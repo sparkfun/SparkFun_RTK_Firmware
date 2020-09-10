@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.5.2">
+<eagle version="9.6.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="yes"/>
@@ -9,25 +9,25 @@
 </settings>
 <grid distance="0.05" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.005" altunitdist="inch" altunit="inch"/>
 <layers>
-<layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
+<layer number="1" name="Top" color="4" fill="1" visible="no" active="yes"/>
 <layer number="2" name="Horz/GND" color="1" fill="3" visible="no" active="yes"/>
 <layer number="15" name="Vert" color="4" fill="6" visible="no" active="yes"/>
-<layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
+<layer number="16" name="Bottom" color="1" fill="1" visible="no" active="yes"/>
 <layer number="17" name="Pads" color="2" fill="1" visible="yes" active="yes"/>
-<layer number="18" name="Vias" color="2" fill="1" visible="yes" active="yes"/>
-<layer number="19" name="Unrouted" color="6" fill="1" visible="yes" active="yes"/>
+<layer number="18" name="Vias" color="2" fill="1" visible="no" active="yes"/>
+<layer number="19" name="Unrouted" color="6" fill="1" visible="no" active="yes"/>
 <layer number="20" name="Dimension" color="24" fill="1" visible="yes" active="yes"/>
 <layer number="21" name="tPlace" color="16" fill="1" visible="yes" active="yes"/>
-<layer number="22" name="bPlace" color="14" fill="1" visible="yes" active="yes"/>
+<layer number="22" name="bPlace" color="14" fill="1" visible="no" active="yes"/>
 <layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
-<layer number="24" name="bOrigins" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="24" name="bOrigins" color="15" fill="1" visible="no" active="yes"/>
 <layer number="25" name="tNames" color="7" fill="1" visible="no" active="yes"/>
 <layer number="26" name="bNames" color="7" fill="1" visible="no" active="yes"/>
-<layer number="27" name="tValues" color="7" fill="1" visible="no" active="yes"/>
+<layer number="27" name="tValues" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="28" name="bValues" color="7" fill="1" visible="no" active="yes"/>
 <layer number="29" name="tStop" color="7" fill="3" visible="no" active="yes"/>
 <layer number="30" name="bStop" color="7" fill="6" visible="no" active="yes"/>
-<layer number="31" name="tCream" color="7" fill="4" visible="no" active="yes"/>
+<layer number="31" name="tCream" color="7" fill="4" visible="yes" active="yes"/>
 <layer number="32" name="bCream" color="7" fill="5" visible="no" active="yes"/>
 <layer number="33" name="tFinish" color="6" fill="3" visible="no" active="yes"/>
 <layer number="34" name="bFinish" color="6" fill="6" visible="no" active="yes"/>
@@ -45,7 +45,7 @@
 <layer number="46" name="Milling" color="3" fill="1" visible="no" active="yes"/>
 <layer number="47" name="Measures" color="7" fill="1" visible="no" active="yes"/>
 <layer number="48" name="Document" color="7" fill="1" visible="no" active="yes"/>
-<layer number="49" name="Reference" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="49" name="Reference" color="7" fill="1" visible="no" active="yes"/>
 <layer number="50" name="dxf" color="7" fill="1" visible="no" active="yes"/>
 <layer number="51" name="tDocu" color="6" fill="1" visible="yes" active="yes"/>
 <layer number="52" name="bDocu" color="7" fill="1" visible="no" active="yes"/>
@@ -15169,6 +15169,163 @@ Out</text>
 <vertex x="0.68" y="0.68"/>
 </polygon>
 </package>
+<package name="GND0">
+<polygon width="0.01" layer="21">
+<vertex x="2.45" y="0.23"/>
+<vertex x="2.32" y="0.2"/>
+<vertex x="2.28" y="0.08"/>
+<vertex x="2.28" y="-0.06"/>
+<vertex x="2.36" y="-0.14"/>
+<vertex x="2.51" y="-0.15"/>
+<vertex x="2.64" y="-0.15"/>
+<vertex x="2.64" y="-0.42"/>
+<vertex x="2.53" y="-0.47"/>
+<vertex x="2.39" y="-0.49"/>
+<vertex x="2.26" y="-0.47"/>
+<vertex x="2.14" y="-0.41"/>
+<vertex x="2.03" y="-0.32"/>
+<vertex x="1.95" y="-0.22"/>
+<vertex x="1.9" y="-0.09"/>
+<vertex x="1.88" y="0.04"/>
+<vertex x="1.9" y="0.19"/>
+<vertex x="1.94" y="0.31"/>
+<vertex x="2.03" y="0.41"/>
+<vertex x="2.14" y="0.49"/>
+<vertex x="2.26" y="0.54"/>
+<vertex x="2.4" y="0.56"/>
+<vertex x="2.53" y="0.54"/>
+<vertex x="2.66" y="0.48"/>
+<vertex x="2.78" y="0.42"/>
+<vertex x="2.88" y="0.45"/>
+<vertex x="3" y="0.56"/>
+<vertex x="3.05" y="0.68"/>
+<vertex x="3" y="0.8"/>
+<vertex x="2.88" y="0.88"/>
+<vertex x="2.76" y="0.94"/>
+<vertex x="2.63" y="0.99"/>
+<vertex x="2.5" y="1.01"/>
+<vertex x="2.37" y="1.02"/>
+<vertex x="2.23" y="1"/>
+<vertex x="2.1" y="0.97"/>
+<vertex x="1.98" y="0.92"/>
+<vertex x="1.86" y="0.86"/>
+<vertex x="1.75" y="0.77"/>
+<vertex x="1.65" y="0.67"/>
+<vertex x="1.57" y="0.57"/>
+<vertex x="1.51" y="0.45"/>
+<vertex x="1.46" y="0.33"/>
+<vertex x="1.43" y="0.2"/>
+<vertex x="1.42" y="0.06"/>
+<vertex x="1.43" y="-0.09"/>
+<vertex x="1.45" y="-0.22"/>
+<vertex x="1.5" y="-0.34"/>
+<vertex x="1.56" y="-0.46"/>
+<vertex x="1.63" y="-0.57"/>
+<vertex x="1.73" y="-0.68"/>
+<vertex x="1.83" y="-0.77"/>
+<vertex x="1.95" y="-0.84"/>
+<vertex x="2.07" y="-0.89"/>
+<vertex x="2.19" y="-0.93"/>
+<vertex x="2.33" y="-0.95"/>
+<vertex x="2.48" y="-0.95"/>
+<vertex x="2.63" y="-0.93"/>
+<vertex x="2.76" y="-0.89"/>
+<vertex x="2.88" y="-0.84"/>
+<vertex x="2.98" y="-0.77"/>
+<vertex x="3.07" y="-0.68"/>
+<vertex x="3.1" y="-0.55"/>
+<vertex x="3.1" y="-0.01"/>
+<vertex x="3.08" y="0.13"/>
+<vertex x="3.01" y="0.21"/>
+<vertex x="2.86" y="0.23"/>
+</polygon>
+<polygon width="0.01" layer="21">
+<vertex x="4.8" y="0.92"/>
+<vertex x="4.76" y="0.81"/>
+<vertex x="4.75" y="0.66"/>
+<vertex x="4.75" y="-0.15"/>
+<vertex x="4.59" y="0.07"/>
+<vertex x="4.44" y="0.27"/>
+<vertex x="4.04" y="0.82"/>
+<vertex x="3.94" y="0.92"/>
+<vertex x="3.81" y="0.96"/>
+<vertex x="3.67" y="0.95"/>
+<vertex x="3.57" y="0.88"/>
+<vertex x="3.55" y="0.75"/>
+<vertex x="3.55" y="-0.74"/>
+<vertex x="3.57" y="-0.87"/>
+<vertex x="3.65" y="-0.94"/>
+<vertex x="3.83" y="-0.95"/>
+<vertex x="3.95" y="-0.9"/>
+<vertex x="4" y="-0.8"/>
+<vertex x="4" y="0.01"/>
+<vertex x="4" y="0.13"/>
+<vertex x="4.23" y="-0.17"/>
+<vertex x="4.72" y="-0.82"/>
+<vertex x="4.83" y="-0.93"/>
+<vertex x="4.96" y="-0.95"/>
+<vertex x="5.13" y="-0.93"/>
+<vertex x="5.2" y="-0.84"/>
+<vertex x="5.22" y="-0.71"/>
+<vertex x="5.22" y="0.63"/>
+<vertex x="5.21" y="0.78"/>
+<vertex x="5.18" y="0.9"/>
+<vertex x="5.07" y="0.96"/>
+<vertex x="4.92" y="0.96"/>
+</polygon>
+<polygon width="0.01" layer="21">
+<vertex x="5.75" y="0.95"/>
+<vertex x="5.65" y="0.9"/>
+<vertex x="5.62" y="0.79"/>
+<vertex x="5.62" y="-0.71"/>
+<vertex x="5.64" y="-0.85"/>
+<vertex x="5.71" y="-0.93"/>
+<vertex x="5.86" y="-0.95"/>
+<vertex x="6.27" y="-0.95"/>
+<vertex x="6.41" y="-0.95"/>
+<vertex x="6.54" y="-0.92"/>
+<vertex x="6.67" y="-0.89"/>
+<vertex x="6.51" y="-0.49"/>
+<vertex x="6.11" y="-0.49"/>
+<vertex x="6.08" y="-0.38"/>
+<vertex x="6.08" y="0.43"/>
+<vertex x="6.15" y="0.5"/>
+<vertex x="6.29" y="0.5"/>
+<vertex x="6.42" y="0.49"/>
+<vertex x="6.55" y="0.45"/>
+<vertex x="6.66" y="0.37"/>
+<vertex x="6.74" y="0.27"/>
+<vertex x="6.8" y="0.15"/>
+<vertex x="6.81" y="0.01"/>
+<vertex x="6.8" y="-0.13"/>
+<vertex x="6.74" y="-0.25"/>
+<vertex x="6.66" y="-0.35"/>
+<vertex x="6.56" y="-0.45"/>
+<vertex x="6.52" y="-0.49"/>
+<vertex x="6.67" y="-0.89"/>
+<vertex x="6.79" y="-0.83"/>
+<vertex x="6.9" y="-0.75"/>
+<vertex x="7" y="-0.66"/>
+<vertex x="7.09" y="-0.55"/>
+<vertex x="7.16" y="-0.44"/>
+<vertex x="7.22" y="-0.32"/>
+<vertex x="7.25" y="-0.19"/>
+<vertex x="7.27" y="-0.06"/>
+<vertex x="7.27" y="0.09"/>
+<vertex x="7.25" y="0.22"/>
+<vertex x="7.22" y="0.35"/>
+<vertex x="7.16" y="0.47"/>
+<vertex x="7.09" y="0.58"/>
+<vertex x="7" y="0.68"/>
+<vertex x="6.89" y="0.78"/>
+<vertex x="6.78" y="0.85"/>
+<vertex x="6.66" y="0.9"/>
+<vertex x="6.53" y="0.94"/>
+<vertex x="6.4" y="0.96"/>
+<vertex x="6.26" y="0.96"/>
+<vertex x="5.85" y="0.96"/>
+</polygon>
+</package>
 </packages>
 </library>
 <library name="SparkFun GPS RTK Surveyor">
@@ -16112,6 +16269,8 @@ design rules under a new name.</description>
 <element name="U$67" library="output" package="#100MM#1" value="" x="29.464" y="50.546" smashed="yes"/>
 <element name="U$68" library="output" package="#1000MM#2" value="" x="29.083" y="42.926" smashed="yes"/>
 <element name="U$69" library="output" package="#BYP#0" value="" x="0.635" y="80.01" smashed="yes" rot="MR0"/>
+<element name="U$70" library="output" package="GND0" value="" x="-13.97" y="52.07" smashed="yes"/>
+<element name="U$71" library="output" package="GND0" value="" x="-15.24" y="49.53" smashed="yes"/>
 </elements>
 <signals>
 <signal name="3.3V" class="1">

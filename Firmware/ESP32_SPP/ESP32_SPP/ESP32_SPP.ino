@@ -2,81 +2,134 @@
 
 BluetoothSerial SerialBT;
 
-volatile bool btconnected = false;
+//Bluetooth status LED goes from off (LED off), no connection (blinking), to connected (solid)
+enum BluetoothState
+{
+  BT_OFF = 0,
+  BT_ON_NOCONNECTION,
+  BT_CONNECTED,
+};
+volatile byte bluetoothState = BT_OFF;
 
-const int statLED = 13;
+const int bluetoothStatusLED = 12;
+uint32_t lastBluetoothLEDBlink = 0;
 
-uint32_t lastTime = 0;
+//uint32_t lastTime = 0;
 
 void callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
     Serial.println("Client Connected");
-    btconnected = true;
-    SerialBT.flush(); //Clear buffer
-    if(Serial1.available()) SerialBT.write(Serial1.read());
+    bluetoothState = BT_CONNECTED;
+    digitalWrite(bluetoothStatusLED, HIGH);
+
+  Serial2.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
     Serial.println("Client disconnected");
-    btconnected = false;
-    digitalWrite(statLED, LOW);
-    SerialBT.flush(); //Clear buffer
+    bluetoothState = BT_ON_NOCONNECTION;
+    digitalWrite(bluetoothStatusLED, LOW);
+    lastBluetoothLEDBlink = millis();
+    Serial2.end();
   }
 
-  if (event == ESP_SPP_WRITE_EVT ) {
-    Serial.println("W");
-    if(Serial1.available()) SerialBT.write(Serial1.read());
-  }
+  //    if (event == ESP_SPP_WRITE_EVT ) {
+  //      Serial.println("W");
+  //      if(Serial2.available()) SerialBT.write(Serial2.read());
+  //    }
 }
 
 void setup() {
   Serial.begin(115200);
-  Serial1.begin(115200); //Default UART1?
+  Serial.println("SparkFun RTK Surveyor v1.0");
 
-  pinMode(statLED, OUTPUT);
+  pinMode(bluetoothStatusLED, OUTPUT);
 
   SerialBT.register_callback(callback);
 
-  if (!SerialBT.begin("ESP32test")) {
+  if (!SerialBT.begin("SparkFun Surveyor"))
+  {
     Serial.println("An error occurred initializing Bluetooth");
-  } else {
-    Serial.println("Bluetooth initialized");
+    bluetoothState = BT_OFF;
+    digitalWrite(bluetoothStatusLED, LOW);
   }
-
+  else
+  {
+    Serial.println("Bluetooth initialized");
+    bluetoothState = BT_ON_NOCONNECTION;
+    digitalWrite(bluetoothStatusLED, HIGH);
+    lastBluetoothLEDBlink = millis();
+  }
 }
 
 void loop() {
 
-//  //if (btconnected == true)
-//  //{
-//  if (Serial1.available())
-//  {
-//    //yield();
-//    SerialBT.write(Serial1.read());
-//
-//    //Blink LED to indicate traffic
-//    if (millis() - lastTime > 1000)
-//    {
-//      lastTime += 1000;
-//
-//      if (digitalRead(statLED) == LOW)
-//        digitalWrite(statLED, HIGH);
-//      else
-//        digitalWrite(statLED, LOW);
-//    }
-//  }
-//
-//  //  }
-//  //  else
-//  //  {
-//  //    Serial.println("No BT");
-//  //    for (int x = 0 ; x < 1000 ; x++)
-//  //    {
-//  //      delay(1);
-//  //      yield();
-//  //    }
-//  //    //delay(1000);
-//  //  }
-//  delay(1);
+  if (Serial.available())
+  {
+    byte incoming = Serial.read();
 
+    if (incoming == 'r')
+    {
+      Serial.println("Reset bluetooth...");
+      //SerialBT.end();
+      //Reset bluetooth
+      SerialBT.register_callback(callback);
+
+      if (!SerialBT.begin("SparkFun Surveyor"))
+      {
+        Serial.println("An error occurred initializing Bluetooth");
+        bluetoothState = BT_OFF;
+        digitalWrite(bluetoothStatusLED, LOW);
+      }
+      else
+      {
+        Serial.println("Bluetooth initialized");
+        bluetoothState = BT_ON_NOCONNECTION;
+        digitalWrite(bluetoothStatusLED, HIGH);
+        lastBluetoothLEDBlink = millis();
+      }
+    }
+    else
+      Serial.println("Unknown command");
+  }
+
+  //Update Bluetooth LED status
+    if (bluetoothState == BT_ON_NOCONNECTION)
+    {
+//      Serial2.end();
+      
+      if (millis() - lastBluetoothLEDBlink > 500)
+      {
+        if (digitalRead(bluetoothStatusLED) == LOW)
+          digitalWrite(bluetoothStatusLED, HIGH);
+        else
+          digitalWrite(bluetoothStatusLED, LOW);
+        lastBluetoothLEDBlink = millis();
+      }
+    }
+
+  if (bluetoothState == BT_CONNECTED)
+  {
+    //yield();
+    //SerialBT.print("Test a lot of text to try to break it");
+    //delay(20);
+    //yield();
+
+    //If the ZED has any new NMEA data, pass it out over Bluetooth
+    if (Serial2.available())
+      SerialBT.write(Serial2.read());
+    //
+    //    //  yield();
+    //
+        //If the phone has any new data (NTRIP RTCM, etc), pass it out over Bluetooth
+//    if (SerialBT.available())
+//      Serial2.write(SerialBT.read());
+
+    //    if (digitalRead(bluetoothStatusLED) == LOW)
+    //      digitalWrite(bluetoothStatusLED, HIGH);
+    //    else
+    //      digitalWrite(bluetoothStatusLED, LOW);
+  }
+
+  //delay(20);
 }

@@ -45,7 +45,7 @@
 <layer number="49" name="Reference" color="7" fill="1" visible="no" active="yes"/>
 <layer number="50" name="dxf" color="7" fill="1" visible="no" active="yes"/>
 <layer number="51" name="tDocu" color="6" fill="1" visible="yes" active="yes"/>
-<layer number="52" name="bDocu" color="7" fill="1" visible="no" active="yes"/>
+<layer number="52" name="bDocu" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="91" name="Nets" color="2" fill="1" visible="yes" active="yes"/>
 <layer number="92" name="Busses" color="1" fill="1" visible="yes" active="yes"/>
 <layer number="93" name="Pins" color="2" fill="1" visible="yes" active="yes"/>
@@ -527,7 +527,6 @@ LEDs this side</text>
 <text x="24" y="0" size="0.5" layer="51" ratio="20" rot="R90" align="center">Connectors</text>
 </package>
 <package name="1553DBK-ENCLOSURE">
-<wire x1="-52.275" y1="-30.4292" x2="-52.275" y2="30.4292" width="0.2032" layer="20"/>
 <text x="-46.8" y="0" size="0.5" layer="51" ratio="20" rot="R270" align="center">Face to Lid
 LEDs this side</text>
 <text x="-51.34" y="0" size="0.5" layer="51" ratio="20" rot="R90" align="center">Connectors</text>
@@ -538,7 +537,6 @@ LEDs this side</text>
 <hole x="-25.0063" y="-28.4988" drill="3.2004"/>
 <wire x1="-3.1623" y1="34.5092" x2="-3.1623" y2="28.575" width="0.2032" layer="20"/>
 <wire x1="3.1623" y1="28.575" x2="3.1623" y2="34.5092" width="0.2032" layer="20"/>
-<wire x1="-52.275" y1="30.4292" x2="-3.1623" y2="34.5092" width="0.2032" layer="20" curve="-7.774791"/>
 <wire x1="49.53" y1="31.7119" x2="56.865" y2="22.8092" width="0.2032" layer="51" curve="-72.045824"/>
 <wire x1="3.1623" y1="34.5092" x2="49.53" y2="31.7119" width="0.2032" layer="51" curve="-8.331372"/>
 <wire x1="-3.1623" y1="28.575" x2="3.1623" y2="28.575" width="0.2032" layer="20" curve="180"/>
@@ -548,14 +546,24 @@ LEDs this side</text>
 <circle x="-25.0063" y="28.4988" radius="2.794" width="0.127" layer="39"/>
 <wire x1="-3.1623" y1="-34.5092" x2="-3.1623" y2="-28.575" width="0.2032" layer="20"/>
 <wire x1="3.1623" y1="-28.575" x2="3.1623" y2="-34.5092" width="0.2032" layer="20"/>
-<wire x1="-52.275" y1="-30.4292" x2="-3.1623" y2="-34.5092" width="0.2032" layer="20" curve="7.774791"/>
-<wire x1="49.53" y1="-31.7119" x2="56.865" y2="-22.8092" width="0.2032" layer="20" curve="72.045824"/>
-<wire x1="3.1623" y1="-34.5092" x2="49.53" y2="-31.7119" width="0.2032" layer="20" curve="8.331372"/>
 <wire x1="-3.1623" y1="-28.575" x2="3.1623" y2="-28.575" width="0.2032" layer="20" curve="-180"/>
 <wire x1="31.75" y1="33.528" x2="31.75" y2="30.48" width="0.2032" layer="20"/>
 <wire x1="31.75" y1="30.48" x2="52.324" y2="30.48" width="0.2032" layer="20"/>
-<wire x1="3.175" y1="34.544" x2="31.75" y2="33.528" width="0.2032" layer="20" curve="-5.381392"/>
+<wire x1="3.1623" y1="34.5092" x2="31.75" y2="33.528" width="0.2032" layer="20" curve="-5.381392"/>
 <wire x1="52.324" y1="30.48" x2="56.865" y2="22.8092" width="0.2032" layer="20" curve="-52.405474"/>
+<wire x1="-54.275" y1="29" x2="-54.275" y2="-29" width="0.2032" layer="20"/>
+<wire x1="-54.275" y1="29" x2="-50" y2="29" width="0.2032" layer="20"/>
+<wire x1="-50" y1="29" x2="-50" y2="30.75" width="0.2032" layer="20"/>
+<wire x1="-54.275" y1="-29" x2="-50" y2="-29" width="0.2032" layer="20"/>
+<wire x1="-50" y1="-29" x2="-50" y2="-30.7" width="0.2032" layer="20"/>
+<wire x1="-50" y1="30.75" x2="-3.1623" y2="34.5092" width="0.2032" layer="20" curve="-7.756885"/>
+<wire x1="-50" y1="-30.7" x2="-3.1623" y2="-34.5092" width="0.2032" layer="20" curve="7.756885"/>
+<wire x1="49.53" y1="-31.7119" x2="56.865" y2="-22.8092" width="0.2032" layer="51" curve="72.045824"/>
+<wire x1="3.1623" y1="-34.5092" x2="49.53" y2="-31.7119" width="0.2032" layer="51" curve="8.331372"/>
+<wire x1="31.75" y1="-33.528" x2="31.75" y2="-30.48" width="0.2032" layer="20"/>
+<wire x1="31.75" y1="-30.48" x2="52.324" y2="-30.48" width="0.2032" layer="20"/>
+<wire x1="3.1623" y1="-34.5092" x2="31.75" y2="-33.528" width="0.2032" layer="20" curve="5.381392"/>
+<wire x1="52.324" y1="-30.48" x2="56.865" y2="-22.8092" width="0.2032" layer="20" curve="52.405474"/>
 </package>
 <package name="ROCKER_SWITCH">
 <wire x1="-9.9" y1="-6.5" x2="-9.9" y2="6.5" width="0.2032" layer="51"/>

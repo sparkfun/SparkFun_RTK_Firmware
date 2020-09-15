@@ -40,14 +40,14 @@ void setup()
     while (1);
   }
 
-  bool response = configureModule();
+  bool response = configureUbloxModule();
 
   if(response == false)
   {
     //Try once more
       Serial.println(F("Failed to configure module. Trying again."));
     delay(2000);
-    response = configureModule();
+    response = configureUbloxModule();
 
     if(response == false)
     {
@@ -56,7 +56,7 @@ void setup()
     }
   }
 
-  Serial.println(F("GPS configuration complate"));
+  Serial.println(F("GPS configuration complete"));
 }
 
 void loop()
@@ -133,7 +133,7 @@ void loop()
   }
 }
 
-bool configureModule()
+bool configureUbloxModule()
 {
   boolean response = true;
 

@@ -1,7 +1,63 @@
+
+//Based on position accuracy, update the green LEDs
+bool updateRoverStatus()
+{
+  //We're in rover mode so update the accuracy LEDs
+  uint32_t accuracy = myGPS.getHorizontalAccuracy();
+
+  // Convert the horizontal accuracy (mm * 10^-1) to a float
+  float f_accuracy = accuracy;
+  // Now convert to m
+  f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
+
+  Serial.print("Rover Accuracy (m): ");
+  Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
+
+  if (f_accuracy <= 0.02)
+  {
+    Serial.print(" 0.02m LED");
+    digitalWrite(positionAccuracyLED_20mm, HIGH);
+    digitalWrite(positionAccuracyLED_100mm, HIGH);
+    digitalWrite(positionAccuracyLED_1000mm, HIGH);
+  }
+  else if (f_accuracy <= 0.100)
+  {
+    Serial.print(" 0.1m LED");
+    digitalWrite(positionAccuracyLED_20mm, LOW);
+    digitalWrite(positionAccuracyLED_100mm, HIGH);
+    digitalWrite(positionAccuracyLED_1000mm, HIGH);
+  }
+  else if (f_accuracy <= 1.0000)
+  {
+    Serial.print(" 1m LED");
+    digitalWrite(positionAccuracyLED_20mm, LOW);
+    digitalWrite(positionAccuracyLED_100mm, LOW);
+    digitalWrite(positionAccuracyLED_1000mm, HIGH);
+  }
+  else if (f_accuracy > 1.0)
+  {
+    Serial.print(" No LEDs");
+    digitalWrite(positionAccuracyLED_20mm, LOW);
+    digitalWrite(positionAccuracyLED_100mm, LOW);
+    digitalWrite(positionAccuracyLED_1000mm, LOW);
+  }
+  Serial.println();
+}
+
 //Configure specific aspects of the receiver for rover mode
 bool configureUbloxModuleRover()
 {
   bool response = myGPS.disableSurveyMode(); //Disable survey
+
+  // Set dynamic model
+  if (myGPS.getDynamicModel() != DYN_MODEL_PORTABLE)
+  {
+    if (myGPS.setDynamicModel(DYN_MODEL_PORTABLE) == false)
+    {
+      Serial.println(F("Warning: setDynamicModel failed!"));
+      return (false);
+    }
+  }
 
   return (setNMEASettings());
 }

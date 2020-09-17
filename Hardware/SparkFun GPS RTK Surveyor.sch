@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.6.0">
+<eagle version="9.6.2">
 <drawing>
 <settings>
 <setting alwaysvectorfont="yes"/>
@@ -24620,7 +24620,7 @@ by exp-lbrs.ulp</description>
 <sheets>
 <sheet>
 <plain>
-<text x="420.624" y="7.366" size="2.54" layer="94">V12</text>
+<text x="420.624" y="7.366" size="2.54" layer="94">v11</text>
 <text x="93.98" y="187.96" size="1.778" layer="97" align="center">7-bit unshifted I2C address: 0x42</text>
 <text x="89.662" y="262.382" size="2.54" layer="94" rot="MR180" align="center">Ublox ZED-F9P</text>
 <text x="33.782" y="168.402" size="2.54" layer="94" rot="MR180" align="center">RTC Backup</text>
@@ -24692,6 +24692,8 @@ On: Fixed</text>
 <wire x1="431.8" y1="68.58" x2="330.2" y2="68.58" width="0.2032" layer="97" style="longdash"/>
 <text x="104.14" y="30.48" size="1.27" layer="97" align="center">5V is not guaranteed
 May be 3.5-5V</text>
+<text x="454.66" y="91.44" size="1.27" layer="91">Add divider for batt level</text>
+<text x="452.12" y="88.9" size="1.27" layer="91">Add ADC connection to battery level</text>
 </plain>
 <instances>
 <instance part="JP21" gate="G$1" x="416.56" y="33.02" smashed="yes" rot="R270"/>

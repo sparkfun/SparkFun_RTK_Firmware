@@ -20,6 +20,7 @@
   - Set the satellite numbering to Extended (3 Digits) for full skyplot support
   (Done) Add ESP32 ID to end of Bluetooth broadcast ID
   Decrease LED resistors to increase brightness
+  Wait for better pos accuracy before starting a survey in
 
   Can we add NTRIP reception over Wifi to the ESP32 to aid in survey in time?
 

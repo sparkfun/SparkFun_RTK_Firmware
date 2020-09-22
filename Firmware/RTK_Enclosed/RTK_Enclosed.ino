@@ -28,11 +28,13 @@
     Test system? Connection to GPS?
     Enable various debug output over BT?
     Display MAC address / broadcast name
+    Change max survey in time before cold start
 
   ESP32 crashing when in rover mode, when LEDs change?
   Seems very stable in base mode, during and after full survey in
+  Still crashing. Heat issue?
 
-H
+Home
 Lat: .01804188
 Long: .28259348
 Stable on Arudino 1.8.9 and default ublox lib
@@ -52,9 +54,9 @@ SFE_UBLOX_GPS myGPS;
 BluetoothSerial SerialBT;
 
 //Hardware connections v11
-const int positionAccuracyLED_20mm = 2; //POSACC1
-const int positionAccuracyLED_100mm = 15; //POSACC2
-const int positionAccuracyLED_1000mm = 13; //POSACC3
+const int positionAccuracyLED_1cm = 2; //POSACC1
+const int positionAccuracyLED_10cm = 15; //POSACC2
+const int positionAccuracyLED_100cm = 13; //POSACC3
 const int baseStatusLED = 4;
 const int baseSwitch = 5;
 const int bluetoothStatusLED = 12;
@@ -80,13 +82,14 @@ volatile byte bluetoothState = BT_OFF;
 typedef enum
 {
   BASE_OFF = 0,
+  BASE_SURVEYING_IN_NOTSTARTED, //User has indicated base, but current pos accuracy is too low
   BASE_SURVEYING_IN_SLOW,
   BASE_SURVEYING_IN_FAST,
   BASE_TRANSMITTING,
 } BaseState;
 volatile BaseState baseState = BASE_OFF;
 unsigned long baseStateBlinkTime = 0;
-const unsigned long maxSurveyInWait_s = 60L * 5L; //Re-start survey-in after X seconds
+const unsigned long maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
 uint32_t lastBluetoothLEDBlink = 0;
 uint32_t lastRoverUpdate = 0;
@@ -120,16 +123,16 @@ void setup()
   Serial2.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
   Serial.println("SparkFun RTK Surveyor v1.0");
 
-  pinMode(positionAccuracyLED_20mm, OUTPUT);
-  pinMode(positionAccuracyLED_100mm, OUTPUT);
-  pinMode(positionAccuracyLED_1000mm, OUTPUT);
+  pinMode(positionAccuracyLED_1cm, OUTPUT);
+  pinMode(positionAccuracyLED_10cm, OUTPUT);
+  pinMode(positionAccuracyLED_100cm, OUTPUT);
   pinMode(baseStatusLED, OUTPUT);
   pinMode(bluetoothStatusLED, OUTPUT);
   pinMode(baseSwitch, INPUT_PULLUP); //HIGH = rover, LOW = base
 
-  digitalWrite(positionAccuracyLED_20mm, LOW);
-  digitalWrite(positionAccuracyLED_100mm, LOW);
-  digitalWrite(positionAccuracyLED_1000mm, LOW);
+  digitalWrite(positionAccuracyLED_1cm, LOW);
+  digitalWrite(positionAccuracyLED_10cm, LOW);
+  digitalWrite(positionAccuracyLED_100cm, LOW);
   digitalWrite(baseStatusLED, LOW);
   digitalWrite(bluetoothStatusLED, LOW);
 
@@ -239,6 +242,8 @@ void loop()
     {
       Serial.println("Rover config failed!");
     }
+
+    digitalWrite(baseStatusLED, LOW);
   }
   else if (digitalRead(baseSwitch) == LOW && baseState == BASE_OFF)
   {
@@ -252,11 +257,10 @@ void loop()
 
     startBluetooth(); //Restart Bluetooth with new name
 
-    //Begin Survey in
-    surveyIn();
+    baseState = BASE_SURVEYING_IN_NOTSTARTED; //Switch to new state
   }
 
-  if (baseState == BASE_SURVEYING_IN_SLOW || baseState == BASE_SURVEYING_IN_FAST)
+  if (baseState == BASE_SURVEYING_IN_NOTSTARTED || baseState == BASE_SURVEYING_IN_SLOW || baseState == BASE_SURVEYING_IN_FAST)
   {
     updateSurveyInStatus();
   }

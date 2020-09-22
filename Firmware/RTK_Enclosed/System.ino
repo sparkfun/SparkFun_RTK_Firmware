@@ -222,15 +222,15 @@ void blinkError(t_errorNumber errorNumber)
   {
     for (int x = 0 ; x < errorNumber ; x++)
     {
-      digitalWrite(positionAccuracyLED_20mm, HIGH);
-      digitalWrite(positionAccuracyLED_100mm, HIGH);
-      digitalWrite(positionAccuracyLED_1000mm, HIGH);
+      digitalWrite(positionAccuracyLED_1cm, HIGH);
+      digitalWrite(positionAccuracyLED_10cm, HIGH);
+      digitalWrite(positionAccuracyLED_100cm, HIGH);
       digitalWrite(baseStatusLED, HIGH);
       digitalWrite(bluetoothStatusLED, HIGH);
       delay(200);
-      digitalWrite(positionAccuracyLED_20mm, LOW);
-      digitalWrite(positionAccuracyLED_100mm, LOW);
-      digitalWrite(positionAccuracyLED_1000mm, LOW);
+      digitalWrite(positionAccuracyLED_1cm, LOW);
+      digitalWrite(positionAccuracyLED_10cm, LOW);
+      digitalWrite(positionAccuracyLED_100cm, LOW);
       digitalWrite(baseStatusLED, LOW);
       digitalWrite(bluetoothStatusLED, LOW);
       delay(200);
@@ -245,32 +245,32 @@ void danceLEDs()
 {
   for (int x = 0 ; x < 2 ; x++)
   {
-    digitalWrite(positionAccuracyLED_20mm, HIGH);
-    digitalWrite(positionAccuracyLED_100mm, HIGH);
-    digitalWrite(positionAccuracyLED_1000mm, HIGH);
+    digitalWrite(positionAccuracyLED_1cm, HIGH);
+    digitalWrite(positionAccuracyLED_10cm, HIGH);
+    digitalWrite(positionAccuracyLED_100cm, HIGH);
     digitalWrite(baseStatusLED, HIGH);
     digitalWrite(bluetoothStatusLED, HIGH);
     delay(100);
-    digitalWrite(positionAccuracyLED_20mm, LOW);
-    digitalWrite(positionAccuracyLED_100mm, LOW);
-    digitalWrite(positionAccuracyLED_1000mm, LOW);
+    digitalWrite(positionAccuracyLED_1cm, LOW);
+    digitalWrite(positionAccuracyLED_10cm, LOW);
+    digitalWrite(positionAccuracyLED_100cm, LOW);
     digitalWrite(baseStatusLED, LOW);
     digitalWrite(bluetoothStatusLED, LOW);
     delay(100);
   }
 
-  digitalWrite(positionAccuracyLED_20mm, HIGH);
-  digitalWrite(positionAccuracyLED_100mm, HIGH);
-  digitalWrite(positionAccuracyLED_1000mm, HIGH);
+  digitalWrite(positionAccuracyLED_1cm, HIGH);
+  digitalWrite(positionAccuracyLED_10cm, HIGH);
+  digitalWrite(positionAccuracyLED_100cm, HIGH);
   digitalWrite(baseStatusLED, HIGH);
   digitalWrite(bluetoothStatusLED, HIGH);
 
   delay(250);
-  digitalWrite(positionAccuracyLED_20mm, LOW);
+  digitalWrite(positionAccuracyLED_1cm, LOW);
   delay(250);
-  digitalWrite(positionAccuracyLED_100mm, LOW);
+  digitalWrite(positionAccuracyLED_10cm, LOW);
   delay(250);
-  digitalWrite(positionAccuracyLED_1000mm, LOW);
+  digitalWrite(positionAccuracyLED_100cm, LOW);
 
   delay(250);
   digitalWrite(baseStatusLED, LOW);

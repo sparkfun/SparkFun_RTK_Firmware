@@ -6,59 +6,82 @@ bool updateSurveyInStatus()
   {
     lastBaseUpdate = millis();
 
-    bool response = myGPS.getSurveyStatus(2000); //Query module for SVIN status with 2000ms timeout (req can take a long time)
-    if (response == true)
+    if (baseState == BASE_SURVEYING_IN_NOTSTARTED)
     {
-      if (myGPS.svin.valid == true)
-      {
-        Serial.println(F("Base survey complete! RTCM now broadcasting."));
-        baseState = BASE_TRANSMITTING;
+      //Check for <5m horz accuracy
+      uint32_t accuracy = myGPS.getHorizontalAccuracy(250); //This call defaults to 1100ms and can cause the core to crash with WDT timeout
+      
+      float f_accuracy = accuracy;
+      f_accuracy = f_accuracy / 10000.0; // Convert the horizontal accuracy (mm * 10^-1) to a float
 
-        digitalWrite(baseStatusLED, HIGH); //Turn on LED
+      Serial.print("Rover Accuracy (m): ");
+      Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
+      Serial.println();
+
+      if (f_accuracy > 0.0 && f_accuracy < 5.0)
+      {
+        //We've got a good positional accuracy, start survey
+        surveyIn();
+      }
+
+    } //baseState = Surveying In Not started
+    else
+    {
+
+      bool response = myGPS.getSurveyStatus(2000); //Query module for SVIN status with 2000ms timeout (req can take a long time)
+      if (response == true)
+      {
+        if (myGPS.svin.valid == true)
+        {
+          Serial.println(F("Base survey complete! RTCM now broadcasting."));
+          baseState = BASE_TRANSMITTING;
+
+          digitalWrite(baseStatusLED, HIGH); //Turn on LED
+        }
+        else
+        {
+          byte SIV = myGPS.getSIV();
+
+          Serial.print(F("Time elapsed: "));
+          Serial.print((String)myGPS.svin.observationTime);
+          Serial.print(F(" Accuracy: "));
+          Serial.print((String)myGPS.svin.meanAccuracy);
+          Serial.print(F(" SIV: "));
+          Serial.print(SIV);
+          Serial.println();
+
+          SerialBT.print(F("Time elapsed: "));
+          SerialBT.print((String)myGPS.svin.observationTime);
+          SerialBT.print(F(" Accuracy: "));
+          SerialBT.print((String)myGPS.svin.meanAccuracy);
+          SerialBT.print(F(" SIV: "));
+          SerialBT.print(SIV);
+          SerialBT.println();
+
+          if (myGPS.svin.meanAccuracy > 6.0)
+            baseState = BASE_SURVEYING_IN_SLOW;
+          else
+            baseState = BASE_SURVEYING_IN_FAST;
+
+          if (myGPS.svin.observationTime > maxSurveyInWait_s)
+          {
+            Serial.println(F("Survey-In took more than 5 minutes. Restarting survey in."));
+
+            resetSurvey();
+
+            surveyIn();
+          }
+        }
       }
       else
       {
-        byte SIV = myGPS.getSIV();
-
-        Serial.print(F("Time elapsed: "));
-        Serial.print((String)myGPS.svin.observationTime);
-        Serial.print(F(" Accuracy: "));
-        Serial.print((String)myGPS.svin.meanAccuracy);
-        Serial.print(F(" SIV: "));
-        Serial.print(SIV);
-        Serial.println();
-
-        SerialBT.print(F("Time elapsed: "));
-        SerialBT.print((String)myGPS.svin.observationTime);
-        SerialBT.print(F(" Accuracy: "));
-        SerialBT.print((String)myGPS.svin.meanAccuracy);
-        SerialBT.print(F(" SIV: "));
-        SerialBT.print(SIV);
-        SerialBT.println();
-
-        if (myGPS.svin.meanAccuracy > 6.0)
-          baseState = BASE_SURVEYING_IN_SLOW;
-        else
-          baseState = BASE_SURVEYING_IN_FAST;
-
-        if (myGPS.svin.observationTime > maxSurveyInWait_s)
-        {
-          Serial.println(F("Survey-In took more than 5 minutes. Restarting survey in."));
-
-          resetSurvey();
-
-          surveyIn();
-        }
+        Serial.println(F("SVIN request failed"));
       }
-    }
-    else
-    {
-      Serial.println(F("SVIN request failed"));
-    }
-  }
+    } //baseState = Surveying In Slow or fast
+  } //Check every second
 
   //Update the Base LED accordingly
-  if (baseState == BASE_SURVEYING_IN_SLOW)
+  if (baseState == BASE_SURVEYING_IN_NOTSTARTED || baseState == BASE_SURVEYING_IN_SLOW)
   {
     if (millis() - baseStateBlinkTime > 500)
     {
@@ -91,9 +114,9 @@ bool configureUbloxModuleBase()
 {
   bool response = true;
 
-  digitalWrite(positionAccuracyLED_20mm, LOW);
-  digitalWrite(positionAccuracyLED_100mm, LOW);
-  digitalWrite(positionAccuracyLED_1000mm, LOW);
+  digitalWrite(positionAccuracyLED_1cm, LOW);
+  digitalWrite(positionAccuracyLED_10cm, LOW);
+  digitalWrite(positionAccuracyLED_100cm, LOW);
 
   // Set dynamic model
   if (myGPS.getDynamicModel() != DYN_MODEL_STATIONARY)

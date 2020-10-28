@@ -1,5 +1,52 @@
 
-uint8_t settingPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
+uint8_t settingPayload[MAX_PAYLOAD_SIZE]; //This array holds the payload data bytes. Global so that we can use between config functions.
+
+//If the phone has any new data (NTRIP RTCM, etc), pass it out over Bluetooth
+//Task for writing to the GNSS receiver
+void F9PSerialWriteTask(void *e)
+{
+  while (true)
+  {
+    //Receive corrections from either the ESP32 USB or bluetooth
+    //and write to the GPS
+    if (Serial.available())
+    {
+      auto s = Serial.readBytes(wBuffer, SERIAL_SIZE_RX);
+      GPS.write(wBuffer, s);
+    }
+    else if (SerialBT.connected() && SerialBT.available())
+    {
+      auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
+      GPS.write(wBuffer, s);
+    }
+
+    taskYIELD();
+  }
+}
+
+//If the ZED has any new NMEA data, pass it out over Bluetooth
+//Task for reading data from the GNSS receiver.
+void F9PSerialReadTask(void *e)
+{
+  while (true)
+  {
+    if (GPS.available())
+    {
+      auto s = GPS.readBytes(rBuffer, SERIAL_SIZE_RX);
+
+      //If we are actively survey-in then do not pass NMEA data from ZED to phone
+      if (baseState == BASE_SURVEYING_IN_SLOW || baseState == BASE_SURVEYING_IN_FAST)
+      {
+        //Do nothing
+      }
+      else if (SerialBT.connected())
+      {
+        SerialBT.write(rBuffer, s);
+      }
+    }
+    taskYIELD();
+  }
+}
 
 //Setup the Ublox module for any setup (base or rover)
 //In general we check if the setting is incorrect before writing it. Otherwise, the set commands have, on rare occasion, become
@@ -14,7 +61,6 @@ bool configureUbloxModule()
 
   //UART1 will primarily be used to pass NMEA from ZED to ESP32/Cell phone but the phone
   //can also provide RTCM data. So let's be sure to enable RTCM on UART1 input.
-
   getPortSettings(COM_PORT_UART1); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != COM_TYPE_NMEA || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
   {
@@ -46,13 +92,23 @@ bool configureUbloxModule()
     response &= myGPS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
   }
 
-  //myGPS.setNavigationFrequency(10); //Set output to 10 times a second
+  //The USB port on the ZED may be used for RTCM to/from the computer (as an NTRIP caster or client)
+  //So let's be sure all protocols are on for the USB port
+  getPortSettings(COM_PORT_USB); //Load the settingPayload with this port's settings
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3) || settingPayload[INPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3))
+  {
+    response &= myGPS.setPortOutput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
+    response &= myGPS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
+  }
+
+
+  //Set output rate
   if (myGPS.getNavigationFrequency() != 4)
   {
     response &= myGPS.setNavigationFrequency(4); //Set output in Hz
   }
 
-  //Make sure the appropriate sentences are enabled
+  //Make sure the appropriate NMEA sentences are enabled
   if (getNMEASettings(UBX_NMEA_GGA, COM_PORT_UART1) != 1)
     response &= myGPS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
   if (getNMEASettings(UBX_NMEA_GSA, COM_PORT_UART1) != 1)
@@ -64,8 +120,9 @@ bool configureUbloxModule()
   if (getNMEASettings(UBX_NMEA_GST, COM_PORT_UART1) != 1)
     response &= myGPS.enableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1);
 
-  //response &= myGPS.setAutoPVT(true); //Tell the GPS to "send" each solution
-  response &= myGPS.setAutoPVT(false); //Turn off PVT
+  response &= myGPS.setAutoPVT(true); //Tell the GPS to "send" each solution
+  //response &= myGPS.setAutoPVT(true, false);    //Tell the GPS to "send" each solution and the lib not to update stale data implicitly
+  //response &= myGPS.setAutoPVT(false); //Turn off PVT
 
   if (getSerialRate(COM_PORT_UART1) != 115200)
   {
@@ -75,7 +132,7 @@ bool configureUbloxModule()
   if (getSerialRate(COM_PORT_UART2) != 57600)
   {
     Serial.println("Updating UART2 rate");
-    myGPS.setSerialRate(57600, COM_PORT_UART2); //Set UART2 to 57600 to match SiK firmware default
+    myGPS.setSerialRate(57600, COM_PORT_UART2); //Set UART2 to 57600 to match SiK telemetry radio firmware default
   }
 
   if (response == false)
@@ -302,5 +359,144 @@ bool startBluetooth()
     return (false);
   Serial.print("Bluetooth broadcasting as: ");
   Serial.println(deviceName);
+
+  //Start the tasks.
+  //Can also use xTaskCreatePinnedToCore to pin a task to one of the two cores
+  //on the ESP32
+  xTaskCreate(F9PSerialReadTask, "F9Read", 10000, NULL, 0, NULL);
+  xTaskCreate(F9PSerialWriteTask, "F9Write", 10000, NULL, 0, NULL);
+
   return (true);
+}
+
+boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
+{
+  myGPS.minfo.hwVersion[0] = 0;
+  myGPS.minfo.swVersion[0] = 0;
+  for (int i = 0; i < 10; i++)
+    myGPS.minfo.extension[i][0] = 0;
+  myGPS.minfo.extensionNo = 0;
+
+  // Let's create our custom packet
+  uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
+
+  // The next line creates and initialises the packet information which wraps around the payload
+  ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+
+  // The structure of ubxPacket is:
+  // uint8_t cls           : The message Class
+  // uint8_t id            : The message ID
+  // uint16_t len          : Length of the payload. Does not include cls, id, or checksum bytes
+  // uint16_t counter      : Keeps track of number of overall bytes received. Some responses are larger than 255 bytes.
+  // uint16_t startingSpot : The counter value needed to go past before we begin recording into payload array
+  // uint8_t *payload      : The payload
+  // uint8_t checksumA     : Given to us by the module. Checked against the rolling calculated A/B checksums.
+  // uint8_t checksumB
+  // sfe_ublox_packet_validity_e valid            : Goes from NOT_DEFINED to VALID or NOT_VALID when checksum is checked
+  // sfe_ublox_packet_validity_e classAndIDmatch  : Goes from NOT_DEFINED to VALID or NOT_VALID when the Class and ID match the requestedClass and requestedID
+
+  // sendCommand will return:
+  // SFE_UBLOX_STATUS_DATA_RECEIVED if the data we requested was read / polled successfully
+  // SFE_UBLOX_STATUS_DATA_SENT     if the data we sent was writted successfully (ACK'd)
+  // Other values indicate errors. Please see the sfe_ublox_status_e enum for further details.
+
+  // Referring to the u-blox M8 Receiver Description and Protocol Specification we see that
+  // the module information can be read using the UBX-MON-VER message. So let's load our
+  // custom packet with the correct information so we can read (poll / get) the module information.
+
+  customCfg.cls = UBX_CLASS_MON; // This is the message Class
+  customCfg.id = UBX_MON_VER;    // This is the message ID
+  customCfg.len = 0;             // Setting the len (length) to zero let's us poll the current settings
+  customCfg.startingSpot = 0;    // Always set the startingSpot to zero (unless you really know what you are doing)
+
+  // Now let's send the command. The module info is returned in customPayload
+
+  if (sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (false); //If command send fails then bail
+
+  // Now let's extract the module info from customPayload
+
+  uint16_t position = 0;
+  for (int i = 0; i < 30; i++)
+  {
+    minfo.swVersion[i] = customPayload[position];
+    position++;
+  }
+  for (int i = 0; i < 10; i++)
+  {
+    minfo.hwVersion[i] = customPayload[position];
+    position++;
+  }
+
+  while (customCfg.len >= position + 30)
+  {
+    for (int i = 0; i < 30; i++)
+    {
+      minfo.extension[minfo.extensionNo][i] = customPayload[position];
+      position++;
+    }
+    minfo.extensionNo++;
+    if (minfo.extensionNo > 9)
+      break;
+  }
+
+  return (true); //Success!
+}
+
+//Call back for when BT connection event happens (connected/disconnect)
+//Used for updating the bluetoothState state machine
+void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
+  if (event == ESP_SPP_SRV_OPEN_EVT) {
+    Serial.println("Client Connected");
+    bluetoothState = BT_CONNECTED;
+    digitalWrite(bluetoothStatusLED, HIGH);
+  }
+
+  if (event == ESP_SPP_CLOSE_EVT ) {
+    Serial.println("Client disconnected");
+    bluetoothState = BT_ON_NOCONNECTION;
+    digitalWrite(bluetoothStatusLED, LOW);
+    lastBluetoothLEDBlink = millis();
+  }
+}
+
+//Update Battery level LEDs every 5s
+void updateBattLEDs()
+{
+  if (millis() - lastBattUpdate > 5000)
+  {
+    lastBattUpdate += 5000;
+
+    int battLevel = battMonitor.percent();
+
+    Serial.print("Batt (");
+    Serial.print(battLevel);
+    Serial.print("%): ");
+
+    if (battLevel < 10)
+    {
+      Serial.print("RED uh oh!");
+      ledcWrite(batteryLevelLED_Red, 255);
+      ledcWrite(batteryLevelLED_Green, 0);
+    }
+    else if (battLevel < 50)
+    {
+      Serial.print("Yellow ok");
+      ledcWrite(batteryLevelLED_Red, 128);
+      ledcWrite(batteryLevelLED_Green, 128);
+    }
+    else if (battLevel >= 50)
+    {
+      Serial.print("Green all good");
+      ledcWrite(batteryLevelLED_Red, 0);
+      ledcWrite(batteryLevelLED_Green, 255);
+    }
+    else
+    {
+      Serial.print("No batt");
+      ledcWrite(batteryLevelLED_Red, 0);
+      ledcWrite(batteryLevelLED_Green, 0);
+    }
+    Serial.println();
+  }
 }

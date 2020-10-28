@@ -2,23 +2,17 @@
 bool updateRoverStatus()
 {
   //Update the horizontal accuracy LEDs only every second or so
-  if (millis() - lastRoverUpdate > 1000)
+  if (millis() - lastRoverUpdate > 2000)
   {
-    lastRoverUpdate = millis();
+    lastRoverUpdate += 2000;
 
-    yield();
-    uint32_t accuracy = myGPS.getHorizontalAccuracy(250); //This call defaults to 1100ms and can cause the core to crash with WDT timeout
-    //uint32_t accuracy = myGPS.getPositionAccuracy(250); //Returns different units
-    //uint32_t accuracy = myGPS.getPositionAccuracy(50);
-//    uint32_t accuracy = 0; 
-    yield();
+    uint32_t accuracy = myGPS.getHorizontalAccuracy(250);
 
     if (accuracy > 0)
     {
       // Convert the horizontal accuracy (mm * 10^-1) to a float
       float f_accuracy = accuracy;
       f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
-//      f_accuracy = f_accuracy / 1000.0; // Convert getPositionAccuracy
 
       Serial.print("Rover Accuracy (m): ");
       Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
@@ -53,6 +47,15 @@ bool updateRoverStatus()
       }
       Serial.println();
     }
+    else
+    {
+      Serial.print("Rover Accuracy: ");
+      Serial.print(accuracy);
+      Serial.print(" ");
+      Serial.print("No lock. SIV: ");
+      Serial.print(myGPS.getSIV());
+      Serial.println();
+    }
   }
 }
 
@@ -75,7 +78,34 @@ bool configureUbloxModuleRover()
   if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_UART2) != 0)
     response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0);
 
+  if (getRTCMSettings(UBX_RTCM_1005, COM_PORT_UART1) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_UART1, 0);
+  if (getRTCMSettings(UBX_RTCM_1074, COM_PORT_UART1) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_UART1, 0);
+  if (getRTCMSettings(UBX_RTCM_1084, COM_PORT_UART1) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_UART1, 0);
+  if (getRTCMSettings(UBX_RTCM_1094, COM_PORT_UART1) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_UART1, 0);
+  if (getRTCMSettings(UBX_RTCM_1124, COM_PORT_UART1) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_UART1, 0);
+  if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_UART1) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART1, 0);
+
+  if (getRTCMSettings(UBX_RTCM_1005, COM_PORT_USB) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_USB, 0);
+  if (getRTCMSettings(UBX_RTCM_1074, COM_PORT_USB) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_USB, 0);
+  if (getRTCMSettings(UBX_RTCM_1084, COM_PORT_USB) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_USB, 0);
+  if (getRTCMSettings(UBX_RTCM_1094, COM_PORT_USB) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_USB, 0);
+  if (getRTCMSettings(UBX_RTCM_1124, COM_PORT_USB) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_USB, 0);
+  if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_USB) != 0)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_USB, 0);
+
   response &= setNMEASettings(); //Enable high precision NMEA and extended sentences
+  response &= setSBAS(false); //Disable SBAS. Work around for RTK LED not working in v1.13 firmware.
   return (response);
 }
 
@@ -109,5 +139,48 @@ bool setNMEASettings()
     Serial.println(F("NMEA setting failed!"));
     return (false);
   }
+  return (true);
+}
+
+//The Ublox library doesn't directly support SBAS control so let's do it manually
+bool setSBAS(bool enableSBAS)
+{
+  uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
+  ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+
+  customCfg.cls = UBX_CLASS_CFG; // This is the message Class
+  customCfg.id = UBX_CFG_GNSS; // This is the message ID
+  customCfg.len = 0; // Setting the len (length) to zero lets us poll the current settings
+  customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
+
+  uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+
+  // Read the current setting. The results will be loaded into customCfg.
+  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  {
+    Serial.println(F("Set SBAS failed!"));
+    return (false);
+  }
+
+  if (enableSBAS)
+  {
+    if (customPayload[8 + 1 * 8] & (1 << 0)) return true; //If we want the bit set, and it already is, simply return
+
+    customPayload[8 + 1 * 8] |= (1 << 0); //Set the enable bit
+  }
+  else
+  {
+    if (customPayload[8 + 1 * 8] & (1 << 0) == 0) return true; //If we want the bit cleared, and it already is, simply return
+
+    customPayload[8 + 1 * 8] &= ~(1 << 0); //Clear the enable bit
+  }
+
+  // Now we write the custom packet back again to change the setting
+  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
+  {
+    Serial.println(F("SBAS setting failed!"));
+    return (false);
+  }
+
   return (true);
 }

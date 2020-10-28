@@ -19,47 +19,100 @@
   - Enable the high accuracy mode and NMEA 4.0+ in the NMEA configuration
   - Set the satellite numbering to Extended (3 Digits) for full skyplot support
   (Done) Add ESP32 ID to end of Bluetooth broadcast ID
-  Decrease LED resistors to increase brightness
+  (Done) Decrease LED resistors to increase brightness
+  (Done) Enable RTCM sentences for USB and UART1, in addition to UART2
+  (Fixed) Something wierd happened with v1.13. Fix type changed? LED is not turning on even in float mode. (Disable SBAS)
+  (Done) Check for v1.13 of ZED firmware. Display warning if not matching.
+  (Fixed) ESP32 crashing when in rover mode, when LEDs change? https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/124
+  Set static position based on user input
   Wait for better pos accuracy before starting a survey in
-
   Can we add NTRIP reception over Wifi to the ESP32 to aid in survey in time?
+  
 
   Menu System:
     Test system? Connection to GPS?
     Enable various debug output over BT?
     Display MAC address / broadcast name
+    Change broadcast name + MAC
     Change max survey in time before cold start
-
-  ESP32 crashing when in rover mode, when LEDs change?
-  Seems very stable in base mode, during and after full survey in
-  Still crashing. Heat issue?
-
-Home
-Lat: .01804188
-Long: .28259348
-Stable on Arudino 1.8.9 and default ublox lib
-
-
+    Allow user to enter permanent coordinates.
+    Allow user to enable/disable detection of permanent base
+    Set radius (5m default) for auto-detection of base
 */
-
-#define RXD2 16
-#define TXD2 17
 
 #include <Wire.h> //Needed for I2C to GPS
 
-#include "SparkFun_Ublox_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_Ublox_GPS
-SFE_UBLOX_GPS myGPS;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//All the I2C and GPS stuff
+#define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 
+#include "SparkFun_Ublox_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_Ublox_GPS
+//SFE_UBLOX_GPS myGPS;
+
+// Extend the class for getModuleInfo - See Example21_ModuleInfo
+class SFE_UBLOX_GPS_ADD : public SFE_UBLOX_GPS
+{
+  public:
+    boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
+
+    struct minfoStructure // Structure to hold the module info (uses 341 bytes of RAM)
+    {
+      char swVersion[30];
+      char hwVersion[10];
+      uint8_t extensionNo = 0;
+      char extension[10][30];
+    } minfo;
+};
+
+SFE_UBLOX_GPS_ADD myGPS;
+
+//This string is used to verify the firmware on the ZED-F9P. This
+//firmware relies on various features of the ZED and may require the latest
+//ublox firmware to work correctly. We check the module firmware at startup but
+//don't prevent operation if firmware is mismatched.
+char latestZEDFirmware[] = "FWVER=HPG 1.13";
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//Bits for the battery level LEDs
+#include "MAX17048.h" //Click here to get the library: http://librarymanager/All#MAX17048
+MAX17048 battMonitor;
+
+// setting PWM properties
+const int freq = 5000;
+const int ledChannel = 0;
+const int resolution = 8;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//Setup hardware serial and BT buffers
 #include "BluetoothSerial.h"
 BluetoothSerial SerialBT;
 
+HardwareSerial GPS(2);
+#define RXD2 16
+#define TXD2 17
+
+#define SERIAL_SIZE_RX 16384 //Using a large buffer. This might be much bigger than needed but the ESP32 has enough RAM
+uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading F9P
+uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //Hardware connections v11
-const int positionAccuracyLED_1cm = 2; //POSACC1
-const int positionAccuracyLED_10cm = 15; //POSACC2
-const int positionAccuracyLED_100cm = 13; //POSACC3
+const int positionAccuracyLED_1cm = 2;
 const int baseStatusLED = 4;
 const int baseSwitch = 5;
 const int bluetoothStatusLED = 12;
+const int positionAccuracyLED_100cm = 13;
+const int positionAccuracyLED_10cm = 15;
+const int sd_cs = 25;
+const int zed_tx_ready = 26;
+const int zed_reset = 27;
+const int batteryLevelLED_Red = 34;
+const int batteryLevelLED_Green = 35;
+const int batteryLevel_alert = 36;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Freeze and blink LEDs if we hit a bad error
 typedef enum
@@ -67,7 +120,6 @@ typedef enum
   ERROR_NO_I2C = 2, //Avoid 0 and 1 as these are bad blink codes
   ERROR_GPS_CONFIG_FAIL,
 } t_errorNumber;
-
 
 //Bluetooth status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BluetoothState
@@ -94,33 +146,20 @@ const unsigned long maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X 
 uint32_t lastBluetoothLEDBlink = 0;
 uint32_t lastRoverUpdate = 0;
 uint32_t lastBaseUpdate = 0;
+uint32_t lastBattUpdate = 0;
 
 uint32_t lastTime = 0;
-
-void callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
-  if (event == ESP_SPP_SRV_OPEN_EVT) {
-    Serial.println("Client Connected");
-    bluetoothState = BT_CONNECTED;
-    digitalWrite(bluetoothStatusLED, HIGH);
-  }
-
-  if (event == ESP_SPP_CLOSE_EVT ) {
-    Serial.println("Client disconnected");
-    bluetoothState = BT_ON_NOCONNECTION;
-    digitalWrite(bluetoothStatusLED, LOW);
-    lastBluetoothLEDBlink = millis();
-  }
-
-  //  if (event == ESP_SPP_WRITE_EVT ) {
-  //    Serial.println("W");
-  //    if(Serial1.available()) SerialBT.write(Serial1.read());
-  //  }
-}
 
 void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
-  Serial2.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
+  Serial.setRxBufferSize(SERIAL_SIZE_RX);
+  Serial.setTimeout(1);
+  
+  GPS.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
+  GPS.setRxBufferSize(SERIAL_SIZE_RX);
+  GPS.setTimeout(1);
+
   Serial.println("SparkFun RTK Surveyor v1.0");
 
   pinMode(positionAccuracyLED_1cm, OUTPUT);
@@ -136,7 +175,11 @@ void setup()
   digitalWrite(baseStatusLED, LOW);
   digitalWrite(bluetoothStatusLED, LOW);
 
-  SerialBT.register_callback(callback);
+  ledcSetup(ledChannel, freq, resolution);
+  ledcAttachPin(batteryLevelLED_Red, ledChannel);
+  ledcAttachPin(batteryLevelLED_Green, ledChannel);
+
+  SerialBT.register_callback(btCallback);
   if (startBluetooth() == false)
   {
     Serial.println("An error occurred initializing Bluetooth");
@@ -151,6 +194,9 @@ void setup()
   }
 
   Wire.begin();
+  
+  battMonitor.attatch(Wire); //Connect batt level LED stuff so we can see battery level at power-on
+
   if (myGPS.begin() == false)
   {
     //Try again with power on delay
@@ -165,6 +211,24 @@ void setup()
   }
   else
     Serial.println(F("Ublox GPS detected"));
+
+  //Based on Example21_ModuleInfo
+  if (myGPS.getModuleInfo(1100) == true) // Try to get the module info
+  {
+    if (strcmp(myGPS.minfo.extension[1], latestZEDFirmware) != 0)
+    {
+      Serial.print("The ZED-F9P appears to have outdated firmware. Found: ");
+      Serial.println(myGPS.minfo.extension[1]);
+      Serial.print("The Surveyor works best with ");
+      Serial.println(latestZEDFirmware);
+      Serial.print("Please upgrade using u-center.");
+      Serial.println();
+    }
+    else
+    {
+      Serial.println("ZED-F9P firmware is current");
+    }
+  }
 
   bool response = configureUbloxModule();
   if (response == false)
@@ -184,7 +248,7 @@ void setup()
 
   danceLEDs(); //Turn on LEDs like a car dashboard
 
-  myGPS.enableDebugging(); //Enable debug messages over Serial (default)
+  //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
 }
 
 void loop()
@@ -199,31 +263,6 @@ void loop()
       else
         digitalWrite(bluetoothStatusLED, LOW);
       lastBluetoothLEDBlink = millis();
-    }
-  }
-
-  if (bluetoothState == BT_CONNECTED)
-  {
-    //If we are actively survey-in then do not pass NMEA data
-    if (baseState == BASE_SURVEYING_IN_SLOW || baseState == BASE_SURVEYING_IN_FAST)
-    {
-      //Do nothing
-    }
-    else
-    {
-      //If the ZED has any new NMEA data, pass it out over Bluetooth
-      while(Serial2.available())
-      {
-        SerialBT.write(Serial2.read());
-        yield();
-      }
-
-      //If the phone has any new data (NTRIP RTCM, etc), pass it out over Bluetooth
-      while(SerialBT.available())
-      {
-        Serial2.write(SerialBT.read());
-        yield();
-      }
     }
   }
 
@@ -269,5 +308,6 @@ void loop()
     updateRoverStatus();
   }
 
-  //delay(1);
+  updateBattLEDs();
+
 }

@@ -4,24 +4,26 @@ bool updateSurveyInStatus()
   //Update the LEDs only every second or so
   if (millis() - lastBaseUpdate > 1000)
   {
-    lastBaseUpdate = millis();
+    lastBaseUpdate += 1000;
 
     if (baseState == BASE_SURVEYING_IN_NOTSTARTED)
     {
       //Check for <5m horz accuracy
       uint32_t accuracy = myGPS.getHorizontalAccuracy(250); //This call defaults to 1100ms and can cause the core to crash with WDT timeout
-      
+
       float f_accuracy = accuracy;
       f_accuracy = f_accuracy / 10000.0; // Convert the horizontal accuracy (mm * 10^-1) to a float
-
-      Serial.print("Rover Accuracy (m): ");
-      Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
-      Serial.println();
 
       if (f_accuracy > 0.0 && f_accuracy < 5.0)
       {
         //We've got a good positional accuracy, start survey
         surveyIn();
+      }
+      else
+      {
+        Serial.print("Waiting for Horz Accuracy < 5m: ");
+        Serial.print(f_accuracy, 2); // Print the accuracy with 2 decimal places
+        Serial.println();
       }
 
     } //baseState = Surveying In Not started
@@ -83,9 +85,9 @@ bool updateSurveyInStatus()
   //Update the Base LED accordingly
   if (baseState == BASE_SURVEYING_IN_NOTSTARTED || baseState == BASE_SURVEYING_IN_SLOW)
   {
-    if (millis() - baseStateBlinkTime > 500)
+    if (millis() - baseStateBlinkTime > 2000)
     {
-      baseStateBlinkTime += 500;
+      baseStateBlinkTime += 2000;
       Serial.println(F("Slow blink"));
 
       if (digitalRead(baseStatusLED) == LOW)
@@ -96,9 +98,9 @@ bool updateSurveyInStatus()
   }
   else if (baseState == BASE_SURVEYING_IN_FAST)
   {
-    if (millis() - baseStateBlinkTime > 100)
+    if (millis() - baseStateBlinkTime > 500)
     {
-      baseStateBlinkTime += 100;
+      baseStateBlinkTime += 500;
       Serial.println(F("Fast blink"));
 
       if (digitalRead(baseStatusLED) == LOW)
@@ -128,6 +130,10 @@ bool configureUbloxModuleBase()
     }
   }
 
+  //In base mode the Surveyor should output RTCM over UART1, UART2, and USB ports:
+  //(Primary) UART2 in case the Surveyor is connected via radio to rover
+  //(Seconday) USB in case the Surveyor is used as an NTRIP caster
+  //(Tertiary) UART1 in case Surveyor is sending RTCM to phone that is then NTRIP caster
   if (getRTCMSettings(UBX_RTCM_1005, COM_PORT_UART2) != 1)
     response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_UART2, 1); //Enable message 1005 to output through UART2, message every second
   if (getRTCMSettings(UBX_RTCM_1074, COM_PORT_UART2) != 1)
@@ -140,6 +146,32 @@ bool configureUbloxModuleBase()
     response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_UART2, 1);
   if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_UART2) != 10)
     response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 10); //Enable message every 10 seconds
+
+  if (getRTCMSettings(UBX_RTCM_1005, COM_PORT_UART1) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_UART1, 1); //Enable message 1005 to output through UART2, message every second
+  if (getRTCMSettings(UBX_RTCM_1074, COM_PORT_UART1) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_UART1, 1);
+  if (getRTCMSettings(UBX_RTCM_1084, COM_PORT_UART1) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_UART1, 1);
+  if (getRTCMSettings(UBX_RTCM_1094, COM_PORT_UART1) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_UART1, 1);
+  if (getRTCMSettings(UBX_RTCM_1124, COM_PORT_UART1) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_UART1, 1);
+  if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_UART1) != 10)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART1, 10); //Enable message every 10 seconds
+
+  if (getRTCMSettings(UBX_RTCM_1005, COM_PORT_USB) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_USB, 1); //Enable message 1005 to output through UART2, message every second
+  if (getRTCMSettings(UBX_RTCM_1074, COM_PORT_USB) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_USB, 1);
+  if (getRTCMSettings(UBX_RTCM_1084, COM_PORT_USB) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_USB, 1);
+  if (getRTCMSettings(UBX_RTCM_1094, COM_PORT_USB) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_USB, 1);
+  if (getRTCMSettings(UBX_RTCM_1124, COM_PORT_USB) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_USB, 1);
+  if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_USB) != 10)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_USB, 10); //Enable message every 10 seconds
 
   if (response == false)
   {

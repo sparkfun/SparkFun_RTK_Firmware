@@ -436,6 +436,26 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </symbol>
 </symbols>
 <devicesets>
+<deviceset name="20OHM" prefix="R">
+<description>RES-07862</description>
+<gates>
+<gate name="G$1" symbol="RESISTOR" x="0" y="0"/>
+</gates>
+<devices>
+<device name="-0603-1/10W-1%" package="0603">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2"/>
+</connects>
+<technologies>
+<technology name="">
+<attribute name="PROD_ID" value="RES-07862"/>
+<attribute name="VALUE" value="20"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
 <deviceset name="330OHM" prefix="R">
 <description>&lt;h3&gt;330Ω resistor&lt;/h3&gt;
 &lt;p&gt;A resistor is a passive two-terminal electrical component that implements electrical resistance as a circuit element. Resistors act to reduce current flow, and, at the same time, act to lower voltage levels within circuits. - Wikipedia&lt;/p&gt;</description>
@@ -464,6 +484,27 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <technology name="">
 <attribute name="PROD_ID" value="RES-8371" constant="no"/>
 <attribute name="VALUE" value="330" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="4.7KOHM" prefix="R">
+<description>&lt;h3&gt;4.7kΩ resistor&lt;/h3&gt;
+&lt;p&gt;A resistor is a passive two-terminal electrical component that implements electrical resistance as a circuit element. Resistors act to reduce current flow, and, at the same time, act to lower voltage levels within circuits. - Wikipedia&lt;/p&gt;</description>
+<gates>
+<gate name="G$1" symbol="RESISTOR" x="0" y="0"/>
+</gates>
+<devices>
+<device name="-0603-1/10W-1%" package="0603">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2"/>
+</connects>
+<technologies>
+<technology name="">
+<attribute name="PROD_ID" value="RES-07857"/>
+<attribute name="VALUE" value="4.7k"/>
 </technology>
 </technologies>
 </device>
@@ -24069,7 +24110,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="GND3" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="GND4" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="D1" library="SparkFun-LED" deviceset="LED-YELLOW" device="0603" value="Yellow"/>
-<part name="R11" library="SparkFun-Resistors" deviceset="330OHM" device="-0603-1/10W-1%" value="330"/>
+<part name="R11" library="SparkFun-Resistors" deviceset="20OHM" device="-0603-1/10W-1%" value="20"/>
 <part name="JP71" library="SparkFun-Aesthetics" deviceset="FIDUCIAL" device="UFIDUCIAL" value="FIDUCIALUFIDUCIAL"/>
 <part name="JP81" library="SparkFun-Aesthetics" deviceset="FIDUCIAL" device="UFIDUCIAL" value="FIDUCIALUFIDUCIAL"/>
 <part name="SUPPLY1" library="SparkFun-PowerSymbols" deviceset="3.3V" device=""/>
@@ -24095,7 +24136,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="U3" library="SparkFun-GPS" deviceset="U-BLOX_ZED-F9P" device=""/>
 <part name="R16" library="SparkFun-Resistors" deviceset="5.1KOHM" device="5.1KOHM-0603-1/10W-1%" value="5.1k"/>
 <part name="R17" library="SparkFun-Resistors" deviceset="5.1KOHM" device="5.1KOHM-0603-1/10W-1%" value="5.1k"/>
-<part name="J5" library="SparkFun-Connectors" deviceset="USB_C" device="_2-LAYER_PADS"/>
+<part name="J5" library="SparkFun-Connectors" deviceset="USB_C" device="_2-LAYER_PADS" value="u-blox USB"/>
 <part name="U$2" library="SparkFun-Aesthetics" deviceset="SPECIAL_INSTRUCTIONS" device="-ORDERING"/>
 <part name="C2" library="SparkFun-Capacitors" deviceset="1.0UF" device="-0603-16V-10%-X7R" value="1.0uF"/>
 <part name="C7" library="SparkFun-Capacitors" deviceset="0.1UF" device="-0603-25V-5%" value="0.1uF"/>
@@ -24136,13 +24177,13 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="GND11" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="GND12" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="D7" library="SparkFun-DiscreteSemi" deviceset="DIODE-SCHOTTKY" device="-BAT60A" value="3A/10V/280mV"/>
-<part name="R24" library="SparkFun-Resistors" deviceset="330OHM" device="-0603-1/10W-1%" value="330"/>
+<part name="R24" library="SparkFun-Resistors" deviceset="20OHM" device="-0603-1/10W-1%" value="20"/>
 <part name="D8" library="SparkFun-LED" deviceset="LED-GREEN" device="0603" value="GREEN"/>
 <part name="GND20" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
-<part name="R25" library="SparkFun-Resistors" deviceset="330OHM" device="-0603-1/10W-1%" value="330"/>
+<part name="R25" library="SparkFun-Resistors" deviceset="20OHM" device="-0603-1/10W-1%" value="20"/>
 <part name="D10" library="SparkFun-LED" deviceset="LED-GREEN" device="0603" value="GREEN"/>
 <part name="GND21" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
-<part name="R26" library="SparkFun-Resistors" deviceset="330OHM" device="-0603-1/10W-1%" value="330"/>
+<part name="R26" library="SparkFun-Resistors" deviceset="20OHM" device="-0603-1/10W-1%" value="20"/>
 <part name="D11" library="SparkFun-LED" deviceset="LED-GREEN" device="0603" value="GREEN"/>
 <part name="GND22" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="J6" library="SparkFun-Connectors" deviceset="CONN_02" device="-JST-2MM-SMT" value="Start Base"/>
@@ -24167,7 +24208,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="R23" library="SparkFun-Resistors" deviceset="10KOHM" device="-0603-1/10W-1%" value="10k"/>
 <part name="R29" library="SparkFun-Resistors" deviceset="10KOHM" device="-0603-1/10W-1%" value="10k"/>
 <part name="Q2" library="SparkFun-DiscreteSemi" deviceset="TRANS_NPN_DUAL" device="-MBT3904DW1T1" value="MBT3904DW1T1"/>
-<part name="J3" library="SparkFun-Connectors" deviceset="USB_C" device="_2-LAYER_PADS" value="USB-C"/>
+<part name="J3" library="SparkFun-Connectors" deviceset="USB_C" device="_2-LAYER_PADS" value="ESP32 USB"/>
 <part name="R37" library="SparkFun-Resistors" deviceset="5.1KOHM" device="5.1KOHM-0603-1/10W-1%" value="5.1k"/>
 <part name="R38" library="SparkFun-Resistors" deviceset="5.1KOHM" device="5.1KOHM-0603-1/10W-1%" value="5.1k"/>
 <part name="GND40" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
@@ -24218,9 +24259,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="J14" library="SparkFun-Connectors" deviceset="CONN_02" device="1X02_NO_SILK"/>
 <part name="D5" library="SparkFun-LED" deviceset="LED-RGB" device="PLCC-6" value="RGB"/>
 <part name="SUPPLY24" library="SparkFun-PowerSymbols" deviceset="VIN" device=""/>
-<part name="R1" library="SparkFun-Resistors" deviceset="1KOHM" device="-0603-1/10W-1%" value="1k"/>
-<part name="R6" library="SparkFun-Resistors" deviceset="330OHM" device="-0603-1/10W-1%" value="330"/>
-<part name="R8" library="SparkFun-Resistors" deviceset="330OHM" device="-0603-1/10W-1%" value="330"/>
+<part name="R1" library="SparkFun-Resistors" deviceset="4.7KOHM" device="-0603-1/10W-1%" value="4.7k"/>
+<part name="R6" library="SparkFun-Resistors" deviceset="1KOHM" device="-0603-1/10W-1%" value="1k"/>
+<part name="R8" library="SparkFun-Resistors" deviceset="1KOHM" device="-0603-1/10W-1%" value="1k"/>
 <part name="GND37" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="U4" library="SparkFun-IC-Power" deviceset="V_REG_AP2112" device="K-3.3V" value="3.3V"/>
 <part name="C17" library="SparkFun-Capacitors" deviceset="1.0UF" device="-0603-16V-10%-X7R" value="1.0uF"/>
@@ -24702,6 +24743,7 @@ May be 3.5-5V</text>
 <attribute name="VALUE" x="398.78" y="247.65" size="1.778" layer="96" font="vector" align="center-left"/>
 </instance>
 <instance part="J3" gate="J1" x="279.4" y="231.14" smashed="yes">
+<attribute name="VALUE" x="276.86" y="218.694" size="1.778" layer="96" font="vector" rot="MR180" align="top-left"/>
 <attribute name="NAME" x="276.86" y="241.554" size="1.778" layer="95" font="vector"/>
 </instance>
 <instance part="R37" gate="R1" x="307.34" y="220.98" smashed="yes" rot="R90">
@@ -26431,16 +26473,6 @@ May be 3.5-5V</text>
 <label x="35.56" y="165.1" size="1.27" layer="95" rot="R90" xref="yes"/>
 </segment>
 </net>
-</nets>
-</sheet>
-<sheet>
-<plain>
-</plain>
-<instances>
-</instances>
-<busses>
-</busses>
-<nets>
 </nets>
 </sheet>
 </sheets>

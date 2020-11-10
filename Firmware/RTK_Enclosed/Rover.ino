@@ -19,7 +19,7 @@ bool updateRoverStatus()
 
       if (f_accuracy <= 0.02)
       {
-        Serial.print(" 0.02m LED");
+        Serial.print(" 0.01m LED");
         digitalWrite(positionAccuracyLED_1cm, HIGH);
         digitalWrite(positionAccuracyLED_10cm, HIGH);
         digitalWrite(positionAccuracyLED_100cm, HIGH);
@@ -105,11 +105,14 @@ bool configureUbloxModuleRover()
     response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_USB, 0);
 
   response &= setNMEASettings(); //Enable high precision NMEA and extended sentences
-  response &= setSBAS(false); //Disable SBAS. Work around for RTK LED not working in v1.13 firmware.
+
+  //Is SBAS causing weird NMEA failures once we are in RTK mode?
+  //response &= setSBAS(false); //Disable SBAS. Work around for RTK LED not working in v1.13 firmware.
+  
   return (response);
 }
 
-//The Ublox library doesn't directly support NMEA configuration so let's do it manually
+//The u-blox library doesn't directly support NMEA configuration so let's do it manually
 bool setNMEASettings()
 {
   uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
@@ -142,7 +145,7 @@ bool setNMEASettings()
   return (true);
 }
 
-//The Ublox library doesn't directly support SBAS control so let's do it manually
+//The u-blox library doesn't directly support SBAS control so let's do it manually
 bool setSBAS(bool enableSBAS)
 {
   uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes

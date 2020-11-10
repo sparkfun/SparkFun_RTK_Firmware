@@ -48,10 +48,10 @@ void F9PSerialReadTask(void *e)
   }
 }
 
-//Setup the Ublox module for any setup (base or rover)
+//Setup the u-blox module for any setup (base or rover)
 //In general we check if the setting is incorrect before writing it. Otherwise, the set commands have, on rare occasion, become
 //corrupt. The worst is when the I2C port gets turned off or the I2C address gets borked. We should only have to configure
-//a fresh Ublox module once and never again.
+//a fresh u-blox module once and never again.
 bool configureUbloxModule()
 {
   boolean response = true;
@@ -101,11 +101,10 @@ bool configureUbloxModule()
     response &= myGPS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
   }
 
-
   //Set output rate
-  if (myGPS.getNavigationFrequency() != 4)
+  if (myGPS.getNavigationFrequency() != gnssUpdateRate)
   {
-    response &= myGPS.setNavigationFrequency(4); //Set output in Hz
+    response &= myGPS.setNavigationFrequency(gnssUpdateRate); //Set output in Hz
   }
 
   //Make sure the appropriate NMEA sentences are enabled
@@ -113,8 +112,21 @@ bool configureUbloxModule()
     response &= myGPS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
   if (getNMEASettings(UBX_NMEA_GSA, COM_PORT_UART1) != 1)
     response &= myGPS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
-  if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != 1)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
+
+  //When receiving 15+ satellite information, the GxGSV sentences can be a large amount of data
+  //If the update rate is >1Hz then this data can overcome the BT capabilities causing timeouts and lag
+  if (gnssUpdateRate == 1)
+  {
+    if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != 1)
+      response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
+  }
+  else
+  {
+    //Turn off satellite sentences
+    if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != 0)
+      response &= myGPS.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
+  }
+
   if (getNMEASettings(UBX_NMEA_RMC, COM_PORT_UART1) != 1)
     response &= myGPS.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
   if (getNMEASettings(UBX_NMEA_GST, COM_PORT_UART1) != 1)
@@ -467,36 +479,75 @@ void updateBattLEDs()
   {
     lastBattUpdate += 5000;
 
-    int battLevel = battMonitor.percent();
-
-    Serial.print("Batt (");
-    Serial.print(battLevel);
-    Serial.print("%): ");
-
-    if (battLevel < 10)
-    {
-      Serial.print("RED uh oh!");
-      ledcWrite(batteryLevelLED_Red, 255);
-      ledcWrite(batteryLevelLED_Green, 0);
-    }
-    else if (battLevel < 50)
-    {
-      Serial.print("Yellow ok");
-      ledcWrite(batteryLevelLED_Red, 128);
-      ledcWrite(batteryLevelLED_Green, 128);
-    }
-    else if (battLevel >= 50)
-    {
-      Serial.print("Green all good");
-      ledcWrite(batteryLevelLED_Red, 0);
-      ledcWrite(batteryLevelLED_Green, 255);
-    }
-    else
-    {
-      Serial.print("No batt");
-      ledcWrite(batteryLevelLED_Red, 0);
-      ledcWrite(batteryLevelLED_Green, 0);
-    }
-    Serial.println();
+    checkBatteryLevels();
   }
+}
+
+//When called, checks level of battery and updates the LED brightnesses
+//And outputs a serial message to USB and BT
+void checkBatteryLevels()
+{
+  String battMsg = "";
+
+  int battLevel = lipo.getSOC();
+
+  battMsg += "Batt (";
+  battMsg += battLevel;
+  battMsg += "%): ";
+
+  battMsg += "Voltage: ";
+  battMsg += lipo.getVoltage();
+  battMsg += "V";
+
+  if (lipo.getChangeRate() > 0)
+    battMsg += " Charging: ";
+  else
+    battMsg += " Discharging: ";
+  battMsg += lipo.getChangeRate();
+  battMsg += "%/hr ";
+
+  if (battLevel < 10)
+  {
+    battMsg += "RED uh oh!";
+    ledcWrite(ledRedChannel, 255);
+    ledcWrite(ledGreenChannel, 0);
+  }
+  else if (battLevel < 50)
+  {
+    battMsg += "Yellow ok";
+    ledcWrite(ledRedChannel, 128);
+    ledcWrite(ledGreenChannel, 128);
+  }
+  else if (battLevel >= 50)
+  {
+    battMsg += "Green all good";
+    ledcWrite(ledRedChannel, 0);
+    ledcWrite(ledGreenChannel, 255);
+  }
+  else
+  {
+    battMsg += "No batt";
+    ledcWrite(ledRedChannel, 10);
+    ledcWrite(ledGreenChannel, 0);
+  }
+  battMsg += "\n\r";
+  SerialBT.print(battMsg);
+  Serial.print(battMsg);
+}
+
+//Configure the on board MAX17048 fuel gauge
+void setupLiPo()
+{
+  // Set up the MAX17048 LiPo fuel gauge
+  if (lipo.begin() == false)
+  {
+    Serial.println(F("MAX17048 not detected. Continuing."));
+    return;
+  }
+
+  //Always use hibernate mode
+  if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
+  if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
+
+  Serial.println(F("MAX17048 configuration complete"));
 }

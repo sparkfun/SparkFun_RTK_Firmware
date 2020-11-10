@@ -27,7 +27,8 @@
   Set static position based on user input
   Wait for better pos accuracy before starting a survey in
   Can we add NTRIP reception over Wifi to the ESP32 to aid in survey in time?
-  
+
+  BT cast batt, RTK status, etc
 
   Menu System:
     Test system? Connection to GPS?
@@ -38,6 +39,8 @@
     Allow user to enter permanent coordinates.
     Allow user to enable/disable detection of permanent base
     Set radius (5m default) for auto-detection of base
+    Set nav rate. 4Hz is fun but may drown BT connection. 1Hz seems to be more stable.
+    If more than 1Hz, turn off SV sentences.
 */
 
 #include <Wire.h> //Needed for I2C to GPS
@@ -68,19 +71,22 @@ SFE_UBLOX_GPS_ADD myGPS;
 
 //This string is used to verify the firmware on the ZED-F9P. This
 //firmware relies on various features of the ZED and may require the latest
-//ublox firmware to work correctly. We check the module firmware at startup but
+//u-blox firmware to work correctly. We check the module firmware at startup but
 //don't prevent operation if firmware is mismatched.
 char latestZEDFirmware[] = "FWVER=HPG 1.13";
+
+uint8_t gnssUpdateRate = 4; //Increasing beyond 1Hz with SV sentence on can drown the BT link
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //Bits for the battery level LEDs
-#include "MAX17048.h" //Click here to get the library: http://librarymanager/All#MAX17048
-MAX17048 battMonitor;
+#include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
+SFE_MAX1704X lipo(MAX1704X_MAX17048); // Create a MAX17048
 
 // setting PWM properties
 const int freq = 5000;
-const int ledChannel = 0;
+const int ledRedChannel = 0;
+const int ledGreenChannel = 1;
 const int resolution = 8;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -109,8 +115,8 @@ const int positionAccuracyLED_10cm = 15;
 const int sd_cs = 25;
 const int zed_tx_ready = 26;
 const int zed_reset = 27;
-const int batteryLevelLED_Red = 34;
-const int batteryLevelLED_Green = 35;
+const int batteryLevelLED_Red = 32;
+const int batteryLevelLED_Green = 33;
 const int batteryLevel_alert = 36;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -160,6 +166,8 @@ void setup()
   GPS.setRxBufferSize(SERIAL_SIZE_RX);
   GPS.setTimeout(1);
 
+  Wire.begin();
+
   Serial.println("SparkFun RTK Surveyor v1.0");
 
   pinMode(positionAccuracyLED_1cm, OUTPUT);
@@ -175,9 +183,17 @@ void setup()
   digitalWrite(baseStatusLED, LOW);
   digitalWrite(bluetoothStatusLED, LOW);
 
-  ledcSetup(ledChannel, freq, resolution);
-  ledcAttachPin(batteryLevelLED_Red, ledChannel);
-  ledcAttachPin(batteryLevelLED_Green, ledChannel);
+  ledcSetup(ledRedChannel, freq, resolution);
+  ledcSetup(ledGreenChannel, freq, resolution);
+
+  ledcAttachPin(batteryLevelLED_Red, ledRedChannel);
+  ledcAttachPin(batteryLevelLED_Green, ledGreenChannel);
+
+  ledcWrite(ledRedChannel, 0);
+  ledcWrite(ledGreenChannel, 0);
+
+  setupLiPo(); //Configure battery fuel guage monitor
+  checkBatteryLevels(); //Display initial battery level
 
   SerialBT.register_callback(btCallback);
   if (startBluetooth() == false)
@@ -193,24 +209,20 @@ void setup()
     lastBluetoothLEDBlink = millis();
   }
 
-  Wire.begin();
-  
-  battMonitor.attatch(Wire); //Connect batt level LED stuff so we can see battery level at power-on
-
   if (myGPS.begin() == false)
   {
     //Try again with power on delay
     delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
     if (myGPS.begin() == false)
     {
-      Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring."));
+      Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring."));
       blinkError(ERROR_NO_I2C);
     }
     else
-      Serial.println(F("Ublox GPS detected"));
+      Serial.println(F("u-blox GPS detected"));
   }
   else
-    Serial.println(F("Ublox GPS detected"));
+    Serial.println(F("u-blox GPS detected"));
 
   //Based on Example21_ModuleInfo
   if (myGPS.getModuleInfo(1100) == true) // Try to get the module info

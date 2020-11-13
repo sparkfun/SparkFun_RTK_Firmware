@@ -321,5 +321,6 @@ void loop()
   }
 
   updateBattLEDs();
+  delay(10); //Required if no other I2C or functions are called
 
 }

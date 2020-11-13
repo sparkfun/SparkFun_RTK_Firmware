@@ -1,7 +1,7 @@
 
 uint8_t settingPayload[MAX_PAYLOAD_SIZE]; //This array holds the payload data bytes. Global so that we can use between config functions.
 
-//If the phone has any new data (NTRIP RTCM, etc), pass it out over Bluetooth
+//If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
 //Task for writing to the GNSS receiver
 void F9PSerialWriteTask(void *e)
 {
@@ -14,10 +14,15 @@ void F9PSerialWriteTask(void *e)
       auto s = Serial.readBytes(wBuffer, SERIAL_SIZE_RX);
       GPS.write(wBuffer, s);
     }
-    else if (SerialBT.connected() && SerialBT.available())
+//    else if (SerialBT.connected() && SerialBT.available())
+    
+    if (SerialBT.available())
     {
-      auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
-      GPS.write(wBuffer, s);
+      while (SerialBT.available())
+      {
+        auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
+        GPS.write(wBuffer, s);
+      }
     }
 
     taskYIELD();
@@ -115,17 +120,9 @@ bool configureUbloxModule()
 
   //When receiving 15+ satellite information, the GxGSV sentences can be a large amount of data
   //If the update rate is >1Hz then this data can overcome the BT capabilities causing timeouts and lag
-  if (gnssUpdateRate == 1)
-  {
-    if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != 1)
-      response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
-  }
-  else
-  {
-    //Turn off satellite sentences
-    if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != 0)
-      response &= myGPS.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
-  }
+  //So we set the GSV sentence to 1Hz regardless of update rate
+  if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != gnssUpdateRate)
+    response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1, gnssUpdateRate);
 
   if (getNMEASettings(UBX_NMEA_RMC, COM_PORT_UART1) != 1)
     response &= myGPS.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
@@ -377,6 +374,8 @@ bool startBluetooth()
   //on the ESP32
   xTaskCreate(F9PSerialReadTask, "F9Read", 10000, NULL, 0, NULL);
   xTaskCreate(F9PSerialWriteTask, "F9Write", 10000, NULL, 0, NULL);
+
+  SerialBT.setTimeout(1);
 
   return (true);
 }

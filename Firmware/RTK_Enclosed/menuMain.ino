@@ -7,14 +7,14 @@ void menuMain()
     Serial.println();
     Serial.println(F("Menu: Main Menu"));
 
-    Serial.println(F("1) Configure Terminal Output"));
+    Serial.println(F("1) Configure Data Logging"));
 
-    Serial.println(F("2) Configure Time Stamp"));
-
-        if (settings.enableSD && online.microSD)
-          Serial.println(F("s) SD Card File Transfer"));
+    if (settings.enableSD && online.microSD)
+      Serial.println(F("s) SD Card File Transfer"));
 
     Serial.println(F("r) Reset all settings to default"));
+
+    Serial.println(F("t) Test menu"));
 
     Serial.println(F("x) Exit"));
 
@@ -43,6 +43,8 @@ void menuMain()
       //    else
       //      Serial.println(F("Reset aborted"));
     }
+    else if (incoming == 't')
+      menuTest();
     else if (incoming == 'x')
       break;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)

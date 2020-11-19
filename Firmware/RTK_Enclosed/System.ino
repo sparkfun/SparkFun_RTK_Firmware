@@ -1,6 +1,39 @@
 
 uint8_t settingPayload[MAX_PAYLOAD_SIZE]; //This array holds the payload data bytes. Global so that we can use between config functions.
 
+//Tack device's MAC address to end of friendly broadcast name
+//This allows multiple units to be on at same time
+bool startBluetooth()
+{
+  uint8_t mac[6];
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  mac[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
+
+  if (digitalRead(baseSwitch) == HIGH)
+  {
+    //Rover mode
+    sprintf(deviceName, "Surveyor Rover-%02X%02X", mac[4], mac[5]);
+  }
+  else
+  {
+    //Base mode
+    sprintf(deviceName, "Surveyor Base-%02X%02X", mac[4], mac[5]);
+  }
+
+  if (SerialBT.begin(deviceName) == false)
+    return (false);
+  Serial.print("Bluetooth broadcasting as: ");
+  Serial.println(deviceName);
+
+  //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
+  xTaskCreate(F9PSerialReadTask, "F9Read", 10000, NULL, 0, NULL);
+  xTaskCreate(F9PSerialWriteTask, "F9Write", 10000, NULL, 0, NULL);
+
+  SerialBT.setTimeout(1);
+
+  return (true);
+}
+
 //If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
 //Task for writing to the GNSS receiver
 void F9PSerialWriteTask(void *e)
@@ -9,19 +42,26 @@ void F9PSerialWriteTask(void *e)
   {
     //Receive corrections from either the ESP32 USB or bluetooth
     //and write to the GPS
-    if (Serial.available())
-    {
-      auto s = Serial.readBytes(wBuffer, SERIAL_SIZE_RX);
-      GPS.write(wBuffer, s);
-    }
-    //    else if (SerialBT.connected() && SerialBT.available())
+    //    if (Serial.available())
+    //    {
+    //      auto s = Serial.readBytes(wBuffer, SERIAL_SIZE_RX);
+    //      GPS.write(wBuffer, s);
+    //    }
 
     if (SerialBT.available())
     {
       while (SerialBT.available())
       {
-        auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
-        GPS.write(wBuffer, s);
+        if (inTestMode == false)
+        {
+          //Pass bytes tp GNSS receiver
+          auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
+          GPS.write(wBuffer, s);
+        }
+        else
+        {
+          Serial.printf("I heard: %c\n", SerialBT.read());
+        }
       }
     }
 
@@ -342,42 +382,6 @@ void danceLEDs()
   digitalWrite(baseStatusLED, LOW);
   delay(250);
   digitalWrite(bluetoothStatusLED, LOW);
-}
-
-//Tack device's MAC address to end of friendly broadcast name
-//This allows multiple units to be on at same time
-bool startBluetooth()
-{
-  uint8_t mac[6];
-  esp_read_mac(mac, ESP_MAC_WIFI_STA);
-  mac[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
-
-  char deviceName[20];
-  if (digitalRead(baseSwitch) == HIGH)
-  {
-    //Rover mode
-    sprintf(deviceName, "Surveyor Rover-%02X%02X", mac[4], mac[5]);
-  }
-  else
-  {
-    //Base mode
-    sprintf(deviceName, "Surveyor Base-%02X%02X", mac[4], mac[5]);
-  }
-
-  if (SerialBT.begin(deviceName) == false)
-    return (false);
-  Serial.print("Bluetooth broadcasting as: ");
-  Serial.println(deviceName);
-
-  //Start the tasks.
-  //Can also use xTaskCreatePinnedToCore to pin a task to one of the two cores
-  //on the ESP32
-  xTaskCreate(F9PSerialReadTask, "F9Read", 10000, NULL, 0, NULL);
-  xTaskCreate(F9PSerialWriteTask, "F9Write", 10000, NULL, 0, NULL);
-
-  SerialBT.setTimeout(1);
-
-  return (true);
 }
 
 boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)

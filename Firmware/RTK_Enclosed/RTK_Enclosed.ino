@@ -27,7 +27,8 @@
   Set static position based on user input
   Wait for better pos accuracy before starting a survey in
   Can we add NTRIP reception over Wifi to the ESP32 to aid in survey in time?
-
+  Test lots of bt switching from setup switch. Test for null handles: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos.html
+  
   BT cast batt, RTK status, etc
 
   Menu System:
@@ -129,6 +130,7 @@ const int resolution = 8;
 //Setup hardware serial and BT buffers
 #include "BluetoothSerial.h"
 BluetoothSerial SerialBT;
+  char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 
 HardwareSerial GPS(2);
 #define RXD2 16
@@ -178,6 +180,8 @@ enum returnStatus {
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
+bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
+
 uint32_t lastBluetoothLEDBlink = 0;
 uint32_t lastRoverUpdate = 0;
 uint32_t lastBaseUpdate = 0;
@@ -289,7 +293,11 @@ void setup()
   Serial.println(F("GPS configuration complete"));
 
   beginSD(); //Test if SD is present
-  
+  if(online.microSD == true)
+  {
+    Serial.println(F("microSD card online"));
+  }
+
   danceLEDs(); //Turn on LEDs like a car dashboard
 
   //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
@@ -368,27 +376,15 @@ void beginSD()
 
   if (settings.enableSD == true)
   {
-    // For reasons I don't understand, we seem to have to wait for at least 1ms after SPI.begin before we call microSDPowerOn.
-    // If you comment the next line, the Artemis resets at microSDPowerOn when beginSD is called from wakeFromSleep...
-    // But only on one of my V10 red boards. The second one I have doesn't seem to need the delay!?
-    delay(1);
-
-    //    microSDPowerOn();
-
     //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
     //Max current is 200mA average across 1s, peak 300mA
-    for (int i = 0; i < 10; i++) //Wait
-    {
-      delay(1);
-    }
+    delay(10);
 
     if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(24)) == false) //Standard SdFat
     {
       printDebug("SD init failed (first attempt). Trying again...\r\n");
-      for (int i = 0; i < 250; i++) //Give SD more time to power up, then try again
-      {
-        delay(1);
-      }
+      //Give SD more time to power up, then try again
+      delay(250);
       if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(24)) == false) //Standard SdFat
       {
         Serial.println(F("SD init failed (second attempt). Is card present? Formatted?"));

@@ -14,8 +14,8 @@ void F9PSerialWriteTask(void *e)
       auto s = Serial.readBytes(wBuffer, SERIAL_SIZE_RX);
       GPS.write(wBuffer, s);
     }
-//    else if (SerialBT.connected() && SerialBT.available())
-    
+    //    else if (SerialBT.connected() && SerialBT.available())
+
     if (SerialBT.available())
     {
       while (SerialBT.available())

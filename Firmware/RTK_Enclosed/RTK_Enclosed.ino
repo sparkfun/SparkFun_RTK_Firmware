@@ -43,6 +43,41 @@
     If more than 1Hz, turn off SV sentences.
 */
 
+const int FIRMWARE_VERSION_MAJOR = 1;
+const int FIRMWARE_VERSION_MINOR = 6;
+
+#include "settings.h"
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//Hardware connections v11
+const int positionAccuracyLED_1cm = 2;
+const int baseStatusLED = 4;
+const int baseSwitch = 5;
+const int bluetoothStatusLED = 12;
+const int positionAccuracyLED_100cm = 13;
+const int positionAccuracyLED_10cm = 15;
+const byte PIN_MICROSD_CHIP_SELECT = 25;
+const int zed_tx_ready = 26;
+const int zed_reset = 27;
+const int batteryLevelLED_Red = 32;
+const int batteryLevelLED_Green = 33;
+const int batteryLevel_alert = 36;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//microSD Interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#include <SPI.h>
+#include <SdFat.h> //SdFat (FAT32) by Bill Greiman: http://librarymanager/All#SdFat
+SdFat sd;
+SdFile sensorDataFile; //File that all sensor data is written to
+SdFile serialDataFile; //File that all incoming serial data is written to
+//#define PRINT_LAST_WRITE_TIME // Uncomment this line to enable the 'measure the time between writes' diagnostic
+
+char sensorDataFileName[30] = ""; //We keep a record of this file name so that we can re-open it upon wakeup from sleep
+char serialDataFileName[30] = ""; //We keep a record of this file name so that we can re-open it upon wakeup from sleep
+const int sdPowerDownDelay = 100; //Delay for this many ms before turning off the SD card power
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 #include <Wire.h> //Needed for I2C to GPS
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -104,22 +139,6 @@ uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading F9P
 uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-//Hardware connections v11
-const int positionAccuracyLED_1cm = 2;
-const int baseStatusLED = 4;
-const int baseSwitch = 5;
-const int bluetoothStatusLED = 12;
-const int positionAccuracyLED_100cm = 13;
-const int positionAccuracyLED_10cm = 15;
-const int sd_cs = 25;
-const int zed_tx_ready = 26;
-const int zed_reset = 27;
-const int batteryLevelLED_Red = 32;
-const int batteryLevelLED_Green = 33;
-const int batteryLevel_alert = 36;
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
 //Freeze and blink LEDs if we hit a bad error
 typedef enum
 {
@@ -149,19 +168,30 @@ volatile BaseState baseState = BASE_OFF;
 unsigned long baseStateBlinkTime = 0;
 const unsigned long maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
+//Return values for getByteChoice()
+enum returnStatus {
+  STATUS_GETBYTE_TIMEOUT = 255,
+  STATUS_GETNUMBER_TIMEOUT = -123455555,
+  STATUS_PRESSED_X,
+};
+
+//Global variables
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 uint32_t lastBluetoothLEDBlink = 0;
 uint32_t lastRoverUpdate = 0;
 uint32_t lastBaseUpdate = 0;
 uint32_t lastBattUpdate = 0;
 
 uint32_t lastTime = 0;
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
   Serial.setRxBufferSize(SERIAL_SIZE_RX);
   Serial.setTimeout(1);
-  
+
   GPS.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
   GPS.setRxBufferSize(SERIAL_SIZE_RX);
   GPS.setTimeout(1);
@@ -258,6 +288,8 @@ void setup()
   }
   Serial.println(F("GPS configuration complete"));
 
+  beginSD(); //Test if SD is present
+  
   danceLEDs(); //Turn on LEDs like a car dashboard
 
   //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
@@ -321,6 +353,63 @@ void loop()
   }
 
   updateBattLEDs();
+
+  //Menu system via ESP32 USB connection
+  if (Serial.available()) menuMain(); //Present user menu
+
   delay(10); //Required if no other I2C or functions are called
 
+}
+
+void beginSD()
+{
+  pinMode(PIN_MICROSD_CHIP_SELECT, OUTPUT);
+  digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
+
+  if (settings.enableSD == true)
+  {
+    // For reasons I don't understand, we seem to have to wait for at least 1ms after SPI.begin before we call microSDPowerOn.
+    // If you comment the next line, the Artemis resets at microSDPowerOn when beginSD is called from wakeFromSleep...
+    // But only on one of my V10 red boards. The second one I have doesn't seem to need the delay!?
+    delay(1);
+
+    //    microSDPowerOn();
+
+    //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
+    //Max current is 200mA average across 1s, peak 300mA
+    for (int i = 0; i < 10; i++) //Wait
+    {
+      delay(1);
+    }
+
+    if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(24)) == false) //Standard SdFat
+    {
+      printDebug("SD init failed (first attempt). Trying again...\r\n");
+      for (int i = 0; i < 250; i++) //Give SD more time to power up, then try again
+      {
+        delay(1);
+      }
+      if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(24)) == false) //Standard SdFat
+      {
+        Serial.println(F("SD init failed (second attempt). Is card present? Formatted?"));
+        digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
+        online.microSD = false;
+        return;
+      }
+    }
+
+    //Change to root directory. All new file creation will be in root.
+    if (sd.chdir() == false)
+    {
+      Serial.println(F("SD change directory failed"));
+      online.microSD = false;
+      return;
+    }
+
+    online.microSD = true;
+  }
+  else
+  {
+    online.microSD = false;
+  }
 }

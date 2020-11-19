@@ -5,13 +5,9 @@ void menuTest()
 {
   inTestMode = true; //Reroutes bluetooth bytes
 
-  //Enable RTCM
-  myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_UART2, 1); //Enable message 1005 to output through UART2, message every second
-  myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_UART2, 1);
-  myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_UART2, 1);
-  myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_UART2, 1);
-  myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_UART2, 1);
-  myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 10); //Enable message every 10 seconds
+  //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
+  //even if there is no GPS fix. We use it to test serial output.
+  myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
 
   while (1)
   {
@@ -42,7 +38,7 @@ void menuTest()
 
     Serial.println(F("x) Exit"));
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    byte incoming = getByteChoice(30); //Timeout after x seconds
 
     if (incoming == '1')
     {
@@ -66,11 +62,6 @@ void menuTest()
   inTestMode = false; //Reroutes bluetooth bytes
 
   //Disable RTCM sentences
-  myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_UART2, 0);
-  myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_UART2, 0);
-  myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_UART2, 0);
-  myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_UART2, 0);
-  myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_UART2, 0);
   myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0);
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars

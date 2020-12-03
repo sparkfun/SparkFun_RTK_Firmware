@@ -8,27 +8,8 @@
 
   Select the ESP32 Dev Module from the boards list. This maps the same pins to the ESP32-WROOM module.
 
-  (Done) Bluetooth NMEA works but switch label is reverse
-  (Done) Fix BT reconnect failure - Better but still fails sometimes
-  (Done) Implement survey in and out based on switch
-  (Done) Try better survey in setup: https://portal.u-blox.com/s/question/0D52p00009IsVoMCAV/restarting-surveyin-on-an-f9p
-  (Done) Startup sequence LEDs like a car (all on, then count down quickly)
-  (Done) Make the Base LED blink faster/slower (for real) depending on base accuracy
-  (Done) Enable the Avinab suggested NMEA sentences:
-  - Enable GST
-  - Enable the high accuracy mode and NMEA 4.0+ in the NMEA configuration
-  - Set the satellite numbering to Extended (3 Digits) for full skyplot support
-  (Done) Add ESP32 ID to end of Bluetooth broadcast ID
-  (Done) Decrease LED resistors to increase brightness
-  (Done) Enable RTCM sentences for USB and UART1, in addition to UART2
-  (Fixed) Something wierd happened with v1.13. Fix type changed? LED is not turning on even in float mode. (Disable SBAS)
-  (Done) Check for v1.13 of ZED firmware. Display warning if not matching.
-  (Fixed) ESP32 crashing when in rover mode, when LEDs change? https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/124
-  (Done) Wait for better pos accuracy before starting a survey in
-  Can we add NTRIP reception over Wifi to the ESP32 to aid in survey in time?
-  Test lots of bt switching from setup switch. Test for null handles: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos.html
-  (Done) Transmit battery level, RTK status, etc
-  (Done) Save settings to file
+  A settings file is accessed on microSD if available otherwise settings are pulled from 
+  ESP32's emulated EEPROM.
 
   Menu System:
     (Done) Log RAWX to SD

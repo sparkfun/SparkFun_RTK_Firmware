@@ -1,4 +1,4 @@
-Sparkfun RTK Surveyor
+SparkFun RTK Surveyor
 ===========================================================
 
 ![SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/parts/1/6/4/0/1/17369-GPS_RTK_Surveyor_-_Enclosed-01.jpg)

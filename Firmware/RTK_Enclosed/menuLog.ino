@@ -19,18 +19,24 @@ void menuLog()
         Serial.println(F("No microSD card is detected"));
     }
 
-
-    Serial.print(F("1) Log ZED-F9P output to microSD: "));
+    Serial.print(F("1) Log to microSD: "));
     if (settings.zedOutputLogging) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    Serial.print(F("2) Toggle GNSS RAWX Output: "));
-    if (settings.gnssRAWOutput) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    if (settings.zedOutputLogging == true)
+    {
+      Serial.print(F("2) Toggle GNSS RAWX logging: "));
+      if (getRAWXSettings(COM_PORT_UART1) == 1) Serial.println(F("Enabled"));
+      else Serial.println(F("Disabled"));
 
-    Serial.print(F("3) Frequent log file access timestamps: "));
-    if (settings.frequentFileAccessTimestamps == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+      Serial.print(F("3) Update file timestamp with each write: "));
+      if (settings.frequentFileAccessTimestamps == true) Serial.println(F("Enabled"));
+      else Serial.println(F("Disabled"));
+
+      Serial.print(F("4) Set max logging time: "));
+      Serial.print(settings.maxLogTime_minutes);
+      Serial.println(F(" minutes"));
+    }
 
     Serial.println(F("x) Exit"));
 
@@ -39,21 +45,50 @@ void menuLog()
     if (incoming == '1')
     {
       settings.zedOutputLogging ^= 1;
+
+      if(online.microSD == true && settings.zedOutputLogging == true) 
+        startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
     }
-    else if (incoming == '2')
+    else if (settings.zedOutputLogging == true)
     {
-      settings.gnssRAWOutput ^= 1;
-
-      //Enable the RAWX sentence as necessary
-      if (settings.gnssRAWOutput == true)
-        myGPS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1);
+      if (incoming == '2')
+      {
+        if (getRAWXSettings(COM_PORT_UART1) == 1)
+        {
+          //Disable
+          settings.gnssRAWOutput = false;
+          myGPS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1);
+        }
+        else
+        {
+          //Enable
+          settings.gnssRAWOutput = true;
+          myGPS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1);
+        }
+        myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+      }
+      else if (incoming == '3')
+        settings.frequentFileAccessTimestamps ^= 1;
+      else if (incoming == '4')
+      {
+        Serial.print(F("Enter max minutes to log data: "));
+        int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds
+        if (maxMinutes < 0 || maxMinutes > 60*48) //Arbitrary 48 hour limit
+        {
+          Serial.println(F("Error: max minutes out of range"));
+        }
+        else
+        {
+          settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
+        }
+      }
+      else if (incoming == 'x')
+        break;
+      else if (incoming == STATUS_GETBYTE_TIMEOUT)
+        break;
       else
-        myGPS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1);
-
-      myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+        printUnknown(incoming);
     }
-    else if (incoming == '3')
-      settings.frequentFileAccessTimestamps ^= 1;
     else if (incoming == 'x')
       break;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)
@@ -84,7 +119,7 @@ void beginDataLogging()
         if (myGPS.getTimeValid() == true && myGPS.getDateValid() == true)
         {
           sprintf(gnssDataFileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt",
-                  myGPS.getYear(), myGPS.getMonth(), myGPS.getDay(),
+                  myGPS.getYear() - 2000, myGPS.getMonth(), myGPS.getDay(),
                   myGPS.getHour(), myGPS.getMinute(), myGPS.getSecond()
                  );
         }
@@ -124,9 +159,9 @@ void updateDataFileAccess(SdFile *dataFile)
     if (myGPS.getTimeValid() == true && myGPS.getDateValid() == true)
     {
       //Update the file access time
-      dataFile->timestamp(T_ACCESS, (myGPS.getYear() + 2000), myGPS.getMonth(), myGPS.getDay(), myGPS.getHour(), myGPS.getMinute(), myGPS.getSecond());
+      dataFile->timestamp(T_ACCESS, myGPS.getYear(), myGPS.getMonth(), myGPS.getDay(), myGPS.getHour(), myGPS.getMinute(), myGPS.getSecond());
       //Update the file write time
-      dataFile->timestamp(T_WRITE, (myGPS.getYear() + 2000), myGPS.getMonth(), myGPS.getDay(), myGPS.getHour(), myGPS.getMinute(), myGPS.getSecond());
+      dataFile->timestamp(T_WRITE, myGPS.getYear(), myGPS.getMonth(), myGPS.getDay(), myGPS.getHour(), myGPS.getMinute(), myGPS.getSecond());
     }
   }
 }
@@ -138,7 +173,32 @@ void updateDataFileCreate(SdFile *dataFile)
     if (myGPS.getTimeValid() == true && myGPS.getDateValid() == true)
     {
       //Update the file create time
-      dataFile->timestamp(T_CREATE, (myGPS.getYear() + 2000), myGPS.getMonth(), myGPS.getDay(), myGPS.getHour(), myGPS.getMinute(), myGPS.getSecond());
+      dataFile->timestamp(T_CREATE, myGPS.getYear(), myGPS.getMonth(), myGPS.getDay(), myGPS.getHour(), myGPS.getMinute(), myGPS.getSecond());
     }
   }
+}
+
+//Given a portID, return the RAWX value for the given port
+uint8_t getRAWXSettings(uint8_t portID)
+{
+  ubxPacket customCfg = {0, 0, 0, 0, 0, settingPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+
+  customCfg.cls = UBX_CLASS_CFG; // This is the message Class
+  customCfg.id = UBX_CFG_MSG; // This is the message ID
+  customCfg.len = 2;
+  customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
+
+  uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+
+  settingPayload[0] = UBX_CLASS_RXM;
+  settingPayload[1] = UBX_RXM_RAWX;
+
+  // Read the current setting. The results will be loaded into customCfg.
+  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  {
+    Serial.println(F("getNMEASettings failed!"));
+    return (false);
+  }
+
+  return (settingPayload[2 + portID]); //Return just the byte associated with this portID
 }

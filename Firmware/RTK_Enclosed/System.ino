@@ -90,15 +90,25 @@ void F9PSerialReadTask(void *e)
       {
         if (online.microSD == true)
         {
-          gnssDataFile.write(rBuffer, s);
-
-          //Force sync every 500ms
-          if (millis() - lastDataLogSyncTime > 500)
+          //Check if we are inside the max time window for logging
+          if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
           {
-            lastDataLogSyncTime = millis();
-            gnssDataFile.sync();
-            if (settings.frequentFileAccessTimestamps == true)
-              updateDataFileAccess(&gnssDataFile); // Update the file access time & date
+            taskYIELD();
+            gnssDataFile.write(rBuffer, s);
+            taskYIELD();
+
+            //Force sync every 500ms
+            if (millis() - lastDataLogSyncTime > 500)
+            {
+              lastDataLogSyncTime = millis();
+
+              taskYIELD();
+              gnssDataFile.sync();
+              taskYIELD();
+
+              if (settings.frequentFileAccessTimestamps == true)
+                updateDataFileAccess(&gnssDataFile); // Update the file access time & date
+            }
           }
         }
       }
@@ -118,13 +128,14 @@ bool configureUbloxModule()
 #define OUTPUT_SETTING 14
 #define INPUT_SETTING 12
 
-  //UART1 will primarily be used to pass NMEA from ZED to ESP32/Cell phone but the phone
-  //can also provide RTCM data. So let's be sure to enable RTCM on UART1 input.
+  //UART1 will primarily be used to pass NMEA from ZED to ESP32 (eventually to cell phone)
+  //but the phone can also provide RTCM data. So let's be sure to enable RTCM on UART1 input.
+  //In addition UART1 may output RAWX (for logging then PPP) so enable UBX on output
   getPortSettings(COM_PORT_UART1); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != COM_TYPE_NMEA || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
   {
     Serial.println("Updating UART1 configuration");
-    response &= myGPS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA); //Set the UART1 to output NMEA
+    response &= myGPS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX); //Set the UART1 to output NMEA and UBX
     response &= myGPS.setPortInput(COM_PORT_UART1, COM_TYPE_RTCM3); //Set the UART1 to input RTCM
   }
 
@@ -554,7 +565,7 @@ void checkBatteryLevels()
 }
 
 //Configure the on board MAX17048 fuel gauge
-void setupLiPo()
+void beginFuelGauge()
 {
   // Set up the MAX17048 LiPo fuel gauge
   if (lipo.begin() == false)

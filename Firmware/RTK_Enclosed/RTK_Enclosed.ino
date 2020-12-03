@@ -28,28 +28,32 @@
   Can we add NTRIP reception over Wifi to the ESP32 to aid in survey in time?
   Test lots of bt switching from setup switch. Test for null handles: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos.html
   (Done) Transmit battery level, RTK status, etc
-
-  Save settings to file
-  I should be able to start a base anytime and have it log
-  Test that we can log and do full BT + NTREIP reliably
-  Update repo
-  Clean up dirs
+  (Done) Save settings to file
 
   Menu System:
-    Test system? Connection to GPS?
+    (Done) Log RAWX to SD
+    (Done) Display MAC address / broadcast name
+    (Done) Test menu
     Enable various debug output over BT?
-    Display MAC address / broadcast name
     Change broadcast name + MAC
     Change max survey in time before cold start
-    Allow user to enter permanent coordinates.
-    Allow user to enable/disable detection of permanent base
+    Enter permanent coordinates
+    Enable/disable detection of permanent base
     Set radius (5m default) for auto-detection of base
-    Set nav rate. 4Hz is fun but may drown BT connection. 1Hz seems to be more stable.
-    If more than 1Hz, turn off SV sentences.
+    Set update rate
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 6;
+const int FIRMWARE_VERSION_MINOR = 0;
+
+//Define the RTK Surveyor board identifier:
+//  This is an int which is unique to this variant of the RTK Surveyor and which allows us
+//  to make sure that the settings in EEPROM are correct for this version of the RTK Surveyor
+//  (sizeOfSettings is not necessarily unique and we want to avoid problems when swapping from one variant to another)
+//  It is the sum of:
+//    the major firmware version * 0x10
+//    the minor firmware version
+#define RTK_IDENTIFIER (FIRMWARE_VERSION_MAJOR * 0x10 + FIRMWARE_VERSION_MINOR)
 
 #include "settings.h"
 
@@ -69,6 +73,12 @@ const int batteryLevelLED_Green = 33;
 const int batteryLevel_alert = 36;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//EEPROM for storing settings
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#include <EEPROM.h>
+#define EEPROM_SIZE 2048 //ESP32 emulates EEPROM in non-volatile storage (external flash IC). Max is 508k.
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
@@ -76,12 +86,15 @@ const int batteryLevel_alert = 36;
 SdFat sd;
 SdFile gnssDataFile; //File that all gnss data is written to
 
+char settingsFileName[40] = "SFE_Surveyor_Settings.txt"; //File to read/write system settings to
+
 unsigned long lastDataLogSyncTime = 0; //Used to record to SD every half second
+long startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-#include <Wire.h> //Needed for I2C to GPS
+#include <Wire.h> //Needed for I2C to GNSS
 
-//GPS configuration
+//GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 
@@ -150,7 +163,6 @@ uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
 MicroOLED oled(PIN_RESET, DC_JUMPER);
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-
 //Freeze and blink LEDs if we hit a bad error
 typedef enum
 {
@@ -194,6 +206,7 @@ char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-B
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
 int battLevel = 0; //SOC measured from fuel gauge, in %
+long systemTime_minutes = 0; //Used to test if logging is less than max minutes
 
 uint32_t lastBluetoothLEDBlink = 0;
 uint32_t lastRoverUpdate = 0;
@@ -214,114 +227,30 @@ void setup()
   GPS.setRxBufferSize(SERIAL_SIZE_RX);
   GPS.setTimeout(1);
 
-  Wire.begin();
+  Wire.begin(); //Start I2C
 
-  Serial.println("SparkFun RTK Surveyor v1.0");
+  beginLEDs(); //LED and PWM setup
 
-  pinMode(positionAccuracyLED_1cm, OUTPUT);
-  pinMode(positionAccuracyLED_10cm, OUTPUT);
-  pinMode(positionAccuracyLED_100cm, OUTPUT);
-  pinMode(baseStatusLED, OUTPUT);
-  pinMode(bluetoothStatusLED, OUTPUT);
-  pinMode(baseSwitch, INPUT_PULLUP); //HIGH = rover, LOW = base
-
-  digitalWrite(positionAccuracyLED_1cm, LOW);
-  digitalWrite(positionAccuracyLED_10cm, LOW);
-  digitalWrite(positionAccuracyLED_100cm, LOW);
-  digitalWrite(baseStatusLED, LOW);
-  digitalWrite(bluetoothStatusLED, LOW);
-
-  ledcSetup(ledRedChannel, freq, resolution);
-  ledcSetup(ledGreenChannel, freq, resolution);
-
-  ledcAttachPin(batteryLevelLED_Red, ledRedChannel);
-  ledcAttachPin(batteryLevelLED_Green, ledGreenChannel);
-
-  ledcWrite(ledRedChannel, 0);
-  ledcWrite(ledGreenChannel, 0);
-
-  setupLiPo(); //Configure battery fuel guage monitor
-  checkBatteryLevels(); //Display initial battery level
-
-  //Get unit MAC address
-  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
-  unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
-
-  SerialBT.register_callback(btCallback);
-  if (startBluetooth() == false)
-  {
-    Serial.println("An error occurred initializing Bluetooth");
-    bluetoothState = BT_OFF;
-    digitalWrite(bluetoothStatusLED, LOW);
-  }
-  else
-  {
-    bluetoothState = BT_ON_NOCONNECTION;
-    digitalWrite(bluetoothStatusLED, HIGH);
-    lastBluetoothLEDBlink = millis();
-  }
-
-  if (myGPS.begin() == false)
-  {
-    //Try again with power on delay
-    delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
-    if (myGPS.begin() == false)
-    {
-      Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring."));
-      blinkError(ERROR_NO_I2C);
-    }
-    else
-      Serial.println(F("u-blox GPS detected"));
-  }
-  else
-    Serial.println(F("u-blox GPS detected"));
-
-  //Based on Example21_ModuleInfo
-  if (myGPS.getModuleInfo(1100) == true) // Try to get the module info
-  {
-    if (strcmp(myGPS.minfo.extension[1], latestZEDFirmware) != 0)
-    {
-      Serial.print("The ZED-F9P appears to have outdated firmware. Found: ");
-      Serial.println(myGPS.minfo.extension[1]);
-      Serial.print("The Surveyor works best with ");
-      Serial.println(latestZEDFirmware);
-      Serial.print("Please upgrade using u-center.");
-      Serial.println();
-    }
-    else
-    {
-      Serial.println("ZED-F9P firmware is current");
-    }
-  }
-
-  bool response = configureUbloxModule();
-  if (response == false)
-  {
-    //Try once more
-    Serial.println(F("Failed to configure module. Trying again."));
-    delay(1000);
-    response = configureUbloxModule();
-
-    if (response == false)
-    {
-      Serial.println(F("Failed to configure module. Power cycle? Freezing..."));
-      blinkError(ERROR_GPS_CONFIG_FAIL);
-    }
-  }
-  Serial.println(F("GPS configuration complete"));
-
+  //Start EEPROM and SD for settings, and display for output
+  //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  beginEEPROM();
+  
   beginSD(); //Test if SD is present
-  if (online.microSD == true)
-  {
-    Serial.println(F("microSD card online"));
-  }
 
-  //Check if an external Qwiic OLED is attached
-  beginDisplay();
-  if (online.display == true)
-  {
-    Serial.println(F("Display online"));
-  }
+  loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
+
+  beginDisplay(); //Check if an external Qwiic OLED is attached
+  //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+  beginFuelGauge(); //Configure battery fuel guage monitor
+  checkBatteryLevels(); //Force display so you see battery level immediately at power on
+
+  beginBT(); //Get MAC, start radio
+  
+  beginGNSS(); //Connect and configure ZED-F9P
+
+  if (online.microSD == true)
+    Serial.println(F("microSD card online"));
 
   //Display splash of some sort
   if (online.display == true)
@@ -330,7 +259,12 @@ void setup()
     oled.display();
   }
 
+  Serial.flush(); //Complete any previous prints
+  Serial.printf("SparkFun RTK Surveyor v%d.%d\r\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+
   danceLEDs(); //Turn on LEDs like a car dashboard
+
+  if(online.microSD == true && settings.zedOutputLogging == true) startLogTime_minutes = 0; //Mark now as start of logging
 
   //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
 }
@@ -412,6 +346,9 @@ void loop()
     online.dataLogging = false;
   }
 
+  //Convert current system time to minutes. This is used in F9PSerialReadTask() to see if we are within max log window.
+  systemTime_minutes = millis() / 1000L / 60;
+
   delay(10); //A small delay prevents panic if no other I2C or functions are called
 }
 
@@ -446,7 +383,7 @@ void updateDisplay()
       //oled.setFontType(1);
       oled.setFontType(0); //Set font to smallest
       oled.setCursor(0, 4);
-//      oled.print(macAddress);
+      //      oled.print(macAddress);
       oled.print("O");
 
       oled.display();
@@ -507,4 +444,101 @@ void beginDisplay()
     oled.clear(PAGE); // Clear the display's internal memory
     oled.clear(ALL);  // Clear the library's display buffer
   }
+}
+
+//Connect to and configure ZED-F9P
+void beginGNSS()
+{
+  if (myGPS.begin() == false)
+  {
+    //Try again with power on delay
+    delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
+    if (myGPS.begin() == false)
+    {
+      Serial.println(F("u-blox GNSS not detected at default I2C address. Hard stop."));
+      blinkError(ERROR_NO_I2C);
+    }
+  }
+
+  //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
+//  if (myGPS.getModuleInfo(1100) == true) // Try to get the module info
+//  {
+//    if (strcmp(myGPS.minfo.extension[1], latestZEDFirmware) != 0)
+//    {
+//      Serial.print("The ZED-F9P appears to have outdated firmware. Found: ");
+//      Serial.println(myGPS.minfo.extension[1]);
+//      Serial.print("The Surveyor works best with ");
+//      Serial.println(latestZEDFirmware);
+//      Serial.print("Please upgrade using u-center.");
+//      Serial.println();
+//    }
+//    else
+//    {
+//      Serial.println("ZED-F9P firmware is current");
+//    }
+//  }
+
+  bool response = configureUbloxModule();
+  if (response == false)
+  {
+    //Try once more
+    Serial.println(F("Failed to configure module. Trying again."));
+    delay(1000);
+    response = configureUbloxModule();
+
+    if (response == false)
+    {
+      Serial.println(F("Failed to configure module. Hard stop."));
+      blinkError(ERROR_GPS_CONFIG_FAIL);
+    }
+  }
+  Serial.println(F("GNSS configuration complete"));
+}
+
+//Get MAC, start radio
+void beginBT()
+{
+  //Get unit MAC address
+  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
+  unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
+
+  SerialBT.register_callback(btCallback);
+  if (startBluetooth() == false)
+  {
+    Serial.println("An error occurred initializing Bluetooth");
+    bluetoothState = BT_OFF;
+    digitalWrite(bluetoothStatusLED, LOW);
+  }
+  else
+  {
+    bluetoothState = BT_ON_NOCONNECTION;
+    digitalWrite(bluetoothStatusLED, HIGH);
+    lastBluetoothLEDBlink = millis();
+  }  
+}
+
+//Set LEDs for output and configure PWM
+void beginLEDs()
+{
+  pinMode(positionAccuracyLED_1cm, OUTPUT);
+  pinMode(positionAccuracyLED_10cm, OUTPUT);
+  pinMode(positionAccuracyLED_100cm, OUTPUT);
+  pinMode(baseStatusLED, OUTPUT);
+  pinMode(bluetoothStatusLED, OUTPUT);
+  pinMode(baseSwitch, INPUT_PULLUP); //HIGH = rover, LOW = base
+
+  digitalWrite(positionAccuracyLED_1cm, LOW);
+  digitalWrite(positionAccuracyLED_10cm, LOW);
+  digitalWrite(positionAccuracyLED_100cm, LOW);
+  digitalWrite(baseStatusLED, LOW);
+  digitalWrite(bluetoothStatusLED, LOW);
+
+  ledcSetup(ledRedChannel, freq, resolution);
+  ledcSetup(ledGreenChannel, freq, resolution);
+
+  ledcAttachPin(batteryLevelLED_Red, ledRedChannel);
+  ledcAttachPin(batteryLevelLED_Green, ledGreenChannel);
+
+  ledcWrite(ledRedChannel, 0);
+  ledcWrite(ledGreenChannel, 0);
 }

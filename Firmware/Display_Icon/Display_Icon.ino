@@ -32,7 +32,7 @@ uint8_t truck [] = {
 };
 
 int iconHeight = 17;
-int iconWidth = 20;
+int iconWidth = 19;
 
 bool displayDetected = false;
 
@@ -78,6 +78,8 @@ void loop()
   {
     oled.drawIcon(iconX, iconY, iconWidth, iconHeight, truck, sizeof(truck), true);
     oled.display();
+
+    while(1);
 
     //Move the icon
     iconX += iconXChangeAmount;

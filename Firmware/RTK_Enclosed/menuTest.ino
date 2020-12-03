@@ -66,11 +66,3 @@ void menuTest()
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }
-
-bool isConnected(uint8_t deviceAddress)
-{
-  Wire.beginTransmission(deviceAddress);
-  if (Wire.endTransmission() == 0)
-    return true;
-  return false;
-}

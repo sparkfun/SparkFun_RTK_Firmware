@@ -24,12 +24,16 @@
   (Fixed) Something wierd happened with v1.13. Fix type changed? LED is not turning on even in float mode. (Disable SBAS)
   (Done) Check for v1.13 of ZED firmware. Display warning if not matching.
   (Fixed) ESP32 crashing when in rover mode, when LEDs change? https://github.com/sparkfun/SparkFun_Ublox_Arduino_Library/issues/124
-  Set static position based on user input
-  Wait for better pos accuracy before starting a survey in
+  (Done) Wait for better pos accuracy before starting a survey in
   Can we add NTRIP reception over Wifi to the ESP32 to aid in survey in time?
   Test lots of bt switching from setup switch. Test for null handles: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos.html
-  
-  BT cast batt, RTK status, etc
+  (Done) Transmit battery level, RTK status, etc
+
+  Save settings to file
+  I should be able to start a base anytime and have it log
+  Test that we can log and do full BT + NTREIP reliably
+  Update repo
+  Clean up dirs
 
   Menu System:
     Test system? Connection to GPS?
@@ -49,8 +53,8 @@ const int FIRMWARE_VERSION_MINOR = 6;
 
 #include "settings.h"
 
+//Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-//Hardware connections v11
 const int positionAccuracyLED_1cm = 2;
 const int baseStatusLED = 4;
 const int baseSwitch = 5;
@@ -70,19 +74,15 @@ const int batteryLevel_alert = 36;
 #include <SPI.h>
 #include <SdFat.h> //SdFat (FAT32) by Bill Greiman: http://librarymanager/All#SdFat
 SdFat sd;
-SdFile sensorDataFile; //File that all sensor data is written to
-SdFile serialDataFile; //File that all incoming serial data is written to
-//#define PRINT_LAST_WRITE_TIME // Uncomment this line to enable the 'measure the time between writes' diagnostic
+SdFile gnssDataFile; //File that all gnss data is written to
 
-char sensorDataFileName[30] = ""; //We keep a record of this file name so that we can re-open it upon wakeup from sleep
-char serialDataFileName[30] = ""; //We keep a record of this file name so that we can re-open it upon wakeup from sleep
-const int sdPowerDownDelay = 100; //Delay for this many ms before turning off the SD card power
+unsigned long lastDataLogSyncTime = 0; //Used to record to SD every half second
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 #include <Wire.h> //Needed for I2C to GPS
 
+//GPS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-//All the I2C and GPS stuff
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 
 #include "SparkFun_Ublox_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_Ublox_GPS
@@ -114,10 +114,10 @@ char latestZEDFirmware[] = "FWVER=HPG 1.13";
 uint8_t gnssUpdateRate = 4; //Increasing beyond 1Hz with SV sentence on can drown the BT link
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//Battery fuel gauge and PWM LEDs
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-//Bits for the battery level LEDs
 #include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
-SFE_MAX1704X lipo(MAX1704X_MAX17048); // Create a MAX17048
+SFE_MAX1704X lipo(MAX1704X_MAX17048);
 
 // setting PWM properties
 const int freq = 5000;
@@ -126,11 +126,10 @@ const int ledGreenChannel = 1;
 const int resolution = 8;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-//Setup hardware serial and BT buffers
 #include "BluetoothSerial.h"
 BluetoothSerial SerialBT;
-  char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 
 HardwareSerial GPS(2);
 #define RXD2 16
@@ -140,6 +139,17 @@ HardwareSerial GPS(2);
 uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading F9P
 uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//External Display
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#include <SFE_MicroOLED.h> //Click here to get the library: http://librarymanager/All#SparkFun_Micro_OLED
+#include "icons.h"
+
+#define PIN_RESET 9
+#define DC_JUMPER 1
+MicroOLED oled(PIN_RESET, DC_JUMPER);
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 
 //Freeze and blink LEDs if we hit a bad error
 typedef enum
@@ -179,13 +189,17 @@ enum returnStatus {
 
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
+char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
+int battLevel = 0; //SOC measured from fuel gauge, in %
 
 uint32_t lastBluetoothLEDBlink = 0;
 uint32_t lastRoverUpdate = 0;
 uint32_t lastBaseUpdate = 0;
 uint32_t lastBattUpdate = 0;
+uint32_t lastDisplayUpdate = 0;
 
 uint32_t lastTime = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -228,6 +242,10 @@ void setup()
 
   setupLiPo(); //Configure battery fuel guage monitor
   checkBatteryLevels(); //Display initial battery level
+
+  //Get unit MAC address
+  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
+  unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
   SerialBT.register_callback(btCallback);
   if (startBluetooth() == false)
@@ -293,9 +311,23 @@ void setup()
   Serial.println(F("GPS configuration complete"));
 
   beginSD(); //Test if SD is present
-  if(online.microSD == true)
+  if (online.microSD == true)
   {
     Serial.println(F("microSD card online"));
+  }
+
+  //Check if an external Qwiic OLED is attached
+  beginDisplay();
+  if (online.display == true)
+  {
+    Serial.println(F("Display online"));
+  }
+
+  //Display splash of some sort
+  if (online.display == true)
+  {
+    oled.drawIcon(1, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
+    oled.display();
   }
 
   danceLEDs(); //Turn on LEDs like a car dashboard
@@ -362,11 +394,64 @@ void loop()
 
   updateBattLEDs();
 
+  updateDisplay();
+
   //Menu system via ESP32 USB connection
   if (Serial.available()) menuMain(); //Present user menu
 
-  delay(10); //Required if no other I2C or functions are called
+  //Create files or close files as needed
+  if (settings.zedOutputLogging == true && online.dataLogging == false)
+  {
+    beginDataLogging();
+  }
+  else if (settings.zedOutputLogging == false && online.dataLogging == true)
+  {
+    //Close down file
+    gnssDataFile.sync();
+    gnssDataFile.close();
+    online.dataLogging = false;
+  }
 
+  delay(10); //A small delay prevents panic if no other I2C or functions are called
+}
+
+void updateDisplay()
+{
+
+  //Update the display if connected
+  if (online.display == true)
+  {
+    if (millis() - lastDisplayUpdate > 1000)
+    {
+      lastDisplayUpdate = millis();
+      Serial.println("Display update");
+
+      //oled.clear(PAGE); // Clear the display's internal memory
+      //oled.clear(ALL);  // Clear the library's display buffer
+
+      if (battLevel < 25)
+        oled.drawIcon(45, 0, Battery_0_Width, Battery_0_Height, Battery_0, sizeof(Battery_0), true);
+      else if (battLevel < 50)
+        oled.drawIcon(45, 0, Battery_1_Width, Battery_1_Height, Battery_1, sizeof(Battery_1), true);
+      else if (battLevel < 75)
+        oled.drawIcon(45, 0, Battery_2_Width, Battery_2_Height, Battery_2, sizeof(Battery_2), true);
+      else //batt level > 75
+        oled.drawIcon(45, 0, Battery_3_Width, Battery_3_Height, Battery_3, sizeof(Battery_3), true);
+
+      //Bluetooth Address
+      char macAddress[5];
+      sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
+      Serial.printf("MAC: %s", macAddress);
+
+      //oled.setFontType(1);
+      oled.setFontType(0); //Set font to smallest
+      oled.setCursor(0, 4);
+//      oled.print(macAddress);
+      oled.print("O");
+
+      oled.display();
+    }
+  }
 }
 
 void beginSD()
@@ -407,5 +492,19 @@ void beginSD()
   else
   {
     online.microSD = false;
+  }
+}
+
+void beginDisplay()
+{
+  //0x3D is default on Qwiic board
+  if (isConnected(0x3D) == true || isConnected(0x3C) == true)
+  {
+    online.display = true;
+
+    //Init display
+    oled.begin();     // Initialize the OLED
+    oled.clear(PAGE); // Clear the display's internal memory
+    oled.clear(ALL);  // Clear the library's display buffer
   }
 }

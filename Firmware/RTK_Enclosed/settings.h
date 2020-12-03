@@ -3,6 +3,9 @@ struct struct_settings {
   bool printDebugMessages = false;
   bool enableSD = true;
   bool enableDisplay = true;
+  bool zedOutputLogging = false;
+  bool gnssRAWOutput = false;
+  bool frequentFileAccessTimestamps = false;
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.
@@ -10,6 +13,5 @@ struct struct_online {
   bool microSD = false;
   bool display = false;
   bool dataLogging = false;
-  bool serialLogging = false;
   bool serialOutput = false;
 } online;

@@ -20,8 +20,8 @@ void menuMain()
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
-    if (incoming == '1') {}
-    //menuLogRate();
+    if (incoming == '1')
+      menuLog();
     else if (incoming == '2') {}
     //menuTimeStamp();
     else if (incoming == 'r')

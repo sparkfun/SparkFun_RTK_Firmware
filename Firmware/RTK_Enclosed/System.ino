@@ -5,19 +5,15 @@ uint8_t settingPayload[MAX_PAYLOAD_SIZE]; //This array holds the payload data by
 //This allows multiple units to be on at same time
 bool startBluetooth()
 {
-  uint8_t mac[6];
-  esp_read_mac(mac, ESP_MAC_WIFI_STA);
-  mac[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
-
   if (digitalRead(baseSwitch) == HIGH)
   {
     //Rover mode
-    sprintf(deviceName, "Surveyor Rover-%02X%02X", mac[4], mac[5]);
+    sprintf(deviceName, "Surveyor Rover-%02X%02X", unitMACAddress[4], unitMACAddress[5]);
   }
   else
   {
     //Base mode
-    sprintf(deviceName, "Surveyor Base-%02X%02X", mac[4], mac[5]);
+    sprintf(deviceName, "Surveyor Base-%02X%02X", unitMACAddress[4], unitMACAddress[5]);
   }
 
   if (SerialBT.begin(deviceName) == false)
@@ -87,6 +83,24 @@ void F9PSerialReadTask(void *e)
       else if (SerialBT.connected())
       {
         SerialBT.write(rBuffer, s);
+      }
+
+      //If user wants to log, record to SD
+      if (settings.zedOutputLogging == true)
+      {
+        if (online.microSD == true)
+        {
+          gnssDataFile.write(rBuffer, s);
+
+          //Force sync every 500ms
+          if (millis() - lastDataLogSyncTime > 500)
+          {
+            lastDataLogSyncTime = millis();
+            gnssDataFile.sync();
+            if (settings.frequentFileAccessTimestamps == true)
+              updateDataFileAccess(&gnssDataFile); // Update the file access time & date
+          }
+        }
       }
     }
     taskYIELD();
@@ -492,7 +506,7 @@ void checkBatteryLevels()
 {
   String battMsg = "";
 
-  int battLevel = lipo.getSOC();
+  battLevel = lipo.getSOC();
 
   battMsg += "Batt (";
   battMsg += battLevel;
@@ -536,6 +550,7 @@ void checkBatteryLevels()
   battMsg += "\n\r";
   SerialBT.print(battMsg);
   Serial.print(battMsg);
+
 }
 
 //Configure the on board MAX17048 fuel gauge
@@ -553,4 +568,13 @@ void setupLiPo()
   if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
 
   Serial.println(F("MAX17048 configuration complete"));
+}
+
+//Ping an I2C device and see if it responds
+bool isConnected(uint8_t deviceAddress)
+{
+  Wire.beginTransmission(deviceAddress);
+  if (Wire.endTransmission() == 0)
+    return true;
+  return false;
 }

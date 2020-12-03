@@ -1,8 +1,9 @@
 SparkFun RTK Surveyor
 ===========================================================
 
-![SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/parts/1/6/4/0/1/17369-GPS_RTK_Surveyor_-_Enclosed-01.jpg)
+[![SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/parts/1/6/4/0/1/17369-GPS_RTK_Surveyor_-_Enclosed-01.jpg)](https://www.sparkfun.com/products/17369)
 
+[*SparkFun RTK Surveyor (SPX-17369)*](https://www.sparkfun.com/products/17369)
 
 
 Repository Contents
@@ -10,11 +11,11 @@ Repository Contents
 
 * **/Documents** - Documentation on hardware and 3D files for the enclosure
 * **/Enclosure** - gcode for enclosure milling
-* **/Firmware** - Arduino sketches
-* **/Graphics** - Sticker graphics
+* **/Firmware** - Main firmware as well as various feature unit tests
+* **/Graphics** - Bitmaps for display (not currently implmented)
 * **/Hardware** - Eagle files
-* **/Programming** - Programming files
-* **/Testing** - Testing
+* **/Programming** - Espressif's CLI for programming binaries
+* **/Testing** - Espressif provided test suite for RF compliance testing
 
 Documentation
 --------------

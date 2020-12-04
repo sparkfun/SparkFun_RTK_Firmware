@@ -8,8 +8,19 @@
 
   Select the ESP32 Dev Module from the boards list. This maps the same pins to the ESP32-WROOM module.
 
+  Special thanks to Avinab Malla for guidance on getting xTasks implemented.
+
+  The RTK Surveyor implements classic Bluetooth SPP to transfer data from the
+  ZED-F9P to the phone and receive any RTCM from the phone and feed it back
+  to the ZED-F9P to achieve RTK: F9PSerialWriteTask(), F9PSerialReadTask().
+
   A settings file is accessed on microSD if available otherwise settings are pulled from 
   ESP32's emulated EEPROM.
+
+  The main loop handles lower priority updates such as:
+  * Fuel gauge checking and power LED color update
+  * Setup switch monitoring (module configure between Rover and Base)
+  * Text menu interactions
 
   Menu System:
     (Done) Log RAWX to SD
@@ -22,6 +33,7 @@
     Enable/disable detection of permanent base
     Set radius (5m default) for auto-detection of base
     Set update rate
+  
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;

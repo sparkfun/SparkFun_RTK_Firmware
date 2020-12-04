@@ -5,6 +5,9 @@ SparkFun RTK Surveyor
 
 [*SparkFun RTK Surveyor (SPX-17369)*](https://www.sparkfun.com/products/17369)
 
+Thanks:
+
+* Special thanks to [Avinab Malla](https://github.com/avinabmalla) for the creation of [SW Maps](https://play.google.com/store/apps/details?id=np.com.softwel.swmaps&hl=en_US&gl=US) and for pointers on handling the ESP32 read/write tasks.
 
 Repository Contents
 -------------------

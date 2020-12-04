@@ -37,7 +37,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 0;
+const int FIRMWARE_VERSION_MINOR = 1;
 
 //Define the RTK Surveyor board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor and which allows us
@@ -253,7 +253,6 @@ void setup()
   }
 
   Serial.flush(); //Complete any previous prints
-  Serial.printf("SparkFun RTK Surveyor v%d.%d\r\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
   danceLEDs(); //Turn on LEDs like a car dashboard
 

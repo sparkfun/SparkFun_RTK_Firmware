@@ -5,6 +5,7 @@ void menuMain()
   while (1)
   {
     Serial.println();
+    Serial.printf("SparkFun RTK Surveyor v%d.%d\r\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
     Serial.println(F("Menu: Main Menu"));
 
     Serial.print("** Bluetooth broadcasting as: ");

@@ -156,42 +156,6 @@ uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
 MicroOLED oled(PIN_RESET, DC_JUMPER);
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-//Freeze and blink LEDs if we hit a bad error
-typedef enum
-{
-  ERROR_NO_I2C = 2, //Avoid 0 and 1 as these are bad blink codes
-  ERROR_GPS_CONFIG_FAIL,
-} t_errorNumber;
-
-//Bluetooth status LED goes from off (LED off), no connection (blinking), to connected (solid)
-enum BluetoothState
-{
-  BT_OFF = 0,
-  BT_ON_NOCONNECTION,
-  BT_CONNECTED,
-};
-volatile byte bluetoothState = BT_OFF;
-
-//Base status goes from Rover-Mode (LED off), surveying in (blinking), to survey is complete/trasmitting RTCM (solid)
-typedef enum
-{
-  BASE_OFF = 0,
-  BASE_SURVEYING_IN_NOTSTARTED, //User has indicated base, but current pos accuracy is too low
-  BASE_SURVEYING_IN_SLOW,
-  BASE_SURVEYING_IN_FAST,
-  BASE_TRANSMITTING,
-} BaseState;
-volatile BaseState baseState = BASE_OFF;
-unsigned long baseStateBlinkTime = 0;
-const unsigned long maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
-
-//Return values for getByteChoice()
-enum returnStatus {
-  STATUS_GETBYTE_TIMEOUT = 255,
-  STATUS_GETNUMBER_TIMEOUT = -123455555,
-  STATUS_PRESSED_X,
-};
-
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display

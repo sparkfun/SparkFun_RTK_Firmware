@@ -6,13 +6,16 @@ void menuMain()
   {
     Serial.println();
     Serial.printf("SparkFun RTK Surveyor v%d.%d\r\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-    Serial.println(F("Menu: Main Menu"));
 
     Serial.print("** Bluetooth broadcasting as: ");
     Serial.print(deviceName);
     Serial.println(" **");
 
+    Serial.println(F("Menu: Main Menu"));
+
     Serial.println(F("1) Configure Data Logging"));
+
+    Serial.println(F("2) Configure Base"));
 
     Serial.println(F("r) Reset all settings to default"));
 
@@ -24,8 +27,8 @@ void menuMain()
 
     if (incoming == '1')
       menuLog();
-    else if (incoming == '2') {}
-    //menuTimeStamp();
+    else if (incoming == '2')
+      menuBase();
     else if (incoming == 'r')
     {
       Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));

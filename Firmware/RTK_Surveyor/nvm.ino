@@ -76,6 +76,17 @@ void recordSystemSettingsToFile()
     settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
     settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
 
+    settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
+    settingsFile.println("observationPositionAccuracy=" + (String)settings.observationPositionAccuracy);
+    settingsFile.println("fixedBase=" + (String)settings.fixedBase);
+    settingsFile.println("fixedBaseCoordinateType=" + (String)settings.fixedBaseCoordinateType);
+    settingsFile.println("fixedEcefX=" + (String)settings.fixedEcefX);
+    settingsFile.println("fixedEcefY=" + (String)settings.fixedEcefY);
+    settingsFile.println("fixedEcefZ=" + (String)settings.fixedEcefZ);
+    settingsFile.println("fixedLat=" + (String)settings.fixedLat);
+    settingsFile.println("fixedLong=" + (String)settings.fixedLong);
+    settingsFile.println("fixedAltitude=" + (String)settings.fixedAltitude);
+
     updateDataFileAccess(&settingsFile); // Update the file access time & date
 
     settingsFile.close();
@@ -218,6 +229,26 @@ bool parseLine(char* str) {
     settings.frequentFileAccessTimestamps = d;
   else if (strcmp(settingName, "maxLogTime_minutes") == 0)
     settings.maxLogTime_minutes = d;
+  else if (strcmp(settingName, "observationSeconds") == 0)
+    settings.observationSeconds = d;
+  else if (strcmp(settingName, "observationPositionAccuracy") == 0)
+    settings.observationPositionAccuracy = d;
+  else if (strcmp(settingName, "fixedBase") == 0)
+    settings.fixedBase = d;
+  else if (strcmp(settingName, "fixedBaseCoordinateType") == 0)
+    settings.fixedBaseCoordinateType = d;
+  else if (strcmp(settingName, "fixedEcefX") == 0)
+    settings.fixedEcefX = d;
+  else if (strcmp(settingName, "fixedEcefY") == 0)
+    settings.fixedEcefY = d;
+  else if (strcmp(settingName, "fixedEcefZ") == 0)
+    settings.fixedEcefZ = d;
+  else if (strcmp(settingName, "fixedLat") == 0)
+    settings.fixedLat = d;
+  else if (strcmp(settingName, "fixedLong") == 0)
+    settings.fixedLong = d;
+  else if (strcmp(settingName, "fixedAltitude") == 0)
+    settings.fixedAltitude = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

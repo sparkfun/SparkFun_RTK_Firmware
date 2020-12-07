@@ -13,9 +13,11 @@ void menuMain()
 
     Serial.println(F("Menu: Main Menu"));
 
-    Serial.println(F("1) Configure Data Logging"));
+    Serial.println(F("1) Configure GNSS Receiver"));
 
-    Serial.println(F("2) Configure Base"));
+    Serial.println(F("2) Configure Data Logging"));
+
+    Serial.println(F("3) Configure Base"));
 
     Serial.println(F("r) Reset all settings to default"));
 
@@ -26,8 +28,10 @@ void menuMain()
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == '1')
-      menuLog();
+      menuGNSS();
     else if (incoming == '2')
+      menuLog();
+    else if (incoming == '3')
       menuBase();
     else if (incoming == 'r')
     {
@@ -36,8 +40,11 @@ void menuMain()
       if (bContinue == 'y')
       {
         eepromErase();
+
         if (sd.exists(settingsFileName))
           sd.remove(settingsFileName);
+
+        myGPS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
         Serial.println(F("Settings erased. Please reset RTK Surveyor. Freezing."));
         while (1) 

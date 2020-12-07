@@ -116,8 +116,6 @@ SFE_UBLOX_GPS_ADD myGPS;
 //u-blox firmware to work correctly. We check the module firmware at startup but
 //don't prevent operation if firmware is mismatched.
 char latestZEDFirmware[] = "FWVER=HPG 1.13";
-
-uint8_t gnssUpdateRate = 4; //Increasing beyond 1Hz with SV sentence on can drown the BT link
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -191,7 +189,9 @@ void setup()
   //Start EEPROM and SD for settings, and display for output
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   beginEEPROM();
-  
+
+  //eepromErase();
+
   beginSD(); //Test if SD is present
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available

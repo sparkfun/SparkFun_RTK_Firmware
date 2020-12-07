@@ -45,6 +45,7 @@ enum returnStatus {
 struct struct_settings {
   int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int
   int rtkIdentifier = RTK_IDENTIFIER; // rtkIdentifier **must** be the second entry
+  uint8_t gnssMeasurementFrequency = 4; //Number of fixes per second
   bool printDebugMessages = false;
   bool enableSD = true;
   bool enableDisplay = true;

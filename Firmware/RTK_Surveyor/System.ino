@@ -172,9 +172,9 @@ bool configureUbloxModule()
   }
 
   //Set output rate
-  if (myGPS.getNavigationFrequency() != gnssUpdateRate)
+  if (myGPS.getNavigationFrequency() != settings.gnssMeasurementFrequency)
   {
-    response &= myGPS.setNavigationFrequency(gnssUpdateRate); //Set output in Hz
+    response &= myGPS.setNavigationFrequency(settings.gnssMeasurementFrequency); //Set output in Hz
   }
 
   //Make sure the appropriate NMEA sentences are enabled
@@ -186,8 +186,8 @@ bool configureUbloxModule()
   //When receiving 15+ satellite information, the GxGSV sentences can be a large amount of data
   //If the update rate is >1Hz then this data can overcome the BT capabilities causing timeouts and lag
   //So we set the GSV sentence to 1Hz regardless of update rate
-  if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != gnssUpdateRate)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1, gnssUpdateRate);
+  if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != settings.gnssMeasurementFrequency)
+    response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1, settings.gnssMeasurementFrequency);
 
   if (getNMEASettings(UBX_NMEA_RMC, COM_PORT_UART1) != 1)
     response &= myGPS.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);

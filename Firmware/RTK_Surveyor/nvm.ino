@@ -68,6 +68,7 @@ void recordSystemSettingsToFile()
 
     settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
     settingsFile.println("rtkIdentifier=" + (String)settings.rtkIdentifier);
+    settingsFile.println("gnssMeasurementFrequency=" + (String)settings.gnssMeasurementFrequency);
     settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
     settingsFile.println("enableSD=" + (String)settings.enableSD);
     settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
@@ -215,6 +216,8 @@ bool parseLine(char* str) {
   else if (strcmp(settingName, "rtkIdentifier") == 0)
     settings.rtkIdentifier = d;
 
+  else if (strcmp(settingName, "gnssMeasurementFrequency") == 0)
+    settings.gnssMeasurementFrequency = d;
   else if (strcmp(settingName, "printDebugMessages") == 0)
     settings.printDebugMessages = d;
   else if (strcmp(settingName, "enableSD") == 0)

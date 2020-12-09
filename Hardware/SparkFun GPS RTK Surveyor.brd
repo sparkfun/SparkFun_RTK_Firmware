@@ -10,14 +10,14 @@
 <grid distance="0.05" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.005" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
-<layer number="2" name="Horz/GND" color="1" fill="3" visible="yes" active="yes"/>
-<layer number="15" name="Vert" color="4" fill="6" visible="yes" active="yes"/>
+<layer number="2" name="Horz/GND" color="1" fill="3" visible="no" active="yes"/>
+<layer number="15" name="Vert" color="4" fill="6" visible="no" active="yes"/>
 <layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
 <layer number="17" name="Pads" color="2" fill="1" visible="yes" active="yes"/>
 <layer number="18" name="Vias" color="2" fill="1" visible="yes" active="yes"/>
 <layer number="19" name="Unrouted" color="6" fill="1" visible="yes" active="yes"/>
 <layer number="20" name="Dimension" color="24" fill="1" visible="yes" active="yes"/>
-<layer number="21" name="tPlace" color="16" fill="1" visible="no" active="yes"/>
+<layer number="21" name="tPlace" color="16" fill="1" visible="yes" active="yes"/>
 <layer number="22" name="bPlace" color="14" fill="1" visible="yes" active="yes"/>
 <layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
 <layer number="24" name="bOrigins" color="15" fill="1" visible="yes" active="yes"/>
@@ -17408,7 +17408,7 @@ design rules under a new name.</description>
 <elements>
 <element name="JP21" library="SparkFun-Aesthetics" package="FIDUCIAL-MICRO" value="FIDUCIALUFIDUCIAL" x="54.61" y="4.35" smashed="yes"/>
 <element name="JP61" library="SparkFun-Aesthetics" package="FIDUCIAL-MICRO" value="FIDUCIALUFIDUCIAL" x="-3.63" y="105.23" smashed="yes"/>
-<element name="J4" library="SparkFun-Connectors" package="JST04_1MM_RA" value="Qwiic Right Angle" x="25.4" y="4.81" smashed="yes" rot="MR0">
+<element name="J4" library="SparkFun-Connectors" package="JST04_1MM_RA" value="External" x="25.4" y="4.81" smashed="yes" rot="MR0">
 <attribute name="NAME" x="26.797" y="2.651" size="0.6096" layer="26" font="vector" ratio="20" rot="MR0"/>
 <attribute name="PROD_ID" value="CONN-13694" x="25.4" y="4.81" size="1.778" layer="28" rot="MR0" display="off"/>
 <attribute name="VALUE" value="Qwiic Right Angle" x="25.4" y="4.81" size="1.778" layer="28" rot="MR0" display="off"/>
@@ -17967,6 +17967,12 @@ design rules under a new name.</description>
 <element name="U$90" library="output" package="PORT3" value="" x="-6.096" y="21.209" smashed="yes" rot="MR90"/>
 <element name="U$91" library="output" package="PPS#RESET0" value="" x="-1.905" y="14.478" smashed="yes" rot="MR0"/>
 <element name="U$92" library="output" package="NMEA#SERIAL1" value="" x="-2.032" y="23.749" smashed="yes" rot="MR0"/>
+<element name="J13" library="SparkFun-Connectors" package="JST04_1MM_RA" value="Internal" x="-4.572" y="61.976" smashed="yes" rot="R180">
+<attribute name="NAME" x="-3.175" y="64.135" size="0.6096" layer="25" font="vector" ratio="20" rot="R180"/>
+<attribute name="PROD_ID" value="CONN-13694" x="-4.572" y="61.976" size="1.778" layer="27" font="vector" ratio="15" rot="R180" display="off"/>
+<attribute name="VALUE" x="-2.921" y="65.278" size="0.6096" layer="27" font="vector" ratio="20" rot="R180"/>
+</element>
+<element name="U$93" library="SparkFun-Aesthetics" package="QWIIC_4MM" value="" x="-4.572" y="60.055" smashed="yes"/>
 </elements>
 <signals>
 <signal name="3.3V" class="1">
@@ -18087,6 +18093,12 @@ design rules under a new name.</description>
 <wire x1="26.67" y1="3.683" x2="26.2175" y2="3.2305" width="0.5588" layer="2"/>
 <via x="26.2175" y="3.2305" extent="1-16" drill="0.3048"/>
 <wire x1="26.67" y1="11.43" x2="26.67" y2="3.683" width="0.5588" layer="2"/>
+<contactref element="J13" pad="2"/>
+<wire x1="-4.072" y1="61.976" x2="-4.072" y2="67.683" width="0.3048" layer="1"/>
+<wire x1="-1.905" y1="69.85" x2="10.16" y2="69.85" width="0.3048" layer="1"/>
+<wire x1="-4.072" y1="67.683" x2="-1.905" y2="69.85" width="0.3048" layer="1"/>
+<via x="10.16" y="69.85" extent="1-16" drill="0.3048"/>
+<wire x1="10.16" y1="69.85" x2="10.16" y2="76.708" width="0.3048" layer="16"/>
 </signal>
 <signal name="GND">
 <contactref element="D1" pad="C"/>
@@ -18479,6 +18491,8 @@ design rules under a new name.</description>
 <contactref element="E1" pad="GND@1"/>
 <contactref element="J17" pad="1"/>
 <via x="36.83" y="12.573" extent="1-16" drill="0.3048"/>
+<contactref element="J13" pad="1"/>
+<via x="-3.048" y="63.5" extent="1-16" drill="0.3048"/>
 </signal>
 <signal name="ESP_22/SCL">
 <contactref element="J4" pad="4"/>
@@ -18503,15 +18517,14 @@ design rules under a new name.</description>
 <wire x1="17.162" y1="99.14" x2="15.414" y2="99.14" width="0.254" layer="16"/>
 <wire x1="15.414" y1="99.14" x2="15.367" y2="99.187" width="0.254" layer="16"/>
 <via x="15.367" y="99.187" extent="1-16" drill="0.3048"/>
-<wire x1="15.367" y1="99.187" x2="17.526" y2="97.028" width="0.1778" layer="15"/>
-<wire x1="17.526" y1="97.028" x2="17.526" y2="42.7093" width="0.1778" layer="15"/>
+<wire x1="15.367" y1="99.187" x2="17.4625" y2="97.0915" width="0.1778" layer="15"/>
 <via x="16.002" y="38.862" extent="1-16" drill="0.3048"/>
 <wire x1="16.002" y1="38.862" x2="16.002" y2="39.9415" width="0.1778" layer="2"/>
 <wire x1="18.24315" y1="40.259" x2="17.399" y2="40.259" width="0.1778" layer="15"/>
 <wire x1="16.002" y1="38.862" x2="17.399" y2="40.259" width="0.1778" layer="15"/>
 <wire x1="18.8849" y1="40.90075" x2="18.24315" y2="40.259" width="0.1778" layer="15"/>
 <wire x1="18.8849" y1="41.3504" x2="18.8849" y2="40.90075" width="0.1778" layer="15"/>
-<wire x1="17.526" y1="42.7093" x2="18.8849" y2="41.3504" width="0.1778" layer="15"/>
+<wire x1="18.8849" y1="41.3504" x2="17.526" y2="42.7093" width="0.1778" layer="15"/>
 <contactref element="U7" pad="7"/>
 <wire x1="23.9" y1="4.81" x2="23.9" y2="9.152" width="0.1778" layer="16"/>
 <wire x1="35.56" y1="12.684" x2="27.432" y2="12.684" width="0.1778" layer="16"/>
@@ -18531,6 +18544,17 @@ design rules under a new name.</description>
 <contactref element="J17" pad="4"/>
 <wire x1="35.56" y1="12.684" x2="34.29" y2="13.954" width="0.1778" layer="1"/>
 <wire x1="34.29" y1="13.954" x2="34.29" y2="13.97" width="0.1778" layer="1"/>
+<contactref element="J13" pad="4"/>
+<wire x1="-6.072" y1="61.976" x2="-6.072" y2="68.477" width="0.1778" layer="1"/>
+<wire x1="-6.072" y1="68.477" x2="-2.413" y2="72.136" width="0.1778" layer="1"/>
+<wire x1="17.526" y1="42.7093" x2="17.526" y2="70.40285" width="0.1778" layer="15"/>
+<wire x1="17.526" y1="70.40285" x2="17.9959" y2="70.87275" width="0.1778" layer="15"/>
+<wire x1="17.9959" y1="70.87275" x2="17.9959" y2="72.136" width="0.1778" layer="15"/>
+<via x="17.9959" y="72.136" extent="1-16" drill="0.3048"/>
+<wire x1="-2.413" y1="72.136" x2="17.9959" y2="72.136" width="0.1778" layer="1"/>
+<wire x1="17.9959" y1="72.136" x2="17.4752" y2="72.6567" width="0.1778" layer="15"/>
+<wire x1="17.4752" y1="97.0788" x2="17.4625" y2="97.0915" width="0.1778" layer="15"/>
+<wire x1="17.4752" y1="72.6567" x2="17.4752" y2="97.0788" width="0.1778" layer="15"/>
 </signal>
 <signal name="ESP_21/SDA">
 <contactref element="J4" pad="3"/>
@@ -18556,7 +18580,8 @@ design rules under a new name.</description>
 <via x="15.494" y="95.25" extent="1-16" drill="0.3048"/>
 <wire x1="17.162" y1="95.33" x2="15.574" y2="95.33" width="0.1778" layer="16"/>
 <wire x1="15.574" y1="95.33" x2="15.494" y2="95.25" width="0.1778" layer="16"/>
-<wire x1="17.1196" y1="93.6244" x2="17.1196" y2="42.2318" width="0.1778" layer="15"/>
+<wire x1="17.1196" y1="93.6244" x2="17.1196" y2="71.12" width="0.1778" layer="15"/>
+<wire x1="17.1196" y1="71.12" x2="17.1196" y2="42.2318" width="0.1778" layer="15"/>
 <wire x1="15.494" y1="95.25" x2="17.1196" y2="93.6244" width="0.1778" layer="15"/>
 <via x="18.034" y="40.894" extent="1-16" drill="0.3048"/>
 <wire x1="18.034" y1="40.894" x2="18.034" y2="40.767" width="0.1778" layer="2"/>
@@ -18592,6 +18617,12 @@ design rules under a new name.</description>
 <wire x1="34.925" y1="11.922" x2="32.528" y2="11.922" width="0.1778" layer="1"/>
 <wire x1="32.528" y1="11.922" x2="31.75" y2="12.7" width="0.1778" layer="1"/>
 <wire x1="31.75" y1="12.7" x2="31.75" y2="13.97" width="0.1778" layer="1"/>
+<contactref element="J13" pad="3"/>
+<wire x1="-5.072" y1="61.976" x2="-5.072" y2="68.334" width="0.1778" layer="1"/>
+<wire x1="-5.072" y1="68.334" x2="-2.286" y2="71.12" width="0.1778" layer="1"/>
+<wire x1="-2.286" y1="71.12" x2="17.399" y2="71.12" width="0.1778" layer="1"/>
+<via x="17.399" y="71.12" extent="1-16" drill="0.3048"/>
+<wire x1="17.399" y1="71.12" x2="17.1196" y2="71.12" width="0.1778" layer="15"/>
 </signal>
 <signal name="TXLV">
 <contactref element="U3" pad="42"/>

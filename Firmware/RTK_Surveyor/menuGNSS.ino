@@ -20,7 +20,7 @@ void menuGNSS()
     {
       Serial.print(F("Enter GNSS measurement rate: "));
       int rate = getNumber(menuTimeout); //Timeout after x seconds
-      if (rate < 1 || rate > 10) //Arbitrary 10Hz limit. We need to limit based on enabled constellations.
+      if (rate < 1 || rate > 20) //Arbitrary 10Hz limit. We need to limit based on enabled constellations.
       {
         Serial.println(F("Error: measurement rate out of range"));
       }

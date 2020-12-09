@@ -14,26 +14,20 @@
   ZED-F9P to the phone and receive any RTCM from the phone and feed it back
   to the ZED-F9P to achieve RTK: F9PSerialWriteTask(), F9PSerialReadTask().
 
-  A settings file is accessed on microSD if available otherwise settings are pulled from 
+  A settings file is accessed on microSD if available otherwise settings are pulled from
   ESP32's emulated EEPROM.
 
   The main loop handles lower priority updates such as:
-  * Fuel gauge checking and power LED color update
-  * Setup switch monitoring (module configure between Rover and Base)
-  * Text menu interactions
+    Fuel gauge checking and power LED color update
+    Setup switch monitoring (module configure between Rover and Base)
+    Text menu interactions
 
-  Menu System:
-    (Done) Log RAWX to SD
-    (Done) Display MAC address / broadcast name
+  Main Menu (Display MAC address / broadcast name):
+    (Done) GNSS - Configure measurement rate, reset module
+    (Done) Log - Log to SD, enable/disable RAWX
+    (Done) Base - Enter fixed coordinates, survey-in settings
     (Done) Test menu
-    Enable various debug output over BT?
-    Change broadcast name + MAC
-    Change max survey in time before cold start
-    Enter permanent coordinates
-    Enable/disable detection of permanent base
-    Set radius (5m default) for auto-detection of base
-    Set update rate
-  
+
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -203,24 +197,17 @@ void setup()
   checkBatteryLevels(); //Force display so you see battery level immediately at power on
 
   beginBT(); //Get MAC, start radio
-  
+
   beginGNSS(); //Connect and configure ZED-F9P
 
   if (online.microSD == true)
     Serial.println(F("microSD card online"));
 
-  //Display splash of some sort
-  if (online.display == true)
-  {
-    oled.drawIcon(1, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
-    oled.display();
-  }
-
   Serial.flush(); //Complete any previous prints
 
   danceLEDs(); //Turn on LEDs like a car dashboard
 
-  if(online.microSD == true && settings.zedOutputLogging == true) startLogTime_minutes = 0; //Mark now as start of logging
+  if (online.microSD == true && settings.zedOutputLogging == true) startLogTime_minutes = 0; //Mark now as start of logging
 
   //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
 }
@@ -317,11 +304,10 @@ void updateDisplay()
     if (millis() - lastDisplayUpdate > 1000)
     {
       lastDisplayUpdate = millis();
-      Serial.println("Display update");
 
-      //oled.clear(PAGE); // Clear the display's internal memory
-      //oled.clear(ALL);  // Clear the library's display buffer
+      oled.clear(PAGE); // Clear the display's internal buffer
 
+      //Current battery charge level
       if (battLevel < 25)
         oled.drawIcon(45, 0, Battery_0_Width, Battery_0_Height, Battery_0, sizeof(Battery_0), true);
       else if (battLevel < 50)
@@ -331,16 +317,56 @@ void updateDisplay()
       else //batt level > 75
         oled.drawIcon(45, 0, Battery_3_Width, Battery_3_Height, Battery_3, sizeof(Battery_3), true);
 
-      //Bluetooth Address
-      char macAddress[5];
-      sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-      Serial.printf("MAC: %s", macAddress);
+      //Bluetooth Address or RSSI
+      if (bluetoothState == BT_CONNECTED)
+      {
+        oled.drawIcon(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol, sizeof(BT_Symbol), true);
+      }
+      else
+      {
+        char macAddress[5];
+        sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
+        oled.setFontType(0); //Set font to smallest
+        oled.setCursor(0, 4);
+        oled.print(macAddress);
+      }
 
-      //oled.setFontType(1);
-      oled.setFontType(0); //Set font to smallest
-      oled.setCursor(0, 4);
-      //      oled.print(macAddress);
-      oled.print("O");
+      if (digitalRead(baseSwitch) == LOW)
+        oled.drawIcon(27, 0, Base_Width, Base_Height, Base, sizeof(Base), true); //true - blend with other pixels
+      else
+        oled.drawIcon(27, 3, Rover_Width, Rover_Height, Rover, sizeof(Rover), true);
+
+      //Horz positional accuracy
+      oled.setFontType(1); //Set font to type 1: 8x16
+      oled.drawIcon(0, 18, CrossHair_Width, CrossHair_Height, CrossHair, sizeof(CrossHair), true);
+      oled.setCursor(16, 20); //x, y
+      oled.print(":");
+      float hpa = myGPS.getHorizontalAccuracy() / 10000.0;
+      Serial.printf("hpa: %03f\n", hpa);
+      if (hpa > 30.0)
+      {
+        oled.print(">30");
+      }
+      else if (hpa > 9.9)
+      {
+        oled.print(hpa, 1); //Print down to decimeter
+      }
+      else if (hpa > 1.0)
+      {
+        oled.print(hpa, 2); //Print down to centimeter
+      }
+      else
+      {
+        oled.print("."); //Remove leading zero
+        oled.printf("%03d", (int)(hpa * 1000)); //Print down to millimeter
+      }
+
+      //SIV
+      oled.drawIcon(2, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
+      oled.setCursor(16, 36); //x, y
+      oled.print(":");
+      oled.print(myGPS.getSIV());
+
 
       oled.display();
     }
@@ -395,10 +421,58 @@ void beginDisplay()
   {
     online.display = true;
 
-    //Init display
+    //Init and display splash
     oled.begin();     // Initialize the OLED
     oled.clear(PAGE); // Clear the display's internal memory
-    oled.clear(ALL);  // Clear the library's display buffer
+
+    oled.setCursor(10, 2); //x, y
+    oled.setFontType(0); //Set font to smallest
+    oled.print("SparkFun");
+
+    oled.setCursor(21, 13);
+    oled.setFontType(1);
+    oled.print("RTK");
+
+    int surveyorTextY = 25;
+    int surveyorTextX = 2;
+    int surveyorTextKerning = 8;
+    oled.setFontType(1);
+
+    oled.setCursor(surveyorTextX, surveyorTextY);
+    oled.print("S");
+
+    surveyorTextX += surveyorTextKerning;
+    oled.setCursor(surveyorTextX, surveyorTextY);
+    oled.print("u");
+
+    surveyorTextX += surveyorTextKerning;
+    oled.setCursor(surveyorTextX, surveyorTextY);
+    oled.print("r");
+
+    surveyorTextX += surveyorTextKerning;
+    oled.setCursor(surveyorTextX, surveyorTextY);
+    oled.print("v");
+
+    surveyorTextX += surveyorTextKerning;
+    oled.setCursor(surveyorTextX, surveyorTextY);
+    oled.print("e");
+
+    surveyorTextX += surveyorTextKerning;
+    oled.setCursor(surveyorTextX, surveyorTextY);
+    oled.print("y");
+
+    surveyorTextX += surveyorTextKerning;
+    oled.setCursor(surveyorTextX, surveyorTextY);
+    oled.print("o");
+
+    surveyorTextX += surveyorTextKerning;
+    oled.setCursor(surveyorTextX, surveyorTextY);
+    oled.print("r");
+
+    oled.setCursor(20, 41);
+    oled.setFontType(0); //Set font to smallest
+    oled.printf("v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    oled.display();
   }
 }
 
@@ -417,22 +491,22 @@ void beginGNSS()
   }
 
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
-//  if (myGPS.getModuleInfo(1100) == true) // Try to get the module info
-//  {
-//    if (strcmp(myGPS.minfo.extension[1], latestZEDFirmware) != 0)
-//    {
-//      Serial.print("The ZED-F9P appears to have outdated firmware. Found: ");
-//      Serial.println(myGPS.minfo.extension[1]);
-//      Serial.print("The Surveyor works best with ");
-//      Serial.println(latestZEDFirmware);
-//      Serial.print("Please upgrade using u-center.");
-//      Serial.println();
-//    }
-//    else
-//    {
-//      Serial.println("ZED-F9P firmware is current");
-//    }
-//  }
+  //  if (myGPS.getModuleInfo(1100) == true) // Try to get the module info
+  //  {
+  //    if (strcmp(myGPS.minfo.extension[1], latestZEDFirmware) != 0)
+  //    {
+  //      Serial.print("The ZED-F9P appears to have outdated firmware. Found: ");
+  //      Serial.println(myGPS.minfo.extension[1]);
+  //      Serial.print("The Surveyor works best with ");
+  //      Serial.println(latestZEDFirmware);
+  //      Serial.print("Please upgrade using u-center.");
+  //      Serial.println();
+  //    }
+  //    else
+  //    {
+  //      Serial.println("ZED-F9P firmware is current");
+  //    }
+  //  }
 
   bool response = configureUbloxModule();
   if (response == false)
@@ -470,7 +544,7 @@ void beginBT()
     bluetoothState = BT_ON_NOCONNECTION;
     digitalWrite(bluetoothStatusLED, HIGH);
     lastBluetoothLEDBlink = millis();
-  }  
+  }
 }
 
 //Set LEDs for output and configure PWM

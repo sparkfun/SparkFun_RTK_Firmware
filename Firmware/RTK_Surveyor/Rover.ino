@@ -106,8 +106,11 @@ bool configureUbloxModuleRover()
 
   response &= setNMEASettings(); //Enable high precision NMEA and extended sentences
 
-  response &= setSBAS(false); //Disable SBAS. Work around for RTK LED not working in v1.13 firmware.
-  
+  if (settings.enableSBAS == true)
+    response &= setSBAS(true); //Enable SBAS
+  else
+    response &= setSBAS(false); //Disable SBAS. Work around for RTK LED not working in v1.13 firmware.
+
   return (response);
 }
 
@@ -144,6 +147,30 @@ bool setNMEASettings()
   return (true);
 }
 
+//Returns true if SBAS is enabled
+bool getSBAS()
+{
+  uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
+  ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+
+  customCfg.cls = UBX_CLASS_CFG; // This is the message Class
+  customCfg.id = UBX_CFG_GNSS; // This is the message ID
+  customCfg.len = 0; // Setting the len (length) to zero lets us poll the current settings
+  customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
+
+  uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+
+  // Read the current setting. The results will be loaded into customCfg.
+  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  {
+    Serial.println(F("Get SBAS failed!"));
+    return (false);
+  }
+
+  if (customPayload[8 + 8 * 1] & (1 << 0)) return true; //Check if bit 0 is set
+  return false;
+}
+
 //The u-blox library doesn't directly support SBAS control so let's do it manually
 bool setSBAS(bool enableSBAS)
 {
@@ -166,15 +193,13 @@ bool setSBAS(bool enableSBAS)
 
   if (enableSBAS)
   {
-    if (customPayload[8 + 1 * 8] & (1 << 0)) return true; //If we want the bit set, and it already is, simply return
-
-    customPayload[8 + 1 * 8] |= (1 << 0); //Set the enable bit
+    customPayload[8 + 8 * 1] |= (1 << 0); //Set the enable bit
+    //We must enable the gnssID as well
+    customPayload[8 + 8 * 1 + 2] |= (1 << 0); //Set the enable bit (16) for SBAS L1C/A
   }
   else
   {
-    if (customPayload[8 + 1 * 8] & (1 << 0) == 0) return true; //If we want the bit cleared, and it already is, simply return
-
-    customPayload[8 + 1 * 8] &= ~(1 << 0); //Clear the enable bit
+    customPayload[8 + 8 * 1] &= ~(1 << 0); //Clear the enable bit
   }
 
   // Now we write the custom packet back again to change the setting

@@ -178,21 +178,43 @@ bool configureUbloxModule()
   }
 
   //Make sure the appropriate NMEA sentences are enabled
-  if (getNMEASettings(UBX_NMEA_GGA, COM_PORT_UART1) != 1)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
-  if (getNMEASettings(UBX_NMEA_GSA, COM_PORT_UART1) != 1)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
+  if (settings.outputSentenceGGA == true)
+    if (getNMEASettings(UBX_NMEA_GGA, COM_PORT_UART1) != 1)
+      response &= myGPS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
+  else if (settings.outputSentenceGGA == false)
+    if (getNMEASettings(UBX_NMEA_GGA, COM_PORT_UART1) != 0)
+      response &= myGPS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
+
+  if (settings.outputSentenceGSA == true)
+    if (getNMEASettings(UBX_NMEA_GSA, COM_PORT_UART1) != 1)
+      response &= myGPS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
+  else if (settings.outputSentenceGSA == false)
+    if (getNMEASettings(UBX_NMEA_GSA, COM_PORT_UART1) != 0)
+      response &= myGPS.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
 
   //When receiving 15+ satellite information, the GxGSV sentences can be a large amount of data
   //If the update rate is >1Hz then this data can overcome the BT capabilities causing timeouts and lag
   //So we set the GSV sentence to 1Hz regardless of update rate
-  if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != settings.gnssMeasurementFrequency)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1, settings.gnssMeasurementFrequency);
+  if (settings.outputSentenceGSV == true)
+    if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != settings.gnssMeasurementFrequency)
+      response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1, settings.gnssMeasurementFrequency);
+  else if (settings.outputSentenceGSV == false)
+    if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != 0)
+      response &= myGPS.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
 
-  if (getNMEASettings(UBX_NMEA_RMC, COM_PORT_UART1) != 1)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
-  if (getNMEASettings(UBX_NMEA_GST, COM_PORT_UART1) != 1)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1);
+  if (settings.outputSentenceRMC == true)
+    if (getNMEASettings(UBX_NMEA_RMC, COM_PORT_UART1) != 1)
+      response &= myGPS.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
+  else if (settings.outputSentenceRMC == false)
+    if (getNMEASettings(UBX_NMEA_RMC, COM_PORT_UART1) != 0)
+      response &= myGPS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
+
+  if (settings.outputSentenceGST == true)
+    if (getNMEASettings(UBX_NMEA_GST, COM_PORT_UART1) != 1)
+      response &= myGPS.enableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1);
+  else if (settings.outputSentenceGST == false)
+    if (getNMEASettings(UBX_NMEA_GST, COM_PORT_UART1) != 0)
+      response &= myGPS.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1);
 
   response &= myGPS.setAutoPVT(true); //Tell the GPS to "send" each solution
   //response &= myGPS.setAutoPVT(true, false);    //Tell the GPS to "send" each solution and the lib not to update stale data implicitly
@@ -201,7 +223,6 @@ bool configureUbloxModule()
   if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
     Serial.println("Updating UART1 rate");
-
     myGPS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Set UART1 to 115200
   }
   if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud)

@@ -65,6 +65,12 @@ struct struct_settings {
   double fixedAltitude = 0.0;
   uint32_t dataPortBaud = 115200; //Default to 115200bps
   uint32_t radioPortBaud = 57600; //Default to 57600bps to support connection to SiK1000 radios
+  bool outputSentenceGGA = true;
+  bool outputSentenceGSA = true;
+  bool outputSentenceGSV = true;
+  bool outputSentenceRMC = true;
+  bool outputSentenceGST = true;
+  bool enableSBAS = false; //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

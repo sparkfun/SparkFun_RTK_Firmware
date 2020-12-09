@@ -88,6 +88,12 @@ void recordSystemSettingsToFile()
     settingsFile.println("fixedAltitude=" + (String)settings.fixedAltitude);
     settingsFile.println("dataPortBaud=" + (String)settings.dataPortBaud);
     settingsFile.println("radioPortBaud=" + (String)settings.radioPortBaud);
+    settingsFile.println("outputSentenceGGA=" + (String)settings.outputSentenceGGA);
+    settingsFile.println("outputSentenceGSA=" + (String)settings.outputSentenceGSA);
+    settingsFile.println("outputSentenceGSV=" + (String)settings.outputSentenceGSV);
+    settingsFile.println("outputSentenceRMC=" + (String)settings.outputSentenceRMC);
+    settingsFile.println("outputSentenceGST=" + (String)settings.outputSentenceGST);
+    settingsFile.println("enableSBAS=" + (String)settings.enableSBAS);
 
     updateDataFileAccess(&settingsFile); // Update the file access time & date
 
@@ -257,6 +263,18 @@ bool parseLine(char* str) {
     settings.dataPortBaud = d;
   else if (strcmp(settingName, "radioPortBaud") == 0)
     settings.radioPortBaud = d;
+  else if (strcmp(settingName, "outputSentenceGGA") == 0)
+    settings.outputSentenceGGA = d;
+  else if (strcmp(settingName, "outputSentenceGSA") == 0)
+    settings.outputSentenceGSA = d;
+  else if (strcmp(settingName, "outputSentenceGSV") == 0)
+    settings.outputSentenceGSV = d;
+  else if (strcmp(settingName, "outputSentenceRMC") == 0)
+    settings.outputSentenceRMC = d;
+  else if (strcmp(settingName, "outputSentenceGST") == 0)
+    settings.outputSentenceGST = d;
+  else if (strcmp(settingName, "enableSBAS") == 0)
+    settings.enableSBAS = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

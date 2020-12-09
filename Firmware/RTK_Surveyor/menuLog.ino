@@ -25,15 +25,11 @@ void menuLog()
 
     if (settings.zedOutputLogging == true)
     {
-      Serial.print(F("2) Toggle GNSS RAWX logging: "));
-      if (getRAWXSettings(COM_PORT_UART1) == 1) Serial.println(F("Enabled"));
-      else Serial.println(F("Disabled"));
-
-      Serial.print(F("3) Update file timestamp with each write: "));
+      Serial.print(F("2) Update file timestamp with each write: "));
       if (settings.frequentFileAccessTimestamps == true) Serial.println(F("Enabled"));
       else Serial.println(F("Disabled"));
 
-      Serial.print(F("4) Set max logging time: "));
+      Serial.print(F("3) Set max logging time: "));
       Serial.print(settings.maxLogTime_minutes);
       Serial.println(F(" minutes"));
     }
@@ -52,24 +48,8 @@ void menuLog()
     else if (settings.zedOutputLogging == true)
     {
       if (incoming == '2')
-      {
-        if (getRAWXSettings(COM_PORT_UART1) == 1)
-        {
-          //Disable
-          settings.gnssRAWOutput = false;
-          myGPS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1);
-        }
-        else
-        {
-          //Enable
-          settings.gnssRAWOutput = true;
-          myGPS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1);
-        }
-        myGPS.saveConfiguration(); //Save the current settings to flash and BBR
-      }
-      else if (incoming == '3')
         settings.frequentFileAccessTimestamps ^= 1;
-      else if (incoming == '4')
+      else if (incoming == '3')
       {
         Serial.print(F("Enter max minutes to log data: "));
         int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds

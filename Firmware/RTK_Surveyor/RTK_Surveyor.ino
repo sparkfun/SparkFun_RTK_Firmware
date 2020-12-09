@@ -23,15 +23,12 @@
     Text menu interactions
 
   Main Menu (Display MAC address / broadcast name):
-    (Done) GNSS - Configure measurement rate, reset module
-    (Done) Log - Log to SD, enable/disable RAWX
+    (Done) GNSS - Configure measurement rate, enable/disable common NMEA sentences, RAWX, SBAS
+    (Done) Log - Log to SD
     (Done) Base - Enter fixed coordinates, survey-in settings
+    (Done) Ports - Configure Radio and Data port baud rates
     (Done) Test menu
 
-  Configure baud rates of Radio and Data ports
-  Move RAWX to GNSS menu
-  Enable/disable NMEA setences
-  Disable/enable SBAS
   Enable various debug outputs sent over BT
 
 */

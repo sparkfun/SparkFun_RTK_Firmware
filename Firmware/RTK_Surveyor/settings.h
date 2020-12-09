@@ -63,6 +63,8 @@ struct struct_settings {
   double fixedLat = 0.0;
   double fixedLong = 0.0;
   double fixedAltitude = 0.0;
+  uint32_t dataPortBaud = 115200; //Default to 115200bps
+  uint32_t radioPortBaud = 57600; //Default to 57600bps to support connection to SiK1000 radios
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

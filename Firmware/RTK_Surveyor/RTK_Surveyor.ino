@@ -28,6 +28,12 @@
     (Done) Base - Enter fixed coordinates, survey-in settings
     (Done) Test menu
 
+  Configure baud rates of Radio and Data ports
+  Move RAWX to GNSS menu
+  Enable/disable NMEA setences
+  Disable/enable SBAS
+  Enable various debug outputs sent over BT
+
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -342,7 +348,6 @@ void updateDisplay()
       oled.setCursor(16, 20); //x, y
       oled.print(":");
       float hpa = myGPS.getHorizontalAccuracy() / 10000.0;
-      Serial.printf("hpa: %03f\n", hpa);
       if (hpa > 30.0)
       {
         oled.print(">30");
@@ -365,8 +370,15 @@ void updateDisplay()
       oled.drawIcon(2, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
       oled.setCursor(16, 36); //x, y
       oled.print(":");
-      oled.print(myGPS.getSIV());
 
+      if (myGPS.getFixType() == 0) //0 = No Fix
+      {
+        oled.print("0");
+      }
+      else
+      {
+        oled.print(myGPS.getSIV());
+      }
 
       oled.display();
     }

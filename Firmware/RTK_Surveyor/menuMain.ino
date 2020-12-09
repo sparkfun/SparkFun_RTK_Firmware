@@ -19,6 +19,8 @@ void menuMain()
 
     Serial.println(F("3) Configure Base"));
 
+    Serial.println(F("4) Configure Ports"));
+
     Serial.println(F("r) Reset all settings to default"));
 
     Serial.println(F("t) Test menu"));
@@ -33,6 +35,8 @@ void menuMain()
       menuLog();
     else if (incoming == '3')
       menuBase();
+    else if (incoming == '4')
+      menuPorts();
     else if (incoming == 'r')
     {
       Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));

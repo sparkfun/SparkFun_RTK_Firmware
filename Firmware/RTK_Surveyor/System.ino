@@ -198,15 +198,16 @@ bool configureUbloxModule()
   //response &= myGPS.setAutoPVT(true, false);    //Tell the GPS to "send" each solution and the lib not to update stale data implicitly
   //response &= myGPS.setAutoPVT(false); //Turn off PVT
 
-  if (getSerialRate(COM_PORT_UART1) != 115200)
+  if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
     Serial.println("Updating UART1 rate");
-    myGPS.setSerialRate(115200, COM_PORT_UART1); //Set UART1 to 115200
+
+    myGPS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Set UART1 to 115200
   }
-  if (getSerialRate(COM_PORT_UART2) != 57600)
+  if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud)
   {
     Serial.println("Updating UART2 rate");
-    myGPS.setSerialRate(57600, COM_PORT_UART2); //Set UART2 to 57600 to match SiK telemetry radio firmware default
+    myGPS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Set UART2 to 57600 to match SiK telemetry radio firmware default
   }
 
   if (response == false)

@@ -106,8 +106,7 @@ bool configureUbloxModuleRover()
 
   response &= setNMEASettings(); //Enable high precision NMEA and extended sentences
 
-  //Is SBAS causing weird NMEA failures once we are in RTK mode?
-  //response &= setSBAS(false); //Disable SBAS. Work around for RTK LED not working in v1.13 firmware.
+  response &= setSBAS(false); //Disable SBAS. Work around for RTK LED not working in v1.13 firmware.
   
   return (response);
 }

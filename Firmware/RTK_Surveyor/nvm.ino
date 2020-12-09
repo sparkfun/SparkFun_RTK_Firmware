@@ -76,7 +76,6 @@ void recordSystemSettingsToFile()
     settingsFile.println("gnssRAWOutput=" + (String)settings.gnssRAWOutput);
     settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
     settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
-
     settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
     settingsFile.println("observationPositionAccuracy=" + (String)settings.observationPositionAccuracy);
     settingsFile.println("fixedBase=" + (String)settings.fixedBase);
@@ -87,6 +86,8 @@ void recordSystemSettingsToFile()
     settingsFile.println("fixedLat=" + (String)settings.fixedLat);
     settingsFile.println("fixedLong=" + (String)settings.fixedLong);
     settingsFile.println("fixedAltitude=" + (String)settings.fixedAltitude);
+    settingsFile.println("dataPortBaud=" + (String)settings.dataPortBaud);
+    settingsFile.println("radioPortBaud=" + (String)settings.radioPortBaud);
 
     updateDataFileAccess(&settingsFile); // Update the file access time & date
 
@@ -252,6 +253,10 @@ bool parseLine(char* str) {
     settings.fixedLong = d;
   else if (strcmp(settingName, "fixedAltitude") == 0)
     settings.fixedAltitude = d;
+  else if (strcmp(settingName, "dataPortBaud") == 0)
+    settings.dataPortBaud = d;
+  else if (strcmp(settingName, "radioPortBaud") == 0)
+    settings.radioPortBaud = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

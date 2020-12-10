@@ -28,8 +28,7 @@
     (Done) Base - Enter fixed coordinates, survey-in settings
     (Done) Ports - Configure Radio and Data port baud rates
     (Done) Test menu
-
-  Enable various debug outputs sent over BT
+    Enable various debug outputs sent over BT
 
 */
 

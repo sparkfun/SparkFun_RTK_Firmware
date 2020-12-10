@@ -10,8 +10,8 @@
 <grid distance="0.05" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.005" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
-<layer number="2" name="Horz/GND" color="1" fill="3" visible="no" active="yes"/>
-<layer number="15" name="Vert" color="4" fill="6" visible="no" active="yes"/>
+<layer number="2" name="Horz/GND" color="1" fill="3" visible="yes" active="yes"/>
+<layer number="15" name="Vert" color="4" fill="6" visible="yes" active="yes"/>
 <layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
 <layer number="17" name="Pads" color="2" fill="1" visible="yes" active="yes"/>
 <layer number="18" name="Vias" color="2" fill="1" visible="yes" active="yes"/>
@@ -21,34 +21,34 @@
 <layer number="22" name="bPlace" color="14" fill="1" visible="yes" active="yes"/>
 <layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
 <layer number="24" name="bOrigins" color="15" fill="1" visible="yes" active="yes"/>
-<layer number="25" name="tNames" color="7" fill="1" visible="no" active="yes"/>
-<layer number="26" name="bNames" color="7" fill="1" visible="no" active="yes"/>
-<layer number="27" name="tValues" color="7" fill="1" visible="no" active="yes"/>
-<layer number="28" name="bValues" color="7" fill="1" visible="no" active="yes"/>
-<layer number="29" name="tStop" color="7" fill="3" visible="no" active="yes"/>
-<layer number="30" name="bStop" color="7" fill="6" visible="no" active="yes"/>
-<layer number="31" name="tCream" color="7" fill="4" visible="no" active="yes"/>
-<layer number="32" name="bCream" color="7" fill="5" visible="no" active="yes"/>
-<layer number="33" name="tFinish" color="6" fill="3" visible="no" active="yes"/>
-<layer number="34" name="bFinish" color="6" fill="6" visible="no" active="yes"/>
-<layer number="35" name="tGlue" color="7" fill="4" visible="no" active="yes"/>
-<layer number="36" name="bGlue" color="7" fill="5" visible="no" active="yes"/>
-<layer number="37" name="tTest" color="7" fill="1" visible="no" active="yes"/>
-<layer number="38" name="bTest" color="7" fill="1" visible="no" active="yes"/>
-<layer number="39" name="tKeepout" color="4" fill="11" visible="no" active="yes"/>
-<layer number="40" name="bKeepout" color="1" fill="11" visible="no" active="yes"/>
-<layer number="41" name="tRestrict" color="4" fill="10" visible="no" active="yes"/>
-<layer number="42" name="bRestrict" color="1" fill="10" visible="no" active="yes"/>
-<layer number="43" name="vRestrict" color="2" fill="10" visible="no" active="yes"/>
-<layer number="44" name="Drills" color="7" fill="1" visible="no" active="yes"/>
+<layer number="25" name="tNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="26" name="bNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="27" name="tValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="28" name="bValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="29" name="tStop" color="7" fill="3" visible="yes" active="yes"/>
+<layer number="30" name="bStop" color="7" fill="6" visible="yes" active="yes"/>
+<layer number="31" name="tCream" color="7" fill="4" visible="yes" active="yes"/>
+<layer number="32" name="bCream" color="7" fill="5" visible="yes" active="yes"/>
+<layer number="33" name="tFinish" color="6" fill="3" visible="yes" active="yes"/>
+<layer number="34" name="bFinish" color="6" fill="6" visible="yes" active="yes"/>
+<layer number="35" name="tGlue" color="7" fill="4" visible="yes" active="yes"/>
+<layer number="36" name="bGlue" color="7" fill="5" visible="yes" active="yes"/>
+<layer number="37" name="tTest" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="38" name="bTest" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="39" name="tKeepout" color="4" fill="11" visible="yes" active="yes"/>
+<layer number="40" name="bKeepout" color="1" fill="11" visible="yes" active="yes"/>
+<layer number="41" name="tRestrict" color="4" fill="10" visible="yes" active="yes"/>
+<layer number="42" name="bRestrict" color="1" fill="10" visible="yes" active="yes"/>
+<layer number="43" name="vRestrict" color="2" fill="10" visible="yes" active="yes"/>
+<layer number="44" name="Drills" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="45" name="Holes" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="46" name="Milling" color="3" fill="1" visible="no" active="yes"/>
-<layer number="47" name="Measures" color="7" fill="1" visible="no" active="yes"/>
-<layer number="48" name="Document" color="7" fill="1" visible="no" active="yes"/>
+<layer number="46" name="Milling" color="3" fill="1" visible="yes" active="yes"/>
+<layer number="47" name="Measures" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="48" name="Document" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="49" name="Reference" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="50" name="dxf" color="7" fill="1" visible="no" active="yes"/>
+<layer number="50" name="dxf" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="51" name="tDocu" color="6" fill="1" visible="yes" active="yes"/>
-<layer number="52" name="bDocu" color="7" fill="1" visible="no" active="yes"/>
+<layer number="52" name="bDocu" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="91" name="Nets" color="2" fill="1" visible="no" active="no"/>
 <layer number="92" name="Busses" color="1" fill="1" visible="no" active="no"/>
 <layer number="93" name="Pins" color="2" fill="1" visible="no" active="no"/>
@@ -188,9 +188,9 @@
 <board>
 <plain>
 <text x="2.794" y="108.839" size="1.27" layer="1" font="vector" ratio="15" rot="SR0" align="center">v15</text>
-<text x="64.77" y="68.58" size="1.778" layer="51" font="vector" ratio="15">Board thickness is 1.6mm</text>
-<text x="64.77" y="63.5" size="1.778" layer="51" font="vector" ratio="15">No clean process</text>
-<text x="64.77" y="66.04" size="1.778" layer="51" font="vector" ratio="15">4 Layer Board</text>
+<text x="74.93" y="68.58" size="1.778" layer="51" font="vector" ratio="15">Board thickness is 1.6mm</text>
+<text x="74.93" y="63.5" size="1.778" layer="51" font="vector" ratio="15">No clean process</text>
+<text x="74.93" y="66.04" size="1.778" layer="51" font="vector" ratio="15">4 Layer Board</text>
 <circle x="26.11" y="9.27" radius="1.5" width="0.1" layer="48"/>
 <circle x="31.11" y="9.27" radius="1.5" width="0.1" layer="48"/>
 <circle x="26.11" y="13.27" radius="1.5" width="0.1" layer="48"/>
@@ -235,6 +235,39 @@ Out</text>
 <text x="134.62" y="13.97" size="0.5" layer="51" font="vector" ratio="15" align="center">NA</text>
 <dimension x1="-9.144" y1="56.515" x2="59.944" y2="56.007" x3="25.4" y3="116.84" textsize="1.016" textratio="15" layer="47" dtype="horizontal" width="0.0762"/>
 <dimension x1="-11.684" y1="110.617" x2="-10.668" y2="0.111" x3="-11.557" y3="55.364" textsize="1.016" textratio="15" layer="47" dtype="vertical" width="0.0762"/>
+<text x="25.4" y="6.54" size="0.5" layer="51" ratio="20" align="center">Face to Lid
+LEDs this side</text>
+<text x="25.4" y="2" size="0.5" layer="51" ratio="20" rot="R180" align="center">Connectors</text>
+<wire x1="2.5908" y1="110.205" x2="48.2092" y2="110.205" width="0.2032" layer="20"/>
+<hole x="-3.0988" y="28.3337" drill="3.2004"/>
+<hole x="-3.0988" y="78.3463" drill="3.2004"/>
+<hole x="53.8988" y="78.3463" drill="3.2004"/>
+<hole x="53.8988" y="28.3337" drill="3.2004"/>
+<wire x1="-9.1092" y1="50.1777" x2="-3.175" y2="50.1777" width="0.2032" layer="20"/>
+<wire x1="-3.175" y1="56.5023" x2="-9.1092" y2="56.5023" width="0.2032" layer="20"/>
+<wire x1="-6.3119" y1="102.87" x2="2.5908" y2="110.205" width="0.2032" layer="51" curve="-72.045824"/>
+<wire x1="-9.1092" y1="56.5023" x2="-6.3119" y2="102.87" width="0.2032" layer="51" curve="-8.331372"/>
+<wire x1="-3.175" y1="50.1777" x2="-3.175" y2="56.5023" width="0.2032" layer="20" curve="180"/>
+<wire x1="59.9092" y1="50.1777" x2="53.975" y2="50.1777" width="0.2032" layer="20"/>
+<wire x1="53.975" y1="56.5023" x2="59.9092" y2="56.5023" width="0.2032" layer="20"/>
+<wire x1="53.975" y1="50.1777" x2="53.975" y2="56.5023" width="0.2032" layer="20" curve="-180"/>
+<wire x1="-8.128" y1="85.09" x2="-5.08" y2="85.09" width="0.2032" layer="20"/>
+<wire x1="-5.08" y1="85.09" x2="-5.08" y2="105.664" width="0.2032" layer="20"/>
+<wire x1="-9.1092" y1="56.5023" x2="-8.128" y2="85.09" width="0.2032" layer="20" curve="-5.381392"/>
+<wire x1="-5.08" y1="105.664" x2="2.5908" y2="110.205" width="0.2032" layer="20" curve="-52.405474"/>
+<wire x1="-3.6" y1="0.065" x2="54.4" y2="0.065" width="0.2032" layer="20"/>
+<wire x1="-3.6" y1="0.065" x2="-3.6" y2="3.34" width="0.2032" layer="20"/>
+<wire x1="-3.6" y1="3.34" x2="-5.35" y2="3.34" width="0.2032" layer="20"/>
+<wire x1="54.4" y1="0.065" x2="54.4" y2="3.34" width="0.2032" layer="20"/>
+<wire x1="54.4" y1="3.34" x2="56.1" y2="3.34" width="0.2032" layer="20"/>
+<wire x1="-5.35" y1="3.34" x2="-9.1092" y2="50.1777" width="0.2032" layer="20" curve="-7.756885"/>
+<wire x1="56.1" y1="3.34" x2="59.9092" y2="50.1777" width="0.2032" layer="20" curve="7.756885"/>
+<wire x1="57.1119" y1="102.87" x2="48.2092" y2="110.205" width="0.2032" layer="51" curve="72.045824"/>
+<wire x1="59.9092" y1="56.5023" x2="57.1119" y2="102.87" width="0.2032" layer="51" curve="8.331372"/>
+<wire x1="58.928" y1="85.09" x2="55.88" y2="85.09" width="0.2032" layer="20"/>
+<wire x1="55.88" y1="85.09" x2="55.88" y2="105.664" width="0.2032" layer="20"/>
+<wire x1="59.9092" y1="56.5023" x2="58.928" y2="85.09" width="0.2032" layer="20" curve="5.381392"/>
+<wire x1="55.88" y1="105.664" x2="48.2092" y2="110.205" width="0.2032" layer="20" curve="52.405474"/>
 </plain>
 <libraries>
 <library name="SparkFun-Resistors">
@@ -17506,7 +17539,7 @@ design rules under a new name.</description>
 <attribute name="NAME" x="25.4" y="-3.953" size="0.762" layer="25" align="center"/>
 <attribute name="PROD_ID" value="CONN-14122" x="25.4" y="6.207" size="1.778" layer="27" display="off"/>
 </element>
-<element name="U$2" library="SparkFun-Aesthetics" package="ORDERING_INSTRUCTIONS" value="SPECIAL_INSTRUCTIONS-ORDERING" x="63.5" y="81.28" smashed="yes"/>
+<element name="U$2" library="SparkFun-Aesthetics" package="ORDERING_INSTRUCTIONS" value="SPECIAL_INSTRUCTIONS-ORDERING" x="73.66" y="81.28" smashed="yes"/>
 <element name="C2" library="SparkFun-Capacitors" package="0603" value="1.0uF" x="30.48" y="38.1" smashed="yes" rot="R90">
 <attribute name="NAME" x="29.718" y="38.1" size="0.6096" layer="25" font="vector" ratio="20" rot="R90" align="bottom-center"/>
 <attribute name="PROD_ID" value="CAP-13930" x="30.48" y="38.1" size="1.778" layer="27" font="vector" ratio="15" rot="R90" display="off"/>

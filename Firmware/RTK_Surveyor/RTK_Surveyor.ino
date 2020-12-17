@@ -29,7 +29,6 @@
     (Done) Ports - Configure Radio and Data port baud rates
     (Done) Test menu
     Enable various debug outputs sent over BT
-
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -87,7 +86,8 @@ long startLogTime_minutes = 0; //Mark when we start logging so we can stop loggi
 WiFiClient caster;
 const char * ntrip_server_name = "SparkFun_RTK_Surveyor";
 
-long lastSentRTCM_ms = 0; //Time of last data pushed to socket
+unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
+unsigned long lastServerReport_ms = 0; //Time of last report of caster bytes sent
 int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
 
 uint32_t serverBytesSent = 0; //Just a running total
@@ -125,6 +125,10 @@ SFE_UBLOX_GPS_ADD myGPS;
 //u-blox firmware to work correctly. We check the module firmware at startup but
 //don't prevent operation if firmware is mismatched.
 char latestZEDFirmware[] = "FWVER=HPG 1.13";
+
+//Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings 
+//This array holds the payload data bytes. Global so that we can use between config functions.
+uint8_t settingPayload[MAX_PAYLOAD_SIZE]; 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -143,14 +147,17 @@ const int resolution = 8;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include "BluetoothSerial.h"
 BluetoothSerial SerialBT;
+#include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
 
 HardwareSerial GPS(2);
 #define RXD2 16
 #define TXD2 17
 
-#define SERIAL_SIZE_RX 16384 //Using a large buffer. This might be much bigger than needed but the ESP32 has enough RAM
+#define SERIAL_SIZE_RX 4096 //Reduced from 16384 to make room for WiFi/NTRIP server capabilities
 uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading F9P
 uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
+TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //External Display
@@ -279,6 +286,13 @@ void loop()
   if (baseState == BASE_SURVEYING_IN_NOTSTARTED || baseState == BASE_SURVEYING_IN_SLOW || baseState == BASE_SURVEYING_IN_FAST)
   {
     updateSurveyInStatus();
+  }
+  else if (baseState == BASE_TRANSMITTING)
+  {
+    if(settings.enableNtripServer == true)
+    {
+      updateNtripServer();
+    }
   }
   else if (baseState == BASE_OFF)
   {

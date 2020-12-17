@@ -43,7 +43,6 @@ bool updateSurveyInStatus()
     } //baseState = Surveying In Not started
     else
     {
-
       bool response = myGPS.getSurveyStatus(2000); //Query module for SVIN status with 2000ms timeout (req can take a long time)
       if (response == true)
       {
@@ -135,64 +134,52 @@ bool configureUbloxModuleBase()
   digitalWrite(positionAccuracyLED_10cm, LOW);
   digitalWrite(positionAccuracyLED_100cm, LOW);
 
+  //In base mode we force 1Hz
+  if (myGPS.getNavigationFrequency() != 1)
+  {
+    response &= myGPS.setNavigationFrequency(1); //Set output in Hz
+  }
+
   // Set dynamic model
   if (myGPS.getDynamicModel() != DYN_MODEL_STATIONARY)
   {
-    if (myGPS.setDynamicModel(DYN_MODEL_STATIONARY) == false)
-    {
+    response &= myGPS.setDynamicModel(DYN_MODEL_STATIONARY);
+    if (response == false)
       Serial.println(F("setDynamicModel failed!"));
-      return (false);
-    }
   }
 
-  //In base mode the Surveyor should output RTCM over UART1, UART2, and USB ports:
+  //In base mode the Surveyor should output RTCM over UART2 and I2C ports:
   //(Primary) UART2 in case the Surveyor is connected via radio to rover
+  //(Optional) I2C in case user wants base to connect to WiFi and NTRIP Serve to Caster
   //(Seconday) USB in case the Surveyor is used as an NTRIP caster
   //(Tertiary) UART1 in case Surveyor is sending RTCM to phone that is then NTRIP caster
-  if (getRTCMSettings(UBX_RTCM_1005, COM_PORT_UART2) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_UART2, 1); //Enable message 1005 to output through UART2, message every second
-  if (getRTCMSettings(UBX_RTCM_1074, COM_PORT_UART2) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_UART2, 1);
-  if (getRTCMSettings(UBX_RTCM_1084, COM_PORT_UART2) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_UART2, 1);
-  if (getRTCMSettings(UBX_RTCM_1094, COM_PORT_UART2) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_UART2, 1);
-  if (getRTCMSettings(UBX_RTCM_1124, COM_PORT_UART2) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_UART2, 1);
-  if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_UART2) != 10)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 10); //Enable message every 10 seconds
+  response &= enableRTCMSentences(COM_PORT_UART2);
+  response &= enableRTCMSentences(COM_PORT_UART1);
+  response &= enableRTCMSentences(COM_PORT_USB);
 
-  if (getRTCMSettings(UBX_RTCM_1005, COM_PORT_UART1) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_UART1, 1); //Enable message 1005 to output through UART2, message every second
-  if (getRTCMSettings(UBX_RTCM_1074, COM_PORT_UART1) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_UART1, 1);
-  if (getRTCMSettings(UBX_RTCM_1084, COM_PORT_UART1) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_UART1, 1);
-  if (getRTCMSettings(UBX_RTCM_1094, COM_PORT_UART1) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_UART1, 1);
-  if (getRTCMSettings(UBX_RTCM_1124, COM_PORT_UART1) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_UART1, 1);
-  if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_UART1) != 10)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART1, 10); //Enable message every 10 seconds
+  if (settings.enableNtripServer == true)
+  {
+    //Turn on RTCM over I2C port so that we can harvest RTCM over I2C and send out over WiFi
+    //This is easier than parsing over UART because the library handles the frame detection
 
-  if (getRTCMSettings(UBX_RTCM_1005, COM_PORT_USB) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_USB, 1); //Enable message 1005 to output through UART2, message every second
-  if (getRTCMSettings(UBX_RTCM_1074, COM_PORT_USB) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_USB, 1);
-  if (getRTCMSettings(UBX_RTCM_1084, COM_PORT_USB) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_USB, 1);
-  if (getRTCMSettings(UBX_RTCM_1094, COM_PORT_USB) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_USB, 1);
-  if (getRTCMSettings(UBX_RTCM_1124, COM_PORT_USB) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_USB, 1);
-  if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_USB) != 10)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_USB, 10); //Enable message every 10 seconds
+#define OUTPUT_SETTING 14
+#define INPUT_SETTING 12
+    getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
+    if (settingPayload[OUTPUT_SETTING] != COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3 || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
+    {
+      response &= myGPS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //UBX+RTCM3 is not a valid option so we enable all three.
+      response &= myGPS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
+    }
+
+    //Disable any NMEA sentences
+    response &= disableNMEASentences(COM_PORT_I2C);
+
+    //Enable necessary RTCM sentences
+    response &= enableRTCMSentences(COM_PORT_I2C);
+  }
 
   if (response == false)
-  {
-    Serial.println(F("RTCM failed to enable."));
-    return (false);
-  }
+    Serial.println(F("RTCM settings failed to enable"));
 
   return (response);
 }
@@ -266,17 +253,17 @@ bool startFixedBase()
     int32_t majorAlt = settings.fixedAltitude * 100;
     int32_t minorAlt = ((settings.fixedAltitude * 100) - majorAlt) * 100;
 
-    Serial.printf("fixedLat (should be -105.184774720): %0.09f\n", settings.fixedLat);
-    Serial.printf("major (should be -1051847747): %lld\n", majorLat);
-    Serial.printf("minor (should be -20): %lld\n", minorLat);
-
-    Serial.printf("fixedLong (should be 40.090335429): %0.09f\n", settings.fixedLong);
-    Serial.printf("major (should be 400903354): %lld\n", majorLong);
-    Serial.printf("minor (should be 29): %lld\n", minorLong);
-
-    Serial.printf("fixedAlt (should be 1560.2284): %0.04f\n", settings.fixedAltitude);
-    Serial.printf("major (should be 156022): %ld\n", majorAlt);
-    Serial.printf("minor (should be 84): %ld\n", minorAlt);
+//    Serial.printf("fixedLat (should be -105.184774720): %0.09f\n", settings.fixedLat);
+//    Serial.printf("major (should be -1051847747): %lld\n", majorLat);
+//    Serial.printf("minor (should be -20): %lld\n", minorLat);
+//
+//    Serial.printf("fixedLong (should be 40.090335429): %0.09f\n", settings.fixedLong);
+//    Serial.printf("major (should be 400903354): %lld\n", majorLong);
+//    Serial.printf("minor (should be 29): %lld\n", minorLong);
+//
+//    Serial.printf("fixedAlt (should be 1560.2284): %0.04f\n", settings.fixedAltitude);
+//    Serial.printf("major (should be 156022): %ld\n", majorAlt);
+//    Serial.printf("minor (should be 84): %ld\n", minorAlt);
 
     response = myGPS.setStaticPosition(
                  majorLong, minorLong,
@@ -293,6 +280,133 @@ bool startFixedBase()
   return (response);
 }
 
+//Call regularly to get data from u-blox module and send out over local WiFi
+//We make sure we are connected to WiFi, then
+bool updateNtripServer()
+{
+  //Is WiFi setup?
+  if (WiFi.isConnected() == false)
+  {
+    //Turn off Bluetooth and turn on WiFi
+    endBluetooth();
+
+    Serial.printf("Connecting to local WiFi: %s\n", settings.wifiSSID);
+    WiFi.begin(settings.wifiSSID, settings.wifiPW);
+
+    //while(1) delay(10);
+
+    int maxTime = 10000;
+    long startTime = millis();
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(F("."));
+
+      if (millis() - startTime > maxTime)
+      {
+        Serial.println(F("Failed to connect to WiFi. Are you sure your WiFi credentials are correct?"));
+        return (false);
+      }
+    }
+    delay(10);
+
+  } //End WiFi connect check
+
+  //Are we connected to caster?
+  if (caster.connected() == false)
+  {
+    Serial.printf("Opening socket to %s\n", settings.casterHost);
+
+    if (caster.connect(settings.casterHost, settings.casterPort) == true) //Attempt connection
+    {
+      Serial.printf("Connected to %s:%d\n", settings.casterHost, settings.casterPort);
+
+      const int SERVER_BUFFER_SIZE  = 512;
+      char serverBuffer[SERVER_BUFFER_SIZE];
+
+      snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/%s\r\n\r\n",
+               settings.mountPointPW, settings.mountPoint, ntrip_server_name, "App Version 1.0");
+
+      Serial.printf("Sending credentials:\n%s\n", serverBuffer);
+      caster.write(serverBuffer, strlen(serverBuffer));
+
+      //Wait for response
+      unsigned long timeout = millis();
+      while (caster.available() == 0)
+      {
+        if (millis() - timeout > 5000)
+        {
+          Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
+          caster.stop();
+          delay(10);
+          return (false);
+        }
+        delay(10);
+      }
+
+      delay(10); //Yield to RTOS
+
+      //Check reply
+      bool connectionSuccess = false;
+      char response[512];
+      int responseSpot = 0;
+      while (caster.available())
+      {
+        response[responseSpot++] = caster.read();
+        if (strstr(response, "200") > 0) //Look for 'ICY 200 OK'
+          connectionSuccess = true;
+        if (responseSpot == 512 - 1) break;
+      }
+      response[responseSpot] = '\0';
+      Serial.printf("Caster responded with: %s\n", response);
+
+      if (connectionSuccess == false)
+      {
+        Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?", response);
+      }
+      else
+      {
+        //We're connected!
+        Serial.println(F("Connected to caster"));
+
+        //Reset flags
+        lastServerReport_ms = millis();
+        lastServerSent_ms = millis();
+        serverBytesSent = 0;
+      }
+    } //End attempt to connect
+    else
+    {
+      Serial.println(F("Failed to connect to caster"));
+      delay(10); //Give RTOS some time
+      return (false);
+    }
+  } //End connected == false
+
+
+  //Poll module for any new I2C data including RTCM
+  //These bytes will automatically be parsed by processRTCM() function
+  myGPS.checkUblox();
+
+  //Close socket if we don't have new data for 10s
+  //RTK2Go will ban your IP address if you abuse it. See http://www.rtk2go.com/how-to-get-your-ip-banned/
+  //So let's not leave the socket open/hanging without data
+  if (millis() - lastServerSent_ms > maxTimeBeforeHangup_ms)
+  {
+    Serial.println(F("RTCM timeout. Disconnecting from caster."));
+    caster.stop();
+    return (false);
+  }
+
+  //Report some statistics every 250
+  if (millis() - lastServerReport_ms > 250)
+  {
+    lastServerReport_ms += 250;
+    Serial.printf("Total bytes sent to caster: %d\n", serverBytesSent);
+  }
+
+  return (true);
+}
+
 //This function gets called from the SparkFun u-blox Arduino Library.
 //As each RTCM byte comes in you can specify what to do with it
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
@@ -302,6 +416,6 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
   {
     caster.write(incoming); //Send this byte to socket
     serverBytesSent++;
-    lastSentRTCM_ms = millis();
+    lastServerSent_ms = millis();
   }
 }

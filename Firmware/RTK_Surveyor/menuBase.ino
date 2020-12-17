@@ -161,12 +161,12 @@ void menuBase()
     }
     else if (incoming == 5 && settings.enableNtripServer == true)
     {
-      Serial.print(F("Enter new WiFi SSID: "));
+      Serial.print(F("Enter local WiFi SSID: "));
       readLine(settings.wifiSSID, sizeof(settings.wifiSSID), menuTimeout);
     }
     else if (incoming == 6 && settings.enableNtripServer == true)
     {
-      Serial.print(F("Enter new WiFi PW: "));
+      Serial.printf("Enter password for WiFi network %s: ", settings.wifiSSID);
       readLine(settings.wifiPW, sizeof(settings.wifiPW), menuTimeout);
     }
     else if (incoming == 7 && settings.enableNtripServer == true)
@@ -191,7 +191,7 @@ void menuBase()
     }
     else if (incoming == 10 && settings.enableNtripServer == true)
     {
-      Serial.print(F("Enter new Mount Point PW: "));
+      Serial.printf("Enter password for Mount Point %s: ", settings.mountPoint);
       readLine(settings.mountPointPW, sizeof(settings.mountPointPW), menuTimeout);
     }
     else if (incoming == STATUS_PRESSED_X)

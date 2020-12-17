@@ -64,45 +64,27 @@ bool configureUbloxModuleRover()
 {
   bool response = myGPS.disableSurveyMode(); //Disable survey
 
+  //Set output rate
+  if (myGPS.getNavigationFrequency() != settings.gnssMeasurementFrequency)
+  {
+    response &= myGPS.setNavigationFrequency(settings.gnssMeasurementFrequency); //Set output in Hz
+  }
+
+  // Set dynamic model
+  if (myGPS.getDynamicModel() != DYN_MODEL_PORTABLE)
+  {
+    response &= myGPS.setDynamicModel(DYN_MODEL_PORTABLE);
+    if (response == false)
+      Serial.println(F("setDynamicModel failed!"));
+  }
+
   //Disable RTCM sentences
-  if (getRTCMSettings(UBX_RTCM_1005, COM_PORT_UART2) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_UART2, 0);
-  if (getRTCMSettings(UBX_RTCM_1074, COM_PORT_UART2) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_UART2, 0);
-  if (getRTCMSettings(UBX_RTCM_1084, COM_PORT_UART2) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_UART2, 0);
-  if (getRTCMSettings(UBX_RTCM_1094, COM_PORT_UART2) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_UART2, 0);
-  if (getRTCMSettings(UBX_RTCM_1124, COM_PORT_UART2) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_UART2, 0);
-  if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_UART2) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0);
-
-  if (getRTCMSettings(UBX_RTCM_1005, COM_PORT_UART1) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_UART1, 0);
-  if (getRTCMSettings(UBX_RTCM_1074, COM_PORT_UART1) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_UART1, 0);
-  if (getRTCMSettings(UBX_RTCM_1084, COM_PORT_UART1) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_UART1, 0);
-  if (getRTCMSettings(UBX_RTCM_1094, COM_PORT_UART1) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_UART1, 0);
-  if (getRTCMSettings(UBX_RTCM_1124, COM_PORT_UART1) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_UART1, 0);
-  if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_UART1) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART1, 0);
-
-  if (getRTCMSettings(UBX_RTCM_1005, COM_PORT_USB) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_USB, 0);
-  if (getRTCMSettings(UBX_RTCM_1074, COM_PORT_USB) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_USB, 0);
-  if (getRTCMSettings(UBX_RTCM_1084, COM_PORT_USB) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_USB, 0);
-  if (getRTCMSettings(UBX_RTCM_1094, COM_PORT_USB) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_USB, 0);
-  if (getRTCMSettings(UBX_RTCM_1124, COM_PORT_USB) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_USB, 0);
-  if (getRTCMSettings(UBX_RTCM_1230, COM_PORT_USB) != 0)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_USB, 0);
+  response &= disableRTCMSentences(COM_PORT_I2C);
+  response &= disableRTCMSentences(COM_PORT_UART2);
+  response &= disableRTCMSentences(COM_PORT_UART1);
+  response &= disableRTCMSentences(COM_PORT_USB);
+  if (response == false)
+    Serial.println(F("Disable RTCM failed"));
 
   response &= setNMEASettings(); //Enable high precision NMEA and extended sentences
 

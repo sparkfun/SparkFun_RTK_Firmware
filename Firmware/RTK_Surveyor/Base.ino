@@ -292,3 +292,16 @@ bool startFixedBase()
 
   return (response);
 }
+
+//This function gets called from the SparkFun u-blox Arduino Library.
+//As each RTCM byte comes in you can specify what to do with it
+//Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
+void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
+{
+  if (caster.connected() == true)
+  {
+    caster.write(incoming); //Send this byte to socket
+    serverBytesSent++;
+    lastSentRTCM_ms = millis();
+  }
+}

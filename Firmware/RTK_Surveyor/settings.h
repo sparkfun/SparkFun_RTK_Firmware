@@ -71,6 +71,13 @@ struct struct_settings {
   bool outputSentenceRMC = true;
   bool outputSentenceGST = true;
   bool enableSBAS = false; //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
+  bool enableNtripServer = false;
+  char casterHost[50] = "rtk2go.com"; //It's free...
+  uint16_t casterPort = 2101;
+  char mountPoint[50] = "bldr_dwntwn2";
+  char mountPointPW[50] = "WR5wRo4H";
+  char wifiSSID[50] = "TRex";
+  char wifiPW[50] = "parachutes";  
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

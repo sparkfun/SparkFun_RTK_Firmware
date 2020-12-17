@@ -81,6 +81,19 @@ unsigned long lastDataLogSyncTime = 0; //Used to record to SD every half second
 long startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+//Connection settings to NTRIP Caster
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#include <WiFi.h>
+WiFiClient caster;
+const char * ntrip_server_name = "SparkFun_RTK_Surveyor";
+
+long lastSentRTCM_ms = 0; //Time of last data pushed to socket
+int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
+
+uint32_t serverBytesSent = 0; //Just a running total
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
 #include <Wire.h> //Needed for I2C to GNSS
 
 //GNSS configuration
@@ -186,6 +199,7 @@ void setup()
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   beginEEPROM();
 
+  delay(3000);
   //eepromErase();
 
   beginSD(); //Test if SD is present

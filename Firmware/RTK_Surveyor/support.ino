@@ -238,3 +238,76 @@ double getDouble(int numberOfSeconds)
   }
   return (largeNumber);
 }
+
+//Reads a line until the \n enter character is found
+//Returns STATUS_GETBYTE_TIMEOUT if input times out
+//Returns STATUS_PRESSED_X if user presses 'x'
+byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
+{
+  byte readLength = 0;
+  long startTime = millis();
+  while (readLength < bufferLength - 1)
+  {
+    //See if we timed out waiting for a line ending
+    if (readLength > 0 && (millis() - startTime) / 1000 >= numberOfSeconds)
+    {
+      Serial.println(F("Do you have line endings turned on?"));
+      break; //Timeout, but we have data
+    }
+
+    while (Serial.available() == 0) //Wait for user input
+    {
+      delay(10); //Yield to processor
+
+      if ( (millis() - startTime) / 1000 >= numberOfSeconds)
+      {
+        if (readLength == 0)
+        {
+          Serial.println(F("No user input received. Do you have line endings turned on?"));
+          return (STATUS_GETBYTE_TIMEOUT); //Timeout. No user input.
+        }
+        else if (readLength > 0)
+        {
+          break; //Timeout, but we have data
+        }
+      }
+    }
+    
+    byte incoming = Serial.read();
+
+    if (incoming == 0x08 || incoming == 0x7F) //Support backspace characters
+    {
+      if (readLength < 1)
+        continue;
+
+      readLength--;
+      buffer[readLength] = '\0'; //Put a terminator on the string in case we are finished
+
+      Serial.print((char)0x08); //Move back one space
+      Serial.print(F(" ")); //Put a blank there to erase the letter from the terminal
+      Serial.print((char)0x08); //Move back again
+
+      continue;
+    }
+
+    Serial.write(incoming); //Echo
+
+    if (incoming == '\r' || incoming == '\n')
+    {
+      Serial.println();
+      buffer[readLength] = '\0';
+      break;
+    }
+    else if (readLength == 0 && incoming == 'x')
+    {
+      return (STATUS_PRESSED_X);
+    }
+    else
+    {
+      buffer[readLength] = incoming;
+      readLength++;
+    }
+  }
+
+  return readLength;
+}

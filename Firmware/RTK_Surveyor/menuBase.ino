@@ -49,107 +49,152 @@ void menuBase()
       Serial.println(F(" meters"));
     }
 
+    Serial.print(F("4) Toggle NTRIP Server: "));
+    if (settings.enableNtripServer == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
+    if (settings.enableNtripServer == true)
+    {
+      Serial.print(F("5) Set WiFi SSID: "));
+      Serial.println(settings.wifiSSID);
+
+      Serial.print(F("6) Set WiFi PW: "));
+      Serial.println(settings.wifiPW);
+
+      Serial.print(F("7) Set Caster Address: "));
+      Serial.println(settings.casterHost);
+
+      Serial.print(F("8) Set Caster Port: "));
+      Serial.println(settings.casterPort);
+
+      Serial.print(F("9) Set Mountpoint: "));
+      Serial.println(settings.mountPoint);
+
+      Serial.print(F("10) Set Mountpoint PW: "));
+      Serial.println(settings.mountPointPW);
+    }
+
     Serial.println(F("x) Exit"));
 
-    byte incoming = getByteChoice(30); //Timeout after x seconds
+    int incoming = getNumber(30); //Timeout after x seconds
 
-    if (incoming == '1')
+    if (incoming == 1)
     {
       settings.fixedBase ^= 1;
     }
-    else if (settings.fixedBase == true)
+    else if (settings.fixedBase == true && incoming == 2)
     {
-      if (incoming == '2')
-      {
-        settings.fixedBaseCoordinateType ^= 1;
-      }
-      if (incoming == '3')
-      {
-        if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
-        {
-          Serial.println(F("Enter the fixed ECEF coordinates that will be used in Base mode:"));
-
-          Serial.print(F("ECEF X in meters (ex: -1280182.920): "));
-          double fixedEcefX = getDouble(menuTimeout); //Timeout after x seconds
-          settings.fixedEcefX = fixedEcefX;
-
-          Serial.print(F("\nECEF Y in meters (ex: -4716808.5807): "));
-          double fixedEcefY = getDouble(menuTimeout);
-          settings.fixedEcefY = fixedEcefY;
-
-          Serial.print(F("\nECEF Z in meters (ex: 4086669.6393): "));
-          double fixedEcefZ = getDouble(menuTimeout);
-          settings.fixedEcefZ = fixedEcefZ;
-
-          Serial.printf("\nX: %f\n", settings.fixedEcefX);
-          Serial.printf("Y: %f\n", settings.fixedEcefY);
-          Serial.printf("Z: %f\n", settings.fixedEcefZ);
-        }
-        else  if (settings.fixedBaseCoordinateType == COORD_TYPE_GEOGRAPHIC)
-        {
-          Serial.println(F("Enter the fixed Lat/Long/Altitude coordinates that will be used in Base mode:"));
-
-          Serial.print(F("Lat in degrees (ex: -105.184774720): "));
-          double fixedLat = getDouble(menuTimeout); //Timeout after x seconds
-          settings.fixedLat = fixedLat;
-
-          Serial.print(F("\nLong in degrees (ex: 40.090335429): "));
-          double fixedLong = getDouble(menuTimeout);
-          settings.fixedLong = fixedLong;
-
-          Serial.print(F("\nAltitude in meters (ex: 1560.2284): "));
-          double fixedAltitude = getDouble(menuTimeout);
-          settings.fixedAltitude = fixedAltitude;
-
-          Serial.printf("\nlat: %f\n", settings.fixedLat);
-          Serial.printf("long: %f\n", settings.fixedLong);
-          Serial.printf("altitude: %f\n", settings.fixedAltitude);
-        }
-      }
-      else if (incoming == 'x')
-        break;
-      else if (incoming == STATUS_GETBYTE_TIMEOUT)
-        break;
-      else
-        printUnknown(incoming);
+      settings.fixedBaseCoordinateType ^= 1;
     }
-    else if (settings.fixedBase == false)
+    else if (settings.fixedBase == true && incoming == 3)
     {
-      if (incoming == '2')
+      if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
       {
-        Serial.print(F("Enter the number of seconds for survey-in obseration time (60 to 600s): "));
-        int observationSeconds = getNumber(menuTimeout); //Timeout after x seconds
-        if (observationSeconds < 60 || observationSeconds > 60 * 10) //Arbitrary 10 minute limit
-        {
-          Serial.println(F("Error: observation seconds out of range"));
-        }
-        else
-        {
-          settings.observationSeconds = observationSeconds; //Recorded to NVM and file at main menu exit
-        }
-      }
-      else if (incoming == '3')
-      {
-        Serial.print(F("Enter the number of meters for survey-in required position accuracy (1.0 to 5.0m): "));
-        float observationPositionAccuracy = getDouble(menuTimeout); //Timeout after x seconds
-        if (observationPositionAccuracy < 1.0 || observationPositionAccuracy > 5.0) //Arbitrary 1m minimum
-        {
-          Serial.println(F("Error: observation positional accuracy requirement out of range"));
-        }
-        else
-        {
-          settings.observationPositionAccuracy = observationPositionAccuracy; //Recorded to NVM and file at main menu exit
-        }
-      }
-      else if (incoming == 'x')
-        break;
-      else if (incoming == STATUS_GETBYTE_TIMEOUT)
-        break;
-      else
-        printUnknown(incoming);
-    }
+        Serial.println(F("Enter the fixed ECEF coordinates that will be used in Base mode:"));
 
-    else if (incoming == 'x')
+        Serial.print(F("ECEF X in meters (ex: -1280182.920): "));
+        double fixedEcefX = getDouble(menuTimeout); //Timeout after x seconds
+        settings.fixedEcefX = fixedEcefX;
+
+        Serial.print(F("\nECEF Y in meters (ex: -4716808.5807): "));
+        double fixedEcefY = getDouble(menuTimeout);
+        settings.fixedEcefY = fixedEcefY;
+
+        Serial.print(F("\nECEF Z in meters (ex: 4086669.6393): "));
+        double fixedEcefZ = getDouble(menuTimeout);
+        settings.fixedEcefZ = fixedEcefZ;
+
+        Serial.printf("\nX: %f\n", settings.fixedEcefX);
+        Serial.printf("Y: %f\n", settings.fixedEcefY);
+        Serial.printf("Z: %f\n", settings.fixedEcefZ);
+      }
+      else  if (settings.fixedBaseCoordinateType == COORD_TYPE_GEOGRAPHIC)
+      {
+        Serial.println(F("Enter the fixed Lat/Long/Altitude coordinates that will be used in Base mode:"));
+
+        Serial.print(F("Lat in degrees (ex: -105.184774720): "));
+        double fixedLat = getDouble(menuTimeout); //Timeout after x seconds
+        settings.fixedLat = fixedLat;
+
+        Serial.print(F("\nLong in degrees (ex: 40.090335429): "));
+        double fixedLong = getDouble(menuTimeout);
+        settings.fixedLong = fixedLong;
+
+        Serial.print(F("\nAltitude in meters (ex: 1560.2284): "));
+        double fixedAltitude = getDouble(menuTimeout);
+        settings.fixedAltitude = fixedAltitude;
+
+        Serial.printf("\nlat: %f\n", settings.fixedLat);
+        Serial.printf("long: %f\n", settings.fixedLong);
+        Serial.printf("altitude: %f\n", settings.fixedAltitude);
+      }
+    }
+    else if (settings.fixedBase == false && incoming == 2)
+    {
+      Serial.print(F("Enter the number of seconds for survey-in obseration time (60 to 600s): "));
+      int observationSeconds = getNumber(menuTimeout); //Timeout after x seconds
+      if (observationSeconds < 60 || observationSeconds > 60 * 10) //Arbitrary 10 minute limit
+      {
+        Serial.println(F("Error: observation seconds out of range"));
+      }
+      else
+      {
+        settings.observationSeconds = observationSeconds; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (settings.fixedBase == false && incoming == 3)
+    {
+      Serial.print(F("Enter the number of meters for survey-in required position accuracy (1.0 to 5.0m): "));
+      float observationPositionAccuracy = getDouble(menuTimeout); //Timeout after x seconds
+      if (observationPositionAccuracy < 1.0 || observationPositionAccuracy > 5.0) //Arbitrary 1m minimum
+      {
+        Serial.println(F("Error: observation positional accuracy requirement out of range"));
+      }
+      else
+      {
+        settings.observationPositionAccuracy = observationPositionAccuracy; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 4)
+    {
+      settings.enableNtripServer ^= 1;
+    }
+    else if (incoming == 5 && settings.enableNtripServer == true)
+    {
+      Serial.print(F("Enter new WiFi SSID: "));
+      readLine(settings.wifiSSID, sizeof(settings.wifiSSID), menuTimeout);
+    }
+    else if (incoming == 6 && settings.enableNtripServer == true)
+    {
+      Serial.print(F("Enter new WiFi PW: "));
+      readLine(settings.wifiPW, sizeof(settings.wifiPW), menuTimeout);
+    }
+    else if (incoming == 7 && settings.enableNtripServer == true)
+    {
+      Serial.print(F("Enter new Caster Address: "));
+      readLine(settings.casterHost, sizeof(settings.casterHost), menuTimeout);
+    }
+    else if (incoming == 8 && settings.enableNtripServer == true)
+    {
+      Serial.print(F("Enter new Caster Port: "));
+
+      int casterPort = getNumber(menuTimeout); //Timeout after x seconds
+      if (casterPort < 1 || casterPort > 99999) //Arbitrary 99k max port #
+        Serial.println(F("Error: Caster Port out of range"));
+      else
+        settings.casterPort = casterPort; //Recorded to NVM and file at main menu exit
+    }
+    else if (incoming == 9 && settings.enableNtripServer == true)
+    {
+      Serial.print(F("Enter new Mount Point: "));
+      readLine(settings.mountPoint, sizeof(settings.mountPoint), menuTimeout);
+    }
+    else if (incoming == 10 && settings.enableNtripServer == true)
+    {
+      Serial.print(F("Enter new Mount Point PW: "));
+      readLine(settings.mountPointPW, sizeof(settings.mountPointPW), menuTimeout);
+    }
+    else if (incoming == STATUS_PRESSED_X)
       break;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)
       break;

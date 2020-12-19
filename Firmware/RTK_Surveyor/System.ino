@@ -215,9 +215,8 @@ bool configureUbloxModule()
   //Make sure the appropriate NMEA sentences are enabled
   response &= enableNMEASentences(COM_PORT_UART1);
 
-  response &= myGPS.setAutoPVT(true); //Tell the GPS to "send" each solution
-  //response &= myGPS.setAutoPVT(true, false);    //Tell the GPS to "send" each solution and the lib not to update stale data implicitly
-  //response &= myGPS.setAutoPVT(false); //Turn off PVT
+  response &= myGPS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
+  response &= myGPS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
 
   if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {

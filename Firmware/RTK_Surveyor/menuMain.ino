@@ -23,6 +23,9 @@ void menuMain()
 
     Serial.println(F("r) Reset all settings to default"));
 
+    if(binCount > 0)
+      Serial.println(F("f) Firmware upgrade"));
+
     Serial.println(F("t) Test menu"));
 
     Serial.println(F("x) Exit"));
@@ -57,6 +60,8 @@ void menuMain()
       else
         Serial.println(F("Reset aborted"));
     }
+    else if (incoming == 'f' && binCount > 0)
+      menuFirmware();
     else if (incoming == 't')
       menuTest();
     else if (incoming == 'x')

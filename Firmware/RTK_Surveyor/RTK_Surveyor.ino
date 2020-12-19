@@ -7,6 +7,7 @@
   and communicates with the ZED-F9P.
 
   Select the ESP32 Dev Module from the boards list. This maps the same pins to the ESP32-WROOM module.
+  Select 'Minimal SPIFFS (1.9MB App)' from the partition list. This will enable SD firmware updates.
 
   Special thanks to Avinab Malla for guidance on getting xTasks implemented.
 
@@ -29,6 +30,9 @@
     (Done) Ports - Configure Radio and Data port baud rates
     (Done) Test menu
     Enable various debug outputs sent over BT
+
+    when user exits wifi mode, turn BT back on
+    
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -170,6 +174,14 @@ TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kil
 MicroOLED oled(PIN_RESET, DC_JUMPER);
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//Firmware binaries loaded from SD
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#include <Update.h>
+int binCount = 0;
+char binFileNames[10][50];
+const char* forceFirmwareFileName = "RTK_Surveyor_Firmware_Force.bin"; //File that will be loaded at startup regardless of user input
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
@@ -206,10 +218,14 @@ void setup()
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   beginEEPROM();
 
-  delay(3000);
   //eepromErase();
 
   beginSD(); //Test if SD is present
+  if (online.microSD == true)
+  {
+    Serial.println(F("microSD online"));
+    scanForFirmware(); //See if SD card contains new firmware that should be loaded at startup
+  }
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
 
@@ -222,9 +238,6 @@ void setup()
   beginBT(); //Get MAC, start radio
 
   beginGNSS(); //Connect and configure ZED-F9P
-
-  if (online.microSD == true)
-    Serial.println(F("microSD card online"));
 
   Serial.flush(); //Complete any previous prints
 

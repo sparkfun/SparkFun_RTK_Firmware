@@ -60,7 +60,7 @@ uint8_t getByteChoice(int numberOfSeconds)
 void beginEEPROM()
 {
   if (EEPROM.begin(EEPROM_SIZE) == false)
-    Serial.println("beginEEPROM: Failed to initialize EEPROM");
+    Serial.println(F("beginEEPROM: Failed to initialize EEPROM"));
   else
     online.eeprom = true;
 }

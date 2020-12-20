@@ -8,7 +8,7 @@ void menuFirmware()
 
   if (binCount == 0)
   {
-    Serial.println("No valid binary files found.");
+    Serial.println(F("No valid binary files found."));
     delay(2000);
     return;
   }
@@ -137,7 +137,7 @@ void updateFromSD(char *firmwareFileName)
       {
         //Advance the bar
         barWidth++;
-        Serial.print("\n[");
+        Serial.print(F("\n["));
         for (int x = 0 ; x < barWidth ; x++)
           Serial.print("=");
         Serial.printf("%d%%", bytesWritten * 100 / updateSize);

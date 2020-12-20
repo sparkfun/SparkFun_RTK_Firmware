@@ -9,7 +9,7 @@ void menuLog()
     Serial.println(F("Menu: Logging Menu"));
 
     if (settings.enableSD && online.microSD)
-      Serial.println("microSD card is detected");
+      Serial.println(F("microSD card is detected"));
     else
     {
       beginSD(); //Test if SD is present
@@ -105,7 +105,7 @@ void beginDataLogging()
         }
         else
         {
-          Serial.println("beginDataLogging: No date/time available. No file created.");
+          Serial.println(F("beginDataLogging: No date/time available. No file created."));
           online.dataLogging = false;
           return;
         }

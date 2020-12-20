@@ -220,12 +220,12 @@ bool configureUbloxModule()
 
   if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
-    Serial.println("Updating UART1 rate");
+    Serial.println(F("Updating UART1 rate"));
     myGPS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Set UART1 to 115200
   }
   if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud)
   {
-    Serial.println("Updating UART2 rate");
+    Serial.println(F("Updating UART2 rate"));
     myGPS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Set UART2 to 57600 to match SiK telemetry radio firmware default
   }
 
@@ -242,7 +242,7 @@ bool configureUbloxModule()
     //Configure for rover mode
     if (configureUbloxModuleRover() == false)
     {
-      Serial.println("Rover config failed!");
+      Serial.println(F("Rover config failed!"));
       return (false);
     }
   }
@@ -251,7 +251,7 @@ bool configureUbloxModule()
     //Configure for base mode
     if (configureUbloxModuleBase() == false)
     {
-      Serial.println("Base config failed!");
+      Serial.println(F("Base config failed!"));
       return (false);
     }
   }
@@ -606,17 +606,17 @@ boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
 }
 
 //Call back for when BT connection event happens (connected/disconnect)
-//Used for updating the bluetoothState state machine
+//Used for updating the radioState state machine
 void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
-    Serial.println("Client Connected");
-    bluetoothState = BT_CONNECTED;
+    Serial.println(F("Client Connected"));
+    radioState = BT_CONNECTED;
     digitalWrite(bluetoothStatusLED, HIGH);
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
-    Serial.println("Client disconnected");
-    bluetoothState = BT_ON_NOCONNECTION;
+    Serial.println(F("Client disconnected"));
+    radioState = BT_ON_NOCONNECTION;
     digitalWrite(bluetoothStatusLED, LOW);
     lastBluetoothLEDBlink = millis();
   }

@@ -54,11 +54,11 @@ void beginDisplay()
 
     oled.setCursor(10, 2); //x, y
     oled.setFontType(0); //Set font to smallest
-    oled.print("SparkFun");
+    oled.print(F("SparkFun"));
 
     oled.setCursor(21, 13);
     oled.setFontType(1);
-    oled.print("RTK");
+    oled.print(F("RTK"));
 
     int surveyorTextY = 25;
     int surveyorTextX = 2;
@@ -122,16 +122,16 @@ void beginGNSS()
   //  {
   //    if (strcmp(myGPS.minfo.extension[1], latestZEDFirmware) != 0)
   //    {
-  //      Serial.print("The ZED-F9P appears to have outdated firmware. Found: ");
+  //      Serial.print(F("The ZED-F9P appears to have outdated firmware. Found: "));
   //      Serial.println(myGPS.minfo.extension[1]);
-  //      Serial.print("The Surveyor works best with ");
+  //      Serial.print(F("The Surveyor works best with "));
   //      Serial.println(latestZEDFirmware);
-  //      Serial.print("Please upgrade using u-center.");
+  //      Serial.print(F("Please upgrade using u-center."));
   //      Serial.println();
   //    }
   //    else
   //    {
-  //      Serial.println("ZED-F9P firmware is current");
+  //      Serial.println(F("ZED-F9P firmware is current"));
   //    }
   //  }
 
@@ -162,13 +162,13 @@ void beginBT()
   SerialBT.register_callback(btCallback);
   if (startBluetooth() == false)
   {
-    Serial.println("An error occurred initializing Bluetooth");
-    bluetoothState = BT_OFF;
+    Serial.println(F("An error occurred initializing Bluetooth"));
+    radioState = RADIO_OFF;
     digitalWrite(bluetoothStatusLED, LOW);
   }
   else
   {
-    bluetoothState = BT_ON_NOCONNECTION;
+    radioState = BT_ON_NOCONNECTION;
     digitalWrite(bluetoothStatusLED, HIGH);
     lastBluetoothLEDBlink = millis();
   }

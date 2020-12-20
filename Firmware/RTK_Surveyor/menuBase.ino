@@ -21,9 +21,9 @@ void menuBase()
       {
         Serial.print(F("3) Set ECEF X/Y/Z coordinates: "));
         Serial.print(settings.fixedEcefX, 4);
-        Serial.print("m, ");
+        Serial.print(F("m, "));
         Serial.print(settings.fixedEcefY, 4);
-        Serial.print("m, ");
+        Serial.print(F("m, "));
         Serial.print(settings.fixedEcefZ, 4);
         Serial.println(F("m"));
       }
@@ -31,9 +31,9 @@ void menuBase()
       {
         Serial.print(F("3) Set Lat/Long/Altitude coordinates: "));
         Serial.print(settings.fixedLat, 9);
-        Serial.print("°, ");
+        Serial.print(F("°, "));
         Serial.print(settings.fixedLong, 9);
-        Serial.print("°, ");
+        Serial.print(F("°, "));
         Serial.print(settings.fixedAltitude, 4);
         Serial.println(F("m"));
       }

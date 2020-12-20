@@ -14,33 +14,33 @@ bool updateRoverStatus()
       float f_accuracy = accuracy;
       f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
 
-      Serial.print("Rover Accuracy (m): ");
+      Serial.print(F("Rover Accuracy (m): "));
       Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
 
       if (f_accuracy <= 0.02)
       {
-        Serial.print(" 0.01m LED");
+        Serial.print(F(" 0.01m LED"));
         digitalWrite(positionAccuracyLED_1cm, HIGH);
         digitalWrite(positionAccuracyLED_10cm, HIGH);
         digitalWrite(positionAccuracyLED_100cm, HIGH);
       }
       else if (f_accuracy <= 0.100)
       {
-        Serial.print(" 0.1m LED");
+        Serial.print(F(" 0.1m LED"));
         digitalWrite(positionAccuracyLED_1cm, LOW);
         digitalWrite(positionAccuracyLED_10cm, HIGH);
         digitalWrite(positionAccuracyLED_100cm, HIGH);
       }
       else if (f_accuracy <= 1.0000)
       {
-        Serial.print(" 1m LED");
+        Serial.print(F(" 1m LED"));
         digitalWrite(positionAccuracyLED_1cm, LOW);
         digitalWrite(positionAccuracyLED_10cm, LOW);
         digitalWrite(positionAccuracyLED_100cm, HIGH);
       }
       else if (f_accuracy > 1.0)
       {
-        Serial.print(" No LEDs");
+        Serial.print(F(" No LEDs"));
         digitalWrite(positionAccuracyLED_1cm, LOW);
         digitalWrite(positionAccuracyLED_10cm, LOW);
         digitalWrite(positionAccuracyLED_100cm, LOW);
@@ -49,10 +49,10 @@ bool updateRoverStatus()
     }
     else
     {
-      Serial.print("Rover Accuracy: ");
+      Serial.print(F("Rover Accuracy: "));
       Serial.print(accuracy);
       Serial.print(" ");
-      Serial.print("No lock. SIV: ");
+      Serial.print(F("No lock. SIV: "));
       Serial.print(myGPS.getSIV());
       Serial.println();
     }

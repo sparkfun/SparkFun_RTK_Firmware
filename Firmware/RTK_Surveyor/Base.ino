@@ -36,7 +36,7 @@ bool updateSurveyInStatus()
       }
       else
       {
-        Serial.print("Waiting for Horz Accuracy < 5 meters: ");
+        Serial.print(F("Waiting for Horz Accuracy < 5 meters: "));
         Serial.print(f_accuracy, 2); // Print the accuracy with 2 decimal places
         Serial.println();
       }
@@ -274,7 +274,7 @@ bool startFixedBase()
 
   if (response == true)
   {
-    Serial.println("Static Base Started Successfully");
+    Serial.println(F("Static Base Started Successfully"));
   }
 
   return (response);

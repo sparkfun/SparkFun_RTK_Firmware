@@ -12,14 +12,16 @@ typedef enum
   ERROR_GPS_CONFIG_FAIL,
 } t_errorNumber;
 
-//Bluetooth status LED goes from off (LED off), no connection (blinking), to connected (solid)
-enum BluetoothState
+//Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
+enum RadioState
 {
-  BT_OFF = 0,
-  BT_ON_NOCONNECTION,
+  RADIO_OFF = 0,
+  BT_ON_NOCONNECTION, //WiFi is off
   BT_CONNECTED,
+  WIFI_ON_NOCONNECTION, //BT is off
+  WIFI_CONNECTED,
 };
-volatile byte bluetoothState = BT_OFF;
+volatile byte radioState = RADIO_OFF;
 
 //Base status goes from Rover-Mode (LED off), surveying in (blinking), to survey is complete/trasmitting RTCM (solid)
 typedef enum

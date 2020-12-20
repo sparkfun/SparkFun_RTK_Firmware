@@ -253,7 +253,7 @@ void loop()
   myGPS.checkUblox(); //Regularly poll to get latest data and any RTCM
   
   //Update Bluetooth LED status
-  if (bluetoothState == BT_ON_NOCONNECTION)
+  if (radioState == BT_ON_NOCONNECTION)
   {
     if (millis() - lastBluetoothLEDBlink > 500)
     {
@@ -278,7 +278,7 @@ void loop()
     //If we are survey'd in, but switch is rover then disable survey
     if (configureUbloxModuleRover() == false)
     {
-      Serial.println("Rover config failed!");
+      Serial.println(F("Rover config failed!"));
     }
 
     digitalWrite(baseStatusLED, LOW);
@@ -290,7 +290,7 @@ void loop()
 
     if (configureUbloxModuleBase() == false)
     {
-      Serial.println("Base config failed!");
+      Serial.println(F("Base config failed!"));
     }
 
     startBluetooth(); //Restart Bluetooth with new name
@@ -363,7 +363,7 @@ void updateDisplay()
         oled.drawIcon(45, 0, Battery_3_Width, Battery_3_Height, Battery_3, sizeof(Battery_3), true);
 
       //Bluetooth Address or RSSI
-      if (bluetoothState == BT_CONNECTED)
+      if (radioState == BT_CONNECTED)
       {
         oled.drawIcon(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol, sizeof(BT_Symbol), true);
       }
@@ -389,7 +389,7 @@ void updateDisplay()
       float hpa = myGPS.getHorizontalAccuracy() / 10000.0;
       if (hpa > 30.0)
       {
-        oled.print(">30");
+        oled.print(F(">30"));
       }
       else if (hpa > 9.9)
       {

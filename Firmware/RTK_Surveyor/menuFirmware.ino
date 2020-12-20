@@ -114,6 +114,11 @@ void updateFromSD(char *firmwareFileName)
     byte dataArray[pageSize];
     int bytesWritten = 0;
 
+    //Indicate progress
+    int barWidthInCharacters = 20; //Width of progress bar, ie [###### % complete
+    long portionSize = updateSize / barWidthInCharacters;
+    int barWidth = 0;
+
     //Bulk write from the SD file to the EEPROM
     while (firmwareFile.available())
     {
@@ -127,7 +132,17 @@ void updateFromSD(char *firmwareFileName)
       else
         bytesWritten += bytesToWrite;
 
-      if (bytesWritten % (512 * 32) == 0) Serial.print("."); //Indicate progress
+      //Indicate progress
+      if (bytesWritten > barWidth * portionSize)
+      {
+        //Advance the bar
+        barWidth++;
+        Serial.print("\n[");
+        for (int x = 0 ; x < barWidth ; x++)
+          Serial.print("=");
+        Serial.printf("%d%%", bytesWritten * 100 / updateSize);
+        if (bytesWritten == updateSize) Serial.println("]");
+      }
     }
     Serial.println(F("\nFile move complete"));
 

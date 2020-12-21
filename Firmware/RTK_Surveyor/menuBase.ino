@@ -196,7 +196,7 @@ void menuBase()
     }
     else if (incoming == STATUS_PRESSED_X)
       break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);

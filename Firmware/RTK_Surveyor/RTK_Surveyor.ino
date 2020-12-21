@@ -29,9 +29,8 @@
     (Done) Base - Enter fixed coordinates, survey-in settings
     (Done) Ports - Configure Radio and Data port baud rates
     (Done) Test menu
+    (Done) Firmware upgrade menu
     Enable various debug outputs sent over BT
-
-    when user exits wifi mode, turn BT back on
 
 */
 
@@ -194,7 +193,6 @@ const byte menuTimeout = 15; //Menus will exit/timeout after this number of seco
 bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
 long systemTime_minutes = 0; //Used to test if logging is less than max minutes
 
-uint32_t lastBluetoothLEDBlink = 0;
 uint32_t lastRoverUpdate = 0;
 uint32_t lastBaseUpdate = 0;
 uint32_t lastBattUpdate = 0;
@@ -252,7 +250,7 @@ void setup()
   beginFuelGauge(); //Configure battery fuel guage monitor
   checkBatteryLevels(); //Force display so you see battery level immediately at power on
 
-  beginBT(); //Get MAC, start radio
+  beginBluetooth(); //Get MAC, start radio
 
   beginGNSS(); //Connect and configure ZED-F9P
 
@@ -289,7 +287,7 @@ void loop()
 
     baseState = BASE_OFF;
 
-    startBluetooth(); //Restart Bluetooth with 'Rover' name
+    beginBluetooth(); //Restart Bluetooth with 'Rover' name
 
     //If we are survey'd in, but switch is rover then disable survey
     if (configureUbloxModuleRover() == false)
@@ -311,7 +309,7 @@ void loop()
 
     //Restart Bluetooth with 'Base' name
     //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
-    startBluetooth();
+    beginBluetooth();
     
     baseState = BASE_SURVEYING_IN_NOTSTARTED; //Switch to new state
   }

@@ -153,14 +153,75 @@ void beginGNSS()
 }
 
 //Get MAC, start radio
-void beginBT()
+//Tack device's MAC address to end of friendly broadcast name
+//This allows multiple units to be on at same time
+bool beginBluetooth()
 {
+  //Shutdown any previous WiFi
+  caster.stop();
+  WiFi.mode(WIFI_OFF);
+  radioState = RADIO_OFF;
+
+  //Due to a known issue, you cannot call esp_bt_controller_enable() a second time
+  //to change the controller mode dynamically. To change controller mode, call
+  //esp_bt_controller_disable() and then call esp_bt_controller_enable() with the new mode.
+
+  //btStart(); //In v1.1 we do not turn off or on the bt radio. See WiFiBluetooSwitch sketch for more info:
+
   //Get unit MAC address
   esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
   unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
+  if (digitalRead(baseSwitch) == HIGH)
+    sprintf(deviceName, "Surveyor Rover-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Rover mode
+  else
+    sprintf(deviceName, "Surveyor Base-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Base mode
+
+  if (SerialBT.begin(deviceName) == false)
+  {
+    Serial.println(F("An error occurred initializing Bluetooth"));
+    radioState = RADIO_OFF;
+    digitalWrite(bluetoothStatusLED, LOW);
+    return (false);
+  }
   SerialBT.register_callback(btCallback);
-  startBluetooth();
+  SerialBT.setTimeout(1);
+
+  Serial.print(F("Bluetooth broadcasting as: "));
+  Serial.println(deviceName);
+
+  radioState = BT_ON_NOCONNECTION;
+  digitalWrite(bluetoothStatusLED, HIGH);
+
+  //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
+  //Reduced stack size from 10,000 to 1,000 to make room for WiFi/NTRIP server capabilities
+  if(F9PSerialReadTaskHandle == NULL) xTaskCreate(F9PSerialReadTask, "F9Read", 1000, NULL, 0, &F9PSerialReadTaskHandle);
+  if(F9PSerialWriteTaskHandle == NULL) xTaskCreate(F9PSerialWriteTask, "F9Write", 1000, NULL, 0, &F9PSerialWriteTaskHandle);
+
+  return (true);
+}
+
+//Turn off BT so we can go into WiFi mode
+bool endBluetooth()
+{
+  //Delete tasks if running
+//  if (F9PSerialReadTaskHandle != NULL)
+//  {
+//    vTaskDelete(F9PSerialReadTaskHandle);
+//    F9PSerialReadTaskHandle = NULL;
+//  }
+//  if (F9PSerialWriteTaskHandle != NULL)
+//  {
+//    vTaskDelete(F9PSerialWriteTaskHandle);
+//    F9PSerialWriteTaskHandle = NULL;
+//  }
+
+  SerialBT.flush();
+  SerialBT.disconnect();
+  //SerialBT.end(); //Do not call both end and custom stop
+  //customBTstop(); //Gracefully turn off Bluetooth so we can turn it back on if needed
+
+  Serial.println(F("Bluetooth turned off"));
 }
 
 //Set LEDs for output and configure PWM

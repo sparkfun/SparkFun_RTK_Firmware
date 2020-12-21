@@ -1,100 +1,32 @@
-//Tack device's MAC address to end of friendly broadcast name
-//This allows multiple units to be on at same time
-bool startBluetooth()
-{
-  //Shutdown any previous WiFi
-  caster.stop();
-  WiFi.mode(WIFI_OFF);
-  radioState = RADIO_OFF;
-
-  btStart();
-
-  if (digitalRead(baseSwitch) == HIGH)
-  {
-    //Rover mode
-    sprintf(deviceName, "Surveyor Rover-%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-  }
-  else
-  {
-    //Base mode
-    sprintf(deviceName, "Surveyor Base-%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-  }
-
-  if (SerialBT.begin(deviceName) == false)
-  {
-    Serial.println(F("An error occurred initializing Bluetooth"));
-    radioState = RADIO_OFF;
-    digitalWrite(bluetoothStatusLED, LOW);
-    return (false);
-  }
-
-  Serial.print(F("Bluetooth broadcasting as: "));
-  Serial.println(deviceName);
-
-  radioState = BT_ON_NOCONNECTION;
-  digitalWrite(bluetoothStatusLED, HIGH);
-  lastBluetoothLEDBlink = millis();
-
-  //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
-  //Reduced stack size from 10,000 to 1,000 to make room for WiFi/NTRIP server capabilities
-  xTaskCreate(F9PSerialReadTask, "F9Read", 1000, NULL, 0, &F9PSerialReadTaskHandle);
-  xTaskCreate(F9PSerialWriteTask, "F9Write", 1000, NULL, 0, &F9PSerialWriteTaskHandle);
-
-  SerialBT.setTimeout(1);
-
-  return (true);
-}
-
-//Turn off BT so we can go into WiFi mode
-bool endBluetooth()
-{
-  //Kill tasks if running
-  if (F9PSerialReadTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialReadTaskHandle);
-    F9PSerialReadTaskHandle = NULL;
-  }
-  if (F9PSerialWriteTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialWriteTaskHandle);
-    F9PSerialWriteTaskHandle = NULL;
-  }
-
-  //SerialBT.end();
-  customBTstop(); //Gracefully turn off Bluetooth so we can turn it back on if needed
-
-  Serial.println(F("Bluetooth turned off"));
-}
-
 //Starting and restarting BT is a problem. See issue: https://github.com/espressif/arduino-esp32/issues/2718
 //To work around the bug without modifying the core we create our own btStop() function with
 //the patch from github
-bool customBTstop() {
-  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE) {
-    return true;
-  }
-  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED) {
-    if (esp_bt_controller_disable()) {
-      log_e("BT Disable failed");
-      return false;
-    }
-    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED);
-  }
-  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
-  {
-    log_i("inited");
-    if (esp_bt_controller_deinit())
-    {
-      log_e("BT deint failed");
-      return false;
-    }
-    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
-      ;
-    return true;
-  }
-  log_e("BT Stop failed");
-  return false;
-}
+//bool customBTstop() {
+//  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE) {
+//    return true;
+//  }
+//  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED) {
+//    if (esp_bt_controller_disable()) {
+//      log_e("BT Disable failed");
+//      return false;
+//    }
+//    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED);
+//  }
+//  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
+//  {
+//    log_i("inited");
+//    if (esp_bt_controller_deinit())
+//    {
+//      log_e("BT deint failed");
+//      return false;
+//    }
+//    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
+//      ;
+//    return true;
+//  }
+//  log_e("BT Stop failed");
+//  return false;
+//}
 
 //If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
 //Task for writing to the GNSS receiver
@@ -641,7 +573,6 @@ void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
     Serial.println(F("Client disconnected"));
     radioState = BT_ON_NOCONNECTION;
     digitalWrite(bluetoothStatusLED, LOW);
-    lastBluetoothLEDBlink = millis();
   }
 }
 

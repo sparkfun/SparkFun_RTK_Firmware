@@ -290,7 +290,7 @@ bool updateNtripServer()
     //Turn off Bluetooth and turn on WiFi
     endBluetooth();
 
-    Serial.printf("Connecting to local WiFi: %s\n", settings.wifiSSID);
+    Serial.printf("Connecting to local WiFi: %s", settings.wifiSSID);
     WiFi.begin(settings.wifiSSID, settings.wifiPW);
 
     int maxTime = 10000;
@@ -304,8 +304,10 @@ bool updateNtripServer()
         Serial.println(F("\nFailed to connect to WiFi. Are you sure your WiFi credentials are correct?"));
         return (false);
       }
+
+      if(Serial.available()) return(false); //User has pressed a key
     }
-    delay(10);
+    Serial.println();
 
     radioState = WIFI_CONNECTED;
   } //End WiFi connect check
@@ -375,7 +377,7 @@ bool updateNtripServer()
     } //End attempt to connect
     else
     {
-      Serial.println(F("Failed to connect to caster"));
+      Serial.println(F("Failed to connect to caster. Are you sure your Caster address is correct?"));
       delay(10); //Give RTOS some time
       return (false);
     }

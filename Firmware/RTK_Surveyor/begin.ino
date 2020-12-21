@@ -160,18 +160,7 @@ void beginBT()
   unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
   SerialBT.register_callback(btCallback);
-  if (startBluetooth() == false)
-  {
-    Serial.println(F("An error occurred initializing Bluetooth"));
-    radioState = RADIO_OFF;
-    digitalWrite(bluetoothStatusLED, LOW);
-  }
-  else
-  {
-    radioState = BT_ON_NOCONNECTION;
-    digitalWrite(bluetoothStatusLED, HIGH);
-    lastBluetoothLEDBlink = millis();
-  }
+  startBluetooth();
 }
 
 //Set LEDs for output and configure PWM
@@ -198,4 +187,21 @@ void beginLEDs()
 
   ledcWrite(ledRedChannel, 0);
   ledcWrite(ledGreenChannel, 0);
+}
+
+//Configure the on board MAX17048 fuel gauge
+void beginFuelGauge()
+{
+  // Set up the MAX17048 LiPo fuel gauge
+  if (lipo.begin() == false)
+  {
+    Serial.println(F("MAX17048 not detected. Continuing."));
+    return;
+  }
+
+  //Always use hibernate mode
+  if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
+  if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
+
+  Serial.println(F("MAX17048 configuration complete"));
 }

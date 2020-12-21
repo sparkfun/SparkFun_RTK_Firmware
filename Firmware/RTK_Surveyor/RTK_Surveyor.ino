@@ -32,7 +32,7 @@
     Enable various debug outputs sent over BT
 
     when user exits wifi mode, turn BT back on
-    
+
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -130,9 +130,9 @@ SFE_UBLOX_GPS_ADD myGPS;
 //don't prevent operation if firmware is mismatched.
 char latestZEDFirmware[] = "FWVER=HPG 1.13";
 
-//Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings 
+//Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings
 //This array holds the payload data bytes. Global so that we can use between config functions.
-uint8_t settingPayload[MAX_PAYLOAD_SIZE]; 
+uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -145,6 +145,10 @@ const int freq = 5000;
 const int ledRedChannel = 0;
 const int ledGreenChannel = 1;
 const int resolution = 8;
+
+int battLevel = 0; //SOC measured from fuel gauge, in %. Used in multiple places (display, serial debug, log)
+float battVoltage = 0.0;
+float battChangeRate = 0.0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Hardware serial and BT buffers
@@ -188,7 +192,6 @@ uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
 char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
-int battLevel = 0; //SOC measured from fuel gauge, in %
 long systemTime_minutes = 0; //Used to test if logging is less than max minutes
 
 uint32_t lastBluetoothLEDBlink = 0;
@@ -199,6 +202,20 @@ uint32_t lastDisplayUpdate = 0;
 
 uint32_t lastTime = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+//Low frequency tasks
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#include <Ticker.h>
+
+SemaphoreHandle_t xI2CSemaphore;
+TickType_t i2cSemaphore_maxWait = 5;
+
+Ticker btLEDTask;
+float btLEDTaskPace = 0.5; //Seconds
+
+//Ticker battCheckTask;
+//float battCheckTaskPace = 2.0; //Seconds
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void setup()
 {
@@ -245,25 +262,23 @@ void setup()
 
   if (online.microSD == true && settings.zedOutputLogging == true) startLogTime_minutes = 0; //Mark now as start of logging
 
+  if (xI2CSemaphore == NULL)
+  {
+    xI2CSemaphore = xSemaphoreCreateMutex();
+    if (xI2CSemaphore != NULL)
+      xSemaphoreGive(xI2CSemaphore);  //Make the I2C hardware available for use
+  }
+
+  //Start tasks
+  btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
+  //battCheckTask.attach(battCheckTaskPace, checkBatteryLevels);
+
   //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
 }
 
 void loop()
 {
   myGPS.checkUblox(); //Regularly poll to get latest data and any RTCM
-  
-  //Update Bluetooth LED status
-  if (radioState == BT_ON_NOCONNECTION)
-  {
-    if (millis() - lastBluetoothLEDBlink > 500)
-    {
-      if (digitalRead(bluetoothStatusLED) == LOW)
-        digitalWrite(bluetoothStatusLED, HIGH);
-      else
-        digitalWrite(bluetoothStatusLED, LOW);
-      lastBluetoothLEDBlink = millis();
-    }
-  }
 
   //Check rover switch and configure module accordingly
   //When switch is set to '1' = BASE, pin will be shorted to ground
@@ -273,7 +288,8 @@ void loop()
     Serial.println(F("Rover Mode"));
 
     baseState = BASE_OFF;
-    startBluetooth(); //Restart Bluetooth with new name
+
+    startBluetooth(); //Restart Bluetooth with 'Rover' name
 
     //If we are survey'd in, but switch is rover then disable survey
     if (configureUbloxModuleRover() == false)
@@ -293,8 +309,10 @@ void loop()
       Serial.println(F("Base config failed!"));
     }
 
-    startBluetooth(); //Restart Bluetooth with new name
-
+    //Restart Bluetooth with 'Base' name
+    //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
+    startBluetooth();
+    
     baseState = BASE_SURVEYING_IN_NOTSTARTED; //Switch to new state
   }
 
@@ -304,7 +322,7 @@ void loop()
   }
   else if (baseState == BASE_TRANSMITTING)
   {
-    if(settings.enableNtripServer == true)
+    if (settings.enableNtripServer == true)
     {
       updateNtripServer();
     }

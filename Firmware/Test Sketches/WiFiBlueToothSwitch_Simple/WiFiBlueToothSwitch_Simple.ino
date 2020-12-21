@@ -13,7 +13,7 @@ BluetoothSerial SerialBT;
 
 #define AP_SSID  "esp32"
 
-#include "C:\Users\nathan.seidle\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.4\tools\sdk\include\bt\esp_bt.h"
+#include "esp_bt.h"
 
 void setup() {
   Serial.begin(115200);

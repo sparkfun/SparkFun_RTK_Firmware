@@ -2,6 +2,13 @@
 //This allows multiple units to be on at same time
 bool startBluetooth()
 {
+  //Shutdown any previous WiFi
+  caster.stop();
+  WiFi.mode(WIFI_OFF);
+  radioState = RADIO_OFF;
+
+  btStart();
+
   if (digitalRead(baseSwitch) == HIGH)
   {
     //Rover mode
@@ -14,13 +21,23 @@ bool startBluetooth()
   }
 
   if (SerialBT.begin(deviceName) == false)
+  {
+    Serial.println(F("An error occurred initializing Bluetooth"));
+    radioState = RADIO_OFF;
+    digitalWrite(bluetoothStatusLED, LOW);
     return (false);
+  }
+
   Serial.print(F("Bluetooth broadcasting as: "));
   Serial.println(deviceName);
 
+  radioState = BT_ON_NOCONNECTION;
+  digitalWrite(bluetoothStatusLED, HIGH);
+  lastBluetoothLEDBlink = millis();
+
   //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
   //Reduced stack size from 10,000 to 1,000 to make room for WiFi/NTRIP server capabilities
-  xTaskCreate(F9PSerialReadTask, "F9Read", 1000, NULL, 0, &F9PSerialReadTaskHandle); 
+  xTaskCreate(F9PSerialReadTask, "F9Read", 1000, NULL, 0, &F9PSerialReadTaskHandle);
   xTaskCreate(F9PSerialWriteTask, "F9Write", 1000, NULL, 0, &F9PSerialWriteTaskHandle);
 
   SerialBT.setTimeout(1);
@@ -33,9 +50,15 @@ bool endBluetooth()
 {
   //Kill tasks if running
   if (F9PSerialReadTaskHandle != NULL)
+  {
     vTaskDelete(F9PSerialReadTaskHandle);
+    F9PSerialReadTaskHandle = NULL;
+  }
   if (F9PSerialWriteTaskHandle != NULL)
+  {
     vTaskDelete(F9PSerialWriteTaskHandle);
+    F9PSerialWriteTaskHandle = NULL;
+  }
 
   //SerialBT.end();
   customBTstop(); //Gracefully turn off Bluetooth so we can turn it back on if needed
@@ -46,31 +69,31 @@ bool endBluetooth()
 //Starting and restarting BT is a problem. See issue: https://github.com/espressif/arduino-esp32/issues/2718
 //To work around the bug without modifying the core we create our own btStop() function with
 //the patch from github
-bool customBTstop(){
-    if(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE){
-        return true;
+bool customBTstop() {
+  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE) {
+    return true;
+  }
+  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED) {
+    if (esp_bt_controller_disable()) {
+      log_e("BT Disable failed");
+      return false;
     }
-    if(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED){
-        if (esp_bt_controller_disable()) {
-            log_e("BT Disable failed");
-            return false;
-        }
-        while(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED);
-    }
-    if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
+    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED);
+  }
+  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
+  {
+    log_i("inited");
+    if (esp_bt_controller_deinit())
     {
-        log_i("inited");
-        if (esp_bt_controller_deinit())
-        {
-            log_e("BT deint failed");
-            return false;
-        }
-        while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
-            ;
-        return true;
+      log_e("BT deint failed");
+      return false;
     }
-    log_e("BT Stop failed");
-    return false;
+    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
+      ;
+    return true;
+  }
+  log_e("BT Stop failed");
+  return false;
 }
 
 //If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
@@ -627,80 +650,63 @@ void updateBattLEDs()
 {
   if (millis() - lastBattUpdate > 5000)
   {
-    lastBattUpdate += 5000;
+    lastBattUpdate = millis();
 
     checkBatteryLevels();
   }
 }
 
 //When called, checks level of battery and updates the LED brightnesses
-//And outputs a serial message to USB and BT
+//And outputs a serial message to USB
 void checkBatteryLevels()
 {
-  String battMsg = "";
+  //long startTime = millis();
+  
+  //Check I2C semaphore
+//  if (xSemaphoreTake(xI2CSemaphore, i2cSemaphore_maxWait) == pdPASS)
+//  {
+    battLevel = lipo.getSOC();
+    battVoltage = lipo.getVoltage();
+    battChangeRate = lipo.getChangeRate();
+//    xSemaphoreGive(xI2CSemaphore);
+//  }
+  //Serial.printf("Batt time to update: %d\n", millis() - startTime);
 
-  battLevel = lipo.getSOC();
-
-  battMsg += "Batt (";
-  battMsg += battLevel;
-  battMsg += "%): ";
-
-  battMsg += "Voltage: ";
-  battMsg += lipo.getVoltage();
-  battMsg += "V";
-
-  if (lipo.getChangeRate() > 0)
-    battMsg += " Charging: ";
+  Serial.printf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
+  
+  char tempStr[25];
+  if (battChangeRate > 0)
+    sprintf(tempStr, "C");
   else
-    battMsg += " Discharging: ";
-  battMsg += lipo.getChangeRate();
-  battMsg += "%/hr ";
+    sprintf(tempStr, "Disc");
+  Serial.printf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
   if (battLevel < 10)
   {
-    battMsg += "RED uh oh!";
+    sprintf(tempStr, "RED uh oh!");
     ledcWrite(ledRedChannel, 255);
     ledcWrite(ledGreenChannel, 0);
   }
   else if (battLevel < 50)
   {
-    battMsg += "Yellow ok";
+    sprintf(tempStr, "Yellow ok");
     ledcWrite(ledRedChannel, 128);
     ledcWrite(ledGreenChannel, 128);
   }
   else if (battLevel >= 50)
   {
-    battMsg += "Green all good";
+    sprintf(tempStr, "Green all good");
     ledcWrite(ledRedChannel, 0);
     ledcWrite(ledGreenChannel, 255);
   }
   else
   {
-    battMsg += "No batt";
+    sprintf(tempStr, "No batt");
     ledcWrite(ledRedChannel, 10);
     ledcWrite(ledGreenChannel, 0);
   }
-  battMsg += "\n\r";
-  SerialBT.print(battMsg);
-  Serial.print(battMsg);
 
-}
-
-//Configure the on board MAX17048 fuel gauge
-void beginFuelGauge()
-{
-  // Set up the MAX17048 LiPo fuel gauge
-  if (lipo.begin() == false)
-  {
-    Serial.println(F("MAX17048 not detected. Continuing."));
-    return;
-  }
-
-  //Always use hibernate mode
-  if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
-  if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
-
-  Serial.println(F("MAX17048 configuration complete"));
+  Serial.printf("%s\n", tempStr);
 }
 
 //Ping an I2C device and see if it responds

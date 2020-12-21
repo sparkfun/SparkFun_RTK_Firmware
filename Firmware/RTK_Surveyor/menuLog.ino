@@ -106,6 +106,7 @@ void beginDataLogging()
         else
         {
           Serial.println(F("beginDataLogging: No date/time available. No file created."));
+          delay(1000); //Give the receiver time to get a lock
           online.dataLogging = false;
           return;
         }

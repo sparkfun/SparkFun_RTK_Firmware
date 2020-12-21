@@ -26,7 +26,7 @@
   Main Menu (Display MAC address / broadcast name):
     (Done) GNSS - Configure measurement rate, enable/disable common NMEA sentences, RAWX, SBAS
     (Done) Log - Log to SD
-    (Done) Base - Enter fixed coordinates, survey-in settings
+    (Done) Base - Enter fixed coordinates, survey-in settings, WiFi/Caster settings,
     (Done) Ports - Configure Radio and Data port baud rates
     (Done) Test menu
     (Done) Firmware upgrade menu

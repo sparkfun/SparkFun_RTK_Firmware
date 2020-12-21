@@ -19,7 +19,7 @@ bool updateSurveyInStatus()
   //Update the LEDs only every second or so
   if (millis() - lastBaseUpdate > 1000)
   {
-    lastBaseUpdate += 1000;
+    lastBaseUpdate = millis();
 
     if (baseState == BASE_SURVEYING_IN_NOTSTARTED)
     {
@@ -101,7 +101,7 @@ bool updateSurveyInStatus()
   {
     if (millis() - baseStateBlinkTime > 2000)
     {
-      baseStateBlinkTime += 2000;
+      baseStateBlinkTime = millis();
       Serial.println(F("Slow blink"));
 
       if (digitalRead(baseStatusLED) == LOW)
@@ -114,7 +114,7 @@ bool updateSurveyInStatus()
   {
     if (millis() - baseStateBlinkTime > 500)
     {
-      baseStateBlinkTime += 500;
+      baseStateBlinkTime = millis();
       Serial.println(F("Fast blink"));
 
       if (digitalRead(baseStatusLED) == LOW)
@@ -280,7 +280,7 @@ bool startFixedBase()
   return (response);
 }
 
-//Call regularly to get data from u-blox module and send out over local WiFi
+//Call regularly to push latest u-blox data out over local WiFi
 //We make sure we are connected to WiFi, then
 bool updateNtripServer()
 {
@@ -293,8 +293,6 @@ bool updateNtripServer()
     Serial.printf("Connecting to local WiFi: %s\n", settings.wifiSSID);
     WiFi.begin(settings.wifiSSID, settings.wifiPW);
 
-    //while(1) delay(10);
-
     int maxTime = 10000;
     long startTime = millis();
     while (WiFi.status() != WL_CONNECTED) {
@@ -303,12 +301,13 @@ bool updateNtripServer()
 
       if (millis() - startTime > maxTime)
       {
-        Serial.println(F("Failed to connect to WiFi. Are you sure your WiFi credentials are correct?"));
+        Serial.println(F("\nFailed to connect to WiFi. Are you sure your WiFi credentials are correct?"));
         return (false);
       }
     }
     delay(10);
 
+    radioState = WIFI_CONNECTED;
   } //End WiFi connect check
 
   //Are we connected to caster?
@@ -383,10 +382,6 @@ bool updateNtripServer()
   } //End connected == false
 
 
-  //Poll module for any new I2C data including RTCM
-  //These bytes will automatically be parsed by processRTCM() function
-  myGPS.checkUblox();
-
   //Close socket if we don't have new data for 10s
   //RTK2Go will ban your IP address if you abuse it. See http://www.rtk2go.com/how-to-get-your-ip-banned/
   //So let's not leave the socket open/hanging without data
@@ -400,7 +395,7 @@ bool updateNtripServer()
   //Report some statistics every 250
   if (millis() - lastServerReport_ms > 250)
   {
-    lastServerReport_ms += 250;
+    lastServerReport_ms = millis();
     Serial.printf("Total bytes sent to caster: %d\n", serverBytesSent);
   }
 

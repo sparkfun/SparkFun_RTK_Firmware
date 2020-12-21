@@ -4,7 +4,7 @@ bool updateRoverStatus()
   //Update the horizontal accuracy LEDs only every second or so
   if (millis() - lastRoverUpdate > 2000)
   {
-    lastRoverUpdate += 2000;
+    lastRoverUpdate = millis();
 
     uint32_t accuracy = myGPS.getHorizontalAccuracy(250);
 

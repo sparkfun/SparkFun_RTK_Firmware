@@ -94,19 +94,24 @@ void menuBase()
 
         Serial.print(F("ECEF X in meters (ex: -1280182.920): "));
         double fixedEcefX = getDouble(menuTimeout); //Timeout after x seconds
-        settings.fixedEcefX = fixedEcefX;
 
-        Serial.print(F("\nECEF Y in meters (ex: -4716808.5807): "));
-        double fixedEcefY = getDouble(menuTimeout);
-        settings.fixedEcefY = fixedEcefY;
+        //Progress with additional prompts only if the user enters valid data
+        if (fixedEcefX != STATUS_GETNUMBER_TIMEOUT && fixedEcefX != STATUS_PRESSED_X)
+        {
+          settings.fixedEcefX = fixedEcefX;
 
-        Serial.print(F("\nECEF Z in meters (ex: 4086669.6393): "));
-        double fixedEcefZ = getDouble(menuTimeout);
-        settings.fixedEcefZ = fixedEcefZ;
+          Serial.print(F("\nECEF Y in meters (ex: -4716808.5807): "));
+          double fixedEcefY = getDouble(menuTimeout);
+          if (fixedEcefY != STATUS_GETNUMBER_TIMEOUT && fixedEcefY != STATUS_PRESSED_X)
+          {
+            settings.fixedEcefY = fixedEcefY;
 
-        Serial.printf("\nX: %f\n", settings.fixedEcefX);
-        Serial.printf("Y: %f\n", settings.fixedEcefY);
-        Serial.printf("Z: %f\n", settings.fixedEcefZ);
+            Serial.print(F("\nECEF Z in meters (ex: 4086669.6393): "));
+            double fixedEcefZ = getDouble(menuTimeout);
+            if (fixedEcefZ != STATUS_GETNUMBER_TIMEOUT && fixedEcefZ != STATUS_PRESSED_X)
+              settings.fixedEcefZ = fixedEcefZ;
+          }
+        }
       }
       else  if (settings.fixedBaseCoordinateType == COORD_TYPE_GEOGRAPHIC)
       {
@@ -114,19 +119,24 @@ void menuBase()
 
         Serial.print(F("Lat in degrees (ex: -105.184774720): "));
         double fixedLat = getDouble(menuTimeout); //Timeout after x seconds
-        settings.fixedLat = fixedLat;
 
-        Serial.print(F("\nLong in degrees (ex: 40.090335429): "));
-        double fixedLong = getDouble(menuTimeout);
-        settings.fixedLong = fixedLong;
+        //Progress with additional prompts only if the user enters valid data
+        if (fixedLat != STATUS_GETNUMBER_TIMEOUT && fixedLat != STATUS_PRESSED_X)
+        {
+          settings.fixedLat = fixedLat;
 
-        Serial.print(F("\nAltitude in meters (ex: 1560.2284): "));
-        double fixedAltitude = getDouble(menuTimeout);
-        settings.fixedAltitude = fixedAltitude;
+          Serial.print(F("\nLong in degrees (ex: 40.090335429): "));
+          double fixedLong = getDouble(menuTimeout);
+          if (fixedLong != STATUS_GETNUMBER_TIMEOUT && fixedLong != STATUS_PRESSED_X)
+          {
+            settings.fixedLong = fixedLong;
 
-        Serial.printf("\nlat: %f\n", settings.fixedLat);
-        Serial.printf("long: %f\n", settings.fixedLong);
-        Serial.printf("altitude: %f\n", settings.fixedAltitude);
+            Serial.print(F("\nAltitude in meters (ex: 1560.2284): "));
+            double fixedAltitude = getDouble(menuTimeout);
+            if (fixedAltitude != STATUS_GETNUMBER_TIMEOUT && fixedAltitude != STATUS_PRESSED_X)
+              settings.fixedAltitude = fixedAltitude;
+          }
+        }
       }
     }
     else if (settings.fixedBase == false && incoming == 2)

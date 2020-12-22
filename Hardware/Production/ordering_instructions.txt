@@ -1,0 +1,12 @@
+panel size, 220x138mm
+PCB thickness, 0.8mm
+number of layers, 4
+soldermask color, Red
+silkscreen color, White
+oz copper, 1oz
+finish, HASL lead free
+stencils, none
+pcs per panel, 3
+min trace width, 0.1778mm / 0.0070in
+min drill size, 0.3048mm / 0.0120in
+filename to layer stackup 1/2/3/4: GTL, GL2, GL3, GBL

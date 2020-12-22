@@ -1,34 +1,32 @@
-
-uint8_t settingPayload[MAX_PAYLOAD_SIZE]; //This array holds the payload data bytes. Global so that we can use between config functions.
-
-//Tack device's MAC address to end of friendly broadcast name
-//This allows multiple units to be on at same time
-bool startBluetooth()
-{
-  if (digitalRead(baseSwitch) == HIGH)
-  {
-    //Rover mode
-    sprintf(deviceName, "Surveyor Rover-%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-  }
-  else
-  {
-    //Base mode
-    sprintf(deviceName, "Surveyor Base-%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-  }
-
-  if (SerialBT.begin(deviceName) == false)
-    return (false);
-  Serial.print("Bluetooth broadcasting as: ");
-  Serial.println(deviceName);
-
-  //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
-  xTaskCreate(F9PSerialReadTask, "F9Read", 10000, NULL, 0, NULL);
-  xTaskCreate(F9PSerialWriteTask, "F9Write", 10000, NULL, 0, NULL);
-
-  SerialBT.setTimeout(1);
-
-  return (true);
-}
+//Starting and restarting BT is a problem. See issue: https://github.com/espressif/arduino-esp32/issues/2718
+//To work around the bug without modifying the core we create our own btStop() function with
+//the patch from github
+//bool customBTstop() {
+//  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE) {
+//    return true;
+//  }
+//  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED) {
+//    if (esp_bt_controller_disable()) {
+//      log_e("BT Disable failed");
+//      return false;
+//    }
+//    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED);
+//  }
+//  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
+//  {
+//    log_i("inited");
+//    if (esp_bt_controller_deinit())
+//    {
+//      log_e("BT deint failed");
+//      return false;
+//    }
+//    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
+//      ;
+//    return true;
+//  }
+//  log_e("BT Stop failed");
+//  return false;
+//}
 
 //If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
 //Task for writing to the GNSS receiver
@@ -134,7 +132,6 @@ bool configureUbloxModule()
   getPortSettings(COM_PORT_UART1); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
   {
-    Serial.println("Updating UART1 configuration");
     response &= myGPS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX); //Set the UART1 to output NMEA and UBX
     response &= myGPS.setPortInput(COM_PORT_UART1, COM_TYPE_RTCM3); //Set the UART1 to input RTCM
   }
@@ -143,7 +140,6 @@ bool configureUbloxModule()
   getPortSettings(COM_PORT_SPI); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != 0 || settingPayload[INPUT_SETTING] != 0)
   {
-    Serial.println("Updating SPI configuration");
     response &= myGPS.setPortOutput(COM_PORT_SPI, 0); //Disable all protocols
     response &= myGPS.setPortInput(COM_PORT_SPI, 0); //Disable all protocols
   }
@@ -159,7 +155,7 @@ bool configureUbloxModule()
   if (settingPayload[OUTPUT_SETTING] != COM_TYPE_UBX || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
   {
     response &= myGPS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-    response &= myGPS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+    response &= myGPS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
   }
 
   //The USB port on the ZED may be used for RTCM to/from the computer (as an NTRIP caster or client)
@@ -171,42 +167,21 @@ bool configureUbloxModule()
     response &= myGPS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
   }
 
-  //Set output rate
-  if (myGPS.getNavigationFrequency() != gnssUpdateRate)
-  {
-    response &= myGPS.setNavigationFrequency(gnssUpdateRate); //Set output in Hz
-  }
-
   //Make sure the appropriate NMEA sentences are enabled
-  if (getNMEASettings(UBX_NMEA_GGA, COM_PORT_UART1) != 1)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
-  if (getNMEASettings(UBX_NMEA_GSA, COM_PORT_UART1) != 1)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
+  response &= enableNMEASentences(COM_PORT_UART1);
 
-  //When receiving 15+ satellite information, the GxGSV sentences can be a large amount of data
-  //If the update rate is >1Hz then this data can overcome the BT capabilities causing timeouts and lag
-  //So we set the GSV sentence to 1Hz regardless of update rate
-  if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) != gnssUpdateRate)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1, gnssUpdateRate);
+  response &= myGPS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
+  response &= myGPS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
 
-  if (getNMEASettings(UBX_NMEA_RMC, COM_PORT_UART1) != 1)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
-  if (getNMEASettings(UBX_NMEA_GST, COM_PORT_UART1) != 1)
-    response &= myGPS.enableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1);
-
-  response &= myGPS.setAutoPVT(true); //Tell the GPS to "send" each solution
-  //response &= myGPS.setAutoPVT(true, false);    //Tell the GPS to "send" each solution and the lib not to update stale data implicitly
-  //response &= myGPS.setAutoPVT(false); //Turn off PVT
-
-  if (getSerialRate(COM_PORT_UART1) != 115200)
+  if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
-    Serial.println("Updating UART1 rate");
-    myGPS.setSerialRate(115200, COM_PORT_UART1); //Set UART1 to 115200
+    Serial.println(F("Updating UART1 rate"));
+    myGPS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Set UART1 to 115200
   }
-  if (getSerialRate(COM_PORT_UART2) != 57600)
+  if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud)
   {
-    Serial.println("Updating UART2 rate");
-    myGPS.setSerialRate(57600, COM_PORT_UART2); //Set UART2 to 57600 to match SiK telemetry radio firmware default
+    Serial.println(F("Updating UART2 rate"));
+    myGPS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Set UART2 to 57600 to match SiK telemetry radio firmware default
   }
 
   if (response == false)
@@ -222,7 +197,7 @@ bool configureUbloxModule()
     //Configure for rover mode
     if (configureUbloxModuleRover() == false)
     {
-      Serial.println("Rover config failed!");
+      Serial.println(F("Rover config failed!"));
       return (false);
     }
   }
@@ -231,22 +206,124 @@ bool configureUbloxModule()
     //Configure for base mode
     if (configureUbloxModuleBase() == false)
     {
-      Serial.println("Base config failed!");
+      Serial.println(F("Base config failed!"));
       return (false);
     }
   }
 
   response &= myGPS.saveConfiguration(); //Save the current settings to flash and BBR
-
   if (response == false)
-  {
     Serial.println(F("Module failed to save."));
-    return (false);
-  }
 
-  return (true);
+  return (response);
 }
 
+
+//Enable the NMEA sentences, based on user's settings, on a given com port
+bool enableNMEASentences(uint8_t portType)
+{
+  bool response = true;
+  if (settings.outputSentenceGGA == true)
+    if (getNMEASettings(UBX_NMEA_GGA, portType) != 1)
+      response &= myGPS.enableNMEAMessage(UBX_NMEA_GGA, portType);
+    else if (settings.outputSentenceGGA == false)
+      if (getNMEASettings(UBX_NMEA_GGA, portType) != 0)
+        response &= myGPS.disableNMEAMessage(UBX_NMEA_GGA, portType);
+
+  if (settings.outputSentenceGSA == true)
+    if (getNMEASettings(UBX_NMEA_GSA, portType) != 1)
+      response &= myGPS.enableNMEAMessage(UBX_NMEA_GSA, portType);
+    else if (settings.outputSentenceGSA == false)
+      if (getNMEASettings(UBX_NMEA_GSA, portType) != 0)
+        response &= myGPS.disableNMEAMessage(UBX_NMEA_GSA, portType);
+
+  //When receiving 15+ satellite information, the GxGSV sentences can be a large amount of data
+  //If the update rate is >1Hz then this data can overcome the BT capabilities causing timeouts and lag
+  //So we set the GSV sentence to 1Hz regardless of update rate
+  if (settings.outputSentenceGSV == true)
+    if (getNMEASettings(UBX_NMEA_GSV, portType) != settings.gnssMeasurementFrequency)
+      response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, portType, settings.gnssMeasurementFrequency);
+    else if (settings.outputSentenceGSV == false)
+      if (getNMEASettings(UBX_NMEA_GSV, portType) != 0)
+        response &= myGPS.disableNMEAMessage(UBX_NMEA_GSV, portType);
+
+  if (settings.outputSentenceRMC == true)
+    if (getNMEASettings(UBX_NMEA_RMC, portType) != 1)
+      response &= myGPS.enableNMEAMessage(UBX_NMEA_RMC, portType);
+    else if (settings.outputSentenceRMC == false)
+      if (getNMEASettings(UBX_NMEA_RMC, portType) != 0)
+        response &= myGPS.disableNMEAMessage(UBX_NMEA_RMC, portType);
+
+  if (settings.outputSentenceGST == true)
+    if (getNMEASettings(UBX_NMEA_GST, portType) != 1)
+      response &= myGPS.enableNMEAMessage(UBX_NMEA_GST, portType);
+    else if (settings.outputSentenceGST == false)
+      if (getNMEASettings(UBX_NMEA_GST, portType) != 0)
+        response &= myGPS.disableNMEAMessage(UBX_NMEA_GST, portType);
+
+  return (response);
+}
+
+//Disable all the NMEA sentences on a given com port
+bool disableNMEASentences(uint8_t portType)
+{
+  bool response = true;
+  if (getNMEASettings(UBX_NMEA_GGA, portType) != 0)
+    response &= myGPS.disableNMEAMessage(UBX_NMEA_GGA, portType);
+  if (getNMEASettings(UBX_NMEA_GSA, portType) != 0)
+    response &= myGPS.disableNMEAMessage(UBX_NMEA_GSA, portType);
+  if (getNMEASettings(UBX_NMEA_GSV, portType) != 0)
+    response &= myGPS.disableNMEAMessage(UBX_NMEA_GSV, portType);
+  if (getNMEASettings(UBX_NMEA_RMC, portType) != 0)
+    response &= myGPS.disableNMEAMessage(UBX_NMEA_RMC, portType);
+  if (getNMEASettings(UBX_NMEA_GST, portType) != 0)
+    response &= myGPS.disableNMEAMessage(UBX_NMEA_GST, portType);
+  if (getNMEASettings(UBX_NMEA_GLL, portType) != 0)
+    response &= myGPS.disableNMEAMessage(UBX_NMEA_GLL, portType);
+  if (getNMEASettings(UBX_NMEA_VTG, portType) != 0)
+    response &= myGPS.disableNMEAMessage(UBX_NMEA_VTG, portType);
+
+  return (response);
+}
+
+//Enable RTCM sentences for a given com port
+bool enableRTCMSentences(uint8_t portType)
+{
+  bool response = true;
+  if (getRTCMSettings(UBX_RTCM_1005, portType) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, portType, 1); //Enable message 1005 to output through UART2, message every second
+  if (getRTCMSettings(UBX_RTCM_1074, portType) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, portType, 1);
+  if (getRTCMSettings(UBX_RTCM_1084, portType) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, portType, 1);
+  if (getRTCMSettings(UBX_RTCM_1094, portType) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, portType, 1);
+  if (getRTCMSettings(UBX_RTCM_1124, portType) != 1)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, portType, 1);
+  if (getRTCMSettings(UBX_RTCM_1230, portType) != 10)
+    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, portType, 10); //Enable message every 10 seconds
+
+  return (response);
+}
+
+//Disable RTCM sentences for a given com port
+bool disableRTCMSentences(uint8_t portType)
+{
+  bool response = true;
+  if (getRTCMSettings(UBX_RTCM_1005, portType) != 0)
+    response &= myGPS.disableRTCMmessage(UBX_RTCM_1005, portType);
+  if (getRTCMSettings(UBX_RTCM_1074, portType) != 0)
+    response &= myGPS.disableRTCMmessage(UBX_RTCM_1074, portType);
+  if (getRTCMSettings(UBX_RTCM_1084, portType) != 0)
+    response &= myGPS.disableRTCMmessage(UBX_RTCM_1084, portType);
+  if (getRTCMSettings(UBX_RTCM_1094, portType) != 0)
+    response &= myGPS.disableRTCMmessage(UBX_RTCM_1094, portType);
+  if (getRTCMSettings(UBX_RTCM_1124, portType) != 0)
+    response &= myGPS.disableRTCMmessage(UBX_RTCM_1124, portType);
+  if (getRTCMSettings(UBX_RTCM_1230, portType) != 0)
+    response &= myGPS.disableRTCMmessage(UBX_RTCM_1230, portType);
+  return (response);
+}
 
 //Given a portID, load the settings associated
 bool getPortSettings(uint8_t portID)
@@ -484,19 +561,18 @@ boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
 }
 
 //Call back for when BT connection event happens (connected/disconnect)
-//Used for updating the bluetoothState state machine
+//Used for updating the radioState state machine
 void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
-    Serial.println("Client Connected");
-    bluetoothState = BT_CONNECTED;
+    Serial.println(F("Client Connected"));
+    radioState = BT_CONNECTED;
     digitalWrite(bluetoothStatusLED, HIGH);
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
-    Serial.println("Client disconnected");
-    bluetoothState = BT_ON_NOCONNECTION;
+    Serial.println(F("Client disconnected"));
+    radioState = BT_ON_NOCONNECTION;
     digitalWrite(bluetoothStatusLED, LOW);
-    lastBluetoothLEDBlink = millis();
   }
 }
 
@@ -505,80 +581,63 @@ void updateBattLEDs()
 {
   if (millis() - lastBattUpdate > 5000)
   {
-    lastBattUpdate += 5000;
+    lastBattUpdate = millis();
 
     checkBatteryLevels();
   }
 }
 
 //When called, checks level of battery and updates the LED brightnesses
-//And outputs a serial message to USB and BT
+//And outputs a serial message to USB
 void checkBatteryLevels()
 {
-  String battMsg = "";
+  //long startTime = millis();
+  
+  //Check I2C semaphore
+//  if (xSemaphoreTake(xI2CSemaphore, i2cSemaphore_maxWait) == pdPASS)
+//  {
+    battLevel = lipo.getSOC();
+    battVoltage = lipo.getVoltage();
+    battChangeRate = lipo.getChangeRate();
+//    xSemaphoreGive(xI2CSemaphore);
+//  }
+  //Serial.printf("Batt time to update: %d\n", millis() - startTime);
 
-  battLevel = lipo.getSOC();
-
-  battMsg += "Batt (";
-  battMsg += battLevel;
-  battMsg += "%): ";
-
-  battMsg += "Voltage: ";
-  battMsg += lipo.getVoltage();
-  battMsg += "V";
-
-  if (lipo.getChangeRate() > 0)
-    battMsg += " Charging: ";
+  Serial.printf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
+  
+  char tempStr[25];
+  if (battChangeRate > 0)
+    sprintf(tempStr, "C");
   else
-    battMsg += " Discharging: ";
-  battMsg += lipo.getChangeRate();
-  battMsg += "%/hr ";
+    sprintf(tempStr, "Disc");
+  Serial.printf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
   if (battLevel < 10)
   {
-    battMsg += "RED uh oh!";
+    sprintf(tempStr, "RED uh oh!");
     ledcWrite(ledRedChannel, 255);
     ledcWrite(ledGreenChannel, 0);
   }
   else if (battLevel < 50)
   {
-    battMsg += "Yellow ok";
+    sprintf(tempStr, "Yellow ok");
     ledcWrite(ledRedChannel, 128);
     ledcWrite(ledGreenChannel, 128);
   }
   else if (battLevel >= 50)
   {
-    battMsg += "Green all good";
+    sprintf(tempStr, "Green all good");
     ledcWrite(ledRedChannel, 0);
     ledcWrite(ledGreenChannel, 255);
   }
   else
   {
-    battMsg += "No batt";
+    sprintf(tempStr, "No batt");
     ledcWrite(ledRedChannel, 10);
     ledcWrite(ledGreenChannel, 0);
   }
-  battMsg += "\n\r";
-  SerialBT.print(battMsg);
-  Serial.print(battMsg);
 
-}
-
-//Configure the on board MAX17048 fuel gauge
-void beginFuelGauge()
-{
-  // Set up the MAX17048 LiPo fuel gauge
-  if (lipo.begin() == false)
-  {
-    Serial.println(F("MAX17048 not detected. Continuing."));
-    return;
-  }
-
-  //Always use hibernate mode
-  if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
-  if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
-
-  Serial.println(F("MAX17048 configuration complete"));
+  Serial.printf("%s\n", tempStr);
 }
 
 //Ping an I2C device and see if it responds

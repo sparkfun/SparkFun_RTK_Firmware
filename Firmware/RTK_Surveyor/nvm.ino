@@ -68,6 +68,7 @@ void recordSystemSettingsToFile()
 
     settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
     settingsFile.println("rtkIdentifier=" + (String)settings.rtkIdentifier);
+    settingsFile.println("gnssMeasurementFrequency=" + (String)settings.gnssMeasurementFrequency);
     settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
     settingsFile.println("enableSD=" + (String)settings.enableSD);
     settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
@@ -75,6 +76,31 @@ void recordSystemSettingsToFile()
     settingsFile.println("gnssRAWOutput=" + (String)settings.gnssRAWOutput);
     settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
     settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
+    settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
+    settingsFile.println("observationPositionAccuracy=" + (String)settings.observationPositionAccuracy);
+    settingsFile.println("fixedBase=" + (String)settings.fixedBase);
+    settingsFile.println("fixedBaseCoordinateType=" + (String)settings.fixedBaseCoordinateType);
+    settingsFile.println("fixedEcefX=" + (String)settings.fixedEcefX);
+    settingsFile.println("fixedEcefY=" + (String)settings.fixedEcefY);
+    settingsFile.println("fixedEcefZ=" + (String)settings.fixedEcefZ);
+    settingsFile.println("fixedLat=" + (String)settings.fixedLat);
+    settingsFile.println("fixedLong=" + (String)settings.fixedLong);
+    settingsFile.println("fixedAltitude=" + (String)settings.fixedAltitude);
+    settingsFile.println("dataPortBaud=" + (String)settings.dataPortBaud);
+    settingsFile.println("radioPortBaud=" + (String)settings.radioPortBaud);
+    settingsFile.println("outputSentenceGGA=" + (String)settings.outputSentenceGGA);
+    settingsFile.println("outputSentenceGSA=" + (String)settings.outputSentenceGSA);
+    settingsFile.println("outputSentenceGSV=" + (String)settings.outputSentenceGSV);
+    settingsFile.println("outputSentenceRMC=" + (String)settings.outputSentenceRMC);
+    settingsFile.println("outputSentenceGST=" + (String)settings.outputSentenceGST);
+    settingsFile.println("enableSBAS=" + (String)settings.enableSBAS);
+    settingsFile.println("enableNtripServer=" + (String)settings.enableNtripServer);
+    settingsFile.println("casterHost=" + (String)settings.casterHost);
+    settingsFile.println("casterPort=" + (String)settings.casterPort);
+    settingsFile.println("mountPoint=" + (String)settings.mountPoint);
+    settingsFile.println("mountPointPW=" + (String)settings.mountPointPW);
+    settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
+    settingsFile.println("wifiPW=" + (String)settings.wifiPW);
 
     updateDataFileAccess(&settingsFile); // Update the file access time & date
 
@@ -175,12 +201,21 @@ bool parseLine(char* str) {
   //Serial.printf("s = %s\r\n", str);
   //Serial.flush();
 
-  // Convert string to double.
+  //Attempt to convert string to double.
   double d = strtod(str, &ptr);
-  if (str == ptr || *skipSpace(ptr)) return false;
 
   //Serial.printf("d = %lf\r\n", d);
   //Serial.flush();
+
+  char settingValue[50];
+  if (d == 0.0) //strtod failed, may be string or may be 0 but let it pass
+  {
+    sprintf(settingValue, "%s", str);
+  }
+  else
+  {
+    if (str == ptr || *skipSpace(ptr)) return false; //Check str pointer
+  }
 
   // Get setting name
   if (strcmp(settingName, "sizeOfSettings") == 0)
@@ -204,6 +239,8 @@ bool parseLine(char* str) {
   else if (strcmp(settingName, "rtkIdentifier") == 0)
     settings.rtkIdentifier = d;
 
+  else if (strcmp(settingName, "gnssMeasurementFrequency") == 0)
+    settings.gnssMeasurementFrequency = d;
   else if (strcmp(settingName, "printDebugMessages") == 0)
     settings.printDebugMessages = d;
   else if (strcmp(settingName, "enableSD") == 0)
@@ -218,6 +255,56 @@ bool parseLine(char* str) {
     settings.frequentFileAccessTimestamps = d;
   else if (strcmp(settingName, "maxLogTime_minutes") == 0)
     settings.maxLogTime_minutes = d;
+  else if (strcmp(settingName, "observationSeconds") == 0)
+    settings.observationSeconds = d;
+  else if (strcmp(settingName, "observationPositionAccuracy") == 0)
+    settings.observationPositionAccuracy = d;
+  else if (strcmp(settingName, "fixedBase") == 0)
+    settings.fixedBase = d;
+  else if (strcmp(settingName, "fixedBaseCoordinateType") == 0)
+    settings.fixedBaseCoordinateType = d;
+  else if (strcmp(settingName, "fixedEcefX") == 0)
+    settings.fixedEcefX = d;
+  else if (strcmp(settingName, "fixedEcefY") == 0)
+    settings.fixedEcefY = d;
+  else if (strcmp(settingName, "fixedEcefZ") == 0)
+    settings.fixedEcefZ = d;
+  else if (strcmp(settingName, "fixedLat") == 0)
+    settings.fixedLat = d;
+  else if (strcmp(settingName, "fixedLong") == 0)
+    settings.fixedLong = d;
+  else if (strcmp(settingName, "fixedAltitude") == 0)
+    settings.fixedAltitude = d;
+  else if (strcmp(settingName, "dataPortBaud") == 0)
+    settings.dataPortBaud = d;
+  else if (strcmp(settingName, "radioPortBaud") == 0)
+    settings.radioPortBaud = d;
+  else if (strcmp(settingName, "outputSentenceGGA") == 0)
+    settings.outputSentenceGGA = d;
+  else if (strcmp(settingName, "outputSentenceGSA") == 0)
+    settings.outputSentenceGSA = d;
+  else if (strcmp(settingName, "outputSentenceGSV") == 0)
+    settings.outputSentenceGSV = d;
+  else if (strcmp(settingName, "outputSentenceRMC") == 0)
+    settings.outputSentenceRMC = d;
+  else if (strcmp(settingName, "outputSentenceGST") == 0)
+    settings.outputSentenceGST = d;
+  else if (strcmp(settingName, "enableSBAS") == 0)
+    settings.enableSBAS = d;
+  else if (strcmp(settingName, "enableNtripServer") == 0)
+    settings.enableNtripServer = d;
+  else if (strcmp(settingName, "casterHost") == 0)
+    strcpy(settings.casterHost, settingValue);
+  else if (strcmp(settingName, "casterPort") == 0)
+    settings.casterPort = d;
+  else if (strcmp(settingName, "mountPoint") == 0)
+    strcpy(settings.mountPoint, settingValue);
+  else if (strcmp(settingName, "mountPointPW") == 0)
+    strcpy(settings.mountPointPW, settingValue);
+  else if (strcmp(settingName, "wifiSSID") == 0)
+    strcpy(settings.wifiSSID, settingValue);
+  else if (strcmp(settingName, "wifiPW") == 0)
+    strcpy(settings.wifiPW, settingValue);
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

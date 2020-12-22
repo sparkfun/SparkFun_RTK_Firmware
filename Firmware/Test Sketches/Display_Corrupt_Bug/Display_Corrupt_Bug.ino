@@ -212,7 +212,7 @@ void setup()
     Serial.println(F("Display online"));
 
     //Display splash of some sort
-    oled.drawIcon(1, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
+    //oled.drawIcon(1, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
     oled.display();
   }
 
@@ -225,11 +225,20 @@ void loop()
 {
   updateDisplay();
 
-  delay(1000); //Required if no other I2C or functions are called
+  delay(250); //Required if no other I2C or functions are called
 }
+
+int counter = 1;
 
 void updateDisplay()
 {
+    oled.setFontType(1); //Set font to type 1: 8x16
+
+    //3D Mean Accuracy
+    oled.setCursor(17, 19); //x, y: Squeeze against the colon
+    oled.print(":");
+    oled.print(counter++);
+    oled.display();
 
   //Update the display if connected
 //  if (online.display == true)
@@ -240,10 +249,10 @@ void updateDisplay()
 //      Serial.println("Display update");
 
       //oled.setFontType(1);
-      oled.setFontType(0); //Set font to smallest
-      oled.setCursor(0, 4);
-      oled.print("O");
-      oled.display();
+//      oled.setFontType(0); //Set font to smallest
+//      oled.setCursor(0, 4);
+//      oled.print("O");
+//      oled.display();
 
       //while(1);
     //}

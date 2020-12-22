@@ -14,21 +14,21 @@ void menuTest()
     Serial.println();
     Serial.println(F("Menu: Test Menu"));
 
-    Serial.print("Bluetooth broadcasting as: ");
+    Serial.print(F("Bluetooth broadcasting as: "));
     Serial.println(deviceName);
 
-    Serial.println("Radio Port is now outputting RTCM");
+    Serial.println(F("Radio Port is now outputting RTCM"));
 
     if (settings.enableSD && online.microSD)
     {
-      Serial.println("microSD card is successfully detected");
+      Serial.println(F("microSD card is successfully detected"));
     }
 
     //0x3D is default on Qwiic board
     if (isConnected(0x3D) == true || isConnected(0x3C) == true)
-      Serial.println("Qwiic Good. Display detected.");
+      Serial.println(F("Qwiic Good. Display detected."));
     else
-      Serial.println("Qwiic port failed! No display detected.");
+      Serial.println(F("Qwiic port failed! No display detected."));
       
     Serial.println(F("Any character received over Blueooth connection will be displayed here"));
 
@@ -52,7 +52,7 @@ void menuTest()
       break;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)
     {
-      Serial.println("time out");
+      Serial.println(F("time out"));
       //      break;
     }
     else

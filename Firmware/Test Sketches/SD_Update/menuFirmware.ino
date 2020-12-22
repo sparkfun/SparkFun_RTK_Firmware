@@ -141,7 +141,7 @@ void updateFromSD(char *firmwareFileName)
         Serial.print("\n[");
         for (int x = 0 ; x < barWidth ; x++)
           Serial.print("=");
-        Serial.printf("%02d%%", bytesWritten * 100 / updateSize);
+        Serial.printf("%d%%", bytesWritten * 100 / updateSize);
         if (bytesWritten == updateSize) Serial.println("]");
       }
     }

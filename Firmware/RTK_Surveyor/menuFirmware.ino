@@ -66,7 +66,10 @@ void scanForFirmware()
         tempFile.getName(fname, sizeof(fname));
 
         if (strcmp(forceFirmwareFileName, fname) == 0)
+        {
+          Serial.println(F("Forced firmware detected. Loading..."));
           updateFromSD((char *)forceFirmwareFileName);
+        }
 
         //Check for 'sfe_rtk' and 'bin' extension
         if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
@@ -109,8 +112,10 @@ void updateFromSD(char *firmwareFileName)
     }
 
     Serial.print(F("Moving file to OTA section"));
+    Serial.print(F("Bytes to write: "));
+    Serial.print(updateSize);
 
-    const int pageSize = 512;
+    const int pageSize = 512 * 4;
     byte dataArray[pageSize];
     int bytesWritten = 0;
 
@@ -122,15 +127,19 @@ void updateFromSD(char *firmwareFileName)
     //Bulk write from the SD file to the EEPROM
     while (firmwareFile.available())
     {
+      digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Toggle LED to indcate activity
+
       int bytesToWrite = pageSize; //Max number of bytes to read
       if (firmwareFile.available() < bytesToWrite) bytesToWrite = firmwareFile.available(); //Trim this read size as needed
 
       firmwareFile.read(dataArray, bytesToWrite); //Read the next set of bytes from file into our temp array
+      delay(10); //Give RTOS time
 
       if (Update.write(dataArray, bytesToWrite) != bytesToWrite)
         Serial.println(F("Write failed"));
       else
         bytesWritten += bytesToWrite;
+      delay(10); //Give RTOS time
 
       //Indicate progress
       if (bytesWritten > barWidth * portionSize)
@@ -151,6 +160,24 @@ void updateFromSD(char *firmwareFileName)
       if (Update.isFinished())
       {
         Serial.println(F("Firmware updated successfully. Rebooting. Good bye!"));
+
+        //If forced firmware is detected, do a full reset of config as well
+        if (strcmp(forceFirmwareFileName, firmwareFileName) == 0)
+        {
+          Serial.println(F("Removing firmware file"));
+          
+          //Remove forced firmware file to prevent endless loading
+          firmwareFile.close();
+          sd.remove(firmwareFileName);
+
+          eepromErase();
+
+          if (sd.exists(settingsFileName))
+            sd.remove(settingsFileName);
+
+          myGPS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
+        }
+
         delay(1000);
         ESP.restart();
       }

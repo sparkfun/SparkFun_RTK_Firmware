@@ -111,7 +111,7 @@ void updateFromSD(char *firmwareFileName)
       return;
     }
 
-    Serial.print(F("Moving file to OTA section"));
+    Serial.println(F("Moving file to OTA section"));
     Serial.print(F("Bytes to write: "));
     Serial.print(updateSize);
 
@@ -136,7 +136,10 @@ void updateFromSD(char *firmwareFileName)
       delay(10); //Give RTOS time
 
       if (Update.write(dataArray, bytesToWrite) != bytesToWrite)
-        Serial.println(F("Write failed"));
+      {
+        Serial.println(F("\nWrite failed. Binary may be incorrectly aligned."));
+        break;
+      }
       else
         bytesWritten += bytesToWrite;
       delay(10); //Give RTOS time

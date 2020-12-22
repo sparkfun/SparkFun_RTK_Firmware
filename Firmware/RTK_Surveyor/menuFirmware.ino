@@ -111,7 +111,7 @@ void updateFromSD(char *firmwareFileName)
       return;
     }
 
-    Serial.print(F("Moving file to OTA section"));
+    Serial.println(F("Moving file to OTA section"));
     Serial.print(F("Bytes to write: "));
     Serial.print(updateSize);
 

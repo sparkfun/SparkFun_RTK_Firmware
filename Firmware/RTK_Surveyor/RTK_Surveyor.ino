@@ -35,7 +35,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 1;
+const int FIRMWARE_VERSION_MINOR = 2;
 
 //Define the RTK Surveyor board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor and which allows us

@@ -18,7 +18,6 @@ const int zed_tx_ready = 26;
 const int zed_reset = 27;
 const int batteryLevel_alert = 36;
 
-
 void setup() {
   ledcSetup(ledRedChannel, freq, resolution);
   ledcSetup(ledGreenChannel, freq, resolution);
@@ -27,7 +26,7 @@ void setup() {
   ledcAttachPin(batteryLevelLED_Green, ledGreenChannel);
 
   //ledcWrite(ledRedChannel, 128);
-  ledcWrite(ledGreenChannel, 128);
+  //ledcWrite(ledGreenChannel, 128);
 
   pinMode(positionAccuracyLED_1cm, OUTPUT);
   pinMode(positionAccuracyLED_10cm, OUTPUT);
@@ -43,12 +42,11 @@ void setup() {
   
 }
 
-// the loop function runs over and over again forever
 void loop() {
-//  ledcWrite(batteryLevelLED_Red, 128);
-  //ledcWrite(batteryLevelLED_Green, 128);
-  delay(1000);                       // wait for a second
-  //ledcWrite(batteryLevelLED_Red, 128);
-  //ledcWrite(batteryLevelLED_Green, 128);
-  delay(1000);                       // wait for a second
+  ledcWrite(ledRedChannel, 128);
+  ledcWrite(ledGreenChannel, 128);
+  delay(2500);                       // wait for a second
+  ledcWrite(ledRedChannel, 0);
+  ledcWrite(ledGreenChannel, 0);
+  delay(2500);                       // wait for a second
 }

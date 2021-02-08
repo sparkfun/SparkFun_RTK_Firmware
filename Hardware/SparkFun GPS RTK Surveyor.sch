@@ -21947,8 +21947,10 @@ Switches electrical signals</description>
 </devices>
 </deviceset>
 <deviceset name="MOSFET_COMPLIMENTARY_PAIR" prefix="Q">
-<description>&lt;h3&gt;Complementary pair enhancement mode MOSFET&lt;/h3&gt;
-&lt;p&gt;A P and N channel MOSFET in a single package. Rated to breakdown at 20V&lt;/p&gt;
+<description>&lt;h3&gt;Complementary pair enhancement mode MOSFET 1A and 4A&lt;/h3&gt;
+&lt;p&gt;A P and N channel MOSFET in a single package. Rated to breakdown at 20V.&lt;/p&gt;
+DMC2700 is 1A. SIL2308 is 4A.
+
 &lt;p&gt;&lt;a href='http://www.diodes.com/_files/datasheets/DMC2700UDM.pdf'&gt;Link to datasheet&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;b&gt;SparkFun Products:&lt;/b&gt;
 &lt;ul&gt;&lt;li&gt;&lt;a href=”https://www.sparkfun.com/products/12780”&gt;ZX Distance and Gesture Sensor&lt;/a&gt;&lt;/li&gt;
@@ -21970,6 +21972,21 @@ Switches electrical signals</description>
 <technologies>
 <technology name="">
 <attribute name="PROD_ID" value="TRANS-11993"/>
+</technology>
+</technologies>
+</device>
+<device name="-SIL2308" package="SOT26">
+<connects>
+<connect gate="G1" pin="D" pad="D1"/>
+<connect gate="G1" pin="G" pad="G1"/>
+<connect gate="G1" pin="S" pad="S1"/>
+<connect gate="G2" pin="D" pad="D2"/>
+<connect gate="G2" pin="G" pad="G2"/>
+<connect gate="G2" pin="S" pad="S2"/>
+</connects>
+<technologies>
+<technology name="">
+<attribute name="PROD_ID" value="TRANS-15717" constant="no"/>
 </technology>
 </technologies>
 </device>
@@ -26342,7 +26359,7 @@ SparkFun BigTime Watch Kit&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;
 <part name="R3" library="SparkFun-Resistors" deviceset="33OHM_RA" device="-1206-1/16W-5%" value="33"/>
 <part name="R9" library="SparkFun-Resistors" deviceset="33OHM_RA" device="-1206-1/16W-5%" value="33"/>
 <part name="J6" library="SparkFun-Connectors" deviceset="CONN_05" device="NO_SILK"/>
-<part name="Q1" library="SparkFun-DiscreteSemi" deviceset="MOSFET_COMPLIMENTARY_PAIR" device="-DMC2700UDM" value="DMC2700UDM"/>
+<part name="Q1" library="SparkFun-DiscreteSemi" deviceset="MOSFET_COMPLIMENTARY_PAIR" device="-SIL2308" value="SIL2308-TP"/>
 <part name="C20" library="SparkFun-Capacitors" deviceset="10UF" device="-0603-6.3V-20%" value="10uF"/>
 <part name="R22" library="SparkFun-Resistors" deviceset="100KOHM" device="-0603-1/10W-1%" value="100k"/>
 <part name="R24" library="SparkFun-Resistors" deviceset="300KOHM" device="-0603-1/10W-1%" value="300k"/>

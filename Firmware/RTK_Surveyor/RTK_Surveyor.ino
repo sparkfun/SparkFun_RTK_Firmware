@@ -155,6 +155,7 @@ float battChangeRate = 0.0;
 #include "BluetoothSerial.h"
 BluetoothSerial SerialBT;
 #include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
+#include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
 
 HardwareSerial GPS(2);
 #define RXD2 16

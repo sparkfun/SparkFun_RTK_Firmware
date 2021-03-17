@@ -167,8 +167,9 @@ bool configureUbloxModule()
     response &= myGPS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
   }
 
-  //Make sure the appropriate NMEA sentences are enabled
-  response &= enableNMEASentences(COM_PORT_UART1);
+  response &= enableNMEASentences(COM_PORT_UART1); //Make sure the appropriate NMEA sentences are enabled
+
+  response &= enableRAWXSentences(COM_PORT_UART1); //This enables logging of RAWX message to SD as user requests
 
   response &= myGPS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
   response &= myGPS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
@@ -218,48 +219,86 @@ bool configureUbloxModule()
   return (response);
 }
 
+//Enable the RAWX message based on user's settings, on a given com port
+bool enableRAWXSentences(uint8_t portType)
+{
+  bool response = true;
 
-//Enable the NMEA sentences, based on user's settings, on a given com port
+  if (settings.gnssRAWOutput == true)
+  {
+    if (getRAWXSettings(portType) != 1)
+      response &= myGPS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
+  }
+  else if (settings.gnssRAWOutput == false)
+  {
+    if (getRAWXSettings(portType) != 0)
+      response &= myGPS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
+  }
+
+  return (response);
+}
+
+//Enable the NMEA messages, based on user's settings, on a given com port
 bool enableNMEASentences(uint8_t portType)
 {
   bool response = true;
   if (settings.outputSentenceGGA == true)
+  {
     if (getNMEASettings(UBX_NMEA_GGA, portType) != 1)
       response &= myGPS.enableNMEAMessage(UBX_NMEA_GGA, portType);
-    else if (settings.outputSentenceGGA == false)
-      if (getNMEASettings(UBX_NMEA_GGA, portType) != 0)
-        response &= myGPS.disableNMEAMessage(UBX_NMEA_GGA, portType);
+  }
+  else if (settings.outputSentenceGGA == false)
+  {
+    if (getNMEASettings(UBX_NMEA_GGA, portType) != 0)
+      response &= myGPS.disableNMEAMessage(UBX_NMEA_GGA, portType);
+  }
 
   if (settings.outputSentenceGSA == true)
+  {
     if (getNMEASettings(UBX_NMEA_GSA, portType) != 1)
       response &= myGPS.enableNMEAMessage(UBX_NMEA_GSA, portType);
-    else if (settings.outputSentenceGSA == false)
-      if (getNMEASettings(UBX_NMEA_GSA, portType) != 0)
-        response &= myGPS.disableNMEAMessage(UBX_NMEA_GSA, portType);
+  }
+  else if (settings.outputSentenceGSA == false)
+  {
+    if (getNMEASettings(UBX_NMEA_GSA, portType) != 0)
+      response &= myGPS.disableNMEAMessage(UBX_NMEA_GSA, portType);
+  }
 
   //When receiving 15+ satellite information, the GxGSV sentences can be a large amount of data
   //If the update rate is >1Hz then this data can overcome the BT capabilities causing timeouts and lag
   //So we set the GSV sentence to 1Hz regardless of update rate
   if (settings.outputSentenceGSV == true)
+  {
     if (getNMEASettings(UBX_NMEA_GSV, portType) != settings.gnssMeasurementFrequency)
       response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, portType, settings.gnssMeasurementFrequency);
-    else if (settings.outputSentenceGSV == false)
-      if (getNMEASettings(UBX_NMEA_GSV, portType) != 0)
-        response &= myGPS.disableNMEAMessage(UBX_NMEA_GSV, portType);
+  }
+  else if (settings.outputSentenceGSV == false)
+  {
+    if (getNMEASettings(UBX_NMEA_GSV, portType) != 0)
+      response &= myGPS.disableNMEAMessage(UBX_NMEA_GSV, portType);
+  }
 
   if (settings.outputSentenceRMC == true)
+  {
     if (getNMEASettings(UBX_NMEA_RMC, portType) != 1)
       response &= myGPS.enableNMEAMessage(UBX_NMEA_RMC, portType);
-    else if (settings.outputSentenceRMC == false)
-      if (getNMEASettings(UBX_NMEA_RMC, portType) != 0)
-        response &= myGPS.disableNMEAMessage(UBX_NMEA_RMC, portType);
+  }
+  else if (settings.outputSentenceRMC == false)
+  {
+    if (getNMEASettings(UBX_NMEA_RMC, portType) != 0)
+      response &= myGPS.disableNMEAMessage(UBX_NMEA_RMC, portType);
+  }
 
   if (settings.outputSentenceGST == true)
+  {
     if (getNMEASettings(UBX_NMEA_GST, portType) != 1)
       response &= myGPS.enableNMEAMessage(UBX_NMEA_GST, portType);
-    else if (settings.outputSentenceGST == false)
-      if (getNMEASettings(UBX_NMEA_GST, portType) != 0)
-        response &= myGPS.disableNMEAMessage(UBX_NMEA_GST, portType);
+  }
+  else if (settings.outputSentenceGST == false)
+  {
+    if (getNMEASettings(UBX_NMEA_GST, portType) != 0)
+      response &= myGPS.disableNMEAMessage(UBX_NMEA_GST, portType);
+  }
 
   return (response);
 }
@@ -592,19 +631,19 @@ void updateBattLEDs()
 void checkBatteryLevels()
 {
   //long startTime = millis();
-  
+
   //Check I2C semaphore
-//  if (xSemaphoreTake(xI2CSemaphore, i2cSemaphore_maxWait) == pdPASS)
-//  {
-    battLevel = lipo.getSOC();
-    battVoltage = lipo.getVoltage();
-    battChangeRate = lipo.getChangeRate();
-//    xSemaphoreGive(xI2CSemaphore);
-//  }
+  //  if (xSemaphoreTake(xI2CSemaphore, i2cSemaphore_maxWait) == pdPASS)
+  //  {
+  battLevel = lipo.getSOC();
+  battVoltage = lipo.getVoltage();
+  battChangeRate = lipo.getChangeRate();
+  //    xSemaphoreGive(xI2CSemaphore);
+  //  }
   //Serial.printf("Batt time to update: %d\n", millis() - startTime);
 
   Serial.printf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
-  
+
   char tempStr[25];
   if (battChangeRate > 0)
     sprintf(tempStr, "C");

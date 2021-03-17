@@ -120,7 +120,7 @@ void setup()
   Wire.begin();
   //Wire.setClock(100000);
 
-  beginLEDs(); //LED and PWM setup
+  //beginLEDs(); //LED and PWM setup
 
   beginDisplay(); //Check if an external Qwiic OLED is attached
 

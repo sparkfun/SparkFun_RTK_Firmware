@@ -39,7 +39,7 @@ bool displayDetected = false;
 void setup()
 {
   Wire.begin();
-  Wire.setClock(2000000);
+  Wire.setClock(400000);
 
   Serial.begin(115200);
   delay(100);
@@ -78,8 +78,6 @@ void loop()
   {
     oled.drawIcon(iconX, iconY, iconWidth, iconHeight, truck, sizeof(truck), true);
     oled.display();
-
-    while(1);
 
     //Move the icon
     iconX += iconXChangeAmount;

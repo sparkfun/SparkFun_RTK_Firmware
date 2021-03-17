@@ -16,6 +16,8 @@
 #include "SD.h"
 #include "SPI.h"
 
+const int sd_cs = 25;
+
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
   Serial.printf("Listing directory: %s\n", dirname);
 
@@ -173,7 +175,6 @@ void testFileIO(fs::FS &fs, const char * path) {
   file.close();
 }
 
-const int sd_cs = 25;
 
 void setup() {
   Serial.begin(115200);

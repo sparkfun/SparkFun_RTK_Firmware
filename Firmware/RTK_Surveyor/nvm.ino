@@ -101,6 +101,7 @@ void recordSystemSettingsToFile()
     settingsFile.println("mountPointPW=" + (String)settings.mountPointPW);
     settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
     settingsFile.println("wifiPW=" + (String)settings.wifiPW);
+    settingsFile.println("enableSFRBX=" + (String)settings.enableSFRBX);
 
     updateDataFileAccess(&settingsFile); // Update the file access time & date
 
@@ -305,6 +306,8 @@ bool parseLine(char* str) {
     strcpy(settings.wifiSSID, settingValue);
   else if (strcmp(settingName, "wifiPW") == 0)
     strcpy(settings.wifiPW, settingValue);
+  else if (strcmp(settingName, "enableSFRBX") == 0)
+    settings.enableSFRBX = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

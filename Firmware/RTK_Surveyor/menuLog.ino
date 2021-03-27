@@ -42,7 +42,7 @@ void menuLog()
     {
       settings.zedOutputLogging ^= 1;
 
-      if(online.microSD == true && settings.zedOutputLogging == true) 
+      if (online.microSD == true && settings.zedOutputLogging == true)
         startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
     }
     else if (settings.zedOutputLogging == true)
@@ -53,7 +53,7 @@ void menuLog()
       {
         Serial.print(F("Enter max minutes to log data: "));
         int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds
-        if (maxMinutes < 0 || maxMinutes > 60*48) //Arbitrary 48 hour limit
+        if (maxMinutes < 0 || maxMinutes > 60 * 48) //Arbitrary 48 hour limit
         {
           Serial.println(F("Error: max minutes out of range"));
         }
@@ -173,6 +173,31 @@ uint8_t getRAWXSettings(uint8_t portID)
 
   settingPayload[0] = UBX_CLASS_RXM;
   settingPayload[1] = UBX_RXM_RAWX;
+
+  // Read the current setting. The results will be loaded into customCfg.
+  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  {
+    Serial.println(F("getNMEASettings failed!"));
+    return (false);
+  }
+
+  return (settingPayload[2 + portID]); //Return just the byte associated with this portID
+}
+
+//Given a portID, return the RAWX value for the given port
+uint8_t getSFRBXSettings(uint8_t portID)
+{
+  ubxPacket customCfg = {0, 0, 0, 0, 0, settingPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+
+  customCfg.cls = UBX_CLASS_CFG; // This is the message Class
+  customCfg.id = UBX_CFG_MSG; // This is the message ID
+  customCfg.len = 2;
+  customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
+
+  uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+
+  settingPayload[0] = UBX_CLASS_RXM;
+  settingPayload[1] = UBX_RXM_SFRBX;
 
   // Read the current setting. The results will be loaded into customCfg.
   if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK

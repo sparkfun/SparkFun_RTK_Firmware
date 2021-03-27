@@ -79,7 +79,8 @@ struct struct_settings {
   char mountPoint[50] = "bldr_dwntwn2";
   char mountPointPW[50] = "WR5wRo4H";
   char wifiSSID[50] = "TRex";
-  char wifiPW[50] = "parachutes";  
+  char wifiPW[50] = "parachutes";
+  bool enableSFRBX = false; //Issue #11
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

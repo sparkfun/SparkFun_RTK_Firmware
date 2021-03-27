@@ -34,7 +34,11 @@ void menuGNSS()
     if (getRAWXSettings(COM_PORT_UART1) == 1) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    Serial.print(F("8) Toggle SBAS: "));
+    Serial.print(F("8) Toggle GNSS SFRBX sentence: "));
+    if (getSFRBXSettings(COM_PORT_UART1) == 1) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
+    Serial.print(F("9) Toggle SBAS: "));
     if (getSBAS() == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
@@ -132,6 +136,7 @@ void menuGNSS()
     }
     else if (incoming == '7')
     {
+
       if (getRAWXSettings(COM_PORT_UART1) == 1)
       {
         //Disable
@@ -146,6 +151,21 @@ void menuGNSS()
       }
     }
     else if (incoming == '8')
+    {
+      if (getSFRBXSettings(COM_PORT_UART1) == 1)
+      {
+        //Disable
+        if (myGPS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1) == true)
+          settings.enableSFRBX = false;
+      }
+      else
+      {
+        //Enable
+        if (myGPS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1) == true)
+          settings.enableSFRBX = true;
+      }
+    }
+    else if (incoming == '9')
     {
       if (getSBAS() == true)
       {

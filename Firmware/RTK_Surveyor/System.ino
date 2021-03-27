@@ -169,7 +169,7 @@ bool configureUbloxModule()
 
   response &= enableNMEASentences(COM_PORT_UART1); //Make sure the appropriate NMEA sentences are enabled
 
-  response &= enableRAWXSentences(COM_PORT_UART1); //This enables logging of RAWX message to SD as user requests
+  response &= enableRXMSentences(COM_PORT_UART1); //This enables logging of RAWX message to SD as user requests
 
   response &= myGPS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
   response &= myGPS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
@@ -219,8 +219,8 @@ bool configureUbloxModule()
   return (response);
 }
 
-//Enable the RAWX message based on user's settings, on a given com port
-bool enableRAWXSentences(uint8_t portType)
+//Enable the RAWX and SFRBX message based on user's settings, on a given com port
+bool enableRXMSentences(uint8_t portType)
 {
   bool response = true;
 
@@ -233,6 +233,17 @@ bool enableRAWXSentences(uint8_t portType)
   {
     if (getRAWXSettings(portType) != 0)
       response &= myGPS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
+  }
+
+  if (settings.enableSFRBX == true)
+  {
+    if (getSFRBXSettings(portType) != 1)
+      response &= myGPS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
+  }
+  else if (settings.enableSFRBX == false)
+  {
+    if (getSFRBXSettings(portType) != 0)
+      response &= myGPS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
   }
 
   return (response);

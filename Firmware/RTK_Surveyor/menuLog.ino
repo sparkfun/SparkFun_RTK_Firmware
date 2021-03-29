@@ -96,11 +96,11 @@ void beginDataLogging()
       if (strlen(gnssDataFileName) == 0)
       {
         //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.txt
-        if (myGPS.getTimeValid() == true && myGPS.getDateValid() == true)
+        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
         {
           sprintf(gnssDataFileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt",
-                  myGPS.getYear() - 2000, myGPS.getMonth(), myGPS.getDay(),
-                  myGPS.getHour(), myGPS.getMinute(), myGPS.getSecond()
+                  i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
+                  i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
                  );
         }
         else
@@ -137,12 +137,12 @@ void updateDataFileAccess(SdFile *dataFile)
 {
   if (online.dataLogging == true)
   {
-    if (myGPS.getTimeValid() == true && myGPS.getDateValid() == true)
+    if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
     {
       //Update the file access time
-      dataFile->timestamp(T_ACCESS, myGPS.getYear(), myGPS.getMonth(), myGPS.getDay(), myGPS.getHour(), myGPS.getMinute(), myGPS.getSecond());
+      dataFile->timestamp(T_ACCESS, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
       //Update the file write time
-      dataFile->timestamp(T_WRITE, myGPS.getYear(), myGPS.getMonth(), myGPS.getDay(), myGPS.getHour(), myGPS.getMinute(), myGPS.getSecond());
+      dataFile->timestamp(T_WRITE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
     }
   }
 }
@@ -151,10 +151,10 @@ void updateDataFileCreate(SdFile *dataFile)
 {
   if (online.dataLogging == true)
   {
-    if (myGPS.getTimeValid() == true && myGPS.getDateValid() == true)
+    if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
     {
       //Update the file create time
-      dataFile->timestamp(T_CREATE, myGPS.getYear(), myGPS.getMonth(), myGPS.getDay(), myGPS.getHour(), myGPS.getMinute(), myGPS.getSecond());
+      dataFile->timestamp(T_CREATE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
     }
   }
 }
@@ -175,7 +175,7 @@ uint8_t getRAWXSettings(uint8_t portID)
   settingPayload[1] = UBX_RXM_RAWX;
 
   // Read the current setting. The results will be loaded into customCfg.
-  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
     Serial.println(F("getNMEASettings failed!"));
     return (false);
@@ -200,7 +200,7 @@ uint8_t getSFRBXSettings(uint8_t portID)
   settingPayload[1] = UBX_RXM_SFRBX;
 
   // Read the current setting. The results will be loaded into customCfg.
-  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
     Serial.println(F("getNMEASettings failed!"));
     return (false);

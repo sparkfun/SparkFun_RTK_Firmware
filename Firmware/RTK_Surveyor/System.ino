@@ -132,30 +132,30 @@ bool configureUbloxModule()
   getPortSettings(COM_PORT_UART1); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
   {
-    response &= myGPS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX); //Set the UART1 to output NMEA and UBX
-    response &= myGPS.setPortInput(COM_PORT_UART1, COM_TYPE_RTCM3); //Set the UART1 to input RTCM
+    response &= i2cGNSS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX); //Set the UART1 to output NMEA and UBX
+    response &= i2cGNSS.setPortInput(COM_PORT_UART1, COM_TYPE_RTCM3); //Set the UART1 to input RTCM
   }
 
   //Disable SPI port - This is just to remove some overhead by ZED
   getPortSettings(COM_PORT_SPI); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != 0 || settingPayload[INPUT_SETTING] != 0)
   {
-    response &= myGPS.setPortOutput(COM_PORT_SPI, 0); //Disable all protocols
-    response &= myGPS.setPortInput(COM_PORT_SPI, 0); //Disable all protocols
+    response &= i2cGNSS.setPortOutput(COM_PORT_SPI, 0); //Disable all protocols
+    response &= i2cGNSS.setPortInput(COM_PORT_SPI, 0); //Disable all protocols
   }
 
   getPortSettings(COM_PORT_UART2); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != COM_TYPE_RTCM3 || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
   {
-    response &= myGPS.setPortOutput(COM_PORT_UART2, COM_TYPE_RTCM3); //Set the UART2 to output RTCM (in case this device goes into base mode)
-    response &= myGPS.setPortInput(COM_PORT_UART2, COM_TYPE_RTCM3); //Set the UART2 to input RTCM
+    response &= i2cGNSS.setPortOutput(COM_PORT_UART2, COM_TYPE_RTCM3); //Set the UART2 to output RTCM (in case this device goes into base mode)
+    response &= i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_RTCM3); //Set the UART2 to input RTCM
   }
 
   getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != COM_TYPE_UBX || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
   {
-    response &= myGPS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
-    response &= myGPS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
+    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+    response &= i2cGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
   }
 
   //The USB port on the ZED may be used for RTCM to/from the computer (as an NTRIP caster or client)
@@ -163,26 +163,26 @@ bool configureUbloxModule()
   getPortSettings(COM_PORT_USB); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3) || settingPayload[INPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3))
   {
-    response &= myGPS.setPortOutput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
-    response &= myGPS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
+    response &= i2cGNSS.setPortOutput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
+    response &= i2cGNSS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
   }
 
   response &= enableNMEASentences(COM_PORT_UART1); //Make sure the appropriate NMEA sentences are enabled
 
   response &= enableRXMSentences(COM_PORT_UART1); //This enables logging of RAWX message to SD as user requests
 
-  response &= myGPS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
-  response &= myGPS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
+  response &= i2cGNSS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
+  response &= i2cGNSS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
 
   if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
     Serial.println(F("Updating UART1 rate"));
-    myGPS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Set UART1 to 115200
+    i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Set UART1 to 115200
   }
   if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud)
   {
     Serial.println(F("Updating UART2 rate"));
-    myGPS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Set UART2 to 57600 to match SiK telemetry radio firmware default
+    i2cGNSS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Set UART2 to 57600 to match SiK telemetry radio firmware default
   }
 
   if (response == false)
@@ -212,7 +212,7 @@ bool configureUbloxModule()
     }
   }
 
-  response &= myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+  response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   if (response == false)
     Serial.println(F("Module failed to save."));
 
@@ -227,23 +227,23 @@ bool enableRXMSentences(uint8_t portType)
   if (settings.gnssRAWOutput == true)
   {
     if (getRAWXSettings(portType) != 1)
-      response &= myGPS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
+      response &= i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
   }
   else if (settings.gnssRAWOutput == false)
   {
     if (getRAWXSettings(portType) != 0)
-      response &= myGPS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
+      response &= i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
   }
 
   if (settings.enableSFRBX == true)
   {
     if (getSFRBXSettings(portType) != 1)
-      response &= myGPS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
+      response &= i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
   }
   else if (settings.enableSFRBX == false)
   {
     if (getSFRBXSettings(portType) != 0)
-      response &= myGPS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
+      response &= i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
   }
 
   return (response);
@@ -256,23 +256,23 @@ bool enableNMEASentences(uint8_t portType)
   if (settings.outputSentenceGGA == true)
   {
     if (getNMEASettings(UBX_NMEA_GGA, portType) != 1)
-      response &= myGPS.enableNMEAMessage(UBX_NMEA_GGA, portType);
+      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, portType);
   }
   else if (settings.outputSentenceGGA == false)
   {
     if (getNMEASettings(UBX_NMEA_GGA, portType) != 0)
-      response &= myGPS.disableNMEAMessage(UBX_NMEA_GGA, portType);
+      response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, portType);
   }
 
   if (settings.outputSentenceGSA == true)
   {
     if (getNMEASettings(UBX_NMEA_GSA, portType) != 1)
-      response &= myGPS.enableNMEAMessage(UBX_NMEA_GSA, portType);
+      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GSA, portType);
   }
   else if (settings.outputSentenceGSA == false)
   {
     if (getNMEASettings(UBX_NMEA_GSA, portType) != 0)
-      response &= myGPS.disableNMEAMessage(UBX_NMEA_GSA, portType);
+      response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GSA, portType);
   }
 
   //When receiving 15+ satellite information, the GxGSV sentences can be a large amount of data
@@ -281,34 +281,34 @@ bool enableNMEASentences(uint8_t portType)
   if (settings.outputSentenceGSV == true)
   {
     if (getNMEASettings(UBX_NMEA_GSV, portType) != settings.gnssMeasurementFrequency)
-      response &= myGPS.enableNMEAMessage(UBX_NMEA_GSV, portType, settings.gnssMeasurementFrequency);
+      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GSV, portType, settings.gnssMeasurementFrequency);
   }
   else if (settings.outputSentenceGSV == false)
   {
     if (getNMEASettings(UBX_NMEA_GSV, portType) != 0)
-      response &= myGPS.disableNMEAMessage(UBX_NMEA_GSV, portType);
+      response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GSV, portType);
   }
 
   if (settings.outputSentenceRMC == true)
   {
     if (getNMEASettings(UBX_NMEA_RMC, portType) != 1)
-      response &= myGPS.enableNMEAMessage(UBX_NMEA_RMC, portType);
+      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_RMC, portType);
   }
   else if (settings.outputSentenceRMC == false)
   {
     if (getNMEASettings(UBX_NMEA_RMC, portType) != 0)
-      response &= myGPS.disableNMEAMessage(UBX_NMEA_RMC, portType);
+      response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_RMC, portType);
   }
 
   if (settings.outputSentenceGST == true)
   {
     if (getNMEASettings(UBX_NMEA_GST, portType) != 1)
-      response &= myGPS.enableNMEAMessage(UBX_NMEA_GST, portType);
+      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GST, portType);
   }
   else if (settings.outputSentenceGST == false)
   {
     if (getNMEASettings(UBX_NMEA_GST, portType) != 0)
-      response &= myGPS.disableNMEAMessage(UBX_NMEA_GST, portType);
+      response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GST, portType);
   }
 
   return (response);
@@ -319,19 +319,19 @@ bool disableNMEASentences(uint8_t portType)
 {
   bool response = true;
   if (getNMEASettings(UBX_NMEA_GGA, portType) != 0)
-    response &= myGPS.disableNMEAMessage(UBX_NMEA_GGA, portType);
+    response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, portType);
   if (getNMEASettings(UBX_NMEA_GSA, portType) != 0)
-    response &= myGPS.disableNMEAMessage(UBX_NMEA_GSA, portType);
+    response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GSA, portType);
   if (getNMEASettings(UBX_NMEA_GSV, portType) != 0)
-    response &= myGPS.disableNMEAMessage(UBX_NMEA_GSV, portType);
+    response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GSV, portType);
   if (getNMEASettings(UBX_NMEA_RMC, portType) != 0)
-    response &= myGPS.disableNMEAMessage(UBX_NMEA_RMC, portType);
+    response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_RMC, portType);
   if (getNMEASettings(UBX_NMEA_GST, portType) != 0)
-    response &= myGPS.disableNMEAMessage(UBX_NMEA_GST, portType);
+    response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GST, portType);
   if (getNMEASettings(UBX_NMEA_GLL, portType) != 0)
-    response &= myGPS.disableNMEAMessage(UBX_NMEA_GLL, portType);
+    response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GLL, portType);
   if (getNMEASettings(UBX_NMEA_VTG, portType) != 0)
-    response &= myGPS.disableNMEAMessage(UBX_NMEA_VTG, portType);
+    response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_VTG, portType);
 
   return (response);
 }
@@ -341,17 +341,17 @@ bool enableRTCMSentences(uint8_t portType)
 {
   bool response = true;
   if (getRTCMSettings(UBX_RTCM_1005, portType) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, portType, 1); //Enable message 1005 to output through UART2, message every second
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1005, portType, 1); //Enable message 1005 to output through UART2, message every second
   if (getRTCMSettings(UBX_RTCM_1074, portType) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, portType, 1);
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1074, portType, 1);
   if (getRTCMSettings(UBX_RTCM_1084, portType) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, portType, 1);
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1084, portType, 1);
   if (getRTCMSettings(UBX_RTCM_1094, portType) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, portType, 1);
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1094, portType, 1);
   if (getRTCMSettings(UBX_RTCM_1124, portType) != 1)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, portType, 1);
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1124, portType, 1);
   if (getRTCMSettings(UBX_RTCM_1230, portType) != 10)
-    response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, portType, 10); //Enable message every 10 seconds
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, portType, 10); //Enable message every 10 seconds
 
   return (response);
 }
@@ -361,17 +361,17 @@ bool disableRTCMSentences(uint8_t portType)
 {
   bool response = true;
   if (getRTCMSettings(UBX_RTCM_1005, portType) != 0)
-    response &= myGPS.disableRTCMmessage(UBX_RTCM_1005, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1005, portType);
   if (getRTCMSettings(UBX_RTCM_1074, portType) != 0)
-    response &= myGPS.disableRTCMmessage(UBX_RTCM_1074, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1074, portType);
   if (getRTCMSettings(UBX_RTCM_1084, portType) != 0)
-    response &= myGPS.disableRTCMmessage(UBX_RTCM_1084, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1084, portType);
   if (getRTCMSettings(UBX_RTCM_1094, portType) != 0)
-    response &= myGPS.disableRTCMmessage(UBX_RTCM_1094, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1094, portType);
   if (getRTCMSettings(UBX_RTCM_1124, portType) != 0)
-    response &= myGPS.disableRTCMmessage(UBX_RTCM_1124, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1124, portType);
   if (getRTCMSettings(UBX_RTCM_1230, portType) != 0)
-    response &= myGPS.disableRTCMmessage(UBX_RTCM_1230, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1230, portType);
   return (response);
 }
 
@@ -390,7 +390,7 @@ bool getPortSettings(uint8_t portID)
   settingPayload[0] = portID; //Request the caller's portID from GPS module
 
   // Read the current setting. The results will be loaded into customCfg.
-  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
     Serial.println(F("getPortSettings failed!"));
     return (false);
@@ -415,7 +415,7 @@ uint8_t getNMEASettings(uint8_t msgID, uint8_t portID)
   settingPayload[1] = msgID;
 
   // Read the current setting. The results will be loaded into customCfg.
-  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
     Serial.println(F("getNMEASettings failed!"));
     return (false);
@@ -440,7 +440,7 @@ uint8_t getRTCMSettings(uint8_t msgID, uint8_t portID)
   settingPayload[1] = msgID;
 
   // Read the current setting. The results will be loaded into customCfg.
-  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
     Serial.println(F("getRTCMSettings failed!"));
     return (false);
@@ -464,7 +464,7 @@ uint32_t getSerialRate(uint8_t portID)
   settingPayload[0] = portID;
 
   // Read the current setting. The results will be loaded into customCfg.
-  if (myGPS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
     Serial.println(F("getSerialRate failed!"));
     return (false);
@@ -536,13 +536,13 @@ void danceLEDs()
   digitalWrite(bluetoothStatusLED, LOW);
 }
 
-boolean SFE_UBLOX_GPS_ADD::getModuleInfo(uint16_t maxWait)
+boolean SFE_UBLOX_GNSS_ADD::getModuleInfo(uint16_t maxWait)
 {
-  myGPS.minfo.hwVersion[0] = 0;
-  myGPS.minfo.swVersion[0] = 0;
+  i2cGNSS.minfo.hwVersion[0] = 0;
+  i2cGNSS.minfo.swVersion[0] = 0;
   for (int i = 0; i < 10; i++)
-    myGPS.minfo.extension[i][0] = 0;
-  myGPS.minfo.extensionNo = 0;
+    i2cGNSS.minfo.extension[i][0] = 0;
+  i2cGNSS.minfo.extensionNo = 0;
 
   // Let's create our custom packet
   uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes

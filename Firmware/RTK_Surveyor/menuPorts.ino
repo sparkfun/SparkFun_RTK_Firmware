@@ -29,7 +29,7 @@ void menuPorts()
       else
       {
         settings.radioPortBaud = newBaud;
-        myGPS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
+        i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
       }
     }
     else if (incoming == '2')
@@ -43,7 +43,7 @@ void menuPorts()
       else
       {
         settings.dataPortBaud = newBaud;
-        myGPS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
+        i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
       }
     }
 

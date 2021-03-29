@@ -64,13 +64,13 @@ void menuGNSS()
       if (getNMEASettings(UBX_NMEA_GGA, COM_PORT_UART1) == 1)
       {
         //Disable the sentence
-        if (myGPS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1) == true)
+        if (i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1) == true)
           settings.outputSentenceGGA = false;
       }
       else
       {
         //Enable the sentence
-        if (myGPS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1) == true)
+        if (i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1) == true)
           settings.outputSentenceGGA = true;
       }
     }
@@ -79,13 +79,13 @@ void menuGNSS()
       if (getNMEASettings(UBX_NMEA_GSA, COM_PORT_UART1) == 1)
       {
         //Disable the sentence
-        if (myGPS.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1) == true)
+        if (i2cGNSS.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1) == true)
           settings.outputSentenceGSA = false;
       }
       else
       {
         //Enable the sentence
-        if (myGPS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1) == true)
+        if (i2cGNSS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1) == true)
           settings.outputSentenceGSA = true;
       }
     }
@@ -94,13 +94,13 @@ void menuGNSS()
       if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) == settings.gnssMeasurementFrequency)
       {
         //Disable the sentence
-        if (myGPS.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1) == true)
+        if (i2cGNSS.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1) == true)
           settings.outputSentenceGSV = false;
       }
       else
       {
         //Enable the sentence at measurement rate to make sentence transmit at 1Hz to avoid stressing BT SPP buffers with 25+ SIV
-        if (myGPS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1, settings.gnssMeasurementFrequency) == true)
+        if (i2cGNSS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1, settings.gnssMeasurementFrequency) == true)
           settings.outputSentenceGSV = true;
       }
     }
@@ -109,13 +109,13 @@ void menuGNSS()
       if (getNMEASettings(UBX_NMEA_RMC, COM_PORT_UART1) == 1)
       {
         //Disable the sentence
-        if (myGPS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1) == true)
+        if (i2cGNSS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1) == true)
           settings.outputSentenceRMC = false;
       }
       else
       {
         //Enable the sentence
-        if (myGPS.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1) == true)
+        if (i2cGNSS.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1) == true)
           settings.outputSentenceRMC = true;
       }
     }
@@ -124,13 +124,13 @@ void menuGNSS()
       if (getNMEASettings(UBX_NMEA_GST, COM_PORT_UART1) == 1)
       {
         //Disable the sentence
-        if (myGPS.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1) == true)
+        if (i2cGNSS.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1) == true)
           settings.outputSentenceGST = false;
       }
       else
       {
         //Enable the sentence
-        if (myGPS.enableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1) == true)
+        if (i2cGNSS.enableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1) == true)
           settings.outputSentenceGST = true;
       }
     }
@@ -140,13 +140,13 @@ void menuGNSS()
       if (getRAWXSettings(COM_PORT_UART1) == 1)
       {
         //Disable
-        if (myGPS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1) == true)
+        if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1) == true)
           settings.gnssRAWOutput = false;
       }
       else
       {
         //Enable
-        if (myGPS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1) == true)
+        if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1) == true)
           settings.gnssRAWOutput = true;
       }
     }
@@ -155,13 +155,13 @@ void menuGNSS()
       if (getSFRBXSettings(COM_PORT_UART1) == 1)
       {
         //Disable
-        if (myGPS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1) == true)
+        if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1) == true)
           settings.enableSFRBX = false;
       }
       else
       {
         //Enable
-        if (myGPS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1) == true)
+        if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1) == true)
           settings.enableSFRBX = true;
       }
     }
@@ -190,7 +190,7 @@ void menuGNSS()
       printUnknown(incoming);
   }
 
-  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+  i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   beginGNSS(); //Push any new settings to GNSS module
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars

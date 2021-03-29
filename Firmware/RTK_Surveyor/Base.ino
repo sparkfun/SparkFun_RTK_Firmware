@@ -24,7 +24,7 @@ bool updateSurveyInStatus()
     if (baseState == BASE_SURVEYING_IN_NOTSTARTED)
     {
       //Check for <5m horz accuracy
-      uint32_t accuracy = myGPS.getHorizontalAccuracy(250); //This call defaults to 1100ms and can cause the core to crash with WDT timeout
+      uint32_t accuracy = i2cGNSS.getHorizontalAccuracy(250); //This call defaults to 1100ms and can cause the core to crash with WDT timeout
 
       float f_accuracy = accuracy;
       f_accuracy = f_accuracy / 10000.0; // Convert the horizontal accuracy (mm * 10^-1) to a float
@@ -43,10 +43,10 @@ bool updateSurveyInStatus()
     } //baseState = Surveying In Not started
     else
     {
-      bool response = myGPS.getSurveyStatus(2000); //Query module for SVIN status with 2000ms timeout (req can take a long time)
+      bool response = i2cGNSS.getSurveyStatus(2000); //Query module for SVIN status with 2000ms timeout (req can take a long time)
       if (response == true)
       {
-        if (myGPS.svin.valid == true)
+        if (i2cGNSS.getSurveyInValid() == true)
         {
           Serial.println(F("Base survey complete! RTCM now broadcasting."));
           baseState = BASE_TRANSMITTING;
@@ -55,31 +55,31 @@ bool updateSurveyInStatus()
         }
         else
         {
-          byte SIV = myGPS.getSIV();
+          byte SIV = i2cGNSS.getSIV();
 
           Serial.print(F("Time elapsed: "));
-          Serial.print((String)myGPS.svin.observationTime);
+          Serial.print((String)i2cGNSS.getSurveyInObservationTime());
           Serial.print(F(" Accuracy: "));
-          Serial.print((String)myGPS.svin.meanAccuracy);
+          Serial.print((String)i2cGNSS.getSurveyInMeanAccuracy());
           Serial.print(F(" SIV: "));
           Serial.print(SIV);
           Serial.println();
 
           SerialBT.print(F("Time elapsed: "));
-          SerialBT.print((String)myGPS.svin.observationTime);
+          SerialBT.print((String)i2cGNSS.getSurveyInObservationTime());
           SerialBT.print(F(" Accuracy: "));
-          SerialBT.print((String)myGPS.svin.meanAccuracy);
+          SerialBT.print((String)i2cGNSS.getSurveyInMeanAccuracy());
           SerialBT.print(F(" SIV: "));
           SerialBT.print(SIV);
           SerialBT.println();
 
           //If we are greater than a meter out of our objective, blink slow
-          if (myGPS.svin.meanAccuracy > (settings.observationPositionAccuracy + 1.0))
+          if (i2cGNSS.getSurveyInMeanAccuracy() > (settings.observationPositionAccuracy + 1.0))
             baseState = BASE_SURVEYING_IN_SLOW;
           else
             baseState = BASE_SURVEYING_IN_FAST;
 
-          if (myGPS.svin.observationTime > maxSurveyInWait_s)
+          if (i2cGNSS.getSurveyInObservationTime() > maxSurveyInWait_s)
           {
             Serial.printf("Survey-In took more than %d minutes. Restarting survey-in process.\n", maxSurveyInWait_s / 60);
 
@@ -135,15 +135,15 @@ bool configureUbloxModuleBase()
   digitalWrite(positionAccuracyLED_100cm, LOW);
 
   //In base mode we force 1Hz
-  if (myGPS.getNavigationFrequency() != 1)
+  if (i2cGNSS.getNavigationFrequency() != 1)
   {
-    response &= myGPS.setNavigationFrequency(1); //Set output in Hz
+    response &= i2cGNSS.setNavigationFrequency(1); //Set output in Hz
   }
 
   // Set dynamic model
-  if (myGPS.getDynamicModel() != DYN_MODEL_STATIONARY)
+  if (i2cGNSS.getDynamicModel() != DYN_MODEL_STATIONARY)
   {
-    response &= myGPS.setDynamicModel(DYN_MODEL_STATIONARY);
+    response &= i2cGNSS.setDynamicModel(DYN_MODEL_STATIONARY);
     if (response == false)
       Serial.println(F("setDynamicModel failed!"));
   }
@@ -167,8 +167,8 @@ bool configureUbloxModuleBase()
     getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
     if (settingPayload[OUTPUT_SETTING] != COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3 || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
     {
-      response &= myGPS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //UBX+RTCM3 is not a valid option so we enable all three.
-      response &= myGPS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
+      response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //UBX+RTCM3 is not a valid option so we enable all three.
+      response &= i2cGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
     }
 
     //Disable any NMEA sentences
@@ -190,7 +190,7 @@ void surveyIn()
 {
   resetSurvey();
 
-  bool response = myGPS.enableSurveyMode(settings.observationSeconds, settings.observationPositionAccuracy); //Enable Survey in, with user parameters
+  bool response = i2cGNSS.enableSurveyMode(settings.observationSeconds, settings.observationPositionAccuracy); //Enable Survey in, with user parameters
   if (response == false)
   {
     Serial.println(F("Survey start failed"));
@@ -207,11 +207,11 @@ void surveyIn()
 void resetSurvey()
 {
   //Slightly modified method for restarting survey-in from: https://portal.u-blox.com/s/question/0D52p00009IsVoMCAV/restarting-surveyin-on-an-f9p
-  bool response = myGPS.disableSurveyMode(); //Disable survey
+  bool response = i2cGNSS.disableSurveyMode(); //Disable survey
   delay(500);
-  response &= myGPS.enableSurveyMode(1000, 400.000); //Enable Survey in with bogus values
+  response &= i2cGNSS.enableSurveyMode(1000, 400.000); //Enable Survey in with bogus values
   delay(500);
-  response &= myGPS.disableSurveyMode(); //Disable survey
+  response &= i2cGNSS.disableSurveyMode(); //Disable survey
   delay(500);
 }
 
@@ -237,7 +237,7 @@ bool startFixedBase()
 
     //Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
     //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
-    response = myGPS.setStaticPosition(majorEcefX, minorEcefX,
+    response = i2cGNSS.setStaticPosition(majorEcefX, minorEcefX,
                                        majorEcefY, minorEcefY,
                                        majorEcefZ, minorEcefZ
                                       ); //With high precision 0.1mm parts
@@ -265,7 +265,7 @@ bool startFixedBase()
 //    Serial.printf("major (should be 156022): %ld\n", majorAlt);
 //    Serial.printf("minor (should be 84): %ld\n", minorAlt);
 
-    response = myGPS.setStaticPosition(
+    response = i2cGNSS.setStaticPosition(
                  majorLong, minorLong,
                  majorLat, minorLat,
                  majorAlt, minorAlt,
@@ -407,7 +407,7 @@ bool updateNtripServer()
 //This function gets called from the SparkFun u-blox Arduino Library.
 //As each RTCM byte comes in you can specify what to do with it
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
-void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
+void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
   if (caster.connected() == true)
   {

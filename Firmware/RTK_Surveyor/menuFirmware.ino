@@ -178,7 +178,7 @@ void updateFromSD(char *firmwareFileName)
           if (sd.exists(settingsFileName))
             sd.remove(settingsFileName);
 
-          myGPS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
+          i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
         }
 
         delay(1000);

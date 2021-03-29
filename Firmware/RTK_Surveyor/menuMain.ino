@@ -51,7 +51,7 @@ void menuMain()
         if (sd.exists(settingsFileName))
           sd.remove(settingsFileName);
 
-        myGPS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
+        i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
         Serial.println(F("Settings erased. Please reset RTK Surveyor. Freezing."));
         while (1) 

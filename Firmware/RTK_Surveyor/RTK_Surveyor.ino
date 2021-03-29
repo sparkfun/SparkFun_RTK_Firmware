@@ -103,11 +103,11 @@ uint32_t serverBytesSent = 0; //Just a running total
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 
-#include "SparkFun_Ublox_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_Ublox_GPS
-//SFE_UBLOX_GPS myGPS;
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+//SFE_UBLOX_GNSS i2cGNSS;
 
 // Extend the class for getModuleInfo - See Example21_ModuleInfo
-class SFE_UBLOX_GPS_ADD : public SFE_UBLOX_GPS
+class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
 {
   public:
     boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
@@ -121,7 +121,7 @@ class SFE_UBLOX_GPS_ADD : public SFE_UBLOX_GPS
     } minfo;
 };
 
-SFE_UBLOX_GPS_ADD myGPS;
+SFE_UBLOX_GNSS_ADD i2cGNSS;
 
 //This string is used to verify the firmware on the ZED-F9P. This
 //firmware relies on various features of the ZED and may require the latest
@@ -272,12 +272,12 @@ void setup()
   btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
   //battCheckTask.attach(battCheckTaskPace, checkBatteryLevels);
 
-  //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
+  //i2cGNSS.enableDebugging(); //Enable debug messages over Serial (default)
 }
 
 void loop()
 {
-  myGPS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
   //Check rover switch and configure module accordingly
   //When switch is set to '1' = BASE, pin will be shorted to ground
@@ -403,7 +403,7 @@ void updateDisplay()
       oled.drawIcon(0, 18, CrossHair_Width, CrossHair_Height, CrossHair, sizeof(CrossHair), true);
       oled.setCursor(16, 20); //x, y
       oled.print(":");
-      float hpa = myGPS.getHorizontalAccuracy() / 10000.0;
+      float hpa = i2cGNSS.getHorizontalAccuracy() / 10000.0;
       if (hpa > 30.0)
       {
         oled.print(F(">30"));
@@ -427,13 +427,13 @@ void updateDisplay()
       oled.setCursor(16, 36); //x, y
       oled.print(":");
 
-      if (myGPS.getFixType() == 0) //0 = No Fix
+      if (i2cGNSS.getFixType() == 0) //0 = No Fix
       {
         oled.print("0");
       }
       else
       {
-        oled.print(myGPS.getSIV());
+        oled.print(i2cGNSS.getSIV());
       }
 
       oled.display();

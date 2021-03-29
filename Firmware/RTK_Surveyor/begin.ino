@@ -106,11 +106,11 @@ void beginDisplay()
 //Connect to and configure ZED-F9P
 void beginGNSS()
 {
-  if (myGPS.begin() == false)
+  if (i2cGNSS.begin() == false)
   {
     //Try again with power on delay
     delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
-    if (myGPS.begin() == false)
+    if (i2cGNSS.begin() == false)
     {
       Serial.println(F("u-blox GNSS not detected at default I2C address. Hard stop."));
       blinkError(ERROR_NO_I2C);
@@ -118,12 +118,12 @@ void beginGNSS()
   }
 
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
-  //  if (myGPS.getModuleInfo(1100) == true) // Try to get the module info
+  //  if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info
   //  {
-  //    if (strcmp(myGPS.minfo.extension[1], latestZEDFirmware) != 0)
+  //    if (strcmp(i2cGNSS.minfo.extension[1], latestZEDFirmware) != 0)
   //    {
   //      Serial.print(F("The ZED-F9P appears to have outdated firmware. Found: "));
-  //      Serial.println(myGPS.minfo.extension[1]);
+  //      Serial.println(i2cGNSS.minfo.extension[1]);
   //      Serial.print(F("The Surveyor works best with "));
   //      Serial.println(latestZEDFirmware);
   //      Serial.print(F("Please upgrade using u-center."));

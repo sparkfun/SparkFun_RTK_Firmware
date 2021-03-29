@@ -84,15 +84,15 @@ void F9PSerialReadTask(void *e)
       }
 
       //If user wants to log, record to SD
-      if (settings.zedOutputLogging == true)
+      if (settings.logNMEA == true)
       {
-        if (online.microSD == true)
+        if (online.nmeaLogging == true)
         {
           //Check if we are inside the max time window for logging
           if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
           {
             taskYIELD();
-            gnssDataFile.write(rBuffer, s);
+            nmeaFile.write(rBuffer, s);
             taskYIELD();
 
             //Force sync every 500ms
@@ -101,11 +101,11 @@ void F9PSerialReadTask(void *e)
               lastDataLogSyncTime = millis();
 
               taskYIELD();
-              gnssDataFile.sync();
+              nmeaFile.sync();
               taskYIELD();
 
               if (settings.frequentFileAccessTimestamps == true)
-                updateDataFileAccess(&gnssDataFile); // Update the file access time & date
+                updateDataFileAccess(&nmeaFile); // Update the file access time & date
             }
           }
         }
@@ -128,11 +128,11 @@ bool configureUbloxModule()
 
   //UART1 will primarily be used to pass NMEA from ZED to ESP32 (eventually to cell phone)
   //but the phone can also provide RTCM data. So let's be sure to enable RTCM on UART1 input.
-  //In addition UART1 may output RAWX (for logging then PPP) so enable UBX on output
+  //Protocol out = NMEA, protocol in = RTCM
   getPortSettings(COM_PORT_UART1); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA) || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
   {
-    response &= i2cGNSS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX); //Set the UART1 to output NMEA and UBX
+    response &= i2cGNSS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA); //Set the UART1 to output NMEA
     response &= i2cGNSS.setPortInput(COM_PORT_UART1, COM_TYPE_RTCM3); //Set the UART1 to input RTCM
   }
 
@@ -169,7 +169,7 @@ bool configureUbloxModule()
 
   response &= enableNMEASentences(COM_PORT_UART1); //Make sure the appropriate NMEA sentences are enabled
 
-  response &= enableRXMSentences(COM_PORT_UART1); //This enables logging of RAWX message to SD as user requests
+  response &= enableRXMSentences(COM_PORT_I2C); //Make sure the appropriate RXM (RAXW and SFXBR) are enabled
 
   response &= i2cGNSS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
   response &= i2cGNSS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
@@ -224,23 +224,23 @@ bool enableRXMSentences(uint8_t portType)
 {
   bool response = true;
 
-  if (settings.gnssRAWOutput == true)
+  if (settings.logRAWX == true)
   {
     if (getRAWXSettings(portType) != 1)
       response &= i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
   }
-  else if (settings.gnssRAWOutput == false)
+  else if (settings.logRAWX == false)
   {
     if (getRAWXSettings(portType) != 0)
       response &= i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
   }
 
-  if (settings.enableSFRBX == true)
+  if (settings.logSFRBX == true)
   {
     if (getSFRBXSettings(portType) != 1)
       response &= i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
   }
-  else if (settings.enableSFRBX == false)
+  else if (settings.logSFRBX == false)
   {
     if (getSFRBXSettings(portType) != 0)
       response &= i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);

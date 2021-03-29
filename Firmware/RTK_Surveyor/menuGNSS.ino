@@ -136,18 +136,25 @@ void menuGNSS()
     }
     else if (incoming == '7')
     {
-
       if (getRAWXSettings(COM_PORT_UART1) == 1)
       {
         //Disable
         if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1) == true)
-          settings.gnssRAWOutput = false;
+        {
+          i2cGNSS.setAutoRXMRAWXcallback(NULL); // Disable automatic RXM RAWX messages
+          i2cGNSS.logRXMRAWX(false); // Disable RXM RAWX data logging
+          settings.logRAWX = false;
+        }
       }
       else
       {
         //Enable
         if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1) == true)
-          settings.gnssRAWOutput = true;
+        {
+          i2cGNSS.setAutoRXMRAWXcallback(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
+          i2cGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
+          settings.logRAWX = true;
+        }
       }
     }
     else if (incoming == '8')
@@ -156,13 +163,21 @@ void menuGNSS()
       {
         //Disable
         if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1) == true)
-          settings.enableSFRBX = false;
+        {
+          i2cGNSS.setAutoRXMRAWXcallback(NULL); // Disable automatic RXM RAWX messages
+          i2cGNSS.logRXMRAWX(false); // Disable RXM RAWX data logging
+          settings.logSFRBX = false;
+        }
       }
       else
       {
         //Enable
         if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1) == true)
-          settings.enableSFRBX = true;
+        {
+          i2cGNSS.setAutoRXMRAWXcallback(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
+          i2cGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
+          settings.logSFRBX = true;
+        }
       }
     }
     else if (incoming == '9')

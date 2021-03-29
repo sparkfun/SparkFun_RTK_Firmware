@@ -106,6 +106,17 @@ void beginDisplay()
 //Connect to and configure ZED-F9P
 void beginGNSS()
 {
+  if (settings.logUBX == true)
+  {
+    i2cGNSS.disableUBX7Fcheck(); // RAWX data can legitimately contain 0x7F, so we need to disable the "7F" check in checkUbloxI2C
+  }
+
+  // RAWX messages can be over 2KBytes in size, so we need to make sure we allocate enough RAM to hold all the data.
+  // SD cards can occasionally 'hiccup' and a write takes much longer than usual. The buffer needs to be big enough
+  // to hold the backlog of data if/when this happens.
+  // getMaxFileBufferAvail will tell us the maximum number of bytes which the file buffer has contained.
+  i2cGNSS.setFileBufferSize(gnssFileBufferSize); // setFileBufferSize must be called _before_ .begin
+
   if (i2cGNSS.begin() == false)
   {
     //Try again with power on delay
@@ -149,6 +160,21 @@ void beginGNSS()
       blinkError(ERROR_GPS_CONFIG_FAIL);
     }
   }
+
+  //Enable callbacks and logging as needed
+  if (settings.logRAWX == true)
+  {
+    i2cGNSS.setAutoRXMRAWXcallback(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
+    i2cGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
+  }
+  if (settings.logSFRBX == true)
+  {
+    i2cGNSS.setAutoRXMSFRBXcallback(&newSFRBX); // Enable automatic RXM SFRBX messages with callback to newSFRBX
+    i2cGNSS.logRXMSFRBX(); // Enable RXM SFRBX data logging
+  }
+
+  online.gnss = true;
+
   Serial.println(F("GNSS configuration complete"));
 }
 
@@ -190,10 +216,10 @@ bool beginBluetooth()
   //https://github.com/espressif/esp-idf/issues/1541
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
-  
+
   esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_NONE; //Requires pin 1234 on old BT dongle, No prompt on new BT dongle
   //esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_OUT; //Works but prompts for either pin (old) or 'Does this 6 pin appear on the device?' (new)
-  
+
   esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
 
   esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;

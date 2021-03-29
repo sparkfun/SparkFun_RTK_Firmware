@@ -45,6 +45,16 @@ void loadSettings()
 void recordSystemSettings()
 {
   settings.sizeOfSettings = sizeof(settings);
+  if (settings.sizeOfSettings > EEPROM_SIZE)
+  {
+    while (1) //Hard freeze
+    {
+      Serial.printf("Size of settings is %d bytes\n", sizeof(settings));
+      Serial.println(F("Increase the EEPROM footprint!"));
+      delay(1000);
+    }
+  }
+  
   EEPROM.put(0, settings);
   EEPROM.commit();
   delay(1); //Give CPU time to pet WDT
@@ -72,8 +82,6 @@ void recordSystemSettingsToFile()
     settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
     settingsFile.println("enableSD=" + (String)settings.enableSD);
     settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
-    settingsFile.println("zedOutputLogging=" + (String)settings.zedOutputLogging);
-    settingsFile.println("gnssRAWOutput=" + (String)settings.gnssRAWOutput);
     settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
     settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
     settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
@@ -101,7 +109,10 @@ void recordSystemSettingsToFile()
     settingsFile.println("mountPointPW=" + (String)settings.mountPointPW);
     settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
     settingsFile.println("wifiPW=" + (String)settings.wifiPW);
-    settingsFile.println("enableSFRBX=" + (String)settings.enableSFRBX);
+    settingsFile.println("logNMEA=" + (String)settings.logNMEA);
+    settingsFile.println("logUBX=" + (String)settings.logUBX);
+    settingsFile.println("logRAWX=" + (String)settings.logRAWX);
+    settingsFile.println("logSFRBX=" + (String)settings.logSFRBX);
 
     updateDataFileAccess(&settingsFile); // Update the file access time & date
 
@@ -248,10 +259,6 @@ bool parseLine(char* str) {
     settings.enableSD = d;
   else if (strcmp(settingName, "enableDisplay") == 0)
     settings.enableDisplay = d;
-  else if (strcmp(settingName, "zedOutputLogging") == 0)
-    settings.zedOutputLogging = d;
-  else if (strcmp(settingName, "gnssRAWOutput") == 0)
-    settings.gnssRAWOutput = d;
   else if (strcmp(settingName, "frequentFileAccessTimestamps") == 0)
     settings.frequentFileAccessTimestamps = d;
   else if (strcmp(settingName, "maxLogTime_minutes") == 0)
@@ -306,8 +313,14 @@ bool parseLine(char* str) {
     strcpy(settings.wifiSSID, settingValue);
   else if (strcmp(settingName, "wifiPW") == 0)
     strcpy(settings.wifiPW, settingValue);
-  else if (strcmp(settingName, "enableSFRBX") == 0)
-    settings.enableSFRBX = d;
+  else if (strcmp(settingName, "logNMEA") == 0)
+    settings.logNMEA = d;
+  else if (strcmp(settingName, "logUBX") == 0)
+    settings.logUBX = d;
+  else if (strcmp(settingName, "logRAWX") == 0)
+    settings.logRAWX = d;
+  else if (strcmp(settingName, "logSFRBX") == 0)
+    settings.logSFRBX = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

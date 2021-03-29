@@ -51,8 +51,6 @@ struct struct_settings {
   bool printDebugMessages = false;
   bool enableSD = true;
   bool enableDisplay = true;
-  bool zedOutputLogging = false;
-  bool gnssRAWOutput = false;
   bool frequentFileAccessTimestamps = false;
   int maxLogTime_minutes = 60*10; //Default to 10 hours
   int observationSeconds = 60; //Default survey in time of 60 seconds
@@ -80,14 +78,19 @@ struct struct_settings {
   char mountPointPW[50] = "WR5wRo4H";
   char wifiSSID[50] = "TRex";
   char wifiPW[50] = "parachutes";
-  bool enableSFRBX = false; //Issue #11
+  bool logNMEA = false;
+  bool logUBX = false;
+  bool logRAWX = false;
+  bool logSFRBX = false; //Issue #11
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.
 struct struct_online {
   bool microSD = false;
   bool display = false;
-  bool dataLogging = false;
+  bool gnss = false;
+  bool nmeaLogging = false;
+  bool ubxLogging = false;
   bool serialOutput = false;
   bool eeprom = false;
 } online;

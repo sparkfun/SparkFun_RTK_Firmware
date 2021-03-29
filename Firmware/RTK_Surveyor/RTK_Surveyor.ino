@@ -75,7 +75,8 @@ const int batteryLevel_alert = 36;
 #include <SPI.h>
 #include <SdFat.h> //SdFat (FAT32) by Bill Greiman: http://librarymanager/All#SdFat
 SdFat sd;
-SdFile gnssDataFile; //File that all gnss data is written to
+SdFile nmeaFile; //File that all gnss nmea setences are written to
+SdFile ubxFile; //File that all gnss nmea setences are written to
 
 char settingsFileName[40] = "SFE_Surveyor_Settings.txt"; //File to read/write system settings to
 
@@ -132,6 +133,9 @@ char latestZEDFirmware[] = "FWVER=HPG 1.13";
 //Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings
 //This array holds the payload data bytes. Global so that we can use between config functions.
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
+
+#define sdWriteSize 512 // Write data to the SD card in blocks of 512 bytes
+#define gnssFileBufferSize 16384 // Allocate 16KBytes of RAM for UBX message storage
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -198,6 +202,9 @@ uint32_t lastRoverUpdate = 0;
 uint32_t lastBaseUpdate = 0;
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
+uint32_t lastUbxCountUpdate = 0;
+uint32_t ubxCount = 0;
+
 
 uint32_t lastTime = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -214,6 +221,18 @@ float btLEDTaskPace = 0.5; //Seconds
 
 //Ticker battCheckTask;
 //float battCheckTaskPace = 2.0; //Seconds
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//GNSS Call back functions
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+void newSFRBX(UBX_RXM_SFRBX_data_t ubxDataStruct)
+{
+  //Do nothing, but we have to have callbacks in place to obtain RXM messages
+}
+
+void newRAWX(UBX_RXM_RAWX_data_t ubxDataStruct)
+{
+}
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void setup()
@@ -259,7 +278,8 @@ void setup()
 
   danceLEDs(); //Turn on LEDs like a car dashboard
 
-  if (online.microSD == true && settings.zedOutputLogging == true) startLogTime_minutes = 0; //Mark now as start of logging
+  if (online.microSD == true && settings.logNMEA == true) startLogTime_minutes = 0; //Mark now as start of logging
+  if (online.microSD == true && settings.logUBX == true) startLogTime_minutes = 0; //Mark now as start of logging
 
   if (xI2CSemaphore == NULL)
   {
@@ -311,7 +331,7 @@ void loop()
     //Restart Bluetooth with 'Base' name
     //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
     beginBluetooth();
-    
+
     baseState = BASE_SURVEYING_IN_NOTSTARTED; //Switch to new state
   }
 
@@ -335,21 +355,10 @@ void loop()
 
   updateDisplay();
 
+  updateLogs(); //Record any new UBX data. Create files or close NMEA and UBX files as needed.
+
   //Menu system via ESP32 USB connection
   if (Serial.available()) menuMain(); //Present user menu
-
-  //Create files or close files as needed
-  if (settings.zedOutputLogging == true && online.dataLogging == false)
-  {
-    beginDataLogging();
-  }
-  else if (settings.zedOutputLogging == false && online.dataLogging == true)
-  {
-    //Close down file
-    gnssDataFile.sync();
-    gnssDataFile.close();
-    online.dataLogging = false;
-  }
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;
@@ -439,4 +448,60 @@ void updateDisplay()
       oled.display();
     }
   }
+}
+
+//Create or close UBX/NMEA files as needed (startup or as user changes settings)
+//Push new UBX packets to log as needed
+void updateLogs()
+{
+  if (online.nmeaLogging == false && settings.logNMEA == true)
+  {
+    beginLoggingNMEA();
+  }
+  else if (online.nmeaLogging == true && settings.logNMEA == false)
+  {
+    //Close down file
+    nmeaFile.sync();
+    nmeaFile.close();
+    online.nmeaLogging = false;
+  }
+
+  if (online.ubxLogging == false && settings.logUBX == true)
+  {
+    beginLoggingUBX();
+  }
+  else if (online.ubxLogging == true && settings.logUBX == false)
+  {
+    //Close down file
+    ubxFile.sync();
+    ubxFile.close();
+    online.ubxLogging = false;
+  }
+
+  if (online.ubxLogging == true)
+  {
+    if (millis() - lastUbxCountUpdate > 1000)
+    {
+      lastUbxCountUpdate = millis();
+      Serial.printf("UBX byte total/buffer: %d / %d\n", ubxCount, i2cGNSS.fileBufferAvailable());
+    }
+
+    while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
+    {
+      uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
+
+      i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
+
+      ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
+
+      delay(1); //Give RTOS a breath
+
+      // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
+      i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
+      i2cGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
+
+      ubxCount += sdWriteSize;
+    }
+  }
+
 }

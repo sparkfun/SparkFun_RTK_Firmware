@@ -19,17 +19,21 @@ void menuLog()
         Serial.println(F("No microSD card is detected"));
     }
 
-    Serial.print(F("1) Log to microSD: "));
-    if (settings.zedOutputLogging) Serial.println(F("Enabled"));
+    Serial.print(F("1) Log NMEA to microSD: "));
+    if (settings.logNMEA) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    if (settings.zedOutputLogging == true)
+    Serial.print(F("2) Log UBX to microSD: "));
+    if (settings.logUBX) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
+    if (settings.logNMEA == true || settings.logUBX == true)
     {
-      Serial.print(F("2) Update file timestamp with each write: "));
+      Serial.print(F("3) Update file timestamp with each write: "));
       if (settings.frequentFileAccessTimestamps == true) Serial.println(F("Enabled"));
       else Serial.println(F("Disabled"));
 
-      Serial.print(F("3) Set max logging time: "));
+      Serial.print(F("4) Set max logging time: "));
       Serial.print(settings.maxLogTime_minutes);
       Serial.println(F(" minutes"));
     }
@@ -40,16 +44,23 @@ void menuLog()
 
     if (incoming == '1')
     {
-      settings.zedOutputLogging ^= 1;
+      settings.logNMEA ^= 1;
 
-      if (online.microSD == true && settings.zedOutputLogging == true)
+      if (online.microSD == true && settings.logNMEA == true)
         startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
     }
-    else if (settings.zedOutputLogging == true)
+    else if (incoming == '2')
     {
-      if (incoming == '2')
+      settings.logUBX ^= 1;
+
+      if (online.microSD == true && settings.logUBX == true)
+        startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
+    }
+    else if (settings.logNMEA == true || settings.logUBX == true)
+    {
+      if (incoming == '3')
         settings.frequentFileAccessTimestamps ^= 1;
-      else if (incoming == '3')
+      else if (incoming == '4')
       {
         Serial.print(F("Enter max minutes to log data: "));
         int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds
@@ -84,58 +95,98 @@ void menuLog()
 
 //Creates a log if logging is enabled, and SD is detected
 //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.txt
-void beginDataLogging()
+void beginLoggingNMEA()
 {
-  if (online.dataLogging == false)
+  if (online.nmeaLogging == false)
   {
-    if (online.microSD == true && settings.zedOutputLogging == true)
+    if (online.microSD == true && settings.logNMEA == true)
     {
-      char gnssDataFileName[40] = "";
+      char fileName[40] = "";
 
-      //If we don't have a file yet, create one
-      if (strlen(gnssDataFileName) == 0)
+      //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.txt
+      if (i2cGNSS.getTimeValid() == false || i2cGNSS.getDateValid() == false)
       {
-        //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.txt
-        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
-        {
-          sprintf(gnssDataFileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt",
-                  i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
-                  i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
-                 );
-        }
-        else
-        {
-          Serial.println(F("beginDataLogging: No date/time available. No file created."));
-          delay(1000); //Give the receiver time to get a lock
-          online.dataLogging = false;
-          return;
-        }
+        Serial.println(F("beginLoggingNMEA: No date/time available. No file created."));
+        delay(1000); //Give the receiver time to get a lock
+        online.nmeaLogging = false;
+        return;
       }
+
+      sprintf(fileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt",
+              i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
+              i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
+             );
+
 
       // O_CREAT - create the file if it does not exist
       // O_APPEND - seek to the end of the file prior to each write
       // O_WRITE - open for write
-      if (gnssDataFile.open(gnssDataFileName, O_CREAT | O_APPEND | O_WRITE) == false)
+      if (nmeaFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
-        Serial.println(F("Failed to create sensor data file"));
-        online.dataLogging = false;
+        Serial.println(F("Failed to create GNSS NMEA data file"));
+        online.nmeaLogging = false;
         return;
       }
 
-      updateDataFileCreate(&gnssDataFile); // Update the file to create time & date
+      updateDataFileCreate(&nmeaFile); // Update the file to create time & date
 
-      Serial.printf("Log file created: %s\n", gnssDataFileName);
-      online.dataLogging = true;
+      Serial.printf("Log file created: %s\n", fileName);
+      online.nmeaLogging = true;
     }
     else
-      online.dataLogging = false;
+      online.nmeaLogging = false;
+  }
+}
+
+//Creates a log if logging is enabled, and SD is detected
+//Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
+void beginLoggingUBX()
+{
+  if (online.ubxLogging == false)
+  {
+    if (online.microSD == true && settings.logUBX == true)
+    {
+      char fileName[40] = "";
+
+      //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.txt
+      if (i2cGNSS.getTimeValid() == false || i2cGNSS.getDateValid() == false)
+      {
+        Serial.println(F("beginLoggingUBX: No date/time available. No file created."));
+        delay(1000); //Give the receiver time to get a lock
+        online.ubxLogging = false;
+        return;
+      }
+
+      sprintf(fileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.ubx",
+              i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
+              i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
+             );
+
+
+      // O_CREAT - create the file if it does not exist
+      // O_APPEND - seek to the end of the file prior to each write
+      // O_WRITE - open for write
+      if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+      {
+        Serial.println(F("Failed to create GNSS UBX data file"));
+        online.ubxLogging = false;
+        return;
+      }
+
+      updateDataFileCreate(&ubxFile); // Update the file to create time & date
+
+      Serial.printf("Log file created: %s\n", fileName);
+      online.ubxLogging = true;
+    }
+    else
+      online.ubxLogging = false;
   }
 }
 
 //Updates the timestemp on a given data file
 void updateDataFileAccess(SdFile *dataFile)
 {
-  if (online.dataLogging == true)
+  if (online.gnss == true) //This function is called at startup and may be called before GNSS is begin()'d
   {
     if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
     {
@@ -149,7 +200,7 @@ void updateDataFileAccess(SdFile *dataFile)
 
 void updateDataFileCreate(SdFile *dataFile)
 {
-  if (online.dataLogging == true)
+  if (online.gnss == true)
   {
     if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
     {

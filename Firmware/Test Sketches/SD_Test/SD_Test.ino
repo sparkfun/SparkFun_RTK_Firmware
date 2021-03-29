@@ -206,6 +206,14 @@ void setup() {
   uint64_t cardSize = SD.cardSize() / (1024 * 1024);
   Serial.printf("SD Card Size: %lluMB\n", cardSize);
 
+  File myFile = SD.open("/RXM_RAWX.ubx", FILE_WRITE);
+  if(!myFile)
+  {
+    Serial.println(F("Failed to create UBX data file! Freezing..."));
+    while (1);
+  }
+
+
   listDir(SD, "/", 0);
   createDir(SD, "/mydir");
   listDir(SD, "/", 0);

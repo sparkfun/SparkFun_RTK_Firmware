@@ -266,8 +266,8 @@ bool startFixedBase()
 //    Serial.printf("minor (should be 84): %ld\n", minorAlt);
 
     response = i2cGNSS.setStaticPosition(
-                 majorLong, minorLong,
                  majorLat, minorLat,
+                 majorLong, minorLong,
                  majorAlt, minorAlt,
                  true);
   }

@@ -2,6 +2,8 @@
 
 void beginSD()
 {
+  const int spiSpeed = 24; //MHz
+  
   pinMode(PIN_MICROSD_CHIP_SELECT, OUTPUT);
   digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
 
@@ -11,12 +13,12 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     delay(10);
 
-    if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(24)) == false) //Standard SdFat
+    if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(spiSpeed)) == false) //Standard SdFat
     {
       printDebug("SD init failed (first attempt). Trying again...\r\n");
       //Give SD more time to power up, then try again
       delay(250);
-      if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(24)) == false) //Standard SdFat
+      if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(spiSpeed)) == false) //Standard SdFat
       {
         Serial.println(F("SD init failed (second attempt). Is card present? Formatted?"));
         digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
@@ -159,18 +161,6 @@ void beginGNSS()
       Serial.println(F("Failed to configure module. Hard stop."));
       blinkError(ERROR_GPS_CONFIG_FAIL);
     }
-  }
-
-  //Enable callbacks and logging as needed
-  if (settings.logRAWX == true)
-  {
-    i2cGNSS.setAutoRXMRAWXcallback(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
-    i2cGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
-  }
-  if (settings.logSFRBX == true)
-  {
-    i2cGNSS.setAutoRXMSFRBXcallback(&newSFRBX); // Enable automatic RXM SFRBX messages with callback to newSFRBX
-    i2cGNSS.logRXMSFRBX(); // Enable RXM SFRBX data logging
   }
 
   online.gnss = true;

@@ -191,6 +191,18 @@ bool configureUbloxModule()
     return (false);
   }
 
+  //Enable callbacks and logging as needed
+  if (settings.logRAWX == true)
+  {
+    i2cGNSS.setAutoRXMRAWXcallback(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
+    i2cGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
+  }
+  if (settings.logSFRBX == true)
+  {
+    i2cGNSS.setAutoRXMSFRBXcallback(&newSFRBX); // Enable automatic RXM SFRBX messages with callback to newSFRBX
+    i2cGNSS.logRXMSFRBX(); // Enable RXM SFRBX data logging
+  }
+
   //Check rover switch and configure module accordingly
   //When switch is set to '1' = BASE, pin will be shorted to ground
   if (digitalRead(baseSwitch) == HIGH)

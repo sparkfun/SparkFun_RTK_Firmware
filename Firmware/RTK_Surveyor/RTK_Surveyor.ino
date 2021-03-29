@@ -298,6 +298,7 @@ void setup()
 void loop()
 {
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  i2cGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
   //Check rover switch and configure module accordingly
   //When switch is set to '1' = BASE, pin will be shorted to ground
@@ -493,8 +494,7 @@ void updateLogs()
       i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
 
       ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
-
-      delay(1); //Give RTOS a breath
+      ubxFile.sync();
 
       // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
       i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.

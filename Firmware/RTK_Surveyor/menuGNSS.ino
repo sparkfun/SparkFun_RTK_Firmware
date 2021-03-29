@@ -31,11 +31,11 @@ void menuGNSS()
     else Serial.println(F("Disabled"));
 
     Serial.print(F("7) Toggle GNSS RAWX sentence: "));
-    if (getRAWXSettings(COM_PORT_UART1) == 1) Serial.println(F("Enabled"));
+    if (getRAWXSettings(COM_PORT_I2C) == 1) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
     Serial.print(F("8) Toggle GNSS SFRBX sentence: "));
-    if (getSFRBXSettings(COM_PORT_UART1) == 1) Serial.println(F("Enabled"));
+    if (getSFRBXSettings(COM_PORT_I2C) == 1) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
     Serial.print(F("9) Toggle SBAS: "));
@@ -136,10 +136,10 @@ void menuGNSS()
     }
     else if (incoming == '7')
     {
-      if (getRAWXSettings(COM_PORT_UART1) == 1)
+      if (getRAWXSettings(COM_PORT_I2C) == 1)
       {
         //Disable
-        if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1) == true)
+        if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_I2C) == true)
         {
           i2cGNSS.setAutoRXMRAWXcallback(NULL); // Disable automatic RXM RAWX messages
           i2cGNSS.logRXMRAWX(false); // Disable RXM RAWX data logging
@@ -149,7 +149,7 @@ void menuGNSS()
       else
       {
         //Enable
-        if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_UART1) == true)
+        if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_I2C) == true)
         {
           i2cGNSS.setAutoRXMRAWXcallback(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
           i2cGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
@@ -159,10 +159,10 @@ void menuGNSS()
     }
     else if (incoming == '8')
     {
-      if (getSFRBXSettings(COM_PORT_UART1) == 1)
+      if (getSFRBXSettings(COM_PORT_I2C) == 1)
       {
         //Disable
-        if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1) == true)
+        if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_I2C) == true)
         {
           i2cGNSS.setAutoRXMRAWXcallback(NULL); // Disable automatic RXM RAWX messages
           i2cGNSS.logRXMRAWX(false); // Disable RXM RAWX data logging
@@ -172,7 +172,7 @@ void menuGNSS()
       else
       {
         //Enable
-        if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_UART1) == true)
+        if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_I2C) == true)
         {
           i2cGNSS.setAutoRXMRAWXcallback(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
           i2cGNSS.logRXMRAWX(); // Enable RXM RAWX data logging

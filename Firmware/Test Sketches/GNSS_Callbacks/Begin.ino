@@ -61,15 +61,16 @@ bool beginBluetooth()
   digitalWrite(bluetoothStatusLED, HIGH);
 
   //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
-  //Reduced stack size from 10,000 to 1,000 to make room for WiFi/NTRIP server capabilities
-  if (F9PSerialReadTaskHandle == NULL) xTaskCreate(F9PSerialReadTask, "F9Read", 1000, NULL, 0, &F9PSerialReadTaskHandle);
-  if (F9PSerialWriteTaskHandle == NULL) xTaskCreate(F9PSerialWriteTask, "F9Write", 1000, NULL, 0, &F9PSerialWriteTaskHandle);
+  if (F9PSerialReadTaskHandle == NULL) xTaskCreate(F9PSerialReadTask, "F9Read", readTaskStackSize, NULL, 0, &F9PSerialReadTaskHandle);
+  if (F9PSerialWriteTaskHandle == NULL) xTaskCreate(F9PSerialWriteTask, "F9Write", writeTaskStackSize, NULL, 0, &F9PSerialWriteTaskHandle);
 
   return (true);
 }
 
 void beginSD()
 {
+  int spiFreqMHz = 8;
+  
   pinMode(PIN_MICROSD_CHIP_SELECT, OUTPUT);
   digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
 
@@ -79,12 +80,14 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     delay(10);
 
-    if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(24)) == false) //Standard SdFat
+    if (SD.begin(PIN_MICROSD_CHIP_SELECT) == false) //Standard SdFat
+//    if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(spiFreqMHz)) == false) //Standard SdFat
     {
       //printDebug("SD init failed (first attempt). Trying again...\r\n");
       //Give SD more time to power up, then try again
       delay(250);
-      if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(24)) == false) //Standard SdFat
+      if (SD.begin(PIN_MICROSD_CHIP_SELECT) == false) //Standard SdFat
+//      if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(spiFreqMHz)) == false) //Standard SdFat
       {
         Serial.println(F("SD init failed (second attempt). Is card present? Formatted?"));
         digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
@@ -94,12 +97,12 @@ void beginSD()
     }
 
     //Change to root directory. All new file creation will be in root.
-    if (sd.chdir() == false)
-    {
-      Serial.println(F("SD change directory failed"));
-      online.microSD = false;
-      return;
-    }
+//    if (sd.chdir() == false)
+//    {
+//      Serial.println(F("SD change directory failed"));
+//      online.microSD = false;
+//      return;
+//    }
 
     online.microSD = true;
   }

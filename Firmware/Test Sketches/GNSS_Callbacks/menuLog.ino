@@ -1,22 +1,24 @@
 //Updates the timestemp on a given data file
-void updateDataFileAccess(SdFile *dataFile)
+void updateDataFileAccess(File *dataFile)
+//void updateDataFileAccess(SdFile *dataFile)
 {
-    if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
-    {
-      //Update the file access time
-      dataFile->timestamp(T_ACCESS, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
-      //Update the file write time
-      dataFile->timestamp(T_WRITE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
-    }
+//    if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
+//    {
+//      //Update the file access time
+//      dataFile->timestamp(T_ACCESS, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
+//      //Update the file write time
+//      dataFile->timestamp(T_WRITE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
+//    }
 }
 
-void updateDataFileCreate(SdFile *dataFile)
+void updateDataFileCreate(File *dataFile)
+//void updateDataFileCreate(SdFile *dataFile)
 {
-    if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
-    {
-      //Update the file create time
-      dataFile->timestamp(T_CREATE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
-    }
+//    if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
+//    {
+//      //Update the file create time
+//      dataFile->timestamp(T_CREATE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
+//    }
 }
 
 //Given a portID, return the RAWX value for the given port
@@ -88,7 +90,8 @@ void beginLoggingNMEA()
         return;
       }
 
-      sprintf(fileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt",
+      sprintf(fileName, "/SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt",
+//      sprintf(fileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt",
               i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
               i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
              );
@@ -97,7 +100,9 @@ void beginLoggingNMEA()
       // O_CREAT - create the file if it does not exist
       // O_APPEND - seek to the end of the file prior to each write
       // O_WRITE - open for write
-      if (nmeaFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+      nmeaFile = SD.open(fileName, FILE_WRITE);
+      if (!nmeaFile)
+//      if (nmeaFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
         Serial.println(F("Failed to create GNSS NMEA data file"));
         online.nmeaLogging = false;
@@ -133,19 +138,22 @@ void beginLoggingUBX()
         return;
       }
 
-      sprintf(fileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.ubx",
+      sprintf(fileName, "/SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.ubx",
+//      sprintf(fileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.ubx",
               i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
               i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
              );
 
-
       // O_CREAT - create the file if it does not exist
       // O_APPEND - seek to the end of the file prior to each write
       // O_WRITE - open for write
-      if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+      ubxFile = SD.open(fileName, FILE_WRITE);
+      if (!ubxFile)
+//      if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
         Serial.println(F("Failed to create GNSS UBX data file"));
         online.ubxLogging = false;
+        delay(1000);
         return;
       }
 

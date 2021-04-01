@@ -66,12 +66,13 @@ void F9PSerialReadTask(void *e)
             taskYIELD();
 
             //Force sync every 500ms
-            if (millis() - lastDataLogSyncTime > 500)
+            if (millis() - lastNMEALogSyncTime > 500)
             {
-              lastDataLogSyncTime = millis();
+              lastNMEALogSyncTime = millis();
 
               taskYIELD();
-              nmeaFile.sync();
+              nmeaFile.flush();
+//              nmeaFile.sync();
               taskYIELD();
 
               if (settings.frequentFileAccessTimestamps == true)

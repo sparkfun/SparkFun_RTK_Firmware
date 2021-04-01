@@ -106,19 +106,30 @@ uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading F9P
 uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+
+//Reduced stack size from 10,000 to 1,000 to make room for WiFi/NTRIP server capabilities
+//Increase stacks to 2k to allow for dual file write of NMEA/UBX using built in SD library
+const int readTaskStackSize = 2000;
+const int writeTaskStackSize = 2000;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
-#include <SdFat.h> //SdFat (FAT32) by Bill Greiman: http://librarymanager/All#SdFat
-SdFat sd;
-SdFile nmeaFile; //File that all gnss nmea setences are written to
-SdFile ubxFile; //File that all gnss nmea setences are written to
+//#include <SdFat.h> //SdFat (FAT32) by Bill Greiman: http://librarymanager/All#SdFat
+//SdFat sd;
+//SdFile nmeaFile; //File that all gnss nmea setences are written to
+//SdFile ubxFile; //File that all gnss nmea setences are written to
+
+#include <SD.h>
+File nmeaFile; //File that all gnss nmea setences are written to
+File ubxFile; //File that all gnss nmea setences are written to
 
 char settingsFileName[40] = "SFE_Surveyor_Settings.txt"; //File to read/write system settings to
 
-unsigned long lastDataLogSyncTime = 0; //Used to record to SD every half second
+unsigned long lastNMEALogSyncTime = 0; //Used to record to SD every half second
+unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
+
 long startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -137,6 +148,9 @@ uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
 
 uint32_t lastTime = 0;
+
+uint32_t lastUbxCountUpdate = 0;
+uint32_t ubxCount = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 
@@ -158,6 +172,7 @@ uint32_t lastTime = 0;
 
 #define sdWriteSize 512 // Write data to the SD card in blocks of 512 bytes
 #define fileBufferSize 16384 // Allocate 16KBytes of RAM for UBX message storage
+//#define fileBufferSize 2048 // Allocate 16KBytes of RAM for UBX message storage
 
 void newSFRBX(UBX_RXM_SFRBX_data_t ubxDataStruct)
 {
@@ -218,18 +233,6 @@ void loop()
 
 void updateLogs()
 {
-  if (online.nmeaLogging == false && settings.logNMEA == true)
-  {
-    beginLoggingNMEA();
-  }
-  else if (online.nmeaLogging == true && settings.logNMEA == false)
-  {
-    //Close down file
-    nmeaFile.sync();
-    nmeaFile.close();
-    online.nmeaLogging = false;
-  }
-
   if (online.ubxLogging == false && settings.logUBX == true)
   {
     beginLoggingUBX();
@@ -237,29 +240,64 @@ void updateLogs()
   else if (online.ubxLogging == true && settings.logUBX == false)
   {
     //Close down file
-    ubxFile.sync();
+    //ubxFile.sync();
+    ubxFile.flush();
     ubxFile.close();
     online.ubxLogging = false;
   }
+  
+  if (online.nmeaLogging == false && settings.logNMEA == true)
+  {
+    beginLoggingNMEA();
+  }
+  else if (online.nmeaLogging == true && settings.logNMEA == false)
+  {
+    //Close down file
+    //nmeaFile.sync();
+    nmeaFile.flush();
+    nmeaFile.close();
+    online.nmeaLogging = false;
+  }
+
+
 
   if (online.ubxLogging == true)
   {
-    Serial.printf("Record RAWX %d\n", i2cGNSS.fileBufferAvailable());
+    if (millis() - lastUbxCountUpdate > 1000)
+    {
+      lastUbxCountUpdate = millis();
+      Serial.printf("UBX byte total / kB/s: %d / %0.02f\n", ubxCount, (float)ubxCount / millis());
+    }
 
     while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
     {
+      Serial.println("1");
       uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
 
       i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
 
+      Serial.println("2");
       ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
 
-      delay(1); //Give RTOS a chance
-
       // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
+      Serial.println("3");
       i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
       i2cGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
+
+      ubxCount += sdWriteSize;
+    }
+
+    //Force sync every 500ms
+    if (millis() - lastUBXLogSyncTime > 500)
+    {
+      Serial.println("Sync");
+      lastUBXLogSyncTime = millis();
+
+      ubxFile.flush();
+//      ubxFile.sync();
+
+      if (settings.frequentFileAccessTimestamps == true)
+        updateDataFileAccess(&ubxFile); // Update the file access time & date
     }
   }
-
 }

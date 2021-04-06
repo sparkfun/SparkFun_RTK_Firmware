@@ -54,7 +54,7 @@ void recordSystemSettings()
       delay(1000);
     }
   }
-  
+
   EEPROM.put(0, settings);
   EEPROM.commit();
   delay(1); //Give CPU time to pet WDT
@@ -66,11 +66,11 @@ void recordSystemSettingsToFile()
 {
   if (online.microSD == true)
   {
-    if (sd.exists(settingsFileName))
-      sd.remove(settingsFileName);
+    if (SD.exists(settingsFileName))
+      SD.remove(settingsFileName);
 
-    SdFile settingsFile; //FAT32
-    if (settingsFile.open(settingsFileName, O_CREAT | O_APPEND | O_WRITE) == false)
+    File settingsFile = SD.open(settingsFileName, FILE_WRITE);
+    if (!settingsFile)
     {
       Serial.println(F("Failed to create settings file"));
       return;
@@ -82,7 +82,6 @@ void recordSystemSettingsToFile()
     settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
     settingsFile.println("enableSD=" + (String)settings.enableSD);
     settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
-    settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
     settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
     settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
     settingsFile.println("observationPositionAccuracy=" + (String)settings.observationPositionAccuracy);
@@ -114,8 +113,6 @@ void recordSystemSettingsToFile()
     settingsFile.println("logRAWX=" + (String)settings.logRAWX);
     settingsFile.println("logSFRBX=" + (String)settings.logSFRBX);
 
-    updateDataFileAccess(&settingsFile); // Update the file access time & date
-
     settingsFile.close();
   }
 }
@@ -128,10 +125,10 @@ bool loadSystemSettingsFromFile()
 {
   if (online.microSD == true)
   {
-    if (sd.exists(settingsFileName))
+    if (SD.exists(settingsFileName))
     {
-      SdFile settingsFile; //FAT32
-      if (settingsFile.open(settingsFileName, O_READ) == false)
+      File settingsFile = SD.open(settingsFileName, FILE_READ);
+      if (!settingsFile)
       {
         Serial.println(F("Failed to open settings file"));
         return (false);
@@ -141,7 +138,10 @@ bool loadSystemSettingsFromFile()
       int lineNumber = 0;
 
       while (settingsFile.available()) {
-        int n = settingsFile.fgets(line, sizeof(line));
+
+        //Get the next line from the file
+        int n = getLine(&settingsFile, line, sizeof(line));
+        //int n = settingsFile.fgets(line, sizeof(line));
         if (n <= 0) {
           Serial.printf("Failed to read line %d from settings file\r\n", lineNumber);
         }
@@ -237,7 +237,7 @@ bool parseLine(char* str) {
     if (d == -1)
     {
       eepromErase();
-      sd.remove(settingsFileName);
+      SD.remove(settingsFileName);
       Serial.println(F("RTK Surveyor has been factory reset. Freezing. Please restart and open terminal at 115200bps."));
       while (1)
         delay(1); //Prevent CPU freakout
@@ -259,8 +259,6 @@ bool parseLine(char* str) {
     settings.enableSD = d;
   else if (strcmp(settingName, "enableDisplay") == 0)
     settings.enableDisplay = d;
-  else if (strcmp(settingName, "frequentFileAccessTimestamps") == 0)
-    settings.frequentFileAccessTimestamps = d;
   else if (strcmp(settingName, "maxLogTime_minutes") == 0)
     settings.maxLogTime_minutes = d;
   else if (strcmp(settingName, "observationSeconds") == 0)
@@ -335,4 +333,29 @@ void eepromErase()
     EEPROM.write(i, 0xFF); //Reset to all 1s
   }
   EEPROM.commit();
+}
+
+//The SD library doesn't have a fgets function like SD fat so recreate it here
+//Read the current line in the file until we hit a EOL char \r or \n
+int getLine(File * openFile, char * lineChars, int lineSize)
+{
+  int count = 0;
+  while (openFile->available())
+  {
+    byte incoming = openFile->read();
+    if (incoming == '\r' || incoming == '\n')
+    {
+      //Sometimes a line has multiple terminators
+      while (openFile->peek() == '\r' || openFile->peek() == '\n')
+        openFile->read(); //Dump it to prevent next line read corruption
+      break;
+    }
+
+    lineChars[count++] = incoming;
+
+    if (count == lineSize - 1)
+      break; //Stop before overun of buffer
+  }
+  lineChars[count] = '\0'; //Terminate string
+  return (count);
 }

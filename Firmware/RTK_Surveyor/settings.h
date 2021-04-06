@@ -51,7 +51,6 @@ struct struct_settings {
   bool printDebugMessages = false;
   bool enableSD = true;
   bool enableDisplay = true;
-  bool frequentFileAccessTimestamps = false;
   int maxLogTime_minutes = 60*10; //Default to 10 hours
   int observationSeconds = 60; //Default survey in time of 60 seconds
   float observationPositionAccuracy = 5.0; //Default survey in pos accy of 5m
@@ -93,4 +92,5 @@ struct struct_online {
   bool ubxLogging = false;
   bool serialOutput = false;
   bool eeprom = false;
+  bool rtc = false;
 } online;

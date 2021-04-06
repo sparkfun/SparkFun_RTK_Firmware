@@ -96,16 +96,14 @@ void F9PSerialReadTask(void *e)
             taskYIELD();
 
             //Force sync every 500ms
-            if (millis() - lastDataLogSyncTime > 500)
+            if (millis() - lastNMEALogSyncTime > 500)
             {
-              lastDataLogSyncTime = millis();
+              lastNMEALogSyncTime = millis();
 
               taskYIELD();
-              nmeaFile.sync();
+              nmeaFile.flush();
               taskYIELD();
 
-              if (settings.frequentFileAccessTimestamps == true)
-                updateDataFileAccess(&nmeaFile); // Update the file access time & date
             }
           }
         }
@@ -621,6 +619,22 @@ boolean SFE_UBLOX_GNSS_ADD::getModuleInfo(uint16_t maxWait)
 
   return (true); //Success!
 }
+
+//Get the confirmed current date
+//bool getConfirmedDate(uint16_t maxWait)
+//{
+//  if (i2cGNSS.packetUBXNAVPVT == NULL) i2cGNSS.initPacketUBXNAVPVT(); //Check that RAM has been allocated for the PVT data
+//  if (i2cGNSS.packetUBXNAVPVT == NULL) //Bail if the RAM allocation failed
+//    return (false);
+//
+////  if (packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedDate == false)
+////    getPVT(maxWait);
+////  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedDate = false; //Since we are about to give this to user, mark this data as stale
+////  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
+////  return ((bool)packetUBXNAVPVT->data.flags2.bits.confirmedDate);
+//return(true);
+//}
+
 
 //Call back for when BT connection event happens (connected/disconnect)
 //Used for updating the radioState state machine

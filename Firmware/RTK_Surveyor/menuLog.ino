@@ -29,11 +29,7 @@ void menuLog()
 
     if (settings.logNMEA == true || settings.logUBX == true)
     {
-      Serial.print(F("3) Update file timestamp with each write: "));
-      if (settings.frequentFileAccessTimestamps == true) Serial.println(F("Enabled"));
-      else Serial.println(F("Disabled"));
-
-      Serial.print(F("4) Set max logging time: "));
+      Serial.print(F("3) Set max logging time: "));
       Serial.print(settings.maxLogTime_minutes);
       Serial.println(F(" minutes"));
     }
@@ -59,8 +55,6 @@ void menuLog()
     else if (settings.logNMEA == true || settings.logUBX == true)
     {
       if (incoming == '3')
-        settings.frequentFileAccessTimestamps ^= 1;
-      else if (incoming == '4')
       {
         Serial.print(F("Enter max minutes to log data: "));
         int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds
@@ -112,22 +106,18 @@ void beginLoggingNMEA()
         return;
       }
 
-      sprintf(fileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt",
+      sprintf(fileName, "/SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt",
               i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
               i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
              );
 
-      // O_CREAT - create the file if it does not exist
-      // O_APPEND - seek to the end of the file prior to each write
-      // O_WRITE - open for write
-      if (nmeaFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+      nmeaFile = SD.open(fileName, FILE_WRITE);
+      if (!nmeaFile)
       {
         Serial.printf("Failed to create GNSS NMEA data file: %s\n", fileName);
         online.nmeaLogging = false;
         return;
       }
-
-      updateDataFileCreate(&nmeaFile); // Update the file to create time & date
 
       Serial.printf("Log file created: %s\n", fileName);
       online.nmeaLogging = true;
@@ -156,23 +146,19 @@ void beginLoggingUBX()
         return;
       }
 
-      sprintf(fileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.ubx",
+      sprintf(fileName, "/SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.ubx",
               i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
               i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
              );
 
-      // O_CREAT - create the file if it does not exist
-      // O_APPEND - seek to the end of the file prior to each write
-      // O_WRITE - open for write
-      if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+      ubxFile = SD.open(fileName, FILE_WRITE);
+      if (!ubxFile)
       {
         Serial.printf("Failed to create GNSS UBX data file: %s\n", fileName);
         delay(1000);
         online.ubxLogging = false;
         return;
       }
-
-      updateDataFileCreate(&ubxFile); // Update the file to create time & date
 
       Serial.printf("Log file created: %s\n", fileName);
       online.ubxLogging = true;
@@ -182,32 +168,7 @@ void beginLoggingUBX()
   }
 }
 
-//Updates the timestemp on a given data file
-void updateDataFileAccess(SdFile *dataFile)
-{
-  if (online.gnss == true) //This function is called at startup and may be called before GNSS is begin()'d
-  {
-    if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
-    {
-      //Update the file access time
-      dataFile->timestamp(T_ACCESS, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
-      //Update the file write time
-      dataFile->timestamp(T_WRITE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
-    }
-  }
-}
 
-void updateDataFileCreate(SdFile *dataFile)
-{
-  if (online.gnss == true)
-  {
-    if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
-    {
-      //Update the file create time
-      dataFile->timestamp(T_CREATE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
-    }
-  }
-}
 
 //Given a portID, return the RAWX value for the given port
 uint8_t getRAWXSettings(uint8_t portID)
@@ -227,7 +188,7 @@ uint8_t getRAWXSettings(uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getNMEASettings failed!"));
+    Serial.println(F("getRAWXSettings failed!"));
     return (false);
   }
 
@@ -252,7 +213,7 @@ uint8_t getSFRBXSettings(uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getNMEASettings failed!"));
+    Serial.println(F("getSFRBXSettings failed!"));
     return (false);
   }
 

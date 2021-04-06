@@ -29,7 +29,7 @@ void menuTest()
       Serial.println(F("Qwiic Good. Display detected."));
     else
       Serial.println(F("Qwiic port failed! No display detected."));
-      
+
     Serial.println(F("Any character received over Blueooth connection will be displayed here"));
 
     Serial.println(F("1) Display microSD contents"));
@@ -44,8 +44,21 @@ void menuTest()
     {
       if (settings.enableSD && online.microSD)
       {
-        Serial.println(F("Files found (date time size name):\n"));
-        sd.ls(LS_R | LS_DATE | LS_SIZE);
+        //Serial.println(F("Files found (date time size name):\n"));
+        //SD.ls(LS_R | LS_DATE | LS_SIZE);
+
+        Serial.println(F("Files found (name size):\n"));
+        File root = SD.open("/"); //Open root
+        File file = root.openNextFile();
+        while (file) {
+          if (file.isDirectory() == false) {
+            Serial.print(file.name());
+            Serial.print(" ");
+            Serial.println(file.size());
+          }
+          file = root.openNextFile();
+        }
+
       }
     }
     else if (incoming == 'x')

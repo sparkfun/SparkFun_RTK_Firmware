@@ -32,6 +32,11 @@
     (Done) Firmware upgrade menu
     Enable various debug outputs sent over BT
 
+    Look into increasing the SD SPI clock
+    Fix file date/time updates with new SD lib
+    Test firmware loading with new SD lib
+    Test file listing from debug menu
+
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -70,17 +75,24 @@ const int batteryLevel_alert = 36;
 #define EEPROM_SIZE 2048 //ESP32 emulates EEPROM in non-volatile storage (external flash IC). Max is 508k.
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+//Handy library for setting ESP32 system time to GNSS time
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#include <ESP32Time.h> //http://librarymanager/All#ESP32Time
+ESP32Time rtc;
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
-#include <SdFat.h> //SdFat (FAT32) by Bill Greiman: http://librarymanager/All#SdFat
-SdFat sd;
-SdFile nmeaFile; //File that all gnss nmea setences are written to
-SdFile ubxFile; //File that all gnss nmea setences are written to
+#include <SD.h> //Use built-in ESP32 SD library. Not as fast as SdFat but works better with dual file access.
+File nmeaFile; //File that all gnss nmea setences are written to
+File ubxFile; //File that all gnss nmea setences are written to
 
-char settingsFileName[40] = "SFE_Surveyor_Settings.txt"; //File to read/write system settings to
+char settingsFileName[40] = "/SFE_Surveyor_Settings.txt"; //File to read/write system settings to
 
-unsigned long lastDataLogSyncTime = 0; //Used to record to SD every half second
+unsigned long lastNMEALogSyncTime = 0; //Used to record to SD every half second
+unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
+
 long startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -170,6 +182,11 @@ uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading F9P
 uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+
+//Reduced stack size from 10,000 to 1,000 to make room for WiFi/NTRIP server capabilities
+//Increase stacks to 2k to allow for dual file write of NMEA/UBX using built in SD library
+const int readTaskStackSize = 2000;
+const int writeTaskStackSize = 2000;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //External Display
@@ -204,7 +221,6 @@ uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
 uint32_t lastUbxCountUpdate = 0;
 uint32_t ubxCount = 0;
-
 
 uint32_t lastTime = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -246,6 +262,7 @@ void setup()
   GPS.setTimeout(1);
 
   Wire.begin(); //Start I2C
+  //Wire.setClock(400000);
 
   beginLEDs(); //LED and PWM setup
 
@@ -356,6 +373,8 @@ void loop()
 
   updateDisplay();
 
+  updateRTC(); //Set system time to GNSS once we have fix
+
   updateLogs(); //Record any new UBX data. Create files or close NMEA and UBX files as needed.
 
   //Menu system via ESP32 USB connection
@@ -462,7 +481,7 @@ void updateLogs()
   else if (online.nmeaLogging == true && settings.logNMEA == false)
   {
     //Close down file
-    nmeaFile.sync();
+    nmeaFile.flush();
     nmeaFile.close();
     online.nmeaLogging = false;
   }
@@ -474,34 +493,62 @@ void updateLogs()
   else if (online.ubxLogging == true && settings.logUBX == false)
   {
     //Close down file
-    ubxFile.sync();
+    ubxFile.flush();
     ubxFile.close();
     online.ubxLogging = false;
   }
 
   if (online.ubxLogging == true)
   {
-    if (millis() - lastUbxCountUpdate > 1000)
-    {
-      lastUbxCountUpdate = millis();
-      Serial.printf("UBX byte total/buffer: %d / %d\n", ubxCount, i2cGNSS.fileBufferAvailable());
-    }
-
     while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
     {
+      if (millis() - lastUbxCountUpdate > 1000)
+      {
+        lastUbxCountUpdate = millis();
+        Serial.printf("UBX byte total/buffer: %d / %d\n", ubxCount, i2cGNSS.fileBufferAvailable());
+      }
+
       uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
 
       i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
 
       ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
-      ubxFile.sync();
 
       // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
       i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
       i2cGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
       ubxCount += sdWriteSize;
+
+      //Force sync every 500ms
+      if (millis() - lastUBXLogSyncTime > 500)
+      {
+        lastUBXLogSyncTime = millis();
+        ubxFile.flush();
+      }
     }
   }
+}
 
+//Once we have a fix, sync system clock to GNSS
+//All SD writes will use the system date/time
+void updateRTC()
+{
+  if (online.rtc == false)
+  {
+    if (online.gnss == true)
+    {
+      if (i2cGNSS.getConfirmedDate() == true && i2cGNSS.getConfirmedTime() == true)
+      {
+        //For the ESP32 SD library, the date/time stamp of files is set using the internal system time
+        //This is normally set with WiFi NTP but we will rarely have WiFi
+        rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());  // 17th Jan 2021 15:24:30
+
+        online.rtc = true;
+
+        Serial.print(F("System time set to: "));
+        Serial.println(rtc.getTime("%B %d %Y %H:%M:%S")); //From ESP32Time library example
+      }
+    }
+  }
 }

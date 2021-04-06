@@ -62,7 +62,7 @@ void scanForFirmware()
     {
       if (tempFile.isDirectory() == false)
       {
-//        tempFile.getName(fname, sizeof(fname));
+        strcpy(fname, tempFile.name());
 
         if (strcmp(forceFirmwareFileName, tempFile.name()) == 0)
         {
@@ -71,15 +71,15 @@ void scanForFirmware()
         }
 
         //Check for 'sfe_rtk' and 'bin' extension
-//        if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
-//        {
-//          if (strstr(fname, BIN_HEADER) != NULL)
-//          {
-//            strcpy(binFileNames[binCount++], fname); //Add this to the array
-//          }
-//          else
-//            Serial.printf("Unknown: %s\n", fname);
-//        }
+        if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
+        {
+          if (strstr(fname, BIN_HEADER) != NULL)
+          {
+            strcpy(binFileNames[binCount++], fname); //Add this to the array
+          }
+          else
+            Serial.printf("Unknown: %s\n", fname);
+        }
       }
       tempFile = root.openNextFile();
     }

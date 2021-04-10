@@ -69,7 +69,7 @@ void recordSystemSettingsToFile()
     if (SD.exists(settingsFileName))
       SD.remove(settingsFileName);
 
-    File settingsFile = SD.open(settingsFileName, FILE_WRITE);
+    File settingsFile = SD.open(settingsFileName, FILE_WRITE); //Overwrite previous file
     if (!settingsFile)
     {
       Serial.println(F("Failed to create settings file"));

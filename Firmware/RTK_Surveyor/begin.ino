@@ -2,6 +2,8 @@
 
 void beginSD()
 {
+  int spiFreq = 40000000;
+
   pinMode(PIN_MICROSD_CHIP_SELECT, OUTPUT);
   digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
 
@@ -11,14 +13,21 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     delay(10);
 
-    if (SD.begin(PIN_MICROSD_CHIP_SELECT) == false)
+    if (SD.begin(PIN_MICROSD_CHIP_SELECT, spi, spiFreq) == false)
     {
-      printDebug("SD init failed (first attempt). Trying again...\r\n");
-      //Give SD more time to power up, then try again
-      delay(250);
-      if (SD.begin(PIN_MICROSD_CHIP_SELECT) == false)
+      int tries = 0;
+      int maxTries = 4;
+      for ( ; tries < maxTries ; tries++)
       {
-        Serial.println(F("SD init failed (second attempt). Is card present? Formatted?"));
+        Serial.printf("SD init failed. Trying again %d out of %d\n", tries + 1, maxTries);
+
+        delay(250); //Give SD more time to power up, then try again
+        if (SD.begin(PIN_MICROSD_CHIP_SELECT, spi, spiFreq) == true) break;
+      }
+
+      if (tries == maxTries)
+      {
+        Serial.println(F("SD init failed. Is card present? Formatted?"));
         digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
         online.microSD = false;
         return;

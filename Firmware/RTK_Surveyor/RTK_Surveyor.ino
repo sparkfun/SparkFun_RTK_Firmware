@@ -33,9 +33,9 @@
     Enable various debug outputs sent over BT
 
     Look into increasing the SD SPI clock
-    Fix file date/time updates with new SD lib
+    (done) Fix file date/time updates with new SD lib
     Test firmware loading with new SD lib
-    Test file listing from debug menu
+    (done) Test file listing from debug menu
 
 */
 
@@ -61,7 +61,7 @@ const int baseSwitch = 5;
 const int bluetoothStatusLED = 12;
 const int positionAccuracyLED_100cm = 13;
 const int positionAccuracyLED_10cm = 15;
-const byte PIN_MICROSD_CHIP_SELECT = 25;
+const int PIN_MICROSD_CHIP_SELECT = 25;
 const int zed_tx_ready = 26;
 const int zed_reset = 27;
 const int batteryLevelLED_Red = 32;
@@ -85,6 +85,8 @@ ESP32Time rtc;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
 #include <SD.h> //Use built-in ESP32 SD library. Not as fast as SdFat but works better with dual file access.
+SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we can set the SPI freq in beginSD()
+
 File nmeaFile; //File that all gnss nmea setences are written to
 File ubxFile; //File that all gnss nmea setences are written to
 
@@ -108,7 +110,6 @@ int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame af
 
 uint32_t serverBytesSent = 0; //Just a running total
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
 
 #include <Wire.h> //Needed for I2C to GNSS
 
@@ -207,6 +208,20 @@ char binFileNames[10][50];
 const char* forceFirmwareFileName = "RTK_Surveyor_Firmware_Force.bin"; //File that will be loaded at startup regardless of user input
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//Low frequency tasks
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#include <Ticker.h>
+
+SemaphoreHandle_t xI2CSemaphore;
+TickType_t i2cSemaphore_maxWait = 5;
+
+Ticker btLEDTask;
+float btLEDTaskPace = 0.5; //Seconds
+
+//Ticker battCheckTask;
+//float battCheckTaskPace = 2.0; //Seconds
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
@@ -222,22 +237,9 @@ uint32_t lastDisplayUpdate = 0;
 uint32_t lastUbxCountUpdate = 0;
 uint32_t ubxCount = 0;
 
-uint32_t lastTime = 0;
+uint32_t lastFileReport = 0; //When logging, print file record stats every few seconds
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-//Low frequency tasks
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <Ticker.h>
-
-SemaphoreHandle_t xI2CSemaphore;
-TickType_t i2cSemaphore_maxWait = 5;
-
-Ticker btLEDTask;
-float btLEDTaskPace = 0.5; //Seconds
-
-//Ticker battCheckTask;
-//float battCheckTaskPace = 2.0; //Seconds
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS Call back functions
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -512,13 +514,13 @@ void updateLogs()
 
       i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
 
-      ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
+      int bytesWritten = ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
 
       // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
       i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
       i2cGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
-      ubxCount += sdWriteSize;
+      ubxCount += bytesWritten;
 
       //Force sync every 500ms
       if (millis() - lastUBXLogSyncTime > 500)
@@ -526,6 +528,21 @@ void updateLogs()
         lastUBXLogSyncTime = millis();
         ubxFile.flush();
       }
+    }
+  }
+
+  //Report file sizes to show recording is working
+  if (online.nmeaLogging == true || online.ubxLogging == true)
+  {
+    if (millis() - lastFileReport > 5000)
+    {
+      lastFileReport = millis();
+      if (online.nmeaLogging == true && online.ubxLogging == true)
+        Serial.printf("UBX and NMEA file size: %d / %d\n", ubxFile.size(), nmeaFile.size());
+      else if (online.nmeaLogging == true)
+        Serial.printf("NMEA file size: %d\n", nmeaFile.size());
+      else if (online.ubxLogging == true)
+        Serial.printf("UBX file size: %d\n", ubxFile.size());
     }
   }
 }

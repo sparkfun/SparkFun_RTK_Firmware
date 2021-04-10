@@ -55,7 +55,19 @@ void scanForFirmware()
     const char* BIN_HEADER = "RTK_Surveyor_Firmware";
     char fname[50]; //Handle long file names
 
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+    Serial.printf("SD Card Size: %lluMB\n", cardSize);
+
     File root = SD.open("/"); //Open root
+
+    if (!root) {
+      Serial.println("Failed to open directory");
+      return;
+    }
+    if (!root.isDirectory()) {
+      Serial.println("Not a directory");
+      return;
+    }
 
     File tempFile = root.openNextFile();
     while (tempFile)
@@ -166,7 +178,7 @@ void updateFromSD(char *firmwareFileName)
         if (strcmp(forceFirmwareFileName, firmwareFileName) == 0)
         {
           Serial.println(F("Removing firmware file"));
-          
+
           //Remove forced firmware file to prevent endless loading
           firmwareFile.close();
           SD.remove(firmwareFileName);

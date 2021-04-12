@@ -65,9 +65,13 @@ bool configureUbloxModuleRover()
   bool response = i2cGNSS.disableSurveyMode(); //Disable survey
 
   //Set output rate
-  if (i2cGNSS.getNavigationFrequency() != settings.gnssMeasurementFrequency)
+  if (i2cGNSS.getMeasurementRate() != settings.measurementRate)
   {
-    response &= i2cGNSS.setNavigationFrequency(settings.gnssMeasurementFrequency); //Set output in Hz
+    response &= i2cGNSS.setMeasurementRate(settings.measurementRate);
+  }
+  if (i2cGNSS.getNavigationRate() != settings.navigationRate)
+  {
+    response &= i2cGNSS.getNavigationRate(settings.navigationRate);
   }
 
   // Set dynamic model

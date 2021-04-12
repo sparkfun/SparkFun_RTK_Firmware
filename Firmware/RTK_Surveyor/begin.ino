@@ -16,7 +16,7 @@ void beginSD()
     if (SD.begin(PIN_MICROSD_CHIP_SELECT, spi, spiFreq) == false)
     {
       int tries = 0;
-      int maxTries = 4;
+      int maxTries = 2;
       for ( ; tries < maxTries ; tries++)
       {
         Serial.printf("SD init failed. Trying again %d out of %d\n", tries + 1, maxTries);

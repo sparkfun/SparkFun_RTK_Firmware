@@ -78,7 +78,6 @@ void recordSystemSettingsToFile()
 
     settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
     settingsFile.println("rtkIdentifier=" + (String)settings.rtkIdentifier);
-    settingsFile.println("gnssMeasurementFrequency=" + (String)settings.gnssMeasurementFrequency);
     settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
     settingsFile.println("enableSD=" + (String)settings.enableSD);
     settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
@@ -112,6 +111,8 @@ void recordSystemSettingsToFile()
     settingsFile.println("logUBX=" + (String)settings.logUBX);
     settingsFile.println("logRAWX=" + (String)settings.logRAWX);
     settingsFile.println("logSFRBX=" + (String)settings.logSFRBX);
+    settingsFile.println("measurementRate=" + (String)settings.measurementRate);
+    settingsFile.println("navigationRate=" + (String)settings.navigationRate);
 
     settingsFile.close();
   }
@@ -251,8 +252,6 @@ bool parseLine(char* str) {
   else if (strcmp(settingName, "rtkIdentifier") == 0)
     settings.rtkIdentifier = d;
 
-  else if (strcmp(settingName, "gnssMeasurementFrequency") == 0)
-    settings.gnssMeasurementFrequency = d;
   else if (strcmp(settingName, "printDebugMessages") == 0)
     settings.printDebugMessages = d;
   else if (strcmp(settingName, "enableSD") == 0)
@@ -319,6 +318,10 @@ bool parseLine(char* str) {
     settings.logRAWX = d;
   else if (strcmp(settingName, "logSFRBX") == 0)
     settings.logSFRBX = d;
+  else if (strcmp(settingName, "measurementRate") == 0)
+    settings.measurementRate = d;
+  else if (strcmp(settingName, "navigationRate") == 0)
+    settings.navigationRate = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

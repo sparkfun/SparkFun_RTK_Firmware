@@ -288,10 +288,11 @@ bool enableNMEASentences(uint8_t portType)
   //When receiving 15+ satellite information, the GxGSV sentences can be a large amount of data
   //If the update rate is >1Hz then this data can overcome the BT capabilities causing timeouts and lag
   //So we set the GSV sentence to 1Hz regardless of update rate
+  uint16_t measurementFrequency = (uint16_t)getMeasurementFrequency(); //Force to int
   if (settings.outputSentenceGSV == true)
   {
-    if (getNMEASettings(UBX_NMEA_GSV, portType) != settings.gnssMeasurementFrequency)
-      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GSV, portType, settings.gnssMeasurementFrequency);
+    if (getNMEASettings(UBX_NMEA_GSV, portType) != measurementFrequency)
+      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GSV, portType, measurementFrequency);
   }
   else if (settings.outputSentenceGSV == false)
   {

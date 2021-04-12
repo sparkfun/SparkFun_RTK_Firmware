@@ -47,7 +47,6 @@ enum returnStatus {
 struct struct_settings {
   int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int
   int rtkIdentifier = RTK_IDENTIFIER; // rtkIdentifier **must** be the second entry
-  uint8_t gnssMeasurementFrequency = 4; //Number of fixes per second
   bool printDebugMessages = false;
   bool enableSD = true;
   bool enableDisplay = true;
@@ -81,6 +80,8 @@ struct struct_settings {
   bool logUBX = false;
   bool logRAWX = false;
   bool logSFRBX = false; //Issue #11
+  uint16_t measurementRate = 250; //Elapsed ms between GNSS measurements. 25ms to 65535ms. Default 4Hz.
+  uint16_t navigationRate = 1; //Ratio between number of measurements and navigation solutions. Default 1 for 4Hz (with measurementRate).
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

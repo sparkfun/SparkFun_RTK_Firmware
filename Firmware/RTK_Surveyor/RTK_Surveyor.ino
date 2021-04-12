@@ -382,7 +382,7 @@ void loop()
   //Menu system via ESP32 USB connection
   if (Serial.available()) menuMain(); //Present user menu
 
-  //Convert current system time to minutes. This is used in F9PSerialReadTask() to see if we are within max log window.
+  //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;
 
   delay(10); //A small delay prevents panic if no other I2C or functions are called
@@ -502,31 +502,35 @@ void updateLogs()
 
   if (online.ubxLogging == true)
   {
-    while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
+    //Check if we are inside the max time window for logging
+    if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
     {
-      if (millis() - lastUbxCountUpdate > 1000)
+      while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
       {
-        lastUbxCountUpdate = millis();
-        Serial.printf("UBX byte total/buffer: %d / %d\n", ubxCount, i2cGNSS.fileBufferAvailable());
-      }
+        if (millis() - lastUbxCountUpdate > 1000)
+        {
+          lastUbxCountUpdate = millis();
+          Serial.printf("UBX byte total/buffer: %d / %d\n", ubxCount, i2cGNSS.fileBufferAvailable());
+        }
 
-      uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
+        uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
 
-      i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
+        i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
 
-      int bytesWritten = ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
+        int bytesWritten = ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
 
-      // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
-      i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
-      i2cGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
+        // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
+        i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
+        i2cGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
-      ubxCount += bytesWritten;
+        ubxCount += bytesWritten;
 
-      //Force sync every 500ms
-      if (millis() - lastUBXLogSyncTime > 500)
-      {
-        lastUBXLogSyncTime = millis();
-        ubxFile.flush();
+        //Force sync every 500ms
+        if (millis() - lastUBXLogSyncTime > 500)
+        {
+          lastUBXLogSyncTime = millis();
+          ubxFile.flush();
+        }
       }
     }
   }

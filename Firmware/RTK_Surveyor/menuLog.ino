@@ -98,7 +98,13 @@ void beginLoggingNMEA()
       char fileName[40] = "";
 
       //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.txt
-      if (i2cGNSS.getTimeValid() == false || i2cGNSS.getDateValid() == false)
+      bool haveLogTime = false;
+      if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
+        haveLogTime = true;
+      if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
+        haveLogTime = true;
+
+      if (haveLogTime == false)
       {
         Serial.println(F("beginLoggingNMEA: No date/time available. No file created."));
         delay(1000); //Give the receiver time to get a lock
@@ -137,8 +143,14 @@ void beginLoggingUBX()
     {
       char fileName[40] = "";
 
-      //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.txt
-      if (i2cGNSS.getTimeValid() == false || i2cGNSS.getDateValid() == false)
+      //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
+      bool haveLogTime = false;
+      if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
+        haveLogTime = true;
+      if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
+        haveLogTime = true;
+
+      if (haveLogTime == false)
       {
         Serial.println(F("beginLoggingUBX: No date/time available. No file created."));
         delay(1000); //Give the receiver time to get a lock

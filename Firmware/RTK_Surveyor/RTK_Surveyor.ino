@@ -507,6 +507,7 @@ void updateLogs()
     {
       while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
       {
+
         if (millis() - lastUbxCountUpdate > 1000)
         {
           lastUbxCountUpdate = millis();
@@ -529,8 +530,11 @@ void updateLogs()
         if (millis() - lastUBXLogSyncTime > 500)
         {
           lastUBXLogSyncTime = millis();
+          digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
           ubxFile.flush();
+          digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
         }
+
       }
     }
   }

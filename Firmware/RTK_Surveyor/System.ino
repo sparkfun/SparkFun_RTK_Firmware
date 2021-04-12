@@ -100,10 +100,11 @@ void F9PSerialReadTask(void *e)
             {
               lastNMEALogSyncTime = millis();
 
+              digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
               taskYIELD();
               nmeaFile.flush();
               taskYIELD();
-
+              digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
             }
           }
         }

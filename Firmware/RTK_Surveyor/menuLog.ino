@@ -117,10 +117,21 @@ void beginLoggingNMEA()
               i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
              );
 
-      // O_CREAT - create the file if it does not exist
-      // O_APPEND - seek to the end of the file prior to each write
-      // O_WRITE - open for write
-      if (nmeaFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+      //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
+      {
+        // O_CREAT - create the file if it does not exist
+        // O_APPEND - seek to the end of the file prior to each write
+        // O_WRITE - open for write
+        if (nmeaFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+        {
+          Serial.printf("Failed to create GNSS NMEA data file: %s\n", fileName);
+          online.nmeaLogging = false;
+          return;
+        }
+        xSemaphoreGive(xFATSemaphore);
+      }
+      else
       {
         Serial.printf("Failed to create GNSS NMEA data file: %s\n", fileName);
         online.nmeaLogging = false;
@@ -165,17 +176,27 @@ void beginLoggingUBX()
               i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
              );
 
-      // O_CREAT - create the file if it does not exist
-      // O_APPEND - seek to the end of the file prior to each write
-      // O_WRITE - open for write
-      if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+      //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
+      {
+        // O_CREAT - create the file if it does not exist
+        // O_APPEND - seek to the end of the file prior to each write
+        // O_WRITE - open for write
+        if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+        {
+          Serial.printf("Failed to create GNSS UBX data file: %s\n", fileName);
+          delay(1000);
+          online.ubxLogging = false;
+          return;
+        }
+        xSemaphoreGive(xFATSemaphore);
+      }
+      else
       {
         Serial.printf("Failed to create GNSS UBX data file: %s\n", fileName);
-        delay(1000);
-        online.ubxLogging = false;
+        online.nmeaLogging = false;
         return;
       }
-
 
       Serial.printf("Log file created: %s\n", fileName);
       online.ubxLogging = true;

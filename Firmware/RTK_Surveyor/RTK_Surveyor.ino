@@ -32,10 +32,9 @@
     (Done) Firmware upgrade menu
     Enable various debug outputs sent over BT
 
-    Look into increasing the SD SPI clock
-    (done) Fix file date/time updates with new SD lib
-    Test firmware loading with new SD lib
-    (done) Test file listing from debug menu
+    Fix file date/time updates
+    Test firmware loading
+    Test file listing from debug menu
 
 */
 
@@ -92,7 +91,7 @@ SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we c
 #define SD_CONFIG SdSpiConfig(PIN_MICROSD_CHIP_SELECT, DEDICATED_SPI, SD_SCK_MHZ(36), &spi)
 
 File nmeaFile; //File that all gnss nmea setences are written to
-File ubxFile; //File that all gnss nmea setences are written to
+File ubxFile; //File that all gnss ubx messages setences are written to
 
 char settingsFileName[40] = "/SFE_Surveyor_Settings.txt"; //File to read/write system settings to
 
@@ -100,6 +99,12 @@ unsigned long lastNMEALogSyncTime = 0; //Used to record to SD every half second
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
 
 long startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
+
+//SdFat crashes when F9PSerialReadTask() is called in the middle of a ubx file write within loop()
+//So we use a semaphore to see if SPI is available before
+SemaphoreHandle_t xFATSemaphore;
+const int fatSemaphore_maxWait = 5; //TickType_t
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster
@@ -216,9 +221,6 @@ const char* forceFirmwareFileName = "RTK_Surveyor_Firmware_Force.bin"; //File th
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <Ticker.h>
 
-SemaphoreHandle_t xI2CSemaphore;
-TickType_t i2cSemaphore_maxWait = 5;
-
 Ticker btLEDTask;
 float btLEDTaskPace = 0.5; //Seconds
 
@@ -268,6 +270,14 @@ void setup()
   Wire.begin(); //Start I2C
   //Wire.setClock(400000);
 
+  //Setup FAT file access semaphore
+  if (xFATSemaphore == NULL)
+  {
+    xFATSemaphore = xSemaphoreCreateMutex();
+    if (xFATSemaphore != NULL)
+      xSemaphoreGive(xFATSemaphore);  //Make the SPI hardware available for use
+  }
+
   beginLEDs(); //LED and PWM setup
 
   //Start EEPROM and SD for settings, and display for output
@@ -301,13 +311,6 @@ void setup()
 
   if (online.microSD == true && settings.logNMEA == true) startLogTime_minutes = 0; //Mark now as start of logging
   if (online.microSD == true && settings.logUBX == true) startLogTime_minutes = 0; //Mark now as start of logging
-
-  if (xI2CSemaphore == NULL)
-  {
-    xI2CSemaphore = xSemaphoreCreateMutex();
-    if (xI2CSemaphore != NULL)
-      xSemaphoreGive(xI2CSemaphore);  //Make the I2C hardware available for use
-  }
 
   //Start tasks
   btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
@@ -509,19 +512,25 @@ void updateLogs()
     {
       while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
       {
-        uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
-
-        i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
-
-        int bytesWritten = ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
-
-        //Force sync every 1000ms
-        if (millis() - lastUBXLogSyncTime > 1000)
+        //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
+        if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
         {
-          lastUBXLogSyncTime = millis();
-          digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
-          ubxFile.flush();
-          digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
+          uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
+
+          i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
+
+          int bytesWritten = ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
+
+          //Force sync every 1000ms
+          if (millis() - lastUBXLogSyncTime > 1000)
+          {
+            lastUBXLogSyncTime = millis();
+            digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
+            ubxFile.flush();
+            digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
+          }
+
+          xSemaphoreGive(xFATSemaphore);
         }
 
         // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
@@ -538,11 +547,18 @@ void updateLogs()
     {
       lastFileReport = millis();
       if (online.nmeaLogging == true && online.ubxLogging == true)
-        Serial.printf("UBX and NMEA file size: %d / %d\n", ubxFile.size(), nmeaFile.size());
+        Serial.printf("UBX and NMEA file size: %d / %d", ubxFile.size(), nmeaFile.size());
       else if (online.nmeaLogging == true)
-        Serial.printf("NMEA file size: %d\n", nmeaFile.size());
+        Serial.printf("NMEA file size: %d", nmeaFile.size());
       else if (online.ubxLogging == true)
-        Serial.printf("UBX file size: %d\n", ubxFile.size());
+        Serial.printf("UBX file size: %d", ubxFile.size());
+
+      if ((systemTime_minutes - startLogTime_minutes) > settings.maxLogTime_minutes)
+        Serial.printf(" reached max log time %d / System time %d",
+                      settings.maxLogTime_minutes,
+                      (systemTime_minutes - startLogTime_minutes));
+
+      Serial.println();
     }
   }
 }

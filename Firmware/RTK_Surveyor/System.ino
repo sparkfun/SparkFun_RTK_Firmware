@@ -91,20 +91,26 @@ void F9PSerialReadTask(void *e)
           //Check if we are inside the max time window for logging
           if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
           {
-            taskYIELD();
-            nmeaFile.write(rBuffer, s);
-            taskYIELD();
-
-            //Force sync every 500ms
-            if (millis() - lastNMEALogSyncTime > 500)
+            //Attempt to write to file system. This avoids collisions with file writing in loop()
+            if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
             {
-              lastNMEALogSyncTime = millis();
+              taskYIELD();
+              nmeaFile.write(rBuffer, s);
+              taskYIELD();
 
-              digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
-              taskYIELD();
-              nmeaFile.flush();
-              taskYIELD();
-              digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
+              //Force sync every 500ms
+              if (millis() - lastNMEALogSyncTime > 500)
+              {
+                lastNMEALogSyncTime = millis();
+
+                digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
+                taskYIELD();
+                nmeaFile.flush();
+                taskYIELD();
+                digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
+              }
+
+              xSemaphoreGive(xFATSemaphore);
             }
           }
         }

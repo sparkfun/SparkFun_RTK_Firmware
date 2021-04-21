@@ -117,8 +117,10 @@ void beginLoggingNMEA()
               i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
              );
 
-      nmeaFile = SD.open(fileName, FILE_WRITE);
-      if (!nmeaFile)
+      // O_CREAT - create the file if it does not exist
+      // O_APPEND - seek to the end of the file prior to each write
+      // O_WRITE - open for write
+      if (nmeaFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
         Serial.printf("Failed to create GNSS NMEA data file: %s\n", fileName);
         online.nmeaLogging = false;
@@ -163,14 +165,17 @@ void beginLoggingUBX()
               i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
              );
 
-      ubxFile = SD.open(fileName, FILE_WRITE);
-      if (!ubxFile)
+      // O_CREAT - create the file if it does not exist
+      // O_APPEND - seek to the end of the file prior to each write
+      // O_WRITE - open for write
+      if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
         Serial.printf("Failed to create GNSS UBX data file: %s\n", fileName);
         delay(1000);
         online.ubxLogging = false;
         return;
       }
+
 
       Serial.printf("Log file created: %s\n", fileName);
       online.ubxLogging = true;

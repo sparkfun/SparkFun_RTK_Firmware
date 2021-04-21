@@ -51,32 +51,21 @@ void scanForFirmware()
   if (online.microSD == true)
   {
     //Count available binaries
+    SdFile tempFile;
+    SdFile dir;
     const char* BIN_EXT = "bin";
     const char* BIN_HEADER = "RTK_Surveyor_Firmware";
     char fname[50]; //Handle long file names
 
-    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-    Serial.printf("SD Card Size: %lluMB\n", cardSize);
+    dir.open("/"); //Open root
 
-    File root = SD.open("/"); //Open root
-
-    if (!root) {
-      Serial.println("Failed to open directory");
-      return;
-    }
-    if (!root.isDirectory()) {
-      Serial.println("Not a directory");
-      return;
-    }
-
-    File tempFile = root.openNextFile();
-    while (tempFile)
+    while (tempFile.openNext(&dir, O_READ))
     {
-      if (tempFile.isDirectory() == false)
+      if (tempFile.isFile())
       {
-        strcpy(fname, tempFile.name());
+        tempFile.getName(fname, sizeof(fname));
 
-        if (strcmp(forceFirmwareFileName, tempFile.name()) == 0)
+        if (strcmp(forceFirmwareFileName, fname) == 0)
         {
           Serial.println(F("Forced firmware detected. Loading..."));
           updateFromSD((char *)forceFirmwareFileName);
@@ -93,7 +82,7 @@ void scanForFirmware()
             Serial.printf("Unknown: %s\n", fname);
         }
       }
-      tempFile = root.openNextFile();
+      tempFile.close();
     }
   }
 }
@@ -102,11 +91,12 @@ void scanForFirmware()
 void updateFromSD(char *firmwareFileName)
 {
   Serial.printf("Loading %s\n", firmwareFileName);
-  if (SD.exists(firmwareFileName))
+  if (sd.exists(firmwareFileName))
   {
-    File firmwareFile = SD.open(firmwareFileName, FILE_READ);
+    SdFile firmwareFile;
+    firmwareFile.open(firmwareFileName, O_READ);
 
-    size_t updateSize = firmwareFile.size();
+    size_t updateSize = firmwareFile.fileSize();
     if (updateSize == 0)
     {
       Serial.println(F("Error: Binary is empty"));
@@ -178,15 +168,15 @@ void updateFromSD(char *firmwareFileName)
         if (strcmp(forceFirmwareFileName, firmwareFileName) == 0)
         {
           Serial.println(F("Removing firmware file"));
-
+          
           //Remove forced firmware file to prevent endless loading
           firmwareFile.close();
-          SD.remove(firmwareFileName);
+          sd.remove(firmwareFileName);
 
           eepromErase();
 
-          if (SD.exists(settingsFileName))
-            SD.remove(settingsFileName);
+          if (sd.exists(settingsFileName))
+            sd.remove(settingsFileName);
 
           i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
         }

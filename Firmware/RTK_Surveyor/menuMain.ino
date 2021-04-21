@@ -48,8 +48,8 @@ void menuMain()
       {
         eepromErase();
 
-        if (SD.exists(settingsFileName))
-          SD.remove(settingsFileName);
+        if (sd.exists(settingsFileName))
+          sd.remove(settingsFileName);
 
         i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 

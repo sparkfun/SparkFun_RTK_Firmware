@@ -84,8 +84,12 @@ ESP32Time rtc;
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
-#include <SD.h> //Use built-in ESP32 SD library. Not as fast as SdFat but works better with dual file access.
+#include "SdFat.h"
+//#include <SD.h> //Use built-in ESP32 SD library. Not as fast as SdFat but works better with dual file access.
+
+SdFat sd;
 SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we can set the SPI freq in beginSD()
+#define SD_CONFIG SdSpiConfig(PIN_MICROSD_CHIP_SELECT, DEDICATED_SPI, SD_SCK_MHZ(36), &spi)
 
 File nmeaFile; //File that all gnss nmea setences are written to
 File ubxFile; //File that all gnss nmea setences are written to
@@ -234,8 +238,6 @@ uint32_t lastRoverUpdate = 0;
 uint32_t lastBaseUpdate = 0;
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
-uint32_t lastUbxCountUpdate = 0;
-uint32_t ubxCount = 0;
 
 uint32_t lastFileReport = 0; //When logging, print file record stats every few seconds
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -507,27 +509,14 @@ void updateLogs()
     {
       while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
       {
-
-        if (millis() - lastUbxCountUpdate > 1000)
-        {
-          lastUbxCountUpdate = millis();
-          Serial.printf("UBX byte total/buffer: %d / %d\n", ubxCount, i2cGNSS.fileBufferAvailable());
-        }
-
         uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
 
         i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
 
         int bytesWritten = ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
 
-        // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
-        i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
-        i2cGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
-
-        ubxCount += bytesWritten;
-
-        //Force sync every 500ms
-        if (millis() - lastUBXLogSyncTime > 500)
+        //Force sync every 1000ms
+        if (millis() - lastUBXLogSyncTime > 1000)
         {
           lastUBXLogSyncTime = millis();
           digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
@@ -535,6 +524,9 @@ void updateLogs()
           digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
         }
 
+        // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
+        i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
+        i2cGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
       }
     }
   }

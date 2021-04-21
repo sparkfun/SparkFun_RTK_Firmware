@@ -13,7 +13,8 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     delay(10);
 
-    if (SD.begin(PIN_MICROSD_CHIP_SELECT, spi, spiFreq) == false)
+    if (sd.begin(SD_CONFIG) == false)
+    //if (SD.begin(PIN_MICROSD_CHIP_SELECT, spi, spiFreq) == false)
     {
       int tries = 0;
       int maxTries = 2;
@@ -22,7 +23,8 @@ void beginSD()
         Serial.printf("SD init failed. Trying again %d out of %d\n", tries + 1, maxTries);
 
         delay(250); //Give SD more time to power up, then try again
-        if (SD.begin(PIN_MICROSD_CHIP_SELECT, spi, spiFreq) == true) break;
+        if (sd.begin(SD_CONFIG) == true) break;
+        //if (SD.begin(PIN_MICROSD_CHIP_SELECT, spi, spiFreq) == true) break;
       }
 
       if (tries == maxTries)

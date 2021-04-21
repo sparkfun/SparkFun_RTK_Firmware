@@ -66,11 +66,11 @@ void recordSystemSettingsToFile()
 {
   if (online.microSD == true)
   {
-    if (SD.exists(settingsFileName))
-      SD.remove(settingsFileName);
+    if (sd.exists(settingsFileName))
+      sd.remove(settingsFileName);
 
-    File settingsFile = SD.open(settingsFileName, FILE_WRITE); //Overwrite previous file
-    if (!settingsFile)
+    SdFile settingsFile; //FAT32
+    if (settingsFile.open(settingsFileName, O_CREAT | O_APPEND | O_WRITE) == false)
     {
       Serial.println(F("Failed to create settings file"));
       return;
@@ -126,10 +126,10 @@ bool loadSystemSettingsFromFile()
 {
   if (online.microSD == true)
   {
-    if (SD.exists(settingsFileName))
+    if (sd.exists(settingsFileName))
     {
-      File settingsFile = SD.open(settingsFileName, FILE_READ);
-      if (!settingsFile)
+      SdFile settingsFile; //FAT32
+      if (settingsFile.open(settingsFileName, O_READ) == false)
       {
         Serial.println(F("Failed to open settings file"));
         return (false);
@@ -141,8 +141,8 @@ bool loadSystemSettingsFromFile()
       while (settingsFile.available()) {
 
         //Get the next line from the file
-        int n = getLine(&settingsFile, line, sizeof(line));
-        //int n = settingsFile.fgets(line, sizeof(line));
+        //int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
+        int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
         if (n <= 0) {
           Serial.printf("Failed to read line %d from settings file\r\n", lineNumber);
         }
@@ -238,7 +238,7 @@ bool parseLine(char* str) {
     if (d == -1)
     {
       eepromErase();
-      SD.remove(settingsFileName);
+      sd.remove(settingsFileName);
       Serial.println(F("RTK Surveyor has been factory reset. Freezing. Please restart and open terminal at 115200bps."));
       while (1)
         delay(1); //Prevent CPU freakout

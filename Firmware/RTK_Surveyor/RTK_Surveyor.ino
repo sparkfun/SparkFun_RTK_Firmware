@@ -35,6 +35,7 @@
     Fix file date/time updates
     Test firmware loading
     Test file listing from debug menu
+    Test file creation from cold start (date/time invalid)
 
 */
 
@@ -90,10 +91,10 @@ SdFat sd;
 SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we can set the SPI freq in beginSD()
 #define SD_CONFIG SdSpiConfig(PIN_MICROSD_CHIP_SELECT, DEDICATED_SPI, SD_SCK_MHZ(36), &spi)
 
-File nmeaFile; //File that all gnss nmea setences are written to
-File ubxFile; //File that all gnss ubx messages setences are written to
+SdFile nmeaFile; //File that all gnss nmea setences are written to
+SdFile ubxFile; //File that all gnss ubx messages setences are written to
 
-char settingsFileName[40] = "/SFE_Surveyor_Settings.txt"; //File to read/write system settings to
+char settingsFileName[40] = "SFE_Surveyor_Settings.txt"; //File to read/write system settings to
 
 unsigned long lastNMEALogSyncTime = 0; //Used to record to SD every half second
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
@@ -242,6 +243,7 @@ uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
 
 uint32_t lastFileReport = 0; //When logging, print file record stats every few seconds
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 
@@ -275,7 +277,7 @@ void setup()
   {
     xFATSemaphore = xSemaphoreCreateMutex();
     if (xFATSemaphore != NULL)
-      xSemaphoreGive(xFATSemaphore);  //Make the SPI hardware available for use
+      xSemaphoreGive(xFATSemaphore);  //Make the file system available for use
   }
 
   beginLEDs(); //LED and PWM setup
@@ -488,7 +490,7 @@ void updateLogs()
   else if (online.nmeaLogging == true && settings.logNMEA == false)
   {
     //Close down file
-    nmeaFile.flush();
+    nmeaFile.sync();
     nmeaFile.close();
     online.nmeaLogging = false;
   }
@@ -500,7 +502,7 @@ void updateLogs()
   else if (online.ubxLogging == true && settings.logUBX == false)
   {
     //Close down file
-    ubxFile.flush();
+    ubxFile.sync();
     ubxFile.close();
     online.ubxLogging = false;
   }
@@ -526,7 +528,7 @@ void updateLogs()
           {
             lastUBXLogSyncTime = millis();
             digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
-            ubxFile.flush();
+            ubxFile.sync();
             digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
           }
 
@@ -547,11 +549,11 @@ void updateLogs()
     {
       lastFileReport = millis();
       if (online.nmeaLogging == true && online.ubxLogging == true)
-        Serial.printf("UBX and NMEA file size: %d / %d", ubxFile.size(), nmeaFile.size());
+        Serial.printf("UBX and NMEA file size: %d / %d", ubxFile.fileSize(), nmeaFile.fileSize());
       else if (online.nmeaLogging == true)
-        Serial.printf("NMEA file size: %d", nmeaFile.size());
+        Serial.printf("NMEA file size: %d", nmeaFile.fileSize());
       else if (online.ubxLogging == true)
-        Serial.printf("UBX file size: %d", ubxFile.size());
+        Serial.printf("UBX file size: %d", ubxFile.fileSize());
 
       if ((systemTime_minutes - startLogTime_minutes) > settings.maxLogTime_minutes)
         Serial.printf(" reached max log time %d / System time %d",

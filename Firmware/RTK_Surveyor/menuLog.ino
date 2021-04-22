@@ -32,6 +32,10 @@ void menuLog()
       Serial.print(F("3) Set max logging time: "));
       Serial.print(settings.maxLogTime_minutes);
       Serial.println(F(" minutes"));
+
+      Serial.print(F("4) Update file timestamp with each write: "));
+      if (settings.frequentFileAccessTimestamps == true) Serial.println(F("Enabled"));
+      else Serial.println(F("Disabled"));
     }
 
     Serial.println(F("x) Exit"));
@@ -67,6 +71,10 @@ void menuLog()
           settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
         }
       }
+      else if (incoming == '4')
+      {
+        settings.frequentFileAccessTimestamps ^= 1;
+      }
       else if (incoming == 'x')
         break;
       else if (incoming == STATUS_GETBYTE_TIMEOUT)
@@ -97,6 +105,8 @@ void beginLoggingNMEA()
     {
       char fileName[40] = "";
 
+      i2cGNSS.checkUblox();
+
       //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.txt
       bool haveLogTime = false;
       if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
@@ -112,7 +122,7 @@ void beginLoggingNMEA()
         return;
       }
 
-      sprintf(fileName, "/SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt",
+      sprintf(fileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt", //SdFat library
               i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
               i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
              );
@@ -127,13 +137,17 @@ void beginLoggingNMEA()
         {
           Serial.printf("Failed to create GNSS NMEA data file: %s\n", fileName);
           online.nmeaLogging = false;
+          xSemaphoreGive(xFATSemaphore);
           return;
         }
+
+        updateDataFileCreate(&nmeaFile); // Update the file to create time & date
+
         xSemaphoreGive(xFATSemaphore);
       }
       else
       {
-        Serial.printf("Failed to create GNSS NMEA data file: %s\n", fileName);
+        Serial.println(F("Failed to get file system lock to create NMEA data file"));
         online.nmeaLogging = false;
         return;
       }
@@ -156,6 +170,8 @@ void beginLoggingUBX()
     {
       char fileName[40] = "";
 
+      i2cGNSS.checkUblox();
+
       //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
       bool haveLogTime = false;
       if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
@@ -171,7 +187,7 @@ void beginLoggingUBX()
         return;
       }
 
-      sprintf(fileName, "/SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.ubx",
+      sprintf(fileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.txt", //SdFat library
               i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
               i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
              );
@@ -187,14 +203,18 @@ void beginLoggingUBX()
           Serial.printf("Failed to create GNSS UBX data file: %s\n", fileName);
           delay(1000);
           online.ubxLogging = false;
+          xSemaphoreGive(xFATSemaphore);
           return;
         }
+
+        updateDataFileCreate(&ubxFile); // Update the file to create time & date
+
         xSemaphoreGive(xFATSemaphore);
       }
       else
       {
-        Serial.printf("Failed to create GNSS UBX data file: %s\n", fileName);
-        online.nmeaLogging = false;
+        Serial.println(F("Failed to get file system lock to create GNSS UBX data file"));
+        online.ubxLogging = false;
         return;
       }
 
@@ -206,7 +226,26 @@ void beginLoggingUBX()
   }
 }
 
+//Updates the timestemp on a given data file
+void updateDataFileAccess(SdFile *dataFile)
+{
+  if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
+  {
+    //Update the file access time
+    dataFile->timestamp(T_ACCESS, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
+    //Update the file write time
+    dataFile->timestamp(T_WRITE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
+  }
+}
 
+void updateDataFileCreate(SdFile *dataFile)
+{
+  if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
+  {
+    //Update the file create time
+    dataFile->timestamp(T_CREATE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
+  }
+}
 
 //Given a portID, return the RAWX value for the given port
 uint8_t getRAWXSettings(uint8_t portID)

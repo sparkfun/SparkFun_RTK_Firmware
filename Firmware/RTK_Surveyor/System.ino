@@ -105,10 +105,13 @@ void F9PSerialReadTask(void *e)
 
                 digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
                 taskYIELD();
-                nmeaFile.flush();
+                nmeaFile.sync();
                 taskYIELD();
                 digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
               }
+
+              if (settings.frequentFileAccessTimestamps == true)
+                updateDataFileAccess(&nmeaFile); // Update the file access time & date
 
               xSemaphoreGive(xFATSemaphore);
             }
@@ -731,4 +734,22 @@ bool isConnected(uint8_t deviceAddress)
   if (Wire.endTransmission() == 0)
     return true;
   return false;
+}
+
+//Create a test file in file structure to make sure we can
+bool createTestFile()
+{
+  SdFile testFile;
+  char testFileName[40] = "testfile.txt";
+
+  if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) == true)
+  {
+    testFile.close();
+    
+    if (sd.exists(testFileName))
+      sd.remove(testFileName);
+    return (true);
+  }
+
+  return (false);
 }

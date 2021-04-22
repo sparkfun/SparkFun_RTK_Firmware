@@ -2,8 +2,6 @@
 
 void beginSD()
 {
-  int spiFreq = 40000000;
-
   pinMode(PIN_MICROSD_CHIP_SELECT, OUTPUT);
   digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
 
@@ -14,7 +12,6 @@ void beginSD()
     delay(10);
 
     if (sd.begin(SD_CONFIG) == false)
-    //if (SD.begin(PIN_MICROSD_CHIP_SELECT, spi, spiFreq) == false)
     {
       int tries = 0;
       int maxTries = 2;
@@ -34,6 +31,21 @@ void beginSD()
         online.microSD = false;
         return;
       }
+    }
+
+    //Change to root directory. All new file creation will be in root.
+    if (sd.chdir() == false)
+    {
+      Serial.println(F("SD change directory failed"));
+      online.microSD = false;
+      return;
+    }
+
+    if(createTestFile() == false)
+    {
+      Serial.println(F("Failed to create test file. Format with 'SD Card Formatter'."));
+      online.microSD = false;
+      return;
     }
 
     online.microSD = true;

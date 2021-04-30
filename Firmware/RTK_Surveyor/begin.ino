@@ -83,18 +83,6 @@ void beginUART2()
     delay(1);
 }
 
-//Assign UART2 interrupts to the current core. See: https://github.com/espressif/arduino-esp32/issues/3386
-void startUART2Task( void *pvParameters )
-{
-  serialGNSS.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
-  serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
-  serialGNSS.setTimeout(1);
-
-  uart2Started = true;
-
-  vTaskDelete( NULL );
-}
-
 void beginDisplay()
 {
   //0x3D is default on Qwiic board
@@ -300,6 +288,9 @@ bool beginBluetooth()
       NULL, //Task input parameter
       0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
       &F9PSerialWriteTaskHandle); //Task handle
+
+  //Start task for controlling Bluetooth pair LED 
+  btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
 
   return (true);
 }

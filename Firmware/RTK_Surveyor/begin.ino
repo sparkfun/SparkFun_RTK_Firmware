@@ -86,9 +86,9 @@ void beginUART2()
 //Assign UART2 interrupts to the current core. See: https://github.com/espressif/arduino-esp32/issues/3386
 void startUART2Task( void *pvParameters )
 {
-  GPS.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
-  GPS.setRxBufferSize(SERIAL_SIZE_RX);
-  GPS.setTimeout(1);
+  serialGNSS.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
+  serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
+  serialGNSS.setTimeout(1);
 
   uart2Started = true;
 
@@ -274,7 +274,7 @@ bool beginBluetooth()
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   SerialBT.register_callback(btCallback);
-  SerialBT.setTimeout(1);
+  SerialBT.setTimeout(250);
 
   Serial.print(F("Bluetooth broadcasting as: "));
   Serial.println(deviceName);
@@ -283,8 +283,23 @@ bool beginBluetooth()
   digitalWrite(bluetoothStatusLED, HIGH);
 
   //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
-  if (F9PSerialReadTaskHandle == NULL) xTaskCreate(F9PSerialReadTask, "F9Read", readTaskStackSize, NULL, 0, &F9PSerialReadTaskHandle);
-  if (F9PSerialWriteTaskHandle == NULL) xTaskCreate(F9PSerialWriteTask, "F9Write", writeTaskStackSize, NULL, 0, &F9PSerialWriteTaskHandle);
+  if (F9PSerialReadTaskHandle == NULL)
+    xTaskCreate(
+      F9PSerialReadTask,
+      "F9Read", //Just for humans
+      readTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      &F9PSerialReadTaskHandle); //Task handle
+
+  if (F9PSerialWriteTaskHandle == NULL)
+    xTaskCreate(
+      F9PSerialWriteTask,
+      "F9Write", //Just for humans
+      writeTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      &F9PSerialWriteTaskHandle); //Task handle
 
   return (true);
 }

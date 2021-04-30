@@ -39,7 +39,7 @@ void F9PSerialWriteTask(void *e)
     //    if (Serial.available())
     //    {
     //      auto s = Serial.readBytes(wBuffer, SERIAL_SIZE_RX);
-    //      GPS.write(wBuffer, s);
+    //      serialGNSS.write(wBuffer, s);
     //    }
 
     if (SerialBT.available())
@@ -50,7 +50,7 @@ void F9PSerialWriteTask(void *e)
         {
           //Pass bytes tp GNSS receiver
           auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
-          GPS.write(wBuffer, s);
+          serialGNSS.write(wBuffer, s);
         }
         else
         {
@@ -69,9 +69,9 @@ void F9PSerialReadTask(void *e)
 {
   while (true)
   {
-    if (GPS.available())
+    if (serialGNSS.available())
     {
-      auto s = GPS.readBytes(rBuffer, SERIAL_SIZE_RX);
+      auto s = serialGNSS.readBytes(rBuffer, SERIAL_SIZE_RX);
 
       //If we are actively survey-in then do not pass NMEA data from ZED to phone
       if (baseState == BASE_SURVEYING_IN_SLOW || baseState == BASE_SURVEYING_IN_FAST)
@@ -112,6 +112,13 @@ void F9PSerialReadTask(void *e)
 
               if (settings.frequentFileAccessTimestamps == true)
                 updateDataFileAccess(&nmeaFile); // Update the file access time & date
+
+              
+              if (millis() - lastStackReport > 2000) {
+                Serial.print("xTask stack usage: ");
+                Serial.println(uxTaskGetStackHighWaterMark( NULL ));
+                lastStackReport = millis();
+              }
 
               xSemaphoreGive(xFATSemaphore);
             }
@@ -743,7 +750,7 @@ bool createTestFile()
   if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) == true)
   {
     testFile.close();
-    
+
     if (sd.exists(testFileName))
       sd.remove(testFileName);
     return (true);

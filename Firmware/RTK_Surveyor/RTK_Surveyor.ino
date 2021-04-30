@@ -184,7 +184,7 @@ BluetoothSerial SerialBT;
 #include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
 #include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
 
-HardwareSerial GPS(2);
+HardwareSerial serialGNSS(2);
 #define RXD2 16
 #define TXD2 17
 
@@ -246,8 +246,9 @@ uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
 
 uint32_t lastFileReport = 0; //When logging, print file record stats every few seconds
-
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+long lastStackReport = 0;
 
 void setup()
 {
@@ -304,7 +305,6 @@ void setup()
 void loop()
 {
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-  i2cGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
 
   //Check rover switch and configure module accordingly
   //When switch is set to '1' = BASE, pin will be shorted to ground
@@ -377,7 +377,6 @@ void loop()
 
 void updateDisplay()
 {
-
   //Update the display if connected
   if (online.display == true)
   {
@@ -517,7 +516,6 @@ void updateLogs()
 
         // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
         i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
-        i2cGNSS.checkCallbacks(); // Check if any callbacks are waiting to be processed.
       }
     }
   }

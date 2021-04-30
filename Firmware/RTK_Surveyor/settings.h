@@ -1,3 +1,25 @@
+//System can enter a variety of states starting at Rover_No_Fix at power on
+typedef enum
+{
+  STATE_ROVER_NO_FIX = 0,
+  STATE_ROVER_FIX,
+  STATE_ROVER_RTK_FLOAT,
+  STATE_ROVER_RTK_FIX,
+  STATE_BASE_TEMP_SURVEY_NOT_STARTED, //User has indicated base, but current pos accuracy is too low
+  STATE_BASE_TEMP_SURVEY_STARTED,
+  STATE_BASE_TEMP_TRANSMITTING,
+  STATE_BASE_TEMP_WIFI_STARTED,
+  STATE_BASE_TEMP_WIFI_CONNECTED,
+  STATE_BASE_TEMP_CASTER_STARTED,
+  STATE_BASE_TEMP_CASTER_CONNECTED,
+  STATE_BASE_FIXED_TRANSMITTING,
+  STATE_BASE_FIXED_WIFI_STARTED,
+  STATE_BASE_FIXED_WIFI_CONNECTED,
+  STATE_BASE_FIXED_CASTER_STARTED,
+  STATE_BASE_FIXED_CASTER_CONNECTED,
+} SystemState;
+volatile SystemState systemState = STATE_ROVER_NO_FIX;
+
 //User can enter fixed base coordinates in ECEF or degrees
 typedef enum
 {
@@ -34,7 +56,6 @@ typedef enum
 } BaseState;
 volatile BaseState baseState = BASE_OFF;
 unsigned long baseStateBlinkTime = 0;
-const unsigned long maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
 //Return values for getByteChoice()
 enum returnStatus {
@@ -89,6 +110,7 @@ struct struct_settings {
   char mountPointPW[50] = "WR5wRo4H";
   char wifiSSID[50] = "TRex";
   char wifiPW[50] = "parachutes";
+  float surveyInStartingAccuracy = 1.0; //Wait for 1m horizontal positional accuracy before starting survey in
   bool logNMEA = false;
   bool logUBX = false;
   bool logRAWX = false;

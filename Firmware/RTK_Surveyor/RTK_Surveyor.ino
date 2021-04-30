@@ -222,13 +222,33 @@ const byte menuTimeout = 15; //Menus will exit/timeout after this number of seco
 bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
 long systemTime_minutes = 0; //Used to test if logging is less than max minutes
 
-uint32_t lastRoverUpdate = 0;
-uint32_t lastBaseUpdate = 0;
+//uint32_t lastRoverUpdate = 0;
+//uint32_t lastBaseUpdate = 0;
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
+uint32_t lastSystemStateUpdate = 0;
 
 uint32_t lastFileReport = 0; //When logging, print file record stats every few seconds
 long lastStackReport = 0; //Controls the report rate of stack highwater mark within a task
+
+uint32_t lastSatelliteDishIconUpdate = 0;
+bool satelliteDishIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms
+uint32_t lastCrosshairIconUpdate = 0;
+bool crosshairIconDisplayed = false; //Toggles as lastCrosshairIconUpdate goes above 1000ms
+uint32_t lastBaseIconUpdate = 0;
+bool baseIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms
+uint32_t lastWifiIconUpdate = 0;
+bool wifiIconDisplayed = false; //Toggles as lastWifiIconUpdate goes above 1000ms
+
+uint32_t lastRTCMPacketSent = 0; //Used to count RTCM packets sent during base mode
+uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent during base mode
+
+uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service times out
+
+uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
+
+bool setupByPowerButton = false; //We can change setup via tapping power button
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -280,23 +300,24 @@ void loop()
 {
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  checkSetupSwitch(); //Change system state as needed
+  checkSetupButton(); //Change system state as needed
 
-  if (baseState == BASE_SURVEYING_IN_NOTSTARTED || baseState == BASE_SURVEYING_IN_SLOW || baseState == BASE_SURVEYING_IN_FAST)
-  {
-    updateSurveyInStatus();
-  }
-  else if (baseState == BASE_TRANSMITTING)
-  {
-    if (settings.enableNtripServer == true)
-    {
-      updateNtripServer();
-    }
-  }
-  else if (baseState == BASE_OFF)
-  {
-    updateRoverStatus();
-  }
+  updateSystemState();
+//  if (baseState == BASE_SURVEYING_IN_NOTSTARTED || baseState == BASE_SURVEYING_IN_SLOW || baseState == BASE_SURVEYING_IN_FAST)
+//  {
+//    updateSurveyInStatus();
+//  }
+//  else if (baseState == BASE_TRANSMITTING)
+//  {
+//    if (settings.enableNtripServer == true)
+//    {
+//      updateNtripServer();
+//    }
+//  }
+//  else if (baseState == BASE_OFF)
+//  {
+//    updateRoverStatus();
+//  }
 
   updateBattLEDs();
 

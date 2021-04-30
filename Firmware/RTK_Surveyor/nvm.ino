@@ -108,6 +108,7 @@ void recordSystemSettingsToFile()
     settingsFile.println("mountPointPW=" + (String)settings.mountPointPW);
     settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
     settingsFile.println("wifiPW=" + (String)settings.wifiPW);
+    settingsFile.println("surveyInStartingAccuracy=" + (String)settings.surveyInStartingAccuracy);
     settingsFile.println("logNMEA=" + (String)settings.logNMEA);
     settingsFile.println("logUBX=" + (String)settings.logUBX);
     settingsFile.println("logRAWX=" + (String)settings.logRAWX);
@@ -313,6 +314,8 @@ bool parseLine(char* str) {
     strcpy(settings.wifiSSID, settingValue);
   else if (strcmp(settingName, "wifiPW") == 0)
     strcpy(settings.wifiPW, settingValue);
+  else if (strcmp(settingName, "surveyInStartingAccuracy") == 0)
+    settings.surveyInStartingAccuracy = d;
   else if (strcmp(settingName, "logNMEA") == 0)
     settings.logNMEA = d;
   else if (strcmp(settingName, "logUBX") == 0)

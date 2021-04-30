@@ -1,7 +1,7 @@
 //Regularly update subsystems. Called from main loop (aka not tasks).
 
 //Change between Rover or Base depending on switch state
-void checkSetupSwitch()
+void checkSetupButton()
 {
   //Check rover switch and configure module accordingly
   //When switch is set to '1' = BASE, pin will be shorted to ground
@@ -38,89 +38,6 @@ void checkSetupSwitch()
 
     baseState = BASE_SURVEYING_IN_NOTSTARTED; //Switch to new state
   }  
-}
-
-void updateDisplay()
-{
-  //Update the display if connected
-  if (online.display == true)
-  {
-    if (millis() - lastDisplayUpdate > 1000)
-    {
-      lastDisplayUpdate = millis();
-
-      oled.clear(PAGE); // Clear the display's internal buffer
-
-      //Current battery charge level
-      if (battLevel < 25)
-        oled.drawIcon(45, 0, Battery_0_Width, Battery_0_Height, Battery_0, sizeof(Battery_0), true);
-      else if (battLevel < 50)
-        oled.drawIcon(45, 0, Battery_1_Width, Battery_1_Height, Battery_1, sizeof(Battery_1), true);
-      else if (battLevel < 75)
-        oled.drawIcon(45, 0, Battery_2_Width, Battery_2_Height, Battery_2, sizeof(Battery_2), true);
-      else //batt level > 75
-        oled.drawIcon(45, 0, Battery_3_Width, Battery_3_Height, Battery_3, sizeof(Battery_3), true);
-
-      //Bluetooth Address or RSSI
-      if (radioState == BT_CONNECTED)
-      {
-        oled.drawIcon(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol, sizeof(BT_Symbol), true);
-      }
-      else
-      {
-        char macAddress[5];
-        sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-        oled.setFontType(0); //Set font to smallest
-        oled.setCursor(0, 4);
-        oled.print(macAddress);
-      }
-
-      if (digitalRead(baseSwitch) == LOW)
-        oled.drawIcon(27, 0, Base_Width, Base_Height, Base, sizeof(Base), true); //true - blend with other pixels
-      else
-        oled.drawIcon(27, 3, Rover_Width, Rover_Height, Rover, sizeof(Rover), true);
-
-      //Horz positional accuracy
-      oled.setFontType(1); //Set font to type 1: 8x16
-      oled.drawIcon(0, 18, CrossHair_Width, CrossHair_Height, CrossHair, sizeof(CrossHair), true);
-      oled.setCursor(16, 20); //x, y
-      oled.print(":");
-      float hpa = i2cGNSS.getHorizontalAccuracy() / 10000.0;
-      if (hpa > 30.0)
-      {
-        oled.print(F(">30"));
-      }
-      else if (hpa > 9.9)
-      {
-        oled.print(hpa, 1); //Print down to decimeter
-      }
-      else if (hpa > 1.0)
-      {
-        oled.print(hpa, 2); //Print down to centimeter
-      }
-      else
-      {
-        oled.print("."); //Remove leading zero
-        oled.printf("%03d", (int)(hpa * 1000)); //Print down to millimeter
-      }
-
-      //SIV
-      oled.drawIcon(2, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
-      oled.setCursor(16, 36); //x, y
-      oled.print(":");
-
-      if (i2cGNSS.getFixType() == 0) //0 = No Fix
-      {
-        oled.print("0");
-      }
-      else
-      {
-        oled.print(i2cGNSS.getSIV());
-      }
-
-      oled.display();
-    }
-  }
 }
 
 //Create or close UBX/NMEA files as needed (startup or as user changes settings)

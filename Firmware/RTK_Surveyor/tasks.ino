@@ -47,7 +47,7 @@ void F9PSerialReadTask(void *e)
       auto s = serialGNSS.readBytes(rBuffer, SERIAL_SIZE_RX);
 
       //If we are actively survey-in then do not pass NMEA data from ZED to phone
-      if (baseState == BASE_SURVEYING_IN_SLOW || baseState == BASE_SURVEYING_IN_FAST)
+      if (systemState == STATE_BASE_TEMP_SURVEY_NOT_STARTED || systemState == STATE_BASE_TEMP_SURVEY_STARTED)
       {
         //Do nothing
       }

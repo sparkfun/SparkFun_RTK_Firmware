@@ -5,39 +5,95 @@ void checkSetupButton()
 {
   //Check rover switch and configure module accordingly
   //When switch is set to '1' = BASE, pin will be shorted to ground
-  if (digitalRead(baseSwitch) == HIGH && baseState != BASE_OFF)
+  if (digitalRead(baseSwitch) == LOW) //Switch is set to base mode
   {
-    //Configure for rover mode
-    Serial.println(F("Rover Mode"));
-
-    baseState = BASE_OFF;
-
-    beginBluetooth(); //Restart Bluetooth with 'Rover' name
-
-    //If we are survey'd in, but switch is rover then disable survey
-    if (configureUbloxModuleRover() == false)
+    if (systemState == STATE_ROVER_NO_FIX ||
+        systemState == STATE_ROVER_FIX ||
+        systemState == STATE_ROVER_RTK_FLOAT ||
+        systemState == STATE_ROVER_RTK_FIX)
     {
-      Serial.println(F("Rover config failed!"));
-    }
+      displayBaseStart();
 
-    digitalWrite(baseStatusLED, LOW);
+      //Configure for base mode
+      Serial.println(F("Base Mode"));
+
+      //Configure for base mode
+      Serial.println(F("Base Mode"));
+
+      //Restart Bluetooth with 'Base' name
+      //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
+      beginBluetooth();
+
+      if (settings.fixedBase == false)
+      {
+        //Don't configure base if we are going to do a survey in. We need to wait for surveyInStartingAccuracy to be achieved in state machine
+        changeState(STATE_BASE_TEMP_SURVEY_NOT_STARTED);
+      }
+      else if (settings.fixedBase == true)
+      {
+        if (configureUbloxModuleBase() == false)
+        {
+          Serial.println(F("Base config failed!"));
+          displayBaseFail();
+          return;
+        }
+
+        bool response = startFixedBase();
+        if (response == true)
+        {
+          changeState(STATE_BASE_FIXED_TRANSMITTING);
+        }
+        else
+        {
+          //TODO maybe create a custom fixed base fail screen
+          Serial.println(F("Fixed base start failed!"));
+          displayBaseFail();
+          return;
+        }
+      }
+
+      displayBaseSuccess();
+      delay(500);
+    }
   }
-  else if (digitalRead(baseSwitch) == LOW && baseState == BASE_OFF)
+  else if (digitalRead(baseSwitch) == HIGH) //Switch is set to Rover
   {
-    //Configure for base mode
-    Serial.println(F("Base Mode"));
-
-    if (configureUbloxModuleBase() == false)
+    if (systemState == STATE_BASE_TEMP_SURVEY_NOT_STARTED ||
+        systemState == STATE_BASE_TEMP_SURVEY_STARTED ||
+        systemState == STATE_BASE_TEMP_TRANSMITTING ||
+        systemState == STATE_BASE_TEMP_WIFI_STARTED ||
+        systemState == STATE_BASE_TEMP_WIFI_CONNECTED ||
+        systemState == STATE_BASE_TEMP_CASTER_STARTED ||
+        systemState == STATE_BASE_TEMP_CASTER_CONNECTED ||
+        systemState == STATE_BASE_FIXED_TRANSMITTING ||
+        systemState == STATE_BASE_FIXED_WIFI_STARTED ||
+        systemState == STATE_BASE_FIXED_WIFI_CONNECTED ||
+        systemState == STATE_BASE_FIXED_CASTER_STARTED ||
+        systemState == STATE_BASE_FIXED_CASTER_CONNECTED)
     {
-      Serial.println(F("Base config failed!"));
+      displayRoverStart();
+
+
+      //Configure for rover mode
+      Serial.println(F("Rover Mode"));
+
+      //If we are survey'd in, but switch is rover then disable survey
+      if (configureUbloxModuleRover() == false)
+      {
+        Serial.println(F("Rover config failed!"));
+        displayRoverFail();
+        return;
+      }
+
+      beginBluetooth(); //Restart Bluetooth with 'Rover' name
+
+      digitalWrite(baseStatusLED, LOW);
+
+      changeState(STATE_ROVER_NO_FIX);
+      displayRoverSuccess();
+      delay(500);
     }
-
-    //Restart Bluetooth with 'Base' name
-    //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
-    beginBluetooth();
-
-    baseState = BASE_SURVEYING_IN_NOTSTARTED; //Switch to new state
-  }  
+  }
 }
 
 //Create or close UBX/NMEA files as needed (startup or as user changes settings)

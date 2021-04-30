@@ -303,21 +303,6 @@ void loop()
   checkSetupButton(); //Change system state as needed
 
   updateSystemState();
-//  if (baseState == BASE_SURVEYING_IN_NOTSTARTED || baseState == BASE_SURVEYING_IN_SLOW || baseState == BASE_SURVEYING_IN_FAST)
-//  {
-//    updateSurveyInStatus();
-//  }
-//  else if (baseState == BASE_TRANSMITTING)
-//  {
-//    if (settings.enableNtripServer == true)
-//    {
-//      updateNtripServer();
-//    }
-//  }
-//  else if (baseState == BASE_OFF)
-//  {
-//    updateRoverStatus();
-//  }
 
   updateBattLEDs();
 

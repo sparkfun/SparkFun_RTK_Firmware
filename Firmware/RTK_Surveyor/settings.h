@@ -43,6 +43,18 @@ enum returnStatus {
   STATUS_PRESSED_X,
 };
 
+//These are the allowable messages to either broadcast over SPP or log to UBX file
+struct gnssMessages
+{
+  bool gga = true;
+  bool gsa = true;
+  bool gsv = true;
+  bool rmc = true;
+  bool gst = true;
+  bool rawx = false;
+  bool sfrbx = false;
+};
+
 //This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
 struct struct_settings {
   int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int
@@ -83,6 +95,8 @@ struct struct_settings {
   bool logSFRBX = false; //Issue #11
   uint16_t measurementRate = 250; //Elapsed ms between GNSS measurements. 25ms to 65535ms. Default 4Hz.
   uint16_t navigationRate = 1; //Ratio between number of measurements and navigation solutions. Default 1 for 4Hz (with measurementRate).
+  gnssMessages btBroadcast;
+  gnssMessages fileLog;
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

@@ -163,7 +163,6 @@ void menuGNSS()
         //Disable
         if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_I2C) == true)
         {
-          i2cGNSS.setAutoRXMRAWXcallback(NULL); // Disable automatic RXM RAWX messages
           i2cGNSS.logRXMRAWX(false); // Disable RXM RAWX data logging
           settings.logRAWX = false;
         }
@@ -173,7 +172,6 @@ void menuGNSS()
         //Enable
         if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_I2C) == true)
         {
-          i2cGNSS.setAutoRXMRAWXcallback(&newRAWX); // Enable automatic RXM RAWX messages with callback to newRAWX
           i2cGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
           settings.logRAWX = true;
         }
@@ -186,7 +184,6 @@ void menuGNSS()
         //Disable
         if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_I2C) == true)
         {
-          i2cGNSS.setAutoRXMSFRBXcallback(NULL); // Disable automatic RXM SFRBX messages
           i2cGNSS.logRXMSFRBX(false); // Disable RXM SFRBX data logging
           settings.logSFRBX = false;
         }
@@ -196,7 +193,6 @@ void menuGNSS()
         //Enable
         if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_I2C) == true)
         {
-          i2cGNSS.setAutoRXMSFRBXcallback(&newSFRBX); // Enable automatic RXM SFRBX messages with callback to newSFRBX
           i2cGNSS.logRXMSFRBX(); // Enable RXM SFRBX data logging
           settings.logSFRBX = true;
         }

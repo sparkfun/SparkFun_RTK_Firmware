@@ -2,6 +2,14 @@
 
 void beginSD()
 {
+  //Setup FAT file access semaphore
+  if (xFATSemaphore == NULL)
+  {
+    xFATSemaphore = xSemaphoreCreateMutex();
+    if (xFATSemaphore != NULL)
+      xSemaphoreGive(xFATSemaphore);  //Make the file system available for use
+  }
+
   pinMode(PIN_MICROSD_CHIP_SELECT, OUTPUT);
   digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
 
@@ -41,7 +49,7 @@ void beginSD()
       return;
     }
 
-    if(createTestFile() == false)
+    if (createTestFile() == false)
     {
       Serial.println(F("Failed to create test file. Format with 'SD Card Formatter'."));
       online.microSD = false;
@@ -54,6 +62,37 @@ void beginSD()
   {
     online.microSD = false;
   }
+}
+
+//We do not start the UART2 for GNSS->BT reception here because the interrupts would be pinned to core 1
+//competing with I2C interrupts
+//See issue: https://github.com/espressif/arduino-esp32/issues/3386
+//We instead start a task that runs on core 0, that then begins serial
+void beginUART2()
+{
+  if (startUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
+      startUART2Task,
+      "UARTStart", //Just for humans
+      2000, //Stack Size
+      NULL, //Task input parameter
+      0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      &startUART2TaskHandle, //Task handle
+      0); //Core where task should run, 0=core, 1=Arduino
+
+  while (uart2Started == false) //Wait for task to run once
+    delay(1);
+}
+
+//Assign UART2 interrupts to the current core. See: https://github.com/espressif/arduino-esp32/issues/3386
+void startUART2Task( void *pvParameters )
+{
+  GPS.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
+  GPS.setRxBufferSize(SERIAL_SIZE_RX);
+  GPS.setTimeout(1);
+
+  uart2Started = true;
+
+  vTaskDelete( NULL );
 }
 
 void beginDisplay()

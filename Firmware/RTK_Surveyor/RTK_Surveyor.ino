@@ -194,6 +194,9 @@ uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 
+TaskHandle_t startUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
+bool uart2Started = false;
+
 //Reduced stack size from 10,000 to 1,000 to make room for WiFi/NTRIP server capabilities
 //Increase stacks to 2k to allow for dual file write of NMEA/UBX using built in SD library
 const int readTaskStackSize = 2000;
@@ -246,39 +249,16 @@ uint32_t lastFileReport = 0; //When logging, print file record stats every few s
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-
-//GNSS Call back functions
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-void newSFRBX(UBX_RXM_SFRBX_data_t ubxDataStruct)
-{
-  //Do nothing, but we have to have callbacks in place to obtain RXM messages
-}
-
-void newRAWX(UBX_RXM_RAWX_data_t ubxDataStruct)
-{
-}
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
 void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
   Serial.setRxBufferSize(SERIAL_SIZE_RX);
   Serial.setTimeout(1);
 
-  GPS.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
-  GPS.setRxBufferSize(SERIAL_SIZE_RX);
-  GPS.setTimeout(1);
+  Wire.begin(); //Start I2C on core 1
+  Wire.setClock(400000);
 
-  Wire.begin(); //Start I2C
-  //Wire.setClock(400000);
-
-  //Setup FAT file access semaphore
-  if (xFATSemaphore == NULL)
-  {
-    xFATSemaphore = xSemaphoreCreateMutex();
-    if (xFATSemaphore != NULL)
-      xSemaphoreGive(xFATSemaphore);  //Make the file system available for use
-  }
+  beginUART2(); //Start UART2 on core 0
 
   beginLEDs(); //LED and PWM setup
 

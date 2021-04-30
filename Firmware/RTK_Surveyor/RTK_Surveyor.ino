@@ -42,9 +42,9 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 2;
 
-//Define the RTK Surveyor board identifier:
-//  This is an int which is unique to this variant of the RTK Surveyor and which allows us
-//  to make sure that the settings in EEPROM are correct for this version of the RTK Surveyor
+//Define the RTK board identifier:
+//  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
+//  to make sure that the settings in EEPROM are correct for this version of the RTK
 //  (sizeOfSettings is not necessarily unique and we want to avoid problems when swapping from one variant to another)
 //  It is the sum of:
 //    the major firmware version * 0x10
@@ -222,8 +222,6 @@ const byte menuTimeout = 15; //Menus will exit/timeout after this number of seco
 bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
 long systemTime_minutes = 0; //Used to test if logging is less than max minutes
 
-//uint32_t lastRoverUpdate = 0;
-//uint32_t lastBaseUpdate = 0;
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
 uint32_t lastSystemStateUpdate = 0;
@@ -247,7 +245,7 @@ uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service tim
 
 uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
-bool setupByPowerButton = false; //We can change setup via tapping power button
+uint32_t lastBaseLEDupdate = 0; //Controls the blinking of the Base LED
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

@@ -54,6 +54,13 @@ void updateSystemState()
       //Wait for horz acc of 5m or less before starting survey in
       case (STATE_BASE_TEMP_SURVEY_NOT_STARTED):
         {
+          //Blink base LED slowly while we wait for first fix
+          if (millis() - lastBaseLEDupdate > 1000)
+          { 
+            lastBaseLEDupdate = millis();
+            digitalWrite(baseStatusLED, !digitalRead(baseStatusLED));
+          }
+
           //Check for <5m horz accuracy
           uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
 
@@ -64,7 +71,7 @@ void updateSystemState()
 
           if (f_accuracy > 0.0 && f_accuracy < settings.surveyInStartingAccuracy)
           {
-            displaySurveyStart(); //Show 'Survey'
+            displaySurveyStart(); //Show 'Survey Started'
             if (configureUbloxModuleBase() == true)
             {
               if (surveyIn() == true) //Begin survey
@@ -80,9 +87,17 @@ void updateSystemState()
       //Check survey status until it completes or 15 minutes elapses and we go back to rover
       case (STATE_BASE_TEMP_SURVEY_STARTED):
         {
+          //Blink base LED quickly during survey in
+          if (millis() - lastBaseLEDupdate > 500)
+          { 
+            lastBaseLEDupdate = millis();
+            digitalWrite(baseStatusLED, !digitalRead(baseStatusLED));
+          }
+
           if (i2cGNSS.getFixType() == 5) //We have a TIME fix which is survey in complete
           {
             Serial.println(F("Base survey complete! RTCM now broadcasting."));
+            digitalWrite(baseStatusLED, HIGH); //Indicate survey complete
             changeState(STATE_BASE_TEMP_TRANSMITTING);
           }
           else
@@ -116,6 +131,7 @@ void updateSystemState()
 
               beginBluetooth(); //Restart Bluetooth with 'Rover' name
 
+              digitalWrite(baseStatusLED, LOW); //Indicate rover mode
               changeState(STATE_ROVER_NO_FIX);
               displayRoverSuccess();
             }

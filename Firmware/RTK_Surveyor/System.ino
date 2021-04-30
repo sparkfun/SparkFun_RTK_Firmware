@@ -508,17 +508,9 @@ void updateBattLEDs()
 //And outputs a serial message to USB
 void checkBatteryLevels()
 {
-  //long startTime = millis();
-
-  //Check I2C semaphore
-  //  if (xSemaphoreTake(xI2CSemaphore, i2cSemaphore_maxWait) == pdPASS)
-  //  {
   battLevel = lipo.getSOC();
   battVoltage = lipo.getVoltage();
   battChangeRate = lipo.getChangeRate();
-  //    xSemaphoreGive(xI2CSemaphore);
-  //  }
-  //Serial.printf("Batt time to update: %d\n", millis() - startTime);
 
   Serial.printf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
 

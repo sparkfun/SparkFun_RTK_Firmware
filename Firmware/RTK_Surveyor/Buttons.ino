@@ -17,9 +17,6 @@ void checkSetupButton()
       //Configure for base mode
       Serial.println(F("Base Mode"));
 
-      //Configure for base mode
-      Serial.println(F("Base Mode"));
-
       //Restart Bluetooth with 'Base' name
       //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
       beginBluetooth();
@@ -52,6 +49,7 @@ void checkSetupButton()
         }
       }
 
+      digitalWrite(baseStatusLED, HIGH);
       displayBaseSuccess();
       delay(500);
     }
@@ -87,9 +85,9 @@ void checkSetupButton()
 
       beginBluetooth(); //Restart Bluetooth with 'Rover' name
 
-      digitalWrite(baseStatusLED, LOW);
-
       changeState(STATE_ROVER_NO_FIX);
+
+      digitalWrite(baseStatusLED, LOW);
       displayRoverSuccess();
       delay(500);
     }

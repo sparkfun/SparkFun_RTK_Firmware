@@ -17,7 +17,7 @@ void updateSystemState()
       case (STATE_ROVER_NO_FIX):
         {
           if (i2cGNSS.getFixType() == 3) //3D
-            systemState = STATE_ROVER_FIX;
+            changeState(STATE_ROVER_FIX);
         }
         break;
 
@@ -25,9 +25,9 @@ void updateSystemState()
         {
           byte rtkType = i2cGNSS.getCarrierSolutionType();
           if (rtkType == 1) //RTK Float
-            systemState = STATE_ROVER_RTK_FLOAT;
+            changeState(STATE_ROVER_RTK_FLOAT);
           else if (rtkType == 2) //RTK Fix
-            systemState = STATE_ROVER_RTK_FIX;
+            changeState(STATE_ROVER_RTK_FIX);
         }
         break;
 
@@ -35,9 +35,9 @@ void updateSystemState()
         {
           byte rtkType = i2cGNSS.getCarrierSolutionType();
           if (rtkType == 0) //No RTK
-            systemState = STATE_ROVER_FIX;
+            changeState(STATE_ROVER_FIX);
           if (rtkType == 2) //RTK Fix
-            systemState = STATE_ROVER_RTK_FIX;
+            changeState(STATE_ROVER_RTK_FIX);
         }
         break;
 
@@ -45,9 +45,9 @@ void updateSystemState()
         {
           byte rtkType = i2cGNSS.getCarrierSolutionType();
           if (rtkType == 0) //No RTK
-            systemState = STATE_ROVER_FIX;
+            changeState(STATE_ROVER_FIX);
           if (rtkType == 1) //RTK Float
-            systemState = STATE_ROVER_RTK_FLOAT;
+            changeState(STATE_ROVER_RTK_FLOAT);
         }
         break;
 
@@ -70,7 +70,7 @@ void updateSystemState()
               if (surveyIn() == true) //Begin survey
               {
                 displaySurveyStarted(); //Show 'Survey Started'
-                systemState = STATE_BASE_TEMP_SURVEY_STARTED;
+                changeState(STATE_BASE_TEMP_SURVEY_STARTED);
               }
             }
           }
@@ -83,7 +83,7 @@ void updateSystemState()
           if (i2cGNSS.getFixType() == 5) //We have a TIME fix which is survey in complete
           {
             Serial.println(F("Base survey complete! RTCM now broadcasting."));
-            systemState = STATE_BASE_TEMP_TRANSMITTING;
+            changeState(STATE_BASE_TEMP_TRANSMITTING);
           }
           else
           {
@@ -116,7 +116,7 @@ void updateSystemState()
 
               beginBluetooth(); //Restart Bluetooth with 'Rover' name
 
-              systemState = STATE_ROVER_NO_FIX;
+              changeState(STATE_ROVER_NO_FIX);
               displayRoverSuccess();
             }
           }
@@ -135,7 +135,7 @@ void updateSystemState()
             WiFi.begin(settings.wifiSSID, settings.wifiPW);
 
             radioState = WIFI_ON_NOCONNECTION;
-            systemState = STATE_BASE_TEMP_WIFI_STARTED;
+            changeState(STATE_BASE_TEMP_WIFI_STARTED);
           }
         }
         break;
@@ -148,7 +148,7 @@ void updateSystemState()
           {
             radioState = WIFI_CONNECTED;
 
-            systemState = STATE_BASE_TEMP_WIFI_CONNECTED;
+            changeState(STATE_BASE_TEMP_WIFI_CONNECTED);
           }
           else
           {
@@ -174,7 +174,7 @@ void updateSystemState()
             //Open connection to caster service
             if (caster.connect(settings.casterHost, settings.casterPort) == true) //Attempt connection
             {
-              systemState = STATE_BASE_TEMP_CASTER_STARTED;
+              changeState(STATE_BASE_TEMP_CASTER_STARTED);
 
               Serial.printf("Connected to %s:%d\n", settings.casterHost, settings.casterPort);
 
@@ -205,7 +205,7 @@ void updateSystemState()
               caster.stop();
               delay(10); //Yield to RTOS
 
-              systemState = STATE_BASE_TEMP_WIFI_CONNECTED; //Return to previous state
+              changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to previous state
             }
           }
           else
@@ -227,7 +227,7 @@ void updateSystemState()
             if (connectionSuccess == false)
             {
               Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?", response);
-              systemState = STATE_BASE_TEMP_WIFI_CONNECTED; //Return to previous state
+              changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to previous state
             }
             else
             {
@@ -239,7 +239,7 @@ void updateSystemState()
               lastServerSent_ms = millis();
               serverBytesSent = 0;
 
-              systemState = STATE_BASE_TEMP_CASTER_CONNECTED;
+              changeState(STATE_BASE_TEMP_CASTER_CONNECTED);
             }
           }
         }
@@ -250,7 +250,7 @@ void updateSystemState()
         {
           if (caster.connected() == false)
           {
-            systemState = STATE_BASE_TEMP_WIFI_CONNECTED; //Return to 2 earlier states to try to reconnect
+            changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to 2 earlier states to try to reconnect
           }
         }
         break;
@@ -267,7 +267,7 @@ void updateSystemState()
             WiFi.begin(settings.wifiSSID, settings.wifiPW);
 
             radioState = WIFI_ON_NOCONNECTION;
-            systemState = STATE_BASE_FIXED_WIFI_STARTED;
+            changeState(STATE_BASE_FIXED_WIFI_STARTED);
           }
         }
         break;
@@ -280,7 +280,7 @@ void updateSystemState()
           {
             radioState = WIFI_CONNECTED;
 
-            systemState = STATE_BASE_FIXED_WIFI_CONNECTED;
+            changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
           }
           else
           {
@@ -306,7 +306,7 @@ void updateSystemState()
             //Open connection to caster service
             if (caster.connect(settings.casterHost, settings.casterPort) == true) //Attempt connection
             {
-              systemState = STATE_BASE_FIXED_CASTER_STARTED;
+              changeState(STATE_BASE_FIXED_CASTER_STARTED);
 
               Serial.printf("Connected to %s:%d\n", settings.casterHost, settings.casterPort);
 
@@ -337,7 +337,7 @@ void updateSystemState()
               caster.stop();
               delay(10); //Yield to RTOS
 
-              systemState = STATE_BASE_FIXED_WIFI_CONNECTED; //Return to previous state
+              changeState(STATE_BASE_FIXED_WIFI_CONNECTED); //Return to previous state
             }
           }
           else
@@ -359,7 +359,7 @@ void updateSystemState()
             if (connectionSuccess == false)
             {
               Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?", response);
-              systemState = STATE_BASE_FIXED_WIFI_CONNECTED; //Return to previous state
+              changeState(STATE_BASE_FIXED_WIFI_CONNECTED); //Return to previous state
             }
             else
             {
@@ -371,7 +371,7 @@ void updateSystemState()
               lastServerSent_ms = millis();
               serverBytesSent = 0;
 
-              systemState = STATE_BASE_FIXED_CASTER_CONNECTED;
+              changeState(STATE_BASE_FIXED_CASTER_CONNECTED);
             }
           }
         }
@@ -382,67 +382,73 @@ void updateSystemState()
         {
           if (caster.connected() == false)
           {
-            systemState = STATE_BASE_FIXED_WIFI_CONNECTED; //Return to 2 earlier states to try to reconnect
+            changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
           }
         }
         break;
 
     }
+  }
+}
 
-    //Debug print
-    switch (systemState)
-    {
-      case (STATE_ROVER_NO_FIX):
-        Serial.println(F("State: Rover - No Fix"));
-        break;
-      case (STATE_ROVER_FIX):
-        Serial.println(F("State: Rover - Fix"));
-        break;
-      case (STATE_ROVER_RTK_FLOAT):
-        Serial.println(F("State: Rover - RTK Float"));
-        break;
-      case (STATE_ROVER_RTK_FIX):
-        Serial.println(F("State: Rover - RTK Fix"));
-        break;
-      case (STATE_BASE_TEMP_SURVEY_NOT_STARTED):
-        Serial.println(F("State: Base-Temp - Survey Not Started"));
-        break;
-      case (STATE_BASE_TEMP_SURVEY_STARTED):
-        Serial.println(F("State: Base-Temp - Survey Started"));
-        break;
-      case (STATE_BASE_TEMP_TRANSMITTING):
-        Serial.println(F("State: Base-Temp - Transmitting"));
-        break;
-      case (STATE_BASE_TEMP_WIFI_STARTED):
-        Serial.println(F("State: Base-Temp - WiFi Started"));
-        break;
-      case (STATE_BASE_TEMP_WIFI_CONNECTED):
-        Serial.println(F("State: Base-Temp - WiFi Connected"));
-        break;
-      case (STATE_BASE_TEMP_CASTER_STARTED):
-        Serial.println(F("State: Base-Temp - Caster Started"));
-        break;
-      case (STATE_BASE_TEMP_CASTER_CONNECTED):
-        Serial.println(F("State: Base-Temp - Caster Connected"));
-        break;
-      case (STATE_BASE_FIXED_TRANSMITTING):
-        Serial.println(F("State: Base-Fixed - Transmitting"));
-        break;
-      case (STATE_BASE_FIXED_WIFI_STARTED):
-        Serial.println(F("State: Base-Fixed - WiFi Started"));
-        break;
-      case (STATE_BASE_FIXED_WIFI_CONNECTED):
-        Serial.println(F("State: Base-Fixed - WiFi Connected"));
-        break;
-      case (STATE_BASE_FIXED_CASTER_STARTED):
-        Serial.println(F("State: Base-Fixed - Caster Started"));
-        break;
-      case (STATE_BASE_FIXED_CASTER_CONNECTED):
-        Serial.println(F("State: Base-Fixed - Caster Connected"));
-        break;
-      default:
-        Serial.printf("State Unknown: %d\n", systemState);
-        break;
-    }
+//Change states and print the new state
+void changeState(SystemState newState)
+{
+  systemState = newState;
+
+  //Debug print
+  switch (systemState)
+  {
+    case (STATE_ROVER_NO_FIX):
+      Serial.println(F("State: Rover - No Fix"));
+      break;
+    case (STATE_ROVER_FIX):
+      Serial.println(F("State: Rover - Fix"));
+      break;
+    case (STATE_ROVER_RTK_FLOAT):
+      Serial.println(F("State: Rover - RTK Float"));
+      break;
+    case (STATE_ROVER_RTK_FIX):
+      Serial.println(F("State: Rover - RTK Fix"));
+      break;
+    case (STATE_BASE_TEMP_SURVEY_NOT_STARTED):
+      Serial.println(F("State: Base-Temp - Survey Not Started"));
+      break;
+    case (STATE_BASE_TEMP_SURVEY_STARTED):
+      Serial.println(F("State: Base-Temp - Survey Started"));
+      break;
+    case (STATE_BASE_TEMP_TRANSMITTING):
+      Serial.println(F("State: Base-Temp - Transmitting"));
+      break;
+    case (STATE_BASE_TEMP_WIFI_STARTED):
+      Serial.println(F("State: Base-Temp - WiFi Started"));
+      break;
+    case (STATE_BASE_TEMP_WIFI_CONNECTED):
+      Serial.println(F("State: Base-Temp - WiFi Connected"));
+      break;
+    case (STATE_BASE_TEMP_CASTER_STARTED):
+      Serial.println(F("State: Base-Temp - Caster Started"));
+      break;
+    case (STATE_BASE_TEMP_CASTER_CONNECTED):
+      Serial.println(F("State: Base-Temp - Caster Connected"));
+      break;
+    case (STATE_BASE_FIXED_TRANSMITTING):
+      Serial.println(F("State: Base-Fixed - Transmitting"));
+      break;
+    case (STATE_BASE_FIXED_WIFI_STARTED):
+      Serial.println(F("State: Base-Fixed - WiFi Started"));
+      break;
+    case (STATE_BASE_FIXED_WIFI_CONNECTED):
+      Serial.println(F("State: Base-Fixed - WiFi Connected"));
+      break;
+    case (STATE_BASE_FIXED_CASTER_STARTED):
+      Serial.println(F("State: Base-Fixed - Caster Started"));
+      break;
+    case (STATE_BASE_FIXED_CASTER_CONNECTED):
+      Serial.println(F("State: Base-Fixed - Caster Connected"));
+      break;
+    default:
+      Serial.printf("State Unknown: %d\n", systemState);
+      break;
   }
 }

@@ -1040,3 +1040,29 @@ void drawFrame()
   oled.line(0, yMax, xMax, yMax); //Bottom
   oled.line(xMax, 0, xMax, yMax); //Right
 }
+
+//If the SD card is detected but is not formatted correctly, display warning
+void displaySDFail()
+{
+  if (online.display == true)
+  {
+    oled.clear(PAGE);
+
+    oled.setCursor(21, 13);
+    oled.setFontType(1);
+
+    int textX = 11;
+    int textY = 10;
+    int textKerning = 8;
+
+    printTextwithKerning("Format", textX, textY, textKerning);
+
+    textX = 7;
+    textY = 25;
+    textKerning = 8;
+    oled.setFontType(1);
+
+    printTextwithKerning("SD Card", textX, textY, textKerning);
+    oled.display();
+  }
+}

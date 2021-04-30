@@ -51,7 +51,8 @@ void beginSD()
 
     if (createTestFile() == false)
     {
-      Serial.println(F("Failed to create test file. Format with 'SD Card Formatter'."));
+      Serial.println(F("Failed to create test file. Format SD card with 'SD Card Formatter'."));
+      delay(5000);
       online.microSD = false;
       return;
     }
@@ -289,7 +290,7 @@ bool beginBluetooth()
       0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
       &F9PSerialWriteTaskHandle); //Task handle
 
-  //Start task for controlling Bluetooth pair LED 
+  //Start task for controlling Bluetooth pair LED
   btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
 
   return (true);

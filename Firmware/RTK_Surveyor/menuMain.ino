@@ -17,9 +17,11 @@ void menuMain()
 
     Serial.println(F("2) Configure Data Logging"));
 
-    Serial.println(F("3) Configure Base"));
+    Serial.println(F("3) Configure Bluetooth Broadcasting"));
 
-    Serial.println(F("4) Configure Ports"));
+    Serial.println(F("4) Configure Base"));
+
+    Serial.println(F("5) Configure Ports"));
 
     Serial.println(F("r) Reset all settings to default"));
 
@@ -37,8 +39,10 @@ void menuMain()
     else if (incoming == '2')
       menuLog();
     else if (incoming == '3')
-      menuBase();
+      menuBroadcast();
     else if (incoming == '4')
+      menuBase();
+    else if (incoming == '5')
       menuPorts();
     else if (incoming == 'r')
     {

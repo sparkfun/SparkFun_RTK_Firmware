@@ -17,35 +17,7 @@ void menuGNSS()
     Serial.print(F("2) Set measurement rate in seconds between measurements: "));
     Serial.println(currentSeconds, 2);
 
-    Serial.print(F("3) Toggle GxGGA sentence: "));
-    if (getNMEASettings(UBX_NMEA_GGA, COM_PORT_UART1) == 1) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
-
-    Serial.print(F("4) Toggle GxGSA sentence: "));
-    if (getNMEASettings(UBX_NMEA_GSA, COM_PORT_UART1) == 1) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
-
-    Serial.print(F("5) Toggle GxGSV sentence: "));
-    if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) == currentHzInt) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
-
-    Serial.print(F("6) Toggle GxRMC sentence: "));
-    if (getNMEASettings(UBX_NMEA_RMC, COM_PORT_UART1) == 1) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
-
-    Serial.print(F("7) Toggle GxGST sentence: "));
-    if (getNMEASettings(UBX_NMEA_GST, COM_PORT_UART1) == 1) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
-
-    Serial.print(F("8) Toggle GNSS RAWX sentence: "));
-    if (getRAWXSettings(COM_PORT_I2C) == 1) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
-
-    Serial.print(F("9) Toggle GNSS SFRBX sentence: "));
-    if (getSFRBXSettings(COM_PORT_I2C) == 1) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
-
-    Serial.print(F("10) Toggle SBAS: "));
+    Serial.print(F("3) Toggle SBAS: "));
     if (getSBAS() == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
@@ -83,123 +55,6 @@ void menuGNSS()
     }
     else if (incoming == 3)
     {
-      if (getNMEASettings(UBX_NMEA_GGA, COM_PORT_UART1) == 1)
-      {
-        //Disable the sentence
-        if (i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1) == true)
-          settings.outputSentenceGGA = false;
-      }
-      else
-      {
-        //Enable the sentence
-        if (i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1) == true)
-          settings.outputSentenceGGA = true;
-      }
-    }
-    else if (incoming == 4)
-    {
-      if (getNMEASettings(UBX_NMEA_GSA, COM_PORT_UART1) == 1)
-      {
-        //Disable the sentence
-        if (i2cGNSS.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1) == true)
-          settings.outputSentenceGSA = false;
-      }
-      else
-      {
-        //Enable the sentence
-        if (i2cGNSS.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1) == true)
-          settings.outputSentenceGSA = true;
-      }
-    }
-    else if (incoming == 5)
-    {
-      if (getNMEASettings(UBX_NMEA_GSV, COM_PORT_UART1) == currentHzInt)
-      {
-        //Disable the sentence
-        if (i2cGNSS.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1) == true)
-          settings.outputSentenceGSV = false;
-      }
-      else
-      {
-        //Enable the sentence at measurement rate to make sentence transmit at 1Hz to avoid stressing BT SPP buffers with 25+ SIV
-        if (i2cGNSS.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1, currentHzInt) == true)
-          settings.outputSentenceGSV = true;
-      }
-    }
-    else if (incoming == 6)
-    {
-      if (getNMEASettings(UBX_NMEA_RMC, COM_PORT_UART1) == 1)
-      {
-        //Disable the sentence
-        if (i2cGNSS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1) == true)
-          settings.outputSentenceRMC = false;
-      }
-      else
-      {
-        //Enable the sentence
-        if (i2cGNSS.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1) == true)
-          settings.outputSentenceRMC = true;
-      }
-    }
-    else if (incoming == 7)
-    {
-      if (getNMEASettings(UBX_NMEA_GST, COM_PORT_UART1) == 1)
-      {
-        //Disable the sentence
-        if (i2cGNSS.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1) == true)
-          settings.outputSentenceGST = false;
-      }
-      else
-      {
-        //Enable the sentence
-        if (i2cGNSS.enableNMEAMessage(UBX_NMEA_GST, COM_PORT_UART1) == true)
-          settings.outputSentenceGST = true;
-      }
-    }
-    else if (incoming == 8)
-    {
-      if (getRAWXSettings(COM_PORT_I2C) == 1)
-      {
-        //Disable
-        if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_I2C) == true)
-        {
-          i2cGNSS.logRXMRAWX(false); // Disable RXM RAWX data logging
-          settings.logRAWX = false;
-        }
-      }
-      else
-      {
-        //Enable
-        if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, COM_PORT_I2C) == true)
-        {
-          i2cGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
-          settings.logRAWX = true;
-        }
-      }
-    }
-    else if (incoming == 9)
-    {
-      if (getSFRBXSettings(COM_PORT_I2C) == 1)
-      {
-        //Disable
-        if (i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_I2C) == true)
-        {
-          i2cGNSS.logRXMSFRBX(false); // Disable RXM SFRBX data logging
-          settings.logSFRBX = false;
-        }
-      }
-      else
-      {
-        //Enable
-        if (i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, COM_PORT_I2C) == true)
-        {
-          i2cGNSS.logRXMSFRBX(); // Enable RXM SFRBX data logging
-          settings.logSFRBX = true;
-        }
-      }
-    }
-    else if (incoming == 10)
-    {
       if (getSBAS() == true)
       {
         //Disable it
@@ -212,9 +67,7 @@ void menuGNSS()
         if (setSBAS(true) == true)
           settings.enableSBAS = true;
       }
-
     }
-
     else if (incoming == STATUS_PRESSED_X)
       break;
     else if (incoming == STATUS_GETNUMBER_TIMEOUT)
@@ -222,9 +75,6 @@ void menuGNSS()
     else
       printUnknown(incoming);
   }
-
-  i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
-  beginGNSS(); //Push any new settings to GNSS module
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }

@@ -84,6 +84,15 @@ void beginUART2()
     delay(1);
 }
 
+//ESP32 requires the creation of an EEPROM space
+void beginEEPROM()
+{
+  if (EEPROM.begin(EEPROM_SIZE) == false)
+    Serial.println(F("beginEEPROM: Failed to initialize EEPROM"));
+  else
+    online.eeprom = true;
+}
+
 void beginDisplay()
 {
   //0x3D is default on Qwiic board
@@ -149,7 +158,7 @@ void beginDisplay()
 //Connect to and configure ZED-F9P
 void beginGNSS()
 {
-  if (settings.logUBX == true)
+  if (logUBXMessages() == true)
   {
     i2cGNSS.disableUBX7Fcheck(); // RAWX data can legitimately contain 0x7F, so we need to disable the "7F" check in checkUbloxI2C
   }

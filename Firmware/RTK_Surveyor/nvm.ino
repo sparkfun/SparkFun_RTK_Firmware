@@ -66,57 +66,70 @@ void recordSystemSettingsToFile()
 {
   if (online.microSD == true)
   {
-    if (sd.exists(settingsFileName))
-      sd.remove(settingsFileName);
-
-    SdFile settingsFile; //FAT32
-    if (settingsFile.open(settingsFileName, O_CREAT | O_APPEND | O_WRITE) == false)
+    //Attempt to write to file system. This avoids collisions with file writing from other functions like updateLogs()
+    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
     {
-      Serial.println(F("Failed to create settings file"));
-      return;
+      if (sd.exists(settingsFileName))
+        sd.remove(settingsFileName);
+
+      SdFile settingsFile; //FAT32
+      if (settingsFile.open(settingsFileName, O_CREAT | O_APPEND | O_WRITE) == false)
+      {
+        Serial.println(F("Failed to create settings file"));
+        return;
+      }
+
+      settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
+      settingsFile.println("rtkIdentifier=" + (String)settings.rtkIdentifier);
+      settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
+      settingsFile.println("enableSD=" + (String)settings.enableSD);
+      settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
+      settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
+      settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
+      settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
+      settingsFile.println("observationPositionAccuracy=" + (String)settings.observationPositionAccuracy);
+      settingsFile.println("fixedBase=" + (String)settings.fixedBase);
+      settingsFile.println("fixedBaseCoordinateType=" + (String)settings.fixedBaseCoordinateType);
+      settingsFile.println("fixedEcefX=" + (String)settings.fixedEcefX);
+      settingsFile.println("fixedEcefY=" + (String)settings.fixedEcefY);
+      settingsFile.println("fixedEcefZ=" + (String)settings.fixedEcefZ);
+      settingsFile.println("fixedLat=" + (String)settings.fixedLat);
+      settingsFile.println("fixedLong=" + (String)settings.fixedLong);
+      settingsFile.println("fixedAltitude=" + (String)settings.fixedAltitude);
+      settingsFile.println("dataPortBaud=" + (String)settings.dataPortBaud);
+      settingsFile.println("radioPortBaud=" + (String)settings.radioPortBaud);
+      settingsFile.println("enableSBAS=" + (String)settings.enableSBAS);
+      settingsFile.println("enableNtripServer=" + (String)settings.enableNtripServer);
+      settingsFile.println("casterHost=" + (String)settings.casterHost);
+      settingsFile.println("casterPort=" + (String)settings.casterPort);
+      settingsFile.println("mountPoint=" + (String)settings.mountPoint);
+      settingsFile.println("mountPointPW=" + (String)settings.mountPointPW);
+      settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
+      settingsFile.println("wifiPW=" + (String)settings.wifiPW);
+      settingsFile.println("surveyInStartingAccuracy=" + (String)settings.surveyInStartingAccuracy);
+      settingsFile.println("measurementRate=" + (String)settings.measurementRate);
+      settingsFile.println("navigationRate=" + (String)settings.navigationRate);
+
+      settingsFile.println("broadcast.gga=" + (String)settings.broadcast.gga);
+      settingsFile.println("broadcast.gsa=" + (String)settings.broadcast.gsa);
+      settingsFile.println("broadcast.gsv=" + (String)settings.broadcast.gsv);
+      settingsFile.println("broadcast.rmc=" + (String)settings.broadcast.rmc);
+      settingsFile.println("broadcast.gst=" + (String)settings.broadcast.gst);
+      settingsFile.println("broadcast.rawx=" + (String)settings.broadcast.rawx);
+      settingsFile.println("broadcast.sfrbx=" + (String)settings.broadcast.sfrbx);
+
+      settingsFile.println("log.gga=" + (String)settings.log.gga);
+      settingsFile.println("log.gsa=" + (String)settings.log.gsa);
+      settingsFile.println("log.gsv=" + (String)settings.log.gsv);
+      settingsFile.println("log.rmc=" + (String)settings.log.rmc);
+      settingsFile.println("log.gst=" + (String)settings.log.gst);
+      settingsFile.println("log.rawx=" + (String)settings.log.rawx);
+      settingsFile.println("log.sfrbx=" + (String)settings.log.sfrbx);
+
+      settingsFile.close();
+
+      xSemaphoreGive(xFATSemaphore);
     }
-
-    settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
-    settingsFile.println("rtkIdentifier=" + (String)settings.rtkIdentifier);
-    settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
-    settingsFile.println("enableSD=" + (String)settings.enableSD);
-    settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
-    settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
-    settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
-    settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
-    settingsFile.println("observationPositionAccuracy=" + (String)settings.observationPositionAccuracy);
-    settingsFile.println("fixedBase=" + (String)settings.fixedBase);
-    settingsFile.println("fixedBaseCoordinateType=" + (String)settings.fixedBaseCoordinateType);
-    settingsFile.println("fixedEcefX=" + (String)settings.fixedEcefX);
-    settingsFile.println("fixedEcefY=" + (String)settings.fixedEcefY);
-    settingsFile.println("fixedEcefZ=" + (String)settings.fixedEcefZ);
-    settingsFile.println("fixedLat=" + (String)settings.fixedLat);
-    settingsFile.println("fixedLong=" + (String)settings.fixedLong);
-    settingsFile.println("fixedAltitude=" + (String)settings.fixedAltitude);
-    settingsFile.println("dataPortBaud=" + (String)settings.dataPortBaud);
-    settingsFile.println("radioPortBaud=" + (String)settings.radioPortBaud);
-    settingsFile.println("outputSentenceGGA=" + (String)settings.outputSentenceGGA);
-    settingsFile.println("outputSentenceGSA=" + (String)settings.outputSentenceGSA);
-    settingsFile.println("outputSentenceGSV=" + (String)settings.outputSentenceGSV);
-    settingsFile.println("outputSentenceRMC=" + (String)settings.outputSentenceRMC);
-    settingsFile.println("outputSentenceGST=" + (String)settings.outputSentenceGST);
-    settingsFile.println("enableSBAS=" + (String)settings.enableSBAS);
-    settingsFile.println("enableNtripServer=" + (String)settings.enableNtripServer);
-    settingsFile.println("casterHost=" + (String)settings.casterHost);
-    settingsFile.println("casterPort=" + (String)settings.casterPort);
-    settingsFile.println("mountPoint=" + (String)settings.mountPoint);
-    settingsFile.println("mountPointPW=" + (String)settings.mountPointPW);
-    settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
-    settingsFile.println("wifiPW=" + (String)settings.wifiPW);
-    settingsFile.println("surveyInStartingAccuracy=" + (String)settings.surveyInStartingAccuracy);
-    settingsFile.println("logNMEA=" + (String)settings.logNMEA);
-    settingsFile.println("logUBX=" + (String)settings.logUBX);
-    settingsFile.println("logRAWX=" + (String)settings.logRAWX);
-    settingsFile.println("logSFRBX=" + (String)settings.logSFRBX);
-    settingsFile.println("measurementRate=" + (String)settings.measurementRate);
-    settingsFile.println("navigationRate=" + (String)settings.navigationRate);
-
-    settingsFile.close();
   }
 }
 
@@ -288,16 +301,6 @@ bool parseLine(char* str) {
     settings.dataPortBaud = d;
   else if (strcmp(settingName, "radioPortBaud") == 0)
     settings.radioPortBaud = d;
-  else if (strcmp(settingName, "outputSentenceGGA") == 0)
-    settings.outputSentenceGGA = d;
-  else if (strcmp(settingName, "outputSentenceGSA") == 0)
-    settings.outputSentenceGSA = d;
-  else if (strcmp(settingName, "outputSentenceGSV") == 0)
-    settings.outputSentenceGSV = d;
-  else if (strcmp(settingName, "outputSentenceRMC") == 0)
-    settings.outputSentenceRMC = d;
-  else if (strcmp(settingName, "outputSentenceGST") == 0)
-    settings.outputSentenceGST = d;
   else if (strcmp(settingName, "enableSBAS") == 0)
     settings.enableSBAS = d;
   else if (strcmp(settingName, "enableNtripServer") == 0)
@@ -316,18 +319,40 @@ bool parseLine(char* str) {
     strcpy(settings.wifiPW, settingValue);
   else if (strcmp(settingName, "surveyInStartingAccuracy") == 0)
     settings.surveyInStartingAccuracy = d;
-  else if (strcmp(settingName, "logNMEA") == 0)
-    settings.logNMEA = d;
-  else if (strcmp(settingName, "logUBX") == 0)
-    settings.logUBX = d;
-  else if (strcmp(settingName, "logRAWX") == 0)
-    settings.logRAWX = d;
-  else if (strcmp(settingName, "logSFRBX") == 0)
-    settings.logSFRBX = d;
   else if (strcmp(settingName, "measurementRate") == 0)
     settings.measurementRate = d;
   else if (strcmp(settingName, "navigationRate") == 0)
     settings.navigationRate = d;
+
+  else if (strcmp(settingName, "broadcast.gga") == 0)
+    settings.broadcast.gga = d;
+  else if (strcmp(settingName, "broadcast.gsa") == 0)
+    settings.broadcast.gsa = d;
+  else if (strcmp(settingName, "broadcast.gsv") == 0)
+    settings.broadcast.gsv = d;
+  else if (strcmp(settingName, "broadcast.rmc") == 0)
+    settings.broadcast.rmc = d;
+  else if (strcmp(settingName, "broadcast.gst") == 0)
+    settings.broadcast.gst = d;
+  else if (strcmp(settingName, "broadcast.rawx") == 0)
+    settings.broadcast.rawx = d;
+  else if (strcmp(settingName, "broadcast.sfrbx") == 0)
+    settings.broadcast.sfrbx = d;
+
+  else if (strcmp(settingName, "log.gga") == 0)
+    settings.log.gga = d;
+  else if (strcmp(settingName, "log.gsa") == 0)
+    settings.log.gsa = d;
+  else if (strcmp(settingName, "log.gsv") == 0)
+    settings.log.gsv = d;
+  else if (strcmp(settingName, "log.rmc") == 0)
+    settings.log.rmc = d;
+  else if (strcmp(settingName, "log.gst") == 0)
+    settings.log.gst = d;
+  else if (strcmp(settingName, "log.rawx") == 0)
+    settings.log.rawx = d;
+  else if (strcmp(settingName, "log.sfrbx") == 0)
+    settings.log.sfrbx = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

@@ -85,11 +85,6 @@ struct struct_settings {
   double fixedAltitude = 0.0;
   uint32_t dataPortBaud = 115200; //Default to 115200bps
   uint32_t radioPortBaud = 57600; //Default to 57600bps to support connection to SiK1000 radios
-  bool outputSentenceGGA = true;
-  bool outputSentenceGSA = true;
-  bool outputSentenceGSV = true;
-  bool outputSentenceRMC = true;
-  bool outputSentenceGST = true;
   bool enableSBAS = false; //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
   bool enableNtripServer = false;
   char casterHost[50] = "rtk2go.com"; //It's free...
@@ -99,14 +94,10 @@ struct struct_settings {
   char wifiSSID[50] = "TRex";
   char wifiPW[50] = "parachutes";
   float surveyInStartingAccuracy = 1.0; //Wait for 1m horizontal positional accuracy before starting survey in
-  bool logNMEA = false;
-  bool logUBX = false;
-  bool logRAWX = false;
-  bool logSFRBX = false; //Issue #11
   uint16_t measurementRate = 250; //Elapsed ms between GNSS measurements. 25ms to 65535ms. Default 4Hz.
   uint16_t navigationRate = 1; //Ratio between number of measurements and navigation solutions. Default 1 for 4Hz (with measurementRate).
-  gnssMessages btBroadcast;
-  gnssMessages fileLog;
+  gnssMessages broadcast;
+  gnssMessages log;
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.
@@ -114,8 +105,7 @@ struct struct_online {
   bool microSD = false;
   bool display = false;
   bool gnss = false;
-  bool nmeaLogging = false;
-  bool ubxLogging = false;
+  bool logging = false;
   bool serialOutput = false;
   bool eeprom = false;
   bool rtc = false;

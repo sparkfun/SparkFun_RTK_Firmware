@@ -35,12 +35,11 @@ uint8_t getByteChoice(int numberOfSeconds)
   while (1)
   {
     delay(10); //Yield to processor
+    i2cGNSS.checkUblox(); //Regularly poll to get latest data
 
     if (Serial.available() > 0)
     {
       incoming = Serial.read();
-      //      Serial.print(F("byte: 0x"));
-      //      Serial.println(incoming, HEX);
       if (incoming >= 'a' && incoming <= 'z') break;
       if (incoming >= 'A' && incoming <= 'Z') break;
       if (incoming >= '0' && incoming <= '9') break;
@@ -54,15 +53,6 @@ uint8_t getByteChoice(int numberOfSeconds)
   }
 
   return (incoming);
-}
-
-//ESP32 requires the creation of an EEPROM space
-void beginEEPROM()
-{
-  if (EEPROM.begin(EEPROM_SIZE) == false)
-    Serial.println(F("beginEEPROM: Failed to initialize EEPROM"));
-  else
-    online.eeprom = true;
 }
 
 //Get a string/value from user, remove all non-numeric values
@@ -83,6 +73,7 @@ int64_t getNumber(int numberOfSeconds)
     while (Serial.available() == 0) //Wait for user input
     {
       delay(10); //Yield to processor
+      i2cGNSS.checkUblox(); //Regularly poll to get latest data
 
       if ( (millis() - startTime) / 1000 >= numberOfSeconds)
       {
@@ -163,6 +154,7 @@ double getDouble(int numberOfSeconds)
     while (Serial.available() == 0) //Wait for user input
     {
       delay(10); //Yield to processor
+      i2cGNSS.checkUblox(); //Regularly poll to get latest data
 
       if ( (millis() - startTime) / 1000 >= numberOfSeconds)
       {
@@ -258,6 +250,7 @@ byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
     while (Serial.available() == 0) //Wait for user input
     {
       delay(10); //Yield to processor
+      i2cGNSS.checkUblox(); //Regularly poll to get latest data
 
       if ( (millis() - startTime) / 1000 >= numberOfSeconds)
       {
@@ -272,7 +265,7 @@ byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
         }
       }
     }
-    
+
     byte incoming = Serial.read();
 
     if (incoming == 0x08 || incoming == 0x7F) //Support backspace characters

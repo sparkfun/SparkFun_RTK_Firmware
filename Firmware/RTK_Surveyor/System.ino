@@ -40,13 +40,13 @@ bool configureUbloxModule()
 #define OUTPUT_SETTING 14
 #define INPUT_SETTING 12
 
-  //UART1 will primarily be used to pass NMEA from ZED to ESP32 (eventually to cell phone)
+  //UART1 will primarily be used to pass NMEA and UBX from ZED to ESP32 (eventually to cell phone)
   //but the phone can also provide RTCM data. So let's be sure to enable RTCM on UART1 input.
   //Protocol out = NMEA, protocol in = RTCM
   getPortSettings(COM_PORT_UART1); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA) || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
   {
-    response &= i2cGNSS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA); //Set the UART1 to output NMEA
+    response &= i2cGNSS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX); //Set the UART1 to output NMEA and UBX
     response &= i2cGNSS.setPortInput(COM_PORT_UART1, COM_TYPE_RTCM3); //Set the UART1 to input RTCM
   }
 
@@ -66,9 +66,9 @@ bool configureUbloxModule()
   }
 
   getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != COM_TYPE_UBX || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA) || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
   {
-    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA); //Set the I2C port to output UBX and NMEA
     response &= i2cGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
   }
 
@@ -81,9 +81,8 @@ bool configureUbloxModule()
     response &= i2cGNSS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
   }
 
-  response &= enableNMEASentences(COM_PORT_UART1); //Make sure the appropriate NMEA sentences are enabled
-
-  response &= enableRXMSentences(COM_PORT_I2C); //Make sure the appropriate RXM (RAXW and SFXBR) are enabled
+  response &= enableMessages(COM_PORT_UART1, settings.broadcast); //Make sure the appropriate messages are enabled
+  response &= enableMessages(COM_PORT_I2C, settings.log); //Make sure the appropriate messages are enabled
 
   response &= i2cGNSS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
   response &= i2cGNSS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
@@ -105,15 +104,14 @@ bool configureUbloxModule()
     return (false);
   }
 
-  //Enable callbacks and logging as needed
-  if (settings.logRAWX == true)
-  {
-    i2cGNSS.logRXMRAWX(); // Enable RXM RAWX data logging
-  }
-  if (settings.logSFRBX == true)
-  {
-    i2cGNSS.logRXMSFRBX(); // Enable RXM SFRBX data logging
-  }
+  //Based on current settings, update the logging options within the GNSS library
+  i2cGNSS.logRXMRAWX(settings.log.rawx);
+  i2cGNSS.logRXMSFRBX(settings.log.sfrbx);
+
+  if (logNMEAMessages() == true)
+    i2cGNSS.setNMEALoggingMask(SFE_UBLOX_FILTER_NMEA_ALL); // Enable logging of all enabled NMEA messages
+  else
+    i2cGNSS.setNMEALoggingMask(0); // Disable logging of all enabled NMEA messages
 
   //Check rover switch and configure module accordingly
   //When switch is set to '1' = BASE, pin will be shorted to ground
@@ -143,57 +141,27 @@ bool configureUbloxModule()
   return (response);
 }
 
-//Enable the RAWX and SFRBX message based on user's settings, on a given com port
-bool enableRXMSentences(uint8_t portType)
+//Enable the NMEA/UBX messages, based on given log or broadcast settings, for a given port
+bool enableMessages(uint8_t portType, gnssMessages messageSetting)
 {
   bool response = true;
-
-  if (settings.logRAWX == true)
-  {
-    if (getRAWXSettings(portType) != 1)
-      response &= i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
-  }
-  else if (settings.logRAWX == false)
-  {
-    if (getRAWXSettings(portType) != 0)
-      response &= i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
-  }
-
-  if (settings.logSFRBX == true)
-  {
-    if (getSFRBXSettings(portType) != 1)
-      response &= i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
-  }
-  else if (settings.logSFRBX == false)
-  {
-    if (getSFRBXSettings(portType) != 0)
-      response &= i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
-  }
-
-  return (response);
-}
-
-//Enable the NMEA messages, based on user's settings, on a given com port
-bool enableNMEASentences(uint8_t portType)
-{
-  bool response = true;
-  if (settings.outputSentenceGGA == true)
+  if (messageSetting.gga == true)
   {
     if (getNMEASettings(UBX_NMEA_GGA, portType) != 1)
       response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, portType);
   }
-  else if (settings.outputSentenceGGA == false)
+  else if (messageSetting.gga == false)
   {
     if (getNMEASettings(UBX_NMEA_GGA, portType) != 0)
       response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, portType);
   }
 
-  if (settings.outputSentenceGSA == true)
+  if (messageSetting.gsa == true)
   {
     if (getNMEASettings(UBX_NMEA_GSA, portType) != 1)
       response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GSA, portType);
   }
-  else if (settings.outputSentenceGSA == false)
+  else if (messageSetting.gsa == false)
   {
     if (getNMEASettings(UBX_NMEA_GSA, portType) != 0)
       response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GSA, portType);
@@ -203,37 +171,59 @@ bool enableNMEASentences(uint8_t portType)
   //If the update rate is >1Hz then this data can overcome the BT capabilities causing timeouts and lag
   //So we set the GSV sentence to 1Hz regardless of update rate
   uint16_t measurementFrequency = (uint16_t)getMeasurementFrequency(); //Force to int
-  if (settings.outputSentenceGSV == true)
+  if (messageSetting.gsv == true)
   {
     if (getNMEASettings(UBX_NMEA_GSV, portType) != measurementFrequency)
       response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GSV, portType, measurementFrequency);
   }
-  else if (settings.outputSentenceGSV == false)
+  else if (messageSetting.gsv == false)
   {
     if (getNMEASettings(UBX_NMEA_GSV, portType) != 0)
       response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GSV, portType);
   }
 
-  if (settings.outputSentenceRMC == true)
+  if (messageSetting.rmc == true)
   {
     if (getNMEASettings(UBX_NMEA_RMC, portType) != 1)
       response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_RMC, portType);
   }
-  else if (settings.outputSentenceRMC == false)
+  else if (messageSetting.rmc == false)
   {
     if (getNMEASettings(UBX_NMEA_RMC, portType) != 0)
       response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_RMC, portType);
   }
 
-  if (settings.outputSentenceGST == true)
+  if (messageSetting.gst == true)
   {
     if (getNMEASettings(UBX_NMEA_GST, portType) != 1)
       response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GST, portType);
   }
-  else if (settings.outputSentenceGST == false)
+  else if (messageSetting.gst == false)
   {
     if (getNMEASettings(UBX_NMEA_GST, portType) != 0)
       response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GST, portType);
+  }
+
+  if (messageSetting.rawx == true)
+  {
+    if (getRAWXSettings(portType) != 1)
+      response &= i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
+  }
+  else if (messageSetting.rawx == false)
+  {
+    if (getRAWXSettings(portType) != 0)
+      response &= i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
+  }
+
+  if (messageSetting.sfrbx == true)
+  {
+    if (getSFRBXSettings(portType) != 1)
+      response &= i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
+  }
+  else if (messageSetting.sfrbx == false)
+  {
+    if (getSFRBXSettings(portType) != 0)
+      response &= i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
   }
 
   return (response);
@@ -584,5 +574,31 @@ bool createTestFile()
     return (true);
   }
 
+  return (false);
+}
+
+//Returns true if any messages are enabled for logging
+bool logMessages()
+{
+  if (logNMEAMessages())
+    return (true);
+  if (logUBXMessages())
+    return (true);
+  return (false);
+}
+
+//Returns true if any of the NMEA messages are enabled for logging
+bool logNMEAMessages()
+{
+  if (settings.log.gga == true || settings.log.gsa == true || settings.log.gsv == true || settings.log.rmc == true || settings.log.gst == true)
+    return (true);
+  return (false);
+}
+
+//Returns true if any of the UBX messages are enabled for logging
+bool logUBXMessages()
+{
+  if (settings.log.rawx == true || settings.log.sfrbx == true)
+    return (true);
   return (false);
 }

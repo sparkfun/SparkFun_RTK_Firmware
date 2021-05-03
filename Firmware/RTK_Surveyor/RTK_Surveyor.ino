@@ -32,11 +32,9 @@
     (Done) Firmware upgrade menu
     Enable various debug outputs sent over BT
 
-    Fix file date/time updates
+    Test file date/time updates
     Test firmware loading
-    Test file listing from debug menu
-    Test file creation from cold start (date/time invalid)
-
+    Add blinking log file icon
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -97,12 +95,8 @@ SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we c
 
 char settingsFileName[40] = "SFE_Surveyor_Settings.txt"; //File to read/write system settings to
 
-SdFile nmeaFile; //File that all gnss nmea setences are written to
 SdFile ubxFile; //File that all gnss ubx messages setences are written to
-
-unsigned long lastNMEALogSyncTime = 0; //Used to record to SD every half second
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
-
 long startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
 
 //SdFat crashes when F9PSerialReadTask() is called in the middle of a ubx file write within loop()
@@ -131,8 +125,8 @@ uint32_t serverBytesSent = 0; //Just a running total
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS i2cGNSS;
 
-//Note: There are two prevalent versions of the ZED-F9P: v1.12 (part# -01B) and v1.13 (-02B). 
-//v1.13 causes the RTK LED to not function if SBAS is enabled. To avoid this, we 
+//Note: There are two prevalent versions of the ZED-F9P: v1.12 (part# -01B) and v1.13 (-02B).
+//v1.13 causes the RTK LED to not function if SBAS is enabled. To avoid this, we
 //disable SBAS by default.
 
 //Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings
@@ -141,6 +135,9 @@ SFE_UBLOX_GNSS i2cGNSS;
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 
 #define gnssFileBufferSize 16384 // Allocate 16KBytes of RAM for UBX message storage
+
+TaskHandle_t F9PI2CTaskHandle = NULL; //Task for regularly checking I2C
+const int i2cTaskStackSize = 2000;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -179,8 +176,7 @@ TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kil
 TaskHandle_t startUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
 bool uart2Started = false;
 
-//Reduced stack size from 10,000 to 1,000 to make room for WiFi/NTRIP server capabilities
-//Increase stacks to 2k to allow for dual file write of NMEA/UBX using built in SD library
+//Reduced stack size from 10,000 to 2,000 to make room for WiFi/NTRIP server capabilities
 const int readTaskStackSize = 2000;
 const int writeTaskStackSize = 2000;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -308,7 +304,7 @@ void loop()
 
   updateRTC(); //Set system time to GNSS once we have fix
 
-  updateLogs(); //Record any new UBX data. Create files or close NMEA and UBX files as needed.
+  updateLogs(); //Record any new data. Create or close files as needed.
 
   //Menu system via ESP32 USB connection
   if (Serial.available()) menuMain(); //Present user menu
@@ -319,42 +315,30 @@ void loop()
   delay(10); //A small delay prevents panic if no other I2C or functions are called
 }
 
-//Create or close UBX/NMEA files as needed (startup or as user changes settings)
-//Push new UBX packets to log as needed
+//Create or close files as needed (startup or as user changes settings)
+//Push new data to log as needed
 void updateLogs()
 {
-  if (online.nmeaLogging == false && settings.logNMEA == true)
+  if (online.logging == false && logMessages() == true)
   {
-    beginLoggingNMEA();
+    beginLogging();
   }
-  else if (online.nmeaLogging == true && settings.logNMEA == false)
-  {
-    //Close down file
-    nmeaFile.sync();
-    nmeaFile.close();
-    online.nmeaLogging = false;
-  }
-
-  if (online.ubxLogging == false && settings.logUBX == true)
-  {
-    beginLoggingUBX();
-  }
-  else if (online.ubxLogging == true && settings.logUBX == false)
+  else if (online.logging == true && logMessages() == false)
   {
     //Close down file
     ubxFile.sync();
     ubxFile.close();
-    online.ubxLogging = false;
+    online.logging = false;
   }
 
-  if (online.ubxLogging == true)
+  if (online.logging == true)
   {
     //Check if we are inside the max time window for logging
     if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
     {
       while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
       {
-        //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
+        //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
         if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
         {
           uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
@@ -382,17 +366,12 @@ void updateLogs()
   }
 
   //Report file sizes to show recording is working
-  if (online.nmeaLogging == true || online.ubxLogging == true)
+  if (online.logging == true)
   {
     if (millis() - lastFileReport > 5000)
     {
       lastFileReport = millis();
-      if (online.nmeaLogging == true && online.ubxLogging == true)
-        Serial.printf("UBX and NMEA file size: %d / %d", ubxFile.fileSize(), nmeaFile.fileSize());
-      else if (online.nmeaLogging == true)
-        Serial.printf("NMEA file size: %d", nmeaFile.fileSize());
-      else if (online.ubxLogging == true)
-        Serial.printf("UBX file size: %d", ubxFile.fileSize());
+      Serial.printf("UBX file size: %d", ubxFile.fileSize());
 
       if ((systemTime_minutes - startLogTime_minutes) > settings.maxLogTime_minutes)
         Serial.printf(" reached max log time %d / System time %d",

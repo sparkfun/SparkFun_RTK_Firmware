@@ -21,7 +21,12 @@ void menuTest()
 
     if (settings.enableSD && online.microSD)
     {
-      Serial.println(F("microSD card is successfully detected"));
+      Serial.print(F("microSD card detected:"));
+      if (createTestFile() == false)
+      {
+        Serial.print(F(" Failed to create test file. Format SD card with 'SD Card Formatter'."));
+      }
+      Serial.println();
     }
 
     //0x3D is default on Qwiic board
@@ -47,17 +52,17 @@ void menuTest()
         Serial.println(F("Files found (date time size name):\n"));
         sd.ls(LS_R | LS_DATE | LS_SIZE);
 
-//        Serial.println(F("Files found (name size):\n"));
-//        File root = SD.open("/"); //Open root
-//        File file = root.openNextFile();
-//        while (file) {
-//          if (file.isDirectory() == false) {
-//            Serial.print(file.name());
-//            Serial.print(" ");
-//            Serial.println(file.size());
-//          }
-//          file = root.openNextFile();
-//        }
+        //        Serial.println(F("Files found (name size):\n"));
+        //        File root = SD.open("/"); //Open root
+        //        File file = root.openNextFile();
+        //        while (file) {
+        //          if (file.isDirectory() == false) {
+        //            Serial.print(file.name());
+        //            Serial.print(" ");
+        //            Serial.println(file.size());
+        //          }
+        //          file = root.openNextFile();
+        //        }
 
       }
     }

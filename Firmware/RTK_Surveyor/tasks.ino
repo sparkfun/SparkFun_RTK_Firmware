@@ -55,48 +55,6 @@ void F9PSerialReadTask(void *e)
       {
         SerialBT.write(rBuffer, s);
       }
-
-      //If user wants to log, record to SD
-      if (settings.logNMEA == true)
-      {
-        if (online.nmeaLogging == true)
-        {
-          //Check if we are inside the max time window for logging
-          if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
-          {
-            //Attempt to write to file system. This avoids collisions with file writing in loop()
-            if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
-            {
-              taskYIELD();
-              nmeaFile.write(rBuffer, s);
-              taskYIELD();
-
-              //Force sync every 500ms
-              if (millis() - lastNMEALogSyncTime > 500)
-              {
-                lastNMEALogSyncTime = millis();
-
-                digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
-                taskYIELD();
-                nmeaFile.sync();
-                taskYIELD();
-                digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
-              }
-
-              if (settings.frequentFileAccessTimestamps == true)
-                updateDataFileAccess(&nmeaFile); // Update the file access time & date
-
-//              if (millis() - lastStackReport > 2000) {
-//                Serial.print("xTask stack usage: ");
-//                Serial.println(uxTaskGetStackHighWaterMark( NULL ));
-//                lastStackReport = millis();
-//              }
-
-              xSemaphoreGive(xFATSemaphore);
-            }
-          }
-        }
-      }
     }
     taskYIELD();
   }

@@ -166,13 +166,13 @@ void beginLogging()
       i2cGNSS.checkUblox();
 
       //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
-      bool haveLogTime = false;
+      bool timeValid = false;
       if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
-        haveLogTime = true;
+        timeValid = true;
       if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
-        haveLogTime = true;
+        timeValid = true;
 
-      if (haveLogTime == false)
+      if (timeValid == false)
       {
         Serial.println(F("beginLoggingUBX: No date/time available. No file created."));
         delay(1000); //Give the receiver time to get a lock
@@ -224,7 +224,13 @@ void beginLogging()
 //Updates the timestemp on a given data file
 void updateDataFileAccess(SdFile *dataFile)
 {
-  if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
+  bool timeValid = false;
+  if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
+    timeValid = true;
+  if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
+    timeValid = true;
+
+  if (timeValid == true)
   {
     //Update the file access time
     dataFile->timestamp(T_ACCESS, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
@@ -235,7 +241,13 @@ void updateDataFileAccess(SdFile *dataFile)
 
 void updateDataFileCreate(SdFile *dataFile)
 {
-  if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true)
+  bool timeValid = false;
+  if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
+    timeValid = true;
+  if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
+    timeValid = true;
+
+  if (timeValid == true)
   {
     //Update the file create time
     dataFile->timestamp(T_CREATE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());

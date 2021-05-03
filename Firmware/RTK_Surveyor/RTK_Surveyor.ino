@@ -24,16 +24,15 @@
     Text menu interactions
 
   Main Menu (Display MAC address / broadcast name):
-    (Done) GNSS - Configure measurement rate, enable/disable common NMEA sentences, RAWX, SBAS
-    (Done) Log - Log to SD
+    (Done) GNSS - Configure measurement rate, SBAS
+    (Done) Log - Control messages logged to SD
+    (Done) Broadcast - Control messages sent over BT SPP
     (Done) Base - Enter fixed coordinates, survey-in settings, WiFi/Caster settings,
     (Done) Ports - Configure Radio and Data port baud rates
     (Done) Test menu
     (Done) Firmware upgrade menu
     Enable various debug outputs sent over BT
 
-    Test file date/time updates
-    Test firmware loading
     Add blinking log file icon
 */
 
@@ -347,6 +346,9 @@ void updateLogs()
 
           int bytesWritten = ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
 
+          if (settings.frequentFileAccessTimestamps == true)
+            updateDataFileAccess(&ubxFile); // Update the file access time & date
+
           //Force sync every 1000ms
           if (millis() - lastUBXLogSyncTime > 1000)
           {
@@ -354,6 +356,8 @@ void updateLogs()
             digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
             ubxFile.sync();
             digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
+
+            updateDataFileAccess(&ubxFile); // Update the file access time & date
           }
 
           xSemaphoreGive(xFATSemaphore);
@@ -393,7 +397,7 @@ void updateRTC()
     {
       if (i2cGNSS.getConfirmedDate() == true && i2cGNSS.getConfirmedTime() == true)
       {
-        //For the ESP32 SD library, the date/time stamp of files is set using the internal system time
+        //Set the internal system time
         //This is normally set with WiFi NTP but we will rarely have WiFi
         rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());  // 17th Jan 2021 15:24:30
 
@@ -401,6 +405,8 @@ void updateRTC()
 
         Serial.print(F("System time set to: "));
         Serial.println(rtc.getTime("%B %d %Y %H:%M:%S")); //From ESP32Time library example
+
+        recordSystemSettingsToFile(); //This will re-record the setting file with current date/time.
       }
     }
   }

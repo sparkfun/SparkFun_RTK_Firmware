@@ -78,6 +78,8 @@ void recordSystemSettingsToFile()
         Serial.println(F("Failed to create settings file"));
         return;
       }
+      if (online.gnss)
+        updateDataFileCreate(&settingsFile); // Update the file to create time & date
 
       settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
       settingsFile.println("rtkIdentifier=" + (String)settings.rtkIdentifier);
@@ -125,6 +127,9 @@ void recordSystemSettingsToFile()
       settingsFile.println("log.gst=" + (String)settings.log.gst);
       settingsFile.println("log.rawx=" + (String)settings.log.rawx);
       settingsFile.println("log.sfrbx=" + (String)settings.log.sfrbx);
+
+      if (online.gnss)
+        updateDataFileAccess(&settingsFile); // Update the file access time & date
 
       settingsFile.close();
 

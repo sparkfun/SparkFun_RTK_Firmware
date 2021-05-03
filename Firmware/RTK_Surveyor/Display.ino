@@ -380,6 +380,19 @@ void paintSIV()
   }
 }
 
+//Draw log icon
+//Turn off icon if  log file gets bigger
+void paintLogging()
+{
+  if (online.display == true)
+  {
+    if (logIncreasing == true)
+    {
+      oled.drawIcon(63 - Logging_Width, 47 - Logging_Height, Logging_Width, Logging_Height, Logging, sizeof(Logging), true); //Draw the icon
+    }
+  }
+}
+
 //Base screen. Display BLE, rover, battery, HorzAcc and SIV
 //Blink SIV until fix
 void paintRoverNoFix()
@@ -395,6 +408,8 @@ void paintRoverNoFix()
     paintHorizontalAccuracy();
 
     paintSIV();
+
+    paintLogging();
   }
 }
 
@@ -412,6 +427,8 @@ void paintRoverFix()
     paintHorizontalAccuracy();
 
     paintSIV();
+
+    paintLogging();
   }
 }
 
@@ -429,6 +446,8 @@ void paintRoverRTKFloat()
     paintHorizontalAccuracy();
 
     paintSIV();
+
+    paintLogging();
   }
 }
 
@@ -445,6 +464,8 @@ void paintRoverRTKFix()
     paintHorizontalAccuracy();
 
     paintSIV();
+
+    paintLogging();
   }
 }
 
@@ -464,6 +485,8 @@ void paintBaseTempSurveyNotStarted()
     paintHorizontalAccuracy(); //2nd line
 
     paintSIV();
+
+    paintLogging();
   }
 }
 
@@ -481,10 +504,6 @@ void paintBaseTempSurveyStarted()
     float meanAccuracy = i2cGNSS.getSurveyInMeanAccuracy(100);
     int elapsedTime = i2cGNSS.getSurveyInObservationTime(100);
 
-    //Stopped. We either need a call back or we accept a 2s update to screen. Something is taking a lot of polling time.
-
-    //  deleteMeElapsedTime++;
-
     oled.setFontType(0);
     oled.setCursor(0, 22); //x, y
     oled.print("Mean:");
@@ -500,6 +519,8 @@ void paintBaseTempSurveyStarted()
     oled.setCursor(30, 36); //x, y
     oled.setFontType(1);
     oled.print(elapsedTime);
+
+    paintLogging();
   }
 }
 
@@ -527,10 +548,9 @@ void paintBaseTempTransmitting()
     oled.setCursor(29, 36); //x, y
     oled.setFontType(1); //Set font to type 1: 8x16
 
-    //Check for too many digits
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
-
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintLogging();
   }
 }
 
@@ -559,10 +579,9 @@ void paintBaseTempWiFiStarted()
     oled.setCursor(29, 36); //x, y
     oled.setFontType(1); //Set font to type 1: 8x16
 
-    //Check for too many digits
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
-
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintLogging();
   }
 }
 
@@ -592,10 +611,9 @@ void paintBaseTempWiFiConnected()
     oled.setCursor(29, 36); //x, y
     oled.setFontType(1); //Set font to type 1: 8x16
 
-    //Check for too many digits
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
-
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintLogging();
   }
 }
 
@@ -651,10 +669,9 @@ void paintBaseTempCasterConnected()
     oled.setCursor(29, 36); //x, y
     oled.setFontType(1); //Set font to type 1: 8x16
 
-    //Check for too many digits
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
-
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintLogging();
   }
 }
 
@@ -682,10 +699,9 @@ void paintBaseFixedTransmitting()
     oled.setCursor(29, 36); //x, y
     oled.setFontType(1); //Set font to type 1: 8x16
 
-    //Check for too many digits
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
-
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintLogging();
   }
 }
 
@@ -714,10 +730,9 @@ void paintBaseFixedWiFiStarted()
     oled.setCursor(29, 36); //x, y
     oled.setFontType(1); //Set font to type 1: 8x16
 
-    //Check for too many digits
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
-
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintLogging();
   }
 }
 
@@ -747,10 +762,9 @@ void paintBaseFixedWiFiConnected()
     oled.setCursor(29, 36); //x, y
     oled.setFontType(1); //Set font to type 1: 8x16
 
-    //Check for too many digits
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
-
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintLogging();
   }
 }
 
@@ -806,10 +820,9 @@ void paintBaseFixedCasterConnected()
     oled.setCursor(29, 36); //x, y
     oled.setFontType(1); //Set font to type 1: 8x16
 
-    //Check for too many digits
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
-
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintLogging();
   }
 }
 

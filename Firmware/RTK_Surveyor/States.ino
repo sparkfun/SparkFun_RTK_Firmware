@@ -253,7 +253,7 @@ void updateSystemState()
               //Reset flags
               lastServerReport_ms = millis();
               lastServerSent_ms = millis();
-              serverBytesSent = 0;
+              casterBytesSent = 0;
 
               changeState(STATE_BASE_TEMP_CASTER_CONNECTED);
             }
@@ -385,7 +385,7 @@ void updateSystemState()
               //Reset flags
               lastServerReport_ms = millis();
               lastServerSent_ms = millis();
-              serverBytesSent = 0;
+              casterBytesSent = 0;
 
               changeState(STATE_BASE_FIXED_CASTER_CONNECTED);
             }

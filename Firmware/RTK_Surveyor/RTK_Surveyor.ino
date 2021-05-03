@@ -116,7 +116,8 @@ unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
 unsigned long lastServerReport_ms = 0; //Time of last report of caster bytes sent
 int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
 
-uint32_t serverBytesSent = 0; //Just a running total
+uint32_t casterBytesSent = 0; //Just a running total
+uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service times out
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration
@@ -229,14 +230,15 @@ bool satelliteDishIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdat
 uint32_t lastCrosshairIconUpdate = 0;
 bool crosshairIconDisplayed = false; //Toggles as lastCrosshairIconUpdate goes above 1000ms
 uint32_t lastBaseIconUpdate = 0;
-bool baseIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms
+bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
 uint32_t lastWifiIconUpdate = 0;
 bool wifiIconDisplayed = false; //Toggles as lastWifiIconUpdate goes above 1000ms
 
-uint32_t lastRTCMPacketSent = 0; //Used to count RTCM packets sent during base mode
-uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent during base mode
+uint32_t lastLogSize = 0;
+bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
 
-uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service times out
+uint32_t lastRTCMPacketSent = 0; //Used to count RTCM packets sent during base mode
+uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM()
 
 uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
@@ -383,6 +385,15 @@ void updateLogs()
                       (systemTime_minutes - startLogTime_minutes));
 
       Serial.println();
+
+      //Update for display
+      if (ubxFile.fileSize() > lastLogSize)
+      {
+        lastLogSize = ubxFile.fileSize();
+        logIncreasing = true;
+      }
+      else
+        logIncreasing = false;
     }
   }
 }

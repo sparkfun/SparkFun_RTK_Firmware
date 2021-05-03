@@ -68,7 +68,7 @@ bool surveyIn()
   if (response == false)
   {
     Serial.println(F("Survey start failed"));
-    return(false);
+    return (false);
   }
 
   Serial.printf("Survey started. This will run until %d seconds have passed and less than %0.03f meter accuracy is achieved.\n",
@@ -76,7 +76,7 @@ bool surveyIn()
                 settings.observationPositionAccuracy
                );
 
-  return(true);
+  return (true);
 }
 
 void resetSurvey()
@@ -113,9 +113,9 @@ bool startFixedBase()
     //Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
     //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
     response = i2cGNSS.setStaticPosition(majorEcefX, minorEcefX,
-                                       majorEcefY, minorEcefY,
-                                       majorEcefZ, minorEcefZ
-                                      ); //With high precision 0.1mm parts
+                                         majorEcefY, minorEcefY,
+                                         majorEcefZ, minorEcefZ
+                                        ); //With high precision 0.1mm parts
   }
   else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEOGRAPHIC)
   {
@@ -128,17 +128,17 @@ bool startFixedBase()
     int32_t majorAlt = settings.fixedAltitude * 100;
     int32_t minorAlt = ((settings.fixedAltitude * 100) - majorAlt) * 100;
 
-//    Serial.printf("fixedLat (should be -105.184774720): %0.09f\n", settings.fixedLat);
-//    Serial.printf("major (should be -1051847747): %lld\n", majorLat);
-//    Serial.printf("minor (should be -20): %lld\n", minorLat);
-//
-//    Serial.printf("fixedLong (should be 40.090335429): %0.09f\n", settings.fixedLong);
-//    Serial.printf("major (should be 400903354): %lld\n", majorLong);
-//    Serial.printf("minor (should be 29): %lld\n", minorLong);
-//
-//    Serial.printf("fixedAlt (should be 1560.2284): %0.04f\n", settings.fixedAltitude);
-//    Serial.printf("major (should be 156022): %ld\n", majorAlt);
-//    Serial.printf("minor (should be 84): %ld\n", minorAlt);
+    //    Serial.printf("fixedLat (should be -105.184774720): %0.09f\n", settings.fixedLat);
+    //    Serial.printf("major (should be -1051847747): %lld\n", majorLat);
+    //    Serial.printf("minor (should be -20): %lld\n", minorLat);
+    //
+    //    Serial.printf("fixedLong (should be 40.090335429): %0.09f\n", settings.fixedLong);
+    //    Serial.printf("major (should be 400903354): %lld\n", majorLong);
+    //    Serial.printf("minor (should be 29): %lld\n", minorLong);
+    //
+    //    Serial.printf("fixedAlt (should be 1560.2284): %0.04f\n", settings.fixedAltitude);
+    //    Serial.printf("major (should be 156022): %ld\n", majorAlt);
+    //    Serial.printf("minor (should be 84): %ld\n", minorAlt);
 
     response = i2cGNSS.setStaticPosition(
                  majorLat, minorLat,
@@ -180,7 +180,7 @@ bool updateNtripServer()
         return (false);
       }
 
-      if(Serial.available()) return(false); //User has pressed a key
+      if (Serial.available()) return (false); //User has pressed a key
     }
     Serial.println();
 
@@ -247,7 +247,7 @@ bool updateNtripServer()
         //Reset flags
         lastServerReport_ms = millis();
         lastServerSent_ms = millis();
-        serverBytesSent = 0;
+        casterBytesSent = 0;
       }
     } //End attempt to connect
     else
@@ -273,7 +273,7 @@ bool updateNtripServer()
   if (millis() - lastServerReport_ms > 250)
   {
     lastServerReport_ms = millis();
-    Serial.printf("Total bytes sent to caster: %d\n", serverBytesSent);
+    Serial.printf("Total bytes sent to caster: %d\n", casterBytesSent);
   }
 
   return (true);
@@ -284,10 +284,28 @@ bool updateNtripServer()
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
 void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
+  //Count outgoing packets for display
+  //Assume 1Hz RTCM transmissions
+  if (millis() - lastRTCMPacketSent > 500)
+  {
+    lastRTCMPacketSent = millis();
+    rtcmPacketsSent++;
+  }
+
+  //Check for too many digits
+  if (logIncreasing == true)
+  {
+    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid logging icon
+  }
+  else
+  {
+    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
+  }
+
   if (caster.connected() == true)
   {
     caster.write(incoming); //Send this byte to socket
-    serverBytesSent++;
+    casterBytesSent++;
     lastServerSent_ms = millis();
   }
 }

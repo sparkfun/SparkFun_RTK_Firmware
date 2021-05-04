@@ -31,11 +31,19 @@
 
 //Setup the u-blox module for any setup (base or rover)
 //In general we check if the setting is incorrect before writing it. Otherwise, the set commands have, on rare occasion, become
-//corrupt. The worst is when the I2C port gets turned off or the I2C address gets borked. We should only have to configure
-//a fresh u-blox module once and never again.
+//corrupt. The worst is when the I2C port gets turned off or the I2C address gets borked.
 bool configureUbloxModule()
 {
   boolean response = true;
+  int maxWait = 2000;
+
+  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+
+  //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
+  if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
+    response &= i2cGNSS.setNavigationFrequency(1, maxWait);
+  if (response == false)
+    Serial.println(F("Set rate failed"));
 
 #define OUTPUT_SETTING 14
 #define INPUT_SETTING 12
@@ -65,6 +73,8 @@ bool configureUbloxModule()
     response &= i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_RTCM3); //Set the UART2 to input RTCM
   }
 
+  //Turn on RTCM over I2C port so that we can harvest RTCM over I2C and send out over WiFi
+  //This is easier than parsing over UART because the library handles the frame detection
   getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3) || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
   {
@@ -101,7 +111,6 @@ bool configureUbloxModule()
   if (response == false)
   {
     Serial.println(F("Module failed initial config."));
-    return (false);
   }
 
   //Based on current settings, update the logging options within the GNSS library
@@ -255,18 +264,20 @@ bool disableNMEASentences(uint8_t portType)
 bool enableRTCMSentences(uint8_t portType)
 {
   bool response = true;
+  int maxWait = 1000; //When I2C traffic is large during logging, give extra time
+
   if (getRTCMSettings(UBX_RTCM_1005, portType) != 1)
-    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1005, portType, 1); //Enable message 1005 to output through UART2, message every second
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1005, portType, 1, maxWait); //Enable message 1005 to output through UART2, message every second
   if (getRTCMSettings(UBX_RTCM_1074, portType) != 1)
-    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1074, portType, 1);
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1074, portType, 1, maxWait);
   if (getRTCMSettings(UBX_RTCM_1084, portType) != 1)
-    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1084, portType, 1);
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1084, portType, 1, maxWait);
   if (getRTCMSettings(UBX_RTCM_1094, portType) != 1)
-    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1094, portType, 1);
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1094, portType, 1, maxWait);
   if (getRTCMSettings(UBX_RTCM_1124, portType) != 1)
-    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1124, portType, 1);
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1124, portType, 1, maxWait);
   if (getRTCMSettings(UBX_RTCM_1230, portType) != 10)
-    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, portType, 10); //Enable message every 10 seconds
+    response &= i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, portType, 10, maxWait); //Enable message every 10 seconds
 
   return (response);
 }
@@ -275,18 +286,20 @@ bool enableRTCMSentences(uint8_t portType)
 bool disableRTCMSentences(uint8_t portType)
 {
   bool response = true;
+  int maxWait = 1000; //When I2C traffic is large during logging, give extra time
+
   if (getRTCMSettings(UBX_RTCM_1005, portType) != 0)
-    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1005, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1005, portType, maxWait);
   if (getRTCMSettings(UBX_RTCM_1074, portType) != 0)
-    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1074, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1074, portType, maxWait);
   if (getRTCMSettings(UBX_RTCM_1084, portType) != 0)
-    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1084, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1084, portType, maxWait);
   if (getRTCMSettings(UBX_RTCM_1094, portType) != 0)
-    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1094, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1094, portType, maxWait);
   if (getRTCMSettings(UBX_RTCM_1124, portType) != 0)
-    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1124, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1124, portType, maxWait);
   if (getRTCMSettings(UBX_RTCM_1230, portType) != 0)
-    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1230, portType);
+    response &= i2cGNSS.disableRTCMmessage(UBX_RTCM_1230, portType, maxWait);
   return (response);
 }
 
@@ -349,7 +362,7 @@ uint8_t getRTCMSettings(uint8_t msgID, uint8_t portID)
   customCfg.len = 2;
   customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
 
-  uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+  uint16_t maxWait = 1250; // Wait for up to 1250ms (Serial may need a lot longer e.g. 1100)
 
   settingPayload[0] = UBX_RTCM_MSB;
   settingPayload[1] = msgID;

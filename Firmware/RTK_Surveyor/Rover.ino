@@ -2,27 +2,22 @@
 //Configure specific aspects of the receiver for rover mode
 bool configureUbloxModuleRover()
 {
-  bool response = i2cGNSS.disableSurveyMode(); //Disable survey
-
-  //Set output rate
-  if (i2cGNSS.getMeasurementRate() != settings.measurementRate)
-  {
-    response &= i2cGNSS.setMeasurementRate(settings.measurementRate);
-  }
-  if (i2cGNSS.getNavigationRate() != settings.navigationRate)
-  {
-    response &= i2cGNSS.getNavigationRate(settings.navigationRate);
-  }
+  bool response = true;
+  
+  response = i2cGNSS.disableSurveyMode(); //Disable survey
+  if (response == false)
+    Serial.println(F("Disable Survey failed"));
 
   // Set dynamic model
   if (i2cGNSS.getDynamicModel() != DYN_MODEL_PORTABLE)
   {
-    response &= i2cGNSS.setDynamicModel(DYN_MODEL_PORTABLE);
+    response = i2cGNSS.setDynamicModel(DYN_MODEL_PORTABLE, 1000);
     if (response == false)
-      Serial.println(F("setDynamicModel failed!"));
+      Serial.println(F("setDynamicModel failed"));
   }
 
   //Disable RTCM sentences
+  response = true; //Reset
   response &= disableRTCMSentences(COM_PORT_I2C);
   response &= disableRTCMSentences(COM_PORT_UART2);
   response &= disableRTCMSentences(COM_PORT_UART1);
@@ -30,12 +25,30 @@ bool configureUbloxModuleRover()
   if (response == false)
     Serial.println(F("Disable RTCM failed"));
 
-  response &= setNMEASettings(); //Enable high precision NMEA and extended sentences
+  response = setNMEASettings(); //Enable high precision NMEA and extended sentences
+  if (response == false)
+    Serial.println(F("setNMEASettings failed"));
 
+  response = true; //Reset
   if (settings.enableSBAS == true)
     response &= setSBAS(true); //Enable SBAS
   else
     response &= setSBAS(false); //Disable SBAS. Work around for RTK LED not working in v1.13 firmware.
+  if (response == false)
+    Serial.println(F("Set SBAS failed"));
+
+  //The last thing we do is set output rate. 
+  response = true; //Reset
+  if (i2cGNSS.getMeasurementRate() != settings.measurementRate)
+  {
+    response &= i2cGNSS.setMeasurementRate(settings.measurementRate);
+  }
+  if (i2cGNSS.getNavigationRate() != settings.navigationRate)
+  {
+    response &= i2cGNSS.setNavigationRate(settings.navigationRate);
+  }
+  if (response == false)
+    Serial.println(F("Set Nav Rate failed"));
 
   return (response);
 }
@@ -51,7 +64,7 @@ bool setNMEASettings()
   customCfg.len = 0; // Setting the len (length) to zero let's us poll the current settings
   customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
 
-  uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+  uint16_t maxWait = 1250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
 
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
@@ -84,7 +97,7 @@ bool getSBAS()
   customCfg.len = 0; // Setting the len (length) to zero lets us poll the current settings
   customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
 
-  uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+  uint16_t maxWait = 1250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
 
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
@@ -108,7 +121,7 @@ bool setSBAS(bool enableSBAS)
   customCfg.len = 0; // Setting the len (length) to zero lets us poll the current settings
   customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
 
-  uint16_t maxWait = 250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+  uint16_t maxWait = 1250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
 
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK

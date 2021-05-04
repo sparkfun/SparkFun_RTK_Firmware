@@ -3,23 +3,32 @@
 bool configureUbloxModuleBase()
 {
   bool response = true;
+  int maxWait = 2000;
 
   digitalWrite(positionAccuracyLED_1cm, LOW);
   digitalWrite(positionAccuracyLED_10cm, LOW);
   digitalWrite(positionAccuracyLED_100cm, LOW);
 
+  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+
   //In base mode we force 1Hz
-  if (i2cGNSS.getNavigationFrequency() != 1)
+  if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
+    response &= i2cGNSS.setNavigationFrequency(1, maxWait);
+  if (response == false)
   {
-    response &= i2cGNSS.setNavigationFrequency(1); //Set output in Hz
+    Serial.println(F("configureUbloxModuleBase: Set rate failed"));
+    return (false);
   }
 
   // Set dynamic model
-  if (i2cGNSS.getDynamicModel() != DYN_MODEL_STATIONARY)
+  if (i2cGNSS.getDynamicModel(maxWait) != DYN_MODEL_STATIONARY)
   {
-    response &= i2cGNSS.setDynamicModel(DYN_MODEL_STATIONARY);
+    response &= i2cGNSS.setDynamicModel(DYN_MODEL_STATIONARY, maxWait);
     if (response == false)
-      Serial.println(F("setDynamicModel failed!"));
+    {
+      Serial.println(F("setDynamicModel failed"));
+      return (false);
+    }
   }
 
   //In base mode the Surveyor should output RTCM over UART2 and I2C ports:
@@ -30,30 +39,13 @@ bool configureUbloxModuleBase()
   response &= enableRTCMSentences(COM_PORT_UART2);
   response &= enableRTCMSentences(COM_PORT_UART1);
   response &= enableRTCMSentences(COM_PORT_USB);
-
-  if (settings.enableNtripServer == true)
-  {
-    //Turn on RTCM over I2C port so that we can harvest RTCM over I2C and send out over WiFi
-    //This is easier than parsing over UART because the library handles the frame detection
-
-#define OUTPUT_SETTING 14
-#define INPUT_SETTING 12
-    getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
-    if (settingPayload[OUTPUT_SETTING] != COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3 || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
-    {
-      response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //UBX+RTCM3 is not a valid option so we enable all three.
-      response &= i2cGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
-    }
-
-    //Disable any NMEA sentences
-    response &= disableNMEASentences(COM_PORT_I2C);
-
-    //Enable necessary RTCM sentences
-    response &= enableRTCMSentences(COM_PORT_I2C);
-  }
+  response &= enableRTCMSentences(COM_PORT_I2C); //Enable for plain radio so we can count RTCM packets for display (State: Base-Temp - Transmitting)
 
   if (response == false)
+  {
     Serial.println(F("RTCM settings failed to enable"));
+    return (false);
+  }
 
   return (response);
 }
@@ -62,7 +54,21 @@ bool configureUbloxModuleBase()
 //The ZED-F9P is slightly different than the NEO-M8P. See the Integration manual 3.5.8 for more info.
 bool surveyIn()
 {
-  resetSurvey();
+  bool needSurveyReset = false;
+  if (i2cGNSS.getSurveyInActive == true) needSurveyReset = true;
+  if (i2cGNSS.getSurveyInValid == true) needSurveyReset = true;
+
+  if (needSurveyReset == true)
+  {
+    if (resetSurvey() == false)
+    {
+      Serial.println(F("Survey reset failed"));
+      if (resetSurvey() == false)
+      {
+        Serial.println(F("Survey reset failed - 2nd attempt"));
+      }
+    }
+  }
 
   bool response = i2cGNSS.enableSurveyMode(settings.observationSeconds, settings.observationPositionAccuracy); //Enable Survey in, with user parameters
   if (response == false)
@@ -79,15 +85,18 @@ bool surveyIn()
   return (true);
 }
 
-void resetSurvey()
+bool resetSurvey()
 {
+  int maxWait = 2000;
+
   //Slightly modified method for restarting survey-in from: https://portal.u-blox.com/s/question/0D52p00009IsVoMCAV/restarting-surveyin-on-an-f9p
-  bool response = i2cGNSS.disableSurveyMode(); //Disable survey
-  delay(500);
-  response &= i2cGNSS.enableSurveyMode(1000, 400.000); //Enable Survey in with bogus values
-  delay(500);
-  response &= i2cGNSS.disableSurveyMode(); //Disable survey
-  delay(500);
+  bool response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+  delay(1000);
+  response &= i2cGNSS.enableSurveyMode(1000, 400.000, maxWait); //Enable Survey in with bogus values
+  delay(1000);
+  response &= i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+  delay(1000);
+  return (response);
 }
 
 //Start the base using fixed coordinates

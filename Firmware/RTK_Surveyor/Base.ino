@@ -137,11 +137,11 @@ bool startFixedBase()
     int32_t majorAlt = settings.fixedAltitude * 100;
     int32_t minorAlt = ((settings.fixedAltitude * 100) - majorAlt) * 100;
 
-    //    Serial.printf("fixedLat (should be -105.184774720): %0.09f\n", settings.fixedLat);
+    //    Serial.printf("fixedLong (should be -105.184774720): %0.09f\n", settings.fixedLong);
     //    Serial.printf("major (should be -1051847747): %lld\n", majorLat);
     //    Serial.printf("minor (should be -20): %lld\n", minorLat);
     //
-    //    Serial.printf("fixedLong (should be 40.090335429): %0.09f\n", settings.fixedLong);
+    //    Serial.printf("fixedLat (should be 40.090335429): %0.09f\n", settings.fixedLat);
     //    Serial.printf("major (should be 400903354): %lld\n", majorLong);
     //    Serial.printf("minor (should be 29): %lld\n", minorLong);
     //

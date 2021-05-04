@@ -95,9 +95,16 @@ void recordSystemSettingsToFile()
       settingsFile.println("fixedEcefX=" + (String)settings.fixedEcefX);
       settingsFile.println("fixedEcefY=" + (String)settings.fixedEcefY);
       settingsFile.println("fixedEcefZ=" + (String)settings.fixedEcefZ);
-      settingsFile.println("fixedLat=" + (String)settings.fixedLat);
-      settingsFile.println("fixedLong=" + (String)settings.fixedLong);
-      settingsFile.println("fixedAltitude=" + (String)settings.fixedAltitude);
+
+      //Print Lat/Long doubles with 9 decimals
+      char longPrint[20]; //-105.123456789
+      sprintf(longPrint, "%0.9f", settings.fixedLat);
+      settingsFile.println("fixedLat=" + (String)longPrint);
+      sprintf(longPrint, "%0.9f", settings.fixedLong);
+      settingsFile.println("fixedLong=" + (String)longPrint);
+      sprintf(longPrint, "%0.4f", settings.fixedAltitude);
+      settingsFile.println("fixedAltitude=" + (String)longPrint);
+
       settingsFile.println("dataPortBaud=" + (String)settings.dataPortBaud);
       settingsFile.println("radioPortBaud=" + (String)settings.radioPortBaud);
       settingsFile.println("enableSBAS=" + (String)settings.enableSBAS);

@@ -117,7 +117,7 @@ void menuBase()
       {
         Serial.println(F("Enter the fixed Lat/Long/Altitude coordinates that will be used in Base mode:"));
 
-        Serial.print(F("Lat in degrees (ex: -105.184774720): "));
+        Serial.print(F("Lat in degrees (ex: 40.090335429): "));
         double fixedLat = getDouble(menuTimeout); //Timeout after x seconds
 
         //Progress with additional prompts only if the user enters valid data
@@ -125,7 +125,7 @@ void menuBase()
         {
           settings.fixedLat = fixedLat;
 
-          Serial.print(F("\nLong in degrees (ex: 40.090335429): "));
+          Serial.print(F("\nLong in degrees (ex: -105.184774720): "));
           double fixedLong = getDouble(menuTimeout);
           if (fixedLong != STATUS_GETNUMBER_TIMEOUT && fixedLong != STATUS_PRESSED_X)
           {

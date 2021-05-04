@@ -56,7 +56,7 @@ void updateSystemState()
         {
           //Blink base LED slowly while we wait for first fix
           if (millis() - lastBaseLEDupdate > 1000)
-          { 
+          {
             lastBaseLEDupdate = millis();
             digitalWrite(baseStatusLED, !digitalRead(baseStatusLED));
           }
@@ -67,18 +67,30 @@ void updateSystemState()
           float f_accuracy = accuracy;
           f_accuracy = f_accuracy / 10000.0; // Convert the horizontal accuracy (mm * 10^-1) to a float
 
-          Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\n", settings.surveyInStartingAccuracy, f_accuracy);
-
           if (f_accuracy > 0.0 && f_accuracy < settings.surveyInStartingAccuracy)
           {
-            displaySurveyStart(); //Show 'Survey Started'
+            displayBaseStart(); //Show 'Base'
             if (configureUbloxModuleBase() == true)
             {
+              displayBaseSuccess(); //Show 'Base Started'
+              delay(500);
+              displaySurveyStart(); //Show 'Survey'
+
               if (surveyIn() == true) //Begin survey
               {
+                Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\n", settings.surveyInStartingAccuracy, f_accuracy);
+
                 displaySurveyStarted(); //Show 'Survey Started'
+                delay(500);
+
                 changeState(STATE_BASE_TEMP_SURVEY_STARTED);
               }
+            }
+            else
+            {
+              Serial.println(F("Base config failed!"));
+              displayBaseFail();
+              delay(1000);
             }
           }
         }
@@ -89,7 +101,7 @@ void updateSystemState()
         {
           //Blink base LED quickly during survey in
           if (millis() - lastBaseLEDupdate > 500)
-          { 
+          {
             lastBaseLEDupdate = millis();
             digitalWrite(baseStatusLED, !digitalRead(baseStatusLED));
           }
@@ -98,6 +110,8 @@ void updateSystemState()
           {
             Serial.println(F("Base survey complete! RTCM now broadcasting."));
             digitalWrite(baseStatusLED, HIGH); //Indicate survey complete
+
+            rtcmPacketsSent = 0; //Reset any previous number
             changeState(STATE_BASE_TEMP_TRANSMITTING);
           }
           else
@@ -166,20 +180,20 @@ void updateSystemState()
 
             changeState(STATE_BASE_TEMP_WIFI_CONNECTED);
           }
-          else
-          {
-            Serial.print(F("WiFi Status: "));
-            switch (wifiStatus) {
-              case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD"));
-              case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS"));
-              case WL_NO_SSID_AVAIL: Serial.println(F("WL_NO_SSID_AVAIL"));
-              case WL_SCAN_COMPLETED: Serial.println(F("WL_SCAN_COMPLETED"));
-              case WL_CONNECTED: Serial.println(F("WL_CONNECTED"));
-              case WL_CONNECT_FAILED: Serial.println(F("WL_CONNECT_FAILED"));
-              case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST"));
-              case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED"));
-            }
-          }
+          //          else
+          //          {
+          //            Serial.print(F("WiFi Status: "));
+          //            switch (wifiStatus) {
+          //              case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
+          //              case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
+          //              case WL_NO_SSID_AVAIL: Serial.println(F("WL_NO_SSID_AVAIL")); break;
+          //              case WL_SCAN_COMPLETED: Serial.println(F("WL_SCAN_COMPLETED")); break;
+          //              case WL_CONNECTED: Serial.println(F("WL_CONNECTED")); break;
+          //              case WL_CONNECT_FAILED: Serial.println(F("WL_CONNECT_FAILED")); break;
+          //              case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
+          //              case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
+          //            }
+          //          }
         }
         break;
 
@@ -254,6 +268,8 @@ void updateSystemState()
               lastServerSent_ms = millis();
               casterBytesSent = 0;
 
+              rtcmPacketsSent = 0; //Reset any previous number
+
               changeState(STATE_BASE_TEMP_CASTER_CONNECTED);
             }
           }
@@ -283,6 +299,9 @@ void updateSystemState()
             WiFi.begin(settings.wifiSSID, settings.wifiPW);
 
             radioState = WIFI_ON_NOCONNECTION;
+
+            rtcmPacketsSent = 0; //Reset any previous number
+
             changeState(STATE_BASE_FIXED_WIFI_STARTED);
           }
         }
@@ -298,20 +317,20 @@ void updateSystemState()
 
             changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
           }
-          else
-          {
-            Serial.print(F("WiFi Status: "));
-            switch (wifiStatus) {
-              case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
-              case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
-              case WL_NO_SSID_AVAIL: Serial.println(F("WL_NO_SSID_AVAIL")); break;
-              case WL_SCAN_COMPLETED: Serial.println(F("WL_SCAN_COMPLETED")); break;
-              case WL_CONNECTED: Serial.println(F("WL_CONNECTED")); break;
-              case WL_CONNECT_FAILED: Serial.println(F("WL_CONNECT_FAILED")); break;
-              case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
-              case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
-            }
-          }
+          //          else
+          //          {
+          //            Serial.print(F("WiFi Status: "));
+          //            switch (wifiStatus) {
+          //              case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
+          //              case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
+          //              case WL_NO_SSID_AVAIL: Serial.println(F("WL_NO_SSID_AVAIL")); break;
+          //              case WL_SCAN_COMPLETED: Serial.println(F("WL_SCAN_COMPLETED")); break;
+          //              case WL_CONNECTED: Serial.println(F("WL_CONNECTED")); break;
+          //              case WL_CONNECT_FAILED: Serial.println(F("WL_CONNECT_FAILED")); break;
+          //              case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
+          //              case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
+          //            }
+          //          }
         }
         break;
 
@@ -332,7 +351,7 @@ void updateSystemState()
               snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/%s\r\n\r\n",
                        settings.mountPointPW, settings.mountPoint, ntrip_server_name, "App Version 1.0");
 
-              Serial.printf("Sending credentials:\n%s\n", serverBuffer);
+              //Serial.printf("Sending credentials:\n%s\n", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));
 
               casterResponseWaitStartTime = millis();
@@ -370,7 +389,7 @@ void updateSystemState()
               if (responseSpot == 512 - 1) break;
             }
             response[responseSpot] = '\0';
-            Serial.printf("Caster responded with: %s\n", response);
+            //Serial.printf("Caster responded with: %s\n", response);
 
             if (connectionSuccess == false)
             {
@@ -380,12 +399,14 @@ void updateSystemState()
             else
             {
               //We're connected!
-              Serial.println(F("Connected to caster"));
+              //Serial.println(F("Connected to caster"));
 
               //Reset flags
               lastServerReport_ms = millis();
               lastServerSent_ms = millis();
               casterBytesSent = 0;
+
+              rtcmPacketsSent = 0; //Reset any previous number
 
               changeState(STATE_BASE_FIXED_CASTER_CONNECTED);
             }

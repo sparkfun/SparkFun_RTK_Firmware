@@ -66,9 +66,9 @@ bool configureUbloxModule()
   }
 
   getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA) || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3) || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
   {
-    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA); //Set the I2C port to output UBX and NMEA
+    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //Set the I2C port to output UBX (config), NMEA (logging), and RTCM3 (casting)
     response &= i2cGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
   }
 

@@ -200,7 +200,7 @@ void updateSystemState()
               snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/%s\r\n\r\n",
                        settings.mountPointPW, settings.mountPoint, ntrip_server_name, "App Version 1.0");
 
-              Serial.printf("Sending credentials:\n%s\n", serverBuffer);
+              //Serial.printf("Sending credentials:\n%s\n", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));
 
               casterResponseWaitStartTime = millis();
@@ -219,7 +219,6 @@ void updateSystemState()
             {
               Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
               caster.stop();
-              delay(10); //Yield to RTOS
 
               changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to previous state
             }
@@ -238,17 +237,17 @@ void updateSystemState()
               if (responseSpot == 512 - 1) break;
             }
             response[responseSpot] = '\0';
-            Serial.printf("Caster responded with: %s\n", response);
+            //Serial.printf("Caster responded with: %s\n", response);
 
             if (connectionSuccess == false)
             {
-              Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?", response);
+              Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n", response);
               changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to previous state
             }
             else
             {
               //We're connected!
-              Serial.println(F("Connected to caster"));
+              //Serial.println(F("Connected to caster"));
 
               //Reset flags
               lastServerReport_ms = millis();
@@ -266,6 +265,7 @@ void updateSystemState()
         {
           if (caster.connected() == false)
           {
+            Serial.println(F("Caster no longer connected. Reconnecting..."));
             changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to 2 earlier states to try to reconnect
           }
         }

@@ -572,7 +572,7 @@ void paintBaseTempWiFiStarted()
     oled.setFontType(1);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 38); //x, y
+    oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
     oled.print("RTCM:");
 
@@ -604,7 +604,7 @@ void paintBaseTempWiFiConnected()
     oled.setFontType(1);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 38); //x, y
+    oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
     oled.print("RTCM:");
 
@@ -662,7 +662,7 @@ void paintBaseTempCasterConnected()
     oled.setFontType(1);
     printTextwithKerning("Casting", textX, textY, textKerning);
 
-    oled.setCursor(0, 38); //x, y
+    oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
     oled.print("RTCM:");
 

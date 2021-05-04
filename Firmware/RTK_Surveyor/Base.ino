@@ -155,130 +155,6 @@ bool startFixedBase()
   return (response);
 }
 
-//Call regularly to push latest u-blox data out over local WiFi
-//We make sure we are connected to WiFi, then
-bool updateNtripServer()
-{
-  //Is WiFi setup?
-  if (WiFi.isConnected() == false)
-  {
-    //Turn off Bluetooth and turn on WiFi
-    endBluetooth();
-
-    Serial.printf("Connecting to local WiFi: %s", settings.wifiSSID);
-    WiFi.begin(settings.wifiSSID, settings.wifiPW);
-
-    int maxTime = 10000;
-    long startTime = millis();
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(F("."));
-
-      if (millis() - startTime > maxTime)
-      {
-        Serial.println(F("\nFailed to connect to WiFi. Are you sure your WiFi credentials are correct?"));
-        return (false);
-      }
-
-      if (Serial.available()) return (false); //User has pressed a key
-    }
-    Serial.println();
-
-    radioState = WIFI_CONNECTED;
-  } //End WiFi connect check
-
-  //Are we connected to caster?
-  if (caster.connected() == false)
-  {
-    Serial.printf("Opening socket to %s\n", settings.casterHost);
-
-    if (caster.connect(settings.casterHost, settings.casterPort) == true) //Attempt connection
-    {
-      Serial.printf("Connected to %s:%d\n", settings.casterHost, settings.casterPort);
-
-      const int SERVER_BUFFER_SIZE  = 512;
-      char serverBuffer[SERVER_BUFFER_SIZE];
-
-      snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/%s\r\n\r\n",
-               settings.mountPointPW, settings.mountPoint, ntrip_server_name, "App Version 1.0");
-
-      Serial.printf("Sending credentials:\n%s\n", serverBuffer);
-      caster.write(serverBuffer, strlen(serverBuffer));
-
-      //Wait for response
-      unsigned long timeout = millis();
-      while (caster.available() == 0)
-      {
-        if (millis() - timeout > 5000)
-        {
-          Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
-          caster.stop();
-          delay(10);
-          return (false);
-        }
-        delay(10);
-      }
-
-      delay(10); //Yield to RTOS
-
-      //Check reply
-      bool connectionSuccess = false;
-      char response[512];
-      int responseSpot = 0;
-      while (caster.available())
-      {
-        response[responseSpot++] = caster.read();
-        if (strstr(response, "200") > 0) //Look for 'ICY 200 OK'
-          connectionSuccess = true;
-        if (responseSpot == 512 - 1) break;
-      }
-      response[responseSpot] = '\0';
-      Serial.printf("Caster responded with: %s\n", response);
-
-      if (connectionSuccess == false)
-      {
-        Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?", response);
-      }
-      else
-      {
-        //We're connected!
-        Serial.println(F("Connected to caster"));
-
-        //Reset flags
-        lastServerReport_ms = millis();
-        lastServerSent_ms = millis();
-        casterBytesSent = 0;
-      }
-    } //End attempt to connect
-    else
-    {
-      Serial.println(F("Failed to connect to caster. Are you sure your Caster address is correct?"));
-      delay(10); //Give RTOS some time
-      return (false);
-    }
-  } //End connected == false
-
-
-  //Close socket if we don't have new data for 10s
-  //RTK2Go will ban your IP address if you abuse it. See http://www.rtk2go.com/how-to-get-your-ip-banned/
-  //So let's not leave the socket open/hanging without data
-  if (millis() - lastServerSent_ms > maxTimeBeforeHangup_ms)
-  {
-    Serial.println(F("RTCM timeout. Disconnecting from caster."));
-    caster.stop();
-    return (false);
-  }
-
-  //Report some statistics every 250
-  if (millis() - lastServerReport_ms > 250)
-  {
-    lastServerReport_ms = millis();
-    Serial.printf("Total bytes sent to caster: %d\n", casterBytesSent);
-  }
-
-  return (true);
-}
-
 //This function gets called from the SparkFun u-blox Arduino Library.
 //As each RTCM byte comes in you can specify what to do with it
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
@@ -295,7 +171,7 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
   //Check for too many digits
   if (logIncreasing == true)
   {
-    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid logging icon
+    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon
   }
   else
   {

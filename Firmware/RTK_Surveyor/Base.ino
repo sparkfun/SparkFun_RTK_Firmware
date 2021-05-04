@@ -55,8 +55,8 @@ bool configureUbloxModuleBase()
 bool surveyIn()
 {
   bool needSurveyReset = false;
-  if (i2cGNSS.getSurveyInActive == true) needSurveyReset = true;
-  if (i2cGNSS.getSurveyInValid == true) needSurveyReset = true;
+  if (i2cGNSS.getSurveyInActive() == true) needSurveyReset = true;
+  if (i2cGNSS.getSurveyInValid() == true) needSurveyReset = true;
 
   if (needSurveyReset == true)
   {

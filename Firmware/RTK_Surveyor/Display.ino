@@ -505,20 +505,26 @@ void paintBaseTempSurveyStarted()
     int elapsedTime = i2cGNSS.getSurveyInObservationTime(100);
 
     oled.setFontType(0);
-    oled.setCursor(0, 22); //x, y
+    oled.setCursor(0, 23); //x, y
     oled.print("Mean:");
 
     oled.setCursor(29, 20); //x, y
     oled.setFontType(1);
-    oled.print(meanAccuracy, 2);
+    if (meanAccuracy < 10.0) //Error check
+      oled.print(meanAccuracy, 2);
+    else
+      oled.print(">10");
 
-    oled.setCursor(0, 38); //x, y
+    oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
     oled.print("Time:");
 
     oled.setCursor(30, 36); //x, y
     oled.setFontType(1);
-    oled.print(elapsedTime);
+    if (elapsedTime < 1000) //Error check
+      oled.print(elapsedTime);
+    else
+      oled.print("0");
 
     paintLogging();
   }
@@ -541,11 +547,15 @@ void paintBaseTempTransmitting()
     oled.setFontType(1);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 38); //x, y
+    oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
     oled.print("RTCM:");
 
-    oled.setCursor(28, 36); //x, y
+    if (rtcmPacketsSent < 100)
+      oled.setCursor(30, 36); //x, y - Give space for two digits
+    else
+      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+      
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
@@ -575,7 +585,11 @@ void paintBaseTempWiFiStarted()
     oled.setFontType(0);
     oled.print("RTCM:");
 
-    oled.setCursor(28, 36); //x, y
+    if (rtcmPacketsSent < 100)
+      oled.setCursor(30, 36); //x, y - Give space for two digits
+    else
+      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
@@ -606,7 +620,11 @@ void paintBaseTempWiFiConnected()
     oled.setFontType(0);
     oled.print("RTCM:");
 
-    oled.setCursor(28, 36); //x, y
+    if (rtcmPacketsSent < 100)
+      oled.setCursor(30, 36); //x, y - Give space for two digits
+    else
+      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
@@ -663,7 +681,11 @@ void paintBaseTempCasterConnected()
     oled.setFontType(0);
     oled.print("RTCM:");
 
-    oled.setCursor(28, 36); //x, y
+    if (rtcmPacketsSent < 100)
+      oled.setCursor(30, 36); //x, y - Give space for two digits
+    else
+      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
@@ -688,11 +710,15 @@ void paintBaseFixedTransmitting()
     oled.setFontType(1);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 38); //x, y
+    oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
     oled.print("RTCM:");
 
-    oled.setCursor(28, 36); //x, y
+    if (rtcmPacketsSent < 100)
+      oled.setCursor(30, 36); //x, y - Give space for two digits
+    else
+      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
@@ -718,11 +744,15 @@ void paintBaseFixedWiFiStarted()
     oled.setFontType(1);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 38); //x, y
+    oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
     oled.print("RTCM:");
 
-    oled.setCursor(28, 36); //x, y
+    if (rtcmPacketsSent < 100)
+      oled.setCursor(30, 36); //x, y - Give space for two digits
+    else
+      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
@@ -749,11 +779,15 @@ void paintBaseFixedWiFiConnected()
     oled.setFontType(1);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 38); //x, y
+    oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
     oled.print("RTCM:");
 
-    oled.setCursor(28, 36); //x, y
+    if (rtcmPacketsSent < 100)
+      oled.setCursor(30, 36); //x, y - Give space for two digits
+    else
+      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
@@ -806,11 +840,15 @@ void paintBaseFixedCasterConnected()
     oled.setFontType(1);
     printTextwithKerning("Casting", textX, textY, textKerning);
 
-    oled.setCursor(0, 38); //x, y
+    oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
     oled.print("RTCM:");
 
-    oled.setCursor(28, 36); //x, y
+    if (rtcmPacketsSent < 100)
+      oled.setCursor(30, 36); //x, y - Give space for two digits
+    else
+      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 

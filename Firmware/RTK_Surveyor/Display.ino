@@ -378,14 +378,14 @@ void paintSIV()
 }
 
 //Draw log icon
-//Turn off icon if  log file gets bigger
+//Turn off icon if log file fails to get bigger
 void paintLogging()
 {
   if (online.display == true)
   {
     if (logIncreasing == true)
     {
-      oled.drawIcon(63 - Logging_Width, 47 - Logging_Height, Logging_Width, Logging_Height, Logging, sizeof(Logging), true); //Draw the icon
+      oled.drawIcon(64 - Logging_Width, 48 - Logging_Height, Logging_Width, Logging_Height, Logging, sizeof(Logging), true); //Draw the icon
     }
   }
 }

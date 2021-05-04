@@ -32,6 +32,7 @@ void checkSetupButton()
         {
           Serial.println(F("Base config failed!"));
           displayBaseFail();
+          delay(1000);
           return;
         }
 
@@ -45,6 +46,7 @@ void checkSetupButton()
           //TODO maybe create a custom fixed base fail screen
           Serial.println(F("Fixed base start failed!"));
           displayBaseFail();
+          delay(1000);
           return;
         }
       }
@@ -70,7 +72,6 @@ void checkSetupButton()
         systemState == STATE_BASE_FIXED_CASTER_CONNECTED)
     {
       displayRoverStart();
-
 
       //Configure for rover mode
       Serial.println(F("Rover Mode"));

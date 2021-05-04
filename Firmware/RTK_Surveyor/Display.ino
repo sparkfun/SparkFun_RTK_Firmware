@@ -292,12 +292,9 @@ void paintBaseState()
     {
       oled.drawIcon(27, 3, Rover_Width, Rover_Height, Rover, sizeof(Rover), true);
     }
-    else if (systemState == STATE_BASE_TEMP_SURVEY_NOT_STARTED)
-    {
-      //Turn on base icon solid (blink crosshair in paintHorzAcc)
-      oled.drawIcon(27, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary, sizeof(BaseTemporary), true); //true - blend with other pixels
-    }
-    else if (systemState == STATE_BASE_TEMP_SURVEY_STARTED)
+    else if (systemState == STATE_BASE_TEMP_SURVEY_STARTED ||
+             systemState == STATE_BASE_TEMP_SURVEY_NOT_STARTED //Turn on base icon solid (blink crosshair in paintHorzAcc)
+            )
     {
       //Blink base icon until survey is complete
       if (millis() - lastBaseIconUpdate > 500)
@@ -555,7 +552,7 @@ void paintBaseTempTransmitting()
       oled.setCursor(30, 36); //x, y - Give space for two digits
     else
       oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
-      
+
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 

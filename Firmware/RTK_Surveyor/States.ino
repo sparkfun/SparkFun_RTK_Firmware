@@ -246,7 +246,7 @@ void updateSystemState()
             while (caster.available())
             {
               response[responseSpot++] = caster.read();
-              if (strstr(response, "200") > 0) //Look for 'ICY 200 OK'
+              if (strstr(response, "200") != NULL) //Look for 'ICY 200 OK'
                 connectionSuccess = true;
               if (responseSpot == 512 - 1) break;
             }
@@ -384,7 +384,7 @@ void updateSystemState()
             while (caster.available())
             {
               response[responseSpot++] = caster.read();
-              if (strstr(response, "200") > 0) //Look for 'ICY 200 OK'
+              if (strstr(response, "200") != NULL) //Look for 'ICY 200 OK'
                 connectionSuccess = true;
               if (responseSpot == 512 - 1) break;
             }

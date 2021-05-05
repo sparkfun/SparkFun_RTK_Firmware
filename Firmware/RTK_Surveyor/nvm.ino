@@ -273,7 +273,7 @@ bool parseLine(char* str) {
 
     //Check to see if this setting file is compatible with this version of RTK Surveyor
     if (d != sizeof(settings))
-      Serial.printf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\r\n", d, sizeof(settings));
+      Serial.printf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\r\n", (int)d, sizeof(settings));
 
   }
   else if (strcmp(settingName, "rtkIdentifier") == 0)

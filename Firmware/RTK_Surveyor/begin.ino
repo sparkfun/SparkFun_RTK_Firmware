@@ -306,7 +306,7 @@ bool beginBluetooth()
 }
 
 //Turn off BT so we can go into WiFi mode
-bool endBluetooth()
+void endBluetooth()
 {
   //Delete tasks if running
   //  if (F9PSerialReadTaskHandle != NULL)

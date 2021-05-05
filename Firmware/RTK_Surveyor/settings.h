@@ -49,7 +49,7 @@ volatile byte radioState = RADIO_OFF;
 enum returnStatus {
   STATUS_GETBYTE_TIMEOUT = 255,
   STATUS_GETNUMBER_TIMEOUT = -123455555,
-  STATUS_PRESSED_X,
+  STATUS_PRESSED_X = 254,
 };
 
 //These are the allowable messages to either broadcast over SPP or log to UBX file

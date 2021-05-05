@@ -87,7 +87,7 @@ void displaySplash()
     int textY = 25;
     int textKerning = 9;
     oled.setFontType(1);
-    printTextwithKerning("Express", textX, textY, textKerning);
+    printTextwithKerning((char*)"Express", textX, textY, textKerning);
 
     oled.setCursor(20, 41);
     oled.setFontType(0); //Set font to smallest
@@ -110,14 +110,14 @@ void displayShutdown()
     int textY = 10;
     int textKerning = 8;
 
-    printTextwithKerning("Shutting", textX, textY, textKerning);
+    printTextwithKerning((char*)"Shutting", textX, textY, textKerning);
 
     textX = 4;
     textY = 25;
     textKerning = 9;
     oled.setFontType(1);
 
-    printTextwithKerning("Down...", textX, textY, textKerning);
+    printTextwithKerning((char*)"Down...", textX, textY, textKerning);
 
     oled.display();
   }
@@ -542,7 +542,7 @@ void paintBaseTempTransmitting()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -576,7 +576,7 @@ void paintBaseTempWiFiStarted()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -611,7 +611,7 @@ void paintBaseTempWiFiConnected()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -645,14 +645,14 @@ void paintBaseTempCasterStarted()
     int textY = 17;
     int textKerning = 8;
 
-    printTextwithKerning("Caster", textX, textY, textKerning);
+    printTextwithKerning((char*)"Caster", textX, textY, textKerning);
 
     textX = 3;
     textY = 33;
     textKerning = 6;
     oled.setFontType(1);
 
-    printTextwithKerning("Connecting", textX, textY, textKerning);
+    printTextwithKerning((char*)"Connecting", textX, textY, textKerning);
   }
 }
 
@@ -672,7 +672,7 @@ void paintBaseTempCasterConnected()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning("Casting", textX, textY, textKerning);
+    printTextwithKerning((char*)"Casting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -705,7 +705,7 @@ void paintBaseFixedTransmitting()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -739,7 +739,7 @@ void paintBaseFixedWiFiStarted()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -774,7 +774,7 @@ void paintBaseFixedWiFiConnected()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -808,14 +808,14 @@ void paintBaseFixedCasterStarted()
     int textY = 18;
     int textKerning = 8;
 
-    printTextwithKerning("Caster", textX, textY, textKerning);
+    printTextwithKerning((char*)"Caster", textX, textY, textKerning);
 
     textX = 3;
     textY = 33;
     textKerning = 6;
     oled.setFontType(1);
 
-    printTextwithKerning("Connecting", textX, textY, textKerning);
+    printTextwithKerning((char*)"Connecting", textX, textY, textKerning);
   }
 }
 
@@ -835,7 +835,7 @@ void paintBaseFixedCasterConnected()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning("Casting", textX, textY, textKerning);
+    printTextwithKerning((char*)"Casting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -874,7 +874,7 @@ void displayBaseStart()
     int textY = 10;
     int textKerning = 8;
 
-    printTextwithKerning("Base", textX, textY, textKerning);
+    printTextwithKerning((char*)"Base", textX, textY, textKerning);
 
     oled.display();
   }
@@ -893,14 +893,14 @@ void displayBaseSuccess()
     int textY = 10;
     int textKerning = 8;
 
-    printTextwithKerning("Base", textX, textY, textKerning);
+    printTextwithKerning((char*)"Base", textX, textY, textKerning);
 
     textX = 5;
     textY = 25;
     textKerning = 8;
     oled.setFontType(1);
 
-    printTextwithKerning("Started", textX, textY, textKerning);
+    printTextwithKerning((char*)"Started", textX, textY, textKerning);
     oled.display();
   }
 }
@@ -918,14 +918,14 @@ void displayBaseFail()
     int textY = 10;
     int textKerning = 8;
 
-    printTextwithKerning("Base", textX, textY, textKerning);
+    printTextwithKerning((char*)"Base", textX, textY, textKerning);
 
     textX = 10;
     textY = 25;
     textKerning = 8;
     oled.setFontType(1);
 
-    printTextwithKerning("Failed", textX, textY, textKerning);
+    printTextwithKerning((char*)"Failed", textX, textY, textKerning);
     oled.display();
   }
 }
@@ -943,7 +943,7 @@ void displayRoverStart()
     int textY = 10;
     int textKerning = 8;
 
-    printTextwithKerning("Rover", textX, textY, textKerning);
+    printTextwithKerning((char*)"Rover", textX, textY, textKerning);
 
     oled.display();
   }
@@ -962,14 +962,14 @@ void displayRoverSuccess()
     int textY = 10;
     int textKerning = 8;
 
-    printTextwithKerning("Rover", textX, textY, textKerning);
+    printTextwithKerning((char*)"Rover", textX, textY, textKerning);
 
     textX = 5;
     textY = 25;
     textKerning = 8;
     oled.setFontType(1);
 
-    printTextwithKerning("Started", textX, textY, textKerning);
+    printTextwithKerning((char*)"Started", textX, textY, textKerning);
     oled.display();
   }
 }
@@ -987,14 +987,14 @@ void displayRoverFail()
     int textY = 10;
     int textKerning = 8;
 
-    printTextwithKerning("Rover", textX, textY, textKerning);
+    printTextwithKerning((char*)"Rover", textX, textY, textKerning);
 
     textX = 10;
     textY = 25;
     textKerning = 8;
     oled.setFontType(1);
 
-    printTextwithKerning("Failed", textX, textY, textKerning);
+    printTextwithKerning((char*)"Failed", textX, textY, textKerning);
     oled.display();
   }
 }
@@ -1013,14 +1013,14 @@ void displaySerialConfig()
     int textY = 10;
     int textKerning = 8;
 
-    printTextwithKerning("Serial", textX, textY, textKerning);
+    printTextwithKerning((char*)"Serial", textX, textY, textKerning);
 
     textX = 10;
     textY = 25;
     textKerning = 8;
     oled.setFontType(1);
 
-    printTextwithKerning("Config", textX, textY, textKerning);
+    printTextwithKerning((char*)"Config", textX, textY, textKerning);
     oled.display();
   }
 }
@@ -1038,7 +1038,7 @@ void displaySurveyStart()
     int textY = 10;
     int textKerning = 8;
 
-    printTextwithKerning("Survey", textX, textY, textKerning);
+    printTextwithKerning((char*)"Survey", textX, textY, textKerning);
 
     oled.display();
   }
@@ -1057,14 +1057,14 @@ void displaySurveyStarted()
     int textY = 10;
     int textKerning = 8;
 
-    printTextwithKerning("Survey", textX, textY, textKerning);
+    printTextwithKerning((char*)"Survey", textX, textY, textKerning);
 
     textX = 6;
     textY = 25;
     textKerning = 8;
     oled.setFontType(1);
 
-    printTextwithKerning("Started", textX, textY, textKerning);
+    printTextwithKerning((char*)"Started", textX, textY, textKerning);
     oled.display();
   }
 }
@@ -1095,14 +1095,14 @@ void displaySDFail()
     int textY = 10;
     int textKerning = 8;
 
-    printTextwithKerning("Format", textX, textY, textKerning);
+    printTextwithKerning((char*)"Format", textX, textY, textKerning);
 
     textX = 7;
     textY = 25;
     textKerning = 8;
     oled.setFontType(1);
 
-    printTextwithKerning("SD Card", textX, textY, textKerning);
+    printTextwithKerning((char*)"SD Card", textX, textY, textKerning);
     oled.display();
   }
 }

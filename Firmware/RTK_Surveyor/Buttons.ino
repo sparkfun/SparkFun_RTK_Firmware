@@ -43,8 +43,7 @@ void checkSetupButton()
         }
         else
         {
-          //TODO maybe create a custom fixed base fail screen
-          Serial.println(F("Fixed base start failed!"));
+          Serial.println(F("Fixed base start failed"));
           displayBaseFail();
           delay(1000);
           return;

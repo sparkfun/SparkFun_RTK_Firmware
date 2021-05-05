@@ -8,7 +8,6 @@ void menuGNSS()
     Serial.println(F("Menu: GNSS Menu"));
 
     float currentHz = getMeasurementFrequency(); //Get measRate and navRate from module.
-    uint16_t currentHzInt = (uint16_t)currentHz;
     float currentSeconds = 1.0 / currentHz;
 
     Serial.print(F("1) Set measurement rate in Hz: "));

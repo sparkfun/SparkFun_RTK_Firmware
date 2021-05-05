@@ -121,7 +121,7 @@ bool configureUbloxModule()
   }
 
   //Based on current settings, update the logging options within the GNSS library
-  if(settings.log.rawx == true)
+  if (settings.log.rawx == true)
   {
     i2cGNSS.setAutoRXMRAWX(true, false); // Enable automatic RXM RAWX messages: without callback; without implicit update
     i2cGNSS.logRXMRAWX(true);
@@ -131,8 +131,8 @@ bool configureUbloxModule()
     i2cGNSS.setAutoRXMRAWX(false); // Disable automatic RXM RAWX messages
     i2cGNSS.logRXMRAWX(false);
   }
-  
-  if(settings.log.sfrbx == true)
+
+  if (settings.log.sfrbx == true)
   {
     i2cGNSS.setAutoRXMSFRBX(true, false); // Enable automatic RXM SFRBX messages: without callback; without implicit update
     i2cGNSS.logRXMSFRBX(true);
@@ -151,6 +151,12 @@ bool configureUbloxModule()
   response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   if (response == false)
     Serial.println(F("Module failed to save."));
+
+  //Turn on/off debug messages
+  if (settings.enableI2Cdebug)
+    i2cGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
+  else
+    i2cGNSS.disableDebugging();
 
   return (response);
 }

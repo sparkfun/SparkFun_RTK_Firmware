@@ -288,8 +288,6 @@ void setup()
 
   danceLEDs(); //Turn on LEDs like a car dashboard
 
-  //i2cGNSS.enableDebugging(); //Enable debug messages over Serial (default)
-  i2cGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
 }
 
 void loop()

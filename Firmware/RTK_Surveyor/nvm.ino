@@ -118,7 +118,6 @@ void recordSystemSettingsToFile()
       settingsFile.println("surveyInStartingAccuracy=" + (String)settings.surveyInStartingAccuracy);
       settingsFile.println("measurementRate=" + (String)settings.measurementRate);
       settingsFile.println("navigationRate=" + (String)settings.navigationRate);
-
       settingsFile.println("broadcast.gga=" + (String)settings.broadcast.gga);
       settingsFile.println("broadcast.gsa=" + (String)settings.broadcast.gsa);
       settingsFile.println("broadcast.gsv=" + (String)settings.broadcast.gsv);
@@ -126,7 +125,6 @@ void recordSystemSettingsToFile()
       settingsFile.println("broadcast.gst=" + (String)settings.broadcast.gst);
       settingsFile.println("broadcast.rawx=" + (String)settings.broadcast.rawx);
       settingsFile.println("broadcast.sfrbx=" + (String)settings.broadcast.sfrbx);
-
       settingsFile.println("log.gga=" + (String)settings.log.gga);
       settingsFile.println("log.gsa=" + (String)settings.log.gsa);
       settingsFile.println("log.gsv=" + (String)settings.log.gsv);
@@ -134,6 +132,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("log.gst=" + (String)settings.log.gst);
       settingsFile.println("log.rawx=" + (String)settings.log.rawx);
       settingsFile.println("log.sfrbx=" + (String)settings.log.sfrbx);
+      settingsFile.println("enableI2Cdebug=" + (String)settings.enableI2Cdebug);
 
       if (online.gnss)
         updateDataFileAccess(&settingsFile); // Update the file access time & date
@@ -335,7 +334,6 @@ bool parseLine(char* str) {
     settings.measurementRate = d;
   else if (strcmp(settingName, "navigationRate") == 0)
     settings.navigationRate = d;
-
   else if (strcmp(settingName, "broadcast.gga") == 0)
     settings.broadcast.gga = d;
   else if (strcmp(settingName, "broadcast.gsa") == 0)
@@ -350,7 +348,6 @@ bool parseLine(char* str) {
     settings.broadcast.rawx = d;
   else if (strcmp(settingName, "broadcast.sfrbx") == 0)
     settings.broadcast.sfrbx = d;
-
   else if (strcmp(settingName, "log.gga") == 0)
     settings.log.gga = d;
   else if (strcmp(settingName, "log.gsa") == 0)
@@ -365,6 +362,8 @@ bool parseLine(char* str) {
     settings.log.rawx = d;
   else if (strcmp(settingName, "log.sfrbx") == 0)
     settings.log.sfrbx = d;
+  else if (strcmp(settingName, "enableI2Cdebug") == 0)
+    settings.enableI2Cdebug = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

@@ -108,6 +108,7 @@ struct struct_settings {
   uint16_t navigationRate = 1; //Ratio between number of measurements and navigation solutions. Default 1 for 4Hz (with measurementRate).
   gnssMessages broadcast;
   gnssMessages log;
+  bool enableI2Cdebug = false; //Turn on to display GNSS library debug messages
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

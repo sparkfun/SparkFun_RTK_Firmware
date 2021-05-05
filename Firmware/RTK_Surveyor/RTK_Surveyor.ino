@@ -33,7 +33,8 @@
     (Done) Firmware upgrade menu
     Enable various debug outputs sent over BT
 
-    Add blinking log file icon
+    TODO
+      Solve caster port not closing issue
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -96,7 +97,7 @@ char settingsFileName[40] = "SFE_Surveyor_Settings.txt"; //File to read/write sy
 
 SdFile ubxFile; //File that all gnss ubx messages setences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
-long startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
+int startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
 
 //SdFat crashes when F9PSerialReadTask() is called in the middle of a ubx file write within loop()
 //So we use a semaphore to see if file system is available
@@ -216,11 +217,13 @@ uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
 char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
-long systemTime_minutes = 0; //Used to test if logging is less than max minutes
+int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
 uint32_t lastSystemStateUpdate = 0;
+uint32_t lastAccuracyLEDUpdate = 0;
+uint32_t lastBaseLEDupdate = 0; //Controls the blinking of the Base LED
 
 uint32_t lastFileReport = 0; //When logging, print file record stats every few seconds
 long lastStackReport = 0; //Controls the report rate of stack highwater mark within a task
@@ -242,20 +245,17 @@ uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM(
 
 uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
-uint32_t lastBaseLEDupdate = 0; //Controls the blinking of the Base LED
-
+uint32_t totalWriteTime = 0; //Used to calculate overall write speed using SdFat library
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
-  Serial.setRxBufferSize(SERIAL_SIZE_RX);
-  Serial.setTimeout(1);
 
   Wire.begin(); //Start I2C on core 1
   Wire.setClock(400000);
 
-  beginUART2(); //Start UART2 on core 0
+  beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
   beginLEDs(); //LED and PWM setup
 
@@ -289,6 +289,7 @@ void setup()
   danceLEDs(); //Turn on LEDs like a car dashboard
 
   //i2cGNSS.enableDebugging(); //Enable debug messages over Serial (default)
+  i2cGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
 }
 
 void loop()
@@ -346,7 +347,7 @@ void updateLogs()
 
           i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
 
-          int bytesWritten = ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
+          ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
 
           if (settings.frequentFileAccessTimestamps == true)
             updateDataFileAccess(&ubxFile); // Update the file access time & date
@@ -356,7 +357,10 @@ void updateLogs()
           {
             lastUBXLogSyncTime = millis();
             digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
+            long startWriteTime = millis();
             ubxFile.sync();
+            long stopWriteTime = millis();
+            totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
             digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
 
             updateDataFileAccess(&ubxFile); // Update the file access time & date
@@ -379,10 +383,15 @@ void updateLogs()
       lastFileReport = millis();
       Serial.printf("UBX file size: %d", ubxFile.fileSize());
 
-      if ((systemTime_minutes - startLogTime_minutes) > settings.maxLogTime_minutes)
-        Serial.printf(" reached max log time %d / System time %d",
-                      settings.maxLogTime_minutes,
-                      (systemTime_minutes - startLogTime_minutes));
+      if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+      {
+        Serial.printf(" - Generation rate: %0.1fkB/s", (ubxFile.fileSize() / (millis() / 1000.0)) / 1000.0);
+        Serial.printf(" - Write speed: %0.1fkB/s", (ubxFile.fileSize() / (totalWriteTime / 1000.0)) / 1000.0);
+      }
+      else
+      {
+        Serial.printf(" reached max log time %d", settings.maxLogTime_minutes);
+      }
 
       Serial.println();
 

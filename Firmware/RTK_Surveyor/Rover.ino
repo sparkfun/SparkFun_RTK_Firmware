@@ -3,15 +3,19 @@
 bool configureUbloxModuleRover()
 {
   bool response = true;
-  
-  response = i2cGNSS.disableSurveyMode(); //Disable survey
-  if (response == false)
-    Serial.println(F("Disable Survey failed"));
+  int maxWait = 2000;
+
+  if (i2cGNSS.getSurveyInActive() == true || i2cGNSS.getSurveyInValid() == true)
+  {
+    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+    if (response == false)
+      Serial.println(F("Disable Survey failed"));
+  }
 
   // Set dynamic model
-  if (i2cGNSS.getDynamicModel() != DYN_MODEL_PORTABLE)
+  if (i2cGNSS.getDynamicModel(maxWait) != DYN_MODEL_PORTABLE)
   {
-    response = i2cGNSS.setDynamicModel(DYN_MODEL_PORTABLE, 1000);
+    response = i2cGNSS.setDynamicModel(DYN_MODEL_PORTABLE, maxWait);
     if (response == false)
       Serial.println(F("setDynamicModel failed"));
   }
@@ -37,7 +41,7 @@ bool configureUbloxModuleRover()
   if (response == false)
     Serial.println(F("Set SBAS failed"));
 
-  //The last thing we do is set output rate. 
+  //The last thing we do is set output rate.
   response = true; //Reset
   if (i2cGNSS.getMeasurementRate() != settings.measurementRate)
   {
@@ -69,7 +73,7 @@ bool setNMEASettings()
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("NMEA setting failed!"));
+    Serial.println(F("NMEA setting failed"));
     return (false);
   }
 
@@ -80,7 +84,7 @@ bool setNMEASettings()
   // Now we write the custom packet back again to change the setting
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
   {
-    Serial.println(F("NMEA setting failed!"));
+    Serial.println(F("NMEA setting failed"));
     return (false);
   }
   return (true);
@@ -102,7 +106,7 @@ bool getSBAS()
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("Get SBAS failed!"));
+    Serial.println(F("Get SBAS failed"));
     return (false);
   }
 
@@ -126,7 +130,7 @@ bool setSBAS(bool enableSBAS)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("Set SBAS failed!"));
+    Serial.println(F("Set SBAS failed"));
     return (false);
   }
 
@@ -144,9 +148,70 @@ bool setSBAS(bool enableSBAS)
   // Now we write the custom packet back again to change the setting
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
   {
-    Serial.println(F("SBAS setting failed!"));
+    Serial.println(F("SBAS setting failed"));
     return (false);
   }
 
   return (true);
+}
+
+//Turn on the three accuracy LEDs depending on our current HPA (horizontal positional accuracy)
+void updateAccuracyLEDs()
+{
+  //Update the horizontal accuracy LEDs only every second or so
+  if (millis() - lastAccuracyLEDUpdate > 2000)
+  {
+    lastAccuracyLEDUpdate = millis();
+
+    uint32_t accuracy = i2cGNSS.getHorizontalAccuracy(250);
+
+    if (accuracy > 0)
+    {
+      // Convert the horizontal accuracy (mm * 10^-1) to a float
+      float f_accuracy = accuracy;
+      f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
+
+      Serial.print(F("Rover Accuracy (m): "));
+      Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
+
+      if (f_accuracy <= 0.02)
+      {
+        Serial.print(F(" 0.01m LED"));
+        digitalWrite(positionAccuracyLED_1cm, HIGH);
+        digitalWrite(positionAccuracyLED_10cm, HIGH);
+        digitalWrite(positionAccuracyLED_100cm, HIGH);
+      }
+      else if (f_accuracy <= 0.100)
+      {
+        Serial.print(F(" 0.1m LED"));
+        digitalWrite(positionAccuracyLED_1cm, LOW);
+        digitalWrite(positionAccuracyLED_10cm, HIGH);
+        digitalWrite(positionAccuracyLED_100cm, HIGH);
+      }
+      else if (f_accuracy <= 1.0000)
+      {
+        Serial.print(F(" 1m LED"));
+        digitalWrite(positionAccuracyLED_1cm, LOW);
+        digitalWrite(positionAccuracyLED_10cm, LOW);
+        digitalWrite(positionAccuracyLED_100cm, HIGH);
+      }
+      else if (f_accuracy > 1.0)
+      {
+        Serial.print(F(" No LEDs"));
+        digitalWrite(positionAccuracyLED_1cm, LOW);
+        digitalWrite(positionAccuracyLED_10cm, LOW);
+        digitalWrite(positionAccuracyLED_100cm, LOW);
+      }
+      Serial.println();
+    }
+    else
+    {
+      Serial.print(F("Rover Accuracy: "));
+      Serial.print(accuracy);
+      Serial.print(" ");
+      Serial.print(F("No lock. SIV: "));
+      Serial.print(i2cGNSS.getSIV());
+      Serial.println();
+    }
+  }
 }

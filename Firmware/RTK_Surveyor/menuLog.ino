@@ -272,7 +272,7 @@ uint8_t getRAWXSettings(uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getRAWXSettings failed!"));
+    Serial.println(F("getRAWXSettings failed"));
     return (false);
   }
 
@@ -297,7 +297,7 @@ uint8_t getSFRBXSettings(uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getSFRBXSettings failed!"));
+    Serial.println(F("getSFRBXSettings failed"));
     return (false);
   }
 

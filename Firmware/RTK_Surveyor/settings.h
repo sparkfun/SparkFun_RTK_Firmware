@@ -1,24 +1,34 @@
 //System can enter a variety of states starting at Rover_No_Fix at power on
 typedef enum
 {
-  STATE_ROVER_NO_FIX = 0,
+  STATE_ROVER_NOT_STARTED = 0,
+  STATE_ROVER_NO_FIX,
   STATE_ROVER_FIX,
   STATE_ROVER_RTK_FLOAT,
   STATE_ROVER_RTK_FIX,
-  STATE_BASE_TEMP_SURVEY_NOT_STARTED, //User has indicated base, but current pos accuracy is too low
+  STATE_BASE_NOT_STARTED,
+  STATE_BASE_TEMP_SETTLE, //User has indicated base, but current pos accuracy is too low
   STATE_BASE_TEMP_SURVEY_STARTED,
   STATE_BASE_TEMP_TRANSMITTING,
   STATE_BASE_TEMP_WIFI_STARTED,
   STATE_BASE_TEMP_WIFI_CONNECTED,
   STATE_BASE_TEMP_CASTER_STARTED,
   STATE_BASE_TEMP_CASTER_CONNECTED,
+  STATE_BASE_FIXED_NOT_STARTED,
   STATE_BASE_FIXED_TRANSMITTING,
   STATE_BASE_FIXED_WIFI_STARTED,
   STATE_BASE_FIXED_WIFI_CONNECTED,
   STATE_BASE_FIXED_CASTER_STARTED,
   STATE_BASE_FIXED_CASTER_CONNECTED,
 } SystemState;
-volatile SystemState systemState = STATE_ROVER_NO_FIX;
+volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
+
+typedef enum
+{
+  BUTTON_ROVER = 0,
+  BUTTON_BASE,
+} ButtonState;
+ButtonState buttonPreviousState = BUTTON_ROVER;
 
 //User can enter fixed base coordinates in ECEF or degrees
 typedef enum

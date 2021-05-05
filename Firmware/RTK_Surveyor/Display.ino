@@ -12,6 +12,9 @@ void updateDisplay()
 
       switch (systemState)
       {
+        case (STATE_ROVER_NOT_STARTED):
+          //Do nothing. Static display shown during state change.
+          break;
         case (STATE_ROVER_NO_FIX):
           paintRoverNoFix();
           break;
@@ -24,8 +27,11 @@ void updateDisplay()
         case (STATE_ROVER_RTK_FIX):
           paintRoverRTKFix();
           break;
-        case (STATE_BASE_TEMP_SURVEY_NOT_STARTED):
-          paintBaseTempSurveyNotStarted();
+        case (STATE_BASE_NOT_STARTED):
+          //Do nothing. Static display shown during state change.
+          break;
+        case (STATE_BASE_TEMP_SETTLE):
+          paintBaseTempSettle();
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
           paintBaseTempSurveyStarted();
@@ -44,6 +50,9 @@ void updateDisplay()
           break;
         case (STATE_BASE_TEMP_CASTER_CONNECTED):
           paintBaseTempCasterConnected();
+          break;
+        case (STATE_BASE_FIXED_NOT_STARTED):
+          //Do nothing. Static display shown during state change.
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
           paintBaseFixedTransmitting();
@@ -212,7 +221,7 @@ void paintHorizontalAccuracy()
   if (online.display == true)
   {
     //Blink crosshair icon until we achieve <5m horz accuracy (user definable)
-    if (systemState == STATE_BASE_TEMP_SURVEY_NOT_STARTED)
+    if (systemState == STATE_BASE_TEMP_SETTLE)
     {
       if (millis() - lastCrosshairIconUpdate > 500)
       {
@@ -292,8 +301,8 @@ void paintBaseState()
     {
       oled.drawIcon(27, 3, Rover_Width, Rover_Height, Rover, sizeof(Rover), true);
     }
-    else if (systemState == STATE_BASE_TEMP_SURVEY_STARTED ||
-             systemState == STATE_BASE_TEMP_SURVEY_NOT_STARTED //Turn on base icon solid (blink crosshair in paintHorzAcc)
+    else if (systemState == STATE_BASE_TEMP_SETTLE ||
+             systemState == STATE_BASE_TEMP_SURVEY_STARTED //Turn on base icon solid (blink crosshair in paintHorzAcc)
             )
     {
       //Blink base icon until survey is complete
@@ -469,7 +478,7 @@ void paintRoverRTKFix()
 //Start of base / survey in / NTRIP mode
 //Screen is displayed while we are waiting for horz accuracy to drop to appropriate level
 //Blink crosshair icon until we have we have horz accuracy < user defined level
-void paintBaseTempSurveyNotStarted()
+void paintBaseTempSettle()
 {
   if (online.display == true)
   {
@@ -861,7 +870,7 @@ void paintBaseFixedCasterConnected()
 //  oled.print("Base Fail Please    Reset");
 //}
 
-void displayBaseStart()
+void displayBaseStart(uint16_t displayTime)
 {
   if (online.display == true)
   {
@@ -877,10 +886,12 @@ void displayBaseStart()
     printTextwithKerning((char*)"Base", textX, textY, textKerning);
 
     oled.display();
+
+    delay(displayTime);
   }
 }
 
-void displayBaseSuccess()
+void displayBaseSuccess(uint16_t displayTime)
 {
   if (online.display == true)
   {
@@ -902,10 +913,12 @@ void displayBaseSuccess()
 
     printTextwithKerning((char*)"Started", textX, textY, textKerning);
     oled.display();
+
+    delay(displayTime);
   }
 }
 
-void displayBaseFail()
+void displayBaseFail(uint16_t displayTime)
 {
   if (online.display == true)
   {
@@ -927,10 +940,12 @@ void displayBaseFail()
 
     printTextwithKerning((char*)"Failed", textX, textY, textKerning);
     oled.display();
+
+    delay(displayTime);
   }
 }
 
-void displayRoverStart()
+void displayRoverStart(uint16_t displayTime)
 {
   if (online.display == true)
   {
@@ -946,10 +961,12 @@ void displayRoverStart()
     printTextwithKerning((char*)"Rover", textX, textY, textKerning);
 
     oled.display();
+
+    delay(displayTime);
   }
 }
 
-void displayRoverSuccess()
+void displayRoverSuccess(uint16_t displayTime)
 {
   if (online.display == true)
   {
@@ -971,10 +988,12 @@ void displayRoverSuccess()
 
     printTextwithKerning((char*)"Started", textX, textY, textKerning);
     oled.display();
+
+    delay(displayTime);
   }
 }
 
-void displayRoverFail()
+void displayRoverFail(uint16_t displayTime)
 {
   if (online.display == true)
   {
@@ -996,6 +1015,8 @@ void displayRoverFail()
 
     printTextwithKerning((char*)"Failed", textX, textY, textKerning);
     oled.display();
+
+    delay(displayTime);
   }
 }
 
@@ -1025,7 +1046,7 @@ void displaySerialConfig()
   }
 }
 
-void displaySurveyStart()
+void displaySurveyStart(uint16_t displayTime)
 {
   if (online.display == true)
   {
@@ -1041,10 +1062,12 @@ void displaySurveyStart()
     printTextwithKerning((char*)"Survey", textX, textY, textKerning);
 
     oled.display();
+
+    delay(displayTime);
   }
 }
 
-void displaySurveyStarted()
+void displaySurveyStarted(uint16_t displayTime)
 {
   if (online.display == true)
   {
@@ -1066,23 +1089,13 @@ void displaySurveyStarted()
 
     printTextwithKerning((char*)"Started", textX, textY, textKerning);
     oled.display();
+
+    delay(displayTime);
   }
 }
 
-//Draw a frame at outside edge
-void drawFrame()
-{
-  //Init and draw box at edge to see screen alignment
-  int xMax = 63;
-  int yMax = 47;
-  oled.line(0, 0, xMax, 0); //Top
-  oled.line(0, 0, 0, yMax); //Left
-  oled.line(0, yMax, xMax, yMax); //Bottom
-  oled.line(xMax, 0, xMax, yMax); //Right
-}
-
 //If the SD card is detected but is not formatted correctly, display warning
-void displaySDFail()
+void displaySDFail(uint16_t displayTime)
 {
   if (online.display == true)
   {
@@ -1104,5 +1117,19 @@ void displaySDFail()
 
     printTextwithKerning((char*)"SD Card", textX, textY, textKerning);
     oled.display();
+
+    delay(displayTime);
   }
+}
+
+//Draw a frame at outside edge
+void drawFrame()
+{
+  //Init and draw box at edge to see screen alignment
+  int xMax = 63;
+  int yMax = 47;
+  oled.line(0, 0, xMax, 0); //Top
+  oled.line(0, 0, 0, yMax); //Left
+  oled.line(0, yMax, xMax, yMax); //Bottom
+  oled.line(xMax, 0, xMax, yMax); //Right
 }

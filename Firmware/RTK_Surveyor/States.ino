@@ -14,6 +14,28 @@ void updateSystemState()
     //Move between states as needed
     switch (systemState)
     {
+      case (STATE_ROVER_NOT_STARTED):
+        {
+          //Configure for rover mode
+          displayRoverStart(0);
+
+          //If we are survey'd in, but switch is rover then disable survey
+          if (configureUbloxModuleRover() == false)
+          {
+            Serial.println(F("Rover config failed"));
+            displayRoverFail(1000);
+            return;
+          }
+
+          beginBluetooth(); //Restart Bluetooth with 'Rover' name
+
+          digitalWrite(baseStatusLED, LOW);
+          displayRoverSuccess(500);
+
+          changeState(STATE_ROVER_NO_FIX);
+        }
+        break;
+
       case (STATE_ROVER_NO_FIX):
         {
           if (i2cGNSS.getFixType() == 3) //3D
@@ -23,6 +45,8 @@ void updateSystemState()
 
       case (STATE_ROVER_FIX):
         {
+          updateAccuracyLEDs();
+
           byte rtkType = i2cGNSS.getCarrierSolutionType();
           if (rtkType == 1) //RTK Float
             changeState(STATE_ROVER_RTK_FLOAT);
@@ -33,6 +57,8 @@ void updateSystemState()
 
       case (STATE_ROVER_RTK_FLOAT):
         {
+          updateAccuracyLEDs();
+
           byte rtkType = i2cGNSS.getCarrierSolutionType();
           if (rtkType == 0) //No RTK
             changeState(STATE_ROVER_FIX);
@@ -43,6 +69,8 @@ void updateSystemState()
 
       case (STATE_ROVER_RTK_FIX):
         {
+          updateAccuracyLEDs();
+
           byte rtkType = i2cGNSS.getCarrierSolutionType();
           if (rtkType == 0) //No RTK
             changeState(STATE_ROVER_FIX);
@@ -51,8 +79,42 @@ void updateSystemState()
         }
         break;
 
+      case (STATE_BASE_NOT_STARTED):
+        {
+          //Turn off base LED until we successfully enter temp/fix state
+          digitalWrite(baseStatusLED, LOW);
+          digitalWrite(positionAccuracyLED_1cm, LOW);
+          digitalWrite(positionAccuracyLED_10cm, LOW);
+          digitalWrite(positionAccuracyLED_100cm, LOW);
+
+          displayBaseStart(0); //Show 'Base'
+
+          //Restart Bluetooth with 'Base' name
+          //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
+          beginBluetooth();
+
+          if (configureUbloxModuleBase() == true)
+          {
+            displayBaseSuccess(500); //Show 'Base Started'
+
+            if (settings.fixedBase == false)
+            {
+              changeState(STATE_BASE_TEMP_SETTLE);
+            }
+            else if (settings.fixedBase == true)
+            {
+              changeState(STATE_BASE_FIXED_NOT_STARTED);
+            }
+          }
+          else
+          {
+            displayBaseFail(1000);
+          }
+        }
+        break;
+
       //Wait for horz acc of 5m or less before starting survey in
-      case (STATE_BASE_TEMP_SURVEY_NOT_STARTED):
+      case (STATE_BASE_TEMP_SETTLE):
         {
           //Blink base LED slowly while we wait for first fix
           if (millis() - lastBaseLEDupdate > 1000)
@@ -61,36 +123,23 @@ void updateSystemState()
             digitalWrite(baseStatusLED, !digitalRead(baseStatusLED));
           }
 
-          //Check for <5m horz accuracy
+          //Check for <1m horz accuracy before starting surveyIn
           uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
 
           float f_accuracy = accuracy;
           f_accuracy = f_accuracy / 10000.0; // Convert the horizontal accuracy (mm * 10^-1) to a float
 
+          Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\n", settings.surveyInStartingAccuracy, f_accuracy);
+
           if (f_accuracy > 0.0 && f_accuracy < settings.surveyInStartingAccuracy)
           {
-            displayBaseStart(); //Show 'Base'
-            if (configureUbloxModuleBase() == true)
+            displaySurveyStart(0); //Show 'Survey'
+
+            if (beginSurveyIn() == true) //Begin survey
             {
-              displayBaseSuccess(); //Show 'Base Started'
-              delay(500);
-              displaySurveyStart(); //Show 'Survey'
+              displaySurveyStarted(500); //Show 'Survey Started'
 
-              if (surveyIn() == true) //Begin survey
-              {
-                Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\n", settings.surveyInStartingAccuracy, f_accuracy);
-
-                displaySurveyStarted(); //Show 'Survey Started'
-                delay(500);
-
-                changeState(STATE_BASE_TEMP_SURVEY_STARTED);
-              }
-            }
-            else
-            {
-              Serial.println(F("Base config failed!"));
-              displayBaseFail();
-              delay(1000);
+              changeState(STATE_BASE_TEMP_SURVEY_STARTED);
             }
           }
         }
@@ -106,7 +155,7 @@ void updateSystemState()
             digitalWrite(baseStatusLED, !digitalRead(baseStatusLED));
           }
 
-          if (i2cGNSS.getFixType() == 5) //We have a TIME fix which is survey in complete
+          if (i2cGNSS.getSurveyInValid() == true) //Survey in complete
           {
             Serial.println(F("Base survey complete! RTCM now broadcasting."));
             digitalWrite(baseStatusLED, HIGH); //Indicate survey complete
@@ -130,24 +179,7 @@ void updateSystemState()
 
               resetSurvey();
 
-              displayRoverStart();
-
-              //Configure for rover mode
-              Serial.println(F("Rover Mode"));
-
-              //If we are survey'd in, but switch is rover then disable survey
-              if (configureUbloxModuleRover() == false)
-              {
-                Serial.println(F("Rover config failed!"));
-                displayRoverFail();
-                return;
-              }
-
-              beginBluetooth(); //Restart Bluetooth with 'Rover' name
-
-              digitalWrite(baseStatusLED, LOW); //Indicate rover mode
-              changeState(STATE_ROVER_NO_FIX);
-              displayRoverSuccess();
+              changeState(STATE_ROVER_NOT_STARTED);
             }
           }
         }
@@ -283,6 +315,27 @@ void updateSystemState()
           {
             Serial.println(F("Caster no longer connected. Reconnecting..."));
             changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to 2 earlier states to try to reconnect
+          }
+        }
+        break;
+
+      //User has set switch to base with fixed option enabled. Let's configure and try to get there.
+      //If fixed base fails, we'll handle it here
+      case (STATE_BASE_FIXED_NOT_STARTED):
+        {
+          bool response = startFixedBase();
+          if (response == true)
+          {
+            digitalWrite(baseStatusLED, HIGH); //Turn on base LED
+
+            changeState(STATE_BASE_FIXED_TRANSMITTING);
+          }
+          else
+          {
+            Serial.println(F("Fixed base start failed"));
+            displayBaseFail(1000);
+
+            changeState(STATE_ROVER_NOT_STARTED); //Return to rover mode to avoid being in fixed base mode
           }
         }
         break;
@@ -436,6 +489,9 @@ void changeState(SystemState newState)
   //Debug print
   switch (systemState)
   {
+    case (STATE_ROVER_NOT_STARTED):
+      Serial.println(F("State: Rover - Not Started"));
+      break;
     case (STATE_ROVER_NO_FIX):
       Serial.println(F("State: Rover - No Fix"));
       break;
@@ -448,8 +504,11 @@ void changeState(SystemState newState)
     case (STATE_ROVER_RTK_FIX):
       Serial.println(F("State: Rover - RTK Fix"));
       break;
-    case (STATE_BASE_TEMP_SURVEY_NOT_STARTED):
-      Serial.println(F("State: Base-Temp - Survey Not Started"));
+    case (STATE_BASE_NOT_STARTED):
+      Serial.println(F("State: Base - Not Started"));
+      break;
+    case (STATE_BASE_TEMP_SETTLE):
+      Serial.println(F("State: Base-Temp - Settle"));
       break;
     case (STATE_BASE_TEMP_SURVEY_STARTED):
       Serial.println(F("State: Base-Temp - Survey Started"));
@@ -468,6 +527,9 @@ void changeState(SystemState newState)
       break;
     case (STATE_BASE_TEMP_CASTER_CONNECTED):
       Serial.println(F("State: Base-Temp - Caster Connected"));
+      break;
+    case (STATE_BASE_FIXED_NOT_STARTED):
+      Serial.println(F("State: Base-Fixed - Not Started"));
       break;
     case (STATE_BASE_FIXED_TRANSMITTING):
       Serial.println(F("State: Base-Fixed - Transmitting"));

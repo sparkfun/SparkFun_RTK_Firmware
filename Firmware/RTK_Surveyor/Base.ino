@@ -11,6 +11,13 @@ bool configureUbloxModuleBase()
 
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
+  if (i2cGNSS.getSurveyInActive() == true)
+  {
+    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+    if (response == false)
+      Serial.println(F("Disable Survey failed"));
+  }
+
   //In base mode we force 1Hz
   if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
     response &= i2cGNSS.setNavigationFrequency(1, maxWait);
@@ -52,7 +59,7 @@ bool configureUbloxModuleBase()
 
 //Start survey
 //The ZED-F9P is slightly different than the NEO-M8P. See the Integration manual 3.5.8 for more info.
-bool surveyIn()
+bool beginSurveyIn()
 {
   bool needSurveyReset = false;
   if (i2cGNSS.getSurveyInActive() == true) needSurveyReset = true;
@@ -103,6 +110,7 @@ bool resetSurvey()
 bool startFixedBase()
 {
   bool response = false;
+  int maxWait = 2000;
 
   if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
   {
@@ -123,7 +131,8 @@ bool startFixedBase()
     //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
     response = i2cGNSS.setStaticPosition(majorEcefX, minorEcefX,
                                          majorEcefY, minorEcefY,
-                                         majorEcefZ, minorEcefZ
+                                         majorEcefZ, minorEcefZ,
+                                         maxWait
                                         ); //With high precision 0.1mm parts
   }
   else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEOGRAPHIC)
@@ -153,12 +162,8 @@ bool startFixedBase()
                  majorLat, minorLat,
                  majorLong, minorLong,
                  majorAlt, minorAlt,
-                 true);
-  }
-
-  if (response == true)
-  {
-    Serial.println(F("Static Base Started Successfully"));
+                 true, //Use lat/long as input
+                 maxWait);
   }
 
   return (response);

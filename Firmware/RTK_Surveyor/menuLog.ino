@@ -129,8 +129,27 @@ void menuLog()
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 
   //Based on current settings, update the logging options within the GNSS library
-  i2cGNSS.logRXMRAWX(settings.log.rawx);
-  i2cGNSS.logRXMSFRBX(settings.log.sfrbx);
+  if(settings.log.rawx == true)
+  {
+    i2cGNSS.setAutoRXMRAWX(true, false); // Enable automatic RXM RAWX messages: without callback; without implicit update
+    i2cGNSS.logRXMRAWX(true);
+  }
+  else
+  {
+    i2cGNSS.setAutoRXMRAWX(false); // Disable automatic RXM RAWX messages
+    i2cGNSS.logRXMRAWX(false);
+  }
+  
+  if(settings.log.sfrbx == true)
+  {
+    i2cGNSS.setAutoRXMSFRBX(true, false); // Enable automatic RXM SFRBX messages: without callback; without implicit update
+    i2cGNSS.logRXMSFRBX(true);
+  }
+  else
+  {
+    i2cGNSS.setAutoRXMSFRBX(false); // Disable automatic RXM SFRBX messages
+    i2cGNSS.logRXMSFRBX(false);
+  }
 
   if (logNMEAMessages() == true)
     i2cGNSS.setNMEALoggingMask(SFE_UBLOX_FILTER_NMEA_ALL); // Enable logging of all enabled NMEA messages

@@ -45,12 +45,9 @@ bool configureUbloxModule()
   if (response == false)
     Serial.println(F("Set rate failed"));
 
-  if (i2cGNSS.getSurveyInActive() == true || i2cGNSS.getSurveyInValid() == true)
-  {
-    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-    if (response == false)
-      Serial.println(F("Disable Survey failed"));
-  }
+  response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+  if (response == false)
+    Serial.println(F("Disable Survey failed"));
 
 #define OUTPUT_SETTING 14
 #define INPUT_SETTING 12

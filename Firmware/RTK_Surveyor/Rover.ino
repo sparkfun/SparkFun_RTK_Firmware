@@ -5,12 +5,9 @@ bool configureUbloxModuleRover()
   bool response = true;
   int maxWait = 2000;
 
-  if (i2cGNSS.getSurveyInActive() == true || i2cGNSS.getSurveyInValid() == true)
-  {
-    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-    if (response == false)
-      Serial.println(F("Disable Survey failed"));
-  }
+  response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+  if (response == false)
+    Serial.println(F("Disable Survey failed"));
 
   // Set dynamic model
   if (i2cGNSS.getDynamicModel(maxWait) != DYN_MODEL_PORTABLE)

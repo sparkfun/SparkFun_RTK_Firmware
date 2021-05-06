@@ -32,7 +32,7 @@ void menuGNSS()
     {
       Serial.print(F("Enter GNSS measurement rate in Hz: "));
       double rate = getDouble(menuTimeout); //Timeout after x seconds
-      if (rate < 0.0 || rate > 10.0) //Arbitrary 10Hz limit. We need to limit based on enabled constellations.
+      if (rate < 0.0 || rate > 20.0) //20Hz limit with all constellations enabled.
       {
         Serial.println(F("Error: measurement rate out of range"));
       }
@@ -122,7 +122,7 @@ void setMeasurementRates(float secondsBetweenSolutions)
   navRate = secondsBetweenSolutions * 1000.0 / measRate; //Set navRate to nearest int value
   measRate = secondsBetweenSolutions * 1000.0 / navRate; //Adjust measurement rate to match actual navRate
 
-  //Serial.printf("measurementRate / navRate: %d / %d\n", measRate, navRate);
+  //Serial.printf("measurementRate / navRate: %d / %d\n\r", measRate, navRate);
 
   //If we successfully set rates, only then record to settings
   if (i2cGNSS.setMeasurementRate(measRate) == true && i2cGNSS.setNavigationRate(navRate) == true)
@@ -147,7 +147,7 @@ float getMeasurementFrequency()
   //The ZED-F9P will report an incorrect nav rate if we have rececently changed it.
   //Reading a second time insures a correct read.
 
-  //Serial.printf("currentMeasurementRate / currentNavigationRate: %d / %d\n", currentMeasurementRate, currentNavigationRate);
+  //Serial.printf("currentMeasurementRate / currentNavigationRate: %d / %d\n\r", currentMeasurementRate, currentNavigationRate);
 
   float measurementFrequency = (1000.0 / currentMeasurementRate) / currentNavigationRate;
   return (measurementFrequency);

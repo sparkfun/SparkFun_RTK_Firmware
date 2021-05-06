@@ -176,28 +176,24 @@ void updateAccuracyLEDs()
 
       if (f_accuracy <= 0.02)
       {
-        Serial.print(F(" 0.01m LED"));
         digitalWrite(positionAccuracyLED_1cm, HIGH);
         digitalWrite(positionAccuracyLED_10cm, HIGH);
         digitalWrite(positionAccuracyLED_100cm, HIGH);
       }
       else if (f_accuracy <= 0.100)
       {
-        Serial.print(F(" 0.1m LED"));
         digitalWrite(positionAccuracyLED_1cm, LOW);
         digitalWrite(positionAccuracyLED_10cm, HIGH);
         digitalWrite(positionAccuracyLED_100cm, HIGH);
       }
       else if (f_accuracy <= 1.0000)
       {
-        Serial.print(F(" 1m LED"));
         digitalWrite(positionAccuracyLED_1cm, LOW);
         digitalWrite(positionAccuracyLED_10cm, LOW);
         digitalWrite(positionAccuracyLED_100cm, HIGH);
       }
       else if (f_accuracy > 1.0)
       {
-        Serial.print(F(" No LEDs"));
         digitalWrite(positionAccuracyLED_1cm, LOW);
         digitalWrite(positionAccuracyLED_10cm, LOW);
         digitalWrite(positionAccuracyLED_100cm, LOW);

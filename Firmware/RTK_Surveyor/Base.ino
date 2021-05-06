@@ -84,7 +84,7 @@ bool beginSurveyIn()
     return (false);
   }
 
-  Serial.printf("Survey started. This will run until %d seconds have passed and less than %0.03f meter accuracy is achieved.\n",
+  Serial.printf("Survey started. This will run until %d seconds have passed and less than %0.03f meter accuracy is achieved.\n\r",
                 settings.observationSeconds,
                 settings.observationPositionAccuracy
                );
@@ -123,9 +123,9 @@ bool startFixedBase()
     long majorEcefZ = settings.fixedEcefZ * 100;
     long minorEcefZ = ((settings.fixedEcefZ * 100.0) - majorEcefZ) * 100.0;
 
-    //    Serial.printf("fixedEcefY (should be -4716808.5807): %0.04f\n", settings.fixedEcefY);
-    //    Serial.printf("major (should be -471680858): %d\n", majorEcefY);
-    //    Serial.printf("minor (should be -7): %d\n", minorEcefY);
+    //    Serial.printf("fixedEcefY (should be -4716808.5807): %0.04f\n\r", settings.fixedEcefY);
+    //    Serial.printf("major (should be -471680858): %d\n\r", majorEcefY);
+    //    Serial.printf("minor (should be -7): %d\n\r", minorEcefY);
 
     //Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
     //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
@@ -146,17 +146,17 @@ bool startFixedBase()
     int32_t majorAlt = settings.fixedAltitude * 100;
     int32_t minorAlt = ((settings.fixedAltitude * 100) - majorAlt) * 100;
 
-    //    Serial.printf("fixedLong (should be -105.184774720): %0.09f\n", settings.fixedLong);
-    //    Serial.printf("major (should be -1051847747): %lld\n", majorLat);
-    //    Serial.printf("minor (should be -20): %lld\n", minorLat);
+    //    Serial.printf("fixedLong (should be -105.184774720): %0.09f\n\r", settings.fixedLong);
+    //    Serial.printf("major (should be -1051847747): %lld\n\r", majorLat);
+    //    Serial.printf("minor (should be -20): %lld\n\r", minorLat);
     //
-    //    Serial.printf("fixedLat (should be 40.090335429): %0.09f\n", settings.fixedLat);
-    //    Serial.printf("major (should be 400903354): %lld\n", majorLong);
-    //    Serial.printf("minor (should be 29): %lld\n", minorLong);
+    //    Serial.printf("fixedLat (should be 40.090335429): %0.09f\n\r", settings.fixedLat);
+    //    Serial.printf("major (should be 400903354): %lld\n\r", majorLong);
+    //    Serial.printf("minor (should be 29): %lld\n\r", minorLong);
     //
-    //    Serial.printf("fixedAlt (should be 1560.2284): %0.04f\n", settings.fixedAltitude);
-    //    Serial.printf("major (should be 156022): %ld\n", majorAlt);
-    //    Serial.printf("minor (should be 84): %ld\n", minorAlt);
+    //    Serial.printf("fixedAlt (should be 1560.2284): %0.04f\n\r", settings.fixedAltitude);
+    //    Serial.printf("major (should be 156022): %ld\n\r", majorAlt);
+    //    Serial.printf("minor (should be 84): %ld\n\r", minorAlt);
 
     response = i2cGNSS.setStaticPosition(
                  majorLat, minorLat,

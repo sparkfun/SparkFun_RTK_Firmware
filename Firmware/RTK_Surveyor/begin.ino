@@ -25,7 +25,7 @@ void beginSD()
       int maxTries = 2;
       for ( ; tries < maxTries ; tries++)
       {
-        Serial.printf("SD init failed. Trying again %d out of %d\n", tries + 1, maxTries);
+        Serial.printf("SD init failed. Trying again %d out of %d\n\r", tries + 1, maxTries);
 
         delay(250); //Give SD more time to power up, then try again
         if (sd.begin(SD_CONFIG) == true) break;

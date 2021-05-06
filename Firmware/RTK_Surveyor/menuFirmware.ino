@@ -20,7 +20,7 @@ void menuFirmware()
 
     for (int x = 0 ; x < binCount ; x++)
     {
-      Serial.printf("%d) Load %s\n", x + 1, binFileNames[x]);
+      Serial.printf("%d) Load %s\n\r", x + 1, binFileNames[x]);
     }
 
     Serial.println(F("x) Exit"));
@@ -38,7 +38,7 @@ void menuFirmware()
     else if (incoming == STATUS_GETNUMBER_TIMEOUT)
       break;
     else
-      Serial.printf("Bad value: %d\n", incoming);
+      Serial.printf("Bad value: %d\n\r", incoming);
   }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
@@ -83,7 +83,7 @@ void scanForFirmware()
               strcpy(binFileNames[binCount++], fname); //Add this to the array
             }
             else
-              Serial.printf("Unknown: %s\n", fname);
+              Serial.printf("Unknown: %s\n\r", fname);
           }
         }
         tempFile.close();
@@ -102,7 +102,7 @@ void updateFromSD(char *firmwareFileName)
   //Wait a long time, this is important
   if (xSemaphoreTake(xFATSemaphore, 10000) == pdPASS)
   {
-    Serial.printf("Loading %s\n", firmwareFileName);
+    Serial.printf("Loading %s\n\r", firmwareFileName);
     if (sd.exists(firmwareFileName))
     {
       SdFile firmwareFile;

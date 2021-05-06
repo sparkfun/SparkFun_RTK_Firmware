@@ -49,10 +49,10 @@ void menuTest()
     {
       if (settings.enableSD && online.microSD)
       {
-        Serial.println(F("Files found (date time size name):\n"));
+        Serial.println(F("Files found (date time size name):\n\r"));
         sd.ls(LS_R | LS_DATE | LS_SIZE);
 
-        //        Serial.println(F("Files found (name size):\n"));
+        //        Serial.println(F("Files found (name size):\n\r"));
         //        File root = SD.open("/"); //Open root
         //        File file = root.openNextFile();
         //        while (file) {

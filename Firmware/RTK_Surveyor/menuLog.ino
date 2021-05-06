@@ -212,7 +212,7 @@ void beginLogging()
         // O_WRITE - open for write
         if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
         {
-          Serial.printf("Failed to create GNSS UBX data file: %s\n", fileName);
+          Serial.printf("Failed to create GNSS UBX data file: %s\n\r", fileName);
           delay(1000);
           online.logging = false;
           xSemaphoreGive(xFATSemaphore);
@@ -232,7 +232,7 @@ void beginLogging()
         return;
       }
 
-      Serial.printf("Log file created: %s\n", fileName);
+      Serial.printf("Log file created: %s\n\r", fileName);
       online.logging = true;
     }
     else

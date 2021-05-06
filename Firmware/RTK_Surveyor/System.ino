@@ -560,7 +560,7 @@ void checkBatteryLevels()
     ledcWrite(ledGreenChannel, 0);
   }
 
-  Serial.printf("%s\n", tempStr);
+  Serial.printf("%s\n\r", tempStr);
 }
 
 //Ping an I2C device and see if it responds

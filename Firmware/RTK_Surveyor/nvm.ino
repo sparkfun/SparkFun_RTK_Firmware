@@ -49,7 +49,7 @@ void recordSystemSettings()
   {
     while (1) //Hard freeze
     {
-      Serial.printf("Size of settings is %d bytes\n", sizeof(settings));
+      Serial.printf("Size of settings is %d bytes\n\r", sizeof(settings));
       Serial.println(F("Increase the EEPROM footprint!"));
       delay(1000);
     }

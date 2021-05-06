@@ -135,7 +135,7 @@ SFE_UBLOX_GNSS i2cGNSS;
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 
-#define gnssFileBufferSize 16384 // Allocate 16KBytes of RAM for UBX message storage
+#define gnssFileBufferSize 32768 // Allocate 16KBytes of RAM for UBX message storage
 
 TaskHandle_t F9PI2CTaskHandle = NULL; //Task for regularly checking I2C
 const int i2cTaskStackSize = 2000;
@@ -280,14 +280,11 @@ void setup()
   beginFuelGauge(); //Configure battery fuel guage monitor
   checkBatteryLevels(); //Force display so you see battery level immediately at power on
 
-  beginBluetooth(); //Get MAC, start radio
-
   beginGNSS(); //Connect and configure ZED-F9P
 
   Serial.flush(); //Complete any previous prints
 
   danceLEDs(); //Turn on LEDs like a car dashboard
-
 }
 
 void loop()

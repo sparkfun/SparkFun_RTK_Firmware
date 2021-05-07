@@ -7,7 +7,7 @@ bool startBluetooth()
   esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
   unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
-  if (digitalRead(baseSwitch) == HIGH)
+  if (digitalRead(pin_baseSwitch) == HIGH)
     sprintf(deviceName, "Surveyor Rover-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Rover mode
   else
     sprintf(deviceName, "Surveyor Base-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Base mode
@@ -16,7 +16,7 @@ bool startBluetooth()
   {
     Serial.println(F("An error occurred initializing Bluetooth"));
     radioState = RADIO_OFF;
-    digitalWrite(bluetoothStatusLED, LOW);
+    digitalWrite(pin_bluetoothStatusLED, LOW);
     return (false);
   }
 
@@ -47,7 +47,7 @@ bool startBluetooth()
   Serial.println(deviceName);
 
   radioState = BT_ON_NOCONNECTION;
-  digitalWrite(bluetoothStatusLED, HIGH);
+  digitalWrite(pin_bluetoothStatusLED, HIGH);
 
   //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
   if (F9PSerialReadTaskHandle == NULL)
@@ -544,17 +544,17 @@ void blinkError(t_errorNumber errorNumber)
   {
     for (int x = 0 ; x < errorNumber ; x++)
     {
-      digitalWrite(positionAccuracyLED_1cm, HIGH);
-      digitalWrite(positionAccuracyLED_10cm, HIGH);
-      digitalWrite(positionAccuracyLED_100cm, HIGH);
-      digitalWrite(baseStatusLED, HIGH);
-      digitalWrite(bluetoothStatusLED, HIGH);
+      digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+      digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+      digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+      digitalWrite(pin_baseStatusLED, HIGH);
+      digitalWrite(pin_bluetoothStatusLED, HIGH);
       delay(200);
-      digitalWrite(positionAccuracyLED_1cm, LOW);
-      digitalWrite(positionAccuracyLED_10cm, LOW);
-      digitalWrite(positionAccuracyLED_100cm, LOW);
-      digitalWrite(baseStatusLED, LOW);
-      digitalWrite(bluetoothStatusLED, LOW);
+      digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+      digitalWrite(pin_baseStatusLED, LOW);
+      digitalWrite(pin_bluetoothStatusLED, LOW);
       delay(200);
     }
 
@@ -565,39 +565,42 @@ void blinkError(t_errorNumber errorNumber)
 //Turn on indicator LEDs to verify LED function and indicate setup sucess
 void danceLEDs()
 {
-  for (int x = 0 ; x < 2 ; x++)
+  if (productVariant == RTK_SURVEYOR)
   {
-    digitalWrite(positionAccuracyLED_1cm, HIGH);
-    digitalWrite(positionAccuracyLED_10cm, HIGH);
-    digitalWrite(positionAccuracyLED_100cm, HIGH);
-    digitalWrite(baseStatusLED, HIGH);
-    digitalWrite(bluetoothStatusLED, HIGH);
-    delay(100);
-    digitalWrite(positionAccuracyLED_1cm, LOW);
-    digitalWrite(positionAccuracyLED_10cm, LOW);
-    digitalWrite(positionAccuracyLED_100cm, LOW);
-    digitalWrite(baseStatusLED, LOW);
-    digitalWrite(bluetoothStatusLED, LOW);
-    delay(100);
+    for (int x = 0 ; x < 2 ; x++)
+    {
+      digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+      digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+      digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+      digitalWrite(pin_baseStatusLED, HIGH);
+      digitalWrite(pin_bluetoothStatusLED, HIGH);
+      delay(100);
+      digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+      digitalWrite(pin_baseStatusLED, LOW);
+      digitalWrite(pin_bluetoothStatusLED, LOW);
+      delay(100);
+    }
+
+    digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+    digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+    digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+    digitalWrite(pin_baseStatusLED, HIGH);
+    digitalWrite(pin_bluetoothStatusLED, HIGH);
+
+    delay(250);
+    digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+    delay(250);
+    digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+    delay(250);
+    digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+
+    delay(250);
+    digitalWrite(pin_baseStatusLED, LOW);
+    delay(250);
+    digitalWrite(pin_bluetoothStatusLED, LOW);
   }
-
-  digitalWrite(positionAccuracyLED_1cm, HIGH);
-  digitalWrite(positionAccuracyLED_10cm, HIGH);
-  digitalWrite(positionAccuracyLED_100cm, HIGH);
-  digitalWrite(baseStatusLED, HIGH);
-  digitalWrite(bluetoothStatusLED, HIGH);
-
-  delay(250);
-  digitalWrite(positionAccuracyLED_1cm, LOW);
-  delay(250);
-  digitalWrite(positionAccuracyLED_10cm, LOW);
-  delay(250);
-  digitalWrite(positionAccuracyLED_100cm, LOW);
-
-  delay(250);
-  digitalWrite(baseStatusLED, LOW);
-  delay(250);
-  digitalWrite(bluetoothStatusLED, LOW);
 }
 
 //Get the confirmed current date
@@ -622,13 +625,13 @@ void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
     Serial.println(F("Client Connected"));
     radioState = BT_CONNECTED;
-    digitalWrite(bluetoothStatusLED, HIGH);
+    digitalWrite(pin_bluetoothStatusLED, HIGH);
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
     Serial.println(F("Client disconnected"));
     radioState = BT_ON_NOCONNECTION;
-    digitalWrite(bluetoothStatusLED, LOW);
+    digitalWrite(pin_bluetoothStatusLED, LOW);
   }
 }
 
@@ -661,31 +664,39 @@ void checkBatteryLevels()
   Serial.printf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
   if (battLevel < 10)
-  {
-    sprintf(tempStr, "RED uh oh!");
-    ledcWrite(ledRedChannel, 255);
-    ledcWrite(ledGreenChannel, 0);
-  }
+    sprintf(tempStr, "Red");
   else if (battLevel < 50)
-  {
-    sprintf(tempStr, "Yellow ok");
-    ledcWrite(ledRedChannel, 128);
-    ledcWrite(ledGreenChannel, 128);
-  }
+    sprintf(tempStr, "Yellow");
   else if (battLevel >= 50)
-  {
-    sprintf(tempStr, "Green all good");
-    ledcWrite(ledRedChannel, 0);
-    ledcWrite(ledGreenChannel, 255);
-  }
+    sprintf(tempStr, "Green");
   else
-  {
     sprintf(tempStr, "No batt");
-    ledcWrite(ledRedChannel, 10);
-    ledcWrite(ledGreenChannel, 0);
-  }
 
   Serial.printf("%s\n\r", tempStr);
+
+  if (productVariant == RTK_SURVEYOR)
+  {
+    if (battLevel < 10)
+    {
+      ledcWrite(ledRedChannel, 255);
+      ledcWrite(ledGreenChannel, 0);
+    }
+    else if (battLevel < 50)
+    {
+      ledcWrite(ledRedChannel, 128);
+      ledcWrite(ledGreenChannel, 128);
+    }
+    else if (battLevel >= 50)
+    {
+      ledcWrite(ledRedChannel, 0);
+      ledcWrite(ledGreenChannel, 255);
+    }
+    else
+    {
+      ledcWrite(ledRedChannel, 10);
+      ledcWrite(ledGreenChannel, 0);
+    }
+  }
 }
 
 //Ping an I2C device and see if it responds
@@ -773,23 +784,23 @@ void cyclePositionLEDs()
   if (millis() - lastCasterLEDupdate > 500)
   {
     lastCasterLEDupdate = millis();
-    if (digitalRead(positionAccuracyLED_100cm) == HIGH)
+    if (digitalRead(pin_positionAccuracyLED_100cm) == HIGH)
     {
-      digitalWrite(positionAccuracyLED_1cm, LOW);
-      digitalWrite(positionAccuracyLED_10cm, HIGH);
-      digitalWrite(positionAccuracyLED_100cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+      digitalWrite(pin_positionAccuracyLED_100cm, LOW);
     }
-    else if (digitalRead(positionAccuracyLED_10cm) == HIGH)
+    else if (digitalRead(pin_positionAccuracyLED_10cm) == HIGH)
     {
-      digitalWrite(positionAccuracyLED_1cm, HIGH);
-      digitalWrite(positionAccuracyLED_10cm, LOW);
-      digitalWrite(positionAccuracyLED_100cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+      digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_100cm, LOW);
     }
     else //Catch all
     {
-      digitalWrite(positionAccuracyLED_1cm, LOW);
-      digitalWrite(positionAccuracyLED_10cm, LOW);
-      digitalWrite(positionAccuracyLED_100cm, HIGH);
+      digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
     }
   }
 }

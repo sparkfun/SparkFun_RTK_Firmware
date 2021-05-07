@@ -55,18 +55,27 @@ const int FIRMWARE_VERSION_MINOR = 3;
 
 //Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-const int positionAccuracyLED_1cm = 2;
-const int baseStatusLED = 4;
-const int baseSwitch = 5;
-const int bluetoothStatusLED = 12;
-const int positionAccuracyLED_100cm = 13;
-const int positionAccuracyLED_10cm = 15;
-const int PIN_MICROSD_CHIP_SELECT = 25;
-const int zed_tx_ready = 26;
-const int zed_reset = 27;
-const int batteryLevelLED_Red = 32;
-const int batteryLevelLED_Green = 33;
-const int batteryLevel_alert = 36;
+//These pins are set in beginBoard()
+int pin_batteryLevelLED_Red;
+int pin_batteryLevelLED_Green;
+int pin_positionAccuracyLED_1cm;
+int pin_positionAccuracyLED_10cm;
+int pin_positionAccuracyLED_100cm;
+int pin_baseStatusLED;
+int pin_bluetoothStatusLED;
+int pin_baseSwitch;
+int pin_microSD_CS;
+int pin_zed_tx_ready;
+int pin_zed_reset;
+int pin_batteryLevel_alert;
+
+int pin_muxA;
+int pin_muxB;
+int pin_powerSenseAndControl;
+int pin_setupButton;
+int pin_powerFastOff;
+int pin_dac26;
+int pin_adc39;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //I2C for GNSS, battery gauge, display, accelerometer
@@ -93,7 +102,7 @@ ESP32Time rtc;
 
 SdFat sd;
 SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we can set the SPI freq in beginSD()
-#define SD_CONFIG SdSpiConfig(PIN_MICROSD_CHIP_SELECT, DEDICATED_SPI, SD_SCK_MHZ(36), &spi)
+#define SD_CONFIG SdSpiConfig(pin_microSD_CS, DEDICATED_SPI, SD_SCK_MHZ(36), &spi)
 
 char settingsFileName[40] = "SFE_Surveyor_Settings.txt"; //File to read/write system settings to
 
@@ -222,6 +231,8 @@ char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-B
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
+uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
+uint8_t debounceDelay = 20; //ms to delay between button reads
 
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
@@ -261,6 +272,8 @@ void setup()
   Wire.begin(); //Start I2C on core 1
   Wire.setClock(400000);
 
+  identifyBoard(); //Determine what hardware platform we are running on
+
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
   beginLEDs(); //LED and PWM setup
@@ -297,7 +310,7 @@ void loop()
 {
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  checkSetupButton(); //Change system state as needed
+  checkButtons(); //Change system state as needed
 
   updateSystemState();
 
@@ -359,12 +372,12 @@ void updateLogs()
           if (millis() - lastUBXLogSyncTime > 1000)
           {
             lastUBXLogSyncTime = millis();
-            digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
+            digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
             long startWriteTime = millis();
             ubxFile.sync();
             long stopWriteTime = millis();
             totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
-            digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
+            digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
 
             updateDataFileAccess(&ubxFile); // Update the file access time & date
           }

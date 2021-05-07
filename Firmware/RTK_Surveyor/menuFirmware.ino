@@ -139,7 +139,7 @@ void updateFromSD(char *firmwareFileName)
       //Bulk write from the SD file to the EEPROM
       while (firmwareFile.available())
       {
-        digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Toggle LED to indcate activity
+        digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Toggle LED to indcate activity
 
         int bytesToWrite = pageSize; //Max number of bytes to read
         if (firmwareFile.available() < bytesToWrite) bytesToWrite = firmwareFile.available(); //Trim this read size as needed

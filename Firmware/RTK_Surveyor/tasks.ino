@@ -77,9 +77,9 @@ void startUART2Task( void *pvParameters )
 void updateBTled()
 {
   if (radioState == BT_ON_NOCONNECTION)
-    digitalWrite(bluetoothStatusLED, !digitalRead(bluetoothStatusLED));
+    digitalWrite(pin_bluetoothStatusLED, !digitalRead(pin_bluetoothStatusLED));
   else if (radioState == BT_CONNECTED)
-    digitalWrite(bluetoothStatusLED, HIGH);
+    digitalWrite(pin_bluetoothStatusLED, HIGH);
   else
-    digitalWrite(bluetoothStatusLED, LOW);
+    digitalWrite(pin_bluetoothStatusLED, LOW);
 }

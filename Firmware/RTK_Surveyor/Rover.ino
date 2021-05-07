@@ -173,27 +173,27 @@ void updateAccuracyLEDs()
 
       if (f_accuracy <= 0.02)
       {
-        digitalWrite(positionAccuracyLED_1cm, HIGH);
-        digitalWrite(positionAccuracyLED_10cm, HIGH);
-        digitalWrite(positionAccuracyLED_100cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
       }
       else if (f_accuracy <= 0.100)
       {
-        digitalWrite(positionAccuracyLED_1cm, LOW);
-        digitalWrite(positionAccuracyLED_10cm, HIGH);
-        digitalWrite(positionAccuracyLED_100cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
       }
       else if (f_accuracy <= 1.0000)
       {
-        digitalWrite(positionAccuracyLED_1cm, LOW);
-        digitalWrite(positionAccuracyLED_10cm, LOW);
-        digitalWrite(positionAccuracyLED_100cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
       }
       else if (f_accuracy > 1.0)
       {
-        digitalWrite(positionAccuracyLED_1cm, LOW);
-        digitalWrite(positionAccuracyLED_10cm, LOW);
-        digitalWrite(positionAccuracyLED_100cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_100cm, LOW);
       }
       Serial.println();
     }

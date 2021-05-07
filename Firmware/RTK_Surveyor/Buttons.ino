@@ -68,27 +68,38 @@ void checkButtons()
       delay(debounceDelay); //Debounce
       if (digitalRead(pin_setupButton) == LOW || setupByPowerButton == true)
       {
-        //Check to see if user is pressing both buttons simultaneously - show test screen
-        if (digitalRead(pin_powerSenseAndControl) == LOW)
+        //User is pressing button
+        if (setupButtonState == BUTTON_RELEASED)
         {
-          displayTest();
-          return;
-        }
+          setupButtonState = BUTTON_PRESSED;
 
-        setupByPowerButton = false;
+          //Check to see if user is pressing both buttons simultaneously - show test screen
+          if (digitalRead(pin_powerSenseAndControl) == LOW)
+          {
+            displayTest();
+            return;
+          }
 
-        if (buttonPreviousState == BUTTON_ROVER)
-        {
-          buttonPreviousState = BUTTON_BASE;
-          changeState(STATE_BASE_NOT_STARTED);
-        }
-        else if (buttonPreviousState == BUTTON_BASE)
-        {
-          buttonPreviousState = BUTTON_ROVER;
-          changeState(STATE_ROVER_NOT_STARTED);
-        }
+          setupByPowerButton = false;
 
-      }
+          //Toggle between Rover and Base system states
+          if (buttonPreviousState == BUTTON_ROVER)
+          {
+            buttonPreviousState = BUTTON_BASE;
+            changeState(STATE_BASE_NOT_STARTED);
+          }
+          else if (buttonPreviousState == BUTTON_BASE)
+          {
+            buttonPreviousState = BUTTON_ROVER;
+            changeState(STATE_ROVER_NOT_STARTED);
+          }
+        } //End button state check
+      } //End debounce button check
+    } //End first button check
+    else if (digitalRead(pin_setupButton) == HIGH && setupButtonState == BUTTON_PRESSED)
+    {
+      //Return to unpressed state
+      setupButtonState = BUTTON_RELEASED;
     }
     //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   }//end productVariant = Express
@@ -118,14 +129,14 @@ void powerOnCheck()
 //then don't display a shutdown screen
 void powerDown(bool displayInfo)
 {
-  if(online.logging == true)
+  if (online.logging == true)
   {
     //Close down file system
     ubxFile.sync();
     ubxFile.close();
     online.logging = false;
   }
-  
+
   if (displayInfo == true)
   {
     displayShutdown();

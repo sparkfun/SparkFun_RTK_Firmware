@@ -34,8 +34,11 @@ typedef enum
 {
   BUTTON_ROVER = 0,
   BUTTON_BASE,
+  BUTTON_PRESSED,
+  BUTTON_RELEASED,
 } ButtonState;
 ButtonState buttonPreviousState = BUTTON_ROVER;
+ButtonState setupButtonState = BUTTON_RELEASED; //RTK Express Setup Button
 
 //Data port mux (RTK Express) can enter one of four different connections
 typedef enum muxConnectionType_e

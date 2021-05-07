@@ -764,3 +764,32 @@ void reportHeap()
     }
   }
 }
+
+//Based on current LED state, blink upwards fashion
+//Used to indicate casting
+void cyclePositionLEDs()
+{
+  //Cycle position LEDs to indicate casting
+  if (millis() - lastCasterLEDupdate > 500)
+  {
+    lastCasterLEDupdate = millis();
+    if (digitalRead(positionAccuracyLED_100cm) == HIGH)
+    {
+      digitalWrite(positionAccuracyLED_1cm, LOW);
+      digitalWrite(positionAccuracyLED_10cm, HIGH);
+      digitalWrite(positionAccuracyLED_100cm, LOW);
+    }
+    else if (digitalRead(positionAccuracyLED_10cm) == HIGH)
+    {
+      digitalWrite(positionAccuracyLED_1cm, HIGH);
+      digitalWrite(positionAccuracyLED_10cm, LOW);
+      digitalWrite(positionAccuracyLED_100cm, LOW);
+    }
+    else //Catch all
+    {
+      digitalWrite(positionAccuracyLED_1cm, LOW);
+      digitalWrite(positionAccuracyLED_10cm, LOW);
+      digitalWrite(positionAccuracyLED_100cm, HIGH);
+    }
+  }
+}

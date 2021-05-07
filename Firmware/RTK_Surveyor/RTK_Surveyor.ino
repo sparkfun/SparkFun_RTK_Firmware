@@ -37,7 +37,6 @@
     Enable various debug outputs sent over BT
 
     TODO
-      Indicate successful casting
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -233,6 +232,7 @@ uint32_t lastBaseLEDupdate = 0; //Controls the blinking of the Base LED
 uint32_t lastFileReport = 0; //When logging, print file record stats every few seconds
 long lastStackReport = 0; //Controls the report rate of stack highwater mark within a task
 uint32_t lastHeapReport = 0;
+uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
 
 uint32_t lastSatelliteDishIconUpdate = 0;
 bool satelliteDishIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms

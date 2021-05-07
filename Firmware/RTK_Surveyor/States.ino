@@ -26,7 +26,7 @@ void updateSystemState()
             displayRoverFail(1000);
             return;
           }
-          
+
           stopWiFi(); //Turn off WiFi and release all resources
           startBluetooth(); //Turn on Bluetooth with 'Rover' name
 
@@ -215,8 +215,8 @@ void updateSystemState()
           {
             Serial.print(F("WiFi Status: "));
             switch (wifiStatus) {
-              case WL_NO_SSID_AVAIL: 
-                Serial.printf("SSID '%s' not detected\n\r", settings.wifiSSID); 
+              case WL_NO_SSID_AVAIL:
+                Serial.printf("SSID '%s' not detected\n\r", settings.wifiSSID);
                 break;
               case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
               case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
@@ -233,6 +233,10 @@ void updateSystemState()
 
       case (STATE_BASE_TEMP_WIFI_CONNECTED):
         {
+          digitalWrite(positionAccuracyLED_1cm, LOW);
+          digitalWrite(positionAccuracyLED_10cm, LOW);
+          digitalWrite(positionAccuracyLED_100cm, LOW);
+
           if (settings.enableNtripServer == true)
           {
             //Open connection to caster service
@@ -313,6 +317,8 @@ void updateSystemState()
       //Monitor connected state
       case (STATE_BASE_TEMP_CASTER_CONNECTED):
         {
+          cyclePositionLEDs();
+
           if (caster.connected() == false)
           {
             Serial.println(F("Caster no longer connected. Reconnecting..."));
@@ -372,8 +378,8 @@ void updateSystemState()
           {
             Serial.print(F("WiFi Status: "));
             switch (wifiStatus) {
-              case WL_NO_SSID_AVAIL: 
-                Serial.printf("SSID '%s' not detected\n\r", settings.wifiSSID); 
+              case WL_NO_SSID_AVAIL:
+                Serial.printf("SSID '%s' not detected\n\r", settings.wifiSSID);
                 break;
               case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
               case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
@@ -390,6 +396,10 @@ void updateSystemState()
 
       case (STATE_BASE_FIXED_WIFI_CONNECTED):
         {
+          digitalWrite(positionAccuracyLED_1cm, LOW);
+          digitalWrite(positionAccuracyLED_10cm, LOW);
+          digitalWrite(positionAccuracyLED_100cm, LOW);
+
           if (settings.enableNtripServer == true)
           {
             //Open connection to caster service
@@ -471,6 +481,8 @@ void updateSystemState()
       //Monitor connected state
       case (STATE_BASE_FIXED_CASTER_CONNECTED):
         {
+          cyclePositionLEDs();
+
           if (caster.connected() == false)
           {
             changeState(STATE_BASE_FIXED_WIFI_CONNECTED);

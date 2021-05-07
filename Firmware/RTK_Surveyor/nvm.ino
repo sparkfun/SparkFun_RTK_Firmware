@@ -134,6 +134,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("log.sfrbx=" + (String)settings.log.sfrbx);
       settingsFile.println("enableI2Cdebug=" + (String)settings.enableI2Cdebug);
       settingsFile.println("enableHeapReport=" + (String)settings.enableHeapReport);
+      settingsFile.println("dataPortChannel=" + (String)settings.dataPortChannel);
 
       if (online.gnss)
         updateDataFileAccess(&settingsFile); // Update the file access time & date
@@ -367,6 +368,8 @@ bool parseLine(char* str) {
     settings.enableI2Cdebug = d;
   else if (strcmp(settingName, "enableHeapReport") == 0)
     settings.enableHeapReport = d;
+  else if (strcmp(settingName, "dataPortChannel") == 0)
+    settings.dataPortChannel = (muxConnectionType_e)d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

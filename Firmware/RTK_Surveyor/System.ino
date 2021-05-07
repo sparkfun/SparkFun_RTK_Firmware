@@ -69,7 +69,8 @@ bool startBluetooth()
       &F9PSerialWriteTaskHandle); //Task handle
 
   //Start task for controlling Bluetooth pair LED
-  btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
+  if (productVariant == RTK_SURVEYOR)
+    btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
 
   return (true);
 }
@@ -801,6 +802,39 @@ void cyclePositionLEDs()
       digitalWrite(pin_positionAccuracyLED_1cm, LOW);
       digitalWrite(pin_positionAccuracyLED_10cm, LOW);
       digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+    }
+  }
+}
+
+//Set the port of the 1:4 dual channel analog mux
+//This allows NMEA, I2C, PPS/Event, and ADC/DAC to be routed through data port via software select
+void setMuxport(int channelNumber)
+{
+  if (productVariant == RTK_EXPRESS)
+  {
+    pinMode(pin_muxA, OUTPUT);
+    pinMode(pin_muxB, OUTPUT);
+
+    if (channelNumber > 3) return; //Error check
+
+    switch (channelNumber)
+    {
+      case 0:
+        digitalWrite(pin_muxA, LOW);
+        digitalWrite(pin_muxB, LOW);
+        break;
+      case 1:
+        digitalWrite(pin_muxA, HIGH);
+        digitalWrite(pin_muxB, LOW);
+        break;
+      case 2:
+        digitalWrite(pin_muxA, LOW);
+        digitalWrite(pin_muxB, HIGH);
+        break;
+      case 3:
+        digitalWrite(pin_muxA, HIGH);
+        digitalWrite(pin_muxB, HIGH);
+        break;
     }
   }
 }

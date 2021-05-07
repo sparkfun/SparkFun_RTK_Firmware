@@ -27,7 +27,9 @@ void F9PSerialWriteTask(void *e)
         }
         else
         {
-          Serial.printf("I heard: %c\n\r", SerialBT.read());
+          char incoming = SerialBT.read();
+          Serial.printf("I heard: %c\n", incoming);
+          incomingBTTest = incoming; //Displayed during system test
         }
       }
     }

@@ -37,6 +37,7 @@
     Enable various debug outputs sent over BT
 
     TODO
+      Add state machine to power and setup buttons
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -193,6 +194,8 @@ bool uart2Started = false;
 //Reduced stack size from 10,000 to 2,000 to make room for WiFi/NTRIP server capabilities
 const int readTaskStackSize = 2000;
 const int writeTaskStackSize = 2000;
+
+char incomingBTTest = 0; //Stores incoming text over BT when in test mode
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //External Display
@@ -222,6 +225,12 @@ float btLEDTaskPace = 0.5; //Seconds
 
 //Ticker battCheckTask;
 //float battCheckTaskPace = 2.0; //Seconds
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//Accelerometer for bubble leveling
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#include "SparkFun_LIS2DH12.h" //Click here to get the library: http://librarymanager/All#SparkFun_LIS2DH12
+SPARKFUN_LIS2DH12 accel;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Global variables
@@ -263,6 +272,9 @@ uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM(
 uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
 uint32_t totalWriteTime = 0; //Used to calculate overall write speed using SdFat library
+
+bool setupByPowerButton = false; //We can change setup via tapping power button
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -272,7 +284,7 @@ void setup()
   Wire.begin(); //Start I2C on core 1
   Wire.setClock(400000);
 
-  identifyBoard(); //Determine what hardware platform we are running on
+  beginBoard(); //Determine what hardware platform we are running on
 
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
@@ -300,6 +312,8 @@ void setup()
   checkBatteryLevels(); //Force display so you see battery level immediately at power on
 
   beginGNSS(); //Connect and configure ZED-F9P
+
+  beginAccelerometer();
 
   Serial.flush(); //Complete any previous prints
 

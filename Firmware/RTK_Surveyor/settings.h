@@ -25,10 +25,26 @@ volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
 
 typedef enum
 {
+  RTK_SURVEYOR = 0,
+  RTK_EXPRESS,
+} ProductVariant;
+ProductVariant productVariant = RTK_SURVEYOR;
+
+typedef enum
+{
   BUTTON_ROVER = 0,
   BUTTON_BASE,
 } ButtonState;
 ButtonState buttonPreviousState = BUTTON_ROVER;
+
+//Data port mux (RTK Express) can enter one of four different connections
+typedef enum muxConnectionType_e
+{
+  MUX_UBLOX_NMEA = 0,
+  MUX_PPS_EVENTTRIGGER,
+  MUX_I2C,
+  MUX_ADC_DAC,
+} muxConnectionType_e;
 
 //User can enter fixed base coordinates in ECEF or degrees
 typedef enum
@@ -110,6 +126,7 @@ struct struct_settings {
   gnssMessages log;
   bool enableI2Cdebug = false; //Turn on to display GNSS library debug messages
   bool enableHeapReport = false; //Turn on to display free heap
+  muxConnectionType_e dataPortChannel = MUX_UBLOX_NMEA; //Mux default to ublox UART1
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.
@@ -121,4 +138,6 @@ struct struct_online {
   bool serialOutput = false;
   bool eeprom = false;
   bool rtc = false;
+  bool battery = false;
+  bool accelerometer = false;
 } online;

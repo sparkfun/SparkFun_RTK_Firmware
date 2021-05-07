@@ -1,17 +1,56 @@
 //Initial startup functions for GNSS, SD, display, radio, etc
 
-void beginSD()
+//Based on hardware features, determine if this is RTK Surveyor or RTK Express hardware
+//Must be called after Wire.begin so that we can do I2C tests
+void beginBoard()
 {
-  //Setup FAT file access semaphore
-  if (xFATSemaphore == NULL)
+  productVariant = RTK_SURVEYOR;
+  if (isConnected(0x19) == true) //Check for accelerometer
   {
-    xFATSemaphore = xSemaphoreCreateMutex();
-    if (xFATSemaphore != NULL)
-      xSemaphoreGive(xFATSemaphore);  //Make the file system available for use
+    productVariant = RTK_EXPRESS;
   }
 
-  pinMode(PIN_MICROSD_CHIP_SELECT, OUTPUT);
-  digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
+  //Setup hardware pins
+  if (productVariant == RTK_SURVEYOR)
+  {
+    pin_batteryLevelLED_Red = 32;
+    pin_batteryLevelLED_Green = 33;
+    pin_positionAccuracyLED_1cm = 2;
+    pin_positionAccuracyLED_10cm = 15;
+    pin_positionAccuracyLED_100cm = 13;
+    pin_baseStatusLED = 4;
+    pin_bluetoothStatusLED = 12;
+    pin_baseSwitch = 5;
+    pin_microSD_CS = 25;
+    pin_zed_tx_ready = 26;
+    pin_zed_reset = 27;
+    pin_batteryLevel_alert = 36;
+  }
+  else if (productVariant == RTK_EXPRESS)
+  {
+    pin_muxA = 2;
+    pin_muxB = 4;
+    pin_powerSenseAndControl = 13;
+    pin_setupButton = 14;
+    pin_microSD_CS = 25;
+    pin_dac26 = 26;
+    pin_powerFastOff = 27;
+    pin_adc39 = 39;
+
+    pinMode(pin_powerSenseAndControl, INPUT_PULLUP);
+    pinMode(pin_powerFastOff, INPUT);
+    powerOnCheck(); //After serial start in case we want to print
+
+    pinMode(pin_setupButton, INPUT_PULLUP);
+
+    setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
+  }
+}
+
+void beginSD()
+{
+  pinMode(pin_microSD_CS, OUTPUT);
+  digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
 
   if (settings.enableSD == true)
   {
@@ -29,13 +68,13 @@ void beginSD()
 
         delay(250); //Give SD more time to power up, then try again
         if (sd.begin(SD_CONFIG) == true) break;
-        //if (SD.begin(PIN_MICROSD_CHIP_SELECT, spi, spiFreq) == true) break;
+        //if (SD.begin(pin_microSD_CS, spi, spiFreq) == true) break;
       }
 
       if (tries == maxTries)
       {
         Serial.println(F("SD init failed. Is card present? Formatted?"));
-        digitalWrite(PIN_MICROSD_CHIP_SELECT, HIGH); //Be sure SD is deselected
+        digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
         online.microSD = false;
         return;
       }
@@ -58,6 +97,14 @@ void beginSD()
     }
 
     online.microSD = true;
+
+    //Setup FAT file access semaphore
+    if (xFATSemaphore == NULL)
+    {
+      xFATSemaphore = xSemaphoreCreateMutex();
+      if (xFATSemaphore != NULL)
+        xSemaphoreGive(xFATSemaphore);  //Make the file system available for use
+    }
   }
   else
   {
@@ -100,58 +147,7 @@ void beginDisplay()
   {
     online.display = true;
 
-    //Init and display splash
-    oled.begin();     // Initialize the OLED
-    oled.clear(PAGE); // Clear the display's internal memory
-
-    oled.setCursor(10, 2); //x, y
-    oled.setFontType(0); //Set font to smallest
-    oled.print(F("SparkFun"));
-
-    oled.setCursor(21, 13);
-    oled.setFontType(1);
-    oled.print(F("RTK"));
-
-    int surveyorTextY = 25;
-    int surveyorTextX = 2;
-    int surveyorTextKerning = 8;
-    oled.setFontType(1);
-
-    oled.setCursor(surveyorTextX, surveyorTextY);
-    oled.print("S");
-
-    surveyorTextX += surveyorTextKerning;
-    oled.setCursor(surveyorTextX, surveyorTextY);
-    oled.print("u");
-
-    surveyorTextX += surveyorTextKerning;
-    oled.setCursor(surveyorTextX, surveyorTextY);
-    oled.print("r");
-
-    surveyorTextX += surveyorTextKerning;
-    oled.setCursor(surveyorTextX, surveyorTextY);
-    oled.print("v");
-
-    surveyorTextX += surveyorTextKerning;
-    oled.setCursor(surveyorTextX, surveyorTextY);
-    oled.print("e");
-
-    surveyorTextX += surveyorTextKerning;
-    oled.setCursor(surveyorTextX, surveyorTextY);
-    oled.print("y");
-
-    surveyorTextX += surveyorTextKerning;
-    oled.setCursor(surveyorTextX, surveyorTextY);
-    oled.print("o");
-
-    surveyorTextX += surveyorTextKerning;
-    oled.setCursor(surveyorTextX, surveyorTextY);
-    oled.print("r");
-
-    oled.setCursor(20, 41);
-    oled.setFontType(0); //Set font to smallest
-    oled.printf("v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-    oled.display();
+    displaySplash();
   }
 }
 
@@ -213,35 +209,38 @@ void beginGNSS()
     }
   }
 
-  online.gnss = true;
-
   Serial.println(F("GNSS configuration complete"));
+
+  online.gnss = true;
 }
 
 //Set LEDs for output and configure PWM
 void beginLEDs()
 {
-  pinMode(positionAccuracyLED_1cm, OUTPUT);
-  pinMode(positionAccuracyLED_10cm, OUTPUT);
-  pinMode(positionAccuracyLED_100cm, OUTPUT);
-  pinMode(baseStatusLED, OUTPUT);
-  pinMode(bluetoothStatusLED, OUTPUT);
-  pinMode(baseSwitch, INPUT_PULLUP); //HIGH = rover, LOW = base
+  if (productVariant == RTK_SURVEYOR)
+  {
+    pinMode(pin_positionAccuracyLED_1cm, OUTPUT);
+    pinMode(pin_positionAccuracyLED_10cm, OUTPUT);
+    pinMode(pin_positionAccuracyLED_100cm, OUTPUT);
+    pinMode(pin_baseStatusLED, OUTPUT);
+    pinMode(pin_bluetoothStatusLED, OUTPUT);
+    pinMode(pin_baseSwitch, INPUT_PULLUP); //HIGH = rover, LOW = base
 
-  digitalWrite(positionAccuracyLED_1cm, LOW);
-  digitalWrite(positionAccuracyLED_10cm, LOW);
-  digitalWrite(positionAccuracyLED_100cm, LOW);
-  digitalWrite(baseStatusLED, LOW);
-  digitalWrite(bluetoothStatusLED, LOW);
+    digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+    digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+    digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+    digitalWrite(pin_baseStatusLED, LOW);
+    digitalWrite(pin_bluetoothStatusLED, LOW);
 
-  ledcSetup(ledRedChannel, freq, resolution);
-  ledcSetup(ledGreenChannel, freq, resolution);
+    ledcSetup(ledRedChannel, freq, resolution);
+    ledcSetup(ledGreenChannel, freq, resolution);
 
-  ledcAttachPin(batteryLevelLED_Red, ledRedChannel);
-  ledcAttachPin(batteryLevelLED_Green, ledGreenChannel);
+    ledcAttachPin(pin_batteryLevelLED_Red, ledRedChannel);
+    ledcAttachPin(pin_batteryLevelLED_Green, ledGreenChannel);
 
-  ledcWrite(ledRedChannel, 0);
-  ledcWrite(ledGreenChannel, 0);
+    ledcWrite(ledRedChannel, 0);
+    ledcWrite(ledGreenChannel, 0);
+  }
 }
 
 //Configure the on board MAX17048 fuel gauge
@@ -259,4 +258,26 @@ void beginFuelGauge()
   if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
 
   Serial.println(F("MAX17048 configuration complete"));
+
+  online.battery = true;
+}
+
+//Begin onboard accelerometer if available
+void beginAccelerometer()
+{
+  if (productVariant == RTK_EXPRESS)
+  {
+    if (accel.begin() == false)
+    {
+      Serial.println("Accelerometer not detected.");
+      online.accelerometer = false;
+      return;
+    }
+
+    //The larger the avgAmount the faster we should read the sensor
+    //accel.setDataRate(LIS2DH12_ODR_100Hz); //6 measurements a second
+    accel.setDataRate(LIS2DH12_ODR_400Hz); //25 measurements a second
+
+    online.accelerometer = true;
+  }
 }

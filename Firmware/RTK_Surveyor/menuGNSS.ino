@@ -20,10 +20,6 @@ void menuGNSS()
     if (getSBAS() == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    Serial.print(F("4) Toggle I2C Debugging Output: "));
-    if (settings.enableI2Cdebug == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
-
     Serial.println(F("x) Exit"));
 
     int incoming = getNumber(30); //Timeout after x seconds
@@ -70,15 +66,6 @@ void menuGNSS()
         if (setSBAS(true) == true)
           settings.enableSBAS = true;
       }
-    }
-    else if (incoming == 4)
-    {
-      settings.enableI2Cdebug ^= 1;
-    
-      if(settings.enableI2Cdebug)
-        i2cGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
-      else
-        i2cGNSS.disableDebugging();
     }
     else if (incoming == STATUS_PRESSED_X)
       break;

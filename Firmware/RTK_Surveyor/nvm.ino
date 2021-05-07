@@ -133,6 +133,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("log.rawx=" + (String)settings.log.rawx);
       settingsFile.println("log.sfrbx=" + (String)settings.log.sfrbx);
       settingsFile.println("enableI2Cdebug=" + (String)settings.enableI2Cdebug);
+      settingsFile.println("enableHeapReport=" + (String)settings.enableHeapReport);
 
       if (online.gnss)
         updateDataFileAccess(&settingsFile); // Update the file access time & date
@@ -364,6 +365,8 @@ bool parseLine(char* str) {
     settings.log.sfrbx = d;
   else if (strcmp(settingName, "enableI2Cdebug") == 0)
     settings.enableI2Cdebug = d;
+  else if (strcmp(settingName, "enableHeapReport") == 0)
+    settings.enableHeapReport = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

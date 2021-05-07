@@ -25,6 +25,8 @@ void menuMain()
 
     Serial.println(F("5) Configure Ports"));
 
+    Serial.println(F("d) Configure Debug"));
+
     Serial.println(F("r) Reset all settings to default"));
 
     if(binCount > 0)
@@ -46,6 +48,8 @@ void menuMain()
       menuBase();
     else if (incoming == '5')
       menuPorts();
+    else if (incoming == 'd')
+      menuDebug();
     else if (incoming == 'r')
     {
       Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));

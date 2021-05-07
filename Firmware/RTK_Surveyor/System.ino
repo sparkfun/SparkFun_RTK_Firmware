@@ -751,3 +751,16 @@ bool logUBXMessages()
     return (true);
   return (false);
 }
+
+//If debug option is on, print available heap
+void reportHeap()
+{
+  if (settings.enableHeapReport == true)
+  {
+    if (millis() - lastHeapReport > 1000)
+    {
+      lastHeapReport = millis();
+      Serial.printf("freeHeap: %d\n\r", ESP.getFreeHeap());
+    }
+  }
+}

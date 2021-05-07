@@ -309,17 +309,13 @@ void loop()
 
   updateLogs(); //Record any new data. Create or close files as needed.
 
+  reportHeap(); //If debug enabled, report free heap
+
   //Menu system via ESP32 USB connection
   if (Serial.available()) menuMain(); //Present user menu
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;
-
-  if (millis() - lastHeapReport > 1000)
-  {
-    lastHeapReport = millis();
-    Serial.printf("freeHeap: %d\n\r", ESP.getFreeHeap());
-  }
 
   delay(10); //A small delay prevents panic if no other I2C or functions are called
 }

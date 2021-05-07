@@ -109,6 +109,7 @@ struct struct_settings {
   gnssMessages broadcast;
   gnssMessages log;
   bool enableI2Cdebug = false; //Turn on to display GNSS library debug messages
+  bool enableHeapReport = false; //Turn on to display free heap
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

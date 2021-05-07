@@ -32,7 +32,7 @@ const char* forceFirmwareFileName = "RTK_Surveyor_Firmware_Force.bin";
 
 void setup() {
   Serial.begin(115200);
-  delay(100);
+  delay(1000);
   Serial.println("SD Update");
 
   beginSD(); //Test if SD is present
@@ -42,6 +42,8 @@ void setup() {
     Serial.println("SD online");
     scanForFirmware();
   }
+
+  createTestFile(1);
 }
 
 
@@ -63,4 +65,20 @@ void loop() {
     while (Serial.available()) Serial.read(); //Remote extra chars
   }
 
+}
+
+void createTestFile(int callNumber)
+{
+  SdFile testFile;
+  
+  if (testFile.open("testfile.txt", O_CREAT | O_APPEND | O_WRITE) == false)
+  {
+    Serial.printf("Failed to create test file: %d\n", callNumber);
+  }
+  else
+  {
+    Serial.println("Test file created!");
+    if (sd.exists("testfile.txt"))
+      sd.remove("testfile.txt");
+  }  
 }

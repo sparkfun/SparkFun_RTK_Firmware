@@ -45,6 +45,16 @@ void loadSettings()
 void recordSystemSettings()
 {
   settings.sizeOfSettings = sizeof(settings);
+  if (settings.sizeOfSettings > EEPROM_SIZE)
+  {
+    while (1) //Hard freeze
+    {
+      Serial.printf("Size of settings is %d bytes\n\r", sizeof(settings));
+      Serial.println(F("Increase the EEPROM footprint!"));
+      delay(1000);
+    }
+  }
+
   EEPROM.put(0, settings);
   EEPROM.commit();
   delay(1); //Give CPU time to pet WDT
@@ -56,55 +66,82 @@ void recordSystemSettingsToFile()
 {
   if (online.microSD == true)
   {
-    if (sd.exists(settingsFileName))
-      sd.remove(settingsFileName);
-
-    SdFile settingsFile; //FAT32
-    if (settingsFile.open(settingsFileName, O_CREAT | O_APPEND | O_WRITE) == false)
+    //Attempt to write to file system. This avoids collisions with file writing from other functions like updateLogs()
+    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
     {
-      Serial.println(F("Failed to create settings file"));
-      return;
+      if (sd.exists(settingsFileName))
+        sd.remove(settingsFileName);
+
+      SdFile settingsFile; //FAT32
+      if (settingsFile.open(settingsFileName, O_CREAT | O_APPEND | O_WRITE) == false)
+      {
+        Serial.println(F("Failed to create settings file"));
+        return;
+      }
+      if (online.gnss)
+        updateDataFileCreate(&settingsFile); // Update the file to create time & date
+
+      settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
+      settingsFile.println("rtkIdentifier=" + (String)settings.rtkIdentifier);
+      settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
+      settingsFile.println("enableSD=" + (String)settings.enableSD);
+      settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
+      settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
+      settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
+      settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
+      settingsFile.println("observationPositionAccuracy=" + (String)settings.observationPositionAccuracy);
+      settingsFile.println("fixedBase=" + (String)settings.fixedBase);
+      settingsFile.println("fixedBaseCoordinateType=" + (String)settings.fixedBaseCoordinateType);
+      settingsFile.println("fixedEcefX=" + (String)settings.fixedEcefX);
+      settingsFile.println("fixedEcefY=" + (String)settings.fixedEcefY);
+      settingsFile.println("fixedEcefZ=" + (String)settings.fixedEcefZ);
+
+      //Print Lat/Long doubles with 9 decimals
+      char longPrint[20]; //-105.123456789
+      sprintf(longPrint, "%0.9f", settings.fixedLat);
+      settingsFile.println("fixedLat=" + (String)longPrint);
+      sprintf(longPrint, "%0.9f", settings.fixedLong);
+      settingsFile.println("fixedLong=" + (String)longPrint);
+      sprintf(longPrint, "%0.4f", settings.fixedAltitude);
+      settingsFile.println("fixedAltitude=" + (String)longPrint);
+
+      settingsFile.println("dataPortBaud=" + (String)settings.dataPortBaud);
+      settingsFile.println("radioPortBaud=" + (String)settings.radioPortBaud);
+      settingsFile.println("enableSBAS=" + (String)settings.enableSBAS);
+      settingsFile.println("enableNtripServer=" + (String)settings.enableNtripServer);
+      settingsFile.println("casterHost=" + (String)settings.casterHost);
+      settingsFile.println("casterPort=" + (String)settings.casterPort);
+      settingsFile.println("mountPoint=" + (String)settings.mountPoint);
+      settingsFile.println("mountPointPW=" + (String)settings.mountPointPW);
+      settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
+      settingsFile.println("wifiPW=" + (String)settings.wifiPW);
+      settingsFile.println("surveyInStartingAccuracy=" + (String)settings.surveyInStartingAccuracy);
+      settingsFile.println("measurementRate=" + (String)settings.measurementRate);
+      settingsFile.println("navigationRate=" + (String)settings.navigationRate);
+      settingsFile.println("broadcast.gga=" + (String)settings.broadcast.gga);
+      settingsFile.println("broadcast.gsa=" + (String)settings.broadcast.gsa);
+      settingsFile.println("broadcast.gsv=" + (String)settings.broadcast.gsv);
+      settingsFile.println("broadcast.rmc=" + (String)settings.broadcast.rmc);
+      settingsFile.println("broadcast.gst=" + (String)settings.broadcast.gst);
+      settingsFile.println("broadcast.rawx=" + (String)settings.broadcast.rawx);
+      settingsFile.println("broadcast.sfrbx=" + (String)settings.broadcast.sfrbx);
+      settingsFile.println("log.gga=" + (String)settings.log.gga);
+      settingsFile.println("log.gsa=" + (String)settings.log.gsa);
+      settingsFile.println("log.gsv=" + (String)settings.log.gsv);
+      settingsFile.println("log.rmc=" + (String)settings.log.rmc);
+      settingsFile.println("log.gst=" + (String)settings.log.gst);
+      settingsFile.println("log.rawx=" + (String)settings.log.rawx);
+      settingsFile.println("log.sfrbx=" + (String)settings.log.sfrbx);
+      settingsFile.println("enableI2Cdebug=" + (String)settings.enableI2Cdebug);
+      settingsFile.println("enableHeapReport=" + (String)settings.enableHeapReport);
+
+      if (online.gnss)
+        updateDataFileAccess(&settingsFile); // Update the file access time & date
+
+      settingsFile.close();
+
+      xSemaphoreGive(xFATSemaphore);
     }
-
-    settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
-    settingsFile.println("rtkIdentifier=" + (String)settings.rtkIdentifier);
-    settingsFile.println("gnssMeasurementFrequency=" + (String)settings.gnssMeasurementFrequency);
-    settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
-    settingsFile.println("enableSD=" + (String)settings.enableSD);
-    settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
-    settingsFile.println("zedOutputLogging=" + (String)settings.zedOutputLogging);
-    settingsFile.println("gnssRAWOutput=" + (String)settings.gnssRAWOutput);
-    settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
-    settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
-    settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
-    settingsFile.println("observationPositionAccuracy=" + (String)settings.observationPositionAccuracy);
-    settingsFile.println("fixedBase=" + (String)settings.fixedBase);
-    settingsFile.println("fixedBaseCoordinateType=" + (String)settings.fixedBaseCoordinateType);
-    settingsFile.println("fixedEcefX=" + (String)settings.fixedEcefX);
-    settingsFile.println("fixedEcefY=" + (String)settings.fixedEcefY);
-    settingsFile.println("fixedEcefZ=" + (String)settings.fixedEcefZ);
-    settingsFile.println("fixedLat=" + (String)settings.fixedLat);
-    settingsFile.println("fixedLong=" + (String)settings.fixedLong);
-    settingsFile.println("fixedAltitude=" + (String)settings.fixedAltitude);
-    settingsFile.println("dataPortBaud=" + (String)settings.dataPortBaud);
-    settingsFile.println("radioPortBaud=" + (String)settings.radioPortBaud);
-    settingsFile.println("outputSentenceGGA=" + (String)settings.outputSentenceGGA);
-    settingsFile.println("outputSentenceGSA=" + (String)settings.outputSentenceGSA);
-    settingsFile.println("outputSentenceGSV=" + (String)settings.outputSentenceGSV);
-    settingsFile.println("outputSentenceRMC=" + (String)settings.outputSentenceRMC);
-    settingsFile.println("outputSentenceGST=" + (String)settings.outputSentenceGST);
-    settingsFile.println("enableSBAS=" + (String)settings.enableSBAS);
-    settingsFile.println("enableNtripServer=" + (String)settings.enableNtripServer);
-    settingsFile.println("casterHost=" + (String)settings.casterHost);
-    settingsFile.println("casterPort=" + (String)settings.casterPort);
-    settingsFile.println("mountPoint=" + (String)settings.mountPoint);
-    settingsFile.println("mountPointPW=" + (String)settings.mountPointPW);
-    settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
-    settingsFile.println("wifiPW=" + (String)settings.wifiPW);
-
-    updateDataFileAccess(&settingsFile); // Update the file access time & date
-
-    settingsFile.close();
   }
 }
 
@@ -129,7 +166,10 @@ bool loadSystemSettingsFromFile()
       int lineNumber = 0;
 
       while (settingsFile.available()) {
-        int n = settingsFile.fgets(line, sizeof(line));
+
+        //Get the next line from the file
+        //int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
+        int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
         if (n <= 0) {
           Serial.printf("Failed to read line %d from settings file\r\n", lineNumber);
         }
@@ -233,24 +273,18 @@ bool parseLine(char* str) {
 
     //Check to see if this setting file is compatible with this version of RTK Surveyor
     if (d != sizeof(settings))
-      Serial.printf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\r\n", d, sizeof(settings));
+      Serial.printf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\r\n", (int)d, sizeof(settings));
 
   }
   else if (strcmp(settingName, "rtkIdentifier") == 0)
     settings.rtkIdentifier = d;
 
-  else if (strcmp(settingName, "gnssMeasurementFrequency") == 0)
-    settings.gnssMeasurementFrequency = d;
   else if (strcmp(settingName, "printDebugMessages") == 0)
     settings.printDebugMessages = d;
   else if (strcmp(settingName, "enableSD") == 0)
     settings.enableSD = d;
   else if (strcmp(settingName, "enableDisplay") == 0)
     settings.enableDisplay = d;
-  else if (strcmp(settingName, "zedOutputLogging") == 0)
-    settings.zedOutputLogging = d;
-  else if (strcmp(settingName, "gnssRAWOutput") == 0)
-    settings.gnssRAWOutput = d;
   else if (strcmp(settingName, "frequentFileAccessTimestamps") == 0)
     settings.frequentFileAccessTimestamps = d;
   else if (strcmp(settingName, "maxLogTime_minutes") == 0)
@@ -279,16 +313,6 @@ bool parseLine(char* str) {
     settings.dataPortBaud = d;
   else if (strcmp(settingName, "radioPortBaud") == 0)
     settings.radioPortBaud = d;
-  else if (strcmp(settingName, "outputSentenceGGA") == 0)
-    settings.outputSentenceGGA = d;
-  else if (strcmp(settingName, "outputSentenceGSA") == 0)
-    settings.outputSentenceGSA = d;
-  else if (strcmp(settingName, "outputSentenceGSV") == 0)
-    settings.outputSentenceGSV = d;
-  else if (strcmp(settingName, "outputSentenceRMC") == 0)
-    settings.outputSentenceRMC = d;
-  else if (strcmp(settingName, "outputSentenceGST") == 0)
-    settings.outputSentenceGST = d;
   else if (strcmp(settingName, "enableSBAS") == 0)
     settings.enableSBAS = d;
   else if (strcmp(settingName, "enableNtripServer") == 0)
@@ -305,6 +329,44 @@ bool parseLine(char* str) {
     strcpy(settings.wifiSSID, settingValue);
   else if (strcmp(settingName, "wifiPW") == 0)
     strcpy(settings.wifiPW, settingValue);
+  else if (strcmp(settingName, "surveyInStartingAccuracy") == 0)
+    settings.surveyInStartingAccuracy = d;
+  else if (strcmp(settingName, "measurementRate") == 0)
+    settings.measurementRate = d;
+  else if (strcmp(settingName, "navigationRate") == 0)
+    settings.navigationRate = d;
+  else if (strcmp(settingName, "broadcast.gga") == 0)
+    settings.broadcast.gga = d;
+  else if (strcmp(settingName, "broadcast.gsa") == 0)
+    settings.broadcast.gsa = d;
+  else if (strcmp(settingName, "broadcast.gsv") == 0)
+    settings.broadcast.gsv = d;
+  else if (strcmp(settingName, "broadcast.rmc") == 0)
+    settings.broadcast.rmc = d;
+  else if (strcmp(settingName, "broadcast.gst") == 0)
+    settings.broadcast.gst = d;
+  else if (strcmp(settingName, "broadcast.rawx") == 0)
+    settings.broadcast.rawx = d;
+  else if (strcmp(settingName, "broadcast.sfrbx") == 0)
+    settings.broadcast.sfrbx = d;
+  else if (strcmp(settingName, "log.gga") == 0)
+    settings.log.gga = d;
+  else if (strcmp(settingName, "log.gsa") == 0)
+    settings.log.gsa = d;
+  else if (strcmp(settingName, "log.gsv") == 0)
+    settings.log.gsv = d;
+  else if (strcmp(settingName, "log.rmc") == 0)
+    settings.log.rmc = d;
+  else if (strcmp(settingName, "log.gst") == 0)
+    settings.log.gst = d;
+  else if (strcmp(settingName, "log.rawx") == 0)
+    settings.log.rawx = d;
+  else if (strcmp(settingName, "log.sfrbx") == 0)
+    settings.log.sfrbx = d;
+  else if (strcmp(settingName, "enableI2Cdebug") == 0)
+    settings.enableI2Cdebug = d;
+  else if (strcmp(settingName, "enableHeapReport") == 0)
+    settings.enableHeapReport = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);
@@ -319,4 +381,29 @@ void eepromErase()
     EEPROM.write(i, 0xFF); //Reset to all 1s
   }
   EEPROM.commit();
+}
+
+//The SD library doesn't have a fgets function like SD fat so recreate it here
+//Read the current line in the file until we hit a EOL char \r or \n
+int getLine(File * openFile, char * lineChars, int lineSize)
+{
+  int count = 0;
+  while (openFile->available())
+  {
+    byte incoming = openFile->read();
+    if (incoming == '\r' || incoming == '\n')
+    {
+      //Sometimes a line has multiple terminators
+      while (openFile->peek() == '\r' || openFile->peek() == '\n')
+        openFile->read(); //Dump it to prevent next line read corruption
+      break;
+    }
+
+    lineChars[count++] = incoming;
+
+    if (count == lineSize - 1)
+      break; //Stop before overun of buffer
+  }
+  lineChars[count] = '\0'; //Terminate string
+  return (count);
 }

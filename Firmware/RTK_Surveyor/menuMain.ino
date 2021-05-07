@@ -2,6 +2,8 @@
 //If user doesn't respond within a few seconds, return to main loop
 void menuMain()
 {
+  displaySerialConfig(); //Display 'Serial Config' while user is configuring
+
   while (1)
   {
     Serial.println();
@@ -17,9 +19,13 @@ void menuMain()
 
     Serial.println(F("2) Configure Data Logging"));
 
-    Serial.println(F("3) Configure Base"));
+    Serial.println(F("3) Configure Bluetooth Broadcasting"));
 
-    Serial.println(F("4) Configure Ports"));
+    Serial.println(F("4) Configure Base"));
+
+    Serial.println(F("5) Configure Ports"));
+
+    Serial.println(F("d) Configure Debug"));
 
     Serial.println(F("r) Reset all settings to default"));
 
@@ -37,9 +43,13 @@ void menuMain()
     else if (incoming == '2')
       menuLog();
     else if (incoming == '3')
-      menuBase();
+      menuBroadcast();
     else if (incoming == '4')
+      menuBase();
+    else if (incoming == '5')
       menuPorts();
+    else if (incoming == 'd')
+      menuDebug();
     else if (incoming == 'r')
     {
       Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
@@ -51,7 +61,7 @@ void menuMain()
         if (sd.exists(settingsFileName))
           sd.remove(settingsFileName);
 
-        myGPS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
+        i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
         Serial.println(F("Settings erased. Please reset RTK Surveyor. Freezing."));
         while (1) 

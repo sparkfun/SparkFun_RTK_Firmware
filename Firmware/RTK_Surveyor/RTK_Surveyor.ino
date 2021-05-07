@@ -18,28 +18,33 @@
   A settings file is accessed on microSD if available otherwise settings are pulled from
   ESP32's emulated EEPROM.
 
+  As of v1.2, the heap is approximately 94072 during Rover Fix, 142260 during WiFi Casting. This is 
+  important to maintain as unit will begin to have stability issues at ~30k.
+
   The main loop handles lower priority updates such as:
     Fuel gauge checking and power LED color update
     Setup switch monitoring (module configure between Rover and Base)
     Text menu interactions
 
   Main Menu (Display MAC address / broadcast name):
-    (Done) GNSS - Configure measurement rate, enable/disable common NMEA sentences, RAWX, SBAS
-    (Done) Log - Log to SD
+    (Done) GNSS - Configure measurement rate, SBAS
+    (Done) Log - Control messages logged to SD
+    (Done) Broadcast - Control messages sent over BT SPP
     (Done) Base - Enter fixed coordinates, survey-in settings, WiFi/Caster settings,
     (Done) Ports - Configure Radio and Data port baud rates
     (Done) Test menu
     (Done) Firmware upgrade menu
     Enable various debug outputs sent over BT
 
+    TODO
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 1;
+const int FIRMWARE_VERSION_MINOR = 2;
 
-//Define the RTK Surveyor board identifier:
-//  This is an int which is unique to this variant of the RTK Surveyor and which allows us
-//  to make sure that the settings in EEPROM are correct for this version of the RTK Surveyor
+//Define the RTK board identifier:
+//  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
+//  to make sure that the settings in EEPROM are correct for this version of the RTK
 //  (sizeOfSettings is not necessarily unique and we want to avoid problems when swapping from one variant to another)
 //  It is the sum of:
 //    the major firmware version * 0x10
@@ -56,7 +61,7 @@ const int baseSwitch = 5;
 const int bluetoothStatusLED = 12;
 const int positionAccuracyLED_100cm = 13;
 const int positionAccuracyLED_10cm = 15;
-const byte PIN_MICROSD_CHIP_SELECT = 25;
+const int PIN_MICROSD_CHIP_SELECT = 25;
 const int zed_tx_ready = 26;
 const int zed_reset = 27;
 const int batteryLevelLED_Red = 32;
@@ -64,28 +69,51 @@ const int batteryLevelLED_Green = 33;
 const int batteryLevel_alert = 36;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//I2C for GNSS, battery gauge, display, accelerometer
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#include <Wire.h>
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 //EEPROM for storing settings
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <EEPROM.h>
 #define EEPROM_SIZE 2048 //ESP32 emulates EEPROM in non-volatile storage (external flash IC). Max is 508k.
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+//Handy library for setting ESP32 system time to GNSS time
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#include <ESP32Time.h> //http://librarymanager/All#ESP32Time
+ESP32Time rtc;
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
-#include <SdFat.h> //SdFat (FAT32) by Bill Greiman: http://librarymanager/All#SdFat
+#include "SdFat.h"
+
 SdFat sd;
-SdFile gnssDataFile; //File that all gnss data is written to
+SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we can set the SPI freq in beginSD()
+#define SD_CONFIG SdSpiConfig(PIN_MICROSD_CHIP_SELECT, DEDICATED_SPI, SD_SCK_MHZ(36), &spi)
 
 char settingsFileName[40] = "SFE_Surveyor_Settings.txt"; //File to read/write system settings to
 
-unsigned long lastDataLogSyncTime = 0; //Used to record to SD every half second
-long startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
+SdFile ubxFile; //File that all gnss ubx messages setences are written to
+unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
+int startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
+
+//SdFat crashes when F9PSerialReadTask() is called in the middle of a ubx file write within loop()
+//So we use a semaphore to see if file system is available
+SemaphoreHandle_t xFATSemaphore;
+const int fatSemaphore_maxWait = 5; //TickType_t
+
+#define sdWriteSize 512 // Write data to the SD card in blocks of 512 bytes
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <WiFi.h>
+#include "esp_wifi.h" //Needed for init/deinit of resources to free up RAM
+
 WiFiClient caster;
 const char * ntrip_server_name = "SparkFun_RTK_Surveyor";
 
@@ -93,45 +121,28 @@ unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
 unsigned long lastServerReport_ms = 0; //Time of last report of caster bytes sent
 int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
 
-uint32_t serverBytesSent = 0; //Just a running total
+uint32_t casterBytesSent = 0; //Just a running total
+uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service times out
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-
-#include <Wire.h> //Needed for I2C to GNSS
 
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS i2cGNSS;
 
-#include "SparkFun_Ublox_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_Ublox_GPS
-//SFE_UBLOX_GPS myGPS;
-
-// Extend the class for getModuleInfo - See Example21_ModuleInfo
-class SFE_UBLOX_GPS_ADD : public SFE_UBLOX_GPS
-{
-  public:
-    boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
-
-    struct minfoStructure // Structure to hold the module info (uses 341 bytes of RAM)
-    {
-      char swVersion[30];
-      char hwVersion[10];
-      uint8_t extensionNo = 0;
-      char extension[10][30];
-    } minfo;
-};
-
-SFE_UBLOX_GPS_ADD myGPS;
-
-//This string is used to verify the firmware on the ZED-F9P. This
-//firmware relies on various features of the ZED and may require the latest
-//u-blox firmware to work correctly. We check the module firmware at startup but
-//don't prevent operation if firmware is mismatched.
-char latestZEDFirmware[] = "FWVER=HPG 1.13";
+//Note: There are two prevalent versions of the ZED-F9P: v1.12 (part# -01B) and v1.13 (-02B).
+//v1.13 causes the RTK LED to not function if SBAS is enabled. To avoid this, we
+//disable SBAS by default.
 
 //Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings
 //This array holds the payload data bytes. Global so that we can use between config functions.
+#define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
+
+#define gnssFileBufferSize 16384 // Allocate 16KBytes of RAM for UBX message storage
+
+TaskHandle_t F9PI2CTaskHandle = NULL; //Task for regularly checking I2C
+const int i2cTaskStackSize = 2000;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -155,8 +166,9 @@ float battChangeRate = 0.0;
 #include "BluetoothSerial.h"
 BluetoothSerial SerialBT;
 #include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
+#include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
 
-HardwareSerial GPS(2);
+HardwareSerial serialGNSS(2);
 #define RXD2 16
 #define TXD2 17
 
@@ -165,6 +177,13 @@ uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading F9P
 uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+
+TaskHandle_t startUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
+bool uart2Started = false;
+
+//Reduced stack size from 10,000 to 2,000 to make room for WiFi/NTRIP server capabilities
+const int readTaskStackSize = 2000;
+const int writeTaskStackSize = 2000;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //External Display
@@ -185,28 +204,9 @@ char binFileNames[10][50];
 const char* forceFirmwareFileName = "RTK_Surveyor_Firmware_Force.bin"; //File that will be loaded at startup regardless of user input
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-//Global variables
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
-char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
-const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
-bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
-long systemTime_minutes = 0; //Used to test if logging is less than max minutes
-
-uint32_t lastRoverUpdate = 0;
-uint32_t lastBaseUpdate = 0;
-uint32_t lastBattUpdate = 0;
-uint32_t lastDisplayUpdate = 0;
-
-uint32_t lastTime = 0;
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
 //Low frequency tasks
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <Ticker.h>
-
-SemaphoreHandle_t xI2CSemaphore;
-TickType_t i2cSemaphore_maxWait = 5;
 
 Ticker btLEDTask;
 float btLEDTaskPace = 0.5; //Seconds
@@ -215,17 +215,53 @@ float btLEDTaskPace = 0.5; //Seconds
 //float battCheckTaskPace = 2.0; //Seconds
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//Global variables
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
+char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
+const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
+bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
+int systemTime_minutes = 0; //Used to test if logging is less than max minutes
+
+uint32_t lastBattUpdate = 0;
+uint32_t lastDisplayUpdate = 0;
+uint32_t lastSystemStateUpdate = 0;
+uint32_t lastAccuracyLEDUpdate = 0;
+uint32_t lastBaseLEDupdate = 0; //Controls the blinking of the Base LED
+
+uint32_t lastFileReport = 0; //When logging, print file record stats every few seconds
+long lastStackReport = 0; //Controls the report rate of stack highwater mark within a task
+uint32_t lastHeapReport = 0;
+uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
+
+uint32_t lastSatelliteDishIconUpdate = 0;
+bool satelliteDishIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms
+uint32_t lastCrosshairIconUpdate = 0;
+bool crosshairIconDisplayed = false; //Toggles as lastCrosshairIconUpdate goes above 1000ms
+uint32_t lastBaseIconUpdate = 0;
+bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
+uint32_t lastWifiIconUpdate = 0;
+bool wifiIconDisplayed = false; //Toggles as lastWifiIconUpdate goes above 1000ms
+
+uint32_t lastLogSize = 0;
+bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
+
+uint32_t lastRTCMPacketSent = 0; //Used to count RTCM packets sent during base mode
+uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM()
+
+uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
+
+uint32_t totalWriteTime = 0; //Used to calculate overall write speed using SdFat library
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
-  Serial.setRxBufferSize(SERIAL_SIZE_RX);
-  Serial.setTimeout(1);
 
-  GPS.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
-  GPS.setRxBufferSize(SERIAL_SIZE_RX);
-  GPS.setTimeout(1);
+  Wire.begin(); //Start I2C on core 1
+  Wire.setClock(400000);
 
-  Wire.begin(); //Start I2C
+  beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
   beginLEDs(); //LED and PWM setup
 
@@ -250,192 +286,151 @@ void setup()
   beginFuelGauge(); //Configure battery fuel guage monitor
   checkBatteryLevels(); //Force display so you see battery level immediately at power on
 
-  beginBluetooth(); //Get MAC, start radio
-
   beginGNSS(); //Connect and configure ZED-F9P
 
   Serial.flush(); //Complete any previous prints
 
   danceLEDs(); //Turn on LEDs like a car dashboard
-
-  if (online.microSD == true && settings.zedOutputLogging == true) startLogTime_minutes = 0; //Mark now as start of logging
-
-  if (xI2CSemaphore == NULL)
-  {
-    xI2CSemaphore = xSemaphoreCreateMutex();
-    if (xI2CSemaphore != NULL)
-      xSemaphoreGive(xI2CSemaphore);  //Make the I2C hardware available for use
-  }
-
-  //Start tasks
-  btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
-  //battCheckTask.attach(battCheckTaskPace, checkBatteryLevels);
-
-  //myGPS.enableDebugging(); //Enable debug messages over Serial (default)
 }
 
 void loop()
 {
-  myGPS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  //Check rover switch and configure module accordingly
-  //When switch is set to '1' = BASE, pin will be shorted to ground
-  if (digitalRead(baseSwitch) == HIGH && baseState != BASE_OFF)
-  {
-    //Configure for rover mode
-    Serial.println(F("Rover Mode"));
+  checkSetupButton(); //Change system state as needed
 
-    baseState = BASE_OFF;
-
-    beginBluetooth(); //Restart Bluetooth with 'Rover' name
-
-    //If we are survey'd in, but switch is rover then disable survey
-    if (configureUbloxModuleRover() == false)
-    {
-      Serial.println(F("Rover config failed!"));
-    }
-
-    digitalWrite(baseStatusLED, LOW);
-  }
-  else if (digitalRead(baseSwitch) == LOW && baseState == BASE_OFF)
-  {
-    //Configure for base mode
-    Serial.println(F("Base Mode"));
-
-    if (configureUbloxModuleBase() == false)
-    {
-      Serial.println(F("Base config failed!"));
-    }
-
-    //Restart Bluetooth with 'Base' name
-    //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
-    beginBluetooth();
-    
-    baseState = BASE_SURVEYING_IN_NOTSTARTED; //Switch to new state
-  }
-
-  if (baseState == BASE_SURVEYING_IN_NOTSTARTED || baseState == BASE_SURVEYING_IN_SLOW || baseState == BASE_SURVEYING_IN_FAST)
-  {
-    updateSurveyInStatus();
-  }
-  else if (baseState == BASE_TRANSMITTING)
-  {
-    if (settings.enableNtripServer == true)
-    {
-      updateNtripServer();
-    }
-  }
-  else if (baseState == BASE_OFF)
-  {
-    updateRoverStatus();
-  }
+  updateSystemState();
 
   updateBattLEDs();
 
   updateDisplay();
 
+  updateRTC(); //Set system time to GNSS once we have fix
+
+  updateLogs(); //Record any new data. Create or close files as needed.
+
+  reportHeap(); //If debug enabled, report free heap
+
   //Menu system via ESP32 USB connection
   if (Serial.available()) menuMain(); //Present user menu
 
-  //Create files or close files as needed
-  if (settings.zedOutputLogging == true && online.dataLogging == false)
-  {
-    beginDataLogging();
-  }
-  else if (settings.zedOutputLogging == false && online.dataLogging == true)
-  {
-    //Close down file
-    gnssDataFile.sync();
-    gnssDataFile.close();
-    online.dataLogging = false;
-  }
-
-  //Convert current system time to minutes. This is used in F9PSerialReadTask() to see if we are within max log window.
+  //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;
 
   delay(10); //A small delay prevents panic if no other I2C or functions are called
 }
 
-void updateDisplay()
+//Create or close files as needed (startup or as user changes settings)
+//Push new data to log as needed
+void updateLogs()
 {
-
-  //Update the display if connected
-  if (online.display == true)
+  if (online.logging == false && logMessages() == true)
   {
-    if (millis() - lastDisplayUpdate > 1000)
+    beginLogging();
+  }
+  else if (online.logging == true && logMessages() == false)
+  {
+    //Close down file
+    ubxFile.sync();
+    ubxFile.close();
+    online.logging = false;
+  }
+
+  if (online.logging == true)
+  {
+    //Check if we are inside the max time window for logging
+    if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
     {
-      lastDisplayUpdate = millis();
-
-      oled.clear(PAGE); // Clear the display's internal buffer
-
-      //Current battery charge level
-      if (battLevel < 25)
-        oled.drawIcon(45, 0, Battery_0_Width, Battery_0_Height, Battery_0, sizeof(Battery_0), true);
-      else if (battLevel < 50)
-        oled.drawIcon(45, 0, Battery_1_Width, Battery_1_Height, Battery_1, sizeof(Battery_1), true);
-      else if (battLevel < 75)
-        oled.drawIcon(45, 0, Battery_2_Width, Battery_2_Height, Battery_2, sizeof(Battery_2), true);
-      else //batt level > 75
-        oled.drawIcon(45, 0, Battery_3_Width, Battery_3_Height, Battery_3, sizeof(Battery_3), true);
-
-      //Bluetooth Address or RSSI
-      if (radioState == BT_CONNECTED)
+      while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
       {
-        oled.drawIcon(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol, sizeof(BT_Symbol), true);
+        //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
+        if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
+        {
+          uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
+
+          i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
+
+          ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
+
+          if (settings.frequentFileAccessTimestamps == true)
+            updateDataFileAccess(&ubxFile); // Update the file access time & date
+
+          //Force sync every 1000ms
+          if (millis() - lastUBXLogSyncTime > 1000)
+          {
+            lastUBXLogSyncTime = millis();
+            digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
+            long startWriteTime = millis();
+            ubxFile.sync();
+            long stopWriteTime = millis();
+            totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
+            digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
+
+            updateDataFileAccess(&ubxFile); // Update the file access time & date
+          }
+
+          xSemaphoreGive(xFATSemaphore);
+        }
+
+        // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
+        i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
+      }
+    }
+  }
+
+  //Report file sizes to show recording is working
+  if (online.logging == true)
+  {
+    if (millis() - lastFileReport > 5000)
+    {
+      lastFileReport = millis();
+      Serial.printf("UBX file size: %d", ubxFile.fileSize());
+
+      if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+      {
+        Serial.printf(" - Generation rate: %0.1fkB/s", (ubxFile.fileSize() / (millis() / 1000.0)) / 1000.0);
+        Serial.printf(" - Write speed: %0.1fkB/s", (ubxFile.fileSize() / (totalWriteTime / 1000.0)) / 1000.0);
       }
       else
       {
-        char macAddress[5];
-        sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-        oled.setFontType(0); //Set font to smallest
-        oled.setCursor(0, 4);
-        oled.print(macAddress);
+        Serial.printf(" reached max log time %d", settings.maxLogTime_minutes);
       }
 
-      if (digitalRead(baseSwitch) == LOW)
-        oled.drawIcon(27, 0, Base_Width, Base_Height, Base, sizeof(Base), true); //true - blend with other pixels
-      else
-        oled.drawIcon(27, 3, Rover_Width, Rover_Height, Rover, sizeof(Rover), true);
+      Serial.println();
 
-      //Horz positional accuracy
-      oled.setFontType(1); //Set font to type 1: 8x16
-      oled.drawIcon(0, 18, CrossHair_Width, CrossHair_Height, CrossHair, sizeof(CrossHair), true);
-      oled.setCursor(16, 20); //x, y
-      oled.print(":");
-      float hpa = myGPS.getHorizontalAccuracy() / 10000.0;
-      if (hpa > 30.0)
+      //Update for display
+      if (ubxFile.fileSize() > lastLogSize)
       {
-        oled.print(F(">30"));
-      }
-      else if (hpa > 9.9)
-      {
-        oled.print(hpa, 1); //Print down to decimeter
-      }
-      else if (hpa > 1.0)
-      {
-        oled.print(hpa, 2); //Print down to centimeter
+        lastLogSize = ubxFile.fileSize();
+        logIncreasing = true;
       }
       else
-      {
-        oled.print("."); //Remove leading zero
-        oled.printf("%03d", (int)(hpa * 1000)); //Print down to millimeter
-      }
+        logIncreasing = false;
+    }
+  }
+}
 
-      //SIV
-      oled.drawIcon(2, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
-      oled.setCursor(16, 36); //x, y
-      oled.print(":");
-
-      if (myGPS.getFixType() == 0) //0 = No Fix
+//Once we have a fix, sync system clock to GNSS
+//All SD writes will use the system date/time
+void updateRTC()
+{
+  if (online.rtc == false)
+  {
+    if (online.gnss == true)
+    {
+      if (i2cGNSS.getConfirmedDate() == true && i2cGNSS.getConfirmedTime() == true)
       {
-        oled.print("0");
-      }
-      else
-      {
-        oled.print(myGPS.getSIV());
-      }
+        //Set the internal system time
+        //This is normally set with WiFi NTP but we will rarely have WiFi
+        rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());  // 17th Jan 2021 15:24:30
 
-      oled.display();
+        online.rtc = true;
+
+        Serial.print(F("System time set to: "));
+        Serial.println(rtc.getTime("%B %d %Y %H:%M:%S")); //From ESP32Time library example
+
+        recordSystemSettingsToFile(); //This will re-record the setting file with current date/time.
+      }
     }
   }
 }

@@ -1,33 +1,161 @@
+//Get MAC, start radio
+//Tack device's MAC address to end of friendly broadcast name
+//This allows multiple units to be on at same time
+bool startBluetooth()
+{
+  //Get unit MAC address
+  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
+  unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
+
+  if (digitalRead(baseSwitch) == HIGH)
+    sprintf(deviceName, "Surveyor Rover-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Rover mode
+  else
+    sprintf(deviceName, "Surveyor Base-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Base mode
+
+  if (SerialBT.begin(deviceName) == false)
+  {
+    Serial.println(F("An error occurred initializing Bluetooth"));
+    radioState = RADIO_OFF;
+    digitalWrite(bluetoothStatusLED, LOW);
+    return (false);
+  }
+
+  //Set PIN to 1234 so we can connect to older BT devices, but not require a PIN for modern device pairing
+  //See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
+  //https://github.com/espressif/esp-idf/issues/1541
+  //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
+
+  esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_NONE; //Requires pin 1234 on old BT dongle, No prompt on new BT dongle
+  //esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_OUT; //Works but prompts for either pin (old) or 'Does this 6 pin appear on the device?' (new)
+
+  esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
+
+  esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
+  esp_bt_pin_code_t pin_code;
+  pin_code[0] = '1';
+  pin_code[1] = '2';
+  pin_code[2] = '3';
+  pin_code[3] = '4';
+  esp_bt_gap_set_pin(pin_type, 4, pin_code);
+  //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+  SerialBT.register_callback(btCallback);
+  SerialBT.setTimeout(250);
+
+  Serial.print(F("Bluetooth broadcasting as: "));
+  Serial.println(deviceName);
+
+  radioState = BT_ON_NOCONNECTION;
+  digitalWrite(bluetoothStatusLED, HIGH);
+
+  //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
+  if (F9PSerialReadTaskHandle == NULL)
+    xTaskCreate(
+      F9PSerialReadTask,
+      "F9Read", //Just for humans
+      readTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      &F9PSerialReadTaskHandle); //Task handle
+
+  if (F9PSerialWriteTaskHandle == NULL)
+    xTaskCreate(
+      F9PSerialWriteTask,
+      "F9Write", //Just for humans
+      writeTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      &F9PSerialWriteTaskHandle); //Task handle
+
+  //Start task for controlling Bluetooth pair LED
+  btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
+
+  return (true);
+}
+
+//This function stops BT so that it can be restarted later
+//It also releases as much system resources as possible so that WiFi/caster is more stable
+void endBluetooth()
+{
+  //Delete tasks if running
+  if (F9PSerialReadTaskHandle != NULL)
+  {
+    vTaskDelete(F9PSerialReadTaskHandle);
+    F9PSerialReadTaskHandle = NULL;
+  }
+  if (F9PSerialWriteTaskHandle != NULL)
+  {
+    vTaskDelete(F9PSerialWriteTaskHandle);
+    F9PSerialWriteTaskHandle = NULL;
+  }
+
+  SerialBT.flush(); //Complete any transfers
+  SerialBT.disconnect(); //Drop any clients
+  SerialBT.end(); //SerialBT.end() will release significant RAM (~100k!) but a SerialBT.start will crash.
+
+  //The following code releases the BT hardware so that it can be restarted with a SerialBT.begin
+  customBTstop();
+  Serial.println(F("Bluetooth turned off"));
+
+  radioState = RADIO_OFF;
+}
+
 //Starting and restarting BT is a problem. See issue: https://github.com/espressif/arduino-esp32/issues/2718
 //To work around the bug without modifying the core we create our own btStop() function with
 //the patch from github
-//bool customBTstop() {
-//  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE) {
-//    return true;
-//  }
-//  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED) {
-//    if (esp_bt_controller_disable()) {
-//      log_e("BT Disable failed");
-//      return false;
-//    }
-//    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED);
-//  }
-//  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
-//  {
-//    log_i("inited");
-//    if (esp_bt_controller_deinit())
-//    {
-//      log_e("BT deint failed");
-//      return false;
-//    }
-//    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
-//      ;
-//    return true;
-//  }
-//  log_e("BT Stop failed");
-//  return false;
-//}
+bool customBTstop() {
 
+  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE) {
+    return true;
+  }
+  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED) {
+    if (esp_bt_controller_disable()) {
+      log_e("BT Disable failed");
+      return false;
+    }
+    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED);
+  }
+  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
+  {
+    log_i("inited");
+    if (esp_bt_controller_deinit())
+    {
+      log_e("BT deint failed");
+      return false;
+    }
+    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
+      ;
+    return true;
+  }
+  log_e("BT Stop failed");
+  return false;
+}
+
+//Start WiFi assuming it was previously fully released
+//See WiFiBluetoothSwitch sketch for more info
+void startWiFi()
+{
+  wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
+  esp_wifi_init(&wifi_init_config); //Restart WiFi resources
+
+  Serial.printf("Connecting to local WiFi: %s\n\r", settings.wifiSSID);
+  WiFi.begin(settings.wifiSSID, settings.wifiPW);
+
+  radioState = WIFI_ON_NOCONNECTION;
+}
+
+//Stop WiFi and release all resources
+//See WiFiBluetoothSwitch sketch for more info
+void stopWiFi()
+{
+  caster.stop();
+  WiFi.mode(WIFI_OFF);
+  esp_wifi_deinit(); //Free all resources
+  Serial.println("WiFi Stopped");
+
+  radioState = RADIO_OFF;
+}
 
 //Setup the u-blox module for any setup (base or rover)
 //In general we check if the setting is incorrect before writing it. Otherwise, the set commands have, on rare occasion, become

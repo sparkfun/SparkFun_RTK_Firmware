@@ -26,8 +26,9 @@ void updateSystemState()
             displayRoverFail(1000);
             return;
           }
-
-          beginBluetooth(); //Restart Bluetooth with 'Rover' name
+          
+          stopWiFi(); //Turn off WiFi and release all resources
+          startBluetooth(); //Turn on Bluetooth with 'Rover' name
 
           digitalWrite(baseStatusLED, LOW);
           displayRoverSuccess(500);
@@ -91,7 +92,8 @@ void updateSystemState()
 
           //Restart Bluetooth with 'Base' name
           //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
-          beginBluetooth();
+          stopWiFi();
+          startBluetooth();
 
           if (configureUbloxModuleBase() == true)
           {
@@ -192,11 +194,8 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             endBluetooth();
+            startWiFi();
 
-            Serial.printf("Connecting to local WiFi: %s\n\r", settings.wifiSSID);
-            WiFi.begin(settings.wifiSSID, settings.wifiPW);
-
-            radioState = WIFI_ON_NOCONNECTION;
             changeState(STATE_BASE_TEMP_WIFI_STARTED);
           }
         }
@@ -216,9 +215,11 @@ void updateSystemState()
           {
             Serial.print(F("WiFi Status: "));
             switch (wifiStatus) {
+              case WL_NO_SSID_AVAIL: 
+                Serial.printf("SSID '%s' not detected\n\r", settings.wifiSSID); 
+                break;
               case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
               case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
-              case WL_NO_SSID_AVAIL: Serial.println(F("WL_NO_SSID_AVAIL")); break;
               case WL_SCAN_COMPLETED: Serial.println(F("WL_SCAN_COMPLETED")); break;
               case WL_CONNECTED: Serial.println(F("WL_CONNECTED")); break;
               case WL_CONNECT_FAILED: Serial.println(F("WL_CONNECT_FAILED")); break;
@@ -348,11 +349,7 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             endBluetooth();
-
-            Serial.printf("Connecting to local WiFi: %s\n\r", settings.wifiSSID);
-            WiFi.begin(settings.wifiSSID, settings.wifiPW);
-
-            radioState = WIFI_ON_NOCONNECTION;
+            startWiFi();
 
             rtcmPacketsSent = 0; //Reset any previous number
 
@@ -375,9 +372,11 @@ void updateSystemState()
           {
             Serial.print(F("WiFi Status: "));
             switch (wifiStatus) {
+              case WL_NO_SSID_AVAIL: 
+                Serial.printf("SSID '%s' not detected\n\r", settings.wifiSSID); 
+                break;
               case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
               case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
-              case WL_NO_SSID_AVAIL: Serial.println(F("WL_NO_SSID_AVAIL")); break;
               case WL_SCAN_COMPLETED: Serial.println(F("WL_SCAN_COMPLETED")); break;
               case WL_CONNECTED: Serial.println(F("WL_CONNECTED")); break;
               case WL_CONNECT_FAILED: Serial.println(F("WL_CONNECT_FAILED")); break;

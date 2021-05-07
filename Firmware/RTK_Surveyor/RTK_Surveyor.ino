@@ -18,6 +18,9 @@
   A settings file is accessed on microSD if available otherwise settings are pulled from
   ESP32's emulated EEPROM.
 
+  As of v1.2, the heap is approximately 94072 during Rover Fix, 142260 during WiFi Casting. This is 
+  important to maintain as unit will begin to have stability issues at ~30k.
+
   The main loop handles lower priority updates such as:
     Fuel gauge checking and power LED color update
     Setup switch monitoring (module configure between Rover and Base)
@@ -34,7 +37,7 @@
     Enable various debug outputs sent over BT
 
     TODO
-      Solve caster port not closing issue
+      Indicate successful casting
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -110,6 +113,8 @@ const int fatSemaphore_maxWait = 5; //TickType_t
 //Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <WiFi.h>
+#include "esp_wifi.h" //Needed for init/deinit of resources to free up RAM
+
 WiFiClient caster;
 const char * ntrip_server_name = "SparkFun_RTK_Surveyor";
 
@@ -135,7 +140,7 @@ SFE_UBLOX_GNSS i2cGNSS;
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 
-#define gnssFileBufferSize 32768 // Allocate 16KBytes of RAM for UBX message storage
+#define gnssFileBufferSize 16384 // Allocate 16KBytes of RAM for UBX message storage
 
 TaskHandle_t F9PI2CTaskHandle = NULL; //Task for regularly checking I2C
 const int i2cTaskStackSize = 2000;
@@ -227,6 +232,7 @@ uint32_t lastBaseLEDupdate = 0; //Controls the blinking of the Base LED
 
 uint32_t lastFileReport = 0; //When logging, print file record stats every few seconds
 long lastStackReport = 0; //Controls the report rate of stack highwater mark within a task
+uint32_t lastHeapReport = 0;
 
 uint32_t lastSatelliteDishIconUpdate = 0;
 bool satelliteDishIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms
@@ -308,6 +314,12 @@ void loop()
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;
+
+  if (millis() - lastHeapReport > 1000)
+  {
+    lastHeapReport = millis();
+    Serial.printf("freeHeap: %d\n\r", ESP.getFreeHeap());
+  }
 
   delay(10); //A small delay prevents panic if no other I2C or functions are called
 }

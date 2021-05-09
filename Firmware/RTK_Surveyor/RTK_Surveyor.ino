@@ -105,14 +105,14 @@ SdFat sd;
 SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we can set the SPI freq in beginSD()
 #define SD_CONFIG SdSpiConfig(pin_microSD_CS, DEDICATED_SPI, SD_SCK_MHZ(36), &spi)
 
-char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the filename prefix for logs and settings files
-char firmwareFilePrefix[40] = "RTK_Surveyor"; //Sets the filename prefix for logs and settings files
+char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
+char firmwareFilePrefix[40] = "RTK_Surveyor"; //Sets the prefix for firmware files
 
 SdFile ubxFile; //File that all gnss ubx messages setences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
 int startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
 
-//SdFat crashes when F9PSerialReadTask() is called in the middle of a ubx file write within loop()
+//System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
 SemaphoreHandle_t xFATSemaphore;
 const int fatSemaphore_maxWait = 5; //TickType_t
@@ -263,6 +263,8 @@ uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
 uint32_t lastWifiIconUpdate = 0;
 bool wifiIconDisplayed = false; //Toggles as lastWifiIconUpdate goes above 1000ms
+uint32_t lastLoggingIconUpdate = 0;
+int loggingIconDisplayed = 0; //Increases every 500ms while logging
 
 uint32_t lastLogSize = 0;
 bool logIncreasing = false; //Goes true when log file is greater than lastLogSize

@@ -25,6 +25,9 @@ void beginBoard()
     pin_zed_tx_ready = 26;
     pin_zed_reset = 27;
     pin_batteryLevel_alert = 36;
+
+    strcpy(platformFilePrefix, "SFE_Surveyor");
+    strcpy(firmwareFilePrefix, "RTK_Surveyor");
   }
   else if (productVariant == RTK_EXPRESS)
   {

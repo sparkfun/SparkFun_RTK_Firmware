@@ -105,7 +105,8 @@ SdFat sd;
 SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we can set the SPI freq in beginSD()
 #define SD_CONFIG SdSpiConfig(pin_microSD_CS, DEDICATED_SPI, SD_SCK_MHZ(36), &spi)
 
-char settingsFileName[40] = "SFE_Surveyor_Settings.txt"; //File to read/write system settings to
+char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the filename prefix for logs and settings files
+char firmwareFilePrefix[40] = "RTK_Surveyor"; //Sets the filename prefix for logs and settings files
 
 SdFile ubxFile; //File that all gnss ubx messages setences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second

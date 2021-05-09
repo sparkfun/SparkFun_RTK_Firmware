@@ -69,6 +69,11 @@ void recordSystemSettingsToFile()
     //Attempt to write to file system. This avoids collisions with file writing from other functions like updateLogs()
     if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
     {
+      //Assemble settings file name
+      char settingsFileName[40]; //SFE_Surveyor_Settings.txt
+      strcpy(settingsFileName, platformFilePrefix);
+      strcat(settingsFileName, "_Settings.txt");
+
       if (sd.exists(settingsFileName))
         sd.remove(settingsFileName);
 
@@ -154,6 +159,11 @@ bool loadSystemSettingsFromFile()
 {
   if (online.microSD == true)
   {
+    //Assemble settings file name
+    char settingsFileName[40]; //SFE_Surveyor_Settings.txt
+    strcpy(settingsFileName, platformFilePrefix);
+    strcat(settingsFileName, "_Settings.txt");
+
     if (sd.exists(settingsFileName))
     {
       SdFile settingsFile; //FAT32
@@ -266,8 +276,15 @@ bool parseLine(char* str) {
     if (d == -1)
     {
       eepromErase();
+
+      //Assemble settings file name
+      char settingsFileName[40]; //SFE_Surveyor_Settings.txt
+      strcpy(settingsFileName, platformFilePrefix);
+      strcat(settingsFileName, "_Settings.txt");
       sd.remove(settingsFileName);
+
       Serial.println(F("RTK Surveyor has been factory reset. Freezing. Please restart and open terminal at 115200bps."));
+
       while (1)
         delay(1); //Prevent CPU freakout
     }

@@ -29,7 +29,7 @@ void menuMain()
 
     Serial.println(F("r) Reset all settings to default"));
 
-    if(binCount > 0)
+    if (binCount > 0)
       Serial.println(F("f) Firmware upgrade"));
 
     Serial.println(F("t) Test menu"));
@@ -58,13 +58,18 @@ void menuMain()
       {
         eepromErase();
 
+        //Assemble settings file name
+        char settingsFileName[40]; //SFE_Surveyor_Settings.txt
+        strcpy(settingsFileName, platformFilePrefix);
+        strcat(settingsFileName, "_Settings.txt");
+
         if (sd.exists(settingsFileName))
           sd.remove(settingsFileName);
 
         i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
         Serial.println(F("Settings erased. Please reset RTK Surveyor. Freezing."));
-        while (1) 
+        while (1)
           delay(1); //Prevent CPU freakout
       }
       else

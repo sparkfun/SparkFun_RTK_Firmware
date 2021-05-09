@@ -58,7 +58,10 @@ void scanForFirmware()
       SdFile tempFile;
       SdFile dir;
       const char* BIN_EXT = "bin";
-      const char* BIN_HEADER = "RTK_Surveyor_Firmware";
+      char BIN_HEADER[30]; //"RTK_Surveyor_Firmware"
+      strcpy(BIN_HEADER, firmwareFilePrefix);
+      strcat(BIN_HEADER, "_Firmware");
+
       char fname[50]; //Handle long file names
 
       dir.open("/"); //Open root
@@ -186,6 +189,11 @@ void updateFromSD(char *firmwareFileName)
             sd.remove(firmwareFileName);
 
             eepromErase();
+
+            //Assemble settings file name
+            char settingsFileName[40]; //SFE_Surveyor_Settings.txt
+            strcpy(settingsFileName, platformFilePrefix);
+            strcat(settingsFileName, "_Settings.txt");
 
             if (sd.exists(settingsFileName))
               sd.remove(settingsFileName);

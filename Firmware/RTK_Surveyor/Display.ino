@@ -409,7 +409,23 @@ void paintLogging()
   {
     if (logIncreasing == true)
     {
-      oled.drawIcon(64 - Logging_Width, 48 - Logging_Height, Logging_Width, Logging_Height, Logging, sizeof(Logging), true); //Draw the icon
+      //Animate icon to show system running
+      if (millis() - lastLoggingIconUpdate > 500)
+      {
+        lastLoggingIconUpdate = millis();
+
+        if (loggingIconDisplayed == 0)
+          oled.drawIcon(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0, sizeof(Logging_0), true); //Draw the icon
+        else if (loggingIconDisplayed == 1)
+          oled.drawIcon(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1, sizeof(Logging_1), true); //Draw the icon
+        else if (loggingIconDisplayed == 2)
+          oled.drawIcon(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2, sizeof(Logging_2), true); //Draw the icon
+        else if (loggingIconDisplayed == 3)
+          oled.drawIcon(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3, sizeof(Logging_3), true); //Draw the icon
+
+        loggingIconDisplayed++; //Goto next icon
+        loggingIconDisplayed %= 4; //Wrap
+      }
     }
   }
 }
@@ -1156,7 +1172,6 @@ void drawFrame()
 // External connections: Loop back test on DATA
 void displayTest()
 {
-
   if (online.display == true)
   {
     int xOffset = 2;
@@ -1187,7 +1202,7 @@ void displayTest()
     while (digitalRead(pin_setupButton) == LOW || digitalRead(pin_powerSenseAndControl) == LOW)
       delay(10);
 
-    //Update display until user presses the setup or power buttons
+    //Update display until user presses the setup button
     while (1)
     {
       if (digitalRead(pin_setupButton) == LOW) break;
@@ -1201,7 +1216,8 @@ void displayTest()
       oled.setCursor(xOffset, yOffset); //x, y
       oled.print(F("SD:"));
 
-      beginSD(); //Test if SD is present
+      if (online.microSD == false)
+        beginSD(); //Test if SD is present
       if (online.microSD == true)
         oled.print(F("OK"));
       else

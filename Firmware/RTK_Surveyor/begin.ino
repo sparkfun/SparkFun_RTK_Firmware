@@ -176,6 +176,9 @@ void beginGNSS()
     }
   }
 
+  //Increase transactions to reduce transfer time
+  i2cGNSS.i2cTransactionSize = 128;
+
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
   //  if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info
   //  {

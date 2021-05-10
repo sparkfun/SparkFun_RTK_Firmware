@@ -18,7 +18,7 @@
   A settings file is accessed on microSD if available otherwise settings are pulled from
   ESP32's emulated EEPROM.
 
-  As of v1.2, the heap is approximately 94072 during Rover Fix, 142260 during WiFi Casting. This is 
+  As of v1.2, the heap is approximately 94072 during Rover Fix, 142260 during WiFi Casting. This is
   important to maintain as unit will begin to have stability issues at ~30k.
 
   The main loop handles lower priority updates such as:
@@ -37,7 +37,6 @@
     Enable various debug outputs sent over BT
 
     TODO
-      Add state machine to power and setup buttons
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;

@@ -295,22 +295,19 @@ void beginFuelGauge()
   online.battery = true;
 }
 
-//Begin onboard accelerometer if available
+//Begin accelerometer if available
 void beginAccelerometer()
 {
-  if (productVariant == RTK_EXPRESS)
+  if (accel.begin() == false)
   {
-    if (accel.begin() == false)
-    {
-      Serial.println("Accelerometer not detected.");
-      online.accelerometer = false;
-      return;
-    }
-
-    //The larger the avgAmount the faster we should read the sensor
-    //accel.setDataRate(LIS2DH12_ODR_100Hz); //6 measurements a second
-    accel.setDataRate(LIS2DH12_ODR_400Hz); //25 measurements a second
-
-    online.accelerometer = true;
+    Serial.println("Accelerometer not detected.");
+    online.accelerometer = false;
+    return;
   }
+
+  //The larger the avgAmount the faster we should read the sensor
+  //accel.setDataRate(LIS2DH12_ODR_100Hz); //6 measurements a second
+  accel.setDataRate(LIS2DH12_ODR_400Hz); //25 measurements a second
+
+  online.accelerometer = true;
 }

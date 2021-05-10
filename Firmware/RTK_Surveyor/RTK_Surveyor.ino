@@ -405,11 +405,16 @@ void updateLogs()
           if (millis() - lastUBXLogSyncTime > 1000)
           {
             lastUBXLogSyncTime = millis();
-            digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
+
+            if (productVariant == RTK_SURVEYOR)
+              digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
+
             long startWriteTime = millis();
             ubxFile.sync();
             long stopWriteTime = millis();
             totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
+
+            if (productVariant == RTK_SURVEYOR)
             digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
 
             updateDataFileAccess(&ubxFile); // Update the file access time & date

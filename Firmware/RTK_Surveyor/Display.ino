@@ -1199,13 +1199,36 @@ void displayTest()
     oled.display();
 
     //Wait for user to stop pressing buttons
-    while (digitalRead(pin_setupButton) == LOW || digitalRead(pin_powerSenseAndControl) == LOW)
-      delay(10);
+    if (productVariant == RTK_EXPRESS)
+    {
+      while (digitalRead(pin_setupButton) == LOW || digitalRead(pin_powerSenseAndControl) == LOW)
+        delay(10);
+    }
+
+    //For Surveyor, we need to monitor the rocker switch
+    ButtonState previousRockerSwitch = BUTTON_ROVER;
+    if (productVariant == RTK_SURVEYOR)
+    {
+      if (digitalRead(pin_baseSwitch) == LOW) //Switch is set to Base
+        previousRockerSwitch = BUTTON_BASE;
+    }
 
     //Update display until user presses the setup button
     while (1)
     {
-      if (digitalRead(pin_setupButton) == LOW) break;
+      //Check for user interaction
+      if (productVariant == RTK_EXPRESS)
+      {
+        if (digitalRead(pin_setupButton) == LOW) break;
+      }
+      else if (productVariant == RTK_SURVEYOR)
+      {
+        //Check if rocker switch moved
+        if (digitalRead(pin_baseSwitch) == HIGH && //Switch is set to Rover
+            previousRockerSwitch == BUTTON_BASE) break;
+        if (digitalRead(pin_baseSwitch) == LOW && //Switch is set to Base
+            previousRockerSwitch == BUTTON_ROVER) break;
+      }
 
       oled.clear(PAGE); // Clear the display's internal memory
 
@@ -1302,9 +1325,12 @@ void displayTest()
 
     oled.display();
 
-    //Wait for user to stop pressing buttons
-    while (digitalRead(pin_setupButton) == LOW)
-      delay(10);
+    if (productVariant == RTK_EXPRESS)
+    {
+      //Wait for user to stop pressing buttons
+      while (digitalRead(pin_setupButton) == LOW)
+        delay(10);
+    }
 
     delay(2000); //Big debounce
   }

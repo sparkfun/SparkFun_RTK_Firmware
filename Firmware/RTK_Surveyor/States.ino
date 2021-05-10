@@ -30,7 +30,8 @@ void updateSystemState()
           stopWiFi(); //Turn off WiFi and release all resources
           startBluetooth(); //Turn on Bluetooth with 'Rover' name
 
-          digitalWrite(pin_baseStatusLED, LOW);
+          if (productVariant == RTK_SURVEYOR)
+            digitalWrite(pin_baseStatusLED, LOW);
           displayRoverSuccess(500);
 
           changeState(STATE_ROVER_NO_FIX);
@@ -83,10 +84,13 @@ void updateSystemState()
       case (STATE_BASE_NOT_STARTED):
         {
           //Turn off base LED until we successfully enter temp/fix state
-          digitalWrite(pin_baseStatusLED, LOW);
-          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+          if (productVariant == RTK_SURVEYOR)
+          {
+            digitalWrite(pin_baseStatusLED, LOW);
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+          }
 
           displayBaseStart(0); //Show 'Base'
 
@@ -122,7 +126,9 @@ void updateSystemState()
           if (millis() - lastBaseLEDupdate > 1000)
           {
             lastBaseLEDupdate = millis();
-            digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED));
+
+            if (productVariant == RTK_SURVEYOR)
+              digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED));
           }
 
           //Check for <1m horz accuracy before starting surveyIn
@@ -154,13 +160,17 @@ void updateSystemState()
           if (millis() - lastBaseLEDupdate > 500)
           {
             lastBaseLEDupdate = millis();
-            digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED));
+
+            if (productVariant == RTK_SURVEYOR)
+              digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED));
           }
 
           if (i2cGNSS.getSurveyInValid() == true) //Survey in complete
           {
             Serial.println(F("Base survey complete! RTCM now broadcasting."));
-            digitalWrite(pin_baseStatusLED, HIGH); //Indicate survey complete
+
+            if (productVariant == RTK_SURVEYOR)
+              digitalWrite(pin_baseStatusLED, HIGH); //Indicate survey complete
 
             rtcmPacketsSent = 0; //Reset any previous number
             changeState(STATE_BASE_TEMP_TRANSMITTING);
@@ -233,9 +243,12 @@ void updateSystemState()
 
       case (STATE_BASE_TEMP_WIFI_CONNECTED):
         {
-          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+          if (productVariant == RTK_SURVEYOR)
+          {
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+          }
 
           if (settings.enableNtripServer == true)
           {
@@ -334,7 +347,8 @@ void updateSystemState()
           bool response = startFixedBase();
           if (response == true)
           {
-            digitalWrite(pin_baseStatusLED, HIGH); //Turn on base LED
+            if (productVariant == RTK_SURVEYOR)
+              digitalWrite(pin_baseStatusLED, HIGH); //Turn on base LED
 
             changeState(STATE_BASE_FIXED_TRANSMITTING);
           }
@@ -396,10 +410,12 @@ void updateSystemState()
 
       case (STATE_BASE_FIXED_WIFI_CONNECTED):
         {
-          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-
+          if (productVariant == RTK_SURVEYOR)
+          {
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+          }
           if (settings.enableNtripServer == true)
           {
             //Open connection to caster service

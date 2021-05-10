@@ -7,7 +7,7 @@ bool startBluetooth()
   esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
   unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
-  if (digitalRead(pin_baseSwitch) == HIGH)
+  if (buttonPreviousState == BUTTON_ROVER)
     sprintf(deviceName, "Surveyor Rover-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Rover mode
   else
     sprintf(deviceName, "Surveyor Base-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Base mode
@@ -16,7 +16,9 @@ bool startBluetooth()
   {
     Serial.println(F("An error occurred initializing Bluetooth"));
     radioState = RADIO_OFF;
-    digitalWrite(pin_bluetoothStatusLED, LOW);
+
+    if (productVariant == RTK_SURVEYOR)
+      digitalWrite(pin_bluetoothStatusLED, LOW);
     return (false);
   }
 
@@ -47,7 +49,9 @@ bool startBluetooth()
   Serial.println(deviceName);
 
   radioState = BT_ON_NOCONNECTION;
-  digitalWrite(pin_bluetoothStatusLED, HIGH);
+
+  if (productVariant == RTK_SURVEYOR)
+    digitalWrite(pin_bluetoothStatusLED, HIGH);
 
   //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
   if (F9PSerialReadTaskHandle == NULL)
@@ -545,18 +549,21 @@ void blinkError(t_errorNumber errorNumber)
   {
     for (int x = 0 ; x < errorNumber ; x++)
     {
-      digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
-      digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
-      digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
-      digitalWrite(pin_baseStatusLED, HIGH);
-      digitalWrite(pin_bluetoothStatusLED, HIGH);
-      delay(200);
-      digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-      digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-      digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-      digitalWrite(pin_baseStatusLED, LOW);
-      digitalWrite(pin_bluetoothStatusLED, LOW);
-      delay(200);
+      if (productVariant == RTK_SURVEYOR)
+      {
+        digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+        digitalWrite(pin_baseStatusLED, HIGH);
+        digitalWrite(pin_bluetoothStatusLED, HIGH);
+        delay(200);
+        digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+        digitalWrite(pin_baseStatusLED, LOW);
+        digitalWrite(pin_bluetoothStatusLED, LOW);
+        delay(200);
+      }
     }
 
     delay(2000);
@@ -626,13 +633,15 @@ void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
     Serial.println(F("Client Connected"));
     radioState = BT_CONNECTED;
-    digitalWrite(pin_bluetoothStatusLED, HIGH);
+    if (productVariant == RTK_SURVEYOR)
+      digitalWrite(pin_bluetoothStatusLED, HIGH);
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
     Serial.println(F("Client disconnected"));
     radioState = BT_ON_NOCONNECTION;
-    digitalWrite(pin_bluetoothStatusLED, LOW);
+    if (productVariant == RTK_SURVEYOR)
+      digitalWrite(pin_bluetoothStatusLED, LOW);
   }
 }
 
@@ -781,27 +790,30 @@ void reportHeap()
 //Used to indicate casting
 void cyclePositionLEDs()
 {
-  //Cycle position LEDs to indicate casting
-  if (millis() - lastCasterLEDupdate > 500)
+  if (productVariant == RTK_SURVEYOR)
   {
-    lastCasterLEDupdate = millis();
-    if (digitalRead(pin_positionAccuracyLED_100cm) == HIGH)
+    //Cycle position LEDs to indicate casting
+    if (millis() - lastCasterLEDupdate > 500)
     {
-      digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-      digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
-      digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-    }
-    else if (digitalRead(pin_positionAccuracyLED_10cm) == HIGH)
-    {
-      digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
-      digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-      digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-    }
-    else //Catch all
-    {
-      digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-      digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-      digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+      lastCasterLEDupdate = millis();
+      if (digitalRead(pin_positionAccuracyLED_100cm) == HIGH)
+      {
+        digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+      }
+      else if (digitalRead(pin_positionAccuracyLED_10cm) == HIGH)
+      {
+        digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+      }
+      else //Catch all
+      {
+        digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+      }
     }
   }
 }

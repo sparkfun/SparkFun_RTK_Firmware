@@ -78,10 +78,13 @@ void startUART2Task( void *pvParameters )
 //Control BT status LED according to bluetoothState
 void updateBTled()
 {
-  if (radioState == BT_ON_NOCONNECTION)
-    digitalWrite(pin_bluetoothStatusLED, !digitalRead(pin_bluetoothStatusLED));
-  else if (radioState == BT_CONNECTED)
-    digitalWrite(pin_bluetoothStatusLED, HIGH);
-  else
-    digitalWrite(pin_bluetoothStatusLED, LOW);
+  if (productVariant == RTK_SURVEYOR)
+  {
+    if (radioState == BT_ON_NOCONNECTION)
+      digitalWrite(pin_bluetoothStatusLED, !digitalRead(pin_bluetoothStatusLED));
+    else if (radioState == BT_CONNECTED)
+      digitalWrite(pin_bluetoothStatusLED, HIGH);
+    else
+      digitalWrite(pin_bluetoothStatusLED, LOW);
+  }
 }

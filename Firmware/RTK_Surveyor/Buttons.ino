@@ -73,13 +73,6 @@ void checkButtons()
         {
           setupButtonState = BUTTON_PRESSED;
 
-          //Check to see if user is pressing both buttons simultaneously - show test screen
-          if (digitalRead(pin_powerSenseAndControl) == LOW)
-          {
-            displayTest();
-            return;
-          }
-
           setupByPowerButton = false;
 
           //Toggle between Rover and Base system states
@@ -100,6 +93,19 @@ void checkButtons()
     {
       //Return to unpressed state
       setupButtonState = BUTTON_RELEASED;
+    }
+
+    //Check to see if user is pressing both buttons simultaneously - show test screen
+    if (digitalRead(pin_powerSenseAndControl) == LOW && digitalRead(pin_setupButton) == LOW)
+    {
+      delay(debounceDelay); //Debounce
+      if (digitalRead(pin_powerSenseAndControl) == LOW && digitalRead(pin_setupButton) == LOW)
+      {
+        displayTest();
+        setupButtonState = BUTTON_RELEASED;
+        buttonPreviousState = BUTTON_ROVER;
+        changeState(STATE_ROVER_NOT_STARTED);
+      }
     }
     //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   }//end productVariant = Express

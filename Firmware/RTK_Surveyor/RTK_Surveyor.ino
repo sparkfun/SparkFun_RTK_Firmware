@@ -266,8 +266,9 @@ bool wifiIconDisplayed = false; //Toggles as lastWifiIconUpdate goes above 1000m
 uint32_t lastLoggingIconUpdate = 0;
 int loggingIconDisplayed = 0; //Increases every 500ms while logging
 
-uint32_t lastLogSize = 0;
+uint64_t lastLogSize = 0;
 bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
+bool reuseLastLog = false; //Goes true if we have a reset due to software (rather than POR)
 
 uint32_t lastRTCMPacketSent = 0; //Used to count RTCM packets sent during base mode
 uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM()
@@ -418,8 +419,10 @@ void updateLogs()
 
       if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
       {
-        Serial.printf(" - Generation rate: %0.1fkB/s", (ubxFile.fileSize() / (millis() / 1000.0)) / 1000.0);
-        Serial.printf(" - Write speed: %0.1fkB/s", (ubxFile.fileSize() / (totalWriteTime / 1000.0)) / 1000.0);
+        //Calculate generation and write speeds every 5 seconds
+        uint32_t delta = ubxFile.fileSize() - lastLogSize;
+        Serial.printf(" - Generation rate: %0.1fkB/s", delta / 5.0 / 1000.0);
+        Serial.printf(" - Write speed: %0.1fkB/s", delta / (totalWriteTime / 1000.0) / 1000.0);
       }
       else
       {
@@ -428,7 +431,8 @@ void updateLogs()
 
       Serial.println();
 
-      //Update for display
+      totalWriteTime = 0; //Reset write time every 5s
+
       if (ubxFile.fileSize() > lastLogSize)
       {
         lastLogSize = ubxFile.fileSize();

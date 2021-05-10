@@ -65,7 +65,7 @@ void F9PSerialReadTask(void *e)
 //Assign UART2 interrupts to the current core. See: https://github.com/espressif/arduino-esp32/issues/3386
 void startUART2Task( void *pvParameters )
 {
-  serialGNSS.begin(115200); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at 115200bps.
+  serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
   serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
   serialGNSS.setTimeout(50);
 

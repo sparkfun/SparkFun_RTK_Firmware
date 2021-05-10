@@ -42,11 +42,40 @@ void beginBoard()
 
     pinMode(pin_powerSenseAndControl, INPUT_PULLUP);
     pinMode(pin_powerFastOff, INPUT);
-    powerOnCheck(); //After serial start in case we want to print
+
+    //Check reset reason. If system rese
+    if (esp_reset_reason() == ESP_RST_POWERON)
+    {
+      powerOnCheck(); //Only do check if we POR start
+      reuseLastLog = false; //Start new log
+    }
+    else
+    {
+      reuseLastLog = true; //Atempt to reuse previous log
+      switch (esp_reset_reason())
+      {
+        case ESP_RST_UNKNOWN: Serial.println(F("ESP_RST_UNKNOWN")); break;
+        case ESP_RST_POWERON : Serial.println(F("ESP_RST_POWERON")); break;
+        case ESP_RST_SW : Serial.println(F("ESP_RST_SW")); break;
+        case ESP_RST_PANIC : Serial.println(F("ESP_RST_PANIC")); break;
+        case ESP_RST_INT_WDT : Serial.println(F("ESP_RST_INT_WDT")); break;
+        case ESP_RST_TASK_WDT : Serial.println(F("ESP_RST_TASK_WDT")); break;
+        case ESP_RST_WDT : Serial.println(F("ESP_RST_WDT")); break;
+        case ESP_RST_DEEPSLEEP : Serial.println(F("ESP_RST_DEEPSLEEP")); break;
+        case ESP_RST_BROWNOUT : Serial.println(F("ESP_RST_BROWNOUT")); break;
+        case ESP_RST_SDIO : Serial.println(F("ESP_RST_SDIO")); break;
+        default : Serial.println(F("Unknown"));
+      }
+    }
 
     pinMode(pin_setupButton, INPUT_PULLUP);
 
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
+
+    reuseLastLog = true; //Atempt to reuse previous log
+
+    strcpy(platformFilePrefix, "SFE_Express");
+    strcpy(firmwareFilePrefix, "RTK_Express");
   }
 }
 

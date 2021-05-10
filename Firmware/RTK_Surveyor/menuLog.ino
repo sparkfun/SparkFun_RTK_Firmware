@@ -129,7 +129,7 @@ void menuLog()
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 
   //Based on current settings, update the logging options within the GNSS library
-  if(settings.log.rawx == true)
+  if (settings.log.rawx == true)
   {
     i2cGNSS.setAutoRXMRAWX(true, false); // Enable automatic RXM RAWX messages: without callback; without implicit update
     i2cGNSS.logRXMRAWX(true);
@@ -139,8 +139,8 @@ void menuLog()
     i2cGNSS.setAutoRXMRAWX(false); // Disable automatic RXM RAWX messages
     i2cGNSS.logRXMRAWX(false);
   }
-  
-  if(settings.log.sfrbx == true)
+
+  if (settings.log.sfrbx == true)
   {
     i2cGNSS.setAutoRXMSFRBX(true, false); // Enable automatic RXM SFRBX messages: without callback; without implicit update
     i2cGNSS.logRXMSFRBX(true);
@@ -184,25 +184,37 @@ void beginLogging()
 
       i2cGNSS.checkUblox();
 
-      //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
-      bool timeValid = false;
-      if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
-        timeValid = true;
-      if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
-        timeValid = true;
-
-      if (timeValid == false)
+      if (reuseLastLog == true) //attempt to use previous log
       {
-        Serial.println(F("beginLoggingUBX: No date/time available. No file created."));
-        delay(1000); //Give the receiver time to get a lock
-        online.logging = false;
-        return;
+        if (findLastLog(fileName) == false)
+        {
+          Serial.println(F("Failed to find last log. Making new one."));
+        }
       }
 
-      sprintf(fileName, "SFE_Surveyor_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
-              i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
-              i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
-             );
+      if (strlen(fileName) == 0)
+      {
+        //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
+        bool timeValid = false;
+        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
+          timeValid = true;
+        if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
+          timeValid = true;
+
+        if (timeValid == false)
+        {
+          Serial.println(F("beginLoggingUBX: No date/time available. No file created."));
+          delay(1000); //Give the receiver time to get a lock
+          online.logging = false;
+          return;
+        }
+
+        sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+                platformFilePrefix,
+                i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
+                i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
+               );
+      }
 
       //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
       if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
@@ -222,6 +234,13 @@ void beginLogging()
         updateDataFileCreate(&ubxFile); // Update the file to create time & date
 
         startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
+
+        //TODO For debug only, remove
+        if(reuseLastLog == true)
+        {
+          Serial.println(F("Appending last available log"));
+          ubxFile.println("Append file due to system reset");
+        }
 
         xSemaphoreGive(xFATSemaphore);
       }
@@ -321,4 +340,51 @@ uint8_t getSFRBXSettings(uint8_t portID)
   }
 
   return (settingPayload[2 + portID]); //Return just the byte associated with this portID
+}
+
+//Finds last log
+//Returns true if succesful
+bool findLastLog(char *lastLogName)
+{
+  bool foundAFile = false;
+
+  if (online.microSD == true)
+  {
+    //Attempt to access file system. This avoids collisions with file writing in F9PSerialReadTask()
+    //Wait a long time, this is important
+    if (xSemaphoreTake(xFATSemaphore, 10000) == pdPASS)
+    {
+      //Count available binaries
+      SdFile tempFile;
+      SdFile dir;
+      const char* LOG_EXTENSION = "ubx";
+      const char* LOG_PREFIX = platformFilePrefix;
+      char fname[50]; //Handle long file names
+
+      dir.open("/"); //Open root
+
+      while (tempFile.openNext(&dir, O_READ))
+      {
+        if (tempFile.isFile())
+        {
+          tempFile.getName(fname, sizeof(fname));
+
+          //Check for matching file name prefix and extension
+          if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
+          {
+            if (strstr(fname, LOG_PREFIX) != NULL)
+            {
+              strcpy(lastLogName, fname); //Store this file as last known log file
+              foundAFile = true;
+            }
+          }
+        }
+        tempFile.close();
+      }
+
+      xSemaphoreGive(xFATSemaphore);
+    }
+  }
+
+  return (foundAFile);
 }

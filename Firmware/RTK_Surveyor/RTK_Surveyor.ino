@@ -139,11 +139,27 @@ uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service tim
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GNSS i2cGNSS;
 
 //Note: There are two prevalent versions of the ZED-F9P: v1.12 (part# -01B) and v1.13 (-02B).
 //v1.13 causes the RTK LED to not function if SBAS is enabled. To avoid this, we
 //disable SBAS by default.
+
+// Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
+class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
+{
+  public:
+    boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
+
+    struct minfoStructure // Structure to hold the module info (uses 341 bytes of RAM)
+    {
+      char swVersion[30];
+      char hwVersion[10];
+      uint8_t extensionNo = 0;
+      char extension[10][30];
+    } minfo;
+};
+
+SFE_UBLOX_GNSS_ADD i2cGNSS;
 
 //Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings
 //This array holds the payload data bytes. Global so that we can use between config functions.

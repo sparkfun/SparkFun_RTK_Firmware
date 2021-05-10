@@ -201,6 +201,7 @@ void beginGNSS()
     if (i2cGNSS.begin() == false)
     {
       Serial.println(F("u-blox GNSS not detected at default I2C address. Hard stop."));
+      displayGNSSFail(0);
       blinkError(ERROR_NO_I2C);
     }
   }

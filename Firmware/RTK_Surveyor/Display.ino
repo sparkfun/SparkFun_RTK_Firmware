@@ -893,14 +893,6 @@ void paintBaseFixedCasterConnected()
   }
 }
 
-//Show error, 15 minutes elapsed without sufficient environment
-//void paintBaseFailed()
-//{
-//  oled.setFontType(0);
-//  oled.setCursor(0, 22); //x, y
-//  oled.print("Base Fail Please    Reset");
-//}
-
 void displayBaseStart(uint16_t displayTime)
 {
   if (online.display == true)
@@ -963,6 +955,33 @@ void displayBaseFail(uint16_t displayTime)
     int textKerning = 8;
 
     printTextwithKerning((char*)"Base", textX, textY, textKerning);
+
+    textX = 10;
+    textY = 25;
+    textKerning = 8;
+    oled.setFontType(1);
+
+    printTextwithKerning((char*)"Failed", textX, textY, textKerning);
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayGNSSFail(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.clear(PAGE);
+
+    oled.setCursor(21, 13);
+    oled.setFontType(1);
+
+    int textX = 18;
+    int textY = 10;
+    int textKerning = 8;
+
+    printTextwithKerning((char*)"GNSS", textX, textY, textKerning);
 
     textX = 10;
     textY = 25;

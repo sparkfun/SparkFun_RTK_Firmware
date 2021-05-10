@@ -58,6 +58,11 @@ void menuLog()
       else Serial.println(F("Disabled"));
     }
 
+    if (online.logging == true)
+    {
+      Serial.println(F("c) Close Current Log"));
+    }
+
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(30); //Timeout after x seconds
@@ -90,6 +95,16 @@ void menuLog()
     {
       settings.log.sfrbx ^= 1;
     }
+    else if (incoming == 'c')
+    {
+      if (online.logging == true)
+      {
+        //Close down file
+        ubxFile.sync();
+        ubxFile.close();
+        online.logging = false;
+      }
+    }
     else if (logNMEAMessages() == true || logUBXMessages() == true)
     {
       if (incoming == '8')
@@ -116,6 +131,7 @@ void menuLog()
       else
         printUnknown(incoming);
     }
+
     else if (incoming == 'x')
       break;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)
@@ -236,7 +252,7 @@ void beginLogging()
         startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 
         //TODO For debug only, remove
-        if(reuseLastLog == true)
+        if (reuseLastLog == true)
         {
           Serial.println(F("Appending last available log"));
           ubxFile.println("Append file due to system reset");

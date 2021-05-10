@@ -27,7 +27,6 @@ void beginBoard()
     pin_batteryLevel_alert = 36;
 
     strcpy(platformFilePrefix, "SFE_Surveyor");
-    strcpy(firmwareFilePrefix, "RTK_Surveyor");
   }
   else if (productVariant == RTK_EXPRESS)
   {
@@ -75,7 +74,6 @@ void beginBoard()
     reuseLastLog = true; //Atempt to reuse previous log
 
     strcpy(platformFilePrefix, "SFE_Express");
-    strcpy(firmwareFilePrefix, "RTK_Express");
   }
 }
 
@@ -100,7 +98,6 @@ void beginSD()
 
         delay(250); //Give SD more time to power up, then try again
         if (sd.begin(SD_CONFIG) == true) break;
-        //if (SD.begin(pin_microSD_CS, spi, spiFreq) == true) break;
       }
 
       if (tries == maxTries)
@@ -123,7 +120,7 @@ void beginSD()
     if (createTestFile() == false)
     {
       Serial.println(F("Failed to create test file. Format SD card with 'SD Card Formatter'."));
-      delay(5000);
+      displaySDFail(5000);
       online.microSD = false;
       return;
     }

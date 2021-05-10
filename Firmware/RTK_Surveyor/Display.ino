@@ -1309,3 +1309,28 @@ void displayTest()
     delay(2000); //Big debounce
   }
 }
+
+void displayForcedFirmwareUpdate()
+{
+  if (online.display == true)
+  {
+    oled.clear(PAGE);
+
+    oled.setCursor(21, 13);
+    oled.setFontType(1);
+
+    int textX = 11;
+    int textY = 10;
+    int textKerning = 8;
+
+    printTextwithKerning((char*)"Forced", textX, textY, textKerning);
+
+    textX = 11;
+    textY = 25;
+    textKerning = 8;
+    oled.setFontType(1);
+
+    printTextwithKerning((char*)"Update", textX, textY, textKerning);
+    oled.display();
+  }
+}

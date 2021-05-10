@@ -106,7 +106,6 @@ SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we c
 #define SD_CONFIG SdSpiConfig(pin_microSD_CS, DEDICATED_SPI, SD_SCK_MHZ(36), &spi)
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
-char firmwareFilePrefix[40] = "RTK_Surveyor"; //Sets the prefix for firmware files
 
 SdFile ubxFile; //File that all gnss ubx messages setences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
@@ -316,6 +315,8 @@ void setup()
 
   //eepromErase();
 
+  beginDisplay(); //Check if an external Qwiic OLED is attached
+
   beginSD(); //Test if SD is present
   if (online.microSD == true)
   {
@@ -324,8 +325,6 @@ void setup()
   }
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
-
-  beginDisplay(); //Check if an external Qwiic OLED is attached
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   beginFuelGauge(); //Configure battery fuel guage monitor

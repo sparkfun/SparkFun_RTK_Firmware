@@ -112,7 +112,7 @@ struct struct_settings {
   double fixedLat = 0.0;
   double fixedLong = 0.0;
   double fixedAltitude = 0.0;
-  uint32_t dataPortBaud = 115200; //Default to 115200bps
+  uint32_t dataPortBaud = 460800; //Default to 460800bps to support >10Hz update rates
   uint32_t radioPortBaud = 57600; //Default to 57600bps to support connection to SiK1000 radios
   bool enableSBAS = false; //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
   bool enableNtripServer = false;

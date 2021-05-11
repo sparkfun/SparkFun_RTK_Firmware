@@ -23,6 +23,10 @@ void menuDebug()
     if (settings.enableHeapReport == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
+    Serial.print(F("3) Set SPI/SD Interface Frequency: "));
+    Serial.print(settings.spiFrequency);
+    Serial.println(" MHz");
+
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(30); //Timeout after x seconds
@@ -39,6 +43,19 @@ void menuDebug()
     else if (incoming == '2')
     {
       settings.enableHeapReport ^= 1;
+    }
+    else if (incoming == '3')
+    {
+      Serial.print(F("Enter SPI frequency in MHz (1 to 48): "));
+      int freq = getNumber(menuTimeout); //Timeout after x seconds
+      if (freq < 1 || freq > 48) //Arbitrary 48 hour limit
+      {
+        Serial.println(F("Error: max minutes out of range"));
+      }
+      else
+      {
+        settings.spiFrequency = freq; //Recorded to NVM and file at main menu exit
+      }
     }
     else if (incoming == 'x')
       break;

@@ -130,6 +130,7 @@ struct struct_settings {
   bool enableI2Cdebug = false; //Turn on to display GNSS library debug messages
   bool enableHeapReport = false; //Turn on to display free heap
   muxConnectionType_e dataPortChannel = MUX_UBLOX_NMEA; //Mux default to ublox UART1
+  uint16_t spiFrequency = 8; //By default, use 8MHz SPI
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

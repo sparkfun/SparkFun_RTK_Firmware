@@ -140,6 +140,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("enableI2Cdebug=" + (String)settings.enableI2Cdebug);
       settingsFile.println("enableHeapReport=" + (String)settings.enableHeapReport);
       settingsFile.println("dataPortChannel=" + (String)settings.dataPortChannel);
+      settingsFile.println("spiFrequency=" + (String)settings.spiFrequency);
 
       if (online.gnss)
         updateDataFileAccess(&settingsFile); // Update the file access time & date
@@ -387,6 +388,8 @@ bool parseLine(char* str) {
     settings.enableHeapReport = d;
   else if (strcmp(settingName, "dataPortChannel") == 0)
     settings.dataPortChannel = (muxConnectionType_e)d;
+  else if (strcmp(settingName, "spiFrequency") == 0)
+    settings.spiFrequency = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

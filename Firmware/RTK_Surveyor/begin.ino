@@ -61,7 +61,8 @@ void beginBoard()
   }
   else
   {
-    reuseLastLog = true; //Atempt to reuse previous log
+    reuseLastLog = true; //Attempt to reuse previous log
+
     switch (esp_reset_reason())
     {
       case ESP_RST_UNKNOWN: Serial.println(F("ESP_RST_UNKNOWN")); break;
@@ -90,7 +91,7 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     delay(10);
 
-    if (sd.begin(SD_CONFIG) == false)
+    if (sd.begin(SdSpiConfig(pin_microSD_CS, DEDICATED_SPI, SD_SCK_MHZ(settings.spiFrequency), &spi)) == false)
     {
       int tries = 0;
       int maxTries = 2;
@@ -99,7 +100,7 @@ void beginSD()
         Serial.printf("SD init failed. Trying again %d out of %d\n\r", tries + 1, maxTries);
 
         delay(250); //Give SD more time to power up, then try again
-        if (sd.begin(SD_CONFIG) == true) break;
+        if (sd.begin(SdSpiConfig(pin_microSD_CS, DEDICATED_SPI, SD_SCK_MHZ(settings.spiFrequency), &spi)) == true) break;
       }
 
       if (tries == maxTries)

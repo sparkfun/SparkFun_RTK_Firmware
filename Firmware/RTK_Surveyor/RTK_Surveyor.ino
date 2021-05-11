@@ -102,7 +102,6 @@ ESP32Time rtc;
 
 SdFat sd;
 SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we can set the SPI freq in beginSD()
-#define SD_CONFIG SdSpiConfig(pin_microSD_CS, DEDICATED_SPI, SD_SCK_MHZ(36), &spi)
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 

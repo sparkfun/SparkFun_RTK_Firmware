@@ -63,6 +63,7 @@ void beginBoard()
   {
     reuseLastLog = true; //Attempt to reuse previous log
 
+    Serial.print("Reset reason: ");
     switch (esp_reset_reason())
     {
       case ESP_RST_UNKNOWN: Serial.println(F("ESP_RST_UNKNOWN")); break;

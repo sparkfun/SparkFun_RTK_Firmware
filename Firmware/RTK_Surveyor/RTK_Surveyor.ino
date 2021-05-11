@@ -407,9 +407,9 @@ void updateLogs()
             if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
-            long startWriteTime = millis();
+            long startWriteTime = micros();
             ubxFile.sync();
-            long stopWriteTime = millis();
+            long stopWriteTime = micros();
             totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
 
             if (productVariant == RTK_SURVEYOR)
@@ -440,7 +440,7 @@ void updateLogs()
         //Calculate generation and write speeds every 5 seconds
         uint32_t delta = ubxFile.fileSize() - lastLogSize;
         Serial.printf(" - Generation rate: %0.1fkB/s", delta / 5.0 / 1000.0);
-        Serial.printf(" - Write speed: %0.1fkB/s", delta / (totalWriteTime / 1000.0) / 1000.0);
+        Serial.printf(" - Write speed: %0.1fkB/s", delta / (totalWriteTime / 1000000.0) / 1000.0);
       }
       else
       {

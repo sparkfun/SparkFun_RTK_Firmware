@@ -112,6 +112,14 @@ void displaySplash()
       oled.setFontType(1);
       printTextwithKerning((char*)"Express", textX, textY, textKerning);
     }
+    else if (productVariant == RTK_FACET)
+    {
+      textX = 11;
+      textY = 25;
+      textKerning = 9;
+      oled.setFontType(1);
+      printTextwithKerning((char*)"Facet", textX, textY, textKerning);
+    }
 
     oled.setCursor(20, 41);
     oled.setFontType(0); //Set font to smallest
@@ -1223,6 +1231,11 @@ void displayTest()
       while (digitalRead(pin_setupButton) == LOW || digitalRead(pin_powerSenseAndControl) == LOW)
         delay(10);
     }
+    else if (productVariant == RTK_FACET)
+    {
+      while (digitalRead(pin_powerSenseAndControl) == LOW)
+        delay(10);
+    }
 
     //For Surveyor, we need to monitor the rocker switch
     ButtonState previousRockerSwitch = BUTTON_ROVER;
@@ -1239,6 +1252,11 @@ void displayTest()
       if (productVariant == RTK_EXPRESS)
       {
         if (digitalRead(pin_setupButton) == LOW) break;
+      }
+      else if (productVariant == RTK_FACET)
+      {
+        while (digitalRead(pin_powerSenseAndControl) == LOW)
+          delay(10);
       }
       else if (productVariant == RTK_SURVEYOR)
       {
@@ -1344,10 +1362,15 @@ void displayTest()
 
     oled.display();
 
+      //Wait for user to stop pressing buttons
     if (productVariant == RTK_EXPRESS)
     {
-      //Wait for user to stop pressing buttons
       while (digitalRead(pin_setupButton) == LOW)
+        delay(10);
+    }
+    else if (productVariant == RTK_FACET)
+    {
+      while (digitalRead(pin_powerSenseAndControl) == LOW)
         delay(10);
     }
 

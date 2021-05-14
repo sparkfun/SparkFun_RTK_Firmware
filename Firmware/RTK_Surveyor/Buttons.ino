@@ -109,6 +109,91 @@ void checkButtons()
     }
     //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   }//end productVariant = Express
+
+  else if (productVariant == RTK_FACET)
+  {
+    //Check power button
+    //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    if (digitalRead(pin_powerSenseAndControl) == LOW && powerPressedStartTime == 0)
+    {
+      //Debounce check
+      delay(debounceDelay);
+      if (digitalRead(pin_powerSenseAndControl) == LOW)
+      {
+        powerPressedStartTime = millis();
+      }
+    }
+    else if (digitalRead(pin_powerSenseAndControl) == LOW && powerPressedStartTime > 0)
+    {
+      //Debounce check
+      delay(debounceDelay);
+      if (digitalRead(pin_powerSenseAndControl) == LOW)
+      {
+        if ((millis() - powerPressedStartTime) > 2000)
+        {
+          powerDown(true);
+        }
+      }
+    }
+    else if (digitalRead(pin_powerSenseAndControl) == HIGH && powerPressedStartTime > 0)
+    {
+      //Debounce check
+      delay(debounceDelay);
+      if (digitalRead(pin_powerSenseAndControl) == HIGH)
+      {
+        Serial.print("Power button released after ms: ");
+        Serial.println(millis() - powerPressedStartTime);
+        powerPressedStartTime = 0; //Reset var to return to normal 'on' state
+      }
+    }
+    //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+    //Check setup button and configure module accordingly
+    //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    if (digitalRead(pin_powerSenseAndControl) == LOW)
+    {
+      delay(debounceDelay); //Debounce
+      if (digitalRead(pin_powerSenseAndControl) == LOW)
+      {
+        //User is pressing button
+        if (setupButtonState == BUTTON_RELEASED)
+        {
+          setupButtonState = BUTTON_PRESSED;
+
+          //Toggle between Rover and Base system states
+          if (buttonPreviousState == BUTTON_ROVER)
+          {
+            buttonPreviousState = BUTTON_BASE;
+            changeState(STATE_BASE_NOT_STARTED);
+          }
+          else if (buttonPreviousState == BUTTON_BASE)
+          {
+            buttonPreviousState = BUTTON_ROVER;
+            changeState(STATE_ROVER_NOT_STARTED);
+          }
+        } //End button state check
+      } //End debounce button check
+    } //End first button check
+    else if (digitalRead(pin_powerSenseAndControl) == HIGH && setupButtonState == BUTTON_PRESSED)
+    {
+      //Return to unpressed state
+      setupButtonState = BUTTON_RELEASED;
+    }
+
+    //Check to see if user is pressing both buttons simultaneously - show test screen
+    //    if (digitalRead(pin_powerSenseAndControl) == LOW && digitalRead(pin_setupButton) == LOW)
+    //    {
+    //      delay(debounceDelay); //Debounce
+    //      if (digitalRead(pin_powerSenseAndControl) == LOW && digitalRead(pin_setupButton) == LOW)
+    //      {
+    //        displayTest();
+    //        setupButtonState = BUTTON_RELEASED;
+    //        buttonPreviousState = BUTTON_ROVER;
+    //        changeState(STATE_ROVER_NOT_STARTED);
+    //      }
+    //    }
+    //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  }//end productVariant = Facet
 }
 
 //User has pressed the power button to turn on the system

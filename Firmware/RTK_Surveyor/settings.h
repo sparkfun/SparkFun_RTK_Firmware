@@ -27,6 +27,7 @@ typedef enum
 {
   RTK_SURVEYOR = 0,
   RTK_EXPRESS,
+  RTK_FACET,
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
 

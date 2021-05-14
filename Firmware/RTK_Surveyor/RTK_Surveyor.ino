@@ -76,6 +76,7 @@ int pin_setupButton;
 int pin_powerFastOff;
 int pin_dac26;
 int pin_adc39;
+int pin_peripheralPowerControl;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //I2C for GNSS, battery gauge, display, accelerometer
@@ -303,6 +304,8 @@ void setup()
 
   beginBoard(); //Determine what hardware platform we are running on
 
+  beginDisplay(); //Check if an external Qwiic OLED is attached
+
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
   beginLEDs(); //LED and PWM setup
@@ -312,8 +315,6 @@ void setup()
   beginEEPROM();
 
   //eepromErase();
-
-  beginDisplay(); //Check if an external Qwiic OLED is attached
 
   beginSD(); //Test if SD is present
   if (online.microSD == true)

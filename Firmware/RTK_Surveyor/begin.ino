@@ -9,6 +9,12 @@ void beginBoard()
   {
     productVariant = RTK_EXPRESS;
   }
+  else if(analogRead(35) > 400 && analogRead(35) < 600)
+  {
+    productVariant = RTK_FACET;
+  }
+
+  productVariant = RTK_FACET;
 
   //Setup hardware pins
   if (productVariant == RTK_SURVEYOR)
@@ -52,6 +58,32 @@ void beginBoard()
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
 
     strcpy(platformFilePrefix, "SFE_Express");
+  }
+  else if (productVariant == RTK_FACET)
+  {
+    //v10
+    pin_muxA = 2;
+    pin_muxB = 0;
+    pin_powerSenseAndControl = 13;
+    pin_peripheralPowerControl = 14;
+    pin_microSD_CS = 25;
+    pin_dac26 = 26;
+    pin_powerFastOff = 27;
+    pin_adc39 = 39;
+
+    pinMode(pin_powerSenseAndControl, INPUT_PULLUP);
+    pinMode(pin_powerFastOff, INPUT);
+
+    if (esp_reset_reason() == ESP_RST_POWERON)
+    {
+      powerOnCheck(); //Only do check if we POR start
+    }
+
+    digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, ZED, etc
+
+    setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
+
+    strcpy(platformFilePrefix, "SFE_Facet");
   }
 
   //For all boards, check reset reason. If reset was do to wdt or panic, append last log
@@ -304,7 +336,6 @@ void beginAccelerometer()
 {
   if (accel.begin() == false)
   {
-    Serial.println("Accelerometer not detected.");
     online.accelerometer = false;
     return;
   }
@@ -312,6 +343,8 @@ void beginAccelerometer()
   //The larger the avgAmount the faster we should read the sensor
   //accel.setDataRate(LIS2DH12_ODR_100Hz); //6 measurements a second
   accel.setDataRate(LIS2DH12_ODR_400Hz); //25 measurements a second
+
+  Serial.println(F("Accelerometer configuration complete"));
 
   online.accelerometer = true;
 }

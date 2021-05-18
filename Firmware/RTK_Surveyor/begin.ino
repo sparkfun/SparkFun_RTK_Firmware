@@ -14,8 +14,6 @@ void beginBoard()
     productVariant = RTK_FACET;
   }
 
-  productVariant = RTK_FACET;
-
   //Setup hardware pins
   if (productVariant == RTK_SURVEYOR)
   {

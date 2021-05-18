@@ -186,13 +186,13 @@ bool configureUbloxModule()
 #define INPUT_SETTING 12
 
   //UART1 will primarily be used to pass NMEA and UBX from ZED to ESP32 (eventually to cell phone)
-  //but the phone can also provide RTCM data. So let's be sure to enable RTCM on UART1 input.
-  //Protocol out = NMEA, protocol in = RTCM
+  //but the phone can also provide RTCM data and a user may want to configure the ZED over Bluetooth. 
+  //So let's be sure to enable UBX+NMEA+RTCM on the input
   getPortSettings(COM_PORT_UART1); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3))
   {
     response &= i2cGNSS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX); //Set the UART1 to output NMEA and UBX
-    response &= i2cGNSS.setPortInput(COM_PORT_UART1, COM_TYPE_RTCM3); //Set the UART1 to input RTCM
+    response &= i2cGNSS.setPortInput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Set the UART1 to input UBX+NMEA+RTCM
   }
 
   //Disable SPI port - This is just to remove some overhead by ZED

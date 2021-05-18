@@ -9,11 +9,11 @@ void F9PSerialWriteTask(void *e)
   {
     //Receive corrections from either the ESP32 USB or bluetooth
     //and write to the GPS
-    //    if (Serial.available())
-    //    {
-    //      auto s = Serial.readBytes(wBuffer, SERIAL_SIZE_RX);
-    //      serialGNSS.write(wBuffer, s);
-    //    }
+    if (Serial.available())
+    {
+      auto s = Serial.readBytes(wBuffer, SERIAL_SIZE_RX);
+      serialGNSS.write(wBuffer, s);
+    }
 
     if (SerialBT.available())
     {

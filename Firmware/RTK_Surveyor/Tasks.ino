@@ -57,7 +57,30 @@ void F9PSerialReadTask(void *e)
       {
         SerialBT.write(rBuffer, s);
       }
-    }
+
+      //If user wants to log, record to SD
+      if (online.logging == true)
+      {
+        //Check if we are inside the max time window for logging
+        if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+        {
+          //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
+          if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
+          {
+            ubxFile.write(rBuffer, s);
+
+            //              if (millis() - lastStackReport > 2000) {
+            //                Serial.print("xTask stack usage: ");
+            //                Serial.println(uxTaskGetStackHighWaterMark( NULL ));
+            //                lastStackReport = millis();
+            //              }
+
+            xSemaphoreGive(xFATSemaphore);
+          } //End xFATSemaphore
+        } //End maxLogTime
+      } //End logging
+    } //End serial available from GNSS
+
     taskYIELD();
   }
 }

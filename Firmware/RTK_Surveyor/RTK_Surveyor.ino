@@ -386,45 +386,33 @@ void updateLogs()
     //Check if we are inside the max time window for logging
     if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
     {
-      while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
+      //Attempt log file sync every 3000ms
+      if (millis() - lastUBXLogSyncTime > 3000)
       {
-        //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
+        //Attempt to write to file system. This avoids collisions with file writing from other functions like F9PSerialReadTask() and recordSystemSettingsToFile()
         if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
         {
-          uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
+          if (productVariant == RTK_SURVEYOR)
+            digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
-          i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
+          long startWriteTime = micros();
+          ubxFile.sync();
+          long stopWriteTime = micros();
+          totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
 
-          ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
-
-          if (settings.frequentFileAccessTimestamps == true)
-            updateDataFileAccess(&ubxFile); // Update the file access time & date
-
-          //Force sync every 1000ms
-          if (millis() - lastUBXLogSyncTime > 1000)
-          {
-            lastUBXLogSyncTime = millis();
-
-            if (productVariant == RTK_SURVEYOR)
-              digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
-
-            long startWriteTime = micros();
-            ubxFile.sync();
-            long stopWriteTime = micros();
-            totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
-
-            if (productVariant == RTK_SURVEYOR)
+          if (productVariant == RTK_SURVEYOR)
             digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
 
-            updateDataFileAccess(&ubxFile); // Update the file access time & date
-          }
+          updateDataFileAccess(&ubxFile); // Update the file access time & date
 
           xSemaphoreGive(xFATSemaphore);
         }
 
-        // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
-        i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
+        lastUBXLogSyncTime = millis();
       }
+
+      // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
+      i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
     }
   }
 

@@ -84,6 +84,8 @@ void beginBoard()
     strcpy(platformFilePrefix, "SFE_Facet");
   }
 
+  Serial.printf("RTK Variant: %s\n\r", platformFilePrefix);
+
   //For all boards, check reset reason. If reset was do to wdt or panic, append last log
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
@@ -210,6 +212,8 @@ void beginDisplay()
   {
     online.display = true;
 
+    oled.setI2CTransactionSize(64); //Increase to page size of 64. Slight speed improvement over 32 bytes.
+
     displaySplash();
   }
 }
@@ -217,17 +221,6 @@ void beginDisplay()
 //Connect to and configure ZED-F9P
 void beginGNSS()
 {
-  if (logUBXMessages() == true)
-  {
-    i2cGNSS.disableUBX7Fcheck(); // RAWX data can legitimately contain 0x7F, so we need to disable the "7F" check in checkUbloxI2C
-  }
-
-  // RAWX messages can be over 2KBytes in size, so we need to make sure we allocate enough RAM to hold all the data.
-  // SD cards can occasionally 'hiccup' and a write takes much longer than usual. The buffer needs to be big enough
-  // to hold the backlog of data if/when this happens.
-  // getMaxFileBufferAvail will tell us the maximum number of bytes which the file buffer has contained.
-  i2cGNSS.setFileBufferSize(gnssFileBufferSize); // setFileBufferSize must be called _before_ .begin
-
   if (i2cGNSS.begin() == false)
   {
     //Try again with power on delay

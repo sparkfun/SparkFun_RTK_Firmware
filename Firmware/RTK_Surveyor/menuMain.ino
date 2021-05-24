@@ -17,13 +17,11 @@ void menuMain()
 
     Serial.println(F("1) Configure GNSS Receiver"));
 
-    Serial.println(F("2) Configure Data Logging"));
+    Serial.println(F("2) Configure GNSS Messages"));
 
-    Serial.println(F("3) Configure Bluetooth Broadcasting"));
+    Serial.println(F("3) Configure Base"));
 
-    Serial.println(F("4) Configure Base"));
-
-    Serial.println(F("5) Configure Ports"));
+    Serial.println(F("4) Configure Ports"));
 
     if (online.accelerometer == true)
       Serial.println(F("b) Bubble Level"));
@@ -44,12 +42,10 @@ void menuMain()
     if (incoming == '1')
       menuGNSS();
     else if (incoming == '2')
-      menuLog();
+      menuMessages();
     else if (incoming == '3')
-      menuBroadcast();
-    else if (incoming == '4')
       menuBase();
-    else if (incoming == '5')
+    else if (incoming == '4')
       menuPorts();
     else if (incoming == 'd')
       menuDebug();

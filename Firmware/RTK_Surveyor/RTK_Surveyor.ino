@@ -87,7 +87,7 @@ int pin_peripheralPowerControl;
 //EEPROM for storing settings
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <EEPROM.h>
-#define EEPROM_SIZE 2048 //ESP32 emulates EEPROM in non-volatile storage (external flash IC). Max is 508k.
+#define EEPROM_SIZE 4096 //ESP32 emulates EEPROM in non-volatile storage (external flash IC). Max is 508k.
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time
@@ -163,11 +163,6 @@ SFE_UBLOX_GNSS_ADD i2cGNSS;
 //This array holds the payload data bytes. Global so that we can use between config functions.
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
-
-#define gnssFileBufferSize 16384 // Allocate 16KBytes of RAM for UBX message storage
-
-TaskHandle_t F9PI2CTaskHandle = NULL; //Task for regularly checking I2C
-const int i2cTaskStackSize = 2000;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -266,7 +261,8 @@ uint32_t lastBaseLEDupdate = 0; //Controls the blinking of the Base LED
 
 uint32_t lastFileReport = 0; //When logging, print file record stats every few seconds
 long lastStackReport = 0; //Controls the report rate of stack highwater mark within a task
-uint32_t lastHeapReport = 0;
+uint32_t lastHeapReport = 0; //Report heap every 1s if option enabled
+uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
 
 uint32_t lastSatelliteDishIconUpdate = 0;
@@ -369,11 +365,11 @@ void loop()
 //Push new data to log as needed
 void updateLogs()
 {
-  if (online.logging == false && logMessages() == true)
+  if (online.logging == false && settings.enableLogging == true)
   {
     beginLogging();
   }
-  else if (online.logging == true && logMessages() == false)
+  else if (online.logging == true && settings.enableLogging == false)
   {
     //Close down file
     ubxFile.sync();

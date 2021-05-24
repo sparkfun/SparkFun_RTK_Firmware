@@ -7,14 +7,7 @@ void F9PSerialWriteTask(void *e)
 {
   while (true)
   {
-    //Receive corrections from either the ESP32 USB or bluetooth
-    //and write to the GPS
-    if (Serial.available())
-    {
-      auto s = Serial.readBytes(wBuffer, SERIAL_SIZE_RX);
-      serialGNSS.write(wBuffer, s);
-    }
-
+    //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
     if (SerialBT.available())
     {
       while (SerialBT.available())
@@ -58,6 +51,15 @@ void F9PSerialReadTask(void *e)
         SerialBT.write(rBuffer, s);
       }
 
+      if (settings.enableHeapReport == true)
+      {
+        if (millis() - lastTaskHeapReport > 1000)
+        {
+          lastTaskHeapReport = millis();
+          Serial.printf("Task freeHeap: %d\n\r", ESP.getFreeHeap());
+        }
+      }
+
       //If user wants to log, record to SD
       if (online.logging == true)
       {
@@ -68,13 +70,6 @@ void F9PSerialReadTask(void *e)
           if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
           {
             ubxFile.write(rBuffer, s);
-
-            //              if (millis() - lastStackReport > 2000) {
-            //                Serial.print("xTask stack usage: ");
-            //                Serial.println(uxTaskGetStackHighWaterMark( NULL ));
-            //                lastStackReport = millis();
-            //              }
-
             xSemaphoreGive(xFATSemaphore);
           } //End xFATSemaphore
         } //End maxLogTime

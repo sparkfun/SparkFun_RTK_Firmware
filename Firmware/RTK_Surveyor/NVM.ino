@@ -123,24 +123,99 @@ void recordSystemSettingsToFile()
       settingsFile.println("surveyInStartingAccuracy=" + (String)settings.surveyInStartingAccuracy);
       settingsFile.println("measurementRate=" + (String)settings.measurementRate);
       settingsFile.println("navigationRate=" + (String)settings.navigationRate);
-      settingsFile.println("broadcast.gga=" + (String)settings.broadcast.gga);
-      settingsFile.println("broadcast.gsa=" + (String)settings.broadcast.gsa);
-      settingsFile.println("broadcast.gsv=" + (String)settings.broadcast.gsv);
-      settingsFile.println("broadcast.rmc=" + (String)settings.broadcast.rmc);
-      settingsFile.println("broadcast.gst=" + (String)settings.broadcast.gst);
-      settingsFile.println("broadcast.rawx=" + (String)settings.broadcast.rawx);
-      settingsFile.println("broadcast.sfrbx=" + (String)settings.broadcast.sfrbx);
-      settingsFile.println("log.gga=" + (String)settings.log.gga);
-      settingsFile.println("log.gsa=" + (String)settings.log.gsa);
-      settingsFile.println("log.gsv=" + (String)settings.log.gsv);
-      settingsFile.println("log.rmc=" + (String)settings.log.rmc);
-      settingsFile.println("log.gst=" + (String)settings.log.gst);
-      settingsFile.println("log.rawx=" + (String)settings.log.rawx);
-      settingsFile.println("log.sfrbx=" + (String)settings.log.sfrbx);
       settingsFile.println("enableI2Cdebug=" + (String)settings.enableI2Cdebug);
       settingsFile.println("enableHeapReport=" + (String)settings.enableHeapReport);
       settingsFile.println("dataPortChannel=" + (String)settings.dataPortChannel);
       settingsFile.println("spiFrequency=" + (String)settings.spiFrequency);
+      settingsFile.println("enableLogging=" + (String)settings.enableLogging);
+
+      //NMEA
+      settingsFile.println("message.nmea_dtm.msgRate=" + (String)settings.message.nmea_gga.msgRate);
+      settingsFile.println("message.nmea_gbs.msgRate=" + (String)settings.message.nmea_gbs.msgRate);
+      settingsFile.println("message.nmea_gga.msgRate=" + (String)settings.message.nmea_gga.msgRate);
+      settingsFile.println("message.nmea_gll.msgRate=" + (String)settings.message.nmea_gll.msgRate);
+      settingsFile.println("message.nmea_gns.msgRate=" + (String)settings.message.nmea_gns.msgRate);
+
+      settingsFile.println("message.nmea_grs.msgRate=" + (String)settings.message.nmea_grs.msgRate);
+      settingsFile.println("message.nmea_gsa.msgRate=" + (String)settings.message.nmea_gsa.msgRate);
+      settingsFile.println("message.nmea_gst.msgRate=" + (String)settings.message.nmea_gst.msgRate);
+      settingsFile.println("message.nmea_gsv.msgRate=" + (String)settings.message.nmea_gsv.msgRate);
+      settingsFile.println("message.nmea_rmc.msgRate=" + (String)settings.message.nmea_rmc.msgRate);
+
+      settingsFile.println("message.nmea_vlw.msgRate=" + (String)settings.message.nmea_vlw.msgRate);
+      settingsFile.println("message.nmea_vtg.msgRate=" + (String)settings.message.nmea_vtg.msgRate);
+      settingsFile.println("message.nmea_zda.msgRate=" + (String)settings.message.nmea_zda.msgRate);
+
+      //NAV
+      settingsFile.println("message.nav_clock.msgRate=" + (String)settings.message.nav_clock.msgRate);
+      settingsFile.println("message.nav_dop.msgRate=" + (String)settings.message.nav_dop.msgRate);
+      settingsFile.println("message.nav_eoe.msgRate=" + (String)settings.message.nav_eoe.msgRate);
+      settingsFile.println("message.nav_geofence.msgRate=" + (String)settings.message.nav_geofence.msgRate);
+      settingsFile.println("message.nav_hpposecef.msgRate=" + (String)settings.message.nav_hpposecef.msgRate);
+
+      settingsFile.println("message.nav_hpposllh.msgRate=" + (String)settings.message.nav_hpposllh.msgRate);
+      settingsFile.println("message.nav_odo.msgRate=" + (String)settings.message.nav_odo.msgRate);
+      settingsFile.println("message.nav_orb.msgRate=" + (String)settings.message.nav_orb.msgRate);
+      settingsFile.println("message.nav_posecef.msgRate=" + (String)settings.message.nav_posecef.msgRate);
+      settingsFile.println("message.nav_posllh.msgRate=" + (String)settings.message.nav_posllh.msgRate);
+
+      settingsFile.println("message.nav_pvt.msgRate=" + (String)settings.message.nav_pvt.msgRate);
+      settingsFile.println("message.nav_relposned.msgRate=" + (String)settings.message.nav_relposned.msgRate);
+      settingsFile.println("message.nav_sat.msgRate=" + (String)settings.message.nav_sat.msgRate);
+      settingsFile.println("message.nav_sig.msgRate=" + (String)settings.message.nav_sig.msgRate);
+      settingsFile.println("message.nav_status.msgRate=" + (String)settings.message.nav_status.msgRate);
+
+      settingsFile.println("message.nav_svin.msgRate=" + (String)settings.message.nav_svin.msgRate);
+      settingsFile.println("message.nav_timebds.msgRate=" + (String)settings.message.nav_timebds.msgRate);
+      settingsFile.println("message.nav_timegal.msgRate=" + (String)settings.message.nav_timegal.msgRate);
+      settingsFile.println("message.nav_timeglo.msgRate=" + (String)settings.message.nav_timeglo.msgRate);
+      settingsFile.println("message.nav_timegps.msgRate=" + (String)settings.message.nav_timegps.msgRate);
+
+      settingsFile.println("message.nav_timels.msgRate=" + (String)settings.message.nav_timels.msgRate);
+      settingsFile.println("message.nav_timeutc.msgRate=" + (String)settings.message.nav_timeutc.msgRate);
+      settingsFile.println("message.nav_velecef.msgRate=" + (String)settings.message.nav_velecef.msgRate);
+      settingsFile.println("message.nav_velned.msgRate=" + (String)settings.message.nav_velned.msgRate);
+
+      //RXM
+      settingsFile.println("message.rxm_measx.msgRate=" + (String)settings.message.rxm_measx.msgRate);
+      settingsFile.println("message.rxm_rawx.msgRate=" + (String)settings.message.rxm_rawx.msgRate);
+      settingsFile.println("message.rxm_rlm.msgRate=" + (String)settings.message.rxm_rlm.msgRate);
+      settingsFile.println("message.rxm_rtcm.msgRate=" + (String)settings.message.rxm_rtcm.msgRate);
+      settingsFile.println("message.rxm_sfrbx.msgRate=" + (String)settings.message.rxm_sfrbx.msgRate);
+
+      //MON
+      settingsFile.println("message.mon_comms.msgRate=" + (String)settings.message.mon_comms.msgRate);
+      settingsFile.println("message.mon_hw2.msgRate=" + (String)settings.message.mon_hw2.msgRate);
+      settingsFile.println("message.mon_hw3.msgRate=" + (String)settings.message.mon_hw3.msgRate);
+      settingsFile.println("message.mon_hw.msgRate=" + (String)settings.message.mon_hw.msgRate);
+      settingsFile.println("message.mon_io.msgRate=" + (String)settings.message.mon_io.msgRate);
+
+      settingsFile.println("message.mon_msgpp.msgRate=" + (String)settings.message.mon_msgpp.msgRate);
+      settingsFile.println("message.mon_rf.msgRate=" + (String)settings.message.mon_rf.msgRate);
+      settingsFile.println("message.mon_rxbuf.msgRate=" + (String)settings.message.mon_rxbuf.msgRate);
+      settingsFile.println("message.mon_rxr.msgRate=" + (String)settings.message.mon_rxr.msgRate);
+      settingsFile.println("message.mon_txbuf.msgRate=" + (String)settings.message.mon_txbuf.msgRate);
+
+      //TIM
+      settingsFile.println("message.tim_tm2.msgRate=" + (String)settings.message.tim_tm2.msgRate);
+      settingsFile.println("message.tim_tp.msgRate=" + (String)settings.message.tim_tp.msgRate);
+      settingsFile.println("message.tim_vrfy.msgRate=" + (String)settings.message.tim_vrfy.msgRate);
+
+      //RTCM
+      settingsFile.println("message.rtcm_1005.msgRate=" + (String)settings.message.rtcm_1005.msgRate);
+      settingsFile.println("message.rtcm_1074.msgRate=" + (String)settings.message.rtcm_1074.msgRate);
+      settingsFile.println("message.rtcm_1077.msgRate=" + (String)settings.message.rtcm_1077.msgRate);
+      settingsFile.println("message.rtcm_1084.msgRate=" + (String)settings.message.rtcm_1084.msgRate);
+      settingsFile.println("message.rtcm_1087.msgRate=" + (String)settings.message.rtcm_1087.msgRate);
+
+      settingsFile.println("message.rtcm_1094.msgRate=" + (String)settings.message.rtcm_1094.msgRate);
+      settingsFile.println("message.rtcm_1097.msgRate=" + (String)settings.message.rtcm_1097.msgRate);
+      settingsFile.println("message.rtcm_1124.msgRate=" + (String)settings.message.rtcm_1124.msgRate);
+      settingsFile.println("message.rtcm_1127.msgRate=" + (String)settings.message.rtcm_1127.msgRate);
+      settingsFile.println("message.rtcm_1230.msgRate=" + (String)settings.message.rtcm_1230.msgRate);
+
+      settingsFile.println("message.rtcm_4072_0.msgRate=" + (String)settings.message.rtcm_4072_0.msgRate);
+      settingsFile.println("message.rtcm_4072_1.msgRate=" + (String)settings.message.rtcm_4072_1.msgRate);
 
       if (online.gnss)
         updateDataFileAccess(&settingsFile); // Update the file access time & date
@@ -354,34 +429,6 @@ bool parseLine(char* str) {
     settings.measurementRate = d;
   else if (strcmp(settingName, "navigationRate") == 0)
     settings.navigationRate = d;
-  else if (strcmp(settingName, "broadcast.gga") == 0)
-    settings.broadcast.gga = d;
-  else if (strcmp(settingName, "broadcast.gsa") == 0)
-    settings.broadcast.gsa = d;
-  else if (strcmp(settingName, "broadcast.gsv") == 0)
-    settings.broadcast.gsv = d;
-  else if (strcmp(settingName, "broadcast.rmc") == 0)
-    settings.broadcast.rmc = d;
-  else if (strcmp(settingName, "broadcast.gst") == 0)
-    settings.broadcast.gst = d;
-  else if (strcmp(settingName, "broadcast.rawx") == 0)
-    settings.broadcast.rawx = d;
-  else if (strcmp(settingName, "broadcast.sfrbx") == 0)
-    settings.broadcast.sfrbx = d;
-  else if (strcmp(settingName, "log.gga") == 0)
-    settings.log.gga = d;
-  else if (strcmp(settingName, "log.gsa") == 0)
-    settings.log.gsa = d;
-  else if (strcmp(settingName, "log.gsv") == 0)
-    settings.log.gsv = d;
-  else if (strcmp(settingName, "log.rmc") == 0)
-    settings.log.rmc = d;
-  else if (strcmp(settingName, "log.gst") == 0)
-    settings.log.gst = d;
-  else if (strcmp(settingName, "log.rawx") == 0)
-    settings.log.rawx = d;
-  else if (strcmp(settingName, "log.sfrbx") == 0)
-    settings.log.sfrbx = d;
   else if (strcmp(settingName, "enableI2Cdebug") == 0)
     settings.enableI2Cdebug = d;
   else if (strcmp(settingName, "enableHeapReport") == 0)
@@ -390,6 +437,163 @@ bool parseLine(char* str) {
     settings.dataPortChannel = (muxConnectionType_e)d;
   else if (strcmp(settingName, "spiFrequency") == 0)
     settings.spiFrequency = d;
+  else if (strcmp(settingName, "enableLogging") == 0)
+    settings.enableLogging = d;
+
+  //NMEA
+  else if (strcmp(settingName, "message.nmea_dtm.msgRate") == 0)
+    settings.message.nmea_dtm.msgRate = d;
+  else if (strcmp(settingName, "message.nmea_gbs.msgRate") == 0)
+    settings.message.nmea_gbs.msgRate = d;
+  else if (strcmp(settingName, "message.nmea_gga.msgRate") == 0)
+    settings.message.nmea_gga.msgRate = d;
+  else if (strcmp(settingName, "message.nmea_gll.msgRate") == 0)
+    settings.message.nmea_gll.msgRate = d;
+  else if (strcmp(settingName, "message.nmea_gns.msgRate") == 0)
+    settings.message.nmea_gns.msgRate = d;
+
+  else if (strcmp(settingName, "message.nmea_grs.msgRate") == 0)
+    settings.message.nmea_grs.msgRate = d;
+  else if (strcmp(settingName, "message.nmea_gsa.msgRate") == 0)
+    settings.message.nmea_gsa.msgRate = d;
+  else if (strcmp(settingName, "message.nmea_gst.msgRate") == 0)
+    settings.message.nmea_gst.msgRate = d;
+  else if (strcmp(settingName, "message.nmea_gsv.msgRate") == 0)
+    settings.message.nmea_gsv.msgRate = d;
+  else if (strcmp(settingName, "message.nmea_rmc.msgRate") == 0)
+    settings.message.nmea_rmc.msgRate = d;
+
+  else if (strcmp(settingName, "message.nmea_vlw.msgRate") == 0)
+    settings.message.nmea_vlw.msgRate = d;
+  else if (strcmp(settingName, "message.nmea_vtg.msgRate") == 0)
+    settings.message.nmea_vtg.msgRate = d;
+  else if (strcmp(settingName, "message.nmea_zda.msgRate") == 0)
+    settings.message.nmea_zda.msgRate = d;
+
+  //NAV
+  else if (strcmp(settingName, "message.nav_clock.msgRate") == 0)
+    settings.message.nav_clock.msgRate = d;
+  else if (strcmp(settingName, "message.nav_dop.msgRate") == 0)
+    settings.message.nav_dop.msgRate = d;
+  else if (strcmp(settingName, "message.nav_eoe.msgRate") == 0)
+    settings.message.nav_eoe.msgRate = d;
+  else if (strcmp(settingName, "message.nav_geofence.msgRate") == 0)
+    settings.message.nav_geofence.msgRate = d;
+  else if (strcmp(settingName, "message.nav_hpposecef.msgRate") == 0)
+    settings.message.nav_hpposecef.msgRate = d;
+
+  else if (strcmp(settingName, "message.nav_hpposllh.msgRate") == 0)
+    settings.message.nav_hpposllh.msgRate = d;
+  else if (strcmp(settingName, "message.nav_odo.msgRate") == 0)
+    settings.message.nav_odo.msgRate = d;
+  else if (strcmp(settingName, "message.nav_orb.msgRate") == 0)
+    settings.message.nav_orb.msgRate = d;
+  else if (strcmp(settingName, "message.nav_posecef.msgRate") == 0)
+    settings.message.nav_posecef.msgRate = d;
+  else if (strcmp(settingName, "message.nav_posllh.msgRate") == 0)
+    settings.message.nav_posllh.msgRate = d;
+
+  else if (strcmp(settingName, "message.nav_pvt.msgRate") == 0)
+    settings.message.nav_pvt.msgRate = d;
+  else if (strcmp(settingName, "message.nav_reposned.msgRate") == 0)
+    settings.message.nav_relposned.msgRate = d;
+  else if (strcmp(settingName, "message.nav_sat.msgRate") == 0)
+    settings.message.nav_sat.msgRate = d;
+  else if (strcmp(settingName, "message.nav_sig.msgRate") == 0)
+    settings.message.nav_sig.msgRate = d;
+  else if (strcmp(settingName, "message.nav_status.msgRate") == 0)
+    settings.message.nav_status.msgRate = d;
+
+  else if (strcmp(settingName, "message.nav_svin.msgRate") == 0)
+    settings.message.nav_svin.msgRate = d;
+  else if (strcmp(settingName, "message.nav_timebds.msgRate") == 0)
+    settings.message.nav_timebds.msgRate = d;
+  else if (strcmp(settingName, "message.nav_timegal.msgRate") == 0)
+    settings.message.nav_timegal.msgRate = d;
+  else if (strcmp(settingName, "message.nav_timeglo.msgRate") == 0)
+    settings.message.nav_timeglo.msgRate = d;
+  else if (strcmp(settingName, "message.nav_timegps.msgRate") == 0)
+    settings.message.nav_timegps.msgRate = d;
+
+  else if (strcmp(settingName, "message.nav_timels.msgRate") == 0)
+    settings.message.nav_timels.msgRate = d;
+  else if (strcmp(settingName, "message.nav_timeutc.msgRate") == 0)
+    settings.message.nav_timeutc.msgRate = d;
+  else if (strcmp(settingName, "message.nav_velecef.msgRate") == 0)
+    settings.message.nav_velecef.msgRate = d;
+  else if (strcmp(settingName, "message.nav_velned.msgRate") == 0)
+    settings.message.nav_velned.msgRate = d;
+
+  //RXM
+  else if (strcmp(settingName, "message.rxm_measx.msgRate") == 0)
+    settings.message.rxm_measx.msgRate = d;
+  else if (strcmp(settingName, "message.rxm_rawx.msgRate") == 0)
+    settings.message.rxm_rawx.msgRate = d;
+  else if (strcmp(settingName, "message.rxm_rlm.msgRate") == 0)
+    settings.message.rxm_rlm.msgRate = d;
+  else if (strcmp(settingName, "message.rxm_rtcm.msgRate") == 0)
+    settings.message.rxm_rtcm.msgRate = d;
+  else if (strcmp(settingName, "message.rxm_sfrbx.msgRate") == 0)
+    settings.message.rxm_sfrbx.msgRate = d;
+
+  //MON
+  else if (strcmp(settingName, "message.mon_comms.msgRate") == 0)
+    settings.message.mon_comms.msgRate = d;
+  else if (strcmp(settingName, "message.mon_hw2.msgRate") == 0)
+    settings.message.mon_hw2.msgRate = d;
+  else if (strcmp(settingName, "message.mon_hw3.msgRate") == 0)
+    settings.message.mon_hw3.msgRate = d;
+  else if (strcmp(settingName, "message.mon_hw.msgRate") == 0)
+    settings.message.mon_hw.msgRate = d;
+  else if (strcmp(settingName, "message.mon_io.msgRate") == 0)
+    settings.message.mon_io.msgRate = d;
+
+  else if (strcmp(settingName, "message.mon_msgpp.msgRate") == 0)
+    settings.message.mon_msgpp.msgRate = d;
+  else if (strcmp(settingName, "message.mon_rf.msgRate") == 0)
+    settings.message.mon_rf.msgRate = d;
+  else if (strcmp(settingName, "message.mon_rxbuf.msgRate") == 0)
+    settings.message.mon_rxbuf.msgRate = d;
+  else if (strcmp(settingName, "message.mon_rxr.msgRate") == 0)
+    settings.message.mon_rxr.msgRate = d;
+  else if (strcmp(settingName, "message.mon_txbuf.msgRate") == 0)
+    settings.message.mon_txbuf.msgRate = d;
+
+  //TIM
+  else if (strcmp(settingName, "message.tim_tm2.msgRate") == 0)
+    settings.message.tim_tm2.msgRate = d;
+  else if (strcmp(settingName, "message.tim_tp.msgRate") == 0)
+    settings.message.tim_tp.msgRate = d;
+  else if (strcmp(settingName, "message.tim_vrfy.msgRate") == 0)
+    settings.message.tim_vrfy.msgRate = d;
+
+  //RTCM
+  else if (strcmp(settingName, "message.rtcm_1005.msgRate") == 0)
+    settings.message.rtcm_1005.msgRate = d;
+  else if (strcmp(settingName, "message.rtcm_1074.msgRate") == 0)
+    settings.message.rtcm_1074.msgRate = d;
+  else if (strcmp(settingName, "message.rtcm_1077.msgRate") == 0)
+    settings.message.rtcm_1077.msgRate = d;
+  else if (strcmp(settingName, "message.rtcm_1084.msgRate") == 0)
+    settings.message.rtcm_1084.msgRate = d;
+  else if (strcmp(settingName, "message.rtcm_1087.msgRate") == 0)
+    settings.message.rtcm_1087.msgRate = d;
+
+  else if (strcmp(settingName, "message.rtcm_1094.msgRate") == 0)
+    settings.message.rtcm_1094.msgRate = d;
+  else if (strcmp(settingName, "message.rtcm_1097.msgRate") == 0)
+    settings.message.rtcm_1097.msgRate = d;
+  else if (strcmp(settingName, "message.rtcm_1124.msgRate") == 0)
+    settings.message.rtcm_1124.msgRate = d;
+  else if (strcmp(settingName, "message.rtcm_1127.msgRate") == 0)
+    settings.message.rtcm_1127.msgRate = d;
+  else if (strcmp(settingName, "message.rtcm_1230.msgRate") == 0)
+    settings.message.rtcm_1230.msgRate = d;
+
+  else if (strcmp(settingName, "message.rtcm_4072_0.msgRate") == 0)
+    settings.message.rtcm_4072_0.msgRate = d;
+  else if (strcmp(settingName, "message.rtcm_4072_1.msgRate") == 0)
+    settings.message.rtcm_4072_1.msgRate = d;
 
   else
     Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);

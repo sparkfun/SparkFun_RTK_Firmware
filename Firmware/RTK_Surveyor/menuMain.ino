@@ -92,5 +92,7 @@ void menuMain()
 
   recordSystemSettings(); //Once all menus have exited, record the new settings to EEPROM and config file
 
+  i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
+
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }

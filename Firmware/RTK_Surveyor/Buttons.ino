@@ -222,9 +222,15 @@ void powerDown(bool displayInfo)
 {
   if (online.logging == true)
   {
-    //Close down file system
-    ubxFile.sync();
-    ubxFile.close();
+    //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
+    if (xSemaphoreTake(xFATSemaphore, 10000) == pdPASS)
+    {
+      //Close down file system
+      ubxFile.sync();
+      ubxFile.close();
+      //xSemaphoreGive(xFATSemaphore); //Do not release semaphore
+    } //End xFATSemaphore
+
     online.logging = false;
   }
 

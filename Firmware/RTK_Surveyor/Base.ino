@@ -135,6 +135,7 @@ bool startFixedBase()
     response = i2cGNSS.setStaticPosition(majorEcefX, minorEcefX,
                                          majorEcefY, minorEcefY,
                                          majorEcefZ, minorEcefZ,
+                                         false,
                                          maxWait
                                         ); //With high precision 0.1mm parts
   }

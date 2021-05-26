@@ -100,6 +100,10 @@ void scanForFirmware()
 //Look for firmware file on SD card and update as needed
 void updateFromSD(char *firmwareFileName)
 {
+  //Turn off any tasks so that we are not disrupted
+  stopWiFi();
+  endBluetooth();
+  
   Serial.printf("Loading %s\n\r", firmwareFileName);
   if (sd.exists(firmwareFileName))
   {

@@ -495,7 +495,7 @@ bool parseLine(char* str) {
 
   else if (strcmp(settingName, "message.nav_pvt.msgRate") == 0)
     settings.message.nav_pvt.msgRate = d;
-  else if (strcmp(settingName, "message.nav_reposned.msgRate") == 0)
+  else if (strcmp(settingName, "message.nav_relposned.msgRate") == 0)
     settings.message.nav_relposned.msgRate = d;
   else if (strcmp(settingName, "message.nav_sat.msgRate") == 0)
     settings.message.nav_sat.msgRate = d;

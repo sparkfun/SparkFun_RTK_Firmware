@@ -1299,10 +1299,14 @@ void displayTest()
 
       oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
       oled.print(F("GNSS:"));
-      if (online.gnss == true)
+      int satsInView = i2cGNSS.getSIV();
+      
+      if (online.gnss == true && satsInView > 8)
         oled.print(F("OK"));
       else
         oled.print(F("FAIL"));
+      oled.print(F("/"));
+      oled.print(satsInView);
 
       oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
       oled.print(F("Mux:"));

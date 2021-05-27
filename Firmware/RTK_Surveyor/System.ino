@@ -7,10 +7,13 @@ bool startBluetooth()
   esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
   unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
+  char stateName[10];
   if (buttonPreviousState == BUTTON_ROVER)
-    sprintf(deviceName, "Surveyor Rover-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Rover mode
+    strcpy(stateName, "Rover");
   else
-    sprintf(deviceName, "Surveyor Base-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Base mode
+    strcpy(stateName, "Base");
+
+  sprintf(deviceName, "%s %s-%02X%02X", platformBluetoothPrefix, stateName, unitMACAddress[4], unitMACAddress[5]); //Base mode
 
   if (SerialBT.begin(deviceName) == false)
   {
@@ -186,7 +189,7 @@ bool configureUbloxModule()
 #define INPUT_SETTING 12
 
   //UART1 will primarily be used to pass NMEA and UBX from ZED to ESP32 (eventually to cell phone)
-  //but the phone can also provide RTCM data and a user may want to configure the ZED over Bluetooth. 
+  //but the phone can also provide RTCM data and a user may want to configure the ZED over Bluetooth.
   //So let's be sure to enable UBX+NMEA+RTCM on the input
   getPortSettings(COM_PORT_UART1); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3))

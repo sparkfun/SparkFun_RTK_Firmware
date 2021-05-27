@@ -1300,7 +1300,6 @@ void displayTest()
       oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
       oled.print(F("GNSS:"));
       int satsInView = i2cGNSS.getSIV();
-      
       if (online.gnss == true && satsInView > 8)
         oled.print(F("OK"));
       else

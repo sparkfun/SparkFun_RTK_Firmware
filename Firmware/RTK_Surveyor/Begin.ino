@@ -9,7 +9,7 @@ void beginBoard()
   {
     productVariant = RTK_EXPRESS;
   }
-  else if(analogRead(35) > 400 && analogRead(35) < 600)
+  else if (analogRead(35) > 400 && analogRead(35) < 600)
   {
     productVariant = RTK_FACET;
   }
@@ -31,6 +31,7 @@ void beginBoard()
     pin_batteryLevel_alert = 36;
 
     strcpy(platformFilePrefix, "SFE_Surveyor");
+    strcpy(platformBluetoothPrefix, "Surveyor");
   }
   else if (productVariant == RTK_EXPRESS)
   {
@@ -56,6 +57,7 @@ void beginBoard()
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
 
     strcpy(platformFilePrefix, "SFE_Express");
+    strcpy(platformBluetoothPrefix, "Express");
   }
   else if (productVariant == RTK_FACET)
   {
@@ -82,6 +84,7 @@ void beginBoard()
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
 
     strcpy(platformFilePrefix, "SFE_Facet");
+    strcpy(platformBluetoothPrefix, "Facet");
   }
 
   Serial.printf("RTK Variant: %s\n\r", platformFilePrefix);

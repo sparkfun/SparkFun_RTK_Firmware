@@ -67,7 +67,7 @@ void F9PSerialReadTask(void *e)
         if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
         {
           //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
-          if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
+          if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait_ms) == pdPASS)
           {
             ubxFile.write(rBuffer, s);
 

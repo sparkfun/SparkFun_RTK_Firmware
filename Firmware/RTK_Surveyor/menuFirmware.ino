@@ -103,7 +103,7 @@ void updateFromSD(char *firmwareFileName)
   //Turn off any tasks so that we are not disrupted
   stopWiFi();
   endBluetooth();
-  
+
   Serial.printf("Loading %s\n\r", firmwareFileName);
   if (sd.exists(firmwareFileName))
   {
@@ -141,8 +141,8 @@ void updateFromSD(char *firmwareFileName)
     //Bulk write from the SD file to the EEPROM
     while (firmwareFile.available())
     {
-            if (productVariant == RTK_SURVEYOR)
-      digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Toggle LED to indcate activity
+      if (productVariant == RTK_SURVEYOR)
+        digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Toggle LED to indcate activity
 
       int bytesToWrite = pageSize; //Max number of bytes to read
       if (firmwareFile.available() < bytesToWrite) bytesToWrite = firmwareFile.available(); //Trim this read size as needed

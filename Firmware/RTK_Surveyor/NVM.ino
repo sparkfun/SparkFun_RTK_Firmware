@@ -67,7 +67,7 @@ void recordSystemSettingsToFile()
   if (online.microSD == true)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like updateLogs()
-    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
+    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait_ms) == pdPASS)
     {
       //Assemble settings file name
       char settingsFileName[40]; //SFE_Surveyor_Settings.txt
@@ -234,64 +234,74 @@ bool loadSystemSettingsFromFile()
 {
   if (online.microSD == true)
   {
-    //Assemble settings file name
-    char settingsFileName[40]; //SFE_Surveyor_Settings.txt
-    strcpy(settingsFileName, platformFilePrefix);
-    strcat(settingsFileName, "_Settings.txt");
-
-    if (sd.exists(settingsFileName))
+    //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait_ms) == pdPASS)
     {
-      SdFile settingsFile; //FAT32
-      if (settingsFile.open(settingsFileName, O_READ) == false)
+      //Assemble settings file name
+      char settingsFileName[40]; //SFE_Surveyor_Settings.txt
+      strcpy(settingsFileName, platformFilePrefix);
+      strcat(settingsFileName, "_Settings.txt");
+
+      if (sd.exists(settingsFileName))
       {
-        Serial.println(F("Failed to open settings file"));
+        SdFile settingsFile; //FAT32
+        if (settingsFile.open(settingsFileName, O_READ) == false)
+        {
+          Serial.println(F("Failed to open settings file"));
+          xSemaphoreGive(xFATSemaphore);
+          return (false);
+        }
+
+        char line[60];
+        int lineNumber = 0;
+
+        while (settingsFile.available()) {
+
+          //Get the next line from the file
+          //int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
+          int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
+          if (n <= 0) {
+            Serial.printf("Failed to read line %d from settings file\r\n", lineNumber);
+          }
+          else if (line[n - 1] != '\n' && n == (sizeof(line) - 1)) {
+            Serial.printf("Settings line %d too long\r\n", lineNumber);
+            if (lineNumber == 0)
+            {
+              //If we can't read the first line of the settings file, give up
+              Serial.println(F("Giving up on settings file"));
+              xSemaphoreGive(xFATSemaphore);
+              return (false);
+            }
+          }
+          else if (parseLine(line) == false) {
+            Serial.printf("Failed to parse line %d: %s\r\n", lineNumber, line);
+            if (lineNumber == 0)
+            {
+              //If we can't read the first line of the settings file, give up
+              Serial.println(F("Giving up on settings file"));
+              xSemaphoreGive(xFATSemaphore);
+              return (false);
+            }
+          }
+
+          lineNumber++;
+        }
+
+        //Serial.println(F("Config file read complete"));
+        settingsFile.close();
+        xSemaphoreGive(xFATSemaphore);
+        return (true);
+      }
+      else
+      {
+        Serial.println(F("No config file found. Using settings from EEPROM."));
+        //The defaults of the struct will be recorded to a file later on.
+        xSemaphoreGive(xFATSemaphore);
         return (false);
       }
 
-      char line[60];
-      int lineNumber = 0;
-
-      while (settingsFile.available()) {
-
-        //Get the next line from the file
-        //int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
-        int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
-        if (n <= 0) {
-          Serial.printf("Failed to read line %d from settings file\r\n", lineNumber);
-        }
-        else if (line[n - 1] != '\n' && n == (sizeof(line) - 1)) {
-          Serial.printf("Settings line %d too long\r\n", lineNumber);
-          if (lineNumber == 0)
-          {
-            //If we can't read the first line of the settings file, give up
-            Serial.println(F("Giving up on settings file"));
-            return (false);
-          }
-        }
-        else if (parseLine(line) == false) {
-          Serial.printf("Failed to parse line %d: %s\r\n", lineNumber, line);
-          if (lineNumber == 0)
-          {
-            //If we can't read the first line of the settings file, give up
-            Serial.println(F("Giving up on settings file"));
-            return (false);
-          }
-        }
-
-        lineNumber++;
-      }
-
-      //Serial.println(F("Config file read complete"));
-      settingsFile.close();
-      return (true);
-    }
-    else
-    {
-      Serial.println(F("No config file found. Using settings from EEPROM."));
-      //The defaults of the struct will be recorded to a file later on.
-      return (false);
-    }
-  }
+    } //End Semaphore check
+  } //End SD online
 
   Serial.println(F("Config file read failed: SD offline"));
   return (false); //SD offline
@@ -358,7 +368,7 @@ bool parseLine(char* str) {
       strcat(settingsFileName, "_Settings.txt");
       sd.remove(settingsFileName);
 
-      Serial.println(F("RTK Surveyor has been factory reset. Freezing. Please restart and open terminal at 115200bps."));
+      Serial.printf("RTK %s has been factory reset via settings file. Freezing. Please restart and open terminal at 115200bps.\n\r", platformBluetoothPrefix);
 
       while (1)
         delay(1); //Prevent CPU freakout

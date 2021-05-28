@@ -623,13 +623,19 @@ bool createTestFile()
   SdFile testFile;
   char testFileName[40] = "testfile.txt";
 
-  if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) == true)
+  //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+  if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait_ms) == pdPASS)
   {
-    testFile.close();
+    if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) == true)
+    {
+      testFile.close();
 
-    if (sd.exists(testFileName))
-      sd.remove(testFileName);
-    return (true);
+      if (sd.exists(testFileName))
+        sd.remove(testFileName);
+      xSemaphoreGive(xFATSemaphore);
+      return (true);
+    }
+    xSemaphoreGive(xFATSemaphore);
   }
 
   return (false);

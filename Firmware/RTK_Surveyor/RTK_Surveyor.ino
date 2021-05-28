@@ -113,7 +113,7 @@ int startLogTime_minutes = 0; //Mark when we start logging so we can stop loggin
 //System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
 SemaphoreHandle_t xFATSemaphore;
-const int fatSemaphore_maxWait = 5; //TickType_t
+const TickType_t fatSemaphore_maxWait_ms = 200 / portTICK_PERIOD_MS;
 
 #define sdWriteSize 512 // Write data to the SD card in blocks of 512 bytes
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

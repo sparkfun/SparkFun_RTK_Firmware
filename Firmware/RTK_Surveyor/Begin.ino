@@ -156,6 +156,14 @@ void beginSD()
       return;
     }
 
+    //Setup FAT file access semaphore
+    if (xFATSemaphore == NULL)
+    {
+      xFATSemaphore = xSemaphoreCreateMutex();
+      if (xFATSemaphore != NULL)
+        xSemaphoreGive(xFATSemaphore);  //Make the file system available for use
+    }
+
     if (createTestFile() == false)
     {
       Serial.println(F("Failed to create test file. Format SD card with 'SD Card Formatter'."));
@@ -165,14 +173,6 @@ void beginSD()
     }
 
     online.microSD = true;
-
-    //Setup FAT file access semaphore
-    if (xFATSemaphore == NULL)
-    {
-      xFATSemaphore = xSemaphoreCreateMutex();
-      if (xFATSemaphore != NULL)
-        xSemaphoreGive(xFATSemaphore);  //Make the file system available for use
-    }
   }
   else
   {

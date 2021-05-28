@@ -823,7 +823,7 @@ void beginLogging()
       }
 
       //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait_ms) == pdPASS)
       {
         // O_CREAT - create the file if it does not exist
         // O_APPEND - seek to the end of the file prior to each write

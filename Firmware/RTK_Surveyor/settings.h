@@ -106,7 +106,7 @@ struct ubxMsgs
   struct ubxMsg nmea_grs = {UBX_NMEA_GRS, UBX_CLASS_NMEA, 0, "UBX_NMEA_GRS"};
   struct ubxMsg nmea_gsa = {UBX_NMEA_GSA, UBX_CLASS_NMEA, 1, "UBX_NMEA_GSA"};
   struct ubxMsg nmea_gst = {UBX_NMEA_GST, UBX_CLASS_NMEA, 1, "UBX_NMEA_GST"};
-  struct ubxMsg nmea_gsv = {UBX_NMEA_GSV, UBX_CLASS_NMEA, 1, "UBX_NMEA_GSV"};
+  struct ubxMsg nmea_gsv = {UBX_NMEA_GSV, UBX_CLASS_NMEA, 4, "UBX_NMEA_GSV"}; //Default to 1 update every 4 fixes
   struct ubxMsg nmea_rmc = {UBX_NMEA_RMC, UBX_CLASS_NMEA, 1, "UBX_NMEA_RMC"};
   
   struct ubxMsg nmea_vlw = {UBX_NMEA_VLW, UBX_CLASS_NMEA, 0, "UBX_NMEA_VLW"};

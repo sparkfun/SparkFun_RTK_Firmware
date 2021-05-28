@@ -70,6 +70,26 @@ void F9PSerialReadTask(void *e)
           if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
           {
             ubxFile.write(rBuffer, s);
+
+            //Force file sync every 5000ms
+            if (millis() - lastUBXLogSyncTime > 5000)
+            {
+              if (productVariant == RTK_SURVEYOR)
+                digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
+
+              long startWriteTime = micros();
+              ubxFile.sync();
+              long stopWriteTime = micros();
+              totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
+
+              if (productVariant == RTK_SURVEYOR)
+                digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
+
+              updateDataFileAccess(&ubxFile); // Update the file access time & date
+
+              lastUBXLogSyncTime = millis();
+            }
+
             xSemaphoreGive(xFATSemaphore);
           } //End xFATSemaphore
         } //End maxLogTime
@@ -91,7 +111,6 @@ void startUART2Task( void *pvParameters )
 
   vTaskDelete( NULL ); //Delete task once it has run once
 }
-
 
 //Control BT status LED according to bluetoothState
 void updateBTled()

@@ -379,41 +379,6 @@ void updateLogs()
     online.logging = false;
   }
 
-  if (online.logging == true)
-  {
-    //Check if we are inside the max time window for logging
-    if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
-    {
-      //Attempt log file sync every 3000ms
-      if (millis() - lastUBXLogSyncTime > 3000)
-      {
-        //Attempt to write to file system. This avoids collisions with file writing from other functions like F9PSerialReadTask() and recordSystemSettingsToFile()
-        if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
-        {
-          if (productVariant == RTK_SURVEYOR)
-            digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
-
-          long startWriteTime = micros();
-          ubxFile.sync();
-          long stopWriteTime = micros();
-          totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
-
-          if (productVariant == RTK_SURVEYOR)
-            digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
-
-          updateDataFileAccess(&ubxFile); // Update the file access time & date
-
-          xSemaphoreGive(xFATSemaphore);
-        }
-
-        lastUBXLogSyncTime = millis();
-      }
-
-      // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
-      i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
-    }
-  }
-
   //Report file sizes to show recording is working
   if (online.logging == true)
   {

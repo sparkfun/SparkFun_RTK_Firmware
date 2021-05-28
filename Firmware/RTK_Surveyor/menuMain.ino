@@ -58,8 +58,14 @@ void menuMain()
       menuLog();
     else if (incoming == '6' && settings.enableSD == true && online.microSD == true)
     {
-      Serial.println(F("Files found (date time size name):\n\r"));
-      sd.ls(LS_R | LS_DATE | LS_SIZE);
+      //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
+      {
+        Serial.println(F("Files found (date time size name):\n\r"));
+        sd.ls(LS_R | LS_DATE | LS_SIZE);
+
+        xSemaphoreGive(xFATSemaphore);
+      }
     }
     else if (incoming == 'd')
       menuDebug();

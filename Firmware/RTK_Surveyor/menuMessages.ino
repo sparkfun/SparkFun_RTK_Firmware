@@ -38,27 +38,18 @@ void menuLog()
     {
       settings.enableLogging ^= 1;
     }
-    else if (settings.enableLogging == true)
+    else if (incoming == '2' && settings.enableLogging == true)
     {
-      if (incoming == '2')
+      Serial.print(F("Enter max minutes to log data: "));
+      int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds
+      if (maxMinutes < 0 || maxMinutes > 60 * 48) //Arbitrary 48 hour limit
       {
-        Serial.print(F("Enter max minutes to log data: "));
-        int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds
-        if (maxMinutes < 0 || maxMinutes > 60 * 48) //Arbitrary 48 hour limit
-        {
-          Serial.println(F("Error: max minutes out of range"));
-        }
-        else
-        {
-          settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
-        }
+        Serial.println(F("Error: max minutes out of range"));
       }
-      else if (incoming == 'x')
-        break;
-      else if (incoming == STATUS_GETBYTE_TIMEOUT)
-        break;
       else
-        printUnknown(incoming);
+      {
+        settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
+      }
     }
     else if (incoming == 'x')
       break;
@@ -724,7 +715,7 @@ bool configureGNSSMessageRates()
   response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_rxbuf);
   response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_rxr);
   response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_txbuf);
-  
+
   //TIM
   response &= configureMessageRate(COM_PORT_UART1, settings.message.tim_tm2);
   response &= configureMessageRate(COM_PORT_UART1, settings.message.tim_tp);

@@ -25,6 +25,11 @@ void menuMain()
 
     Serial.println(F("5) Configure Logging"));
 
+    if (settings.enableSD == true && online.microSD == true)
+    {
+      Serial.println(F("6) Display microSD contents"));
+    }
+
     if (online.accelerometer == true)
       Serial.println(F("b) Bubble Level"));
 
@@ -35,7 +40,7 @@ void menuMain()
     if (binCount > 0)
       Serial.println(F("f) Firmware upgrade"));
 
-    Serial.println(F("t) Test menu"));
+    //Serial.println(F("t) Test menu"));
 
     Serial.println(F("x) Exit"));
 
@@ -51,6 +56,11 @@ void menuMain()
       menuPorts();
     else if (incoming == '5')
       menuLog();
+    else if (incoming == '6' && settings.enableSD == true && online.microSD == true)
+    {
+      Serial.println(F("Files found (date time size name):\n\r"));
+      sd.ls(LS_R | LS_DATE | LS_SIZE);
+    }
     else if (incoming == 'd')
       menuDebug();
     else if (incoming == 'r')

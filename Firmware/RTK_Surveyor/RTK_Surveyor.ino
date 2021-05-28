@@ -183,7 +183,7 @@ float battChangeRate = 0.0;
 
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include "BluetoothSerial.h"
+#include "src/BluetoothSerial/BluetoothSerial.h"
 BluetoothSerial SerialBT;
 #include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
 #include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
@@ -195,8 +195,8 @@ HardwareSerial serialGNSS(2);
 #define TXD2 17
 
 #define SERIAL_SIZE_RX 4096 //Reduced from 16384 to make room for WiFi/NTRIP server capabilities
-uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading F9P
-uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
+uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
+uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 

@@ -14,7 +14,7 @@ void F9PSerialWriteTask(void *e)
       {
         if (inTestMode == false)
         {
-          //Pass bytes tp GNSS receiver
+          //Pass bytes to GNSS receiver
           auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
           serialGNSS.write(wBuffer, s);
         }

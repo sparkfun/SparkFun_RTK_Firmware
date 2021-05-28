@@ -22,7 +22,7 @@ void menuGNSS()
 
     Serial.println(F("x) Exit"));
 
-    int incoming = getNumber(30); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
     {

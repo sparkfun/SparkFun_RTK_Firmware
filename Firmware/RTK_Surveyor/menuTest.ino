@@ -43,7 +43,7 @@ void menuTest()
 
     Serial.println(F("x) Exit"));
 
-    byte incoming = getByteChoice(30); //Timeout after x seconds
+    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == '1')
     {

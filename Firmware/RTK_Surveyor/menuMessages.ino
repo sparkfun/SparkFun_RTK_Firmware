@@ -32,7 +32,7 @@ void menuLog()
 
     Serial.println(F("x) Exit"));
 
-    byte incoming = getByteChoice(30); //Timeout after x seconds
+    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == '1')
     {
@@ -81,7 +81,7 @@ void menuMessages()
 
     Serial.println(F("x) Exit"));
 
-    byte incoming = getByteChoice(30); //Timeout after x seconds
+    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == '1')
       menuMessagesNMEA();
@@ -173,7 +173,7 @@ void menuMessagesNMEA()
 
     Serial.println(F("x) Exit"));
 
-    int incoming = getNumber(30); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
       inputMessageRate(settings.message.nmea_dtm);
@@ -300,7 +300,7 @@ void menuMessagesNAV()
 
     Serial.println(F("x) Exit"));
 
-    int incoming = getNumber(30); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
       inputMessageRate(settings.message.nav_clock);
@@ -392,7 +392,7 @@ void menuMessagesRXM()
 
     Serial.println(F("x) Exit"));
 
-    int incoming = getNumber(30); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
       inputMessageRate(settings.message.rxm_measx);
@@ -459,7 +459,7 @@ void menuMessagesMON()
 
     Serial.println(F("x) Exit"));
 
-    int incoming = getNumber(30); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
       inputMessageRate(settings.message.mon_comms);
@@ -513,7 +513,7 @@ void menuMessagesTIM()
 
     Serial.println(F("x) Exit"));
 
-    int incoming = getNumber(30); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
       inputMessageRate(settings.message.tim_tm2);
@@ -581,7 +581,7 @@ void menuMessagesRTCM()
 
     Serial.println(F("x) Exit"));
 
-    int incoming = getNumber(30); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
       inputMessageRate(settings.message.rtcm_1005);

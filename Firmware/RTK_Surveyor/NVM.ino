@@ -91,7 +91,6 @@ void recordSystemSettingsToFile()
       settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
       settingsFile.println("enableSD=" + (String)settings.enableSD);
       settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
-      settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
       settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
       settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
       settingsFile.println("observationPositionAccuracy=" + (String)settings.observationPositionAccuracy);
@@ -379,8 +378,6 @@ bool parseLine(char* str) {
     settings.enableSD = d;
   else if (strcmp(settingName, "enableDisplay") == 0)
     settings.enableDisplay = d;
-  else if (strcmp(settingName, "frequentFileAccessTimestamps") == 0)
-    settings.frequentFileAccessTimestamps = d;
   else if (strcmp(settingName, "maxLogTime_minutes") == 0)
     settings.maxLogTime_minutes = d;
   else if (strcmp(settingName, "observationSeconds") == 0)

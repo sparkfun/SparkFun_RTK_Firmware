@@ -188,6 +188,8 @@ BluetoothSerial SerialBT;
 #include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
 #include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
 
+char platformBluetoothPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names
+
 HardwareSerial serialGNSS(2);
 #define RXD2 16
 #define TXD2 17

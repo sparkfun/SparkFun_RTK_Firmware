@@ -23,6 +23,8 @@ void menuMain()
 
     Serial.println(F("4) Configure Ports"));
 
+    Serial.println(F("5) Configure Logging"));
+
     if (online.accelerometer == true)
       Serial.println(F("b) Bubble Level"));
 
@@ -47,6 +49,8 @@ void menuMain()
       menuBase();
     else if (incoming == '4')
       menuPorts();
+    else if (incoming == '5')
+      menuLog();
     else if (incoming == 'd')
       menuDebug();
     else if (incoming == 'r')

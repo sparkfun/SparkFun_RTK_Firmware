@@ -1,3 +1,78 @@
+//Control the messages that get logged to SD
+//Control max logging time (limit to a certain number of minutes)
+//The main use case is the setup for a base station to log RAW sentences that then get post processed
+void menuLog()
+{
+  while (1)
+  {
+    Serial.println();
+    Serial.println(F("Menu: Logging Menu"));
+
+    if (settings.enableSD && online.microSD)
+      Serial.println(F("microSD card is online"));
+    else
+    {
+      beginSD(); //Test if SD is present
+      if (online.microSD == true)
+        Serial.println(F("microSD card online"));
+      else
+        Serial.println(F("No microSD card is detected"));
+    }
+
+    Serial.print(F("1) Log to microSD: "));
+    if (settings.enableLogging == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
+    if (settings.enableLogging == true)
+    {
+      Serial.print(F("2) Set max logging time: "));
+      Serial.print(settings.maxLogTime_minutes);
+      Serial.println(F(" minutes"));
+    }
+
+    Serial.println(F("x) Exit"));
+
+    byte incoming = getByteChoice(30); //Timeout after x seconds
+
+    if (incoming == '1')
+    {
+      settings.enableLogging ^= 1;
+    }
+    else if (settings.enableLogging == true)
+    {
+      if (incoming == '2')
+      {
+        Serial.print(F("Enter max minutes to log data: "));
+        int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds
+        if (maxMinutes < 0 || maxMinutes > 60 * 48) //Arbitrary 48 hour limit
+        {
+          Serial.println(F("Error: max minutes out of range"));
+        }
+        else
+        {
+          settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
+        }
+      }
+      else if (incoming == 'x')
+        break;
+      else if (incoming == STATUS_GETBYTE_TIMEOUT)
+        break;
+      else
+        printUnknown(incoming);
+    }
+    else if (incoming == 'x')
+      break;
+    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    {
+      break;
+    }
+    else
+      printUnknown(incoming);
+  }
+
+  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+}
+
 //Control the messages that get broadcast over Bluetooth and logged (if enabled)
 void menuMessages()
 {

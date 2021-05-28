@@ -129,7 +129,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("enableLogging=" + (String)settings.enableLogging);
 
       //NMEA
-      settingsFile.println("message.nmea_dtm.msgRate=" + (String)settings.message.nmea_gga.msgRate);
+      settingsFile.println("message.nmea_dtm.msgRate=" + (String)settings.message.nmea_dtm.msgRate);
       settingsFile.println("message.nmea_gbs.msgRate=" + (String)settings.message.nmea_gbs.msgRate);
       settingsFile.println("message.nmea_gga.msgRate=" + (String)settings.message.nmea_gga.msgRate);
       settingsFile.println("message.nmea_gll.msgRate=" + (String)settings.message.nmea_gll.msgRate);

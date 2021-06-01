@@ -223,7 +223,8 @@ void powerDown(bool displayInfo)
   if (online.logging == true)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
-    if (xSemaphoreTake(xFATSemaphore, 10000) == pdPASS)
+    //Wait up to 1000ms
+    if (xSemaphoreTake(xFATSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS)
     {
       //Close down file system
       ubxFile.sync();

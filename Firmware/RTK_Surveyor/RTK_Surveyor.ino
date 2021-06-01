@@ -115,8 +115,6 @@ int startLogTime_minutes = 0; //Mark when we start logging so we can stop loggin
 SemaphoreHandle_t xFATSemaphore;
 const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
 const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
-
-#define sdWriteSize 512 // Write data to the SD card in blocks of 512 bytes
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster

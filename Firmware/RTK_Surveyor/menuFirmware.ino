@@ -51,8 +51,8 @@ void scanForFirmware()
   if (online.microSD == true)
   {
     //Attempt to access file system. This avoids collisions with file writing in F9PSerialReadTask()
-    //Wait a long time, this is important
-    if (xSemaphoreTake(xFATSemaphore, 10000) == pdPASS)
+    //Wait up to 5s, this is important
+    if (xSemaphoreTake(xFATSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
     {
       //Count available binaries
       SdFile tempFile;

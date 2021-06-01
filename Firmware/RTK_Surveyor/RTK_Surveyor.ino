@@ -113,7 +113,8 @@ int startLogTime_minutes = 0; //Mark when we start logging so we can stop loggin
 //System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
 SemaphoreHandle_t xFATSemaphore;
-const TickType_t fatSemaphore_maxWait_ms = 200 / portTICK_PERIOD_MS;
+const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
+const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 
 #define sdWriteSize 512 // Write data to the SD card in blocks of 512 bytes
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -375,9 +376,13 @@ void updateLogs()
   else if (online.logging == true && settings.enableLogging == false)
   {
     //Close down file
-    ubxFile.sync();
-    ubxFile.close();
-    online.logging = false;
+    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      ubxFile.sync();
+      ubxFile.close();
+      online.logging = false;
+      //xSemaphoreGive(xFATSemaphore); //Do not release semaphore
+    }
   }
 
   //Report file sizes to show recording is working
@@ -385,32 +390,45 @@ void updateLogs()
   {
     if (millis() - lastFileReport > 5000)
     {
-      lastFileReport = millis();
-      Serial.printf("UBX file size: %d", ubxFile.fileSize());
+      long fileSize = 0;
 
-      if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+      //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
-        //Calculate generation and write speeds every 5 seconds
-        uint32_t delta = ubxFile.fileSize() - lastLogSize;
-        Serial.printf(" - Generation rate: %0.1fkB/s", delta / 5.0 / 1000.0);
-        Serial.printf(" - Write speed: %0.1fkB/s", delta / (totalWriteTime / 1000000.0) / 1000.0);
-      }
-      else
-      {
-        Serial.printf(" reached max log time %d", settings.maxLogTime_minutes);
+        fileSize = ubxFile.fileSize();
+
+        xSemaphoreGive(xFATSemaphore);
       }
 
-      Serial.println();
-
-      totalWriteTime = 0; //Reset write time every 5s
-
-      if (ubxFile.fileSize() > lastLogSize)
+      if (fileSize > 0)
       {
-        lastLogSize = ubxFile.fileSize();
-        logIncreasing = true;
+        lastFileReport = millis();
+        Serial.printf("UBX file size: %ld", fileSize);
+
+        if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+        {
+          //Calculate generation and write speeds every 5 seconds
+          uint32_t delta = fileSize - lastLogSize;
+          Serial.printf(" - Generation rate: %0.1fkB/s", delta / 5.0 / 1000.0);
+          Serial.printf(" - Write speed: %0.1fkB/s", delta / (totalWriteTime / 1000000.0) / 1000.0);
+        }
+        else
+        {
+          Serial.printf(" reached max log time %d", settings.maxLogTime_minutes);
+        }
+
+        Serial.println();
+
+        totalWriteTime = 0; //Reset write time every 5s
+
+        if (fileSize > lastLogSize)
+        {
+          lastLogSize = fileSize;
+          logIncreasing = true;
+        }
+        else
+          logIncreasing = false;
       }
-      else
-        logIncreasing = false;
     }
   }
 }

@@ -59,7 +59,7 @@ void menuMain()
     else if (incoming == '6' && settings.enableSD == true && online.microSD == true)
     {
       //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait_ms) == pdPASS)
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {
         Serial.println(F("Files found (date time size name):\n\r"));
         sd.ls(LS_R | LS_DATE | LS_SIZE);
@@ -83,7 +83,7 @@ void menuMain()
         strcat(settingsFileName, "_Settings.txt");
 
         //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-        if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait_ms) == pdPASS)
+        if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
         {
           if (sd.exists(settingsFileName))
             sd.remove(settingsFileName);

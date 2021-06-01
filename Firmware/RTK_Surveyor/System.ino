@@ -624,7 +624,7 @@ bool createTestFile()
   char testFileName[40] = "testfile.txt";
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-  if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait_ms) == pdPASS)
+  if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
   {
     if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) == true)
     {

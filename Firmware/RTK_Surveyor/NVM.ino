@@ -67,7 +67,7 @@ void recordSystemSettingsToFile()
   if (online.microSD == true)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like updateLogs()
-    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait_ms) == pdPASS)
+    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       //Assemble settings file name
       char settingsFileName[40]; //SFE_Surveyor_Settings.txt
@@ -240,7 +240,7 @@ bool loadSystemSettingsFromFile()
   if (online.microSD == true)
   {
     //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait_ms) == pdPASS)
+    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       //Assemble settings file name
       char settingsFileName[40]; //SFE_Surveyor_Settings.txt

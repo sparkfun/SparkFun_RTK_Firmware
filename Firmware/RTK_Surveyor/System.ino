@@ -13,7 +13,7 @@ bool startBluetooth()
   else
     strcpy(stateName, "Base");
 
-  sprintf(deviceName, "%s %s-%02X%02X", platformBluetoothPrefix, stateName, unitMACAddress[4], unitMACAddress[5]); //Base mode
+  sprintf(deviceName, "%s %s-%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]); //Base mode
 
   if (SerialBT.begin(deviceName) == false)
   {

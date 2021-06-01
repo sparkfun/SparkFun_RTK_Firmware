@@ -31,7 +31,7 @@ void beginBoard()
     pin_batteryLevel_alert = 36;
 
     strcpy(platformFilePrefix, "SFE_Surveyor");
-    strcpy(platformBluetoothPrefix, "Surveyor");
+    strcpy(platformPrefix, "Surveyor");
   }
   else if (productVariant == RTK_EXPRESS)
   {
@@ -57,7 +57,7 @@ void beginBoard()
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
 
     strcpy(platformFilePrefix, "SFE_Express");
-    strcpy(platformBluetoothPrefix, "Express");
+    strcpy(platformPrefix, "Express");
   }
   else if (productVariant == RTK_FACET)
   {
@@ -84,10 +84,10 @@ void beginBoard()
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
 
     strcpy(platformFilePrefix, "SFE_Facet");
-    strcpy(platformBluetoothPrefix, "Facet");
+    strcpy(platformPrefix, "Facet");
   }
 
-  Serial.printf("RTK Variant: %s\n\r", platformFilePrefix);
+  Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
   //For all boards, check reset reason. If reset was do to wdt or panic, append last log
   if (esp_reset_reason() == ESP_RST_POWERON)

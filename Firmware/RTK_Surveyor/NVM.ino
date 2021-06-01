@@ -88,6 +88,11 @@ void recordSystemSettingsToFile()
 
       settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
       settingsFile.println("rtkIdentifier=" + (String)settings.rtkIdentifier);
+
+      char firmwareVersion[30]; //v1.3 December 31 2021
+      sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+      settingsFile.println("rtkFirmwareVersion=" + (String)firmwareVersion);
+
       settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
       settingsFile.println("enableSD=" + (String)settings.enableSD);
       settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
@@ -368,7 +373,7 @@ bool parseLine(char* str) {
       strcat(settingsFileName, "_Settings.txt");
       sd.remove(settingsFileName);
 
-      Serial.printf("RTK %s has been factory reset via settings file. Freezing. Please restart and open terminal at 115200bps.\n\r", platformBluetoothPrefix);
+      Serial.printf("RTK %s has been factory reset via settings file. Freezing. Please restart and open terminal at 115200bps.\n\r", platformPrefix);
 
       while (1)
         delay(1); //Prevent CPU freakout

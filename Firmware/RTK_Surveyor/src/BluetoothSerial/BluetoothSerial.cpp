@@ -40,9 +40,11 @@
 
 const char * _spp_server_name = "ESP32SPP";
 
-#define RX_QUEUE_SIZE (512 * 4) //Increase to facilitate larger NTRIP transfers
+//Now passed in during begin()
+//#define RX_QUEUE_SIZE (512 * 4) //Increase to facilitate larger NTRIP transfers
 //#define RX_QUEUE_SIZE 512
-#define TX_QUEUE_SIZE 32
+//#define TX_QUEUE_SIZE 512 //Increase to facilitate high transmission rates
+//#define TX_QUEUE_SIZE 32
 #define SPP_TX_QUEUE_TIMEOUT 1000
 #define SPP_TX_DONE_TIMEOUT 1000
 #define SPP_CONGESTED_TIMEOUT 1000
@@ -485,7 +487,7 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     }
 }
 
-static bool _init_bt(const char *deviceName)
+static bool _init_bt(const char *deviceName, uint16_t rxQueueSize, uint16_t txQueueSize)
 {
     if(!_spp_event_group){
         _spp_event_group = xEventGroupCreate();
@@ -498,14 +500,14 @@ static bool _init_bt(const char *deviceName)
         xEventGroupSetBits(_spp_event_group, SPP_DISCONNECTED);
     }
     if (_spp_rx_queue == NULL){
-        _spp_rx_queue = xQueueCreate(RX_QUEUE_SIZE, sizeof(uint8_t)); //initialize the queue
+        _spp_rx_queue = xQueueCreate(rxQueueSize, sizeof(uint8_t)); //initialize the queue
         if (_spp_rx_queue == NULL){
             log_e("RX Queue Create Failed");
             return false;
         }
     }
     if (_spp_tx_queue == NULL){
-        _spp_tx_queue = xQueueCreate(TX_QUEUE_SIZE, sizeof(spp_packet_t*)); //initialize the queue
+        _spp_tx_queue = xQueueCreate(txQueueSize, sizeof(spp_packet_t *)); //initialize the queue
         if (_spp_tx_queue == NULL){
             log_e("TX Queue Create Failed");
             return false;
@@ -654,13 +656,13 @@ BluetoothSerial::~BluetoothSerial(void)
     _stop_bt();
 }
 
-bool BluetoothSerial::begin(String localName, bool isMaster)
+bool BluetoothSerial::begin(String localName, bool isMaster, uint16_t rxQueueSize, uint16_t txQueueSize)
 {
     _isMaster = isMaster;
     if (localName.length()){
         local_name = localName;
     }
-    return _init_bt(local_name.c_str());
+    return _init_bt(local_name.c_str(), rxQueueSize, txQueueSize);
 }
 
 int BluetoothSerial::available(void)

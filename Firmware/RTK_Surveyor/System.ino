@@ -15,7 +15,7 @@ bool startBluetooth()
 
   sprintf(deviceName, "%s %s-%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]); //Base mode
 
-  if (SerialBT.begin(deviceName) == false)
+  if (SerialBT.begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
   {
     Serial.println(F("An error occurred initializing Bluetooth"));
     radioState = RADIO_OFF;

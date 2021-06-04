@@ -27,6 +27,12 @@ void menuDebug()
     Serial.print(settings.spiFrequency);
     Serial.println(" MHz");
 
+    Serial.print(F("4) Set SPP RX Buffer Size: "));
+    Serial.println(settings.sppRxQueueSize);
+
+    Serial.print(F("5) Set SPP TX Buffer Size: "));
+    Serial.println(settings.sppTxQueueSize);
+
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
@@ -50,11 +56,37 @@ void menuDebug()
       int freq = getNumber(menuTimeout); //Timeout after x seconds
       if (freq < 1 || freq > 48) //Arbitrary 48 hour limit
       {
-        Serial.println(F("Error: max minutes out of range"));
+        Serial.println(F("Error: SPI frequency out of range"));
       }
       else
       {
         settings.spiFrequency = freq; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == '4')
+    {
+      Serial.print(F("Enter SPP RX Queue Size in Bytes (32 to 16384): "));
+      uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
+      if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+      {
+        Serial.println(F("Error: Queue size out of range"));
+      }
+      else
+      {
+        settings.sppRxQueueSize = queSize; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == '5')
+    {
+      Serial.print(F("Enter SPP TX Queue Size in Bytes (32 to 16384): "));
+      uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
+      if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+      {
+        Serial.println(F("Error: Queue size out of range"));
+      }
+      else
+      {
+        settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 'x')

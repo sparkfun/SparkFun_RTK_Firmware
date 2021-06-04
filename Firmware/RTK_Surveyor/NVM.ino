@@ -131,7 +131,8 @@ void recordSystemSettingsToFile()
       settingsFile.println("enableHeapReport=" + (String)settings.enableHeapReport);
       settingsFile.println("dataPortChannel=" + (String)settings.dataPortChannel);
       settingsFile.println("spiFrequency=" + (String)settings.spiFrequency);
-      settingsFile.println("enableLogging=" + (String)settings.enableLogging);
+      settingsFile.println("sppRxQueueSize=" + (String)settings.sppRxQueueSize);
+      settingsFile.println("sppTxQueueSize=" + (String)settings.sppTxQueueSize);
 
       //NMEA
       settingsFile.println("message.nmea_dtm.msgRate=" + (String)settings.message.nmea_dtm.msgRate);
@@ -386,6 +387,8 @@ bool parseLine(char* str) {
   }
   else if (strcmp(settingName, "rtkIdentifier") == 0)
     settings.rtkIdentifier = d;
+  else if (strcmp(settingName, "rtkFirmwareVersion") == 0)
+  {} //Do nothing. Just read it to avoid 'Unknown setting' error
 
   else if (strcmp(settingName, "printDebugMessages") == 0)
     settings.printDebugMessages = d;
@@ -451,6 +454,10 @@ bool parseLine(char* str) {
     settings.spiFrequency = d;
   else if (strcmp(settingName, "enableLogging") == 0)
     settings.enableLogging = d;
+  else if (strcmp(settingName, "sppRxQueueSize") == 0)
+    settings.sppRxQueueSize = d;
+  else if (strcmp(settingName, "sppTxQueueSize") == 0)
+    settings.sppTxQueueSize = d;
 
   //NMEA
   else if (strcmp(settingName, "message.nmea_dtm.msgRate") == 0)

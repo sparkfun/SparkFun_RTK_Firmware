@@ -278,6 +278,8 @@ struct struct_settings {
   muxConnectionType_e dataPortChannel = MUX_UBLOX_NMEA; //Mux default to ublox UART1
   uint16_t spiFrequency = 8; //By default, use 8MHz SPI
   bool enableLogging = true; //If an SD card is present, log default sentences
+  uint16_t sppRxQueueSize = 2048;
+  uint16_t sppTxQueueSize = 512;
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

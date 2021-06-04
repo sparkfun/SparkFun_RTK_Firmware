@@ -92,6 +92,10 @@ void F9PSerialReadTask(void *e)
 
             xSemaphoreGive(xFATSemaphore);
           } //End xFATSemaphore
+          else
+          {
+            log_d("F9SerialRead: Semaphore failed to yield");
+          }
         } //End maxLogTime
       } //End logging
     } //End serial available from GNSS

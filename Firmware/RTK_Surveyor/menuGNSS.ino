@@ -122,7 +122,8 @@ void menuGNSS()
         if (setSBAS(true) == true)
           settings.enableSBAS = true;
       }
-    }    else if (incoming == STATUS_PRESSED_X)
+    }    
+    else if (incoming == STATUS_PRESSED_X)
       break;
     else if (incoming == STATUS_GETNUMBER_TIMEOUT)
       break;

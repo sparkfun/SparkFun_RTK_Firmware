@@ -78,30 +78,65 @@ void menuMessages()
     Serial.println(F("4) Set NAV Messages"));
     Serial.println(F("5) Set MON Messages"));
     Serial.println(F("6) Set TIM Messages"));
+    Serial.println(F("7) Reset to Surveying Defaults (NMEAx5)"));
+    Serial.println(F("8) Reset to PPP Logging Defaults (NMEAx5 + RXMx2)"));
+    Serial.println(F("9) Turn off all messages"));
+    Serial.println(F("10) Turn on all messages"));
 
     Serial.println(F("x) Exit"));
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
-    if (incoming == '1')
+    if (incoming == 1)
       menuMessagesNMEA();
-    else if (incoming == '2')
+    else if (incoming == 2)
       menuMessagesRTCM();
-    else if (incoming == '3')
+    else if (incoming == 3)
       menuMessagesRXM();
-    else if (incoming == '4')
+    else if (incoming == 4)
       menuMessagesNAV();
-    else if (incoming == '5')
+    else if (incoming == 5)
       menuMessagesMON();
-    else if (incoming == '6')
+    else if (incoming == 6)
       menuMessagesTIM();
-
-    else if (incoming == 'x')
-      break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    else if (incoming == 7)
     {
-      break;
+      setGNSSMessageRates(0); //Turn off all messages
+      settings.message.nmea_gga.msgRate = 1;
+      settings.message.nmea_gsa.msgRate = 1;
+      settings.message.nmea_gst.msgRate = 1;
+      settings.message.nmea_gsv.msgRate = 4; //One update per 4 fixes to avoid swamping SPP connection
+      settings.message.nmea_rmc.msgRate = 1;
+      Serial.println(F("Reset to Surveying Defaults (NMEAx5)"));
     }
+    else if (incoming == 8)
+    {
+      setGNSSMessageRates(0); //Turn off all messages
+      settings.message.nmea_gga.msgRate = 1;
+      settings.message.nmea_gsa.msgRate = 1;
+      settings.message.nmea_gst.msgRate = 1;
+      settings.message.nmea_gsv.msgRate = 4; //One update per 4 fixes to avoid swamping SPP connection
+      settings.message.nmea_rmc.msgRate = 1;
+
+      settings.message.rxm_rawx.msgRate = 1;
+      settings.message.rxm_sfrbx.msgRate = 1;
+      Serial.println(F("Reset to PPP Logging Defaults (NMEAx5 + RXMx2)"));
+    }
+    else if (incoming == 9)
+    {
+      setGNSSMessageRates(0); //Turn off all messages
+      Serial.println(F("All messages disabled"));
+    }
+    else if (incoming == 10)
+    {
+      setGNSSMessageRates(1); //Turn on all messages
+      Serial.println(F("All messages enabled"));
+    }
+
+    else if (incoming == STATUS_PRESSED_X)
+      break;
+    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+      break;
     else
       printUnknown(incoming);
   }
@@ -111,14 +146,19 @@ void menuMessages()
   bool response = configureGNSSMessageRates(); //Make sure the appropriate messages are enabled
   if (response == false)
   {
-    Serial.println(F("menuBroadcast: Failed to enable UART1 messages - Try 1"));
+    Serial.println(F("menuMessages: Failed to enable UART1 messages - Try 1"));
     //Try again
     response = configureGNSSMessageRates(); //Make sure the appropriate messages are enabled
     if (response == false)
-      Serial.println(F("menuBroadcast: Failed to enable UART1 messages - Try 2"));
+      Serial.println(F("menuMessages: Failed to enable UART1 messages - Try 2"));
     else
-      Serial.println(F("menuBroadcast: UART1 messages successfully enabled"));
+      Serial.println(F("menuMessages: UART1 messages successfully enabled"));
   }
+  else
+  {
+    Serial.println(F("menuMessages: UART1 messages successfully enabled"));
+  }
+
 }
 
 //Control the messages that get broadcast over Bluetooth and logged (if enabled)
@@ -738,6 +778,99 @@ bool configureGNSSMessageRates()
   response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_4072_1);
 
   return (response);
+}
+
+//Set all GNSS message report rates to one value
+//Useful for turning on or off all messages for resetting and testing
+void setGNSSMessageRates(uint8_t msgRate)
+{
+  //NMEA
+  settings.message.nmea_dtm.msgRate = msgRate;
+  settings.message.nmea_gbs.msgRate = msgRate;
+  settings.message.nmea_gga.msgRate = msgRate;
+  settings.message.nmea_gll.msgRate = msgRate;
+  settings.message.nmea_gns.msgRate = msgRate;
+
+  settings.message.nmea_grs.msgRate = msgRate;
+  settings.message.nmea_gsa.msgRate = msgRate;
+  settings.message.nmea_gst.msgRate = msgRate;
+  settings.message.nmea_gsv.msgRate = msgRate;
+  settings.message.nmea_rmc.msgRate = msgRate;
+
+  settings.message.nmea_vlw.msgRate = msgRate;
+  settings.message.nmea_vtg.msgRate = msgRate;
+  settings.message.nmea_zda.msgRate = msgRate;
+
+  //NAV
+  settings.message.nav_clock.msgRate = msgRate;
+  settings.message.nav_dop.msgRate = msgRate;
+  settings.message.nav_eoe.msgRate = msgRate;
+  settings.message.nav_geofence.msgRate = msgRate;
+  settings.message.nav_hpposecef.msgRate = msgRate;
+
+  settings.message.nav_hpposllh.msgRate = msgRate;
+  settings.message.nav_odo.msgRate = msgRate;
+  settings.message.nav_orb.msgRate = msgRate;
+  settings.message.nav_posecef.msgRate = msgRate;
+  settings.message.nav_posllh.msgRate = msgRate;
+
+  settings.message.nav_pvt.msgRate = msgRate;
+  settings.message.nav_relposned.msgRate = msgRate;
+  settings.message.nav_sat.msgRate = msgRate;
+  settings.message.nav_sig.msgRate = msgRate;
+  settings.message.nav_status.msgRate = msgRate;
+
+  settings.message.nav_svin.msgRate = msgRate;
+  settings.message.nav_timebds.msgRate = msgRate;
+  settings.message.nav_timegal.msgRate = msgRate;
+  settings.message.nav_timeglo.msgRate = msgRate;
+  settings.message.nav_timegps.msgRate = msgRate;
+
+  settings.message.nav_timels.msgRate = msgRate;
+  settings.message.nav_timeutc.msgRate = msgRate;
+  settings.message.nav_velecef.msgRate = msgRate;
+  settings.message.nav_velned.msgRate = msgRate;
+
+  //RXM
+  settings.message.rxm_measx.msgRate = msgRate;
+  settings.message.rxm_rawx.msgRate = msgRate;
+  settings.message.rxm_rlm.msgRate = msgRate;
+  settings.message.rxm_rtcm.msgRate = msgRate;
+  settings.message.rxm_sfrbx.msgRate = msgRate;
+
+  //MON
+  settings.message.mon_comms.msgRate = msgRate;
+  settings.message.mon_hw2.msgRate = msgRate;
+  settings.message.mon_hw3.msgRate = msgRate;
+  settings.message.mon_hw.msgRate = msgRate;
+  settings.message.mon_io.msgRate = msgRate;
+
+  settings.message.mon_msgpp.msgRate = msgRate;
+  settings.message.mon_rf.msgRate = msgRate;
+  settings.message.mon_rxbuf.msgRate = msgRate;
+  settings.message.mon_rxr.msgRate = msgRate;
+  settings.message.mon_txbuf.msgRate = msgRate;
+
+  //TIM
+  settings.message.tim_tm2.msgRate = msgRate;
+  settings.message.tim_tp.msgRate = msgRate;
+  settings.message.tim_vrfy.msgRate = msgRate;
+
+  //RTCM
+  settings.message.rtcm_1005.msgRate = msgRate;
+  settings.message.rtcm_1074.msgRate = msgRate;
+  settings.message.rtcm_1077.msgRate = msgRate;
+  settings.message.rtcm_1084.msgRate = msgRate;
+  settings.message.rtcm_1087.msgRate = msgRate;
+
+  settings.message.rtcm_1094.msgRate = msgRate;
+  settings.message.rtcm_1097.msgRate = msgRate;
+  settings.message.rtcm_1124.msgRate = msgRate;
+  settings.message.rtcm_1127.msgRate = msgRate;
+  settings.message.rtcm_1230.msgRate = msgRate;
+
+  settings.message.rtcm_4072_0.msgRate = msgRate;
+  settings.message.rtcm_4072_1.msgRate = msgRate;
 }
 
 //Given a message, set the message rate on the ZED-F9P

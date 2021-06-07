@@ -133,6 +133,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("spiFrequency=" + (String)settings.spiFrequency);
       settingsFile.println("sppRxQueueSize=" + (String)settings.sppRxQueueSize);
       settingsFile.println("sppTxQueueSize=" + (String)settings.sppTxQueueSize);
+      settingsFile.println("dynamicModel=" + (String)settings.dynamicModel);
 
       //NMEA
       settingsFile.println("message.nmea_dtm.msgRate=" + (String)settings.message.nmea_dtm.msgRate);
@@ -458,6 +459,8 @@ bool parseLine(char* str) {
     settings.sppRxQueueSize = d;
   else if (strcmp(settingName, "sppTxQueueSize") == 0)
     settings.sppTxQueueSize = d;
+  else if (strcmp(settingName, "dynamicModel") == 0)
+    settings.dynamicModel = d;
 
   //NMEA
   else if (strcmp(settingName, "message.nmea_dtm.msgRate") == 0)

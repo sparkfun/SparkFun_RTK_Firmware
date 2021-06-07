@@ -280,6 +280,7 @@ struct struct_settings {
   bool enableLogging = true; //If an SD card is present, log default sentences
   uint16_t sppRxQueueSize = 2048;
   uint16_t sppTxQueueSize = 512;
+  uint8_t dynamicModel = DYN_MODEL_PORTABLE;
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

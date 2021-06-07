@@ -16,7 +16,43 @@ void menuGNSS()
     Serial.print(F("2) Set measurement rate in seconds between measurements: "));
     Serial.println(1 / measurementFrequency, 2);
 
-    Serial.print(F("3) Toggle SBAS: "));
+    Serial.print(F("3) Set dynamic model: "));
+    switch (settings.dynamicModel)
+    {
+      case DYN_MODEL_PORTABLE:
+        Serial.print(F("Portable"));
+        break;
+      case DYN_MODEL_STATIONARY:
+        Serial.print(F("Stationary"));
+        break;
+      case DYN_MODEL_PEDESTRIAN:
+        Serial.print(F("Pedestrian"));
+        break;
+      case DYN_MODEL_AUTOMOTIVE:
+        Serial.print(F("Automotive"));
+        break;
+      case DYN_MODEL_SEA: 
+        Serial.print(F("Sea"));
+        break;
+      case DYN_MODEL_AIRBORNE1g: 
+        Serial.print(F("Airborne 1g"));
+        break;
+      case DYN_MODEL_AIRBORNE2g: 
+        Serial.print(F("Airborne 2g"));
+        break;
+      case DYN_MODEL_AIRBORNE4g: 
+        Serial.print(F("Airborne 4g"));
+        break;
+      case DYN_MODEL_WRIST: 
+        Serial.print(F("Wrist"));
+        break;
+      case DYN_MODEL_BIKE: 
+        Serial.print(F("Bike"));
+        break;
+    }
+    Serial.println();
+
+    Serial.print(F("4) Toggle SBAS: "));
     if (getSBAS() == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
@@ -54,6 +90,26 @@ void menuGNSS()
     }
     else if (incoming == 3)
     {
+      Serial.println(F("Enter the dynamic model to use: "));
+      Serial.println(F("1) Portable"));
+      Serial.println(F("2) Stationary"));
+      Serial.println(F("3) Pedestrian"));
+      Serial.println(F("4) Automotive"));
+      Serial.println(F("5) Sea"));
+      Serial.println(F("6) Airborne 1g"));
+      Serial.println(F("7) Airborne 2g"));
+      Serial.println(F("8) Airborne 4g"));
+      Serial.println(F("9) Wrist"));
+      Serial.println(F("10) Bike"));
+
+      int dynamicModel = getNumber(menuTimeout); //Timeout after x seconds
+      if (dynamicModel < 1 || dynamicModel > DYN_MODEL_BIKE)
+        Serial.println(F("Error: Dynamic model out of range"));
+      else
+        settings.dynamicModel = dynamicModel; //Recorded to NVM and file at main menu exit
+    }
+    else if (incoming == 4)
+    {
       if (getSBAS() == true)
       {
         //Disable it
@@ -66,13 +122,21 @@ void menuGNSS()
         if (setSBAS(true) == true)
           settings.enableSBAS = true;
       }
-    }
-    else if (incoming == STATUS_PRESSED_X)
+    }    else if (incoming == STATUS_PRESSED_X)
       break;
     else if (incoming == STATUS_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
+  }
+
+  int maxWait = 2000;
+
+  // Set dynamic model
+  if (i2cGNSS.getDynamicModel(maxWait) != settings.dynamicModel)
+  {
+    if (i2cGNSS.setDynamicModel((dynModel)settings.dynamicModel, maxWait) == false)
+      Serial.println(F("menuGNSS: setDynamicModel failed"));
   }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars

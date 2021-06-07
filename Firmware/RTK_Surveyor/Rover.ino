@@ -10,9 +10,9 @@ bool configureUbloxModuleRover()
     Serial.println(F("Disable Survey failed"));
 
   // Set dynamic model
-  if (i2cGNSS.getDynamicModel(maxWait) != DYN_MODEL_PORTABLE)
+  if (i2cGNSS.getDynamicModel(maxWait) != settings.dynamicModel)
   {
-    response = i2cGNSS.setDynamicModel(DYN_MODEL_PORTABLE, maxWait);
+    response = i2cGNSS.setDynamicModel((dynModel)settings.dynamicModel, maxWait);
     if (response == false)
       Serial.println(F("setDynamicModel failed"));
   }

@@ -7,16 +7,21 @@ bool startBluetooth()
   esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
   unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
-  if (digitalRead(baseSwitch) == HIGH)
-    sprintf(deviceName, "Surveyor Rover-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Rover mode
+  char stateName[10];
+  if (buttonPreviousState == BUTTON_ROVER)
+    strcpy(stateName, "Rover");
   else
-    sprintf(deviceName, "Surveyor Base-%02X%02X", unitMACAddress[4], unitMACAddress[5]); //Base mode
+    strcpy(stateName, "Base");
 
-  if (SerialBT.begin(deviceName) == false)
+  sprintf(deviceName, "%s %s-%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]); //Base mode
+
+  if (SerialBT.begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
   {
     Serial.println(F("An error occurred initializing Bluetooth"));
     radioState = RADIO_OFF;
-    digitalWrite(bluetoothStatusLED, LOW);
+
+    if (productVariant == RTK_SURVEYOR)
+      digitalWrite(pin_bluetoothStatusLED, LOW);
     return (false);
   }
 
@@ -47,7 +52,9 @@ bool startBluetooth()
   Serial.println(deviceName);
 
   radioState = BT_ON_NOCONNECTION;
-  digitalWrite(bluetoothStatusLED, HIGH);
+
+  if (productVariant == RTK_SURVEYOR)
+    digitalWrite(pin_bluetoothStatusLED, HIGH);
 
   //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
   if (F9PSerialReadTaskHandle == NULL)
@@ -69,7 +76,8 @@ bool startBluetooth()
       &F9PSerialWriteTaskHandle); //Task handle
 
   //Start task for controlling Bluetooth pair LED
-  btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
+  if (productVariant == RTK_SURVEYOR)
+    btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
 
   return (true);
 }
@@ -181,13 +189,13 @@ bool configureUbloxModule()
 #define INPUT_SETTING 12
 
   //UART1 will primarily be used to pass NMEA and UBX from ZED to ESP32 (eventually to cell phone)
-  //but the phone can also provide RTCM data. So let's be sure to enable RTCM on UART1 input.
-  //Protocol out = NMEA, protocol in = RTCM
+  //but the phone can also provide RTCM data and a user may want to configure the ZED over Bluetooth.
+  //So let's be sure to enable UBX+NMEA+RTCM on the input
   getPortSettings(COM_PORT_UART1); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != COM_TYPE_RTCM3)
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3))
   {
     response &= i2cGNSS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX); //Set the UART1 to output NMEA and UBX
-    response &= i2cGNSS.setPortInput(COM_PORT_UART1, COM_TYPE_RTCM3); //Set the UART1 to input RTCM
+    response &= i2cGNSS.setPortInput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Set the UART1 to input UBX+NMEA+RTCM
   }
 
   //Disable SPI port - This is just to remove some overhead by ZED
@@ -223,8 +231,7 @@ bool configureUbloxModule()
     response &= i2cGNSS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
   }
 
-  response &= enableMessages(COM_PORT_UART1, settings.broadcast); //Make sure the appropriate messages are enabled
-  response &= enableMessages(COM_PORT_I2C, settings.log); //Make sure the appropriate messages are enabled
+  response &= configureGNSSMessageRates(); //Make sure the appropriate messages are enabled
 
   response &= i2cGNSS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
   response &= i2cGNSS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
@@ -245,34 +252,6 @@ bool configureUbloxModule()
     Serial.println(F("Module failed initial config."));
   }
 
-  //Based on current settings, update the logging options within the GNSS library
-  if (settings.log.rawx == true)
-  {
-    i2cGNSS.setAutoRXMRAWX(true, false); // Enable automatic RXM RAWX messages: without callback; without implicit update
-    i2cGNSS.logRXMRAWX(true);
-  }
-  else
-  {
-    i2cGNSS.setAutoRXMRAWX(false); // Disable automatic RXM RAWX messages
-    i2cGNSS.logRXMRAWX(false);
-  }
-
-  if (settings.log.sfrbx == true)
-  {
-    i2cGNSS.setAutoRXMSFRBX(true, false); // Enable automatic RXM SFRBX messages: without callback; without implicit update
-    i2cGNSS.logRXMSFRBX(true);
-  }
-  else
-  {
-    i2cGNSS.setAutoRXMSFRBX(false); // Disable automatic RXM SFRBX messages
-    i2cGNSS.logRXMSFRBX(false);
-  }
-
-  if (logNMEAMessages() == true)
-    i2cGNSS.setNMEALoggingMask(SFE_UBLOX_FILTER_NMEA_ALL); // Enable logging of all enabled NMEA messages
-  else
-    i2cGNSS.setNMEALoggingMask(0); // Disable logging of all enabled NMEA messages
-
   response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   if (response == false)
     Serial.println(F("Module failed to save."));
@@ -286,93 +265,7 @@ bool configureUbloxModule()
   return (response);
 }
 
-//Enable the NMEA/UBX messages, based on given log or broadcast settings, for a given port
-bool enableMessages(uint8_t portType, gnssMessages messageSetting)
-{
-  bool response = true;
-  if (messageSetting.gga == true)
-  {
-    if (getNMEASettings(UBX_NMEA_GGA, portType) != 1)
-      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, portType);
-  }
-  else if (messageSetting.gga == false)
-  {
-    if (getNMEASettings(UBX_NMEA_GGA, portType) != 0)
-      response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, portType);
-  }
 
-  if (messageSetting.gsa == true)
-  {
-    if (getNMEASettings(UBX_NMEA_GSA, portType) != 1)
-      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GSA, portType);
-  }
-  else if (messageSetting.gsa == false)
-  {
-    if (getNMEASettings(UBX_NMEA_GSA, portType) != 0)
-      response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GSA, portType);
-  }
-
-  //When receiving 15+ satellite information, the GxGSV sentences can be a large amount of data
-  //If the update rate is >1Hz then this data can overcome the BT capabilities causing timeouts and lag
-  //So we set the GSV sentence to 1Hz regardless of update rate
-  uint16_t measurementFrequency = (uint16_t)getMeasurementFrequency(); //Force to int
-  if (messageSetting.gsv == true)
-  {
-    if (getNMEASettings(UBX_NMEA_GSV, portType) != measurementFrequency)
-      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GSV, portType, measurementFrequency);
-  }
-  else if (messageSetting.gsv == false)
-  {
-    if (getNMEASettings(UBX_NMEA_GSV, portType) != 0)
-      response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GSV, portType);
-  }
-
-  if (messageSetting.rmc == true)
-  {
-    if (getNMEASettings(UBX_NMEA_RMC, portType) != 1)
-      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_RMC, portType);
-  }
-  else if (messageSetting.rmc == false)
-  {
-    if (getNMEASettings(UBX_NMEA_RMC, portType) != 0)
-      response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_RMC, portType);
-  }
-
-  if (messageSetting.gst == true)
-  {
-    if (getNMEASettings(UBX_NMEA_GST, portType) != 1)
-      response &= i2cGNSS.enableNMEAMessage(UBX_NMEA_GST, portType);
-  }
-  else if (messageSetting.gst == false)
-  {
-    if (getNMEASettings(UBX_NMEA_GST, portType) != 0)
-      response &= i2cGNSS.disableNMEAMessage(UBX_NMEA_GST, portType);
-  }
-
-  if (messageSetting.rawx == true)
-  {
-    if (getRAWXSettings(portType) != 1)
-      response &= i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
-  }
-  else if (messageSetting.rawx == false)
-  {
-    if (getRAWXSettings(portType) != 0)
-      response &= i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_RAWX, portType);
-  }
-
-  if (messageSetting.sfrbx == true)
-  {
-    if (getSFRBXSettings(portType) != 1)
-      response &= i2cGNSS.enableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
-  }
-  else if (messageSetting.sfrbx == false)
-  {
-    if (getSFRBXSettings(portType) != 0)
-      response &= i2cGNSS.disableMessage(UBX_CLASS_RXM, UBX_RXM_SFRBX, portType);
-  }
-
-  return (response);
-}
 
 //Disable all the NMEA sentences on a given com port
 bool disableNMEASentences(uint8_t portType)
@@ -544,18 +437,21 @@ void blinkError(t_errorNumber errorNumber)
   {
     for (int x = 0 ; x < errorNumber ; x++)
     {
-      digitalWrite(positionAccuracyLED_1cm, HIGH);
-      digitalWrite(positionAccuracyLED_10cm, HIGH);
-      digitalWrite(positionAccuracyLED_100cm, HIGH);
-      digitalWrite(baseStatusLED, HIGH);
-      digitalWrite(bluetoothStatusLED, HIGH);
-      delay(200);
-      digitalWrite(positionAccuracyLED_1cm, LOW);
-      digitalWrite(positionAccuracyLED_10cm, LOW);
-      digitalWrite(positionAccuracyLED_100cm, LOW);
-      digitalWrite(baseStatusLED, LOW);
-      digitalWrite(bluetoothStatusLED, LOW);
-      delay(200);
+      if (productVariant == RTK_SURVEYOR)
+      {
+        digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+        digitalWrite(pin_baseStatusLED, HIGH);
+        digitalWrite(pin_bluetoothStatusLED, HIGH);
+        delay(200);
+        digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+        digitalWrite(pin_baseStatusLED, LOW);
+        digitalWrite(pin_bluetoothStatusLED, LOW);
+        delay(200);
+      }
     }
 
     delay(2000);
@@ -565,39 +461,42 @@ void blinkError(t_errorNumber errorNumber)
 //Turn on indicator LEDs to verify LED function and indicate setup sucess
 void danceLEDs()
 {
-  for (int x = 0 ; x < 2 ; x++)
+  if (productVariant == RTK_SURVEYOR)
   {
-    digitalWrite(positionAccuracyLED_1cm, HIGH);
-    digitalWrite(positionAccuracyLED_10cm, HIGH);
-    digitalWrite(positionAccuracyLED_100cm, HIGH);
-    digitalWrite(baseStatusLED, HIGH);
-    digitalWrite(bluetoothStatusLED, HIGH);
-    delay(100);
-    digitalWrite(positionAccuracyLED_1cm, LOW);
-    digitalWrite(positionAccuracyLED_10cm, LOW);
-    digitalWrite(positionAccuracyLED_100cm, LOW);
-    digitalWrite(baseStatusLED, LOW);
-    digitalWrite(bluetoothStatusLED, LOW);
-    delay(100);
+    for (int x = 0 ; x < 2 ; x++)
+    {
+      digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+      digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+      digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+      digitalWrite(pin_baseStatusLED, HIGH);
+      digitalWrite(pin_bluetoothStatusLED, HIGH);
+      delay(100);
+      digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+      digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+      digitalWrite(pin_baseStatusLED, LOW);
+      digitalWrite(pin_bluetoothStatusLED, LOW);
+      delay(100);
+    }
+
+    digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+    digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+    digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+    digitalWrite(pin_baseStatusLED, HIGH);
+    digitalWrite(pin_bluetoothStatusLED, HIGH);
+
+    delay(250);
+    digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+    delay(250);
+    digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+    delay(250);
+    digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+
+    delay(250);
+    digitalWrite(pin_baseStatusLED, LOW);
+    delay(250);
+    digitalWrite(pin_bluetoothStatusLED, LOW);
   }
-
-  digitalWrite(positionAccuracyLED_1cm, HIGH);
-  digitalWrite(positionAccuracyLED_10cm, HIGH);
-  digitalWrite(positionAccuracyLED_100cm, HIGH);
-  digitalWrite(baseStatusLED, HIGH);
-  digitalWrite(bluetoothStatusLED, HIGH);
-
-  delay(250);
-  digitalWrite(positionAccuracyLED_1cm, LOW);
-  delay(250);
-  digitalWrite(positionAccuracyLED_10cm, LOW);
-  delay(250);
-  digitalWrite(positionAccuracyLED_100cm, LOW);
-
-  delay(250);
-  digitalWrite(baseStatusLED, LOW);
-  delay(250);
-  digitalWrite(bluetoothStatusLED, LOW);
 }
 
 //Get the confirmed current date
@@ -622,13 +521,15 @@ void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
     Serial.println(F("Client Connected"));
     radioState = BT_CONNECTED;
-    digitalWrite(bluetoothStatusLED, HIGH);
+    if (productVariant == RTK_SURVEYOR)
+      digitalWrite(pin_bluetoothStatusLED, HIGH);
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
     Serial.println(F("Client disconnected"));
     radioState = BT_ON_NOCONNECTION;
-    digitalWrite(bluetoothStatusLED, LOW);
+    if (productVariant == RTK_SURVEYOR)
+      digitalWrite(pin_bluetoothStatusLED, LOW);
   }
 }
 
@@ -661,31 +562,39 @@ void checkBatteryLevels()
   Serial.printf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
   if (battLevel < 10)
-  {
-    sprintf(tempStr, "RED uh oh!");
-    ledcWrite(ledRedChannel, 255);
-    ledcWrite(ledGreenChannel, 0);
-  }
+    sprintf(tempStr, "Red");
   else if (battLevel < 50)
-  {
-    sprintf(tempStr, "Yellow ok");
-    ledcWrite(ledRedChannel, 128);
-    ledcWrite(ledGreenChannel, 128);
-  }
+    sprintf(tempStr, "Yellow");
   else if (battLevel >= 50)
-  {
-    sprintf(tempStr, "Green all good");
-    ledcWrite(ledRedChannel, 0);
-    ledcWrite(ledGreenChannel, 255);
-  }
+    sprintf(tempStr, "Green");
   else
-  {
     sprintf(tempStr, "No batt");
-    ledcWrite(ledRedChannel, 10);
-    ledcWrite(ledGreenChannel, 0);
-  }
 
   Serial.printf("%s\n\r", tempStr);
+
+  if (productVariant == RTK_SURVEYOR)
+  {
+    if (battLevel < 10)
+    {
+      ledcWrite(ledRedChannel, 255);
+      ledcWrite(ledGreenChannel, 0);
+    }
+    else if (battLevel < 50)
+    {
+      ledcWrite(ledRedChannel, 128);
+      ledcWrite(ledGreenChannel, 128);
+    }
+    else if (battLevel >= 50)
+    {
+      ledcWrite(ledRedChannel, 0);
+      ledcWrite(ledGreenChannel, 255);
+    }
+    else
+    {
+      ledcWrite(ledRedChannel, 10);
+      ledcWrite(ledGreenChannel, 0);
+    }
+  }
 }
 
 //Ping an I2C device and see if it responds
@@ -714,41 +623,21 @@ bool createTestFile()
   SdFile testFile;
   char testFileName[40] = "testfile.txt";
 
-  if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) == true)
+  //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+  if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
   {
-    testFile.close();
+    if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) == true)
+    {
+      testFile.close();
 
-    if (sd.exists(testFileName))
-      sd.remove(testFileName);
-    return (true);
+      if (sd.exists(testFileName))
+        sd.remove(testFileName);
+      xSemaphoreGive(xFATSemaphore);
+      return (true);
+    }
+    xSemaphoreGive(xFATSemaphore);
   }
 
-  return (false);
-}
-
-//Returns true if any messages are enabled for logging
-bool logMessages()
-{
-  if (logNMEAMessages())
-    return (true);
-  if (logUBXMessages())
-    return (true);
-  return (false);
-}
-
-//Returns true if any of the NMEA messages are enabled for logging
-bool logNMEAMessages()
-{
-  if (settings.log.gga == true || settings.log.gsa == true || settings.log.gsv == true || settings.log.rmc == true || settings.log.gst == true)
-    return (true);
-  return (false);
-}
-
-//Returns true if any of the UBX messages are enabled for logging
-bool logUBXMessages()
-{
-  if (settings.log.rawx == true || settings.log.sfrbx == true)
-    return (true);
   return (false);
 }
 
@@ -769,27 +658,116 @@ void reportHeap()
 //Used to indicate casting
 void cyclePositionLEDs()
 {
-  //Cycle position LEDs to indicate casting
-  if (millis() - lastCasterLEDupdate > 500)
+  if (productVariant == RTK_SURVEYOR)
   {
-    lastCasterLEDupdate = millis();
-    if (digitalRead(positionAccuracyLED_100cm) == HIGH)
+    //Cycle position LEDs to indicate casting
+    if (millis() - lastCasterLEDupdate > 500)
     {
-      digitalWrite(positionAccuracyLED_1cm, LOW);
-      digitalWrite(positionAccuracyLED_10cm, HIGH);
-      digitalWrite(positionAccuracyLED_100cm, LOW);
-    }
-    else if (digitalRead(positionAccuracyLED_10cm) == HIGH)
-    {
-      digitalWrite(positionAccuracyLED_1cm, HIGH);
-      digitalWrite(positionAccuracyLED_10cm, LOW);
-      digitalWrite(positionAccuracyLED_100cm, LOW);
-    }
-    else //Catch all
-    {
-      digitalWrite(positionAccuracyLED_1cm, LOW);
-      digitalWrite(positionAccuracyLED_10cm, LOW);
-      digitalWrite(positionAccuracyLED_100cm, HIGH);
+      lastCasterLEDupdate = millis();
+      if (digitalRead(pin_positionAccuracyLED_100cm) == HIGH)
+      {
+        digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+      }
+      else if (digitalRead(pin_positionAccuracyLED_10cm) == HIGH)
+      {
+        digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+        digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+      }
+      else //Catch all
+      {
+        digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+        digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+      }
     }
   }
+}
+
+//Set the port of the 1:4 dual channel analog mux
+//This allows NMEA, I2C, PPS/Event, and ADC/DAC to be routed through data port via software select
+void setMuxport(int channelNumber)
+{
+  if (productVariant == RTK_EXPRESS)
+  {
+    pinMode(pin_muxA, OUTPUT);
+    pinMode(pin_muxB, OUTPUT);
+
+    if (channelNumber > 3) return; //Error check
+
+    switch (channelNumber)
+    {
+      case 0:
+        digitalWrite(pin_muxA, LOW);
+        digitalWrite(pin_muxB, LOW);
+        break;
+      case 1:
+        digitalWrite(pin_muxA, HIGH);
+        digitalWrite(pin_muxB, LOW);
+        break;
+      case 2:
+        digitalWrite(pin_muxA, LOW);
+        digitalWrite(pin_muxB, HIGH);
+        break;
+      case 3:
+        digitalWrite(pin_muxA, HIGH);
+        digitalWrite(pin_muxB, HIGH);
+        break;
+    }
+  }
+}
+
+boolean SFE_UBLOX_GNSS_ADD::getModuleInfo(uint16_t maxWait)
+{
+  i2cGNSS.minfo.hwVersion[0] = 0;
+  i2cGNSS.minfo.swVersion[0] = 0;
+  for (int i = 0; i < 10; i++)
+    i2cGNSS.minfo.extension[i][0] = 0;
+  i2cGNSS.minfo.extensionNo = 0;
+
+  // Let's create our custom packet
+  uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
+
+  // The next line creates and initialises the packet information which wraps around the payload
+  ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+
+  customCfg.cls = UBX_CLASS_MON; // This is the message Class
+  customCfg.id = UBX_MON_VER;    // This is the message ID
+  customCfg.len = 0;             // Setting the len (length) to zero let's us poll the current settings
+  customCfg.startingSpot = 0;    // Always set the startingSpot to zero (unless you really know what you are doing)
+
+  // Now let's send the command. The module info is returned in customPayload
+
+  if (sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
+    return (false); //If command send fails then bail
+
+  // Now let's extract the module info from customPayload
+
+  uint16_t position = 0;
+  for (int i = 0; i < 30; i++)
+  {
+    minfo.swVersion[i] = customPayload[position];
+    position++;
+  }
+  for (int i = 0; i < 10; i++)
+  {
+    minfo.hwVersion[i] = customPayload[position];
+    position++;
+  }
+
+  while (customCfg.len >= position + 30)
+  {
+    for (int i = 0; i < 30; i++)
+    {
+      minfo.extension[minfo.extensionNo][i] = customPayload[position];
+      position++;
+    }
+    minfo.extensionNo++;
+    if (minfo.extensionNo > 9)
+      break;
+  }
+
+  return (true); //Success!
 }

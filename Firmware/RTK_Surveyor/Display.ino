@@ -92,11 +92,34 @@ void displaySplash()
     oled.setFontType(1);
     oled.print(F("RTK"));
 
-    int textX = 3;
-    int textY = 25;
-    int textKerning = 9;
-    oled.setFontType(1);
-    printTextwithKerning((char*)"Express", textX, textY, textKerning);
+    int textX;
+    int textY;
+    int textKerning;
+
+    if (productVariant == RTK_SURVEYOR)
+    {
+      textX = 2;
+      textY = 25;
+      textKerning = 8;
+      oled.setFontType(1);
+      printTextwithKerning((char*)"Surveyor", textX, textY, textKerning);
+    }
+    else if (productVariant == RTK_EXPRESS)
+    {
+      textX = 3;
+      textY = 25;
+      textKerning = 9;
+      oled.setFontType(1);
+      printTextwithKerning((char*)"Express", textX, textY, textKerning);
+    }
+    else if (productVariant == RTK_FACET)
+    {
+      textX = 11;
+      textY = 25;
+      textKerning = 9;
+      oled.setFontType(1);
+      printTextwithKerning((char*)"Facet", textX, textY, textKerning);
+    }
 
     oled.setCursor(20, 41);
     oled.setFontType(0); //Set font to smallest
@@ -394,7 +417,23 @@ void paintLogging()
   {
     if (logIncreasing == true)
     {
-      oled.drawIcon(64 - Logging_Width, 48 - Logging_Height, Logging_Width, Logging_Height, Logging, sizeof(Logging), true); //Draw the icon
+      //Animate icon to show system running
+      if (millis() - lastLoggingIconUpdate > 500)
+      {
+        lastLoggingIconUpdate = millis();
+
+        if (loggingIconDisplayed == 0)
+          oled.drawIcon(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0, sizeof(Logging_0), true); //Draw the icon
+        else if (loggingIconDisplayed == 1)
+          oled.drawIcon(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1, sizeof(Logging_1), true); //Draw the icon
+        else if (loggingIconDisplayed == 2)
+          oled.drawIcon(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2, sizeof(Logging_2), true); //Draw the icon
+        else if (loggingIconDisplayed == 3)
+          oled.drawIcon(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3, sizeof(Logging_3), true); //Draw the icon
+
+        loggingIconDisplayed++; //Goto next icon
+        loggingIconDisplayed %= 4; //Wrap
+      }
     }
   }
 }
@@ -862,14 +901,6 @@ void paintBaseFixedCasterConnected()
   }
 }
 
-//Show error, 15 minutes elapsed without sufficient environment
-//void paintBaseFailed()
-//{
-//  oled.setFontType(0);
-//  oled.setCursor(0, 22); //x, y
-//  oled.print("Base Fail Please    Reset");
-//}
-
 void displayBaseStart(uint16_t displayTime)
 {
   if (online.display == true)
@@ -932,6 +963,33 @@ void displayBaseFail(uint16_t displayTime)
     int textKerning = 8;
 
     printTextwithKerning((char*)"Base", textX, textY, textKerning);
+
+    textX = 10;
+    textY = 25;
+    textKerning = 8;
+    oled.setFontType(1);
+
+    printTextwithKerning((char*)"Failed", textX, textY, textKerning);
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayGNSSFail(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.clear(PAGE);
+
+    oled.setCursor(21, 13);
+    oled.setFontType(1);
+
+    int textX = 18;
+    int textY = 10;
+    int textKerning = 8;
+
+    printTextwithKerning((char*)"GNSS", textX, textY, textKerning);
 
     textX = 10;
     textY = 25;
@@ -1132,4 +1190,218 @@ void drawFrame()
   oled.line(0, 0, 0, yMax); //Left
   oled.line(0, yMax, xMax, yMax); //Bottom
   oled.line(xMax, 0, xMax, yMax); //Right
+}
+
+//Display unit self-tests until user presses a button to exit
+//Allows operator to check:
+// Display alignment
+// Internal connections to: SD, Accel, Fuel guage, GNSS
+// External connections: Loop back test on DATA
+void displayTest()
+{
+  if (online.display == true)
+  {
+    int xOffset = 2;
+    int yOffset = 2;
+
+    int charHeight = 7;
+
+    inTestMode = true; //Reroutes bluetooth bytes
+
+    char macAddress[5];
+    sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
+
+    //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
+    //even if there is no GPS fix. We use it to test serial output.
+    i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
+
+    oled.clear(PAGE); // Clear the display's internal memory
+
+    drawFrame(); //Outside edge
+
+    oled.setFontType(0); //Set font to smallest
+    oled.setCursor(xOffset, yOffset); //x, y
+    oled.print(F("Test Menu"));
+
+    oled.display();
+
+    //Wait for user to stop pressing buttons
+    if (productVariant == RTK_EXPRESS)
+    {
+      while (digitalRead(pin_setupButton) == LOW || digitalRead(pin_powerSenseAndControl) == LOW)
+        delay(10);
+    }
+    else if (productVariant == RTK_FACET)
+    {
+      while (digitalRead(pin_powerSenseAndControl) == LOW)
+        delay(10);
+    }
+
+    //For Surveyor, we need to monitor the rocker switch
+    ButtonState previousRockerSwitch = BUTTON_ROVER;
+    if (productVariant == RTK_SURVEYOR)
+    {
+      if (digitalRead(pin_baseSwitch) == LOW) //Switch is set to Base
+        previousRockerSwitch = BUTTON_BASE;
+    }
+
+    //Update display until user presses the setup button
+    while (1)
+    {
+      //Check for user interaction
+      if (productVariant == RTK_EXPRESS)
+      {
+        if (digitalRead(pin_setupButton) == LOW) break;
+      }
+      else if (productVariant == RTK_FACET)
+      {
+        while (digitalRead(pin_powerSenseAndControl) == LOW)
+          delay(10);
+      }
+      else if (productVariant == RTK_SURVEYOR)
+      {
+        //Check if rocker switch moved
+        if (digitalRead(pin_baseSwitch) == HIGH && //Switch is set to Rover
+            previousRockerSwitch == BUTTON_BASE) break;
+        if (digitalRead(pin_baseSwitch) == LOW && //Switch is set to Base
+            previousRockerSwitch == BUTTON_ROVER) break;
+      }
+
+      oled.clear(PAGE); // Clear the display's internal memory
+
+      drawFrame(); //Outside edge
+
+      //Test SD, accel, batt, GNSS, mux
+      oled.setFontType(0); //Set font to smallest
+      oled.setCursor(xOffset, yOffset); //x, y
+      oled.print(F("SD:"));
+
+      if (online.microSD == false)
+        beginSD(); //Test if SD is present
+      if (online.microSD == true)
+        oled.print(F("OK"));
+      else
+        oled.print(F("FAIL"));
+
+      oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
+      oled.print(F("Accel:"));
+      if (online.accelerometer == true)
+        oled.print(F("OK"));
+      else
+        oled.print(F("FAIL"));
+
+      oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
+      oled.print(F("Batt:"));
+      if (online.battery == true)
+        oled.print(F("OK"));
+      else
+        oled.print(F("FAIL"));
+
+      oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
+      oled.print(F("GNSS:"));
+      int satsInView = i2cGNSS.getSIV();
+      if (online.gnss == true && satsInView > 8)
+        oled.print(F("OK"));
+      else
+        oled.print(F("FAIL"));
+      oled.print(F("/"));
+      oled.print(satsInView);
+
+      oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
+      oled.print(F("Mux:"));
+
+      //Set mux to channel 3 and toggle pin and verify with loop back jumper wire inserted by test technician
+
+      setMuxport(MUX_ADC_DAC); //Set mux to DAC so we can toggle back/forth
+      pinMode(pin_dac26, OUTPUT);
+      pinMode(pin_adc39, INPUT_PULLUP);
+
+      digitalWrite(pin_dac26, HIGH);
+      if (digitalRead(pin_adc39) == HIGH)
+      {
+        digitalWrite(pin_dac26, LOW);
+        if (digitalRead(pin_adc39) == LOW)
+          oled.print(F("OK"));
+        else
+          oled.print(F("FAIL"));
+      }
+      else
+        oled.print(F("FAIL"));
+
+      //Display MAC address
+      oled.setCursor(xOffset, yOffset + (5 * charHeight) ); //x, y
+      oled.print(macAddress);
+      oled.print(":");
+      if (incomingBTTest == 0)
+        oled.print(F("FAIL"));
+      else
+      {
+        oled.write(incomingBTTest);
+        oled.print(F("-OK"));
+      }
+
+      //Display incoming BT characters
+
+      oled.display();
+      delay(250);
+    }
+
+    //    Serial.println(F("Any character received over Blueooth connection will be displayed here"));
+
+    inTestMode = false; //Reroutes bluetooth bytes
+
+    setMuxport(settings.dataPortChannel); //Return mux to original channel
+
+    //Disable RTCM sentences
+    i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0);
+
+    oled.clear(PAGE); // Clear the display's internal memory
+
+    drawFrame(); //Outside edge
+
+    oled.setFontType(0); //Set font to smallest
+    oled.setCursor(xOffset, yOffset); //x, y
+    oled.print(F("Stop Test"));
+
+    oled.display();
+
+      //Wait for user to stop pressing buttons
+    if (productVariant == RTK_EXPRESS)
+    {
+      while (digitalRead(pin_setupButton) == LOW)
+        delay(10);
+    }
+    else if (productVariant == RTK_FACET)
+    {
+      while (digitalRead(pin_powerSenseAndControl) == LOW)
+        delay(10);
+    }
+
+    delay(2000); //Big debounce
+  }
+}
+
+void displayForcedFirmwareUpdate()
+{
+  if (online.display == true)
+  {
+    oled.clear(PAGE);
+
+    oled.setCursor(21, 13);
+    oled.setFontType(1);
+
+    int textX = 11;
+    int textY = 10;
+    int textKerning = 8;
+
+    printTextwithKerning((char*)"Forced", textX, textY, textKerning);
+
+    textX = 11;
+    textY = 25;
+    textKerning = 8;
+    oled.setFontType(1);
+
+    printTextwithKerning((char*)"Update", textX, textY, textKerning);
+    oled.display();
+  }
 }

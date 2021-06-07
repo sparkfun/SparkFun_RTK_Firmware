@@ -2,6 +2,8 @@
 //Set the ECEF coordinates for a known location
 void menuBase()
 {
+  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, ECEF coords, etc).
+  
   while (1)
   {
     Serial.println();
@@ -76,7 +78,7 @@ void menuBase()
 
     Serial.println(F("x) Exit"));
 
-    int incoming = getNumber(30); //Timeout after x seconds
+    int incoming = getNumber(menuTimeoutExtended); //Timeout after x seconds
 
     if (incoming == 1)
     {
@@ -93,7 +95,7 @@ void menuBase()
         Serial.println(F("Enter the fixed ECEF coordinates that will be used in Base mode:"));
 
         Serial.print(F("ECEF X in meters (ex: -1280182.920): "));
-        double fixedEcefX = getDouble(menuTimeout); //Timeout after x seconds
+        double fixedEcefX = getDouble(menuTimeoutExtended); //Timeout after x seconds
 
         //Progress with additional prompts only if the user enters valid data
         if (fixedEcefX != STATUS_GETNUMBER_TIMEOUT && fixedEcefX != STATUS_PRESSED_X)
@@ -101,13 +103,13 @@ void menuBase()
           settings.fixedEcefX = fixedEcefX;
 
           Serial.print(F("\nECEF Y in meters (ex: -4716808.5807): "));
-          double fixedEcefY = getDouble(menuTimeout);
+          double fixedEcefY = getDouble(menuTimeoutExtended);
           if (fixedEcefY != STATUS_GETNUMBER_TIMEOUT && fixedEcefY != STATUS_PRESSED_X)
           {
             settings.fixedEcefY = fixedEcefY;
 
             Serial.print(F("\nECEF Z in meters (ex: 4086669.6393): "));
-            double fixedEcefZ = getDouble(menuTimeout);
+            double fixedEcefZ = getDouble(menuTimeoutExtended);
             if (fixedEcefZ != STATUS_GETNUMBER_TIMEOUT && fixedEcefZ != STATUS_PRESSED_X)
               settings.fixedEcefZ = fixedEcefZ;
           }
@@ -118,7 +120,7 @@ void menuBase()
         Serial.println(F("Enter the fixed Lat/Long/Altitude coordinates that will be used in Base mode:"));
 
         Serial.print(F("Lat in degrees (ex: 40.090335429): "));
-        double fixedLat = getDouble(menuTimeout); //Timeout after x seconds
+        double fixedLat = getDouble(menuTimeoutExtended); //Timeout after x seconds
 
         //Progress with additional prompts only if the user enters valid data
         if (fixedLat != STATUS_GETNUMBER_TIMEOUT && fixedLat != STATUS_PRESSED_X)
@@ -126,13 +128,13 @@ void menuBase()
           settings.fixedLat = fixedLat;
 
           Serial.print(F("\nLong in degrees (ex: -105.184774720): "));
-          double fixedLong = getDouble(menuTimeout);
+          double fixedLong = getDouble(menuTimeoutExtended);
           if (fixedLong != STATUS_GETNUMBER_TIMEOUT && fixedLong != STATUS_PRESSED_X)
           {
             settings.fixedLong = fixedLong;
 
             Serial.print(F("\nAltitude in meters (ex: 1560.2284): "));
-            double fixedAltitude = getDouble(menuTimeout);
+            double fixedAltitude = getDouble(menuTimeoutExtended);
             if (fixedAltitude != STATUS_GETNUMBER_TIMEOUT && fixedAltitude != STATUS_PRESSED_X)
               settings.fixedAltitude = fixedAltitude;
           }
@@ -172,23 +174,23 @@ void menuBase()
     else if (incoming == 5 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter local WiFi SSID: "));
-      readLine(settings.wifiSSID, sizeof(settings.wifiSSID), menuTimeout);
+      readLine(settings.wifiSSID, sizeof(settings.wifiSSID), menuTimeoutExtended);
     }
     else if (incoming == 6 && settings.enableNtripServer == true)
     {
       Serial.printf("Enter password for WiFi network %s: ", settings.wifiSSID);
-      readLine(settings.wifiPW, sizeof(settings.wifiPW), menuTimeout);
+      readLine(settings.wifiPW, sizeof(settings.wifiPW), menuTimeoutExtended);
     }
     else if (incoming == 7 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Caster Address: "));
-      readLine(settings.casterHost, sizeof(settings.casterHost), menuTimeout);
+      readLine(settings.casterHost, sizeof(settings.casterHost), menuTimeoutExtended);
     }
     else if (incoming == 8 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Caster Port: "));
 
-      int casterPort = getNumber(menuTimeout); //Timeout after x seconds
+      int casterPort = getNumber(menuTimeoutExtended); //Timeout after x seconds
       if (casterPort < 1 || casterPort > 99999) //Arbitrary 99k max port #
         Serial.println(F("Error: Caster Port out of range"));
       else
@@ -197,12 +199,12 @@ void menuBase()
     else if (incoming == 9 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Mount Point: "));
-      readLine(settings.mountPoint, sizeof(settings.mountPoint), menuTimeout);
+      readLine(settings.mountPoint, sizeof(settings.mountPoint), menuTimeoutExtended);
     }
     else if (incoming == 10 && settings.enableNtripServer == true)
     {
       Serial.printf("Enter password for Mount Point %s: ", settings.mountPoint);
-      readLine(settings.mountPointPW, sizeof(settings.mountPointPW), menuTimeout);
+      readLine(settings.mountPointPW, sizeof(settings.mountPointPW), menuTimeoutExtended);
     }
     else if (incoming == STATUS_PRESSED_X)
       break;

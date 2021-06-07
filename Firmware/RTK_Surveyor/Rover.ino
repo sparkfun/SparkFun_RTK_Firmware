@@ -170,32 +170,35 @@ void updateAccuracyLEDs()
 
       Serial.print(F("Rover Accuracy (m): "));
       Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
-
-      if (f_accuracy <= 0.02)
-      {
-        digitalWrite(positionAccuracyLED_1cm, HIGH);
-        digitalWrite(positionAccuracyLED_10cm, HIGH);
-        digitalWrite(positionAccuracyLED_100cm, HIGH);
-      }
-      else if (f_accuracy <= 0.100)
-      {
-        digitalWrite(positionAccuracyLED_1cm, LOW);
-        digitalWrite(positionAccuracyLED_10cm, HIGH);
-        digitalWrite(positionAccuracyLED_100cm, HIGH);
-      }
-      else if (f_accuracy <= 1.0000)
-      {
-        digitalWrite(positionAccuracyLED_1cm, LOW);
-        digitalWrite(positionAccuracyLED_10cm, LOW);
-        digitalWrite(positionAccuracyLED_100cm, HIGH);
-      }
-      else if (f_accuracy > 1.0)
-      {
-        digitalWrite(positionAccuracyLED_1cm, LOW);
-        digitalWrite(positionAccuracyLED_10cm, LOW);
-        digitalWrite(positionAccuracyLED_100cm, LOW);
-      }
       Serial.println();
+
+      if (productVariant == RTK_SURVEYOR)
+      {
+        if (f_accuracy <= 0.02)
+        {
+          digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+          digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+          digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+        }
+        else if (f_accuracy <= 0.100)
+        {
+          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+          digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+          digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+        }
+        else if (f_accuracy <= 1.0000)
+        {
+          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+          digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+          digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+        }
+        else if (f_accuracy > 1.0)
+        {
+          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+          digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+          digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+        }
+      }
     }
     else
     {

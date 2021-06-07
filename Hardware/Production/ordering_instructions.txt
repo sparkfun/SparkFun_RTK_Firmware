@@ -1,5 +1,5 @@
 panel size, 220x138mm
-PCB thickness, 0.8mm
+PCB thickness, 1.6mm
 number of layers, 4
 soldermask color, Red
 silkscreen color, White

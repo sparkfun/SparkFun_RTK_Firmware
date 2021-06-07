@@ -18,7 +18,7 @@
   A settings file is accessed on microSD if available otherwise settings are pulled from
   ESP32's emulated EEPROM.
 
-  As of v1.2, the heap is approximately 94072 during Rover Fix, 142260 during WiFi Casting. This is 
+  As of v1.2, the heap is approximately 94072 during Rover Fix, 142260 during WiFi Casting. This is
   important to maintain as unit will begin to have stability issues at ~30k.
 
   The main loop handles lower priority updates such as:
@@ -40,7 +40,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 2;
+const int FIRMWARE_VERSION_MINOR = 3;
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -55,18 +55,28 @@ const int FIRMWARE_VERSION_MINOR = 2;
 
 //Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-const int positionAccuracyLED_1cm = 2;
-const int baseStatusLED = 4;
-const int baseSwitch = 5;
-const int bluetoothStatusLED = 12;
-const int positionAccuracyLED_100cm = 13;
-const int positionAccuracyLED_10cm = 15;
-const int PIN_MICROSD_CHIP_SELECT = 25;
-const int zed_tx_ready = 26;
-const int zed_reset = 27;
-const int batteryLevelLED_Red = 32;
-const int batteryLevelLED_Green = 33;
-const int batteryLevel_alert = 36;
+//These pins are set in beginBoard()
+int pin_batteryLevelLED_Red;
+int pin_batteryLevelLED_Green;
+int pin_positionAccuracyLED_1cm;
+int pin_positionAccuracyLED_10cm;
+int pin_positionAccuracyLED_100cm;
+int pin_baseStatusLED;
+int pin_bluetoothStatusLED;
+int pin_baseSwitch;
+int pin_microSD_CS;
+int pin_zed_tx_ready;
+int pin_zed_reset;
+int pin_batteryLevel_alert;
+
+int pin_muxA;
+int pin_muxB;
+int pin_powerSenseAndControl;
+int pin_setupButton;
+int pin_powerFastOff;
+int pin_dac26;
+int pin_adc39;
+int pin_peripheralPowerControl;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //I2C for GNSS, battery gauge, display, accelerometer
@@ -77,7 +87,7 @@ const int batteryLevel_alert = 36;
 //EEPROM for storing settings
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <EEPROM.h>
-#define EEPROM_SIZE 2048 //ESP32 emulates EEPROM in non-volatile storage (external flash IC). Max is 508k.
+#define EEPROM_SIZE 4096 //ESP32 emulates EEPROM in non-volatile storage (external flash IC). Max is 508k.
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time
@@ -93,20 +103,18 @@ ESP32Time rtc;
 
 SdFat sd;
 SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we can set the SPI freq in beginSD()
-#define SD_CONFIG SdSpiConfig(PIN_MICROSD_CHIP_SELECT, DEDICATED_SPI, SD_SCK_MHZ(36), &spi)
 
-char settingsFileName[40] = "SFE_Surveyor_Settings.txt"; //File to read/write system settings to
+char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
 SdFile ubxFile; //File that all gnss ubx messages setences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
 int startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
 
-//SdFat crashes when F9PSerialReadTask() is called in the middle of a ubx file write within loop()
+//System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
 SemaphoreHandle_t xFATSemaphore;
-const int fatSemaphore_maxWait = 5; //TickType_t
-
-#define sdWriteSize 512 // Write data to the SD card in blocks of 512 bytes
+const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
+const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster
@@ -128,21 +136,32 @@ uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service tim
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GNSS i2cGNSS;
 
 //Note: There are two prevalent versions of the ZED-F9P: v1.12 (part# -01B) and v1.13 (-02B).
 //v1.13 causes the RTK LED to not function if SBAS is enabled. To avoid this, we
 //disable SBAS by default.
 
+// Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
+class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
+{
+  public:
+    boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
+
+    struct minfoStructure // Structure to hold the module info (uses 341 bytes of RAM)
+    {
+      char swVersion[30];
+      char hwVersion[10];
+      uint8_t extensionNo = 0;
+      char extension[10][30];
+    } minfo;
+};
+
+SFE_UBLOX_GNSS_ADD i2cGNSS;
+
 //Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings
 //This array holds the payload data bytes. Global so that we can use between config functions.
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
-
-#define gnssFileBufferSize 16384 // Allocate 16KBytes of RAM for UBX message storage
-
-TaskHandle_t F9PI2CTaskHandle = NULL; //Task for regularly checking I2C
-const int i2cTaskStackSize = 2000;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -163,18 +182,21 @@ float battChangeRate = 0.0;
 
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include "BluetoothSerial.h"
+//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/18
+#include "src/BluetoothSerial/BluetoothSerial.h"
 BluetoothSerial SerialBT;
 #include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
 #include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
+
+char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names
 
 HardwareSerial serialGNSS(2);
 #define RXD2 16
 #define TXD2 17
 
 #define SERIAL_SIZE_RX 4096 //Reduced from 16384 to make room for WiFi/NTRIP server capabilities
-uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading F9P
-uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing to F9P
+uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
+uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 
@@ -184,6 +206,8 @@ bool uart2Started = false;
 //Reduced stack size from 10,000 to 2,000 to make room for WiFi/NTRIP server capabilities
 const int readTaskStackSize = 2000;
 const int writeTaskStackSize = 2000;
+
+char incomingBTTest = 0; //Stores incoming text over BT when in test mode
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //External Display
@@ -215,6 +239,12 @@ float btLEDTaskPace = 0.5; //Seconds
 //float battCheckTaskPace = 2.0; //Seconds
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//Accelerometer for bubble leveling
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#include "SparkFun_LIS2DH12.h" //Click here to get the library: http://librarymanager/All#SparkFun_LIS2DH12
+SPARKFUN_LIS2DH12 accel;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
@@ -222,6 +252,8 @@ char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-B
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
+uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
+uint8_t debounceDelay = 20; //ms to delay between button reads
 
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
@@ -231,7 +263,8 @@ uint32_t lastBaseLEDupdate = 0; //Controls the blinking of the Base LED
 
 uint32_t lastFileReport = 0; //When logging, print file record stats every few seconds
 long lastStackReport = 0; //Controls the report rate of stack highwater mark within a task
-uint32_t lastHeapReport = 0;
+uint32_t lastHeapReport = 0; //Report heap every 1s if option enabled
+uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
 
 uint32_t lastSatelliteDishIconUpdate = 0;
@@ -242,9 +275,12 @@ uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
 uint32_t lastWifiIconUpdate = 0;
 bool wifiIconDisplayed = false; //Toggles as lastWifiIconUpdate goes above 1000ms
+uint32_t lastLoggingIconUpdate = 0;
+int loggingIconDisplayed = 0; //Increases every 500ms while logging
 
-uint32_t lastLogSize = 0;
+uint64_t lastLogSize = 0;
 bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
+bool reuseLastLog = false; //Goes true if we have a reset due to software (rather than POR)
 
 uint32_t lastRTCMPacketSent = 0; //Used to count RTCM packets sent during base mode
 uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM()
@@ -252,6 +288,9 @@ uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM(
 uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
 uint32_t totalWriteTime = 0; //Used to calculate overall write speed using SdFat library
+
+bool setupByPowerButton = false; //We can change setup via tapping power button
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -260,6 +299,10 @@ void setup()
 
   Wire.begin(); //Start I2C on core 1
   Wire.setClock(400000);
+
+  beginBoard(); //Determine what hardware platform we are running on
+
+  beginDisplay(); //Check if an external Qwiic OLED is attached
 
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
@@ -279,14 +322,14 @@ void setup()
   }
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
-
-  beginDisplay(); //Check if an external Qwiic OLED is attached
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   beginFuelGauge(); //Configure battery fuel guage monitor
   checkBatteryLevels(); //Force display so you see battery level immediately at power on
 
   beginGNSS(); //Connect and configure ZED-F9P
+
+  beginAccelerometer();
 
   Serial.flush(); //Complete any previous prints
 
@@ -297,7 +340,7 @@ void loop()
 {
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  checkSetupButton(); //Change system state as needed
+  checkButtons(); //Change system state as needed
 
   updateSystemState();
 
@@ -324,57 +367,19 @@ void loop()
 //Push new data to log as needed
 void updateLogs()
 {
-  if (online.logging == false && logMessages() == true)
+  if (online.logging == false && settings.enableLogging == true)
   {
     beginLogging();
   }
-  else if (online.logging == true && logMessages() == false)
+  else if (online.logging == true && settings.enableLogging == false)
   {
     //Close down file
-    ubxFile.sync();
-    ubxFile.close();
-    online.logging = false;
-  }
-
-  if (online.logging == true)
-  {
-    //Check if we are inside the max time window for logging
-    if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
-      while (i2cGNSS.fileBufferAvailable() >= sdWriteSize) // Check to see if we have at least sdWriteSize waiting in the buffer
-      {
-        //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
-        if (xSemaphoreTake(xFATSemaphore, fatSemaphore_maxWait) == pdPASS)
-        {
-          uint8_t myBuffer[sdWriteSize]; // Create our own buffer to hold the data while we write it to SD card
-
-          i2cGNSS.extractFileBufferData((uint8_t *)&myBuffer, sdWriteSize); // Extract exactly sdWriteSize bytes from the UBX file buffer and put them into myBuffer
-
-          ubxFile.write(myBuffer, sdWriteSize); // Write exactly sdWriteSize bytes from myBuffer to the ubxDataFile on the SD card
-
-          if (settings.frequentFileAccessTimestamps == true)
-            updateDataFileAccess(&ubxFile); // Update the file access time & date
-
-          //Force sync every 1000ms
-          if (millis() - lastUBXLogSyncTime > 1000)
-          {
-            lastUBXLogSyncTime = millis();
-            digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Blink LED to indicate logging activity
-            long startWriteTime = millis();
-            ubxFile.sync();
-            long stopWriteTime = millis();
-            totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
-            digitalWrite(baseStatusLED, !digitalRead(baseStatusLED)); //Return LED to previous state
-
-            updateDataFileAccess(&ubxFile); // Update the file access time & date
-          }
-
-          xSemaphoreGive(xFATSemaphore);
-        }
-
-        // In case the SD writing is slow or there is a lot of data to write, keep checking for the arrival of new data
-        i2cGNSS.checkUblox(); // Check for the arrival of new data and process it.
-      }
+      ubxFile.sync();
+      ubxFile.close();
+      online.logging = false;
+      //xSemaphoreGive(xFATSemaphore); //Do not release semaphore
     }
   }
 
@@ -383,29 +388,45 @@ void updateLogs()
   {
     if (millis() - lastFileReport > 5000)
     {
-      lastFileReport = millis();
-      Serial.printf("UBX file size: %d", ubxFile.fileSize());
+      long fileSize = 0;
 
-      if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+      //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
-        Serial.printf(" - Generation rate: %0.1fkB/s", (ubxFile.fileSize() / (millis() / 1000.0)) / 1000.0);
-        Serial.printf(" - Write speed: %0.1fkB/s", (ubxFile.fileSize() / (totalWriteTime / 1000.0)) / 1000.0);
-      }
-      else
-      {
-        Serial.printf(" reached max log time %d", settings.maxLogTime_minutes);
+        fileSize = ubxFile.fileSize();
+
+        xSemaphoreGive(xFATSemaphore);
       }
 
-      Serial.println();
-
-      //Update for display
-      if (ubxFile.fileSize() > lastLogSize)
+      if (fileSize > 0)
       {
-        lastLogSize = ubxFile.fileSize();
-        logIncreasing = true;
+        lastFileReport = millis();
+        Serial.printf("UBX file size: %ld", fileSize);
+
+        if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+        {
+          //Calculate generation and write speeds every 5 seconds
+          uint32_t delta = fileSize - lastLogSize;
+          Serial.printf(" - Generation rate: %0.1fkB/s", delta / 5.0 / 1000.0);
+          Serial.printf(" - Write speed: %0.1fkB/s", delta / (totalWriteTime / 1000000.0) / 1000.0);
+        }
+        else
+        {
+          Serial.printf(" reached max log time %d", settings.maxLogTime_minutes);
+        }
+
+        Serial.println();
+
+        totalWriteTime = 0; //Reset write time every 5s
+
+        if (fileSize > lastLogSize)
+        {
+          lastLogSize = fileSize;
+          logIncreasing = true;
+        }
+        else
+          logIncreasing = false;
       }
-      else
-        logIncreasing = false;
     }
   }
 }

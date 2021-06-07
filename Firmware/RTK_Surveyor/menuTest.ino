@@ -43,14 +43,20 @@ void menuTest()
 
     Serial.println(F("x) Exit"));
 
-    byte incoming = getByteChoice(30); //Timeout after x seconds
+    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == '1')
     {
       if (settings.enableSD && online.microSD)
       {
-        Serial.println(F("Files found (date time size name):\n\r"));
-        sd.ls(LS_R | LS_DATE | LS_SIZE);
+        //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+        if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+        {
+          Serial.println(F("Files found (date time size name):\n\r"));
+          sd.ls(LS_R | LS_DATE | LS_SIZE);
+
+          xSemaphoreGive(xFATSemaphore);
+        }
       }
     }
     else if (incoming == 'x')

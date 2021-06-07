@@ -5,9 +5,12 @@ bool configureUbloxModuleBase()
   bool response = true;
   int maxWait = 2000;
 
-  digitalWrite(positionAccuracyLED_1cm, LOW);
-  digitalWrite(positionAccuracyLED_10cm, LOW);
-  digitalWrite(positionAccuracyLED_100cm, LOW);
+  if (productVariant == RTK_SURVEYOR)
+  {
+    digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+    digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+    digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+  }
 
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
@@ -116,22 +119,23 @@ bool startFixedBase()
   {
     //Break ECEF into main and high precision parts
     //The type casting should not effect rounding of original double cast coordinate
-    long majorEcefX = settings.fixedEcefX * 100;
-    long minorEcefX = ((settings.fixedEcefX * 100.0) - majorEcefX) * 100.0;
-    long majorEcefY = settings.fixedEcefY * 100;
-    long minorEcefY = ((settings.fixedEcefY * 100.0) - majorEcefY) * 100.0;
-    long majorEcefZ = settings.fixedEcefZ * 100;
-    long minorEcefZ = ((settings.fixedEcefZ * 100.0) - majorEcefZ) * 100.0;
+    long majorEcefX = floor((settings.fixedEcefX * 100.0) + 0.5);
+    long minorEcefX = floor((((settings.fixedEcefX * 100.0) - majorEcefX) * 100.0) + 0.5);
+    long majorEcefY = floor((settings.fixedEcefY * 100) + 0.5);
+    long minorEcefY = floor((((settings.fixedEcefY * 100.0) - majorEcefY) * 100.0) + 0.5);
+    long majorEcefZ = floor((settings.fixedEcefZ * 100) + 0.5);
+    long minorEcefZ = floor((((settings.fixedEcefZ * 100.0) - majorEcefZ) * 100.0) + 0.5);
 
-    //    Serial.printf("fixedEcefY (should be -4716808.5807): %0.04f\n\r", settings.fixedEcefY);
-    //    Serial.printf("major (should be -471680858): %d\n\r", majorEcefY);
-    //    Serial.printf("minor (should be -7): %d\n\r", minorEcefY);
+//    Serial.printf("fixedEcefY (should be -4716808.5807): %0.04f\n\r", settings.fixedEcefY);
+//    Serial.printf("major (should be -471680858): %ld\n\r", majorEcefY);
+//    Serial.printf("minor (should be -7): %ld\n\r", minorEcefY);
 
     //Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
     //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
     response = i2cGNSS.setStaticPosition(majorEcefX, minorEcefX,
                                          majorEcefY, minorEcefY,
                                          majorEcefZ, minorEcefZ,
+                                         false,
                                          maxWait
                                         ); //With high precision 0.1mm parts
   }

@@ -7,7 +7,7 @@ void menuMain()
   while (1)
   {
     Serial.println();
-    Serial.printf("SparkFun RTK Surveyor v%d.%d\r\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
     Serial.print(F("** Bluetooth broadcasting as: "));
     Serial.print(deviceName);
@@ -17,22 +17,30 @@ void menuMain()
 
     Serial.println(F("1) Configure GNSS Receiver"));
 
-    Serial.println(F("2) Configure Data Logging"));
+    Serial.println(F("2) Configure GNSS Messages"));
 
-    Serial.println(F("3) Configure Bluetooth Broadcasting"));
+    Serial.println(F("3) Configure Base"));
 
-    Serial.println(F("4) Configure Base"));
+    Serial.println(F("4) Configure Ports"));
 
-    Serial.println(F("5) Configure Ports"));
+    Serial.println(F("5) Configure Logging"));
+
+    if (settings.enableSD == true && online.microSD == true)
+    {
+      Serial.println(F("6) Display microSD contents"));
+    }
+
+    if (online.accelerometer == true)
+      Serial.println(F("b) Bubble Level"));
 
     Serial.println(F("d) Configure Debug"));
 
     Serial.println(F("r) Reset all settings to default"));
 
-    if(binCount > 0)
+    if (binCount > 0)
       Serial.println(F("f) Firmware upgrade"));
 
-    Serial.println(F("t) Test menu"));
+    //Serial.println(F("t) Test menu"));
 
     Serial.println(F("x) Exit"));
 
@@ -41,13 +49,24 @@ void menuMain()
     if (incoming == '1')
       menuGNSS();
     else if (incoming == '2')
-      menuLog();
+      menuMessages();
     else if (incoming == '3')
-      menuBroadcast();
-    else if (incoming == '4')
       menuBase();
-    else if (incoming == '5')
+    else if (incoming == '4')
       menuPorts();
+    else if (incoming == '5')
+      menuLog();
+    else if (incoming == '6' && settings.enableSD == true && online.microSD == true)
+    {
+      //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+      {
+        Serial.println(F("Files found (date time size name):\n\r"));
+        sd.ls(LS_R | LS_DATE | LS_SIZE);
+
+        xSemaphoreGive(xFATSemaphore);
+      }
+    }
     else if (incoming == 'd')
       menuDebug();
     else if (incoming == 'r')
@@ -58,13 +77,23 @@ void menuMain()
       {
         eepromErase();
 
-        if (sd.exists(settingsFileName))
-          sd.remove(settingsFileName);
+        //Assemble settings file name
+        char settingsFileName[40]; //SFE_Surveyor_Settings.txt
+        strcpy(settingsFileName, platformFilePrefix);
+        strcat(settingsFileName, "_Settings.txt");
+
+        //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+        if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+        {
+          if (sd.exists(settingsFileName))
+            sd.remove(settingsFileName);
+          xSemaphoreGive(xFATSemaphore);
+        } //End xFATSemaphore
 
         i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
         Serial.println(F("Settings erased. Please reset RTK Surveyor. Freezing."));
-        while (1) 
+        while (1)
           delay(1); //Prevent CPU freakout
       }
       else
@@ -74,6 +103,10 @@ void menuMain()
       menuFirmware();
     else if (incoming == 't')
       menuTest();
+    else if (incoming == 'b')
+    {
+      if (online.accelerometer == true) menuBubble();
+    }
     else if (incoming == 'x')
       break;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)
@@ -83,6 +116,8 @@ void menuMain()
   }
 
   recordSystemSettings(); //Once all menus have exited, record the new settings to EEPROM and config file
+
+  i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }

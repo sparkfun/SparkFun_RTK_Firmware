@@ -7,14 +7,14 @@ void menuGNSS()
     Serial.println();
     Serial.println(F("Menu: GNSS Menu"));
 
-    float currentHz = getMeasurementFrequency(); //Get measRate and navRate from module.
-    float currentSeconds = 1.0 / currentHz;
+    //Because we may be in base mode (always 1Hz), do not get freq from module, use settings instead
+    float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
 
     Serial.print(F("1) Set measurement rate in Hz: "));
-    Serial.println(currentHz, 4);
+    Serial.println(measurementFrequency, 4);
 
     Serial.print(F("2) Set measurement rate in seconds between measurements: "));
-    Serial.println(currentSeconds, 2);
+    Serial.println(1 / measurementFrequency, 2);
 
     Serial.print(F("3) Toggle SBAS: "));
     if (getSBAS() == true) Serial.println(F("Enabled"));
@@ -22,7 +22,7 @@ void menuGNSS()
 
     Serial.println(F("x) Exit"));
 
-    int incoming = getNumber(30); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
     {

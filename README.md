@@ -1,9 +1,21 @@
-SparkFun RTK Surveyor
+SparkFun RTK Firmware
 ===========================================================
 
 [![SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/parts/1/6/4/0/1/17369-GPS_RTK_Surveyor_-_Enclosed-01.jpg)](https://www.sparkfun.com/products/17369)
 
 [*SparkFun RTK Surveyor (SPX-17369)*](https://www.sparkfun.com/products/17369)
+
+The [SparkFun RTK Surveyor](https://www.sparkfun.com/products/17369) and [SparkFun RTK Express](https://www.sparkfun.com/products/18019) are centimeter-level GNSS receivers. With RTK enabled, these devices can output your location with 14mm horizontal and vertical *accuracy* at up to 20Hz!
+
+This repo houses the firmware that runs on the SparkFun RTK product line including:
+
+* [SparkFun RTK Surveyor](https://www.sparkfun.com/products/17369)
+* [SparkFun RTK Express](https://www.sparkfun.com/products/18019)
+
+If you're interested in the PCB, enclosure, or overlay on each product please see the hardware repos:
+
+* [SparkFun RTK Surveyor Hardware](https://github.com/sparkfun/SparkFun_RTK_Surveyor)
+* [SparkFun RTK Express Hardware](https://github.com/sparkfun/SparkFun_RTK_Express)
 
 Thanks:
 
@@ -12,11 +24,7 @@ Thanks:
 Repository Contents
 -------------------
 
-* **/Documents** - Documentation on hardware and 3D files for the enclosure
-* **/Enclosure** - gcode for enclosure milling
 * **/Firmware** - Main firmware as well as various feature unit tests
-* **/Graphics** - Bitmaps for display (not currently implmented)
-* **/Hardware** - Eagle files
 * **/Programming** - Espressif's CLI for programming binaries
 * **/Testing** - Espressif provided test suite for RF compliance testing
 

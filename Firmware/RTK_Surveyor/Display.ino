@@ -1297,15 +1297,18 @@ void displayTest()
       else
         oled.print(F("FAIL"));
 
+      i2cGNSS.checkUblox();
       oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
       oled.print(F("GNSS:"));
       int satsInView = i2cGNSS.getSIV();
       if (online.gnss == true && satsInView > 8)
+      {
         oled.print(F("OK"));
+        oled.print(F("/"));
+        oled.print(satsInView);
+      }
       else
         oled.print(F("FAIL"));
-      oled.print(F("/"));
-      oled.print(satsInView);
 
       oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
       oled.print(F("Mux:"));
@@ -1365,7 +1368,7 @@ void displayTest()
 
     oled.display();
 
-      //Wait for user to stop pressing buttons
+    //Wait for user to stop pressing buttons
     if (productVariant == RTK_EXPRESS)
     {
       while (digitalRead(pin_setupButton) == LOW)

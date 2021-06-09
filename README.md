@@ -31,9 +31,8 @@ Thanks:
 Repository Contents
 -------------------
 
+* **/Binaries** - Loadable firmware either over USB or via SD card
 * **/Firmware** - Main firmware as well as various feature unit tests
-* **/Programming** - Espressif's CLI for programming binaries
-* **/Testing** - Espressif provided test suite for RF compliance testing
 
 Documentation
 --------------

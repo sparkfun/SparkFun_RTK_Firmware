@@ -101,7 +101,7 @@ void menuMessages()
       menuMessagesTIM();
     else if (incoming == 7)
     {
-      setGNSSMessageRates(0); //Turn off all messages
+      setGNSSMessageRates(settings.message, 0); //Turn off all messages
       settings.message.nmea_gga.msgRate = 1;
       settings.message.nmea_gsa.msgRate = 1;
       settings.message.nmea_gst.msgRate = 1;
@@ -111,7 +111,7 @@ void menuMessages()
     }
     else if (incoming == 8)
     {
-      setGNSSMessageRates(0); //Turn off all messages
+      setGNSSMessageRates(settings.message, 0); //Turn off all messages
       settings.message.nmea_gga.msgRate = 1;
       settings.message.nmea_gsa.msgRate = 1;
       settings.message.nmea_gst.msgRate = 1;
@@ -124,15 +124,14 @@ void menuMessages()
     }
     else if (incoming == 9)
     {
-      setGNSSMessageRates(0); //Turn off all messages
+      setGNSSMessageRates(settings.message, 0); //Turn off all messages
       Serial.println(F("All messages disabled"));
     }
     else if (incoming == 10)
     {
-      setGNSSMessageRates(1); //Turn on all messages
+      setGNSSMessageRates(settings.message, 1); //Turn on all messages to report once per fix
       Serial.println(F("All messages enabled"));
     }
-
     else if (incoming == STATUS_PRESSED_X)
       break;
     else if (incoming == STATUS_GETNUMBER_TIMEOUT)
@@ -143,12 +142,12 @@ void menuMessages()
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 
-  bool response = configureGNSSMessageRates(); //Make sure the appropriate messages are enabled
+  bool response = configureGNSSMessageRates(COM_PORT_UART1, settings.message); //Make sure the appropriate messages are enabled
   if (response == false)
   {
     Serial.println(F("menuMessages: Failed to enable UART1 messages - Try 1"));
     //Try again
-    response = configureGNSSMessageRates(); //Make sure the appropriate messages are enabled
+    response = configureGNSSMessageRates(COM_PORT_UART1, settings.message); //Make sure the appropriate messages are enabled
     if (response == false)
       Serial.println(F("menuMessages: Failed to enable UART1 messages - Try 2"));
     else
@@ -685,192 +684,196 @@ void inputMessageRate(ubxMsg &message)
 }
 
 //Updates the message rates on the ZED-F9P for all known messages
-bool configureGNSSMessageRates()
+//Any port and messages structure can be passed in. This allows us to modify the USB 
+//port settings a separate (not NVM backed) message struct for testing
+bool configureGNSSMessageRates(uint8_t portType, ubxMsgs message)
 {
   bool response = true;
 
   //NMEA
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_dtm);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_gbs);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_gga);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_gll);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_gns);
+  response &= configureMessageRate(portType, message.nmea_dtm);
+  response &= configureMessageRate(portType, message.nmea_gbs);
+  response &= configureMessageRate(portType, message.nmea_gga);
+  response &= configureMessageRate(portType, message.nmea_gll);
+  response &= configureMessageRate(portType, message.nmea_gns);
 
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_grs);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_gsa);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_gst);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_gsv);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_rmc);
+  response &= configureMessageRate(portType, message.nmea_grs);
+  response &= configureMessageRate(portType, message.nmea_gsa);
+  response &= configureMessageRate(portType, message.nmea_gst);
+  response &= configureMessageRate(portType, message.nmea_gsv);
+  response &= configureMessageRate(portType, message.nmea_rmc);
 
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_vlw);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_vtg);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nmea_zda);
+  response &= configureMessageRate(portType, message.nmea_vlw);
+  response &= configureMessageRate(portType, message.nmea_vtg);
+  response &= configureMessageRate(portType, message.nmea_zda);
 
   //NAV
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_clock);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_dop);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_eoe);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_geofence);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_hpposecef);
+  response &= configureMessageRate(portType, message.nav_clock);
+  response &= configureMessageRate(portType, message.nav_dop);
+  response &= configureMessageRate(portType, message.nav_eoe);
+  response &= configureMessageRate(portType, message.nav_geofence);
+  response &= configureMessageRate(portType, message.nav_hpposecef);
 
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_hpposllh);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_odo);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_orb);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_posecef);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_posllh);
+  response &= configureMessageRate(portType, message.nav_hpposllh);
+  response &= configureMessageRate(portType, message.nav_odo);
+  response &= configureMessageRate(portType, message.nav_orb);
+  response &= configureMessageRate(portType, message.nav_posecef);
+  response &= configureMessageRate(portType, message.nav_posllh);
 
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_pvt);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_relposned);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_sat);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_sig);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_status);
+  response &= configureMessageRate(portType, message.nav_pvt);
+  response &= configureMessageRate(portType, message.nav_relposned);
+  response &= configureMessageRate(portType, message.nav_sat);
+  response &= configureMessageRate(portType, message.nav_sig);
+  response &= configureMessageRate(portType, message.nav_status);
 
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_svin);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_timebds);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_timegal);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_timeglo);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_timegps);
+  response &= configureMessageRate(portType, message.nav_svin);
+  response &= configureMessageRate(portType, message.nav_timebds);
+  response &= configureMessageRate(portType, message.nav_timegal);
+  response &= configureMessageRate(portType, message.nav_timeglo);
+  response &= configureMessageRate(portType, message.nav_timegps);
 
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_timels);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_timeutc);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_velecef);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.nav_velned);
+  response &= configureMessageRate(portType, message.nav_timels);
+  response &= configureMessageRate(portType, message.nav_timeutc);
+  response &= configureMessageRate(portType, message.nav_velecef);
+  response &= configureMessageRate(portType, message.nav_velned);
 
   //RXM
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rxm_measx);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rxm_rawx);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rxm_rlm);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rxm_rtcm);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rxm_sfrbx);
+  response &= configureMessageRate(portType, message.rxm_measx);
+  response &= configureMessageRate(portType, message.rxm_rawx);
+  response &= configureMessageRate(portType, message.rxm_rlm);
+  response &= configureMessageRate(portType, message.rxm_rtcm);
+  response &= configureMessageRate(portType, message.rxm_sfrbx);
 
   //MON
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_comms);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_hw2);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_hw3);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_hw);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_io);
+  response &= configureMessageRate(portType, message.mon_comms);
+  response &= configureMessageRate(portType, message.mon_hw2);
+  response &= configureMessageRate(portType, message.mon_hw3);
+  response &= configureMessageRate(portType, message.mon_hw);
+  response &= configureMessageRate(portType, message.mon_io);
 
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_msgpp);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_rf);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_rxbuf);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_rxr);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.mon_txbuf);
+  response &= configureMessageRate(portType, message.mon_msgpp);
+  response &= configureMessageRate(portType, message.mon_rf);
+  response &= configureMessageRate(portType, message.mon_rxbuf);
+  response &= configureMessageRate(portType, message.mon_rxr);
+  response &= configureMessageRate(portType, message.mon_txbuf);
 
   //TIM
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.tim_tm2);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.tim_tp);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.tim_vrfy);
+  response &= configureMessageRate(portType, message.tim_tm2);
+  response &= configureMessageRate(portType, message.tim_tp);
+  response &= configureMessageRate(portType, message.tim_vrfy);
 
   //RTCM
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_1005);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_1074);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_1077);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_1084);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_1087);
+  response &= configureMessageRate(portType, message.rtcm_1005);
+  response &= configureMessageRate(portType, message.rtcm_1074);
+  response &= configureMessageRate(portType, message.rtcm_1077);
+  response &= configureMessageRate(portType, message.rtcm_1084);
+  response &= configureMessageRate(portType, message.rtcm_1087);
 
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_1094);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_1097);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_1124);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_1127);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_1230);
+  response &= configureMessageRate(portType, message.rtcm_1094);
+  response &= configureMessageRate(portType, message.rtcm_1097);
+  response &= configureMessageRate(portType, message.rtcm_1124);
+  response &= configureMessageRate(portType, message.rtcm_1127);
+  response &= configureMessageRate(portType, message.rtcm_1230);
 
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_4072_0);
-  response &= configureMessageRate(COM_PORT_UART1, settings.message.rtcm_4072_1);
+  response &= configureMessageRate(portType, message.rtcm_4072_0);
+  response &= configureMessageRate(portType, message.rtcm_4072_1);
 
   return (response);
 }
 
 //Set all GNSS message report rates to one value
 //Useful for turning on or off all messages for resetting and testing
-void setGNSSMessageRates(uint8_t msgRate)
+//We pass in the message struct so that we can modify a temp struct
+//like a dummy struct for USB message changes (all on/off) for testing
+void setGNSSMessageRates(ubxMsgs &message, uint8_t msgRate)
 {
   //NMEA
-  settings.message.nmea_dtm.msgRate = msgRate;
-  settings.message.nmea_gbs.msgRate = msgRate;
-  settings.message.nmea_gga.msgRate = msgRate;
-  settings.message.nmea_gll.msgRate = msgRate;
-  settings.message.nmea_gns.msgRate = msgRate;
+  message.nmea_dtm.msgRate = msgRate;
+  message.nmea_gbs.msgRate = msgRate;
+  message.nmea_gga.msgRate = msgRate;
+  message.nmea_gll.msgRate = msgRate;
+  message.nmea_gns.msgRate = msgRate;
 
-  settings.message.nmea_grs.msgRate = msgRate;
-  settings.message.nmea_gsa.msgRate = msgRate;
-  settings.message.nmea_gst.msgRate = msgRate;
-  settings.message.nmea_gsv.msgRate = msgRate;
-  settings.message.nmea_rmc.msgRate = msgRate;
+  message.nmea_grs.msgRate = msgRate;
+  message.nmea_gsa.msgRate = msgRate;
+  message.nmea_gst.msgRate = msgRate;
+  message.nmea_gsv.msgRate = msgRate;
+  message.nmea_rmc.msgRate = msgRate;
 
-  settings.message.nmea_vlw.msgRate = msgRate;
-  settings.message.nmea_vtg.msgRate = msgRate;
-  settings.message.nmea_zda.msgRate = msgRate;
+  message.nmea_vlw.msgRate = msgRate;
+  message.nmea_vtg.msgRate = msgRate;
+  message.nmea_zda.msgRate = msgRate;
 
   //NAV
-  settings.message.nav_clock.msgRate = msgRate;
-  settings.message.nav_dop.msgRate = msgRate;
-  settings.message.nav_eoe.msgRate = msgRate;
-  settings.message.nav_geofence.msgRate = msgRate;
-  settings.message.nav_hpposecef.msgRate = msgRate;
+  message.nav_clock.msgRate = msgRate;
+  message.nav_dop.msgRate = msgRate;
+  message.nav_eoe.msgRate = msgRate;
+  message.nav_geofence.msgRate = msgRate;
+  message.nav_hpposecef.msgRate = msgRate;
 
-  settings.message.nav_hpposllh.msgRate = msgRate;
-  settings.message.nav_odo.msgRate = msgRate;
-  settings.message.nav_orb.msgRate = msgRate;
-  settings.message.nav_posecef.msgRate = msgRate;
-  settings.message.nav_posllh.msgRate = msgRate;
+  message.nav_hpposllh.msgRate = msgRate;
+  message.nav_odo.msgRate = msgRate;
+  message.nav_orb.msgRate = msgRate;
+  message.nav_posecef.msgRate = msgRate;
+  message.nav_posllh.msgRate = msgRate;
 
-  settings.message.nav_pvt.msgRate = msgRate;
-  settings.message.nav_relposned.msgRate = msgRate;
-  settings.message.nav_sat.msgRate = msgRate;
-  settings.message.nav_sig.msgRate = msgRate;
-  settings.message.nav_status.msgRate = msgRate;
+  message.nav_pvt.msgRate = msgRate;
+  message.nav_relposned.msgRate = msgRate;
+  message.nav_sat.msgRate = msgRate;
+  message.nav_sig.msgRate = msgRate;
+  message.nav_status.msgRate = msgRate;
 
-  settings.message.nav_svin.msgRate = msgRate;
-  settings.message.nav_timebds.msgRate = msgRate;
-  settings.message.nav_timegal.msgRate = msgRate;
-  settings.message.nav_timeglo.msgRate = msgRate;
-  settings.message.nav_timegps.msgRate = msgRate;
+  message.nav_svin.msgRate = msgRate;
+  message.nav_timebds.msgRate = msgRate;
+  message.nav_timegal.msgRate = msgRate;
+  message.nav_timeglo.msgRate = msgRate;
+  message.nav_timegps.msgRate = msgRate;
 
-  settings.message.nav_timels.msgRate = msgRate;
-  settings.message.nav_timeutc.msgRate = msgRate;
-  settings.message.nav_velecef.msgRate = msgRate;
-  settings.message.nav_velned.msgRate = msgRate;
+  message.nav_timels.msgRate = msgRate;
+  message.nav_timeutc.msgRate = msgRate;
+  message.nav_velecef.msgRate = msgRate;
+  message.nav_velned.msgRate = msgRate;
 
   //RXM
-  settings.message.rxm_measx.msgRate = msgRate;
-  settings.message.rxm_rawx.msgRate = msgRate;
-  settings.message.rxm_rlm.msgRate = msgRate;
-  settings.message.rxm_rtcm.msgRate = msgRate;
-  settings.message.rxm_sfrbx.msgRate = msgRate;
+  message.rxm_measx.msgRate = msgRate;
+  message.rxm_rawx.msgRate = msgRate;
+  message.rxm_rlm.msgRate = msgRate;
+  message.rxm_rtcm.msgRate = msgRate;
+  message.rxm_sfrbx.msgRate = msgRate;
 
   //MON
-  settings.message.mon_comms.msgRate = msgRate;
-  settings.message.mon_hw2.msgRate = msgRate;
-  settings.message.mon_hw3.msgRate = msgRate;
-  settings.message.mon_hw.msgRate = msgRate;
-  settings.message.mon_io.msgRate = msgRate;
+  message.mon_comms.msgRate = msgRate;
+  message.mon_hw2.msgRate = msgRate;
+  message.mon_hw3.msgRate = msgRate;
+  message.mon_hw.msgRate = msgRate;
+  message.mon_io.msgRate = msgRate;
 
-  settings.message.mon_msgpp.msgRate = msgRate;
-  settings.message.mon_rf.msgRate = msgRate;
-  settings.message.mon_rxbuf.msgRate = msgRate;
-  settings.message.mon_rxr.msgRate = msgRate;
-  settings.message.mon_txbuf.msgRate = msgRate;
+  message.mon_msgpp.msgRate = msgRate;
+  message.mon_rf.msgRate = msgRate;
+  message.mon_rxbuf.msgRate = msgRate;
+  message.mon_rxr.msgRate = msgRate;
+  message.mon_txbuf.msgRate = msgRate;
 
   //TIM
-  settings.message.tim_tm2.msgRate = msgRate;
-  settings.message.tim_tp.msgRate = msgRate;
-  settings.message.tim_vrfy.msgRate = msgRate;
+  message.tim_tm2.msgRate = msgRate;
+  message.tim_tp.msgRate = msgRate;
+  message.tim_vrfy.msgRate = msgRate;
 
   //RTCM
-  settings.message.rtcm_1005.msgRate = msgRate;
-  settings.message.rtcm_1074.msgRate = msgRate;
-  settings.message.rtcm_1077.msgRate = msgRate;
-  settings.message.rtcm_1084.msgRate = msgRate;
-  settings.message.rtcm_1087.msgRate = msgRate;
+  message.rtcm_1005.msgRate = msgRate;
+  message.rtcm_1074.msgRate = msgRate;
+  message.rtcm_1077.msgRate = msgRate;
+  message.rtcm_1084.msgRate = msgRate;
+  message.rtcm_1087.msgRate = msgRate;
 
-  settings.message.rtcm_1094.msgRate = msgRate;
-  settings.message.rtcm_1097.msgRate = msgRate;
-  settings.message.rtcm_1124.msgRate = msgRate;
-  settings.message.rtcm_1127.msgRate = msgRate;
-  settings.message.rtcm_1230.msgRate = msgRate;
+  message.rtcm_1094.msgRate = msgRate;
+  message.rtcm_1097.msgRate = msgRate;
+  message.rtcm_1124.msgRate = msgRate;
+  message.rtcm_1127.msgRate = msgRate;
+  message.rtcm_1230.msgRate = msgRate;
 
-  settings.message.rtcm_4072_0.msgRate = msgRate;
-  settings.message.rtcm_4072_1.msgRate = msgRate;
+  message.rtcm_4072_0.msgRate = msgRate;
+  message.rtcm_4072_1.msgRate = msgRate;
 }
 
 //Given a message, set the message rate on the ZED-F9P

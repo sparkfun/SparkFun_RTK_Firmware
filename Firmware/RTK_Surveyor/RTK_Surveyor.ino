@@ -36,7 +36,6 @@
     (Done) Firmware upgrade menu
     Enable various debug outputs sent over BT
 
-    TODO
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;

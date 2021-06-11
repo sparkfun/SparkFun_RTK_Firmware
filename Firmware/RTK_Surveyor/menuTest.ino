@@ -38,14 +38,14 @@ void menuTest()
     Serial.println(F("Any character received over Blueooth connection will be displayed here"));
 
     Serial.println(F("1) Display microSD contents"));
-
-    Serial.println(F("2) Scan for Qwiic OLED display"));
+    Serial.println(F("2) Turn on all messages on USB port"));
+    Serial.println(F("3) Reset USB Messages to Defaults (NMEAx6)"));
 
     Serial.println(F("x) Exit"));
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
-    if (incoming == '1')
+    if (incoming == 1)
     {
       if (settings.enableSD && online.microSD)
       {
@@ -59,13 +59,43 @@ void menuTest()
         }
       }
     }
-    else if (incoming == 'x')
-      break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    else if (incoming == 2)
     {
-      Serial.println(F("time out"));
-      //      break;
+      ubxMsgs usbMessage; //Create temp struct
+      setGNSSMessageRates(usbMessage, 1); //Turn on all messages to report once per fix
+
+      //Now send that struct
+      bool response = configureGNSSMessageRates(COM_PORT_USB, usbMessage); //Make sure the appropriate messages are enabled
+      if (response == false)
+        Serial.println(F("menuTest: Failed to enable USB messages"));
+      else
+        Serial.println(F("All messages enabled"));
     }
+    else if (incoming == 3)
+    {
+      ubxMsgs usbMessage; //Create temp struct
+      setGNSSMessageRates(usbMessage, 0); //Turn off all messages to report
+
+      //Turn on default 6
+      usbMessage.nmea_gga.msgRate = 1;
+      usbMessage.nmea_gsa.msgRate = 1;
+      usbMessage.nmea_gst.msgRate = 1;
+      usbMessage.nmea_gsv.msgRate = 1;
+      usbMessage.nmea_rmc.msgRate = 1;
+      usbMessage.nmea_vtg.msgRate = 1;
+
+      //Now send that struct
+      bool response = configureGNSSMessageRates(COM_PORT_USB, usbMessage); //Make sure the appropriate messages are enabled
+      if (response == false)
+        Serial.println(F("menuTest: Failed to enable USB messages"));
+      else
+        Serial.println(F("All messages enabled"));
+    }
+
+    else if (incoming == STATUS_PRESSED_X)
+      break;
+    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+      break;
     else
       printUnknown(incoming);
   }

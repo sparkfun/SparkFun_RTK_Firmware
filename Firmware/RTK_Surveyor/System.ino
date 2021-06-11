@@ -231,7 +231,7 @@ bool configureUbloxModule()
     response &= i2cGNSS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
   }
 
-  response &= configureGNSSMessageRates(); //Make sure the appropriate messages are enabled
+  response &= configureGNSSMessageRates(COM_PORT_UART1, settings.message); //Make sure the appropriate messages are enabled
 
   response &= i2cGNSS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
   response &= i2cGNSS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed

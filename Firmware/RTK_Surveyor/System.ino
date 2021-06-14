@@ -216,9 +216,9 @@ bool configureUbloxModule()
   //Turn on RTCM over I2C port so that we can harvest RTCM over I2C and send out over WiFi
   //This is easier than parsing over UART because the library handles the frame detection
   getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3) || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_RTCM3) || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
   {
-    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //Set the I2C port to output UBX (config), NMEA (logging), and RTCM3 (casting)
+    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3); //Set the I2C port to output UBX (config), NMEA (logging), and RTCM3 (casting)
     response &= i2cGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
   }
 

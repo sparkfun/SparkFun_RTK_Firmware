@@ -17,12 +17,15 @@ bool configureUbloxModuleRover()
       Serial.println(F("setDynamicModel failed"));
   }
 
-  //Disable RTCM sentences
+  //Disable RTCM sentences on I2C, USB, and UART2
   response = true; //Reset
   response &= disableRTCMSentences(COM_PORT_I2C);
   response &= disableRTCMSentences(COM_PORT_UART2);
-  response &= disableRTCMSentences(COM_PORT_UART1);
   response &= disableRTCMSentences(COM_PORT_USB);
+
+  //Re-enable any RTCM msgs on UART1 the user has set within settings
+  response &= configureGNSSMessageRates(COM_PORT_UART1, settings.message); //Make sure the appropriate messages are enabled
+
   if (response == false)
     Serial.println(F("Disable RTCM failed"));
 

@@ -192,9 +192,9 @@ bool configureUbloxModule()
   //but the phone can also provide RTCM data and a user may want to configure the ZED over Bluetooth.
   //So let's be sure to enable UBX+NMEA+RTCM on the input
   getPortSettings(COM_PORT_UART1); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3))
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3) || settingPayload[INPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3))
   {
-    response &= i2cGNSS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX); //Set the UART1 to output NMEA and UBX
+    response &= i2cGNSS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Set the UART1 to output UBX+NMEA+RTCM
     response &= i2cGNSS.setPortInput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Set the UART1 to input UBX+NMEA+RTCM
   }
 
@@ -290,6 +290,8 @@ bool disableNMEASentences(uint8_t portType)
 }
 
 //Enable RTCM sentences for a given com port
+//This function is needed when switching from rover to base
+//We over-ride user settings in base mode
 bool enableRTCMSentences(uint8_t portType)
 {
   bool response = true;
@@ -312,6 +314,9 @@ bool enableRTCMSentences(uint8_t portType)
 }
 
 //Disable RTCM sentences for a given com port
+//This function is needed when switching from base to rover
+//It's used for turning off RTCM on USB, UART2, and I2C ports.
+//UART1 should be re-enabled with user settings using the configureGNSSMessageRates() function
 bool disableRTCMSentences(uint8_t portType)
 {
   bool response = true;

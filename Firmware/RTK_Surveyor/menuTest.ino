@@ -40,6 +40,7 @@ void menuTest()
     Serial.println(F("1) Display microSD contents"));
     Serial.println(F("2) Turn on all messages on USB port"));
     Serial.println(F("3) Reset USB Messages to Defaults (NMEAx6)"));
+    Serial.println(F("4) Duplicate UART messages to USB"));
 
     Serial.println(F("x) Exit"));
 
@@ -90,6 +91,15 @@ void menuTest()
         Serial.println(F("menuTest: Failed to enable USB messages"));
       else
         Serial.println(F("All messages enabled"));
+    }
+    else if (incoming == 4)
+    {
+      //Send the current settings to USB
+      bool response = configureGNSSMessageRates(COM_PORT_USB, settings.message); //Make sure the appropriate messages are enabled
+      if (response == false)
+        Serial.println(F("menuTest: Failed to enable USB messages"));
+      else
+        Serial.println(F("USB now matches UART messages"));
     }
 
     else if (incoming == STATUS_PRESSED_X)

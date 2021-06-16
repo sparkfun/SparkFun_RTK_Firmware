@@ -63,7 +63,7 @@ bool startBluetooth()
       "F9Read", //Just for humans
       readTaskStackSize, //Stack Size
       NULL, //Task input parameter
-      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      1, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
       &F9PSerialReadTaskHandle); //Task handle
 
   if (F9PSerialWriteTaskHandle == NULL)

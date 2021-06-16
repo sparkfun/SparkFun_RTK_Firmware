@@ -12,6 +12,7 @@ void F9PSerialWriteTask(void *e)
     {
       while (SerialBT.available())
       {
+        taskYIELD();
         if (inTestMode == false)
         {
           //Pass bytes to GNSS receiver
@@ -37,8 +38,10 @@ void F9PSerialReadTask(void *e)
 {
   while (true)
   {
-    if (serialGNSS.available())
+    while (serialGNSS.available())
     {
+      taskYIELD();
+
       auto s = serialGNSS.readBytes(rBuffer, SERIAL_SIZE_RX);
 
       //If we are actively survey-in then do not pass NMEA data from ZED to phone
@@ -78,7 +81,9 @@ void F9PSerialReadTask(void *e)
                 digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
               long startWriteTime = micros();
+              taskYIELD();
               ubxFile.sync();
+              taskYIELD();
               long stopWriteTime = micros();
               totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
 

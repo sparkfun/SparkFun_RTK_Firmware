@@ -240,22 +240,27 @@ void beginGNSS()
   i2cGNSS.i2cTransactionSize = 128;
 
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
-  //  if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info
-  //  {
-  //    if (strcmp(i2cGNSS.minfo.extension[1], latestZEDFirmware) != 0)
-  //    {
-  //      Serial.print(F("The ZED-F9P appears to have outdated firmware. Found: "));
-  //      Serial.println(i2cGNSS.minfo.extension[1]);
-  //      Serial.print(F("The Surveyor works best with "));
-  //      Serial.println(latestZEDFirmware);
-  //      Serial.print(F("Please upgrade using u-center."));
-  //      Serial.println();
-  //    }
-  //    else
-  //    {
-  //      Serial.println(F("ZED-F9P firmware is current"));
-  //    }
-  //  }
+  if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info
+  {
+    strcpy(zedFirmwareVersion, i2cGNSS.minfo.extension[1]);
+
+    Serial.print(F("ZED-F9P firmware: "));
+    Serial.println(zedFirmwareVersion);
+
+    //    if (strcmp(i2cGNSS.minfo.extension[1], latestZEDFirmware) != 0)
+    //    {
+    //      Serial.print(F("The ZED-F9P appears to have outdated firmware. Found: "));
+    //      Serial.println(i2cGNSS.minfo.extension[1]);
+    //      Serial.print(F("The Surveyor works best with "));
+    //      Serial.println(latestZEDFirmware);
+    //      Serial.print(F("Please upgrade using u-center."));
+    //      Serial.println();
+    //    }
+    //    else
+    //    {
+    //      Serial.println(F("ZED-F9P firmware is current"));
+    //    }
+  }
 
   bool response = configureUbloxModule();
   if (response == false)

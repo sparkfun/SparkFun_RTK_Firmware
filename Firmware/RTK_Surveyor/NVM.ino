@@ -93,6 +93,7 @@ void recordSystemSettingsToFile()
       sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
       settingsFile.println("rtkFirmwareVersion=" + (String)firmwareVersion);
 
+      settingsFile.println("zedFirmwareVersion=" + (String)zedFirmwareVersion);
       settingsFile.println("printDebugMessages=" + (String)settings.printDebugMessages);
       settingsFile.println("enableSD=" + (String)settings.enableSD);
       settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
@@ -390,7 +391,8 @@ bool parseLine(char* str) {
     settings.rtkIdentifier = d;
   else if (strcmp(settingName, "rtkFirmwareVersion") == 0)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
-
+  else if (strcmp(settingName, "zedFirmwareVersion") == 0)
+  {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "printDebugMessages") == 0)
     settings.printDebugMessages = d;
   else if (strcmp(settingName, "enableSD") == 0)

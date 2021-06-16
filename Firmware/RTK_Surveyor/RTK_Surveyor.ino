@@ -140,6 +140,8 @@ uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service tim
 //v1.13 causes the RTK LED to not function if SBAS is enabled. To avoid this, we
 //disable SBAS by default.
 
+char zedFirmwareVersion[20]; //The string looks like 'FWVER=HPG 1.12'. Output to debug menu and settings file.
+
 // Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
 class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
 {

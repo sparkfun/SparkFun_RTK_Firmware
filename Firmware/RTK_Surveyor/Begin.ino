@@ -248,7 +248,7 @@ void beginGNSS()
     //Replace = with - to avoid NVM parsing issues
     char *ptr = strchr(zedFirmwareVersion, '=');
     if (ptr != NULL)
-      zedFirmwareVersion[ptr - zedFirmwareVersion] = '-';
+      zedFirmwareVersion[ptr - zedFirmwareVersion] = ':';
 
     Serial.print(F("ZED-F9P firmware: "));
     Serial.println(zedFirmwareVersion);

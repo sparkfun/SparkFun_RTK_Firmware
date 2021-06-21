@@ -161,7 +161,9 @@ void menuMessages()
   }
 
 }
-//Control the messages that get broadcast over Bluetooth and logged (if enabled)
+
+//Given a sub type (ie "RTCM", "NMEA") present menu showing messages with this subtype
+//Controls the messages that get broadcast over Bluetooth and logged (if enabled)
 void menuMessagesSubtype(char* messageType)
 {
   while (1)

@@ -244,6 +244,12 @@ void beginGNSS()
   {
     strcpy(zedFirmwareVersion, i2cGNSS.minfo.extension[1]);
 
+    //i2cGNSS.minfo.extension[1] looks like 'FWVER=HPG 1.12'
+    //Replace = with - to avoid NVM parsing issues
+    char *ptr = strchr(zedFirmwareVersion, '=');
+    if (ptr != NULL)
+      zedFirmwareVersion[ptr - zedFirmwareVersion] = '-';
+
     Serial.print(F("ZED-F9P firmware: "));
     Serial.println(zedFirmwareVersion);
 

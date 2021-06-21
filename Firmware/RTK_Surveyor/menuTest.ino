@@ -62,40 +62,40 @@ void menuTest()
     }
     else if (incoming == 2)
     {
-      ubxMsgs usbMessage; //Create temp struct
-      setGNSSMessageRates(usbMessage, 1); //Turn on all messages to report once per fix
-
-      //Now send that struct
-      bool response = configureGNSSMessageRates(COM_PORT_USB, usbMessage); //Make sure the appropriate messages are enabled
-      if (response == false)
-        Serial.println(F("menuTest: Failed to enable USB messages"));
-      else
-        Serial.println(F("All messages enabled"));
+//      ubxMsgs usbMessage; //Create temp struct
+//      setGNSSMessageRates(usbMessage, 1); //Turn on all messages to report once per fix
+//
+//      //Now send that struct
+//      bool response = configureGNSSMessageRates(COM_PORT_USB, usbMessage); //Make sure the appropriate messages are enabled
+//      if (response == false)
+//        Serial.println(F("menuTest: Failed to enable USB messages"));
+//      else
+//        Serial.println(F("All messages enabled"));
     }
     else if (incoming == 3)
     {
-      ubxMsgs usbMessage; //Create temp struct
-      setGNSSMessageRates(usbMessage, 0); //Turn off all messages to report
-
-      //Turn on default 6
-      usbMessage.nmea_gga.msgRate = 1;
-      usbMessage.nmea_gsa.msgRate = 1;
-      usbMessage.nmea_gst.msgRate = 1;
-      usbMessage.nmea_gsv.msgRate = 1;
-      usbMessage.nmea_rmc.msgRate = 1;
-      usbMessage.nmea_vtg.msgRate = 1;
-
-      //Now send that struct
-      bool response = configureGNSSMessageRates(COM_PORT_USB, usbMessage); //Make sure the appropriate messages are enabled
-      if (response == false)
-        Serial.println(F("menuTest: Failed to enable USB messages"));
-      else
-        Serial.println(F("All messages enabled"));
+//      ubxMsgs usbMessage; //Create temp struct
+//      setGNSSMessageRates(usbMessage, 0); //Turn off all messages to report
+//
+//      //Turn on default 6
+//      usbMessage.nmea_gga.msgRate = 1;
+//      usbMessage.nmea_gsa.msgRate = 1;
+//      usbMessage.nmea_gst.msgRate = 1;
+//      usbMessage.nmea_gsv.msgRate = 1;
+//      usbMessage.nmea_rmc.msgRate = 1;
+//      usbMessage.nmea_vtg.msgRate = 1;
+//
+//      //Now send that struct
+//      bool response = configureGNSSMessageRates(COM_PORT_USB, usbMessage); //Make sure the appropriate messages are enabled
+//      if (response == false)
+//        Serial.println(F("menuTest: Failed to enable USB messages"));
+//      else
+//        Serial.println(F("All messages enabled"));
     }
     else if (incoming == 4)
     {
       //Send the current settings to USB
-      bool response = configureGNSSMessageRates(COM_PORT_USB, settings.message); //Make sure the appropriate messages are enabled
+      bool response = configureGNSSMessageRates(COM_PORT_USB, ubxMessages); //Make sure the appropriate messages are enabled
       if (response == false)
         Serial.println(F("menuTest: Failed to enable USB messages"));
       else

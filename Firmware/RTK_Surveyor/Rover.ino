@@ -24,7 +24,7 @@ bool configureUbloxModuleRover()
   response &= disableRTCMSentences(COM_PORT_USB);
 
   //Re-enable any RTCM msgs on UART1 the user has set within settings
-  response &= configureGNSSMessageRates(COM_PORT_UART1, settings.message); //Make sure the appropriate messages are enabled
+  response &= configureGNSSMessageRates(COM_PORT_UART1, ubxMessages); //Make sure the appropriate messages are enabled
 
   if (response == false)
     Serial.println(F("Disable RTCM failed"));

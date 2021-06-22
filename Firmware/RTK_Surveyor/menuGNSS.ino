@@ -49,6 +49,9 @@ void menuGNSS()
       case DYN_MODEL_BIKE: 
         Serial.print(F("Bike"));
         break;
+      default: 
+        Serial.print(F("Unknown"));
+        break;
     }
     Serial.println();
 
@@ -106,7 +109,12 @@ void menuGNSS()
       if (dynamicModel < 1 || dynamicModel > DYN_MODEL_BIKE)
         Serial.println(F("Error: Dynamic model out of range"));
       else
-        settings.dynamicModel = dynamicModel; //Recorded to NVM and file at main menu exit
+      {
+        if(dynamicModel == 1)
+          settings.dynamicModel = DYN_MODEL_PORTABLE; //The enum starts at 0 and skips 1.
+        else
+          settings.dynamicModel = dynamicModel; //Recorded to NVM and file at main menu exit
+      }
     }
     else if (incoming == 4)
     {

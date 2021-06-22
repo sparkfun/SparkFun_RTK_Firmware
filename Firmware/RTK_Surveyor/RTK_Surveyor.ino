@@ -305,8 +305,6 @@ void setup()
 
   beginDisplay(); //Check if an external Qwiic OLED is attached
 
-  beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
-
   beginLEDs(); //LED and PWM setup
 
   //Start EEPROM and SD for settings, and display for output
@@ -324,6 +322,8 @@ void setup()
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+  beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
   beginFuelGauge(); //Configure battery fuel guage monitor
   checkBatteryLevels(); //Force display so you see battery level immediately at power on

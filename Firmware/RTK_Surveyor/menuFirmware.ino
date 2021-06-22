@@ -77,9 +77,10 @@ void scanForFirmware()
             updateFromSD((char *)forceFirmwareFileName);
           }
 
-          //Check for 'RTK_Surveyor_Firmware' header and 'bin' extension
+          //Check 'bin' extension
           if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
           {
+            //Check for 'RTK_Surveyor_Firmware' start of file name
             if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
             {
               strcpy(binFileNames[binCount++], fname); //Add this to the array

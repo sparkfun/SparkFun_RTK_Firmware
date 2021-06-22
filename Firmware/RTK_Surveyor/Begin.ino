@@ -4,14 +4,19 @@
 //Must be called after Wire.begin so that we can do I2C tests
 void beginBoard()
 {
-  productVariant = RTK_SURVEYOR;
-  if (isConnected(0x19) == true) //Check for accelerometer
+  //Use ADC to check 50% resistor divider
+  int pin_adc_rtk_facet = 35;
+  if (analogReadMilliVolts(pin_adc_rtk_facet) > (3300/2 * 0.9) && analogReadMilliVolts(pin_adc_rtk_facet) < (3300/2 * 1.1))
+  {
+    productVariant = RTK_FACET;
+  }
+  else if (isConnected(0x19) == true) //Check for accelerometer
   {
     productVariant = RTK_EXPRESS;
   }
-  else if (analogRead(35) > 400 && analogRead(35) < 600)
+  else
   {
-    productVariant = RTK_FACET;
+    productVariant = RTK_SURVEYOR;
   }
 
   //Setup hardware pins
@@ -61,7 +66,7 @@ void beginBoard()
   }
   else if (productVariant == RTK_FACET)
   {
-    //v10
+    //v11
     pin_muxA = 2;
     pin_muxB = 0;
     pin_powerSenseAndControl = 13;
@@ -76,12 +81,15 @@ void beginBoard()
 
     if (esp_reset_reason() == ESP_RST_POWERON)
     {
-      powerOnCheck(); //Only do check if we POR start
+//      powerOnCheck(); //Only do check if we POR start
     }
 
+    pinMode(pin_peripheralPowerControl, OUTPUT);
     digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, ZED, etc
 
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
+
+    delay(1000);
 
     strcpy(platformFilePrefix, "SFE_Facet");
     strcpy(platformPrefix, "Facet");

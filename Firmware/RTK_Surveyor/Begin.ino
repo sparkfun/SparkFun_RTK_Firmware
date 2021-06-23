@@ -81,7 +81,7 @@ void beginBoard()
 
     if (esp_reset_reason() == ESP_RST_POWERON)
     {
-      //powerOnCheck(); //Only do check if we POR start
+      powerOnCheck(); //Only do check if we POR start
     }
 
     pinMode(pin_peripheralPowerControl, OUTPUT);

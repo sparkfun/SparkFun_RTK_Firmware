@@ -1380,7 +1380,7 @@ void displayTest()
         delay(10);
     }
 
-    delay(2000); //Big debounce
+    delay(500);
   }
 }
 

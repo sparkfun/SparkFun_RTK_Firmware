@@ -47,6 +47,8 @@ void recordSystemSettings()
   settings.sizeOfSettings = sizeof(settings);
   if (settings.sizeOfSettings > EEPROM_SIZE)
   {
+    displayError((char*)"EEPROM");
+    
     while (1) //Hard freeze
     {
       Serial.printf("Size of settings is %d bytes\n\r", sizeof(settings));

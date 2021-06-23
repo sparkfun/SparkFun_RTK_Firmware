@@ -6,7 +6,7 @@ void beginBoard()
 {
   //Use ADC to check 50% resistor divider
   int pin_adc_rtk_facet = 35;
-  if (analogReadMilliVolts(pin_adc_rtk_facet) > (3300/2 * 0.9) && analogReadMilliVolts(pin_adc_rtk_facet) < (3300/2 * 1.1))
+  if (analogReadMilliVolts(pin_adc_rtk_facet) > (3300 / 2 * 0.9) && analogReadMilliVolts(pin_adc_rtk_facet) < (3300 / 2 * 1.1))
   {
     productVariant = RTK_FACET;
   }
@@ -81,7 +81,7 @@ void beginBoard()
 
     if (esp_reset_reason() == ESP_RST_POWERON)
     {
-//      powerOnCheck(); //Only do check if we POR start
+      //powerOnCheck(); //Only do check if we POR start
     }
 
     pinMode(pin_peripheralPowerControl, OUTPUT);
@@ -287,6 +287,7 @@ void beginGNSS()
     if (response == false)
     {
       Serial.println(F("Failed to configure module. Hard stop."));
+      displayGNSSFail(0);
       blinkError(ERROR_GPS_CONFIG_FAIL);
     }
   }

@@ -292,6 +292,8 @@ uint32_t totalWriteTime = 0; //Used to calculate overall write speed using SdFat
 
 bool setupByPowerButton = false; //We can change setup via tapping power button
 
+uint16_t svinObservationTime = 0; //Use globals so we don't have to request these values multiple times (slow response)
+float svinMeanAccuracy = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()

@@ -184,15 +184,19 @@ void updateSystemState()
           }
           else
           {
+            //Get the data once to avoid duplicate slow responses
+            svinObservationTime = i2cGNSS.getSurveyInObservationTime(100);
+            svinMeanAccuracy = i2cGNSS.getSurveyInMeanAccuracy(100);
+            
             Serial.print(F("Time elapsed: "));
-            Serial.print((String)i2cGNSS.getSurveyInObservationTime());
+            Serial.print(svinObservationTime);
             Serial.print(F(" Accuracy: "));
-            Serial.print((String)i2cGNSS.getSurveyInMeanAccuracy());
+            Serial.print(svinMeanAccuracy);
             Serial.print(F(" SIV: "));
             Serial.print(i2cGNSS.getSIV());
             Serial.println();
 
-            if (i2cGNSS.getSurveyInObservationTime() > maxSurveyInWait_s)
+            if (svinObservationTime > maxSurveyInWait_s)
             {
               Serial.printf("Survey-In took more than %d minutes. Returning to rover mode.\n\r", maxSurveyInWait_s / 60);
 

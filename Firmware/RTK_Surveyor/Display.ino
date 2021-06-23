@@ -52,7 +52,7 @@ void updateDisplay()
           paintBaseTempCasterConnected();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
-          //Do nothing. Static display shown during state change.
+          paintBaseFixedNotStarted();
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
           paintBaseFixedTransmitting();
@@ -68,6 +68,9 @@ void updateDisplay()
           break;
         case (STATE_BASE_FIXED_CASTER_CONNECTED):
           paintBaseFixedCasterConnected();
+          break;
+        default:
+          displayError((char*)"Display");
           break;
       }
 
@@ -546,17 +549,14 @@ void paintBaseTempSurveyStarted()
 
     paintBaseState(); //Top center
 
-    float meanAccuracy = i2cGNSS.getSurveyInMeanAccuracy(100);
-    int elapsedTime = i2cGNSS.getSurveyInObservationTime(100);
-
     oled.setFontType(0);
     oled.setCursor(0, 23); //x, y
     oled.print("Mean:");
 
     oled.setCursor(29, 20); //x, y
     oled.setFontType(1);
-    if (meanAccuracy < 10.0) //Error check
-      oled.print(meanAccuracy, 2);
+    if (svinMeanAccuracy < 10.0) //Error check
+      oled.print(svinMeanAccuracy, 2);
     else
       oled.print(">10");
 
@@ -566,8 +566,8 @@ void paintBaseTempSurveyStarted()
 
     oled.setCursor(30, 36); //x, y
     oled.setFontType(1);
-    if (elapsedTime < 1000) //Error check
-      oled.print(elapsedTime);
+    if (svinObservationTime < 1000) //Error check
+      oled.print(svinObservationTime);
     else
       oled.print("0");
 
@@ -735,6 +735,19 @@ void paintBaseTempCasterConnected()
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintLogging();
+  }
+}
+
+//Show transmission of RTCM packets
+void paintBaseFixedNotStarted()
+{
+  if (online.display == true)
+  {
+    paintBatteryLevel(); //Top right corner
+
+    paintWirelessIcon(); //Top left corner
+
+    paintBaseState(); //Top center
   }
 }
 

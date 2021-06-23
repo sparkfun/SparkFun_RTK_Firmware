@@ -97,7 +97,7 @@ void beginBoard()
 
   Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
-  //For all boards, check reset reason. If reset was do to wdt or panic, append last log
+  //For all boards, check reset reason. If reset was due to wdt or panic, append last log
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
     reuseLastLog = false; //Start new log

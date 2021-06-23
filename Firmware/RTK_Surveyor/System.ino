@@ -776,3 +776,19 @@ boolean SFE_UBLOX_GNSS_ADD::getModuleInfo(uint16_t maxWait)
 
   return (true); //Success!
 }
+
+//Create $GNTXT, type message complete with CRC
+//https://www.nmea.org/Assets/20160520%20txt%20amendment.pdf
+//Used for reporting a system reboot inside the log
+void createNMEASentence(uint8_t sentenceNumber, uint8_t textID, char *nmeaMessage, char *textMessage)
+{
+  char nmeaTxt[82]; //Max NMEA sentence length is 82
+  sprintf(nmeaTxt, "$GNTXT,01,%02d,%02d,%s*", sentenceNumber, textID, textMessage);
+
+  //From: http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html
+  byte CRC = 0; // XOR chars between '$' and '*'
+  for (byte x = 1 ; x < strlen(nmeaTxt) - 1; x++) 
+    CRC = CRC ^ nmeaTxt[x];
+
+  sprintf(nmeaMessage, "%s%02X", nmeaTxt, CRC);
+}

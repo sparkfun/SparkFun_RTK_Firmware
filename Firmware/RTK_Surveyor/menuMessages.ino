@@ -307,8 +307,8 @@ void beginLogging()
       {
         //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
         bool timeValid = false;
-//        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
-//          timeValid = true;
+        //        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
+        //          timeValid = true;
         if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
           timeValid = true;
 
@@ -346,11 +346,30 @@ void beginLogging()
 
         startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 
-        //TODO For debug only, remove
+        //Add NMEA txt message with restart reason
+        char rstReason[30];
+        switch (esp_reset_reason())
+        {
+          case ESP_RST_UNKNOWN: strcpy(rstReason, "ESP_RST_UNKNOWN"); break;
+          case ESP_RST_POWERON : strcpy(rstReason, "ESP_RST_POWERON"); break;
+          case ESP_RST_SW : strcpy(rstReason, "ESP_RST_SW"); break;
+          case ESP_RST_PANIC : strcpy(rstReason, "ESP_RST_PANIC"); break;
+          case ESP_RST_INT_WDT : strcpy(rstReason, "ESP_RST_INT_WDT"); break;
+          case ESP_RST_TASK_WDT : strcpy(rstReason, "ESP_RST_TASK_WDT"); break;
+          case ESP_RST_WDT : strcpy(rstReason, "ESP_RST_WDT"); break;
+          case ESP_RST_DEEPSLEEP : strcpy(rstReason, "ESP_RST_DEEPSLEEP"); break;
+          case ESP_RST_BROWNOUT : strcpy(rstReason, "ESP_RST_BROWNOUT"); break;
+          case ESP_RST_SDIO : strcpy(rstReason, "ESP_RST_SDIO"); break;
+          default : strcpy(rstReason, "Unknown");
+        }
+
+        char nmeaMessage[82]; //Max NMEA sentence length is 82
+        createNMEASentence(1, 1, nmeaMessage, rstReason); //sentenceNumber, textID
+        ubxFile.println(nmeaMessage);
+
         if (reuseLastLog == true)
         {
           Serial.println(F("Appending last available log"));
-          ubxFile.println("Append file due to system reset");
         }
 
         xSemaphoreGive(xFATSemaphore);
@@ -455,7 +474,7 @@ void setMessageOffsets(char* messageType, int& startOfBlock, int& endOfBlock)
 {
   char messageNamePiece[40]; //UBX_RTCM
   sprintf(messageNamePiece, "UBX_%s", messageType); //Put UBX_ infront of type
-  
+
   //Find the first occurrence
   for (startOfBlock = 0 ; startOfBlock < MAX_UBX_MSG ; startOfBlock++)
   {
@@ -490,13 +509,13 @@ bool setMessageRateByName(char *msgName, uint8_t msgRate)
 {
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
-    if(strcmp(ubxMessages[x].msgTextName, msgName) == 0)
+    if (strcmp(ubxMessages[x].msgTextName, msgName) == 0)
     {
       ubxMessages[x].msgRate = msgRate;
-      return(true);
-    }      
+      return (true);
+    }
   }
 
   Serial.printf("setMessageRateByName: %s not found\n\r", msgName);
-  return(false);
+  return (false);
 }

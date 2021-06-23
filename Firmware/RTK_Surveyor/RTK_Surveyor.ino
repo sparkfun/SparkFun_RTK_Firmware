@@ -332,6 +332,8 @@ void setup()
 
   beginAccelerometer();
 
+  beginSystemState(); //Determine initial system state
+  
   Serial.flush(); //Complete any previous prints
 
   danceLEDs(); //Turn on LEDs like a car dashboard

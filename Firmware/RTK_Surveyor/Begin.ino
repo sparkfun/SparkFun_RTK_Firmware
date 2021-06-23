@@ -362,3 +362,25 @@ void beginAccelerometer()
 
   online.accelerometer = true;
 }
+
+//Depending on platform and previous power down state, set system state
+void beginSystemState()
+{
+  if (productVariant == RTK_SURVEYOR)
+  {
+    //Assume Rover. checkButtons() will correct as needed.
+    systemState = STATE_ROVER_NOT_STARTED;
+    buttonPreviousState = BUTTON_BASE;
+  }
+  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS)
+  {
+    systemState = settings.lastState; //Return to system state previous to power down.
+
+    if (systemState == STATE_ROVER_NOT_STARTED)
+      buttonPreviousState = BUTTON_ROVER;
+    else if (systemState == STATE_BASE_NOT_STARTED)
+      buttonPreviousState = BUTTON_BASE;
+    else
+      buttonPreviousState = BUTTON_ROVER;
+  }
+}

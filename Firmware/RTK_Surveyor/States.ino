@@ -32,6 +32,10 @@ void updateSystemState()
 
           if (productVariant == RTK_SURVEYOR)
             digitalWrite(pin_baseStatusLED, LOW);
+
+          settings.lastState = STATE_ROVER_NOT_STARTED;
+          recordSystemSettings();
+
           displayRoverSuccess(500);
 
           changeState(STATE_ROVER_NO_FIX);
@@ -101,6 +105,9 @@ void updateSystemState()
 
           if (configureUbloxModuleBase() == true)
           {
+            settings.lastState = STATE_BASE_NOT_STARTED; //Record this state for next POR
+            recordSystemSettings();
+
             displayBaseSuccess(500); //Show 'Base Started'
 
             if (settings.fixedBase == false)

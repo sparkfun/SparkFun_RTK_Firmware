@@ -654,7 +654,7 @@ void reportHeap()
     if (millis() - lastHeapReport > 1000)
     {
       lastHeapReport = millis();
-      Serial.printf("freeHeap: %d\n\r", ESP.getFreeHeap());
+      Serial.printf("FreeHeap: %d\n\r", ESP.getFreeHeap());
     }
   }
 }

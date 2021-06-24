@@ -132,6 +132,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("navigationRate=" + (String)settings.navigationRate);
       settingsFile.println("enableI2Cdebug=" + (String)settings.enableI2Cdebug);
       settingsFile.println("enableHeapReport=" + (String)settings.enableHeapReport);
+      settingsFile.println("enableTaskReports=" + (String)settings.enableTaskReports);
       settingsFile.println("dataPortChannel=" + (String)settings.dataPortChannel);
       settingsFile.println("spiFrequency=" + (String)settings.spiFrequency);
       settingsFile.println("sppRxQueueSize=" + (String)settings.sppRxQueueSize);
@@ -374,6 +375,8 @@ bool parseLine(char* str) {
     settings.enableI2Cdebug = d;
   else if (strcmp(settingName, "enableHeapReport") == 0)
     settings.enableHeapReport = d;
+  else if (strcmp(settingName, "enableTaskReports") == 0)
+    settings.enableTaskReports = d;
   else if (strcmp(settingName, "dataPortChannel") == 0)
     settings.dataPortChannel = (muxConnectionType_e)d;
   else if (strcmp(settingName, "spiFrequency") == 0)

@@ -8,23 +8,23 @@ void F9PSerialWriteTask(void *e)
   while (true)
   {
     //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
-    if (SerialBT.available())
+    while (SerialBT.available())
     {
-      while (SerialBT.available())
+      taskYIELD();
+      if (inTestMode == false)
       {
-        taskYIELD();
-        if (inTestMode == false)
-        {
-          //Pass bytes to GNSS receiver
-          auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
-          serialGNSS.write(wBuffer, s);
-        }
-        else
-        {
-          char incoming = SerialBT.read();
-          Serial.printf("I heard: %c\n", incoming);
-          incomingBTTest = incoming; //Displayed during system test
-        }
+        //Pass bytes to GNSS receiver
+        auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
+        serialGNSS.write(wBuffer, s);
+
+        if (settings.enableTaskReports == true)
+          Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+      }
+      else
+      {
+        char incoming = SerialBT.read();
+        Serial.printf("I heard: %c\n", incoming);
+        incomingBTTest = incoming; //Displayed during system test
       }
     }
 
@@ -54,14 +54,8 @@ void F9PSerialReadTask(void *e)
         SerialBT.write(rBuffer, s);
       }
 
-      if (settings.enableHeapReport == true)
-      {
-        if (millis() - lastTaskHeapReport > 1000)
-        {
-          lastTaskHeapReport = millis();
-          Serial.printf("Task freeHeap: %d\n\r", ESP.getFreeHeap());
-        }
-      }
+      if (settings.enableTaskReports == true)
+        Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
 
       //If user wants to log, record to SD
       if (online.logging == true)

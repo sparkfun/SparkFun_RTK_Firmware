@@ -654,7 +654,7 @@ void reportHeap()
     if (millis() - lastHeapReport > 1000)
     {
       lastHeapReport = millis();
-      Serial.printf("FreeHeap: %d\n\r", ESP.getFreeHeap());
+      Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\n\r", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
     }
   }
 }

@@ -62,7 +62,7 @@ void F9PSerialReadTask(void *e)
         else
         {
           //Don't push data to BT SPP if there is congestion to prevent heap hits.
-          log_d("Dropped SPP Bytes: %d\n\r", s);
+          log_d("Dropped SPP Bytes: %d", s);
         }
       }
 

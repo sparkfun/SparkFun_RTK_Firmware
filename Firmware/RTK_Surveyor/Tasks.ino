@@ -42,62 +42,70 @@ void F9PSerialReadTask(void *e)
     {
       taskYIELD();
 
-      auto s = serialGNSS.readBytes(rBuffer, SERIAL_SIZE_RX);
-
-      //If we are actively survey-in then do not pass NMEA data from ZED to phone
-      if (systemState == STATE_BASE_TEMP_SETTLE || systemState == STATE_BASE_TEMP_SURVEY_STARTED)
+      //Don't check UART if there is BT SPP congestion to prevent heap hits.
+      if (SerialBT.isCongested() == true) 
       {
-        //Do nothing
+        log_d("ZED UART Read Blocked");
       }
-      else if (SerialBT.connected())
+      else
       {
-        SerialBT.write(rBuffer, s);
-      }
+        auto s = serialGNSS.readBytes(rBuffer, SERIAL_SIZE_RX);
 
-      if (settings.enableTaskReports == true)
-        Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
-
-      //If user wants to log, record to SD
-      if (online.logging == true)
-      {
-        //Check if we are inside the max time window for logging
-        if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+        //If we are actively survey-in then do not pass NMEA data from ZED to phone
+        if (systemState == STATE_BASE_TEMP_SETTLE || systemState == STATE_BASE_TEMP_SURVEY_STARTED)
         {
-          //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
-          if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
-          {
-            ubxFile.write(rBuffer, s);
+          //Do nothing
+        }
+        else if (SerialBT.connected())
+        {
+          SerialBT.write(rBuffer, s);
+        }
 
-            //Force file sync every 5000ms
-            if (millis() - lastUBXLogSyncTime > 5000)
+        if (settings.enableTaskReports == true)
+          Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+
+        //If user wants to log, record to SD
+        if (online.logging == true)
+        {
+          //Check if we are inside the max time window for logging
+          if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+          {
+            //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
+            if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
             {
-              if (productVariant == RTK_SURVEYOR)
-                digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
+              ubxFile.write(rBuffer, s);
 
-              long startWriteTime = micros();
-              taskYIELD();
-              ubxFile.sync();
-              taskYIELD();
-              long stopWriteTime = micros();
-              totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
+              //Force file sync every 5000ms
+              if (millis() - lastUBXLogSyncTime > 5000)
+              {
+                if (productVariant == RTK_SURVEYOR)
+                  digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
-              if (productVariant == RTK_SURVEYOR)
-                digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
+                long startWriteTime = micros();
+                taskYIELD();
+                ubxFile.sync();
+                taskYIELD();
+                long stopWriteTime = micros();
+                totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
 
-              updateDataFileAccess(&ubxFile); // Update the file access time & date
+                if (productVariant == RTK_SURVEYOR)
+                  digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
 
-              lastUBXLogSyncTime = millis();
+                updateDataFileAccess(&ubxFile); // Update the file access time & date
+
+                lastUBXLogSyncTime = millis();
+              }
+
+              xSemaphoreGive(xFATSemaphore);
+            } //End xFATSemaphore
+            else
+            {
+              log_d("F9SerialRead: Semaphore failed to yield");
             }
-
-            xSemaphoreGive(xFATSemaphore);
-          } //End xFATSemaphore
-          else
-          {
-            log_d("F9SerialRead: Semaphore failed to yield");
-          }
-        } //End maxLogTime
-      } //End logging
-    } //End serial available from GNSS
+          } //End maxLogTime
+        } //End logging
+      } //End SPP Congestion check
+    }
 
     taskYIELD();
   }

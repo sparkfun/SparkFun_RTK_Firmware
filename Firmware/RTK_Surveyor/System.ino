@@ -45,7 +45,7 @@ bool startBluetooth()
   esp_bt_gap_set_pin(pin_type, 4, pin_code);
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  SerialBT.register_callback(btCallback);
+  SerialBT.register_callback(btCallback); //Controls BT Status LED on Surveyor
   SerialBT.setTimeout(250);
 
   Serial.print(F("Bluetooth broadcasting as: "));
@@ -503,22 +503,6 @@ void danceLEDs()
     digitalWrite(pin_bluetoothStatusLED, LOW);
   }
 }
-
-//Get the confirmed current date
-//bool getConfirmedDate(uint16_t maxWait)
-//{
-//  if (i2cGNSS.packetUBXNAVPVT == NULL) i2cGNSS.initPacketUBXNAVPVT(); //Check that RAM has been allocated for the PVT data
-//  if (i2cGNSS.packetUBXNAVPVT == NULL) //Bail if the RAM allocation failed
-//    return (false);
-//
-////  if (packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedDate == false)
-////    getPVT(maxWait);
-////  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedDate = false; //Since we are about to give this to user, mark this data as stale
-////  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
-////  return ((bool)packetUBXNAVPVT->data.flags2.bits.confirmedDate);
-//return(true);
-//}
-
 
 //Call back for when BT connection event happens (connected/disconnect)
 //Used for updating the radioState state machine

@@ -37,7 +37,7 @@ void menuDebug()
     Serial.print(F("6) Set SPP TX Buffer Size: "));
     Serial.println(settings.sppTxQueueSize);
 
-    Serial.print(F("7) Throttle During SPP Congestion: "));
+    Serial.print(F("7) Throttle BT Transmissions During SPP Congestion: "));
     if (settings.throttleDuringSPPCongestion == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 

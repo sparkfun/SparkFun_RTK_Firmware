@@ -283,7 +283,7 @@ struct struct_settings {
   uint16_t sppRxQueueSize = 2048;
   uint16_t sppTxQueueSize = 512;
   uint8_t dynamicModel = DYN_MODEL_PORTABLE;
-  SystemState lastState = STATE_ROVER_NO_FIX; //For Express, start unit in state prior to powerdown
+  SystemState lastState = STATE_ROVER_NOT_STARTED; //For Express, start unit in last known state
   bool throttleDuringSPPCongestion = true;
 } settings;
 

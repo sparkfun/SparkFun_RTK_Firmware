@@ -885,4 +885,9 @@ bool BluetoothSerial::isReady(bool checkMaster, int timeout) {
     TickType_t xTicksToWait = timeout / portTICK_PERIOD_MS;
     return (xEventGroupWaitBits(_spp_event_group, SPP_RUNNING, pdFALSE, pdTRUE, xTicksToWait) & SPP_RUNNING) != 0;
 }
+
+bool BluetoothSerial::isCongested(){
+    return(!(xEventGroupGetBits(_spp_event_group) & SPP_CONGESTED));
+}
+
 #endif

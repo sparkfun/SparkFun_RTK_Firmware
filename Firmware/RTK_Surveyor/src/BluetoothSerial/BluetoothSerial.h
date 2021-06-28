@@ -61,6 +61,8 @@ class BluetoothSerial: public Stream
         bool disconnect();
         bool unpairDevice(uint8_t remoteAddress[]);
 
+        bool isCongested();
+
     private:
         String local_name;
 

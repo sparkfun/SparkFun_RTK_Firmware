@@ -42,69 +42,73 @@ void F9PSerialReadTask(void *e)
     {
       taskYIELD();
 
-      //Don't check UART if there is BT SPP congestion to prevent heap hits.
-      if (SerialBT.isCongested() == true) 
+      auto s = serialGNSS.readBytes(rBuffer, SERIAL_SIZE_RX);
+
+      //If we are actively survey-in then do not pass NMEA data from ZED to phone
+      if (systemState == STATE_BASE_TEMP_SETTLE || systemState == STATE_BASE_TEMP_SURVEY_STARTED)
       {
-        log_d("ZED UART Read Blocked");
+        //Do nothing
       }
-      else
+      else if (SerialBT.connected())
       {
-        auto s = serialGNSS.readBytes(rBuffer, SERIAL_SIZE_RX);
-
-        //If we are actively survey-in then do not pass NMEA data from ZED to phone
-        if (systemState == STATE_BASE_TEMP_SETTLE || systemState == STATE_BASE_TEMP_SURVEY_STARTED)
+        if (SerialBT.isCongested() == false)
         {
-          //Do nothing
+          SerialBT.write(rBuffer, s); //Push new data to BT SPP
         }
-        else if (SerialBT.connected())
+        else if (settings.throttleDuringSPPCongestion == false)
         {
-          SerialBT.write(rBuffer, s);
+          SerialBT.write(rBuffer, s); //Push new data to SPP regardless of congestion
         }
-
-        if (settings.enableTaskReports == true)
-          Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
-
-        //If user wants to log, record to SD
-        if (online.logging == true)
+        else
         {
-          //Check if we are inside the max time window for logging
-          if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+          //Don't push data to BT SPP if there is congestion to prevent heap hits.
+          log_d("Dropped SPP Bytes: %d\n\r", s);
+        }
+      }
+
+      if (settings.enableTaskReports == true)
+        Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+
+      //If user wants to log, record to SD
+      if (online.logging == true)
+      {
+        //Check if we are inside the max time window for logging
+        if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+        {
+          //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
+          if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
           {
-            //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
-            if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+            ubxFile.write(rBuffer, s);
+
+            //Force file sync every 5000ms
+            if (millis() - lastUBXLogSyncTime > 5000)
             {
-              ubxFile.write(rBuffer, s);
+              if (productVariant == RTK_SURVEYOR)
+                digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
-              //Force file sync every 5000ms
-              if (millis() - lastUBXLogSyncTime > 5000)
-              {
-                if (productVariant == RTK_SURVEYOR)
-                  digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
+              long startWriteTime = micros();
+              taskYIELD();
+              ubxFile.sync();
+              taskYIELD();
+              long stopWriteTime = micros();
+              totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
 
-                long startWriteTime = micros();
-                taskYIELD();
-                ubxFile.sync();
-                taskYIELD();
-                long stopWriteTime = micros();
-                totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
+              if (productVariant == RTK_SURVEYOR)
+                digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
 
-                if (productVariant == RTK_SURVEYOR)
-                  digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
+              updateDataFileAccess(&ubxFile); // Update the file access time & date
 
-                updateDataFileAccess(&ubxFile); // Update the file access time & date
-
-                lastUBXLogSyncTime = millis();
-              }
-
-              xSemaphoreGive(xFATSemaphore);
-            } //End xFATSemaphore
-            else
-            {
-              log_d("F9SerialRead: Semaphore failed to yield");
+              lastUBXLogSyncTime = millis();
             }
-          } //End maxLogTime
-        } //End logging
-      } //End SPP Congestion check
+
+            xSemaphoreGive(xFATSemaphore);
+          } //End xFATSemaphore
+          else
+          {
+            log_d("F9SerialRead: Semaphore failed to yield");
+          }
+        } //End maxLogTime
+      } //End logging
     }
 
     taskYIELD();

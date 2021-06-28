@@ -284,6 +284,7 @@ struct struct_settings {
   uint16_t sppTxQueueSize = 512;
   uint8_t dynamicModel = DYN_MODEL_PORTABLE;
   SystemState lastState = STATE_ROVER_NO_FIX; //For Express, start unit in state prior to powerdown
+  bool throttleDuringSPPCongestion = true;
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

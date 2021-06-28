@@ -139,6 +139,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("sppTxQueueSize=" + (String)settings.sppTxQueueSize);
       settingsFile.println("dynamicModel=" + (String)settings.dynamicModel);
       settingsFile.println("lastState=" + (String)settings.lastState);
+      settingsFile.println("throttleDuringSPPCongestion=" + (String)settings.throttleDuringSPPCongestion);
 
       //Record message settings
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
@@ -391,6 +392,8 @@ bool parseLine(char* str) {
     settings.dynamicModel = d;
   else if (strcmp(settingName, "lastState") == 0)
     settings.lastState = (SystemState)d;
+  else if (strcmp(settingName, "throttleDuringSPPCongestion") == 0)
+    settings.throttleDuringSPPCongestion = d;
 
   //Check for message rates
   //Must be last on else list

@@ -15,15 +15,15 @@ void menuDebug()
       Serial.println(i2cGNSS.minfo.extension[1]);
     }
 
-    Serial.print(F("1) Toggle I2C Debugging Output: "));
+    Serial.print(F("1) I2C Debugging Output: "));
     if (settings.enableI2Cdebug == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    Serial.print(F("2) Toggle Heap Reporting: "));
+    Serial.print(F("2) Heap Reporting: "));
     if (settings.enableHeapReport == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    Serial.print(F("3) Toggle Task Highwater Reporting: "));
+    Serial.print(F("3) Task Highwater Reporting: "));
     if (settings.enableTaskReports == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
@@ -36,6 +36,10 @@ void menuDebug()
 
     Serial.print(F("6) Set SPP TX Buffer Size: "));
     Serial.println(settings.sppTxQueueSize);
+
+    Serial.print(F("7) Throttle During SPP Congestion: "));
+    if (settings.throttleDuringSPPCongestion == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
 
     Serial.println(F("x) Exit"));
 
@@ -96,6 +100,10 @@ void menuDebug()
       {
         settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
       }
+    }
+    else if (incoming == '7')
+    {
+      settings.throttleDuringSPPCongestion ^= 1;
     }
     else if (incoming == 'x')
       break;

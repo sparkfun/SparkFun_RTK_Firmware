@@ -7,6 +7,7 @@ void F9PSerialWriteTask(void *e)
 {
   while (true)
   {
+#ifdef COMPILE_BT
     //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
     while (SerialBT.available())
     {
@@ -27,6 +28,7 @@ void F9PSerialWriteTask(void *e)
         incomingBTTest = incoming; //Displayed during system test
       }
     }
+#endif 
 
     taskYIELD();
   }
@@ -48,6 +50,7 @@ void F9PSerialReadTask(void *e)
         //Do nothing
         taskYIELD();
       }
+#ifdef COMPILE_BT
       else if (SerialBT.connected())
       {
         if (SerialBT.isCongested() == false)
@@ -64,6 +67,7 @@ void F9PSerialReadTask(void *e)
           log_d("Dropped SPP Bytes: %d", s);
         }
       }
+#endif
 
       if (settings.enableTaskReports == true)
         Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));

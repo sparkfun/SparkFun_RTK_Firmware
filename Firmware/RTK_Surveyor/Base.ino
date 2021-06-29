@@ -196,10 +196,12 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
     if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
   }
 
+#ifdef COMPILE_WIFI
   if (caster.connected() == true)
   {
     caster.write(incoming); //Send this byte to socket
     casterBytesSent++;
     lastServerSent_ms = millis();
   }
+#endif
 }

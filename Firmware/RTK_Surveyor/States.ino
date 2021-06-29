@@ -225,6 +225,7 @@ void updateSystemState()
       //Check to see if we have connected over WiFi
       case (STATE_BASE_TEMP_WIFI_STARTED):
         {
+#ifdef COMPILE_WIFI
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
@@ -249,6 +250,7 @@ void updateSystemState()
             }
             delay(1000);
           }
+#endif          
         }
         break;
 
@@ -264,6 +266,7 @@ void updateSystemState()
           if (settings.enableNtripServer == true)
           {
             //Open connection to caster service
+#ifdef COMPILE_WIFI
             if (caster.connect(settings.casterHost, settings.casterPort) == true) //Attempt connection
             {
               changeState(STATE_BASE_TEMP_CASTER_STARTED);
@@ -281,6 +284,7 @@ void updateSystemState()
 
               casterResponseWaitStartTime = millis();
             }
+#endif
           }
         }
         break;
@@ -288,6 +292,7 @@ void updateSystemState()
       //Wait for response for caster service and make sure it's valid
       case (STATE_BASE_TEMP_CASTER_STARTED):
         {
+#ifdef COMPILE_WIFI
           //Check if caster service responded
           if (caster.available() == 0)
           {
@@ -335,6 +340,7 @@ void updateSystemState()
               changeState(STATE_BASE_TEMP_CASTER_CONNECTED);
             }
           }
+#endif
         }
         break;
 
@@ -343,11 +349,13 @@ void updateSystemState()
         {
           cyclePositionLEDs();
 
+#ifdef COMPILE_WIFI
           if (caster.connected() == false)
           {
             Serial.println(F("Caster no longer connected. Reconnecting..."));
             changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to 2 earlier states to try to reconnect
           }
+#endif
         }
         break;
 
@@ -392,6 +400,7 @@ void updateSystemState()
       //Check to see if we have connected over WiFi
       case (STATE_BASE_FIXED_WIFI_STARTED):
         {
+#ifdef COMPILE_WIFI
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
@@ -416,6 +425,7 @@ void updateSystemState()
             }
             delay(1000);
           }
+#endif          
         }
         break;
 
@@ -429,6 +439,7 @@ void updateSystemState()
           }
           if (settings.enableNtripServer == true)
           {
+#ifdef COMPILE_WIFI
             //Open connection to caster service
             if (caster.connect(settings.casterHost, settings.casterPort) == true) //Attempt connection
             {
@@ -447,6 +458,7 @@ void updateSystemState()
 
               casterResponseWaitStartTime = millis();
             }
+#endif
           }
         }
         break;
@@ -454,6 +466,7 @@ void updateSystemState()
       //Wait for response for caster service and make sure it's valid
       case (STATE_BASE_FIXED_CASTER_STARTED):
         {
+#ifdef COMPILE_WIFI
           //Check if caster service responded
           if (caster.available() < 10)
           {
@@ -502,6 +515,7 @@ void updateSystemState()
               changeState(STATE_BASE_FIXED_CASTER_CONNECTED);
             }
           }
+#endif
         }
         break;
 
@@ -510,10 +524,12 @@ void updateSystemState()
         {
           cyclePositionLEDs();
 
+#ifdef COMPILE_WIFI
           if (caster.connected() == false)
           {
             changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
           }
+#endif          
         }
         break;
 

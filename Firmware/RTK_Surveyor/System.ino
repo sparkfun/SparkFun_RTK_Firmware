@@ -3,6 +3,8 @@
 //This allows multiple units to be on at same time
 bool startBluetooth()
 {
+#ifdef COMPILE_BT
+
   //Get unit MAC address
   esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
   unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
@@ -78,6 +80,7 @@ bool startBluetooth()
   //Start task for controlling Bluetooth pair LED
   if (productVariant == RTK_SURVEYOR)
     btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
+#endif
 
   return (true);
 }
@@ -98,9 +101,11 @@ void endBluetooth()
     F9PSerialWriteTaskHandle = NULL;
   }
 
+#ifdef COMPILE_BT
   SerialBT.flush(); //Complete any transfers
   SerialBT.disconnect(); //Drop any clients
   SerialBT.end(); //SerialBT.end() will release significant RAM (~100k!) but a SerialBT.start will crash.
+#endif
 
   //The following code releases the BT hardware so that it can be restarted with a SerialBT.begin
   customBTstop();
@@ -113,7 +118,7 @@ void endBluetooth()
 //To work around the bug without modifying the core we create our own btStop() function with
 //the patch from github
 bool customBTstop() {
-
+#ifdef COMPILE_BT
   if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE) {
     return true;
   }
@@ -137,6 +142,7 @@ bool customBTstop() {
     return true;
   }
   log_e("BT Stop failed");
+#endif
   return false;
 }
 
@@ -144,11 +150,13 @@ bool customBTstop() {
 //See WiFiBluetoothSwitch sketch for more info
 void startWiFi()
 {
+#ifdef COMPILE_WIFI
   wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
   esp_wifi_init(&wifi_init_config); //Restart WiFi resources
 
   Serial.printf("Connecting to local WiFi: %s\n\r", settings.wifiSSID);
   WiFi.begin(settings.wifiSSID, settings.wifiPW);
+#endif
 
   radioState = WIFI_ON_NOCONNECTION;
 }
@@ -157,9 +165,12 @@ void startWiFi()
 //See WiFiBluetoothSwitch sketch for more info
 void stopWiFi()
 {
+#ifdef COMPILE_WIFI
   caster.stop();
   WiFi.mode(WIFI_OFF);
   esp_wifi_deinit(); //Free all resources
+#endif
+
   Serial.println("WiFi Stopped");
 
   radioState = RADIO_OFF;
@@ -506,6 +517,7 @@ void danceLEDs()
 
 //Call back for when BT connection event happens (connected/disconnect)
 //Used for updating the radioState state machine
+#ifdef COMPILE_BT
 void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
     Serial.println(F("Client Connected"));
@@ -521,6 +533,7 @@ void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
       digitalWrite(pin_bluetoothStatusLED, LOW);
   }
 }
+#endif
 
 //Update Battery level LEDs every 5s
 void updateBattLEDs()

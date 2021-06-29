@@ -40,14 +40,13 @@ void F9PSerialReadTask(void *e)
   {
     while (serialGNSS.available())
     {
-      taskYIELD();
-
       auto s = serialGNSS.readBytes(rBuffer, SERIAL_SIZE_RX);
 
       //If we are actively survey-in then do not pass NMEA data from ZED to phone
       if (systemState == STATE_BASE_TEMP_SETTLE || systemState == STATE_BASE_TEMP_SURVEY_STARTED)
       {
         //Do nothing
+        taskYIELD();
       }
       else if (SerialBT.connected())
       {
@@ -109,7 +108,10 @@ void F9PSerialReadTask(void *e)
           }
         } //End maxLogTime
       } //End logging
-    }
+
+      taskYIELD();
+
+    } //End Serial.available()
 
     taskYIELD();
   }

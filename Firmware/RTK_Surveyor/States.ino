@@ -172,8 +172,13 @@ void updateSystemState()
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED));
           }
 
-          if (i2cGNSS.getSurveyInValid() == true) //Survey in complete
+          //Get the data once to avoid duplicate slow responses
+          svinObservationTime = i2cGNSS.getSurveyInObservationTime(100);
+          svinMeanAccuracy = i2cGNSS.getSurveyInMeanAccuracy(100);
+
+          if (i2cGNSS.getSurveyInValid(100) == true) //Survey in complete
           {
+            Serial.printf("obs time: %d\n\r", svinObservationTime);
             Serial.println(F("Base survey complete! RTCM now broadcasting."));
 
             if (productVariant == RTK_SURVEYOR)
@@ -184,10 +189,6 @@ void updateSystemState()
           }
           else
           {
-            //Get the data once to avoid duplicate slow responses
-            svinObservationTime = i2cGNSS.getSurveyInObservationTime(100);
-            svinMeanAccuracy = i2cGNSS.getSurveyInMeanAccuracy(100);
-            
             Serial.print(F("Time elapsed: "));
             Serial.print(svinObservationTime);
             Serial.print(F(" Accuracy: "));
@@ -250,7 +251,7 @@ void updateSystemState()
             }
             delay(1000);
           }
-#endif          
+#endif
         }
         break;
 
@@ -425,7 +426,7 @@ void updateSystemState()
             }
             delay(1000);
           }
-#endif          
+#endif
         }
         break;
 
@@ -529,7 +530,7 @@ void updateSystemState()
           {
             changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
           }
-#endif          
+#endif
         }
         break;
 

@@ -119,7 +119,7 @@ const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 //Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-//#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
+#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
 
 #ifdef COMPILE_WIFI
 #include <WiFi.h>
@@ -190,7 +190,7 @@ float battChangeRate = 0.0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/18
 
-//#define COMPILE_BT 1 //Comment out to disable all Bluetooth
+#define COMPILE_BT 1 //Comment out to disable all Bluetooth
 
 #ifdef COMPILE_BT
 #include "src/BluetoothSerial/BluetoothSerial.h"

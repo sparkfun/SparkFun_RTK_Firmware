@@ -252,7 +252,7 @@ bool configureConstellations()
 {
   bool response = true;
 
-  long startTime = millis();
+  //long startTime = millis();
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
   {
     //Standard UBX protocol method takes ~533-783ms
@@ -265,9 +265,9 @@ bool configureConstellations()
     //    if (currentlyEnabled != ubxConstellations[x].enabled)
     //      response &= i2cGNSS.setVal(ubxConstellations[x].configKey, ubxConstellations[x].enabled);
   }
-  long stopTime = millis();
+  //long stopTime = millis();
 
-  Serial.printf("setConstellation time delta: %ld ms\n\r", stopTime - startTime);
+  //Serial.printf("setConstellation time delta: %ld ms\n\r", stopTime - startTime);
 
   return (response);
 }

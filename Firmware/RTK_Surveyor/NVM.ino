@@ -48,7 +48,7 @@ void recordSystemSettings()
   if (settings.sizeOfSettings > EEPROM_SIZE)
   {
     displayError((char*)"EEPROM");
-    
+
     while (1) //Hard freeze
     {
       Serial.printf("Size of settings is %d bytes\n\r", sizeof(settings));
@@ -119,7 +119,6 @@ void recordSystemSettingsToFile()
 
       settingsFile.println("dataPortBaud=" + (String)settings.dataPortBaud);
       settingsFile.println("radioPortBaud=" + (String)settings.radioPortBaud);
-      settingsFile.println("enableSBAS=" + (String)settings.enableSBAS);
       settingsFile.println("enableNtripServer=" + (String)settings.enableNtripServer);
       settingsFile.println("casterHost=" + (String)settings.casterHost);
       settingsFile.println("casterPort=" + (String)settings.casterPort);
@@ -140,6 +139,14 @@ void recordSystemSettingsToFile()
       settingsFile.println("dynamicModel=" + (String)settings.dynamicModel);
       settingsFile.println("lastState=" + (String)settings.lastState);
       settingsFile.println("throttleDuringSPPCongestion=" + (String)settings.throttleDuringSPPCongestion);
+
+      //Record constellation settings
+      for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
+      {
+        char tempString[50]; //constellation.BeiDou=1
+        sprintf(tempString, "constellation.%s=%d", ubxConstellations[x].textName, ubxConstellations[x].enabled);
+        settingsFile.println(tempString);
+      }
 
       //Record message settings
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
@@ -350,8 +357,6 @@ bool parseLine(char* str) {
     settings.dataPortBaud = d;
   else if (strcmp(settingName, "radioPortBaud") == 0)
     settings.radioPortBaud = d;
-  else if (strcmp(settingName, "enableSBAS") == 0)
-    settings.enableSBAS = d;
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = d;
   else if (strcmp(settingName, "casterHost") == 0)
@@ -395,23 +400,43 @@ bool parseLine(char* str) {
   else if (strcmp(settingName, "throttleDuringSPPCongestion") == 0)
     settings.throttleDuringSPPCongestion = d;
 
-  //Check for message rates
+  //Check for bulk settings (constellations and message rates)
   //Must be last on else list
   else
   {
     bool knownSetting = false;
 
-    //Scan for message settings
-    for (int x = 0 ; x < MAX_UBX_MSG ; x++)
+    //Scan for constellation settings
+    if (knownSetting == false)
     {
-      char tempString[50]; //message.nmea_dtm.msgRate=5
-      sprintf(tempString, "message.%s.msgRate", ubxMessages[x].msgTextName);
-
-      if (strcmp(settingName, tempString) == 0)
+      for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
       {
-        ubxMessages[x].msgRate = d;
-        knownSetting = true;
-        break;
+        char tempString[50]; //constellation.GPS=1
+        sprintf(tempString, "constellation.%s", ubxConstellations[x].textName);
+
+        if (strcmp(settingName, tempString) == 0)
+        {
+          ubxConstellations[x].enabled = d;
+          knownSetting = true;
+          break;
+        }
+      }
+    }
+
+    //Scan for message settings
+    if (knownSetting == false)
+    {
+      for (int x = 0 ; x < MAX_UBX_MSG ; x++)
+      {
+        char tempString[50]; //message.nmea_dtm.msgRate=5
+        sprintf(tempString, "message.%s.msgRate", ubxMessages[x].msgTextName);
+
+        if (strcmp(settingName, tempString) == 0)
+        {
+          ubxMessages[x].msgRate = d;
+          knownSetting = true;
+          break;
+        }
       }
     }
 

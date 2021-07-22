@@ -82,6 +82,31 @@ enum returnStatus {
   STATUS_PRESSED_X = 254,
 };
 
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+
+//Each constellation will have its config key, enable, and a visible name
+typedef struct ubxConstellation
+{
+  uint32_t configKey;
+  uint8_t gnssID;
+  bool enabled;
+  char textName[30];
+} ubxConstellation;
+
+//These are the allowable constellations to receive from and log (if enabled)
+//Tested with u-center v21.02
+#define MAX_CONSTELLATIONS 7
+ubxConstellation ubxConstellations[MAX_CONSTELLATIONS] =
+{
+  {UBLOX_CFG_SIGNAL_GPS_ENA, SFE_UBLOX_GNSS_ID_GPS, true, "GPS"},
+  {UBLOX_CFG_SIGNAL_SBAS_ENA, SFE_UBLOX_GNSS_ID_SBAS, false, "SBAS"}, //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
+  {UBLOX_CFG_SIGNAL_GAL_ENA, SFE_UBLOX_GNSS_ID_GALILEO, true, "Galileo"},
+  {UBLOX_CFG_SIGNAL_BDS_ENA, SFE_UBLOX_GNSS_ID_BEIDOU, true, "BeiDou"},
+  {UBLOX_CFG_SIGNAL_QZSS_ENA, SFE_UBLOX_GNSS_ID_IMES, false, "IMES"}, //Config key does not exist?
+  {UBLOX_CFG_SIGNAL_QZSS_ENA, SFE_UBLOX_GNSS_ID_QZSS, true, "QZSS"},
+  {UBLOX_CFG_SIGNAL_GLO_ENA, SFE_UBLOX_GNSS_ID_GLONASS, true, "GLONASS"},
+};
+
 //Each message will have a rate, a visible name, and a class
 typedef struct ubxMsg
 {
@@ -91,8 +116,6 @@ typedef struct ubxMsg
   uint8_t msgRate;
   char msgTextName[30];
 } ubxMsg;
-
-#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
 //These are the allowable messages to broadcast and log (if enabled)
 //Tested with u-center v21.02
@@ -262,7 +285,6 @@ struct struct_settings {
   double fixedAltitude = 0.0;
   uint32_t dataPortBaud = 460800; //Default to 460800bps to support >10Hz update rates
   uint32_t radioPortBaud = 57600; //Default to 57600bps to support connection to SiK1000 radios
-  bool enableSBAS = false; //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
   bool enableNtripServer = false;
   char casterHost[50] = "rtk2go.com"; //It's free...
   uint16_t casterPort = 2101;
@@ -285,6 +307,8 @@ struct struct_settings {
   uint8_t dynamicModel = DYN_MODEL_PORTABLE;
   SystemState lastState = STATE_ROVER_NOT_STARTED; //For Express, start unit in last known state
   bool throttleDuringSPPCongestion = true;
+  ubxConstellation ubxConstellations; //Constellations monitored/used for fix
+  
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

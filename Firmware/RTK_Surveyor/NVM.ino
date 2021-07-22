@@ -291,6 +291,9 @@ bool parseLine(char* str) {
   else
   {
     if (str == ptr || *skipSpace(ptr)) return false; //Check str pointer
+
+    //See issue https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/47
+    sprintf(settingValue, "%1.0lf", d); //Catch when the input is pure numbers (strtod was successful), store as settingValue
   }
 
   // Get setting name

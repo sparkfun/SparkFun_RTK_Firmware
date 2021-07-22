@@ -205,7 +205,8 @@ uint8_t locateGNSSID(uint8_t *customPayload, uint8_t constellation)
       return (4 + x * 8);
   }
 
-  Serial.println(F("locateGNSSID failed"));
+  Serial.print(F("locateGNSSID failed: "));
+  Serial.println(constellation);
   return (0);
 }
 

@@ -36,11 +36,10 @@
     (Done) Firmware upgrade menu
     Enable various debug outputs sent over BT
 
-    TODO
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 3;
+const int FIRMWARE_VERSION_MINOR = 4;
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -119,10 +118,15 @@ const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 
 //Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
+
+#ifdef COMPILE_WIFI
 #include <WiFi.h>
 #include "esp_wifi.h" //Needed for init/deinit of resources to free up RAM
 
 WiFiClient caster;
+#endif
 const char * ntrip_server_name = "SparkFun_RTK_Surveyor";
 
 unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
@@ -140,6 +144,8 @@ uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service tim
 //Note: There are two prevalent versions of the ZED-F9P: v1.12 (part# -01B) and v1.13 (-02B).
 //v1.13 causes the RTK LED to not function if SBAS is enabled. To avoid this, we
 //disable SBAS by default.
+
+char zedFirmwareVersion[20]; //The string looks like 'FWVER=HPG 1.12'. Output to debug menu and settings file.
 
 // Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
 class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
@@ -183,10 +189,15 @@ float battChangeRate = 0.0;
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/18
+
+#define COMPILE_BT 1 //Comment out to disable all Bluetooth
+
+#ifdef COMPILE_BT
 #include "src/BluetoothSerial/BluetoothSerial.h"
 BluetoothSerial SerialBT;
 #include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
 #include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
+#endif
 
 char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names
 
@@ -291,6 +302,8 @@ uint32_t totalWriteTime = 0; //Used to calculate overall write speed using SdFat
 
 bool setupByPowerButton = false; //We can change setup via tapping power button
 
+uint16_t svinObservationTime = 0; //Use globals so we don't have to request these values multiple times (slow response)
+float svinMeanAccuracy = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -303,8 +316,6 @@ void setup()
   beginBoard(); //Determine what hardware platform we are running on
 
   beginDisplay(); //Check if an external Qwiic OLED is attached
-
-  beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
   beginLEDs(); //LED and PWM setup
 
@@ -324,12 +335,16 @@ void setup()
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+  beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
+
   beginFuelGauge(); //Configure battery fuel guage monitor
   checkBatteryLevels(); //Force display so you see battery level immediately at power on
 
   beginGNSS(); //Connect and configure ZED-F9P
 
   beginAccelerometer();
+
+  beginSystemState(); //Determine initial system state
 
   Serial.flush(); //Complete any previous prints
 

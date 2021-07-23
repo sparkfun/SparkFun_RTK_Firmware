@@ -15,23 +15,31 @@ void menuDebug()
       Serial.println(i2cGNSS.minfo.extension[1]);
     }
 
-    Serial.print(F("1) Toggle I2C Debugging Output: "));
+    Serial.print(F("1) I2C Debugging Output: "));
     if (settings.enableI2Cdebug == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    Serial.print(F("2) Toggle Heap Reporting: "));
+    Serial.print(F("2) Heap Reporting: "));
     if (settings.enableHeapReport == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    Serial.print(F("3) Set SPI/SD Interface Frequency: "));
+    Serial.print(F("3) Task Highwater Reporting: "));
+    if (settings.enableTaskReports == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
+    Serial.print(F("4) Set SPI/SD Interface Frequency: "));
     Serial.print(settings.spiFrequency);
     Serial.println(" MHz");
 
-    Serial.print(F("4) Set SPP RX Buffer Size: "));
+    Serial.print(F("5) Set SPP RX Buffer Size: "));
     Serial.println(settings.sppRxQueueSize);
 
-    Serial.print(F("5) Set SPP TX Buffer Size: "));
+    Serial.print(F("6) Set SPP TX Buffer Size: "));
     Serial.println(settings.sppTxQueueSize);
+
+    Serial.print(F("7) Throttle BT Transmissions During SPP Congestion: "));
+    if (settings.throttleDuringSPPCongestion == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
 
     Serial.println(F("x) Exit"));
 
@@ -52,6 +60,10 @@ void menuDebug()
     }
     else if (incoming == '3')
     {
+      settings.enableTaskReports ^= 1;
+    }
+    else if (incoming == '4')
+    {
       Serial.print(F("Enter SPI frequency in MHz (1 to 48): "));
       int freq = getNumber(menuTimeout); //Timeout after x seconds
       if (freq < 1 || freq > 48) //Arbitrary 48 hour limit
@@ -63,7 +75,7 @@ void menuDebug()
         settings.spiFrequency = freq; //Recorded to NVM and file at main menu exit
       }
     }
-    else if (incoming == '4')
+    else if (incoming == '5')
     {
       Serial.print(F("Enter SPP RX Queue Size in Bytes (32 to 16384): "));
       uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
@@ -76,7 +88,7 @@ void menuDebug()
         settings.sppRxQueueSize = queSize; //Recorded to NVM and file at main menu exit
       }
     }
-    else if (incoming == '5')
+    else if (incoming == '6')
     {
       Serial.print(F("Enter SPP TX Queue Size in Bytes (32 to 16384): "));
       uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
@@ -88,6 +100,10 @@ void menuDebug()
       {
         settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
       }
+    }
+    else if (incoming == '7')
+    {
+      settings.throttleDuringSPPCongestion ^= 1;
     }
     else if (incoming == 'x')
       break;

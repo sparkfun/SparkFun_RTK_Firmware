@@ -4,14 +4,19 @@
 //Must be called after Wire.begin so that we can do I2C tests
 void beginBoard()
 {
-  productVariant = RTK_SURVEYOR;
-  if (isConnected(0x19) == true) //Check for accelerometer
+  //Use ADC to check 50% resistor divider
+  int pin_adc_rtk_facet = 35;
+  if (analogReadMilliVolts(pin_adc_rtk_facet) > (3300 / 2 * 0.9) && analogReadMilliVolts(pin_adc_rtk_facet) < (3300 / 2 * 1.1))
+  {
+    productVariant = RTK_FACET;
+  }
+  else if (isConnected(0x19) == true) //Check for accelerometer
   {
     productVariant = RTK_EXPRESS;
   }
-  else if (analogRead(35) > 400 && analogRead(35) < 600)
+  else
   {
-    productVariant = RTK_FACET;
+    productVariant = RTK_SURVEYOR;
   }
 
   //Setup hardware pins
@@ -61,7 +66,7 @@ void beginBoard()
   }
   else if (productVariant == RTK_FACET)
   {
-    //v10
+    //v11
     pin_muxA = 2;
     pin_muxB = 0;
     pin_powerSenseAndControl = 13;
@@ -79,9 +84,12 @@ void beginBoard()
       powerOnCheck(); //Only do check if we POR start
     }
 
+    pinMode(pin_peripheralPowerControl, OUTPUT);
     digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, ZED, etc
 
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
+
+    delay(1000);
 
     strcpy(platformFilePrefix, "SFE_Facet");
     strcpy(platformPrefix, "Facet");
@@ -89,7 +97,7 @@ void beginBoard()
 
   Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
-  //For all boards, check reset reason. If reset was do to wdt or panic, append last log
+  //For all boards, check reset reason. If reset was due to wdt or panic, append last log
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
     reuseLastLog = false; //Start new log
@@ -240,22 +248,33 @@ void beginGNSS()
   i2cGNSS.i2cTransactionSize = 128;
 
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
-  //  if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info
-  //  {
-  //    if (strcmp(i2cGNSS.minfo.extension[1], latestZEDFirmware) != 0)
-  //    {
-  //      Serial.print(F("The ZED-F9P appears to have outdated firmware. Found: "));
-  //      Serial.println(i2cGNSS.minfo.extension[1]);
-  //      Serial.print(F("The Surveyor works best with "));
-  //      Serial.println(latestZEDFirmware);
-  //      Serial.print(F("Please upgrade using u-center."));
-  //      Serial.println();
-  //    }
-  //    else
-  //    {
-  //      Serial.println(F("ZED-F9P firmware is current"));
-  //    }
-  //  }
+  if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info
+  {
+    strcpy(zedFirmwareVersion, i2cGNSS.minfo.extension[1]);
+
+    //i2cGNSS.minfo.extension[1] looks like 'FWVER=HPG 1.12'
+    //Replace = with - to avoid NVM parsing issues
+    char *ptr = strchr(zedFirmwareVersion, '=');
+    if (ptr != NULL)
+      zedFirmwareVersion[ptr - zedFirmwareVersion] = ':';
+
+    Serial.print(F("ZED-F9P firmware: "));
+    Serial.println(zedFirmwareVersion);
+
+    //    if (strcmp(i2cGNSS.minfo.extension[1], latestZEDFirmware) != 0)
+    //    {
+    //      Serial.print(F("The ZED-F9P appears to have outdated firmware. Found: "));
+    //      Serial.println(i2cGNSS.minfo.extension[1]);
+    //      Serial.print(F("The Surveyor works best with "));
+    //      Serial.println(latestZEDFirmware);
+    //      Serial.print(F("Please upgrade using u-center."));
+    //      Serial.println();
+    //    }
+    //    else
+    //    {
+    //      Serial.println(F("ZED-F9P firmware is current"));
+    //    }
+  }
 
   bool response = configureUbloxModule();
   if (response == false)
@@ -268,6 +287,7 @@ void beginGNSS()
     if (response == false)
     {
       Serial.println(F("Failed to configure module. Hard stop."));
+      displayGNSSFail(0);
       blinkError(ERROR_GPS_CONFIG_FAIL);
     }
   }
@@ -341,4 +361,26 @@ void beginAccelerometer()
   Serial.println(F("Accelerometer configuration complete"));
 
   online.accelerometer = true;
+}
+
+//Depending on platform and previous power down state, set system state
+void beginSystemState()
+{
+  if (productVariant == RTK_SURVEYOR)
+  {
+    //Assume Rover. checkButtons() will correct as needed.
+    systemState = STATE_ROVER_NOT_STARTED;
+    buttonPreviousState = BUTTON_BASE;
+  }
+  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS)
+  {
+    systemState = settings.lastState; //Return to system state previous to power down.
+
+    if (systemState == STATE_ROVER_NOT_STARTED)
+      buttonPreviousState = BUTTON_ROVER;
+    else if (systemState == STATE_BASE_NOT_STARTED)
+      buttonPreviousState = BUTTON_BASE;
+    else
+      buttonPreviousState = BUTTON_ROVER;
+  }
 }

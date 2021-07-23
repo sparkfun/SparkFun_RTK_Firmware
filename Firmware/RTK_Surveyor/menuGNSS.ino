@@ -16,9 +16,46 @@ void menuGNSS()
     Serial.print(F("2) Set measurement rate in seconds between measurements: "));
     Serial.println(1 / measurementFrequency, 2);
 
-    Serial.print(F("3) Toggle SBAS: "));
-    if (getSBAS() == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    Serial.print(F("3) Set dynamic model: "));
+    switch (settings.dynamicModel)
+    {
+      case DYN_MODEL_PORTABLE:
+        Serial.print(F("Portable"));
+        break;
+      case DYN_MODEL_STATIONARY:
+        Serial.print(F("Stationary"));
+        break;
+      case DYN_MODEL_PEDESTRIAN:
+        Serial.print(F("Pedestrian"));
+        break;
+      case DYN_MODEL_AUTOMOTIVE:
+        Serial.print(F("Automotive"));
+        break;
+      case DYN_MODEL_SEA:
+        Serial.print(F("Sea"));
+        break;
+      case DYN_MODEL_AIRBORNE1g:
+        Serial.print(F("Airborne 1g"));
+        break;
+      case DYN_MODEL_AIRBORNE2g:
+        Serial.print(F("Airborne 2g"));
+        break;
+      case DYN_MODEL_AIRBORNE4g:
+        Serial.print(F("Airborne 4g"));
+        break;
+      case DYN_MODEL_WRIST:
+        Serial.print(F("Wrist"));
+        break;
+      case DYN_MODEL_BIKE:
+        Serial.print(F("Bike"));
+        break;
+      default:
+        Serial.print(F("Unknown"));
+        break;
+    }
+    Serial.println();
+
+    Serial.println(F("4) Set Constellations "));
 
     Serial.println(F("x) Exit"));
 
@@ -54,17 +91,84 @@ void menuGNSS()
     }
     else if (incoming == 3)
     {
-      if (getSBAS() == true)
-      {
-        //Disable it
-        if (setSBAS(false) == true)
-          settings.enableSBAS = false;
-      }
+      Serial.println(F("Enter the dynamic model to use: "));
+      Serial.println(F("1) Portable"));
+      Serial.println(F("2) Stationary"));
+      Serial.println(F("3) Pedestrian"));
+      Serial.println(F("4) Automotive"));
+      Serial.println(F("5) Sea"));
+      Serial.println(F("6) Airborne 1g"));
+      Serial.println(F("7) Airborne 2g"));
+      Serial.println(F("8) Airborne 4g"));
+      Serial.println(F("9) Wrist"));
+      Serial.println(F("10) Bike"));
+
+      int dynamicModel = getNumber(menuTimeout); //Timeout after x seconds
+      if (dynamicModel < 1 || dynamicModel > DYN_MODEL_BIKE)
+        Serial.println(F("Error: Dynamic model out of range"));
       else
       {
-        //Enable it
-        if (setSBAS(true) == true)
-          settings.enableSBAS = true;
+        if (dynamicModel == 1)
+          settings.dynamicModel = DYN_MODEL_PORTABLE; //The enum starts at 0 and skips 1.
+        else
+          settings.dynamicModel = dynamicModel; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 4)
+    {
+      menuConstellations();
+    }
+    else if (incoming == STATUS_PRESSED_X)
+      break;
+    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
+  }
+
+  int maxWait = 2000;
+
+  // Set dynamic model
+  if (i2cGNSS.getDynamicModel(maxWait) != settings.dynamicModel)
+  {
+    if (i2cGNSS.setDynamicModel((dynModel)settings.dynamicModel, maxWait) == false)
+      Serial.println(F("menuGNSS: setDynamicModel failed"));
+  }
+
+  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+}
+
+//Controls the constellations that are used to generate a fix and logged
+void menuConstellations()
+{
+  while (1)
+  {
+    Serial.println();
+    Serial.println(F("Menu: Constellations Menu"));
+
+    for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
+    {
+      Serial.printf("%d) Constellation %s: ", x + 1, ubxConstellations[x].textName);
+      if (ubxConstellations[x].enabled == true)
+        Serial.print("Enabled");
+      else
+        Serial.print("Disabled");
+      Serial.println();
+    }
+
+    Serial.println(F("x) Exit"));
+
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+
+    if (incoming >= 1 && incoming <= MAX_CONSTELLATIONS)
+    {
+      ubxConstellations[incoming - 1].enabled ^= 1;
+
+      //3.10.6: To avoid cross-correlation issues, it is recommended that GPS and QZSS are always both enabled or both disabled.
+      if((incoming - 1) == SFE_UBLOX_GNSS_ID_GPS || (incoming - 1) == SFE_UBLOX_GNSS_ID_QZSS)
+      {
+        ubxConstellations[SFE_UBLOX_GNSS_ID_GPS].enabled = ubxConstellations[incoming - 1].enabled;
+        ubxConstellations[SFE_UBLOX_GNSS_ID_QZSS].enabled = ubxConstellations[incoming - 1].enabled;
       }
     }
     else if (incoming == STATUS_PRESSED_X)
@@ -74,6 +178,9 @@ void menuGNSS()
     else
       printUnknown(incoming);
   }
+
+  //Apply current settings to module
+  configureConstellations();
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }
@@ -138,4 +245,29 @@ float getMeasurementFrequency()
 
   float measurementFrequency = (1000.0 / currentMeasurementRate) / currentNavigationRate;
   return (measurementFrequency);
+}
+
+//Updates the enabled constellations
+bool configureConstellations()
+{
+  bool response = true;
+
+  //long startTime = millis();
+  for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
+  {
+    //Standard UBX protocol method takes ~533-783ms
+    uint8_t currentlyEnabled = getConstellation(ubxConstellations[x].gnssID); //Qeury the module for the current setting
+    if (currentlyEnabled != ubxConstellations[x].enabled)
+      response &= setConstellation(ubxConstellations[x].gnssID, ubxConstellations[x].enabled);
+
+    //Get/set val method takes ~642ms but does not work because we don't send additional sigCfg keys at same time
+    //    uint8_t currentlyEnabled = i2cGNSS.getVal8(ubxConstellations[x].configKey, VAL_LAYER_RAM, 1200);
+    //    if (currentlyEnabled != ubxConstellations[x].enabled)
+    //      response &= i2cGNSS.setVal(ubxConstellations[x].configKey, ubxConstellations[x].enabled);
+  }
+  //long stopTime = millis();
+
+  //Serial.printf("setConstellation time delta: %ld ms\n\r", stopTime - startTime);
+
+  return (response);
 }

@@ -65,11 +65,13 @@ bool configureUbloxModuleBase()
 bool beginSurveyIn()
 {
   bool needSurveyReset = false;
-  if (i2cGNSS.getSurveyInActive() == true) needSurveyReset = true;
-  if (i2cGNSS.getSurveyInValid() == true) needSurveyReset = true;
+  if (i2cGNSS.getSurveyInActive(100) == true) needSurveyReset = true;
+  if (i2cGNSS.getSurveyInValid(100) == true) needSurveyReset = true;
 
   if (needSurveyReset == true)
   {
+    Serial.println("Resetting survey");
+
     if (resetSurvey() == false)
     {
       Serial.println(F("Survey reset failed"));
@@ -80,7 +82,7 @@ bool beginSurveyIn()
     }
   }
 
-  bool response = i2cGNSS.enableSurveyMode(settings.observationSeconds, settings.observationPositionAccuracy); //Enable Survey in, with user parameters
+  bool response = i2cGNSS.enableSurveyMode(settings.observationSeconds, settings.observationPositionAccuracy, 5000); //Enable Survey in, with user parameters. Wait up to 5s.
   if (response == false)
   {
     Serial.println(F("Survey start failed"));
@@ -91,6 +93,15 @@ bool beginSurveyIn()
                 settings.observationSeconds,
                 settings.observationPositionAccuracy
                );
+
+  //Wait until active becomes true
+  long maxTime = 5000;
+  long startTime = millis();
+  while(i2cGNSS.getSurveyInActive(100) == false)
+  {
+    delay(100);
+    if(millis() - startTime > maxTime) return(false); //Reset of survey failed
+  }
 
   return (true);
 }
@@ -105,8 +116,20 @@ bool resetSurvey()
   response &= i2cGNSS.enableSurveyMode(1000, 400.000, maxWait); //Enable Survey in with bogus values
   delay(1000);
   response &= i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-  delay(1000);
-  return (response);
+
+  if(response == false)
+    return(response);
+
+  //Wait until active and valid becomes false
+  long maxTime = 5000;
+  long startTime = millis();
+  while(i2cGNSS.getSurveyInActive(100) == true || i2cGNSS.getSurveyInValid(100) == true)
+  {
+    delay(100);
+    if(millis() - startTime > maxTime) return(false); //Reset of survey failed
+  }
+
+  return(true);
 }
 
 //Start the base using fixed coordinates
@@ -126,9 +149,9 @@ bool startFixedBase()
     long majorEcefZ = floor((settings.fixedEcefZ * 100) + 0.5);
     long minorEcefZ = floor((((settings.fixedEcefZ * 100.0) - majorEcefZ) * 100.0) + 0.5);
 
-//    Serial.printf("fixedEcefY (should be -4716808.5807): %0.04f\n\r", settings.fixedEcefY);
-//    Serial.printf("major (should be -471680858): %ld\n\r", majorEcefY);
-//    Serial.printf("minor (should be -7): %ld\n\r", minorEcefY);
+    //    Serial.printf("fixedEcefY (should be -4716808.5807): %0.04f\n\r", settings.fixedEcefY);
+    //    Serial.printf("major (should be -471680858): %ld\n\r", majorEcefY);
+    //    Serial.printf("minor (should be -7): %ld\n\r", minorEcefY);
 
     //Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
     //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
@@ -196,10 +219,12 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
     if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
   }
 
+#ifdef COMPILE_WIFI
   if (caster.connected() == true)
   {
     caster.write(incoming); //Send this byte to socket
     casterBytesSent++;
     lastServerSent_ms = millis();
   }
+#endif
 }

@@ -7,25 +7,28 @@ void F9PSerialWriteTask(void *e)
 {
   while (true)
   {
+#ifdef COMPILE_BT
     //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
-    if (SerialBT.available())
+    while (SerialBT.available())
     {
-      while (SerialBT.available())
+      taskYIELD();
+      if (inTestMode == false)
       {
-        if (inTestMode == false)
-        {
-          //Pass bytes to GNSS receiver
-          auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
-          serialGNSS.write(wBuffer, s);
-        }
-        else
-        {
-          char incoming = SerialBT.read();
-          Serial.printf("I heard: %c\n", incoming);
-          incomingBTTest = incoming; //Displayed during system test
-        }
+        //Pass bytes to GNSS receiver
+        auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
+        serialGNSS.write(wBuffer, s);
+
+        if (settings.enableTaskReports == true)
+          Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+      }
+      else
+      {
+        char incoming = SerialBT.read();
+        Serial.printf("I heard: %c\n", incoming);
+        incomingBTTest = incoming; //Displayed during system test
       }
     }
+#endif 
 
     taskYIELD();
   }
@@ -37,7 +40,7 @@ void F9PSerialReadTask(void *e)
 {
   while (true)
   {
-    if (serialGNSS.available())
+    while (serialGNSS.available())
     {
       auto s = serialGNSS.readBytes(rBuffer, SERIAL_SIZE_RX);
 
@@ -45,20 +48,29 @@ void F9PSerialReadTask(void *e)
       if (systemState == STATE_BASE_TEMP_SETTLE || systemState == STATE_BASE_TEMP_SURVEY_STARTED)
       {
         //Do nothing
+        taskYIELD();
       }
+#ifdef COMPILE_BT
       else if (SerialBT.connected())
       {
-        SerialBT.write(rBuffer, s);
-      }
-
-      if (settings.enableHeapReport == true)
-      {
-        if (millis() - lastTaskHeapReport > 1000)
+        if (SerialBT.isCongested() == false)
         {
-          lastTaskHeapReport = millis();
-          Serial.printf("Task freeHeap: %d\n\r", ESP.getFreeHeap());
+          SerialBT.write(rBuffer, s); //Push new data to BT SPP
+        }
+        else if (settings.throttleDuringSPPCongestion == false)
+        {
+          SerialBT.write(rBuffer, s); //Push new data to SPP regardless of congestion
+        }
+        else
+        {
+          //Don't push data to BT SPP if there is congestion to prevent heap hits.
+          log_d("Dropped SPP Bytes: %d", s);
         }
       }
+#endif
+
+      if (settings.enableTaskReports == true)
+        Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
 
       //If user wants to log, record to SD
       if (online.logging == true)
@@ -78,7 +90,9 @@ void F9PSerialReadTask(void *e)
                 digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
               long startWriteTime = micros();
+              taskYIELD();
               ubxFile.sync();
+              taskYIELD();
               long stopWriteTime = micros();
               totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
 
@@ -98,7 +112,10 @@ void F9PSerialReadTask(void *e)
           }
         } //End maxLogTime
       } //End logging
-    } //End serial available from GNSS
+
+      taskYIELD();
+
+    } //End Serial.available()
 
     taskYIELD();
   }

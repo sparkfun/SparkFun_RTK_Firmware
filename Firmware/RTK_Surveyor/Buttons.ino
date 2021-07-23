@@ -23,6 +23,17 @@ void checkButtons()
   }
   else if (productVariant == RTK_EXPRESS)
   {
+    //Check to see if user is pressing both buttons simultaneously - show test screen
+    if (digitalRead(pin_powerSenseAndControl) == LOW && digitalRead(pin_setupButton) == LOW)
+    {
+      delay(debounceDelay); //Debounce
+      if (digitalRead(pin_powerSenseAndControl) == LOW && digitalRead(pin_setupButton) == LOW)
+      {
+        displayTest();
+        setupButtonState = BUTTON_RELEASED;
+      }
+    }
+    
     //Check power button
     //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     if (digitalRead(pin_powerSenseAndControl) == LOW && powerPressedStartTime == 0)
@@ -93,19 +104,6 @@ void checkButtons()
     {
       //Return to unpressed state
       setupButtonState = BUTTON_RELEASED;
-    }
-
-    //Check to see if user is pressing both buttons simultaneously - show test screen
-    if (digitalRead(pin_powerSenseAndControl) == LOW && digitalRead(pin_setupButton) == LOW)
-    {
-      delay(debounceDelay); //Debounce
-      if (digitalRead(pin_powerSenseAndControl) == LOW && digitalRead(pin_setupButton) == LOW)
-      {
-        displayTest();
-        setupButtonState = BUTTON_RELEASED;
-        buttonPreviousState = BUTTON_ROVER;
-        changeState(STATE_ROVER_NOT_STARTED);
-      }
     }
     //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   }//end productVariant = Express

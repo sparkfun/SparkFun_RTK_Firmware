@@ -158,7 +158,18 @@ static esp_err_t _spp_queue_packet(uint8_t *data, size_t len){
     return ESP_OK;
 }
 
-const uint16_t SPP_TX_MAX = 330;
+//SPP_TX_MAX seems to default to a lower amount (330) until there is congestion it then
+//tries to catch up but at 330, it cannot and the heap begins to take the hit.
+//Increasing the max to 2048 we see normal verbose xfers of 512 until congestion
+//when it increases briefly to 2048 then returns to 512 with no heap hit.
+//The rate at which we congest is dependant on how much we are attempting to TX and
+//how much is coming in RX from the phone.
+//At ~25kBps heap lowest point is 100k and stable
+//At ~50kBps heap lowest point is ~78k and stable
+//Above 50kbps it becomes unstable
+
+//const uint16_t SPP_TX_MAX = 330; //Original 
+const uint16_t SPP_TX_MAX = 512*4;
 static uint8_t _spp_tx_buffer[SPP_TX_MAX];
 static uint16_t _spp_tx_buffer_len = 0;
 
@@ -288,10 +299,13 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
     case ESP_SPP_CONG_EVT://connection congestion status changed
         if(param->cong.cong){
             xEventGroupClearBits(_spp_event_group, SPP_CONGESTED);
-        } else {
+            log_d("ESP_SPP_CONG_EVT: CONGESTED");
+        }
+        else
+        {
             xEventGroupSetBits(_spp_event_group, SPP_CONGESTED);
         }
-        log_v("ESP_SPP_CONG_EVT: %s", param->cong.cong?"CONGESTED":"FREE");
+        //log_v("ESP_SPP_CONG_EVT: %s", param->cong.cong ? "CONGESTED" : "FREE");
         break;
 
     case ESP_SPP_WRITE_EVT://write operation completed
@@ -871,4 +885,9 @@ bool BluetoothSerial::isReady(bool checkMaster, int timeout) {
     TickType_t xTicksToWait = timeout / portTICK_PERIOD_MS;
     return (xEventGroupWaitBits(_spp_event_group, SPP_RUNNING, pdFALSE, pdTRUE, xTicksToWait) & SPP_RUNNING) != 0;
 }
+
+bool BluetoothSerial::isCongested(){
+    return(!(xEventGroupGetBits(_spp_event_group) & SPP_CONGESTED));
+}
+
 #endif

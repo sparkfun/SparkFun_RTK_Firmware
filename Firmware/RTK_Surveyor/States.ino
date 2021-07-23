@@ -32,6 +32,10 @@ void updateSystemState()
 
           if (productVariant == RTK_SURVEYOR)
             digitalWrite(pin_baseStatusLED, LOW);
+
+          settings.lastState = STATE_ROVER_NOT_STARTED;
+          recordSystemSettings();
+
           displayRoverSuccess(500);
 
           changeState(STATE_ROVER_NO_FIX);
@@ -101,6 +105,9 @@ void updateSystemState()
 
           if (configureUbloxModuleBase() == true)
           {
+            settings.lastState = STATE_BASE_NOT_STARTED; //Record this state for next POR
+            recordSystemSettings();
+
             displayBaseSuccess(500); //Show 'Base Started'
 
             if (settings.fixedBase == false)
@@ -165,8 +172,13 @@ void updateSystemState()
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED));
           }
 
-          if (i2cGNSS.getSurveyInValid() == true) //Survey in complete
+          //Get the data once to avoid duplicate slow responses
+          svinObservationTime = i2cGNSS.getSurveyInObservationTime(100);
+          svinMeanAccuracy = i2cGNSS.getSurveyInMeanAccuracy(100);
+
+          if (i2cGNSS.getSurveyInValid(100) == true) //Survey in complete
           {
+            Serial.printf("obs time: %d\n\r", svinObservationTime);
             Serial.println(F("Base survey complete! RTCM now broadcasting."));
 
             if (productVariant == RTK_SURVEYOR)
@@ -178,14 +190,14 @@ void updateSystemState()
           else
           {
             Serial.print(F("Time elapsed: "));
-            Serial.print((String)i2cGNSS.getSurveyInObservationTime());
+            Serial.print(svinObservationTime);
             Serial.print(F(" Accuracy: "));
-            Serial.print((String)i2cGNSS.getSurveyInMeanAccuracy());
+            Serial.print(svinMeanAccuracy);
             Serial.print(F(" SIV: "));
             Serial.print(i2cGNSS.getSIV());
             Serial.println();
 
-            if (i2cGNSS.getSurveyInObservationTime() > maxSurveyInWait_s)
+            if (svinObservationTime > maxSurveyInWait_s)
             {
               Serial.printf("Survey-In took more than %d minutes. Returning to rover mode.\n\r", maxSurveyInWait_s / 60);
 
@@ -214,6 +226,7 @@ void updateSystemState()
       //Check to see if we have connected over WiFi
       case (STATE_BASE_TEMP_WIFI_STARTED):
         {
+#ifdef COMPILE_WIFI
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
@@ -238,6 +251,7 @@ void updateSystemState()
             }
             delay(1000);
           }
+#endif
         }
         break;
 
@@ -253,6 +267,7 @@ void updateSystemState()
           if (settings.enableNtripServer == true)
           {
             //Open connection to caster service
+#ifdef COMPILE_WIFI
             if (caster.connect(settings.casterHost, settings.casterPort) == true) //Attempt connection
             {
               changeState(STATE_BASE_TEMP_CASTER_STARTED);
@@ -270,6 +285,7 @@ void updateSystemState()
 
               casterResponseWaitStartTime = millis();
             }
+#endif
           }
         }
         break;
@@ -277,6 +293,7 @@ void updateSystemState()
       //Wait for response for caster service and make sure it's valid
       case (STATE_BASE_TEMP_CASTER_STARTED):
         {
+#ifdef COMPILE_WIFI
           //Check if caster service responded
           if (caster.available() == 0)
           {
@@ -324,6 +341,7 @@ void updateSystemState()
               changeState(STATE_BASE_TEMP_CASTER_CONNECTED);
             }
           }
+#endif
         }
         break;
 
@@ -332,11 +350,13 @@ void updateSystemState()
         {
           cyclePositionLEDs();
 
+#ifdef COMPILE_WIFI
           if (caster.connected() == false)
           {
             Serial.println(F("Caster no longer connected. Reconnecting..."));
             changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to 2 earlier states to try to reconnect
           }
+#endif
         }
         break;
 
@@ -381,6 +401,7 @@ void updateSystemState()
       //Check to see if we have connected over WiFi
       case (STATE_BASE_FIXED_WIFI_STARTED):
         {
+#ifdef COMPILE_WIFI
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
@@ -405,6 +426,7 @@ void updateSystemState()
             }
             delay(1000);
           }
+#endif
         }
         break;
 
@@ -418,6 +440,7 @@ void updateSystemState()
           }
           if (settings.enableNtripServer == true)
           {
+#ifdef COMPILE_WIFI
             //Open connection to caster service
             if (caster.connect(settings.casterHost, settings.casterPort) == true) //Attempt connection
             {
@@ -436,6 +459,7 @@ void updateSystemState()
 
               casterResponseWaitStartTime = millis();
             }
+#endif
           }
         }
         break;
@@ -443,6 +467,7 @@ void updateSystemState()
       //Wait for response for caster service and make sure it's valid
       case (STATE_BASE_FIXED_CASTER_STARTED):
         {
+#ifdef COMPILE_WIFI
           //Check if caster service responded
           if (caster.available() < 10)
           {
@@ -491,6 +516,7 @@ void updateSystemState()
               changeState(STATE_BASE_FIXED_CASTER_CONNECTED);
             }
           }
+#endif
         }
         break;
 
@@ -499,10 +525,12 @@ void updateSystemState()
         {
           cyclePositionLEDs();
 
+#ifdef COMPILE_WIFI
           if (caster.connected() == false)
           {
             changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
           }
+#endif
         }
         break;
 

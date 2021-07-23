@@ -10,19 +10,22 @@ bool configureUbloxModuleRover()
     Serial.println(F("Disable Survey failed"));
 
   // Set dynamic model
-  if (i2cGNSS.getDynamicModel(maxWait) != DYN_MODEL_PORTABLE)
+  if (i2cGNSS.getDynamicModel(maxWait) != settings.dynamicModel)
   {
-    response = i2cGNSS.setDynamicModel(DYN_MODEL_PORTABLE, maxWait);
+    response = i2cGNSS.setDynamicModel((dynModel)settings.dynamicModel, maxWait);
     if (response == false)
       Serial.println(F("setDynamicModel failed"));
   }
 
-  //Disable RTCM sentences
+  //Disable RTCM sentences on I2C, USB, and UART2
   response = true; //Reset
   response &= disableRTCMSentences(COM_PORT_I2C);
   response &= disableRTCMSentences(COM_PORT_UART2);
-  response &= disableRTCMSentences(COM_PORT_UART1);
   response &= disableRTCMSentences(COM_PORT_USB);
+
+  //Re-enable any RTCM msgs on UART1 the user has set within settings
+  response &= configureGNSSMessageRates(COM_PORT_UART1, ubxMessages); //Make sure the appropriate messages are enabled
+
   if (response == false)
     Serial.println(F("Disable RTCM failed"));
 
@@ -31,12 +34,6 @@ bool configureUbloxModuleRover()
     Serial.println(F("setNMEASettings failed"));
 
   response = true; //Reset
-  if (settings.enableSBAS == true)
-    response &= setSBAS(true); //Enable SBAS
-  else
-    response &= setSBAS(false); //Disable SBAS. Work around for RTK LED not working in v1.13 firmware.
-  if (response == false)
-    Serial.println(F("Set SBAS failed"));
 
   //The last thing we do is set output rate.
   response = true; //Reset
@@ -87,8 +84,8 @@ bool setNMEASettings()
   return (true);
 }
 
-//Returns true if SBAS is enabled
-bool getSBAS()
+//Returns true if constellation is enabled
+bool getConstellation(uint8_t constellation)
 {
   uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
   ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
@@ -103,16 +100,17 @@ bool getSBAS()
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("Get SBAS failed"));
+    Serial.println(F("Get Constellation failed"));
     return (false);
   }
 
-  if (customPayload[8 + 8 * 1] & (1 << 0)) return true; //Check if bit 0 is set
+  if (customPayload[8 + 8 * constellation] & (1 << 0)) return true; //Check if bit 0 is set
   return false;
 }
 
-//The u-blox library doesn't directly support SBAS control so let's do it manually
-bool setSBAS(bool enableSBAS)
+//The u-blox library doesn't directly support constellation control so let's do it manually
+//Also allows the enable/disable of any constellation (BeiDou, Galileo, etc)
+bool setConstellation(uint8_t constellation, bool enable)
 {
   uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
   ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
@@ -127,29 +125,89 @@ bool setSBAS(bool enableSBAS)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("Set SBAS failed"));
+    Serial.println(F("Set Constellation failed"));
     return (false);
   }
 
-  if (enableSBAS)
+  if (enable)
   {
-    customPayload[8 + 8 * 1] |= (1 << 0); //Set the enable bit
-    //We must enable the gnssID as well
-    customPayload[8 + 8 * 1 + 2] |= (1 << 0); //Set the enable bit (16) for SBAS L1C/A
+    if (constellation == SFE_UBLOX_GNSS_ID_GPS || constellation == SFE_UBLOX_GNSS_ID_QZSS)
+    {
+      //QZSS must follow GPS
+      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_GPS) + 4] |= (1 << 0); //Set the enable bit
+      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_QZSS) + 4] |= (1 << 0); //Set the enable bit
+    }
+    else
+    {
+      customPayload[locateGNSSID(customPayload, constellation) + 4] |= (1 << 0); //Set the enable bit
+    }
+
+    //Set sigCfgMask as well
+    if (constellation == SFE_UBLOX_GNSS_ID_GPS || constellation == SFE_UBLOX_GNSS_ID_QZSS)
+    {
+      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_GPS) + 6] |= 0x11; //Enable GPS L1C/A, and L2C
+
+      //QZSS must follow GPS
+      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_QZSS) + 6] = 0x11; //Enable QZSS L1C/A, and L2C - Follow u-center
+      //customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_QZSS) + 6] = 0x15; //Enable QZSS L1C/A, L1S, and L2C
+    }
+    else if (constellation == SFE_UBLOX_GNSS_ID_SBAS)
+    {
+      customPayload[locateGNSSID(customPayload, constellation) + 6] |= 0x01; //Enable SBAS L1C/A
+    }
+    else if (constellation == SFE_UBLOX_GNSS_ID_GALILEO)
+    {
+      customPayload[locateGNSSID(customPayload, constellation) + 6] |= 0x21; //Enable Galileo E1/E5b
+    }
+    else if (constellation == SFE_UBLOX_GNSS_ID_BEIDOU)
+    {
+      customPayload[locateGNSSID(customPayload, constellation) + 6] |= 0x11; //Enable BeiDou B1I/B2I
+    }
+    else if (constellation == SFE_UBLOX_GNSS_ID_GLONASS)
+    {
+      customPayload[locateGNSSID(customPayload, constellation) + 6] |= 0x11; //Enable GLONASS L1 and L2
+    }
   }
-  else
+  else //Disable
   {
-    customPayload[8 + 8 * 1] &= ~(1 << 0); //Clear the enable bit
+    //QZSS must follow GPS
+    if (constellation == SFE_UBLOX_GNSS_ID_GPS || constellation == SFE_UBLOX_GNSS_ID_QZSS)
+    {
+      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_GPS) + 4] &= ~(1 << 0); //Clear the enable bit
+
+      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_QZSS) + 4] &= ~(1 << 0); //Clear the enable bit
+    }
+    else
+    {
+      customPayload[locateGNSSID(customPayload, constellation) + 4] &= ~(1 << 0); //Clear the enable bit
+    }
+
   }
 
   // Now we write the custom packet back again to change the setting
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
   {
-    Serial.println(F("SBAS setting failed"));
+    Serial.println(F("Constellation setting failed"));
     return (false);
   }
 
   return (true);
+}
+
+//Given a payload, return the location of a given constellation
+//This is needed because IMES is not currently returned in the query packet
+//so QZSS and GLONAS are offset by -8 bytes.
+uint8_t locateGNSSID(uint8_t *customPayload, uint8_t constellation)
+{
+  for (int x = 0 ; x < 7 ; x++) //Assume max of 7 constellations
+  {
+    if (customPayload[4 + 8 * x] == constellation) //Test gnssid
+      return (4 + x * 8);
+  }
+
+  Serial.print(F("locateGNSSID failed: "));
+  Serial.println(constellation);
+  return (0);
 }
 
 //Turn on the three accuracy LEDs depending on our current HPA (horizontal positional accuracy)

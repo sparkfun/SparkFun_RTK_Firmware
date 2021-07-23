@@ -3,6 +3,8 @@
 //This allows multiple units to be on at same time
 bool startBluetooth()
 {
+#ifdef COMPILE_BT
+
   //Get unit MAC address
   esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
   unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
@@ -45,7 +47,7 @@ bool startBluetooth()
   esp_bt_gap_set_pin(pin_type, 4, pin_code);
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  SerialBT.register_callback(btCallback);
+  SerialBT.register_callback(btCallback); //Controls BT Status LED on Surveyor
   SerialBT.setTimeout(250);
 
   Serial.print(F("Bluetooth broadcasting as: "));
@@ -63,7 +65,7 @@ bool startBluetooth()
       "F9Read", //Just for humans
       readTaskStackSize, //Stack Size
       NULL, //Task input parameter
-      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      1, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
       &F9PSerialReadTaskHandle); //Task handle
 
   if (F9PSerialWriteTaskHandle == NULL)
@@ -78,6 +80,7 @@ bool startBluetooth()
   //Start task for controlling Bluetooth pair LED
   if (productVariant == RTK_SURVEYOR)
     btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
+#endif
 
   return (true);
 }
@@ -98,9 +101,11 @@ void endBluetooth()
     F9PSerialWriteTaskHandle = NULL;
   }
 
+#ifdef COMPILE_BT
   SerialBT.flush(); //Complete any transfers
   SerialBT.disconnect(); //Drop any clients
   SerialBT.end(); //SerialBT.end() will release significant RAM (~100k!) but a SerialBT.start will crash.
+#endif
 
   //The following code releases the BT hardware so that it can be restarted with a SerialBT.begin
   customBTstop();
@@ -113,7 +118,7 @@ void endBluetooth()
 //To work around the bug without modifying the core we create our own btStop() function with
 //the patch from github
 bool customBTstop() {
-
+#ifdef COMPILE_BT
   if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE) {
     return true;
   }
@@ -137,6 +142,7 @@ bool customBTstop() {
     return true;
   }
   log_e("BT Stop failed");
+#endif
   return false;
 }
 
@@ -144,11 +150,13 @@ bool customBTstop() {
 //See WiFiBluetoothSwitch sketch for more info
 void startWiFi()
 {
+#ifdef COMPILE_WIFI
   wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
   esp_wifi_init(&wifi_init_config); //Restart WiFi resources
 
   Serial.printf("Connecting to local WiFi: %s\n\r", settings.wifiSSID);
   WiFi.begin(settings.wifiSSID, settings.wifiPW);
+#endif
 
   radioState = WIFI_ON_NOCONNECTION;
 }
@@ -157,9 +165,12 @@ void startWiFi()
 //See WiFiBluetoothSwitch sketch for more info
 void stopWiFi()
 {
+#ifdef COMPILE_WIFI
   caster.stop();
   WiFi.mode(WIFI_OFF);
   esp_wifi_deinit(); //Free all resources
+#endif
+
   Serial.println("WiFi Stopped");
 
   radioState = RADIO_OFF;
@@ -192,9 +203,9 @@ bool configureUbloxModule()
   //but the phone can also provide RTCM data and a user may want to configure the ZED over Bluetooth.
   //So let's be sure to enable UBX+NMEA+RTCM on the input
   getPortSettings(COM_PORT_UART1); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX) || settingPayload[INPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3))
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3) || settingPayload[INPUT_SETTING] != (COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3))
   {
-    response &= i2cGNSS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX); //Set the UART1 to output NMEA and UBX
+    response &= i2cGNSS.setPortOutput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Set the UART1 to output UBX+NMEA+RTCM
     response &= i2cGNSS.setPortInput(COM_PORT_UART1, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Set the UART1 to input UBX+NMEA+RTCM
   }
 
@@ -216,9 +227,9 @@ bool configureUbloxModule()
   //Turn on RTCM over I2C port so that we can harvest RTCM over I2C and send out over WiFi
   //This is easier than parsing over UART because the library handles the frame detection
   getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3) || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_RTCM3) || settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
   {
-    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //Set the I2C port to output UBX (config), NMEA (logging), and RTCM3 (casting)
+    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3); //Set the I2C port to output UBX (config), NMEA (logging), and RTCM3 (casting)
     response &= i2cGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
   }
 
@@ -231,7 +242,9 @@ bool configureUbloxModule()
     response &= i2cGNSS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
   }
 
-  response &= configureGNSSMessageRates(); //Make sure the appropriate messages are enabled
+  response &= configureConstellations(); //Enable the constellations the user has set
+
+  response &= configureGNSSMessageRates(COM_PORT_UART1, ubxMessages); //Make sure the appropriate messages are enabled
 
   response &= i2cGNSS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
   response &= i2cGNSS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
@@ -290,6 +303,8 @@ bool disableNMEASentences(uint8_t portType)
 }
 
 //Enable RTCM sentences for a given com port
+//This function is needed when switching from rover to base
+//We over-ride user settings in base mode
 bool enableRTCMSentences(uint8_t portType)
 {
   bool response = true;
@@ -312,6 +327,9 @@ bool enableRTCMSentences(uint8_t portType)
 }
 
 //Disable RTCM sentences for a given com port
+//This function is needed when switching from base to rover
+//It's used for turning off RTCM on USB, UART2, and I2C ports.
+//UART1 should be re-enabled with user settings using the configureGNSSMessageRates() function
 bool disableRTCMSentences(uint8_t portType)
 {
   bool response = true;
@@ -499,24 +517,9 @@ void danceLEDs()
   }
 }
 
-//Get the confirmed current date
-//bool getConfirmedDate(uint16_t maxWait)
-//{
-//  if (i2cGNSS.packetUBXNAVPVT == NULL) i2cGNSS.initPacketUBXNAVPVT(); //Check that RAM has been allocated for the PVT data
-//  if (i2cGNSS.packetUBXNAVPVT == NULL) //Bail if the RAM allocation failed
-//    return (false);
-//
-////  if (packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedDate == false)
-////    getPVT(maxWait);
-////  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.confirmedDate = false; //Since we are about to give this to user, mark this data as stale
-////  packetUBXNAVPVT->moduleQueried.moduleQueried1.bits.all = false;
-////  return ((bool)packetUBXNAVPVT->data.flags2.bits.confirmedDate);
-//return(true);
-//}
-
-
 //Call back for when BT connection event happens (connected/disconnect)
 //Used for updating the radioState state machine
+#ifdef COMPILE_BT
 void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
     Serial.println(F("Client Connected"));
@@ -532,6 +535,7 @@ void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
       digitalWrite(pin_bluetoothStatusLED, LOW);
   }
 }
+#endif
 
 //Update Battery level LEDs every 5s
 void updateBattLEDs()
@@ -649,7 +653,7 @@ void reportHeap()
     if (millis() - lastHeapReport > 1000)
     {
       lastHeapReport = millis();
-      Serial.printf("freeHeap: %d\n\r", ESP.getFreeHeap());
+      Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\n\r", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
     }
   }
 }
@@ -770,4 +774,20 @@ boolean SFE_UBLOX_GNSS_ADD::getModuleInfo(uint16_t maxWait)
   }
 
   return (true); //Success!
+}
+
+//Create $GNTXT, type message complete with CRC
+//https://www.nmea.org/Assets/20160520%20txt%20amendment.pdf
+//Used for reporting a system reboot inside the log
+void createNMEASentence(uint8_t sentenceNumber, uint8_t textID, char *nmeaMessage, char *textMessage)
+{
+  char nmeaTxt[82]; //Max NMEA sentence length is 82
+  sprintf(nmeaTxt, "$GNTXT,01,%02d,%02d,%s*", sentenceNumber, textID, textMessage);
+
+  //From: http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html
+  byte CRC = 0; // XOR chars between '$' and '*'
+  for (byte x = 1 ; x < strlen(nmeaTxt) - 1; x++) 
+    CRC = CRC ^ nmeaTxt[x];
+
+  sprintf(nmeaMessage, "%s%02X", nmeaTxt, CRC);
 }

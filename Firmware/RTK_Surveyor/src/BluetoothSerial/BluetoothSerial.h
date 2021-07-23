@@ -35,7 +35,7 @@ class BluetoothSerial: public Stream
         BluetoothSerial(void);
         ~BluetoothSerial(void);
 
-        bool begin(String localName=String(), bool isMaster=false, uint16_t rxQueueSize = 512, uint16_t txQueueSize = 512);
+        bool begin(String localName=String(), bool isMaster=false, uint16_t rxQueueSize = 512 * 4, uint16_t txQueueSize = 512);
         int available(void);
         int peek(void);
         bool hasClient(void);
@@ -60,6 +60,8 @@ class BluetoothSerial: public Stream
         bool isReady(bool checkMaster=false, int timeout=0);
         bool disconnect();
         bool unpairDevice(uint8_t remoteAddress[]);
+
+        bool isCongested();
 
     private:
         String local_name;

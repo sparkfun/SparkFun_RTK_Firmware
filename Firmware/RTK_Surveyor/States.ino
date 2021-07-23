@@ -550,7 +550,18 @@ void updateSystemState()
 
       case (STATE_MARK_EVENT):
         {
-          //todo - reenter previous main state
+          //Record this event to the log
+          if (online.logging == true)
+          {
+            char nmeaMessage[82]; //Max NMEA sentence length is 82
+            createNMEASentence(1, 2, nmeaMessage, (char*)"CustomEvent"); //sentenceNumber, textID, buffer, text
+            ubxFile.println(nmeaMessage);
+            displayEventMarked(500); //Show 'Event Marked'
+          }
+          else
+            displayNoLogging(500); //Show 'No Logging'
+
+          changeState(lastSystemState);
         }
         break;
 
@@ -558,8 +569,7 @@ void updateSystemState()
         {
           if (millis() - lastSetupMenuChange > 1500)
           {
-            Serial.println("Exiting setup display");
-
+            forceSystemStateUpdate = true; //Imediately go to this new state
             changeState(setupState); //Change to last setup state
           }
         }

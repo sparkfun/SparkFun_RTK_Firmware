@@ -155,6 +155,8 @@ void ButtonCheckTask(void *e)
 
   while (true)
   {
+    delay(1); //Yield to other tasks. Pet WDT.
+
     if (productVariant == RTK_SURVEYOR)
     {
       setupBtn->read();

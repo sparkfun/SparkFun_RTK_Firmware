@@ -207,6 +207,29 @@ void beginUART2()
     delay(1);
 }
 
+//These must be started after BT is up and running otherwise SerialBT.available will call reboot
+void startUART2Tasks()
+{
+  //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
+  if (F9PSerialReadTaskHandle == NULL)
+    xTaskCreate(
+      F9PSerialReadTask,
+      "F9Read", //Just for humans
+      readTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      1, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      &F9PSerialReadTaskHandle); //Task handle
+
+  if (F9PSerialWriteTaskHandle == NULL)
+    xTaskCreate(
+      F9PSerialWriteTask,
+      "F9Write", //Just for humans
+      writeTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      &F9PSerialWriteTaskHandle); //Task handle
+}
+
 //ESP32 requires the creation of an EEPROM space
 void beginEEPROM()
 {
@@ -393,6 +416,6 @@ void beginSystemState()
       "BtnCheck", //Just for humans
       buttonTaskStackSize, //Stack Size
       NULL, //Task input parameter
-      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      1, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
       &ButtonCheckTaskHandle); //Task handle
 }

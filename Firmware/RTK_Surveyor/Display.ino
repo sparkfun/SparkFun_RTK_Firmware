@@ -1103,12 +1103,12 @@ void displayForcedFirmwareUpdate()
   displayMessage((char*)"Forced Update", 0);
 }
 
-void displayEventMarked(uint8_t displayTime)
+void displayEventMarked(uint16_t displayTime)
 {
   displayMessage((char*)"Event Marked", displayTime);
 }
 
-void displayNoLogging(uint8_t displayTime)
+void displayNoLogging(uint16_t displayTime)
 {
   displayMessage((char*)"No Logging", displayTime);
 }

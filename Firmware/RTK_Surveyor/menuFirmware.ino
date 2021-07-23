@@ -105,6 +105,18 @@ void updateFromSD(char *firmwareFileName)
   stopWiFi();
   endBluetooth();
 
+  //Delete tasks if running
+  if (F9PSerialReadTaskHandle != NULL)
+  {
+    vTaskDelete(F9PSerialReadTaskHandle);
+    F9PSerialReadTaskHandle = NULL;
+  }
+  if (F9PSerialWriteTaskHandle != NULL)
+  {
+    vTaskDelete(F9PSerialWriteTaskHandle);
+    F9PSerialWriteTaskHandle = NULL;
+  }
+
   Serial.printf("Loading %s\n\r", firmwareFileName);
   if (sd.exists(firmwareFileName))
   {

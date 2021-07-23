@@ -58,25 +58,6 @@ bool startBluetooth()
   if (productVariant == RTK_SURVEYOR)
     digitalWrite(pin_bluetoothStatusLED, HIGH);
 
-  //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
-  if (F9PSerialReadTaskHandle == NULL)
-    xTaskCreate(
-      F9PSerialReadTask,
-      "F9Read", //Just for humans
-      readTaskStackSize, //Stack Size
-      NULL, //Task input parameter
-      1, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-      &F9PSerialReadTaskHandle); //Task handle
-
-  if (F9PSerialWriteTaskHandle == NULL)
-    xTaskCreate(
-      F9PSerialWriteTask,
-      "F9Write", //Just for humans
-      writeTaskStackSize, //Stack Size
-      NULL, //Task input parameter
-      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-      &F9PSerialWriteTaskHandle); //Task handle
-
   //Start task for controlling Bluetooth pair LED
   if (productVariant == RTK_SURVEYOR)
     btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
@@ -89,18 +70,6 @@ bool startBluetooth()
 //It also releases as much system resources as possible so that WiFi/caster is more stable
 void endBluetooth()
 {
-  //Delete tasks if running
-  if (F9PSerialReadTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialReadTaskHandle);
-    F9PSerialReadTaskHandle = NULL;
-  }
-  if (F9PSerialWriteTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialWriteTaskHandle);
-    F9PSerialWriteTaskHandle = NULL;
-  }
-
 #ifdef COMPILE_BT
   SerialBT.flush(); //Complete any transfers
   SerialBT.disconnect(); //Drop any clients

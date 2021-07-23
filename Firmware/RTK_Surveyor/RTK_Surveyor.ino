@@ -41,6 +41,9 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 5;
 
+#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
+#define COMPILE_BT 1 //Comment out to disable all Bluetooth
+
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
 //  to make sure that the settings in EEPROM are correct for this version of the RTK
@@ -117,9 +120,6 @@ const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 
 //Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-//#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
-
 #ifdef COMPILE_WIFI
 #include <WiFi.h>
 #include "esp_wifi.h" //Needed for init/deinit of resources to free up RAM
@@ -187,11 +187,8 @@ float battChangeRate = 0.0;
 
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/18
-
-//#define COMPILE_BT 1 //Comment out to disable all Bluetooth
-
 #ifdef COMPILE_BT
+//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/18
 #include "src/BluetoothSerial/BluetoothSerial.h"
 BluetoothSerial SerialBT;
 #include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.

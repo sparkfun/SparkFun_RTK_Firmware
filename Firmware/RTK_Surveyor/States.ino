@@ -36,6 +36,7 @@ void updateSystemState()
 
           stopWiFi(); //Turn off WiFi and release all resources
           startBluetooth(); //Turn on Bluetooth with 'Rover' name
+          startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           if (productVariant == RTK_SURVEYOR)
             digitalWrite(pin_baseStatusLED, LOW);

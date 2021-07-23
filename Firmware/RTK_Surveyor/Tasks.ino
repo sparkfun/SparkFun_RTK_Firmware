@@ -221,6 +221,7 @@ void ButtonCheckTask(void *e)
           case STATE_BUBBLE_LEVEL:
           case STATE_MARK_EVENT:
           case STATE_WIFI_CONFIG:
+            lastSystemState = systemState; //Remember this state to return after we mark an event
             changeState(STATE_DISPLAY_SETUP);
             setupState = STATE_MARK_EVENT;
             lastSetupMenuChange = millis();
@@ -236,7 +237,7 @@ void ButtonCheckTask(void *e)
             //Exit display setup and enter new system state after ~1500ms in updateSystemState()
             lastSetupMenuChange = millis();
 
-            forceDisplayUpdate = true; //User is interacting so repaint display
+            forceDisplayUpdate = true; //User is interacting so repaint display quickly
 
             switch (setupState)
             {

@@ -29,6 +29,7 @@ typedef enum
   STATE_SHUTDOWN,
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
+SystemState lastSystemState = STATE_ROVER_NOT_STARTED;
 
 //The setup display can show a limited set of states
 //When user pauses for X amount of time, system will enter that state

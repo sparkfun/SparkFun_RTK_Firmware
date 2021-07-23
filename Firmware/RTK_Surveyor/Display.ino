@@ -4,9 +4,10 @@ void updateDisplay()
   //Update the display if connected
   if (online.display == true)
   {
-    if (millis() - lastDisplayUpdate > 500) //Update display at 2Hz
+    if (millis() - lastDisplayUpdate > 500 || forceDisplayUpdate == true) //Update display at 2Hz
     {
       lastDisplayUpdate = millis();
+      forceDisplayUpdate = false;
 
       oled.clear(PAGE); // Clear the display's internal buffer
 
@@ -69,8 +70,27 @@ void updateDisplay()
         case (STATE_BASE_FIXED_CASTER_CONNECTED):
           paintBaseFixedCasterConnected();
           break;
+        case (STATE_BUBBLE_LEVEL):
+          paintBubbleLevel();
+          break;
+        case (STATE_MARK_EVENT):
+          //Do nothing. Static display shown during state change.
+          break;
+        case (STATE_DISPLAY_SETUP):
+          paintDisplaySetup();
+          break;
+        case (STATE_WIFI_CONFIG):
+          //TODO
+          break;
+        case (STATE_TEST):
+          //Do nothing
+          break;
+        case (STATE_TESTING):
+          paintSystemTest();
+          break;
         default:
           displayError((char*)"Display");
+          Serial.printf("Unknown display: %d\n\r", systemState);
           break;
       }
 
@@ -1205,12 +1225,37 @@ void drawFrame()
   oled.line(xMax, 0, xMax, yMax); //Right
 }
 
+void displayForcedFirmwareUpdate()
+{
+  if (online.display == true)
+  {
+    oled.clear(PAGE);
+
+    oled.setCursor(21, 13);
+    oled.setFontType(1);
+
+    int textX = 11;
+    int textY = 10;
+    int textKerning = 8;
+
+    printTextwithKerning((char*)"Forced", textX, textY, textKerning);
+
+    textX = 11;
+    textY = 25;
+    textKerning = 8;
+    oled.setFontType(1);
+
+    printTextwithKerning((char*)"Update", textX, textY, textKerning);
+    oled.display();
+  }
+}
+
 //Display unit self-tests until user presses a button to exit
 //Allows operator to check:
 // Display alignment
 // Internal connections to: SD, Accel, Fuel guage, GNSS
 // External connections: Loop back test on DATA
-void displayTest()
+void paintSystemTest()
 {
   if (online.display == true)
   {
@@ -1219,70 +1264,56 @@ void displayTest()
 
     int charHeight = 7;
 
-    inTestMode = true; //Reroutes bluetooth bytes
-
     char macAddress[5];
     sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
 
-    //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
-    //even if there is no GPS fix. We use it to test serial output.
-    i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
-
-    oled.clear(PAGE); // Clear the display's internal memory
-
     drawFrame(); //Outside edge
 
-    oled.setFontType(0); //Set font to smallest
-    oled.setCursor(xOffset, yOffset); //x, y
-    oled.print(F("Test Menu"));
-
-    oled.display();
-
-    //Wait for user to stop pressing buttons
-    if (productVariant == RTK_EXPRESS)
-    {
-      while (digitalRead(pin_setupButton) == LOW || digitalRead(pin_powerSenseAndControl) == LOW)
-        delay(10);
-    }
-    else if (productVariant == RTK_FACET)
-    {
-      while (digitalRead(pin_powerSenseAndControl) == LOW)
-        delay(10);
-    }
+//    //Wait for user to stop pressing buttons
+//    if (productVariant == RTK_EXPRESS)
+//    {
+//      while (digitalRead(pin_setupButton) == LOW || digitalRead(pin_powerSenseAndControl) == LOW)
+//        delay(10);
+//    }
+//    else if (productVariant == RTK_FACET)
+//    {
+//      while (digitalRead(pin_powerSenseAndControl) == LOW)
+//        delay(10);
+//    }
 
     //For Surveyor, we need to monitor the rocker switch
-    ButtonState previousRockerSwitch = BUTTON_ROVER;
-    if (productVariant == RTK_SURVEYOR)
-    {
-      if (digitalRead(pin_baseSwitch) == LOW) //Switch is set to Base
-        previousRockerSwitch = BUTTON_BASE;
-    }
-
-    //Update display until user presses the setup button
-    while (1)
-    {
+//    ButtonState previousRockerSwitch = BUTTON_ROVER;
+//    if (productVariant == RTK_SURVEYOR)
+//    {
+//      if (digitalRead(pin_baseSwitch) == LOW) //Switch is set to Base
+//        previousRockerSwitch = BUTTON_BASE;
+//    }
+//
+//    //Update display until user presses the setup button
+//    while (1)
+//    {
       //Check for user interaction
-      if (productVariant == RTK_EXPRESS)
-      {
-        if (digitalRead(pin_setupButton) == LOW) break;
-      }
-      else if (productVariant == RTK_FACET)
-      {
-        while (digitalRead(pin_powerSenseAndControl) == LOW)
-          delay(10);
-      }
-      else if (productVariant == RTK_SURVEYOR)
-      {
-        //Check if rocker switch moved
-        if (digitalRead(pin_baseSwitch) == HIGH && //Switch is set to Rover
-            previousRockerSwitch == BUTTON_BASE) break;
-        if (digitalRead(pin_baseSwitch) == LOW && //Switch is set to Base
-            previousRockerSwitch == BUTTON_ROVER) break;
-      }
-
-      oled.clear(PAGE); // Clear the display's internal memory
-
-      drawFrame(); //Outside edge
+//      if (productVariant == RTK_EXPRESS)
+//      {
+//        if (digitalRead(pin_setupButton) == LOW) break;
+//      }
+//      else if (productVariant == RTK_FACET)
+//      {
+//        while (digitalRead(pin_powerSenseAndControl) == LOW)
+//          delay(10);
+//      }
+//      else if (productVariant == RTK_SURVEYOR)
+//      {
+//        //Check if rocker switch moved
+//        if (digitalRead(pin_baseSwitch) == HIGH && //Switch is set to Rover
+//            previousRockerSwitch == BUTTON_BASE) break;
+//        if (digitalRead(pin_baseSwitch) == LOW && //Switch is set to Base
+//            previousRockerSwitch == BUTTON_ROVER) break;
+//      }
+//
+//      oled.clear(PAGE); // Clear the display's internal memory
+//
+//      drawFrame(); //Outside edge
 
       //Test SD, accel, batt, GNSS, mux
       oled.setFontType(0); //Set font to smallest
@@ -1358,66 +1389,177 @@ void displayTest()
 
       //Display incoming BT characters
 
-      oled.display();
-      delay(250);
-    }
+//      oled.display();
+//      delay(250);
+//    }
+//
+//    //    Serial.println(F("Any character received over Blueooth connection will be displayed here"));
 
-    //    Serial.println(F("Any character received over Blueooth connection will be displayed here"));
-
-    inTestMode = false; //Reroutes bluetooth bytes
-
-    setMuxport(settings.dataPortChannel); //Return mux to original channel
-
-    //Disable RTCM sentences
-    i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0);
-
-    oled.clear(PAGE); // Clear the display's internal memory
-
-    drawFrame(); //Outside edge
-
-    oled.setFontType(0); //Set font to smallest
-    oled.setCursor(xOffset, yOffset); //x, y
-    oled.print(F("Stop Test"));
-
-    oled.display();
-
-    //Wait for user to stop pressing buttons
-    if (productVariant == RTK_EXPRESS)
-    {
-      while (digitalRead(pin_setupButton) == LOW)
-        delay(10);
-    }
-    else if (productVariant == RTK_FACET)
-    {
-      while (digitalRead(pin_powerSenseAndControl) == LOW)
-        delay(10);
-    }
-
-    delay(500);
+//    inTestMode = false; //Reroutes bluetooth bytes
+//
+//    setMuxport(settings.dataPortChannel); //Return mux to original channel
+//
+//    //Disable RTCM sentences
+//    i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0);
+//
+//    oled.clear(PAGE); // Clear the display's internal memory
+//
+//    drawFrame(); //Outside edge
+//
+//    oled.setFontType(0); //Set font to smallest
+//    oled.setCursor(xOffset, yOffset); //x, y
+//    oled.print(F("Stop Test"));
+//
+//    oled.display();
+//
+//    //Wait for user to stop pressing buttons
+//    if (productVariant == RTK_EXPRESS)
+//    {
+//      while (digitalRead(pin_setupButton) == LOW)
+//        delay(10);
+//    }
+//    else if (productVariant == RTK_FACET)
+//    {
+//      while (digitalRead(pin_powerSenseAndControl) == LOW)
+//        delay(10);
+//    }
+//
+//    delay(500);
   }
 }
 
-void displayForcedFirmwareUpdate()
+//Globals but only used for Bubble Level
+double averagedRoll = 0.0;
+double averagedPitch = 0.0;
+
+//A bubble level
+void paintBubbleLevel()
 {
   if (online.display == true)
   {
-    oled.clear(PAGE);
+    forceDisplayUpdate = true; //Update the display as quickly as possible
+    
+    getAngles();
 
-    oled.setCursor(21, 13);
-    oled.setFontType(1);
+    //Draw dot in middle
+    oled.pixel(LCDWIDTH / 2, LCDHEIGHT / 2);
+    oled.pixel(LCDWIDTH / 2 + 1, LCDHEIGHT / 2);
+    oled.pixel(LCDWIDTH / 2, LCDHEIGHT / 2 + 1);
+    oled.pixel(LCDWIDTH / 2 + 1, LCDHEIGHT / 2 + 1);
 
-    int textX = 11;
-    int textY = 10;
-    int textKerning = 8;
+    //Draw circle relative to dot
+    const int radiusLarge = 10;
+    const int radiusSmall = 4;
 
-    printTextwithKerning((char*)"Forced", textX, textY, textKerning);
+    oled.circle(LCDWIDTH / 2 - averagedPitch, LCDHEIGHT / 2 + averagedRoll, radiusLarge);
+    oled.circle(LCDWIDTH / 2 - averagedPitch, LCDHEIGHT / 2 + averagedRoll, radiusSmall);
+  }
+}
 
-    textX = 11;
-    textY = 25;
-    textKerning = 8;
-    oled.setFontType(1);
+void getAngles()
+{
+  if (online.accelerometer == true)
+  {
+    averagedRoll = 0.0;
+    averagedPitch = 0.0;
+    const int avgAmount = 16;
 
-    printTextwithKerning((char*)"Update", textX, textY, textKerning);
-    oled.display();
+    //Take an average readings
+    for (int reading = 0 ; reading < avgAmount ; reading++)
+    {
+      while (accel.available() == false) delay(1);
+
+      float accelX = accel.getX();
+      float accelZ = accel.getY();
+      float accelY = accel.getZ();
+      accelZ *= -1.0;
+      accelX *= -1.0;
+
+      double roll = atan2(accelY , accelZ) * 57.3;
+      double pitch = atan2((-accelX) , sqrt(accelY * accelY + accelZ * accelZ)) * 57.3;
+
+      averagedRoll += roll;
+      averagedPitch += pitch;
+    }
+
+    averagedRoll /= (float)avgAmount;
+    averagedPitch /= (float)avgAmount;
+
+    //Avoid -0 since we're not printing the decimal portion
+    if (averagedRoll < 0.5 && averagedRoll > -0.5) averagedRoll = 0;
+    if (averagedPitch < 0.5 && averagedPitch > -0.5) averagedPitch = 0;
+  }
+}
+
+//Show transmission of RTCM packets to caster service
+//Solid WiFi icon
+void paintDisplaySetup()
+{
+  if (online.display == true)
+  {
+    if (setupState == STATE_MARK_EVENT)
+    {
+      printTextCenter((char *)"Mark", 12 * 0, 1, 1, true); //string, y, font type, kerning, inverted
+      printTextCenter((char *)"Rover", 12 * 1, 1, 1, false);
+      printTextCenter((char *)"Base", 12 * 2, 1, 1, false);
+      printTextCenter((char *)"Bubble", 12 * 3, 1, 1, false);
+    }
+    else if (setupState == STATE_ROVER_NOT_STARTED)
+    {
+      printTextCenter((char *)"Mark", 12 * 0, 1, 1, false);
+      printTextCenter((char *)"Rover", 12 * 1, 1, 1, true);
+      printTextCenter((char *)"Base", 12 * 2, 1, 1, false);
+      printTextCenter((char *)"Bubble", 12 * 3, 1, 1, false);
+    }
+    else if (setupState == STATE_BASE_NOT_STARTED)
+    {
+      printTextCenter((char *)"Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
+      printTextCenter((char *)"Rover", 12 * 1, 1, 1, false);
+      printTextCenter((char *)"Base", 12 * 2, 1, 1, true);
+      printTextCenter((char *)"Bubble", 12 * 3, 1, 1, false);
+    }
+    else if (setupState == STATE_BUBBLE_LEVEL)
+    {
+      printTextCenter((char *)"Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
+      printTextCenter((char *)"Rover", 12 * 1, 1, 1, false);
+      printTextCenter((char *)"Base", 12 * 2, 1, 1, false);
+      printTextCenter((char *)"Bubble", 12 * 3, 1, 1, true);
+    }
+    else if (setupState == STATE_WIFI_CONFIG)
+    {
+      printTextCenter((char *)"Rover", 12 * 0, 1, 1, false);
+      printTextCenter((char *)"Base", 12 * 1, 1, 1, false);
+      printTextCenter((char *)"Bubble", 12 * 2, 1, 1, false);
+      printTextCenter((char *)"Config", 12 * 3, 1, 1, true);
+    }
+  }
+}
+
+//Given text, and location, print text center of the screen
+void printTextCenter(char *text, uint8_t yPos, uint8_t fontType, uint8_t kerning, bool highlight) //text, y, font type, kearning, inverted
+{
+  uint8_t fontWidth = 0;
+  if (fontType == 0) fontWidth = 5; //Smallest 5x7
+  if (fontType == 1)
+  {
+    fontWidth = 7; //8x16, but widest character is only 7 pixels.
+  }
+  
+  uint8_t xStart = (LCDWIDTH / 2) - ((strlen(text) * (fontWidth + kerning)) / 2);
+
+  oled.setFontType(fontType);
+  oled.setDrawMode(XOR);
+  uint8_t xPos = xStart;
+  for (int x = 0 ; x < strlen(text) ; x++)
+  {
+    oled.setCursor(xPos, yPos);
+    oled.print(text[x]);
+    xPos += fontWidth + kerning;
+  }
+
+  if(highlight) //Draw a box, inverted over text
+  {
+    uint8_t textPixelWidth = strlen(text) * (fontWidth + kerning);
+    oled.rectFill(xStart - 5, yPos, textPixelWidth + 9, 11, WHITE, XOR); //x, y, width, height, color, mode
   }
 }

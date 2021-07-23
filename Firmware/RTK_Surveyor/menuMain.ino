@@ -30,9 +30,6 @@ void menuMain()
       Serial.println(F("6) Display microSD contents"));
     }
 
-    if (online.accelerometer == true)
-      Serial.println(F("b) Bubble Level"));
-
     Serial.println(F("d) Configure Debug"));
 
     Serial.println(F("r) Reset all settings to default"));
@@ -103,10 +100,6 @@ void menuMain()
       menuFirmware();
     else if (incoming == 't')
       menuTest();
-    else if (incoming == 'b')
-    {
-      if (online.accelerometer == true) menuBubble();
-    }
     else if (incoming == 'x')
       break;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)

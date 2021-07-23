@@ -28,7 +28,7 @@ void F9PSerialWriteTask(void *e)
         incomingBTTest = incoming; //Displayed during system test
       }
     }
-#endif 
+#endif
 
     taskYIELD();
   }
@@ -144,5 +144,132 @@ void updateBTled()
       digitalWrite(pin_bluetoothStatusLED, HIGH);
     else
       digitalWrite(pin_bluetoothStatusLED, LOW);
+  }
+}
+
+//For RTK Express and RTK Facet, monitor momentary buttons
+void ButtonCheckTask(void *e)
+{
+  if (setupBtn != NULL) setupBtn->begin();
+  if (powerBtn != NULL) powerBtn->begin();
+
+  while (true)
+  {
+    if (productVariant == RTK_SURVEYOR)
+    {
+      setupBtn->read();
+
+      //When switch is set to '1' = BASE, pin will be shorted to ground
+      if (setupBtn->isPressed()) //Switch is set to base mode
+      {
+        if (buttonPreviousState == BUTTON_ROVER)
+        {
+          buttonPreviousState = BUTTON_BASE;
+          changeState(STATE_BASE_NOT_STARTED);
+        }
+      }
+      else if (setupBtn->wasReleased()) //Switch is set to base mode
+      {
+        if (buttonPreviousState == BUTTON_BASE)
+        {
+          buttonPreviousState = BUTTON_ROVER;
+          changeState(STATE_ROVER_NOT_STARTED);
+        }
+      }
+    }
+    else //Express&Facet: Check either one or both of the momentary switches
+    {
+      if (setupBtn != NULL) setupBtn->read();
+      if (powerBtn != NULL) powerBtn->read();
+
+      if ((setupBtn != NULL && setupBtn->pressedFor(shutDownButtonTime)) ||
+          (powerBtn != NULL && powerBtn->pressedFor(shutDownButtonTime)))
+      {
+        forceSystemStateUpdate = true;
+        changeState(STATE_SHUTDOWN);
+      }
+      else if ((setupBtn != NULL && setupBtn->pressedFor(500)) &&
+               (powerBtn != NULL && powerBtn->pressedFor(500)))
+      {
+        changeState(STATE_TEST);
+      }
+      else if ((setupBtn != NULL && setupBtn->wasReleased()) ||
+               (powerBtn != NULL && powerBtn->wasReleased()))
+      {
+        switch (systemState)
+        {
+          //If we are in any running state, change to STATE_DISPLAY_SETUP
+          case STATE_ROVER_NOT_STARTED:
+          case STATE_ROVER_NO_FIX:
+          case STATE_ROVER_FIX:
+          case STATE_ROVER_RTK_FLOAT:
+          case STATE_ROVER_RTK_FIX:
+          case STATE_BASE_NOT_STARTED:
+          case STATE_BASE_TEMP_SETTLE:
+          case STATE_BASE_TEMP_SURVEY_STARTED:
+          case STATE_BASE_TEMP_TRANSMITTING:
+          case STATE_BASE_TEMP_WIFI_STARTED:
+          case STATE_BASE_TEMP_WIFI_CONNECTED:
+          case STATE_BASE_TEMP_CASTER_STARTED:
+          case STATE_BASE_TEMP_CASTER_CONNECTED:
+          case STATE_BASE_FIXED_NOT_STARTED:
+          case STATE_BASE_FIXED_TRANSMITTING:
+          case STATE_BASE_FIXED_WIFI_STARTED:
+          case STATE_BASE_FIXED_WIFI_CONNECTED:
+          case STATE_BASE_FIXED_CASTER_STARTED:
+          case STATE_BASE_FIXED_CASTER_CONNECTED:
+          case STATE_BUBBLE_LEVEL:
+          case STATE_MARK_EVENT:
+          case STATE_WIFI_CONFIG:
+            changeState(STATE_DISPLAY_SETUP);
+            setupState = STATE_MARK_EVENT;
+            lastSetupMenuChange = millis();
+            break;
+
+          case STATE_TESTING:
+            //If we are in testing, return to Rover Not Started
+            changeState(STATE_ROVER_NOT_STARTED);
+            break;
+
+          case STATE_DISPLAY_SETUP:
+            //If we are displaying the setup menu, cycle through possible system states
+            //Exit display setup and enter new system state after ~1500ms in updateSystemState()
+            lastSetupMenuChange = millis();
+
+            forceDisplayUpdate = true; //User is interacting so repaint display
+
+            switch (setupState)
+            {
+              case STATE_MARK_EVENT:
+                setupState = STATE_ROVER_NOT_STARTED;
+                break;
+              case STATE_ROVER_NOT_STARTED:
+                setupState = STATE_BASE_NOT_STARTED;
+                break;
+              case STATE_BASE_NOT_STARTED:
+                setupState = STATE_BUBBLE_LEVEL;
+                break;
+              case STATE_BUBBLE_LEVEL:
+                setupState = STATE_WIFI_CONFIG;
+                break;
+              case STATE_WIFI_CONFIG:
+                setupState = STATE_MARK_EVENT;
+                break;
+              default:
+                Serial.printf("ButtonCheckTask unknown setup state: %d\n\r", setupState);
+                setupState = STATE_MARK_EVENT;
+                break;
+            }
+            break;
+
+          default:
+            Serial.printf("ButtonCheckTask unknown system state: %d\n\r", systemState);
+            changeState(STATE_ROVER_NOT_STARTED);
+            break;
+        }
+      }
+    } //End Platform = RTK Express or RTK Facet
+
+    taskYIELD();
   }
 }

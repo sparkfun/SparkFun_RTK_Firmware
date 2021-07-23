@@ -7,9 +7,10 @@
 //A user pressing the setup button (change between rover/base) is handled by checkpin_setupButton()
 void updateSystemState()
 {
-  if (millis() - lastSystemStateUpdate > 500)
+  if (millis() - lastSystemStateUpdate > 500 || forceSystemStateUpdate == true)
   {
     lastSystemStateUpdate = millis();
+    forceSystemStateUpdate = false;
 
     //Move between states as needed
     switch (systemState)
@@ -26,6 +27,12 @@ void updateSystemState()
             displayRoverFail(1000);
             return;
           }
+
+          inTestMode = false; //Reroutes bluetooth bytes
+
+          setMuxport(settings.dataPortChannel); //Return mux to original channel
+
+          i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
 
           stopWiFi(); //Turn off WiFi and release all resources
           startBluetooth(); //Turn on Bluetooth with 'Rover' name
@@ -534,6 +541,67 @@ void updateSystemState()
         }
         break;
 
+      case (STATE_BUBBLE_LEVEL):
+        {
+          //Do nothing - display only
+        }
+        break;
+
+      case (STATE_MARK_EVENT):
+        {
+          //todo - reenter previous main state
+        }
+        break;
+
+      case (STATE_DISPLAY_SETUP):
+        {
+          if (millis() - lastSetupMenuChange > 1500)
+          {
+            Serial.println("Exiting setup display");
+
+            changeState(setupState); //Change to last setup state
+          }
+        }
+        break;
+
+      case (STATE_WIFI_CONFIG):
+        {
+          //ToDo
+        }
+        break;
+
+      //Setup device for testing
+      case (STATE_TEST):
+        {
+          //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
+          //even if there is no GPS fix. We use it to test serial output.
+          i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
+
+          inTestMode = true; //Reroutes bluetooth bytes
+
+          changeState(STATE_TESTING);
+        }
+        break;
+
+      //Display testing screen - do nothing
+      case (STATE_TESTING):
+        {
+          //Exit via button press task
+        }
+        break;
+
+      case (STATE_SHUTDOWN):
+        {
+          forceDisplayUpdate = true;
+          powerDown(true);
+        }
+        break;
+
+      default:
+        {
+          Serial.printf("Unknown state: %d\n\r", systemState);
+        }
+        break;
     }
   }
 }
@@ -603,8 +671,29 @@ void changeState(SystemState newState)
     case (STATE_BASE_FIXED_CASTER_CONNECTED):
       Serial.println(F("State: Base-Fixed - Caster Connected"));
       break;
+    case (STATE_BUBBLE_LEVEL):
+      Serial.println(F("State: Bubble level"));
+      break;
+    case (STATE_MARK_EVENT):
+      Serial.println(F("State: Mark Event"));
+      break;
+    case (STATE_DISPLAY_SETUP):
+      Serial.println(F("State: Display Setup"));
+      break;
+    case (STATE_WIFI_CONFIG):
+      Serial.println(F("State: WiFi Config"));
+      break;
+    case (STATE_TEST):
+      Serial.println(F("State: System Test Setup"));
+      break;
+    case (STATE_TESTING):
+      Serial.println(F("State: System Testing"));
+      break;
+    case (STATE_SHUTDOWN):
+      Serial.println(F("State: Shut Down"));
+      break;
     default:
-      Serial.printf("State Unknown: %d\n\r", systemState);
+      Serial.printf("Change State Unknown: %d\n\r", systemState);
       break;
   }
 }

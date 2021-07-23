@@ -62,7 +62,6 @@ int pin_positionAccuracyLED_10cm;
 int pin_positionAccuracyLED_100cm;
 int pin_baseStatusLED;
 int pin_bluetoothStatusLED;
-int pin_baseSwitch;
 int pin_microSD_CS;
 int pin_zed_tx_ready;
 int pin_zed_reset;
@@ -119,7 +118,7 @@ const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 //Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
+//#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
 
 #ifdef COMPILE_WIFI
 #include <WiFi.h>
@@ -190,7 +189,7 @@ float battChangeRate = 0.0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/18
 
-#define COMPILE_BT 1 //Comment out to disable all Bluetooth
+//#define COMPILE_BT 1 //Comment out to disable all Bluetooth
 
 #ifdef COMPILE_BT
 #include "src/BluetoothSerial/BluetoothSerial.h"
@@ -256,6 +255,18 @@ float btLEDTaskPace = 0.5; //Seconds
 SPARKFUN_LIS2DH12 accel;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//Buttons - Interrupt driven and debounce
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#include <JC_Button.h> // http://librarymanager/All#JC_Button
+Button *setupBtn = NULL; //We can't instatiate the buttons here because we don't yet know what pin numbers to use
+Button *powerBtn = NULL;
+
+TaskHandle_t ButtonCheckTaskHandle = NULL;
+const int buttonTaskStackSize = 1500;
+
+const int shutDownButtonTime = 2000; //ms press and hold before shutdown
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
@@ -268,7 +279,9 @@ uint8_t debounceDelay = 20; //ms to delay between button reads
 
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
+bool forceDisplayUpdate = false; //Goes true when setup is pressed, causes display to refresh real time
 uint32_t lastSystemStateUpdate = 0;
+bool forceSystemStateUpdate = false; //Set true to avoid update wait
 uint32_t lastAccuracyLEDUpdate = 0;
 uint32_t lastBaseLEDupdate = 0; //Controls the blinking of the Base LED
 
@@ -304,6 +317,8 @@ bool setupByPowerButton = false; //We can change setup via tapping power button
 
 uint16_t svinObservationTime = 0; //Use globals so we don't have to request these values multiple times (slow response)
 float svinMeanAccuracy = 0;
+
+uint32_t lastSetupMenuChange = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -344,7 +359,7 @@ void setup()
 
   beginAccelerometer();
 
-  beginSystemState(); //Determine initial system state
+  beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
   Serial.flush(); //Complete any previous prints
 
@@ -355,7 +370,7 @@ void loop()
 {
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  checkButtons(); //Change system state as needed
+  //checkButtons(); //Change system state as needed
 
   updateSystemState();
 

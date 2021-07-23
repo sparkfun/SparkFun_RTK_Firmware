@@ -20,8 +20,19 @@ typedef enum
   STATE_BASE_FIXED_WIFI_CONNECTED,
   STATE_BASE_FIXED_CASTER_STARTED,
   STATE_BASE_FIXED_CASTER_CONNECTED,
+  STATE_BUBBLE_LEVEL,
+  STATE_MARK_EVENT,
+  STATE_DISPLAY_SETUP,
+  STATE_WIFI_CONFIG,
+  STATE_TEST,
+  STATE_TESTING,
+  STATE_SHUTDOWN,
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
+
+//The setup display can show a limited set of states
+//When user pauses for X amount of time, system will enter that state
+SystemState setupState = STATE_MARK_EVENT;
 
 typedef enum
 {
@@ -35,11 +46,8 @@ typedef enum
 {
   BUTTON_ROVER = 0,
   BUTTON_BASE,
-  BUTTON_PRESSED,
-  BUTTON_RELEASED,
 } ButtonState;
 ButtonState buttonPreviousState = BUTTON_ROVER;
-ButtonState setupButtonState = BUTTON_RELEASED; //RTK Express Setup Button
 
 //Data port mux (RTK Express) can enter one of four different connections
 typedef enum muxConnectionType_e

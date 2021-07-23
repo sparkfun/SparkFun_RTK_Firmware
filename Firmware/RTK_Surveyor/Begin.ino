@@ -29,7 +29,7 @@ void beginBoard()
     pin_positionAccuracyLED_100cm = 13;
     pin_baseStatusLED = 4;
     pin_bluetoothStatusLED = 12;
-    pin_baseSwitch = 5;
+    pin_setupButton = 5;
     pin_microSD_CS = 25;
     pin_zed_tx_ready = 26;
     pin_zed_reset = 27;
@@ -307,7 +307,7 @@ void beginLEDs()
     pinMode(pin_positionAccuracyLED_100cm, OUTPUT);
     pinMode(pin_baseStatusLED, OUTPUT);
     pinMode(pin_bluetoothStatusLED, OUTPUT);
-    pinMode(pin_baseSwitch, INPUT_PULLUP); //HIGH = rover, LOW = base
+    pinMode(pin_setupButton, INPUT_PULLUP); //HIGH = rover, LOW = base
 
     digitalWrite(pin_positionAccuracyLED_1cm, LOW);
     digitalWrite(pin_positionAccuracyLED_10cm, LOW);
@@ -368,19 +368,31 @@ void beginSystemState()
 {
   if (productVariant == RTK_SURVEYOR)
   {
-    //Assume Rover. checkButtons() will correct as needed.
-    systemState = STATE_ROVER_NOT_STARTED;
-    buttonPreviousState = BUTTON_BASE;
+    systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask_Switch() will correct as needed.
+
+    setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
-  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS)
+  else if (productVariant == RTK_EXPRESS)
   {
     systemState = settings.lastState; //Return to system state previous to power down.
 
-    if (systemState == STATE_ROVER_NOT_STARTED)
-      buttonPreviousState = BUTTON_ROVER;
-    else if (systemState == STATE_BASE_NOT_STARTED)
-      buttonPreviousState = BUTTON_BASE;
-    else
-      buttonPreviousState = BUTTON_ROVER;
+    setupBtn = new Button(pin_setupButton); //Create the button in memory
+    powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }
+  else if (productVariant == RTK_FACET)
+  {
+    systemState = settings.lastState; //Return to system state previous to power down.
+
+    powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
+  }
+
+  //Starts task for monitoring button presses
+  if (ButtonCheckTaskHandle == NULL)
+    xTaskCreate(
+      ButtonCheckTask,
+      "BtnCheck", //Just for humans
+      buttonTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      &ButtonCheckTaskHandle); //Task handle
 }

@@ -104,7 +104,7 @@ typedef struct ubxConstellation
 
 //These are the allowable constellations to receive from and log (if enabled)
 //Tested with u-center v21.02
-#define MAX_CONSTELLATIONS 6
+#define MAX_CONSTELLATIONS (sizeof(ubxConstellation)/sizeof(ubxConstellation))
 ubxConstellation ubxConstellations[MAX_CONSTELLATIONS] =
 {
   {UBLOX_CFG_SIGNAL_GPS_ENA, SFE_UBLOX_GNSS_ID_GPS, true, "GPS"},
@@ -128,7 +128,7 @@ typedef struct ubxMsg
 
 //These are the allowable messages to broadcast and log (if enabled)
 //Tested with u-center v21.02
-#define MAX_UBX_MSG 67
+#define MAX_UBX_MSG (sizeof(ubxMessages)/sizeof(ubxMsg))
 ubxMsg ubxMessages[MAX_UBX_MSG] =
 {
   {UBLOX_CFG_MSGOUT_NMEA_ID_DTM_UART1, UBX_NMEA_DTM, UBX_CLASS_NMEA, 0, "UBX_NMEA_DTM"},

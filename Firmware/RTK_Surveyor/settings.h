@@ -104,8 +104,8 @@ typedef struct ubxConstellation
 
 //These are the allowable constellations to receive from and log (if enabled)
 //Tested with u-center v21.02
-#define MAX_CONSTELLATIONS (sizeof(ubxConstellation)/sizeof(ubxConstellation))
-ubxConstellation ubxConstellations[MAX_CONSTELLATIONS] =
+#define MAX_CONSTELLATIONS (sizeof(ubxConstellations)/sizeof(ubxConstellation))
+ubxConstellation ubxConstellations[] =
 {
   {UBLOX_CFG_SIGNAL_GPS_ENA, SFE_UBLOX_GNSS_ID_GPS, true, "GPS"},
   {UBLOX_CFG_SIGNAL_SBAS_ENA, SFE_UBLOX_GNSS_ID_SBAS, false, "SBAS"}, //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
@@ -129,7 +129,7 @@ typedef struct ubxMsg
 //These are the allowable messages to broadcast and log (if enabled)
 //Tested with u-center v21.02
 #define MAX_UBX_MSG (sizeof(ubxMessages)/sizeof(ubxMsg))
-ubxMsg ubxMessages[MAX_UBX_MSG] =
+ubxMsg ubxMessages[] =
 {
   {UBLOX_CFG_MSGOUT_NMEA_ID_DTM_UART1, UBX_NMEA_DTM, UBX_CLASS_NMEA, 0, "UBX_NMEA_DTM"},
   {UBLOX_CFG_MSGOUT_NMEA_ID_GBS_UART1, UBX_NMEA_GBS, UBX_CLASS_NMEA, 0, "UBX_NMEA_GBS"},

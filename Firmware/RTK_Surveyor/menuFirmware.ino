@@ -106,16 +106,7 @@ void updateFromSD(const char *firmwareFileName)
   stopBluetooth();
 
   //Delete tasks if running
-  if (F9PSerialReadTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialReadTaskHandle);
-    F9PSerialReadTaskHandle = NULL;
-  }
-  if (F9PSerialWriteTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialWriteTaskHandle);
-    F9PSerialWriteTaskHandle = NULL;
-  }
+  stopUART2Tasks();
 
   Serial.printf("Loading %s\n\r", firmwareFileName);
   if (sd.exists(firmwareFileName))
@@ -182,6 +173,8 @@ void updateFromSD(const char *firmwareFileName)
           Serial.print("=");
         Serial.printf("%d%%", bytesWritten * 100 / updateSize);
         if (bytesWritten == updateSize) Serial.println("]");
+
+        displayFirmwareUpdateProgress(bytesWritten * 100 / updateSize);
       }
     }
     Serial.println(F("\nFile move complete"));
@@ -190,6 +183,8 @@ void updateFromSD(const char *firmwareFileName)
     {
       if (Update.isFinished())
       {
+        displayFirmwareUpdateProgress(100);
+        
         Serial.println(F("Firmware updated successfully. Rebooting. Good bye!"));
 
         //If forced firmware is detected, do a full reset of config as well

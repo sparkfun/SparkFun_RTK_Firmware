@@ -116,6 +116,11 @@ int startLogTime_minutes = 0; //Mark when we start logging so we can stop loggin
 SemaphoreHandle_t xFATSemaphore;
 const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
 const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
+
+//Display used/free space in menu and config page
+uint32_t sdCardSizeMB = 0;
+uint32_t sdFreeSpaceMB = 0;
+uint32_t sdUsedSpaceMB = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster
@@ -259,10 +264,29 @@ Button *setupBtn = NULL; //We can't instatiate the buttons here because we don't
 Button *powerBtn = NULL;
 
 TaskHandle_t ButtonCheckTaskHandle = NULL;
-const int buttonTaskStackSize = 1500;
+const int buttonTaskStackSize = 2000;
 
 const int shutDownButtonTime = 2000; //ms press and hold before shutdown
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+//Webserver for serving config page from ESP32 as Acess Point
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#ifdef COMPILE_WIFI
+
+#include "ESPAsyncWebServer.h"
+#include "form.h"
+
+AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
+#endif
+
+//Because the incoming string is longer than max len, there are multiple callbacks so we
+//use a global to combine the incoming
+char incomingSettings[2000];
+int incomingSettingsSpot = 0;
+unsigned long timeSinceLastIncomingSetting = 0;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

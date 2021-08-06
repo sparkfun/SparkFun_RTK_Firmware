@@ -23,6 +23,7 @@ typedef enum
   STATE_BUBBLE_LEVEL,
   STATE_MARK_EVENT,
   STATE_DISPLAY_SETUP,
+  STATE_WIFI_CONFIG_NOT_STARTED,
   STATE_WIFI_CONFIG,
   STATE_TEST,
   STATE_TESTING,
@@ -286,12 +287,12 @@ struct struct_settings {
   float observationPositionAccuracy = 5.0; //Default survey in pos accy of 5m
   bool fixedBase = false; //Use survey-in by default
   bool fixedBaseCoordinateType = COORD_TYPE_ECEF;
-  double fixedEcefX = 0.0;
-  double fixedEcefY = 0.0;
-  double fixedEcefZ = 0.0;
-  double fixedLat = 0.0;
-  double fixedLong = 0.0;
-  double fixedAltitude = 0.0;
+  double fixedEcefX = -1280206.568;
+  double fixedEcefY = -4716804.403;
+  double fixedEcefZ = 4086665.484;
+  double fixedLat = 40.09029479;
+  double fixedLong = -105.18505761;
+  double fixedAltitude = 1560.089;
   uint32_t dataPortBaud = 460800; //Default to 460800bps to support >10Hz update rates
   uint32_t radioPortBaud = 57600; //Default to 57600bps to support connection to SiK1000 radios
   bool enableNtripServer = false;

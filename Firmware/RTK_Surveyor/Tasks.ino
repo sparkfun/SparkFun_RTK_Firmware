@@ -222,6 +222,7 @@ void ButtonCheckTask(void *e)
           case STATE_BASE_FIXED_CASTER_CONNECTED:
           case STATE_BUBBLE_LEVEL:
           case STATE_MARK_EVENT:
+          case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
             lastSystemState = systemState; //Remember this state to return after we mark an event
             changeState(STATE_DISPLAY_SETUP);
@@ -253,9 +254,9 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_BUBBLE_LEVEL;
                 break;
               case STATE_BUBBLE_LEVEL:
-                setupState = STATE_WIFI_CONFIG;
+                setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
-              case STATE_WIFI_CONFIG:
+              case STATE_WIFI_CONFIG_NOT_STARTED:
                 setupState = STATE_MARK_EVENT;
                 break;
               default:

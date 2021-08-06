@@ -230,6 +230,22 @@ void startUART2Tasks()
       &F9PSerialWriteTaskHandle); //Task handle
 }
 
+//Stop tasks - useful when running firmware update or WiFi AP is running
+void stopUART2Tasks()
+{
+  //Delete tasks if running
+  if (F9PSerialReadTaskHandle != NULL)
+  {
+    vTaskDelete(F9PSerialReadTaskHandle);
+    F9PSerialReadTaskHandle = NULL;
+  }
+  if (F9PSerialWriteTaskHandle != NULL)
+  {
+    vTaskDelete(F9PSerialWriteTaskHandle);
+    F9PSerialWriteTaskHandle = NULL;
+  }
+}
+
 //ESP32 requires the creation of an EEPROM space
 void beginEEPROM()
 {

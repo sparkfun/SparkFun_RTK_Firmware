@@ -575,9 +575,34 @@ void updateSystemState()
         }
         break;
 
+      case (STATE_WIFI_CONFIG_NOT_STARTED):
+        {
+          displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
+
+          //Start in AP mode and show config html page
+          startConfigAP();
+          changeState(STATE_WIFI_CONFIG);
+        }
+        break;
       case (STATE_WIFI_CONFIG):
         {
-          //ToDo
+          if (incomingSettingsSpot > 0)
+          {
+            //Allow for 150ms before we parse buffer for all data to arrive
+            if (millis() - timeSinceLastIncomingSetting > 750)
+            {
+              Serial.print("Parsing: ");
+              for (int x = 0 ; x < incomingSettingsSpot ; x++)
+                Serial.write(incomingSettings[x]);
+              Serial.println();
+
+              parseIncomingSettings();
+
+              //Clear buffer
+              incomingSettingsSpot = 0;
+              memset(incomingSettings, 0, sizeof(incomingSettings));
+            }
+          }
         }
         break;
 
@@ -620,6 +645,10 @@ void updateSystemState()
 //Change states and print the new state
 void changeState(SystemState newState)
 {
+  //If we are leaving WiFi config, record and implement settings
+  if (systemState == STATE_WIFI_CONFIG)
+    recordSystemSettings(); //Record the new settings to EEPROM and config file
+
   systemState = newState;
 
   //Debug print

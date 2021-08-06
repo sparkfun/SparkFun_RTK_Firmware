@@ -79,8 +79,11 @@ void updateDisplay()
         case (STATE_DISPLAY_SETUP):
           paintDisplaySetup();
           break;
+        case (STATE_WIFI_CONFIG_NOT_STARTED):
+          displayWiFiConfigNotStarted(); //Display 'WiFi Config'
+          break;
         case (STATE_WIFI_CONFIG):
-          //TODO
+          displayWiFiConfig(); //Display SSID and IP
           break;
         case (STATE_TEST):
           //Do nothing
@@ -1032,14 +1035,32 @@ void displaySerialConfig()
 }
 
 //When user enters WiFi Config mode from setup, show splash while config happens
-void displayWiFiConfigStart()
+void displayWiFiConfigNotStarted()
 {
   displayMessage("WiFi Config", 0);
 }
 
 void displayWiFiConfig()
 {
-  displayMessage("WiFi Config", 0);
+  //Draw the WiFi icon
+  oled.drawIcon((LCDWIDTH / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol, sizeof(WiFi_Symbol), true);
+
+  int yPos = WiFi_Symbol_Height + 3;
+  int fontHeight = 8;
+
+  printTextCenter("SSID:", yPos, 0, 1, false); //text, y, font type, kerning, inverted
+
+  yPos = yPos + fontHeight + 1;
+  printTextCenter("RTK Config", yPos, 0, 1, false);
+
+  yPos = yPos + fontHeight + 3;
+  printTextCenter("IP:", yPos, 0, 1, false);
+
+  yPos = yPos + fontHeight + 1;
+  //char temp[50];
+  //sprintf(temp, "%s", WiFi.softAPIP());
+  //printTextCenter((const*)temp, yPos, 0, 1, false);
+  printTextCenter("192.168.1.1", yPos, 0, 1, false);
 }
 
 //When user does a factory reset, let us know
@@ -1118,6 +1139,30 @@ void drawFrame()
 void displayForcedFirmwareUpdate()
 {
   displayMessage("Forced Update", 0);
+}
+
+void displayFirmwareUpdateProgress(int percentComplete)
+{
+  //Update the display if connected
+  if (online.display == true)
+  {
+    oled.clear(PAGE); // Clear the display's internal buffer
+
+    int yPos = 3;
+    int fontHeight = 8;
+
+    printTextCenter("Firmware", yPos, 0, 1, false); //text, y, font type, kerning, inverted
+
+    yPos = yPos + fontHeight + 1;
+    printTextCenter("Update", yPos, 0, 1, false); //text, y, font type, kerning, inverted
+
+    yPos = yPos + fontHeight + 3;
+    char temp[50];
+    sprintf(temp, "%d%%", percentComplete);
+    printTextCenter(temp, yPos, 1, 1, false); //text, y, font type, kerning, inverted
+
+    oled.display(); //Push internal buffer to display
+  }
 }
 
 void displayEventMarked(uint16_t displayTime)
@@ -1388,7 +1433,7 @@ void displayMessage(const char* message, uint16_t displayTime)
     token = strtok(temp, " ");
     while (token != NULL)
     {
-      printTextCenter(token, yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+      printTextCenter(token, yPos, 1, 1, false); //text, y, font type, kerning, inverted
       token = strtok(NULL, " ");
       yPos += fontHeight;
     }

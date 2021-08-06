@@ -90,38 +90,38 @@ void menuMessages()
     int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
-      menuMessagesSubtype((char*)"NMEA");
+      menuMessagesSubtype("NMEA");
     else if (incoming == 2)
-      menuMessagesSubtype((char*)"RTCM");
+      menuMessagesSubtype("RTCM");
     else if (incoming == 3)
-      menuMessagesSubtype((char*)"RXM");
+      menuMessagesSubtype("RXM");
     else if (incoming == 4)
-      menuMessagesSubtype((char*)"NAV");
+      menuMessagesSubtype("NAV");
     else if (incoming == 5)
-      menuMessagesSubtype((char*)"MON");
+      menuMessagesSubtype("MON");
     else if (incoming == 6)
-      menuMessagesSubtype((char*)"TIM");
+      menuMessagesSubtype("TIM");
     else if (incoming == 7)
     {
       setGNSSMessageRates(ubxMessages, 0); //Turn off all messages
-      setMessageRateByName((char*)"UBX_NMEA_GGA", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GSA", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GST", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GSV", 4); //One update per 4 fixes to avoid swamping SPP connection
-      setMessageRateByName((char*)"UBX_NMEA_RMC", 1);
+      setMessageRateByName("UBX_NMEA_GGA", 1);
+      setMessageRateByName("UBX_NMEA_GSA", 1);
+      setMessageRateByName("UBX_NMEA_GST", 1);
+      setMessageRateByName("UBX_NMEA_GSV", 4); //One update per 4 fixes to avoid swamping SPP connection
+      setMessageRateByName("UBX_NMEA_RMC", 1);
       Serial.println(F("Reset to Surveying Defaults (NMEAx5)"));
     }
     else if (incoming == 8)
     {
       setGNSSMessageRates(ubxMessages, 0); //Turn off all messages
-      setMessageRateByName((char*)"UBX_NMEA_GGA", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GSA", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GST", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GSV", 4); //One update per 4 fixes to avoid swamping SPP connection
-      setMessageRateByName((char*)"UBX_NMEA_RMC", 1);
+      setMessageRateByName("UBX_NMEA_GGA", 1);
+      setMessageRateByName("UBX_NMEA_GSA", 1);
+      setMessageRateByName("UBX_NMEA_GST", 1);
+      setMessageRateByName("UBX_NMEA_GSV", 4); //One update per 4 fixes to avoid swamping SPP connection
+      setMessageRateByName("UBX_NMEA_RMC", 1);
 
-      setMessageRateByName((char*)"UBX_RXM_RAWX", 1);
-      setMessageRateByName((char*)"UBX_RXM_SFRBX", 1);
+      setMessageRateByName("UBX_RXM_RAWX", 1);
+      setMessageRateByName("UBX_RXM_SFRBX", 1);
       Serial.println(F("Reset to PPP Logging Defaults (NMEAx5 + RXMx2)"));
     }
     else if (incoming == 9)
@@ -164,7 +164,7 @@ void menuMessages()
 
 //Given a sub type (ie "RTCM", "NMEA") present menu showing messages with this subtype
 //Controls the messages that get broadcast over Bluetooth and logged (if enabled)
-void menuMessagesSubtype(char* messageType)
+void menuMessagesSubtype(const char* messageType)
 {
   while (1)
   {
@@ -470,7 +470,7 @@ bool findLastLog(char *lastLogName)
 }
 
 //Given a unique string, find first and last records containing that string in message array
-void setMessageOffsets(char* messageType, int& startOfBlock, int& endOfBlock)
+void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlock)
 {
   char messageNamePiece[40]; //UBX_RTCM
   sprintf(messageNamePiece, "UBX_%s", messageType); //Put UBX_ infront of type
@@ -505,7 +505,7 @@ uint8_t getActiveMessageCount()
 }
 
 //Given the name of a message, find it, and set the rate
-bool setMessageRateByName(char *msgName, uint8_t msgRate)
+bool setMessageRateByName(const char *msgName, uint8_t msgRate)
 {
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {

@@ -89,7 +89,7 @@ void updateDisplay()
           paintSystemTest();
           break;
         default:
-          displayError((char*)"Display");
+          displayError("Display");
           Serial.printf("Unknown display: %d\n\r", systemState);
           break;
       }
@@ -125,7 +125,7 @@ void displaySplash()
       textY = 25;
       textKerning = 8;
       oled.setFontType(1);
-      printTextwithKerning((char*)"Surveyor", textX, textY, textKerning);
+      printTextwithKerning("Surveyor", textX, textY, textKerning);
     }
     else if (productVariant == RTK_EXPRESS)
     {
@@ -133,7 +133,7 @@ void displaySplash()
       textY = 25;
       textKerning = 9;
       oled.setFontType(1);
-      printTextwithKerning((char*)"Express", textX, textY, textKerning);
+      printTextwithKerning("Express", textX, textY, textKerning);
     }
     else if (productVariant == RTK_FACET)
     {
@@ -141,7 +141,7 @@ void displaySplash()
       textY = 25;
       textKerning = 9;
       oled.setFontType(1);
-      printTextwithKerning((char*)"Facet", textX, textY, textKerning);
+      printTextwithKerning("Facet", textX, textY, textKerning);
     }
 
     oled.setCursor(20, 41);
@@ -153,12 +153,12 @@ void displaySplash()
 
 void displayShutdown()
 {
-  displayMessage((char*)"Shutting Down...", 0);
+  displayMessage("Shutting Down...", 0);
 }
 
 //Displays a small error message then hard freeze
 //Text wraps and is small but legible
-void displayError(char * errorMessage)
+void displayError(const char * errorMessage)
 {
   if (online.display == true)
   {
@@ -588,7 +588,7 @@ void paintBaseTempTransmitting()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
+    printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -622,7 +622,7 @@ void paintBaseTempWiFiStarted()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
+    printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -657,7 +657,7 @@ void paintBaseTempWiFiConnected()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
+    printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -691,14 +691,14 @@ void paintBaseTempCasterStarted()
     int textY = 17;
     int textKerning = 8;
 
-    printTextwithKerning((char*)"Caster", textX, textY, textKerning);
+    printTextwithKerning("Caster", textX, textY, textKerning);
 
     textX = 3;
     textY = 33;
     textKerning = 6;
     oled.setFontType(1);
 
-    printTextwithKerning((char*)"Connecting", textX, textY, textKerning);
+    printTextwithKerning("Connecting", textX, textY, textKerning);
   }
 }
 
@@ -718,7 +718,7 @@ void paintBaseTempCasterConnected()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning((char*)"Casting", textX, textY, textKerning);
+    printTextwithKerning("Casting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -764,7 +764,7 @@ void paintBaseFixedTransmitting()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
+    printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -798,7 +798,7 @@ void paintBaseFixedWiFiStarted()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
+    printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -833,7 +833,7 @@ void paintBaseFixedWiFiConnected()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning((char*)"Xmitting", textX, textY, textKerning);
+    printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -867,14 +867,14 @@ void paintBaseFixedCasterStarted()
     int textY = 18;
     int textKerning = 8;
 
-    printTextwithKerning((char*)"Caster", textX, textY, textKerning);
+    printTextwithKerning("Caster", textX, textY, textKerning);
 
     textX = 3;
     textY = 33;
     textKerning = 6;
     oled.setFontType(1);
 
-    printTextwithKerning((char*)"Connecting", textX, textY, textKerning);
+    printTextwithKerning("Connecting", textX, textY, textKerning);
   }
 }
 
@@ -894,7 +894,7 @@ void paintBaseFixedCasterConnected()
     int textY = 17;
     int textKerning = 8;
     oled.setFontType(1);
-    printTextwithKerning((char*)"Casting", textX, textY, textKerning);
+    printTextwithKerning("Casting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
     oled.setFontType(0);
@@ -921,7 +921,7 @@ void displayBaseStart(uint16_t displayTime)
     uint8_t fontHeight = 15; //Assume fontsize 1
     uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
 
-    printTextCenter((char*)"Base", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Base", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
     oled.display();
 
     oled.display();
@@ -939,8 +939,8 @@ void displayBaseSuccess(uint16_t displayTime)
     uint8_t fontHeight = 15; //Assume fontsize 1
     uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
 
-    printTextCenter((char*)"Base", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter((char*)"Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Base", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -957,8 +957,8 @@ void displayBaseFail(uint16_t displayTime)
     uint8_t fontHeight = 15; //Assume fontsize 1
     uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
 
-    printTextCenter((char*)"Base", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter((char*)"Failed", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Base", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Failed", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -968,7 +968,7 @@ void displayBaseFail(uint16_t displayTime)
 
 void displayGNSSFail(uint16_t displayTime)
 {
-  displayMessage((char*)"GNSS Failed", displayTime);
+  displayMessage("GNSS Failed", displayTime);
 }
 
 void displayRoverStart(uint16_t displayTime)
@@ -980,8 +980,8 @@ void displayRoverStart(uint16_t displayTime)
     uint8_t fontHeight = 15;
     uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
 
-    printTextCenter((char*)"Rover", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    //  printTextCenter((char*)"Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Rover", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+    //  printTextCenter("Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -998,8 +998,8 @@ void displayRoverSuccess(uint16_t displayTime)
     uint8_t fontHeight = 15;
     uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
 
-    printTextCenter((char*)"Rover", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter((char*)"Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Rover", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1016,8 +1016,8 @@ void displayRoverFail(uint16_t displayTime)
     uint8_t fontHeight = 15;
     uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
 
-    printTextCenter((char*)"Rover", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter((char*)"Failed", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Rover", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Failed", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1025,10 +1025,27 @@ void displayRoverFail(uint16_t displayTime)
   }
 }
 
-//When user enter serial config menu the display will freeze so show splash while config happens
+//When user enters serial config menu the display will freeze so show splash while config happens
 void displaySerialConfig()
 {
-  displayMessage((char*)"Serial Config", 0);
+  displayMessage("Serial Config", 0);
+}
+
+//When user enters WiFi Config mode from setup, show splash while config happens
+void displayWiFiConfigStart()
+{
+  displayMessage("WiFi Config", 0);
+}
+
+void displayWiFiConfig()
+{
+  displayMessage("WiFi Config", 0);
+}
+
+//When user does a factory reset, let us know
+void displaySytemReset()
+{
+  displayMessage("Factory Reset", 0);
 }
 
 void displaySurveyStart(uint16_t displayTime)
@@ -1040,8 +1057,8 @@ void displaySurveyStart(uint16_t displayTime)
     uint8_t fontHeight = 15;
     uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
 
-    printTextCenter((char*)"Survey", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    //printTextCenter((char*)"Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Survey", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+    //printTextCenter("Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1058,8 +1075,8 @@ void displaySurveyStarted(uint16_t displayTime)
     uint8_t fontHeight = 15;
     uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
 
-    printTextCenter((char*)"Survey", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter((char*)"Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Survey", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1077,8 +1094,8 @@ void displaySDFail(uint16_t displayTime)
     uint8_t fontHeight = 15;
     uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
 
-    printTextCenter((char*)"Format", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter((char*)"SD Card", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Format", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("SD Card", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1100,17 +1117,17 @@ void drawFrame()
 
 void displayForcedFirmwareUpdate()
 {
-  displayMessage((char*)"Forced Update", 0);
+  displayMessage("Forced Update", 0);
 }
 
 void displayEventMarked(uint16_t displayTime)
 {
-  displayMessage((char*)"Event Marked", displayTime);
+  displayMessage("Event Marked", displayTime);
 }
 
 void displayNoLogging(uint16_t displayTime)
 {
-  displayMessage((char*)"No Logging", displayTime);
+  displayMessage("No Logging", displayTime);
 }
 
 //Display unit self-tests until user presses a button to exit
@@ -1277,44 +1294,44 @@ void paintDisplaySetup()
   {
     if (setupState == STATE_MARK_EVENT)
     {
-      printTextCenter((char *)"Mark", 12 * 0, 1, 1, true); //string, y, font type, kerning, inverted
-      printTextCenter((char *)"Rover", 12 * 1, 1, 1, false);
-      printTextCenter((char *)"Base", 12 * 2, 1, 1, false);
-      printTextCenter((char *)"Bubble", 12 * 3, 1, 1, false);
+      printTextCenter("Mark", 12 * 0, 1, 1, true); //string, y, font type, kerning, inverted
+      printTextCenter("Rover", 12 * 1, 1, 1, false);
+      printTextCenter("Base", 12 * 2, 1, 1, false);
+      printTextCenter("Bubble", 12 * 3, 1, 1, false);
     }
     else if (setupState == STATE_ROVER_NOT_STARTED)
     {
-      printTextCenter((char *)"Mark", 12 * 0, 1, 1, false);
-      printTextCenter((char *)"Rover", 12 * 1, 1, 1, true);
-      printTextCenter((char *)"Base", 12 * 2, 1, 1, false);
-      printTextCenter((char *)"Bubble", 12 * 3, 1, 1, false);
+      printTextCenter("Mark", 12 * 0, 1, 1, false);
+      printTextCenter("Rover", 12 * 1, 1, 1, true);
+      printTextCenter("Base", 12 * 2, 1, 1, false);
+      printTextCenter("Bubble", 12 * 3, 1, 1, false);
     }
     else if (setupState == STATE_BASE_NOT_STARTED)
     {
-      printTextCenter((char *)"Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
-      printTextCenter((char *)"Rover", 12 * 1, 1, 1, false);
-      printTextCenter((char *)"Base", 12 * 2, 1, 1, true);
-      printTextCenter((char *)"Bubble", 12 * 3, 1, 1, false);
+      printTextCenter("Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
+      printTextCenter("Rover", 12 * 1, 1, 1, false);
+      printTextCenter("Base", 12 * 2, 1, 1, true);
+      printTextCenter("Bubble", 12 * 3, 1, 1, false);
     }
     else if (setupState == STATE_BUBBLE_LEVEL)
     {
-      printTextCenter((char *)"Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
-      printTextCenter((char *)"Rover", 12 * 1, 1, 1, false);
-      printTextCenter((char *)"Base", 12 * 2, 1, 1, false);
-      printTextCenter((char *)"Bubble", 12 * 3, 1, 1, true);
+      printTextCenter("Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
+      printTextCenter("Rover", 12 * 1, 1, 1, false);
+      printTextCenter("Base", 12 * 2, 1, 1, false);
+      printTextCenter("Bubble", 12 * 3, 1, 1, true);
     }
-    else if (setupState == STATE_WIFI_CONFIG)
+    else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
     {
-      printTextCenter((char *)"Rover", 12 * 0, 1, 1, false);
-      printTextCenter((char *)"Base", 12 * 1, 1, 1, false);
-      printTextCenter((char *)"Bubble", 12 * 2, 1, 1, false);
-      printTextCenter((char *)"Config", 12 * 3, 1, 1, true);
+      printTextCenter("Rover", 12 * 0, 1, 1, false);
+      printTextCenter("Base", 12 * 1, 1, 1, false);
+      printTextCenter("Bubble", 12 * 2, 1, 1, false);
+      printTextCenter("Config", 12 * 3, 1, 1, true);
     }
   }
 }
 
 //Given text, and location, print text center of the screen
-void printTextCenter(char *text, uint8_t yPos, uint8_t fontType, uint8_t kerning, bool highlight) //text, y, font type, kearning, inverted
+void printTextCenter(const char *text, uint8_t yPos, uint8_t fontType, uint8_t kerning, bool highlight) //text, y, font type, kearning, inverted
 {
   uint8_t fontWidth = 0;
   if (fontType == 0) fontWidth = 5; //Smallest 5x7
@@ -1343,7 +1360,7 @@ void printTextCenter(char *text, uint8_t yPos, uint8_t fontType, uint8_t kerning
 }
 
 //Given a message (one or two words) display centered
-void displayMessage(char* message, uint16_t displayTime)
+void displayMessage(const char* message, uint16_t displayTime)
 {
   if (online.display == true)
   {

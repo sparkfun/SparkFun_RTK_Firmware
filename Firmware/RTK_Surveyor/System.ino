@@ -68,7 +68,7 @@ bool startBluetooth()
 
 //This function stops BT so that it can be restarted later
 //It also releases as much system resources as possible so that WiFi/caster is more stable
-void endBluetooth()
+void stopBluetooth()
 {
 #ifdef COMPILE_BT
   SerialBT.flush(); //Complete any transfers
@@ -581,7 +581,7 @@ bool isConnected(uint8_t deviceAddress)
 
 //Given text, a position, and kerning, print text to display
 //This is helpful for squishing or stretching a string to appropriately fill the display
-void printTextwithKerning(char *newText, uint8_t xPos, uint8_t yPos, uint8_t kerning)
+void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8_t kerning)
 {
   for (int x = 0 ; x < strlen(newText) ; x++)
   {

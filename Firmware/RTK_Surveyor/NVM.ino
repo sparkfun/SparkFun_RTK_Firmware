@@ -47,7 +47,7 @@ void recordSystemSettings()
   settings.sizeOfSettings = sizeof(settings);
   if (settings.sizeOfSettings > EEPROM_SIZE)
   {
-    displayError((char*)"EEPROM");
+    displayError("EEPROM");
 
     while (1) //Hard freeze
     {

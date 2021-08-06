@@ -74,7 +74,7 @@ void scanForFirmware()
           {
             Serial.println(F("Forced firmware detected. Loading..."));
             displayForcedFirmwareUpdate();
-            updateFromSD((char *)forceFirmwareFileName);
+            updateFromSD(forceFirmwareFileName);
           }
 
           //Check 'bin' extension
@@ -99,11 +99,11 @@ void scanForFirmware()
 }
 
 //Look for firmware file on SD card and update as needed
-void updateFromSD(char *firmwareFileName)
+void updateFromSD(const char *firmwareFileName)
 {
   //Turn off any tasks so that we are not disrupted
   stopWiFi();
-  endBluetooth();
+  stopBluetooth();
 
   //Delete tasks if running
   if (F9PSerialReadTaskHandle != NULL)

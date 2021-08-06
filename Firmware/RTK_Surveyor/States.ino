@@ -223,7 +223,7 @@ void updateSystemState()
           if (settings.enableNtripServer == true)
           {
             //Turn off Bluetooth and turn on WiFi
-            endBluetooth();
+            stopBluetooth();
             startWiFi();
 
             changeState(STATE_BASE_TEMP_WIFI_STARTED);
@@ -396,7 +396,7 @@ void updateSystemState()
           if (settings.enableNtripServer == true)
           {
             //Turn off Bluetooth and turn on WiFi
-            endBluetooth();
+            stopBluetooth();
             startWiFi();
 
             rtcmPacketsSent = 0; //Reset any previous number
@@ -690,6 +690,9 @@ void changeState(SystemState newState)
       break;
     case (STATE_DISPLAY_SETUP):
       Serial.println(F("State: Display Setup"));
+      break;
+    case (STATE_WIFI_CONFIG_NOT_STARTED):
+      Serial.println(F("State: WiFi Config Not Started"));
       break;
     case (STATE_WIFI_CONFIG):
       Serial.println(F("State: WiFi Config"));

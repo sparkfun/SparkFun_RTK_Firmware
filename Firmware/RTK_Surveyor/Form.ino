@@ -33,7 +33,12 @@ void startConfigAP()
     Serial.print("Used space(MB): ");
     Serial.println(sdUsedSpaceMB);
   }
-  
+
+  //When testing, operate on local WiFi instead of AP
+//#define LOCAL_WIFI_TESTING 1
+
+#ifndef LOCAL_WIFI_TESTING
+  //Start in AP mode
   WiFi.mode(WIFI_AP);
 
   IPAddress local_IP(192, 168, 1, 1); //Set static IP to match OLED width
@@ -47,6 +52,24 @@ void startConfigAP()
   }
   Serial.print(F("AP Started with IP: "));
   Serial.println(WiFi.softAPIP());
+#endif
+
+#ifdef LOCAL_WIFI_TESTING
+  //Connect to local router
+#define WIFI_SSID "ATT672"
+#define WIFI_PASSWORD "6814167060"
+  WiFi.mode(WIFI_STA);
+
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.print("Connected with IP: ");
+  Serial.println(WiFi.localIP());
+#endif
 
   //Clear any garbage from settings array
   memset(incomingSettings, 0, sizeof(incomingSettings));
@@ -116,8 +139,13 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 //Create a csv string with current settings
 void createSettingsString(char* settingsCSV)
 {
-  //System Type/Page Title
+  //System Info
   stringRecord(settingsCSV, "platformPrefix", platformPrefix);
+
+  char rtkFirmwareVersion[50];
+  sprintf(rtkFirmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+  stringRecord(settingsCSV, "rtkFirmwareVersion", rtkFirmwareVersion);
+  stringRecord(settingsCSV, "zedFirmwareVersion", zedFirmwareVersion);
 
   //GNSS Config
   stringRecord(settingsCSV, "measurementRateHz", 1000.0 / settings.measurementRate, 2); //2 = decimals to print
@@ -250,13 +278,11 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
-  {
     updateFromSD(settingValueStr);
-  }
   else if (strcmp(settingName, "factoryDefaultReset") == 0)
-  {
     factoryReset();
-  }
+  else if (strcmp(settingName, "exitToRoverMode") == 0)
+    changeState(STATE_ROVER_NOT_STARTED);
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

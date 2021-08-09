@@ -12,7 +12,7 @@
 //Convert file to hex at http://tomeko.net/online_tools/file_to_hex.php?lang=en
 
 static const char *main_js = R"=====(
-//var ws = new WebSocket("ws://192.168.1.229/ws"); //WiFi mode
+//var ws = new WebSocket("ws://192.168.1.228/ws"); //WiFi mode
 var ws = new WebSocket("ws://192.168.1.1/ws"); //AP Mode
 
 ws.onmessage = function (msg) {
@@ -54,6 +54,8 @@ function parseIncoming(msg) {
         }
         else if (id.includes("sdFreeSpace")
             || id.includes("sdUsedSpace")
+            || id.includes("rtkFirmwareVersion")
+            || id.includes("zedFirmwareVersion")
         ) {
             ge(id).innerHTML = val;
         }
@@ -146,29 +148,38 @@ function successMessage(id, msgText) {
 var errorCount = 0;
 
 function validateFields() {
+    //Collapse all sections
+    ge("collapseGNSSConfig").classList.remove('show');
+    ge("collapseGNSSConfigMsg").classList.remove('show');
+    ge("collapseBaseConfig").classList.remove('show');
+    ge("collapsePortsConfig").classList.remove('show');
+    ge("collapseSystemConfig").classList.remove('show');
+
     errorCount = 0;
     //GNSS Config
-    checkElementValue("measurementRateHz", 0, 10, "Must be between 0 and 10Hz");
+    checkElementValue("measurementRateHz", 0.1, 10, "Must be between 0 and 10Hz", "collapseGNSSConfig");
+    checkElementValue("UBX_NMEA_DTM", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 
     //Base Config
-    checkElementValue("observationSeconds", 60, 600, "Must be between 60 to 600");
-    checkElementValue("observationPositionAccuracy", 1, 5.1, "Must be between 1.0 to 5.0");
-    checkElementValue("fixedEcefX", -5000000, 5000000, "Must be -5000000 to 5000000");
-    checkElementValue("fixedEcefY", -5000000, 5000000, "Must be -5000000 to 5000000");
-    checkElementValue("fixedEcefZ", 3000000, 5000000, "Must be 3000000 to 5000000");
-    checkElementValue("fixedLat", -180, 180, "Must be -180 to 180");
-    checkElementValue("fixedLong", -180, 180, "Must be -180 to 180");
-    checkElementValue("fixedAltitude", 0, 8849, "Must be 0 to 8849");
+    checkElementValue("observationSeconds", 60, 600, "Must be between 60 to 600", "collapseBaseConfig");
+    checkElementValue("observationPositionAccuracy", 1, 5.1, "Must be between 1.0 to 5.0", "collapseBaseConfig");
+    checkElementValue("fixedEcefX", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefY", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
+    if (ge("fixedEcefZ").value == 0.0) ge("fixedEcefZ").value = 4084500;
+    checkElementValue("fixedEcefZ", 4084500, 5000000, "Must be 4084500 to 5000000", "collapseBaseConfig");
+    checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
+    checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
+    checkElementValue("fixedAltitude", 0, 8849, "Must be 0 to 8849", "collapseBaseConfig");
 
-    checkElementString("wifiSSID", 1, 30, "Must be 1 to 30 characters");
-    checkElementString("wifiPW", 0, 30, "Must be 0 to 30 characters");
-    checkElementString("casterHost", 1, 30, "Must be 1 to 30 characters");
-    checkElementValue("casterPort", 1, 99999, "Must be 1 to 99999");
-    checkElementString("mountPoint", 1, 30, "Must be 1 to 30 characters");
-    checkElementString("mountPointPW", 1, 30, "Must be 1 to 30 characters");
+    checkElementString("wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
+    checkElementString("casterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementValue("casterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
+    checkElementString("mountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("mountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
 
     //System Config
-    checkElementValue("maxLogTime_minutes", 1, 2880, "Must be 1 to 2880");
+    checkElementValue("maxLogTime_minutes", 1, 2880, "Must be 1 to 2880", "collapseSystemConfig");
 
     //Port Config
 
@@ -185,19 +196,22 @@ function validateFields() {
     }
 }
 
-function checkElementValue(id, min, max, errorText) {
+function checkElementValue(id, min, max, errorText, collapseID) {
     value = ge(id).value;
     if (value < min || value > max) {
         ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        if (collapseID == "collapseGNSSConfigMsg") ge("collapseGNSSConfig").classList.add('show');
         errorCount++;
     }
     else
         ge(id + 'Error').innerHTML = '';
 }
-function checkElementString(id, min, max, errorText) {
+function checkElementString(id, min, max, errorText, collapseID) {
     value = ge(id).value;
     if (value.length < min || value.length > max) {
         ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
         errorCount++;
     }
     else
@@ -207,6 +221,12 @@ function checkElementString(id, min, max, errorText) {
 function resetToFactoryDefaults() {
     ge("factoryDefaultsMsg").innerHTML = "Defaults Applied. Please wait for device reset..."
     ws.send("factoryDefaultReset,1,");
+}
+
+function exitConfig() {
+    ge("exitPage").style.display = "block"; //Show
+    ge("mainPage").style.display = "none"; //Hide main page
+    ws.send("exitToRoverMode,1,");
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -449,22 +469,33 @@ static const char *index_html = R"=====(
         }
 
         .box-margin20 {
-            margin-left: 5px;
+            margin-left: 20px;
         }
 
         .box-margin40 {
-            margin-left: 10px;
+            margin-left: 40px;
         }
     </style>
 </head>
 
 <body>
-    <div class="container" style="margin-top:20px;max-width:600px;">
+
+    <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="exitPage">
+        <b>Done</b><br><br>RTK device is now in Rover mode.
+    </div>
+
+    <div class="container" style="margin-top:20px;max-width:600px;" id="mainPage">
         <h2>
             <p id="platformPrefix">RTK Setup</p>
         </h2>
-        <br />
-        <div id="wifi-list-group" class="list-group"></div>
+
+        <div class="form-check">
+            RTK Firmware: <p id="rtkFirmwareVersion" style="display:inline;">v1.5</p>
+            <br>
+            ZED-F9P Firmware: <p id="zedFirmwareVersion" style="display:inline;">ABC41</p>
+        </div>
+
+        <hr>
         <div style="margin-top:20px;">
             <form>
 
@@ -1280,13 +1311,13 @@ static const char *index_html = R"=====(
                             <input class="form-check-input" type="checkbox" value="" id="enableFactoryDefaults"
                                 unchecked>
                         </div>
+                        <div class="form-check">
+                            <button type="button" id="factoryDefaults" class="btn btn-primary"
+                                onClick="resetToFactoryDefaults()" disabled>Reset to Factory
+                                Defaults</button>
+                            <p id="factoryDefaultsMsg" class="inlineSuccess"></p>
+                        </div>
 
-                        <button type="button" id="factoryDefaults" class="btn btn-primary"
-                            onClick="resetToFactoryDefaults()" disabled>Reset to Factory
-                            Defaults</button>
-                        <p id="factoryDefaultsMsg" class="inlineSuccess"></p>
-
-                        <!-- <div class="form-check" id="sdMounted" style="display:none;"> -->
                         <div class="form-check" id="sdMounted">
                             <b>SD Card</b>
 
@@ -1345,20 +1376,26 @@ static const char *index_html = R"=====(
 
                 <hr>
 
-                <div class="form-group row">
-                </div>
                 <div style="display: inline;">
-                    <button type="button" id="saveBtn" class="btn btn-primary" onclick="validateFields()">Save
-                        Config</button>
-                    <p id="saveBtnError" class="inlineSuccess"></p>
                 </div>
 
-                <div class="form-group row">
-                </div>
-                <!-- <button type="button" id="boot-btn" class="btn btn-primary">Restart</button> -->
+                <p>
+                    <button type="button" id="saveBtn" class="btn btn-primary" onclick="validateFields()">Save
+                        Config</button>
+                <p id="saveBtnError" class="inlineSuccess"></p>
+                </p>
+
+                <p>
+                    <button type="button" id="exitBtn" class="btn btn-primary" onclick="exitConfig()">Exit to Rover
+                        Mode</button>
+                <p id="exitBtnError" class="inlineSuccess"></p>
+                </p>
+
             </form>
         </div>
         <script src="src/main.js"></script>
+    </div>
+    </p>
 </body>
 
 </html>

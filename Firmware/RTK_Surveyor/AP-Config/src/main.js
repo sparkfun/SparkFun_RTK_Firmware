@@ -1,5 +1,5 @@
-var ws = new WebSocket("ws://192.168.1.228/ws"); //WiFi mode
-//var ws = new WebSocket("ws://192.168.1.1/ws"); //AP Mode
+//var ws = new WebSocket("ws://192.168.1.228/ws"); //WiFi mode
+var ws = new WebSocket("ws://192.168.1.1/ws"); //AP Mode
 
 ws.onmessage = function (msg) {
     parseIncoming(msg.data);
@@ -143,16 +143,15 @@ function validateFields() {
 
     errorCount = 0;
     //GNSS Config
-    checkElementValue("measurementRateHz", 0.1, 10, "Must be between 0 and 10Hz", "collapseGNSSConfig");
+    checkElementValue("measurementRateHz", 0.000122, 10, "Must be between 0.000122 and 10Hz", "collapseGNSSConfig");
     checkElementValue("UBX_NMEA_DTM", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 
     //Base Config
     checkElementValue("observationSeconds", 60, 600, "Must be between 60 to 600", "collapseBaseConfig");
     checkElementValue("observationPositionAccuracy", 1, 5.1, "Must be between 1.0 to 5.0", "collapseBaseConfig");
-    checkElementValue("fixedEcefX", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
-    checkElementValue("fixedEcefY", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
-    if (ge("fixedEcefZ").value == 0.0) ge("fixedEcefZ").value = 4084500;
-    checkElementValue("fixedEcefZ", 4084500, 5000000, "Must be 4084500 to 5000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefX", -6400000, 6400000, "Must be -6400000 to 6400000", "collapseBaseConfig");
+    checkElementValue("fixedEcefY", -6400000, 6400000, "Must be -6400000 to 6400000", "collapseBaseConfig");
+    checkElementValue("fixedEcefZ", -6400000, 6400000, "Must be 6400000 to 6400000", "collapseBaseConfig");
     checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
     checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
     checkElementValue("fixedAltitude", 0, 8849, "Must be 0 to 8849", "collapseBaseConfig");

@@ -110,6 +110,7 @@ char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and set
 SdFile ubxFile; //File that all gnss ubx messages setences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
 int startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
+SdFile newFirmwareFile; //File that is available if user uploads new firmware via web gui
 
 //System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
@@ -236,7 +237,8 @@ MicroOLED oled(PIN_RESET, DC_JUMPER);
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <Update.h>
 int binCount = 0;
-char binFileNames[10][50];
+const int maxBinFiles = 10;
+char binFileNames[maxBinFiles][50];
 const char* forceFirmwareFileName = "RTK_Surveyor_Firmware_Force.bin"; //File that will be loaded at startup regardless of user input
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

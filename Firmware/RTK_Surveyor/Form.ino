@@ -109,9 +109,71 @@ void startConfigAP()
     request->send(response);
   });
 
+  //Handler for the firmware file /upload form POST
+  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
+      request->send(200);
+    }, handleFirmwareFileUpload);
+
   server.begin();
 #endif
 }
+
+//Handler for firmware file upload
+#ifdef COMPILE_WIFI
+static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final) 
+{
+  //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
+  if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) != pdPASS) {
+    Serial.println(F("Failed to get file system lock on firmware file"));
+    return;
+  }
+
+  if (!index) {
+    //Convert string to array
+    char tempFileName[100];
+    fileName.toCharArray(tempFileName, sizeof(tempFileName));
+
+    if (sd.exists(tempFileName))
+      sd.remove(tempFileName);
+
+    Serial.printf("Start Firmware Upload: %s\n\r", tempFileName);
+
+    // O_CREAT - create the file if it does not exist
+    // O_APPEND - seek to the end of the file prior to each write
+    // O_WRITE - open for write
+    if (newFirmwareFile.open(tempFileName, O_CREAT | O_APPEND | O_WRITE) == false)
+    {
+      Serial.printf("Failed to create firmware file: %s\n\r", tempFileName);
+      xSemaphoreGive(xFATSemaphore);
+      return;
+    }
+  }
+
+  //Record to file
+  if (newFirmwareFile.write(data, len) != len)
+    Serial.println(F("Error writing to firmware file"));
+
+  if (final)
+  {
+    updateDataFileCreate(&newFirmwareFile); // Update the file create time & date
+    newFirmwareFile.close();
+
+    Serial.print("Upload complete: ");
+    Serial.println(fileName);
+
+    binCount = 0;
+    xSemaphoreGive(xFATSemaphore); //Must release semaphore before scanning for firmware
+    scanForFirmware(); //Update firmware file list
+
+    //Reload page upon success - this will show all available firmware files
+    request->send(200, "text/html", "<meta http-equiv=\"Refresh\" content=\"0; url='/'\" />");
+  }
+
+  xSemaphoreGive(xFATSemaphore);
+
+
+}
+#endif
 
 //Events triggered by web sockets
 #ifdef COMPILE_WIFI

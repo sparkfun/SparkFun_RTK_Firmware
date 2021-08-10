@@ -64,7 +64,7 @@ void scanForFirmware()
 
       dir.open("/"); //Open root
 
-      while (tempFile.openNext(&dir, O_READ))
+      while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
       {
         if (tempFile.isFile())
         {

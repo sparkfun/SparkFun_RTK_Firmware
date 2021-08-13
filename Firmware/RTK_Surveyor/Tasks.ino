@@ -179,13 +179,16 @@ void ButtonCheckTask(void *e)
         }
       }
     }
-    else //Express&Facet: Check either one or both of the momentary switches
+    else if (productVariant == RTK_EXPRESS) //Express: Check either one or both of the momentary switches
     {
       if (setupBtn != NULL) setupBtn->read();
       if (powerBtn != NULL) powerBtn->read();
 
-      if ((setupBtn != NULL && setupBtn->pressedFor(shutDownButtonTime)) ||
-          (powerBtn != NULL && powerBtn->pressedFor(shutDownButtonTime)))
+      if (systemState == STATE_SHUTDOWN)
+      {
+        //Ignore button presses while shutting down
+      }
+      else if (powerBtn != NULL && powerBtn->pressedFor(shutDownButtonTime))
       {
         forceSystemStateUpdate = true;
         changeState(STATE_SHUTDOWN);
@@ -195,8 +198,7 @@ void ButtonCheckTask(void *e)
       {
         changeState(STATE_TEST);
       }
-      else if ((setupBtn != NULL && setupBtn->wasReleased()) ||
-               (powerBtn != NULL && powerBtn->wasReleased()))
+      else if (setupBtn != NULL && setupBtn->wasReleased())
       {
         switch (systemState)
         {
@@ -221,13 +223,17 @@ void ButtonCheckTask(void *e)
           case STATE_BASE_FIXED_CASTER_STARTED:
           case STATE_BASE_FIXED_CASTER_CONNECTED:
           case STATE_BUBBLE_LEVEL:
-          case STATE_MARK_EVENT:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
             lastSystemState = systemState; //Remember this state to return after we mark an event
             changeState(STATE_DISPLAY_SETUP);
             setupState = STATE_MARK_EVENT;
             lastSetupMenuChange = millis();
+            break;
+
+          case STATE_MARK_EVENT:
+            //If the user presses the setup button during a mark event, do nothing
+            //Allow system to return to lastSystemState
             break;
 
           case STATE_TESTING:
@@ -272,7 +278,12 @@ void ButtonCheckTask(void *e)
             break;
         }
       }
-    } //End Platform = RTK Express or RTK Facet
+    } //End Platform = RTK Express
+    else if (productVariant == RTK_FACET)
+    {
+      Serial.println("WIP");
+      delay(500);
+    } //End Platform = RTK Facet
 
     taskYIELD();
   }

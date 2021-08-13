@@ -91,6 +91,9 @@ void updateDisplay()
         case (STATE_TESTING):
           paintSystemTest();
           break;
+        case (STATE_SHUTDOWN):
+          displayShutdown();
+          break;
         default:
           displayError("Display");
           Serial.printf("Unknown display: %d\n\r", systemState);

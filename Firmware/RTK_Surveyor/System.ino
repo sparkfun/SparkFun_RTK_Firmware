@@ -55,12 +55,13 @@ bool startBluetooth()
 
   radioState = BT_ON_NOCONNECTION;
 
-  if (productVariant == RTK_SURVEYOR)
-    digitalWrite(pin_bluetoothStatusLED, HIGH);
-
   //Start task for controlling Bluetooth pair LED
   if (productVariant == RTK_SURVEYOR)
-    btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
+  {
+    ledcWrite(ledBTChannel, 255); //Turn on BT LED
+    btLEDTask.detach(); //Slow down the BT LED blinker task
+    btLEDTask.attach(btLEDTaskPace2Hz, updateBTled); //Rate in seconds, callback
+  }
 #endif
 
   return (true);
@@ -755,7 +756,7 @@ void createNMEASentence(uint8_t sentenceNumber, uint8_t textID, char *nmeaMessag
 
   //From: http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html
   byte CRC = 0; // XOR chars between '$' and '*'
-  for (byte x = 1 ; x < strlen(nmeaTxt) - 1; x++) 
+  for (byte x = 1 ; x < strlen(nmeaTxt) - 1; x++)
     CRC = CRC ^ nmeaTxt[x];
 
   sprintf(nmeaMessage, "%s%02X", nmeaTxt, CRC);

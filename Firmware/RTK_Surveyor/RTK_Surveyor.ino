@@ -181,10 +181,14 @@ uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 SFE_MAX1704X lipo(MAX1704X_MAX17048);
 
 // setting PWM properties
-const int freq = 5000;
+const int pwmFreq = 5000;
 const int ledRedChannel = 0;
 const int ledGreenChannel = 1;
-const int resolution = 8;
+const int ledBTChannel = 2;
+const int pwmResolution = 8;
+
+int pwmFadeAmount = 10;
+int btFadeLevel = 0;
 
 int battLevel = 0; //SOC measured from fuel gauge, in %. Used in multiple places (display, serial debug, log)
 float battVoltage = 0.0;
@@ -247,10 +251,8 @@ const char* forceFirmwareFileName = "RTK_Surveyor_Firmware_Force.bin"; //File th
 #include <Ticker.h>
 
 Ticker btLEDTask;
-float btLEDTaskPace = 0.5; //Seconds
-
-//Ticker battCheckTask;
-//float battCheckTaskPace = 2.0; //Seconds
+float btLEDTaskPace2Hz = 0.5;
+float btLEDTaskPace33Hz = 0.03;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Accelerometer for bubble leveling
@@ -269,6 +271,7 @@ TaskHandle_t ButtonCheckTaskHandle = NULL;
 const int buttonTaskStackSize = 2000;
 
 const int shutDownButtonTime = 2000; //ms press and hold before shutdown
+unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Webserver for serving config page from ESP32 as Acess Point

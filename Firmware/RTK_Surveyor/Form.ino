@@ -8,6 +8,7 @@ void startConfigAP()
   stopUART2Tasks(); //Delete F9 serial tasks if running
 
 #ifdef COMPILE_WIFI
+
   wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
   esp_wifi_init(&wifi_init_config); //Restart WiFi resources
 
@@ -35,7 +36,7 @@ void startConfigAP()
   }
 
   //When testing, operate on local WiFi instead of AP
-//#define LOCAL_WIFI_TESTING 1
+  //#define LOCAL_WIFI_TESTING 1
 
 #ifndef LOCAL_WIFI_TESTING
   //Start in AP mode
@@ -110,17 +111,21 @@ void startConfigAP()
   });
 
   //Handler for the firmware file /upload form POST
-  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
-      request->send(200);
-    }, handleFirmwareFileUpload);
+  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest * request) {
+    request->send(200);
+  }, handleFirmwareFileUpload);
 
   server.begin();
 #endif
+
+  radioState = WIFI_ON_NOCONNECTION;
+  btLEDTask.detach(); //Increase BT LED blinker task rate
+  btLEDTask.attach(btLEDTaskPace33Hz, updateBTled); //Rate in seconds, callback
 }
 
 //Handler for firmware file upload
 #ifdef COMPILE_WIFI
-static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final) 
+static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
   //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
   if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) != pdPASS) {

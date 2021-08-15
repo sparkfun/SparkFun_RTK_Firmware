@@ -17,6 +17,15 @@ void updateSystemState()
     {
       case (STATE_ROVER_NOT_STARTED):
         {
+          if (productVariant == RTK_SURVEYOR)
+          {
+            digitalWrite(pin_baseStatusLED, LOW);
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+            ledcWrite(ledBTChannel, 0); //Turn off BT LED
+          }
+
           //Configure for rover mode
           displayRoverStart(0);
 
@@ -37,9 +46,6 @@ void updateSystemState()
           stopWiFi(); //Turn off WiFi and release all resources
           startBluetooth(); //Turn on Bluetooth with 'Rover' name
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
-
-          if (productVariant == RTK_SURVEYOR)
-            digitalWrite(pin_baseStatusLED, LOW);
 
           settings.lastState = STATE_ROVER_NOT_STARTED;
           recordSystemSettings();
@@ -102,6 +108,7 @@ void updateSystemState()
             digitalWrite(pin_positionAccuracyLED_1cm, LOW);
             digitalWrite(pin_positionAccuracyLED_10cm, LOW);
             digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+            ledcWrite(ledBTChannel, 0); //Turn off BT LED
           }
 
           displayBaseStart(0); //Show 'Base'
@@ -577,10 +584,20 @@ void updateSystemState()
 
       case (STATE_WIFI_CONFIG_NOT_STARTED):
         {
+          if (productVariant == RTK_SURVEYOR)
+          {
+            digitalWrite(pin_baseStatusLED, LOW);
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+            ledcWrite(ledBTChannel, 0); //Turn off BT LED
+          }
+
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 
           //Start in AP mode and show config html page
           startConfigAP();
+
           changeState(STATE_WIFI_CONFIG);
         }
         break;

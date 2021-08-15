@@ -133,17 +133,33 @@ void startUART2Task( void *pvParameters )
   vTaskDelete( NULL ); //Delete task once it has run once
 }
 
-//Control BT status LED according to bluetoothState
+//Control BT status LED according to radioState
 void updateBTled()
 {
   if (productVariant == RTK_SURVEYOR)
   {
     if (radioState == BT_ON_NOCONNECTION)
-      digitalWrite(pin_bluetoothStatusLED, !digitalRead(pin_bluetoothStatusLED));
+    {
+      //Blink on/off while we wait for BT connection
+      if (btFadeLevel == 0) btFadeLevel = 255;
+      else btFadeLevel = 0;
+      ledcWrite(ledBTChannel, btFadeLevel);
+    }
     else if (radioState == BT_CONNECTED)
-      digitalWrite(pin_bluetoothStatusLED, HIGH);
+      ledcWrite(ledBTChannel, 255);
+    else if (radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
+    {
+      //Fade in/out the BT LED during WiFi AP mode
+      btFadeLevel += pwmFadeAmount;
+      if (btFadeLevel <= 0 || btFadeLevel >= 255) pwmFadeAmount *= -1;
+
+      if (btFadeLevel > 255) btFadeLevel = 255;
+      if (btFadeLevel < 0) btFadeLevel = 0;
+
+      ledcWrite(ledBTChannel, btFadeLevel);
+    }
     else
-      digitalWrite(pin_bluetoothStatusLED, LOW);
+      ledcWrite(ledBTChannel, 0);
   }
 }
 
@@ -166,16 +182,26 @@ void ButtonCheckTask(void *e)
       {
         if (buttonPreviousState == BUTTON_ROVER)
         {
+          lastRockerSwitchChange = millis(); //Record for WiFi AP access
           buttonPreviousState = BUTTON_BASE;
           changeState(STATE_BASE_NOT_STARTED);
         }
       }
-      else if (setupBtn->wasReleased()) //Switch is set to base mode
+      else if (setupBtn->wasReleased()) //Switch is set to Rover
       {
         if (buttonPreviousState == BUTTON_BASE)
         {
           buttonPreviousState = BUTTON_ROVER;
-          changeState(STATE_ROVER_NOT_STARTED);
+
+          //If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
+          if (millis() - lastRockerSwitchChange < 500)
+          {
+            changeState(STATE_WIFI_CONFIG_NOT_STARTED);
+          }
+          else
+          {
+            changeState(STATE_ROVER_NOT_STARTED);
+          }
         }
       }
     }

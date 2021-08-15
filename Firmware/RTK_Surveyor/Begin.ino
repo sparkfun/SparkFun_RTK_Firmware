@@ -354,14 +354,17 @@ void beginLEDs()
     digitalWrite(pin_baseStatusLED, LOW);
     digitalWrite(pin_bluetoothStatusLED, LOW);
 
-    ledcSetup(ledRedChannel, freq, resolution);
-    ledcSetup(ledGreenChannel, freq, resolution);
+    ledcSetup(ledRedChannel, pwmFreq, pwmResolution);
+    ledcSetup(ledGreenChannel, pwmFreq, pwmResolution);
+    ledcSetup(ledBTChannel, pwmFreq, pwmResolution);
 
     ledcAttachPin(pin_batteryLevelLED_Red, ledRedChannel);
     ledcAttachPin(pin_batteryLevelLED_Green, ledGreenChannel);
+    ledcAttachPin(pin_bluetoothStatusLED, ledBTChannel);
 
     ledcWrite(ledRedChannel, 0);
     ledcWrite(ledGreenChannel, 0);
+    ledcWrite(ledBTChannel, 0);
   }
 }
 

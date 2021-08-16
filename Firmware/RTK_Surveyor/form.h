@@ -157,8 +157,89 @@ function validateFields() {
 
     errorCount = 0;
     //GNSS Config
-    checkElementValue("measurementRateHz", 0.1, 10, "Must be between 0 and 10Hz", "collapseGNSSConfig");
+    checkElementValue("measurementRateHz", 0.000122, 10, "Must be between 0.000122 and 10Hz", "collapseGNSSConfig");
+
     checkElementValue("UBX_NMEA_DTM", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NMEA_GBS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NMEA_GGA", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NMEA_GLL", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NMEA_GNS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_NMEA_GRS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NMEA_GSA", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NMEA_GST", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NMEA_GSV", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NMEA_RMC", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_NMEA_VLW", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NMEA_VTG", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NMEA_ZDA", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_NAV_CLOCK", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_DOP", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_EOE", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_GEOFENCE", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_HPPOSECEF", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_NAV_HPPOSLLH", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_ODO", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_ORB", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_POSECEF", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_POSLLH", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_NAV_PVT", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_RELPOSNED", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_SAT", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_SIG", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_STATUS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_NAV_SVIN", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_TIMEBDS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_TIMEGAL", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_TIMEGLO", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_TIMEGPS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_NAV_TIMELS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_TIMEUTC", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_VELECEF", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_NAV_VELNED", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_RXM_MEASX", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RXM_RAWX", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RXM_RLM", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RXM_RTCM", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RXM_SFRBX", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_MON_COMMS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_MON_HW2", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_MON_HW3", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_MON_HW", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_MON_IO", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_MON_MSGPP", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_MON_RF", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_MON_RXBUF", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_MON_RXR", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_MON_TXBUF", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_TIM_TM2", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_TIM_TP", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_TIM_VRFY", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_RTCM_1005", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RTCM_1074", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RTCM_1077", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RTCM_1084", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RTCM_1087", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_RTCM_1094", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RTCM_1097", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RTCM_1124", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RTCM_1127", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RTCM_1230", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
+    checkElementValue("UBX_RTCM_4072_0", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_RTCM_4072_1", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 
     //Base Config
     checkElementValue("observationSeconds", 60, 600, "Must be between 60 to 600", "collapseBaseConfig");

@@ -1046,7 +1046,29 @@ void displayWiFiConfigNotStarted()
 void displayWiFiConfig()
 {
   //Draw the WiFi icon
-  oled.drawIcon((LCDWIDTH / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol, sizeof(WiFi_Symbol), true);
+  if (radioState == WIFI_ON_NOCONNECTION)
+  {
+    //Blink WiFi icon
+    if (millis() - lastWifiIconUpdate > 500)
+    {
+      lastWifiIconUpdate = millis();
+      if (wifiIconDisplayed == false)
+      {
+        wifiIconDisplayed = true;
+
+        //Draw the icon
+        oled.drawIcon((LCDWIDTH / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol, sizeof(WiFi_Symbol), true);
+      }
+      else
+        wifiIconDisplayed = false;
+    }
+  }
+  else if (radioState == WIFI_CONNECTED)
+  {
+    //Solid WiFi icon
+    oled.drawIcon((LCDWIDTH / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol, sizeof(WiFi_Symbol), true);
+  }
+
 
   int yPos = WiFi_Symbol_Height + 3;
   int fontHeight = 8;

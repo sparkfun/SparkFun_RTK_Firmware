@@ -190,9 +190,11 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     createSettingsString(settingsCSV);
     //Serial.printf("Sending command: %s\n\r", settingsCSV);
     client->text(settingsCSV);
+    radioState = WIFI_CONNECTED;
   }
   else if (type == WS_EVT_DISCONNECT) {
-    Serial.println("Websocket client disconnected");
+    //Serial.println("Websocket client disconnected");
+    radioState = WIFI_ON_NOCONNECTION;
   }
   else if (type == WS_EVT_DATA) {
     for (int i = 0; i < len; i++) {

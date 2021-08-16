@@ -12,6 +12,13 @@ void updateSystemState()
     lastSystemStateUpdate = millis();
     forceSystemStateUpdate = false;
 
+    //Check to see if any external sources need to change state
+    if (newSystemStateRequested == true && systemState != requestedSystemState)
+    {
+      changeState(requestedSystemState);
+      newSystemStateRequested = false;
+    }
+
     //Move between states as needed
     switch (systemState)
     {
@@ -120,15 +127,11 @@ void updateSystemState()
 
           if (configureUbloxModuleBase() == true)
           {
-            //Because configureUbloxModuleBase is slow, there is the chance that the user modified the system state while ZED was configuring
-            //Check to see if we are still in base state
-            if(systemState != STATE_BASE_NOT_STARTED) return;
-
             settings.lastState = STATE_BASE_NOT_STARTED; //Record this state for next POR
             recordSystemSettings();
 
             displayBaseSuccess(500); //Show 'Base Started'
-           
+
             if (settings.fixedBase == false)
             {
               changeState(STATE_BASE_TEMP_SETTLE);
@@ -661,6 +664,16 @@ void updateSystemState()
         break;
     }
   }
+}
+
+//System state changes may only occur within main state machine
+//To allow state changes from external sources (ie, Button Tasks) requests can be made
+//Requests are handled at the start of updateSystemState()
+void requestChangeState(SystemState requestedState)
+{
+  newSystemStateRequested = true;
+  requestedSystemState = requestedState;
+  ESP_LOGD(TAG, "Requested System State: %d", requestedSystemState);
 }
 
 //Change states and print the new state

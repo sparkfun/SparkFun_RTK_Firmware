@@ -22,7 +22,7 @@ void startConfigAP()
 
     //Find available cluster/space
     sdFreeSpaceMB = sd.vol()->freeClusterCount(); //This takes a few seconds to complete
-    sdFreeSpaceMB *= sd.vol()->blocksPerCluster() / 2;
+    sdFreeSpaceMB *= sd.vol()->sectorsPerCluster() / 2;
     sdFreeSpaceMB /= 1024;
 
     sdUsedSpaceMB = sdCardSizeMB - sdFreeSpaceMB; //Don't think of it as used, think of it as unusable
@@ -349,7 +349,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "factoryDefaultReset") == 0)
     factoryReset();
   else if (strcmp(settingName, "exitToRoverMode") == 0)
-    changeState(STATE_ROVER_NOT_STARTED);
+    requestChangeState(STATE_ROVER_NOT_STARTED);
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

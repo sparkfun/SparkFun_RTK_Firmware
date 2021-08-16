@@ -171,7 +171,10 @@ SFE_UBLOX_GNSS_ADD i2cGNSS;
 
 //Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings
 //This array holds the payload data bytes. Global so that we can use between config functions.
+#ifdef MAX_PAYLOAD_SIZE
+#undef MAX_PAYLOAD_SIZE
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
+#endif
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

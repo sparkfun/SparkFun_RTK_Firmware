@@ -184,7 +184,7 @@ void ButtonCheckTask(void *e)
         {
           lastRockerSwitchChange = millis(); //Record for WiFi AP access
           buttonPreviousState = BUTTON_BASE;
-          changeState(STATE_BASE_NOT_STARTED);
+          requestChangeState(STATE_BASE_NOT_STARTED);
         }
       }
       else if (setupBtn->wasReleased()) //Switch is set to Rover
@@ -196,11 +196,11 @@ void ButtonCheckTask(void *e)
           //If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
           if (millis() - lastRockerSwitchChange < 500)
           {
-            changeState(STATE_WIFI_CONFIG_NOT_STARTED);
+            requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
           }
           else
           {
-            changeState(STATE_ROVER_NOT_STARTED);
+            requestChangeState(STATE_ROVER_NOT_STARTED);
           }
         }
       }
@@ -217,12 +217,12 @@ void ButtonCheckTask(void *e)
       else if (powerBtn != NULL && powerBtn->pressedFor(shutDownButtonTime))
       {
         forceSystemStateUpdate = true;
-        changeState(STATE_SHUTDOWN);
+        requestChangeState(STATE_SHUTDOWN);
       }
       else if ((setupBtn != NULL && setupBtn->pressedFor(500)) &&
                (powerBtn != NULL && powerBtn->pressedFor(500)))
       {
-        changeState(STATE_TEST);
+        requestChangeState(STATE_TEST);
       }
       else if (setupBtn != NULL && setupBtn->wasReleased())
       {
@@ -252,7 +252,7 @@ void ButtonCheckTask(void *e)
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
             lastSystemState = systemState; //Remember this state to return after we mark an event
-            changeState(STATE_DISPLAY_SETUP);
+            requestChangeState(STATE_DISPLAY_SETUP);
             setupState = STATE_MARK_EVENT;
             lastSetupMenuChange = millis();
             break;
@@ -264,7 +264,7 @@ void ButtonCheckTask(void *e)
 
           case STATE_TESTING:
             //If we are in testing, return to Rover Not Started
-            changeState(STATE_ROVER_NOT_STARTED);
+            requestChangeState(STATE_ROVER_NOT_STARTED);
             break;
 
           case STATE_DISPLAY_SETUP:
@@ -300,7 +300,7 @@ void ButtonCheckTask(void *e)
 
           default:
             Serial.printf("ButtonCheckTask unknown system state: %d\n\r", systemState);
-            changeState(STATE_ROVER_NOT_STARTED);
+            requestChangeState(STATE_ROVER_NOT_STARTED);
             break;
         }
       }

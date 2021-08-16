@@ -31,6 +31,8 @@ typedef enum
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
 SystemState lastSystemState = STATE_ROVER_NOT_STARTED;
+SystemState requestedSystemState = STATE_ROVER_NOT_STARTED;
+bool newSystemStateRequested = false;
 
 //The setup display can show a limited set of states
 //When user pauses for X amount of time, system will enter that state
@@ -143,11 +145,11 @@ ubxMsg ubxMessages[] =
   {UBLOX_CFG_MSGOUT_NMEA_ID_GST_UART1, UBX_NMEA_GST, UBX_CLASS_NMEA, 1, "UBX_NMEA_GST"},
   {UBLOX_CFG_MSGOUT_NMEA_ID_GSV_UART1, UBX_NMEA_GSV, UBX_CLASS_NMEA, 4, "UBX_NMEA_GSV"}, //Default to 1 update every 4 fixes
   {UBLOX_CFG_MSGOUT_NMEA_ID_RMC_UART1, UBX_NMEA_RMC, UBX_CLASS_NMEA, 1, "UBX_NMEA_RMC"},
-  
+
   {UBLOX_CFG_MSGOUT_NMEA_ID_VLW_UART1, UBX_NMEA_VLW, UBX_CLASS_NMEA, 0, "UBX_NMEA_VLW"},
   {UBLOX_CFG_MSGOUT_NMEA_ID_VTG_UART1, UBX_NMEA_VTG, UBX_CLASS_NMEA, 0, "UBX_NMEA_VTG"},
   {UBLOX_CFG_MSGOUT_NMEA_ID_ZDA_UART1, UBX_NMEA_ZDA, UBX_CLASS_NMEA, 0, "UBX_NMEA_ZDA"},
-  
+
   //  uint8_t nmea_msb = 0; //Not supported by u-center
   //  uint8_t nmea_gaq = 0; //Not supported by u-center
   //  uint8_t nmea_gbq = 0; //Not supported by u-center
@@ -170,19 +172,19 @@ ubxMsg ubxMessages[] =
   {UBLOX_CFG_MSGOUT_UBX_NAV_ORB_UART1, UBX_NAV_ORB, UBX_CLASS_NAV, 0, "UBX_NAV_ORB"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_POSECEF_UART1, UBX_NAV_POSECEF, UBX_CLASS_NAV, 0, "UBX_NAV_POSECEF"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_POSLLH_UART1, UBX_NAV_POSLLH, UBX_CLASS_NAV, 0, "UBX_NAV_POSLLH"},
-  
+
   {UBLOX_CFG_MSGOUT_UBX_NAV_PVT_UART1, UBX_NAV_PVT, UBX_CLASS_NAV, 0, "UBX_NAV_PVT"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_RELPOSNED_UART1, UBX_NAV_RELPOSNED, UBX_CLASS_NAV, 0, "UBX_NAV_RELPOSNED"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_SAT_UART1, UBX_NAV_SAT, UBX_CLASS_NAV, 0, "UBX_NAV_SAT"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_SIG_UART1, UBX_NAV_SIG, UBX_CLASS_NAV, 0, "UBX_NAV_SIG"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_STATUS_UART1, UBX_NAV_STATUS, UBX_CLASS_NAV, 0, "UBX_NAV_STATUS"},
-  
+
   {UBLOX_CFG_MSGOUT_UBX_NAV_SVIN_UART1, UBX_NAV_SVIN, UBX_CLASS_NAV, 0, "UBX_NAV_SVIN"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_TIMEBDS_UART1, UBX_NAV_TIMEBDS, UBX_CLASS_NAV, 0, "UBX_NAV_TIMEBDS"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_TIMEGAL_UART1, UBX_NAV_TIMEGAL, UBX_CLASS_NAV, 0, "UBX_NAV_TIMEGAL"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_TIMEGLO_UART1, UBX_NAV_TIMEGLO, UBX_CLASS_NAV, 0, "UBX_NAV_TIMEGLO"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_TIMEGPS_UART1, UBX_NAV_TIMEGPS, UBX_CLASS_NAV, 0, "UBX_NAV_TIMEGPS"},
-  
+
   {UBLOX_CFG_MSGOUT_UBX_NAV_TIMELS_UART1, UBX_NAV_TIMELS, UBX_CLASS_NAV, 0, "UBX_NAV_TIMELS"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_TIMEUTC_UART1, UBX_NAV_TIMEUTC, UBX_CLASS_NAV, 0, "UBX_NAV_TIMEUTC"},
   {UBLOX_CFG_MSGOUT_UBX_NAV_VELECEF_UART1, UBX_NAV_VELECEF, UBX_CLASS_NAV, 0, "UBX_NAV_VELECEF"},
@@ -201,27 +203,27 @@ ubxMsg ubxMessages[] =
   //  uint8_t nav_nmi = 0; //Not supported by ZED-F9P or library
   //  uint8_t nav_sol = 0; //Not supported by ZED-F9P or library
   //  uint8_t nav_svinfo = 0; //Not supported by ZED-F9P or library
-  
+
   {UBLOX_CFG_MSGOUT_UBX_RXM_MEASX_UART1, UBX_RXM_MEASX, UBX_CLASS_RXM, 0, "UBX_RXM_MEASX"},
   {UBLOX_CFG_MSGOUT_UBX_RXM_RAWX_UART1, UBX_RXM_RAWX, UBX_CLASS_RXM, 0, "UBX_RXM_RAWX"},
   {UBLOX_CFG_MSGOUT_UBX_RXM_RLM_UART1, UBX_RXM_RLM, UBX_CLASS_RXM, 0, "UBX_RXM_RLM"},
   {UBLOX_CFG_MSGOUT_UBX_RXM_RTCM_UART1, UBX_RXM_RTCM, UBX_CLASS_RXM, 0, "UBX_RXM_RTCM"},
   {UBLOX_CFG_MSGOUT_UBX_RXM_SFRBX_UART1, UBX_RXM_SFRBX, UBX_CLASS_RXM, 0, "UBX_RXM_SFRBX"},
 
-//  uint8_t rxm_alm = 0; //Not supported by library or ZED-F9P
-//  uint8_t rxm_eph = 0; //Not supported by library or ZED-F9P
-//  uint8_t rxm_imes = 0; //Not supported by library or ZED-F9P
-//  uint8_t rxm_pmp = 0; //Not supported by library or ZED-F9P
-//  uint8_t rxm_raw = 0; //Not supported by library or ZED-F9P
-//  uint8_t rxm_sfrb = 0; //Not supported by library or ZED-F9P
-//  uint8_t rxm_spartn = 0; //Not supported by library or ZED-F9P
-//  uint8_t rxm_svsi = 0; //Not supported by library or ZED-F9P
-//  uint8_t rxm_tm = 0; //Not supported by library or ZED-F9P
-//  uint8_t rxm_pmreq = 0; //Not supported by u-center
-  
-//  uint8_t hnr_att = 0; //Not supported by ZED-F9P
-//  uint8_t hnr_ins = 0; //Not supported by ZED-F9P
-//  uint8_t hnr_pvt = 0; //Not supported by ZED-F9P
+  //  uint8_t rxm_alm = 0; //Not supported by library or ZED-F9P
+  //  uint8_t rxm_eph = 0; //Not supported by library or ZED-F9P
+  //  uint8_t rxm_imes = 0; //Not supported by library or ZED-F9P
+  //  uint8_t rxm_pmp = 0; //Not supported by library or ZED-F9P
+  //  uint8_t rxm_raw = 0; //Not supported by library or ZED-F9P
+  //  uint8_t rxm_sfrb = 0; //Not supported by library or ZED-F9P
+  //  uint8_t rxm_spartn = 0; //Not supported by library or ZED-F9P
+  //  uint8_t rxm_svsi = 0; //Not supported by library or ZED-F9P
+  //  uint8_t rxm_tm = 0; //Not supported by library or ZED-F9P
+  //  uint8_t rxm_pmreq = 0; //Not supported by u-center
+
+  //  uint8_t hnr_att = 0; //Not supported by ZED-F9P
+  //  uint8_t hnr_ins = 0; //Not supported by ZED-F9P
+  //  uint8_t hnr_pvt = 0; //Not supported by ZED-F9P
 
   {UBLOX_CFG_MSGOUT_UBX_MON_COMMS_UART1, UBX_MON_COMMS, UBX_CLASS_MON, 0, "UBX_MON_COMMS"},
   {UBLOX_CFG_MSGOUT_UBX_MON_HW2_UART1, UBX_MON_HW2, UBX_CLASS_MON, 0, "UBX_MON_HW2"},
@@ -235,28 +237,28 @@ ubxMsg ubxMessages[] =
   {UBLOX_CFG_MSGOUT_UBX_MON_RXR_UART1, UBX_MON_RXR, UBX_CLASS_MON, 0, "UBX_MON_RXR"},
   {UBLOX_CFG_MSGOUT_UBX_MON_TXBUF_UART1, UBX_MON_TXBUF, UBX_CLASS_MON, 0, "UBX_MON_TXBUF"},
 
-//  uint8_t mon_gnss = 0; //Not supported by u-center
-//  uint8_t mon_patch = 0; //Not supported by u-center
+  //  uint8_t mon_gnss = 0; //Not supported by u-center
+  //  uint8_t mon_patch = 0; //Not supported by u-center
   //uint8_t mon_smgr = 0; //Not supported by library or ZED-F9P
   //uint8_t mon_span = 0; //Not supported by library
-//  uint8_t mon_ver = 0; //Not supported by u-center
+  //  uint8_t mon_ver = 0; //Not supported by u-center
 
   {UBLOX_CFG_MSGOUT_UBX_TIM_TM2_UART1, UBX_TIM_TM2, UBX_CLASS_TIM, 0, "UBX_TIM_TM2"},
   {UBLOX_CFG_MSGOUT_UBX_TIM_TP_UART1, UBX_TIM_TP, UBX_CLASS_TIM, 0, "UBX_TIM_TP"},
   {UBLOX_CFG_MSGOUT_UBX_TIM_VRFY_UART1, UBX_TIM_VRFY, UBX_CLASS_TIM, 0, "UBX_TIM_VRFY"},
 
-//  uint8_t tim_dosc = 0; //Not supported by library or ZED-F9P
-//  uint8_t tim_fchg = 0; //Not supported by library or ZED-F9P
-//  uint8_t tim_smeas = 0; //Not supported by library or ZED-F9P
-//  uint8_t tim_svin = 0; //Not supported by library or ZED-F9P
-//  uint8_t tim_tos = 0; //Not supported by library or ZED-F9P
-//  uint8_t tim_vcocal = 0; //Not supported by library or ZED-F9P
+  //  uint8_t tim_dosc = 0; //Not supported by library or ZED-F9P
+  //  uint8_t tim_fchg = 0; //Not supported by library or ZED-F9P
+  //  uint8_t tim_smeas = 0; //Not supported by library or ZED-F9P
+  //  uint8_t tim_svin = 0; //Not supported by library or ZED-F9P
+  //  uint8_t tim_tos = 0; //Not supported by library or ZED-F9P
+  //  uint8_t tim_vcocal = 0; //Not supported by library or ZED-F9P
 
-//  uint8_t esf_alg = 0; //Not supported by ZED-F9P
-//  uint8_t esf_ins = 0; //Not supported by ZED-F9P
-//  uint8_t esf_meas = 0; //Not supported by ZED-F9P
-//  uint8_t esf_raw = 0; //Not supported by ZED-F9P
-//  uint8_t esf_status = 0; //Not supported by ZED-F9P
+  //  uint8_t esf_alg = 0; //Not supported by ZED-F9P
+  //  uint8_t esf_ins = 0; //Not supported by ZED-F9P
+  //  uint8_t esf_meas = 0; //Not supported by ZED-F9P
+  //  uint8_t esf_raw = 0; //Not supported by ZED-F9P
+  //  uint8_t esf_status = 0; //Not supported by ZED-F9P
   //uint8_t esf_resetalg = 0; //Not supported by u-center
 
   {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_UART1, UBX_RTCM_1005, UBX_RTCM_MSB, 0, "UBX_RTCM_1005"},
@@ -318,7 +320,7 @@ struct struct_settings {
   SystemState lastState = STATE_ROVER_NOT_STARTED; //For Express, start unit in last known state
   bool throttleDuringSPPCongestion = true;
   ubxConstellation ubxConstellations; //Constellations monitored/used for fix
-  
+
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

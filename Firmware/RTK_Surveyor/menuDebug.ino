@@ -8,12 +8,8 @@ void menuDebug()
     Serial.println();
     Serial.println(F("Menu: Debug Menu"));
 
-    //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
-    if (i2cGNSS.getModuleInfo(maxWait) == true) // Try to get the module info
-    {
-      Serial.print(F("ZED-F9P firmware: "));
-      Serial.println(i2cGNSS.minfo.extension[1]);
-    }
+    Serial.print(F("ZED-F9P firmware: "));
+    Serial.println(zedFirmwareVersion);
 
     Serial.print(F("1) I2C Debugging Output: "));
     if (settings.enableI2Cdebug == true) Serial.println(F("Enabled"));

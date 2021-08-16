@@ -289,30 +289,16 @@ void beginGNSS()
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
   if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info
   {
+    //i2cGNSS.minfo.extension[1] looks like 'FWVER=HPG 1.12'
     strcpy(zedFirmwareVersion, i2cGNSS.minfo.extension[1]);
 
-    //i2cGNSS.minfo.extension[1] looks like 'FWVER=HPG 1.12'
-    //Replace = with - to avoid NVM parsing issues
-    char *ptr = strchr(zedFirmwareVersion, '=');
+    //Remove 'FWVER='. It's extraneous and = causes settings file parsing issues
+    char *ptr = strstr(zedFirmwareVersion, "FWVER=");
     if (ptr != NULL)
-      zedFirmwareVersion[ptr - zedFirmwareVersion] = ':';
+      strcpy(zedFirmwareVersion, ptr + strlen("FWVER="));
 
     Serial.print(F("ZED-F9P firmware: "));
     Serial.println(zedFirmwareVersion);
-
-    //    if (strcmp(i2cGNSS.minfo.extension[1], latestZEDFirmware) != 0)
-    //    {
-    //      Serial.print(F("The ZED-F9P appears to have outdated firmware. Found: "));
-    //      Serial.println(i2cGNSS.minfo.extension[1]);
-    //      Serial.print(F("The Surveyor works best with "));
-    //      Serial.println(latestZEDFirmware);
-    //      Serial.print(F("Please upgrade using u-center."));
-    //      Serial.println();
-    //    }
-    //    else
-    //    {
-    //      Serial.println(F("ZED-F9P firmware is current"));
-    //    }
   }
 
   bool response = configureUbloxModule();

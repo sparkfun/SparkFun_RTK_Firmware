@@ -13,10 +13,11 @@ void updateSystemState()
     forceSystemStateUpdate = false;
 
     //Check to see if any external sources need to change state
-    if (newSystemStateRequested == true && systemState != requestedSystemState)
+    if (newSystemStateRequested == true)
     {
-      changeState(requestedSystemState);
       newSystemStateRequested = false;
+      if (systemState != requestedSystemState)
+        changeState(requestedSystemState);
     }
 
     //Move between states as needed
@@ -120,10 +121,9 @@ void updateSystemState()
 
           displayBaseStart(0); //Show 'Base'
 
-          //Restart Bluetooth with 'Base' name
-          //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
+          //Stop all WiFi and BT. Re-enable in each specific base start state.
           stopWiFi();
-          startBluetooth();
+          stopBluetooth();
 
           if (configureUbloxModuleBase() == true)
           {
@@ -134,6 +134,9 @@ void updateSystemState()
 
             if (settings.fixedBase == false)
             {
+              //Restart Bluetooth with 'Base' name
+              //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
+              startBluetooth();
               changeState(STATE_BASE_TEMP_SETTLE);
             }
             else if (settings.fixedBase == true)

@@ -9,23 +9,26 @@ void F9PSerialWriteTask(void *e)
   {
 #ifdef COMPILE_BT
     //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
-    while (SerialBT.available())
+    if (radioState == BT_CONNECTED)
     {
-      taskYIELD();
-      if (inTestMode == false)
+      while (SerialBT.available())
       {
-        //Pass bytes to GNSS receiver
-        auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
-        serialGNSS.write(wBuffer, s);
+        taskYIELD();
+        if (inTestMode == false)
+        {
+          //Pass bytes to GNSS receiver
+          auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
+          serialGNSS.write(wBuffer, s);
 
-        if (settings.enableTaskReports == true)
-          Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
-      }
-      else
-      {
-        char incoming = SerialBT.read();
-        Serial.printf("I heard: %c\n", incoming);
-        incomingBTTest = incoming; //Displayed during system test
+          if (settings.enableTaskReports == true)
+            Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+        }
+        else
+        {
+          char incoming = SerialBT.read();
+          Serial.printf("I heard: %c\n", incoming);
+          incomingBTTest = incoming; //Displayed during system test
+        }
       }
     }
 #endif
@@ -51,7 +54,7 @@ void F9PSerialReadTask(void *e)
         taskYIELD();
       }
 #ifdef COMPILE_BT
-      else if (SerialBT.connected())
+      else if (radioState == BT_CONNECTED)
       {
         if (SerialBT.isCongested() == false)
         {
@@ -222,6 +225,7 @@ void ButtonCheckTask(void *e)
       else if ((setupBtn != NULL && setupBtn->pressedFor(500)) &&
                (powerBtn != NULL && powerBtn->pressedFor(500)))
       {
+        forceSystemStateUpdate = true;
         requestChangeState(STATE_TEST);
       }
       else if (setupBtn != NULL && setupBtn->wasReleased())
@@ -260,6 +264,10 @@ void ButtonCheckTask(void *e)
           case STATE_MARK_EVENT:
             //If the user presses the setup button during a mark event, do nothing
             //Allow system to return to lastSystemState
+            break;
+
+          case STATE_TEST:
+            //Do nothing. User is releasing the setup button.
             break;
 
           case STATE_TESTING:

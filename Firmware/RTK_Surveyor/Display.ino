@@ -113,46 +113,38 @@ void displaySplash()
     oled.begin();     // Initialize the OLED
     oled.clear(PAGE); // Clear the display's internal memory
 
-    oled.setCursor(10, 2); //x, y
-    oled.setFontType(0); //Set font to smallest
-    oled.print(F("SparkFun"));
+    int yPos = 0;
+    int fontHeight = 8;
 
-    oled.setCursor(21, 13);
-    oled.setFontType(1);
-    oled.print(F("RTK"));
+    printTextCenter("SparkFun", yPos, 0, 1, false); //text, y, font type, kerning, inverted
 
-    int textX;
-    int textY;
-    int textKerning;
+    yPos = yPos + fontHeight + 2;
+    printTextCenter("RTK", yPos, 1, 1, false);
+
+    yPos = yPos + fontHeight + 4;
 
     if (productVariant == RTK_SURVEYOR)
     {
-      textX = 2;
-      textY = 25;
-      textKerning = 8;
-      oled.setFontType(1);
-      printTextwithKerning("Surveyor", textX, textY, textKerning);
+      printTextCenter("Surveyor", yPos, 1, 1, false);
     }
     else if (productVariant == RTK_EXPRESS)
     {
-      textX = 3;
-      textY = 25;
-      textKerning = 9;
-      oled.setFontType(1);
-      printTextwithKerning("Express", textX, textY, textKerning);
+      printTextCenter("Express", yPos, 1, 1, false);
+    }
+    else if (productVariant == RTK_EXPRESS_PLUS)
+    {
+      printTextCenter("Express+", yPos, 1, 1, false);
     }
     else if (productVariant == RTK_FACET)
     {
-      textX = 11;
-      textY = 25;
-      textKerning = 9;
-      oled.setFontType(1);
-      printTextwithKerning("Facet", textX, textY, textKerning);
+      printTextCenter("Facet", yPos, 1, 1, false);
     }
 
-    oled.setCursor(20, 41);
-    oled.setFontType(0); //Set font to smallest
-    oled.printf("v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    yPos = yPos + fontHeight + 9;
+    char unitFirmware[50];
+    sprintf(unitFirmware, "v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    printTextCenter(unitFirmware, yPos, 0, 1, false);
+
     oled.display();
   }
 }
@@ -1362,42 +1354,76 @@ void paintDisplaySetup()
 {
   if (online.display == true)
   {
-    if (setupState == STATE_MARK_EVENT)
+    if (zedModuleType == PLATFORM_F9P)
     {
-      printTextCenter("Mark", 12 * 0, 1, 1, true); //string, y, font type, kerning, inverted
-      printTextCenter("Rover", 12 * 1, 1, 1, false);
-      printTextCenter("Base", 12 * 2, 1, 1, false);
-      printTextCenter("Bubble", 12 * 3, 1, 1, false);
-    }
-    else if (setupState == STATE_ROVER_NOT_STARTED)
+      if (setupState == STATE_MARK_EVENT)
+      {
+        printTextCenter("Mark", 12 * 0, 1, 1, true); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, 1, 1, false);
+        printTextCenter("Base", 12 * 2, 1, 1, false);
+        printTextCenter("Bubble", 12 * 3, 1, 1, false);
+      }
+      else if (setupState == STATE_ROVER_NOT_STARTED)
+      {
+        printTextCenter("Mark", 12 * 0, 1, 1, false);
+        printTextCenter("Rover", 12 * 1, 1, 1, true);
+        printTextCenter("Base", 12 * 2, 1, 1, false);
+        printTextCenter("Bubble", 12 * 3, 1, 1, false);
+      }
+      else if (setupState == STATE_BASE_NOT_STARTED)
+      {
+        printTextCenter("Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, 1, 1, false);
+        printTextCenter("Base", 12 * 2, 1, 1, true);
+        printTextCenter("Bubble", 12 * 3, 1, 1, false);
+      }
+      else if (setupState == STATE_BUBBLE_LEVEL)
+      {
+        printTextCenter("Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, 1, 1, false);
+        printTextCenter("Base", 12 * 2, 1, 1, false);
+        printTextCenter("Bubble", 12 * 3, 1, 1, true);
+      }
+      else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
+      {
+        printTextCenter("Rover", 12 * 0, 1, 1, false);
+        printTextCenter("Base", 12 * 1, 1, 1, false);
+        printTextCenter("Bubble", 12 * 2, 1, 1, false);
+        printTextCenter("Config", 12 * 3, 1, 1, true);
+      }
+    } //end type F9P
+    else if (zedModuleType == PLATFORM_F9R)
     {
-      printTextCenter("Mark", 12 * 0, 1, 1, false);
-      printTextCenter("Rover", 12 * 1, 1, 1, true);
-      printTextCenter("Base", 12 * 2, 1, 1, false);
-      printTextCenter("Bubble", 12 * 3, 1, 1, false);
-    }
-    else if (setupState == STATE_BASE_NOT_STARTED)
-    {
-      printTextCenter("Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
-      printTextCenter("Rover", 12 * 1, 1, 1, false);
-      printTextCenter("Base", 12 * 2, 1, 1, true);
-      printTextCenter("Bubble", 12 * 3, 1, 1, false);
-    }
-    else if (setupState == STATE_BUBBLE_LEVEL)
-    {
-      printTextCenter("Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
-      printTextCenter("Rover", 12 * 1, 1, 1, false);
-      printTextCenter("Base", 12 * 2, 1, 1, false);
-      printTextCenter("Bubble", 12 * 3, 1, 1, true);
-    }
-    else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
-    {
-      printTextCenter("Rover", 12 * 0, 1, 1, false);
-      printTextCenter("Base", 12 * 1, 1, 1, false);
-      printTextCenter("Bubble", 12 * 2, 1, 1, false);
-      printTextCenter("Config", 12 * 3, 1, 1, true);
-    }
-  }
+      if (setupState == STATE_MARK_EVENT)
+      {
+        printTextCenter("Mark", 12 * 0, 1, 1, true); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, 1, 1, false);
+        printTextCenter("Bubble", 12 * 2, 1, 1, false);
+        printTextCenter("Config", 12 * 3, 1, 1, false);
+      }
+      else if (setupState == STATE_ROVER_NOT_STARTED)
+      {
+        printTextCenter("Mark", 12 * 0, 1, 1, false);
+        printTextCenter("Rover", 12 * 1, 1, 1, true);
+        printTextCenter("Bubble", 12 * 2, 1, 1, false);
+        printTextCenter("Config", 12 * 3, 1, 1, false);
+      }
+      else if (setupState == STATE_BUBBLE_LEVEL)
+      {
+        printTextCenter("Mark", 12 * 0, 1, 1, false);
+        printTextCenter("Rover", 12 * 1, 1, 1, false);
+        printTextCenter("Bubble", 12 * 2, 1, 1, true);
+        printTextCenter("Config", 12 * 3, 1, 1, false);
+      }
+      else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
+      {
+        printTextCenter("Mark", 12 * 0, 1, 1, false);
+        printTextCenter("Rover", 12 * 1, 1, 1, false);
+        printTextCenter("Bubble", 12 * 2, 1, 1, false);
+        printTextCenter("Config", 12 * 3, 1, 1, true);
+      }
+    } //end type F9R
+  } //end display online
 }
 
 //Given text, and location, print text center of the screen

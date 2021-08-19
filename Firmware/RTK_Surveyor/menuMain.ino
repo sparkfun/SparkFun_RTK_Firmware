@@ -19,7 +19,8 @@ void menuMain()
 
     Serial.println(F("2) Configure GNSS Messages"));
 
-    Serial.println(F("3) Configure Base"));
+    if (zedModuleType == PLATFORM_F9P)
+      Serial.println(F("3) Configure Base"));
 
     Serial.println(F("4) Configure Ports"));
 
@@ -47,7 +48,7 @@ void menuMain()
       menuGNSS();
     else if (incoming == '2')
       menuMessages();
-    else if (incoming == '3')
+    else if (incoming == '3' && zedModuleType == PLATFORM_F9P)
       menuBase();
     else if (incoming == '4')
       menuPorts();
@@ -117,7 +118,7 @@ void factoryReset()
   i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
   displaySytemReset(); //Display friendly message on OLED
-  
+
   Serial.println(F("Settings erased successfully. Rebooting. Good bye!"));
   delay(2000);
   ESP.restart();

@@ -41,8 +41,8 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 5;
 
-#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
-#define COMPILE_BT 1 //Comment out to disable all Bluetooth
+//#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
+//#define COMPILE_BT 1 //Comment out to disable all Bluetooth
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -151,6 +151,7 @@ uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service tim
 //disable SBAS by default.
 
 char zedFirmwareVersion[20]; //The string looks like 'FWVER=HPG 1.12'. Output to debug menu and settings file.
+uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
 // Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
 class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
@@ -295,7 +296,6 @@ int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
@@ -358,6 +358,8 @@ void setup()
   Wire.begin(); //Start I2C on core 1
   Wire.setClock(400000);
 
+  beginGNSS(); //Connect to GNSS
+
   beginBoard(); //Determine what hardware platform we are running on
 
   beginDisplay(); //Check if an external Qwiic OLED is attached
@@ -385,7 +387,7 @@ void setup()
   beginFuelGauge(); //Configure battery fuel guage monitor
   checkBatteryLevels(); //Force display so you see battery level immediately at power on
 
-  beginGNSS(); //Connect and configure ZED-F9P
+  configureGNSS(); //Configure ZED module
 
   beginAccelerometer();
 

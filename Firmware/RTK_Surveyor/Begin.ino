@@ -12,7 +12,8 @@ void beginBoard()
   }
   else if (isConnected(0x19) == true) //Check for accelerometer
   {
-    productVariant = RTK_EXPRESS;
+    if (zedModuleType == PLATFORM_F9P) productVariant = RTK_EXPRESS;
+    else if (zedModuleType == PLATFORM_F9R) productVariant = RTK_EXPRESS_PLUS;
   }
   else
   {
@@ -38,7 +39,7 @@ void beginBoard()
     strcpy(platformFilePrefix, "SFE_Surveyor");
     strcpy(platformPrefix, "Surveyor");
   }
-  else if (productVariant == RTK_EXPRESS)
+  else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
     pin_muxA = 2;
     pin_muxB = 4;
@@ -61,8 +62,16 @@ void beginBoard()
 
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
 
-    strcpy(platformFilePrefix, "SFE_Express");
-    strcpy(platformPrefix, "Express");
+    if (productVariant == RTK_EXPRESS)
+    {
+      strcpy(platformFilePrefix, "SFE_Express");
+      strcpy(platformPrefix, "Express");
+    }
+    else if (productVariant == RTK_EXPRESS_PLUS)
+    {
+      strcpy(platformFilePrefix, "SFE_Express_Plus");
+      strcpy(platformPrefix, "Express Plus");
+    }
   }
   else if (productVariant == RTK_FACET)
   {
@@ -268,7 +277,7 @@ void beginDisplay()
   }
 }
 
-//Connect to and configure ZED-F9P
+//Connect to ZED module and identify particulars
 void beginGNSS()
 {
   if (i2cGNSS.begin() == false)
@@ -297,10 +306,24 @@ void beginGNSS()
     if (ptr != NULL)
       strcpy(zedFirmwareVersion, ptr + strlen("FWVER="));
 
-    Serial.print(F("ZED-F9P firmware: "));
-    Serial.println(zedFirmwareVersion);
-  }
+    //Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
+    if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9P") != NULL)
+    {
+      zedModuleType = PLATFORM_F9P;
+    }
+    else if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9R") != NULL)
+    {
+      zedModuleType = PLATFORM_F9R;
+    }
 
+    printModuleInfo(); //Print module type and firmware version
+  }
+  online.gnss = true;
+}
+
+//Configuration can take >1s so configure during splash
+void configureGNSS()
+{
   bool response = configureUbloxModule();
   if (response == false)
   {
@@ -318,8 +341,6 @@ void beginGNSS()
   }
 
   Serial.println(F("GNSS configuration complete"));
-
-  online.gnss = true;
 }
 
 //Set LEDs for output and configure PWM
@@ -400,7 +421,7 @@ void beginSystemState()
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
-  else if (productVariant == RTK_EXPRESS)
+  else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
     systemState = settings.lastState; //Return to system state previous to power down.
 

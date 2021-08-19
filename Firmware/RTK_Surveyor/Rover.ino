@@ -5,9 +5,13 @@ bool configureUbloxModuleRover()
   bool response = true;
   int maxWait = 2000;
 
-  response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-  if (response == false)
-    Serial.println(F("Disable Survey failed"));
+  //Survey mode is only available on ZED-F9P modules
+  if (zedModuleType == PLATFORM_F9P)
+  {
+    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+    if (response == false)
+      Serial.println(F("Disable Survey failed"));
+  }
 
   // Set dynamic model
   if (i2cGNSS.getDynamicModel(maxWait) != settings.dynamicModel)
@@ -17,11 +21,15 @@ bool configureUbloxModuleRover()
       Serial.println(F("setDynamicModel failed"));
   }
 
-  //Disable RTCM sentences on I2C, USB, and UART2
-  response = true; //Reset
-  response &= disableRTCMSentences(COM_PORT_I2C);
-  response &= disableRTCMSentences(COM_PORT_UART2);
-  response &= disableRTCMSentences(COM_PORT_USB);
+  //RTCM is only available on ZED-F9P modules
+  if (zedModuleType == PLATFORM_F9P)
+  {
+    //Disable RTCM sentences on I2C, USB, and UART2
+    response = true; //Reset
+    response &= disableRTCMSentences(COM_PORT_I2C);
+    response &= disableRTCMSentences(COM_PORT_UART2);
+    response &= disableRTCMSentences(COM_PORT_USB);
+  }
 
   //Re-enable any RTCM msgs on UART1 the user has set within settings
   response &= configureGNSSMessageRates(COM_PORT_UART1, ubxMessages); //Make sure the appropriate messages are enabled

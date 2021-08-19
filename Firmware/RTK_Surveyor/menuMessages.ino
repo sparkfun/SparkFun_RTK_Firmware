@@ -75,7 +75,8 @@ void menuMessages()
     Serial.printf("Active messages: %d\n\r", getActiveMessageCount());
 
     Serial.println(F("1) Set NMEA Messages"));
-    Serial.println(F("2) Set RTCM Messages"));
+    if (zedModuleType == PLATFORM_F9P)
+      Serial.println(F("2) Set RTCM Messages"));
     Serial.println(F("3) Set RXM Messages"));
     Serial.println(F("4) Set NAV Messages"));
     Serial.println(F("5) Set MON Messages"));
@@ -91,7 +92,7 @@ void menuMessages()
 
     if (incoming == 1)
       menuMessagesSubtype("NMEA");
-    else if (incoming == 2)
+    else if (incoming == 2 && zedModuleType == PLATFORM_F9P)
       menuMessagesSubtype("RTCM");
     else if (incoming == 3)
       menuMessagesSubtype("RXM");
@@ -173,11 +174,15 @@ void menuMessagesSubtype(const char* messageType)
 
     int startOfBlock = 0;
     int endOfBlock = 0;
-    setMessageOffsets(messageType, startOfBlock, endOfBlock); //Find start and stop of RTCM records in message array
+    setMessageOffsets(messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
     for (int x = 0 ; x < (endOfBlock - startOfBlock) ; x++)
     {
-      Serial.printf("%d) Message %s: ", x + 1, ubxMessages[x + startOfBlock].msgTextName);
-      Serial.println(ubxMessages[x + startOfBlock].msgRate);
+      //Check to see if this ZED platform supports this message
+      if (ubxMessages[x + startOfBlock].supported & zedModuleType)
+      {
+        Serial.printf("%d) Message %s: ", x + 1, ubxMessages[x + startOfBlock].msgTextName);
+        Serial.println(ubxMessages[x + startOfBlock].msgRate);
+      }
     }
 
     Serial.println(F("x) Exit"));
@@ -222,7 +227,7 @@ void inputMessageRate(ubxMsg &localMessage)
   localMessage.msgRate = rate;
 }
 
-//Updates the message rates on the ZED-F9P for all known messages
+//Updates the message rates on the ZED-F9x for all supported messages
 //Any port and messages by reference can be passed in. This allows us to modify the USB
 //port settings a separate (not NVM backed) message struct for testing
 bool configureGNSSMessageRates(uint8_t portType, ubxMsg *localMessage)
@@ -230,7 +235,11 @@ bool configureGNSSMessageRates(uint8_t portType, ubxMsg *localMessage)
   bool response = true;
 
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    response &= configureMessageRate(portType, localMessage[x]);
+  {
+    //Check to see if this ZED platform supports this message
+    if (ubxMessages[x].supported & zedModuleType)
+      response &= configureMessageRate(portType, localMessage[x]);
+  }
 
   return (response);
 }

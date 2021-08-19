@@ -1,15 +1,12 @@
 //Toggle control of heap reports and I2C GNSS debug
 void menuDebug()
 {
-  int maxWait = 2000;
-
   while (1)
   {
     Serial.println();
     Serial.println(F("Menu: Debug Menu"));
 
-    Serial.print(F("ZED-F9P firmware: "));
-    Serial.println(zedFirmwareVersion);
+    printModuleInfo();
 
     Serial.print(F("1) I2C Debugging Output: "));
     if (settings.enableI2Cdebug == true) Serial.println(F("Enabled"));

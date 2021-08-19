@@ -162,9 +162,13 @@ bool configureUbloxModule()
   if (response == false)
     Serial.println(F("Set rate failed"));
 
-  response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-  if (response == false)
-    Serial.println(F("Disable Survey failed"));
+  //Survey mode is only available on ZED-F9P modules
+  if (zedModuleType == PLATFORM_F9P)
+  {
+    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+    if (response == false)
+      Serial.println(F("Disable Survey failed"));
+  }
 
 #define OUTPUT_SETTING 14
 #define INPUT_SETTING 12
@@ -664,7 +668,7 @@ void cyclePositionLEDs()
 //This allows NMEA, I2C, PPS/Event, and ADC/DAC to be routed through data port via software select
 void setMuxport(int channelNumber)
 {
-  if (productVariant == RTK_EXPRESS)
+  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
     pinMode(pin_muxA, OUTPUT);
     pinMode(pin_muxB, OUTPUT);

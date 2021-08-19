@@ -208,7 +208,7 @@ void ButtonCheckTask(void *e)
         }
       }
     }
-    else if (productVariant == RTK_EXPRESS) //Express: Check either one or both of the momentary switches
+    else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS) //Express: Check both of the momentary switches
     {
       if (setupBtn != NULL) setupBtn->read();
       if (powerBtn != NULL) powerBtn->read();
@@ -288,7 +288,11 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_ROVER_NOT_STARTED;
                 break;
               case STATE_ROVER_NOT_STARTED:
-                setupState = STATE_BASE_NOT_STARTED;
+                //If F9R, skip base state
+                if (zedModuleType == PLATFORM_F9R)
+                  setupState = STATE_BUBBLE_LEVEL;
+                else
+                  setupState = STATE_BASE_NOT_STARTED;
                 break;
               case STATE_BASE_NOT_STARTED:
                 setupState = STATE_BUBBLE_LEVEL;
@@ -313,7 +317,7 @@ void ButtonCheckTask(void *e)
         }
       }
     } //End Platform = RTK Express
-    else if (productVariant == RTK_FACET)
+    else if (productVariant == RTK_FACET) //Check one momentary button
     {
       Serial.println("WIP");
       delay(500);

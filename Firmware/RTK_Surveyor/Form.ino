@@ -125,6 +125,11 @@ void startConfigAP()
     request->send(response);
   });
 
+  //Handler for the /update form POST
+  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
+      request->send(200);
+    }, handleFirmwareFileUpload);
+
   server.begin();
 #endif
 

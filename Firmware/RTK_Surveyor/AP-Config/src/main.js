@@ -357,6 +357,10 @@ function exitConfig() {
     ws.send("exitToRoverMode,1,");
 }
 
+function firmwareUploadWait() {
+    ge("firmwareUploadMsg").innerHTML = "<br>Uploading, please wait....";
+}
+
 document.addEventListener("DOMContentLoaded", (event) => {
 
     ge("measurementRateHz").addEventListener("change", function () {

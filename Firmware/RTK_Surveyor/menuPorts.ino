@@ -1,8 +1,8 @@
 void menuPorts()
 {
-  if(productVariant == RTK_SURVEYOR)
+  if (productVariant == RTK_SURVEYOR)
     menuPortsSurveyor();
-  else if(productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
+  else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
     menuPortsExpress();
 }
 
@@ -83,8 +83,13 @@ void menuPortsExpress()
       Serial.println(F("NMEA TX Out/RX In"));
     else if (settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)
       Serial.println(F("PPS OUT/Event Trigger In"));
-    else if (settings.dataPortChannel == MUX_I2C)
-      Serial.println(F("I2C SDA/SCL"));
+    else if (settings.dataPortChannel == MUX_I2C_WT)
+    {
+      if (zedModuleType == PLATFORM_F9P)
+        Serial.println(F("I2C SDA/SCL"));
+      else if (zedModuleType == PLATFORM_F9R)
+        Serial.println(F("Wheel Tick/Direction"));
+    }
     else if (settings.dataPortChannel == MUX_ADC_DAC)
       Serial.println(F("ESP32 DAC Out/ADC In"));
 
@@ -119,9 +124,12 @@ void menuPortsExpress()
       Serial.println(F("\n\rEnter the pin connection to use (1 to 4) for Data Port: "));
       Serial.println(F("1) NMEA TX Out/RX In"));
       Serial.println(F("2) PPS OUT/Event Trigger In"));
-      Serial.println(F("3) I2C SDA/SCL"));
+      if (zedModuleType == PLATFORM_F9P)
+        Serial.println(F("3) I2C SDA/SCL"));
+      else if (zedModuleType == PLATFORM_F9R)
+        Serial.println(F("3) Wheel Tick/Direction"));
       Serial.println(F("4) ESP32 DAC Out/ADC In"));
-      
+
       int muxPort = getNumber(menuTimeout); //Timeout after x seconds
       if (muxPort < 1 || muxPort > 4)
       {

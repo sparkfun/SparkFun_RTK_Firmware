@@ -59,7 +59,7 @@ typedef enum muxConnectionType_e
 {
   MUX_UBLOX_NMEA = 0,
   MUX_PPS_EVENTTRIGGER,
-  MUX_I2C,
+  MUX_I2C_WT,
   MUX_ADC_DAC,
 } muxConnectionType_e;
 
@@ -332,6 +332,7 @@ struct struct_settings {
   SystemState lastState = STATE_ROVER_NOT_STARTED; //For Express, start unit in last known state
   bool throttleDuringSPPCongestion = true;
   ubxConstellation ubxConstellations; //Constellations monitored/used for fix
+  bool autoIMUmountAlignment = true;
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

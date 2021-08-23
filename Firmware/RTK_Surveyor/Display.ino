@@ -321,7 +321,43 @@ void paintBaseState()
         systemState == STATE_ROVER_RTK_FLOAT ||
         systemState == STATE_ROVER_RTK_FIX)
     {
-      oled.drawIcon(27, 3, Rover_Width, Rover_Height, Rover, sizeof(Rover), true);
+      //Normal rover for ZED-F9P, fusion rover for ZED-F9R
+      if (zedModuleType == PLATFORM_F9P)
+      {
+        oled.drawIcon(27, 3, Rover_Width, Rover_Height, Rover, sizeof(Rover), true);
+      }
+      else if (zedModuleType == PLATFORM_F9R)
+      {
+        //Blink fusion rover until we have calibration
+        i2cGNSS.getEsfInfo(); // Poll new ESF STATUS data
+        if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0) //Initializing
+        {
+          //Blink Fusion Rover icon until sensor calibration is complete
+          if (millis() - lastBaseIconUpdate > 500)
+          {
+            lastBaseIconUpdate = millis();
+            if (baseIconDisplayed == false)
+            {
+              baseIconDisplayed = true;
+
+              //Draw the icon
+              oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
+            }
+            else
+              baseIconDisplayed = false;
+          }
+        }
+        else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1) //Calibrated
+        {
+          //Solid fusion rover
+          oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
+        }
+        else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2 || i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3) //Suspended or disabled
+        {
+          //Empty rover
+          oled.drawIcon(27, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty, sizeof(Rover_Fusion_Empty), true);
+        }
+      }
     }
     else if (systemState == STATE_BASE_TEMP_SETTLE ||
              systemState == STATE_BASE_TEMP_SURVEY_STARTED //Turn on base icon solid (blink crosshair in paintHorzAcc)
@@ -370,7 +406,7 @@ void paintSIV()
   if (online.display == true)
   {
     //Blink satellite dish icon if we don't have a fix
-    if (i2cGNSS.getFixType() == 3 || i2cGNSS.getFixType() == 5) //3D or Time
+    if (i2cGNSS.getFixType() == 3 || i2cGNSS.getFixType() == 4 || i2cGNSS.getFixType() == 5) //3D, 3D+DR, or Time
     {
       //Fix, turn on icon
       oled.drawIcon(2, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);

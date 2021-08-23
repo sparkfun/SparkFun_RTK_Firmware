@@ -3,7 +3,7 @@
 void menuBase()
 {
   int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, ECEF coords, etc).
-  
+
   while (1)
   {
     Serial.println();
@@ -213,6 +213,54 @@ void menuBase()
     else
       printUnknown(incoming);
   }
+
+  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+}
+
+//Configure ESF settings
+void menuSensorFusion()
+{
+  while (1)
+  {
+    Serial.println();
+    Serial.println(F("Menu: Sensor Fusion Menu"));
+
+    if (i2cGNSS.getEsfInfo()) // Poll new ESF STATUS data
+    {
+      Serial.print(F("Fusion Mode: "));
+      Serial.print(i2cGNSS.packetUBXESFSTATUS->data.fusionMode);
+      if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
+        Serial.println(F("Initializing"));
+      else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1)
+        Serial.println(F("Calibrated"));
+      else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2)
+        Serial.println(F("Suspended"));
+      else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
+        Serial.println(F("Disabled"));
+    }
+
+    Serial.print(F("1) Toggle Automatic IMU-mount Alignment: "));
+    if (settings.autoIMUmountAlignment == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
+    Serial.println(F("x) Exit"));
+
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+
+    if (incoming == 1)
+    {
+      settings.autoIMUmountAlignment ^= 1;
+    }
+
+    else if (incoming == STATUS_PRESSED_X)
+      break;
+    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
+  }
+
+  i2cGNSS.setESFAutoAlignment(settings.autoIMUmountAlignment); //Configure UBX-CFG-ESFALG Automatic IMU-mount Alignment
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }

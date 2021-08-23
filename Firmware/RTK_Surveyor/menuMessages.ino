@@ -77,6 +77,8 @@ void menuMessages()
     Serial.println(F("1) Set NMEA Messages"));
     if (zedModuleType == PLATFORM_F9P)
       Serial.println(F("2) Set RTCM Messages"));
+    else if (zedModuleType == PLATFORM_F9R)
+      Serial.println(F("2) Set ESF Messages"));
     Serial.println(F("3) Set RXM Messages"));
     Serial.println(F("4) Set NAV Messages"));
     Serial.println(F("5) Set MON Messages"));
@@ -94,6 +96,8 @@ void menuMessages()
       menuMessagesSubtype("NMEA");
     else if (incoming == 2 && zedModuleType == PLATFORM_F9P)
       menuMessagesSubtype("RTCM");
+    else if (incoming == 2 && zedModuleType == PLATFORM_F9R)
+      menuMessagesSubtype("ESF");
     else if (incoming == 3)
       menuMessagesSubtype("RXM");
     else if (incoming == 4)

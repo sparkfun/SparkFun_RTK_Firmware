@@ -42,6 +42,10 @@ bool configureUbloxModuleRover()
     Serial.println(F("setNMEASettings failed"));
 
   response = true; //Reset
+  if (zedModuleType == PLATFORM_F9R)
+  {
+    i2cGNSS.setESFAutoAlignment(settings.autoIMUmountAlignment); //Configure UBX-CFG-ESFALG Automatic IMU-mount Alignment
+  }
 
   //The last thing we do is set output rate.
   response = true; //Reset

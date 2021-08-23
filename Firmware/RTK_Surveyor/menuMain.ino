@@ -21,6 +21,8 @@ void menuMain()
 
     if (zedModuleType == PLATFORM_F9P)
       Serial.println(F("3) Configure Base"));
+    else if (zedModuleType == PLATFORM_F9R)
+      Serial.println(F("3) Configure Sensor Fusion"));
 
     Serial.println(F("4) Configure Ports"));
 
@@ -50,6 +52,8 @@ void menuMain()
       menuMessages();
     else if (incoming == '3' && zedModuleType == PLATFORM_F9P)
       menuBase();
+    else if (incoming == '3' && zedModuleType == PLATFORM_F9R)
+      menuSensorFusion();
     else if (incoming == '4')
       menuPorts();
     else if (incoming == '5')

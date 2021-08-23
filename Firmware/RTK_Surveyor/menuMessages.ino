@@ -191,7 +191,11 @@ void menuMessagesSubtype(const char* messageType)
 
     if (incoming >= 1 && incoming <= (endOfBlock - startOfBlock))
     {
-      inputMessageRate(ubxMessages[ (incoming - 1) + startOfBlock]);
+      //Check to see if this ZED platform supports this message
+      if (ubxMessages[(incoming - 1) + startOfBlock].supported & zedModuleType)
+        inputMessageRate(ubxMessages[(incoming - 1) + startOfBlock]);
+      else
+        printUnknown(incoming);
     }
     else if (incoming == STATUS_PRESSED_X)
       break;

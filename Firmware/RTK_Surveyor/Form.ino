@@ -211,10 +211,19 @@ void createSettingsString(char* settingsCSV)
   //System Info
   stringRecord(settingsCSV, "platformPrefix", platformPrefix);
 
-  char rtkFirmwareVersion[50];
-  sprintf(rtkFirmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
-  stringRecord(settingsCSV, "rtkFirmwareVersion", rtkFirmwareVersion);
-  stringRecord(settingsCSV, "zedFirmwareVersion", zedFirmwareVersion);
+  char apRtkFirmwareVersion[50];
+  sprintf(apRtkFirmwareVersion, "RTK %s Firmware: v%d.%d-%s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+  stringRecord(settingsCSV, "rtkFirmwareVersion", apRtkFirmwareVersion);
+
+  char apZedPlatform[50];
+  if (zedModuleType == PLATFORM_F9P)
+    strcpy(apZedPlatform, "ZED-F9P");
+  else if (zedModuleType == PLATFORM_F9R)
+    strcpy(apZedPlatform, "ZED-F9R");
+
+  char apZedFirmwareVersion[50];
+  sprintf(apZedFirmwareVersion, "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
+  stringRecord(settingsCSV, "zedFirmwareVersion", apZedFirmwareVersion);
 
   //GNSS Config
   stringRecord(settingsCSV, "measurementRateHz", 1000.0 / settings.measurementRate, 2); //2 = decimals to print

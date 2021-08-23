@@ -1,5 +1,5 @@
-//var ws = new WebSocket("ws://192.168.1.228/ws"); //WiFi mode
-var ws = new WebSocket("ws://192.168.1.1/ws"); //AP Mode
+var ws = new WebSocket("ws://192.168.1.105/ws"); //WiFi mode
+//var ws = new WebSocket("ws://192.168.4.1/ws"); //AP Mode
 
 ws.onmessage = function (msg) {
     parseIncoming(msg.data);
@@ -24,19 +24,38 @@ function parseIncoming(msg) {
         if (id.includes("sdMounted")) {
             //Turn on/off SD area
             if (val == "false") {
-                ge("sdMounted").style.display = "none";
+                hide("sdMounted");
             }
             else if (val == "true") {
-                ge("sdMounted").style.display = "block";
+                show("sdMounted");
             }
         }
         else if (id == "platformPrefix") {
             platformPrefix = val;
-            ge(id).innerHTML = "RTK " + val + " Setup";
-            document.title = "RTK " + val + " Setup";
+            document.title = "RTK " + platformPrefix + " Setup";
 
-            if (platformPrefix == "Surveyor") ge("dataPortChannelDropdown").style.display = "none";
-            if (platformPrefix == "Express Plus") ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
+            if (platformPrefix == "Surveyor") hide("dataPortChannelDropdown");
+            if (platformPrefix == "Express Plus") {
+                ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
+
+                hide("baseConfig"); //Hide Base Config section
+
+                hide("msgUBX_NAV_SVIN"); //Hide unsupported messages
+                hide("msgUBX_RTCM_1005");
+                hide("msgUBX_RTCM_1074");
+                hide("msgUBX_RTCM_1077");
+                hide("msgUBX_RTCM_1084");
+                hide("msgUBX_RTCM_1087");
+
+                hide("msgUBX_RTCM_1094");
+                hide("msgUBX_RTCM_1097");
+                hide("msgUBX_RTCM_1124");
+                hide("msgUBX_RTCM_1127");
+                hide("msgUBX_RTCM_1230");
+
+                hide("msgUBX_RTCM_4072_0");
+                hide("msgUBX_RTCM_4072_1");
+            }
         }
         else if (id.includes("sdFreeSpace")
             || id.includes("sdUsedSpace")
@@ -46,15 +65,15 @@ function parseIncoming(msg) {
             ge(id).innerHTML = val;
         }
         else if (id.includes("firmwareFileName")) {
-            ge("firmwareAvailable").style.display = "block"; //Turn on firmware area
+            show("firmwareAvailable"); //Turn on firmware area
 
             ge(id).innerHTML = val;
-            if (id.includes("0")) ge("firmwareFile0").style.display = "block";
-            if (id.includes("1")) ge("firmwareFile1").style.display = "block";
-            if (id.includes("2")) ge("firmwareFile2").style.display = "block";
-            if (id.includes("3")) ge("firmwareFile3").style.display = "block";
-            if (id.includes("4")) ge("firmwareFile4").style.display = "block";
-            if (id.includes("5")) ge("firmwareFile5").style.display = "block";
+            if (id.includes("0")) show("firmwareFile0");
+            if (id.includes("1")) show("firmwareFile1");
+            if (id.includes("2")) show("firmwareFile2");
+            if (id.includes("3")) show("firmwareFile3");
+            if (id.includes("4")) show("firmwareFile4");
+            if (id.includes("5")) show("firmwareFile5");
         }
 
         //Check boxes / radio buttons
@@ -67,20 +86,32 @@ function parseIncoming(msg) {
 
         //All regular input boxes and values
         else {
-            ge(id).value = val;
+            try {
+                ge(id).value = val;
+            } catch (error) {
+                console.log("Issue with ID: " + id)
+            }
         }
     }
     //console.log("Settings loaded");
 
     //Force element updates
-    ge("measurementRateHz").dispatchEvent(new Event('change'));
-    ge("baseTypeSurveyIn").dispatchEvent(new Event('change'));
-    ge("baseTypeFixed").dispatchEvent(new Event('change'));
-    ge("fixedBaseCoordinateTypeECEF").dispatchEvent(new Event('change'));
-    ge("fixedBaseCoordinateTypeGeo").dispatchEvent(new Event('change'));
-    ge("enableLogging").dispatchEvent(new Event('change'));
-    ge("enableNtripServer").dispatchEvent(new Event('change'));
-    ge("dataPortChannel").dispatchEvent(new Event('change'));
+    ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
+    ge("baseTypeSurveyIn").dispatchEvent(new CustomEvent('change'));
+    ge("baseTypeFixed").dispatchEvent(new CustomEvent('change'));
+    ge("fixedBaseCoordinateTypeECEF").dispatchEvent(new CustomEvent('change'));
+    ge("fixedBaseCoordinateTypeGeo").dispatchEvent(new CustomEvent('change'));
+    ge("enableLogging").dispatchEvent(new CustomEvent('change'));
+    ge("enableNtripServer").dispatchEvent(new CustomEvent('change'));
+    ge("dataPortChannel").dispatchEvent(new CustomEvent('change'));
+}
+
+function hide(id) {
+    ge(id).style.display = "none";
+}
+
+function show(id) {
+    ge(id).style.display = "block";
 }
 
 //Create CSV of all setting data
@@ -120,15 +151,19 @@ function sendFirmwareFile() {
 }
 
 function showError(id, errorText) {
-    ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+    ge(id + 'Error').innerHTML = '<br>Error: ' + errorText;
 }
 
 function clearError(id) {
     ge(id + 'Error').innerHTML = '';
 }
 
-function successMessage(id, msgText) {
-    ge(id + 'Error').innerHTML = '<p style="color:green; display:inline;"><b>' + msgText + '</b></p>';
+function showSuccess(id, msg) {
+    ge(id + 'Success').innerHTML = '<br>Success: ' + msg;
+}
+
+function clearSuccess(id) {
+    ge(id + 'Success').innerHTML = '';
 }
 
 var errorCount = 0;
@@ -142,8 +177,10 @@ function validateFields() {
     ge("collapseSystemConfig").classList.remove('show');
 
     errorCount = 0;
+
     //GNSS Config
-    checkElementValue("measurementRateHz", 0.000122, 10, "Must be between 0.000122 and 10Hz", "collapseGNSSConfig");
+    checkElementValue("measurementRateHz", 0.1, 10, "Must be between 0 and 10Hz", "collapseGNSSConfig");
+    checkConstellations();
 
     checkElementValue("UBX_NMEA_DTM", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NMEA_GBS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
@@ -161,30 +198,31 @@ function validateFields() {
     checkElementValue("UBX_NMEA_VTG", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NMEA_ZDA", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 
+    checkElementValue("UBX_NAV_ATT", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_CLOCK", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_DOP", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_EOE", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_GEOFENCE", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
-    checkElementValue("UBX_NAV_HPPOSECEF", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 
+    checkElementValue("UBX_NAV_HPPOSECEF", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_HPPOSLLH", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_ODO", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_ORB", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_POSECEF", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
-    checkElementValue("UBX_NAV_POSLLH", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 
+    checkElementValue("UBX_NAV_POSLLH", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_PVT", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_RELPOSNED", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_SAT", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_SIG", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
-    checkElementValue("UBX_NAV_STATUS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 
+    checkElementValue("UBX_NAV_STATUS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_SVIN", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_TIMEBDS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_TIMEGAL", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_TIMEGLO", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
-    checkElementValue("UBX_NAV_TIMEGPS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 
+    checkElementValue("UBX_NAV_TIMEGPS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_TIMELS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_TIMEUTC", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_NAV_VELECEF", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
@@ -227,12 +265,19 @@ function validateFields() {
     checkElementValue("UBX_RTCM_4072_0", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
     checkElementValue("UBX_RTCM_4072_1", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 
+    checkElementValue("UBX_ESF_MEAS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_ESF_RAW", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_ESF_STATUS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_ESF_ALG", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue("UBX_ESF_INS", 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+
     //Base Config
     checkElementValue("observationSeconds", 60, 600, "Must be between 60 to 600", "collapseBaseConfig");
     checkElementValue("observationPositionAccuracy", 1, 5.1, "Must be between 1.0 to 5.0", "collapseBaseConfig");
-    checkElementValue("fixedEcefX", -6400000, 6400000, "Must be -6400000 to 6400000", "collapseBaseConfig");
-    checkElementValue("fixedEcefY", -6400000, 6400000, "Must be -6400000 to 6400000", "collapseBaseConfig");
-    checkElementValue("fixedEcefZ", -6400000, 6400000, "Must be 6400000 to 6400000", "collapseBaseConfig");
+    checkElementValue("fixedEcefX", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefY", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
+    if (ge("fixedEcefZ").value == 0.0) ge("fixedEcefZ").value = 4084500;
+    checkElementValue("fixedEcefZ", 4084500, 5000000, "Must be 4084500 to 5000000", "collapseBaseConfig");
     checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
     checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
     checkElementValue("fixedAltitude", 0, 8849, "Must be 0 to 8849", "collapseBaseConfig");
@@ -251,15 +296,32 @@ function validateFields() {
 
     if (errorCount == 1) {
         showError('saveBtn', "Please clear " + errorCount + " error");
+        clearSuccess('saveBtn');
     }
     else if (errorCount > 1) {
         showError('saveBtn', "Please clear " + errorCount + " errors");
+        clearSuccess('saveBtn');
     }
     else {
         //Tell Arduino we're ready to save
         sendData();
-        successMessage('saveBtn', "All saved");
+        clearError('saveBtn');
+        showSuccess('saveBtn', "All saved!");
     }
+}
+
+function checkConstellations() {
+    if (ge("ubxConstellationsGPS").checked == false
+        && ge("ubxConstellationsGalileo").checked == false
+        && ge("ubxConstellationsBeiDou").checked == false
+        && ge("ubxConstellationsGLONASS").checked == false
+    ) {
+        ge("collapseGNSSConfig").classList.add('show');
+        showError('ubxConstellations', "Please choose one constellation");
+        errorCount++;
+    }
+    else
+        clearError("ubxConstellations");
 }
 
 function checkElementValue(id, min, max, errorText, collapseID) {
@@ -271,7 +333,7 @@ function checkElementValue(id, min, max, errorText, collapseID) {
         errorCount++;
     }
     else
-        ge(id + 'Error').innerHTML = '';
+        clearError(id);
 }
 function checkElementString(id, min, max, errorText, collapseID) {
     value = ge(id).value;
@@ -281,7 +343,7 @@ function checkElementString(id, min, max, errorText, collapseID) {
         errorCount++;
     }
     else
-        ge(id + 'Error').innerHTML = '';
+        clearError(id);
 }
 
 function resetToFactoryDefaults() {
@@ -290,8 +352,8 @@ function resetToFactoryDefaults() {
 }
 
 function exitConfig() {
-    ge("exitPage").style.display = "block"; //Show
-    ge("mainPage").style.display = "none"; //Hide main page
+    show("exitPage");
+    hide("mainPage");
     ws.send("exitToRoverMode,1,");
 }
 
@@ -471,12 +533,10 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
     ge("dataPortChannel").addEventListener("change", function () {
         if (ge("dataPortChannel").value == 0) {
-            //Show baud drop down
-            ge("dataPortBaudDropdown").style.display = "block";
+            show("dataPortBaudDropdown");
         }
         else {
-            //Hide baud drop down
-            ge("dataPortBaudDropdown").style.display = "none";
+            hide("dataPortBaudDropdown");
         }
     });
 })

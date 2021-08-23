@@ -42,7 +42,7 @@ void startConfigAP()
   //Start in AP mode
   WiFi.mode(WIFI_AP);
 
-  IPAddress local_IP(192, 168, 1, 1); //Set static IP to match OLED width
+  IPAddress local_IP(192, 168, 4, 1);
   IPAddress gateway(192, 168, 1, 1);
   IPAddress subnet(255, 255, 0, 0);
   WiFi.softAPConfig(local_IP, gateway, subnet);
@@ -57,8 +57,8 @@ void startConfigAP()
 
 #ifdef LOCAL_WIFI_TESTING
   //Connect to local router
-#define WIFI_SSID "ATT672"
-#define WIFI_PASSWORD "6814167060"
+#define WIFI_SSID "TRex"
+#define WIFI_PASSWORD "parachutes"
   WiFi.mode(WIFI_STA);
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -86,6 +86,10 @@ void startConfigAP()
     request->send_P(200, "text/javascript", main_js);
   });
 
+  server.on("/src/bootstrap-icons.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send_P(200, "text/css", bootstrap_icons_min_css);
+  });
+
   server.on("/src/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", bootstrap_css, sizeof(bootstrap_css));
     response->addHeader("Content-Encoding", "gzip");
@@ -93,27 +97,33 @@ void startConfigAP()
   });
 
   server.on("/src/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", bootstrap_min_js, sizeof(bootstrap_min_js));
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", bootstrap_min_js, sizeof(bootstrap_min_js));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
   server.on("/src/jquery-3.6.0.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", jquery_js, sizeof(jquery_js));
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", jquery_js, sizeof(jquery_js));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
   server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", favicon_ico, sizeof(favicon_ico));
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", favicon_ico, sizeof(favicon_ico));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  //Handler for the firmware file /upload form POST
-  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest * request) {
-    request->send(200);
-  }, handleFirmwareFileUpload);
+  server.on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+  server.on("/src/fonts/bootstrap-icons.woff2", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "font/woff2", bootstrap_icons_woff2, sizeof(bootstrap_icons_woff2));
+    request->send(response);
+  });
 
   server.begin();
 #endif
@@ -185,7 +195,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
   if (type == WS_EVT_CONNECT) {
-    char settingsCSV[2500];
+    char settingsCSV[3000];
     memset(settingsCSV, 0, sizeof(settingsCSV));
     createSettingsString(settingsCSV);
     //Serial.printf("Sending command: %s\n\r", settingsCSV);

@@ -1074,10 +1074,11 @@ void displayWiFiConfig()
   printTextCenter("IP:", yPos, 0, 1, false);
 
   yPos = yPos + fontHeight + 1;
+
   //char temp[50];
   //sprintf(temp, "%s", WiFi.softAPIP());
   //printTextCenter((const*)temp, yPos, 0, 1, false);
-  printTextCenter("192.168.1.1", yPos, 0, 1, false);
+  printTextCenter("192.168.4.1", yPos, 0, 1, false);
 }
 
 //When user does a factory reset, let us know

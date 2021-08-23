@@ -53,6 +53,7 @@ function parseIncoming(msg) {
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
 
                 hide("baseConfig"); //Hide Base Config section
+                show("sensorConfig"); //Hide Base Config section
 
                 hide("msgUBX_NAV_SVIN"); //Hide unsupported messages
                 hide("msgUBX_RTCM_1005");
@@ -144,7 +145,7 @@ function sendData() {
         settingCSV += clsElements[x].id + "," + clsElements[x].checked + ",";
     }
 
-    //console.log(settingCSV);
+    console.log("Sending: " + settingCSV);
     ws.send(settingCSV);
 }
 
@@ -1452,6 +1453,27 @@ static const char *index_html = R"=====(
                             <p id="mountPointPWError" class="inlineError"></p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- --------- Sensor Fusion Config --------- -->
+
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary mt-3 toggle-btn" id="sensorConfig" type="button" data-toggle="collapse"
+                    data-target="#collapseSensorConfig" aria-expanded="false" aria-controls="collapseSensorConfig"
+                    style="display:none;">
+                    Sensor Configuration <i class="caret-icon bi bi-caret-down-fill"></i>
+                </button>
+            </div>
+            <div class="collapse" id="collapseSensorConfig">
+                <div class="card card-body">
+
+                    <div class="form-check">
+                        <label class="form-check-label" for="autoIMUmountAlignment">Enable Auto IMU-mount
+                            Alignment</label>
+                        <input class="form-check-input" type="checkbox" value="" id="autoIMUmountAlignment">
+                    </div>
+
                 </div>
             </div>
 

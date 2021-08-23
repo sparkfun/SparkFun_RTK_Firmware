@@ -39,6 +39,7 @@ function parseIncoming(msg) {
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
 
                 hide("baseConfig"); //Hide Base Config section
+                show("sensorConfig"); //Hide Base Config section
 
                 hide("msgUBX_NAV_SVIN"); //Hide unsupported messages
                 hide("msgUBX_RTCM_1005");
@@ -130,7 +131,7 @@ function sendData() {
         settingCSV += clsElements[x].id + "," + clsElements[x].checked + ",";
     }
 
-    //console.log(settingCSV);
+    console.log("Sending: " + settingCSV);
     ws.send(settingCSV);
 }
 

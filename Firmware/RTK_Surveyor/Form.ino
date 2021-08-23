@@ -273,6 +273,9 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "mountPoint", settings.mountPoint);
   stringRecord(settingsCSV, "mountPointPW", settings.mountPointPW);
 
+  //Sensor Fusion Config
+  stringRecord(settingsCSV, "autoIMUmountAlignment", settings.autoIMUmountAlignment);
+
   //System Config
   stringRecord(settingsCSV, "enableLogging", settings.enableLogging);
   stringRecord(settingsCSV, "maxLogTime_minutes", settings.maxLogTime_minutes);
@@ -360,6 +363,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.enableLogging = settingValueBool;
   else if (strcmp(settingName, "dataPortChannel") == 0)
     settings.dataPortChannel = (muxConnectionType_e)settingValue;
+  else if (strcmp(settingName, "autoIMUmountAlignment") == 0)
+    settings.autoIMUmountAlignment = settingValue;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

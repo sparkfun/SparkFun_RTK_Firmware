@@ -233,7 +233,7 @@ void updateAccuracyLEDs()
   {
     lastAccuracyLEDUpdate = millis();
 
-    uint32_t accuracy = i2cGNSS.getHorizontalAccuracy(250);
+    uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
 
     if (accuracy > 0)
     {

@@ -140,7 +140,7 @@ void displaySplash()
       printTextCenter("Facet", yPos, 1, 1, false);
     }
 
-    yPos = yPos + fontHeight + 9;
+    yPos = yPos + fontHeight + 7;
     char unitFirmware[50];
     sprintf(unitFirmware, "v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
     printTextCenter(unitFirmware, yPos, 0, 1, false);
@@ -1362,11 +1362,28 @@ void getAngles()
     {
       while (accel.available() == false) delay(1);
 
-      float accelX = accel.getX();
-      float accelZ = accel.getY();
-      float accelY = accel.getZ();
-      accelZ *= -1.0;
-      accelX *= -1.0;
+      float accelX;
+      float accelZ;
+      float accelY;
+
+      //Express Accel orientation is different from Facet
+      if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
+      {
+        accelX = accel.getX();
+        accelZ = accel.getY();
+        accelY = accel.getZ();
+        accelZ *= -1.0;
+        accelX *= -1.0;
+      }
+      else if (productVariant == RTK_FACET)
+      {
+        accelZ = accel.getX();
+        accelX = accel.getY();
+        accelY = accel.getZ();
+        accelZ *= -1.0;
+        accelY *= -1.0;
+        accelX *= -1.0;
+      }
 
       double roll = atan2(accelY , accelZ) * 57.3;
       double pitch = atan2((-accelX) , sqrt(accelY * accelY + accelZ * accelZ)) * 57.3;

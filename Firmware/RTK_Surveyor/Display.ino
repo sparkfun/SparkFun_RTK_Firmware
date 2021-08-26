@@ -329,7 +329,6 @@ void paintBaseState()
       else if (zedModuleType == PLATFORM_F9R)
       {
         //Blink fusion rover until we have calibration
-        i2cGNSS.getEsfInfo(); // Poll new ESF STATUS data
         if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0) //Initializing
         {
           //Blink Fusion Rover icon until sensor calibration is complete

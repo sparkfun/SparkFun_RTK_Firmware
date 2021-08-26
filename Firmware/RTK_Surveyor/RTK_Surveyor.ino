@@ -487,7 +487,10 @@ void updateLogs()
           logIncreasing = true;
         }
         else
+        {
+          ESP_LOGD(TAG, "Log file: No increase in file size");
           logIncreasing = false;
+        }
       }
     }
   }

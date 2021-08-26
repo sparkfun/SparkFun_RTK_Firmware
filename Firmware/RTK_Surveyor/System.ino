@@ -223,6 +223,11 @@ bool configureUbloxModule()
   response &= i2cGNSS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
   response &= i2cGNSS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
 
+  if (zedModuleType == PLATFORM_F9R)
+  {
+    response &= i2cGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
+  }
+
   if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
     Serial.println(F("Updating UART1 rate"));

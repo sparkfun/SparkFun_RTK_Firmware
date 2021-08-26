@@ -8,9 +8,12 @@ bool configureUbloxModuleRover()
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {
-    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-    if (response == false)
-      Serial.println(F("Disable Survey failed"));
+    if (i2cGNSS.getSurveyInActive(100) == true)
+    {
+      response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+      if (response == false)
+        Serial.println(F("Disable Survey failed"));
+    }
   }
 
   // Set dynamic model

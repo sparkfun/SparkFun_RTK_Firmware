@@ -225,19 +225,16 @@ void menuSensorFusion()
     Serial.println();
     Serial.println(F("Menu: Sensor Fusion Menu"));
 
-    if (i2cGNSS.getEsfInfo()) // Poll new ESF STATUS data
-    {
-      Serial.print(F("Fusion Mode: "));
-      Serial.print(i2cGNSS.packetUBXESFSTATUS->data.fusionMode);
-      if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
-        Serial.println(F("Initializing"));
-      else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1)
-        Serial.println(F("Calibrated"));
-      else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2)
-        Serial.println(F("Suspended"));
-      else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
-        Serial.println(F("Disabled"));
-    }
+    Serial.print(F("Fusion Mode: "));
+    Serial.print(i2cGNSS.packetUBXESFSTATUS->data.fusionMode);
+    if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
+      Serial.println(F("Initializing"));
+    else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1)
+      Serial.println(F("Calibrated"));
+    else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2)
+      Serial.println(F("Suspended"));
+    else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
+      Serial.println(F("Disabled"));
 
     Serial.print(F("1) Toggle Automatic IMU-mount Alignment: "));
     if (settings.autoIMUmountAlignment == true) Serial.println(F("Enabled"));

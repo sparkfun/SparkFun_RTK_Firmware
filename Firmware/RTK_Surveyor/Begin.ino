@@ -98,8 +98,6 @@ void beginBoard()
 
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
 
-    delay(1000);
-
     strcpy(platformFilePrefix, "SFE_Facet");
     strcpy(platformPrefix, "Facet");
   }

@@ -274,7 +274,7 @@ void updateSystemState()
               case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
               case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
             }
-            delay(1000);
+            delay(500);
           }
 #endif
         }
@@ -449,7 +449,7 @@ void updateSystemState()
               case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
               case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
             }
-            delay(1000);
+            delay(500);
           }
 #endif
         }

@@ -121,7 +121,7 @@ void displaySplash()
     yPos = yPos + fontHeight + 2;
     printTextCenter("RTK", yPos, 1, 1, false);
 
-    yPos = yPos + fontHeight + 4;
+    yPos = yPos + fontHeight + 5;
 
     if (productVariant == RTK_SURVEYOR)
     {

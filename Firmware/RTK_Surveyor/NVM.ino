@@ -312,10 +312,9 @@ bool parseLine(char* str) {
       strcat(settingsFileName, "_Settings.txt");
       sd.remove(settingsFileName);
 
-      Serial.printf("RTK %s has been factory reset via settings file. Freezing. Please restart and open terminal at 115200bps.\n\r", platformPrefix);
-
-      while (1)
-        delay(1); //Prevent CPU freakout
+      Serial.printf("RTK %s has been factory reset via settings file. Unit restarting. Please open terminal at 115200bps.\n\r", platformPrefix);
+      delay(2000);
+      ESP.restart();
     }
 
     //Check to see if this setting file is compatible with this version of RTK Surveyor

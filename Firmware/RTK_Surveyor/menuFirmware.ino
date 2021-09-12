@@ -152,7 +152,6 @@ void updateFromSD(const char *firmwareFileName)
       if (firmwareFile.available() < bytesToWrite) bytesToWrite = firmwareFile.available(); //Trim this read size as needed
 
       firmwareFile.read(dataArray, bytesToWrite); //Read the next set of bytes from file into our temp array
-      delay(1); //Give RTOS time
 
       if (Update.write(dataArray, bytesToWrite) != bytesToWrite)
       {
@@ -161,7 +160,6 @@ void updateFromSD(const char *firmwareFileName)
       }
       else
         bytesWritten += bytesToWrite;
-      delay(1); //Give RTOS time
 
       //Indicate progress
       if (bytesWritten > barWidth * portionSize)

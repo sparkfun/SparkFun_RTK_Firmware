@@ -142,7 +142,11 @@ void displaySplash()
 
     yPos = yPos + fontHeight + 7;
     char unitFirmware[50];
+#ifdef ENABLE_DEVELOPER
+    sprintf(unitFirmware, "v%d.%d-DEV", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+#else
     sprintf(unitFirmware, "v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+#endif
     printTextCenter(unitFirmware, yPos, 0, 1, false);
 
     oled.display();
@@ -1362,9 +1366,9 @@ void getAngles()
     {
       while (accel.available() == false) delay(1);
 
-      float accelX;
-      float accelZ;
-      float accelY;
+      float accelX = 0;
+      float accelY = 0;
+      float accelZ = 0;
 
       //Express Accel orientation is different from Facet
       if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)

@@ -128,6 +128,13 @@ void beginBoard()
       case ESP_RST_SDIO : Serial.println(F("ESP_RST_SDIO")); break;
       default : Serial.println(F("Unknown"));
     }
+
+#ifdef ENABLE_DEVELOPER
+    Serial.println("System reset");
+    displayError("WDT RST"); //Freeze with displayed error
+    while (1);
+#endif
+
   }
 }
 

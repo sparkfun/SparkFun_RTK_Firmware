@@ -3,10 +3,7 @@
 //Let's make sure they continue to press for two seconds
 void powerOnCheck()
 {
-#ifndef COMPILE_WIFI
-  return;
-#endif
-#ifndef COMPILE_BT
+#ifdef ENABLE_DEVELOPER
   return;
 #endif
 

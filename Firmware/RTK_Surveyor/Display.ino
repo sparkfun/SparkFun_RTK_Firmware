@@ -460,18 +460,18 @@ void paintLogging()
       {
         lastLoggingIconUpdate = millis();
 
-        if (loggingIconDisplayed == 0)
-          oled.drawIcon(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0, sizeof(Logging_0), true); //Draw the icon
-        else if (loggingIconDisplayed == 1)
-          oled.drawIcon(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1, sizeof(Logging_1), true); //Draw the icon
-        else if (loggingIconDisplayed == 2)
-          oled.drawIcon(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2, sizeof(Logging_2), true); //Draw the icon
-        else if (loggingIconDisplayed == 3)
-          oled.drawIcon(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3, sizeof(Logging_3), true); //Draw the icon
-
         loggingIconDisplayed++; //Goto next icon
         loggingIconDisplayed %= 4; //Wrap
       }
+
+      if (loggingIconDisplayed == 0)
+        oled.drawIcon(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0, sizeof(Logging_0), true); //Draw the icon
+      else if (loggingIconDisplayed == 1)
+        oled.drawIcon(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1, sizeof(Logging_1), true); //Draw the icon
+      else if (loggingIconDisplayed == 2)
+        oled.drawIcon(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2, sizeof(Logging_2), true); //Draw the icon
+      else if (loggingIconDisplayed == 3)
+        oled.drawIcon(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3, sizeof(Logging_3), true); //Draw the icon
     }
   }
 }

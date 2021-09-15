@@ -169,8 +169,8 @@ static esp_err_t _spp_queue_packet(uint8_t *data, size_t len){
 //Above 50kbps it becomes unstable
 
 //const uint16_t SPP_TX_MAX = 330; //Original 
-const uint16_t SPP_TX_MAX = 512*4;
-static uint8_t _spp_tx_buffer[SPP_TX_MAX];
+const uint16_t SPP_TX_MAX = 1024*2; //Should match the SERIAL_SIZE_RX buffer size in RTK_Surveyor.ino
+static uint8_t _spp_tx_buffer[SPP_TX_MAX]; 
 static uint16_t _spp_tx_buffer_len = 0;
 
 static bool _spp_send_buffer(){

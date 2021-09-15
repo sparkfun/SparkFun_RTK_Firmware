@@ -41,9 +41,9 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 5;
 
-//#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
-//#define COMPILE_BT 1 //Comment out to disable all Bluetooth
-#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
+#define COMPILE_BT 1 //Comment out to disable all Bluetooth
+//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -216,11 +216,13 @@ HardwareSerial serialGNSS(2);
 #define RXD2 16
 #define TXD2 17
 
-#define SERIAL_SIZE_RX 4096 //Reduced from 16384 to make room for WiFi/NTRIP server capabilities
+#define SERIAL_SIZE_RX (1024 * 2) //Should match buffer size in BluetoothSerial.cpp. Reduced from 16384 to make room for WiFi/NTRIP server capabilities
 uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
 uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+const uint8_t F9PSerialWriteTaskPriority = 1; //Priority, with 3 being the highest, and 0 being the lowest.
+const uint8_t F9PSerialReadTaskPriority = 1;
 
 TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
 bool uart2pinned = false;
@@ -273,6 +275,7 @@ Button *setupBtn = NULL; //We can't instantiate the buttons here because we don'
 Button *powerBtn = NULL;
 
 TaskHandle_t ButtonCheckTaskHandle = NULL;
+const uint8_t ButtonCheckTaskPriority = 1; //Priority, with 3 being the highest, and 0 being the lowest.
 const int buttonTaskStackSize = 2000;
 
 const int shutDownButtonTime = 2000; //ms press and hold before shutdown

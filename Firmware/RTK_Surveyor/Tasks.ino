@@ -28,11 +28,13 @@ void F9PSerialWriteTask(void *e)
           Serial.printf("I heard: %c\n", incoming);
           incomingBTTest = incoming; //Displayed during system test
         }
+        delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
         taskYIELD();
       }
     }
 #endif
 
+    delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
   }
 }
@@ -116,10 +118,12 @@ void F9PSerialReadTask(void *e)
         } //End maxLogTime
       } //End logging
 
+      delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
       taskYIELD();
 
     } //End Serial.available()
 
+    delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
   }
 }
@@ -414,7 +418,7 @@ void ButtonCheckTask(void *e)
       }
     } //End Platform = RTK Facet
 
-    delay(1); //Yield to other tasks. Pet WDT.
+    delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
   }
 }

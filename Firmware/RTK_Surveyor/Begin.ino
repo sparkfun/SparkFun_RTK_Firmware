@@ -236,7 +236,7 @@ void startUART2Tasks()
       "F9Read", //Just for humans
       readTaskStackSize, //Stack Size
       NULL, //Task input parameter
-      1, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      F9PSerialReadTaskPriority, //Priority
       &F9PSerialReadTaskHandle); //Task handle
 
   if (F9PSerialWriteTaskHandle == NULL)
@@ -245,7 +245,7 @@ void startUART2Tasks()
       "F9Write", //Just for humans
       writeTaskStackSize, //Stack Size
       NULL, //Task input parameter
-      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      F9PSerialWriteTaskPriority, //Priority
       &F9PSerialWriteTaskHandle); //Task handle
 }
 
@@ -452,6 +452,6 @@ void beginSystemState()
       "BtnCheck", //Just for humans
       buttonTaskStackSize, //Stack Size
       NULL, //Task input parameter
-      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      ButtonCheckTaskPriority, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
       &ButtonCheckTaskHandle); //Task handle
 }

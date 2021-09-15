@@ -222,8 +222,8 @@ uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 
-TaskHandle_t startUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
-bool uart2Started = false;
+TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
+bool uart2pinned = false;
 
 //Reduced stack size from 10,000 to 2,000 to make room for WiFi/NTRIP server capabilities
 const int readTaskStackSize = 2000;
@@ -269,7 +269,7 @@ SPARKFUN_LIS2DH12 accel;
 //Buttons - Interrupt driven and debounce
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <JC_Button.h> // http://librarymanager/All#JC_Button
-Button *setupBtn = NULL; //We can't instatiate the buttons here because we don't yet know what pin numbers to use
+Button *setupBtn = NULL; //We can't instantiate the buttons here because we don't yet know what pin numbers to use
 Button *powerBtn = NULL;
 
 TaskHandle_t ButtonCheckTaskHandle = NULL;
@@ -402,8 +402,6 @@ void setup()
 void loop()
 {
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-
-  //checkButtons(); //Change system state as needed
 
   updateSystemState();
 

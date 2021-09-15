@@ -128,13 +128,6 @@ void beginBoard()
       case ESP_RST_SDIO : Serial.println(F("ESP_RST_SDIO")); break;
       default : Serial.println(F("Unknown"));
     }
-
-#ifdef ENABLE_DEVELOPER
-    Serial.println("System reset");
-    displayError("WDT RST"); //Freeze with displayed error
-    while (1);
-#endif
-
   }
 }
 
@@ -202,26 +195,38 @@ void beginSD()
   }
 }
 
+//We want the UART2 interrupts to be pinned to core 0 to avoid competing with I2C interrupts
 //We do not start the UART2 for GNSS->BT reception here because the interrupts would be pinned to core 1
-//competing with I2C interrupts
-//See issue: https://github.com/espressif/arduino-esp32/issues/3386
 //We instead start a task that runs on core 0, that then begins serial
+//See issue: https://github.com/espressif/arduino-esp32/issues/3386
 void beginUART2()
 {
-  if (startUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
-      startUART2Task,
+  if (pinUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
+      pinUART2Task,
       "UARTStart", //Just for humans
       2000, //Stack Size
       NULL, //Task input parameter
       0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-      &startUART2TaskHandle, //Task handle
+      &pinUART2TaskHandle, //Task handle
       0); //Core where task should run, 0=core, 1=Arduino
 
-  while (uart2Started == false) //Wait for task to run once
+  while (uart2pinned == false) //Wait for task to run once
     delay(1);
 }
 
-//These must be started after BT is up and running otherwise SerialBT.available will call reboot
+//Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
+void pinUART2Task( void *pvParameters )
+{
+  serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+  serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
+  serialGNSS.setTimeout(50);
+
+  uart2pinned = true;
+
+  vTaskDelete( NULL ); //Delete task once it has run once
+}
+
+//Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT.available will cause reboot
 void startUART2Tasks()
 {
   //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
@@ -447,6 +452,6 @@ void beginSystemState()
       "BtnCheck", //Just for humans
       buttonTaskStackSize, //Stack Size
       NULL, //Task input parameter
-      1, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
       &ButtonCheckTaskHandle); //Task handle
 }

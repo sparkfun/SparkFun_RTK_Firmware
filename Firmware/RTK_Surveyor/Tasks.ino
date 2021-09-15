@@ -13,7 +13,6 @@ void F9PSerialWriteTask(void *e)
     {
       while (SerialBT.available())
       {
-        taskYIELD();
         if (inTestMode == false)
         {
           //Pass bytes to GNSS receiver
@@ -29,6 +28,7 @@ void F9PSerialWriteTask(void *e)
           Serial.printf("I heard: %c\n", incoming);
           incomingBTTest = incoming; //Displayed during system test
         }
+        taskYIELD();
       }
     }
 #endif
@@ -124,17 +124,7 @@ void F9PSerialReadTask(void *e)
   }
 }
 
-//Assign UART2 interrupts to the current core. See: https://github.com/espressif/arduino-esp32/issues/3386
-void startUART2Task( void *pvParameters )
-{
-  serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-  serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
-  serialGNSS.setTimeout(50);
 
-  uart2Started = true;
-
-  vTaskDelete( NULL ); //Delete task once it has run once
-}
 
 //Control BT status LED according to radioState
 void updateBTled()
@@ -174,8 +164,6 @@ void ButtonCheckTask(void *e)
 
   while (true)
   {
-    delay(1); //Yield to other tasks. Pet WDT.
-
     if (productVariant == RTK_SURVEYOR)
     {
       setupBtn->read();
@@ -330,12 +318,12 @@ void ButtonCheckTask(void *e)
         forceSystemStateUpdate = true;
         requestChangeState(STATE_SHUTDOWN);
       }
-//      else if ((setupBtn != NULL && setupBtn->pressedFor(500)) &&
-//               (powerBtn != NULL && powerBtn->pressedFor(500)))
-//      {
-//        forceSystemStateUpdate = true;
-//        requestChangeState(STATE_TEST);
-//      }
+      //      else if ((setupBtn != NULL && setupBtn->pressedFor(500)) &&
+      //               (powerBtn != NULL && powerBtn->pressedFor(500)))
+      //      {
+      //        forceSystemStateUpdate = true;
+      //        requestChangeState(STATE_TEST);
+      //      }
       else if (powerBtn != NULL && powerBtn->wasReleased())
       {
         switch (systemState)
@@ -423,8 +411,10 @@ void ButtonCheckTask(void *e)
             requestChangeState(STATE_ROVER_NOT_STARTED);
             break;
         }
-      }    } //End Platform = RTK Facet
+      }
+    } //End Platform = RTK Facet
 
+    delay(1); //Yield to other tasks. Pet WDT.
     taskYIELD();
   }
 }

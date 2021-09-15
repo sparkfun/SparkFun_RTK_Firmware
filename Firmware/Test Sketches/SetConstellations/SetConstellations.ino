@@ -23,6 +23,16 @@
   06 08 0C 00 01 00 11 01 GLO
   Above is command for GPS and QZSS turned off
 
+  00 3C 3C 05
+  00 08 10 00 01 00 11 11
+  02 0A 12 00 00 00 21 21
+  03 04 05 00 00 00 11 11
+  05 00 04 00 01 00 11 11
+  06 08 0C 00 00 00 11 11
+  00 00 00 00 00 00 00 00
+Above, on ZED-F9P v1.12, BeiDou is disabled. Why is SBAS not being reported?
+Ah, it's a v1.12 bug. Works fine in v1.13 and on ZED-F9R v1.0
+
   Ugh. The issue is that the doc says IMES is gnssid 4 but really QZSS is in 4th position but with ID 5.
 
       Works:
@@ -48,11 +58,12 @@ SFE_UBLOX_GNSS i2cGNSS;
 void setup()
 {
   Serial.begin(115200);
-  delay(200); //Wait for ESP32
+  delay(500); //Wait for ESP32
   Serial.println("SparkFun u-blox Example");
 
   Wire.begin();
-
+  Wire.setClock(400000);
+  
   //i2cGNSS.enableDebugging(); // Uncomment this line to enable debug messages
 
   if (i2cGNSS.begin() == false) //Connect to the Ublox module using Wire port
@@ -173,7 +184,7 @@ bool setConstellation(uint8_t constellation, bool enable)
   customCfg.len = 0; // Setting the len (length) to zero lets us poll the current settings
   customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
 
-  uint16_t maxWait = 1250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+  uint16_t maxWait = 1250; // Wait for up to 1250ms (Serial may need a lot longer e.g. 1100)
 
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK

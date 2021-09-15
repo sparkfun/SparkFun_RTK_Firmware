@@ -162,13 +162,15 @@ void menuConstellations()
 
     if (incoming >= 1 && incoming <= MAX_CONSTELLATIONS)
     {
-      ubxConstellations[incoming - 1].enabled ^= 1;
+      incoming--; //Align choice to constallation array of 0 to 5
+      
+      ubxConstellations[incoming].enabled ^= 1;
 
       //3.10.6: To avoid cross-correlation issues, it is recommended that GPS and QZSS are always both enabled or both disabled.
-      if ((incoming - 1) == SFE_UBLOX_GNSS_ID_GPS || (incoming - 1) == SFE_UBLOX_GNSS_ID_QZSS)
+      if (incoming == SFE_UBLOX_GNSS_ID_GPS || incoming == 4) //QZSS ID is 5 but array location is 4
       {
-        ubxConstellations[SFE_UBLOX_GNSS_ID_GPS].enabled = ubxConstellations[incoming - 1].enabled;
-        ubxConstellations[SFE_UBLOX_GNSS_ID_QZSS].enabled = ubxConstellations[incoming - 1].enabled;
+        ubxConstellations[SFE_UBLOX_GNSS_ID_GPS].enabled = ubxConstellations[incoming].enabled; //GPS ID is 0 and array location is 0
+        ubxConstellations[4].enabled = ubxConstellations[incoming].enabled; //QZSS ID is 5 but array location is 4
       }
     }
     else if (incoming == STATUS_PRESSED_X)

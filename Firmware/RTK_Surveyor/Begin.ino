@@ -36,6 +36,10 @@ void beginBoard()
     pin_zed_reset = 27;
     pin_batteryLevel_alert = 36;
 
+    //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
+    //The following changes the POR default but will be overwritten by settings in NVM or settings file
+    ubxConstellations[1].enabled = false; 
+
     strcpy(platformFilePrefix, "SFE_Surveyor");
     strcpy(platformPrefix, "Surveyor");
   }

@@ -47,6 +47,7 @@ bool configureUbloxModuleRover()
   response = true; //Reset
   if (zedModuleType == PLATFORM_F9R)
   {
+    setSensorFusion(settings.enableSensorFusion); //Enable/disable sensor fusion
     i2cGNSS.setESFAutoAlignment(settings.autoIMUmountAlignment); //Configure UBX-CFG-ESFALG Automatic IMU-mount Alignment
   }
 

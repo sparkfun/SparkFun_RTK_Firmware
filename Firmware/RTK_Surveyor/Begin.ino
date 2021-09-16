@@ -108,6 +108,8 @@ void beginBoard()
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
     reuseLastLog = false; //Start new log
+    settings.resetCount = 0;
+    recordSystemSettings(); //Record to NVM
   }
   else
   {

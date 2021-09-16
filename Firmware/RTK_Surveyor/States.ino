@@ -66,7 +66,7 @@ void updateSystemState()
 
       case (STATE_ROVER_NO_FIX):
         {
-          if (i2cGNSS.getFixType() == 3) //3D
+          if (i2cGNSS.getFixType() == 3 || i2cGNSS.getFixType() == 4) //3D, 3D+DR
             changeState(STATE_ROVER_FIX);
         }
         break;

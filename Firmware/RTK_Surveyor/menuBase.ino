@@ -227,6 +227,7 @@ void menuSensorFusion()
 
     Serial.print(F("Fusion Mode: "));
     Serial.print(i2cGNSS.packetUBXESFSTATUS->data.fusionMode);
+    Serial.print(" - ");
     if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
       Serial.println(F("Initializing"));
     else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1)

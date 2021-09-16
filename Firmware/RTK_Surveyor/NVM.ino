@@ -139,6 +139,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("dynamicModel=" + (String)settings.dynamicModel);
       settingsFile.println("lastState=" + (String)settings.lastState);
       settingsFile.println("throttleDuringSPPCongestion=" + (String)settings.throttleDuringSPPCongestion);
+      settingsFile.println("enableSensorFusion=" + (String)settings.enableSensorFusion);
       settingsFile.println("autoIMUmountAlignment=" + (String)settings.autoIMUmountAlignment);
       settingsFile.println("enableResetDisplay=" + (String)settings.enableResetDisplay);
       settingsFile.println("resetCount=" + (String)settings.resetCount);
@@ -404,6 +405,8 @@ bool parseLine(char* str) {
     settings.lastState = (SystemState)d;
   else if (strcmp(settingName, "throttleDuringSPPCongestion") == 0)
     settings.throttleDuringSPPCongestion = d;
+  else if (strcmp(settingName, "enableSensorFusion") == 0)
+    settings.enableSensorFusion = d;
   else if (strcmp(settingName, "autoIMUmountAlignment") == 0)
     settings.autoIMUmountAlignment = d;
   else if (strcmp(settingName, "enableResetDisplay") == 0)

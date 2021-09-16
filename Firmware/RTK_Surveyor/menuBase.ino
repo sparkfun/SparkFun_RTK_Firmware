@@ -237,7 +237,14 @@ void menuSensorFusion()
     else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
       Serial.println(F("Disabled"));
 
-    Serial.print(F("1) Toggle Automatic IMU-mount Alignment: "));
+    if (settings.enableSensorFusion == true && settings.dynamicModel != DYN_MODEL_AUTOMOTIVE)
+      Serial.println(F("Warning: Dynamic Model not set to Automotive. Sensor Fusion is best used with the Automotive Dynamic Model."));
+
+    Serial.print(F("1) Toggle Sensor Fusion: "));
+    if (settings.enableSensorFusion == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
+    Serial.print(F("2) Toggle Automatic IMU-mount Alignment: "));
     if (settings.autoIMUmountAlignment == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
@@ -246,6 +253,11 @@ void menuSensorFusion()
     int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
+    {
+      settings.enableSensorFusion ^= 1;
+      setSensorFusion(settings.enableSensorFusion); //Enable/disable sensor fusion
+    }
+    else if (incoming == 2)
     {
       settings.autoIMUmountAlignment ^= 1;
     }
@@ -261,4 +273,16 @@ void menuSensorFusion()
   i2cGNSS.setESFAutoAlignment(settings.autoIMUmountAlignment); //Configure UBX-CFG-ESFALG Automatic IMU-mount Alignment
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+}
+
+//Enable or disable sensor fusion using keys
+void setSensorFusion(bool enable)
+{
+  if (getSensorFusion() != enable)
+    i2cGNSS.setVal8(UBLOX_CFG_SFCORE_USE_SF, enable, VAL_LAYER_ALL);
+}
+
+bool getSensorFusion()
+{
+  return (i2cGNSS.getVal8(UBLOX_CFG_SFCORE_USE_SF, VAL_LAYER_RAM, 1200));
 }

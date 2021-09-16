@@ -333,6 +333,8 @@ struct struct_settings {
   bool throttleDuringSPPCongestion = true;
   ubxConstellation ubxConstellations; //Constellations monitored/used for fix
   bool autoIMUmountAlignment = true;
+  bool enableResetDisplay = false;
+  uint8_t resetCount = 0;
 } settings;
 
 //These are the devices on board RTK Surveyor that may be on or offline.

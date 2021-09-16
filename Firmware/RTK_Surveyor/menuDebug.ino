@@ -34,6 +34,10 @@ void menuDebug()
     if (settings.throttleDuringSPPCongestion == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
+    Serial.print(F("8) Display Reset Counter: "));
+    if (settings.enableResetDisplay == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
@@ -97,6 +101,10 @@ void menuDebug()
     else if (incoming == '7')
     {
       settings.throttleDuringSPPCongestion ^= 1;
+    }
+    else if (incoming == '8')
+    {
+      settings.enableResetDisplay ^= 1;
     }
     else if (incoming == 'x')
       break;

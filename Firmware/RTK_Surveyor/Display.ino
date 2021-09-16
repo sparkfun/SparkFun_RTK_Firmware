@@ -444,6 +444,13 @@ void paintSIV()
     {
       oled.print(i2cGNSS.getSIV());
     }
+
+    if (settings.enableResetDisplay == true)
+    {
+      oled.setFontType(0); //Small font
+      oled.setCursor(16 + (8 * 3) + 6, 38); //x, y
+      oled.print(settings.resetCount);
+    }
   }
 }
 

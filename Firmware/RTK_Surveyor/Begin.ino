@@ -112,6 +112,8 @@ void beginBoard()
   else
   {
     reuseLastLog = true; //Attempt to reuse previous log
+    settings.resetCount++;
+    recordSystemSettings(); //Record to NVM
 
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())

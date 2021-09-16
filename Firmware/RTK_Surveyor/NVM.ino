@@ -140,6 +140,8 @@ void recordSystemSettingsToFile()
       settingsFile.println("lastState=" + (String)settings.lastState);
       settingsFile.println("throttleDuringSPPCongestion=" + (String)settings.throttleDuringSPPCongestion);
       settingsFile.println("autoIMUmountAlignment=" + (String)settings.autoIMUmountAlignment);
+      settingsFile.println("enableResetDisplay=" + (String)settings.enableResetDisplay);
+      settingsFile.println("resetCount=" + (String)settings.resetCount);
 
       //Record constellation settings
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -404,6 +406,10 @@ bool parseLine(char* str) {
     settings.throttleDuringSPPCongestion = d;
   else if (strcmp(settingName, "autoIMUmountAlignment") == 0)
     settings.autoIMUmountAlignment = d;
+  else if (strcmp(settingName, "enableResetDisplay") == 0)
+    settings.enableResetDisplay = d;
+  else if (strcmp(settingName, "resetCount") == 0)
+    settings.resetCount = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

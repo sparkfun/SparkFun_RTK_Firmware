@@ -41,8 +41,8 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 5;
 
-#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
-#define COMPILE_BT 1 //Comment out to disable all Bluetooth
+#define COMPILE_WIFI //Comment out to remove all WiFi functionality
+#define COMPILE_BT //Comment out to disable all Bluetooth
 //#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:

@@ -7,15 +7,33 @@
 //A user pressing the setup button (change between rover/base) is handled by checkpin_setupButton()
 void updateSystemState()
 {
-  if (millis() - lastSystemStateUpdate > 500)
+  if (millis() - lastSystemStateUpdate > 500 || forceSystemStateUpdate == true)
   {
     lastSystemStateUpdate = millis();
+    forceSystemStateUpdate = false;
+
+    //Check to see if any external sources need to change state
+    if (newSystemStateRequested == true)
+    {
+      newSystemStateRequested = false;
+      if (systemState != requestedSystemState)
+        changeState(requestedSystemState);
+    }
 
     //Move between states as needed
     switch (systemState)
     {
       case (STATE_ROVER_NOT_STARTED):
         {
+          if (productVariant == RTK_SURVEYOR)
+          {
+            digitalWrite(pin_baseStatusLED, LOW);
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+            ledcWrite(ledBTChannel, 0); //Turn off BT LED
+          }
+
           //Configure for rover mode
           displayRoverStart(0);
 
@@ -27,11 +45,15 @@ void updateSystemState()
             return;
           }
 
+          inTestMode = false; //Reroutes bluetooth bytes
+
+          setMuxport(settings.dataPortChannel); //Return mux to original channel
+
+          i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
+
           stopWiFi(); //Turn off WiFi and release all resources
           startBluetooth(); //Turn on Bluetooth with 'Rover' name
-
-          if (productVariant == RTK_SURVEYOR)
-            digitalWrite(pin_baseStatusLED, LOW);
+          startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           settings.lastState = STATE_ROVER_NOT_STARTED;
           recordSystemSettings();
@@ -44,7 +66,7 @@ void updateSystemState()
 
       case (STATE_ROVER_NO_FIX):
         {
-          if (i2cGNSS.getFixType() == 3) //3D
+          if (i2cGNSS.getFixType() == 3 || i2cGNSS.getFixType() == 4) //3D, 3D+DR
             changeState(STATE_ROVER_FIX);
         }
         break;
@@ -94,14 +116,14 @@ void updateSystemState()
             digitalWrite(pin_positionAccuracyLED_1cm, LOW);
             digitalWrite(pin_positionAccuracyLED_10cm, LOW);
             digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+            ledcWrite(ledBTChannel, 0); //Turn off BT LED
           }
 
           displayBaseStart(0); //Show 'Base'
 
-          //Restart Bluetooth with 'Base' name
-          //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
+          //Stop all WiFi and BT. Re-enable in each specific base start state.
           stopWiFi();
-          startBluetooth();
+          stopBluetooth();
 
           if (configureUbloxModuleBase() == true)
           {
@@ -112,6 +134,9 @@ void updateSystemState()
 
             if (settings.fixedBase == false)
             {
+              //Restart Bluetooth with 'Base' name
+              //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
+              startBluetooth();
               changeState(STATE_BASE_TEMP_SETTLE);
             }
             else if (settings.fixedBase == true)
@@ -215,7 +240,7 @@ void updateSystemState()
           if (settings.enableNtripServer == true)
           {
             //Turn off Bluetooth and turn on WiFi
-            endBluetooth();
+            stopBluetooth();
             startWiFi();
 
             changeState(STATE_BASE_TEMP_WIFI_STARTED);
@@ -249,7 +274,7 @@ void updateSystemState()
               case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
               case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
             }
-            delay(1000);
+            delay(500);
           }
 #endif
         }
@@ -388,7 +413,7 @@ void updateSystemState()
           if (settings.enableNtripServer == true)
           {
             //Turn off Bluetooth and turn on WiFi
-            endBluetooth();
+            stopBluetooth();
             startWiFi();
 
             rtcmPacketsSent = 0; //Reset any previous number
@@ -424,7 +449,7 @@ void updateSystemState()
               case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
               case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
             }
-            delay(1000);
+            delay(500);
           }
 #endif
         }
@@ -534,13 +559,133 @@ void updateSystemState()
         }
         break;
 
+      case (STATE_BUBBLE_LEVEL):
+        {
+          //Do nothing - display only
+        }
+        break;
+
+      case (STATE_MARK_EVENT):
+        {
+          //Record this event to the log
+          if (online.logging == true)
+          {
+            char nmeaMessage[82]; //Max NMEA sentence length is 82
+            createNMEASentence(1, 2, nmeaMessage, (char*)"CustomEvent"); //sentenceNumber, textID, buffer, text
+            ubxFile.println(nmeaMessage);
+            displayEventMarked(500); //Show 'Event Marked'
+          }
+          else
+            displayNoLogging(500); //Show 'No Logging'
+
+          changeState(lastSystemState);
+        }
+        break;
+
+      case (STATE_DISPLAY_SETUP):
+        {
+          if (millis() - lastSetupMenuChange > 1500)
+          {
+            forceSystemStateUpdate = true; //Imediately go to this new state
+            changeState(setupState); //Change to last setup state
+          }
+        }
+        break;
+
+      case (STATE_WIFI_CONFIG_NOT_STARTED):
+        {
+          if (productVariant == RTK_SURVEYOR)
+          {
+            digitalWrite(pin_baseStatusLED, LOW);
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+            ledcWrite(ledBTChannel, 0); //Turn off BT LED
+          }
+
+          displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
+
+          //Start in AP mode and show config html page
+          startConfigAP();
+
+          changeState(STATE_WIFI_CONFIG);
+        }
+        break;
+      case (STATE_WIFI_CONFIG):
+        {
+          if (incomingSettingsSpot > 0)
+          {
+            //Allow for 150ms before we parse buffer for all data to arrive
+            if (millis() - timeSinceLastIncomingSetting > 750)
+            {
+              Serial.print("Parsing: ");
+              for (int x = 0 ; x < incomingSettingsSpot ; x++)
+                Serial.write(incomingSettings[x]);
+              Serial.println();
+
+              parseIncomingSettings();
+
+              //Clear buffer
+              incomingSettingsSpot = 0;
+              memset(incomingSettings, 0, sizeof(incomingSettings));
+            }
+          }
+        }
+        break;
+
+      //Setup device for testing
+      case (STATE_TEST):
+        {
+          //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
+          //even if there is no GPS fix. We use it to test serial output.
+          i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
+
+          inTestMode = true; //Reroutes bluetooth bytes
+
+          changeState(STATE_TESTING);
+        }
+        break;
+
+      //Display testing screen - do nothing
+      case (STATE_TESTING):
+        {
+          //Exit via button press task
+        }
+        break;
+
+      case (STATE_SHUTDOWN):
+        {
+          forceDisplayUpdate = true;
+          powerDown(true);
+        }
+        break;
+
+      default:
+        {
+          Serial.printf("Unknown state: %d\n\r", systemState);
+        }
+        break;
     }
   }
+}
+
+//System state changes may only occur within main state machine
+//To allow state changes from external sources (ie, Button Tasks) requests can be made
+//Requests are handled at the start of updateSystemState()
+void requestChangeState(SystemState requestedState)
+{
+  newSystemStateRequested = true;
+  requestedSystemState = requestedState;
+  ESP_LOGD(TAG, "Requested System State: %d", requestedSystemState);
 }
 
 //Change states and print the new state
 void changeState(SystemState newState)
 {
+  //If we are leaving WiFi config, record and implement settings
+  if (systemState == STATE_WIFI_CONFIG)
+    recordSystemSettings(); //Record the new settings to EEPROM and config file
+
   systemState = newState;
 
   //Debug print
@@ -603,8 +748,32 @@ void changeState(SystemState newState)
     case (STATE_BASE_FIXED_CASTER_CONNECTED):
       Serial.println(F("State: Base-Fixed - Caster Connected"));
       break;
+    case (STATE_BUBBLE_LEVEL):
+      Serial.println(F("State: Bubble level"));
+      break;
+    case (STATE_MARK_EVENT):
+      Serial.println(F("State: Mark Event"));
+      break;
+    case (STATE_DISPLAY_SETUP):
+      Serial.println(F("State: Display Setup"));
+      break;
+    case (STATE_WIFI_CONFIG_NOT_STARTED):
+      Serial.println(F("State: WiFi Config Not Started"));
+      break;
+    case (STATE_WIFI_CONFIG):
+      Serial.println(F("State: WiFi Config"));
+      break;
+    case (STATE_TEST):
+      Serial.println(F("State: System Test Setup"));
+      break;
+    case (STATE_TESTING):
+      Serial.println(F("State: System Testing"));
+      break;
+    case (STATE_SHUTDOWN):
+      Serial.println(F("State: Shut Down"));
+      break;
     default:
-      Serial.printf("State Unknown: %d\n\r", systemState);
+      Serial.printf("Change State Unknown: %d\n\r", systemState);
       break;
   }
 }

@@ -64,7 +64,7 @@ void scanForFirmware()
 
       dir.open("/"); //Open root
 
-      while (tempFile.openNext(&dir, O_READ))
+      while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
       {
         if (tempFile.isFile())
         {
@@ -74,7 +74,7 @@ void scanForFirmware()
           {
             Serial.println(F("Forced firmware detected. Loading..."));
             displayForcedFirmwareUpdate();
-            updateFromSD((char *)forceFirmwareFileName);
+            updateFromSD(forceFirmwareFileName);
           }
 
           //Check 'bin' extension
@@ -99,11 +99,14 @@ void scanForFirmware()
 }
 
 //Look for firmware file on SD card and update as needed
-void updateFromSD(char *firmwareFileName)
+void updateFromSD(const char *firmwareFileName)
 {
   //Turn off any tasks so that we are not disrupted
   stopWiFi();
-  endBluetooth();
+  stopBluetooth();
+
+  //Delete tasks if running
+  stopUART2Tasks();
 
   Serial.printf("Loading %s\n\r", firmwareFileName);
   if (sd.exists(firmwareFileName))
@@ -149,7 +152,6 @@ void updateFromSD(char *firmwareFileName)
       if (firmwareFile.available() < bytesToWrite) bytesToWrite = firmwareFile.available(); //Trim this read size as needed
 
       firmwareFile.read(dataArray, bytesToWrite); //Read the next set of bytes from file into our temp array
-      delay(10); //Give RTOS time
 
       if (Update.write(dataArray, bytesToWrite) != bytesToWrite)
       {
@@ -158,7 +160,6 @@ void updateFromSD(char *firmwareFileName)
       }
       else
         bytesWritten += bytesToWrite;
-      delay(10); //Give RTOS time
 
       //Indicate progress
       if (bytesWritten > barWidth * portionSize)
@@ -170,6 +171,8 @@ void updateFromSD(char *firmwareFileName)
           Serial.print("=");
         Serial.printf("%d%%", bytesWritten * 100 / updateSize);
         if (bytesWritten == updateSize) Serial.println("]");
+
+        displayFirmwareUpdateProgress(bytesWritten * 100 / updateSize);
       }
     }
     Serial.println(F("\nFile move complete"));
@@ -178,6 +181,8 @@ void updateFromSD(char *firmwareFileName)
     {
       if (Update.isFinished())
       {
+        displayFirmwareUpdateProgress(100);
+        
         Serial.println(F("Firmware updated successfully. Rebooting. Good bye!"));
 
         //If forced firmware is detected, do a full reset of config as well

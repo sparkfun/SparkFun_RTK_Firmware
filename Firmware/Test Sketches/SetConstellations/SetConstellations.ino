@@ -23,6 +23,16 @@
   06 08 0C 00 01 00 11 01 GLO
   Above is command for GPS and QZSS turned off
 
+  00 3C 3C 05
+  00 08 10 00 01 00 11 11
+  02 0A 12 00 00 00 21 21
+  03 04 05 00 00 00 11 11
+  05 00 04 00 01 00 11 11
+  06 08 0C 00 00 00 11 11
+  00 00 00 00 00 00 00 00
+  Above, on ZED-F9P v1.12, BeiDou is disabled. Why is SBAS not being reported?
+  Ah, it's a v1.12 bug. Works fine in v1.13 and on ZED-F9R v1.0
+
   Ugh. The issue is that the doc says IMES is gnssid 4 but really QZSS is in 4th position but with ID 5.
 
       Works:
@@ -48,10 +58,11 @@ SFE_UBLOX_GNSS i2cGNSS;
 void setup()
 {
   Serial.begin(115200);
-  delay(200); //Wait for ESP32
+  delay(500); //Wait for ESP32
   Serial.println("SparkFun u-blox Example");
 
   Wire.begin();
+  Wire.setClock(400000);
 
   //i2cGNSS.enableDebugging(); // Uncomment this line to enable debug messages
 
@@ -153,10 +164,41 @@ void loop()
       else
         Serial.println("Disable QZSS Success");
     }
+    else if(incoming == '!')
+    {
+    for(int x = 0 ; x < 6 ; x++)
+    {
+      bool isEnabled = false;
+      if(x == 0) isEnabled = getConstellation(SFE_UBLOX_GNSS_ID_GPS);
+      else if(x == 1) isEnabled = getConstellation(SFE_UBLOX_GNSS_ID_SBAS);
+      else if(x == 2) isEnabled = getConstellation(SFE_UBLOX_GNSS_ID_GALILEO);
+      else if(x == 3) isEnabled = getConstellation(SFE_UBLOX_GNSS_ID_BEIDOU);
+      else if(x == 4) isEnabled = getConstellation(SFE_UBLOX_GNSS_ID_QZSS);
+      else if(x == 5) isEnabled = getConstellation(SFE_UBLOX_GNSS_ID_GLONASS);
+
+      Serial.print("Module reports ");
+      if(x == 0) Serial.print("GPS");
+      else if(x == 1) Serial.print("SBAS");
+      else if(x == 2) Serial.print("GALILEO");
+      else if(x == 3) Serial.print("BeiDou");
+      else if(x == 4) Serial.print("QZSS");
+      else if(x == 5) Serial.print("GLONASS");
+      Serial.print(": ");
+      if (isEnabled == true)
+        Serial.println("Enabled");
+      else
+        Serial.println("Disabled");
+    }      
+    }
+    else if(incoming == '\n' || incoming == '\r')
+    {
+      //Do nothing
+    }
     else
     {
       //Serial.println("Unknown");
     }
+   
   }
 
 }
@@ -173,7 +215,7 @@ bool setConstellation(uint8_t constellation, bool enable)
   customCfg.len = 0; // Setting the len (length) to zero lets us poll the current settings
   customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
 
-  uint16_t maxWait = 1250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+  uint16_t maxWait = 1250; // Wait for up to 1250ms (Serial may need a lot longer e.g. 1100)
 
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
@@ -281,4 +323,28 @@ uint8_t locateGNSSID(uint8_t *customPayload, uint8_t constellation)
 
   Serial.println(F("locateGNSSID failed"));
   return (0);
+}
+
+//Returns true if constellation is enabled
+bool getConstellation(uint8_t constellationID)
+{
+  uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
+  ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
+
+  customCfg.cls = UBX_CLASS_CFG; // This is the message Class
+  customCfg.id = UBX_CFG_GNSS; // This is the message ID
+  customCfg.len = 0; // Setting the len (length) to zero lets us poll the current settings
+  customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
+
+  uint16_t maxWait = 1250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+
+  // Read the current setting. The results will be loaded into customCfg.
+  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
+  {
+    Serial.println(F("Get Constellation failed"));
+    return (false);
+  }
+
+  if (customPayload[locateGNSSID(customPayload, constellationID) + 4] & (1 << 0)) return true; //Check if bit 0 is set
+  return false;
 }

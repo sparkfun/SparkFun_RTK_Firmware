@@ -75,7 +75,10 @@ void menuMessages()
     Serial.printf("Active messages: %d\n\r", getActiveMessageCount());
 
     Serial.println(F("1) Set NMEA Messages"));
-    Serial.println(F("2) Set RTCM Messages"));
+    if (zedModuleType == PLATFORM_F9P)
+      Serial.println(F("2) Set RTCM Messages"));
+    else if (zedModuleType == PLATFORM_F9R)
+      Serial.println(F("2) Set ESF Messages"));
     Serial.println(F("3) Set RXM Messages"));
     Serial.println(F("4) Set NAV Messages"));
     Serial.println(F("5) Set MON Messages"));
@@ -90,38 +93,40 @@ void menuMessages()
     int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
-      menuMessagesSubtype((char*)"NMEA");
-    else if (incoming == 2)
-      menuMessagesSubtype((char*)"RTCM");
+      menuMessagesSubtype("NMEA");
+    else if (incoming == 2 && zedModuleType == PLATFORM_F9P)
+      menuMessagesSubtype("RTCM");
+    else if (incoming == 2 && zedModuleType == PLATFORM_F9R)
+      menuMessagesSubtype("ESF");
     else if (incoming == 3)
-      menuMessagesSubtype((char*)"RXM");
+      menuMessagesSubtype("RXM");
     else if (incoming == 4)
-      menuMessagesSubtype((char*)"NAV");
+      menuMessagesSubtype("NAV");
     else if (incoming == 5)
-      menuMessagesSubtype((char*)"MON");
+      menuMessagesSubtype("MON");
     else if (incoming == 6)
-      menuMessagesSubtype((char*)"TIM");
+      menuMessagesSubtype("TIM");
     else if (incoming == 7)
     {
       setGNSSMessageRates(ubxMessages, 0); //Turn off all messages
-      setMessageRateByName((char*)"UBX_NMEA_GGA", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GSA", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GST", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GSV", 4); //One update per 4 fixes to avoid swamping SPP connection
-      setMessageRateByName((char*)"UBX_NMEA_RMC", 1);
+      setMessageRateByName("UBX_NMEA_GGA", 1);
+      setMessageRateByName("UBX_NMEA_GSA", 1);
+      setMessageRateByName("UBX_NMEA_GST", 1);
+      setMessageRateByName("UBX_NMEA_GSV", 4); //One update per 4 fixes to avoid swamping SPP connection
+      setMessageRateByName("UBX_NMEA_RMC", 1);
       Serial.println(F("Reset to Surveying Defaults (NMEAx5)"));
     }
     else if (incoming == 8)
     {
       setGNSSMessageRates(ubxMessages, 0); //Turn off all messages
-      setMessageRateByName((char*)"UBX_NMEA_GGA", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GSA", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GST", 1);
-      setMessageRateByName((char*)"UBX_NMEA_GSV", 4); //One update per 4 fixes to avoid swamping SPP connection
-      setMessageRateByName((char*)"UBX_NMEA_RMC", 1);
+      setMessageRateByName("UBX_NMEA_GGA", 1);
+      setMessageRateByName("UBX_NMEA_GSA", 1);
+      setMessageRateByName("UBX_NMEA_GST", 1);
+      setMessageRateByName("UBX_NMEA_GSV", 4); //One update per 4 fixes to avoid swamping SPP connection
+      setMessageRateByName("UBX_NMEA_RMC", 1);
 
-      setMessageRateByName((char*)"UBX_RXM_RAWX", 1);
-      setMessageRateByName((char*)"UBX_RXM_SFRBX", 1);
+      setMessageRateByName("UBX_RXM_RAWX", 1);
+      setMessageRateByName("UBX_RXM_SFRBX", 1);
       Serial.println(F("Reset to PPP Logging Defaults (NMEAx5 + RXMx2)"));
     }
     else if (incoming == 9)
@@ -164,7 +169,7 @@ void menuMessages()
 
 //Given a sub type (ie "RTCM", "NMEA") present menu showing messages with this subtype
 //Controls the messages that get broadcast over Bluetooth and logged (if enabled)
-void menuMessagesSubtype(char* messageType)
+void menuMessagesSubtype(const char* messageType)
 {
   while (1)
   {
@@ -173,11 +178,15 @@ void menuMessagesSubtype(char* messageType)
 
     int startOfBlock = 0;
     int endOfBlock = 0;
-    setMessageOffsets(messageType, startOfBlock, endOfBlock); //Find start and stop of RTCM records in message array
+    setMessageOffsets(messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
     for (int x = 0 ; x < (endOfBlock - startOfBlock) ; x++)
     {
-      Serial.printf("%d) Message %s: ", x + 1, ubxMessages[x + startOfBlock].msgTextName);
-      Serial.println(ubxMessages[x + startOfBlock].msgRate);
+      //Check to see if this ZED platform supports this message
+      if (ubxMessages[x + startOfBlock].supported & zedModuleType)
+      {
+        Serial.printf("%d) Message %s: ", x + 1, ubxMessages[x + startOfBlock].msgTextName);
+        Serial.println(ubxMessages[x + startOfBlock].msgRate);
+      }
     }
 
     Serial.println(F("x) Exit"));
@@ -186,7 +195,11 @@ void menuMessagesSubtype(char* messageType)
 
     if (incoming >= 1 && incoming <= (endOfBlock - startOfBlock))
     {
-      inputMessageRate(ubxMessages[ (incoming - 1) + startOfBlock]);
+      //Check to see if this ZED platform supports this message
+      if (ubxMessages[(incoming - 1) + startOfBlock].supported & zedModuleType)
+        inputMessageRate(ubxMessages[(incoming - 1) + startOfBlock]);
+      else
+        printUnknown(incoming);
     }
     else if (incoming == STATUS_PRESSED_X)
       break;
@@ -222,7 +235,7 @@ void inputMessageRate(ubxMsg &localMessage)
   localMessage.msgRate = rate;
 }
 
-//Updates the message rates on the ZED-F9P for all known messages
+//Updates the message rates on the ZED-F9x for all supported messages
 //Any port and messages by reference can be passed in. This allows us to modify the USB
 //port settings a separate (not NVM backed) message struct for testing
 bool configureGNSSMessageRates(uint8_t portType, ubxMsg *localMessage)
@@ -230,7 +243,11 @@ bool configureGNSSMessageRates(uint8_t portType, ubxMsg *localMessage)
   bool response = true;
 
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    response &= configureMessageRate(portType, localMessage[x]);
+  {
+    //Check to see if this ZED platform supports this message
+    if (ubxMessages[x].supported & zedModuleType)
+      response &= configureMessageRate(portType, localMessage[x]);
+  }
 
   return (response);
 }
@@ -291,102 +308,106 @@ void beginLogging()
   {
     if (online.microSD == true && settings.enableLogging == true)
     {
-      char fileName[40] = "";
-
-      i2cGNSS.checkUblox();
-
-      if (reuseLastLog == true) //attempt to use previous log
+      //Wait 1000ms between newLog creation for ZED to get date/time
+      if (millis() - lastBeginLoggingAttempt > 1000)
       {
-        if (findLastLog(fileName) == false)
-        {
-          Serial.println(F("Failed to find last log. Making new one."));
-        }
-      }
+        lastBeginLoggingAttempt = millis();
 
-      if (strlen(fileName) == 0)
-      {
-        //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
-        bool timeValid = false;
-        //        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
-        //          timeValid = true;
-        if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
-          timeValid = true;
+        char fileName[40] = "";
 
-        if (timeValid == false)
+        i2cGNSS.checkUblox();
+
+        if (reuseLastLog == true) //attempt to use previous log
         {
-          Serial.println(F("beginLoggingUBX: No date/time available. No file created."));
-          delay(1000); //Give the receiver time to get a lock
-          online.logging = false;
-          return;
+          if (findLastLog(fileName) == false)
+          {
+            Serial.println(F("Failed to find last log. Making new one."));
+          }
         }
 
-        sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
-                platformFilePrefix,
-                i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
-                i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
-               );
-      }
-
-      //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-      {
-        // O_CREAT - create the file if it does not exist
-        // O_APPEND - seek to the end of the file prior to each write
-        // O_WRITE - open for write
-        if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+        if (strlen(fileName) == 0)
         {
-          Serial.printf("Failed to create GNSS UBX data file: %s\n\r", fileName);
-          delay(1000);
-          online.logging = false;
+          //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
+          bool timeValid = false;
+          //        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
+          //          timeValid = true;
+          if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
+            timeValid = true;
+
+          if (timeValid == false)
+          {
+            Serial.println(F("beginLoggingUBX: No date/time available. No file created."));
+            online.logging = false;
+            return;
+          }
+
+          sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+                  platformFilePrefix,
+                  i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
+                  i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
+                 );
+        }
+
+        //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
+        if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+        {
+          // O_CREAT - create the file if it does not exist
+          // O_APPEND - seek to the end of the file prior to each write
+          // O_WRITE - open for write
+          if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+          {
+            Serial.printf("Failed to create GNSS UBX data file: %s\n\r", fileName);
+            online.logging = false;
+            xSemaphoreGive(xFATSemaphore);
+            return;
+          }
+
+          updateDataFileCreate(&ubxFile); // Update the file to create time & date
+
+          startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
+
+          //Add NMEA txt message with restart reason
+          char rstReason[30];
+          switch (esp_reset_reason())
+          {
+            case ESP_RST_UNKNOWN: strcpy(rstReason, "ESP_RST_UNKNOWN"); break;
+            case ESP_RST_POWERON : strcpy(rstReason, "ESP_RST_POWERON"); break;
+            case ESP_RST_SW : strcpy(rstReason, "ESP_RST_SW"); break;
+            case ESP_RST_PANIC : strcpy(rstReason, "ESP_RST_PANIC"); break;
+            case ESP_RST_INT_WDT : strcpy(rstReason, "ESP_RST_INT_WDT"); break;
+            case ESP_RST_TASK_WDT : strcpy(rstReason, "ESP_RST_TASK_WDT"); break;
+            case ESP_RST_WDT : strcpy(rstReason, "ESP_RST_WDT"); break;
+            case ESP_RST_DEEPSLEEP : strcpy(rstReason, "ESP_RST_DEEPSLEEP"); break;
+            case ESP_RST_BROWNOUT : strcpy(rstReason, "ESP_RST_BROWNOUT"); break;
+            case ESP_RST_SDIO : strcpy(rstReason, "ESP_RST_SDIO"); break;
+            default : strcpy(rstReason, "Unknown");
+          }
+
+          char nmeaMessage[82]; //Max NMEA sentence length is 82
+          createNMEASentence(1, 1, nmeaMessage, rstReason); //sentenceNumber, textID, buffer, text
+          ubxFile.println(nmeaMessage);
+
+          if (reuseLastLog == true)
+          {
+            Serial.println(F("Appending last available log"));
+          }
+
           xSemaphoreGive(xFATSemaphore);
+        }
+        else
+        {
+          Serial.println(F("Failed to get file system lock to create GNSS UBX data file"));
+          online.logging = false;
           return;
         }
 
-        updateDataFileCreate(&ubxFile); // Update the file to create time & date
-
-        startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
-
-        //Add NMEA txt message with restart reason
-        char rstReason[30];
-        switch (esp_reset_reason())
-        {
-          case ESP_RST_UNKNOWN: strcpy(rstReason, "ESP_RST_UNKNOWN"); break;
-          case ESP_RST_POWERON : strcpy(rstReason, "ESP_RST_POWERON"); break;
-          case ESP_RST_SW : strcpy(rstReason, "ESP_RST_SW"); break;
-          case ESP_RST_PANIC : strcpy(rstReason, "ESP_RST_PANIC"); break;
-          case ESP_RST_INT_WDT : strcpy(rstReason, "ESP_RST_INT_WDT"); break;
-          case ESP_RST_TASK_WDT : strcpy(rstReason, "ESP_RST_TASK_WDT"); break;
-          case ESP_RST_WDT : strcpy(rstReason, "ESP_RST_WDT"); break;
-          case ESP_RST_DEEPSLEEP : strcpy(rstReason, "ESP_RST_DEEPSLEEP"); break;
-          case ESP_RST_BROWNOUT : strcpy(rstReason, "ESP_RST_BROWNOUT"); break;
-          case ESP_RST_SDIO : strcpy(rstReason, "ESP_RST_SDIO"); break;
-          default : strcpy(rstReason, "Unknown");
-        }
-
-        char nmeaMessage[82]; //Max NMEA sentence length is 82
-        createNMEASentence(1, 1, nmeaMessage, rstReason); //sentenceNumber, textID
-        ubxFile.println(nmeaMessage);
-
-        if (reuseLastLog == true)
-        {
-          Serial.println(F("Appending last available log"));
-        }
-
-        xSemaphoreGive(xFATSemaphore);
-      }
-      else
-      {
-        Serial.println(F("Failed to get file system lock to create GNSS UBX data file"));
-        online.logging = false;
-        return;
-      }
-
-      Serial.printf("Log file created: %s\n\r", fileName);
-      online.logging = true;
-    }
+        Serial.printf("Log file created: %s\n\r", fileName);
+        online.logging = true;
+      } //lastBeginLoggingAttempt > 1000ms
+    } //sdOnline, settings.logging = true
     else
       online.logging = false;
-  }
+  } //online.logging = false
 }
 
 //Updates the timestemp on a given data file
@@ -470,7 +491,7 @@ bool findLastLog(char *lastLogName)
 }
 
 //Given a unique string, find first and last records containing that string in message array
-void setMessageOffsets(char* messageType, int& startOfBlock, int& endOfBlock)
+void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlock)
 {
   char messageNamePiece[40]; //UBX_RTCM
   sprintf(messageNamePiece, "UBX_%s", messageType); //Put UBX_ infront of type
@@ -505,7 +526,7 @@ uint8_t getActiveMessageCount()
 }
 
 //Given the name of a message, find it, and set the rate
-bool setMessageRateByName(char *msgName, uint8_t msgRate)
+bool setMessageRateByName(const char *msgName, uint8_t msgRate)
 {
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {

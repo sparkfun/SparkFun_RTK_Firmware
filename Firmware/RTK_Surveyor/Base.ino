@@ -5,13 +5,6 @@ bool configureUbloxModuleBase()
   bool response = true;
   int maxWait = 2000;
 
-  if (productVariant == RTK_SURVEYOR)
-  {
-    digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-    digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-    digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-  }
-
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
   if (i2cGNSS.getSurveyInActive() == true)

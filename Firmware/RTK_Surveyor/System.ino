@@ -55,31 +55,13 @@ bool startBluetooth()
 
   radioState = BT_ON_NOCONNECTION;
 
-  if (productVariant == RTK_SURVEYOR)
-    digitalWrite(pin_bluetoothStatusLED, HIGH);
-
-  //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
-  if (F9PSerialReadTaskHandle == NULL)
-    xTaskCreate(
-      F9PSerialReadTask,
-      "F9Read", //Just for humans
-      readTaskStackSize, //Stack Size
-      NULL, //Task input parameter
-      1, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-      &F9PSerialReadTaskHandle); //Task handle
-
-  if (F9PSerialWriteTaskHandle == NULL)
-    xTaskCreate(
-      F9PSerialWriteTask,
-      "F9Write", //Just for humans
-      writeTaskStackSize, //Stack Size
-      NULL, //Task input parameter
-      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-      &F9PSerialWriteTaskHandle); //Task handle
-
   //Start task for controlling Bluetooth pair LED
   if (productVariant == RTK_SURVEYOR)
-    btLEDTask.attach(btLEDTaskPace, updateBTled); //Rate in seconds, callback
+  {
+    ledcWrite(ledBTChannel, 255); //Turn on BT LED
+    btLEDTask.detach(); //Slow down the BT LED blinker task
+    btLEDTask.attach(btLEDTaskPace2Hz, updateBTled); //Rate in seconds, callback
+  }
 #endif
 
   return (true);
@@ -87,20 +69,8 @@ bool startBluetooth()
 
 //This function stops BT so that it can be restarted later
 //It also releases as much system resources as possible so that WiFi/caster is more stable
-void endBluetooth()
+void stopBluetooth()
 {
-  //Delete tasks if running
-  if (F9PSerialReadTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialReadTaskHandle);
-    F9PSerialReadTaskHandle = NULL;
-  }
-  if (F9PSerialWriteTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialWriteTaskHandle);
-    F9PSerialWriteTaskHandle = NULL;
-  }
-
 #ifdef COMPILE_BT
   SerialBT.flush(); //Complete any transfers
   SerialBT.disconnect(); //Drop any clients
@@ -192,9 +162,13 @@ bool configureUbloxModule()
   if (response == false)
     Serial.println(F("Set rate failed"));
 
-  response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-  if (response == false)
-    Serial.println(F("Disable Survey failed"));
+  //Survey mode is only available on ZED-F9P modules
+  if (zedModuleType == PLATFORM_F9P)
+  {
+    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+    if (response == false)
+      Serial.println(F("Disable Survey failed"));
+  }
 
 #define OUTPUT_SETTING 14
 #define INPUT_SETTING 12
@@ -248,6 +222,11 @@ bool configureUbloxModule()
 
   response &= i2cGNSS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
   response &= i2cGNSS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
+
+  if (zedModuleType == PLATFORM_F9R)
+  {
+    response &= i2cGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
+  }
 
   if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
@@ -612,7 +591,7 @@ bool isConnected(uint8_t deviceAddress)
 
 //Given text, a position, and kerning, print text to display
 //This is helpful for squishing or stretching a string to appropriately fill the display
-void printTextwithKerning(char *newText, uint8_t xPos, uint8_t yPos, uint8_t kerning)
+void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8_t kerning)
 {
   for (int x = 0 ; x < strlen(newText) ; x++)
   {
@@ -694,7 +673,7 @@ void cyclePositionLEDs()
 //This allows NMEA, I2C, PPS/Event, and ADC/DAC to be routed through data port via software select
 void setMuxport(int channelNumber)
 {
-  if (productVariant == RTK_EXPRESS)
+  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
     pinMode(pin_muxA, OUTPUT);
     pinMode(pin_muxB, OUTPUT);
@@ -786,7 +765,7 @@ void createNMEASentence(uint8_t sentenceNumber, uint8_t textID, char *nmeaMessag
 
   //From: http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html
   byte CRC = 0; // XOR chars between '$' and '*'
-  for (byte x = 1 ; x < strlen(nmeaTxt) - 1; x++) 
+  for (byte x = 1 ; x < strlen(nmeaTxt) - 1; x++)
     CRC = CRC ^ nmeaTxt[x];
 
   sprintf(nmeaMessage, "%s%02X", nmeaTxt, CRC);

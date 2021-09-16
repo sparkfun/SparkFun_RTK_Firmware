@@ -39,7 +39,11 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 4;
+const int FIRMWARE_VERSION_MINOR = 5;
+
+#define COMPILE_WIFI //Comment out to remove all WiFi functionality
+#define COMPILE_BT //Comment out to disable all Bluetooth
+//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -62,7 +66,6 @@ int pin_positionAccuracyLED_10cm;
 int pin_positionAccuracyLED_100cm;
 int pin_baseStatusLED;
 int pin_bluetoothStatusLED;
-int pin_baseSwitch;
 int pin_microSD_CS;
 int pin_zed_tx_ready;
 int pin_zed_reset;
@@ -108,19 +111,22 @@ char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and set
 SdFile ubxFile; //File that all gnss ubx messages setences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
 int startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
+SdFile newFirmwareFile; //File that is available if user uploads new firmware via web gui
 
 //System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
 SemaphoreHandle_t xFATSemaphore;
 const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
 const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
+
+//Display used/free space in menu and config page
+uint32_t sdCardSizeMB = 0;
+uint32_t sdFreeSpaceMB = 0;
+uint32_t sdUsedSpaceMB = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-#define COMPILE_WIFI 1 //Comment out to remove all WiFi functionality
-
 #ifdef COMPILE_WIFI
 #include <WiFi.h>
 #include "esp_wifi.h" //Needed for init/deinit of resources to free up RAM
@@ -145,7 +151,8 @@ uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service tim
 //v1.13 causes the RTK LED to not function if SBAS is enabled. To avoid this, we
 //disable SBAS by default.
 
-char zedFirmwareVersion[20]; //The string looks like 'FWVER=HPG 1.12'. Output to debug menu and settings file.
+char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to debug menu and settings file.
+uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
 // Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
 class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
@@ -166,7 +173,10 @@ SFE_UBLOX_GNSS_ADD i2cGNSS;
 
 //Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings
 //This array holds the payload data bytes. Global so that we can use between config functions.
+#ifdef MAX_PAYLOAD_SIZE
+#undef MAX_PAYLOAD_SIZE
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
+#endif
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -176,10 +186,14 @@ uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 SFE_MAX1704X lipo(MAX1704X_MAX17048);
 
 // setting PWM properties
-const int freq = 5000;
+const int pwmFreq = 5000;
 const int ledRedChannel = 0;
 const int ledGreenChannel = 1;
-const int resolution = 8;
+const int ledBTChannel = 2;
+const int pwmResolution = 8;
+
+int pwmFadeAmount = 10;
+int btFadeLevel = 0;
 
 int battLevel = 0; //SOC measured from fuel gauge, in %. Used in multiple places (display, serial debug, log)
 float battVoltage = 0.0;
@@ -188,11 +202,8 @@ float battChangeRate = 0.0;
 
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/18
-
-#define COMPILE_BT 1 //Comment out to disable all Bluetooth
-
 #ifdef COMPILE_BT
+//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/18
 #include "src/BluetoothSerial/BluetoothSerial.h"
 BluetoothSerial SerialBT;
 #include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
@@ -205,14 +216,16 @@ HardwareSerial serialGNSS(2);
 #define RXD2 16
 #define TXD2 17
 
-#define SERIAL_SIZE_RX 4096 //Reduced from 16384 to make room for WiFi/NTRIP server capabilities
+#define SERIAL_SIZE_RX (1024 * 2) //Should match buffer size in BluetoothSerial.cpp. Reduced from 16384 to make room for WiFi/NTRIP server capabilities
 uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
 uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+const uint8_t F9PSerialWriteTaskPriority = 1; //Priority, with 3 being the highest, and 0 being the lowest.
+const uint8_t F9PSerialReadTaskPriority = 1;
 
-TaskHandle_t startUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
-bool uart2Started = false;
+TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
+bool uart2pinned = false;
 
 //Reduced stack size from 10,000 to 2,000 to make room for WiFi/NTRIP server capabilities
 const int readTaskStackSize = 2000;
@@ -235,7 +248,8 @@ MicroOLED oled(PIN_RESET, DC_JUMPER);
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <Update.h>
 int binCount = 0;
-char binFileNames[10][50];
+const int maxBinFiles = 10;
+char binFileNames[maxBinFiles][50];
 const char* forceFirmwareFileName = "RTK_Surveyor_Firmware_Force.bin"; //File that will be loaded at startup regardless of user input
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -244,16 +258,46 @@ const char* forceFirmwareFileName = "RTK_Surveyor_Firmware_Force.bin"; //File th
 #include <Ticker.h>
 
 Ticker btLEDTask;
-float btLEDTaskPace = 0.5; //Seconds
-
-//Ticker battCheckTask;
-//float battCheckTaskPace = 2.0; //Seconds
+float btLEDTaskPace2Hz = 0.5;
+float btLEDTaskPace33Hz = 0.03;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Accelerometer for bubble leveling
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include "SparkFun_LIS2DH12.h" //Click here to get the library: http://librarymanager/All#SparkFun_LIS2DH12
 SPARKFUN_LIS2DH12 accel;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//Buttons - Interrupt driven and debounce
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#include <JC_Button.h> // http://librarymanager/All#JC_Button
+Button *setupBtn = NULL; //We can't instantiate the buttons here because we don't yet know what pin numbers to use
+Button *powerBtn = NULL;
+
+TaskHandle_t ButtonCheckTaskHandle = NULL;
+const uint8_t ButtonCheckTaskPriority = 1; //Priority, with 3 being the highest, and 0 being the lowest.
+const int buttonTaskStackSize = 2000;
+
+const int shutDownButtonTime = 2000; //ms press and hold before shutdown
+unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+//Webserver for serving config page from ESP32 as Acess Point
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#ifdef COMPILE_WIFI
+
+#include "ESPAsyncWebServer.h"
+#include "form.h"
+
+AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
+#endif
+
+//Because the incoming string is longer than max len, there are multiple callbacks so we
+//use a global to combine the incoming
+char incomingSettings[2000];
+int incomingSettingsSpot = 0;
+unsigned long timeSinceLastIncomingSetting = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Global variables
@@ -268,7 +312,9 @@ uint8_t debounceDelay = 20; //ms to delay between button reads
 
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
+bool forceDisplayUpdate = false; //Goes true when setup is pressed, causes display to refresh real time
 uint32_t lastSystemStateUpdate = 0;
+bool forceSystemStateUpdate = false; //Set true to avoid update wait
 uint32_t lastAccuracyLEDUpdate = 0;
 uint32_t lastBaseLEDupdate = 0; //Controls the blinking of the Base LED
 
@@ -277,6 +323,7 @@ long lastStackReport = 0; //Controls the report rate of stack highwater mark wit
 uint32_t lastHeapReport = 0; //Report heap every 1s if option enabled
 uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
+uint32_t lastBeginLoggingAttempt = 0; //Wait 1000ms between newLog creation for ZED to get date/time
 
 uint32_t lastSatelliteDishIconUpdate = 0;
 bool satelliteDishIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms
@@ -304,6 +351,8 @@ bool setupByPowerButton = false; //We can change setup via tapping power button
 
 uint16_t svinObservationTime = 0; //Use globals so we don't have to request these values multiple times (slow response)
 float svinMeanAccuracy = 0;
+
+uint32_t lastSetupMenuChange = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -312,6 +361,8 @@ void setup()
 
   Wire.begin(); //Start I2C on core 1
   Wire.setClock(400000);
+
+  beginGNSS(); //Connect to GNSS
 
   beginBoard(); //Determine what hardware platform we are running on
 
@@ -340,11 +391,11 @@ void setup()
   beginFuelGauge(); //Configure battery fuel guage monitor
   checkBatteryLevels(); //Force display so you see battery level immediately at power on
 
-  beginGNSS(); //Connect and configure ZED-F9P
+  configureGNSS(); //Configure ZED module
 
   beginAccelerometer();
 
-  beginSystemState(); //Determine initial system state
+  beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
   Serial.flush(); //Complete any previous prints
 
@@ -354,8 +405,6 @@ void setup()
 void loop()
 {
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-
-  checkButtons(); //Change system state as needed
 
   updateSystemState();
 
@@ -440,7 +489,10 @@ void updateLogs()
           logIncreasing = true;
         }
         else
+        {
+          ESP_LOGD(TAG, "Log file: No increase in file size");
           logIncreasing = false;
+        }
       }
     }
   }

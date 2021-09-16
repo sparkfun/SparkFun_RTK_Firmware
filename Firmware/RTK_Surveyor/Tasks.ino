@@ -9,27 +9,32 @@ void F9PSerialWriteTask(void *e)
   {
 #ifdef COMPILE_BT
     //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
-    while (SerialBT.available())
+    if (radioState == BT_CONNECTED)
     {
-      taskYIELD();
-      if (inTestMode == false)
+      while (SerialBT.available())
       {
-        //Pass bytes to GNSS receiver
-        auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
-        serialGNSS.write(wBuffer, s);
+        if (inTestMode == false)
+        {
+          //Pass bytes to GNSS receiver
+          auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
+          serialGNSS.write(wBuffer, s);
 
-        if (settings.enableTaskReports == true)
-          Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
-      }
-      else
-      {
-        char incoming = SerialBT.read();
-        Serial.printf("I heard: %c\n", incoming);
-        incomingBTTest = incoming; //Displayed during system test
+          if (settings.enableTaskReports == true)
+            Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+        }
+        else
+        {
+          char incoming = SerialBT.read();
+          Serial.printf("I heard: %c\n", incoming);
+          incomingBTTest = incoming; //Displayed during system test
+        }
+        delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
+        taskYIELD();
       }
     }
-#endif 
+#endif
 
+    delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
   }
 }
@@ -51,7 +56,7 @@ void F9PSerialReadTask(void *e)
         taskYIELD();
       }
 #ifdef COMPILE_BT
-      else if (SerialBT.connected())
+      else if (radioState == BT_CONNECTED)
       {
         if (SerialBT.isCongested() == false)
         {
@@ -113,36 +118,307 @@ void F9PSerialReadTask(void *e)
         } //End maxLogTime
       } //End logging
 
+      delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
       taskYIELD();
 
     } //End Serial.available()
 
+    delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
   }
 }
 
-//Assign UART2 interrupts to the current core. See: https://github.com/espressif/arduino-esp32/issues/3386
-void startUART2Task( void *pvParameters )
-{
-  serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-  serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
-  serialGNSS.setTimeout(50);
 
-  uart2Started = true;
 
-  vTaskDelete( NULL ); //Delete task once it has run once
-}
-
-//Control BT status LED according to bluetoothState
+//Control BT status LED according to radioState
 void updateBTled()
 {
   if (productVariant == RTK_SURVEYOR)
   {
     if (radioState == BT_ON_NOCONNECTION)
-      digitalWrite(pin_bluetoothStatusLED, !digitalRead(pin_bluetoothStatusLED));
+    {
+      //Blink on/off while we wait for BT connection
+      if (btFadeLevel == 0) btFadeLevel = 255;
+      else btFadeLevel = 0;
+      ledcWrite(ledBTChannel, btFadeLevel);
+    }
     else if (radioState == BT_CONNECTED)
-      digitalWrite(pin_bluetoothStatusLED, HIGH);
+      ledcWrite(ledBTChannel, 255);
+    else if (radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
+    {
+      //Fade in/out the BT LED during WiFi AP mode
+      btFadeLevel += pwmFadeAmount;
+      if (btFadeLevel <= 0 || btFadeLevel >= 255) pwmFadeAmount *= -1;
+
+      if (btFadeLevel > 255) btFadeLevel = 255;
+      if (btFadeLevel < 0) btFadeLevel = 0;
+
+      ledcWrite(ledBTChannel, btFadeLevel);
+    }
     else
-      digitalWrite(pin_bluetoothStatusLED, LOW);
+      ledcWrite(ledBTChannel, 0);
+  }
+}
+
+//For RTK Express and RTK Facet, monitor momentary buttons
+void ButtonCheckTask(void *e)
+{
+  if (setupBtn != NULL) setupBtn->begin();
+  if (powerBtn != NULL) powerBtn->begin();
+
+  while (true)
+  {
+    if (productVariant == RTK_SURVEYOR)
+    {
+      setupBtn->read();
+
+      //When switch is set to '1' = BASE, pin will be shorted to ground
+      if (setupBtn->isPressed()) //Switch is set to base mode
+      {
+        if (buttonPreviousState == BUTTON_ROVER)
+        {
+          lastRockerSwitchChange = millis(); //Record for WiFi AP access
+          buttonPreviousState = BUTTON_BASE;
+          requestChangeState(STATE_BASE_NOT_STARTED);
+        }
+      }
+      else if (setupBtn->wasReleased()) //Switch is set to Rover
+      {
+        if (buttonPreviousState == BUTTON_BASE)
+        {
+          buttonPreviousState = BUTTON_ROVER;
+
+          //If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
+          if (millis() - lastRockerSwitchChange < 500)
+          {
+            requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
+          }
+          else
+          {
+            requestChangeState(STATE_ROVER_NOT_STARTED);
+          }
+        }
+      }
+    }
+    else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS) //Express: Check both of the momentary switches
+    {
+      if (setupBtn != NULL) setupBtn->read();
+      if (powerBtn != NULL) powerBtn->read();
+
+      if (systemState == STATE_SHUTDOWN)
+      {
+        //Ignore button presses while shutting down
+      }
+      else if (powerBtn != NULL && powerBtn->pressedFor(shutDownButtonTime))
+      {
+        forceSystemStateUpdate = true;
+        requestChangeState(STATE_SHUTDOWN);
+      }
+      else if ((setupBtn != NULL && setupBtn->pressedFor(500)) &&
+               (powerBtn != NULL && powerBtn->pressedFor(500)))
+      {
+        forceSystemStateUpdate = true;
+        requestChangeState(STATE_TEST);
+      }
+      else if (setupBtn != NULL && setupBtn->wasReleased())
+      {
+        switch (systemState)
+        {
+          //If we are in any running state, change to STATE_DISPLAY_SETUP
+          case STATE_ROVER_NOT_STARTED:
+          case STATE_ROVER_NO_FIX:
+          case STATE_ROVER_FIX:
+          case STATE_ROVER_RTK_FLOAT:
+          case STATE_ROVER_RTK_FIX:
+          case STATE_BASE_NOT_STARTED:
+          case STATE_BASE_TEMP_SETTLE:
+          case STATE_BASE_TEMP_SURVEY_STARTED:
+          case STATE_BASE_TEMP_TRANSMITTING:
+          case STATE_BASE_TEMP_WIFI_STARTED:
+          case STATE_BASE_TEMP_WIFI_CONNECTED:
+          case STATE_BASE_TEMP_CASTER_STARTED:
+          case STATE_BASE_TEMP_CASTER_CONNECTED:
+          case STATE_BASE_FIXED_NOT_STARTED:
+          case STATE_BASE_FIXED_TRANSMITTING:
+          case STATE_BASE_FIXED_WIFI_STARTED:
+          case STATE_BASE_FIXED_WIFI_CONNECTED:
+          case STATE_BASE_FIXED_CASTER_STARTED:
+          case STATE_BASE_FIXED_CASTER_CONNECTED:
+          case STATE_BUBBLE_LEVEL:
+          case STATE_WIFI_CONFIG_NOT_STARTED:
+          case STATE_WIFI_CONFIG:
+            lastSystemState = systemState; //Remember this state to return after we mark an event
+            requestChangeState(STATE_DISPLAY_SETUP);
+            setupState = STATE_MARK_EVENT;
+            lastSetupMenuChange = millis();
+            break;
+
+          case STATE_MARK_EVENT:
+            //If the user presses the setup button during a mark event, do nothing
+            //Allow system to return to lastSystemState
+            break;
+
+          case STATE_TEST:
+            //Do nothing. User is releasing the setup button.
+            break;
+
+          case STATE_TESTING:
+            //If we are in testing, return to Rover Not Started
+            requestChangeState(STATE_ROVER_NOT_STARTED);
+            break;
+
+          case STATE_DISPLAY_SETUP:
+            //If we are displaying the setup menu, cycle through possible system states
+            //Exit display setup and enter new system state after ~1500ms in updateSystemState()
+            lastSetupMenuChange = millis();
+
+            forceDisplayUpdate = true; //User is interacting so repaint display quickly
+
+            switch (setupState)
+            {
+              case STATE_MARK_EVENT:
+                setupState = STATE_ROVER_NOT_STARTED;
+                break;
+              case STATE_ROVER_NOT_STARTED:
+                //If F9R, skip base state
+                if (zedModuleType == PLATFORM_F9R)
+                  setupState = STATE_BUBBLE_LEVEL;
+                else
+                  setupState = STATE_BASE_NOT_STARTED;
+                break;
+              case STATE_BASE_NOT_STARTED:
+                setupState = STATE_BUBBLE_LEVEL;
+                break;
+              case STATE_BUBBLE_LEVEL:
+                setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                break;
+              case STATE_WIFI_CONFIG_NOT_STARTED:
+                setupState = STATE_MARK_EVENT;
+                break;
+              default:
+                Serial.printf("ButtonCheckTask unknown setup state: %d\n\r", setupState);
+                setupState = STATE_MARK_EVENT;
+                break;
+            }
+            break;
+
+          default:
+            Serial.printf("ButtonCheckTask unknown system state: %d\n\r", systemState);
+            requestChangeState(STATE_ROVER_NOT_STARTED);
+            break;
+        }
+      }
+    } //End Platform = RTK Express
+    else if (productVariant == RTK_FACET) //Check one momentary button
+    {
+      if (powerBtn != NULL) powerBtn->read();
+
+      if (systemState == STATE_SHUTDOWN)
+      {
+        //Ignore button presses while shutting down
+      }
+      else if (powerBtn != NULL && powerBtn->pressedFor(shutDownButtonTime))
+      {
+        forceSystemStateUpdate = true;
+        requestChangeState(STATE_SHUTDOWN);
+      }
+      //      else if ((setupBtn != NULL && setupBtn->pressedFor(500)) &&
+      //               (powerBtn != NULL && powerBtn->pressedFor(500)))
+      //      {
+      //        forceSystemStateUpdate = true;
+      //        requestChangeState(STATE_TEST);
+      //      }
+      else if (powerBtn != NULL && powerBtn->wasReleased())
+      {
+        switch (systemState)
+        {
+          //If we are in any running state, change to STATE_DISPLAY_SETUP
+          case STATE_ROVER_NOT_STARTED:
+          case STATE_ROVER_NO_FIX:
+          case STATE_ROVER_FIX:
+          case STATE_ROVER_RTK_FLOAT:
+          case STATE_ROVER_RTK_FIX:
+          case STATE_BASE_NOT_STARTED:
+          case STATE_BASE_TEMP_SETTLE:
+          case STATE_BASE_TEMP_SURVEY_STARTED:
+          case STATE_BASE_TEMP_TRANSMITTING:
+          case STATE_BASE_TEMP_WIFI_STARTED:
+          case STATE_BASE_TEMP_WIFI_CONNECTED:
+          case STATE_BASE_TEMP_CASTER_STARTED:
+          case STATE_BASE_TEMP_CASTER_CONNECTED:
+          case STATE_BASE_FIXED_NOT_STARTED:
+          case STATE_BASE_FIXED_TRANSMITTING:
+          case STATE_BASE_FIXED_WIFI_STARTED:
+          case STATE_BASE_FIXED_WIFI_CONNECTED:
+          case STATE_BASE_FIXED_CASTER_STARTED:
+          case STATE_BASE_FIXED_CASTER_CONNECTED:
+          case STATE_BUBBLE_LEVEL:
+          case STATE_WIFI_CONFIG_NOT_STARTED:
+          case STATE_WIFI_CONFIG:
+            lastSystemState = systemState; //Remember this state to return after we mark an event
+            requestChangeState(STATE_DISPLAY_SETUP);
+            setupState = STATE_MARK_EVENT;
+            lastSetupMenuChange = millis();
+            break;
+
+          case STATE_MARK_EVENT:
+            //If the user presses the setup button during a mark event, do nothing
+            //Allow system to return to lastSystemState
+            break;
+
+          case STATE_TEST:
+            //Do nothing. User is releasing the setup button.
+            break;
+
+          case STATE_TESTING:
+            //If we are in testing, return to Rover Not Started
+            requestChangeState(STATE_ROVER_NOT_STARTED);
+            break;
+
+          case STATE_DISPLAY_SETUP:
+            //If we are displaying the setup menu, cycle through possible system states
+            //Exit display setup and enter new system state after ~1500ms in updateSystemState()
+            lastSetupMenuChange = millis();
+
+            forceDisplayUpdate = true; //User is interacting so repaint display quickly
+
+            switch (setupState)
+            {
+              case STATE_MARK_EVENT:
+                setupState = STATE_ROVER_NOT_STARTED;
+                break;
+              case STATE_ROVER_NOT_STARTED:
+                //If F9R, skip base state
+                if (zedModuleType == PLATFORM_F9R)
+                  setupState = STATE_BUBBLE_LEVEL;
+                else
+                  setupState = STATE_BASE_NOT_STARTED;
+                break;
+              case STATE_BASE_NOT_STARTED:
+                setupState = STATE_BUBBLE_LEVEL;
+                break;
+              case STATE_BUBBLE_LEVEL:
+                setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                break;
+              case STATE_WIFI_CONFIG_NOT_STARTED:
+                setupState = STATE_MARK_EVENT;
+                break;
+              default:
+                Serial.printf("ButtonCheckTask unknown setup state: %d\n\r", setupState);
+                setupState = STATE_MARK_EVENT;
+                break;
+            }
+            break;
+
+          default:
+            Serial.printf("ButtonCheckTask unknown system state: %d\n\r", systemState);
+            requestChangeState(STATE_ROVER_NOT_STARTED);
+            break;
+        }
+      }
+    } //End Platform = RTK Facet
+
+    delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
+    taskYIELD();
   }
 }

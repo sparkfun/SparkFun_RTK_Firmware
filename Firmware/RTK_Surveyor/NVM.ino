@@ -47,7 +47,7 @@ void recordSystemSettings()
   settings.sizeOfSettings = sizeof(settings);
   if (settings.sizeOfSettings > EEPROM_SIZE)
   {
-    displayError((char*)"EEPROM");
+    displayError("EEPROM");
 
     while (1) //Hard freeze
     {
@@ -139,6 +139,10 @@ void recordSystemSettingsToFile()
       settingsFile.println("dynamicModel=" + (String)settings.dynamicModel);
       settingsFile.println("lastState=" + (String)settings.lastState);
       settingsFile.println("throttleDuringSPPCongestion=" + (String)settings.throttleDuringSPPCongestion);
+      settingsFile.println("enableSensorFusion=" + (String)settings.enableSensorFusion);
+      settingsFile.println("autoIMUmountAlignment=" + (String)settings.autoIMUmountAlignment);
+      settingsFile.println("enableResetDisplay=" + (String)settings.enableResetDisplay);
+      settingsFile.println("resetCount=" + (String)settings.resetCount);
 
       //Record constellation settings
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -311,10 +315,9 @@ bool parseLine(char* str) {
       strcat(settingsFileName, "_Settings.txt");
       sd.remove(settingsFileName);
 
-      Serial.printf("RTK %s has been factory reset via settings file. Freezing. Please restart and open terminal at 115200bps.\n\r", platformPrefix);
-
-      while (1)
-        delay(1); //Prevent CPU freakout
+      Serial.printf("RTK %s has been factory reset via settings file. Unit restarting. Please open terminal at 115200bps.\n\r", platformPrefix);
+      delay(2000);
+      ESP.restart();
     }
 
     //Check to see if this setting file is compatible with this version of RTK Surveyor
@@ -402,6 +405,14 @@ bool parseLine(char* str) {
     settings.lastState = (SystemState)d;
   else if (strcmp(settingName, "throttleDuringSPPCongestion") == 0)
     settings.throttleDuringSPPCongestion = d;
+  else if (strcmp(settingName, "enableSensorFusion") == 0)
+    settings.enableSensorFusion = d;
+  else if (strcmp(settingName, "autoIMUmountAlignment") == 0)
+    settings.autoIMUmountAlignment = d;
+  else if (strcmp(settingName, "enableResetDisplay") == 0)
+    settings.enableResetDisplay = d;
+  else if (strcmp(settingName, "resetCount") == 0)
+    settings.resetCount = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

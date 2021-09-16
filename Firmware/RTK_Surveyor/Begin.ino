@@ -12,7 +12,8 @@ void beginBoard()
   }
   else if (isConnected(0x19) == true) //Check for accelerometer
   {
-    productVariant = RTK_EXPRESS;
+    if (zedModuleType == PLATFORM_F9P) productVariant = RTK_EXPRESS;
+    else if (zedModuleType == PLATFORM_F9R) productVariant = RTK_EXPRESS_PLUS;
   }
   else
   {
@@ -29,16 +30,20 @@ void beginBoard()
     pin_positionAccuracyLED_100cm = 13;
     pin_baseStatusLED = 4;
     pin_bluetoothStatusLED = 12;
-    pin_baseSwitch = 5;
+    pin_setupButton = 5;
     pin_microSD_CS = 25;
     pin_zed_tx_ready = 26;
     pin_zed_reset = 27;
     pin_batteryLevel_alert = 36;
 
+    //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
+    //The following changes the POR default but will be overwritten by settings in NVM or settings file
+    ubxConstellations[1].enabled = false; 
+
     strcpy(platformFilePrefix, "SFE_Surveyor");
     strcpy(platformPrefix, "Surveyor");
   }
-  else if (productVariant == RTK_EXPRESS)
+  else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
     pin_muxA = 2;
     pin_muxB = 4;
@@ -61,8 +66,16 @@ void beginBoard()
 
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
 
-    strcpy(platformFilePrefix, "SFE_Express");
-    strcpy(platformPrefix, "Express");
+    if (productVariant == RTK_EXPRESS)
+    {
+      strcpy(platformFilePrefix, "SFE_Express");
+      strcpy(platformPrefix, "Express");
+    }
+    else if (productVariant == RTK_EXPRESS_PLUS)
+    {
+      strcpy(platformFilePrefix, "SFE_Express_Plus");
+      strcpy(platformPrefix, "Express Plus");
+    }
   }
   else if (productVariant == RTK_FACET)
   {
@@ -89,8 +102,6 @@ void beginBoard()
 
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
 
-    delay(1000);
-
     strcpy(platformFilePrefix, "SFE_Facet");
     strcpy(platformPrefix, "Facet");
   }
@@ -101,10 +112,14 @@ void beginBoard()
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
     reuseLastLog = false; //Start new log
+    settings.resetCount = 0;
+    recordSystemSettings(); //Record to NVM
   }
   else
   {
     reuseLastLog = true; //Attempt to reuse previous log
+    settings.resetCount++;
+    recordSystemSettings(); //Record to NVM
 
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())
@@ -188,23 +203,74 @@ void beginSD()
   }
 }
 
+//We want the UART2 interrupts to be pinned to core 0 to avoid competing with I2C interrupts
 //We do not start the UART2 for GNSS->BT reception here because the interrupts would be pinned to core 1
-//competing with I2C interrupts
-//See issue: https://github.com/espressif/arduino-esp32/issues/3386
 //We instead start a task that runs on core 0, that then begins serial
+//See issue: https://github.com/espressif/arduino-esp32/issues/3386
 void beginUART2()
 {
-  if (startUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
-      startUART2Task,
+  if (pinUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
+      pinUART2Task,
       "UARTStart", //Just for humans
       2000, //Stack Size
       NULL, //Task input parameter
       0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-      &startUART2TaskHandle, //Task handle
+      &pinUART2TaskHandle, //Task handle
       0); //Core where task should run, 0=core, 1=Arduino
 
-  while (uart2Started == false) //Wait for task to run once
+  while (uart2pinned == false) //Wait for task to run once
     delay(1);
+}
+
+//Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
+void pinUART2Task( void *pvParameters )
+{
+  serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+  serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
+  serialGNSS.setTimeout(50);
+
+  uart2pinned = true;
+
+  vTaskDelete( NULL ); //Delete task once it has run once
+}
+
+//Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT.available will cause reboot
+void startUART2Tasks()
+{
+  //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
+  if (F9PSerialReadTaskHandle == NULL)
+    xTaskCreate(
+      F9PSerialReadTask,
+      "F9Read", //Just for humans
+      readTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      F9PSerialReadTaskPriority, //Priority
+      &F9PSerialReadTaskHandle); //Task handle
+
+  if (F9PSerialWriteTaskHandle == NULL)
+    xTaskCreate(
+      F9PSerialWriteTask,
+      "F9Write", //Just for humans
+      writeTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      F9PSerialWriteTaskPriority, //Priority
+      &F9PSerialWriteTaskHandle); //Task handle
+}
+
+//Stop tasks - useful when running firmware update or WiFi AP is running
+void stopUART2Tasks()
+{
+  //Delete tasks if running
+  if (F9PSerialReadTaskHandle != NULL)
+  {
+    vTaskDelete(F9PSerialReadTaskHandle);
+    F9PSerialReadTaskHandle = NULL;
+  }
+  if (F9PSerialWriteTaskHandle != NULL)
+  {
+    vTaskDelete(F9PSerialWriteTaskHandle);
+    F9PSerialWriteTaskHandle = NULL;
+  }
 }
 
 //ESP32 requires the creation of an EEPROM space
@@ -229,7 +295,7 @@ void beginDisplay()
   }
 }
 
-//Connect to and configure ZED-F9P
+//Connect to ZED module and identify particulars
 void beginGNSS()
 {
   if (i2cGNSS.begin() == false)
@@ -250,32 +316,32 @@ void beginGNSS()
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
   if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info
   {
+    //i2cGNSS.minfo.extension[1] looks like 'FWVER=HPG 1.12'
     strcpy(zedFirmwareVersion, i2cGNSS.minfo.extension[1]);
 
-    //i2cGNSS.minfo.extension[1] looks like 'FWVER=HPG 1.12'
-    //Replace = with - to avoid NVM parsing issues
-    char *ptr = strchr(zedFirmwareVersion, '=');
+    //Remove 'FWVER='. It's extraneous and = causes settings file parsing issues
+    char *ptr = strstr(zedFirmwareVersion, "FWVER=");
     if (ptr != NULL)
-      zedFirmwareVersion[ptr - zedFirmwareVersion] = ':';
+      strcpy(zedFirmwareVersion, ptr + strlen("FWVER="));
 
-    Serial.print(F("ZED-F9P firmware: "));
-    Serial.println(zedFirmwareVersion);
+    //Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
+    if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9P") != NULL)
+    {
+      zedModuleType = PLATFORM_F9P;
+    }
+    else if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9R") != NULL)
+    {
+      zedModuleType = PLATFORM_F9R;
+    }
 
-    //    if (strcmp(i2cGNSS.minfo.extension[1], latestZEDFirmware) != 0)
-    //    {
-    //      Serial.print(F("The ZED-F9P appears to have outdated firmware. Found: "));
-    //      Serial.println(i2cGNSS.minfo.extension[1]);
-    //      Serial.print(F("The Surveyor works best with "));
-    //      Serial.println(latestZEDFirmware);
-    //      Serial.print(F("Please upgrade using u-center."));
-    //      Serial.println();
-    //    }
-    //    else
-    //    {
-    //      Serial.println(F("ZED-F9P firmware is current"));
-    //    }
+    printModuleInfo(); //Print module type and firmware version
   }
+  online.gnss = true;
+}
 
+//Configuration can take >1s so configure during splash
+void configureGNSS()
+{
   bool response = configureUbloxModule();
   if (response == false)
   {
@@ -293,8 +359,6 @@ void beginGNSS()
   }
 
   Serial.println(F("GNSS configuration complete"));
-
-  online.gnss = true;
 }
 
 //Set LEDs for output and configure PWM
@@ -307,7 +371,7 @@ void beginLEDs()
     pinMode(pin_positionAccuracyLED_100cm, OUTPUT);
     pinMode(pin_baseStatusLED, OUTPUT);
     pinMode(pin_bluetoothStatusLED, OUTPUT);
-    pinMode(pin_baseSwitch, INPUT_PULLUP); //HIGH = rover, LOW = base
+    pinMode(pin_setupButton, INPUT_PULLUP); //HIGH = rover, LOW = base
 
     digitalWrite(pin_positionAccuracyLED_1cm, LOW);
     digitalWrite(pin_positionAccuracyLED_10cm, LOW);
@@ -315,14 +379,17 @@ void beginLEDs()
     digitalWrite(pin_baseStatusLED, LOW);
     digitalWrite(pin_bluetoothStatusLED, LOW);
 
-    ledcSetup(ledRedChannel, freq, resolution);
-    ledcSetup(ledGreenChannel, freq, resolution);
+    ledcSetup(ledRedChannel, pwmFreq, pwmResolution);
+    ledcSetup(ledGreenChannel, pwmFreq, pwmResolution);
+    ledcSetup(ledBTChannel, pwmFreq, pwmResolution);
 
     ledcAttachPin(pin_batteryLevelLED_Red, ledRedChannel);
     ledcAttachPin(pin_batteryLevelLED_Green, ledGreenChannel);
+    ledcAttachPin(pin_bluetoothStatusLED, ledBTChannel);
 
     ledcWrite(ledRedChannel, 0);
     ledcWrite(ledGreenChannel, 0);
+    ledcWrite(ledBTChannel, 0);
   }
 }
 
@@ -368,19 +435,31 @@ void beginSystemState()
 {
   if (productVariant == RTK_SURVEYOR)
   {
-    //Assume Rover. checkButtons() will correct as needed.
-    systemState = STATE_ROVER_NOT_STARTED;
-    buttonPreviousState = BUTTON_BASE;
+    systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask_Switch() will correct as needed.
+
+    setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
-  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS)
+  else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
     systemState = settings.lastState; //Return to system state previous to power down.
 
-    if (systemState == STATE_ROVER_NOT_STARTED)
-      buttonPreviousState = BUTTON_ROVER;
-    else if (systemState == STATE_BASE_NOT_STARTED)
-      buttonPreviousState = BUTTON_BASE;
-    else
-      buttonPreviousState = BUTTON_ROVER;
+    setupBtn = new Button(pin_setupButton); //Create the button in memory
+    powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }
+  else if (productVariant == RTK_FACET)
+  {
+    systemState = settings.lastState; //Return to system state previous to power down.
+
+    powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
+  }
+
+  //Starts task for monitoring button presses
+  if (ButtonCheckTaskHandle == NULL)
+    xTaskCreate(
+      ButtonCheckTask,
+      "BtnCheck", //Just for humans
+      buttonTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      ButtonCheckTaskPriority, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      &ButtonCheckTaskHandle); //Task handle
 }

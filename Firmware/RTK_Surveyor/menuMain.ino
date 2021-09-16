@@ -19,7 +19,10 @@ void menuMain()
 
     Serial.println(F("2) Configure GNSS Messages"));
 
-    Serial.println(F("3) Configure Base"));
+    if (zedModuleType == PLATFORM_F9P)
+      Serial.println(F("3) Configure Base"));
+    else if (zedModuleType == PLATFORM_F9R)
+      Serial.println(F("3) Configure Sensor Fusion"));
 
     Serial.println(F("4) Configure Ports"));
 
@@ -29,9 +32,6 @@ void menuMain()
     {
       Serial.println(F("6) Display microSD contents"));
     }
-
-    if (online.accelerometer == true)
-      Serial.println(F("b) Bubble Level"));
 
     Serial.println(F("d) Configure Debug"));
 
@@ -50,8 +50,10 @@ void menuMain()
       menuGNSS();
     else if (incoming == '2')
       menuMessages();
-    else if (incoming == '3')
+    else if (incoming == '3' && zedModuleType == PLATFORM_F9P)
       menuBase();
+    else if (incoming == '3' && zedModuleType == PLATFORM_F9R)
+      menuSensorFusion();
     else if (incoming == '4')
       menuPorts();
     else if (incoming == '5')
@@ -75,26 +77,7 @@ void menuMain()
       byte bContinue = getByteChoice(menuTimeout);
       if (bContinue == 'y')
       {
-        eepromErase();
-
-        //Assemble settings file name
-        char settingsFileName[40]; //SFE_Surveyor_Settings.txt
-        strcpy(settingsFileName, platformFilePrefix);
-        strcat(settingsFileName, "_Settings.txt");
-
-        //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-        if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-        {
-          if (sd.exists(settingsFileName))
-            sd.remove(settingsFileName);
-          xSemaphoreGive(xFATSemaphore);
-        } //End xFATSemaphore
-
-        i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
-
-        Serial.println(F("Settings erased. Please reset RTK Surveyor. Freezing."));
-        while (1)
-          delay(1); //Prevent CPU freakout
+        factoryReset();
       }
       else
         Serial.println(F("Reset aborted"));
@@ -103,10 +86,6 @@ void menuMain()
       menuFirmware();
     else if (incoming == 't')
       menuTest();
-    else if (incoming == 'b')
-    {
-      if (online.accelerometer == true) menuBubble();
-    }
     else if (incoming == 'x')
       break;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)
@@ -120,4 +99,31 @@ void menuMain()
   i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+}
+
+//Erase all settings. Upon restart, unit will use defaults
+void factoryReset()
+{
+  eepromErase();
+
+  //Assemble settings file name
+  char settingsFileName[40]; //SFE_Surveyor_Settings.txt
+  strcpy(settingsFileName, platformFilePrefix);
+  strcat(settingsFileName, "_Settings.txt");
+
+  //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+  if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+  {
+    if (sd.exists(settingsFileName))
+      sd.remove(settingsFileName);
+    xSemaphoreGive(xFATSemaphore);
+  } //End xFATSemaphore
+
+  i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
+
+  displaySytemReset(); //Display friendly message on OLED
+
+  Serial.println(F("Settings erased successfully. Rebooting. Good bye!"));
+  delay(2000);
+  ESP.restart();
 }

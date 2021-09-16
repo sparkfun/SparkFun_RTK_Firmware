@@ -5,9 +5,16 @@ bool configureUbloxModuleRover()
   bool response = true;
   int maxWait = 2000;
 
-  response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-  if (response == false)
-    Serial.println(F("Disable Survey failed"));
+  //Survey mode is only available on ZED-F9P modules
+  if (zedModuleType == PLATFORM_F9P)
+  {
+    if (i2cGNSS.getSurveyInActive(100) == true)
+    {
+      response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+      if (response == false)
+        Serial.println(F("Disable Survey failed"));
+    }
+  }
 
   // Set dynamic model
   if (i2cGNSS.getDynamicModel(maxWait) != settings.dynamicModel)
@@ -17,11 +24,15 @@ bool configureUbloxModuleRover()
       Serial.println(F("setDynamicModel failed"));
   }
 
-  //Disable RTCM sentences on I2C, USB, and UART2
-  response = true; //Reset
-  response &= disableRTCMSentences(COM_PORT_I2C);
-  response &= disableRTCMSentences(COM_PORT_UART2);
-  response &= disableRTCMSentences(COM_PORT_USB);
+  //RTCM is only available on ZED-F9P modules
+  if (zedModuleType == PLATFORM_F9P)
+  {
+    //Disable RTCM sentences on I2C, USB, and UART2
+    response = true; //Reset
+    response &= disableRTCMSentences(COM_PORT_I2C);
+    response &= disableRTCMSentences(COM_PORT_UART2);
+    response &= disableRTCMSentences(COM_PORT_USB);
+  }
 
   //Re-enable any RTCM msgs on UART1 the user has set within settings
   response &= configureGNSSMessageRates(COM_PORT_UART1, ubxMessages); //Make sure the appropriate messages are enabled
@@ -34,6 +45,10 @@ bool configureUbloxModuleRover()
     Serial.println(F("setNMEASettings failed"));
 
   response = true; //Reset
+  if (zedModuleType == PLATFORM_F9R)
+  {
+    i2cGNSS.setESFAutoAlignment(settings.autoIMUmountAlignment); //Configure UBX-CFG-ESFALG Automatic IMU-mount Alignment
+  }
 
   //The last thing we do is set output rate.
   response = true; //Reset
@@ -85,7 +100,7 @@ bool setNMEASettings()
 }
 
 //Returns true if constellation is enabled
-bool getConstellation(uint8_t constellation)
+bool getConstellation(uint8_t constellationID)
 {
   uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
   ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
@@ -95,7 +110,7 @@ bool getConstellation(uint8_t constellation)
   customCfg.len = 0; // Setting the len (length) to zero lets us poll the current settings
   customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
 
-  uint16_t maxWait = 1250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
+  uint16_t maxWait = 1250; // Wait for up to 1250ms (Serial may need a lot longer e.g. 1100)
 
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
@@ -104,7 +119,7 @@ bool getConstellation(uint8_t constellation)
     return (false);
   }
 
-  if (customPayload[8 + 8 * constellation] & (1 << 0)) return true; //Check if bit 0 is set
+  if (customPayload[locateGNSSID(customPayload, constellationID) + 4] & (1 << 0)) return true; //Check if enable bit is set
   return false;
 }
 
@@ -199,7 +214,7 @@ bool setConstellation(uint8_t constellation, bool enable)
 //so QZSS and GLONAS are offset by -8 bytes.
 uint8_t locateGNSSID(uint8_t *customPayload, uint8_t constellation)
 {
-  for (int x = 0 ; x < 7 ; x++) //Assume max of 7 constellations
+  for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
   {
     if (customPayload[4 + 8 * x] == constellation) //Test gnssid
       return (4 + x * 8);
@@ -218,7 +233,7 @@ void updateAccuracyLEDs()
   {
     lastAccuracyLEDUpdate = millis();
 
-    uint32_t accuracy = i2cGNSS.getHorizontalAccuracy(250);
+    uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
 
     if (accuracy > 0)
     {

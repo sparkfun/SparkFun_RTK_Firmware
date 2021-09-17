@@ -108,7 +108,7 @@ void menuMessages()
       menuMessagesSubtype("TIM");
     else if (incoming == 7)
     {
-      setGNSSMessageRates(ubxMessages, 0); //Turn off all messages
+      setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
       setMessageRateByName("UBX_NMEA_GGA", 1);
       setMessageRateByName("UBX_NMEA_GSA", 1);
       setMessageRateByName("UBX_NMEA_GST", 1);
@@ -118,7 +118,7 @@ void menuMessages()
     }
     else if (incoming == 8)
     {
-      setGNSSMessageRates(ubxMessages, 0); //Turn off all messages
+      setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
       setMessageRateByName("UBX_NMEA_GGA", 1);
       setMessageRateByName("UBX_NMEA_GSA", 1);
       setMessageRateByName("UBX_NMEA_GST", 1);
@@ -131,12 +131,12 @@ void menuMessages()
     }
     else if (incoming == 9)
     {
-      setGNSSMessageRates(ubxMessages, 0); //Turn off all messages
+      setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
       Serial.println(F("All messages disabled"));
     }
     else if (incoming == 10)
     {
-      setGNSSMessageRates(ubxMessages, 1); //Turn on all messages to report once per fix
+      setGNSSMessageRates(settings.ubxMessages, 1); //Turn on all messages to report once per fix
       Serial.println(F("All messages enabled"));
     }
     else if (incoming == STATUS_PRESSED_X)
@@ -149,12 +149,12 @@ void menuMessages()
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 
-  bool response = configureGNSSMessageRates(COM_PORT_UART1, ubxMessages); //Make sure the appropriate messages are enabled
+  bool response = configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //Make sure the appropriate messages are enabled
   if (response == false)
   {
     Serial.println(F("menuMessages: Failed to enable UART1 messages - Try 1"));
     //Try again
-    response = configureGNSSMessageRates(COM_PORT_UART1, ubxMessages); //Make sure the appropriate messages are enabled
+    response = configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //Make sure the appropriate messages are enabled
     if (response == false)
       Serial.println(F("menuMessages: Failed to enable UART1 messages - Try 2"));
     else
@@ -182,10 +182,10 @@ void menuMessagesSubtype(const char* messageType)
     for (int x = 0 ; x < (endOfBlock - startOfBlock) ; x++)
     {
       //Check to see if this ZED platform supports this message
-      if (ubxMessages[x + startOfBlock].supported & zedModuleType)
+      if (settings.ubxMessages[x + startOfBlock].supported & zedModuleType)
       {
-        Serial.printf("%d) Message %s: ", x + 1, ubxMessages[x + startOfBlock].msgTextName);
-        Serial.println(ubxMessages[x + startOfBlock].msgRate);
+        Serial.printf("%d) Message %s: ", x + 1, settings.ubxMessages[x + startOfBlock].msgTextName);
+        Serial.println(settings.ubxMessages[x + startOfBlock].msgRate);
       }
     }
 
@@ -196,8 +196,8 @@ void menuMessagesSubtype(const char* messageType)
     if (incoming >= 1 && incoming <= (endOfBlock - startOfBlock))
     {
       //Check to see if this ZED platform supports this message
-      if (ubxMessages[(incoming - 1) + startOfBlock].supported & zedModuleType)
-        inputMessageRate(ubxMessages[(incoming - 1) + startOfBlock]);
+      if (settings.ubxMessages[(incoming - 1) + startOfBlock].supported & zedModuleType)
+        inputMessageRate(settings.ubxMessages[(incoming - 1) + startOfBlock]);
       else
         printUnknown(incoming);
     }
@@ -245,7 +245,7 @@ bool configureGNSSMessageRates(uint8_t portType, ubxMsg *localMessage)
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
     //Check to see if this ZED platform supports this message
-    if (ubxMessages[x].supported & zedModuleType)
+    if (settings.ubxMessages[x].supported & zedModuleType)
       response &= configureMessageRate(portType, localMessage[x]);
   }
 
@@ -499,7 +499,7 @@ void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlo
   //Find the first occurrence
   for (startOfBlock = 0 ; startOfBlock < MAX_UBX_MSG ; startOfBlock++)
   {
-    if (strstr(ubxMessages[startOfBlock].msgTextName, messageNamePiece) != NULL) break;
+    if (strstr(settings.ubxMessages[startOfBlock].msgTextName, messageNamePiece) != NULL) break;
   }
   if (startOfBlock == MAX_UBX_MSG)
   {
@@ -512,7 +512,7 @@ void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlo
   //Find the last occurrence
   for (endOfBlock = startOfBlock + 1 ; endOfBlock < MAX_UBX_MSG ; endOfBlock++)
   {
-    if (strstr(ubxMessages[endOfBlock].msgTextName, messageNamePiece) == NULL) break;
+    if (strstr(settings.ubxMessages[endOfBlock].msgTextName, messageNamePiece) == NULL) break;
   }
 }
 
@@ -521,7 +521,7 @@ uint8_t getActiveMessageCount()
 {
   uint8_t count = 0;
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    if (ubxMessages[x].msgRate > 0) count++;
+    if (settings.ubxMessages[x].msgRate > 0) count++;
   return (count);
 }
 
@@ -530,9 +530,9 @@ bool setMessageRateByName(const char *msgName, uint8_t msgRate)
 {
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
-    if (strcmp(ubxMessages[x].msgTextName, msgName) == 0)
+    if (strcmp(settings.ubxMessages[x].msgTextName, msgName) == 0)
     {
-      ubxMessages[x].msgRate = msgRate;
+      settings.ubxMessages[x].msgRate = msgRate;
       return (true);
     }
   }

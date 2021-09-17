@@ -60,7 +60,10 @@ void loadSettingsPartial()
   //Check to see if EEPROM is blank
   uint32_t testRead = 0;
   if (EEPROM.get(0, testRead) == 0xFFFFFFFF)
+  {
+    ESP_LOGD(TAG, "EEPROM is blank");
     return; //EEPROM is blank, assume default settings
+  }
   
   EEPROM.get(0, settings); //Read current settings
 }
@@ -172,7 +175,7 @@ void recordSystemSettingsToFile()
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
       {
         char tempString[50]; //constellation.BeiDou=1
-        sprintf(tempString, "constellation.%s=%d", ubxConstellations[x].textName, ubxConstellations[x].enabled);
+        sprintf(tempString, "constellation.%s=%d", settings.ubxConstellations[x].textName, settings.ubxConstellations[x].enabled);
         settingsFile.println(tempString);
       }
 
@@ -180,7 +183,7 @@ void recordSystemSettingsToFile()
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
         char tempString[50]; //message.nmea_dtm.msgRate=5
-        sprintf(tempString, "message.%s.msgRate=%d", ubxMessages[x].msgTextName, ubxMessages[x].msgRate);
+        sprintf(tempString, "message.%s.msgRate=%d", settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
         settingsFile.println(tempString);
       }
 
@@ -448,11 +451,11 @@ bool parseLine(char* str) {
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
       {
         char tempString[50]; //constellation.GPS=1
-        sprintf(tempString, "constellation.%s", ubxConstellations[x].textName);
+        sprintf(tempString, "constellation.%s", settings.ubxConstellations[x].textName);
 
         if (strcmp(settingName, tempString) == 0)
         {
-          ubxConstellations[x].enabled = d;
+          settings.ubxConstellations[x].enabled = d;
           knownSetting = true;
           break;
         }
@@ -465,11 +468,11 @@ bool parseLine(char* str) {
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
         char tempString[50]; //message.nmea_dtm.msgRate=5
-        sprintf(tempString, "message.%s.msgRate", ubxMessages[x].msgTextName);
+        sprintf(tempString, "message.%s.msgRate", settings.ubxMessages[x].msgTextName);
 
         if (strcmp(settingName, tempString) == 0)
         {
-          ubxMessages[x].msgRate = d;
+          settings.ubxMessages[x].msgRate = d;
           knownSetting = true;
           break;
         }
@@ -489,6 +492,11 @@ bool parseLine(char* str) {
 //ESP32 doesn't have erase command so we do it here
 void eepromErase()
 {
+  if(online.eeprom == false)
+  {
+    ESP_LOGD(TAG, "Error: EEPROM not online");
+    return;
+  }
   for (int i = 0 ; i < EEPROM_SIZE ; i++) {
     EEPROM.write(i, 0xFF); //Reset to all 1s
   }

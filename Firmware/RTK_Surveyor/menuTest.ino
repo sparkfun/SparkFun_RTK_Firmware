@@ -95,7 +95,7 @@ void menuTest()
     else if (incoming == 4)
     {
       //Send the current settings to USB
-      bool response = configureGNSSMessageRates(COM_PORT_USB, ubxMessages); //Make sure the appropriate messages are enabled
+      bool response = configureGNSSMessageRates(COM_PORT_USB, settings.ubxMessages); //Make sure the appropriate messages are enabled
       if (response == false)
         Serial.println(F("menuTest: Failed to enable USB messages"));
       else

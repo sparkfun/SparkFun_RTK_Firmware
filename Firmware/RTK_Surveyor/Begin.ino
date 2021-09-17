@@ -38,7 +38,7 @@ void beginBoard()
 
     //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
     //The following changes the POR default but will be overwritten by settings in NVM or settings file
-    ubxConstellations[1].enabled = false; 
+    ubxConstellations[1].enabled = false;
 
     strcpy(platformFilePrefix, "SFE_Surveyor");
     strcpy(platformPrefix, "Surveyor");
@@ -112,14 +112,25 @@ void beginBoard()
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
     reuseLastLog = false; //Start new log
-    settings.resetCount = 0;
-    recordSystemSettings(); //Record to NVM
+
+    loadSettingsPartial();
+    if (settings.enableResetDisplay == true)
+    {
+      settings.resetCount = 0;
+      recordSystemSettings(); //Record to NVM
+    }
   }
   else
   {
     reuseLastLog = true; //Attempt to reuse previous log
-    settings.resetCount++;
-    recordSystemSettings(); //Record to NVM
+
+    loadSettingsPartial();
+    if (settings.enableResetDisplay == true)
+    {
+      settings.resetCount++;
+      recordSystemSettings(); //Record to NVM
+      Serial.printf("resetCount: %d\n\r", settings.resetCount);
+    }
 
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())
@@ -336,6 +347,7 @@ void beginGNSS()
 
     printModuleInfo(); //Print module type and firmware version
   }
+
   online.gnss = true;
 }
 

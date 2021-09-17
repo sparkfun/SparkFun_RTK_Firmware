@@ -147,10 +147,6 @@ uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service tim
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
-//Note: There are two prevalent versions of the ZED-F9P: v1.12 (part# -01B) and v1.13 (-02B).
-//v1.13 causes the RTK LED to not function if SBAS is enabled. To avoid this, we
-//disable SBAS by default.
-
 char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to debug menu and settings file.
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
@@ -221,7 +217,7 @@ uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
 uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
-const uint8_t F9PSerialWriteTaskPriority = 1; //Priority, with 3 being the highest, and 0 being the lowest.
+const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest.
 const uint8_t F9PSerialReadTaskPriority = 1;
 
 TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
@@ -275,7 +271,7 @@ Button *setupBtn = NULL; //We can't instantiate the buttons here because we don'
 Button *powerBtn = NULL;
 
 TaskHandle_t ButtonCheckTaskHandle = NULL;
-const uint8_t ButtonCheckTaskPriority = 1; //Priority, with 3 being the highest, and 0 being the lowest.
+const uint8_t ButtonCheckTaskPriority = 1; //3 being the highest, and 0 being the lowest.
 const int buttonTaskStackSize = 2000;
 
 const int shutDownButtonTime = 2000; //ms press and hold before shutdown
@@ -360,19 +356,18 @@ void setup()
   Serial.begin(115200); //UART0 for programming and debugging
 
   Wire.begin(); //Start I2C on core 1
-  Wire.setClock(400000);
+  //Wire.setClock(400000);
+  Wire.setClock(100000);
 
   beginGNSS(); //Connect to GNSS
+
+  beginEEPROM(); //Start EEPROM and SD for settings
 
   beginBoard(); //Determine what hardware platform we are running on
 
   beginDisplay(); //Check if an external Qwiic OLED is attached
 
   beginLEDs(); //LED and PWM setup
-
-  //Start EEPROM and SD for settings, and display for output
-  //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  beginEEPROM();
 
   //eepromErase();
 
@@ -384,7 +379,6 @@ void setup()
   }
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
-  //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 

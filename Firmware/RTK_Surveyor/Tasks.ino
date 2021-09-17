@@ -1,4 +1,4 @@
-//High frequency tasks made by createTask()
+//High frequency tasks made by xTaskCreate()
 //And any low frequency tasks that are called by Ticker
 
 //If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED

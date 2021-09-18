@@ -163,7 +163,7 @@ void menuConstellations()
     if (incoming >= 1 && incoming <= MAX_CONSTELLATIONS)
     {
       incoming--; //Align choice to constallation array of 0 to 5
-      
+
       settings.ubxConstellations[incoming].enabled ^= 1;
 
       //3.10.6: To avoid cross-correlation issues, it is recommended that GPS and QZSS are always both enabled or both disabled.
@@ -253,6 +253,14 @@ float getMeasurementFrequency()
 bool configureConstellations()
 {
   bool response = true;
+
+  //If we have a corrupt constellation ID it can cause GNSS config to fail.
+  //Reset to factory defaults.
+  if (settings.ubxConstellations[0].gnssID == 255)
+  {
+    ESP_LOGD(TAG, "Constellation ID corrupt");
+    factoryReset();
+  }
 
   //long startTime = millis();
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)

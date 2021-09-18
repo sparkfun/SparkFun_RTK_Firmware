@@ -86,7 +86,9 @@ void recordSystemSettings()
     delay(1); //Give CPU time to pet WDT
   }
   else
+  {
     ESP_LOGD(TAG, "Error: EEPROM not online");
+  }
 
   recordSystemSettingsToFile();
 }

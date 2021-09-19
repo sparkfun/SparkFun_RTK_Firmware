@@ -24,6 +24,14 @@ bool configureUbloxModuleRover()
       Serial.println(F("setDynamicModel failed"));
   }
 
+#define OUTPUT_SETTING 14
+
+  //Turn off all traffic except UBX to reduce I2C bus errors and ESP32 resets as much as possible
+  getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX))
+    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to output UBX (config)
+  //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3); //Not a valid state. Goes to UBX+I2C+ RTCM3 - Set the I2C port to output UBX (config), and RTCM3 (casting)
+
   //RTCM is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {

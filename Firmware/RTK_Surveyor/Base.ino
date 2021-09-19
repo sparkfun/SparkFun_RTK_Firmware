@@ -34,6 +34,15 @@ bool configureUbloxModuleBase()
     }
   }
 
+#define OUTPUT_SETTING 14
+
+  //Turn on RTCM so that we can harvest RTCM over I2C and send out over WiFi
+  //This is easier than parsing over UART because the library handles the frame detection
+  getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
+  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3))
+    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //Set the I2C port to output UBX (config), and RTCM3 (casting)
+  //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3); //Not a valid state. Goes to UBX+NMEA+RTCM3 - 
+
   //In base mode the Surveyor should output RTCM over UART2 and I2C ports:
   //(Primary) UART2 in case the Surveyor is connected via radio to rover
   //(Optional) I2C in case user wants base to connect to WiFi and NTRIP Serve to Caster

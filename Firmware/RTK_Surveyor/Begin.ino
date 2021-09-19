@@ -207,6 +207,9 @@ void beginSD()
     }
 
     online.microSD = true;
+
+    Serial.println(F("microSD online"));
+    scanForFirmware(); //See if SD card contains new firmware that should be loaded at startup
   }
   else
   {
@@ -225,7 +228,7 @@ void beginUART2()
       "UARTStart", //Just for humans
       2000, //Stack Size
       NULL, //Task input parameter
-      0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
       &pinUART2TaskHandle, //Task handle
       0); //Core where task should run, 0=core, 1=Arduino
 
@@ -472,6 +475,6 @@ void beginSystemState()
       "BtnCheck", //Just for humans
       buttonTaskStackSize, //Stack Size
       NULL, //Task input parameter
-      ButtonCheckTaskPriority, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      ButtonCheckTaskPriority,
       &ButtonCheckTaskHandle); //Task handle
 }

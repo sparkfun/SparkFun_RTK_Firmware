@@ -43,7 +43,7 @@ const int FIRMWARE_VERSION_MINOR = 6;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -217,7 +217,7 @@ uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
 uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
-const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest.
+const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const uint8_t F9PSerialReadTaskPriority = 1;
 
 TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
@@ -271,7 +271,7 @@ Button *setupBtn = NULL; //We can't instantiate the buttons here because we don'
 Button *powerBtn = NULL;
 
 TaskHandle_t ButtonCheckTaskHandle = NULL;
-const uint8_t ButtonCheckTaskPriority = 1; //3 being the highest, and 0 being the lowest.
+const uint8_t ButtonCheckTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int buttonTaskStackSize = 2000;
 
 const int shutDownButtonTime = 2000; //ms press and hold before shutdown
@@ -356,12 +356,12 @@ void setup()
   Serial.begin(115200); //UART0 for programming and debugging
 
   Wire.begin(); //Start I2C on core 1
-  //Wire.setClock(400000);
-  Wire.setClock(100000);
+  Wire.setClock(100000); //Confirm we are at 100kHz
 
   beginGNSS(); //Connect to GNSS
 
   beginEEPROM(); //Start EEPROM and SD for settings
+  //eepromErase(); //Must be before first use of EEPROM. Currently in beginBoard().
 
   beginBoard(); //Determine what hardware platform we are running on
 
@@ -369,21 +369,14 @@ void setup()
 
   beginLEDs(); //LED and PWM setup
 
-  //eepromErase();
-
   beginSD(); //Test if SD is present
-  if (online.microSD == true)
-  {
-    Serial.println(F("microSD online"));
-    scanForFirmware(); //See if SD card contains new firmware that should be loaded at startup
-  }
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
 
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
   beginFuelGauge(); //Configure battery fuel guage monitor
-  checkBatteryLevels(); //Force display so you see battery level immediately at power on
+  checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
   configureGNSS(); //Configure ZED module
 

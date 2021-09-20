@@ -107,17 +107,20 @@ void factoryReset()
   eepromErase();
 
   //Assemble settings file name
-  char settingsFileName[40]; //SFE_Surveyor_Settings.txt
+  char settingsFileName[40]; //SFE_Express_Plus_Settings.txt
   strcpy(settingsFileName, platformFilePrefix);
   strcat(settingsFileName, "_Settings.txt");
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-  if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+  if (settings.enableSD && online.microSD)
   {
-    if (sd.exists(settingsFileName))
-      sd.remove(settingsFileName);
-    xSemaphoreGive(xFATSemaphore);
-  } //End xFATSemaphore
+    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      if (sd.exists(settingsFileName))
+        sd.remove(settingsFileName);
+      xSemaphoreGive(xFATSemaphore);
+    } //End xFATSemaphore
+  }
 
   i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 

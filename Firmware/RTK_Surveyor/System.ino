@@ -211,13 +211,15 @@ bool configureUbloxModule()
 
   response &= configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //Make sure the appropriate messages are enabled
 
+  response &= disableNMEASentences(COM_PORT_I2C); //Disable NMEA messages on all but UART1
+  response &= disableNMEASentences(COM_PORT_UART2);
+  response &= disableNMEASentences(COM_PORT_SPI);
+
   response &= i2cGNSS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
   response &= i2cGNSS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
 
   if (zedModuleType == PLATFORM_F9R)
-  {
     response &= i2cGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
-  }
 
   if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
@@ -247,8 +249,6 @@ bool configureUbloxModule()
 
   return (response);
 }
-
-
 
 //Disable all the NMEA sentences on a given com port
 bool disableNMEASentences(uint8_t portType)
@@ -596,6 +596,12 @@ bool createTestFile()
 {
   SdFile testFile;
   char testFileName[40] = "testfile.txt";
+
+  if(online.microSD == false)
+  {
+    Serial.println(F("SD card offline"));
+    return(false);
+  }
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
   if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)

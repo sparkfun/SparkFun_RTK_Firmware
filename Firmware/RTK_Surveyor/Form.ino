@@ -142,6 +142,12 @@ void startConfigAP()
 #ifdef COMPILE_WIFI
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
+  if(online.microSD == false)
+  {
+    Serial.println(F("No SD card available"));
+    return;
+  }
+  
   //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
   if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) != pdPASS) {
     Serial.println(F("Failed to get file system lock on firmware file"));

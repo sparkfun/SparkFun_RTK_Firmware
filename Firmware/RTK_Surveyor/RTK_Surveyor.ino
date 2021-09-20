@@ -223,7 +223,7 @@ const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being
 const uint8_t F9PSerialReadTaskPriority = 1;
 
 TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
-bool uart2pinned = false;
+volatile bool uart2pinned = false; //This variable is touched by core 0 but checked by core 1. Must be volatile.
 
 //Reduced stack size from 10,000 to 2,000 to make room for WiFi/NTRIP server capabilities
 const int readTaskStackSize = 2500;
@@ -350,7 +350,7 @@ bool setupByPowerButton = false; //We can change setup via tapping power button
 uint16_t svinObservationTime = 0; //Use globals so we don't have to request these values multiple times (slow response)
 float svinMeanAccuracy = 0;
 
-uint32_t lastSetupMenuChange = 0;
+uint32_t lastSetupMenuChange = 0; //Auto-selects the setup menu option after 1500ms
 uint32_t lastTestMenuChange = 0; //Avoids exiting the test menu for at least 1 second
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -486,7 +486,6 @@ void updateLogs()
       }
     }
   }
-  //  }
 }
 
 //Once we have a fix, sync system clock to GNSS

@@ -224,7 +224,7 @@ TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
 bool uart2pinned = false;
 
 //Reduced stack size from 10,000 to 2,000 to make room for WiFi/NTRIP server capabilities
-const int readTaskStackSize = 2000;
+const int readTaskStackSize = 2500;
 const int writeTaskStackSize = 2000;
 
 char incomingBTTest = 0; //Stores incoming text over BT when in test mode
@@ -282,7 +282,7 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
 
-#include "ESPAsyncWebServer.h"
+#include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer 
 #include "form.h"
 
 AsyncWebServer server(80);
@@ -356,7 +356,7 @@ void setup()
   Serial.begin(115200); //UART0 for programming and debugging
 
   Wire.begin(); //Start I2C on core 1
-  Wire.setClock(100000); //Confirm we are at 100kHz
+  Wire.setClock(400000); //Increase bus rate to 400kHz
 
   beginGNSS(); //Connect to GNSS
 
@@ -483,6 +483,7 @@ void updateLogs()
       }
     }
   }
+  //  }
 }
 
 //Once we have a fix, sync system clock to GNSS

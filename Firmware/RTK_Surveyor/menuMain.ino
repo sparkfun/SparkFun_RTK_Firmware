@@ -122,9 +122,9 @@ void factoryReset()
     } //End xFATSemaphore
   }
 
-  i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
-
   displaySytemReset(); //Display friendly message on OLED
+
+  i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
   Serial.println(F("Settings erased successfully. Rebooting. Good bye!"));
   delay(2000);

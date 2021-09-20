@@ -597,9 +597,9 @@ bool createTestFile()
   SdFile testFile;
   char testFileName[40] = "testfile.txt";
 
-  if(online.microSD == false)
+  if(xFATSemaphore == NULL)
   {
-    Serial.println(F("SD card offline"));
+    ESP_LOGD(TAG, "xFATSemaphote is Null");
     return(false);
   }
 

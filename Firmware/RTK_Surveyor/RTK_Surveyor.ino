@@ -6,6 +6,8 @@
   This firmware runs the core of the SparkFun RTK Surveyor product. It runs on an ESP32
   and communicates with the ZED-F9P.
 
+  Compiled with Arduino v1.8.13 with ESP32 core v1.0.6.
+
   Select the ESP32 Dev Module from the boards list. This maps the same pins to the ESP32-WROOM module.
   Select 'Minimal SPIFFS (1.9MB App)' from the partition list. This will enable SD firmware updates.
 
@@ -39,7 +41,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 5;
+const int FIRMWARE_VERSION_MINOR = 6;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
@@ -147,10 +149,6 @@ uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service tim
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
-//Note: There are two prevalent versions of the ZED-F9P: v1.12 (part# -01B) and v1.13 (-02B).
-//v1.13 causes the RTK LED to not function if SBAS is enabled. To avoid this, we
-//disable SBAS by default.
-
 char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to debug menu and settings file.
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
@@ -221,14 +219,14 @@ uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
 uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
-const uint8_t F9PSerialWriteTaskPriority = 1; //Priority, with 3 being the highest, and 0 being the lowest.
+const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const uint8_t F9PSerialReadTaskPriority = 1;
 
 TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
-bool uart2pinned = false;
+volatile bool uart2pinned = false; //This variable is touched by core 0 but checked by core 1. Must be volatile.
 
 //Reduced stack size from 10,000 to 2,000 to make room for WiFi/NTRIP server capabilities
-const int readTaskStackSize = 2000;
+const int readTaskStackSize = 2500;
 const int writeTaskStackSize = 2000;
 
 char incomingBTTest = 0; //Stores incoming text over BT when in test mode
@@ -275,7 +273,7 @@ Button *setupBtn = NULL; //We can't instantiate the buttons here because we don'
 Button *powerBtn = NULL;
 
 TaskHandle_t ButtonCheckTaskHandle = NULL;
-const uint8_t ButtonCheckTaskPriority = 1; //Priority, with 3 being the highest, and 0 being the lowest.
+const uint8_t ButtonCheckTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int buttonTaskStackSize = 2000;
 
 const int shutDownButtonTime = 2000; //ms press and hold before shutdown
@@ -286,7 +284,7 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
 
-#include "ESPAsyncWebServer.h"
+#include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer 
 #include "form.h"
 
 AsyncWebServer server(80);
@@ -352,7 +350,8 @@ bool setupByPowerButton = false; //We can change setup via tapping power button
 uint16_t svinObservationTime = 0; //Use globals so we don't have to request these values multiple times (slow response)
 float svinMeanAccuracy = 0;
 
-uint32_t lastSetupMenuChange = 0;
+uint32_t lastSetupMenuChange = 0; //Auto-selects the setup menu option after 1500ms
+uint32_t lastTestMenuChange = 0; //Avoids exiting the test menu for at least 1 second
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -360,9 +359,12 @@ void setup()
   Serial.begin(115200); //UART0 for programming and debugging
 
   Wire.begin(); //Start I2C on core 1
-  Wire.setClock(400000);
+  Wire.setClock(400000); //Increase bus rate to 400kHz
 
   beginGNSS(); //Connect to GNSS
+
+  beginEEPROM(); //Start EEPROM and SD for settings
+  //eepromErase(); //Must be before first use of EEPROM. Currently in beginBoard().
 
   beginBoard(); //Determine what hardware platform we are running on
 
@@ -370,26 +372,14 @@ void setup()
 
   beginLEDs(); //LED and PWM setup
 
-  //Start EEPROM and SD for settings, and display for output
-  //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  beginEEPROM();
-
-  //eepromErase();
-
   beginSD(); //Test if SD is present
-  if (online.microSD == true)
-  {
-    Serial.println(F("microSD online"));
-    scanForFirmware(); //See if SD card contains new firmware that should be loaded at startup
-  }
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
-  //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
   beginFuelGauge(); //Configure battery fuel guage monitor
-  checkBatteryLevels(); //Force display so you see battery level immediately at power on
+  checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
   configureGNSS(); //Configure ZED module
 

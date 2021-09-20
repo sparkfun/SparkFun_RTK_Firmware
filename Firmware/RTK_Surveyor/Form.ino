@@ -142,6 +142,12 @@ void startConfigAP()
 #ifdef COMPILE_WIFI
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
+  if(online.microSD == false)
+  {
+    Serial.println(F("No SD card available"));
+    return;
+  }
+  
   //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
   if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) != pdPASS) {
     Serial.println(F("Failed to get file system lock on firmware file"));
@@ -243,13 +249,13 @@ void createSettingsString(char* settingsCSV)
   //GNSS Config
   stringRecord(settingsCSV, "measurementRateHz", 1000.0 / settings.measurementRate, 2); //2 = decimals to print
   stringRecord(settingsCSV, "dynamicModel", settings.dynamicModel);
-  stringRecord(settingsCSV, "ubxConstellationsGPS", ubxConstellations[0].enabled); //GPS
-  stringRecord(settingsCSV, "ubxConstellationsSBAS", ubxConstellations[1].enabled); //SBAS
-  stringRecord(settingsCSV, "ubxConstellationsGalileo", ubxConstellations[2].enabled); //Galileo
-  stringRecord(settingsCSV, "ubxConstellationsBeiDou", ubxConstellations[3].enabled); //BeiDou
-  stringRecord(settingsCSV, "ubxConstellationsGLONASS", ubxConstellations[5].enabled); //GLONASS
+  stringRecord(settingsCSV, "ubxConstellationsGPS", settings.ubxConstellations[0].enabled); //GPS
+  stringRecord(settingsCSV, "ubxConstellationsSBAS", settings.ubxConstellations[1].enabled); //SBAS
+  stringRecord(settingsCSV, "ubxConstellationsGalileo", settings.ubxConstellations[2].enabled); //Galileo
+  stringRecord(settingsCSV, "ubxConstellationsBeiDou", settings.ubxConstellations[3].enabled); //BeiDou
+  stringRecord(settingsCSV, "ubxConstellationsGLONASS", settings.ubxConstellations[5].enabled); //GLONASS
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    stringRecord(settingsCSV, ubxMessages[x].msgTextName, ubxMessages[x].msgRate);
+    stringRecord(settingsCSV, settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
 
   //Base Config
   stringRecord(settingsCSV, "baseTypeSurveyIn", !settings.fixedBase);
@@ -394,11 +400,11 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
       {
         char tempString[50]; //ubxConstellationsSBAS
-        sprintf(tempString, "ubxConstellations%s", ubxConstellations[x].textName);
+        sprintf(tempString, "ubxConstellations%s", settings.ubxConstellations[x].textName);
 
         if (strcmp(settingName, tempString) == 0)
         {
-          ubxConstellations[x].enabled = settingValueBool;
+          settings.ubxConstellations[x].enabled = settingValueBool;
           knownSetting = true;
           break;
         }
@@ -410,9 +416,9 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     {
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
-        if (strcmp(settingName, ubxMessages[x].msgTextName) == 0)
+        if (strcmp(settingName, settings.ubxMessages[x].msgTextName) == 0)
         {
-          ubxMessages[x].msgRate = settingValue;
+          settings.ubxMessages[x].msgRate = settingValue;
           knownSetting = true;
           break;
         }

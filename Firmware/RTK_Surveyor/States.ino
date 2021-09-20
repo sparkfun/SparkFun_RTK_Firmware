@@ -124,6 +124,7 @@ void updateSystemState()
           //Stop all WiFi and BT. Re-enable in each specific base start state.
           stopWiFi();
           stopBluetooth();
+          startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           if (configureUbloxModuleBase() == true)
           {
@@ -636,13 +637,17 @@ void updateSystemState()
       //Setup device for testing
       case (STATE_TEST):
         {
-          //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
-          //even if there is no GPS fix. We use it to test serial output.
-          i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
+          //Don't enter testing
+          if (millis() - lastTestMenuChange > 500)
+          {
+            //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
+            //even if there is no GPS fix. We use it to test serial output.
+            i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
 
-          inTestMode = true; //Reroutes bluetooth bytes
+            inTestMode = true; //Reroutes bluetooth bytes
 
-          changeState(STATE_TESTING);
+            changeState(STATE_TESTING);
+          }
         }
         break;
 

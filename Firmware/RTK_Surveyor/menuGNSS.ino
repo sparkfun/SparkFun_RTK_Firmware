@@ -148,8 +148,8 @@ void menuConstellations()
 
     for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
     {
-      Serial.printf("%d) Constellation %s: ", x + 1, ubxConstellations[x].textName);
-      if (ubxConstellations[x].enabled == true)
+      Serial.printf("%d) Constellation %s: ", x + 1, settings.ubxConstellations[x].textName);
+      if (settings.ubxConstellations[x].enabled == true)
         Serial.print("Enabled");
       else
         Serial.print("Disabled");
@@ -163,14 +163,14 @@ void menuConstellations()
     if (incoming >= 1 && incoming <= MAX_CONSTELLATIONS)
     {
       incoming--; //Align choice to constallation array of 0 to 5
-      
-      ubxConstellations[incoming].enabled ^= 1;
+
+      settings.ubxConstellations[incoming].enabled ^= 1;
 
       //3.10.6: To avoid cross-correlation issues, it is recommended that GPS and QZSS are always both enabled or both disabled.
       if (incoming == SFE_UBLOX_GNSS_ID_GPS || incoming == 4) //QZSS ID is 5 but array location is 4
       {
-        ubxConstellations[SFE_UBLOX_GNSS_ID_GPS].enabled = ubxConstellations[incoming].enabled; //GPS ID is 0 and array location is 0
-        ubxConstellations[4].enabled = ubxConstellations[incoming].enabled; //QZSS ID is 5 but array location is 4
+        settings.ubxConstellations[SFE_UBLOX_GNSS_ID_GPS].enabled = settings.ubxConstellations[incoming].enabled; //GPS ID is 0 and array location is 0
+        settings.ubxConstellations[4].enabled = settings.ubxConstellations[incoming].enabled; //QZSS ID is 5 but array location is 4
       }
     }
     else if (incoming == STATUS_PRESSED_X)
@@ -254,18 +254,26 @@ bool configureConstellations()
 {
   bool response = true;
 
+  //If we have a corrupt constellation ID it can cause GNSS config to fail.
+  //Reset to factory defaults.
+  if (settings.ubxConstellations[0].gnssID == 255)
+  {
+    ESP_LOGD(TAG, "Constellation ID corrupt");
+    factoryReset();
+  }
+
   //long startTime = millis();
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
   {
     //Standard UBX protocol method takes ~533-783ms
-    uint8_t currentlyEnabled = getConstellation(ubxConstellations[x].gnssID); //Qeury the module for the current setting
-    if (currentlyEnabled != ubxConstellations[x].enabled)
-      response &= setConstellation(ubxConstellations[x].gnssID, ubxConstellations[x].enabled);
+    uint8_t currentlyEnabled = getConstellation(settings.ubxConstellations[x].gnssID); //Qeury the module for the current setting
+    if (currentlyEnabled != settings.ubxConstellations[x].enabled)
+      response &= setConstellation(settings.ubxConstellations[x].gnssID, settings.ubxConstellations[x].enabled);
 
     //Get/set val method takes ~642ms but does not work because we don't send additional sigCfg keys at same time
-    //    uint8_t currentlyEnabled = i2cGNSS.getVal8(ubxConstellations[x].configKey, VAL_LAYER_RAM, 1200);
-    //    if (currentlyEnabled != ubxConstellations[x].enabled)
-    //      response &= i2cGNSS.setVal(ubxConstellations[x].configKey, ubxConstellations[x].enabled);
+    //    uint8_t currentlyEnabled = i2cGNSS.getVal8(settings.ubxConstellations[x].configKey, VAL_LAYER_RAM, 1200);
+    //    if (currentlyEnabled != settings.ubxConstellations[x].enabled)
+    //      response &= i2cGNSS.setVal(settings.ubxConstellations[x].configKey, settings.ubxConstellations[x].enabled);
   }
   //long stopTime = millis();
 

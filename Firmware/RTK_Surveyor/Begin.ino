@@ -38,7 +38,7 @@ void beginBoard()
 
     //Bug in ZED-F9P v1.13 firmware causes RTK LED to not light when RTK Floating with SBAS on.
     //The following changes the POR default but will be overwritten by settings in NVM or settings file
-    ubxConstellations[1].enabled = false; 
+    settings.ubxConstellations[1].enabled = false;
 
     strcpy(platformFilePrefix, "SFE_Surveyor");
     strcpy(platformPrefix, "Surveyor");
@@ -112,14 +112,25 @@ void beginBoard()
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
     reuseLastLog = false; //Start new log
-    settings.resetCount = 0;
-    recordSystemSettings(); //Record to NVM
+
+    loadSettingsPartial();
+    if (settings.enableResetDisplay == true)
+    {
+      settings.resetCount = 0;
+      recordSystemSettings(); //Record to NVM
+    }
   }
   else
   {
     reuseLastLog = true; //Attempt to reuse previous log
-    settings.resetCount++;
-    recordSystemSettings(); //Record to NVM
+
+    loadSettingsPartial();
+    if (settings.enableResetDisplay == true)
+    {
+      settings.resetCount++;
+      recordSystemSettings(); //Record to NVM
+      Serial.printf("resetCount: %d\n\r", settings.resetCount);
+    }
 
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())
@@ -196,6 +207,9 @@ void beginSD()
     }
 
     online.microSD = true;
+
+    Serial.println(F("microSD online"));
+    scanForFirmware(); //See if SD card contains new firmware that should be loaded at startup
   }
   else
   {
@@ -214,7 +228,7 @@ void beginUART2()
       "UARTStart", //Just for humans
       2000, //Stack Size
       NULL, //Task input parameter
-      0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
       &pinUART2TaskHandle, //Task handle
       0); //Core where task should run, 0=core, 1=Arduino
 
@@ -225,9 +239,9 @@ void beginUART2()
 //Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
 void pinUART2Task( void *pvParameters )
 {
-  serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
   serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
   serialGNSS.setTimeout(50);
+  serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
   uart2pinned = true;
 
@@ -336,6 +350,7 @@ void beginGNSS()
 
     printModuleInfo(); //Print module type and firmware version
   }
+
   online.gnss = true;
 }
 
@@ -460,6 +475,6 @@ void beginSystemState()
       "BtnCheck", //Just for humans
       buttonTaskStackSize, //Stack Size
       NULL, //Task input parameter
-      ButtonCheckTaskPriority, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      ButtonCheckTaskPriority,
       &ButtonCheckTaskHandle); //Task handle
 }

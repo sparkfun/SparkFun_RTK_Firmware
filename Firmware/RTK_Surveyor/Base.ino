@@ -41,7 +41,7 @@ bool configureUbloxModuleBase()
   getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3))
     response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //Set the I2C port to output UBX (config), and RTCM3 (casting)
-  //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3); //Not a valid state. Goes to UBX+NMEA+RTCM3 - 
+  //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3); //Not a valid state. Goes to UBX+NMEA+RTCM3 -
 
   //In base mode the Surveyor should output RTCM over UART2 and I2C ports:
   //(Primary) UART2 in case the Surveyor is connected via radio to rover
@@ -99,10 +99,10 @@ bool beginSurveyIn()
   //Wait until active becomes true
   long maxTime = 5000;
   long startTime = millis();
-  while(i2cGNSS.getSurveyInActive(100) == false)
+  while (i2cGNSS.getSurveyInActive(100) == false)
   {
     delay(100);
-    if(millis() - startTime > maxTime) return(false); //Reset of survey failed
+    if (millis() - startTime > maxTime) return (false); //Reset of survey failed
   }
 
   return (true);
@@ -119,19 +119,19 @@ bool resetSurvey()
   delay(1000);
   response &= i2cGNSS.disableSurveyMode(maxWait); //Disable survey
 
-  if(response == false)
-    return(response);
+  if (response == false)
+    return (response);
 
   //Wait until active and valid becomes false
   long maxTime = 5000;
   long startTime = millis();
-  while(i2cGNSS.getSurveyInActive(100) == true || i2cGNSS.getSurveyInValid(100) == true)
+  while (i2cGNSS.getSurveyInActive(100) == true || i2cGNSS.getSurveyInValid(100) == true)
   {
     delay(100);
-    if(millis() - startTime > maxTime) return(false); //Reset of survey failed
+    if (millis() - startTime > maxTime) return (false); //Reset of survey failed
   }
 
-  return(true);
+  return (true);
 }
 
 //Start the base using fixed coordinates
@@ -212,7 +212,11 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
   }
 
   //Check for too many digits
-  if (logIncreasing == true)
+  if (settings.enableResetDisplay == true)
+  {
+    if (rtcmPacketsSent > 99) rtcmPacketsSent = 1; //Trim to two digits to avoid overlap
+  }
+  else if (logIncreasing == true)
   {
     if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon
   }

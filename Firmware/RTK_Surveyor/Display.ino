@@ -445,12 +445,7 @@ void paintSIV()
       oled.print(i2cGNSS.getSIV());
     }
 
-    if (settings.enableResetDisplay == true)
-    {
-      oled.setFontType(0); //Small font
-      oled.setCursor(16 + (8 * 3) + 6, 38); //x, y
-      oled.print(settings.resetCount);
-    }
+    paintResets();
   }
 }
 
@@ -646,6 +641,8 @@ void paintBaseTempTransmitting()
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
+    paintResets();
+
     paintLogging();
   }
 }
@@ -679,6 +676,8 @@ void paintBaseTempWiFiStarted()
 
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintResets();
 
     paintLogging();
   }
@@ -714,6 +713,8 @@ void paintBaseTempWiFiConnected()
 
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintResets();
 
     paintLogging();
   }
@@ -776,6 +777,8 @@ void paintBaseTempCasterConnected()
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
+    paintResets();
+
     paintLogging();
   }
 }
@@ -822,6 +825,8 @@ void paintBaseFixedTransmitting()
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
+    paintResets();
+
     paintLogging();
   }
 }
@@ -855,6 +860,8 @@ void paintBaseFixedWiFiStarted()
 
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintResets();
 
     paintLogging();
   }
@@ -890,6 +897,8 @@ void paintBaseFixedWiFiConnected()
 
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintResets();
 
     paintLogging();
   }
@@ -951,6 +960,8 @@ void paintBaseFixedCasterConnected()
 
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+    paintResets();
 
     paintLogging();
   }
@@ -1556,5 +1567,18 @@ void displayMessage(const char* message, uint16_t displayTime)
     oled.display();
 
     delay(displayTime);
+  }
+}
+
+void paintResets()
+{
+  if (online.display == true)
+  {
+    if (settings.enableResetDisplay == true)
+    {
+      oled.setFontType(0); //Small font
+      oled.setCursor(16 + (8 * 3) + 6, 38); //x, y
+      oled.print(settings.resetCount);
+    }
   }
 }

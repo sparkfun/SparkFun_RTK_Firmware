@@ -38,6 +38,8 @@ void menuDebug()
     if (settings.enableResetDisplay == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
+    Serial.println(F("r) Force system reset"));
+
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
@@ -105,6 +107,15 @@ void menuDebug()
     else if (incoming == '8')
     {
       settings.enableResetDisplay ^= 1;
+      if (settings.enableResetDisplay == true)
+      {
+        settings.resetCount = 0;
+        recordSystemSettings(); //Record to NVM
+      }
+    }
+    else if (incoming == 'r')
+    {
+      ESP.restart();
     }
     else if (incoming == 'x')
       break;

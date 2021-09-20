@@ -1,5 +1,11 @@
 void loadSettings()
 {
+  if (online.eeprom == false)
+  {
+    ESP_LOGD(TAG, "Error: EEPROM not online");
+    return;
+  }
+
   //First load any settings from NVM
   //After, we'll load settings from config file if available
   //We'll then re-record settings so that the settings from the file over-rides internal NVM settings
@@ -41,25 +47,49 @@ void loadSettings()
   recordSystemSettings();
 }
 
+//Load settings without recording 
+//Used at very first boot to test for resetCounter
+void loadSettingsPartial()
+{
+  if (online.eeprom == false)
+  {
+    ESP_LOGD(TAG, "Error: EEPROM not online");
+    return;
+  }
+
+  //Check to see if EEPROM is blank
+  uint32_t testRead = 0;
+  if (EEPROM.get(0, testRead) == 0xFFFFFFFF)
+  {
+    ESP_LOGD(TAG, "EEPROM is blank");
+    return; //EEPROM is blank, assume default settings
+  }
+  
+  EEPROM.get(0, settings); //Read current settings
+}
+
 //Record the current settings struct to EEPROM and then to config file
 void recordSystemSettings()
 {
   settings.sizeOfSettings = sizeof(settings);
   if (settings.sizeOfSettings > EEPROM_SIZE)
   {
-    displayError("EEPROM");
-
-    while (1) //Hard freeze
-    {
-      Serial.printf("Size of settings is %d bytes\n\r", sizeof(settings));
-      Serial.println(F("Increase the EEPROM footprint!"));
-      delay(1000);
-    }
+    Serial.printf("Size of settings is %d bytes\n\r", sizeof(settings));
+    Serial.println(F("Increase the EEPROM footprint!"));
+    displayError("EEPROM"); //Hard freeze
   }
 
-  EEPROM.put(0, settings);
-  EEPROM.commit();
-  delay(1); //Give CPU time to pet WDT
+  if (online.eeprom == true)
+  {
+    EEPROM.put(0, settings);
+    EEPROM.commit();
+    delay(1); //Give CPU time to pet WDT
+  }
+  else
+  {
+    ESP_LOGD(TAG, "Error: EEPROM not online");
+  }
+
   recordSystemSettingsToFile();
 }
 
@@ -142,13 +172,12 @@ void recordSystemSettingsToFile()
       settingsFile.println("enableSensorFusion=" + (String)settings.enableSensorFusion);
       settingsFile.println("autoIMUmountAlignment=" + (String)settings.autoIMUmountAlignment);
       settingsFile.println("enableResetDisplay=" + (String)settings.enableResetDisplay);
-      settingsFile.println("resetCount=" + (String)settings.resetCount);
 
       //Record constellation settings
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
       {
         char tempString[50]; //constellation.BeiDou=1
-        sprintf(tempString, "constellation.%s=%d", ubxConstellations[x].textName, ubxConstellations[x].enabled);
+        sprintf(tempString, "constellation.%s=%d", settings.ubxConstellations[x].textName, settings.ubxConstellations[x].enabled);
         settingsFile.println(tempString);
       }
 
@@ -156,7 +185,7 @@ void recordSystemSettingsToFile()
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
         char tempString[50]; //message.nmea_dtm.msgRate=5
-        sprintf(tempString, "message.%s.msgRate=%d", ubxMessages[x].msgTextName, ubxMessages[x].msgRate);
+        sprintf(tempString, "message.%s.msgRate=%d", settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
         settingsFile.println(tempString);
       }
 
@@ -411,8 +440,6 @@ bool parseLine(char* str) {
     settings.autoIMUmountAlignment = d;
   else if (strcmp(settingName, "enableResetDisplay") == 0)
     settings.enableResetDisplay = d;
-  else if (strcmp(settingName, "resetCount") == 0)
-    settings.resetCount = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list
@@ -426,11 +453,11 @@ bool parseLine(char* str) {
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
       {
         char tempString[50]; //constellation.GPS=1
-        sprintf(tempString, "constellation.%s", ubxConstellations[x].textName);
+        sprintf(tempString, "constellation.%s", settings.ubxConstellations[x].textName);
 
         if (strcmp(settingName, tempString) == 0)
         {
-          ubxConstellations[x].enabled = d;
+          settings.ubxConstellations[x].enabled = d;
           knownSetting = true;
           break;
         }
@@ -443,11 +470,11 @@ bool parseLine(char* str) {
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
         char tempString[50]; //message.nmea_dtm.msgRate=5
-        sprintf(tempString, "message.%s.msgRate", ubxMessages[x].msgTextName);
+        sprintf(tempString, "message.%s.msgRate", settings.ubxMessages[x].msgTextName);
 
         if (strcmp(settingName, tempString) == 0)
         {
-          ubxMessages[x].msgRate = d;
+          settings.ubxMessages[x].msgRate = d;
           knownSetting = true;
           break;
         }
@@ -467,6 +494,11 @@ bool parseLine(char* str) {
 //ESP32 doesn't have erase command so we do it here
 void eepromErase()
 {
+  if(online.eeprom == false)
+  {
+    ESP_LOGD(TAG, "Error: EEPROM not online");
+    return;
+  }
   for (int i = 0 ; i < EEPROM_SIZE ; i++) {
     EEPROM.write(i, 0xFF); //Reset to all 1s
   }

@@ -219,6 +219,7 @@ void ButtonCheckTask(void *e)
       {
         forceSystemStateUpdate = true;
         requestChangeState(STATE_TEST);
+        lastTestMenuChange = millis(); //Avoid exiting test menu for 1s
       }
       else if (setupBtn != NULL && setupBtn->wasReleased())
       {

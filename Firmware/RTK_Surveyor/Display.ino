@@ -86,7 +86,7 @@ void updateDisplay()
           displayWiFiConfig(); //Display SSID and IP
           break;
         case (STATE_TEST):
-          //Do nothing
+          paintSystemTest();
           break;
         case (STATE_TESTING):
           paintSystemTest();

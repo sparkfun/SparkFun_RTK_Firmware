@@ -7,6 +7,7 @@
   and communicates with the ZED-F9P.
 
   Compiled with Arduino v1.8.13 with ESP32 core v1.0.6.
+  v1.7 Moves to ESP32 core v2.0.0.
 
   Select the ESP32 Dev Module from the boards list. This maps the same pins to the ESP32-WROOM module.
   Select 'Minimal SPIFFS (1.9MB App)' from the partition list. This will enable SD firmware updates.
@@ -45,7 +46,7 @@ const int FIRMWARE_VERSION_MINOR = 7;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -106,7 +107,6 @@ ESP32Time rtc;
 #include "SdFat.h"
 
 SdFat sd;
-SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we can set the SPI freq in beginSD()
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 

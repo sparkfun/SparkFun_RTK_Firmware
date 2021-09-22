@@ -161,7 +161,6 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     delay(10);
 
-    //    if (sd.begin(SdSpiConfig(pin_microSD_CS, DEDICATED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
       int tries = 0;
@@ -171,7 +170,6 @@ void beginSD()
         Serial.printf("SD init failed. Trying again %d out of %d\n\r", tries + 1, maxTries);
 
         delay(250); //Give SD more time to power up, then try again
-        //        if (sd.begin(SdSpiConfig(pin_microSD_CS, DEDICATED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
         if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
       }
 

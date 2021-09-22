@@ -293,7 +293,7 @@ struct struct_settings {
   uint8_t resetCount = 0;
 } settings;
 
-//These are the devices on board RTK Surveyor that may be on or offline.
+//Monitor which devices on the device are on or offline.
 struct struct_online {
   bool microSD = false;
   bool display = false;

@@ -34,7 +34,7 @@ void loadSettings()
   EEPROM.get(sizeof(int), tempIdentifier); //Load the identifier from the EEPROM location after sizeOfSettings (int)
   if (tempIdentifier != RTK_IDENTIFIER)
   {
-    Serial.println(F("Settings are not valid for this variant of RTK Surveyor. Default settings applied"));
+    Serial.printf("Settings are not valid for this variant of RTK %s. Default settings applied.\n\r", platformPrefix);
     recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
   }
 

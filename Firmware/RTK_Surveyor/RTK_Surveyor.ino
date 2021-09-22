@@ -359,7 +359,7 @@ void setup()
   Serial.begin(115200); //UART0 for programming and debugging
 
   Wire.begin(); //Start I2C on core 1
-  Wire.setClock(400000); //Increase bus rate to 400kHz
+  Wire.setClock(100000);
 
   beginGNSS(); //Connect to GNSS
 

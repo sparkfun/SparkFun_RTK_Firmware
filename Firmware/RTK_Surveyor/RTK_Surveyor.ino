@@ -46,7 +46,7 @@ const int FIRMWARE_VERSION_MINOR = 7;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
-#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -359,7 +359,7 @@ void setup()
   Serial.begin(115200); //UART0 for programming and debugging
 
   Wire.begin(); //Start I2C on core 1
-  Wire.setClock(100000);
+  Wire.setClock(400000);
 
   beginGNSS(); //Connect to GNSS
 

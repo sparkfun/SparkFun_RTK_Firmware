@@ -800,37 +800,48 @@ static const char *index_html = R"=====(
         <div style="margin-top:20px;">
             <form>
 
+                <!-- --------- GNSS Config --------- -->
                 <div class="d-grid gap-2">
                     <button class="btn btn-primary toggle-btn" type="button" data-toggle="collapse"
                         data-target="#collapseGNSSConfig" aria-expanded="false" aria-controls="collapseGNSSConfig">
-                        GNSS Configuration <i class="caret-icon bi icon-caret-up masterTooltip"
-                            title="Tooltip text here"></i>
+                        GNSS Configuration <i class="caret-icon bi icon-caret-down"></i>
                     </button>
                 </div>
-
-                <!-- --------- GNSS Config --------- -->
                 <div class="collapse show" id="collapseGNSSConfig">
                     <div class="card card-body pt-1">
-                        Measurement Rate:
-                        <div class="row">
-                            <div class="col-sm-2 col-12 ms-3 form-group">
-                                <label for="measurementRateHz" class="col-form-label">In
-                                    Hz:</label>
-                            </div>
-                            <div class="col-sm-4 col-5 ms-3 form-group">
-                                <input type="number" class="form-control mb-2" id="measurementRateHz">
-                                <p id="measurementRateHzError" class="inlineError"></p>
-                            </div>
-                            <p class="small ms-3 mt-0 mb-0"><em>or</em></p>
+                        <div id="measurementRateInput">
+                            Measurement Rate:
+                            <div class="row">
+                                <div class="col-sm-2 col-12 ms-3 form-group">
+                                    <label for="measurementRateHz" class="col-form-label">In
+                                        Hz:</label>
+                                </div>
+                                <div class="col-sm-4 col-5 ms-3 form-group">
+                                    <input type="number" class="form-control mb-2" id="measurementRateHz">
+                                    <p id="measurementRateHzError" class="inlineError"></p>
+                                </div>
+                                <div class="col-sm-4 form-group">
+                                    <span class="tt" data-bs-placement="right"
+                                        title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Default: 4Hz. Limit: 0.000122 to 10Hz.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </div>
 
-                            <div class="col-sm-6 col-12 ms-3 form-group">
-                                <label for="measurementRateSec" class="col-form-label">
-                                    Seconds between measurements:</label>
-                            </div>
+                                <p class="small ms-3 mt-0 mb-0"><em>or</em></p>
 
-                            <div class="col-sm-4 col-5 ms-3 form-group">
-                                <input type="number" class="form-control mb-3" id="measurementRateSec">
-                                <p id="measurementRateSecError" class="inlineError"></p>
+                                <div class="col-sm-2 col-12 ms-3 form-group">
+                                    <label for="measurementRateSec">Seconds between measurements:</label>
+                                </div>
+                                <div class="col-sm-4 col-5 ms-3 form-group">
+                                    <input type="number" class="form-control mb-2" id="measurementRateSec">
+                                    <p id="measurementRateSecError" class="inlineError"></p>
+                                </div>
+                                <div class="col-sm-4 form-group">
+                                    <span class="tt" data-bs-placement="right"
+                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when taking a measurement every few seconds across a long survey (24+ hours). Limit: 0.1 to 8196 seconds.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         <div id="dynamicModelDropdown">
@@ -855,7 +866,13 @@ static const char *index_html = R"=====(
                             <br>
                         </div>
 
-                        <label for="constellations">Constellations:</label>
+                        <div id="constellationCheckBoxes">
+                            <label for="constellations">Constellations:</label>
+                            <span class="tt" data-bs-placement="right"
+                                title="The receiver is capable of concurrently receiving signals from multiple satellites across multiple constellations. Some applications dictate the need to turn off certain constellation reception. Deselecting a given constellation will cause the receiver to ignore those signals preventing them from being used during position calculations. Default: GPS, SBAS, GLONASS, BeiDou, and Galileo.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
                         <div class="form-check box-margin20">
                             <label class="form-check-label" for="ubxConstellationsGPS">GPS/QZSS</label>
                             <input class="form-check-input" type="checkbox" value="" id="ubxConstellationsGPS">
@@ -878,11 +895,17 @@ static const char *index_html = R"=====(
                         </div>
                         <p id="ubxConstellationsError" class="inlineError"></p>
 
-                        <button class="btn btn-md btn-outline-primary mt-3 toggle-btn" type="button"
-                            data-toggle="collapse" data-target="#collapseGNSSConfigMsg" aria-expanded="false"
-                            aria-controls="collapseGNSSConfigMsg">
-                            Message Rates <i class="caret-icon bi icon-caret-down"></i>
-                        </button>
+                        <div id="messageRateButton">
+                            <button class="btn btn-md btn-outline-primary mt-3 toggle-btn" type="button"
+                                data-toggle="collapse" data-target="#collapseGNSSConfigMsg" aria-expanded="false"
+                                aria-controls="collapseGNSSConfigMsg">
+                                Message Rates <i class="caret-icon bi icon-caret-down"></i>
+                            </button>
+                            <span class="tt" data-bs-placement="right"
+                                title="NMEA and RAWX are the two most commonly reported types of message but the receiver supports more than 70 different messages. Each message rate input controls which messages are disabled (0) and how often the message is reported (1 = one message reported per 1 fix, 5 = one report every 5 fixes). Default: NMEA GGA, GSA, GST, GSV, and RMC. Limits: 0 to 20.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
 
                         <div class="collapse" id="collapseGNSSConfigMsg">
                             <div class="card card-body">
@@ -1461,9 +1484,13 @@ static const char *index_html = R"=====(
                 <div class="collapse" id="collapseBaseConfig">
                     <div class="card card-body">
 
-                        <div class="col-sm-12">
+                        <div id="surveyInRadio">
                             <input type="radio" id="baseTypeSurveyIn" name="baseType" class="form-radio" checked>
-                            <label for="baseTypeSurveyIn"><strong>Survey-In</strong></label><br>
+                            <label for="baseTypeSurveyIn"><strong>Survey-In</strong></label>
+                            <span class="tt" data-bs-placement="right"
+                                title="If the precise location of a base station is not known it may be obtained by ‘surveying’ the location. The base is fixed in one place and takes approximately 60 seconds worth of readings to obtain a best fit location based on the measurements. This method achieves ~30cm accurate position but can vary. Increasing the Minimum Observation Time and/or Required Mean Deviation will increase accuracy but only to a point. Better accuracy is achieved with long-term logging and post processing. Default: 60s and 5.0m. Limits: 60 to 900s, 1.0 to 5.0m.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
                         </div>
 
                         <div class="form-group row">
@@ -1485,10 +1512,15 @@ static const char *index_html = R"=====(
                             </div>
                         </div>
 
-                        <div>
+                        <div id="fixedRadio">
                             <input type="radio" id="baseTypeFixed" name="baseType" value="1" class="form-radio">
                             <label for="baseTypeFixed"><strong>Fixed</strong> <span class="small">(Choose ECEF or
-                                    Geodetic)</span></label><br>
+                                    Geodetic)</span></label>
+                            <span class="tt" data-bs-placement="right"
+                                title="If the location of the base is known it can be entered in either ECEF or Geodetic coordinates. In this mode the receiver will immediately begin outputting RTCM correction data. A fixed position is best obtained with PPP (please see our tutorial) or with post processing against a reference station. Default: SparkFun's location in Boulder, Colorado.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+
                         </div>
 
                         <div class="mt-3">
@@ -1561,6 +1593,10 @@ static const char *index_html = R"=====(
                         <div class="form-check mt-3">
                             <label class="form-check-label" for="enableNtripServer">Enable NTRIP Server</label>
                             <input class="form-check-input" type="checkbox" value="" id="enableNtripServer">
+                            <span class="tt" data-bs-placement="right"
+                                title="Once a base station is outputting correction data it can be pushed to an NTRIP caster via local Wifi. Other devices can access the correction stream using an NTRIP client. Default: Disabled.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
                         </div>
 
                         <div class="form-group row">
@@ -1628,24 +1664,26 @@ static const char *index_html = R"=====(
                 </div>
                 <div class="collapse" id="collapseSensorConfig">
                     <div class="card card-body">
-
-
                         <div class="form-check mt-3">
                             <label class="form-check-label" for="enableSensorFusion">Sensor Fusion</label>
-                            <input class="form-check-input" type="checkbox" value="" id="enableSensorFusion"
-                                >
+                            <input class="form-check-input" type="checkbox" value="" id="enableSensorFusion">
+                            <span class="tt" data-bs-placement="right"
+                                title="Use the onboard IMU to maintain position when GNSS is unavailable. Only applicable to automotive installations. Will degrade positional accuracy in non-automotive applications. Default: Disabled">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
                         </div>
                         <div class="form-check mt-3">
                             <label class="form-check-label" for="autoIMUmountAlignment">Auto IMU Mount Alignment</label>
-                            <input class="form-check-input" type="checkbox" value="" id="autoIMUmountAlignment"
-                                >
+                            <input class="form-check-input" type="checkbox" value="" id="autoIMUmountAlignment">
+                            <span class="tt" data-bs-placement="right"
+                                title="Automatically identify how the product is mounted in reference to the vehicle’s frame of reference. Default: Enabled">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
                         </div>
-
                     </div>
                 </div>
 
                 <!-- --------- Ports Config --------- -->
-
                 <div class="d-grid gap-2">
                     <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                         data-target="#collapsePortsConfig" aria-expanded="false" aria-controls="collapsePortsConfig">
@@ -1656,7 +1694,7 @@ static const char *index_html = R"=====(
                     <div class="card card-body">
 
                         <div id="radioPortChannelDropdown" class="mb-2">
-                            <label for="radioPortBaud">Baud rate for Radio Port: </label>
+                            <label for="radioPortBaud">Radio Port Baud Rate: </label>
                             <select name="radioPortBaud" id="radioPortBaud" class="form-dropdown">
                                 <option value="4800">4800</option>
                                 <option value="9600">9600</option>
@@ -1668,6 +1706,10 @@ static const char *index_html = R"=====(
                                 <option value="460800">460800</option>
                                 <option value="921600">921600</option>
                             </select>
+                            <span class="tt" data-bs-placement="right"
+                                title="The baud rate for the RADIO port can be changed to match a user's choice of radio. Default: 57600bps">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
                             <br>
                         </div>
 
@@ -1679,11 +1721,14 @@ static const char *index_html = R"=====(
                                 <option value="2" id="muxChannel2">I2C</option>
                                 <option value="3">ADC/DAC</option>
                             </select>
-                            <br>
+                            <span class="tt" data-bs-placement="right"
+                                title="The DATA port can be configured for different applications. NMEA is used for serial TX/RX of location information. PPS/Trigger is used for pulse per second output and 5ns accurate trigger inputs. I2C is used as an additional SDA/SCL data channel. Wheel/Dir Tick is used for automotive interfacing. ADC/DAC is used for custom firmware applications. Default: NMEA">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
                         </div>
 
                         <div id="dataPortBaudDropdown" class="mb-2">
-                            <label for="dataPortBaud">Baud rate for Data Port: </label>
+                            <label for="dataPortBaud">Data Port Baud Rate: </label>
                             <select name="dataPortBaud" id="dataPortBaud" class="form-dropdown">
                                 <option value="4800">4800</option>
                                 <option value="9600">9600</option>
@@ -1695,7 +1740,10 @@ static const char *index_html = R"=====(
                                 <option value="460800">460800</option>
                                 <option value="921600">921600</option>
                             </select>
-                            <br>
+                            <span class="tt" data-bs-placement="right"
+                                title="In NMEA mode, the baud rate for the DATA port can be changed to match a user's application. Default: 460800bps">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
                         </div>
 
                     </div>
@@ -1715,14 +1763,26 @@ static const char *index_html = R"=====(
                         <div class="form-check">
                             <label class="form-check-label" for="enableLogging">Log to SD Card</label>
                             <input class="form-check-input" type="checkbox" value="" id="enableLogging">
+                            <span class="tt" data-bs-placement="right"
+                                title="If a microSD card is detected, all messages will be logged. Default: Enabled">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
                         </div>
 
-                        <div class="form-group row">
-                            <label for="maxLogTime_minutes" class="col-sm-4 col-7 col-form-label box-margin20">Max Log Time
-                                (min):</label>
-                            <div class="col-sm-7 col-4">
+                        <div id="maxLogTime Input" class="row">
+                            <label for="maxLogTime_minutes" class="col-sm-2 col-4 form-group box-margin20">Max Log
+                                Time (min):</label>
+
+                            <div class="col-sm-4 col-5 ms-3 form-group">
                                 <input type="number" class="form-control" id="maxLogTime_minutes">
                                 <p id="maxLogTime_minutesError" class="inlineError"></p>
+                            </div>
+
+                            <div class="col-sm-4 form-group">
+                                <span class="tt" data-bs-placement="right"
+                                    title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 600 minutes. Limit: 1 to 2880 minutes.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
                             </div>
                         </div>
 
@@ -1730,6 +1790,10 @@ static const char *index_html = R"=====(
                             <label class="form-check-label" for="enableFactoryDefaults">Enable Factory Defaults</label>
                             <input class="form-check-input" type="checkbox" value="" id="enableFactoryDefaults"
                                 unchecked>
+                            <span class="tt" data-bs-placement="right"
+                                title="Factory Defaults will erase any user settings and reset the internal receiver to stock settings. Any logs on SD are maintained. To prevent accidental reset the checkbox must first be checked before the button is pressed.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
                         </div>
                         <div class="form-check">
                             <button type="button" id="factoryDefaults" class="btn btn-primary"
@@ -1738,8 +1802,12 @@ static const char *index_html = R"=====(
                             <p id="factoryDefaultsMsg" class="inlineSuccess"></p>
                         </div>
 
-                        <div class="form-check" id="sdMounted">
-                            <strong>SD Card</strong>
+                        <div class="col-sm-7 col-4" id="sdMounted">
+                            SD Card:
+                            <span class="tt" data-bs-placement="right"
+                                title="Various stats for the SD card are shown. If valid firmware is detected, the upgrade process will be made available.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
 
                             <div class="form-check">
                                 Free: <p id="sdFreeSpaceMB" style="display:inline;">0</p>MB
@@ -1748,7 +1816,7 @@ static const char *index_html = R"=====(
                             </div>
 
                             <div class="form-check" id="firmwareAvailable" style="display:none;">
-                                <b>Firmware</b>
+                                Available Firmware:
                                 <div class="form-check">
 
                                     <div style="display:none;" id="firmwareFile0">
@@ -1783,14 +1851,34 @@ static const char *index_html = R"=====(
                                             id="enableFirmwareUpdate" unchecked disabled>
                                     </div>
 
-                                    <button type="button" id="firmwareUpdate" class="btn btn-primary"
-                                        onClick="sendFirmwareFile()" disabled>Update Firmware</button>
-                                    <p id="firmwareUpdateMsg" class="inlineSuccess"></p>
+                                    <div id="firmwareUpdateButton">
+                                        <button type="button" id="firmwareUpdate" class="btn btn-primary"
+                                            onClick="sendFirmwareFile()" disabled>Update Firmware</button>
+                                        <p id="firmwareUpdateMsg" class="inlineSuccess"></p>
+                                        <span class="tt" data-bs-placement="right"
+                                            title="Select the firmware file, then check ‘Enable Firmware Update’ to begin update process.">
+                                            <span class="icon-info-circle text-primary ms-2"></span>
+                                        </span>
+                                    </div>
                                 </div>
-
+                            </div>
+                            <div id="uploadNewFirmwareDiv" class="mb-2">
+                                <label class="form-check-label" for="uploadNewFirmware">Add Firmware
+                                </label>
+                                <form id="uploadNewFirmware" enctype="multipart/form-data" method="post"
+                                    action="/upload">
+                                    <input id="fileupload" name="binfile" type="file" />
+                                    <input type="submit" value="Upload" id="submitFirmwareFile"
+                                        class="btn btn-primary" />
+                                </form>
+                                <span class="tt" data-bs-placement="right"
+                                    title="New firmware may be uploaded via WiFi to the SD card. Firmware is only loaded to the SD card and must then be loaded to the unit.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
                             </div>
                         </div>
-                        Debug Zone:
+
+                        <label for="debugZone">Debug Zone:</label>
                         <div class="form-check mt-3 box-margin20">
                             <label class="form-check-label" for="enableResetDisplay">Display Reset Counter</label>
                             <input class="form-check-input" type="checkbox" value="" id="enableResetDisplay" unchecked>
@@ -1828,7 +1916,6 @@ static const char *index_html = R"=====(
 </body>
 
 </html>
-
 )====="; //End index.html
 
 //Content of bootstrap.bundle.min.jss with gzip compression

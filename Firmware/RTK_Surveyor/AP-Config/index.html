@@ -97,7 +97,7 @@
                         GNSS Configuration <i class="caret-icon bi icon-caret-down"></i>
                     </button>
                 </div>
-                <div class="collapse" id="collapseGNSSConfig">
+                <div class="collapse show" id="collapseGNSSConfig">
                     <div class="card card-body pt-1">
                         <div id="measurementRateInput">
                             Measurement Rate:
@@ -112,7 +112,7 @@
                                 </div>
                                 <div class="col-sm-4 form-group">
                                     <span class="tt" data-bs-placement="right"
-                                        title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz is not guaranteed to be stable. The Bluetooth buffer can quickly become overwhelmed and/or if data logging is enabled the system can become bogged down with SD write delays. Decreasing to 1Hz is acceptable and will reduce the log sizes linearly. Default: 4Hz. Limit: 0.000122 to 10Hz.">
+                                        title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Default: 4Hz. Limit: 0.000122 to 10Hz.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </div>
@@ -1047,7 +1047,7 @@
                         System Configuration <i class="caret-icon bi icon-caret-down"></i>
                     </button>
                 </div>
-                <div class="collapse show" id="collapseSystemConfig">
+                <div class="collapse" id="collapseSystemConfig">
                     <div class="card card-body">
 
                         <div class="form-check">
@@ -1106,7 +1106,7 @@
                             </div>
 
                             <div class="form-check" id="firmwareAvailable" style="display:none;">
-                                <b>Firmware</b>
+                                Available Firmware:
                                 <div class="form-check">
 
                                     <div style="display:none;" id="firmwareFile0">
@@ -1141,13 +1141,15 @@
                                             id="enableFirmwareUpdate" unchecked disabled>
                                     </div>
 
-                                    <button type="button" id="firmwareUpdate" class="btn btn-primary"
-                                        onClick="sendFirmwareFile()" disabled>Update Firmware</button>
-                                    <p id="firmwareUpdateMsg" class="inlineSuccess"></p>
-                                    <span class="tt" data-bs-placement="right"
-                                        title="Select the firmware file, then check ‘Enable Firmware Update’ to begin update process.">
-                                        <span class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
+                                    <div id="firmwareUpdateButton">
+                                        <button type="button" id="firmwareUpdate" class="btn btn-primary"
+                                            onClick="sendFirmwareFile()" disabled>Update Firmware</button>
+                                        <p id="firmwareUpdateMsg" class="inlineSuccess"></p>
+                                        <span class="tt" data-bs-placement="right"
+                                            title="Select the firmware file, then check ‘Enable Firmware Update’ to begin update process.">
+                                            <span class="icon-info-circle text-primary ms-2"></span>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                             <div id="uploadNewFirmwareDiv" class="mb-2">

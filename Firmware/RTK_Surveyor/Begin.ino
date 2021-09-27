@@ -161,7 +161,7 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     delay(10);
 
-    if (sd.begin(SdSpiConfig(pin_microSD_CS, DEDICATED_SPI, SD_SCK_MHZ(settings.spiFrequency), &spi)) == false)
+    if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
       int tries = 0;
       int maxTries = 2;
@@ -170,7 +170,7 @@ void beginSD()
         Serial.printf("SD init failed. Trying again %d out of %d\n\r", tries + 1, maxTries);
 
         delay(250); //Give SD more time to power up, then try again
-        if (sd.begin(SdSpiConfig(pin_microSD_CS, DEDICATED_SPI, SD_SCK_MHZ(settings.spiFrequency), &spi)) == true) break;
+        if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
       }
 
       if (tries == maxTries)
@@ -337,6 +337,20 @@ void beginGNSS()
     char *ptr = strstr(zedFirmwareVersion, "FWVER=");
     if (ptr != NULL)
       strcpy(zedFirmwareVersion, ptr + strlen("FWVER="));
+
+    //Convert version to a uint8_t
+    if (strstr(zedFirmwareVersion, "1.00") != NULL)
+      zedFirmwareVersionInt = 100;
+    else if (strstr(zedFirmwareVersion, "1.12") != NULL)
+      zedFirmwareVersionInt = 112;
+    else if (strstr(zedFirmwareVersion, "1.13") != NULL)
+      zedFirmwareVersionInt = 113;
+    else if (strstr(zedFirmwareVersion, "1.20") != NULL) //Mostly for F9R HPS 1.20, but also F9P HPG v1.20 Spartan future support
+      zedFirmwareVersionInt = 120;
+    else if (strstr(zedFirmwareVersion, "1.21") != NULL) //Future F9R HPS v1.21
+      zedFirmwareVersionInt = 121;
+    else
+      Serial.printf("Unknown firmware version: %s", zedFirmwareVersion);
 
     //Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
     if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9P") != NULL)

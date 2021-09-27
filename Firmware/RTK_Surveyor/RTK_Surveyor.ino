@@ -7,6 +7,7 @@
   and communicates with the ZED-F9P.
 
   Compiled with Arduino v1.8.13 with ESP32 core v1.0.6.
+  v1.7 Moves to ESP32 core v2.0.0.
 
   Select the ESP32 Dev Module from the boards list. This maps the same pins to the ESP32-WROOM module.
   Select 'Minimal SPIFFS (1.9MB App)' from the partition list. This will enable SD firmware updates.
@@ -41,7 +42,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 6;
+const int FIRMWARE_VERSION_MINOR = 7;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
@@ -106,7 +107,6 @@ ESP32Time rtc;
 #include "SdFat.h"
 
 SdFat sd;
-SPIClass spi = SPIClass(VSPI); //We need to pass the class into SD.begin so we can set the SPI freq in beginSD()
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
@@ -150,6 +150,7 @@ uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service tim
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
 char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to debug menu and settings file.
+uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS)
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
 // Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
@@ -359,7 +360,7 @@ void setup()
   Serial.begin(115200); //UART0 for programming and debugging
 
   Wire.begin(); //Start I2C on core 1
-  Wire.setClock(400000); //Increase bus rate to 400kHz
+  Wire.setClock(400000);
 
   beginGNSS(); //Connect to GNSS
 

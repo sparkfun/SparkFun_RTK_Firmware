@@ -475,6 +475,41 @@ void paintLogging()
       else if (loggingIconDisplayed == 3)
         oled.drawIcon(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3, sizeof(Logging_3), true); //Draw the icon
     }
+    else
+    { //Paint pulse to show system activity
+      //Animate icon to show system running
+      if (millis() - lastLoggingIconUpdate > 500)
+      {
+        lastLoggingIconUpdate = millis();
+
+        loggingIconDisplayed++; //Goto next icon
+        loggingIconDisplayed %= 4; //Wrap
+
+        const int pulseX = 64 - 4;
+        const int pulseY = oled.getLCDHeight();
+
+        if (loggingIconDisplayed == 0)
+        {
+          //Paint no line
+        }
+        else if (loggingIconDisplayed == 1)
+        {
+          oled.line(pulseX, pulseY, pulseX, pulseY - 4);
+          oled.line(pulseX - 1, pulseY, pulseX - 1, pulseY - 4);
+        }
+        else if (loggingIconDisplayed == 2)
+        {
+          oled.line(pulseX, pulseY, pulseX, pulseY - 8);
+          oled.line(pulseX - 1, pulseY, pulseX - 1, pulseY - 8);
+        }
+        else if (loggingIconDisplayed == 3)
+        {
+          oled.line(pulseX, pulseY, pulseX, pulseY - 12);
+          oled.line(pulseX - 1, pulseY, pulseX - 1, pulseY - 12);
+        }
+      }
+
+    }
   }
 }
 

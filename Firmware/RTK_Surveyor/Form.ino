@@ -78,20 +78,40 @@ void startConfigAP()
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
 
+// * index.html (not gz'd)
+// * favicon.ico
+
+// * /src/bootstrap.bundle.min.js - Needed for popper
+// * /src/bootstrap.min.css
+// * /src/bootstrap.min.js
+// * /src/jquery-3.6.0.min.js
+// * /src/main.js (not gz'd)
+// * /src/rtk-setup.png
+// * /src/style.css
+
+// * /src/fonts/icomoon.eot
+// * /src/fonts/icomoon.svg
+// * /src/fonts/icomoon.ttf
+// * /src/fonts/icomoon.woof
+
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", index_html);
   });
 
-  server.on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send_P(200, "text/javascript", main_js);
+  server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", favicon_ico, sizeof(favicon_ico));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
   });
 
-  server.on("/src/bootstrap-icons.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send_P(200, "text/css", bootstrap_icons_min_css);
+  server.on("/src/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", bootstrap_bundle_min_js, sizeof(bootstrap_bundle_min_js));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
   });
 
   server.on("/src/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", bootstrap_css, sizeof(bootstrap_css));
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", bootstrap_min_css, sizeof(bootstrap_min_css));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
@@ -108,10 +128,8 @@ void startConfigAP()
     request->send(response);
   });
 
-  server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", favicon_ico, sizeof(favicon_ico));
-    response->addHeader("Content-Encoding", "gzip");
-    request->send(response);
+  server.on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send_P(200, "text/javascript", main_js);
   });
 
   server.on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest * request) {
@@ -120,10 +138,36 @@ void startConfigAP()
     request->send(response);
   });
 
-  server.on("/src/fonts/bootstrap-icons.woff2", HTTP_GET, [](AsyncWebServerRequest * request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "font/woff2", bootstrap_icons_woff2, sizeof(bootstrap_icons_woff2));
+  server.on("/src/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", style_css, sizeof(style_css));
+    response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
+
+  server.on("/src/fonts/icomoon.eot", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_eot, sizeof(icomoon_eot));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+  server.on("/src/fonts/icomoon.svg", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_svg, sizeof(icomoon_svg));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+  server.on("/src/fonts/icomoon.ttf", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_ttf, sizeof(icomoon_ttf));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+  server.on("/src/fonts/icomoon.woof", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_woof, sizeof(icomoon_woof));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
 
   //Handler for the /update form POST
   server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
@@ -209,12 +253,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     char settingsCSV[3000];
     memset(settingsCSV, 0, sizeof(settingsCSV));
     createSettingsString(settingsCSV);
-    //Serial.printf("Sending command: %s\n\r", settingsCSV);
+    ESP_LOGD(TAG, "Sending command: %s\n\r", settingsCSV);
     client->text(settingsCSV);
     radioState = WIFI_CONNECTED;
   }
   else if (type == WS_EVT_DISCONNECT) {
-    //Serial.println("Websocket client disconnected");
+    ESP_LOGD(TAG, "Websocket client disconnected");
     radioState = WIFI_ON_NOCONNECTION;
   }
   else if (type == WS_EVT_DATA) {
@@ -280,6 +324,7 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "mountPointPW", settings.mountPointPW);
 
   //Sensor Fusion Config
+  stringRecord(settingsCSV, "enableSensorFusion", settings.enableSensorFusion);
   stringRecord(settingsCSV, "autoIMUmountAlignment", settings.autoIMUmountAlignment);
 
   //System Config
@@ -288,6 +333,8 @@ void createSettingsString(char* settingsCSV)
 
   stringRecord(settingsCSV, "sdFreeSpaceMB", sdFreeSpaceMB);
   stringRecord(settingsCSV, "sdUsedSpaceMB", sdUsedSpaceMB);
+
+  stringRecord(settingsCSV, "enableResetDisplay", settings.enableResetDisplay);
 
   //Pass any available firmware file names
   if (binCount > 0)
@@ -370,7 +417,11 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "dataPortChannel") == 0)
     settings.dataPortChannel = (muxConnectionType_e)settingValue;
   else if (strcmp(settingName, "autoIMUmountAlignment") == 0)
-    settings.autoIMUmountAlignment = settingValue;
+    settings.autoIMUmountAlignment = settingValueBool;
+  else if (strcmp(settingName, "enableSensorFusion") == 0)
+    settings.enableSensorFusion = settingValueBool;
+  else if (strcmp(settingName, "enableResetDisplay") == 0)
+    settings.enableResetDisplay = settingValueBool;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

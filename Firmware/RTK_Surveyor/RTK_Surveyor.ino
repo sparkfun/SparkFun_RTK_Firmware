@@ -150,6 +150,7 @@ uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service tim
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
 char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to debug menu and settings file.
+uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS)
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
 // Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.

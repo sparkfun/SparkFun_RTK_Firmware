@@ -265,10 +265,19 @@ bool configureConstellations()
   //long startTime = millis();
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
   {
-    //Standard UBX protocol method takes ~533-783ms
-    uint8_t currentlyEnabled = getConstellation(settings.ubxConstellations[x].gnssID); //Qeury the module for the current setting
-    if (currentlyEnabled != settings.ubxConstellations[x].enabled)
-      response &= setConstellation(settings.ubxConstellations[x].gnssID, settings.ubxConstellations[x].enabled);
+    //v1.12 ZED firmware does not allow for SBAS control
+    //Also, if we can't identify the version (0), skip SBAS enable
+    if (zedModuleType == PLATFORM_F9P && (zedFirmwareVersionInt == 112 || zedFirmwareVersionInt == 0) && x == 1) //SBAS
+    {
+      //Do nothing
+    }
+    else
+    {
+      //Standard UBX protocol method takes ~533-783ms
+      uint8_t currentlyEnabled = getConstellation(settings.ubxConstellations[x].gnssID); //Qeury the module for the current setting
+      if (currentlyEnabled != settings.ubxConstellations[x].enabled)
+        response &= setConstellation(settings.ubxConstellations[x].gnssID, settings.ubxConstellations[x].enabled);
+    }
 
     //Get/set val method takes ~642ms but does not work because we don't send additional sigCfg keys at same time
     //    uint8_t currentlyEnabled = i2cGNSS.getVal8(settings.ubxConstellations[x].configKey, VAL_LAYER_RAM, 1200);

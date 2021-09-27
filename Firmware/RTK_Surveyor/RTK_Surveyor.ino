@@ -46,7 +46,7 @@ const int FIRMWARE_VERSION_MINOR = 7;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
-#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us

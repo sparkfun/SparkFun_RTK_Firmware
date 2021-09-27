@@ -34,12 +34,30 @@ function parseIncoming(msg) {
             platformPrefix = val;
             document.title = "RTK " + platformPrefix + " Setup";
 
-            if (platformPrefix == "Surveyor") hide("dataPortChannelDropdown");
-            if (platformPrefix == "Express Plus") {
+            if (platformPrefix == "Surveyor") {
+                hide("dataPortChannelDropdown");
+
+                hide("sensorConfig"); //Hide Sensor Config section
+
+                hide("msgUBX_ESF_MEAS"); //Hide unsupported messages
+                hide("msgUBX_ESF_RAW");
+                hide("msgUBX_ESF_STATUS");
+                hide("msgUBX_ESF_ALG");
+                hide("msgUBX_ESF_INS");
+            }
+            else if (platformPrefix == "Express") {
+                hide("sensorConfig"); //Hide Sensor Config section
+
+                hide("msgUBX_ESF_MEAS"); //Hide unsupported messages
+                hide("msgUBX_ESF_RAW");
+                hide("msgUBX_ESF_STATUS");
+                hide("msgUBX_ESF_ALG");
+                hide("msgUBX_ESF_INS");
+            }
+            else if (platformPrefix == "Express Plus") {
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
 
                 hide("baseConfig"); //Hide Base Config section
-                show("sensorConfig"); //Show Sensor Config section
 
                 hide("msgUBX_NAV_SVIN"); //Hide unsupported messages
                 hide("msgUBX_RTCM_1005");

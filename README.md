@@ -3,26 +3,30 @@ SparkFun RTK Firmware
 
 <table class="table table-hover table-striped table-bordered">
   <tr align="center">
-   <td><a href="https://www.sparkfun.com/products/17369"><img src="https://cdn.sparkfun.com//assets/parts/1/6/4/0/1/17369-SparkFun_RTK_Surveyor-14.jpg"></a></td>
-   <td><a href="https://www.sparkfun.com/products/18019"><img src="https://cdn.sparkfun.com//assets/parts/1/7/2/4/1/18019-SparkFun_RTK_Express-09.jpg"></a></td>
+   <td><a href="https://www.sparkfun.com/products/18443"><img src="https://cdn.sparkfun.com//assets/parts/1/6/4/0/1/17369-SparkFun_RTK_Surveyor-14.jpg"></a></td>
+   <td><a href="https://www.sparkfun.com/products/18442"><img src="https://cdn.sparkfun.com//assets/parts/1/7/2/4/1/18019-SparkFun_RTK_Express-09.jpg"></a></td>
+   <td><a href="https://www.sparkfun.com/products/18590"><img src="https://cdn.sparkfun.com//assets/parts/1/8/0/7/5/18590-SparkFun_RTK_Express_Plus-04.jpg"></a></td>
   </tr>
   <tr align="center">
-    <td><a href="https://www.sparkfun.com/products/17369">SparkFun RTK Surveyor (SPX-17369)</a></td>
-    <td><a href="https://www.sparkfun.com/products/18019">SparkFun RTK Express (SPX-18019)</a></td>
+    <td><a href="https://www.sparkfun.com/products/18443">SparkFun RTK Surveyor (GPS-18443)</a></td>
+    <td><a href="https://www.sparkfun.com/products/18442">SparkFun RTK Express (GPS-18442)</a></td>
+    <td><a href="https://www.sparkfun.com/products/18590">SparkFun RTK Express Plus (GPS-18590)</a></td>
   </tr>
 </table>
 
-The [SparkFun RTK Surveyor](https://www.sparkfun.com/products/17369) and [SparkFun RTK Express](https://www.sparkfun.com/products/18019) are centimeter-level GNSS receivers. With RTK enabled, these devices can output your location with 14mm horizontal and vertical *accuracy* at up to 20Hz!
+The [SparkFun RTK Surveyor](https://www.sparkfun.com/products/18443), [SparkFun RTK Express](https://www.sparkfun.com/products/18442), and [SparkFun RTK Express Plus](https://www.sparkfun.com/products/18590) are centimeter-level GNSS receivers. With RTK enabled, these devices can output your location with 14mm horizontal and vertical *accuracy* at up to 20Hz!
 
 This repo houses the firmware that runs on the SparkFun RTK product line including:
 
-* [SparkFun RTK Surveyor](https://www.sparkfun.com/products/17369)
-* [SparkFun RTK Express](https://www.sparkfun.com/products/18019)
+* [SparkFun RTK Surveyor](https://www.sparkfun.com/products/18443)
+* [SparkFun RTK Express](https://www.sparkfun.com/products/18442)
+* [SparkFun RTK Express Plus](https://www.sparkfun.com/products/18590)
 
 If you're interested in the PCB, enclosure, or overlay on each product please see the hardware repos:
 
 * [SparkFun RTK Surveyor Hardware](https://github.com/sparkfun/SparkFun_RTK_Surveyor)
 * [SparkFun RTK Express Hardware](https://github.com/sparkfun/SparkFun_RTK_Express)
+* [SparkFun RTK Express Plus Hardware](https://github.com/sparkfun/SparkFun_RTK_Express_Plus)
 
 Thanks:
 
@@ -37,7 +41,8 @@ Repository Contents
 Documentation
 --------------
 
-* **[Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide)** - Hookup guide for the SparkFun RTK Surveyor.
+* **[RTK Surveyor Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide)** - Hookup guide for the SparkFun RTK Surveyor.
+* **[RTK Express Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-express-hookup-guide)** - Hookup guide for the SparkFun RTK Express and Express Plus.
 
 License Information
 -------------------

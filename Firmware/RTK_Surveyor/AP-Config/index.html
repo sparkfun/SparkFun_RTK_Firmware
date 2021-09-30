@@ -94,7 +94,7 @@
                 <div class="d-grid gap-2">
                     <button class="btn btn-primary toggle-btn" type="button" data-toggle="collapse"
                         data-target="#collapseGNSSConfig" aria-expanded="false" aria-controls="collapseGNSSConfig">
-                        GNSS Configuration <i class="caret-icon bi icon-caret-down"></i>
+                        GNSS Configuration <i class="caret-icon bi icon-caret-up"></i>
                     </button>
                 </div>
                 <div class="collapse show" id="collapseGNSSConfig">
@@ -105,32 +105,27 @@
                                 <div class="col-sm-2 col-12 ms-3 form-group">
                                     <label for="measurementRateHz" class="col-form-label">In
                                         Hz:</label>
-                                </div>
-                                <div class="col-sm-4 col-5 ms-3 form-group">
-                                    <input type="number" class="form-control mb-2" id="measurementRateHz">
-                                    <p id="measurementRateHzError" class="inlineError"></p>
-                                </div>
-                                <div class="col-sm-4 form-group">
                                     <span class="tt" data-bs-placement="right"
                                         title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Default: 4Hz. Limit: 0.000122 to 10Hz.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
+                                </div>
+                                <div class="col-sm-4 col-5 ms-3 form-group">
+                                    <input type="number" class="form-control mb-2" id="measurementRateHz">
+                                    <p id="measurementRateHzError" class="inlineError"></p>
                                 </div>
 
                                 <p class="small ms-3 mt-0 mb-0"><em>or</em></p>
 
                                 <div class="col-sm-2 col-12 ms-3 form-group">
                                     <label for="measurementRateSec">Seconds between measurements:</label>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when taking a measurement every few seconds across a long survey (24+ hours). Limit: 0.1 to 8196 seconds."><span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
                                 </div>
                                 <div class="col-sm-4 col-5 ms-3 form-group">
                                     <input type="number" class="form-control mb-2" id="measurementRateSec">
                                     <p id="measurementRateSecError" class="inlineError"></p>
-                                </div>
-                                <div class="col-sm-4 form-group">
-                                    <span class="tt" data-bs-placement="right"
-                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when taking a measurement every few seconds across a long survey (24+ hours). Limit: 0.1 to 8196 seconds.">
-                                        <span class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -198,14 +193,14 @@
                         </div>
 
                         <div class="collapse" id="collapseGNSSConfigMsg">
-                            <div class="card card-body">
+                            <div class="card card-body" style="margin-top:5px;">
 
-                                <div class="form-check">
+                                <div style="margin-bottom:5px;">
                                     <button type="button" id="nmeaDefaults" class="btn btn-primary"
                                         onClick="resetToNmeaDefaults()">Reset to Surveying
                                         Defaults (NMEAx5)</button>
                                 </div>
-                                <div class="form-check">
+                                <div style="margin-bottom:5px;">
                                     <button type="button" id="loggingDefaults" class="btn btn-primary"
                                         onClick="resetToLoggingDefaults()">Reset to Logging
                                         Defaults (NMEAx5 + RXMx2)</button>
@@ -336,24 +331,24 @@
                                 </div>
                                 <div class="form-group row" id="msgUBX_NAV_GEOFENCE">
                                     <label for="UBX_NAV_GEOFENCE"
-                                        class="col-sm-4 col-6 col-form-label">NAV_GEOFENCE:</label>
-                                    <div class="col-sm-7 col-6"><input type="number" class="form-control"
+                                        class="col-sm-6 col-7 col-form-label">NAV_GEOFENCE:</label>
+                                    <div class="col-sm-5 col-5"><input type="number" class="form-control"
                                             id="UBX_NAV_GEOFENCE" value="0">
                                         <p id="UBX_NAV_GEOFENCEError" class="inlineError"></p>
                                     </div>
                                 </div>
                                 <div class="form-group row" id="msgUBX_NAV_HPPOSECEF">
                                     <label for="UBX_NAV_HPPOSECEF"
-                                        class="col-sm-4 col-6 col-form-label">NAV_HPPOSECEF:</label>
-                                    <div class="col-sm-7 col-6"><input type="number" class="form-control"
+                                        class="col-sm-4 col-7 col-form-label">NAV_HPPOSECEF:</label>
+                                    <div class="col-sm-7 col-5"><input type="number" class="form-control"
                                             id="UBX_NAV_HPPOSECEF" value="0">
                                         <p id="UBX_NAV_HPPOSECEFError" class="inlineError"></p>
                                     </div>
                                 </div>
                                 <div class="form-group row" id="msgUBX_NAV_HPPOSLLH">
                                     <label for="UBX_NAV_HPPOSLLH"
-                                        class="col-sm-4 col-6 col-form-label">NAV_HPPOSLLH:</label>
-                                    <div class="col-sm-7 col-6"><input type="number" class="form-control"
+                                        class="col-sm-4 col-7 col-form-label">NAV_HPPOSLLH:</label>
+                                    <div class="col-sm-7 col-5"><input type="number" class="form-control"
                                             id="UBX_NAV_HPPOSLLH" value="0">
                                         <p id="UBX_NAV_HPPOSLLHError" class="inlineError"></p>
                                     </div>
@@ -382,8 +377,8 @@
                                 </div>
                                 <div class="form-group row" id="msgUBX_NAV_POSLLH">
                                     <label for="UBX_NAV_POSLLH"
-                                        class="col-sm-4 col-5 col-form-label">NAV_POSLLH:</label>
-                                    <div class="col-sm-7 col-7"><input type="number" class="form-control"
+                                        class="col-sm-4 col-6 col-form-label">NAV_POSLLH:</label>
+                                    <div class="col-sm-7 col-6"><input type="number" class="form-control"
                                             id="UBX_NAV_POSLLH" value="0">
                                         <p id="UBX_NAV_POSLLHError" class="inlineError"></p>
                                     </div>
@@ -397,8 +392,8 @@
                                 </div>
                                 <div class="form-group row" id="msgUBX_NAV_RELPOSNED">
                                     <label for="UBX_NAV_RELPOSNED"
-                                        class="col-sm-4 col-6 col-form-label">NAV_RELPOSNED:</label>
-                                    <div class="col-sm-7 col-6"><input type="number" class="form-control"
+                                        class="col-sm-4 col-7 col-form-label">NAV_RELPOSNED:</label>
+                                    <div class="col-sm-7 col-5"><input type="number" class="form-control"
                                             id="UBX_NAV_RELPOSNED" value="0">
                                         <p id="UBX_NAV_RELPOSNEDError" class="inlineError"></p>
                                     </div>
@@ -419,8 +414,8 @@
                                 </div>
                                 <div class="form-group row" id="msgUBX_NAV_STATUS">
                                     <label for="UBX_NAV_STATUS"
-                                        class="col-sm-3 col-5 col-form-label">NAV_STATUS:</label>
-                                    <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        class="col-sm-3 col-6 col-form-label">NAV_STATUS:</label>
+                                    <div class="col-sm-8 col-6"><input type="number" class="form-control"
                                             id="UBX_NAV_STATUS" value="0">
                                         <p id="UBX_NAV_STATUSError" class="inlineError"></p>
                                     </div>
@@ -490,8 +485,8 @@
                                 </div>
                                 <div class="form-group row" id="msgUBX_NAV_VELNED">
                                     <label for="UBX_NAV_VELNED"
-                                        class="col-sm-4 col-5 col-form-label">NAV_VELNED:</label>
-                                    <div class="col-sm-7 col-7"><input type="number" class="form-control"
+                                        class="col-sm-4 col-6 col-form-label">NAV_VELNED:</label>
+                                    <div class="col-sm-7 col-6"><input type="number" class="form-control"
                                             id="UBX_NAV_VELNED" value="0">
                                         <p id="UBX_NAV_VELNEDError" class="inlineError"></p>
                                     </div>
@@ -500,8 +495,8 @@
                                 <hr>
 
                                 <div class="form-group row" id="msgUBX_RXM_MEASX">
-                                    <label for="UBX_RXM_MEASX" class="col-sm-3 col-5 col-form-label">RXM_MEASX:</label>
-                                    <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                    <label for="UBX_RXM_MEASX" class="col-sm-3 col-6 col-form-label">RXM_MEASX:</label>
+                                    <div class="col-sm-8 col-6"><input type="number" class="form-control"
                                             id="UBX_RXM_MEASX" value="0">
                                         <p id="UBX_RXM_MEASXError" class="inlineError"></p>
                                     </div>
@@ -573,8 +568,8 @@
                                     </div>
                                 </div>
                                 <div class="form-group row" id="msgUBX_MON_MSGPP">
-                                    <label for="UBX_MON_MSGPP" class="col-sm-4 col-5 col-form-label">MON_MSGPP:</label>
-                                    <div class="col-sm-7 col-7"><input type="number" class="form-control"
+                                    <label for="UBX_MON_MSGPP" class="col-sm-4 col-6 col-form-label">MON_MSGPP:</label>
+                                    <div class="col-sm-7 col-6"><input type="number" class="form-control"
                                             id="UBX_MON_MSGPP" value="0">
                                         <p id="UBX_MON_MSGPPError" class="inlineError"></p>
                                     </div>
@@ -587,8 +582,8 @@
                                     </div>
                                 </div>
                                 <div class="form-group row" id="msgUBX_MON_RXBUF">
-                                    <label for="UBX_MON_RXBUF" class="col-sm-3 col-5 col-form-label">MON_RXBUF:</label>
-                                    <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                    <label for="UBX_MON_RXBUF" class="col-sm-3 col-6 col-form-label">MON_RXBUF:</label>
+                                    <div class="col-sm-8 col-6"><input type="number" class="form-control"
                                             id="UBX_MON_RXBUF" value="0">
                                         <p id="UBX_MON_RXBUFError" class="inlineError"></p>
                                     </div>
@@ -601,8 +596,8 @@
                                     </div>
                                 </div>
                                 <div class="form-group row" id="msgUBX_MON_TXBUF">
-                                    <label for="UBX_MON_TXBUF" class="col-sm-3 col-5 col-form-label">MON_TXBUF:</label>
-                                    <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                    <label for="UBX_MON_TXBUF" class="col-sm-3 col-6 col-form-label">MON_TXBUF:</label>
+                                    <div class="col-sm-8 col-6"><input type="number" class="form-control"
                                             id="UBX_MON_TXBUF" value="0">
                                         <p id="UBX_MON_TXBUFError" class="inlineError"></p>
                                     </div>
@@ -873,8 +868,8 @@
 
                         <div class="form-group row">
                             <label for="fixedAltitude"
-                                class="box-margin40 col-sm-3 col-4 col-form-label">HAE/Alt(m):</label>
-                            <div class="col-sm-4 col-6">
+                                class="box-margin40 col-sm-3 col-5 col-form-label">HAE/Alt(m):</label>
+                            <div class="col-sm-4 col-5">
                                 <input type="number" class="form-control" id="fixedAltitude" disabled>
                                 <p id="fixedAltitudeError" class="inlineError"></p>
                             </div>
@@ -916,9 +911,9 @@
                         </div>
 
                         <div class="form-group row">
-                            <label for="casterPort" class="box-margin20 col-sm-3 col-4 col-form-label">Caster
+                            <label for="casterPort" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                                 Port:</label>
-                            <div class="col-sm-8 col-7">
+                            <div class="col-sm-8 col-6">
                                 <input type="text" class="form-control" id="casterPort">
                                 <p id="casterPortError" class="inlineError"></p>
                             </div>
@@ -1060,20 +1055,19 @@
                         </div>
 
                         <div id="maxLogTime Input" class="row">
-                            <label for="maxLogTime_minutes" class="col-sm-2 col-4 form-group box-margin20">Max Log
-                                Time (min):</label>
+                            <div class="col-sm-4 col-9 form-group">
+                                <label for="maxLogTime_minutes" class="form-group box-margin20">Max Log
+                                    Time (min):</label><span class="tt" data-bs-placement="right"
+                                    title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 600 minutes. Limit: 1 to 2880 minutes.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                            </div>
 
                             <div class="col-sm-4 col-5 ms-3 form-group">
                                 <input type="number" class="form-control" id="maxLogTime_minutes">
                                 <p id="maxLogTime_minutesError" class="inlineError"></p>
                             </div>
 
-                            <div class="col-sm-4 form-group">
-                                <span class="tt" data-bs-placement="right"
-                                    title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 600 minutes. Limit: 1 to 2880 minutes.">
-                                    <span class="icon-info-circle text-primary ms-2"></span>
-                                </span>
-                            </div>
                         </div>
 
                         <div class="form-check mt-3">
@@ -1092,9 +1086,8 @@
                             <p id="factoryDefaultsMsg" class="inlineSuccess"></p>
                         </div>
 
-                        <div class="col-sm-7 col-4" id="sdMounted">
-                            SD Card:
-                            <span class="tt" data-bs-placement="right"
+                        <div class="col-sm-7 col-12 mt-2" id="sdMounted">
+                            SD Card<span class="tt" data-bs-placement="right"
                                 title="Various stats for the SD card are shown. If valid firmware is detected, the upgrade process will be made available.">
                                 <span class="icon-info-circle text-primary ms-2"></span>
                             </span>
@@ -1108,7 +1101,6 @@
                             <div class="form-check" id="firmwareAvailable" style="display:none;">
                                 Available Firmware:
                                 <div class="form-check">
-
                                     <div style="display:none;" id="firmwareFile0">
                                         <input type="radio" id="file0" name="firmwareFiles">
                                         <label for="file0" id="firmwareFileName0">file0</label><br>
@@ -1135,8 +1127,10 @@
                                     </div>
 
                                     <div class="form-check">
-                                        <label class="form-check-label" for="enableFirmwareUpdate">Enable Firmware
-                                            Update</label>
+                                        <label class="form-check-label" for="enableFirmwareUpdate">Enable Firmware Update:</label><span class="tt" data-bs-placement="right"
+                                            title="Select the firmware file, then check ‘Enable Firmware Update’ to begin update process.">
+                                            <span class="icon-info-circle text-primary ms-2"></span>
+                                        </span>
                                         <input class="form-check-input" type="checkbox" value=""
                                             id="enableFirmwareUpdate" unchecked disabled>
                                     </div>
@@ -1145,31 +1139,26 @@
                                         <button type="button" id="firmwareUpdate" class="btn btn-primary"
                                             onClick="sendFirmwareFile()" disabled>Update Firmware</button>
                                         <p id="firmwareUpdateMsg" class="inlineSuccess"></p>
-                                        <span class="tt" data-bs-placement="right"
-                                            title="Select the firmware file, then check ‘Enable Firmware Update’ to begin update process.">
-                                            <span class="icon-info-circle text-primary ms-2"></span>
-                                        </span>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                            <div class="col-sm-7 col-6 mt-2">
                             <div id="uploadNewFirmwareDiv" class="mb-2">
-                                <label class="form-check-label" for="uploadNewFirmware">Add Firmware
-                                </label>
+                                <label class="form-check-label" for="uploadNewFirmware">Add Firmware:</label>
+                                <span class="tt" data-bs-placement="right" title="New firmware may be uploaded via WiFi to the SD card. Firmware is only loaded to the SD card and must then be loaded to the unit.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
                                 <form id="uploadNewFirmware" enctype="multipart/form-data" method="post"
                                     action="/upload">
                                     <input id="fileupload" name="binfile" type="file" />
-                                    <input type="submit" value="Upload" id="submitFirmwareFile"
-                                        class="btn btn-primary" />
+                                    <input type="submit" value="Upload" id="submitFirmwareFile" class="btn btn-primary" style="margin-top:5px;"/>
                                 </form>
-                                <span class="tt" data-bs-placement="right"
-                                    title="New firmware may be uploaded via WiFi to the SD card. Firmware is only loaded to the SD card and must then be loaded to the unit.">
-                                    <span class="icon-info-circle text-primary ms-2"></span>
-                                </span>
                             </div>
                         </div>
 
-                        <label for="debugZone">Debug Zone:</label>
-                        <div class="form-check mt-3 box-margin20">
+                        <label class="mt-2" for="debugZone">Debug Zone:</label>
+                        <div class="form-check mt-1 box-margin20">
                             <label class="form-check-label" for="enableResetDisplay">Display Reset Counter</label>
                             <input class="form-check-input" type="checkbox" value="" id="enableResetDisplay" unchecked>
                         </div>
@@ -1179,15 +1168,12 @@
                 <hr>
                 <div class="row">
                     <div align="center" class="col-sm-5 offset-sm-1 col-12 offset-0 mb-2">
-                        <button type="button" id="saveBtn" class="btn btn-secondary" onclick="validateFields()">Save
-                            Configuration <span class="icon-save ms-1"></span></button>
+                        <button type="button" id="saveBtn" class="btn btn-secondary" onclick="validateFields()">Save Configuration <span class="icon-save ms-1"></span></button>
                         <p id="saveBtnError" class="inlineError"></p>
                         <p id="saveBtnSuccess" class="inlineSuccess"></p>
                     </div>
                     <div align="center" class="col-sm-5 col-12">
-                        <button type="button" id="exitBtn" class="btn btn-outline-secondary" onclick="exitConfig()">Exit
-                            to Rover
-                            Mode <span class="icon-remove text-secondary ms-1"></span></button>
+                        <button type="button" id="exitBtn" class="btn btn-outline-secondary" onclick="exitConfig()">Exit to Rover Mode <span class="icon-remove text-secondary ms-1"></span></button>
                         <p id="exitBtnError" class="inlineSuccess"></p>
                         <p>&nbsp;</p>
                     </div>

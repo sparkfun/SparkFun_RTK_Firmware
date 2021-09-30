@@ -46,7 +46,7 @@ const int FIRMWARE_VERSION_MINOR = 8;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -215,13 +215,15 @@ HardwareSerial serialGNSS(2);
 #define RXD2 16
 #define TXD2 17
 
-#define SERIAL_SIZE_RX (1024 * 2) //Should match buffer size in BluetoothSerial.cpp. Reduced from 16384 to make room for WiFi/NTRIP server capabilities
+#define SERIAL_SIZE_RX (1024 * 4) //Should match buffer size in BluetoothSerial.cpp. Reduced from 16384 to make room for WiFi/NTRIP server capabilities
 uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
-uint8_t wBuffer[SERIAL_SIZE_RX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
+
+#define SERIAL_SIZE_TX (1024 * 2)
+uint8_t wBuffer[SERIAL_SIZE_TX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest
-const uint8_t F9PSerialReadTaskPriority = 1;
 
 TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
 volatile bool uart2pinned = false; //This variable is touched by core 0 but checked by core 1. Must be volatile.
@@ -438,9 +440,36 @@ void updateLogs()
     }
   }
 
-  //Report file sizes to show recording is working
   if (online.logging == true)
   {
+    //Force file sync every 5000ms
+    if (millis() - lastUBXLogSyncTime > 5000)
+    {
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+      {
+        if (productVariant == RTK_SURVEYOR)
+          digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
+
+        long startWriteTime = micros();
+        ubxFile.sync();
+        long stopWriteTime = micros();
+        totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
+
+        if (productVariant == RTK_SURVEYOR)
+          digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
+
+        updateDataFileAccess(&ubxFile); // Update the file access time & date
+
+        lastUBXLogSyncTime = millis();
+        xSemaphoreGive(xFATSemaphore);
+      } //End xFATSemaphore
+      else
+      {
+        log_d("Semaphore failed to yield");
+      }
+    }
+
+    //Report file sizes to show recording is working
     if (millis() - lastFileReport > 5000)
     {
       long fileSize = 0;

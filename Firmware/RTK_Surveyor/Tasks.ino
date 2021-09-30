@@ -16,7 +16,7 @@ void F9PSerialWriteTask(void *e)
         if (inTestMode == false)
         {
           //Pass bytes to GNSS receiver
-          auto s = SerialBT.readBytes(wBuffer, SERIAL_SIZE_RX);
+          auto s = SerialBT.readBytes(wBuffer, sizeof(wBuffer));
           serialGNSS.write(wBuffer, s);
 
           if (settings.enableTaskReports == true)
@@ -47,7 +47,7 @@ void F9PSerialReadTask(void *e)
   {
     while (serialGNSS.available())
     {
-      auto s = serialGNSS.readBytes(rBuffer, SERIAL_SIZE_RX);
+      auto s = serialGNSS.readBytes(rBuffer, sizeof(rBuffer));
 
       //If we are actively survey-in then do not pass NMEA data from ZED to phone
       if (systemState == STATE_BASE_TEMP_SETTLE || systemState == STATE_BASE_TEMP_SURVEY_STARTED)
@@ -88,32 +88,11 @@ void F9PSerialReadTask(void *e)
           {
             ubxFile.write(rBuffer, s);
 
-            //Force file sync every 5000ms
-            if (millis() - lastUBXLogSyncTime > 5000)
-            {
-              if (productVariant == RTK_SURVEYOR)
-                digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
-
-              long startWriteTime = micros();
-              taskYIELD();
-              ubxFile.sync();
-              taskYIELD();
-              long stopWriteTime = micros();
-              totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
-
-              if (productVariant == RTK_SURVEYOR)
-                digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
-
-              updateDataFileAccess(&ubxFile); // Update the file access time & date
-
-              lastUBXLogSyncTime = millis();
-            }
-
             xSemaphoreGive(xFATSemaphore);
           } //End xFATSemaphore
           else
           {
-            log_d("F9SerialRead: Semaphore failed to yield");
+            log_d("Semaphore failed to yield");
           }
         } //End maxLogTime
       } //End logging

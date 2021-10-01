@@ -490,9 +490,13 @@ void updateLogs()
         if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
         {
           //Calculate generation and write speeds every 5 seconds
-          uint32_t delta = fileSize - lastLogSize;
-          Serial.printf(" - Generation rate: %0.1fkB/s", delta / 5.0 / 1000.0);
-          Serial.printf(" - Write speed: %0.1fkB/s", delta / (totalWriteTime / 1000000.0) / 1000.0);
+          uint32_t fileSizeDelta = fileSize - lastLogSize;
+          Serial.printf(" - Generation rate: %0.1fkB/s", fileSizeDelta / 5.0 / 1000.0);
+          
+          if(totalWriteTime > 0)
+            Serial.printf(" - Write speed: %0.1fkB/s", fileSizeDelta / (totalWriteTime / 1000000.0) / 1000.0);
+          else
+            Serial.printf(" - Write speed: 0.0kB/s");
         }
         else
         {

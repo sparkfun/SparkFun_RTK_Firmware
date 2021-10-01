@@ -325,42 +325,97 @@ void paintBaseState()
         systemState == STATE_ROVER_RTK_FLOAT ||
         systemState == STATE_ROVER_RTK_FIX)
     {
-      //Normal rover for ZED-F9P, fusion rover for ZED-F9R
-      if (zedModuleType == PLATFORM_F9P)
+      //Display icon associated with current Dynamic Model
+      switch (settings.dynamicModel)
       {
-        oled.drawIcon(27, 3, Rover_Width, Rover_Height, Rover, sizeof(Rover), true);
-      }
-      else if (zedModuleType == PLATFORM_F9R)
-      {
-        //Blink fusion rover until we have calibration
-        if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0) //Initializing
-        {
-          //Blink Fusion Rover icon until sensor calibration is complete
-          if (millis() - lastBaseIconUpdate > 500)
+        case (DYN_MODEL_PORTABLE):
           {
-            lastBaseIconUpdate = millis();
-            if (baseIconDisplayed == false)
-            {
-              baseIconDisplayed = true;
-
-              //Draw the icon
-              oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
-            }
-            else
-              baseIconDisplayed = false;
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_1_Portable, sizeof(DynamicModel_1_Portable), true);
           }
-        }
-        else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1) //Calibrated
-        {
-          //Solid fusion rover
-          oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
-        }
-        else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2 || i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3) //Suspended or disabled
-        {
-          //Empty rover
-          oled.drawIcon(27, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty, sizeof(Rover_Fusion_Empty), true);
-        }
+          break;
+        case (DYN_MODEL_STATIONARY):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_2_Stationary, sizeof(DynamicModel_2_Stationary), true);
+          }
+          break;
+        case (DYN_MODEL_PEDESTRIAN):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_3_Pedestrian, sizeof(DynamicModel_3_Pedestrian), true);
+          }
+          break;
+        case (DYN_MODEL_AUTOMOTIVE):
+          {
+            //Normal rover for ZED-F9P, fusion rover for ZED-F9R
+            if (zedModuleType == PLATFORM_F9P)
+            {
+              oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_4_Automotive, sizeof(DynamicModel_4_Automotive), true);
+            }
+            else if (zedModuleType == PLATFORM_F9R)
+            {
+              //Blink fusion rover until we have calibration
+              if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0) //Initializing
+              {
+                //Blink Fusion Rover icon until sensor calibration is complete
+                if (millis() - lastBaseIconUpdate > 500)
+                {
+                  lastBaseIconUpdate = millis();
+                  if (baseIconDisplayed == false)
+                  {
+                    baseIconDisplayed = true;
+
+                    //Draw the icon
+                    oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
+                  }
+                  else
+                    baseIconDisplayed = false;
+                }
+              }
+              else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1) //Calibrated
+              {
+                //Solid fusion rover
+                oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
+              }
+              else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2 || i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3) //Suspended or disabled
+              {
+                //Empty rover
+                oled.drawIcon(27, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty, sizeof(Rover_Fusion_Empty), true);
+              }
+            }
+
+          }
+          break;
+        case (DYN_MODEL_SEA):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_5_Sea, sizeof(DynamicModel_5_Sea), true);
+          }
+          break;
+        case (DYN_MODEL_AIRBORNE1g):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_6_Airborne1g, sizeof(DynamicModel_6_Airborne1g), true);
+          }
+          break;
+        case (DYN_MODEL_AIRBORNE2g):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_7_Airborne2g, sizeof(DynamicModel_7_Airborne2g), true);
+          }
+          break;
+        case (DYN_MODEL_AIRBORNE4g):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_8_Airborne4g, sizeof(DynamicModel_8_Airborne4g), true);
+          }
+          break;
+        case (DYN_MODEL_WRIST):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_9_Wrist, sizeof(DynamicModel_9_Wrist), true);
+          }
+          break;
+        case (DYN_MODEL_BIKE):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_10_Bike, sizeof(DynamicModel_10_Bike), true);
+          }
+          break;
       }
+
     }
     else if (systemState == STATE_BASE_TEMP_SETTLE ||
              systemState == STATE_BASE_TEMP_SURVEY_STARTED //Turn on base icon solid (blink crosshair in paintHorzAcc)

@@ -215,7 +215,7 @@ HardwareSerial serialGNSS(2);
 #define RXD2 16
 #define TXD2 17
 
-#define SERIAL_SIZE_RX (1024 * 4) //Should match buffer size in BluetoothSerial.cpp. Reduced from 16384 to make room for WiFi/NTRIP server capabilities
+#define SERIAL_SIZE_RX (1024 * 6) //Should match buffer size in BluetoothSerial.cpp. Reduced from 16384 to make room for WiFi/NTRIP server capabilities
 uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest

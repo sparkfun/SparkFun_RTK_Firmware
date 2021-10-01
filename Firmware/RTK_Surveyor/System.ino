@@ -138,7 +138,9 @@ void stopWiFi()
 #ifdef COMPILE_WIFI
   caster.stop();
   WiFi.mode(WIFI_OFF);
-  esp_wifi_deinit(); //Free all resources
+  
+  if(radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
+    esp_wifi_deinit(); //Free all resources
 #endif
 
   Serial.println("WiFi Stopped");

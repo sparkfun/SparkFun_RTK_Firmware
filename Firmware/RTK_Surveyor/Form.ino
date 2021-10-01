@@ -178,8 +178,6 @@ void startConfigAP()
 #endif
 
   radioState = WIFI_ON_NOCONNECTION;
-  btLEDTask.detach(); //Increase BT LED blinker task rate
-  btLEDTask.attach(btLEDTaskPace33Hz, updateBTled); //Rate in seconds, callback
 }
 
 //Handler for firmware file upload

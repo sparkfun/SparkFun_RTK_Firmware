@@ -597,11 +597,14 @@ void updateSystemState()
         {
           if (productVariant == RTK_SURVEYOR)
           {
+            //Start BT LED Fade to indicate start of WiFi
+            btLEDTask.detach(); //Increase BT LED blinker task rate
+            btLEDTask.attach(btLEDTaskPace33Hz, updateBTled); //Rate in seconds, callback
+
             digitalWrite(pin_baseStatusLED, LOW);
             digitalWrite(pin_positionAccuracyLED_1cm, LOW);
             digitalWrite(pin_positionAccuracyLED_10cm, LOW);
             digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-            ledcWrite(ledBTChannel, 0); //Turn off BT LED
           }
 
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause

@@ -3,11 +3,13 @@
 //Scan for display
 void menuTest()
 {
-  inTestMode = true; //Reroutes bluetooth bytes
-
   //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
   //even if there is no GPS fix. We use it to test serial output.
   i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
+
+  //Go direct into test display
+  if (online.display)
+    changeState(STATE_TEST);
 
   while (1)
   {
@@ -21,7 +23,7 @@ void menuTest()
 
     if (settings.enableSD && online.microSD)
     {
-      Serial.print(F("microSD card detected:"));
+      Serial.print(F("microSD card detected"));
       if (createTestFile() == false)
       {
         Serial.print(F(" Failed to create test file. Format SD card with 'SD Card Formatter'."));
@@ -38,9 +40,8 @@ void menuTest()
     Serial.println(F("Any character received over Blueooth connection will be displayed here"));
 
     Serial.println(F("1) Display microSD contents"));
-    Serial.println(F("2) Turn on all messages on USB port"));
-    Serial.println(F("3) Reset USB Messages to Defaults (NMEAx6)"));
-    Serial.println(F("4) Duplicate UART messages to USB"));
+    Serial.println(F("2) Duplicate UART messages to USB"));
+    Serial.println(F("3) Enter Test Screen"));
 
     Serial.println(F("x) Exit"));
 
@@ -62,38 +63,6 @@ void menuTest()
     }
     else if (incoming == 2)
     {
-//      ubxMsgs usbMessage; //Create temp struct
-//      setGNSSMessageRates(usbMessage, 1); //Turn on all messages to report once per fix
-//
-//      //Now send that struct
-//      bool response = configureGNSSMessageRates(COM_PORT_USB, usbMessage); //Make sure the appropriate messages are enabled
-//      if (response == false)
-//        Serial.println(F("menuTest: Failed to enable USB messages"));
-//      else
-//        Serial.println(F("All messages enabled"));
-    }
-    else if (incoming == 3)
-    {
-//      ubxMsgs usbMessage; //Create temp struct
-//      setGNSSMessageRates(usbMessage, 0); //Turn off all messages to report
-//
-//      //Turn on default 6
-//      usbMessage.nmea_gga.msgRate = 1;
-//      usbMessage.nmea_gsa.msgRate = 1;
-//      usbMessage.nmea_gst.msgRate = 1;
-//      usbMessage.nmea_gsv.msgRate = 1;
-//      usbMessage.nmea_rmc.msgRate = 1;
-//      usbMessage.nmea_vtg.msgRate = 1;
-//
-//      //Now send that struct
-//      bool response = configureGNSSMessageRates(COM_PORT_USB, usbMessage); //Make sure the appropriate messages are enabled
-//      if (response == false)
-//        Serial.println(F("menuTest: Failed to enable USB messages"));
-//      else
-//        Serial.println(F("All messages enabled"));
-    }
-    else if (incoming == 4)
-    {
       //Send the current settings to USB
       bool response = configureGNSSMessageRates(COM_PORT_USB, settings.ubxMessages); //Make sure the appropriate messages are enabled
       if (response == false)
@@ -101,7 +70,6 @@ void menuTest()
       else
         Serial.println(F("USB now matches UART messages"));
     }
-
     else if (incoming == STATUS_PRESSED_X)
       break;
     else if (incoming == STATUS_GETNUMBER_TIMEOUT)
@@ -109,8 +77,6 @@ void menuTest()
     else
       printUnknown(incoming);
   }
-
-  inTestMode = false; //Reroutes bluetooth bytes
 
   //Disable RTCM sentences
   i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0);

@@ -45,8 +45,6 @@ void updateSystemState()
             return;
           }
 
-          inTestMode = false; //Reroutes bluetooth bytes
-
           setMuxport(settings.dataPortChannel); //Return mux to original channel
 
           i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
@@ -647,7 +645,19 @@ void updateSystemState()
             //even if there is no GPS fix. We use it to test serial output.
             i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
 
-            inTestMode = true; //Reroutes bluetooth bytes
+            //Verify the ESP UART2 can communicate TX/RX to ZED UART1
+            SFE_UBLOX_GNSS myGNSS;
+
+            //Attempt 3 connections
+            for (int x = 0 ; x < 3 ; x++)
+            {
+              if (myGNSS.begin(serialGNSS) == true)
+              {
+                zedUartPassed = true;
+                break;
+              }
+              delay(250);
+            }
 
             changeState(STATE_TESTING);
           }

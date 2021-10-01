@@ -13,24 +13,15 @@ void F9PSerialWriteTask(void *e)
     {
       while (SerialBT.available())
       {
-        if (inTestMode == false)
-        {
-          //Pass bytes to GNSS receiver
-          auto s = SerialBT.readBytes(wBuffer, sizeof(wBuffer));
-          serialGNSS.write(wBuffer, s);
+        //Pass bytes to GNSS receiver
+        auto s = SerialBT.readBytes(wBuffer, sizeof(wBuffer));
+        serialGNSS.write(wBuffer, s);
 
-          if (settings.enableTaskReports == true)
-            Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
-        }
-        else
-        {
-          char incoming = SerialBT.read();
-          Serial.printf("I heard: %c\n", incoming);
-          incomingBTTest = incoming; //Displayed during system test
-        }
-        delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
-        taskYIELD();
+        if (settings.enableTaskReports == true)
+          Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
       }
+      delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
+      taskYIELD();
     }
 #endif
 
@@ -166,7 +157,10 @@ void ButtonCheckTask(void *e)
           //If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
           if (millis() - lastRockerSwitchChange < 500)
           {
-            requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
+            if(systemState == STATE_ROVER_NOT_STARTED && online.display == true) //Catch during Power On
+              requestChangeState(STATE_TEST); //If RTK Surveyor, with display attached, during Rover not started, then enter test mode
+            else
+              requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
           }
           else
           {

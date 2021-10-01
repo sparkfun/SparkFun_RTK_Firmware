@@ -211,9 +211,7 @@ BluetoothSerial SerialBT;
 
 char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names
 
-HardwareSerial serialGNSS(2);
-#define RXD2 16
-#define TXD2 17
+HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
 #define SERIAL_SIZE_RX (1024 * 6) //Should match buffer size in BluetoothSerial.cpp. Reduced from 16384 to make room for WiFi/NTRIP server capabilities
 uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
@@ -232,7 +230,7 @@ volatile bool uart2pinned = false; //This variable is touched by core 0 but chec
 const int readTaskStackSize = 2500;
 const int writeTaskStackSize = 2000;
 
-char incomingBTTest = 0; //Stores incoming text over BT when in test mode
+bool zedUartPassed = false; //Goes true during testing if ESP can communicate with ZED over UART
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //External Display
@@ -306,7 +304,6 @@ unsigned long timeSinceLastIncomingSetting = 0;
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
 char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
-bool inTestMode = false; //Used to re-route BT traffic while in test sub menu
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
 uint8_t debounceDelay = 20; //ms to delay between button reads

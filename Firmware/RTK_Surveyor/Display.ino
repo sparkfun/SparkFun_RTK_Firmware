@@ -1371,12 +1371,15 @@ void paintSystemTest()
     else
       oled.print(F("FAIL"));
 
-    oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
-    oled.print(F("Accel:"));
-    if (online.accelerometer == true)
-      oled.print(F("OK"));
-    else
-      oled.print(F("FAIL"));
+    if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
+    {
+      oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
+      oled.print(F("Accel:"));
+      if (online.accelerometer == true)
+        oled.print(F("OK"));
+      else
+        oled.print(F("FAIL"));
+    }
 
     oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
     oled.print(F("Batt:"));
@@ -1389,7 +1392,7 @@ void paintSystemTest()
     oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
     oled.print(F("GNSS:"));
     int satsInView = i2cGNSS.getSIV();
-    if (online.gnss == true && satsInView > 8)
+    if (online.gnss == true && satsInView > 5)
     {
       oled.print(F("OK"));
       oled.print(F("/"));
@@ -1398,38 +1401,38 @@ void paintSystemTest()
     else
       oled.print(F("FAIL"));
 
-    oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
-    oled.print(F("Mux:"));
-
-    //Set mux to channel 3 and toggle pin and verify with loop back jumper wire inserted by test technician
-
-    setMuxport(MUX_ADC_DAC); //Set mux to DAC so we can toggle back/forth
-    pinMode(pin_dac26, OUTPUT);
-    pinMode(pin_adc39, INPUT_PULLUP);
-
-    digitalWrite(pin_dac26, HIGH);
-    if (digitalRead(pin_adc39) == HIGH)
+    if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
     {
-      digitalWrite(pin_dac26, LOW);
-      if (digitalRead(pin_adc39) == LOW)
-        oled.print(F("OK"));
+      oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
+      oled.print(F("Mux:"));
+
+      //Set mux to channel 3 and toggle pin and verify with loop back jumper wire inserted by test technician
+
+      setMuxport(MUX_ADC_DAC); //Set mux to DAC so we can toggle back/forth
+      pinMode(pin_dac26, OUTPUT);
+      pinMode(pin_adc39, INPUT_PULLUP);
+
+      digitalWrite(pin_dac26, HIGH);
+      if (digitalRead(pin_adc39) == HIGH)
+      {
+        digitalWrite(pin_dac26, LOW);
+        if (digitalRead(pin_adc39) == LOW)
+          oled.print(F("OK"));
+        else
+          oled.print(F("FAIL"));
+      }
       else
         oled.print(F("FAIL"));
     }
-    else
-      oled.print(F("FAIL"));
 
     //Display MAC address
     oled.setCursor(xOffset, yOffset + (5 * charHeight) ); //x, y
     oled.print(macAddress);
     oled.print(":");
-    if (incomingBTTest == 0)
+    if (zedUartPassed == false)
       oled.print(F("FAIL"));
     else
-    {
-      oled.write(incomingBTTest);
-      oled.print(F("-OK"));
-    }
+      oled.print(F("OK"));
   }
 }
 

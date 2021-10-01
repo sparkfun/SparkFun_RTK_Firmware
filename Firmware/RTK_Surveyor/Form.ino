@@ -78,21 +78,21 @@ void startConfigAP()
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
 
-// * index.html (not gz'd)
-// * favicon.ico
+  // * index.html (not gz'd)
+  // * favicon.ico
 
-// * /src/bootstrap.bundle.min.js - Needed for popper
-// * /src/bootstrap.min.css
-// * /src/bootstrap.min.js
-// * /src/jquery-3.6.0.min.js
-// * /src/main.js (not gz'd)
-// * /src/rtk-setup.png
-// * /src/style.css
+  // * /src/bootstrap.bundle.min.js - Needed for popper
+  // * /src/bootstrap.min.css
+  // * /src/bootstrap.min.js
+  // * /src/jquery-3.6.0.min.js
+  // * /src/main.js (not gz'd)
+  // * /src/rtk-setup.png
+  // * /src/style.css
 
-// * /src/fonts/icomoon.eot
-// * /src/fonts/icomoon.svg
-// * /src/fonts/icomoon.ttf
-// * /src/fonts/icomoon.woof
+  // * /src/fonts/icomoon.eot
+  // * /src/fonts/icomoon.svg
+  // * /src/fonts/icomoon.ttf
+  // * /src/fonts/icomoon.woof
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", index_html);
@@ -168,11 +168,10 @@ void startConfigAP()
     request->send(response);
   });
 
-
   //Handler for the /update form POST
-  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
-      request->send(200);
-    }, handleFirmwareFileUpload);
+  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest * request) {
+    request->send(200);
+  }, handleFirmwareFileUpload);
 
   server.begin();
 #endif
@@ -184,12 +183,12 @@ void startConfigAP()
 #ifdef COMPILE_WIFI
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
-  if(online.microSD == false)
+  if (online.microSD == false)
   {
     Serial.println(F("No SD card available"));
     return;
   }
-  
+
   //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
   if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) != pdPASS) {
     Serial.println(F("Failed to get file system lock on firmware file"));
@@ -238,8 +237,6 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
   }
 
   xSemaphoreGive(xFATSemaphore);
-
-
 }
 #endif
 

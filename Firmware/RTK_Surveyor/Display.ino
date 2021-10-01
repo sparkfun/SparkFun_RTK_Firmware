@@ -412,7 +412,7 @@ void paintSIV()
     if (i2cGNSS.getFixType() == 3 || i2cGNSS.getFixType() == 4 || i2cGNSS.getFixType() == 5) //3D, 3D+DR, or Time
     {
       //Fix, turn on icon
-      oled.drawIcon(2, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
+      oled.drawIcon(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna, sizeof(SIV_Antenna), true);
     }
     else
     {
@@ -425,7 +425,7 @@ void paintSIV()
           satelliteDishIconDisplayed = true;
 
           //Draw the icon
-          oled.drawIcon(2, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
+          oled.drawIcon(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna, sizeof(SIV_Antenna), true);
         }
         else
           satelliteDishIconDisplayed = false;

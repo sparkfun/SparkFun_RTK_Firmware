@@ -96,10 +96,6 @@ void F9PSerialReadTask(void *e)
           }
         } //End maxLogTime
       } //End logging
-
-      delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
-      taskYIELD();
-
     } //End Serial.available()
 
     delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset

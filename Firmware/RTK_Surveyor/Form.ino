@@ -428,7 +428,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
+  {
     updateFromSD(settingValueStr);
+    requestChangeState(STATE_ROVER_NOT_STARTED); //If update failed, return to Rover mode.
+  }
   else if (strcmp(settingName, "factoryDefaultReset") == 0)
     factoryReset();
   else if (strcmp(settingName, "exitToRoverMode") == 0)

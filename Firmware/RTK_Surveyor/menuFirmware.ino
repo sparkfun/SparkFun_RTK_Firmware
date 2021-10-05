@@ -182,7 +182,7 @@ void updateFromSD(const char *firmwareFileName)
       if (Update.isFinished())
       {
         displayFirmwareUpdateProgress(100);
-        
+
         Serial.println(F("Firmware updated successfully. Rebooting. Good bye!"));
 
         //If forced firmware is detected, do a full reset of config as well
@@ -220,6 +220,10 @@ void updateFromSD(const char *firmwareFileName)
     }
 
     firmwareFile.close();
+
+    displayMessage("Update Failed", 0);
+
+    Serial.println(F("Firmware update failed. Please try again."));
   }
   else
   {

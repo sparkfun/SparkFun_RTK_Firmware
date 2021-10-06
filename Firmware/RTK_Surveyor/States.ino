@@ -617,7 +617,7 @@ void updateSystemState()
         {
           if (incomingSettingsSpot > 0)
           {
-            //Allow for 150ms before we parse buffer for all data to arrive
+            //Allow for 750ms before we parse buffer for all data to arrive
             if (millis() - timeSinceLastIncomingSetting > 750)
             {
               Serial.print("Parsing: ");
@@ -638,7 +638,7 @@ void updateSystemState()
       //Setup device for testing
       case (STATE_TEST):
         {
-          //Don't enter testing
+          //Debounce entry into test menu
           if (millis() - lastTestMenuChange > 500)
           {
             //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted

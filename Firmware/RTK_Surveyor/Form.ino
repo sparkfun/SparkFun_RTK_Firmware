@@ -78,21 +78,21 @@ void startConfigAP()
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
 
-// * index.html (not gz'd)
-// * favicon.ico
+  // * index.html (not gz'd)
+  // * favicon.ico
 
-// * /src/bootstrap.bundle.min.js - Needed for popper
-// * /src/bootstrap.min.css
-// * /src/bootstrap.min.js
-// * /src/jquery-3.6.0.min.js
-// * /src/main.js (not gz'd)
-// * /src/rtk-setup.png
-// * /src/style.css
+  // * /src/bootstrap.bundle.min.js - Needed for popper
+  // * /src/bootstrap.min.css
+  // * /src/bootstrap.min.js
+  // * /src/jquery-3.6.0.min.js
+  // * /src/main.js (not gz'd)
+  // * /src/rtk-setup.png
+  // * /src/style.css
 
-// * /src/fonts/icomoon.eot
-// * /src/fonts/icomoon.svg
-// * /src/fonts/icomoon.ttf
-// * /src/fonts/icomoon.woof
+  // * /src/fonts/icomoon.eot
+  // * /src/fonts/icomoon.svg
+  // * /src/fonts/icomoon.ttf
+  // * /src/fonts/icomoon.woof
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", index_html);
@@ -168,30 +168,27 @@ void startConfigAP()
     request->send(response);
   });
 
-
   //Handler for the /update form POST
-  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
-      request->send(200);
-    }, handleFirmwareFileUpload);
+  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest * request) {
+    request->send(200);
+  }, handleFirmwareFileUpload);
 
   server.begin();
 #endif
 
   radioState = WIFI_ON_NOCONNECTION;
-  btLEDTask.detach(); //Increase BT LED blinker task rate
-  btLEDTask.attach(btLEDTaskPace33Hz, updateBTled); //Rate in seconds, callback
 }
 
 //Handler for firmware file upload
 #ifdef COMPILE_WIFI
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
-  if(online.microSD == false)
+  if (online.microSD == false)
   {
     Serial.println(F("No SD card available"));
     return;
   }
-  
+
   //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
   if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) != pdPASS) {
     Serial.println(F("Failed to get file system lock on firmware file"));
@@ -240,8 +237,6 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
   }
 
   xSemaphoreGive(xFATSemaphore);
-
-
 }
 #endif
 
@@ -433,7 +428,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
+  {
     updateFromSD(settingValueStr);
+    requestChangeState(STATE_ROVER_NOT_STARTED); //If update failed, return to Rover mode.
+  }
   else if (strcmp(settingName, "factoryDefaultReset") == 0)
     factoryReset();
   else if (strcmp(settingName, "exitToRoverMode") == 0)

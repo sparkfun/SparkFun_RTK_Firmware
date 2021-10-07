@@ -45,8 +45,6 @@ void updateSystemState()
             return;
           }
 
-          inTestMode = false; //Reroutes bluetooth bytes
-
           setMuxport(settings.dataPortChannel); //Return mux to original channel
 
           i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
@@ -597,11 +595,14 @@ void updateSystemState()
         {
           if (productVariant == RTK_SURVEYOR)
           {
+            //Start BT LED Fade to indicate start of WiFi
+            btLEDTask.detach(); //Increase BT LED blinker task rate
+            btLEDTask.attach(btLEDTaskPace33Hz, updateBTled); //Rate in seconds, callback
+
             digitalWrite(pin_baseStatusLED, LOW);
             digitalWrite(pin_positionAccuracyLED_1cm, LOW);
             digitalWrite(pin_positionAccuracyLED_10cm, LOW);
             digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-            ledcWrite(ledBTChannel, 0); //Turn off BT LED
           }
 
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
@@ -616,7 +617,7 @@ void updateSystemState()
         {
           if (incomingSettingsSpot > 0)
           {
-            //Allow for 150ms before we parse buffer for all data to arrive
+            //Allow for 750ms before we parse buffer for all data to arrive
             if (millis() - timeSinceLastIncomingSetting > 750)
             {
               Serial.print("Parsing: ");
@@ -637,14 +638,26 @@ void updateSystemState()
       //Setup device for testing
       case (STATE_TEST):
         {
-          //Don't enter testing
+          //Debounce entry into test menu
           if (millis() - lastTestMenuChange > 500)
           {
             //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
             //even if there is no GPS fix. We use it to test serial output.
             i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
 
-            inTestMode = true; //Reroutes bluetooth bytes
+            //Verify the ESP UART2 can communicate TX/RX to ZED UART1
+            SFE_UBLOX_GNSS myGNSS;
+
+            //Attempt 3 connections
+            for (int x = 0 ; x < 3 ; x++)
+            {
+              if (myGNSS.begin(serialGNSS) == true)
+              {
+                zedUartPassed = true;
+                break;
+              }
+              delay(250);
+            }
 
             changeState(STATE_TESTING);
           }

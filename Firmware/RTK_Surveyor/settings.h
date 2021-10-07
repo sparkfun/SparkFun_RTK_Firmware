@@ -142,7 +142,7 @@ struct struct_settings {
   bool printDebugMessages = false;
   bool enableSD = true;
   bool enableDisplay = true;
-  int maxLogTime_minutes = 60 * 10; //Default to 10 hours
+  int maxLogTime_minutes = 60 * 24; //Default to 24 hours
   int observationSeconds = 60; //Default survey in time of 60 seconds
   float observationPositionAccuracy = 5.0; //Default survey in pos accy of 5m
   bool fixedBase = false; //Use survey-in by default
@@ -268,7 +268,7 @@ struct struct_settings {
   bool enableHeapReport = false; //Turn on to display free heap
   bool enableTaskReports = false; //Turn on to display task high water marks
   muxConnectionType_e dataPortChannel = MUX_UBLOX_NMEA; //Mux default to ublox UART1
-  uint16_t spiFrequency = 8; //By default, use 8MHz SPI
+  uint16_t spiFrequency = 16; //By default, use 16MHz SPI
   bool enableLogging = true; //If an SD card is present, log default sentences
   uint16_t sppRxQueueSize = 2048;
   uint16_t sppTxQueueSize = 512;

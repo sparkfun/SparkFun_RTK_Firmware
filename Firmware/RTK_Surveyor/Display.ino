@@ -325,42 +325,97 @@ void paintBaseState()
         systemState == STATE_ROVER_RTK_FLOAT ||
         systemState == STATE_ROVER_RTK_FIX)
     {
-      //Normal rover for ZED-F9P, fusion rover for ZED-F9R
-      if (zedModuleType == PLATFORM_F9P)
+      //Display icon associated with current Dynamic Model
+      switch (settings.dynamicModel)
       {
-        oled.drawIcon(27, 3, Rover_Width, Rover_Height, Rover, sizeof(Rover), true);
-      }
-      else if (zedModuleType == PLATFORM_F9R)
-      {
-        //Blink fusion rover until we have calibration
-        if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0) //Initializing
-        {
-          //Blink Fusion Rover icon until sensor calibration is complete
-          if (millis() - lastBaseIconUpdate > 500)
+        case (DYN_MODEL_PORTABLE):
           {
-            lastBaseIconUpdate = millis();
-            if (baseIconDisplayed == false)
-            {
-              baseIconDisplayed = true;
-
-              //Draw the icon
-              oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
-            }
-            else
-              baseIconDisplayed = false;
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_1_Portable, sizeof(DynamicModel_1_Portable), true);
           }
-        }
-        else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1) //Calibrated
-        {
-          //Solid fusion rover
-          oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
-        }
-        else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2 || i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3) //Suspended or disabled
-        {
-          //Empty rover
-          oled.drawIcon(27, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty, sizeof(Rover_Fusion_Empty), true);
-        }
+          break;
+        case (DYN_MODEL_STATIONARY):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_2_Stationary, sizeof(DynamicModel_2_Stationary), true);
+          }
+          break;
+        case (DYN_MODEL_PEDESTRIAN):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_3_Pedestrian, sizeof(DynamicModel_3_Pedestrian), true);
+          }
+          break;
+        case (DYN_MODEL_AUTOMOTIVE):
+          {
+            //Normal rover for ZED-F9P, fusion rover for ZED-F9R
+            if (zedModuleType == PLATFORM_F9P)
+            {
+              oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_4_Automotive, sizeof(DynamicModel_4_Automotive), true);
+            }
+            else if (zedModuleType == PLATFORM_F9R)
+            {
+              //Blink fusion rover until we have calibration
+              if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0) //Initializing
+              {
+                //Blink Fusion Rover icon until sensor calibration is complete
+                if (millis() - lastBaseIconUpdate > 500)
+                {
+                  lastBaseIconUpdate = millis();
+                  if (baseIconDisplayed == false)
+                  {
+                    baseIconDisplayed = true;
+
+                    //Draw the icon
+                    oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
+                  }
+                  else
+                    baseIconDisplayed = false;
+                }
+              }
+              else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1) //Calibrated
+              {
+                //Solid fusion rover
+                oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
+              }
+              else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2 || i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3) //Suspended or disabled
+              {
+                //Empty rover
+                oled.drawIcon(27, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty, sizeof(Rover_Fusion_Empty), true);
+              }
+            }
+
+          }
+          break;
+        case (DYN_MODEL_SEA):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_5_Sea, sizeof(DynamicModel_5_Sea), true);
+          }
+          break;
+        case (DYN_MODEL_AIRBORNE1g):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_6_Airborne1g, sizeof(DynamicModel_6_Airborne1g), true);
+          }
+          break;
+        case (DYN_MODEL_AIRBORNE2g):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_7_Airborne2g, sizeof(DynamicModel_7_Airborne2g), true);
+          }
+          break;
+        case (DYN_MODEL_AIRBORNE4g):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_8_Airborne4g, sizeof(DynamicModel_8_Airborne4g), true);
+          }
+          break;
+        case (DYN_MODEL_WRIST):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_9_Wrist, sizeof(DynamicModel_9_Wrist), true);
+          }
+          break;
+        case (DYN_MODEL_BIKE):
+          {
+            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_10_Bike, sizeof(DynamicModel_10_Bike), true);
+          }
+          break;
       }
+
     }
     else if (systemState == STATE_BASE_TEMP_SETTLE ||
              systemState == STATE_BASE_TEMP_SURVEY_STARTED //Turn on base icon solid (blink crosshair in paintHorzAcc)
@@ -412,7 +467,7 @@ void paintSIV()
     if (i2cGNSS.getFixType() == 3 || i2cGNSS.getFixType() == 4 || i2cGNSS.getFixType() == 5) //3D, 3D+DR, or Time
     {
       //Fix, turn on icon
-      oled.drawIcon(2, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
+      oled.drawIcon(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna, sizeof(SIV_Antenna), true);
     }
     else
     {
@@ -425,7 +480,7 @@ void paintSIV()
           satelliteDishIconDisplayed = true;
 
           //Draw the icon
-          oled.drawIcon(2, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
+          oled.drawIcon(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna, sizeof(SIV_Antenna), true);
         }
         else
           satelliteDishIconDisplayed = false;
@@ -1316,12 +1371,15 @@ void paintSystemTest()
     else
       oled.print(F("FAIL"));
 
-    oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
-    oled.print(F("Accel:"));
-    if (online.accelerometer == true)
-      oled.print(F("OK"));
-    else
-      oled.print(F("FAIL"));
+    if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
+    {
+      oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
+      oled.print(F("Accel:"));
+      if (online.accelerometer == true)
+        oled.print(F("OK"));
+      else
+        oled.print(F("FAIL"));
+    }
 
     oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
     oled.print(F("Batt:"));
@@ -1334,7 +1392,7 @@ void paintSystemTest()
     oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
     oled.print(F("GNSS:"));
     int satsInView = i2cGNSS.getSIV();
-    if (online.gnss == true && satsInView > 8)
+    if (online.gnss == true && satsInView > 5)
     {
       oled.print(F("OK"));
       oled.print(F("/"));
@@ -1343,38 +1401,38 @@ void paintSystemTest()
     else
       oled.print(F("FAIL"));
 
-    oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
-    oled.print(F("Mux:"));
-
-    //Set mux to channel 3 and toggle pin and verify with loop back jumper wire inserted by test technician
-
-    setMuxport(MUX_ADC_DAC); //Set mux to DAC so we can toggle back/forth
-    pinMode(pin_dac26, OUTPUT);
-    pinMode(pin_adc39, INPUT_PULLUP);
-
-    digitalWrite(pin_dac26, HIGH);
-    if (digitalRead(pin_adc39) == HIGH)
+    if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
     {
-      digitalWrite(pin_dac26, LOW);
-      if (digitalRead(pin_adc39) == LOW)
-        oled.print(F("OK"));
+      oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
+      oled.print(F("Mux:"));
+
+      //Set mux to channel 3 and toggle pin and verify with loop back jumper wire inserted by test technician
+
+      setMuxport(MUX_ADC_DAC); //Set mux to DAC so we can toggle back/forth
+      pinMode(pin_dac26, OUTPUT);
+      pinMode(pin_adc39, INPUT_PULLUP);
+
+      digitalWrite(pin_dac26, HIGH);
+      if (digitalRead(pin_adc39) == HIGH)
+      {
+        digitalWrite(pin_dac26, LOW);
+        if (digitalRead(pin_adc39) == LOW)
+          oled.print(F("OK"));
+        else
+          oled.print(F("FAIL"));
+      }
       else
         oled.print(F("FAIL"));
     }
-    else
-      oled.print(F("FAIL"));
 
     //Display MAC address
     oled.setCursor(xOffset, yOffset + (5 * charHeight) ); //x, y
     oled.print(macAddress);
     oled.print(":");
-    if (incomingBTTest == 0)
+    if (zedUartPassed == false)
       oled.print(F("FAIL"));
     else
-    {
-      oled.write(incomingBTTest);
-      oled.print(F("-OK"));
-    }
+      oled.print(F("OK"));
   }
 }
 

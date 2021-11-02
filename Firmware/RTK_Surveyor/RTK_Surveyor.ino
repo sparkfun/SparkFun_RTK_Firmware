@@ -104,7 +104,7 @@ ESP32Time rtc;
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
-#include "SdFat.h"
+#include "SdFat.h" //Currently uses v2.1.1
 
 SdFat sd;
 

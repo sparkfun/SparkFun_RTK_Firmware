@@ -298,11 +298,11 @@ void updateSystemState()
 
               Serial.printf("Connected to %s:%d\n\r", settings.casterHost, settings.casterPort);
 
-              const int SERVER_BUFFER_SIZE  = 512;
+              const int SERVER_BUFFER_SIZE = 512;
               char serverBuffer[SERVER_BUFFER_SIZE];
 
-              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/%s\r\n\r\n",
-                       settings.mountPointPW, settings.mountPoint, ntrip_server_name, "App Version 1.0");
+              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/v%d.%d\r\n\r\n",
+                       settings.mountPointPW, settings.mountPoint, ntrip_server_name, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));
@@ -475,8 +475,8 @@ void updateSystemState()
               const int SERVER_BUFFER_SIZE  = 512;
               char serverBuffer[SERVER_BUFFER_SIZE];
 
-              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/%s\r\n\r\n",
-                       settings.mountPointPW, settings.mountPoint, ntrip_server_name, "App Version 1.0");
+              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/v%d.%d\r\n\r\n",
+                       settings.mountPointPW, settings.mountPoint, ntrip_server_name, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));

@@ -226,12 +226,12 @@ bool configureUbloxModule()
   if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
     Serial.println(F("Updating UART1 rate"));
-    i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Set UART1 to 115200
+    i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1);
   }
-  if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud)
+  if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud) //Defaults to 460800 to maximize message output support
   {
     Serial.println(F("Updating UART2 rate"));
-    i2cGNSS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Set UART2 to 57600 to match SiK telemetry radio firmware default
+    i2cGNSS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Defaults to 57600 to match SiK telemetry radio firmware default
   }
 
   if (response == false)

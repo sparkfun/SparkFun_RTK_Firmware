@@ -1429,8 +1429,21 @@ void paintSystemTest()
     oled.setCursor(xOffset, yOffset + (5 * charHeight) ); //x, y
     oled.print(macAddress);
     oled.print(":");
+
+    //Verify the ESP UART2 can communicate TX/RX to ZED UART1
     if (zedUartPassed == false)
-      oled.print(F("FAIL"));
+    {
+      SFE_UBLOX_GNSS myGNSS;
+
+      //begin() attempts 3 connections
+      if (myGNSS.begin(serialGNSS) == true)
+      {
+        zedUartPassed = true;
+        oled.print(F("OK"));
+      }
+      else
+        oled.print(F("FAIL"));
+    }
     else
       oled.print(F("OK"));
   }

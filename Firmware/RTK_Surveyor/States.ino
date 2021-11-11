@@ -641,23 +641,11 @@ void updateSystemState()
           //Debounce entry into test menu
           if (millis() - lastTestMenuChange > 500)
           {
+            zedUartPassed = false;
+            
             //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
             //even if there is no GPS fix. We use it to test serial output.
             i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
-
-            //Verify the ESP UART2 can communicate TX/RX to ZED UART1
-            SFE_UBLOX_GNSS myGNSS;
-
-            //Attempt 3 connections
-            for (int x = 0 ; x < 3 ; x++)
-            {
-              if (myGNSS.begin(serialGNSS) == true)
-              {
-                zedUartPassed = true;
-                break;
-              }
-              delay(250);
-            }
 
             changeState(STATE_TESTING);
           }

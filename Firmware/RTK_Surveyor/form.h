@@ -68,7 +68,7 @@ function parseIncoming(msg) {
                 hide("msgUBX_ESF_ALG");
                 hide("msgUBX_ESF_INS");
             }
-            else if (platformPrefix == "Express") {
+            else if (platformPrefix == "Express" || platformPrefix == "Facet") {
                 hide("sensorConfig"); //Hide Sensor Config section
 
                 hide("msgUBX_ESF_MEAS"); //Hide unsupported messages

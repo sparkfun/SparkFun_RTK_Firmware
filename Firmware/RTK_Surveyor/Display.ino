@@ -1170,6 +1170,24 @@ void displayRoverFail(uint16_t displayTime)
   }
 }
 
+void displayAccelFail(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.clear(PAGE);
+
+    uint8_t fontHeight = 15;
+    uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
+
+    printTextCenter("Accel", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Failed", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
 //When user enters serial config menu the display will freeze so show splash while config happens
 void displaySerialConfig()
 {
@@ -1458,22 +1476,29 @@ void paintBubbleLevel()
 {
   if (online.display == true)
   {
-    forceDisplayUpdate = true; //Update the display as quickly as possible
+    if (online.accelerometer == true)
+    {
+      forceDisplayUpdate = true; //Update the display as quickly as possible
 
-    getAngles();
+      getAngles();
 
-    //Draw dot in middle
-    oled.pixel(LCDWIDTH / 2, LCDHEIGHT / 2);
-    oled.pixel(LCDWIDTH / 2 + 1, LCDHEIGHT / 2);
-    oled.pixel(LCDWIDTH / 2, LCDHEIGHT / 2 + 1);
-    oled.pixel(LCDWIDTH / 2 + 1, LCDHEIGHT / 2 + 1);
+      //Draw dot in middle
+      oled.pixel(LCDWIDTH / 2, LCDHEIGHT / 2);
+      oled.pixel(LCDWIDTH / 2 + 1, LCDHEIGHT / 2);
+      oled.pixel(LCDWIDTH / 2, LCDHEIGHT / 2 + 1);
+      oled.pixel(LCDWIDTH / 2 + 1, LCDHEIGHT / 2 + 1);
 
-    //Draw circle relative to dot
-    const int radiusLarge = 10;
-    const int radiusSmall = 4;
+      //Draw circle relative to dot
+      const int radiusLarge = 10;
+      const int radiusSmall = 4;
 
-    oled.circle(LCDWIDTH / 2 - averagedPitch, LCDHEIGHT / 2 + averagedRoll, radiusLarge);
-    oled.circle(LCDWIDTH / 2 - averagedPitch, LCDHEIGHT / 2 + averagedRoll, radiusSmall);
+      oled.circle(LCDWIDTH / 2 - averagedPitch, LCDHEIGHT / 2 + averagedRoll, radiusLarge);
+      oled.circle(LCDWIDTH / 2 - averagedPitch, LCDHEIGHT / 2 + averagedRoll, radiusSmall);
+    }
+    else
+    {
+      displayAccelFail(0);
+    }
   }
 }
 

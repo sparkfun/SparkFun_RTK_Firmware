@@ -302,8 +302,8 @@ void updateSystemState()
               const int SERVER_BUFFER_SIZE = 512;
               char serverBuffer[SERVER_BUFFER_SIZE];
 
-              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/v%d.%d\r\n\r\n",
-                       settings.mountPointPW, settings.mountPoint, ntrip_server_name, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
+                       settings.mountPointPW, settings.mountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));
@@ -476,8 +476,8 @@ void updateSystemState()
               const int SERVER_BUFFER_SIZE  = 512;
               char serverBuffer[SERVER_BUFFER_SIZE];
 
-              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/v%d.%d\r\n\r\n",
-                       settings.mountPointPW, settings.mountPoint, ntrip_server_name, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
+                       settings.mountPointPW, settings.mountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));

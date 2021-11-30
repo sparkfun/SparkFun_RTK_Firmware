@@ -135,7 +135,6 @@ uint32_t sdUsedSpaceMB = 0;
 
 WiFiClient caster;
 #endif
-const char * ntrip_server_name = "SparkFun_RTK_Surveyor";
 
 unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
 unsigned long lastServerReport_ms = 0; //Time of last report of caster bytes sent

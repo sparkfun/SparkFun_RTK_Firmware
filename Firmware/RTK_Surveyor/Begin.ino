@@ -444,8 +444,7 @@ void beginFuelGauge()
 //Begin accelerometer if available
 void beginAccelerometer()
 {
-  //if (accel.begin() == false)
-  if (1)
+  if (accel.begin() == false)
   {
     online.accelerometer = false;
 

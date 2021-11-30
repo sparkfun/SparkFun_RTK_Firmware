@@ -292,13 +292,13 @@ void ButtonCheckTask(void *e)
         forceSystemStateUpdate = true;
         requestChangeState(STATE_SHUTDOWN);
       }
-      //      else if ((setupBtn != NULL && setupBtn->pressedFor(500)) &&
-      //               (powerBtn != NULL && powerBtn->pressedFor(500)))
-      //      {
-      //        forceSystemStateUpdate = true;
-      //        requestChangeState(STATE_TEST);
-      //      }
-      else if (powerBtn != NULL && powerBtn->wasReleased())
+      else if (powerBtn != NULL && systemState == STATE_ROVER_NOT_STARTED && firstRoverStart == true && powerBtn->pressedFor(500))
+      {
+        forceSystemStateUpdate = true;
+        requestChangeState(STATE_TEST);
+        lastTestMenuChange = millis(); //Avoid exiting test menu for 1s
+      }
+      else if (powerBtn != NULL && powerBtn->wasReleased() && firstRoverStart == false)
       {
         switch (systemState)
         {

@@ -478,6 +478,8 @@ void beginSystemState()
   else if (productVariant == RTK_FACET)
   {
     systemState = settings.lastState; //Return to system state previous to power down.
+    if(systemState == STATE_ROVER_NOT_STARTED)
+      firstRoverStart = true; //Allow user to enter test screen during first rover start
 
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }

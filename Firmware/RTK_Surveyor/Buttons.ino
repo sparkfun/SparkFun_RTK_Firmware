@@ -1,6 +1,6 @@
 //User has pressed the power button to turn on the system
 //Was it an accidental bump or do they really want to turn on?
-//Let's make sure they continue to press for two seconds
+//Let's make sure they continue to press for 500ms
 void powerOnCheck()
 {
 #ifdef ENABLE_DEVELOPER
@@ -10,7 +10,7 @@ void powerOnCheck()
   powerPressedStartTime = millis();
   while (digitalRead(pin_powerSenseAndControl) == LOW)
   {
-    delay(100); //Wait for user to stop pressing button.
+    delay(10);
 
     if (millis() - powerPressedStartTime > 500)
       break;

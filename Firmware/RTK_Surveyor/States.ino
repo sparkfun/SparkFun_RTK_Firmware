@@ -59,6 +59,7 @@ void updateSystemState()
           displayRoverSuccess(500);
 
           changeState(STATE_ROVER_NO_FIX);
+          firstRoverStart = false; //Do not allow entry into test menu again
         }
         break;
 

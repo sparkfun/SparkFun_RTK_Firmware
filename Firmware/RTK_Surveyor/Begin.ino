@@ -164,7 +164,7 @@ void beginSD()
     if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
       int tries = 0;
-      int maxTries = 2;
+      int maxTries = 1;
       for ( ; tries < maxTries ; tries++)
       {
         Serial.printf("SD init failed. Trying again %d out of %d\n\r", tries + 1, maxTries);

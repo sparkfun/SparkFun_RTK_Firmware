@@ -59,6 +59,7 @@ void updateSystemState()
           displayRoverSuccess(500);
 
           changeState(STATE_ROVER_NO_FIX);
+          firstRoverStart = false; //Do not allow entry into test menu again
         }
         break;
 
@@ -298,11 +299,11 @@ void updateSystemState()
 
               Serial.printf("Connected to %s:%d\n\r", settings.casterHost, settings.casterPort);
 
-              const int SERVER_BUFFER_SIZE  = 512;
+              const int SERVER_BUFFER_SIZE = 512;
               char serverBuffer[SERVER_BUFFER_SIZE];
 
-              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/%s\r\n\r\n",
-                       settings.mountPointPW, settings.mountPoint, ntrip_server_name, "App Version 1.0");
+              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
+                       settings.mountPointPW, settings.mountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));
@@ -475,8 +476,8 @@ void updateSystemState()
               const int SERVER_BUFFER_SIZE  = 512;
               char serverBuffer[SERVER_BUFFER_SIZE];
 
-              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP %s/%s\r\n\r\n",
-                       settings.mountPointPW, settings.mountPoint, ntrip_server_name, "App Version 1.0");
+              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
+                       settings.mountPointPW, settings.mountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));
@@ -641,23 +642,11 @@ void updateSystemState()
           //Debounce entry into test menu
           if (millis() - lastTestMenuChange > 500)
           {
+            zedUartPassed = false;
+            
             //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
             //even if there is no GPS fix. We use it to test serial output.
             i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
-
-            //Verify the ESP UART2 can communicate TX/RX to ZED UART1
-            SFE_UBLOX_GNSS myGNSS;
-
-            //Attempt 3 connections
-            for (int x = 0 ; x < 3 ; x++)
-            {
-              if (myGNSS.begin(serialGNSS) == true)
-              {
-                zedUartPassed = true;
-                break;
-              }
-              delay(250);
-            }
 
             changeState(STATE_TESTING);
           }

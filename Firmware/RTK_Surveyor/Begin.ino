@@ -164,7 +164,7 @@ void beginSD()
     if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
       int tries = 0;
-      int maxTries = 2;
+      int maxTries = 1;
       for ( ; tries < maxTries ; tries++)
       {
         Serial.printf("SD init failed. Trying again %d out of %d\n\r", tries + 1, maxTries);
@@ -447,6 +447,9 @@ void beginAccelerometer()
   if (accel.begin() == false)
   {
     online.accelerometer = false;
+
+    displayAccelFail(1000);
+
     return;
   }
 
@@ -478,6 +481,8 @@ void beginSystemState()
   else if (productVariant == RTK_FACET)
   {
     systemState = settings.lastState; //Return to system state previous to power down.
+    if (systemState == STATE_ROVER_NOT_STARTED)
+      firstRoverStart = true; //Allow user to enter test screen during first rover start
 
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }

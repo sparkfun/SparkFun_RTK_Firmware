@@ -201,7 +201,10 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
     fileName.toCharArray(tempFileName, sizeof(tempFileName));
 
     if (sd.exists(tempFileName))
+    {
       sd.remove(tempFileName);
+      Serial.printf("Removed old firmware file: %s\n\r", tempFileName);
+    }
 
     Serial.printf("Start Firmware Upload: %s\n\r", tempFileName);
 
@@ -218,7 +221,9 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
 
   //Record to file
   if (newFirmwareFile.write(data, len) != len)
-    Serial.println(F("Error writing to firmware file"));
+    log_e("Error writing to firmware file");
+  else
+    log_d("Recorded %d bytes to file\n\r", len);
 
   if (final)
   {

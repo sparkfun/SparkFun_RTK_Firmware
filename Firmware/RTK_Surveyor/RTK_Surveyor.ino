@@ -42,11 +42,11 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 8;
+const int FIRMWARE_VERSION_MINOR = 9;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
-#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -104,7 +104,7 @@ ESP32Time rtc;
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
-#include "SdFat.h"
+#include "SdFat.h" //Currently uses v2.1.1
 
 SdFat sd;
 
@@ -135,7 +135,6 @@ uint32_t sdUsedSpaceMB = 0;
 
 WiFiClient caster;
 #endif
-const char * ntrip_server_name = "SparkFun_RTK_Surveyor";
 
 unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
 unsigned long lastServerReport_ms = 0; //Time of last report of caster bytes sent
@@ -352,6 +351,8 @@ float svinMeanAccuracy = 0;
 
 uint32_t lastSetupMenuChange = 0; //Auto-selects the setup menu option after 1500ms
 uint32_t lastTestMenuChange = 0; //Avoids exiting the test menu for at least 1 second
+
+bool firstRoverStart = false; //Used to detect if user is toggling power button at POR to enter test menu
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()

@@ -672,7 +672,7 @@ void cyclePositionLEDs()
 //This allows NMEA, I2C, PPS/Event, and ADC/DAC to be routed through data port via software select
 void setMuxport(int channelNumber)
 {
-  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
+  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
   {
     pinMode(pin_muxA, OUTPUT);
     pinMode(pin_muxB, OUTPUT);

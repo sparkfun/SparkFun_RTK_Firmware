@@ -1451,6 +1451,13 @@ void paintSystemTest()
     //Verify the ESP UART2 can communicate TX/RX to ZED UART1
     if (zedUartPassed == false)
     {
+      setMuxport(MUX_UBLOX_NMEA); //Set mux to UART so we can debug over data port
+      delay(20);
+
+      //Clear out buffer before starting
+      while(serialGNSS.available()) serialGNSS.read();
+      serialGNSS.flush();
+
       SFE_UBLOX_GNSS myGNSS;
 
       //begin() attempts 3 connections

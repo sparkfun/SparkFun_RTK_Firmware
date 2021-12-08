@@ -362,14 +362,14 @@ void setup()
   Wire.begin(); //Start I2C on core 1
   Wire.setClock(400000);
 
-  beginGNSS(); //Connect to GNSS
+  beginGNSS(); //Connect to GNSS to get module type
 
-  beginEEPROM(); //Start EEPROM and SD for settings
+  beginEEPROM(); //Start EEPROM for settings
   //eepromErase(); //Must be before first use of EEPROM. Currently in beginBoard().
 
-  beginBoard(); //Determine what hardware platform we are running on
+  beginBoard(); //Determine what hardware platform we are running on and check on button
 
-  beginDisplay(); //Check if an external Qwiic OLED is attached
+  beginDisplay(); //Start display first to be able to display any errors
 
   beginLEDs(); //LED and PWM setup
 

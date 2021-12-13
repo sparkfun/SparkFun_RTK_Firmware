@@ -258,7 +258,7 @@ bool configureConstellations()
   //Reset to factory defaults.
   if (settings.ubxConstellations[0].gnssID == 255)
   {
-    ESP_LOGD(TAG, "Constellation ID corrupt");
+    log_d("Constellation ID corrupt");
     factoryReset();
   }
 

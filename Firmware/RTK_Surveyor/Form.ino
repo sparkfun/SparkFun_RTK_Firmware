@@ -253,12 +253,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     char settingsCSV[3000];
     memset(settingsCSV, 0, sizeof(settingsCSV));
     createSettingsString(settingsCSV);
-    ESP_LOGD(TAG, "Sending command: %s\n\r", settingsCSV);
+    log_d("Sending command: %s\n\r", settingsCSV);
     client->text(settingsCSV);
     radioState = WIFI_CONNECTED;
   }
   else if (type == WS_EVT_DISCONNECT) {
-    ESP_LOGD(TAG, "Websocket client disconnected");
+    log_d("Websocket client disconnected");
     radioState = WIFI_ON_NOCONNECTION;
   }
   else if (type == WS_EVT_DATA) {

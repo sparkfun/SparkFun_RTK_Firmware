@@ -2,7 +2,7 @@ void loadSettings()
 {
   if (online.eeprom == false)
   {
-    ESP_LOGD(TAG, "Error: EEPROM not online");
+    log_d("Error: EEPROM not online");
     return;
   }
 
@@ -53,7 +53,7 @@ void loadSettingsPartial()
 {
   if (online.eeprom == false)
   {
-    ESP_LOGD(TAG, "Error: EEPROM not online");
+    log_d("Error: EEPROM not online");
     return;
   }
 
@@ -61,7 +61,7 @@ void loadSettingsPartial()
   uint32_t testRead = 0;
   if (EEPROM.get(0, testRead) == 0xFFFFFFFF)
   {
-    ESP_LOGD(TAG, "EEPROM is blank");
+    log_d("EEPROM is blank");
     return; //EEPROM is blank, assume default settings
   }
   
@@ -87,7 +87,7 @@ void recordSystemSettings()
   }
   else
   {
-    ESP_LOGD(TAG, "Error: EEPROM not online");
+    log_d("Error: EEPROM not online");
   }
 
   recordSystemSettingsToFile();
@@ -496,7 +496,7 @@ void eepromErase()
 {
   if(online.eeprom == false)
   {
-    ESP_LOGD(TAG, "Error: EEPROM not online");
+    log_d("Error: EEPROM not online");
     return;
   }
   for (int i = 0 ; i < EEPROM_SIZE ; i++) {

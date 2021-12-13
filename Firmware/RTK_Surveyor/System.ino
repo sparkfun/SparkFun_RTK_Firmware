@@ -601,7 +601,7 @@ bool createTestFile()
 
   if(xFATSemaphore == NULL)
   {
-    ESP_LOGD(TAG, "xFATSemaphote is Null");
+    log_d("xFATSemaphote is Null");
     return(false);
   }
 

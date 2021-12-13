@@ -683,7 +683,7 @@ void requestChangeState(SystemState requestedState)
 {
   newSystemStateRequested = true;
   requestedSystemState = requestedState;
-  ESP_LOGD(TAG, "Requested System State: %d", requestedSystemState);
+  log_d("Requested System State: %d", requestedSystemState);
 }
 
 //Change states and print the new state

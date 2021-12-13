@@ -512,7 +512,7 @@ void updateLogs()
         }
         else
         {
-          ESP_LOGD(TAG, "Log file: No increase in file size");
+          log_d("Log file: No increase in file size");
           logIncreasing = false;
         }
       }

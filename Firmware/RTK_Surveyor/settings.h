@@ -70,6 +70,21 @@ typedef enum
   COORD_TYPE_GEOGRAPHIC,
 } coordinateType_e;
 
+//User can select output pulse as either falling or rising edge
+typedef enum
+{
+  PULSE_FALLING_EDGE = 0,
+  PULSE_RISING_EDGE,
+} pulseEdgeType_e;
+
+//Custom NMEA sentence types output to the log file
+typedef enum
+{
+  CUSTOM_NMEA_TYPE_RESET_REASON = 0,
+  CUSTOM_NMEA_TYPE_WAYPOINT,
+  CUSTOM_NMEA_TYPE_EVENT,
+} customNmeaType_e;
+
 //Freeze and blink LEDs if we hit a bad error
 typedef enum
 {
@@ -291,6 +306,11 @@ struct struct_settings {
   bool autoIMUmountAlignment = true; //Allows unit to automatically establish device orientation in vehicle
   bool enableResetDisplay = false;
   uint8_t resetCount = 0;
+  bool enableExternalPulse = false; //Send pulse once lock is achieved
+  uint32_t externalPulseTimeBetweenPulse_us = 500000; //us between pulses, max of 65s
+  uint32_t externalPulseLength_us = 100000; //us length of pulse
+  pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; //Pulse rises for pulse length, then falls
+  bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
 } settings;
 
 //Monitor which devices on the device are on or offline.

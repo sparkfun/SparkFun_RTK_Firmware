@@ -44,9 +44,9 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 10;
 
-#define COMPILE_WIFI //Comment out to remove all WiFi functionality
-#define COMPILE_BT //Comment out to disable all Bluetooth
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+//#define COMPILE_WIFI //Comment out to remove all WiFi functionality
+//#define COMPILE_BT //Comment out to disable all Bluetooth
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -353,6 +353,11 @@ uint32_t lastSetupMenuChange = 0; //Auto-selects the setup menu option after 150
 uint32_t lastTestMenuChange = 0; //Avoids exiting the test menu for at least 1 second
 
 bool firstRoverStart = false; //Used to detect if user is toggling power button at POR to enter test menu
+
+bool newEventToRecord = false; //Goes true when INT pin goes high
+uint32_t triggerCount = 0; //Global copy - TM2 event counter
+uint32_t towMsR = 0; //Global copy - Time Of Week of rising edge (ms)
+uint32_t towSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -386,6 +391,8 @@ void setup()
 
   beginAccelerometer();
 
+  beginExternalTriggers(); //Configure the time pulse output and TM2 input
+
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
   Serial.flush(); //Complete any previous prints
@@ -396,6 +403,7 @@ void setup()
 void loop()
 {
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
 
   updateSystemState();
 
@@ -464,6 +472,27 @@ void updateLogs()
       else
       {
         log_d("Semaphore failed to yield");
+      }
+    }
+
+    //Record any pending trigger events
+    if (newEventToRecord == true)
+    {
+      Serial.println("Recording event");
+
+      //Record trigger count with Time Of Week of rising edge (ms) and Millisecond fraction of Time Of Week of rising edge (ns)
+      char eventData[82]; //Max NMEA sentence length is 82
+      snprintf(eventData, sizeof(eventData), "%d,%d,%d", triggerCount, towMsR, towSubMsR);
+
+      char nmeaMessage[82]; //Max NMEA sentence length is 82
+      createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, eventData); //textID, buffer, text
+
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+      {
+        ubxFile.println(nmeaMessage);
+
+        xSemaphoreGive(xFATSemaphore);
+        newEventToRecord = false;
       }
     }
 

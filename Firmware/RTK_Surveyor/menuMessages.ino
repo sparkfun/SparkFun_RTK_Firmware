@@ -384,7 +384,7 @@ void beginLogging()
           }
 
           char nmeaMessage[82]; //Max NMEA sentence length is 82
-          createNMEASentence(1, 1, nmeaMessage, rstReason); //sentenceNumber, textID, buffer, text
+          createNMEASentence(CUSTOM_NMEA_TYPE_RESET_REASON, nmeaMessage, rstReason); //textID, buffer, text
           ubxFile.println(nmeaMessage);
 
           if (reuseLastLog == true)

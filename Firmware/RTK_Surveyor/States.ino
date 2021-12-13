@@ -571,7 +571,7 @@ void updateSystemState()
           if (online.logging == true)
           {
             char nmeaMessage[82]; //Max NMEA sentence length is 82
-            createNMEASentence(1, 2, nmeaMessage, (char*)"CustomEvent"); //sentenceNumber, textID, buffer, text
+            createNMEASentence(CUSTOM_NMEA_TYPE_WAYPOINT, nmeaMessage, (char*)"CustomEvent"); //textID, buffer, text
             ubxFile.println(nmeaMessage);
             displayEventMarked(500); //Show 'Event Marked'
           }

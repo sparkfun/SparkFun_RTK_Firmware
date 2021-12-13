@@ -497,3 +497,38 @@ void beginSystemState()
       ButtonCheckTaskPriority,
       &ButtonCheckTaskHandle); //Task handle
 }
+
+//Setup the timepulse output on the PPS pin for external triggering
+//Setup TM2 time stamp input as need
+void beginExternalTriggers()
+{
+  UBX_CFG_TP5_data_t timePulseParameters;
+
+  if (i2cGNSS.getTimePulseParameters(&timePulseParameters) == false)
+    log_e("getTimePulseParameters failed!");
+
+  timePulseParameters.tpIdx = 0; // Select the TIMEPULSE pin
+
+  // While the module is _locking_ to GNSS time, turn off pulse
+  timePulseParameters.freqPeriod = 1000000; //Set the period between pulses in us
+  timePulseParameters.pulseLenRatio = 0; //Set the pulse length in us
+
+  // When the module is _locked_ to GNSS time, make it generate 1kHz
+  timePulseParameters.freqPeriodLock = settings.externalPulseTimeBetweenPulse_us; //Set the period between pulses is us
+  timePulseParameters.pulseLenRatioLock = settings.externalPulseLength_us; //Set the pulse length in us
+
+  timePulseParameters.flags.bits.active = settings.enableExternalPulse; //Make sure the active flag is set to enable the time pulse. (Set to 0 to disable.)
+  timePulseParameters.flags.bits.lockedOtherSet = 1; //Tell the module to use freqPeriod while locking and freqPeriodLock when locked to GNSS time
+  timePulseParameters.flags.bits.isFreq = 0; //Tell the module that we want to set the period
+  timePulseParameters.flags.bits.isLength = 1; //Tell the module that pulseLenRatio is a length (in us)
+  timePulseParameters.flags.bits.polarity = (uint8_t)settings.externalPulsePolarity; //Rising or failling edge type pulse
+
+  if (i2cGNSS.setTimePulseParameters(&timePulseParameters, 1000) == false)
+    log_e("setTimePulseParameters failed!");
+
+  if (settings.enableExternalHardwareEventLogging == true)
+    i2cGNSS.setAutoTIMTM2callback(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
+  else
+    i2cGNSS.setAutoTIMTM2callback(NULL);
+
+}

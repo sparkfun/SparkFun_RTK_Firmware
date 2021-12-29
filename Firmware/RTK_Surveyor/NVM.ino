@@ -307,14 +307,8 @@ bool parseLine(char* str) {
   str = strtok(nullptr, "\n");
   if (!str) return false;
 
-  //Serial.printf("s = %s\r\n", str);
-  //Serial.flush();
-
-  //Attempt to convert string to double.
+  //Attempt to convert string to double
   double d = strtod(str, &ptr);
-
-  //Serial.printf("d = %lf\r\n", d);
-  //Serial.flush();
 
   char settingValue[50];
   if (d == 0.0) //strtod failed, may be string or may be 0 but let it pass

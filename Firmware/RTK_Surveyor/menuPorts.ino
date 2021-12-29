@@ -258,11 +258,6 @@ void menuPortHardwareTriggers()
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 
   beginExternalTriggers(); //Update with new settings
-
-  if (settings.enableExternalHardwareEventLogging == true)
-    i2cGNSS.setAutoTIMTM2callback(&eventTriggerReceived); // Enable automatic TIM TM2 messages with callback to eventMessageReceived
-  else
-    i2cGNSS.setAutoTIMTM2callback(NULL);
 }
 
 void eventTriggerReceived(UBX_TIM_TM2_data_t ubxDataStruct)

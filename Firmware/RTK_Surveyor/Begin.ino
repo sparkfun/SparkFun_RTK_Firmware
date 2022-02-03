@@ -89,6 +89,13 @@ void beginBoard()
     pin_powerFastOff = 27;
     pin_adc39 = 39;
 
+    pin_radio_rx = 33;
+    pin_radio_tx = 32;
+    pin_radio_rst = 15;
+    pin_radio_pwr = 4;
+    pin_radio_cts = 5;
+    //pin_radio_rts = 255; //Not implemented
+
     pinMode(pin_powerSenseAndControl, INPUT_PULLUP);
     pinMode(pin_powerFastOff, INPUT);
 
@@ -101,6 +108,10 @@ void beginBoard()
     digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, ZED, etc
 
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
+
+    //CTS is active low. ESP32 pin 5 has pullup at POR. We must drive it low.
+    pinMode(pin_radio_cts, OUTPUT);
+    digitalWrite(pin_radio_cts, LOW);
 
     strcpy(platformFilePrefix, "SFE_Facet");
     strcpy(platformPrefix, "Facet");
@@ -543,5 +554,54 @@ void beginExternalTriggers()
     i2cGNSS.setAutoTIMTM2callback(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
   else
     i2cGNSS.setAutoTIMTM2callback(NULL);
+}
 
+//Test and begin serial1 connection with SARA
+void beginSARA()
+{
+  mySARA = new SARA_R5(pin_radio_pwr, pin_radio_rst, 3);
+
+  //mySARA->enableDebugging();
+
+  int radioBaud = 115200;
+  Serial1.begin(radioBaud, SERIAL_8N1, pin_radio_tx, pin_radio_rx); //RX, TX
+
+  if (isRadioConnected() == false)
+  {
+    log_d("Radio not detected");
+    resetSARA();
+  }
+
+  if (mySARA->begin(Serial1, radioBaud) == true)
+  {
+    log_d("Cellular connected");
+    online.cellular = true;
+  }
+  else
+  {
+    log_d("Cellular failed to connected");
+    online.cellular = false;
+  }
+}
+
+//At POR SARA is at 115200
+//SARA does not respond to AT commands for ~2s after POR
+//Quick test at 115200. Should respond immediately if not at POR.
+bool isRadioConnected()
+{
+  for (int x = 0 ; x < 5 ; x++)
+  {
+    Serial1.print("AT\r");
+    delay(10);
+
+    if (Serial1.available())
+    {
+      log_d("Radio Responded");
+      return (true);
+    }
+    delay(10);
+  }
+
+  log_d("No radio response");
+  return (false);
 }

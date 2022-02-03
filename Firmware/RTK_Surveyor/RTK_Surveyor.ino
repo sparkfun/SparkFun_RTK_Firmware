@@ -39,12 +39,18 @@
     (Done) Firmware upgrade menu
     Enable various debug outputs sent over BT
 
+  TODO:
+    Change AP to 'mountPointUpload' and PW upload
+    Add mountPointDownload and PWDownload to AP config
+    Add casterTransmitGGA to AP config
+    Add casterUser/PW to AP ocnfig
+
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 10;
 
-//#define COMPILE_WIFI //Comment out to remove all WiFi functionality
+#define COMPILE_WIFI //Comment out to remove all WiFi functionality
 //#define COMPILE_BT //Comment out to disable all Bluetooth
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
@@ -82,6 +88,14 @@ int pin_powerFastOff;
 int pin_dac26;
 int pin_adc39;
 int pin_peripheralPowerControl;
+
+int pin_radio_rx;
+int pin_radio_tx;
+int pin_radio_rst;
+int pin_radio_pwr;
+int pin_radio_cts;
+int pin_radio_rts;
+
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //I2C for GNSS, battery gauge, display, accelerometer
@@ -298,6 +312,16 @@ int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//Cellular Radio
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#include <SparkFun_u-blox_SARA-R5_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_SARA-R5_Arduino_Library
+SARA_R5 *mySARA = NULL; //We can't instantiate here because we don't yet know what pin numbers to use
+
+#include "base64.h" //Built-in ESP32 library. Needed for Caster credentials.
+
+int socketNumber = -1;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
@@ -358,6 +382,19 @@ bool newEventToRecord = false; //Goes true when INT pin goes high
 uint32_t triggerCount = 0; //Global copy - TM2 event counter
 uint32_t towMsR = 0; //Global copy - Time Of Week of rising edge (ms)
 uint32_t towSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
+
+long lastReceivedRTCM_ms = 0;       //5 RTCM messages take approximately ~300ms to arrive at 115200bps
+int timeBetweenGGAUpdate_ms = 10000; //GGA is required for Rev2 NTRIP casters. Don't transmit but once every 10 seconds
+long lastTransmittedGGA_ms = 0;
+
+//Used for GGA sentence parsing from incoming NMEA
+bool ggaSentenceStarted = false;
+bool ggaSentenceComplete = false;
+bool ggaTransmitComplete = false; //Goes true once we transmit GGA to the caster
+char ggaSentence[128] = {0};
+byte ggaSentenceSpot = 0;
+int ggaSentenceEndSpot = 0;
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -390,6 +427,8 @@ void setup()
   configureGNSS(); //Configure ZED module
 
   beginAccelerometer();
+
+  //beginSARA();
 
   beginExternalTriggers(); //Configure the time pulse output and TM2 input
 

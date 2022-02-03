@@ -173,8 +173,13 @@ struct struct_settings {
   bool enableNtripServer = false;
   char casterHost[50] = "rtk2go.com"; //It's free...
   uint16_t casterPort = 2101;
-  char mountPoint[50] = "bldr_dwntwn2";
-  char mountPointPW[50] = "WR5wRo4H";
+  char casterUser[50] = "test@test.com"; //Some free casters require auth. User must provide their own email address to use RTK2Go
+  char casterUserPW[50] = "";
+  char mountPointUpload[50] = "bldr_dwntwn2";
+  char mountPointPWUpload[50] = "WR5wRo4H";
+  char mountPointDownload[50] = "bldr_SparkFun1";
+  char mountPointPWDownload[50] = "";
+  bool casterTransmitGGA = true;
   char wifiSSID[50] = "TRex";
   char wifiPW[50] = "parachutes";
   float surveyInStartingAccuracy = 1.0; //Wait for 1m horizontal positional accuracy before starting survey in
@@ -324,4 +329,5 @@ struct struct_online {
   bool rtc = false;
   bool battery = false;
   bool accelerometer = false;
+  bool cellular = false;
 } online;

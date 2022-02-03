@@ -303,7 +303,7 @@ void updateSystemState()
               char serverBuffer[SERVER_BUFFER_SIZE];
 
               snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
-                       settings.mountPointPW, settings.mountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+                       settings.mountPointPWUpload, settings.mountPointUpload, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));
@@ -477,7 +477,7 @@ void updateSystemState()
               char serverBuffer[SERVER_BUFFER_SIZE];
 
               snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
-                       settings.mountPointPW, settings.mountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+                       settings.mountPointPWUpload, settings.mountPointUpload, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));

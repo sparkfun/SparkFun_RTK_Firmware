@@ -593,7 +593,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = true;
             ge("fixedEcefY").disabled = true;
             ge("fixedEcefZ").disabled = true;
-            //Disable Geographic inputs
+            //Enable Geographic inputs
             ge("fixedLat").disabled = false;
             ge("fixedLong").disabled = false;
             ge("fixedAltitude").disabled = false;

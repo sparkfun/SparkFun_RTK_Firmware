@@ -381,7 +381,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   if (strcmp(settingValueStr, "true") == 0) settingValueBool = true;
 
   if (strcmp(settingName, "maxLogTime_minutes") == 0)
+  {
+    newAPSettings = true; //Mark settings as new to force record before reset
     settings.maxLogTime_minutes = settingValue;
+  }
   else if (strcmp(settingName, "measurementRateHz") == 0)
     settings.measurementRate = (int)(1000.0 / settingValue);
   else if (strcmp(settingName, "dynamicModel") == 0)
@@ -457,14 +460,18 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "firmwareFileName") == 0)
   {
     updateFromSD(settingValueStr);
+
+    //If update is successful, it will force system reset and not get here.
+
     requestChangeState(STATE_ROVER_NOT_STARTED); //If update failed, return to Rover mode.
   }
   else if (strcmp(settingName, "factoryDefaultReset") == 0)
     factoryReset();
-  else if (strcmp(settingName, "exitToRoverMode") == 0)
+  else if (strcmp(settingName, "exitAndReset") == 0)
   {
+    if(newAPSettings == true) recordSystemSettings(); //If we've recieved settings, record before restart
+
     ESP.restart();
-    //requestChangeState(STATE_ROVER_NOT_STARTED);
   }
 
   //Check for bulk settings (constellations and message rates)
@@ -590,7 +597,7 @@ bool parseIncomingSettings()
       headPtr = commaPtr + 1;
     }
 
-    Serial.printf("settingName: %s value: %s\n\r", settingName, valueStr);
+    //Serial.printf("settingName: %s value: %s\n\r", settingName, valueStr);
 
     //Ignore zero length values (measurementRateSec) received from browser
     if (strlen(valueStr) > 0)

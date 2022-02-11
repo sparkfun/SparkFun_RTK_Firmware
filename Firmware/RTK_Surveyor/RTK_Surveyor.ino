@@ -395,6 +395,8 @@ char ggaSentence[128] = {0};
 byte ggaSentenceSpot = 0;
 int ggaSentenceEndSpot = 0;
 
+bool newAPSettings = false; //Goes true when new setting is received via AP config. Allows us to record settings when combined with a reset.
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()

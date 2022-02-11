@@ -499,7 +499,7 @@ function resetToLoggingDefaults() {
 function exitConfig() {
     show("exitPage");
     hide("mainPage");
-    ws.send("exitToRoverMode,1,");
+    ws.send("exitAndReset,1,");
 }
 
 function firmwareUploadWait() {

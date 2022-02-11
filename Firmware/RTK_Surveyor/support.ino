@@ -233,7 +233,6 @@ double getDouble(int numberOfSeconds)
 
 //Reads a line until the \n enter character is found
 //Returns STATUS_GETBYTE_TIMEOUT if input times out
-//Returns STATUS_PRESSED_X if user presses 'x'
 byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
 {
   byte readLength = 0;
@@ -290,10 +289,6 @@ byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
       Serial.println();
       buffer[readLength] = '\0';
       break;
-    }
-    else if (readLength == 0 && incoming == 'x')
-    {
-      return (STATUS_PRESSED_X);
     }
     else
     {

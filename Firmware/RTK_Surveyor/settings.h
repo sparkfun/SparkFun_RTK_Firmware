@@ -176,9 +176,9 @@ struct struct_settings {
   char casterUser[50] = "test@test.com"; //Some free casters require auth. User must provide their own email address to use RTK2Go
   char casterUserPW[50] = "";
   char mountPointUpload[50] = "bldr_dwntwn2";
-  char mountPointPWUpload[50] = "WR5wRo4H";
+  char mountPointUploadPW[50] = "WR5wRo4H";
   char mountPointDownload[50] = "bldr_SparkFun1";
-  char mountPointPWDownload[50] = "";
+  char mountPointDownloadPW[50] = "";
   bool casterTransmitGGA = true;
   char wifiSSID[50] = "TRex";
   char wifiPW[50] = "parachutes";

@@ -97,10 +97,18 @@ function parseIncoming(msg) {
 
         //Check boxes / radio buttons
         else if (val == "true") {
-            ge(id).checked = true;
+            try {
+                ge(id).checked = true;
+            } catch (error) {
+                console.log("Issue with ID: " + id)
+            }
         }
         else if (val == "false") {
-            ge(id).checked = false;
+            try {
+                ge(id).checked = false;
+            } catch (error) {
+                console.log("Issue with ID: " + id)
+            }
         }
 
         //All regular input boxes and values
@@ -310,8 +318,8 @@ function validateFields() {
     checkElementString("wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
     checkElementString("casterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
     checkElementValue("casterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
-    checkElementString("mountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-    checkElementString("mountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("mountPointUpload", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("mountPointUploadPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
 
     //System Config
     checkElementValue("maxLogTime_minutes", 1, 2880, "Must be 1 to 2880", "collapseSystemConfig");
@@ -617,8 +625,8 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("wifiPW").disabled = false;
             ge("casterHost").disabled = false;
             ge("casterPort").disabled = false;
-            ge("mountPoint").disabled = false;
-            ge("mountPointPW").disabled = false;
+            ge("mountPointUpload").disabled = false;
+            ge("mountPointUploadPW").disabled = false;
         }
         else {
             //Disable NTRIP inputs
@@ -626,8 +634,8 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("wifiPW").disabled = true;
             ge("casterHost").disabled = true;
             ge("casterPort").disabled = true;
-            ge("mountPoint").disabled = true;
-            ge("mountPointPW").disabled = true;
+            ge("mountPointUpload").disabled = true;
+            ge("mountPointUploadPW").disabled = true;
         }
     });
 

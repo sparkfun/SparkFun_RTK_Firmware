@@ -120,10 +120,18 @@ function parseIncoming(msg) {
 
         //Check boxes / radio buttons
         else if (val == "true") {
-            ge(id).checked = true;
+            try {
+                ge(id).checked = true;
+            } catch (error) {
+                console.log("Issue with ID: " + id)
+            }
         }
         else if (val == "false") {
-            ge(id).checked = false;
+            try {
+                ge(id).checked = false;
+            } catch (error) {
+                console.log("Issue with ID: " + id)
+            }
         }
 
         //All regular input boxes and values
@@ -333,8 +341,8 @@ function validateFields() {
     checkElementString("wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
     checkElementString("casterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
     checkElementValue("casterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
-    checkElementString("mountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-    checkElementString("mountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("mountPointUpload", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("mountPointUploadPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
 
     //System Config
     checkElementValue("maxLogTime_minutes", 1, 2880, "Must be 1 to 2880", "collapseSystemConfig");
@@ -640,8 +648,8 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("wifiPW").disabled = false;
             ge("casterHost").disabled = false;
             ge("casterPort").disabled = false;
-            ge("mountPoint").disabled = false;
-            ge("mountPointPW").disabled = false;
+            ge("mountPointUpload").disabled = false;
+            ge("mountPointUploadPW").disabled = false;
         }
         else {
             //Disable NTRIP inputs
@@ -649,8 +657,8 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("wifiPW").disabled = true;
             ge("casterHost").disabled = true;
             ge("casterPort").disabled = true;
-            ge("mountPoint").disabled = true;
-            ge("mountPointPW").disabled = true;
+            ge("mountPointUpload").disabled = true;
+            ge("mountPointUploadPW").disabled = true;
         }
     });
 
@@ -799,7 +807,7 @@ static const char *index_html = R"=====(
 <body>
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="exitPage">
-        <b>Done</b><br><br>RTK device is now in Rover mode.
+        <b>Done</b><br><br>RTK device is now rebooting.
     </div>
 
     <div class="container" style="margin-top:20px;max-width:600px;" id="mainPage">
@@ -1592,7 +1600,7 @@ static const char *index_html = R"=====(
                         <label class="form-check-label" for="enableNtripServer">Enable NTRIP Server</label>
                         <input class="form-check-input" type="checkbox" value="" id="enableNtripServer">
                         <span class="tt" data-bs-placement="right"
-                            title="Once a base station is outputting correction data it can be pushed to an NTRIP caster via local Wifi. Other devices can access the correction stream using an NTRIP client. Default: Disabled.">
+                            title="Use this NTRIP server to upload the base's correction data to a casting service. Other devices can then access the correction data using an NTRIP client. Default: Disabled.">
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
@@ -1633,20 +1641,20 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div class="form-group row">
-                        <label for="mountPoint" class="box-margin20 col-sm-3 col-5 col-form-label">Mount
+                        <label for="mountPointUpload" class="box-margin20 col-sm-3 col-5 col-form-label">Mount
                             Point:</label>
                         <div class="col-sm-8 col-6">
-                            <input type="text" class="form-control" id="mountPoint">
-                            <p id="mountPointError" class="inlineError"></p>
+                            <input type="text" class="form-control" id="mountPointUpload">
+                            <p id="mountPointUploadError" class="inlineError"></p>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label for="mountPointPW" class="box-margin20 col-sm-4 col-6 col-form-label">Mount Point
+                        <label for="mountPointUploadPW" class="box-margin20 col-sm-4 col-6 col-form-label">Mount Point
                             PW:</label>
                         <div class="col-sm-7 col-5">
-                            <input type="text" class="form-control" id="mountPointPW">
-                            <p id="mountPointPWError" class="inlineError"></p>
+                            <input type="text" class="form-control" id="mountPointUploadPW">
+                            <p id="mountPointUploadPWError" class="inlineError"></p>
                         </div>
                     </div>
                 </div>
@@ -1888,8 +1896,7 @@ static const char *index_html = R"=====(
                     <p id="saveBtnSuccess" class="inlineSuccess"></p>
                 </div>
                 <div align="center" class="col-sm-5 col-12">
-                    <button type="button" id="exitBtn" class="btn btn-outline-secondary" onclick="exitConfig()">Exit to
-                        Rover Mode <span class="icon-remove text-secondary ms-1"></span></button>
+                    <button type="button" id="exitBtn" class="btn btn-outline-secondary" onclick="exitConfig()">Exit and Reset<span class="icon-remove text-secondary ms-1"></span></button>
                     <p id="exitBtnError" class="inlineSuccess"></p>
                     <p>&nbsp;</p>
                 </div>

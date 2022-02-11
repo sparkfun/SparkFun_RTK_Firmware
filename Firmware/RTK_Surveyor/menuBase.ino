@@ -73,7 +73,7 @@ void menuBase()
       Serial.println(settings.mountPointUpload);
 
       Serial.print(F("10) Set Mountpoint PW: "));
-      Serial.println(settings.mountPointPWUpload);
+      Serial.println(settings.mountPointUploadPW);
     }
 
     Serial.println(F("x) Exit"));
@@ -204,7 +204,7 @@ void menuBase()
     else if (incoming == 10 && settings.enableNtripServer == true)
     {
       Serial.printf("Enter password for Mount Point %s: ", settings.mountPointUpload);
-      readLine(settings.mountPointPWUpload, sizeof(settings.mountPointPWUpload), menuTimeoutExtended);
+      readLine(settings.mountPointUploadPW, sizeof(settings.mountPointUploadPW), menuTimeoutExtended);
     }
     else if (incoming == STATUS_PRESSED_X)
       break;

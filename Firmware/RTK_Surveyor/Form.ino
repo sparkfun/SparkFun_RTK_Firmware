@@ -306,11 +306,11 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "baseTypeFixed", settings.fixedBase);
   stringRecord(settingsCSV, "observationSeconds", settings.observationSeconds);
   stringRecord(settingsCSV, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
-  stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", settings.fixedBaseCoordinateType);
+  stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", !settings.fixedBaseCoordinateType); //COORD_TYPE_ECEF = 0
   stringRecord(settingsCSV, "fixedEcefX", settings.fixedEcefX, 3);
   stringRecord(settingsCSV, "fixedEcefY", settings.fixedEcefY, 3);
   stringRecord(settingsCSV, "fixedEcefZ", settings.fixedEcefZ, 3);
-  stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", !settings.fixedBaseCoordinateType);
+  stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", settings.fixedBaseCoordinateType);
   stringRecord(settingsCSV, "fixedLat", settings.fixedLat, 9);
   stringRecord(settingsCSV, "fixedLong", settings.fixedLong, 9);
   stringRecord(settingsCSV, "fixedAltitude", settings.fixedAltitude, 4);
@@ -321,9 +321,9 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "casterUser", settings.casterUser);
   stringRecord(settingsCSV, "casterUserPW", settings.casterUserPW);
   stringRecord(settingsCSV, "mountPointUpload", settings.mountPointUpload);
-  stringRecord(settingsCSV, "mountPointPWUpload", settings.mountPointPWUpload);
+  stringRecord(settingsCSV, "mountPointUploadPW", settings.mountPointUploadPW);
   stringRecord(settingsCSV, "mountPointDownload", settings.mountPointDownload);
-  stringRecord(settingsCSV, "mountPointPWDownload", settings.mountPointPWDownload);
+  stringRecord(settingsCSV, "mountPointDownloadPW", settings.mountPointDownloadPW);
   stringRecord(settingsCSV, "casterTransmitGGA", settings.casterTransmitGGA);
   stringRecord(settingsCSV, "wifiSSID", settings.wifiSSID);
   stringRecord(settingsCSV, "wifiPW", settings.wifiPW);
@@ -362,6 +362,13 @@ void createSettingsString(char* settingsCSV)
 
   strcat(settingsCSV, "\0");
   Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
+
+  //Upon AP load, Survey In is always checked.
+  //Sometimes, (perhaps if fixed should be checked) fixed area is left enabled. Check main.js for correct disable of baseTypeFixed if fixedBase = false
+
+
+  //Is baseTypeSurveyIn 1 or 0
+  Serial.printf("settingsCSV: %s\n\r", settingsCSV);
 }
 
 //Given a settingName, and string value, update a given setting
@@ -415,12 +422,12 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.casterUserPW, settingValueStr);
   else if (strcmp(settingName, "mountPointUpload") == 0)
     strcpy(settings.mountPointUpload, settingValueStr);
-  else if (strcmp(settingName, "mountPointPWUpload") == 0)
-    strcpy(settings.mountPointPWUpload, settingValueStr);
+  else if (strcmp(settingName, "mountPointUploadPW") == 0)
+    strcpy(settings.mountPointUploadPW, settingValueStr);
   else if (strcmp(settingName, "mountPointDownload") == 0)
     strcpy(settings.mountPointDownload, settingValueStr);
-  else if (strcmp(settingName, "mountPointPWDownload") == 0)
-    strcpy(settings.mountPointPWDownload, settingValueStr);
+  else if (strcmp(settingName, "mountPointDownloadPW") == 0)
+    strcpy(settings.mountPointDownloadPW, settingValueStr);
   else if (strcmp(settingName, "casterTransmitGGA") == 0)
     settings.casterTransmitGGA = settingValueBool;
   else if (strcmp(settingName, "wifiSSID") == 0)
@@ -455,7 +462,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "factoryDefaultReset") == 0)
     factoryReset();
   else if (strcmp(settingName, "exitToRoverMode") == 0)
-    requestChangeState(STATE_ROVER_NOT_STARTED);
+  {
+    ESP.restart();
+    //requestChangeState(STATE_ROVER_NOT_STARTED);
+  }
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list
@@ -555,22 +565,36 @@ void stringRecord(char* settingsCSV, const char *id, char* settingValue)
 }
 
 //Break CSV into setting constituents
+//Can't use strtok because we may have two commas next to each other, ie measurementRateHz,4.00,measurementRateSec,,dynamicModel,0,
 bool parseIncomingSettings()
 {
-  char settingName[50];
-  char valueStr[50]; //firmwareFileName,RTK_Surveyor_Firmware_v14.bin,
-  char *ptr = strtok(incomingSettings, ","); //measurementRateHz,2.00,
-  for (int x = 0 ; ptr != NULL ; x++)
+  char settingName[50] = {'\0'};
+  char valueStr[50] = {'\0'}; //firmwareFileName,RTK_Surveyor_Firmware_v14.bin,
+
+  char* commaPtr = incomingSettings;
+  char* headPtr = incomingSettings;
+  while (*headPtr) //Check if string is over
   {
-    strcpy(settingName, ptr);
-    ptr = strtok(NULL, ","); //Move to next comma
-    if (ptr == NULL) break;
+    //Spin to first comma
+    commaPtr = strstr(headPtr, ",");
+    if (commaPtr != NULL) {
+      *commaPtr = '\0';
+      strcpy(settingName, headPtr);
+      headPtr = commaPtr + 1;
+    }
 
-    strcpy(valueStr, ptr);
-    ptr = strtok(NULL, ","); //Move to next comma
+    commaPtr = strstr(headPtr, ",");
+    if (commaPtr != NULL) {
+      *commaPtr = '\0';
+      strcpy(valueStr, headPtr);
+      headPtr = commaPtr + 1;
+    }
 
-    //Serial.printf("settingName: %s value: %s\n\r", settingName, valueStr);
-    updateSettingWithValue(settingName, valueStr);
+    Serial.printf("settingName: %s value: %s\n\r", settingName, valueStr);
+
+    //Ignore zero length values (measurementRateSec) received from browser
+    if (strlen(valueStr) > 0)
+      updateSettingWithValue(settingName, valueStr);
   }
 
   return (true);

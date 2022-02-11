@@ -155,9 +155,9 @@ void recordSystemSettingsToFile()
       settingsFile.println("casterUser=" + (String)settings.casterUser);
       settingsFile.println("casterUserPW=" + (String)settings.casterUserPW);
       settingsFile.println("mountPointUpload=" + (String)settings.mountPointUpload);
-      settingsFile.println("mountPointPWUpload=" + (String)settings.mountPointPWUpload);
+      settingsFile.println("mountPointUploadPW=" + (String)settings.mountPointUploadPW);
       settingsFile.println("mountPointDownload=" + (String)settings.mountPointDownload);
-      settingsFile.println("mountPointPWDownload=" + (String)settings.mountPointPWDownload);
+      settingsFile.println("mountPointDownloadPW=" + (String)settings.mountPointDownloadPW);
       settingsFile.println("casterTransmitGGA=" + (String)settings.casterTransmitGGA);
       settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
       settingsFile.println("wifiPW=" + (String)settings.wifiPW);
@@ -404,12 +404,12 @@ bool parseLine(char* str) {
     strcpy(settings.casterUserPW, settingValue);
   else if (strcmp(settingName, "mountPointUpload") == 0)
     strcpy(settings.mountPointUpload, settingValue);
-  else if (strcmp(settingName, "mountPointPWUpload") == 0)
-    strcpy(settings.mountPointPWUpload, settingValue);
+  else if (strcmp(settingName, "mountPointUploadPW") == 0)
+    strcpy(settings.mountPointUploadPW, settingValue);
   else if (strcmp(settingName, "mountPointDownload") == 0)
     strcpy(settings.mountPointDownload, settingValue);
-  else if (strcmp(settingName, "mountPointPWDownload") == 0)
-    strcpy(settings.mountPointPWDownload, settingValue);
+  else if (strcmp(settingName, "mountPointDownloadPW") == 0)
+    strcpy(settings.mountPointDownloadPW, settingValue);
   else if (strcmp(settingName, "casterTransmitGGA") == 0)
     settings.casterTransmitGGA = d;
   else if (strcmp(settingName, "wifiSSID") == 0)

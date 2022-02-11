@@ -47,7 +47,7 @@ void loadSettings()
   recordSystemSettings();
 }
 
-//Load settings without recording 
+//Load settings without recording
 //Used at very first boot to test for resetCounter
 void loadSettingsPartial()
 {
@@ -64,7 +64,7 @@ void loadSettingsPartial()
     log_d("EEPROM is blank");
     return; //EEPROM is blank, assume default settings
   }
-  
+
   EEPROM.get(0, settings); //Read current settings
 }
 
@@ -308,25 +308,35 @@ bool parseLine(char* str) {
   char settingName[40];
   sprintf(settingName, "%s", str);
 
+  double d = 0.0;
+  char settingValue[50] = "";
+
   //Move pointer to end of line
   str = strtok(nullptr, "\n");
-  if (!str) return false;
-
-  //Attempt to convert string to double
-  double d = strtod(str, &ptr);
-
-  char settingValue[50];
-  if (d == 0.0) //strtod failed, may be string or may be 0 but let it pass
+  if (!str)
   {
-    sprintf(settingValue, "%s", str);
+    //This line does not contain a \n or the settingValue is zero length
+    //so there is nothing to parse
+    //https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/77
   }
   else
   {
-    if (str == ptr || *skipSpace(ptr)) return false; //Check str pointer
+    //Attempt to convert string to double
+    d = strtod(str, &ptr);
 
-    //See issue https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/47
-    sprintf(settingValue, "%1.0lf", d); //Catch when the input is pure numbers (strtod was successful), store as settingValue
+    if (d == 0.0) //strtod failed, may be string or may be 0 but let it pass
+    {
+      sprintf(settingValue, "%s", str);
+    }
+    else
+    {
+      if (str == ptr || *skipSpace(ptr)) return false; //Check str pointer
+
+      //See issue https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/47
+      sprintf(settingValue, "%1.0lf", d); //Catch when the input is pure numbers (strtod was successful), store as settingValue
+    }
   }
+
 
   // Get setting name
   if (strcmp(settingName, "sizeOfSettings") == 0)
@@ -504,7 +514,7 @@ bool parseLine(char* str) {
 //ESP32 doesn't have erase command so we do it here
 void eepromErase()
 {
-  if(online.eeprom == false)
+  if (online.eeprom == false)
   {
     log_d("Error: EEPROM not online");
     return;

@@ -387,6 +387,18 @@ void beginLogging()
           createNMEASentence(CUSTOM_NMEA_TYPE_RESET_REASON, nmeaMessage, rstReason); //textID, buffer, text
           ubxFile.println(nmeaMessage);
 
+          //Record system firmware versions and info to log
+          
+          //SparkFun RTK Express v1.10-Feb 11 2022
+          char firmwareVersion[30]; //v1.3 December 31 2021
+          sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+          createNMEASentence(CUSTOM_NMEA_TYPE_SYSTEM_VERSION, nmeaMessage, firmwareVersion); //textID, buffer, text
+          ubxFile.println(nmeaMessage);
+
+          //ZED-F9P firmware: HPG 1.30
+          createNMEASentence(CUSTOM_NMEA_TYPE_ZED_VERSION, nmeaMessage, zedFirmwareVersion); //textID, buffer, text
+          ubxFile.println(nmeaMessage);
+
           if (reuseLastLog == true)
           {
             Serial.println(F("Appending last available log"));

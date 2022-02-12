@@ -17,7 +17,7 @@ void menuBase()
     {
       Serial.print(F("2) Toggle Coordinate System: "));
       if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF) Serial.println(F("ECEF"));
-      else Serial.println(F("Geographic"));
+      else Serial.println(F("Geodetic"));
 
       if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
       {
@@ -29,7 +29,7 @@ void menuBase()
         Serial.print(settings.fixedEcefZ, 4);
         Serial.println(F("m"));
       }
-      else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEOGRAPHIC)
+      else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
       {
         Serial.print(F("3) Set Lat/Long/Altitude coordinates: "));
         Serial.print(settings.fixedLat, 9);
@@ -115,7 +115,7 @@ void menuBase()
           }
         }
       }
-      else  if (settings.fixedBaseCoordinateType == COORD_TYPE_GEOGRAPHIC)
+      else  if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
       {
         Serial.println(F("Enter the fixed Lat/Long/Altitude coordinates that will be used in Base mode:"));
 

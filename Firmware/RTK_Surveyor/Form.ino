@@ -306,11 +306,21 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "baseTypeFixed", settings.fixedBase);
   stringRecord(settingsCSV, "observationSeconds", settings.observationSeconds);
   stringRecord(settingsCSV, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
-  stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", !settings.fixedBaseCoordinateType); //COORD_TYPE_ECEF = 0
+
+  if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
+  {
+    stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", true);
+    stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", false);
+  }
+  else
+  {
+    stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", false);
+    stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", true);
+  }
+
   stringRecord(settingsCSV, "fixedEcefX", settings.fixedEcefX, 3);
   stringRecord(settingsCSV, "fixedEcefY", settings.fixedEcefY, 3);
   stringRecord(settingsCSV, "fixedEcefZ", settings.fixedEcefZ, 3);
-  stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", settings.fixedBaseCoordinateType);
   stringRecord(settingsCSV, "fixedLat", settings.fixedLat, 9);
   stringRecord(settingsCSV, "fixedLong", settings.fixedLong, 9);
   stringRecord(settingsCSV, "fixedAltitude", settings.fixedAltitude, 4);
@@ -363,10 +373,6 @@ void createSettingsString(char* settingsCSV)
   strcat(settingsCSV, "\0");
   Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
 
-  //Upon AP load, Survey In is always checked.
-  //Sometimes, (perhaps if fixed should be checked) fixed area is left enabled. Check main.js for correct disable of baseTypeFixed if fixedBase = false
-
-
   //Is baseTypeSurveyIn 1 or 0
   Serial.printf("settingsCSV: %s\n\r", settingsCSV);
 }
@@ -396,7 +402,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "observationPositionAccuracy") == 0)
     settings.observationPositionAccuracy = settingValue;
   else if (strcmp(settingName, "fixedBaseCoordinateTypeECEF") == 0)
-    settings.fixedBaseCoordinateType = settingValueBool;
+    settings.fixedBaseCoordinateType = !settingValueBool; //When ECEF is true, fixedBaseCoordinateType = 0 (COORD_TYPE_ECEF)
   else if (strcmp(settingName, "fixedEcefX") == 0)
     settings.fixedEcefX = settingValue;
   else if (strcmp(settingName, "fixedEcefY") == 0)
@@ -469,7 +475,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     factoryReset();
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
-    if(newAPSettings == true) recordSystemSettings(); //If we've recieved settings, record before restart
+    if (newAPSettings == true) recordSystemSettings(); //If we've recieved settings, record before restart
 
     ESP.restart();
   }
@@ -597,7 +603,7 @@ bool parseIncomingSettings()
       headPtr = commaPtr + 1;
     }
 
-    //Serial.printf("settingName: %s value: %s\n\r", settingName, valueStr);
+    Serial.printf("settingName: %s value: %s\n\r", settingName, valueStr);
 
     //Ignore zero length values (measurementRateSec) received from browser
     if (strlen(valueStr) > 0)

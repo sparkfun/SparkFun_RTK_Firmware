@@ -67,7 +67,7 @@ typedef enum muxConnectionType_e
 typedef enum
 {
   COORD_TYPE_ECEF = 0,
-  COORD_TYPE_GEOGRAPHIC,
+  COORD_TYPE_GEODETIC,
 } coordinateType_e;
 
 //User can select output pulse as either falling or rising edge

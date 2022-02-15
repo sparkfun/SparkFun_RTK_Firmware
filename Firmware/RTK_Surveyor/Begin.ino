@@ -360,8 +360,10 @@ void beginGNSS()
       zedFirmwareVersionInt = 120;
     else if (strstr(zedFirmwareVersion, "1.21") != NULL) //Future F9R HPS v1.21
       zedFirmwareVersionInt = 121;
+    else if (strstr(zedFirmwareVersion, "1.30") != NULL) //ZED-F9P released Dec, 2021
+      zedFirmwareVersionInt = 130;
     else
-      Serial.printf("Unknown firmware version: %s", zedFirmwareVersion);
+      Serial.printf("Unknown firmware version: %s\n\r", zedFirmwareVersion);
 
     //Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
     if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9P") != NULL)

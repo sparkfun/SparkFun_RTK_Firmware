@@ -83,17 +83,6 @@ function parseIncoming(msg) {
         ) {
             ge(id).innerHTML = val;
         }
-        else if (id.includes("firmwareFileName")) {
-            show("firmwareAvailable"); //Turn on firmware area
-
-            ge(id).innerHTML = val;
-            if (id.includes("0")) show("firmwareFile0");
-            if (id.includes("1")) show("firmwareFile1");
-            if (id.includes("2")) show("firmwareFile2");
-            if (id.includes("3")) show("firmwareFile3");
-            if (id.includes("4")) show("firmwareFile4");
-            if (id.includes("5")) show("firmwareFile5");
-        }
 
         //Check boxes / radio buttons
         else if (val == "true") {
@@ -159,22 +148,6 @@ function sendData() {
 
     console.log("Sending: " + settingCSV);
     ws.send(settingCSV);
-}
-
-function sendFirmwareFile() {
-    var firmwareFileName = "firmwareFileName,";
-
-    //ID the firmware file radio
-    if (ge("file0").checked) firmwareFileName += ge("firmwareFileName0").innerHTML;
-    else if (ge("file1").checked) firmwareFileName += ge("firmwareFileName1").innerHTML;
-    else if (ge("file2").checked) firmwareFileName += ge("firmwareFileName2").innerHTML;
-    else if (ge("file3").checked) firmwareFileName += ge("firmwareFileName3").innerHTML;
-    else if (ge("file4").checked) firmwareFileName += ge("firmwareFileName4").innerHTML;
-    else if (ge("file5").checked) firmwareFileName += ge("firmwareFileName5").innerHTML;
-
-    firmwareFileName += ","
-    ws.send(firmwareFileName);
-    ge("firmwareUpdateMsg").innerHTML = 'Updating, please wait for system reset...';
 }
 
 function showError(id, errorText) {
@@ -503,7 +476,7 @@ function exitConfig() {
 }
 
 function firmwareUploadWait() {
-    ge("firmwareUploadMsg").innerHTML = "<br>Uploading, please wait....";
+    ge("firmwareUploadMsg").innerHTML = "<br>Uploading, please wait...";
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -658,25 +631,6 @@ document.addEventListener("DOMContentLoaded", (event) => {
         else {
             //Disable button
             ge("factoryDefaults").disabled = true;
-        }
-    });
-
-    //Enable the check box
-    ge("firmwareFile0").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile1").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile2").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile3").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile4").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile5").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-
-    ge("enableFirmwareUpdate").addEventListener("change", function () {
-        if (ge("enableFirmwareUpdate").checked) {
-            //Enable button
-            ge("firmwareUpdate").disabled = false;
-        }
-        else {
-            //Disable button
-            ge("firmwareUpdate").disabled = true;
         }
     });
 

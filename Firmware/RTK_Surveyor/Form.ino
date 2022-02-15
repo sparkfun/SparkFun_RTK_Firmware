@@ -168,7 +168,7 @@ void startConfigAP()
     request->send(response);
   });
 
-  //Handler for the /update form POST
+  //Handler for the /upload form POST
   server.on("/upload", HTTP_POST, [](AsyncWebServerRequest * request) {
     request->send(200);
   }, handleFirmwareFileUpload);
@@ -183,65 +183,41 @@ void startConfigAP()
 #ifdef COMPILE_WIFI
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
-  if (online.microSD == false)
+  //Todo check file name against valid firmware names
+
+  if (!index)
   {
-    Serial.println(F("No SD card available"));
-    return;
-  }
-
-  //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
-  if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) != pdPASS) {
-    Serial.println(F("Failed to get file system lock on firmware file"));
-    return;
-  }
-
-  if (!index) {
-    //Convert string to array
-    char tempFileName[100];
-    fileName.toCharArray(tempFileName, sizeof(tempFileName));
-
-    if (sd.exists(tempFileName))
+    if (!Update.begin(UPDATE_SIZE_UNKNOWN))
     {
-      sd.remove(tempFileName);
-      Serial.printf("Removed old firmware file: %s\n\r", tempFileName);
-    }
-
-    Serial.printf("Start Firmware Upload: %s\n\r", tempFileName);
-
-    // O_CREAT - create the file if it does not exist
-    // O_APPEND - seek to the end of the file prior to each write
-    // O_WRITE - open for write
-    if (newFirmwareFile.open(tempFileName, O_CREAT | O_APPEND | O_WRITE) == false)
-    {
-      Serial.printf("Failed to create firmware file: %s\n\r", tempFileName);
-      xSemaphoreGive(xFATSemaphore);
-      return;
+      Update.printError(Serial);
+      return request->send(400, "text/plain", "OTA could not begin");
     }
   }
 
-  //Record to file
-  if (newFirmwareFile.write(data, len) != len)
-    log_e("Error writing to firmware file");
-  else
-    log_d("Recorded %d bytes to file\n\r", len);
+  // Write chunked data to the free sketch space
+  if (len)
+  {
+    if (Update.write(data, len) != len)
+      return request->send(400, "text/plain", "OTA could not begin");
+  }
 
   if (final)
   {
-    updateDataFileCreate(&newFirmwareFile); // Update the file create time & date
-    newFirmwareFile.close();
-
-    Serial.print("Upload complete: ");
-    Serial.println(fileName);
-
-    binCount = 0;
-    xSemaphoreGive(xFATSemaphore); //Must release semaphore before scanning for firmware
-    scanForFirmware(); //Update firmware file list
-
-    //Reload page upon success - this will show all available firmware files
-    request->send(200, "text/html", "<meta http-equiv=\"Refresh\" content=\"0; url='/'\" />");
+    if (!Update.end(true))
+    {
+      Update.printError(Serial);
+      return request->send(400, "text/plain", "Could not end OTA");
+    }
+    else
+    {
+      Serial.print("Update complete: ");
+      Serial.println(fileName);
+      request->send(200, "text/html", "<b>Done</b><br><br>Firmware update complete. RTK device is rebooting.");
+      Serial.println("Restarting");
+      delay(100);
+      ESP.restart();
+    }
   }
-
-  xSemaphoreGive(xFATSemaphore);
 }
 #endif
 

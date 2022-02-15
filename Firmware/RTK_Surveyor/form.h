@@ -106,17 +106,6 @@ function parseIncoming(msg) {
         ) {
             ge(id).innerHTML = val;
         }
-        else if (id.includes("firmwareFileName")) {
-            show("firmwareAvailable"); //Turn on firmware area
-
-            ge(id).innerHTML = val;
-            if (id.includes("0")) show("firmwareFile0");
-            if (id.includes("1")) show("firmwareFile1");
-            if (id.includes("2")) show("firmwareFile2");
-            if (id.includes("3")) show("firmwareFile3");
-            if (id.includes("4")) show("firmwareFile4");
-            if (id.includes("5")) show("firmwareFile5");
-        }
 
         //Check boxes / radio buttons
         else if (val == "true") {
@@ -182,22 +171,6 @@ function sendData() {
 
     console.log("Sending: " + settingCSV);
     ws.send(settingCSV);
-}
-
-function sendFirmwareFile() {
-    var firmwareFileName = "firmwareFileName,";
-
-    //ID the firmware file radio
-    if (ge("file0").checked) firmwareFileName += ge("firmwareFileName0").innerHTML;
-    else if (ge("file1").checked) firmwareFileName += ge("firmwareFileName1").innerHTML;
-    else if (ge("file2").checked) firmwareFileName += ge("firmwareFileName2").innerHTML;
-    else if (ge("file3").checked) firmwareFileName += ge("firmwareFileName3").innerHTML;
-    else if (ge("file4").checked) firmwareFileName += ge("firmwareFileName4").innerHTML;
-    else if (ge("file5").checked) firmwareFileName += ge("firmwareFileName5").innerHTML;
-
-    firmwareFileName += ","
-    ws.send(firmwareFileName);
-    ge("firmwareUpdateMsg").innerHTML = 'Updating, please wait for system reset...';
 }
 
 function showError(id, errorText) {
@@ -526,7 +499,7 @@ function exitConfig() {
 }
 
 function firmwareUploadWait() {
-    ge("firmwareUploadMsg").innerHTML = "<br>Uploading, please wait....";
+    ge("firmwareUploadMsg").innerHTML = "<br>Uploading, please wait...";
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -575,7 +548,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
                 ge("fixedEcefX").disabled = false;
                 ge("fixedEcefY").disabled = false;
                 ge("fixedEcefZ").disabled = false;
-                //Disable Geodetic inputs
+                //Disable Geographic inputs
                 ge("fixedLat").disabled = true;
                 ge("fixedLong").disabled = true;
                 ge("fixedAltitude").disabled = true;
@@ -585,7 +558,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
                 ge("fixedEcefX").disabled = true;
                 ge("fixedEcefY").disabled = true;
                 ge("fixedEcefZ").disabled = true;
-                //Disable Geodetic inputs
+                //Disable Geographic inputs
                 ge("fixedLat").disabled = false;
                 ge("fixedLong").disabled = false;
                 ge("fixedAltitude").disabled = false;
@@ -600,7 +573,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = false;
             ge("fixedEcefY").disabled = false;
             ge("fixedEcefZ").disabled = false;
-            //Disable Geodetic inputs
+            //Disable Geographic inputs
             ge("fixedLat").disabled = true;
             ge("fixedLong").disabled = true;
             ge("fixedAltitude").disabled = true;
@@ -610,7 +583,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = true;
             ge("fixedEcefY").disabled = true;
             ge("fixedEcefZ").disabled = true;
-            //Disable Geodetic inputs
+            //Disable Geographic inputs
             ge("fixedLat").disabled = false;
             ge("fixedLong").disabled = false;
             ge("fixedAltitude").disabled = false;
@@ -624,7 +597,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = true;
             ge("fixedEcefY").disabled = true;
             ge("fixedEcefZ").disabled = true;
-            //Enable Geodetic inputs
+            //Enable Geographic inputs
             ge("fixedLat").disabled = false;
             ge("fixedLong").disabled = false;
             ge("fixedAltitude").disabled = false;
@@ -634,7 +607,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = false;
             ge("fixedEcefY").disabled = false;
             ge("fixedEcefZ").disabled = false;
-            //Disable Geodetic inputs
+            //Disable Geographic inputs
             ge("fixedLat").disabled = true;
             ge("fixedLong").disabled = true;
             ge("fixedAltitude").disabled = true;
@@ -681,25 +654,6 @@ document.addEventListener("DOMContentLoaded", (event) => {
         else {
             //Disable button
             ge("factoryDefaults").disabled = true;
-        }
-    });
-
-    //Enable the check box
-    ge("firmwareFile0").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile1").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile2").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile3").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile4").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile5").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-
-    ge("enableFirmwareUpdate").addEventListener("change", function () {
-        if (ge("enableFirmwareUpdate").checked) {
-            //Enable button
-            ge("firmwareUpdate").disabled = false;
-        }
-        else {
-            //Disable button
-            ge("firmwareUpdate").disabled = true;
         }
     });
 
@@ -1865,9 +1819,8 @@ static const char *index_html = R"=====(
                     </div>
                     <div class="col-sm-7 col-6 mt-2">
                         <div id="uploadNewFirmwareDiv" class="mb-2">
-                            <label class="form-check-label" for="uploadNewFirmware">Add Firmware:</label>
-                            <span class="tt" data-bs-placement="right"
-                                title="New firmware may be uploaded via WiFi to the SD card. Firmware is only loaded to the SD card and must then be loaded to the unit.">
+                            <label class="form-check-label" for="uploadNewFirmware">Update Firmware:</label>
+                            <span class="tt" data-bs-placement="right" title="Update the unit's firmware over WiFi.">
                                 <span class="icon-info-circle text-primary ms-2"></span>
                             </span>
                             <form id="uploadNewFirmware" enctype="multipart/form-data" method="post" action="/upload">
@@ -1896,7 +1849,8 @@ static const char *index_html = R"=====(
                     <p id="saveBtnSuccess" class="inlineSuccess"></p>
                 </div>
                 <div align="center" class="col-sm-5 col-12">
-                    <button type="button" id="exitBtn" class="btn btn-outline-secondary" onclick="exitConfig()">Exit and Reset<span class="icon-remove text-secondary ms-1"></span></button>
+                    <button type="button" id="exitBtn" class="btn btn-outline-secondary" onclick="exitConfig()">Exit and
+                        Reset<span class="icon-remove text-secondary ms-1"></span></button>
                     <p id="exitBtnError" class="inlineSuccess"></p>
                     <p>&nbsp;</p>
                 </div>

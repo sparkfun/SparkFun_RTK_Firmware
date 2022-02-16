@@ -224,6 +224,28 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
   {
     if (Update.write(data, len) != len)
       return request->send(400, "text/plain", "OTA could not begin");
+    else
+    {
+      binBytesSent += len;
+
+      //Send an update to browser every 100k
+      if (binBytesSent - binBytesLastUpdate > 100000)
+      {
+        binBytesLastUpdate = binBytesSent;
+
+        char bytesSentMsg[100];
+        sprintf(bytesSentMsg, "%d bytes sent", binBytesSent);
+
+        Serial.printf("bytesSentMsg: %s\n\r", bytesSentMsg);
+
+        char statusMsg[200] = {'\0'};
+        stringRecord(statusMsg, "firmwareUploadStatus", bytesSentMsg); //Convert to "firmwareUploadMsg,11214 bytes sent,"
+
+        Serial.printf("msg: %s\n\r", statusMsg);
+        ws.textAll(statusMsg);
+      }
+
+    }
   }
 
   if (final)
@@ -235,10 +257,8 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
     }
     else
     {
-      Serial.print("Update complete: ");
-      Serial.println(fileName);
-      request->send(200, "text/html", "<b>Done</b><br><br>Firmware update complete. RTK device is rebooting.");
-      Serial.println("Restarting");
+      ws.textAll("firmwareUploadComplete,1,");
+      Serial.println("Firmware update complete. Restarting");
       delay(500);
       ESP.restart();
     }

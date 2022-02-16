@@ -397,6 +397,8 @@ int ggaSentenceEndSpot = 0;
 
 bool newAPSettings = false; //Goes true when new setting is received via AP config. Allows us to record settings when combined with a reset.
 
+unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update via AP config.
+int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()

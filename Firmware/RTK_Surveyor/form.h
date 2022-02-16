@@ -106,6 +106,12 @@ function parseIncoming(msg) {
         ) {
             ge(id).innerHTML = val;
         }
+        else if (id.includes("firmwareUploadComplete")) {
+            firmwareUploadComplete();
+        }
+        else if (id.includes("firmwareUploadStatus")) {
+            firmwareUploadStatus(val);
+        }
 
         //Check boxes / radio buttons
         else if (val == "true") {
@@ -502,6 +508,15 @@ function firmwareUploadWait() {
     ge("firmwareUploadMsg").innerHTML = "<br>Uploading, please wait...";
 }
 
+function firmwareUploadStatus(val) {
+    ge("firmwareUploadMsg").innerHTML = val;
+}
+
+function firmwareUploadComplete() {
+    show("firmwareUploadComplete");
+    hide("mainPage");
+}
+
 document.addEventListener("DOMContentLoaded", (event) => {
 
     ge("measurementRateHz").addEventListener("change", function () {
@@ -548,7 +563,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
                 ge("fixedEcefX").disabled = false;
                 ge("fixedEcefY").disabled = false;
                 ge("fixedEcefZ").disabled = false;
-                //Disable Geographic inputs
+                //Disable Geodetic inputs
                 ge("fixedLat").disabled = true;
                 ge("fixedLong").disabled = true;
                 ge("fixedAltitude").disabled = true;
@@ -558,7 +573,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
                 ge("fixedEcefX").disabled = true;
                 ge("fixedEcefY").disabled = true;
                 ge("fixedEcefZ").disabled = true;
-                //Disable Geographic inputs
+                //Disable Geodetic inputs
                 ge("fixedLat").disabled = false;
                 ge("fixedLong").disabled = false;
                 ge("fixedAltitude").disabled = false;
@@ -573,7 +588,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = false;
             ge("fixedEcefY").disabled = false;
             ge("fixedEcefZ").disabled = false;
-            //Disable Geographic inputs
+            //Disable Geodetic inputs
             ge("fixedLat").disabled = true;
             ge("fixedLong").disabled = true;
             ge("fixedAltitude").disabled = true;
@@ -583,7 +598,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = true;
             ge("fixedEcefY").disabled = true;
             ge("fixedEcefZ").disabled = true;
-            //Disable Geographic inputs
+            //Enable Geodetic inputs
             ge("fixedLat").disabled = false;
             ge("fixedLong").disabled = false;
             ge("fixedAltitude").disabled = false;
@@ -597,7 +612,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = true;
             ge("fixedEcefY").disabled = true;
             ge("fixedEcefZ").disabled = true;
-            //Enable Geographic inputs
+            //Enable Geodetic inputs
             ge("fixedLat").disabled = false;
             ge("fixedLong").disabled = false;
             ge("fixedAltitude").disabled = false;
@@ -607,7 +622,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = false;
             ge("fixedEcefY").disabled = false;
             ge("fixedEcefZ").disabled = false;
-            //Disable Geographic inputs
+            //Disable Geodetic inputs
             ge("fixedLat").disabled = true;
             ge("fixedLong").disabled = true;
             ge("fixedAltitude").disabled = true;
@@ -762,6 +777,10 @@ static const char *index_html = R"=====(
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="exitPage">
         <b>Done</b><br><br>RTK device is now rebooting.
+    </div>
+
+    <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="firmwareUploadComplete">
+        <b>Done</b><br><br>Firmware update complete. RTK device is now rebooting.
     </div>
 
     <div class="container" style="margin-top:20px;max-width:600px;" id="mainPage">
@@ -1770,52 +1789,6 @@ static const char *index_html = R"=====(
                             <br>
                             Used: <p id="sdUsedSpaceMB" style="display:inline;">0</p>MB
                         </div>
-
-                        <div class="form-check" id="firmwareAvailable" style="display:none;">
-                            Available Firmware:
-                            <div class="form-check">
-                                <div style="display:none;" id="firmwareFile0">
-                                    <input type="radio" id="file0" name="firmwareFiles">
-                                    <label for="file0" id="firmwareFileName0">file0</label><br>
-                                </div>
-                                <div style="display:none;" id="firmwareFile1">
-                                    <input type="radio" id="file1" name="firmwareFiles">
-                                    <label for="file1" id="firmwareFileName1">file 1</label><br>
-                                </div>
-                                <div style="display:none;" id="firmwareFile2">
-                                    <input type="radio" id="file2" name="firmwareFiles">
-                                    <label for="file2" id="firmwareFileName2">file2</label><br>
-                                </div>
-                                <div style="display:none;" id="firmwareFile3">
-                                    <input type="radio" id="file3" name="firmwareFiles">
-                                    <label for="file3" id="firmwareFileName3">file3</label><br>
-                                </div>
-                                <div style="display:none;" id="firmwareFile4">
-                                    <input type="radio" id="file4" name="firmwareFiles">
-                                    <label for="file4" id="firmwareFileName4">file4</label><br>
-                                </div>
-                                <div style="display:none;" id="firmwareFile5">
-                                    <input type="radio" id="file5" name="firmwareFiles">
-                                    <label for="file5" id="firmwareFileName5">file5</label><br>
-                                </div>
-
-                                <div class="form-check">
-                                    <label class="form-check-label" for="enableFirmwareUpdate">Enable Firmware
-                                        Update:</label><span class="tt" data-bs-placement="right"
-                                        title="Select the firmware file, then check ‘Enable Firmware Update’ to begin update process.">
-                                        <span class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
-                                    <input class="form-check-input" type="checkbox" value="" id="enableFirmwareUpdate"
-                                        unchecked disabled>
-                                </div>
-
-                                <div id="firmwareUpdateButton">
-                                    <button type="button" id="firmwareUpdate" class="btn btn-primary"
-                                        onClick="sendFirmwareFile()" disabled>Update Firmware</button>
-                                    <p id="firmwareUpdateMsg" class="inlineSuccess"></p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     <div class="col-sm-7 col-6 mt-2">
                         <div id="uploadNewFirmwareDiv" class="mb-2">
@@ -1867,6 +1840,7 @@ static const char *index_html = R"=====(
 </body>
 
 </html>
+
 )====="; //End index.html
 
 //Content of bootstrap.bundle.min.jss with gzip compression

@@ -83,6 +83,12 @@ function parseIncoming(msg) {
         ) {
             ge(id).innerHTML = val;
         }
+        else if (id.includes("firmwareUploadComplete")) {
+            firmwareUploadComplete();
+        }
+        else if (id.includes("firmwareUploadStatus")) {
+            firmwareUploadStatus(val);
+        }
 
         //Check boxes / radio buttons
         else if (val == "true") {
@@ -477,6 +483,15 @@ function exitConfig() {
 
 function firmwareUploadWait() {
     ge("firmwareUploadMsg").innerHTML = "<br>Uploading, please wait...";
+}
+
+function firmwareUploadStatus(val) {
+    ge("firmwareUploadMsg").innerHTML = val;
+}
+
+function firmwareUploadComplete() {
+    show("firmwareUploadComplete");
+    hide("mainPage");
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {

@@ -525,7 +525,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
                 ge("fixedEcefX").disabled = false;
                 ge("fixedEcefY").disabled = false;
                 ge("fixedEcefZ").disabled = false;
-                //Disable Geographic inputs
+                //Disable Geodetic inputs
                 ge("fixedLat").disabled = true;
                 ge("fixedLong").disabled = true;
                 ge("fixedAltitude").disabled = true;
@@ -535,7 +535,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
                 ge("fixedEcefX").disabled = true;
                 ge("fixedEcefY").disabled = true;
                 ge("fixedEcefZ").disabled = true;
-                //Disable Geographic inputs
+                //Disable Geodetic inputs
                 ge("fixedLat").disabled = false;
                 ge("fixedLong").disabled = false;
                 ge("fixedAltitude").disabled = false;
@@ -550,7 +550,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = false;
             ge("fixedEcefY").disabled = false;
             ge("fixedEcefZ").disabled = false;
-            //Disable Geographic inputs
+            //Disable Geodetic inputs
             ge("fixedLat").disabled = true;
             ge("fixedLong").disabled = true;
             ge("fixedAltitude").disabled = true;
@@ -560,7 +560,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = true;
             ge("fixedEcefY").disabled = true;
             ge("fixedEcefZ").disabled = true;
-            //Disable Geographic inputs
+            //Enable Geodetic inputs
             ge("fixedLat").disabled = false;
             ge("fixedLong").disabled = false;
             ge("fixedAltitude").disabled = false;
@@ -574,7 +574,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = true;
             ge("fixedEcefY").disabled = true;
             ge("fixedEcefZ").disabled = true;
-            //Enable Geographic inputs
+            //Enable Geodetic inputs
             ge("fixedLat").disabled = false;
             ge("fixedLong").disabled = false;
             ge("fixedAltitude").disabled = false;
@@ -584,7 +584,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = false;
             ge("fixedEcefY").disabled = false;
             ge("fixedEcefZ").disabled = false;
-            //Disable Geographic inputs
+            //Disable Geodetic inputs
             ge("fixedLat").disabled = true;
             ge("fixedLong").disabled = true;
             ge("fixedAltitude").disabled = true;

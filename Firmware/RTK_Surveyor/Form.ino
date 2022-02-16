@@ -183,14 +183,39 @@ void startConfigAP()
 #ifdef COMPILE_WIFI
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
-  //Todo check file name against valid firmware names
-
   if (!index)
   {
-    if (!Update.begin(UPDATE_SIZE_UNKNOWN))
+    //Check file name against valid firmware names
+    const char* BIN_EXT = "bin";
+    const char* BIN_HEADER = "RTK_Surveyor_Firmware";
+
+    char fname[50]; //Handle long file names
+    fileName.toCharArray(fname, sizeof(fname));
+    fname[fileName.length()] = '\0'; //Terminate array
+
+    //Check 'bin' extension
+    if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
     {
-      Update.printError(Serial);
-      return request->send(400, "text/plain", "OTA could not begin");
+      //Check for 'RTK_Surveyor_Firmware' start of file name
+      if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
+      {
+        //Begin update process
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN))
+        {
+          Update.printError(Serial);
+          return request->send(400, "text/plain", "OTA could not begin");
+        }
+      }
+      else
+      {
+        Serial.printf("Unknown: %s\n\r", fname);
+        return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
+      }
+    }
+    else
+    {
+      Serial.printf("Unknown: %s\n\r", fname);
+      return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
     }
   }
 
@@ -214,7 +239,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
       Serial.println(fileName);
       request->send(200, "text/html", "<b>Done</b><br><br>Firmware update complete. RTK device is rebooting.");
       Serial.println("Restarting");
-      delay(100);
+      delay(500);
       ESP.restart();
     }
   }

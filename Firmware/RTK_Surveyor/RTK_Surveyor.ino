@@ -6,7 +6,7 @@
   This firmware runs the core of the SparkFun RTK Surveyor product. It runs on an ESP32
   and communicates with the ZED-F9P.
 
-  Compiled with Arduino v1.8.13 with ESP32 core v1.0.6.
+  Compiled with Arduino v1.8.15 with ESP32 core v2.0.1.
   v1.7 Moves to ESP32 core v2.0.0.
 
   Select the ESP32 Dev Module from the boards list. This maps the same pins to the ESP32-WROOM module.

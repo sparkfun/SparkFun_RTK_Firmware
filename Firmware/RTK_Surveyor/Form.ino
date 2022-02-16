@@ -372,17 +372,6 @@ void createSettingsString(char* settingsCSV)
 
   stringRecord(settingsCSV, "enableResetDisplay", settings.enableResetDisplay);
 
-  //Pass any available firmware file names
-  if (binCount > 0)
-  {
-    for (int x = 0 ; x < binCount ; x++)
-    {
-      char firmwareFileID[50];
-      sprintf(firmwareFileID, "firmwareFileName%d", x);
-      stringRecord(settingsCSV, firmwareFileID, binFileNames[x]);
-    }
-  }
-
   //Turn on SD display block last
   stringRecord(settingsCSV, "sdMounted", online.microSD);
 
@@ -624,11 +613,9 @@ bool parseIncomingSettings()
       headPtr = commaPtr + 1;
     }
 
-    Serial.printf("settingName: %s value: %s\n\r", settingName, valueStr);
+    log_d("settingName: %s value: %s", settingName, valueStr);
 
-    //Ignore zero length values (measurementRateSec) received from browser
-    if (strlen(valueStr) > 0)
-      updateSettingWithValue(settingName, valueStr);
+    updateSettingWithValue(settingName, valueStr);
   }
 
   return (true);

@@ -12,7 +12,7 @@ function ge(e) {
 var platformPrefix = "Surveyor";
 
 function parseIncoming(msg) {
-    console.log("incoming message: " + msg);
+    //console.log("incoming message: " + msg);
 
     var data = msg.split(',');
     for (let x = 0; x < data.length - 1; x += 2) {

@@ -45,6 +45,7 @@ void startConfigAP()
   IPAddress local_IP(192, 168, 4, 1);
   IPAddress gateway(192, 168, 1, 1);
   IPAddress subnet(255, 255, 0, 0);
+
   WiFi.softAPConfig(local_IP, gateway, subnet);
   if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
   {
@@ -234,7 +235,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
         binBytesLastUpdate = binBytesSent;
 
         char bytesSentMsg[100];
-        sprintf(bytesSentMsg, "%d bytes sent", binBytesSent);
+        sprintf(bytesSentMsg, "%'d bytes sent", binBytesSent);
 
         Serial.printf("bytesSentMsg: %s\n\r", bytesSentMsg);
 

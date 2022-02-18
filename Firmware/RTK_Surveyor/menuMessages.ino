@@ -320,7 +320,7 @@ void beginLogging()
       {
         sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
                 platformFilePrefix,
-                rtc.getYear() - 2000, rtc.getMonth(), rtc.getDay(),
+                rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11 
                 rtc.getHour(), rtc.getMinute(), rtc.getSecond()
                );
       }
@@ -401,8 +401,9 @@ void updateDataFileAccess(SdFile *dataFile)
 {
   if (online.rtc == true)
   {
-    dataFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth(), rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond());
-    dataFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth(), rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond());
+    //ESP32Time returns month:0-11 
+    dataFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond());
+    dataFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond());
   }
 }
 
@@ -410,7 +411,7 @@ void updateDataFileAccess(SdFile *dataFile)
 void updateDataFileCreate(SdFile *dataFile)
 {
   if (online.rtc == true)
-    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth(), rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond());
+    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11 
 }
 
 //Finds last log

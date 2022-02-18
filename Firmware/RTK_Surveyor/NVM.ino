@@ -45,6 +45,8 @@ void loadSettings()
   //Record these new settings to EEPROM and config file to be sure they are the same
   //(do this even if loadSystemSettingsFromFile returned false)
   recordSystemSettings();
+
+  log_d("Settings loaded");
 }
 
 //Load settings without recording
@@ -84,6 +86,7 @@ void recordSystemSettings()
     EEPROM.put(0, settings);
     EEPROM.commit();
     delay(1); //Give CPU time to pet WDT
+    log_d("System settings recorded");
   }
   else
   {
@@ -115,8 +118,8 @@ void recordSystemSettingsToFile()
         Serial.println(F("Failed to create settings file"));
         return;
       }
-      if (online.gnss)
-        updateDataFileCreate(&settingsFile); // Update the file to create time & date
+
+      updateDataFileCreate(&settingsFile); // Update the file to create time & date
 
       settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
       settingsFile.println("rtkIdentifier=" + (String)settings.rtkIdentifier);
@@ -194,10 +197,11 @@ void recordSystemSettingsToFile()
         settingsFile.println(tempString);
       }
 
-      if (online.gnss)
-        updateDataFileAccess(&settingsFile); // Update the file access time & date
+      updateDataFileAccess(&settingsFile); // Update the file access time & date
 
       settingsFile.close();
+
+      log_d("System settings recorded to file");
 
       xSemaphoreGive(xFATSemaphore);
     }
@@ -337,6 +341,9 @@ bool parseLine(char* str) {
     }
   }
 
+  //  log_d("settingName: %s", settingName);
+  //  log_d("settingValue: %s", settingValue);
+  //  log_d("d: %0.3f", d);
 
   // Get setting name
   if (strcmp(settingName, "sizeOfSettings") == 0)

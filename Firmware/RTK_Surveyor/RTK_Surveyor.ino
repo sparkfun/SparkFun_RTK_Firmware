@@ -344,7 +344,7 @@ long lastStackReport = 0; //Controls the report rate of stack highwater mark wit
 uint32_t lastHeapReport = 0; //Report heap every 1s if option enabled
 uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
-uint32_t lastBeginLoggingAttempt = 0; //Wait 1000ms between newLog creation for ZED to get date/time
+uint32_t lastRTCAttempt = 0; //Wait 1000ms between checking GNSS for current date/time
 
 uint32_t lastSatelliteDishIconUpdate = 0;
 bool satelliteDishIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms
@@ -562,8 +562,8 @@ void updateLogs()
           //Calculate generation and write speeds every 5 seconds
           uint32_t fileSizeDelta = fileSize - lastLogSize;
           Serial.printf(" - Generation rate: %0.1fkB/s", fileSizeDelta / 5.0 / 1000.0);
-          
-          if(totalWriteTime > 0)
+
+          if (totalWriteTime > 0)
             Serial.printf(" - Write speed: %0.1fkB/s", fileSizeDelta / (totalWriteTime / 1000000.0) / 1000.0);
           else
             Serial.printf(" - Write speed: 0.0kB/s");
@@ -600,19 +600,39 @@ void updateRTC()
   {
     if (online.gnss == true)
     {
-      if (i2cGNSS.getConfirmedDate() == true && i2cGNSS.getConfirmedTime() == true)
+      if (millis() - lastRTCAttempt > 1000)
       {
-        //Set the internal system time
-        //This is normally set with WiFi NTP but we will rarely have WiFi
-        rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());  // 17th Jan 2021 15:24:30
+        lastRTCAttempt = millis();
 
-        online.rtc = true;
+        i2cGNSS.checkUblox();
 
-        Serial.print(F("System time set to: "));
-        Serial.println(rtc.getTime("%B %d %Y %H:%M:%S")); //From ESP32Time library example
+        bool timeValid = false;
+        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
+          timeValid = true;
+        if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
+          timeValid = true;
 
-        recordSystemSettingsToFile(); //This will re-record the setting file with current date/time.
-      }
-    }
-  }
+        if (timeValid == true)
+        {
+          //Set the internal system time
+          //This is normally set with WiFi NTP but we will rarely have WiFi
+          rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());  // 17th Jan 2021 15:24:30
+
+          online.rtc = true;
+
+          Serial.print(F("System time set to: "));
+          Serial.println(rtc.getTime("%B %d %Y %H:%M:%S")); //From ESP32Time library example
+
+          recordSystemSettingsToFile(); //This will re-record the setting file with current date/time.
+        }
+        else
+        {
+          Serial.println("No GNSS date/time available for system RTC.");
+        } //End timeValid
+      } //End lastRTCAttempt
+    } //End online.gnss
+  } //End online.rtc
+}
+
+void printElapsedTime(const char* title)
 }

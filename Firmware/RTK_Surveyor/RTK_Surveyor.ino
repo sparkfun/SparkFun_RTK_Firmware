@@ -399,6 +399,8 @@ bool newAPSettings = false; //Goes true when new setting is received via AP conf
 
 unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update via AP config.
 int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
+
+unsigned long startTime = 0; //Used for checking longest running functions
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -635,4 +637,6 @@ void updateRTC()
 }
 
 void printElapsedTime(const char* title)
+{
+  Serial.printf("%s: %d\n\r", title, millis() - startTime);
 }

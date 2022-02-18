@@ -187,6 +187,27 @@ struct struct_settings {
   float surveyInStartingAccuracy = 1.0; //Wait for 1m horizontal positional accuracy before starting survey in
   uint16_t measurementRate = 250; //Elapsed ms between GNSS measurements. 25ms to 65535ms. Default 4Hz.
   uint16_t navigationRate = 1; //Ratio between number of measurements and navigation solutions. Default 1 for 4Hz (with measurementRate).
+  bool enableI2Cdebug = false; //Turn on to display GNSS library debug messages
+  bool enableHeapReport = false; //Turn on to display free heap
+  bool enableTaskReports = false; //Turn on to display task high water marks
+  muxConnectionType_e dataPortChannel = MUX_UBLOX_NMEA; //Mux default to ublox UART1
+  uint16_t spiFrequency = 16; //By default, use 16MHz SPI
+  bool enableLogging = true; //If an SD card is present, log default sentences
+  uint16_t sppRxQueueSize = 2048;
+  uint16_t sppTxQueueSize = 512;
+  uint8_t dynamicModel = DYN_MODEL_PORTABLE;
+  SystemState lastState = STATE_ROVER_NOT_STARTED; //For Express, start unit in last known state
+  bool throttleDuringSPPCongestion = true;
+  bool enableSensorFusion = false; //If IMU is available, avoid using it unless user specifically selects automotive
+  bool autoIMUmountAlignment = true; //Allows unit to automatically establish device orientation in vehicle
+  bool enableResetDisplay = false;
+  uint8_t resetCount = 0;
+  bool enableExternalPulse = false; //Send pulse once lock is achieved
+  uint32_t externalPulseTimeBetweenPulse_us = 500000; //us between pulses, max of 65s
+  uint32_t externalPulseLength_us = 100000; //us length of pulse
+  pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; //Pulse rises for pulse length, then falls
+  bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
+
   ubxMsg ubxMessages[MAX_UBX_MSG] = //Report rates for all known messages
   {
     //NMEA
@@ -286,17 +307,6 @@ struct struct_settings {
     {UBLOX_CFG_MSGOUT_UBX_ESF_INS_UART1, UBX_ESF_INS, UBX_CLASS_ESF, 0, "UBX_ESF_INS", (PLATFORM_F9R)},
   };
 
-  bool enableI2Cdebug = false; //Turn on to display GNSS library debug messages
-  bool enableHeapReport = false; //Turn on to display free heap
-  bool enableTaskReports = false; //Turn on to display task high water marks
-  muxConnectionType_e dataPortChannel = MUX_UBLOX_NMEA; //Mux default to ublox UART1
-  uint16_t spiFrequency = 16; //By default, use 16MHz SPI
-  bool enableLogging = true; //If an SD card is present, log default sentences
-  uint16_t sppRxQueueSize = 2048;
-  uint16_t sppTxQueueSize = 512;
-  uint8_t dynamicModel = DYN_MODEL_PORTABLE;
-  SystemState lastState = STATE_ROVER_NOT_STARTED; //For Express, start unit in last known state
-  bool throttleDuringSPPCongestion = true;
   //Constellations monitored/used for fix
   ubxConstellation ubxConstellations[MAX_CONSTELLATIONS] = 
   {
@@ -309,15 +319,6 @@ struct struct_settings {
     {UBLOX_CFG_SIGNAL_GLO_ENA, SFE_UBLOX_GNSS_ID_GLONASS, true, "GLONASS"},
   };
 
-  bool enableSensorFusion = false; //If IMU is available, avoid using it unless user specifically selects automotive
-  bool autoIMUmountAlignment = true; //Allows unit to automatically establish device orientation in vehicle
-  bool enableResetDisplay = false;
-  uint8_t resetCount = 0;
-  bool enableExternalPulse = false; //Send pulse once lock is achieved
-  uint32_t externalPulseTimeBetweenPulse_us = 500000; //us between pulses, max of 65s
-  uint32_t externalPulseLength_us = 100000; //us length of pulse
-  pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; //Pulse rises for pulse length, then falls
-  bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
 } settings;
 
 //Monitor which devices on the device are on or offline.

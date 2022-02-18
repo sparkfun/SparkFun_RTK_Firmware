@@ -54,7 +54,7 @@ void updateSystemState()
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           settings.lastState = STATE_ROVER_NOT_STARTED;
-          recordSystemSettings();
+          recordSystemSettings(); //Record this state for next POR
 
           displayRoverSuccess(500);
 
@@ -128,7 +128,7 @@ void updateSystemState()
           if (configureUbloxModuleBase() == true)
           {
             settings.lastState = STATE_BASE_NOT_STARTED; //Record this state for next POR
-            recordSystemSettings();
+            recordSystemSettings(); //Record this state for next POR
 
             displayBaseSuccess(500); //Show 'Base Started'
 
@@ -303,7 +303,7 @@ void updateSystemState()
               char serverBuffer[SERVER_BUFFER_SIZE];
 
               snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
-                       settings.mountPointPW, settings.mountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+                       settings.mountPointUploadPW, settings.mountPointUpload, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));
@@ -477,7 +477,7 @@ void updateSystemState()
               char serverBuffer[SERVER_BUFFER_SIZE];
 
               snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
-                       settings.mountPointPW, settings.mountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+                       settings.mountPointUploadPW, settings.mountPointUpload, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
               caster.write(serverBuffer, strlen(serverBuffer));
@@ -571,7 +571,7 @@ void updateSystemState()
           if (online.logging == true)
           {
             char nmeaMessage[82]; //Max NMEA sentence length is 82
-            createNMEASentence(1, 2, nmeaMessage, (char*)"CustomEvent"); //sentenceNumber, textID, buffer, text
+            createNMEASentence(CUSTOM_NMEA_TYPE_WAYPOINT, nmeaMessage, (char*)"CustomEvent"); //textID, buffer, text
             ubxFile.println(nmeaMessage);
             displayEventMarked(500); //Show 'Event Marked'
           }
@@ -627,6 +627,7 @@ void updateSystemState()
               Serial.println();
 
               parseIncomingSettings();
+              recordSystemSettings(); //Record these settings to unit
 
               //Clear buffer
               incomingSettingsSpot = 0;
@@ -684,16 +685,12 @@ void requestChangeState(SystemState requestedState)
 {
   newSystemStateRequested = true;
   requestedSystemState = requestedState;
-  ESP_LOGD(TAG, "Requested System State: %d", requestedSystemState);
+  log_d("Requested System State: %d", requestedSystemState);
 }
 
 //Change states and print the new state
 void changeState(SystemState newState)
 {
-  //If we are leaving WiFi config, record and implement settings
-  if (systemState == STATE_WIFI_CONFIG)
-    recordSystemSettings(); //Record the new settings to EEPROM and config file
-
   systemState = newState;
 
   //Debug print

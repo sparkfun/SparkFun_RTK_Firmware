@@ -45,6 +45,7 @@ void startConfigAP()
   IPAddress local_IP(192, 168, 4, 1);
   IPAddress gateway(192, 168, 1, 1);
   IPAddress subnet(255, 255, 0, 0);
+
   WiFi.softAPConfig(local_IP, gateway, subnet);
   if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
   {
@@ -168,7 +169,7 @@ void startConfigAP()
     request->send(response);
   });
 
-  //Handler for the /update form POST
+  //Handler for the /upload form POST
   server.on("/upload", HTTP_POST, [](AsyncWebServerRequest * request) {
     request->send(200);
   }, handleFirmwareFileUpload);
@@ -183,65 +184,86 @@ void startConfigAP()
 #ifdef COMPILE_WIFI
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
-  if (online.microSD == false)
+  if (!index)
   {
-    Serial.println(F("No SD card available"));
-    return;
-  }
+    //Check file name against valid firmware names
+    const char* BIN_EXT = "bin";
+    const char* BIN_HEADER = "RTK_Surveyor_Firmware";
 
-  //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
-  if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) != pdPASS) {
-    Serial.println(F("Failed to get file system lock on firmware file"));
-    return;
-  }
+    char fname[50]; //Handle long file names
+    fileName.toCharArray(fname, sizeof(fname));
+    fname[fileName.length()] = '\0'; //Terminate array
 
-  if (!index) {
-    //Convert string to array
-    char tempFileName[100];
-    fileName.toCharArray(tempFileName, sizeof(tempFileName));
-
-    if (sd.exists(tempFileName))
+    //Check 'bin' extension
+    if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
     {
-      sd.remove(tempFileName);
-      Serial.printf("Removed old firmware file: %s\n\r", tempFileName);
+      //Check for 'RTK_Surveyor_Firmware' start of file name
+      if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
+      {
+        //Begin update process
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN))
+        {
+          Update.printError(Serial);
+          return request->send(400, "text/plain", "OTA could not begin");
+        }
+      }
+      else
+      {
+        Serial.printf("Unknown: %s\n\r", fname);
+        return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
+      }
     }
-
-    Serial.printf("Start Firmware Upload: %s\n\r", tempFileName);
-
-    // O_CREAT - create the file if it does not exist
-    // O_APPEND - seek to the end of the file prior to each write
-    // O_WRITE - open for write
-    if (newFirmwareFile.open(tempFileName, O_CREAT | O_APPEND | O_WRITE) == false)
+    else
     {
-      Serial.printf("Failed to create firmware file: %s\n\r", tempFileName);
-      xSemaphoreGive(xFATSemaphore);
-      return;
+      Serial.printf("Unknown: %s\n\r", fname);
+      return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
     }
   }
 
-  //Record to file
-  if (newFirmwareFile.write(data, len) != len)
-    log_e("Error writing to firmware file");
-  else
-    log_d("Recorded %d bytes to file\n\r", len);
+  // Write chunked data to the free sketch space
+  if (len)
+  {
+    if (Update.write(data, len) != len)
+      return request->send(400, "text/plain", "OTA could not begin");
+    else
+    {
+      binBytesSent += len;
+
+      //Send an update to browser every 100k
+      if (binBytesSent - binBytesLastUpdate > 100000)
+      {
+        binBytesLastUpdate = binBytesSent;
+
+        char bytesSentMsg[100];
+        sprintf(bytesSentMsg, "%'d bytes sent", binBytesSent);
+
+        Serial.printf("bytesSentMsg: %s\n\r", bytesSentMsg);
+
+        char statusMsg[200] = {'\0'};
+        stringRecord(statusMsg, "firmwareUploadStatus", bytesSentMsg); //Convert to "firmwareUploadMsg,11214 bytes sent,"
+
+        Serial.printf("msg: %s\n\r", statusMsg);
+        ws.textAll(statusMsg);
+      }
+
+    }
+  }
 
   if (final)
   {
-    updateDataFileCreate(&newFirmwareFile); // Update the file create time & date
-    newFirmwareFile.close();
-
-    Serial.print("Upload complete: ");
-    Serial.println(fileName);
-
-    binCount = 0;
-    xSemaphoreGive(xFATSemaphore); //Must release semaphore before scanning for firmware
-    scanForFirmware(); //Update firmware file list
-
-    //Reload page upon success - this will show all available firmware files
-    request->send(200, "text/html", "<meta http-equiv=\"Refresh\" content=\"0; url='/'\" />");
+    if (!Update.end(true))
+    {
+      Update.printError(Serial);
+      return request->send(400, "text/plain", "Could not end OTA");
+    }
+    else
+    {
+      ws.textAll("firmwareUploadComplete,1,");
+      Serial.println("Firmware update complete. Restarting");
+      delay(500);
+      ESP.restart();
+    }
   }
-
-  xSemaphoreGive(xFATSemaphore);
 }
 #endif
 
@@ -253,12 +275,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     char settingsCSV[3000];
     memset(settingsCSV, 0, sizeof(settingsCSV));
     createSettingsString(settingsCSV);
-    ESP_LOGD(TAG, "Sending command: %s\n\r", settingsCSV);
+    log_d("Sending command: %s\n\r", settingsCSV);
     client->text(settingsCSV);
     radioState = WIFI_CONNECTED;
   }
   else if (type == WS_EVT_DISCONNECT) {
-    ESP_LOGD(TAG, "Websocket client disconnected");
+    log_d("Websocket client disconnected");
     radioState = WIFI_ON_NOCONNECTION;
   }
   else if (type == WS_EVT_DATA) {
@@ -306,22 +328,37 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "baseTypeFixed", settings.fixedBase);
   stringRecord(settingsCSV, "observationSeconds", settings.observationSeconds);
   stringRecord(settingsCSV, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
-  stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", settings.fixedBaseCoordinateType);
+
+  if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
+  {
+    stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", true);
+    stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", false);
+  }
+  else
+  {
+    stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", false);
+    stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", true);
+  }
+
   stringRecord(settingsCSV, "fixedEcefX", settings.fixedEcefX, 3);
   stringRecord(settingsCSV, "fixedEcefY", settings.fixedEcefY, 3);
   stringRecord(settingsCSV, "fixedEcefZ", settings.fixedEcefZ, 3);
-  stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", !settings.fixedBaseCoordinateType);
   stringRecord(settingsCSV, "fixedLat", settings.fixedLat, 9);
   stringRecord(settingsCSV, "fixedLong", settings.fixedLong, 9);
   stringRecord(settingsCSV, "fixedAltitude", settings.fixedAltitude, 4);
 
   stringRecord(settingsCSV, "enableNtripServer", settings.enableNtripServer);
-  stringRecord(settingsCSV, "wifiSSID", settings.wifiSSID);
-  stringRecord(settingsCSV, "wifiPW", settings.wifiPW);
   stringRecord(settingsCSV, "casterHost", settings.casterHost);
   stringRecord(settingsCSV, "casterPort", settings.casterPort);
-  stringRecord(settingsCSV, "mountPoint", settings.mountPoint);
-  stringRecord(settingsCSV, "mountPointPW", settings.mountPointPW);
+  stringRecord(settingsCSV, "casterUser", settings.casterUser);
+  stringRecord(settingsCSV, "casterUserPW", settings.casterUserPW);
+  stringRecord(settingsCSV, "mountPointUpload", settings.mountPointUpload);
+  stringRecord(settingsCSV, "mountPointUploadPW", settings.mountPointUploadPW);
+  stringRecord(settingsCSV, "mountPointDownload", settings.mountPointDownload);
+  stringRecord(settingsCSV, "mountPointDownloadPW", settings.mountPointDownloadPW);
+  stringRecord(settingsCSV, "casterTransmitGGA", settings.casterTransmitGGA);
+  stringRecord(settingsCSV, "wifiSSID", settings.wifiSSID);
+  stringRecord(settingsCSV, "wifiPW", settings.wifiPW);
 
   //Sensor Fusion Config
   stringRecord(settingsCSV, "enableSensorFusion", settings.enableSensorFusion);
@@ -336,17 +373,6 @@ void createSettingsString(char* settingsCSV)
 
   stringRecord(settingsCSV, "enableResetDisplay", settings.enableResetDisplay);
 
-  //Pass any available firmware file names
-  if (binCount > 0)
-  {
-    for (int x = 0 ; x < binCount ; x++)
-    {
-      char firmwareFileID[50];
-      sprintf(firmwareFileID, "firmwareFileName%d", x);
-      stringRecord(settingsCSV, firmwareFileID, binFileNames[x]);
-    }
-  }
-
   //Turn on SD display block last
   stringRecord(settingsCSV, "sdMounted", online.microSD);
 
@@ -357,6 +383,9 @@ void createSettingsString(char* settingsCSV)
 
   strcat(settingsCSV, "\0");
   Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
+
+  //Is baseTypeSurveyIn 1 or 0
+  Serial.printf("settingsCSV: %s\n\r", settingsCSV);
 }
 
 //Given a settingName, and string value, update a given setting
@@ -369,7 +398,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   if (strcmp(settingValueStr, "true") == 0) settingValueBool = true;
 
   if (strcmp(settingName, "maxLogTime_minutes") == 0)
+  {
+    newAPSettings = true; //Mark settings as new to force record before reset
     settings.maxLogTime_minutes = settingValue;
+  }
   else if (strcmp(settingName, "measurementRateHz") == 0)
     settings.measurementRate = (int)(1000.0 / settingValue);
   else if (strcmp(settingName, "dynamicModel") == 0)
@@ -381,7 +413,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "observationPositionAccuracy") == 0)
     settings.observationPositionAccuracy = settingValue;
   else if (strcmp(settingName, "fixedBaseCoordinateTypeECEF") == 0)
-    settings.fixedBaseCoordinateType = settingValueBool;
+    settings.fixedBaseCoordinateType = !settingValueBool; //When ECEF is true, fixedBaseCoordinateType = 0 (COORD_TYPE_ECEF)
   else if (strcmp(settingName, "fixedEcefX") == 0)
     settings.fixedEcefX = settingValue;
   else if (strcmp(settingName, "fixedEcefY") == 0)
@@ -404,10 +436,20 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.casterHost, settingValueStr);
   else if (strcmp(settingName, "casterPort") == 0)
     settings.casterPort = settingValue;
-  else if (strcmp(settingName, "mountPoint") == 0)
-    strcpy(settings.mountPoint, settingValueStr);
-  else if (strcmp(settingName, "mountPointPW") == 0)
-    strcpy(settings.mountPointPW, settingValueStr);
+  else if (strcmp(settingName, "casterUser") == 0)
+    strcpy(settings.casterUser, settingValueStr);
+  else if (strcmp(settingName, "casterUserPW") == 0)
+    strcpy(settings.casterUserPW, settingValueStr);
+  else if (strcmp(settingName, "mountPointUpload") == 0)
+    strcpy(settings.mountPointUpload, settingValueStr);
+  else if (strcmp(settingName, "mountPointUploadPW") == 0)
+    strcpy(settings.mountPointUploadPW, settingValueStr);
+  else if (strcmp(settingName, "mountPointDownload") == 0)
+    strcpy(settings.mountPointDownload, settingValueStr);
+  else if (strcmp(settingName, "mountPointDownloadPW") == 0)
+    strcpy(settings.mountPointDownloadPW, settingValueStr);
+  else if (strcmp(settingName, "casterTransmitGGA") == 0)
+    settings.casterTransmitGGA = settingValueBool;
   else if (strcmp(settingName, "wifiSSID") == 0)
     strcpy(settings.wifiSSID, settingValueStr);
   else if (strcmp(settingName, "wifiPW") == 0)
@@ -435,12 +477,19 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "firmwareFileName") == 0)
   {
     updateFromSD(settingValueStr);
+
+    //If update is successful, it will force system reset and not get here.
+
     requestChangeState(STATE_ROVER_NOT_STARTED); //If update failed, return to Rover mode.
   }
   else if (strcmp(settingName, "factoryDefaultReset") == 0)
     factoryReset();
-  else if (strcmp(settingName, "exitToRoverMode") == 0)
-    requestChangeState(STATE_ROVER_NOT_STARTED);
+  else if (strcmp(settingName, "exitAndReset") == 0)
+  {
+    if (newAPSettings == true) recordSystemSettings(); //If we've recieved settings, record before restart
+
+    ESP.restart();
+  }
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list
@@ -540,21 +589,33 @@ void stringRecord(char* settingsCSV, const char *id, char* settingValue)
 }
 
 //Break CSV into setting constituents
+//Can't use strtok because we may have two commas next to each other, ie measurementRateHz,4.00,measurementRateSec,,dynamicModel,0,
 bool parseIncomingSettings()
 {
-  char settingName[50];
-  char valueStr[50]; //firmwareFileName,RTK_Surveyor_Firmware_v14.bin,
-  char *ptr = strtok(incomingSettings, ","); //measurementRateHz,2.00,
-  for (int x = 0 ; ptr != NULL ; x++)
+  char settingName[50] = {'\0'};
+  char valueStr[50] = {'\0'}; //firmwareFileName,RTK_Surveyor_Firmware_v14.bin,
+
+  char* commaPtr = incomingSettings;
+  char* headPtr = incomingSettings;
+  while (*headPtr) //Check if string is over
   {
-    strcpy(settingName, ptr);
-    ptr = strtok(NULL, ","); //Move to next comma
-    if (ptr == NULL) break;
+    //Spin to first comma
+    commaPtr = strstr(headPtr, ",");
+    if (commaPtr != NULL) {
+      *commaPtr = '\0';
+      strcpy(settingName, headPtr);
+      headPtr = commaPtr + 1;
+    }
 
-    strcpy(valueStr, ptr);
-    ptr = strtok(NULL, ","); //Move to next comma
+    commaPtr = strstr(headPtr, ",");
+    if (commaPtr != NULL) {
+      *commaPtr = '\0';
+      strcpy(valueStr, headPtr);
+      headPtr = commaPtr + 1;
+    }
 
-    //Serial.printf("settingName: %s value: %s\n\r", settingName, valueStr);
+    log_d("settingName: %s value: %s", settingName, valueStr);
+
     updateSettingWithValue(settingName, valueStr);
   }
 

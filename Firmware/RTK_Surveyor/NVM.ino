@@ -2,7 +2,7 @@ void loadSettings()
 {
   if (online.eeprom == false)
   {
-    ESP_LOGD(TAG, "Error: EEPROM not online");
+    log_d("Error: EEPROM not online");
     return;
   }
 
@@ -45,15 +45,17 @@ void loadSettings()
   //Record these new settings to EEPROM and config file to be sure they are the same
   //(do this even if loadSystemSettingsFromFile returned false)
   recordSystemSettings();
+
+  log_d("Settings loaded");
 }
 
-//Load settings without recording 
+//Load settings without recording
 //Used at very first boot to test for resetCounter
 void loadSettingsPartial()
 {
   if (online.eeprom == false)
   {
-    ESP_LOGD(TAG, "Error: EEPROM not online");
+    log_d("Error: EEPROM not online");
     return;
   }
 
@@ -61,10 +63,10 @@ void loadSettingsPartial()
   uint32_t testRead = 0;
   if (EEPROM.get(0, testRead) == 0xFFFFFFFF)
   {
-    ESP_LOGD(TAG, "EEPROM is blank");
+    log_d("EEPROM is blank");
     return; //EEPROM is blank, assume default settings
   }
-  
+
   EEPROM.get(0, settings); //Read current settings
 }
 
@@ -84,10 +86,11 @@ void recordSystemSettings()
     EEPROM.put(0, settings);
     EEPROM.commit();
     delay(1); //Give CPU time to pet WDT
+    log_d("System settings recorded");
   }
   else
   {
-    ESP_LOGD(TAG, "Error: EEPROM not online");
+    log_d("Error: EEPROM not online");
   }
 
   recordSystemSettingsToFile();
@@ -115,8 +118,8 @@ void recordSystemSettingsToFile()
         Serial.println(F("Failed to create settings file"));
         return;
       }
-      if (online.gnss)
-        updateDataFileCreate(&settingsFile); // Update the file to create time & date
+
+      updateDataFileCreate(&settingsFile); // Update the file to create time & date
 
       settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
       settingsFile.println("rtkIdentifier=" + (String)settings.rtkIdentifier);
@@ -152,8 +155,13 @@ void recordSystemSettingsToFile()
       settingsFile.println("enableNtripServer=" + (String)settings.enableNtripServer);
       settingsFile.println("casterHost=" + (String)settings.casterHost);
       settingsFile.println("casterPort=" + (String)settings.casterPort);
-      settingsFile.println("mountPoint=" + (String)settings.mountPoint);
-      settingsFile.println("mountPointPW=" + (String)settings.mountPointPW);
+      settingsFile.println("casterUser=" + (String)settings.casterUser);
+      settingsFile.println("casterUserPW=" + (String)settings.casterUserPW);
+      settingsFile.println("mountPointUpload=" + (String)settings.mountPointUpload);
+      settingsFile.println("mountPointUploadPW=" + (String)settings.mountPointUploadPW);
+      settingsFile.println("mountPointDownload=" + (String)settings.mountPointDownload);
+      settingsFile.println("mountPointDownloadPW=" + (String)settings.mountPointDownloadPW);
+      settingsFile.println("casterTransmitGGA=" + (String)settings.casterTransmitGGA);
       settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
       settingsFile.println("wifiPW=" + (String)settings.wifiPW);
       settingsFile.println("surveyInStartingAccuracy=" + (String)settings.surveyInStartingAccuracy);
@@ -189,10 +197,11 @@ void recordSystemSettingsToFile()
         settingsFile.println(tempString);
       }
 
-      if (online.gnss)
-        updateDataFileAccess(&settingsFile); // Update the file access time & date
+      updateDataFileAccess(&settingsFile); // Update the file access time & date
 
       settingsFile.close();
+
+      log_d("System settings recorded to file");
 
       xSemaphoreGive(xFATSemaphore);
     }
@@ -303,31 +312,38 @@ bool parseLine(char* str) {
   char settingName[40];
   sprintf(settingName, "%s", str);
 
+  double d = 0.0;
+  char settingValue[50] = "";
+
   //Move pointer to end of line
   str = strtok(nullptr, "\n");
-  if (!str) return false;
-
-  //Serial.printf("s = %s\r\n", str);
-  //Serial.flush();
-
-  //Attempt to convert string to double.
-  double d = strtod(str, &ptr);
-
-  //Serial.printf("d = %lf\r\n", d);
-  //Serial.flush();
-
-  char settingValue[50];
-  if (d == 0.0) //strtod failed, may be string or may be 0 but let it pass
+  if (!str)
   {
-    sprintf(settingValue, "%s", str);
+    //This line does not contain a \n or the settingValue is zero length
+    //so there is nothing to parse
+    //https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/77
   }
   else
   {
-    if (str == ptr || *skipSpace(ptr)) return false; //Check str pointer
+    //Attempt to convert string to double
+    d = strtod(str, &ptr);
 
-    //See issue https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/47
-    sprintf(settingValue, "%1.0lf", d); //Catch when the input is pure numbers (strtod was successful), store as settingValue
+    if (d == 0.0) //strtod failed, may be string or may be 0 but let it pass
+    {
+      sprintf(settingValue, "%s", str);
+    }
+    else
+    {
+      if (str == ptr || *skipSpace(ptr)) return false; //Check str pointer
+
+      //See issue https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/47
+      sprintf(settingValue, "%1.0lf", d); //Catch when the input is pure numbers (strtod was successful), store as settingValue
+    }
   }
+
+  //  log_d("settingName: %s", settingName);
+  //  log_d("settingValue: %s", settingValue);
+  //  log_d("d: %0.3f", d);
 
   // Get setting name
   if (strcmp(settingName, "sizeOfSettings") == 0)
@@ -398,10 +414,21 @@ bool parseLine(char* str) {
     strcpy(settings.casterHost, settingValue);
   else if (strcmp(settingName, "casterPort") == 0)
     settings.casterPort = d;
-  else if (strcmp(settingName, "mountPoint") == 0)
-    strcpy(settings.mountPoint, settingValue);
-  else if (strcmp(settingName, "mountPointPW") == 0)
-    strcpy(settings.mountPointPW, settingValue);
+
+  else if (strcmp(settingName, "casterUser") == 0)
+    strcpy(settings.casterUser, settingValue);
+  else if (strcmp(settingName, "casterUserPW") == 0)
+    strcpy(settings.casterUserPW, settingValue);
+  else if (strcmp(settingName, "mountPointUpload") == 0)
+    strcpy(settings.mountPointUpload, settingValue);
+  else if (strcmp(settingName, "mountPointUploadPW") == 0)
+    strcpy(settings.mountPointUploadPW, settingValue);
+  else if (strcmp(settingName, "mountPointDownload") == 0)
+    strcpy(settings.mountPointDownload, settingValue);
+  else if (strcmp(settingName, "mountPointDownloadPW") == 0)
+    strcpy(settings.mountPointDownloadPW, settingValue);
+  else if (strcmp(settingName, "casterTransmitGGA") == 0)
+    settings.casterTransmitGGA = d;
   else if (strcmp(settingName, "wifiSSID") == 0)
     strcpy(settings.wifiSSID, settingValue);
   else if (strcmp(settingName, "wifiPW") == 0)
@@ -494,9 +521,9 @@ bool parseLine(char* str) {
 //ESP32 doesn't have erase command so we do it here
 void eepromErase()
 {
-  if(online.eeprom == false)
+  if (online.eeprom == false)
   {
-    ESP_LOGD(TAG, "Error: EEPROM not online");
+    log_d("Error: EEPROM not online");
     return;
   }
   for (int i = 0 ; i < EEPROM_SIZE ; i++) {

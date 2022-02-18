@@ -17,7 +17,7 @@ void menuBase()
     {
       Serial.print(F("2) Toggle Coordinate System: "));
       if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF) Serial.println(F("ECEF"));
-      else Serial.println(F("Geographic"));
+      else Serial.println(F("Geodetic"));
 
       if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
       {
@@ -29,7 +29,7 @@ void menuBase()
         Serial.print(settings.fixedEcefZ, 4);
         Serial.println(F("m"));
       }
-      else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEOGRAPHIC)
+      else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
       {
         Serial.print(F("3) Set Lat/Long/Altitude coordinates: "));
         Serial.print(settings.fixedLat, 9);
@@ -70,10 +70,10 @@ void menuBase()
       Serial.println(settings.casterPort);
 
       Serial.print(F("9) Set Mountpoint: "));
-      Serial.println(settings.mountPoint);
+      Serial.println(settings.mountPointUpload);
 
       Serial.print(F("10) Set Mountpoint PW: "));
-      Serial.println(settings.mountPointPW);
+      Serial.println(settings.mountPointUploadPW);
     }
 
     Serial.println(F("x) Exit"));
@@ -115,7 +115,7 @@ void menuBase()
           }
         }
       }
-      else  if (settings.fixedBaseCoordinateType == COORD_TYPE_GEOGRAPHIC)
+      else  if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
       {
         Serial.println(F("Enter the fixed Lat/Long/Altitude coordinates that will be used in Base mode:"));
 
@@ -199,12 +199,12 @@ void menuBase()
     else if (incoming == 9 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Mount Point: "));
-      readLine(settings.mountPoint, sizeof(settings.mountPoint), menuTimeoutExtended);
+      readLine(settings.mountPointUpload, sizeof(settings.mountPointUpload), menuTimeoutExtended);
     }
     else if (incoming == 10 && settings.enableNtripServer == true)
     {
-      Serial.printf("Enter password for Mount Point %s: ", settings.mountPoint);
-      readLine(settings.mountPointPW, sizeof(settings.mountPointPW), menuTimeoutExtended);
+      Serial.printf("Enter password for Mount Point %s: ", settings.mountPointUpload);
+      readLine(settings.mountPointUploadPW, sizeof(settings.mountPointUploadPW), menuTimeoutExtended);
     }
     else if (incoming == STATUS_PRESSED_X)
       break;

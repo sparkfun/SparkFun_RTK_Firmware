@@ -164,7 +164,7 @@ bool startFixedBase()
                                          maxWait
                                         ); //With high precision 0.1mm parts
   }
-  else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEOGRAPHIC)
+  else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
   {
     //Break coordinates into main and high precision parts
     //The type casting should not effect rounding of original double cast coordinate

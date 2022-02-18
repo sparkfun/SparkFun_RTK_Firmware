@@ -6,7 +6,7 @@
   This firmware runs the core of the SparkFun RTK Surveyor product. It runs on an ESP32
   and communicates with the ZED-F9P.
 
-  Compiled with Arduino v1.8.13 with ESP32 core v1.0.6.
+  Compiled with Arduino v1.8.15 with ESP32 core v2.0.1.
   v1.7 Moves to ESP32 core v2.0.0.
 
   Select the ESP32 Dev Module from the boards list. This maps the same pins to the ESP32-WROOM module.
@@ -39,10 +39,16 @@
     (Done) Firmware upgrade menu
     Enable various debug outputs sent over BT
 
+  TODO:
+    Change AP to 'mountPointUpload' and PW upload
+    Add mountPointDownload and PWDownload to AP config
+    Add casterTransmitGGA to AP config
+    Add casterUser/PW to AP ocnfig
+
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 9;
+const int FIRMWARE_VERSION_MINOR = 10;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
@@ -82,6 +88,14 @@ int pin_powerFastOff;
 int pin_dac26;
 int pin_adc39;
 int pin_peripheralPowerControl;
+
+int pin_radio_rx;
+int pin_radio_tx;
+int pin_radio_rst;
+int pin_radio_pwr;
+int pin_radio_cts;
+int pin_radio_rts;
+
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //I2C for GNSS, battery gauge, display, accelerometer
@@ -293,9 +307,19 @@ AsyncWebSocket ws("/ws");
 
 //Because the incoming string is longer than max len, there are multiple callbacks so we
 //use a global to combine the incoming
-char incomingSettings[2000];
+char incomingSettings[3000];
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//Cellular Radio
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#include <SparkFun_u-blox_SARA-R5_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_SARA-R5_Arduino_Library
+SARA_R5 *mySARA = NULL; //We can't instantiate here because we don't yet know what pin numbers to use
+
+#include "base64.h" //Built-in ESP32 library. Needed for Caster credentials.
+
+int socketNumber = -1;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Global variables
@@ -320,7 +344,7 @@ long lastStackReport = 0; //Controls the report rate of stack highwater mark wit
 uint32_t lastHeapReport = 0; //Report heap every 1s if option enabled
 uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
-uint32_t lastBeginLoggingAttempt = 0; //Wait 1000ms between newLog creation for ZED to get date/time
+uint32_t lastRTCAttempt = 0; //Wait 1000ms between checking GNSS for current date/time
 
 uint32_t lastSatelliteDishIconUpdate = 0;
 bool satelliteDishIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms
@@ -353,6 +377,30 @@ uint32_t lastSetupMenuChange = 0; //Auto-selects the setup menu option after 150
 uint32_t lastTestMenuChange = 0; //Avoids exiting the test menu for at least 1 second
 
 bool firstRoverStart = false; //Used to detect if user is toggling power button at POR to enter test menu
+
+bool newEventToRecord = false; //Goes true when INT pin goes high
+uint32_t triggerCount = 0; //Global copy - TM2 event counter
+uint32_t towMsR = 0; //Global copy - Time Of Week of rising edge (ms)
+uint32_t towSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
+
+long lastReceivedRTCM_ms = 0;       //5 RTCM messages take approximately ~300ms to arrive at 115200bps
+int timeBetweenGGAUpdate_ms = 10000; //GGA is required for Rev2 NTRIP casters. Don't transmit but once every 10 seconds
+long lastTransmittedGGA_ms = 0;
+
+//Used for GGA sentence parsing from incoming NMEA
+bool ggaSentenceStarted = false;
+bool ggaSentenceComplete = false;
+bool ggaTransmitComplete = false; //Goes true once we transmit GGA to the caster
+char ggaSentence[128] = {0};
+byte ggaSentenceSpot = 0;
+int ggaSentenceEndSpot = 0;
+
+bool newAPSettings = false; //Goes true when new setting is received via AP config. Allows us to record settings when combined with a reset.
+
+unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update via AP config.
+int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
+
+unsigned long startTime = 0; //Used for checking longest running functions
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -386,6 +434,10 @@ void setup()
 
   beginAccelerometer();
 
+  //beginSARA();
+
+  beginExternalTriggers(); //Configure the time pulse output and TM2 input
+
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
   Serial.flush(); //Complete any previous prints
@@ -396,6 +448,7 @@ void setup()
 void loop()
 {
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
 
   updateSystemState();
 
@@ -467,6 +520,27 @@ void updateLogs()
       }
     }
 
+    //Record any pending trigger events
+    if (newEventToRecord == true)
+    {
+      Serial.println("Recording event");
+
+      //Record trigger count with Time Of Week of rising edge (ms) and Millisecond fraction of Time Of Week of rising edge (ns)
+      char eventData[82]; //Max NMEA sentence length is 82
+      snprintf(eventData, sizeof(eventData), "%d,%d,%d", triggerCount, towMsR, towSubMsR);
+
+      char nmeaMessage[82]; //Max NMEA sentence length is 82
+      createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, eventData); //textID, buffer, text
+
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+      {
+        ubxFile.println(nmeaMessage);
+
+        xSemaphoreGive(xFATSemaphore);
+        newEventToRecord = false;
+      }
+    }
+
     //Report file sizes to show recording is working
     if (millis() - lastFileReport > 5000)
     {
@@ -490,8 +564,8 @@ void updateLogs()
           //Calculate generation and write speeds every 5 seconds
           uint32_t fileSizeDelta = fileSize - lastLogSize;
           Serial.printf(" - Generation rate: %0.1fkB/s", fileSizeDelta / 5.0 / 1000.0);
-          
-          if(totalWriteTime > 0)
+
+          if (totalWriteTime > 0)
             Serial.printf(" - Write speed: %0.1fkB/s", fileSizeDelta / (totalWriteTime / 1000000.0) / 1000.0);
           else
             Serial.printf(" - Write speed: 0.0kB/s");
@@ -512,7 +586,7 @@ void updateLogs()
         }
         else
         {
-          ESP_LOGD(TAG, "Log file: No increase in file size");
+          log_d("Log file: No increase in file size");
           logIncreasing = false;
         }
       }
@@ -528,19 +602,41 @@ void updateRTC()
   {
     if (online.gnss == true)
     {
-      if (i2cGNSS.getConfirmedDate() == true && i2cGNSS.getConfirmedTime() == true)
+      if (millis() - lastRTCAttempt > 1000)
       {
-        //Set the internal system time
-        //This is normally set with WiFi NTP but we will rarely have WiFi
-        rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());  // 17th Jan 2021 15:24:30
+        lastRTCAttempt = millis();
 
-        online.rtc = true;
+        i2cGNSS.checkUblox();
 
-        Serial.print(F("System time set to: "));
-        Serial.println(rtc.getTime("%B %d %Y %H:%M:%S")); //From ESP32Time library example
+        bool timeValid = false;
+        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
+          timeValid = true;
+        if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
+          timeValid = true;
 
-        recordSystemSettingsToFile(); //This will re-record the setting file with current date/time.
-      }
-    }
-  }
+        if (timeValid == true)
+        {
+          //Set the internal system time
+          //This is normally set with WiFi NTP but we will rarely have WiFi
+          rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());  // 17th Jan 2021 15:24:30
+
+          online.rtc = true;
+
+          Serial.print(F("System time set to: "));
+          Serial.println(rtc.getDateTime(true));
+
+          recordSystemSettingsToFile(); //This will re-record the setting file with current date/time.
+        }
+        else
+        {
+          Serial.println("No GNSS date/time available for system RTC.");
+        } //End timeValid
+      } //End lastRTCAttempt
+    } //End online.gnss
+  } //End online.rtc
+}
+
+void printElapsedTime(const char* title)
+{
+  Serial.printf("%s: %d\n\r", title, millis() - startTime);
 }

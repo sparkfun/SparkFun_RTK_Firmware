@@ -89,6 +89,13 @@ void beginBoard()
     pin_powerFastOff = 27;
     pin_adc39 = 39;
 
+    pin_radio_rx = 33;
+    pin_radio_tx = 32;
+    pin_radio_rst = 15;
+    pin_radio_pwr = 4;
+    pin_radio_cts = 5;
+    //pin_radio_rts = 255; //Not implemented
+
     pinMode(pin_powerSenseAndControl, INPUT_PULLUP);
     pinMode(pin_powerFastOff, INPUT);
 
@@ -101,6 +108,10 @@ void beginBoard()
     digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, ZED, etc
 
     setMuxport(settings.dataPortChannel); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
+
+    //CTS is active low. ESP32 pin 5 has pullup at POR. We must drive it low.
+    pinMode(pin_radio_cts, OUTPUT);
+    digitalWrite(pin_radio_cts, LOW);
 
     strcpy(platformFilePrefix, "SFE_Facet");
     strcpy(platformPrefix, "Facet");
@@ -349,8 +360,10 @@ void beginGNSS()
       zedFirmwareVersionInt = 120;
     else if (strstr(zedFirmwareVersion, "1.21") != NULL) //Future F9R HPS v1.21
       zedFirmwareVersionInt = 121;
+    else if (strstr(zedFirmwareVersion, "1.30") != NULL) //ZED-F9P released Dec, 2021
+      zedFirmwareVersionInt = 130;
     else
-      Serial.printf("Unknown firmware version: %s", zedFirmwareVersion);
+      Serial.printf("Unknown firmware version: %s\n\r", zedFirmwareVersion);
 
     //Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
     if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9P") != NULL)
@@ -475,12 +488,25 @@ void beginSystemState()
   {
     systemState = settings.lastState; //Return to system state previous to power down.
 
+    if (systemState > STATE_SHUTDOWN)
+    {
+      Serial.println("Unknown state - factory reset");
+      factoryReset();
+    }
+
     setupBtn = new Button(pin_setupButton); //Create the button in memory
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }
   else if (productVariant == RTK_FACET)
   {
     systemState = settings.lastState; //Return to system state previous to power down.
+
+    if (systemState > STATE_SHUTDOWN)
+    {
+      Serial.println("Unknown state - factory reset");
+      factoryReset();
+    }
+
     if (systemState == STATE_ROVER_NOT_STARTED)
       firstRoverStart = true; //Allow user to enter test screen during first rover start
 
@@ -496,4 +522,88 @@ void beginSystemState()
       NULL, //Task input parameter
       ButtonCheckTaskPriority,
       &ButtonCheckTaskHandle); //Task handle
+}
+
+//Setup the timepulse output on the PPS pin for external triggering
+//Setup TM2 time stamp input as need
+void beginExternalTriggers()
+{
+  UBX_CFG_TP5_data_t timePulseParameters;
+
+  if (i2cGNSS.getTimePulseParameters(&timePulseParameters) == false)
+    log_e("getTimePulseParameters failed!");
+
+  timePulseParameters.tpIdx = 0; // Select the TIMEPULSE pin
+
+  // While the module is _locking_ to GNSS time, turn off pulse
+  timePulseParameters.freqPeriod = 1000000; //Set the period between pulses in us
+  timePulseParameters.pulseLenRatio = 0; //Set the pulse length in us
+
+  // When the module is _locked_ to GNSS time, make it generate 1kHz
+  timePulseParameters.freqPeriodLock = settings.externalPulseTimeBetweenPulse_us; //Set the period between pulses is us
+  timePulseParameters.pulseLenRatioLock = settings.externalPulseLength_us; //Set the pulse length in us
+
+  timePulseParameters.flags.bits.active = settings.enableExternalPulse; //Make sure the active flag is set to enable the time pulse. (Set to 0 to disable.)
+  timePulseParameters.flags.bits.lockedOtherSet = 1; //Tell the module to use freqPeriod while locking and freqPeriodLock when locked to GNSS time
+  timePulseParameters.flags.bits.isFreq = 0; //Tell the module that we want to set the period
+  timePulseParameters.flags.bits.isLength = 1; //Tell the module that pulseLenRatio is a length (in us)
+  timePulseParameters.flags.bits.polarity = (uint8_t)settings.externalPulsePolarity; //Rising or failling edge type pulse
+
+  if (i2cGNSS.setTimePulseParameters(&timePulseParameters, 1000) == false)
+    log_e("setTimePulseParameters failed!");
+
+  if (settings.enableExternalHardwareEventLogging == true)
+    i2cGNSS.setAutoTIMTM2callback(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
+  else
+    i2cGNSS.setAutoTIMTM2callback(NULL);
+}
+
+//Test and begin serial1 connection with SARA
+void beginSARA()
+{
+  mySARA = new SARA_R5(pin_radio_pwr, pin_radio_rst, 3);
+
+  //mySARA->enableDebugging();
+
+  int radioBaud = 115200;
+  Serial1.begin(radioBaud, SERIAL_8N1, pin_radio_tx, pin_radio_rx); //RX, TX
+
+  if (isRadioConnected() == false)
+  {
+    log_d("Radio not detected");
+    resetSARA();
+  }
+
+  if (mySARA->begin(Serial1, radioBaud) == true)
+  {
+    log_d("Cellular connected");
+    online.cellular = true;
+  }
+  else
+  {
+    log_d("Cellular failed to connected");
+    online.cellular = false;
+  }
+}
+
+//At POR SARA is at 115200
+//SARA does not respond to AT commands for ~2s after POR
+//Quick test at 115200. Should respond immediately if not at POR.
+bool isRadioConnected()
+{
+  for (int x = 0 ; x < 5 ; x++)
+  {
+    Serial1.print("AT\r");
+    delay(10);
+
+    if (Serial1.available())
+    {
+      log_d("Radio Responded");
+      return (true);
+    }
+    delay(10);
+  }
+
+  log_d("No radio response");
+  return (false);
 }

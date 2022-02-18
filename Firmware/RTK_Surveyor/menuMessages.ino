@@ -306,141 +306,112 @@ void beginLogging()
 {
   if (online.logging == false)
   {
-    if (online.microSD == true && settings.enableLogging == true)
+    if (online.microSD == true && settings.enableLogging == true && online.rtc == true) //We can't create a file until we have date/time
     {
-      //Wait 1000ms between newLog creation for ZED to get date/time
-      if (millis() - lastBeginLoggingAttempt > 1000)
+      char fileName[40] = "";
+
+      if (reuseLastLog == true) //attempt to use previous log
       {
-        lastBeginLoggingAttempt = millis();
+        if (findLastLog(fileName) == false)
+          log_d("Failed to find last log. Making new one.");
+      }
 
-        char fileName[40] = "";
+      if (strlen(fileName) == 0)
+      {
+        sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+                platformFilePrefix,
+                rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11 
+                rtc.getHour(), rtc.getMinute(), rtc.getSecond()
+               );
+      }
 
-        i2cGNSS.checkUblox();
-
-        if (reuseLastLog == true) //attempt to use previous log
+      //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+      {
+        // O_CREAT - create the file if it does not exist
+        // O_APPEND - seek to the end of the file prior to each write
+        // O_WRITE - open for write
+        if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
         {
-          if (findLastLog(fileName) == false)
-          {
-            Serial.println(F("Failed to find last log. Making new one."));
-          }
-        }
-
-        if (strlen(fileName) == 0)
-        {
-          //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
-          bool timeValid = false;
-          //        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
-          //          timeValid = true;
-          if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
-            timeValid = true;
-
-          if (timeValid == false)
-          {
-            Serial.println(F("beginLoggingUBX: No date/time available. No file created."));
-            online.logging = false;
-            return;
-          }
-
-          sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
-                  platformFilePrefix,
-                  i2cGNSS.getYear() - 2000, i2cGNSS.getMonth(), i2cGNSS.getDay(),
-                  i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond()
-                 );
-        }
-
-        //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
-        if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-        {
-          // O_CREAT - create the file if it does not exist
-          // O_APPEND - seek to the end of the file prior to each write
-          // O_WRITE - open for write
-          if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
-          {
-            Serial.printf("Failed to create GNSS UBX data file: %s\n\r", fileName);
-            online.logging = false;
-            xSemaphoreGive(xFATSemaphore);
-            return;
-          }
-
-          updateDataFileCreate(&ubxFile); // Update the file to create time & date
-
-          startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
-
-          //Add NMEA txt message with restart reason
-          char rstReason[30];
-          switch (esp_reset_reason())
-          {
-            case ESP_RST_UNKNOWN: strcpy(rstReason, "ESP_RST_UNKNOWN"); break;
-            case ESP_RST_POWERON : strcpy(rstReason, "ESP_RST_POWERON"); break;
-            case ESP_RST_SW : strcpy(rstReason, "ESP_RST_SW"); break;
-            case ESP_RST_PANIC : strcpy(rstReason, "ESP_RST_PANIC"); break;
-            case ESP_RST_INT_WDT : strcpy(rstReason, "ESP_RST_INT_WDT"); break;
-            case ESP_RST_TASK_WDT : strcpy(rstReason, "ESP_RST_TASK_WDT"); break;
-            case ESP_RST_WDT : strcpy(rstReason, "ESP_RST_WDT"); break;
-            case ESP_RST_DEEPSLEEP : strcpy(rstReason, "ESP_RST_DEEPSLEEP"); break;
-            case ESP_RST_BROWNOUT : strcpy(rstReason, "ESP_RST_BROWNOUT"); break;
-            case ESP_RST_SDIO : strcpy(rstReason, "ESP_RST_SDIO"); break;
-            default : strcpy(rstReason, "Unknown");
-          }
-
-          char nmeaMessage[82]; //Max NMEA sentence length is 82
-          createNMEASentence(1, 1, nmeaMessage, rstReason); //sentenceNumber, textID, buffer, text
-          ubxFile.println(nmeaMessage);
-
-          if (reuseLastLog == true)
-          {
-            Serial.println(F("Appending last available log"));
-          }
-
-          xSemaphoreGive(xFATSemaphore);
-        }
-        else
-        {
-          Serial.println(F("Failed to get file system lock to create GNSS UBX data file"));
+          Serial.printf("Failed to create GNSS UBX data file: %s\n\r", fileName);
           online.logging = false;
+          xSemaphoreGive(xFATSemaphore);
           return;
         }
 
-        Serial.printf("Log file created: %s\n\r", fileName);
-        online.logging = true;
-      } //lastBeginLoggingAttempt > 1000ms
-    } //sdOnline, settings.logging = true
-    else
-      online.logging = false;
-  } //online.logging = false
+        updateDataFileCreate(&ubxFile); // Update the file to create time & date
+
+        startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
+
+        //Add NMEA txt message with restart reason
+        char rstReason[30];
+        switch (esp_reset_reason())
+        {
+          case ESP_RST_UNKNOWN: strcpy(rstReason, "ESP_RST_UNKNOWN"); break;
+          case ESP_RST_POWERON : strcpy(rstReason, "ESP_RST_POWERON"); break;
+          case ESP_RST_SW : strcpy(rstReason, "ESP_RST_SW"); break;
+          case ESP_RST_PANIC : strcpy(rstReason, "ESP_RST_PANIC"); break;
+          case ESP_RST_INT_WDT : strcpy(rstReason, "ESP_RST_INT_WDT"); break;
+          case ESP_RST_TASK_WDT : strcpy(rstReason, "ESP_RST_TASK_WDT"); break;
+          case ESP_RST_WDT : strcpy(rstReason, "ESP_RST_WDT"); break;
+          case ESP_RST_DEEPSLEEP : strcpy(rstReason, "ESP_RST_DEEPSLEEP"); break;
+          case ESP_RST_BROWNOUT : strcpy(rstReason, "ESP_RST_BROWNOUT"); break;
+          case ESP_RST_SDIO : strcpy(rstReason, "ESP_RST_SDIO"); break;
+          default : strcpy(rstReason, "Unknown");
+        }
+
+        char nmeaMessage[82]; //Max NMEA sentence length is 82
+        createNMEASentence(CUSTOM_NMEA_TYPE_RESET_REASON, nmeaMessage, rstReason); //textID, buffer, text
+        ubxFile.println(nmeaMessage);
+
+        //Record system firmware versions and info to log
+
+        //SparkFun RTK Express v1.10-Feb 11 2022
+        char firmwareVersion[30]; //v1.3 December 31 2021
+        sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+        createNMEASentence(CUSTOM_NMEA_TYPE_SYSTEM_VERSION, nmeaMessage, firmwareVersion); //textID, buffer, text
+        ubxFile.println(nmeaMessage);
+
+        //ZED-F9P firmware: HPG 1.30
+        createNMEASentence(CUSTOM_NMEA_TYPE_ZED_VERSION, nmeaMessage, zedFirmwareVersion); //textID, buffer, text
+        ubxFile.println(nmeaMessage);
+
+        if (reuseLastLog == true)
+        {
+          Serial.println(F("Appending last available log"));
+        }
+
+        xSemaphoreGive(xFATSemaphore);
+      }
+      else
+      {
+        Serial.println(F("Failed to get file system lock to create GNSS UBX data file"));
+        online.logging = false;
+        return;
+      }
+
+      Serial.printf("Log file created: %s\n\r", fileName);
+      online.logging = true;
+    } //online.sd, enable.logging, online.rtc
+  } //online.logging
 }
 
-//Updates the timestemp on a given data file
+//Update the file access and write time with date and time obtained from GNSS
 void updateDataFileAccess(SdFile *dataFile)
 {
-  bool timeValid = false;
-  if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
-    timeValid = true;
-  if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
-    timeValid = true;
-
-  if (timeValid == true)
+  if (online.rtc == true)
   {
-    //Update the file access time
-    dataFile->timestamp(T_ACCESS, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
-    //Update the file write time
-    dataFile->timestamp(T_WRITE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
+    //ESP32Time returns month:0-11 
+    dataFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond());
+    dataFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond());
   }
 }
 
+//Update the file create time with date and time obtained from GNSS
 void updateDataFileCreate(SdFile *dataFile)
 {
-  bool timeValid = false;
-  if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
-    timeValid = true;
-  if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
-    timeValid = true;
-
-  if (timeValid == true)
-  {
-    //Update the file create time
-    dataFile->timestamp(T_CREATE, i2cGNSS.getYear(), i2cGNSS.getMonth(), i2cGNSS.getDay(), i2cGNSS.getHour(), i2cGNSS.getMinute(), i2cGNSS.getSecond());
-  }
+  if (online.rtc == true)
+    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11 
 }
 
 //Finds last log

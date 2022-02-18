@@ -35,7 +35,7 @@ function ge(e) {
 var platformPrefix = "Surveyor";
 
 function parseIncoming(msg) {
-    console.log("incoming message: " + msg);
+    //console.log("incoming message: " + msg);
 
     var data = msg.split(',');
     for (let x = 0; x < data.length - 1; x += 2) {
@@ -106,24 +106,27 @@ function parseIncoming(msg) {
         ) {
             ge(id).innerHTML = val;
         }
-        else if (id.includes("firmwareFileName")) {
-            show("firmwareAvailable"); //Turn on firmware area
-
-            ge(id).innerHTML = val;
-            if (id.includes("0")) show("firmwareFile0");
-            if (id.includes("1")) show("firmwareFile1");
-            if (id.includes("2")) show("firmwareFile2");
-            if (id.includes("3")) show("firmwareFile3");
-            if (id.includes("4")) show("firmwareFile4");
-            if (id.includes("5")) show("firmwareFile5");
+        else if (id.includes("firmwareUploadComplete")) {
+            firmwareUploadComplete();
+        }
+        else if (id.includes("firmwareUploadStatus")) {
+            firmwareUploadStatus(val);
         }
 
         //Check boxes / radio buttons
         else if (val == "true") {
-            ge(id).checked = true;
+            try {
+                ge(id).checked = true;
+            } catch (error) {
+                console.log("Issue with ID: " + id)
+            }
         }
         else if (val == "false") {
-            ge(id).checked = false;
+            try {
+                ge(id).checked = false;
+            } catch (error) {
+                console.log("Issue with ID: " + id)
+            }
         }
 
         //All regular input boxes and values
@@ -174,22 +177,6 @@ function sendData() {
 
     console.log("Sending: " + settingCSV);
     ws.send(settingCSV);
-}
-
-function sendFirmwareFile() {
-    var firmwareFileName = "firmwareFileName,";
-
-    //ID the firmware file radio
-    if (ge("file0").checked) firmwareFileName += ge("firmwareFileName0").innerHTML;
-    else if (ge("file1").checked) firmwareFileName += ge("firmwareFileName1").innerHTML;
-    else if (ge("file2").checked) firmwareFileName += ge("firmwareFileName2").innerHTML;
-    else if (ge("file3").checked) firmwareFileName += ge("firmwareFileName3").innerHTML;
-    else if (ge("file4").checked) firmwareFileName += ge("firmwareFileName4").innerHTML;
-    else if (ge("file5").checked) firmwareFileName += ge("firmwareFileName5").innerHTML;
-
-    firmwareFileName += ","
-    ws.send(firmwareFileName);
-    ge("firmwareUpdateMsg").innerHTML = 'Updating, please wait for system reset...';
 }
 
 function showError(id, errorText) {
@@ -333,8 +320,8 @@ function validateFields() {
     checkElementString("wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
     checkElementString("casterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
     checkElementValue("casterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
-    checkElementString("mountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-    checkElementString("mountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("mountPointUpload", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("mountPointUploadPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
 
     //System Config
     checkElementValue("maxLogTime_minutes", 1, 2880, "Must be 1 to 2880", "collapseSystemConfig");
@@ -514,11 +501,20 @@ function resetToLoggingDefaults() {
 function exitConfig() {
     show("exitPage");
     hide("mainPage");
-    ws.send("exitToRoverMode,1,");
+    ws.send("exitAndReset,1,");
 }
 
 function firmwareUploadWait() {
-    ge("firmwareUploadMsg").innerHTML = "<br>Uploading, please wait....";
+    ge("firmwareUploadMsg").innerHTML = "<br>Uploading, please wait...";
+}
+
+function firmwareUploadStatus(val) {
+    ge("firmwareUploadMsg").innerHTML = val;
+}
+
+function firmwareUploadComplete() {
+    show("firmwareUploadComplete");
+    hide("mainPage");
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -567,7 +563,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
                 ge("fixedEcefX").disabled = false;
                 ge("fixedEcefY").disabled = false;
                 ge("fixedEcefZ").disabled = false;
-                //Disable Geographic inputs
+                //Disable Geodetic inputs
                 ge("fixedLat").disabled = true;
                 ge("fixedLong").disabled = true;
                 ge("fixedAltitude").disabled = true;
@@ -577,7 +573,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
                 ge("fixedEcefX").disabled = true;
                 ge("fixedEcefY").disabled = true;
                 ge("fixedEcefZ").disabled = true;
-                //Disable Geographic inputs
+                //Disable Geodetic inputs
                 ge("fixedLat").disabled = false;
                 ge("fixedLong").disabled = false;
                 ge("fixedAltitude").disabled = false;
@@ -592,7 +588,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = false;
             ge("fixedEcefY").disabled = false;
             ge("fixedEcefZ").disabled = false;
-            //Disable Geographic inputs
+            //Disable Geodetic inputs
             ge("fixedLat").disabled = true;
             ge("fixedLong").disabled = true;
             ge("fixedAltitude").disabled = true;
@@ -602,7 +598,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = true;
             ge("fixedEcefY").disabled = true;
             ge("fixedEcefZ").disabled = true;
-            //Disable Geographic inputs
+            //Enable Geodetic inputs
             ge("fixedLat").disabled = false;
             ge("fixedLong").disabled = false;
             ge("fixedAltitude").disabled = false;
@@ -616,7 +612,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = true;
             ge("fixedEcefY").disabled = true;
             ge("fixedEcefZ").disabled = true;
-            //Disable Geographic inputs
+            //Enable Geodetic inputs
             ge("fixedLat").disabled = false;
             ge("fixedLong").disabled = false;
             ge("fixedAltitude").disabled = false;
@@ -626,7 +622,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("fixedEcefX").disabled = false;
             ge("fixedEcefY").disabled = false;
             ge("fixedEcefZ").disabled = false;
-            //Disable Geographic inputs
+            //Disable Geodetic inputs
             ge("fixedLat").disabled = true;
             ge("fixedLong").disabled = true;
             ge("fixedAltitude").disabled = true;
@@ -640,8 +636,8 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("wifiPW").disabled = false;
             ge("casterHost").disabled = false;
             ge("casterPort").disabled = false;
-            ge("mountPoint").disabled = false;
-            ge("mountPointPW").disabled = false;
+            ge("mountPointUpload").disabled = false;
+            ge("mountPointUploadPW").disabled = false;
         }
         else {
             //Disable NTRIP inputs
@@ -649,8 +645,8 @@ document.addEventListener("DOMContentLoaded", (event) => {
             ge("wifiPW").disabled = true;
             ge("casterHost").disabled = true;
             ge("casterPort").disabled = true;
-            ge("mountPoint").disabled = true;
-            ge("mountPointPW").disabled = true;
+            ge("mountPointUpload").disabled = true;
+            ge("mountPointUploadPW").disabled = true;
         }
     });
 
@@ -673,25 +669,6 @@ document.addEventListener("DOMContentLoaded", (event) => {
         else {
             //Disable button
             ge("factoryDefaults").disabled = true;
-        }
-    });
-
-    //Enable the check box
-    ge("firmwareFile0").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile1").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile2").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile3").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile4").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-    ge("firmwareFile5").addEventListener("change", function () { ge("enableFirmwareUpdate").disabled = false; });
-
-    ge("enableFirmwareUpdate").addEventListener("change", function () {
-        if (ge("enableFirmwareUpdate").checked) {
-            //Enable button
-            ge("firmwareUpdate").disabled = false;
-        }
-        else {
-            //Disable button
-            ge("firmwareUpdate").disabled = true;
         }
     });
 
@@ -799,7 +776,11 @@ static const char *index_html = R"=====(
 <body>
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="exitPage">
-        <b>Done</b><br><br>RTK device is now in Rover mode.
+        <b>Done</b><br><br>RTK device is now rebooting.
+    </div>
+
+    <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="firmwareUploadComplete">
+        <b>Done</b><br><br>Firmware update complete. RTK device is now rebooting.
     </div>
 
     <div class="container" style="margin-top:20px;max-width:600px;" id="mainPage">
@@ -1592,7 +1573,7 @@ static const char *index_html = R"=====(
                         <label class="form-check-label" for="enableNtripServer">Enable NTRIP Server</label>
                         <input class="form-check-input" type="checkbox" value="" id="enableNtripServer">
                         <span class="tt" data-bs-placement="right"
-                            title="Once a base station is outputting correction data it can be pushed to an NTRIP caster via local Wifi. Other devices can access the correction stream using an NTRIP client. Default: Disabled.">
+                            title="Use this NTRIP server to upload the base's correction data to a casting service. Other devices can then access the correction data using an NTRIP client. Default: Disabled.">
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
@@ -1633,20 +1614,20 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div class="form-group row">
-                        <label for="mountPoint" class="box-margin20 col-sm-3 col-5 col-form-label">Mount
+                        <label for="mountPointUpload" class="box-margin20 col-sm-3 col-5 col-form-label">Mount
                             Point:</label>
                         <div class="col-sm-8 col-6">
-                            <input type="text" class="form-control" id="mountPoint">
-                            <p id="mountPointError" class="inlineError"></p>
+                            <input type="text" class="form-control" id="mountPointUpload">
+                            <p id="mountPointUploadError" class="inlineError"></p>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label for="mountPointPW" class="box-margin20 col-sm-4 col-6 col-form-label">Mount Point
+                        <label for="mountPointUploadPW" class="box-margin20 col-sm-4 col-6 col-form-label">Mount Point
                             PW:</label>
                         <div class="col-sm-7 col-5">
-                            <input type="text" class="form-control" id="mountPointPW">
-                            <p id="mountPointPWError" class="inlineError"></p>
+                            <input type="text" class="form-control" id="mountPointUploadPW">
+                            <p id="mountPointUploadPWError" class="inlineError"></p>
                         </div>
                     </div>
                 </div>
@@ -1808,58 +1789,11 @@ static const char *index_html = R"=====(
                             <br>
                             Used: <p id="sdUsedSpaceMB" style="display:inline;">0</p>MB
                         </div>
-
-                        <div class="form-check" id="firmwareAvailable" style="display:none;">
-                            Available Firmware:
-                            <div class="form-check">
-                                <div style="display:none;" id="firmwareFile0">
-                                    <input type="radio" id="file0" name="firmwareFiles">
-                                    <label for="file0" id="firmwareFileName0">file0</label><br>
-                                </div>
-                                <div style="display:none;" id="firmwareFile1">
-                                    <input type="radio" id="file1" name="firmwareFiles">
-                                    <label for="file1" id="firmwareFileName1">file 1</label><br>
-                                </div>
-                                <div style="display:none;" id="firmwareFile2">
-                                    <input type="radio" id="file2" name="firmwareFiles">
-                                    <label for="file2" id="firmwareFileName2">file2</label><br>
-                                </div>
-                                <div style="display:none;" id="firmwareFile3">
-                                    <input type="radio" id="file3" name="firmwareFiles">
-                                    <label for="file3" id="firmwareFileName3">file3</label><br>
-                                </div>
-                                <div style="display:none;" id="firmwareFile4">
-                                    <input type="radio" id="file4" name="firmwareFiles">
-                                    <label for="file4" id="firmwareFileName4">file4</label><br>
-                                </div>
-                                <div style="display:none;" id="firmwareFile5">
-                                    <input type="radio" id="file5" name="firmwareFiles">
-                                    <label for="file5" id="firmwareFileName5">file5</label><br>
-                                </div>
-
-                                <div class="form-check">
-                                    <label class="form-check-label" for="enableFirmwareUpdate">Enable Firmware
-                                        Update:</label><span class="tt" data-bs-placement="right"
-                                        title="Select the firmware file, then check ‘Enable Firmware Update’ to begin update process.">
-                                        <span class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
-                                    <input class="form-check-input" type="checkbox" value="" id="enableFirmwareUpdate"
-                                        unchecked disabled>
-                                </div>
-
-                                <div id="firmwareUpdateButton">
-                                    <button type="button" id="firmwareUpdate" class="btn btn-primary"
-                                        onClick="sendFirmwareFile()" disabled>Update Firmware</button>
-                                    <p id="firmwareUpdateMsg" class="inlineSuccess"></p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     <div class="col-sm-7 col-6 mt-2">
                         <div id="uploadNewFirmwareDiv" class="mb-2">
-                            <label class="form-check-label" for="uploadNewFirmware">Add Firmware:</label>
-                            <span class="tt" data-bs-placement="right"
-                                title="New firmware may be uploaded via WiFi to the SD card. Firmware is only loaded to the SD card and must then be loaded to the unit.">
+                            <label class="form-check-label" for="uploadNewFirmware">Update Firmware:</label>
+                            <span class="tt" data-bs-placement="right" title="Update the unit's firmware over WiFi.">
                                 <span class="icon-info-circle text-primary ms-2"></span>
                             </span>
                             <form id="uploadNewFirmware" enctype="multipart/form-data" method="post" action="/upload">
@@ -1888,8 +1822,8 @@ static const char *index_html = R"=====(
                     <p id="saveBtnSuccess" class="inlineSuccess"></p>
                 </div>
                 <div align="center" class="col-sm-5 col-12">
-                    <button type="button" id="exitBtn" class="btn btn-outline-secondary" onclick="exitConfig()">Exit to
-                        Rover Mode <span class="icon-remove text-secondary ms-1"></span></button>
+                    <button type="button" id="exitBtn" class="btn btn-outline-secondary" onclick="exitConfig()">Exit and
+                        Reset<span class="icon-remove text-secondary ms-1"></span></button>
                     <p id="exitBtnError" class="inlineSuccess"></p>
                     <p>&nbsp;</p>
                 </div>
@@ -1906,6 +1840,7 @@ static const char *index_html = R"=====(
 </body>
 
 </html>
+
 )====="; //End index.html
 
 //Content of bootstrap.bundle.min.jss with gzip compression

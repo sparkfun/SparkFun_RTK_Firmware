@@ -3,7 +3,7 @@ void menuPorts()
   if (productVariant == RTK_SURVEYOR)
     menuPortsSurveyor();
   else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
-    menuPortsExpress();
+    menuPortsMultiplexed();
 }
 
 //Set the baud rates for the radio and data ports

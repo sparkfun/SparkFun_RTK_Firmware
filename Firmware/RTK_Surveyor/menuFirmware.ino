@@ -183,6 +183,9 @@ void updateFromSD(const char *firmwareFileName)
       {
         displayFirmwareUpdateProgress(100);
 
+        //Clear all settings from EEPROM
+        eepromErase();
+
         Serial.println(F("Firmware updated successfully. Rebooting. Good bye!"));
 
         //If forced firmware is detected, do a full reset of config as well
@@ -193,8 +196,6 @@ void updateFromSD(const char *firmwareFileName)
           //Remove forced firmware file to prevent endless loading
           firmwareFile.close();
           sd.remove(firmwareFileName);
-
-          eepromErase();
 
           //Assemble settings file name
           char settingsFileName[40]; //SFE_Surveyor_Settings.txt

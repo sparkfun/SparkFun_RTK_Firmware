@@ -9,7 +9,7 @@ if [%1]==[] goto usage
 @echo -
 @echo Programming binary: %1 on %2
 
-esptool.exe --chip esp32 --port COM26 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect ^
+esptool.exe --chip esp32 --port %2 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect ^
 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin ^
 0x8000 ./bin/RTK_Surveyor.ino.partitions.bin ^
 0xe000 ./bin/boot_app0.bin ^

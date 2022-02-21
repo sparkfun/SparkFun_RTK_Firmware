@@ -329,9 +329,29 @@ void beginGNSS()
     delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
     if (i2cGNSS.begin() == false)
     {
-      Serial.println(F("u-blox GNSS not detected at default I2C address. Hard stop."));
+      if (productVariant == RTK_SURVEYOR)
+        blinkError(ERROR_NO_I2C); //Infinite loop
+
       displayGNSSFail(0);
-      blinkError(ERROR_NO_I2C);
+
+      //Present user with prompt to factory reset unit over serial
+      while (1)
+      {
+        Serial.println(F("GNSS Error: u-blox GNSS not detected at default I2C address. Press 'r' to factory reset."));
+        byte incoming = getByteChoice(2); //Timeout after x seconds
+
+        if (incoming == 'r')
+        {
+          Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
+          byte bContinue = getByteChoice(menuTimeout);
+          if (bContinue == 'y')
+          {
+            factoryReset();
+          }
+          else
+            Serial.println(F("Reset aborted"));
+        }
+      }
     }
   }
 
@@ -394,9 +414,29 @@ void configureGNSS()
 
     if (response == false)
     {
-      Serial.println(F("Failed to configure module. Hard stop."));
+      if (productVariant == RTK_SURVEYOR)
+        blinkError(ERROR_GPS_CONFIG_FAIL); //Infinite loop
+
       displayGNSSFail(0);
-      blinkError(ERROR_GPS_CONFIG_FAIL);
+
+      //Present user with prompt to factory reset unit over serial
+      while (1)
+      {
+        Serial.println(F("GNSS Error: Failed to configure module. Press 'r' to factory reset."));
+        byte incoming = getByteChoice(2); //Timeout after x seconds
+
+        if (incoming == 'r')
+        {
+          Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
+          byte bContinue = getByteChoice(menuTimeout);
+          if (bContinue == 'y')
+          {
+            factoryReset();
+          }
+          else
+            Serial.println(F("Reset aborted"));
+        }
+      }
     }
   }
 

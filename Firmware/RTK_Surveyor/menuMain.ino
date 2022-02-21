@@ -104,6 +104,8 @@ void menuMain()
 //Erase all settings. Upon restart, unit will use defaults
 void factoryReset()
 {
+  displaySytemReset(); //Display friendly message on OLED
+
   eepromErase();
 
   //Assemble settings file name
@@ -121,8 +123,6 @@ void factoryReset()
       xSemaphoreGive(xFATSemaphore);
     } //End xFATSemaphore
   }
-
-  displaySytemReset(); //Display friendly message on OLED
 
   i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 

@@ -352,17 +352,7 @@ bool parseLine(char* str) {
     //If user sets sizeOfSettings to -1 in config file, RTK Surveyor will factory reset
     if (d == -1)
     {
-      eepromErase();
-
-      //Assemble settings file name
-      char settingsFileName[40]; //SFE_Surveyor_Settings.txt
-      strcpy(settingsFileName, platformFilePrefix);
-      strcat(settingsFileName, "_Settings.txt");
-      sd.remove(settingsFileName);
-
-      Serial.printf("RTK %s has been factory reset via settings file. Unit restarting. Please open terminal at 115200bps.\n\r", platformPrefix);
-      delay(2000);
-      ESP.restart();
+      factoryReset(); //Erase EEPROM, erase settings file, reset u-blox module, display message on OLED
     }
 
     //Check to see if this setting file is compatible with this version of RTK Surveyor

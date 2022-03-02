@@ -28,7 +28,7 @@ bool startBluetooth()
   }
 
   //Set PIN to 1234 so we can connect to older BT devices, but not require a PIN for modern device pairing
-  //See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
+  //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/5
   //https://github.com/espressif/esp-idf/issues/1541
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;

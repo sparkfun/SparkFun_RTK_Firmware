@@ -48,7 +48,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 10;
+const int FIRMWARE_VERSION_MINOR = 11;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
@@ -215,11 +215,11 @@ float battChangeRate = 0.0;
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_BT
-//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/18
+//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/23
 #include "src/BluetoothSerial/BluetoothSerial.h"
 BluetoothSerial SerialBT;
 #include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
-#include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
+#include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/5
 #endif
 
 char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names

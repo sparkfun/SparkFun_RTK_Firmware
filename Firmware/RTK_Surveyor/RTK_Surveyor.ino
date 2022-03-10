@@ -52,7 +52,7 @@ const int FIRMWARE_VERSION_MINOR = 11;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -251,7 +251,7 @@ bool zedUartPassed = false; //Goes true during testing if ESP can communicate wi
 #include <SFE_MicroOLED.h> //Click here to get the library: http://librarymanager/All#SparkFun_Micro_OLED
 #include "icons.h"
 
-#define PIN_RESET 9
+#define PIN_RESET 255 //Disable
 #define DC_JUMPER 1
 MicroOLED oled(PIN_RESET, DC_JUMPER);
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

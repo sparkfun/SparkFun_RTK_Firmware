@@ -9,6 +9,8 @@ void updateDisplay()
       lastDisplayUpdate = millis();
       forceDisplayUpdate = false;
 
+      oled.initDisplay(false); //Incase of previous corruption, force re-alignment of CGRAM, but do not clear the internal CGRAM (takes a long time)
+
       oled.clear(PAGE); // Clear the display's internal buffer
 
       switch (systemState)
@@ -102,7 +104,7 @@ void updateDisplay()
 
       oled.display(); //Push internal buffer to display
     }
-  }
+  } //End display online
 }
 
 void displaySplash()
@@ -1455,7 +1457,7 @@ void paintSystemTest()
       delay(20);
 
       //Clear out buffer before starting
-      while(serialGNSS.available()) serialGNSS.read();
+      while (serialGNSS.available()) serialGNSS.read();
       serialGNSS.flush();
 
       SFE_UBLOX_GNSS myGNSS;

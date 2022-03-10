@@ -318,6 +318,17 @@ void beginDisplay()
 
     displaySplash();
   }
+  else
+  {
+    if (productVariant == RTK_SURVEYOR)
+    {
+      Serial.println(F("Display not detected."));
+    }
+    else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
+    {
+      Serial.println(F("Display Error: Not detected."));
+    }
+  }
 }
 
 //Connect to ZED module and identify particulars

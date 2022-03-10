@@ -251,7 +251,7 @@ void beginUART2()
 void pinUART2Task( void *pvParameters )
 {
   serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
-  serialGNSS.setTimeout(50);
+  serialGNSS.setTimeout(0);
   serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
   uart2pinned = true;

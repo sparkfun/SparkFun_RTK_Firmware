@@ -319,6 +319,8 @@ struct struct_settings {
     {UBLOX_CFG_SIGNAL_GLO_ENA, SFE_UBLOX_GNSS_ID_GLONASS, true, "GLONASS"},
   };
 
+  int maxLogLength_minutes = 60 * 24; //Default to 24 hours
+
 } settings;
 
 //Monitor which devices on the device are on or offline.

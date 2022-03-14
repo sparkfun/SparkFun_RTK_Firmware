@@ -302,6 +302,7 @@ function validateFields() {
 
     //System Config
     checkElementValue("maxLogTime_minutes", 1, 2880, "Must be 1 to 2880", "collapseSystemConfig");
+    checkElementValue("maxLogLength_minutes", 1, 2880, "Must be 1 to 2880", "collapseSystemConfig");
 
     //Port Config
 
@@ -631,10 +632,12 @@ document.addEventListener("DOMContentLoaded", (event) => {
         if (ge("enableLogging").checked) {
             //Enable inputs
             ge("maxLogTime_minutes").disabled = false;
+            ge("maxLogLength_minutes").disabled = false;
         }
         else {
             //Disable inputs
             ge("maxLogTime_minutes").disabled = true;
+            ge("maxLogLength_minutes").disabled = true;
         }
     });
 

@@ -367,6 +367,7 @@ void createSettingsString(char* settingsCSV)
   //System Config
   stringRecord(settingsCSV, "enableLogging", settings.enableLogging);
   stringRecord(settingsCSV, "maxLogTime_minutes", settings.maxLogTime_minutes);
+  stringRecord(settingsCSV, "maxLogLength_minutes", settings.maxLogLength_minutes);
 
   stringRecord(settingsCSV, "sdFreeSpaceMB", sdFreeSpaceMB);
   stringRecord(settingsCSV, "sdUsedSpaceMB", sdUsedSpaceMB);
@@ -402,6 +403,9 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     newAPSettings = true; //Mark settings as new to force record before reset
     settings.maxLogTime_minutes = settingValue;
   }
+
+  else if (strcmp(settingName, "maxLogLength_minutes") == 0)
+    settings.maxLogLength_minutes = settingValue;
   else if (strcmp(settingName, "measurementRateHz") == 0)
     settings.measurementRate = (int)(1000.0 / settingValue);
   else if (strcmp(settingName, "dynamicModel") == 0)

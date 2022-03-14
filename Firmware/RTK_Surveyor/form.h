@@ -325,6 +325,7 @@ function validateFields() {
 
     //System Config
     checkElementValue("maxLogTime_minutes", 1, 2880, "Must be 1 to 2880", "collapseSystemConfig");
+    checkElementValue("maxLogLength_minutes", 1, 2880, "Must be 1 to 2880", "collapseSystemConfig");
 
     //Port Config
 
@@ -654,10 +655,12 @@ document.addEventListener("DOMContentLoaded", (event) => {
         if (ge("enableLogging").checked) {
             //Enable inputs
             ge("maxLogTime_minutes").disabled = false;
+            ge("maxLogLength_minutes").disabled = false;
         }
         else {
             //Disable inputs
             ge("maxLogTime_minutes").disabled = true;
+            ge("maxLogLength_minutes").disabled = true;
         }
     });
 
@@ -1751,7 +1754,7 @@ static const char *index_html = R"=====(
                         <div class="col-sm-4 col-9 form-group">
                             <label for="maxLogTime_minutes" class="form-group box-margin20">Max Log
                                 Time (min):</label><span class="tt" data-bs-placement="right"
-                                title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 600 minutes. Limit: 1 to 2880 minutes.">
+                                title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
                                 <span class="icon-info-circle text-primary ms-2"></span>
                             </span>
                         </div>
@@ -1760,7 +1763,21 @@ static const char *index_html = R"=====(
                             <input type="number" class="form-control" id="maxLogTime_minutes">
                             <p id="maxLogTime_minutesError" class="inlineError"></p>
                         </div>
+                    </div>
 
+                    <div id="maxLogLength Input" class="row">
+                        <div class="col-sm-4 col-9 form-group">
+                            <label for="maxLogLength_minutes" class="form-group box-margin20">Max Log
+                                Length (min):</label><span class="tt" data-bs-placement="right"
+                                title="Once this length of time is achieved, a new log will be created. This is useful for creating multiple logs over a long survey. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
+
+                        <div class="col-sm-4 col-5 ms-3 form-group">
+                            <input type="number" class="form-control" id="maxLogLength_minutes">
+                            <p id="maxLogLength_minutesError" class="inlineError"></p>
+                        </div>
                     </div>
 
                     <div class="form-check mt-3">

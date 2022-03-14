@@ -28,6 +28,10 @@ void menuLog()
       Serial.print(F("2) Set max logging time: "));
       Serial.print(settings.maxLogTime_minutes);
       Serial.println(F(" minutes"));
+
+      Serial.print(F("3) Set max log length: "));
+      Serial.print(settings.maxLogLength_minutes);
+      Serial.println(F(" minutes"));
     }
 
     Serial.println(F("x) Exit"));
@@ -40,7 +44,7 @@ void menuLog()
     }
     else if (incoming == '2' && settings.enableLogging == true)
     {
-      Serial.print(F("Enter max minutes to log data: "));
+      Serial.print(F("Enter max minutes before logging stops: "));
       int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds
       if (maxMinutes < 0 || maxMinutes > 60 * 48) //Arbitrary 48 hour limit
       {
@@ -49,6 +53,19 @@ void menuLog()
       else
       {
         settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == '3' && settings.enableLogging == true)
+    {
+      Serial.print(F("Enter max minutes of logging before new log is created: "));
+      int maxLogMinutes = getNumber(menuTimeout); //Timeout after x seconds
+      if (maxLogMinutes < 0 || maxLogMinutes > 60 * 48) //Arbitrary 48 hour limit
+      {
+        Serial.println(F("Error: max minutes out of range"));
+      }
+      else
+      {
+        settings.maxLogLength_minutes = maxLogMinutes; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 'x')
@@ -314,14 +331,16 @@ void beginLogging()
       {
         if (findLastLog(fileName) == false)
           log_d("Failed to find last log. Making new one.");
+        else
+          log_d("Using last log file.");
       }
 
       if (strlen(fileName) == 0)
       {
         sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
                 platformFilePrefix,
-                rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11 
-                rtc.getHour(), rtc.getMinute(), rtc.getSecond()
+                rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
+                rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
                );
       }
 
@@ -339,9 +358,14 @@ void beginLogging()
           return;
         }
 
+        lastLogSize = 0; //Reset counter - used for displaying active logging icon
+
         updateDataFileCreate(&ubxFile); // Update the file to create time & date
 
-        startLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
+        startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
+
+        //If it hasn't been done before, mark the initial start of logging for total run time
+        if (startLogTime_minutes == 0) startLogTime_minutes = millis() / 1000L / 60;
 
         //Add NMEA txt message with restart reason
         char rstReason[30];
@@ -401,7 +425,7 @@ void updateDataFileAccess(SdFile *dataFile)
 {
   if (online.rtc == true)
   {
-    //ESP32Time returns month:0-11 
+    //ESP32Time returns month:0-11
     dataFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond());
     dataFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond());
   }
@@ -411,7 +435,7 @@ void updateDataFileAccess(SdFile *dataFile)
 void updateDataFileCreate(SdFile *dataFile)
 {
   if (online.rtc == true)
-    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11 
+    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11
 }
 
 //Finds last log

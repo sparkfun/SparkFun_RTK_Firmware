@@ -133,6 +133,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("enableSD=" + (String)settings.enableSD);
       settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
       settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
+      settingsFile.println("maxLogLength_minutes=" + (String)settings.maxLogLength_minutes);
       settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
       settingsFile.println("observationPositionAccuracy=" + (String)settings.observationPositionAccuracy);
       settingsFile.println("fixedBase=" + (String)settings.fixedBase);
@@ -374,6 +375,8 @@ bool parseLine(char* str) {
     settings.enableDisplay = d;
   else if (strcmp(settingName, "maxLogTime_minutes") == 0)
     settings.maxLogTime_minutes = d;
+  else if (strcmp(settingName, "maxLogLength_minutes") == 0)
+    settings.maxLogLength_minutes = d;
   else if (strcmp(settingName, "observationSeconds") == 0)
     settings.observationSeconds = d;
   else if (strcmp(settingName, "observationPositionAccuracy") == 0)

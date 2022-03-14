@@ -40,10 +40,10 @@
     Enable various debug outputs sent over BT
 
   TODO:
-    Change AP to 'mountPointUpload' and PW upload
     Add mountPointDownload and PWDownload to AP config
     Add casterTransmitGGA to AP config
-    Add casterUser/PW to AP ocnfig
+    Add casterUser/PW to AP config
+    Add maxLogLength_minutes to AP config
 
 */
 
@@ -126,7 +126,9 @@ char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and set
 
 SdFile ubxFile; //File that all gnss ubx messages setences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
-int startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
+int startLogTime_minutes = 0; //Mark when we start any logging so we can stop logging after maxLogTime_minutes
+int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file so we can close it after x minutes and start a new one
+
 SdFile newFirmwareFile; //File that is available if user uploads new firmware via web gui
 
 //System crashes if two tasks access a file at the same time
@@ -424,8 +426,6 @@ void setup()
 
   beginAccelerometer();
 
-  //beginSARA();
-
   beginExternalTriggers(); //Configure the time pulse output and TM2 input
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
@@ -477,7 +477,18 @@ void updateLogs()
       ubxFile.sync();
       ubxFile.close();
       online.logging = false;
-      //xSemaphoreGive(xFATSemaphore); //Do not release semaphore
+      xSemaphoreGive(xFATSemaphore); //Release semaphore
+    }
+  }
+  else if (online.logging == true && settings.enableLogging == true && (systemTime_minutes - startCurrentLogTime_minutes) >= settings.maxLogLength_minutes)
+  {
+    //Close down file. A new one will be created at the next calling of updateLogs().
+    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      ubxFile.sync();
+      ubxFile.close();
+      online.logging = false;
+      xSemaphoreGive(xFATSemaphore); //Release semaphore
     }
   }
 
@@ -576,7 +587,7 @@ void updateLogs()
         }
         else
         {
-          log_d("Log file: No increase in file size");
+          log_d("No increase in file size");
           logIncreasing = false;
         }
       }

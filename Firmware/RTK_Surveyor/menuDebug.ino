@@ -8,6 +8,8 @@ void menuDebug()
 
     printModuleInfo();
 
+    printCurrentConditions();
+
     Serial.print(F("1) I2C Debugging Output: "));
     if (settings.enableI2Cdebug == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
@@ -128,4 +130,76 @@ void menuDebug()
   }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+}
+
+//Print the current long/lat/alt/HPA/SIV
+//From Example11_GetHighPrecisionPositionUsingDouble
+void printCurrentConditions()
+{
+  // getHighResLatitude: returns the latitude from HPPOSLLH as an int32_t in degrees * 10^-7
+  // getHighResLatitudeHp: returns the high resolution component of latitude from HPPOSLLH as an int8_t in degrees * 10^-9
+  // getHighResLongitude: returns the longitude from HPPOSLLH as an int32_t in degrees * 10^-7
+  // getHighResLongitudeHp: returns the high resolution component of longitude from HPPOSLLH as an int8_t in degrees * 10^-9
+  // getElipsoid: returns the height above ellipsoid as an int32_t in mm
+  // getElipsoidHp: returns the high resolution component of the height above ellipsoid as an int8_t in mm * 10^-1
+  // getMeanSeaLevel: returns the height above mean sea level as an int32_t in mm
+  // getMeanSeaLevelHp: returns the high resolution component of the height above mean sea level as an int8_t in mm * 10^-1
+  // getHorizontalAccuracy: returns the horizontal accuracy estimate from HPPOSLLH as an uint32_t in mm * 10^-1
+
+  // First, let's collect the position data
+  int32_t latitude = i2cGNSS.getHighResLatitude();
+  int8_t latitudeHp = i2cGNSS.getHighResLatitudeHp();
+  int32_t longitude = i2cGNSS.getHighResLongitude();
+  int8_t longitudeHp = i2cGNSS.getHighResLongitudeHp();
+  int32_t ellipsoid = i2cGNSS.getElipsoid();
+  int8_t ellipsoidHp = i2cGNSS.getElipsoidHp();
+  int32_t msl = i2cGNSS.getMeanSeaLevel();
+  int8_t mslHp = i2cGNSS.getMeanSeaLevelHp();
+  uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
+
+  // Defines storage for the lat and lon as double
+  double d_lat; // latitude
+  double d_lon; // longitude
+
+  // Assemble the high precision latitude and longitude
+  d_lat = ((double)latitude) / 10000000.0; // Convert latitude from degrees * 10^-7 to degrees
+  d_lat += ((double)latitudeHp) / 1000000000.0; // Now add the high resolution component (degrees * 10^-9 )
+  d_lon = ((double)longitude) / 10000000.0; // Convert longitude from degrees * 10^-7 to degrees
+  d_lon += ((double)longitudeHp) / 1000000000.0; // Now add the high resolution component (degrees * 10^-9 )
+
+  // Print the lat and lon
+  Serial.print("Lat (deg): ");
+  Serial.print(d_lat, 9);
+  Serial.print(", Lon (deg): ");
+  Serial.print(d_lon, 9);
+
+  // Now define float storage for the heights and accuracy
+  float f_ellipsoid;
+  float f_msl;
+  float f_accuracy;
+
+  // Calculate the height above ellipsoid in mm * 10^-1
+  f_ellipsoid = (ellipsoid * 10) + ellipsoidHp;
+  // Now convert to m
+  f_ellipsoid = f_ellipsoid / 10000.0; // Convert from mm * 10^-1 to m
+
+  // Calculate the height above mean sea level in mm * 10^-1
+  f_msl = (msl * 10) + mslHp;
+  // Now convert to m
+  f_msl = f_msl / 10000.0; // Convert from mm * 10^-1 to m
+
+  // Convert the horizontal accuracy (mm * 10^-1) to a float
+  f_accuracy = accuracy;
+  // Now convert to m
+  f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
+
+  // Finally, do the printing
+  Serial.print(", Ellipsoid (m): ");
+  Serial.print(f_ellipsoid, 4); // Print the ellipsoid with 4 decimal places
+
+  Serial.print(", Mean Sea Level (m): ");
+  Serial.print(f_msl, 4); // Print the mean sea level with 4 decimal places
+
+  Serial.print(", Accuracy (m): ");
+  Serial.println(f_accuracy, 4); // Print the accuracy with 4 decimal places
 }

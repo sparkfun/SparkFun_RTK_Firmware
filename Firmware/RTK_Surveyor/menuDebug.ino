@@ -156,6 +156,7 @@ void printCurrentConditions()
   int32_t msl = i2cGNSS.getMeanSeaLevel();
   int8_t mslHp = i2cGNSS.getMeanSeaLevelHp();
   uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
+  byte SIV = i2cGNSS.getSIV();
 
   // Defines storage for the lat and lon as double
   double d_lat; // latitude
@@ -201,5 +202,10 @@ void printCurrentConditions()
   Serial.print(f_msl, 4); // Print the mean sea level with 4 decimal places
 
   Serial.print(", Accuracy (m): ");
-  Serial.println(f_accuracy, 4); // Print the accuracy with 4 decimal places
+  Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
+
+  Serial.print(F(", SIV: "));
+  Serial.print(SIV);
+
+  Serial.println();
 }

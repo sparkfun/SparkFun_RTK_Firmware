@@ -16,7 +16,7 @@ void updateDisplay()
       switch (systemState)
       {
         case (STATE_ROVER_NOT_STARTED):
-          //Do nothing. Static display shown during state change.
+          paintRoverNoFix();
           break;
         case (STATE_ROVER_NO_FIX):
           paintRoverNoFix();
@@ -295,8 +295,16 @@ void paintHorizontalAccuracy()
     oled.setFontType(1); //Set font to type 1: 8x16
     oled.setCursor(16, 20); //x, y
     oled.print(":");
-    float hpa = i2cGNSS.getHorizontalAccuracy() / 10000.0;
-    if (hpa > 30.0)
+    float hpa = 100;
+
+    if (online.gnss == true)
+      hpa = i2cGNSS.getHorizontalAccuracy() / 10000.0;
+
+    if (online.gnss == false)
+    {
+      oled.print(F("N/A"));
+    }
+    else if (hpa > 30.0)
     {
       oled.print(F(">30m"));
     }
@@ -320,7 +328,7 @@ void paintHorizontalAccuracy()
 //Draw a different base if we have fixed coordinate base type
 void paintBaseState()
 {
-  if (online.display == true)
+  if (online.display == true && online.gnss == true)
   {
     if (systemState == STATE_ROVER_NO_FIX ||
         systemState == STATE_ROVER_FIX ||
@@ -463,7 +471,7 @@ void paintBaseState()
 //Blink icon if no fix
 void paintSIV()
 {
-  if (online.display == true)
+  if (online.display == true && online.gnss == true)
   {
     //Blink satellite dish icon if we don't have a fix
     if (i2cGNSS.getFixType() == 3 || i2cGNSS.getFixType() == 4 || i2cGNSS.getFixType() == 5) //3D, 3D+DR, or Time
@@ -503,6 +511,17 @@ void paintSIV()
     }
 
     paintResets();
+  } //End gnss online
+  else if (online.display == true && online.gnss == false)
+  {
+    //Fix, turn on icon
+    oled.drawIcon(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna, sizeof(SIV_Antenna), true);
+
+    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setCursor(16, 36); //x, y
+    oled.print(":");
+
+    oled.print("X");
   }
 }
 
@@ -1408,15 +1427,20 @@ void paintSystemTest()
     else
       oled.print(F("FAIL"));
 
-    i2cGNSS.checkUblox();
     oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
     oled.print(F("GNSS:"));
-    int satsInView = i2cGNSS.getSIV();
-    if (online.gnss == true && satsInView > 5)
+    if (online.gnss == true)
     {
-      oled.print(F("OK"));
-      oled.print(F("/"));
-      oled.print(satsInView);
+      i2cGNSS.checkUblox();
+      int satsInView = i2cGNSS.getSIV();
+      if (satsInView > 5)
+      {
+        oled.print(F("OK"));
+        oled.print(F("/"));
+        oled.print(satsInView);
+      }
+      else
+        oled.print(F("FAIL"));
     }
     else
       oled.print(F("FAIL"));

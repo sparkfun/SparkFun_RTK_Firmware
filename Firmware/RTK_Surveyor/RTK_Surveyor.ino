@@ -437,8 +437,11 @@ void setup()
 
 void loop()
 {
-  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-  i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+  if (online.gnss == true)
+  {
+    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+  }
 
   updateSystemState();
 

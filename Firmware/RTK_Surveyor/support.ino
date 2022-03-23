@@ -35,7 +35,8 @@ uint8_t getByteChoice(int numberOfSeconds)
   while (1)
   {
     delay(10); //Yield to processor
-    i2cGNSS.checkUblox(); //Regularly poll to get latest data
+    if (online.gnss == true)
+      i2cGNSS.checkUblox(); //Regularly poll to get latest data
 
     if (Serial.available() > 0)
     {
@@ -73,7 +74,8 @@ int64_t getNumber(int numberOfSeconds)
     while (Serial.available() == 0) //Wait for user input
     {
       delay(10); //Yield to processor
-      i2cGNSS.checkUblox(); //Regularly poll to get latest data
+      if (online.gnss == true)
+        i2cGNSS.checkUblox(); //Regularly poll to get latest data
 
       if ( (millis() - startTime) / 1000 >= numberOfSeconds)
       {
@@ -154,7 +156,8 @@ double getDouble(int numberOfSeconds)
     while (Serial.available() == 0) //Wait for user input
     {
       delay(10); //Yield to processor
-      i2cGNSS.checkUblox(); //Regularly poll to get latest data
+      if (online.gnss == true)
+        i2cGNSS.checkUblox(); //Regularly poll to get latest data
 
       if ( (millis() - startTime) / 1000 >= numberOfSeconds)
       {
@@ -249,7 +252,8 @@ byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
     while (Serial.available() == 0) //Wait for user input
     {
       delay(10); //Yield to processor
-      i2cGNSS.checkUblox(); //Regularly poll to get latest data
+      if (online.gnss == true)
+        i2cGNSS.checkUblox(); //Regularly poll to get latest data
 
       if ( (millis() - startTime) / 1000 >= numberOfSeconds)
       {

@@ -340,16 +340,13 @@ void beginDisplay()
 //Connect to ZED module and identify particulars
 void beginGNSS()
 {
-  online.gnss = false;
-  return;
-  
   if (i2cGNSS.begin() == false)
   {
     //Try again with power on delay
     delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
     if (i2cGNSS.begin() == false)
     {
-      displayGNSSFail(0);
+      displayGNSSFail(1000);
       online.gnss = false;
       return;
     }
@@ -415,7 +412,7 @@ void configureGNSS()
     if (response == false)
     {
       Serial.println(F("Failed to configure GNSS module."));
-      displayGNSSFail(0);
+      displayGNSSFail(1000);
       online.gnss = false;
       return;
     }

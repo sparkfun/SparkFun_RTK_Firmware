@@ -2,6 +2,8 @@
 //Configure specific aspects of the receiver for base mode
 bool configureUbloxModuleBase()
 {
+  if(online.gnss == false) return(false);
+
   bool response = true;
   int maxWait = 2000;
 

@@ -153,6 +153,8 @@ void stopWiFi()
 //corrupt. The worst is when the I2C port gets turned off or the I2C address gets borked.
 bool configureUbloxModule()
 {
+  if(online.gnss == false) return(false);
+  
   boolean response = true;
   int maxWait = 2000;
 
@@ -418,34 +420,6 @@ uint32_t getSerialRate(uint8_t portID)
   }
 
   return (((uint32_t)settingPayload[10] << 16) | ((uint32_t)settingPayload[9] << 8) | settingPayload[8]);
-}
-
-//Freeze displaying a given error code
-void blinkError(t_errorNumber errorNumber)
-{
-  while (1)
-  {
-    for (int x = 0 ; x < errorNumber ; x++)
-    {
-      if (productVariant == RTK_SURVEYOR)
-      {
-        digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
-        digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
-        digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
-        digitalWrite(pin_baseStatusLED, HIGH);
-        digitalWrite(pin_bluetoothStatusLED, HIGH);
-        delay(200);
-        digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-        digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-        digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-        digitalWrite(pin_baseStatusLED, LOW);
-        digitalWrite(pin_bluetoothStatusLED, LOW);
-        delay(200);
-      }
-    }
-
-    delay(2000);
-  }
 }
 
 //Turn on indicator LEDs to verify LED function and indicate setup sucess

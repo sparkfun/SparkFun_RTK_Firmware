@@ -25,6 +25,12 @@ void updateSystemState()
     {
       case (STATE_ROVER_NOT_STARTED):
         {
+          if(online.gnss == false)
+          {
+            firstRoverStart = false; //If GNSS is offline, we still need to allow button use
+            return;
+          }
+          
           if (productVariant == RTK_SURVEYOR)
           {
             digitalWrite(pin_baseStatusLED, LOW);
@@ -108,6 +114,12 @@ void updateSystemState()
 
       case (STATE_BASE_NOT_STARTED):
         {
+          if(online.gnss == false)
+          {
+            firstRoverStart = false; //If GNSS is offline, we still need to allow button use
+            return;
+          }
+
           //Turn off base LED until we successfully enter temp/fix state
           if (productVariant == RTK_SURVEYOR)
           {

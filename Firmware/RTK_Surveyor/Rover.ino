@@ -2,6 +2,8 @@
 //Configure specific aspects of the receiver for rover mode
 bool configureUbloxModuleRover()
 {
+  if(online.gnss == false) return(false);
+  
   bool response = true;
   int maxWait = 2000;
 
@@ -242,54 +244,57 @@ void updateAccuracyLEDs()
   {
     lastAccuracyLEDUpdate = millis();
 
-    uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
-
-    if (accuracy > 0)
+    if (online.gnss == true)
     {
-      // Convert the horizontal accuracy (mm * 10^-1) to a float
-      float f_accuracy = accuracy;
-      f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
+      uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
 
-      Serial.print(F("Rover Accuracy (m): "));
-      Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
-      Serial.println();
-
-      if (productVariant == RTK_SURVEYOR)
+      if (accuracy > 0)
       {
-        if (f_accuracy <= 0.02)
+        // Convert the horizontal accuracy (mm * 10^-1) to a float
+        float f_accuracy = accuracy;
+        f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
+
+        Serial.print(F("Rover Accuracy (m): "));
+        Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
+        Serial.println();
+
+        if (productVariant == RTK_SURVEYOR)
         {
-          digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
-          digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
-          digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
-        }
-        else if (f_accuracy <= 0.100)
-        {
-          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
-          digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
-        }
-        else if (f_accuracy <= 1.0000)
-        {
-          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
-        }
-        else if (f_accuracy > 1.0)
-        {
-          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+          if (f_accuracy <= 0.02)
+          {
+            digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+            digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+            digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+          }
+          else if (f_accuracy <= 0.100)
+          {
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+            digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+          }
+          else if (f_accuracy <= 1.0000)
+          {
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+          }
+          else if (f_accuracy > 1.0)
+          {
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+          }
         }
       }
-    }
-    else
-    {
-      Serial.print(F("Rover Accuracy: "));
-      Serial.print(accuracy);
-      Serial.print(" ");
-      Serial.print(F("No lock. SIV: "));
-      Serial.print(i2cGNSS.getSIV());
-      Serial.println();
-    }
-  }
+      else
+      {
+        Serial.print(F("Rover Accuracy: "));
+        Serial.print(accuracy);
+        Serial.print(" ");
+        Serial.print(F("No lock. SIV: "));
+        Serial.print(i2cGNSS.getSIV());
+        Serial.println();
+      }
+    } //End GNSS online checking
+  } //Check every 2000ms
 }

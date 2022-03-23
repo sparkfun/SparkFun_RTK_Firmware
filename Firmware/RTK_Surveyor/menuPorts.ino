@@ -37,7 +37,8 @@ void menuPortsSurveyor()
       else
       {
         settings.radioPortBaud = newBaud;
-        i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
+        if (online.gnss == true)
+          i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
       }
     }
     else if (incoming == '2')
@@ -51,7 +52,8 @@ void menuPortsSurveyor()
       else
       {
         settings.dataPortBaud = newBaud;
-        i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
+        if (online.gnss == true)
+          i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
       }
     }
 
@@ -120,7 +122,8 @@ void menuPortsMultiplexed()
       else
       {
         settings.radioPortBaud = newBaud;
-        i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
+        if (online.gnss == true)
+          i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
       }
     }
     else if (incoming == '2')
@@ -156,7 +159,8 @@ void menuPortsMultiplexed()
       else
       {
         settings.dataPortBaud = newBaud;
-        i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
+        if (online.gnss == true)
+          i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
       }
     }
     else if (incoming == '3' && settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)

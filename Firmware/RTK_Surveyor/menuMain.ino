@@ -33,7 +33,7 @@ void menuMain()
       Serial.println(F("6) Display microSD contents"));
     }
 
-    Serial.println(F("d) Configure Debug"));
+    Serial.println(F("s) System Status"));
 
     Serial.println(F("r) Reset all settings to default"));
 
@@ -69,8 +69,8 @@ void menuMain()
         xSemaphoreGive(xFATSemaphore);
       }
     }
-    else if (incoming == 'd')
-      menuDebug();
+    else if (incoming == 's')
+      menuSystem();
     else if (incoming == 'r')
     {
       Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
@@ -96,7 +96,8 @@ void menuMain()
 
   recordSystemSettings(); //Once all menus have exited, record the new settings to EEPROM and config file
 
-  i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
+  if(online.gnss == true)
+    i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }
@@ -124,7 +125,8 @@ void factoryReset()
     } //End xFATSemaphore
   }
 
-  i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
+  if(online.gnss == true)
+    i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
   Serial.println(F("Settings erased successfully. Rebooting. Good bye!"));
   delay(2000);

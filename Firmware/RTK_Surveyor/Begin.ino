@@ -172,6 +172,12 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     delay(10);
 
+    if(settings.spiFrequency > 16)
+    {
+      Serial.println(("Error: SPI Frequency out of range. Default to 16MHz"));
+      settings.spiFrequency = 16;
+    }
+
     if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
       int tries = 0;
@@ -322,7 +328,7 @@ void beginDisplay()
   {
     if (productVariant == RTK_SURVEYOR)
     {
-      Serial.println(F("Display not detected."));
+      Serial.println(F("Display not detected"));
     }
     else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
     {
@@ -334,35 +340,18 @@ void beginDisplay()
 //Connect to ZED module and identify particulars
 void beginGNSS()
 {
+  online.gnss = false;
+  return;
+  
   if (i2cGNSS.begin() == false)
   {
     //Try again with power on delay
     delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
     if (i2cGNSS.begin() == false)
     {
-      if (productVariant == RTK_SURVEYOR)
-        blinkError(ERROR_NO_I2C); //Infinite loop
-
       displayGNSSFail(0);
-
-      //Present user with prompt to factory reset unit over serial
-      while (1)
-      {
-        Serial.println(F("GNSS Error: u-blox GNSS not detected at default I2C address. Press 'r' to factory reset."));
-        byte incoming = getByteChoice(2); //Timeout after x seconds
-
-        if (incoming == 'r')
-        {
-          Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
-          byte bContinue = getByteChoice(menuTimeout);
-          if (bContinue == 'y')
-          {
-            factoryReset();
-          }
-          else
-            Serial.println(F("Reset aborted"));
-        }
-      }
+      online.gnss = false;
+      return;
     }
   }
 
@@ -419,35 +408,16 @@ void configureGNSS()
   if (response == false)
   {
     //Try once more
-    Serial.println(F("Failed to configure module. Trying again."));
+    Serial.println(F("Failed to configure GNSS module. Trying again."));
     delay(1000);
     response = configureUbloxModule();
 
     if (response == false)
     {
-      if (productVariant == RTK_SURVEYOR)
-        blinkError(ERROR_GPS_CONFIG_FAIL); //Infinite loop
-
+      Serial.println(F("Failed to configure GNSS module."));
       displayGNSSFail(0);
-
-      //Present user with prompt to factory reset unit over serial
-      while (1)
-      {
-        Serial.println(F("GNSS Error: Failed to configure module. Press 'r' to factory reset."));
-        byte incoming = getByteChoice(2); //Timeout after x seconds
-
-        if (incoming == 'r')
-        {
-          Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
-          byte bContinue = getByteChoice(menuTimeout);
-          if (bContinue == 'y')
-          {
-            factoryReset();
-          }
-          else
-            Serial.println(F("Reset aborted"));
-        }
-      }
+      online.gnss = false;
+      return;
     }
   }
 
@@ -579,6 +549,9 @@ void beginSystemState()
 //Setup TM2 time stamp input as need
 void beginExternalTriggers()
 {
+  if(online.gnss == false)
+    return;
+    
   UBX_CFG_TP5_data_t timePulseParameters;
 
   if (i2cGNSS.getTimePulseParameters(&timePulseParameters) == false)

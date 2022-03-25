@@ -4,39 +4,40 @@
    Distributed as-is; no warranty is given.
 */
 #include <Wire.h>
-#include <SFE_MicroOLED.h> //Click here to get the library: http://librarymanager/All#SparkFun_Micro_OLED
+
+#include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
+QwiicMicroOLED oled;
+
+// Fonts
+#include <res/qw_fnt_5x7.h>
+#include <res/qw_fnt_8x16.h>
+
+//#include <SFE_MicroOLED.h> //Click here to get the library: http://librarymanager/All#SparkFun_Micro_OLED
 #include "icons.h"
 
-#define PIN_RESET 9
-#define DC_JUMPER 1
-MicroOLED oled(PIN_RESET, DC_JUMPER);
+//#define PIN_RESET 9
+//#define DC_JUMPER 1
+//MicroOLED oled(PIN_RESET, DC_JUMPER);
 
 bool displayDetected = false;
 
 void setup()
 {
-  Wire.begin();
-  Wire.setClock(400000);
-
   Serial.begin(115200);
   delay(100);
   Serial.println("OLED example");
 
-  //0x3D is default on Qwiic board
-  if (isConnected(0x3D) == true || isConnected(0x3C) == true)
-  {
-    Serial.println("Display detected");
-    displayDetected = true;
-  }
-  else
-    Serial.println("No display detected");
+  Wire.begin();
+  Wire.setClock(400000);
 
-  if (displayDetected)
+  if (oled.begin() == false)
   {
-    oled.begin();     // Initialize the OLED
-    oled.clear(PAGE); // Clear the display's internal memory
-    oled.clear(ALL);  // Clear the library's display buffer
+    Serial.println("Device begin failed. Freezing...");
+    while (true)
+      ;
   }
+  Serial.println("Begin success");
+  displayDetected = true;
 }
 
 void loop()
@@ -48,12 +49,12 @@ void loop()
     //    oled.drawIcon(4, 4, Battery_0_Width, Battery_0_Height, Battery_0, sizeof(Battery_0), true);
     //    oled.drawIcon(4, 4, Rover_Width, Rover_Height, Rover, sizeof(Rover), true);
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16);
 
     //HPA
-//    oled.setCursor(0, 21); //x, y
-//    oled.print("HPA:");
-//    oled.print("125");
+    //    oled.setCursor(0, 21); //x, y
+    //    oled.print("HPA:");
+    //    oled.print("125");
 
     //3D Mean Accuracy
     oled.setCursor(17, 19); //x, y: Squeeze against the colon
@@ -61,17 +62,18 @@ void loop()
 
     //SIV
     oled.setCursor(16, 35); //x, y
-    oled.print(":24");
+    printText(":24", QW_FONT_5X7);
+    //oled.print(":24");
 
     //Bluetooth Address
-    oled.setFontType(0); //Set font to type 0: 
+    oled.setFont(QW_FONT_5X7);
     oled.setCursor(0, 4); //x, y
     oled.print("BC5D");
 
-    oled.drawIcon(45, 0, Battery_2_Width, Battery_2_Height, Battery_2, sizeof(Battery_2), true);
-    oled.drawIcon(28, 0, Base_Width, Base_Height, Base, sizeof(Base), true);
-    oled.drawIcon(0, 18, CrossHair_Width, CrossHair_Height, CrossHair, sizeof(CrossHair), true);
-    oled.drawIcon(1, 35, Antenna_Width, Antenna_Height, Antenna, sizeof(Antenna), true);
+    displayBitmap(45, 0, Battery_2_Width, Battery_2_Height, Battery_2);
+    displayBitmap(28, 0, Base_Width, Base_Height, Base);
+    displayBitmap(0, 18, CrossHair_Width, CrossHair_Height, CrossHair);
+    displayBitmap(1, 35, Antenna_Width, Antenna_Height, Antenna);
     oled.display();
 
     while (1);
@@ -86,4 +88,18 @@ void loop()
 
   Serial.print(".");
   delay(100);
+}
+
+//Wrapper to avoid needing to pass width/height data twice
+void displayBitmap(uint8_t x, uint8_t y, uint8_t imageWidth, uint8_t imageHeight, uint8_t *imageData)
+{
+  oled.bitmap(x, y, x + imageWidth, y + imageHeight, imageData, imageWidth, imageHeight);
+}
+
+void printText(const char *text, QwiicFont &fontType)
+{
+  oled.setFont(fontType);
+  oled.setDrawMode(grROPXOR);
+
+  oled.print(text);
 }

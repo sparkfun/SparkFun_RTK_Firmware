@@ -9,9 +9,10 @@ void updateDisplay()
       lastDisplayUpdate = millis();
       forceDisplayUpdate = false;
 
-      oled.initDisplay(false); //Incase of previous corruption, force re-alignment of CGRAM, but do not clear the internal CGRAM (takes a long time)
+      //oled.initDisplay(false); //Incase of previous corruption, force re-alignment of CGRAM, but do not clear the internal CGRAM (takes a long time)
 
-      oled.clear(PAGE); // Clear the display's internal buffer
+      //oled.clear(PAGE); // Clear the display's internal buffer
+      oled.erase();
 
       switch (systemState)
       {
@@ -111,35 +112,33 @@ void displaySplash()
 {
   if (online.display == true)
   {
-    //Init and display splash
-    oled.begin();     // Initialize the OLED
-    oled.clear(PAGE); // Clear the display's internal memory
+    oled.erase();
 
     int yPos = 0;
     int fontHeight = 8;
 
-    printTextCenter("SparkFun", yPos, 0, 1, false); //text, y, font type, kerning, inverted
+    printTextCenter("SparkFun", yPos, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
     yPos = yPos + fontHeight + 2;
-    printTextCenter("RTK", yPos, 1, 1, false);
+    printTextCenter("RTK", yPos, QW_FONT_8X16, 1, false);
 
     yPos = yPos + fontHeight + 5;
 
     if (productVariant == RTK_SURVEYOR)
     {
-      printTextCenter("Surveyor", yPos, 1, 1, false);
+      printTextCenter("Surveyor", yPos, QW_FONT_8X16, 1, false);
     }
     else if (productVariant == RTK_EXPRESS)
     {
-      printTextCenter("Express", yPos, 1, 1, false);
+      printTextCenter("Express", yPos, QW_FONT_8X16, 1, false);
     }
     else if (productVariant == RTK_EXPRESS_PLUS)
     {
-      printTextCenter("Express+", yPos, 1, 1, false);
+      printTextCenter("Express+", yPos, QW_FONT_8X16, 1, false);
     }
     else if (productVariant == RTK_FACET)
     {
-      printTextCenter("Facet", yPos, 1, 1, false);
+      printTextCenter("Facet", yPos, QW_FONT_8X16, 1, false);
     }
 
     yPos = yPos + fontHeight + 7;
@@ -149,7 +148,7 @@ void displaySplash()
 #else
     sprintf(unitFirmware, "v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 #endif
-    printTextCenter(unitFirmware, yPos, 0, 1, false);
+    printTextCenter(unitFirmware, yPos, QW_FONT_5X7, 1, false);
 
     oled.display();
   }
@@ -166,14 +165,14 @@ void displayError(const char * errorMessage)
 {
   if (online.display == true)
   {
-    oled.clear(PAGE); // Clear the display's internal buffer
+    oled.erase(); // Clear the display's internal buffer
 
     oled.setCursor(0, 0); //x, y
-    oled.setFontType(0); //Set font to smallest
+    oled.setFont(QW_FONT_5X7); //Set font to smallest
     oled.print(F("Error:"));
 
     oled.setCursor(2, 10);
-    //oled.setFontType(1);
+    //oled.setFont(QW_FONT_8X16);
     oled.print(errorMessage);
 
     oled.display(); //Push internal buffer to display
@@ -189,13 +188,13 @@ void paintBatteryLevel()
   {
     //Current battery charge level
     if (battLevel < 25)
-      oled.drawIcon(45, 0, Battery_0_Width, Battery_0_Height, Battery_0, sizeof(Battery_0), true);
+      displayBitmap(45, 0, Battery_0_Width, Battery_0_Height, Battery_0);
     else if (battLevel < 50)
-      oled.drawIcon(45, 0, Battery_1_Width, Battery_1_Height, Battery_1, sizeof(Battery_1), true);
+      displayBitmap(45, 0, Battery_1_Width, Battery_1_Height, Battery_1);
     else if (battLevel < 75)
-      oled.drawIcon(45, 0, Battery_2_Width, Battery_2_Height, Battery_2, sizeof(Battery_2), true);
+      displayBitmap(45, 0, Battery_2_Width, Battery_2_Height, Battery_2);
     else //batt level > 75
-      oled.drawIcon(45, 0, Battery_3_Width, Battery_3_Height, Battery_3, sizeof(Battery_3), true);
+      displayBitmap(45, 0, Battery_3_Width, Battery_3_Height, Battery_3);
   }
 }
 
@@ -207,7 +206,7 @@ void paintWirelessIcon()
     //Bluetooth icon if paired, or Bluetooth MAC address if not paired
     if (radioState == BT_CONNECTED)
     {
-      oled.drawIcon(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol, sizeof(BT_Symbol), true);
+      displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
     }
     else if (radioState == WIFI_ON_NOCONNECTION)
     {
@@ -220,7 +219,7 @@ void paintWirelessIcon()
           wifiIconDisplayed = true;
 
           //Draw the icon
-          oled.drawIcon(6, 1, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol, sizeof(WiFi_Symbol), true);
+          displayBitmap(6, 1, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
         }
         else
           wifiIconDisplayed = false;
@@ -229,14 +228,14 @@ void paintWirelessIcon()
     else if (radioState == WIFI_CONNECTED)
     {
       //Solid WiFi icon
-      oled.drawIcon(6, 1, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol, sizeof(WiFi_Symbol), true);
+      displayBitmap(6, 1, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
     }
     else
     {
       char macAddress[5];
       sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-      oled.setFontType(0); //Set font to smallest
-      oled.setCursor(0, 4);
+      oled.setFont(QW_FONT_5X7); //Set font to smallest
+      oled.setCursor(0, 3);
       oled.print(macAddress);
     }
   }
@@ -259,7 +258,7 @@ void paintHorizontalAccuracy()
           crosshairIconDisplayed = true;
 
           //Draw the icon
-          oled.drawIcon(0, 18, CrossHair_Width, CrossHair_Height, CrossHair, sizeof(CrossHair), true);
+          displayBitmap(0, 18, CrossHair_Width, CrossHair_Height, CrossHair);
         }
         else
           crosshairIconDisplayed = false;
@@ -275,7 +274,7 @@ void paintHorizontalAccuracy()
           crosshairIconDisplayed = true;
 
           //Draw dual crosshair
-          oled.drawIcon(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual, sizeof(CrossHairDual), true);
+          displayBitmap(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual);
         }
         else
           crosshairIconDisplayed = false;
@@ -284,15 +283,15 @@ void paintHorizontalAccuracy()
     else if (systemState == STATE_ROVER_RTK_FIX)
     {
       //Draw dual crosshair
-      oled.drawIcon(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual, sizeof(CrossHairDual), true);
+      displayBitmap(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual);
     }
     else
     {
       //Draw crosshair
-      oled.drawIcon(0, 18, CrossHair_Width, CrossHair_Height, CrossHair, sizeof(CrossHair), true);
+      displayBitmap(0, 18, CrossHair_Width, CrossHair_Height, CrossHair);
     }
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.setCursor(16, 20); //x, y
     oled.print(":");
     float hpa = 100;
@@ -340,17 +339,17 @@ void paintBaseState()
       {
         case (DYN_MODEL_PORTABLE):
           {
-            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_1_Portable, sizeof(DynamicModel_1_Portable), true);
+            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_1_Portable);
           }
           break;
         case (DYN_MODEL_STATIONARY):
           {
-            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_2_Stationary, sizeof(DynamicModel_2_Stationary), true);
+            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_2_Stationary);
           }
           break;
         case (DYN_MODEL_PEDESTRIAN):
           {
-            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_3_Pedestrian, sizeof(DynamicModel_3_Pedestrian), true);
+            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_3_Pedestrian);
           }
           break;
         case (DYN_MODEL_AUTOMOTIVE):
@@ -358,7 +357,7 @@ void paintBaseState()
             //Normal rover for ZED-F9P, fusion rover for ZED-F9R
             if (zedModuleType == PLATFORM_F9P)
             {
-              oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_4_Automotive, sizeof(DynamicModel_4_Automotive), true);
+              displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_4_Automotive);
             }
             else if (zedModuleType == PLATFORM_F9R)
             {
@@ -374,7 +373,7 @@ void paintBaseState()
                     baseIconDisplayed = true;
 
                     //Draw the icon
-                    oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
+                    displayBitmap(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion);
                   }
                   else
                     baseIconDisplayed = false;
@@ -383,12 +382,12 @@ void paintBaseState()
               else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1) //Calibrated
               {
                 //Solid fusion rover
-                oled.drawIcon(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion, sizeof(Rover_Fusion), true);
+                displayBitmap(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion);
               }
               else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2 || i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3) //Suspended or disabled
               {
                 //Empty rover
-                oled.drawIcon(27, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty, sizeof(Rover_Fusion_Empty), true);
+                displayBitmap(27, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty);
               }
             }
 
@@ -396,32 +395,32 @@ void paintBaseState()
           break;
         case (DYN_MODEL_SEA):
           {
-            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_5_Sea, sizeof(DynamicModel_5_Sea), true);
+            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_5_Sea);
           }
           break;
         case (DYN_MODEL_AIRBORNE1g):
           {
-            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_6_Airborne1g, sizeof(DynamicModel_6_Airborne1g), true);
+            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_6_Airborne1g);
           }
           break;
         case (DYN_MODEL_AIRBORNE2g):
           {
-            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_7_Airborne2g, sizeof(DynamicModel_7_Airborne2g), true);
+            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_7_Airborne2g);
           }
           break;
         case (DYN_MODEL_AIRBORNE4g):
           {
-            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_8_Airborne4g, sizeof(DynamicModel_8_Airborne4g), true);
+            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_8_Airborne4g);
           }
           break;
         case (DYN_MODEL_WRIST):
           {
-            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_9_Wrist, sizeof(DynamicModel_9_Wrist), true);
+            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_9_Wrist);
           }
           break;
         case (DYN_MODEL_BIKE):
           {
-            oled.drawIcon(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_10_Bike, sizeof(DynamicModel_10_Bike), true);
+            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_10_Bike);
           }
           break;
       }
@@ -440,7 +439,7 @@ void paintBaseState()
           baseIconDisplayed = true;
 
           //Draw the icon
-          oled.drawIcon(27, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary, sizeof(BaseTemporary), true); //true - blend with other pixels
+          displayBitmap(27, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary);
         }
         else
           baseIconDisplayed = false;
@@ -453,7 +452,7 @@ void paintBaseState()
              systemState == STATE_BASE_TEMP_CASTER_CONNECTED)
     {
       //Draw the icon
-      oled.drawIcon(27, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary, sizeof(BaseTemporary), true); //true - blend with other pixels
+      displayBitmap(27, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary);
     }
     else if (systemState == STATE_BASE_FIXED_TRANSMITTING ||
              systemState == STATE_BASE_FIXED_WIFI_STARTED ||
@@ -462,7 +461,7 @@ void paintBaseState()
              systemState == STATE_BASE_FIXED_CASTER_CONNECTED)
     {
       //Draw the icon
-      oled.drawIcon(27, 0, BaseFixed_Width, BaseFixed_Height, BaseFixed, sizeof(BaseFixed), true); //true - blend with other pixels
+      displayBitmap(27, 0, BaseFixed_Width, BaseFixed_Height, BaseFixed); //true - blend with other pixels
     }
   }
 }
@@ -477,7 +476,7 @@ void paintSIV()
     if (i2cGNSS.getFixType() == 3 || i2cGNSS.getFixType() == 4 || i2cGNSS.getFixType() == 5) //3D, 3D+DR, or Time
     {
       //Fix, turn on icon
-      oled.drawIcon(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna, sizeof(SIV_Antenna), true);
+      displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
     }
     else
     {
@@ -490,14 +489,14 @@ void paintSIV()
           satelliteDishIconDisplayed = true;
 
           //Draw the icon
-          oled.drawIcon(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna, sizeof(SIV_Antenna), true);
+          displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
         }
         else
           satelliteDishIconDisplayed = false;
       }
     }
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.setCursor(16, 36); //x, y
     oled.print(":");
 
@@ -515,9 +514,9 @@ void paintSIV()
   else if (online.display == true && online.gnss == false)
   {
     //Fix, turn on icon
-    oled.drawIcon(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna, sizeof(SIV_Antenna), true);
+    displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.setCursor(16, 36); //x, y
     oled.print(":");
 
@@ -543,13 +542,13 @@ void paintLogging()
       }
 
       if (loggingIconDisplayed == 0)
-        oled.drawIcon(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0, sizeof(Logging_0), true); //Draw the icon
+        displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
       else if (loggingIconDisplayed == 1)
-        oled.drawIcon(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1, sizeof(Logging_1), true); //Draw the icon
+        displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1);
       else if (loggingIconDisplayed == 2)
-        oled.drawIcon(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2, sizeof(Logging_2), true); //Draw the icon
+        displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2);
       else if (loggingIconDisplayed == 3)
-        oled.drawIcon(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3, sizeof(Logging_3), true); //Draw the icon
+        displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3);
     }
     else
     { //Paint pulse to show system activity
@@ -562,7 +561,7 @@ void paintLogging()
         loggingIconDisplayed %= 4; //Wrap
 
         const int pulseX = 64 - 4;
-        const int pulseY = oled.getLCDHeight();
+        const int pulseY = oled.getHeight();
 
         if (loggingIconDisplayed == 0)
         {
@@ -697,23 +696,23 @@ void paintBaseTempSurveyStarted()
 
     paintBaseState(); //Top center
 
-    oled.setFontType(0);
+    oled.setFont(QW_FONT_5X7);
     oled.setCursor(0, 23); //x, y
     oled.print("Mean:");
 
     oled.setCursor(29, 20); //x, y
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
     if (svinMeanAccuracy < 10.0) //Error check
       oled.print(svinMeanAccuracy, 2);
     else
       oled.print(">10");
 
     oled.setCursor(0, 39); //x, y
-    oled.setFontType(0);
+    oled.setFont(QW_FONT_5X7);
     oled.print("Time:");
 
     oled.setCursor(30, 36); //x, y
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
     if (svinObservationTime < 1000) //Error check
       oled.print(svinObservationTime);
     else
@@ -737,11 +736,11 @@ void paintBaseTempTransmitting()
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
-    oled.setFontType(0);
+    oled.setFont(QW_FONT_5X7);
     oled.print("RTCM:");
 
     if (rtcmPacketsSent < 100)
@@ -749,7 +748,7 @@ void paintBaseTempTransmitting()
     else
       oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
@@ -773,11 +772,11 @@ void paintBaseTempWiFiStarted()
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
-    oled.setFontType(0);
+    oled.setFont(QW_FONT_5X7);
     oled.print("RTCM:");
 
     if (rtcmPacketsSent < 100)
@@ -785,7 +784,7 @@ void paintBaseTempWiFiStarted()
     else
       oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
@@ -810,11 +809,11 @@ void paintBaseTempWiFiConnected()
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
-    oled.setFontType(0);
+    oled.setFont(QW_FONT_5X7);
     oled.print("RTCM:");
 
     if (rtcmPacketsSent < 100)
@@ -822,7 +821,7 @@ void paintBaseTempWiFiConnected()
     else
       oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
@@ -852,7 +851,7 @@ void paintBaseTempCasterStarted()
     textX = 3;
     textY = 33;
     textKerning = 6;
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
 
     printTextwithKerning("Connecting", textX, textY, textKerning);
   }
@@ -873,11 +872,11 @@ void paintBaseTempCasterConnected()
     int textX = 4;
     int textY = 17;
     int textKerning = 8;
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
     printTextwithKerning("Casting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
-    oled.setFontType(0);
+    oled.setFont(QW_FONT_5X7);
     oled.print("RTCM:");
 
     if (rtcmPacketsSent < 100)
@@ -885,7 +884,7 @@ void paintBaseTempCasterConnected()
     else
       oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
@@ -921,11 +920,11 @@ void paintBaseFixedTransmitting()
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
-    oled.setFontType(0);
+    oled.setFont(QW_FONT_5X7);
     oled.print("RTCM:");
 
     if (rtcmPacketsSent < 100)
@@ -933,7 +932,7 @@ void paintBaseFixedTransmitting()
     else
       oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
@@ -957,11 +956,11 @@ void paintBaseFixedWiFiStarted()
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
-    oled.setFontType(0);
+    oled.setFont(QW_FONT_5X7);
     oled.print("RTCM:");
 
     if (rtcmPacketsSent < 100)
@@ -969,7 +968,7 @@ void paintBaseFixedWiFiStarted()
     else
       oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
@@ -994,11 +993,11 @@ void paintBaseFixedWiFiConnected()
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
     printTextwithKerning("Xmitting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
-    oled.setFontType(0);
+    oled.setFont(QW_FONT_5X7);
     oled.print("RTCM:");
 
     if (rtcmPacketsSent < 100)
@@ -1006,7 +1005,7 @@ void paintBaseFixedWiFiConnected()
     else
       oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
@@ -1036,7 +1035,7 @@ void paintBaseFixedCasterStarted()
     textX = 3;
     textY = 33;
     textKerning = 6;
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
 
     printTextwithKerning("Connecting", textX, textY, textKerning);
   }
@@ -1057,11 +1056,11 @@ void paintBaseFixedCasterConnected()
     int textX = 4;
     int textY = 17;
     int textKerning = 8;
-    oled.setFontType(1);
+    oled.setFont(QW_FONT_8X16);
     printTextwithKerning("Casting", textX, textY, textKerning);
 
     oled.setCursor(0, 39); //x, y
-    oled.setFontType(0);
+    oled.setFont(QW_FONT_5X7);
     oled.print("RTCM:");
 
     if (rtcmPacketsSent < 100)
@@ -1069,7 +1068,7 @@ void paintBaseFixedCasterConnected()
     else
       oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFontType(1); //Set font to type 1: 8x16
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
@@ -1082,12 +1081,12 @@ void displayBaseStart(uint16_t displayTime)
 {
   if (online.display == true)
   {
-    oled.clear(PAGE);
+    oled.erase();
 
     uint8_t fontHeight = 15; //Assume fontsize 1
-    uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
-    printTextCenter("Base", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Base", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
     oled.display();
 
     oled.display();
@@ -1100,13 +1099,13 @@ void displayBaseSuccess(uint16_t displayTime)
 {
   if (online.display == true)
   {
-    oled.clear(PAGE);
+    oled.erase();
 
     uint8_t fontHeight = 15; //Assume fontsize 1
-    uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
-    printTextCenter("Base", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter("Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Base", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1118,13 +1117,13 @@ void displayBaseFail(uint16_t displayTime)
 {
   if (online.display == true)
   {
-    oled.clear(PAGE);
+    oled.erase();
 
     uint8_t fontHeight = 15; //Assume fontsize 1
-    uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
-    printTextCenter("Base", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter("Failed", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Base", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Failed", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1141,13 +1140,13 @@ void displayRoverStart(uint16_t displayTime)
 {
   if (online.display == true)
   {
-    oled.clear(PAGE);
+    oled.erase();
 
     uint8_t fontHeight = 15;
-    uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
-    printTextCenter("Rover", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    //  printTextCenter("Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Rover", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    //  printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1159,13 +1158,13 @@ void displayRoverSuccess(uint16_t displayTime)
 {
   if (online.display == true)
   {
-    oled.clear(PAGE);
+    oled.erase();
 
     uint8_t fontHeight = 15;
-    uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
-    printTextCenter("Rover", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter("Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Rover", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1177,13 +1176,13 @@ void displayRoverFail(uint16_t displayTime)
 {
   if (online.display == true)
   {
-    oled.clear(PAGE);
+    oled.erase();
 
     uint8_t fontHeight = 15;
-    uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
-    printTextCenter("Rover", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter("Failed", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Rover", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Failed", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1195,13 +1194,13 @@ void displayAccelFail(uint16_t displayTime)
 {
   if (online.display == true)
   {
-    oled.clear(PAGE);
+    oled.erase();
 
     uint8_t fontHeight = 15;
-    uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
-    printTextCenter("Accel", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter("Failed", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Accel", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Failed", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1235,7 +1234,7 @@ void displayWiFiConfig()
         wifiIconDisplayed = true;
 
         //Draw the icon
-        oled.drawIcon((LCDWIDTH / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol, sizeof(WiFi_Symbol), true);
+        displayBitmap((oled.getWidth() / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
       }
       else
         wifiIconDisplayed = false;
@@ -1244,27 +1243,22 @@ void displayWiFiConfig()
   else if (radioState == WIFI_CONNECTED)
   {
     //Solid WiFi icon
-    oled.drawIcon((LCDWIDTH / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol, sizeof(WiFi_Symbol), true);
+    displayBitmap((oled.getWidth() / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
   }
 
-
-  int yPos = WiFi_Symbol_Height + 3;
+  int yPos = WiFi_Symbol_Height + 2;
   int fontHeight = 8;
 
-  printTextCenter("SSID:", yPos, 0, 1, false); //text, y, font type, kerning, inverted
+  printTextCenter("SSID:", yPos, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
   yPos = yPos + fontHeight + 1;
-  printTextCenter("RTK Config", yPos, 0, 1, false);
+  printTextCenter("RTK Config", yPos, QW_FONT_5X7, 1, false);
 
   yPos = yPos + fontHeight + 3;
-  printTextCenter("IP:", yPos, 0, 1, false);
+  printTextCenter("IP:", yPos, QW_FONT_5X7, 1, false);
 
   yPos = yPos + fontHeight + 1;
-
-  //char temp[50];
-  //sprintf(temp, "%s", WiFi.softAPIP());
-  //printTextCenter((const*)temp, yPos, 0, 1, false);
-  printTextCenter("192.168.4.1", yPos, 0, 1, false);
+  printTextCenter("192.168.4.1", yPos, QW_FONT_5X7, 1, false);
 }
 
 //When user does a factory reset, let us know
@@ -1277,13 +1271,13 @@ void displaySurveyStart(uint16_t displayTime)
 {
   if (online.display == true)
   {
-    oled.clear(PAGE);
+    oled.erase();
 
     uint8_t fontHeight = 15;
-    uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
-    printTextCenter("Survey", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    //printTextCenter("Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Survey", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    //printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1295,13 +1289,13 @@ void displaySurveyStarted(uint16_t displayTime)
 {
   if (online.display == true)
   {
-    oled.clear(PAGE);
+    oled.erase();
 
     uint8_t fontHeight = 15;
-    uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
-    printTextCenter("Survey", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter("Started", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Survey", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1314,13 +1308,13 @@ void displaySDFail(uint16_t displayTime)
 {
   if (online.display == true)
   {
-    oled.clear(PAGE);
+    oled.erase();
 
     uint8_t fontHeight = 15;
-    uint8_t yPos = LCDHEIGHT / 2 - fontHeight;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
-    printTextCenter("Format", yPos, 1, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter("SD Card", yPos + fontHeight, 1, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Format", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("SD Card", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1350,20 +1344,20 @@ void displayFirmwareUpdateProgress(int percentComplete)
   //Update the display if connected
   if (online.display == true)
   {
-    oled.clear(PAGE); // Clear the display's internal buffer
+    oled.erase(); // Clear the display's internal buffer
 
     int yPos = 3;
     int fontHeight = 8;
 
-    printTextCenter("Firmware", yPos, 0, 1, false); //text, y, font type, kerning, inverted
+    printTextCenter("Firmware", yPos, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
     yPos = yPos + fontHeight + 1;
-    printTextCenter("Update", yPos, 0, 1, false); //text, y, font type, kerning, inverted
+    printTextCenter("Update", yPos, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
     yPos = yPos + fontHeight + 3;
     char temp[50];
     sprintf(temp, "%d%%", percentComplete);
-    printTextCenter(temp, yPos, 1, 1, false); //text, y, font type, kerning, inverted
+    printTextCenter(temp, yPos, QW_FONT_8X16, 1, false); //text, y, font type, kerning, inverted
 
     oled.display(); //Push internal buffer to display
   }
@@ -1399,7 +1393,7 @@ void paintSystemTest()
     drawFrame(); //Outside edge
 
     //Test SD, accel, batt, GNSS, mux
-    oled.setFontType(0); //Set font to smallest
+    oled.setFont(QW_FONT_5X7); //Set font to smallest
     oled.setCursor(xOffset, yOffset); //x, y
     oled.print(F("SD:"));
 
@@ -1477,6 +1471,8 @@ void paintSystemTest()
     //Verify the ESP UART2 can communicate TX/RX to ZED UART1
     if (zedUartPassed == false)
     {
+      Serial.println("GNSS test");
+
       setMuxport(MUX_UBLOX_NMEA); //Set mux to UART so we can debug over data port
       delay(20);
 
@@ -1516,17 +1512,17 @@ void paintBubbleLevel()
       getAngles();
 
       //Draw dot in middle
-      oled.pixel(LCDWIDTH / 2, LCDHEIGHT / 2);
-      oled.pixel(LCDWIDTH / 2 + 1, LCDHEIGHT / 2);
-      oled.pixel(LCDWIDTH / 2, LCDHEIGHT / 2 + 1);
-      oled.pixel(LCDWIDTH / 2 + 1, LCDHEIGHT / 2 + 1);
+      oled.pixel(oled.getWidth() / 2, oled.getHeight() / 2);
+      oled.pixel(oled.getWidth() / 2 + 1, oled.getHeight() / 2);
+      oled.pixel(oled.getWidth() / 2, oled.getHeight() / 2 + 1);
+      oled.pixel(oled.getWidth() / 2 + 1, oled.getHeight() / 2 + 1);
 
       //Draw circle relative to dot
       const int radiusLarge = 10;
       const int radiusSmall = 4;
 
-      oled.circle(LCDWIDTH / 2 - averagedPitch, LCDHEIGHT / 2 + averagedRoll, radiusLarge);
-      oled.circle(LCDWIDTH / 2 - averagedPitch, LCDHEIGHT / 2 + averagedRoll, radiusSmall);
+      oled.circle(oled.getWidth() / 2 - averagedPitch, oled.getHeight() / 2 + averagedRoll, radiusLarge);
+      oled.circle(oled.getWidth() / 2 - averagedPitch, oled.getHeight() / 2 + averagedRoll, radiusSmall);
     }
     else
     {
@@ -1597,88 +1593,85 @@ void paintDisplaySetup()
     {
       if (setupState == STATE_MARK_EVENT)
       {
-        printTextCenter("Mark", 12 * 0, 1, 1, true); //string, y, font type, kerning, inverted
-        printTextCenter("Rover", 12 * 1, 1, 1, false);
-        printTextCenter("Base", 12 * 2, 1, 1, false);
-        printTextCenter("Bubble", 12 * 3, 1, 1, false);
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
       }
       else if (setupState == STATE_ROVER_NOT_STARTED)
       {
-        printTextCenter("Mark", 12 * 0, 1, 1, false);
-        printTextCenter("Rover", 12 * 1, 1, 1, true);
-        printTextCenter("Base", 12 * 2, 1, 1, false);
-        printTextCenter("Bubble", 12 * 3, 1, 1, false);
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
       }
       else if (setupState == STATE_BASE_NOT_STARTED)
       {
-        printTextCenter("Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
-        printTextCenter("Rover", 12 * 1, 1, 1, false);
-        printTextCenter("Base", 12 * 2, 1, 1, true);
-        printTextCenter("Bubble", 12 * 3, 1, 1, false);
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, true);
+        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
       }
       else if (setupState == STATE_BUBBLE_LEVEL)
       {
-        printTextCenter("Mark", 12 * 0, 1, 1, false); //string, y, font type, kerning, inverted
-        printTextCenter("Rover", 12 * 1, 1, 1, false);
-        printTextCenter("Base", 12 * 2, 1, 1, false);
-        printTextCenter("Bubble", 12 * 3, 1, 1, true);
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
       {
-        printTextCenter("Rover", 12 * 0, 1, 1, false);
-        printTextCenter("Base", 12 * 1, 1, 1, false);
-        printTextCenter("Bubble", 12 * 2, 1, 1, false);
-        printTextCenter("Config", 12 * 3, 1, 1, true);
+        printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
       }
     } //end type F9P
     else if (zedModuleType == PLATFORM_F9R)
     {
       if (setupState == STATE_MARK_EVENT)
       {
-        printTextCenter("Mark", 12 * 0, 1, 1, true); //string, y, font type, kerning, inverted
-        printTextCenter("Rover", 12 * 1, 1, 1, false);
-        printTextCenter("Bubble", 12 * 2, 1, 1, false);
-        printTextCenter("Config", 12 * 3, 1, 1, false);
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
       }
       else if (setupState == STATE_ROVER_NOT_STARTED)
       {
-        printTextCenter("Mark", 12 * 0, 1, 1, false);
-        printTextCenter("Rover", 12 * 1, 1, 1, true);
-        printTextCenter("Bubble", 12 * 2, 1, 1, false);
-        printTextCenter("Config", 12 * 3, 1, 1, false);
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
+        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
       }
       else if (setupState == STATE_BUBBLE_LEVEL)
       {
-        printTextCenter("Mark", 12 * 0, 1, 1, false);
-        printTextCenter("Rover", 12 * 1, 1, 1, false);
-        printTextCenter("Bubble", 12 * 2, 1, 1, true);
-        printTextCenter("Config", 12 * 3, 1, 1, false);
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, true);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
       }
       else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
       {
-        printTextCenter("Mark", 12 * 0, 1, 1, false);
-        printTextCenter("Rover", 12 * 1, 1, 1, false);
-        printTextCenter("Bubble", 12 * 2, 1, 1, false);
-        printTextCenter("Config", 12 * 3, 1, 1, true);
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
       }
     } //end type F9R
   } //end display online
 }
 
 //Given text, and location, print text center of the screen
-void printTextCenter(const char *text, uint8_t yPos, uint8_t fontType, uint8_t kerning, bool highlight) //text, y, font type, kearning, inverted
+void printTextCenter(const char *text, uint8_t yPos, QwiicFont &fontType, uint8_t kerning, bool highlight) //text, y, font type, kearning, inverted
 {
-  uint8_t fontWidth = 0;
-  if (fontType == 0) fontWidth = 5; //Smallest 5x7
-  if (fontType == 1)
-  {
-    fontWidth = 7; //8x16, but widest character is only 7 pixels.
-  }
+  oled.setFont(fontType);
+  oled.setDrawMode(grROPXOR);
 
-  uint8_t xStart = (LCDWIDTH / 2) - ((strlen(text) * (fontWidth + kerning)) / 2);
+  uint8_t fontWidth = fontType.width;
+  if(fontWidth == 8) fontWidth = 7; //8x16, but widest character is only 7 pixels.
 
-  oled.setFontType(fontType);
-  oled.setDrawMode(XOR);
+  uint8_t xStart = (oled.getWidth() / 2) - ((strlen(text) * (fontWidth + kerning)) / 2) + 1;
+
   uint8_t xPos = xStart;
   for (int x = 0 ; x < strlen(text) ; x++)
   {
@@ -1690,7 +1683,7 @@ void printTextCenter(const char *text, uint8_t yPos, uint8_t fontType, uint8_t k
   if (highlight) //Draw a box, inverted over text
   {
     uint8_t textPixelWidth = strlen(text) * (fontWidth + kerning);
-    oled.rectFill(xStart - 5, yPos, textPixelWidth + 9, 11, WHITE, XOR); //x, y, width, height, color, mode
+    oled.rectangleFill(xStart - 5, yPos, textPixelWidth + 9, 12, 1); //x, y, width, height, color
   }
 }
 
@@ -1712,10 +1705,10 @@ void displayMessage(const char* message, uint16_t displayTime)
       token = strtok(NULL, " ");
     }
 
-    uint8_t yPos = (LCDHEIGHT / 2) - (fontHeight / 2);
+    uint8_t yPos = (oled.getHeight() / 2) - (fontHeight / 2);
     if (wordCount == 2) yPos -= (fontHeight / 2);
 
-    oled.clear(PAGE);
+    oled.erase();
 
     //drawFrame();
 
@@ -1723,7 +1716,7 @@ void displayMessage(const char* message, uint16_t displayTime)
     token = strtok(temp, " ");
     while (token != NULL)
     {
-      printTextCenter(token, yPos, 1, 1, false); //text, y, font type, kerning, inverted
+      printTextCenter(token, yPos, QW_FONT_8X16, 1, false); //text, y, font type, kerning, inverted
       token = strtok(NULL, " ");
       yPos += fontHeight;
     }
@@ -1740,9 +1733,15 @@ void paintResets()
   {
     if (settings.enableResetDisplay == true)
     {
-      oled.setFontType(0); //Small font
+      oled.setFont(QW_FONT_5X7); //Small font
       oled.setCursor(16 + (8 * 3) + 6, 38); //x, y
       oled.print(settings.resetCount);
     }
   }
+}
+
+//Wrapper to avoid needing to pass width/height data twice
+void displayBitmap(uint8_t x, uint8_t y, uint8_t imageWidth, uint8_t imageHeight, uint8_t *imageData)
+{
+  oled.bitmap(x, y, x + imageWidth, y + imageHeight, imageData, imageWidth, imageHeight);
 }

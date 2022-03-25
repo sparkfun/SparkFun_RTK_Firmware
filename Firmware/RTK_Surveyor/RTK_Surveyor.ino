@@ -50,8 +50,8 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 11;
 
-#define COMPILE_WIFI //Comment out to remove all WiFi functionality
-#define COMPILE_BT //Comment out to disable all Bluetooth
+//#define COMPILE_WIFI //Comment out to remove all WiFi functionality
+//#define COMPILE_BT //Comment out to disable all Bluetooth
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
@@ -250,12 +250,14 @@ bool zedUartPassed = false; //Goes true during testing if ESP can communicate wi
 
 //External Display
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SFE_MicroOLED.h> //Click here to get the library: http://librarymanager/All#SparkFun_Micro_OLED
-#include "icons.h"
+#include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
+QwiicMicroOLED oled;
 
-#define PIN_RESET 255 //Disable
-#define DC_JUMPER 1
-MicroOLED oled(PIN_RESET, DC_JUMPER);
+// Fonts
+#include <res/qw_fnt_5x7.h>
+#include <res/qw_fnt_8x16.h>
+
+#include "icons.h"
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Firmware binaries loaded from SD

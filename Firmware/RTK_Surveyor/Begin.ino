@@ -315,12 +315,11 @@ void beginEEPROM()
 
 void beginDisplay()
 {
-  //0x3D is default on Qwiic board
-  if (isConnected(0x3D) == true || isConnected(0x3C) == true)
+  Serial.println("Starting display");
+  
+  if (oled.begin() == true)
   {
     online.display = true;
-
-    oled.setI2CTransactionSize(64); //Increase to page size of 64. Slight speed improvement over 32 bytes.
 
     displaySplash();
   }

@@ -1,38 +1,49 @@
 /*
-  Red = 34
-  Green = 35
-  Blue = Used for Charging
+  Basic demonstration of the MAX17048 fuel gauge IC used in the RTK line.
 
-  Battery level LED goes from Green (50-100%) to Yellow (10-50%) to Red (<10%)
+  On the RTK Surveyor, one LED is used to indicate status. Battery level LED goes 
+  from Green (50-100%) to Yellow (10-50%) to Red (<10%)
 */
 
-#include "MAX17048.h" //Click here to get the library: http://librarymanager/All#MAX17048
-MAX17048 battMonitor;
-
-const int batteryLevelLED_Red = 34;
-const int batteryLevelLED_Green = 35;
+//Battery fuel gauge and PWM LEDs
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
+SFE_MAX1704X lipo(MAX1704X_MAX17048);
 
 // setting PWM properties
-const int freq = 5000;
-const int ledChannel = 0;
-const int resolution = 8;
+const int pwmFreq = 5000;
+const int ledRedChannel = 0;
+const int ledGreenChannel = 1;
+const int ledBTChannel = 2;
+const int pwmResolution = 8;
+
+int pwmFadeAmount = 10;
+int btFadeLevel = 0;
+
+int battLevel = 0; //SOC measured from fuel gauge, in %. Used in multiple places (display, serial debug, log)
+float battVoltage = 0.0;
+float battChangeRate = 0.0;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+uint32_t lastBattUpdate = 0;
 
 void setup()
 {
   Serial.begin(115200);
+  Serial.println("Battery example");
+
   Wire.begin();
 
-  battMonitor.attatch(Wire);
+  beginLEDs(); //LED and PWM setup
 
-  ledcSetup(ledChannel, freq, resolution);
-  ledcAttachPin(batteryLevelLED_Red, ledChannel);
-  ledcAttachPin(batteryLevelLED_Green, ledChannel);
-
-  xTaskCreate(batteryLEDTask, "batteryLEDs", 1000, NULL, 0, NULL); //1000 stack, 0 = Low priority
+  beginFuelGauge(); //Configure battery fuel guage monitor
+  checkBatteryLevels(); //Force check so you see battery level immediately at power on
+  
 }
 
 void loop()
 {
+  updateBattLEDs();
   Serial.println(".");
   delay(1000);
 }

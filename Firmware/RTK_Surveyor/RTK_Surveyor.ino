@@ -199,7 +199,7 @@ uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 #include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
 SFE_MAX1704X lipo(MAX1704X_MAX17048);
 
-// setting PWM properties
+// RTK Surveyor LED PWM properties
 const int pwmFreq = 5000;
 const int ledRedChannel = 0;
 const int ledGreenChannel = 1;

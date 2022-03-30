@@ -19,7 +19,7 @@
   to the ZED-F9P to achieve RTK: F9PSerialWriteTask(), F9PSerialReadTask().
 
   A settings file is accessed on microSD if available otherwise settings are pulled from
-  ESP32's emulated EEPROM.
+  ESP32's file system LittleFS.
 
   As of v1.2, the heap is approximately 94072 during Rover Fix, 142260 during WiFi Casting. This is
   important to maintain as unit will begin to have stability issues at ~30k.
@@ -50,13 +50,13 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 11;
 
-//#define COMPILE_WIFI //Comment out to remove all WiFi functionality
-//#define COMPILE_BT //Comment out to disable all Bluetooth
+#define COMPILE_WIFI //Comment out to remove all WiFi functionality
+#define COMPILE_BT //Comment out to disable all Bluetooth
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
-//  to make sure that the settings in EEPROM are correct for this version of the RTK
+//  to make sure that the settings stored in flash (LittleFS) are correct for this version of the RTK
 //  (sizeOfSettings is not necessarily unique and we want to avoid problems when swapping from one variant to another)
 //  It is the sum of:
 //    the major firmware version * 0x10
@@ -103,10 +103,15 @@ int pin_radio_rts;
 #include <Wire.h>
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-//EEPROM for storing settings
+//LittleFS for storing settings for different user profiles
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#include <EEPROM.h>
-#define EEPROM_SIZE 4096 //ESP32 emulates EEPROM in non-volatile storage (external flash IC). Max is 508k.
+#include "FS.h"
+#include <LittleFS.h>
+#define FORMAT_LITTLEFS_IF_FAILED true
+
+const char *rtkProfileSettings = "SFERTK"; //Holds the profileNumber
+const char *rtkSettings[] = {"SFERTK_0", "SFERTK_1", "SFERTK_2", "SFERTK_3"}; //User profiles
+#define MAX_PROFILE_COUNT 4
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time
@@ -406,8 +411,7 @@ void setup()
 
   beginGNSS(); //Connect to GNSS to get module type
 
-  beginEEPROM(); //Start EEPROM for settings
-  //eepromErase(); //Must be before first use of EEPROM. Currently in beginBoard().
+  beginFS(); //Start file system for settings
 
   beginBoard(); //Determine what hardware platform we are running on and check on button
 

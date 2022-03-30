@@ -20,15 +20,21 @@ void printUnknown(int unknownValue)
   Serial.println();
 }
 
+//Clear the Serial RX buffer before we begin scanning for characters
+void clearBuffer()
+{
+  Serial.flush();
+  delay(20);//Wait for any incoming chars to hit buffer
+  while (Serial.available() > 0) Serial.read(); //Clear buffer
+}
+
 //Get single byte from user
 //Waits for and returns the character that the user provides
 //Returns STATUS_GETNUMBER_TIMEOUT if input times out
 //Returns 'x' if user presses 'x'
 uint8_t getByteChoice(int numberOfSeconds)
 {
-  Serial.flush();
-  delay(50);//Wait for any incoming chars to hit buffer
-  while (Serial.available() > 0) Serial.read(); //Clear buffer
+  clearBuffer();
 
   long startTime = millis();
   byte incoming;
@@ -61,8 +67,7 @@ uint8_t getByteChoice(int numberOfSeconds)
 //Returns STATUS_PRESSED_X if user presses 'x'
 int64_t getNumber(int numberOfSeconds)
 {
-  delay(10); //Wait for any incoming chars to hit buffer
-  while (Serial.available() > 0) Serial.read(); //Clear buffer
+  clearBuffer();
 
   //Get input from user
   char cleansed[20]; //Good for very large numbers: 123,456,789,012,345,678\0
@@ -142,8 +147,7 @@ int64_t getNumber(int numberOfSeconds)
 //Returns STATUS_PRESSED_X if user presses 'x'
 double getDouble(int numberOfSeconds)
 {
-  delay(10); //Wait for any incoming chars to hit buffer
-  while (Serial.available() > 0) Serial.read(); //Clear buffer
+  clearBuffer();
 
   //Get input from user
   char cleansed[20]; //Good for very large numbers: 123,456,789,012,345,678\0
@@ -238,6 +242,8 @@ double getDouble(int numberOfSeconds)
 //Returns STATUS_GETBYTE_TIMEOUT if input times out
 byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
 {
+  clearBuffer();
+
   byte readLength = 0;
   long startTime = millis();
   while (readLength < bufferLength - 1)

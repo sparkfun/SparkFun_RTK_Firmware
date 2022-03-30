@@ -1,99 +1,152 @@
+//We use the LittleFS library to store user profiles in SPIFFs
+//Move selected user profile from SPIFFs into settings struct (RAM)
+//We originally used EEPROM but it was limited to 4096 bytes. Each settings struct is ~4000 bytes
+//so multiple user profiles wouldn't fit. Prefences was limited to a single putBytes of ~3000 bytes.
+//So we moved again to SPIFFs. It's being replaced by LittleFS so here we are.
 void loadSettings()
 {
-  if (online.eeprom == false)
+  //First, look up the last used profile number
+  uint8_t profileNumber = getProfileNumber();
+
+  //Load the settings file into a temp holder until we know it's valid
+  Settings tempSettings;
+  if (getSettings(profileNumber, tempSettings) == true)
+    settings = tempSettings; //Settings are good. Move them over.
+
+  loadSystemSettingsFromFile(); //Load any settings from config file. This will over-write any pre-existing LittleFS settings.
+
+  //Change default profile names to 'Profile1' etc
+  if (strcmp(settings.profileName, "Default") == 0)
+    sprintf(settings.profileName, "Profile%d", profileNumber + 1);
+
+  //Record these settings to LittleFS and SD file to be sure they are the same
+  recordSystemSettings();
+
+  log_d("Settings profile #%d loaded", profileNumber);
+}
+
+//Load a given settings file into a given settings array
+//Check settings file for correct length and ID
+//Returns true if settings file was loaded successfully
+bool getSettings(uint8_t fileNumber, Settings &localSettings)
+{
+  //Read the file into tempSettings for further verification
+  uint8_t *settingsBytes = (uint8_t *)&localSettings; // Cast the struct into a uint8_t ptr
+
+  //With the given profile number, load appropriate settings file
+  char settingsFileName[40];
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, fileNumber);
+
+  File settingsFile = LittleFS.open(settingsFileName, FILE_READ);
+  if (!settingsFile)
   {
-    log_d("Error: EEPROM not online");
-    return;
+    log_d("Setting file %s not found. Using default settings.", settingsFileName);
+    return (false);
   }
 
-  //First load any settings from NVM
-  //After, we'll load settings from config file if available
-  //We'll then re-record settings so that the settings from the file over-rides internal NVM settings
+  uint16_t fileSize = settingsFile.size();
+  if (fileSize > sizeof(Settings)) fileSize = sizeof(Settings); //Trim to max setting struct size
+  settingsFile.read(settingsBytes, fileSize); //Copy the bytes from file into testSettings struct
+  settingsFile.close();
 
-  //Check to see if EEPROM is blank
-  uint32_t testRead = 0;
-  if (EEPROM.get(0, testRead) == 0xFFFFFFFF)
-  {
-    Serial.println(F("EEPROM is blank. Default settings applied"));
-    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
-  }
-
-  //Check that the current settings struct size matches what is stored in EEPROM
+  //Check that the current settings struct size matches what is stored in this settings file
   //Misalignment happens when we add a new feature or setting
-  int tempSize = 0;
-  EEPROM.get(0, tempSize); //Load the sizeOfSettings
-  if (tempSize != sizeof(settings))
+  if (fileSize != sizeof(Settings))
   {
-    Serial.println(F("Settings wrong size. Default settings applied"));
-    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
+    log_d("Settings file wrong size: %d bytes, should be %d bytes. Using default settings.", fileSize, sizeof(settings));
+    return (false);
   }
 
   //Check that the rtkIdentifier is correct
   //(It is possible for two different versions of the code to have the same sizeOfSettings - which causes problems!)
-  int tempIdentifier = 0;
-  EEPROM.get(sizeof(int), tempIdentifier); //Load the identifier from the EEPROM location after sizeOfSettings (int)
-  if (tempIdentifier != RTK_IDENTIFIER)
+  if (localSettings.rtkIdentifier != RTK_IDENTIFIER)
   {
-    Serial.printf("Settings are not valid for this variant of RTK %s. Default settings applied.\n\r", platformPrefix);
-    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
+    log_d("Settings are not valid for this variant of RTK %s. Found %s, should be %s. Using default settings.", platformPrefix, settings.rtkIdentifier, RTK_IDENTIFIER);
+    return (false);
   }
 
-  //Read current settings
-  EEPROM.get(0, settings);
+  log_d("Using LittleFS file: %s", settingsFileName);
 
-  loadSystemSettingsFromFile(); //Load any settings from config file. This will over-write any pre-existing EEPROM settings.
-  //Record these new settings to EEPROM and config file to be sure they are the same
-  //(do this even if loadSystemSettingsFromFile returned false)
-  recordSystemSettings();
+  return (true);
+}
 
-  log_d("Settings loaded");
+//Load the special profileNumber file in LittleFS and return one byte value
+uint8_t getProfileNumber()
+{
+  uint8_t profileNumber = 0;
+
+  File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_READ);
+  if (!fileProfileNumber)
+  {
+    log_d("profileNumber.txt not found");
+    profileNumber = 0;
+    recordProfileNumber(profileNumber);
+  }
+  else
+  {
+    profileNumber = fileProfileNumber.read();
+    fileProfileNumber.close();
+  }
+
+  //We have arbitrary limit of 4 user profiles
+  if (profileNumber >= MAX_PROFILE_COUNT)
+  {
+    log_d("ProfileNumber invalid. Going to zero.");
+    profileNumber = 0;
+    recordProfileNumber(profileNumber);
+  }
+
+  return (profileNumber);
+}
+
+//Record the given profile number
+void recordProfileNumber(uint8_t profileNumber)
+{
+  File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_WRITE);
+  if (!fileProfileNumber)
+  {
+    log_d("profileNumber.txt failed to open");
+    return;
+  }
+  fileProfileNumber.write(profileNumber);
+  fileProfileNumber.close();
+}
+
+//Record the current settings struct to LittleFS and then to SD file if available
+void recordSystemSettings()
+{
+  char settingsFileName[40];
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
+
+  File settingsFile = LittleFS.open(settingsFileName, FILE_WRITE);
+  if (!settingsFile)
+  {
+    log_d("Failed to write to settings file %s", settingsFileName);
+  }
+  else
+  {
+    settings.sizeOfSettings = sizeof(settings); //Update to current setting size
+
+    uint8_t *settingsBytes = (uint8_t *)&settings; // cast the struct into a uint8_t ptr
+    settingsFile.write(settingsBytes, sizeof(settings)); //Store raw settings bytes into file
+    settingsFile.close();
+    log_d("System settings recorded to LittleFS: %s", settingsFileName);
+  }
+
+  recordSystemSettingsToFile();
 }
 
 //Load settings without recording
 //Used at very first boot to test for resetCounter
 void loadSettingsPartial()
 {
-  if (online.eeprom == false)
-  {
-    log_d("Error: EEPROM not online");
-    return;
-  }
+  //First, look up the last used profile number
+  uint8_t profileNumber = getProfileNumber();
 
-  //Check to see if EEPROM is blank
-  uint32_t testRead = 0;
-  if (EEPROM.get(0, testRead) == 0xFFFFFFFF)
-  {
-    log_d("EEPROM is blank");
-    return; //EEPROM is blank, assume default settings
-  }
-
-  EEPROM.get(0, settings); //Read current settings
-}
-
-//Record the current settings struct to EEPROM and then to config file
-void recordSystemSettings()
-{
-  settings.sizeOfSettings = sizeof(settings);
-  if (settings.sizeOfSettings > EEPROM_SIZE)
-  {
-    Serial.printf("Size of settings is %d bytes\n\r", sizeof(settings));
-    Serial.println(F("Increase the EEPROM footprint!"));
-    displayError("EEPROM"); //Hard freeze
-  }
-
-  if (online.eeprom == true)
-  {
-    EEPROM.put(0, settings);
-    EEPROM.commit();
-    delay(1); //Give CPU time to pet WDT
-    log_d("System settings recorded");
-  }
-  else
-  {
-    log_d("Error: EEPROM not online");
-  }
-
-  recordSystemSettingsToFile();
+  //Load the settings file into a temp holder until we know it's valid
+  Settings tempSettings;
+  if (getSettings(profileNumber, tempSettings) == true)
+    settings = tempSettings; //Settings are good. Move them over.
 }
 
 //Export the current settings to a config file
@@ -106,8 +159,7 @@ void recordSystemSettingsToFile()
     {
       //Assemble settings file name
       char settingsFileName[40]; //SFE_Surveyor_Settings.txt
-      strcpy(settingsFileName, platformFilePrefix);
-      strcat(settingsFileName, "_Settings.txt");
+      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
 
       if (sd.exists(settingsFileName))
         sd.remove(settingsFileName);
@@ -277,7 +329,7 @@ bool loadSystemSettingsFromFile()
       }
       else
       {
-        Serial.println(F("No config file found. Using settings from EEPROM."));
+        Serial.println(F("No config file found. Using settings from internal FS."));
         //The defaults of the struct will be recorded to a file later on.
         xSemaphoreGive(xFATSemaphore);
         return (false);
@@ -286,7 +338,7 @@ bool loadSystemSettingsFromFile()
     } //End Semaphore check
   } //End SD online
 
-  Serial.println(F("Config file read failed: SD offline"));
+  log_d("Config file read failed: SD offline");
   return (false); //SD offline
 }
 
@@ -353,7 +405,7 @@ bool parseLine(char* str) {
     //If user sets sizeOfSettings to -1 in config file, RTK Surveyor will factory reset
     if (d == -1)
     {
-      factoryReset(); //Erase EEPROM, erase settings file, reset u-blox module, display message on OLED
+      factoryReset(); //Erase file system, erase settings file, reset u-blox module, display message on OLED
     }
 
     //Check to see if this setting file is compatible with this version of RTK Surveyor
@@ -509,20 +561,6 @@ bool parseLine(char* str) {
   }
 
   return (true);
-}
-
-//ESP32 doesn't have erase command so we do it here
-void eepromErase()
-{
-  if (online.eeprom == false)
-  {
-    log_d("Error: EEPROM not online");
-    return;
-  }
-  for (int i = 0 ; i < EEPROM_SIZE ; i++) {
-    EEPROM.write(i, 0xFF); //Reset to all 1s
-  }
-  EEPROM.commit();
 }
 
 //The SD library doesn't have a fgets function like SD fat so recreate it here

@@ -33,6 +33,8 @@ void menuMain()
       Serial.println(F("6) Display microSD contents"));
     }
 
+    Serial.println(F("p) Configure Profiles"));
+
     Serial.println(F("s) System Status"));
 
     Serial.println(F("r) Reset all settings to default"));
@@ -71,6 +73,8 @@ void menuMain()
     }
     else if (incoming == 's')
       menuSystem();
+    else if (incoming == 'p')
+      menuUserProfiles();
     else if (incoming == 'r')
     {
       Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
@@ -94,10 +98,116 @@ void menuMain()
       printUnknown(incoming);
   }
 
-  recordSystemSettings(); //Once all menus have exited, record the new settings to EEPROM and config file
+  recordSystemSettings(); //Once all menus have exited, record the new settings to LittleFS and config file
 
-  if(online.gnss == true)
+  if (online.gnss == true)
     i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
+
+  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+}
+
+//Change system wide settings based on current user profile
+void menuUserProfiles()
+{
+  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, ECEF coords, etc).
+  uint8_t originalProfileNumber = getProfileNumber();
+
+  while (1)
+  {
+    Serial.println();
+    Serial.println(F("Menu: User Profiles Menu"));
+
+    Serial.printf("Current profile: %d-%s\n\r", getProfileNumber() + 1, settings.profileName);
+    Serial.println("1) Change profile");
+
+    Serial.printf("2) Edit profile name: %s\n\r", settings.profileName);
+
+    Serial.println(F("x) Exit"));
+
+    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+
+    if (incoming == '1')
+    {
+      Serial.println();
+      Serial.println("Available Profiles:");
+
+      //List available profiles
+      for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
+      {
+        //With the given profile number, load appropriate settings file
+        char settingsFileName[40];
+        sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+
+        char tempProfileName[50];
+
+        if (LittleFS.exists(settingsFileName))
+        {
+          //Open this profile and get the profile name from it
+          File settingsFile = LittleFS.open(settingsFileName, FILE_READ);
+
+          Settings tempSettings;
+          uint8_t *settingsBytes = (uint8_t *)&tempSettings; // Cast the struct into a uint8_t ptr
+
+          uint16_t fileSize = settingsFile.size();
+          if (fileSize > sizeof(tempSettings)) fileSize = sizeof(tempSettings); //Trim to max setting struct size
+
+          settingsFile.read(settingsBytes, fileSize); //Copy the bytes from file into testSettings struct
+          settingsFile.close();
+
+          strcpy(tempProfileName, tempSettings.profileName);
+        }
+        else
+        {
+          sprintf(tempProfileName, "(Empty)", x + 1);
+        }
+
+        Serial.printf("%d) %s\n\r", x + 1, tempProfileName);
+      }
+
+      //Wait for user to select new profile number
+      int incoming = getNumber(menuTimeout); //Timeout after x seconds
+
+      if (incoming < 1 || incoming > MAX_PROFILE_COUNT)
+      {
+        Serial.println(F("Error: Profile number out of range"));
+      }
+      else
+      {
+        recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
+
+        recordProfileNumber(incoming - 1); //Align to array
+      }
+      //Reset settings to default
+      Settings defaultSettings;
+      settings = defaultSettings;
+
+      //Load the settings file with the most recent profileNumber
+      //If the settings file doesn't exist, defaults will be applied
+      getSettings(getProfileNumber(), settings);
+    }
+    else if (incoming == '2')
+    {
+      Serial.print("Enter new profile name: ");
+      readLine(settings.profileName, sizeof(settings.profileName), menuTimeoutExtended);
+      recordSystemSettings(); //We need to update this immediately in case user lists the available profiles again
+    }
+
+    else if (incoming == 'x')
+      break;
+    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    {
+      break;
+    }
+    else
+      printUnknown(incoming);
+  }
+
+  if (originalProfileNumber != getProfileNumber())
+  {
+    Serial.println(F("Changing profiles. Rebooting. Goodbye!"));
+    delay(2000);
+    ESP.restart();
+  }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }
@@ -107,7 +217,7 @@ void factoryReset()
 {
   displaySytemReset(); //Display friendly message on OLED
 
-  eepromErase();
+  LittleFS.format();
 
   //Assemble settings file name
   char settingsFileName[40]; //SFE_Express_Plus_Settings.txt
@@ -125,10 +235,10 @@ void factoryReset()
     } //End xFATSemaphore
   }
 
-  if(online.gnss == true)
+  if (online.gnss == true)
     i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
-  Serial.println(F("Settings erased successfully. Rebooting. Good bye!"));
+  Serial.println(F("Settings erased successfully. Rebooting. Goodbye!"));
   delay(2000);
   ESP.restart();
 }

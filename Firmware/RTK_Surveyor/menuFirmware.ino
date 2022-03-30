@@ -142,7 +142,7 @@ void updateFromSD(const char *firmwareFileName)
     long portionSize = updateSize / barWidthInCharacters;
     int barWidth = 0;
 
-    //Bulk write from the SD file to the EEPROM
+    //Bulk write from the SD file to flash
     while (firmwareFile.available())
     {
       if (productVariant == RTK_SURVEYOR)
@@ -183,10 +183,10 @@ void updateFromSD(const char *firmwareFileName)
       {
         displayFirmwareUpdateProgress(100);
 
-        //Clear all settings from EEPROM
-        eepromErase();
+        //Clear all settings from LittleFS
+        LittleFS.format();
 
-        Serial.println(F("Firmware updated successfully. Rebooting. Good bye!"));
+        Serial.println(F("Firmware updated successfully. Rebooting. Goodbye!"));
 
         //If forced firmware is detected, do a full reset of config as well
         if (strcmp(forceFirmwareFileName, firmwareFileName) == 0)

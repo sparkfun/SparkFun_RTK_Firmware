@@ -184,7 +184,7 @@ void beginSD()
       int maxTries = 1;
       for ( ; tries < maxTries ; tries++)
       {
-        Serial.printf("SD init failed. Trying again %d out of %d\n\r", tries + 1, maxTries);
+        log_d("SD init failed. Trying again %d out of %d", tries + 1, maxTries);
 
         delay(250); //Give SD more time to power up, then try again
         if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
@@ -304,13 +304,18 @@ void stopUART2Tasks()
   }
 }
 
-//ESP32 requires the creation of an EEPROM space
-void beginEEPROM()
+void beginFS()
 {
-  if (EEPROM.begin(EEPROM_SIZE) == false)
-    Serial.println(F("beginEEPROM: Failed to initialize EEPROM"));
-  else
-    online.eeprom = true;
+  if (online.fs == false)
+  {
+    Serial.println("Starting FS");
+    
+    if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
+      log_d("Error: LittleFS not online");
+      return;
+    }
+    online.fs = true;
+  }  
 }
 
 void beginDisplay()

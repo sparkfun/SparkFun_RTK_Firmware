@@ -153,7 +153,7 @@ typedef struct ubxMsg
 #define MAX_UBX_MSG (13 + 25 + 5 + 10 + 3 + 12 + 5) //(sizeof(ubxMessages)/sizeof(ubxMsg))
 
 //This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
-struct struct_settings {
+typedef struct struct_settings {
   int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int
   int rtkIdentifier = RTK_IDENTIFIER; // rtkIdentifier **must** be the second entry
   bool printDebugMessages = false;
@@ -320,8 +320,10 @@ struct struct_settings {
   };
 
   int maxLogLength_minutes = 60 * 24; //Default to 24 hours
+  char profileName[50] = "Default";
 
-} settings;
+} Settings;
+Settings settings;
 
 //Monitor which devices on the device are on or offline.
 struct struct_online {
@@ -330,9 +332,8 @@ struct struct_online {
   bool gnss = false;
   bool logging = false;
   bool serialOutput = false;
-  bool eeprom = false;
+  bool fs = false;
   bool rtc = false;
   bool battery = false;
   bool accelerometer = false;
-  bool cellular = false;
 } online;

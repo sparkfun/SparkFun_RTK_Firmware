@@ -209,6 +209,10 @@ void menuUserProfiles()
     ESP.restart();
   }
 
+  //A user may edit the name of a profile, but then switch back to original profile.
+  //Thus, no reset, and activeProfiles is not updated. Do it here.
+  activeProfiles = getActiveProfiles(); //Count is used during menu display
+
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }
 

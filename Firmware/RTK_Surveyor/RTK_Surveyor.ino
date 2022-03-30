@@ -50,8 +50,8 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 11;
 
-#define COMPILE_WIFI //Comment out to remove all WiFi functionality
-#define COMPILE_BT //Comment out to disable all Bluetooth
+//#define COMPILE_WIFI //Comment out to remove all WiFi functionality
+//#define COMPILE_BT //Comment out to disable all Bluetooth
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
@@ -112,6 +112,7 @@ int pin_radio_rts;
 const char *rtkProfileSettings = "SFERTK"; //Holds the profileNumber
 const char *rtkSettings[] = {"SFERTK_0", "SFERTK_1", "SFERTK_2", "SFERTK_3"}; //User profiles
 #define MAX_PROFILE_COUNT 4
+uint8_t activeProfiles = 1;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time

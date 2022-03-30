@@ -138,8 +138,8 @@ void stopWiFi()
 #ifdef COMPILE_WIFI
   caster.stop();
   WiFi.mode(WIFI_OFF);
-  
-  if(radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
+
+  if (radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
     esp_wifi_deinit(); //Free all resources
 #endif
 
@@ -153,8 +153,8 @@ void stopWiFi()
 //corrupt. The worst is when the I2C port gets turned off or the I2C address gets borked.
 bool configureUbloxModule()
 {
-  if(online.gnss == false) return(false);
-  
+  if (online.gnss == false) return (false);
+
   boolean response = true;
   int maxWait = 2000;
 
@@ -573,10 +573,10 @@ bool createTestFile()
   SdFile testFile;
   char testFileName[40] = "testfile.txt";
 
-  if(xFATSemaphore == NULL)
+  if (xFATSemaphore == NULL)
   {
     log_d("xFATSemaphote is Null");
-    return(false);
+    return (false);
   }
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
@@ -736,7 +736,7 @@ void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, char *textMe
   //Currently we don't have messages longer than 82 char max so we hardcode the sentence numbers
   const uint8_t totalNumberOfSentences = 1;
   const uint8_t sentenceNumber = 1;
-  
+
   char nmeaTxt[82]; //Max NMEA sentence length is 82
   sprintf(nmeaTxt, "$GNTXT,%02d,%02d,%02d,%s*", totalNumberOfSentences, sentenceNumber, textID, textMessage);
 

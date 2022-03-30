@@ -157,7 +157,7 @@ void ButtonCheckTask(void *e)
           //If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
           if (millis() - lastRockerSwitchChange < 500)
           {
-            if(systemState == STATE_ROVER_NOT_STARTED && online.display == true) //Catch during Power On
+            if (systemState == STATE_ROVER_NOT_STARTED && online.display == true) //Catch during Power On
               requestChangeState(STATE_TEST); //If RTK Surveyor, with display attached, during Rover not started, then enter test mode
             else
               requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
@@ -336,6 +336,14 @@ void ButtonCheckTask(void *e)
             //Allow system to return to lastSystemState
             break;
 
+          case STATE_PROFILE_1:
+          case STATE_PROFILE_2:
+          case STATE_PROFILE_3:
+          case STATE_PROFILE_4:
+            //If the user presses the setup button during a profile change, do nothing
+            //Allow system to return to lastSystemState
+            break;
+
           case STATE_TEST:
             //Do nothing. User is releasing the setup button.
             break;
@@ -371,6 +379,27 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
+                if (activeProfiles == 1) //If we have only one active profile, do not show any profiles
+                  setupState = STATE_MARK_EVENT;
+                else
+                  setupState = STATE_PROFILE_1;
+                break;
+              case STATE_PROFILE_1:
+                setupState = STATE_PROFILE_2;
+                break;
+              case STATE_PROFILE_2:
+                if (activeProfiles == 2)
+                  setupState = STATE_MARK_EVENT;
+                else
+                  setupState = STATE_PROFILE_3;
+                break;
+              case STATE_PROFILE_3:
+                if (activeProfiles == 3)
+                  setupState = STATE_MARK_EVENT;
+                else
+                  setupState = STATE_PROFILE_4;
+                break;
+              case STATE_PROFILE_4:
                 setupState = STATE_MARK_EVENT;
                 break;
               default:

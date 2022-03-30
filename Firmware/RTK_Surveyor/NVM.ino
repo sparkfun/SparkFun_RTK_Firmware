@@ -22,6 +22,8 @@ void loadSettings()
   //Record these settings to LittleFS and SD file to be sure they are the same
   recordSystemSettings();
 
+  activeProfiles = getActiveProfiles(); //Count is used during menu display
+
   log_d("Settings profile #%d loaded", profileNumber);
 }
 
@@ -96,7 +98,97 @@ uint8_t getProfileNumber()
     recordProfileNumber(profileNumber);
   }
 
+  log_d("Using profile #%d", profileNumber);
   return (profileNumber);
+}
+
+//Return the number of non-empty settings files
+uint8_t getActiveProfiles()
+{
+  int profileCount = 0;
+
+  for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
+  {
+    //With the given profile number, load appropriate settings file
+    char settingsFileName[40];
+    sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+
+    if (LittleFS.exists(settingsFileName))
+      profileCount++;
+  }
+
+  log_d("%d active profiles", profileCount);
+  return (profileCount);
+}
+
+//Loads a given profile name.
+//Profiles may not be sequential (user might have empty profile #2, but filled #3) so we load the profile unit, not the number
+//Return true if successful
+bool getProfileName(uint8_t profileUnit, char *profileName, uint8_t profileNameLength)
+{
+  uint8_t located = 0;
+
+  //Step through possible profiles looking for the 1st, 2nd, 3rd, or 4th unit
+  for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
+  {
+    //With the given profile number, load appropriate settings file
+    char settingsFileName[40];
+    sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+
+    if (LittleFS.exists(settingsFileName))
+    {
+      if (located == profileUnit)
+      {
+        //Open this profile and get the profile name from it
+        File settingsFile = LittleFS.open(settingsFileName, FILE_READ);
+
+        Settings tempSettings;
+        uint8_t *settingsBytes = (uint8_t *)&tempSettings; // Cast the struct into a uint8_t ptr
+
+        uint16_t fileSize = settingsFile.size();
+        if (fileSize > sizeof(tempSettings)) fileSize = sizeof(tempSettings); //Trim to max setting struct size
+
+        settingsFile.read(settingsBytes, fileSize); //Copy the bytes from file into testSettings struct
+        settingsFile.close();
+
+        snprintf(profileName, profileNameLength, "%s", tempSettings.profileName); //snprintf handles null terminator
+        return (true);
+      }
+
+      located++; //Valid settingFileName but not the unit we are looking for
+    }
+  }
+  log_d("Profile unit %d not found", profileUnit);
+
+  return (false);
+}
+
+//Return profile number based on units
+//Profiles may not be sequential (user might have empty profile #2, but filled #3) so we look up the profile unit and return the count
+uint8_t getProfileNumberFromUnit(uint8_t profileUnit)
+{
+  uint8_t located = 0;
+
+  //Step through possible profiles looking for the 1st, 2nd, 3rd, or 4th unit
+  for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
+  {
+    //With the given profile number, load appropriate settings file
+    char settingsFileName[40];
+    sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+
+    if (LittleFS.exists(settingsFileName))
+    {
+      if (located == profileUnit)
+      {
+        return (located);
+      }
+
+      located++; //Valid settingFileName but not the unit we are looking for
+    }
+  }
+  log_d("Profile unit %d not found", profileUnit);
+
+  return (false);
 }
 
 //Record the given profile number
@@ -130,7 +222,7 @@ void recordSystemSettings()
     uint8_t *settingsBytes = (uint8_t *)&settings; // cast the struct into a uint8_t ptr
     settingsFile.write(settingsBytes, sizeof(settings)); //Store raw settings bytes into file
     settingsFile.close();
-    log_d("System settings recorded to LittleFS: %s", settingsFileName);
+    log_d("Settings recorded to LittleFS: %s", settingsFileName);
   }
 
   recordSystemSettingsToFile();
@@ -274,8 +366,7 @@ bool loadSystemSettingsFromFile()
     {
       //Assemble settings file name
       char settingsFileName[40]; //SFE_Surveyor_Settings.txt
-      strcpy(settingsFileName, platformFilePrefix);
-      strcat(settingsFileName, "_Settings.txt");
+      sprintf(settingsFileName, "%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
 
       if (sd.exists(settingsFileName))
       {

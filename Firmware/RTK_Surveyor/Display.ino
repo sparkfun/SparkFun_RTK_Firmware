@@ -76,6 +76,18 @@ void updateDisplay()
         case (STATE_BUBBLE_LEVEL):
           paintBubbleLevel();
           break;
+        case (STATE_PROFILE_1):
+          paintProfile(0);
+          break;
+        case (STATE_PROFILE_2):
+          paintProfile(1);
+          break;
+        case (STATE_PROFILE_3):
+          paintProfile(2);
+          break;
+        case (STATE_PROFILE_4):
+          paintProfile(3);
+          break;
         case (STATE_MARK_EVENT):
           //Do nothing. Static display shown during state change.
           break;
@@ -1373,6 +1385,25 @@ void displayNoLogging(uint16_t displayTime)
   displayMessage("No Logging", displayTime);
 }
 
+//Show 'Loading Home2' profile identified
+//Profiles may not be sequential (user might have empty profile #2, but filled #3) so we load the profile unit, not the number
+void paintProfile(uint8_t profileUnit)
+{
+  char profileMessage[20]; //'Loading HomeStar' max of ~18 chars
+
+  char profileName[8 + 1];
+  if (getProfileName(profileUnit, profileName, 8) == true) //Load the profile name, limited to 8 chars
+  {
+    //Lookup profileNumber based on unit
+    uint8_t profileNumber = getProfileNumberFromUnit(profileUnit);
+    recordProfileNumber(profileNumber); //Update internal settings with user's choice
+
+    snprintf(profileMessage, sizeof(profileMessage), "Loading %s", profileName);
+    displayMessage(profileMessage, 2000);
+    ESP.restart(); //Profiles require full restart to take effect
+  }
+}
+
 //Display unit self-tests until user presses a button to exit
 //Allows operator to check:
 // Display alignment
@@ -1583,8 +1614,7 @@ void getAngles()
   }
 }
 
-//Show transmission of RTCM packets to caster service
-//Solid WiFi icon
+//Show different menu 'buttons' to allow user to pause on one to select it
 void paintDisplaySetup()
 {
   if (online.display == true)
@@ -1626,6 +1656,61 @@ void paintDisplaySetup()
         printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
         printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
       }
+      else if (setupState == STATE_PROFILE_1)
+      {
+        char profileName[8 + 1];
+
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+
+        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else if (setupState == STATE_PROFILE_2)
+      {
+        char profileName[8 + 1];
+
+        printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
+
+        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+
+        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else if (setupState == STATE_PROFILE_3)
+      {
+        char profileName[8 + 1];
+
+        printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
+
+        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
+
+        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+
+        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else if (setupState == STATE_PROFILE_4)
+      {
+        char profileName[8 + 1];
+
+        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
+
+        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
+
+        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+
+        getProfileName(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+      }
     } //end type F9P
     else if (zedModuleType == PLATFORM_F9R)
     {
@@ -1657,6 +1742,61 @@ void paintDisplaySetup()
         printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
         printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
       }
+      else if (setupState == STATE_PROFILE_1)
+      {
+        char profileName[8 + 1];
+
+        printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+
+        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else if (setupState == STATE_PROFILE_2)
+      {
+        char profileName[8 + 1];
+
+        printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
+
+        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+
+        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else if (setupState == STATE_PROFILE_3)
+      {
+        char profileName[8 + 1];
+
+        printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
+
+        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
+
+        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+
+        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else if (setupState == STATE_PROFILE_4)
+      {
+        char profileName[8 + 1];
+
+        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
+
+        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
+
+        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+
+        getProfileName(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
+        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+      }
     } //end type F9R
   } //end display online
 }
@@ -1668,7 +1808,7 @@ void printTextCenter(const char *text, uint8_t yPos, QwiicFont &fontType, uint8_
   oled.setDrawMode(grROPXOR);
 
   uint8_t fontWidth = fontType.width;
-  if(fontWidth == 8) fontWidth = 7; //8x16, but widest character is only 7 pixels.
+  if (fontWidth == 8) fontWidth = 7; //8x16, but widest character is only 7 pixels.
 
   uint8_t xStart = (oled.getWidth() / 2) - ((strlen(text) * (fontWidth + kerning)) / 2) + 1;
 
@@ -1683,7 +1823,14 @@ void printTextCenter(const char *text, uint8_t yPos, QwiicFont &fontType, uint8_
   if (highlight) //Draw a box, inverted over text
   {
     uint8_t textPixelWidth = strlen(text) * (fontWidth + kerning);
-    oled.rectangleFill(xStart - 5, yPos, textPixelWidth + 9, 12, 1); //x, y, width, height, color
+
+    //Error check
+    int xBoxStart = xStart - 5;
+    if (xBoxStart < 0) xBoxStart = 0;
+    int xBoxEnd = textPixelWidth + 9;
+    if (xBoxEnd > oled.getWidth() - 1) xBoxEnd = oled.getWidth() - 1;
+
+    oled.rectangleFill(xBoxStart, yPos, xBoxEnd, 12, 1); //x, y, width, height, color
   }
 }
 

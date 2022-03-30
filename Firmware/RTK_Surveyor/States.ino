@@ -577,6 +577,30 @@ void updateSystemState()
         }
         break;
 
+      case (STATE_PROFILE_1):
+        {
+          //Do nothing - display only
+        }
+        break;
+
+      case (STATE_PROFILE_2):
+        {
+          //Do nothing - display only
+        }
+        break;
+
+      case (STATE_PROFILE_3):
+        {
+          //Do nothing - display only
+        }
+        break;
+
+      case (STATE_PROFILE_4):
+        {
+          //Do nothing - display only
+        }
+        break;
+
       case (STATE_MARK_EVENT):
         {
           //Record this event to the log
@@ -785,6 +809,18 @@ void changeState(SystemState newState)
       break;
     case (STATE_TESTING):
       Serial.println(F("State: System Testing"));
+      break;
+    case (STATE_PROFILE_1):
+      Serial.println(F("State: Profile 1"));
+      break;
+    case (STATE_PROFILE_2):
+      Serial.println(F("State: Profile 2"));
+      break;
+    case (STATE_PROFILE_3):
+      Serial.println(F("State: Profile 3"));
+      break;
+    case (STATE_PROFILE_4):
+      Serial.println(F("State: Profile 4"));
       break;
     case (STATE_SHUTDOWN):
       Serial.println(F("State: Shut Down"));

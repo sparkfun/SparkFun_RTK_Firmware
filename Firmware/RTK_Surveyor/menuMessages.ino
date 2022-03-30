@@ -46,7 +46,7 @@ void menuLog()
     {
       Serial.print(F("Enter max minutes before logging stops: "));
       int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds
-      if (maxMinutes < 0 || maxMinutes > 60 * 48) //Arbitrary 48 hour limit
+      if (maxMinutes < 0 || maxMinutes > (60 * 24 * 365 * 2)) //Arbitrary 2 year limit. See https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/86
       {
         Serial.println(F("Error: max minutes out of range"));
       }

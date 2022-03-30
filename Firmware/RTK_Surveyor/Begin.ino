@@ -320,12 +320,11 @@ void beginFS()
 
 void beginDisplay()
 {
-  Serial.println("Starting display");
-  
   if (oled.begin() == true)
   {
     online.display = true;
 
+    Serial.println(F("Display started"));
     displaySplash();
   }
   else

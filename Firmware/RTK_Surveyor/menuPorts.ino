@@ -104,7 +104,7 @@ void menuPortsMultiplexed()
     }
     else if (settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)
     {
-      Serial.print(F("3) Configure External Triggers"));
+      Serial.println(F("3) Configure External Triggers"));
     }
 
     Serial.println(F("x) Exit"));

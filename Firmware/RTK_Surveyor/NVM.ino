@@ -1,3 +1,16 @@
+/*
+  For any new setting added to the settings struct, we must add it to setting file
+  recording and logging, and to the WiFi AP load/read in the following places:
+
+  recordSystemSettingsToFile();
+  parseLine();
+  createSettingsString();
+  updateSettingWithValue();
+
+  form.h also needs to be updated to include a space for user input. This is best
+  edited in the index.html and main.js files.
+*/
+
 //We use the LittleFS library to store user profiles in SPIFFs
 //Move selected user profile from SPIFFs into settings struct (RAM)
 //We originally used EEPROM but it was limited to 4096 bytes. Each settings struct is ~4000 bytes
@@ -242,6 +255,7 @@ void loadSettingsPartial()
 }
 
 //Export the current settings to a config file
+//We only record the active profile to the appropriate 'SFE_Facet_Settings_2.txt' file.
 void recordSystemSettingsToFile()
 {
   if (online.microSD == true)
@@ -325,6 +339,12 @@ void recordSystemSettingsToFile()
       settingsFile.println("enableSensorFusion=" + (String)settings.enableSensorFusion);
       settingsFile.println("autoIMUmountAlignment=" + (String)settings.autoIMUmountAlignment);
       settingsFile.println("enableResetDisplay=" + (String)settings.enableResetDisplay);
+      settingsFile.println("enableExternalPulse=" + (String)settings.enableExternalPulse);
+      settingsFile.println("externalPulseTimeBetweenPulse_us=" + (String)settings.externalPulseTimeBetweenPulse_us);
+      settingsFile.println("externalPulseLength_us=" + (String)settings.externalPulseLength_us);
+      settingsFile.println("externalPulsePolarity=" + (String)settings.externalPulsePolarity);
+      settingsFile.println("enableExternalHardwareEventLogging=" + (String)settings.enableExternalHardwareEventLogging);
+      settingsFile.println("profileName=" + (String)settings.profileName);
 
       //Record constellation settings
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -603,6 +623,18 @@ bool parseLine(char* str) {
     settings.autoIMUmountAlignment = d;
   else if (strcmp(settingName, "enableResetDisplay") == 0)
     settings.enableResetDisplay = d;
+  else if (strcmp(settingName, "enableExternalPulse") == 0)
+    settings.enableExternalPulse = d;
+  else if (strcmp(settingName, "externalPulseTimeBetweenPulse_us") == 0)
+    settings.externalPulseTimeBetweenPulse_us = d;
+  else if (strcmp(settingName, "externalPulseLength_us") == 0)
+    settings.externalPulseLength_us = d;
+  else if (strcmp(settingName, "externalPulsePolarity") == 0)
+    settings.externalPulsePolarity = (pulseEdgeType_e)d;
+  else if (strcmp(settingName, "enableExternalHardwareEventLogging") == 0)
+    settings.enableExternalHardwareEventLogging = d;
+  else if (strcmp(settingName, "profileName") == 0)
+    strcpy(settings.profileName, settingValue);
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

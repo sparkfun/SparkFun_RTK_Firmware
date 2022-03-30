@@ -382,10 +382,16 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "radioPortBaud", settings.radioPortBaud);
   stringRecord(settingsCSV, "dataPortChannel", settings.dataPortChannel);
 
+  //New settings not yet integrated
+  stringRecord(settingsCSV, "enableExternalPulse", settings.enableExternalPulse);
+  stringRecord(settingsCSV, "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
+  stringRecord(settingsCSV, "externalPulseLength_us", settings.externalPulseLength_us);
+  stringRecord(settingsCSV, "externalPulsePolarity", settings.externalPulsePolarity);
+  stringRecord(settingsCSV, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
+  stringRecord(settingsCSV, "profileName", settings.profileName);
+
   strcat(settingsCSV, "\0");
   Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
-
-  //Is baseTypeSurveyIn 1 or 0
   Serial.printf("settingsCSV: %s\n\r", settingsCSV);
 }
 
@@ -468,6 +474,19 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.enableSensorFusion = settingValueBool;
   else if (strcmp(settingName, "enableResetDisplay") == 0)
     settings.enableResetDisplay = settingValueBool;
+
+  else if (strcmp(settingName, "enableExternalPulse") == 0)
+    settings.enableExternalPulse = settingValueBool;
+  else if (strcmp(settingName, "externalPulseTimeBetweenPulse_us") == 0)
+    settings.externalPulseTimeBetweenPulse_us = settingValue;
+  else if (strcmp(settingName, "externalPulseLength_us") == 0)
+    settings.externalPulseLength_us = settingValue;
+  else if (strcmp(settingName, "externalPulsePolarity") == 0)
+    settings.externalPulsePolarity = (pulseEdgeType_e)settingValue;
+  else if (strcmp(settingName, "enableExternalHardwareEventLogging") == 0)
+    settings.enableExternalHardwareEventLogging = settingValueBool;
+  else if (strcmp(settingName, "profileName") == 0)
+    strcpy(settings.profileName, settingValueStr);
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

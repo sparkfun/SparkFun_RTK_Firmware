@@ -427,7 +427,6 @@ void setup()
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
   beginFuelGauge(); //Configure battery fuel guage monitor
-  checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
   configureGNSS(); //Configure ZED module
 

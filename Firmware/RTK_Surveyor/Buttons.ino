@@ -8,6 +8,7 @@ void powerOnCheck()
 #endif
 
   powerPressedStartTime = millis();
+
   while (digitalRead(pin_powerSenseAndControl) == LOW)
   {
     delay(10);

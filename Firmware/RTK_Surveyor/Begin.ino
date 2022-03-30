@@ -172,7 +172,7 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     delay(10);
 
-    if(settings.spiFrequency > 16)
+    if (settings.spiFrequency > 16)
     {
       Serial.println(("Error: SPI Frequency out of range. Default to 16MHz"));
       settings.spiFrequency = 16;
@@ -309,13 +309,13 @@ void beginFS()
   if (online.fs == false)
   {
     Serial.println("Starting FS");
-    
+
     if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
       log_d("Error: LittleFS not online");
       return;
     }
     online.fs = true;
-  }  
+  }
 }
 
 void beginDisplay()
@@ -472,6 +472,21 @@ void beginFuelGauge()
 
   Serial.println(F("MAX17048 configuration complete"));
 
+  checkBatteryLevels(); //Force check so you see battery level immediately at power on
+
+  //Check to see if we are dangerously low
+  if (battLevel < 5) //5%
+  {
+    Serial.println("Battery too low. Please charge. Shutting down...");
+
+    if (online.display == true)
+      displayMessage("Charge Battery", 0);
+
+    delay(2000);
+
+    powerDown(false); //Don't display 'Shutting Down'
+  }
+
   online.battery = true;
 }
 
@@ -549,9 +564,9 @@ void beginSystemState()
 //Setup TM2 time stamp input as need
 void beginExternalTriggers()
 {
-  if(online.gnss == false)
+  if (online.gnss == false)
     return;
-    
+
   UBX_CFG_TP5_data_t timePulseParameters;
 
   if (i2cGNSS.getTimePulseParameters(&timePulseParameters) == false)

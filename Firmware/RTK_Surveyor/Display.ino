@@ -9,9 +9,8 @@ void updateDisplay()
       lastDisplayUpdate = millis();
       forceDisplayUpdate = false;
 
-      //oled.initDisplay(false); //Incase of previous corruption, force re-alignment of CGRAM, but do not clear the internal CGRAM (takes a long time)
+      oled.reset(false); //Incase of previous corruption, force re-alignment of CGRAM. Do not init buffers as it takes time and causes screen to blink.
 
-      //oled.clear(PAGE); // Clear the display's internal buffer
       oled.erase();
 
       switch (systemState)

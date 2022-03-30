@@ -9,7 +9,7 @@ void menuSystem()
     Serial.print(F("GNSS: "));
     if (online.gnss == true)
     {
-      Serial.print(F("Online-"));
+      Serial.print(F("Online - "));
 
       printModuleInfo();
 
@@ -48,7 +48,8 @@ void menuSystem()
     sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
 
     Serial.print(F("MAC: "));
-    Serial.println(macAddress);
+    Serial.print(macAddress);
+    Serial.print(F(" - "));
 
     //Verify the ESP UART2 can communicate TX/RX to ZED UART1
     if (online.gnss == true)
@@ -68,18 +69,19 @@ void menuSystem()
         if (myGNSS.begin(serialGNSS, 20) == true)
         {
           zedUartPassed = true;
-          oled.print(F("OK"));
+          Serial.print(F("OK"));
         }
         else
-          oled.print(F("FAIL"));
+          Serial.print(F("FAIL"));
       }
       else
-        oled.print(F("OK"));
+        Serial.print(F("OK"));
     }
     else
     {
-      Serial.println("BT Offline");
+      Serial.print("BT Offline");
     }
+    Serial.println();
 
     Serial.println(F("d) Configure Debug"));
 

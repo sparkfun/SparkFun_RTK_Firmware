@@ -38,7 +38,6 @@ void setup()
 
   beginFuelGauge(); //Configure battery fuel guage monitor
   checkBatteryLevels(); //Force check so you see battery level immediately at power on
-  
 }
 
 void loop()

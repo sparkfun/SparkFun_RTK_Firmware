@@ -321,3 +321,76 @@ void printCurrentConditions()
     Serial.println();
   }
 }
+
+void printCurrentConditionsNMEA()
+{
+  if (online.gnss == true)
+  {
+    // First, let's collect the position data
+    uint8_t month = i2cGNSS.getMonth();
+    uint8_t day = i2cGNSS.getDay();
+    int year = i2cGNSS.getYear() % 2000; //Limit to last two digits
+
+    uint8_t hour = i2cGNSS.getHour();
+    uint8_t minute = i2cGNSS.getMinute();
+    uint8_t second = i2cGNSS.getSecond();
+    int mseconds = ceil(i2cGNSS.getMillisecond() / 10.0); //Limit to first two digits
+
+    int32_t latitude = i2cGNSS.getHighResLatitude();
+    int8_t latitudeHp = i2cGNSS.getHighResLatitudeHp();
+    int32_t longitude = i2cGNSS.getHighResLongitude();
+    int8_t longitudeHp = i2cGNSS.getHighResLongitudeHp();
+    int32_t ellipsoid = i2cGNSS.getElipsoid();
+    int8_t ellipsoidHp = i2cGNSS.getElipsoidHp();
+    int32_t msl = i2cGNSS.getMeanSeaLevel();
+    int8_t mslHp = i2cGNSS.getMeanSeaLevelHp();
+    uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
+    byte siv = i2cGNSS.getSIV();
+    byte fixType = i2cGNSS.getFixType();
+    byte rtkSolution = i2cGNSS.getCarrierSolutionType();
+
+    // Defines storage for the lat and lon as double
+    double d_lat; // latitude
+    double d_lon; // longitude
+
+    // Assemble the high precision latitude and longitude
+    d_lat = ((double)latitude) / 10000000.0; // Convert latitude from degrees * 10^-7 to degrees
+    d_lat += ((double)latitudeHp) / 1000000000.0; // Now add the high resolution component (degrees * 10^-9 )
+    d_lon = ((double)longitude) / 10000000.0; // Convert longitude from degrees * 10^-7 to degrees
+    d_lon += ((double)longitudeHp) / 1000000000.0; // Now add the high resolution component (degrees * 10^-9 )
+
+    //float f_ellipsoid;
+    float f_msl;
+    float f_accuracy;
+
+    //f_ellipsoid = (ellipsoid * 10) + ellipsoidHp;
+    //f_ellipsoid = f_ellipsoid / 10000.0; // Convert from mm * 10^-1 to m
+
+    f_msl = (msl * 10) + mslHp;
+    f_msl = f_msl / 10000.0; // Convert from mm * 10^-1 to m
+
+    f_accuracy = accuracy;
+    f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
+
+    char systemStatus[100];
+    sprintf(systemStatus, "%02d%02d%02d.%02d,%02d%02d%02d,%0.3f,%d,%0.9f,%0.9f,%0.2f,%d,%d,%d",
+            hour, minute, second, mseconds,
+            day, month, year,
+            f_accuracy, siv,
+            d_lat, d_lon,
+            f_msl,
+            fixType, rtkSolution,
+            battLevel
+            );
+
+    char nmeaMessage[100]; //Max NMEA sentence length is 82
+    createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, systemStatus); //textID, buffer, text
+    Serial.println(nmeaMessage);
+  }
+  else
+  {
+    char nmeaMessage[100]; //Max NMEA sentence length is 82
+    createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, (char *)"OFFLINE"); //textID, buffer, text
+    Serial.println(nmeaMessage);
+  }
+}

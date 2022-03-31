@@ -83,6 +83,11 @@ void menuSystem()
     }
     Serial.println();
 
+    if (settings.enableSD == true && online.microSD == true)
+    {
+      Serial.println(F("f) Display microSD Files"));
+    }
+
     Serial.println(F("d) Configure Debug"));
 
     Serial.println(F("r) Reset all settings to default"));
@@ -103,6 +108,17 @@ void menuSystem()
       }
       else
         Serial.println(F("Reset aborted"));
+    }
+    else if (incoming == 'f' && settings.enableSD == true && online.microSD == true)
+    {
+      //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+      {
+        Serial.println(F("Files found (date time size name):\n\r"));
+        sd.ls(LS_R | LS_DATE | LS_SIZE);
+
+        xSemaphoreGive(xFATSemaphore);
+      }
     }
     else if (incoming == 'x')
       break;

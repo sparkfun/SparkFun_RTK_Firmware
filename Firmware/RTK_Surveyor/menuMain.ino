@@ -46,11 +46,6 @@ void menuMain()
 
     Serial.println(F("5) Configure Logging"));
 
-    if (settings.enableSD == true && online.microSD == true)
-    {
-      Serial.println(F("6) Display microSD contents"));
-    }
-
     Serial.println(F("p) Configure Profiles"));
 
     Serial.println(F("s) System Status"));
@@ -76,25 +71,12 @@ void menuMain()
       menuPorts();
     else if (incoming == '5')
       menuLog();
-    else if (incoming == '6' && settings.enableSD == true && online.microSD == true)
-    {
-      //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-      {
-        Serial.println(F("Files found (date time size name):\n\r"));
-        sd.ls(LS_R | LS_DATE | LS_SIZE);
-
-        xSemaphoreGive(xFATSemaphore);
-      }
-    }
     else if (incoming == 's')
       menuSystem();
     else if (incoming == 'p')
       menuUserProfiles();
     else if (incoming == 'f' && binCount > 0)
       menuFirmware();
-    else if (incoming == 't')
-      menuTest();
     else if (incoming == 'x')
       break;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)

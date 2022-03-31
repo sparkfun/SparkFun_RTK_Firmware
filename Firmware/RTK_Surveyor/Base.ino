@@ -7,10 +7,25 @@ bool configureUbloxModuleBase()
   bool response = true;
   int maxWait = 2000;
 
+  //If our settings haven't changed, and this is first config since power on, trust ZED's settings
+  if(updateZEDSettings == false && firstPowerOn == true)
+  {
+    firstPowerOn = false; //Next time user switches modes, new settings will be applied
+    log_d("Skipping ZED Base configuration");
+    return(true);
+  }
+
+  //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
+  if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
+    response &= i2cGNSS.setNavigationFrequency(1, maxWait);
+  if (response == false)
+    Serial.println(F("Set rate failed"));
+    
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
   if (i2cGNSS.getSurveyInActive() == true)
   {
+    log_d("Disabling survey");
     response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
     if (response == false)
       Serial.println(F("Disable Survey failed"));
@@ -60,6 +75,10 @@ bool configureUbloxModuleBase()
     Serial.println(F("RTCM settings failed to enable"));
     return (false);
   }
+
+  response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
+  if (response == false)
+    Serial.println(F("Module failed to save."));
 
   return (response);
 }

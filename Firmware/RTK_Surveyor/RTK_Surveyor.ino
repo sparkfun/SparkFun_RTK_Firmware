@@ -50,8 +50,8 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 11;
 
-//#define COMPILE_WIFI //Comment out to remove all WiFi functionality
-//#define COMPILE_BT //Comment out to disable all Bluetooth
+#define COMPILE_WIFI //Comment out to remove all WiFi functionality
+#define COMPILE_BT //Comment out to disable all Bluetooth
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
@@ -399,6 +399,8 @@ bool newAPSettings = false; //Goes true when new setting is received via AP conf
 
 unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update via AP config.
 int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
+bool updateZEDSettings = false; //If settings from file are different from LittleFS, config the ZED
+bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
 
 unsigned long startTime = 0; //Used for checking longest running functions
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -437,6 +439,8 @@ void setup()
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
   Serial.flush(); //Complete any previous prints
+
+  log_d("Boot time: %d", millis());
 
   danceLEDs(); //Turn on LEDs like a car dashboard
 }

@@ -215,7 +215,7 @@ void updateSystemState()
 
           if (i2cGNSS.getSurveyInValid(100) == true) //Survey in complete
           {
-            Serial.printf("obs time: %d\n\r", svinObservationTime);
+            Serial.printf("Observation Time: %d\n\r", svinObservationTime);
             Serial.println(F("Base survey complete! RTCM now broadcasting."));
 
             if (productVariant == RTK_SURVEYOR)

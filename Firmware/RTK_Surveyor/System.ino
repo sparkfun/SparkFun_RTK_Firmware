@@ -169,9 +169,13 @@ bool configureUbloxModule()
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {
-    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-    if (response == false)
-      Serial.println(F("Disable Survey failed"));
+    if (i2cGNSS.getSurveyInActive(100) == true)
+    {
+      log_d("Disabling survey");
+      response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+      if (response == false)
+        Serial.println(F("Disable Survey failed"));
+    }
   }
 
 #define OUTPUT_SETTING 14
@@ -226,12 +230,12 @@ bool configureUbloxModule()
   if (zedModuleType == PLATFORM_F9R)
     response &= i2cGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
 
-  if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud) 
+  if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
     Serial.println(F("Updating UART1 rate"));
     i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
   }
-  if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud) 
+  if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud)
   {
     Serial.println(F("Updating UART2 rate"));
     i2cGNSS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Defaults to 57600 to match SiK telemetry radio firmware default

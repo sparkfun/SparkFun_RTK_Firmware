@@ -354,6 +354,8 @@ void beginGNSS()
 {
   if (i2cGNSS.begin() == false)
   {
+    log_d("GNSS Failed to begin. Trying again.");
+
     //Try again with power on delay
     delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
     if (i2cGNSS.begin() == false)
@@ -413,6 +415,15 @@ void beginGNSS()
 //Configuration can take >1s so configure during splash
 void configureGNSS()
 {
+  //Configuring the ZED can take more than 2000ms. We save configuration to
+  //ZED so there is no need to update settings unless user has modified
+  //the settings file or internal settings.
+  if (updateZEDSettings == false)
+  {
+    log_d("Skipping ZED configuration");
+    return;
+  }
+
   bool response = configureUbloxModule();
   if (response == false)
   {
@@ -525,7 +536,12 @@ void beginSystemState()
 {
   if (productVariant == RTK_SURVEYOR)
   {
-    systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask_Switch() will correct as needed.
+    //If the rocker switch was moved while off, force module settings
+    //When switch is set to '1' = BASE, pin will be shorted to ground
+    if (settings.lastState == STATE_ROVER_NOT_STARTED && digitalRead(pin_setupButton) == LOW) updateZEDSettings = true;
+    else if (settings.lastState == STATE_BASE_NOT_STARTED && digitalRead(pin_setupButton) == HIGH) updateZEDSettings = true;
+
+    systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask() will correct as needed.
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
@@ -571,10 +587,16 @@ void beginSystemState()
 
 //Setup the timepulse output on the PPS pin for external triggering
 //Setup TM2 time stamp input as need
-void beginExternalTriggers()
+bool beginExternalTriggers()
 {
-  if (online.gnss == false)
-    return;
+  if (online.gnss == false) return (false);
+
+  //If our settings haven't changed, trust ZED's settings
+  if (updateZEDSettings == false)
+  {
+    log_d("Skipping ZED Trigger configuration");
+    return (true);
+  }
 
   UBX_CFG_TP5_data_t timePulseParameters;
 
@@ -604,4 +626,10 @@ void beginExternalTriggers()
     i2cGNSS.setAutoTIMTM2callback(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
   else
     i2cGNSS.setAutoTIMTM2callback(NULL);
+
+  bool response = i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
+  if (response == false)
+    Serial.println(F("Module failed to save."));
+
+  return (response);
 }

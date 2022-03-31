@@ -541,25 +541,85 @@ bool parseLine(char* str) {
   else if (strcmp(settingName, "maxLogLength_minutes") == 0)
     settings.maxLogLength_minutes = d;
   else if (strcmp(settingName, "observationSeconds") == 0)
-    settings.observationSeconds = d;
+  {
+    if (settings.observationSeconds != d) //If a setting for the ZED has changed, apply, and trigger module config update
+    {
+      settings.observationSeconds = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "observationPositionAccuracy") == 0)
-    settings.observationPositionAccuracy = d;
+  {
+    if (settings.observationPositionAccuracy != d)
+    {
+      settings.observationPositionAccuracy = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedBase") == 0)
-    settings.fixedBase = d;
+  {
+    if (settings.fixedBase != d)
+    {
+      settings.fixedBase = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedBaseCoordinateType") == 0)
-    settings.fixedBaseCoordinateType = d;
+  {
+    if (settings.fixedBaseCoordinateType != d)
+    {
+      settings.fixedBaseCoordinateType = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedEcefX") == 0)
-    settings.fixedEcefX = d;
+  {
+    if (settings.fixedEcefX != d)
+    {
+      settings.fixedEcefX = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedEcefY") == 0)
-    settings.fixedEcefY = d;
+  {
+    if (settings.fixedEcefY != d)
+    {
+      settings.fixedEcefY = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedEcefZ") == 0)
-    settings.fixedEcefZ = d;
+  {
+    if (settings.fixedEcefZ != d)
+    {
+      settings.fixedEcefZ = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedLat") == 0)
-    settings.fixedLat = d;
+  {
+    if (settings.fixedLat != d)
+    {
+      settings.fixedLat = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedLong") == 0)
-    settings.fixedLong = d;
+  {
+    if (settings.fixedLong != d)
+    {
+      settings.fixedLong = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedAltitude") == 0)
-    settings.fixedAltitude = d;
+  {
+    if (settings.fixedAltitude != d)
+    {
+      settings.fixedAltitude = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "dataPortBaud") == 0)
     settings.dataPortBaud = d;
   else if (strcmp(settingName, "radioPortBaud") == 0)
@@ -570,7 +630,6 @@ bool parseLine(char* str) {
     strcpy(settings.casterHost, settingValue);
   else if (strcmp(settingName, "casterPort") == 0)
     settings.casterPort = d;
-
   else if (strcmp(settingName, "casterUser") == 0)
     strcpy(settings.casterUser, settingValue);
   else if (strcmp(settingName, "casterUserPW") == 0)
@@ -592,9 +651,21 @@ bool parseLine(char* str) {
   else if (strcmp(settingName, "surveyInStartingAccuracy") == 0)
     settings.surveyInStartingAccuracy = d;
   else if (strcmp(settingName, "measurementRate") == 0)
-    settings.measurementRate = d;
+  {
+    if (settings.measurementRate != d)
+    {
+      settings.measurementRate = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "navigationRate") == 0)
-    settings.navigationRate = d;
+  {
+    if (settings.navigationRate != d)
+    {
+      settings.navigationRate = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "enableI2Cdebug") == 0)
     settings.enableI2Cdebug = d;
   else if (strcmp(settingName, "enableHeapReport") == 0)
@@ -612,27 +683,81 @@ bool parseLine(char* str) {
   else if (strcmp(settingName, "sppTxQueueSize") == 0)
     settings.sppTxQueueSize = d;
   else if (strcmp(settingName, "dynamicModel") == 0)
-    settings.dynamicModel = d;
+  {
+    if (settings.dynamicModel != d)
+    {
+      settings.dynamicModel = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "lastState") == 0)
-    settings.lastState = (SystemState)d;
+  {
+    if (settings.lastState != (SystemState)d)
+    {
+      settings.lastState = (SystemState)d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "throttleDuringSPPCongestion") == 0)
     settings.throttleDuringSPPCongestion = d;
   else if (strcmp(settingName, "enableSensorFusion") == 0)
-    settings.enableSensorFusion = d;
+  {
+    if (settings.enableSensorFusion != d)
+    {
+      settings.enableSensorFusion = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "autoIMUmountAlignment") == 0)
-    settings.autoIMUmountAlignment = d;
+  {
+    if (settings.autoIMUmountAlignment != d)
+    {
+      settings.autoIMUmountAlignment = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "enableResetDisplay") == 0)
     settings.enableResetDisplay = d;
   else if (strcmp(settingName, "enableExternalPulse") == 0)
-    settings.enableExternalPulse = d;
+  {
+    if (settings.enableExternalPulse != d)
+    {
+      settings.enableExternalPulse = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "externalPulseTimeBetweenPulse_us") == 0)
-    settings.externalPulseTimeBetweenPulse_us = d;
+  {
+    if (settings.externalPulseTimeBetweenPulse_us != d)
+    {
+      settings.externalPulseTimeBetweenPulse_us = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "externalPulseLength_us") == 0)
-    settings.externalPulseLength_us = d;
+  {
+    if (settings.externalPulseLength_us != d)
+    {
+      settings.externalPulseLength_us = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "externalPulsePolarity") == 0)
-    settings.externalPulsePolarity = (pulseEdgeType_e)d;
+  {
+    if (settings.externalPulsePolarity != (pulseEdgeType_e)d)
+    {
+      settings.externalPulsePolarity = (pulseEdgeType_e)d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "enableExternalHardwareEventLogging") == 0)
-    settings.enableExternalHardwareEventLogging = d;
+  {
+    if (settings.enableExternalHardwareEventLogging != d)
+    {
+      settings.enableExternalHardwareEventLogging = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "profileName") == 0)
     strcpy(settings.profileName, settingValue);
 
@@ -652,7 +777,12 @@ bool parseLine(char* str) {
 
         if (strcmp(settingName, tempString) == 0)
         {
-          settings.ubxConstellations[x].enabled = d;
+          if (settings.ubxConstellations[x].enabled != d)
+          {
+            settings.ubxConstellations[x].enabled = d;
+            updateZEDSettings = true;
+          }
+
           knownSetting = true;
           break;
         }
@@ -669,7 +799,12 @@ bool parseLine(char* str) {
 
         if (strcmp(settingName, tempString) == 0)
         {
-          settings.ubxMessages[x].msgRate = d;
+          if (settings.ubxMessages[x].msgRate != d)
+          {
+            settings.ubxMessages[x].msgRate = d;
+            updateZEDSettings = true;
+          }
+          
           knownSetting = true;
           break;
         }

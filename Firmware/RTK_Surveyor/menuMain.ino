@@ -55,8 +55,6 @@ void menuMain()
 
     Serial.println(F("s) System Status"));
 
-    Serial.println(F("r) Reset all settings to default"));
-
     if (binCount > 0)
       Serial.println(F("f) Firmware upgrade"));
 
@@ -93,17 +91,6 @@ void menuMain()
       menuSystem();
     else if (incoming == 'p')
       menuUserProfiles();
-    else if (incoming == 'r')
-    {
-      Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
-      byte bContinue = getByteChoice(menuTimeout);
-      if (bContinue == 'y')
-      {
-        factoryReset();
-      }
-      else
-        Serial.println(F("Reset aborted"));
-    }
     else if (incoming == 'f' && binCount > 0)
       menuFirmware();
     else if (incoming == 't')

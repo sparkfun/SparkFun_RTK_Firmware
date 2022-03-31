@@ -207,8 +207,8 @@ typedef struct struct_settings {
   bool autoIMUmountAlignment = true; //Allows unit to automatically establish device orientation in vehicle
   bool enableResetDisplay = false;
   uint8_t resetCount = 0;
-  bool enableExternalPulse = false; //Send pulse once lock is achieved
-  uint32_t externalPulseTimeBetweenPulse_us = 500000; //us between pulses, max of 65s
+  bool enableExternalPulse = true; //Send pulse once lock is achieved
+  uint32_t externalPulseTimeBetweenPulse_us = 1000000; //us between pulses, max of 65s
   uint32_t externalPulseLength_us = 100000; //us length of pulse
   pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; //Pulse rises for pulse length, then falls
   bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low

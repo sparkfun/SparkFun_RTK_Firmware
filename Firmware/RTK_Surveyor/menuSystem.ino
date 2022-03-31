@@ -85,12 +85,25 @@ void menuSystem()
 
     Serial.println(F("d) Configure Debug"));
 
+    Serial.println(F("r) Reset all settings to default"));
+
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == 'd')
       menuDebug();
+    else if (incoming == 'r')
+    {
+      Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
+      byte bContinue = getByteChoice(menuTimeout);
+      if (bContinue == 'y')
+      {
+        factoryReset();
+      }
+      else
+        Serial.println(F("Reset aborted"));
+    }
     else if (incoming == 'x')
       break;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)
@@ -259,7 +272,6 @@ void printCurrentConditions()
     // getMeanSeaLevelHp: returns the high resolution component of the height above mean sea level as an int8_t in mm * 10^-1
     // getHorizontalAccuracy: returns the horizontal accuracy estimate from HPPOSLLH as an uint32_t in mm * 10^-1
 
-    // First, let's collect the position data
     int32_t latitude = i2cGNSS.getHighResLatitude();
     int8_t latitudeHp = i2cGNSS.getHighResLatitudeHp();
     int32_t longitude = i2cGNSS.getHighResLongitude();
@@ -271,34 +283,22 @@ void printCurrentConditions()
     uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
     byte SIV = i2cGNSS.getSIV();
 
-    // Defines storage for the lat and lon as double
     double d_lat; // latitude
     double d_lon; // longitude
 
-    // Assemble the high precision latitude and longitude
     d_lat = ((double)latitude) / 10000000.0; // Convert latitude from degrees * 10^-7 to degrees
     d_lat += ((double)latitudeHp) / 1000000000.0; // Now add the high resolution component (degrees * 10^-9 )
     d_lon = ((double)longitude) / 10000000.0; // Convert longitude from degrees * 10^-7 to degrees
     d_lon += ((double)longitudeHp) / 1000000000.0; // Now add the high resolution component (degrees * 10^-9 )
 
-    // Now define float storage for the heights and accuracy
     float f_ellipsoid;
     float f_msl;
     float f_accuracy;
 
-    // Calculate the height above ellipsoid in mm * 10^-1
     f_ellipsoid = (ellipsoid * 10) + ellipsoidHp;
-    // Now convert to m
     f_ellipsoid = f_ellipsoid / 10000.0; // Convert from mm * 10^-1 to m
 
-    // Calculate the height above mean sea level in mm * 10^-1
-    f_msl = (msl * 10) + mslHp;
-    // Now convert to m
-    f_msl = f_msl / 10000.0; // Convert from mm * 10^-1 to m
-
-    // Convert the horizontal accuracy (mm * 10^-1) to a float
     f_accuracy = accuracy;
-    // Now convert to m
     f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
 
     Serial.print(F("SIV: "));
@@ -312,11 +312,8 @@ void printCurrentConditions()
     Serial.print(", Lon: ");
     Serial.print(d_lon, 9);
 
-    Serial.print(", Ellipsoid (m): ");
+    Serial.print(", Altitude (m): ");
     Serial.print(f_ellipsoid, 1);
-
-    Serial.print(", Mean Sea Level (m): ");
-    Serial.print(f_msl, 1);
 
     Serial.println();
   }

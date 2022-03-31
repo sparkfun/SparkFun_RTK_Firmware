@@ -208,6 +208,7 @@ bool configureUbloxModule()
   getPortSettings(COM_PORT_USB); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3))
     response &= i2cGNSS.setPortOutput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
+
   if (settingPayload[INPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3))
     response &= i2cGNSS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
 
@@ -225,12 +226,12 @@ bool configureUbloxModule()
   if (zedModuleType == PLATFORM_F9R)
     response &= i2cGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
 
-  if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
+  if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud) 
   {
     Serial.println(F("Updating UART1 rate"));
-    i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1);
+    i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
   }
-  if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud) //Defaults to 460800 to maximize message output support
+  if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud) 
   {
     Serial.println(F("Updating UART2 rate"));
     i2cGNSS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Defaults to 57600 to match SiK telemetry radio firmware default

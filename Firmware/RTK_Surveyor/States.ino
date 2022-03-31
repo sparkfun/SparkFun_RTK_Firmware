@@ -679,7 +679,7 @@ void updateSystemState()
           //Debounce entry into test menu
           if (millis() - lastTestMenuChange > 500)
           {
-            stopUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+            stopUART2Tasks(); //Stop absoring ZED serial via task
             zedUartPassed = false;
 
             //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted

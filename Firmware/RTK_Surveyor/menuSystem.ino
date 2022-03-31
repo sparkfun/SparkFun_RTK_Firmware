@@ -56,30 +56,30 @@ void menuSystem()
     {
       if (zedUartPassed == false)
       {
-        setMuxport(MUX_UBLOX_NMEA); //Set mux to UART so we can debug over data port
-        delay(20);
+        stopUART2Tasks(); //Stop absoring ZED serial via task
 
         //Clear out buffer before starting
         while (serialGNSS.available()) serialGNSS.read();
         serialGNSS.flush();
 
+        //begin() attempts 3 connections with X timeout per attempt
         SFE_UBLOX_GNSS myGNSS;
-
-        //begin() attempts 3 connections with 20ms begin timeout
-        if (myGNSS.begin(serialGNSS, 20) == true)
+        if (myGNSS.begin(serialGNSS, 200) == true)
         {
           zedUartPassed = true;
-          Serial.print(F("OK"));
+          Serial.print(F("BT Online"));
         }
         else
-          Serial.print(F("FAIL"));
+          Serial.print(F("BT Offline"));
+
+        startUART2Tasks(); //Return to normal operation
       }
       else
-        Serial.print(F("OK"));
+        Serial.print(F("BT Online"));
     }
     else
     {
-      Serial.print("BT Offline");
+      Serial.print("GNSS Offline");
     }
     Serial.println();
 
@@ -378,7 +378,7 @@ void printCurrentConditionsNMEA()
             f_msl,
             fixType, rtkSolution,
             battLevel
-            );
+           );
 
     char nmeaMessage[100]; //Max NMEA sentence length is 82
     createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, systemStatus); //textID, buffer, text

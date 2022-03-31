@@ -130,7 +130,7 @@ SdFat sd;
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
-SdFile ubxFile; //File that all gnss ubx messages setences are written to
+SdFile ubxFile; //File that all GNSS ubx messages sentences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
 int startLogTime_minutes = 0; //Mark when we start any logging so we can stop logging after maxLogTime_minutes
 int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file so we can close it after x minutes and start a new one

@@ -567,6 +567,7 @@ void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8
     xPos += kerning;
   }
 }
+
 //Create a test file in file structure to make sure we can
 bool createTestFile()
 {
@@ -575,7 +576,7 @@ bool createTestFile()
 
   if (xFATSemaphore == NULL)
   {
-    log_d("xFATSemaphote is Null");
+    log_d("xFATSemaphore is Null");
     return (false);
   }
 

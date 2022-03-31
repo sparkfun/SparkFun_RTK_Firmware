@@ -67,16 +67,11 @@ void loop()
     d_lon += ((double)longitudeHp) / 1000000000.0; // Now add the high resolution component (degrees * 10^-9 )
 
     float f_ellipsoid;
-    float f_msl;
     float f_accuracy;
 
     // Calculate the height above ellipsoid in mm * 10^-1
     f_ellipsoid = (ellipsoid * 10) + ellipsoidHp;
     f_ellipsoid = f_ellipsoid / 10000.0; // Convert from mm * 10^-1 to m
-
-    // Calculate the height above mean sea level in mm * 10^-1
-    f_msl = (msl * 10) + mslHp;
-    f_msl = f_msl / 10000.0; // Convert from mm * 10^-1 to m
 
     f_accuracy = accuracy / 10000.0; // Convert from mm * 10^-1 to m
 

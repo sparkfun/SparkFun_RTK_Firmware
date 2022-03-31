@@ -1,3 +1,21 @@
+//Check to see if we've received serial over USB
+//Report status if ~ received, otherwise present config menu
+void updateSerial()
+{
+  if (Serial.available()) 
+  {
+    byte incoming = Serial.read();
+    
+    if(incoming == '~')
+    {
+      //Output custom GNTXT message with all current system data
+      printCurrentConditionsNMEA();
+    }
+    else
+      menuMain(); //Present user menu
+  }  
+}
+
 //Display the options
 //If user doesn't respond within a few seconds, return to main loop
 void menuMain()

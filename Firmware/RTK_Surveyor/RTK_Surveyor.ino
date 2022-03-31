@@ -50,8 +50,8 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 11;
 
-#define COMPILE_WIFI //Comment out to remove all WiFi functionality
-#define COMPILE_BT //Comment out to disable all Bluetooth
+//#define COMPILE_WIFI //Comment out to remove all WiFi functionality
+//#define COMPILE_BT //Comment out to disable all Bluetooth
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
@@ -461,8 +461,7 @@ void loop()
 
   reportHeap(); //If debug enabled, report free heap
 
-  //Menu system via ESP32 USB connection
-  if (Serial.available()) menuMain(); //Present user menu
+  updateSerial(); //Menu system via ESP32 USB connection
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;

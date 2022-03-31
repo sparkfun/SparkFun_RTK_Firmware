@@ -737,7 +737,7 @@ void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, char *textMe
   const uint8_t totalNumberOfSentences = 1;
   const uint8_t sentenceNumber = 1;
 
-  char nmeaTxt[82]; //Max NMEA sentence length is 82
+  char nmeaTxt[200]; //Max NMEA sentence length is 82
   sprintf(nmeaTxt, "$GNTXT,%02d,%02d,%02d,%s*", totalNumberOfSentences, sentenceNumber, textID, textMessage);
 
   //From: http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html

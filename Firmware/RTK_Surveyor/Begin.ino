@@ -172,9 +172,18 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     delay(10);
 
+    //Do a quick test to see if a card is present
+    if (sdPresent() == false)
+    {
+      log_d("SD card not detected");
+      return;
+    }
+    //If an SD card is present, allow SdFat to take over
+    log_d("SD card detected");
+
     if (settings.spiFrequency > 16)
     {
-      Serial.println(("Error: SPI Frequency out of range. Default to 16MHz"));
+      Serial.println("Error: SPI Frequency out of range. Default to 16MHz");
       settings.spiFrequency = 16;
     }
 

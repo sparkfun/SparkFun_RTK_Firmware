@@ -305,31 +305,27 @@ void paintHorizontalAccuracy()
     oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.setCursor(16, 20); //x, y
     oled.print(":");
-    float hpa = 100;
-
-    if (online.gnss == true)
-      hpa = i2cGNSS.getHorizontalAccuracy() / 10000.0;
 
     if (online.gnss == false)
     {
       oled.print(F("N/A"));
     }
-    else if (hpa > 30.0)
+    else if (horizontalAccuracy > 30.0)
     {
       oled.print(F(">30m"));
     }
-    else if (hpa > 9.9)
+    else if (horizontalAccuracy > 9.9)
     {
-      oled.print(hpa, 1); //Print down to decimeter
+      oled.print(horizontalAccuracy, 1); //Print down to decimeter
     }
-    else if (hpa > 1.0)
+    else if (horizontalAccuracy > 1.0)
     {
-      oled.print(hpa, 2); //Print down to centimeter
+      oled.print(horizontalAccuracy, 2); //Print down to centimeter
     }
     else
     {
       oled.print("."); //Remove leading zero
-      oled.printf("%03d", (int)(hpa * 1000)); //Print down to millimeter
+      oled.printf("%03d", (int)(horizontalAccuracy * 1000)); //Print down to millimeter
     }
   }
 }
@@ -484,7 +480,8 @@ void paintSIV()
   if (online.display == true && online.gnss == true)
   {
     //Blink satellite dish icon if we don't have a fix
-    if (i2cGNSS.getFixType() == 3 || i2cGNSS.getFixType() == 4 || i2cGNSS.getFixType() == 5) //3D, 3D+DR, or Time
+    uint8_t fixType = fixType;
+    if (fixType == 3 || fixType == 4 || fixType == 5) //3D, 3D+DR, or Time
     {
       //Fix, turn on icon
       displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
@@ -511,13 +508,13 @@ void paintSIV()
     oled.setCursor(16, 36); //x, y
     oled.print(":");
 
-    if (i2cGNSS.getFixType() == 0) //0 = No Fix
+    if (fixType == 0) //0 = No Fix
     {
       oled.print("0");
     }
     else
     {
-      oled.print(i2cGNSS.getSIV());
+      oled.print(numSV);
     }
 
     paintResets();
@@ -1455,8 +1452,10 @@ void paintSystemTest()
     oled.print(F("GNSS:"));
     if (online.gnss == true)
     {
-      i2cGNSS.checkUblox();
-      int satsInView = i2cGNSS.getSIV();
+      i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+      i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+
+      int satsInView = numSV;
       if (satsInView > 5)
       {
         oled.print(F("OK"));

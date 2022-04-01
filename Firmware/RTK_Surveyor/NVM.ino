@@ -95,6 +95,7 @@ uint8_t getProfileNumber()
   {
     log_d("profileNumber.txt not found");
     profileNumber = 0;
+    updateZEDSettings = true; //Force module update
     recordProfileNumber(profileNumber);
   }
   else

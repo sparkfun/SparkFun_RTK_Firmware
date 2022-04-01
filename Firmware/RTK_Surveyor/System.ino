@@ -158,7 +158,13 @@ bool configureUbloxModule()
   boolean response = true;
   int maxWait = 2000;
 
-  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  //Wait for initial report from module
+  while(ubloxUpdated == false)
+  {
+    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+    delay(10);
+  }
 
   //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
   if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
@@ -223,9 +229,6 @@ bool configureUbloxModule()
   response &= disableNMEASentences(COM_PORT_I2C); //Disable NMEA messages on all but UART1
   response &= disableNMEASentences(COM_PORT_UART2);
   response &= disableNMEASentences(COM_PORT_SPI);
-
-  response &= i2cGNSS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
-  response &= i2cGNSS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
 
   if (zedModuleType == PLATFORM_F9R)
     response &= i2cGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
@@ -465,6 +468,11 @@ void danceLEDs()
     digitalWrite(pin_baseStatusLED, LOW);
     delay(250);
     digitalWrite(pin_bluetoothStatusLED, LOW);
+  }
+  else
+  {
+    //Units can boot under 1s. Keep splash screen up for at least 2s.
+    while(millis() - splashStart < 2000) delay(1); 
   }
 }
 

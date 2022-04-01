@@ -278,58 +278,19 @@ void printCurrentConditions()
 {
   if (online.gnss == true)
   {
-    // getHighResLatitude: returns the latitude from HPPOSLLH as an int32_t in degrees * 10^-7
-    // getHighResLatitudeHp: returns the high resolution component of latitude from HPPOSLLH as an int8_t in degrees * 10^-9
-    // getHighResLongitude: returns the longitude from HPPOSLLH as an int32_t in degrees * 10^-7
-    // getHighResLongitudeHp: returns the high resolution component of longitude from HPPOSLLH as an int8_t in degrees * 10^-9
-    // getElipsoid: returns the height above ellipsoid as an int32_t in mm
-    // getElipsoidHp: returns the high resolution component of the height above ellipsoid as an int8_t in mm * 10^-1
-    // getMeanSeaLevel: returns the height above mean sea level as an int32_t in mm
-    // getMeanSeaLevelHp: returns the high resolution component of the height above mean sea level as an int8_t in mm * 10^-1
-    // getHorizontalAccuracy: returns the horizontal accuracy estimate from HPPOSLLH as an uint32_t in mm * 10^-1
-
-    int32_t latitude = i2cGNSS.getHighResLatitude();
-    int8_t latitudeHp = i2cGNSS.getHighResLatitudeHp();
-    int32_t longitude = i2cGNSS.getHighResLongitude();
-    int8_t longitudeHp = i2cGNSS.getHighResLongitudeHp();
-    int32_t ellipsoid = i2cGNSS.getElipsoid();
-    int8_t ellipsoidHp = i2cGNSS.getElipsoidHp();
-    int32_t msl = i2cGNSS.getMeanSeaLevel();
-    int8_t mslHp = i2cGNSS.getMeanSeaLevelHp();
-    uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
-    byte SIV = i2cGNSS.getSIV();
-
-    double d_lat; // latitude
-    double d_lon; // longitude
-
-    d_lat = ((double)latitude) / 10000000.0; // Convert latitude from degrees * 10^-7 to degrees
-    d_lat += ((double)latitudeHp) / 1000000000.0; // Now add the high resolution component (degrees * 10^-9 )
-    d_lon = ((double)longitude) / 10000000.0; // Convert longitude from degrees * 10^-7 to degrees
-    d_lon += ((double)longitudeHp) / 1000000000.0; // Now add the high resolution component (degrees * 10^-9 )
-
-    float f_ellipsoid;
-    float f_msl;
-    float f_accuracy;
-
-    f_ellipsoid = (ellipsoid * 10) + ellipsoidHp;
-    f_ellipsoid = f_ellipsoid / 10000.0; // Convert from mm * 10^-1 to m
-
-    f_accuracy = accuracy;
-    f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
-
     Serial.print(F("SIV: "));
-    Serial.print(SIV);
+    Serial.print(numSV);
 
     Serial.print(", HPA (m): ");
-    Serial.print(f_accuracy, 3);
+    Serial.print(horizontalAccuracy, 3);
 
     Serial.print(", Lat: ");
-    Serial.print(d_lat, 9);
+    Serial.print(latitude, 9);
     Serial.print(", Lon: ");
-    Serial.print(d_lon, 9);
+    Serial.print(longitude, 9);
 
     Serial.print(", Altitude (m): ");
-    Serial.print(f_ellipsoid, 1);
+    Serial.print(altitude, 1);
 
     Serial.println();
   }
@@ -339,60 +300,14 @@ void printCurrentConditionsNMEA()
 {
   if (online.gnss == true)
   {
-    // First, let's collect the position data
-    uint8_t month = i2cGNSS.getMonth();
-    uint8_t day = i2cGNSS.getDay();
-    int year = i2cGNSS.getYear() % 2000; //Limit to last two digits
-
-    uint8_t hour = i2cGNSS.getHour();
-    uint8_t minute = i2cGNSS.getMinute();
-    uint8_t second = i2cGNSS.getSecond();
-    int mseconds = ceil(i2cGNSS.getMillisecond() / 10.0); //Limit to first two digits
-
-    int32_t latitude = i2cGNSS.getHighResLatitude();
-    int8_t latitudeHp = i2cGNSS.getHighResLatitudeHp();
-    int32_t longitude = i2cGNSS.getHighResLongitude();
-    int8_t longitudeHp = i2cGNSS.getHighResLongitudeHp();
-    int32_t ellipsoid = i2cGNSS.getElipsoid();
-    int8_t ellipsoidHp = i2cGNSS.getElipsoidHp();
-    int32_t msl = i2cGNSS.getMeanSeaLevel();
-    int8_t mslHp = i2cGNSS.getMeanSeaLevelHp();
-    uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
-    byte siv = i2cGNSS.getSIV();
-    byte fixType = i2cGNSS.getFixType();
-    byte rtkSolution = i2cGNSS.getCarrierSolutionType();
-
-    // Defines storage for the lat and lon as double
-    double d_lat; // latitude
-    double d_lon; // longitude
-
-    // Assemble the high precision latitude and longitude
-    d_lat = ((double)latitude) / 10000000.0; // Convert latitude from degrees * 10^-7 to degrees
-    d_lat += ((double)latitudeHp) / 1000000000.0; // Now add the high resolution component (degrees * 10^-9 )
-    d_lon = ((double)longitude) / 10000000.0; // Convert longitude from degrees * 10^-7 to degrees
-    d_lon += ((double)longitudeHp) / 1000000000.0; // Now add the high resolution component (degrees * 10^-9 )
-
-    //float f_ellipsoid;
-    float f_msl;
-    float f_accuracy;
-
-    //f_ellipsoid = (ellipsoid * 10) + ellipsoidHp;
-    //f_ellipsoid = f_ellipsoid / 10000.0; // Convert from mm * 10^-1 to m
-
-    f_msl = (msl * 10) + mslHp;
-    f_msl = f_msl / 10000.0; // Convert from mm * 10^-1 to m
-
-    f_accuracy = accuracy;
-    f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
-
     char systemStatus[100];
     sprintf(systemStatus, "%02d%02d%02d.%02d,%02d%02d%02d,%0.3f,%d,%0.9f,%0.9f,%0.2f,%d,%d,%d",
-            hour, minute, second, mseconds,
-            day, month, year,
-            f_accuracy, siv,
-            d_lat, d_lon,
-            f_msl,
-            fixType, rtkSolution,
+            gnssHour, gnssMinute, gnssSecond, mseconds,
+            gnssDay, gnssMonth, gnssYear % 2000, //Limit to 2 digits
+            horizontalAccuracy, numSV,
+            latitude, longitude,
+            altitude,
+            fixType, carrSoln,
             battLevel
            );
 

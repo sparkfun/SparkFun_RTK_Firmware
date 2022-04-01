@@ -8,7 +8,7 @@ bool configureUbloxModuleRover()
   int maxWait = 2000;
 
   //If our settings haven't changed, and this is first config since power on, trust ZED's settings
-  if(updateZEDSettings == false && firstPowerOn == true)
+  if (updateZEDSettings == false && firstPowerOn == true)
   {
     firstPowerOn = false; //Next time user switches modes, new settings will be applied
     log_d("Skipping ZED Rover configuration");
@@ -267,39 +267,33 @@ void updateAccuracyLEDs()
 
     if (online.gnss == true)
     {
-      uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
-
-      if (accuracy > 0)
+      if (horizontalAccuracy > 0)
       {
-        // Convert the horizontal accuracy (mm * 10^-1) to a float
-        float f_accuracy = accuracy;
-        f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
-
         Serial.print(F("Rover Accuracy (m): "));
-        Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
+        Serial.print(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
         Serial.println();
 
         if (productVariant == RTK_SURVEYOR)
         {
-          if (f_accuracy <= 0.02)
+          if (horizontalAccuracy <= 0.02)
           {
             digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
             digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
             digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
           }
-          else if (f_accuracy <= 0.100)
+          else if (horizontalAccuracy <= 0.100)
           {
             digitalWrite(pin_positionAccuracyLED_1cm, LOW);
             digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
             digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
           }
-          else if (f_accuracy <= 1.0000)
+          else if (horizontalAccuracy <= 1.0000)
           {
             digitalWrite(pin_positionAccuracyLED_1cm, LOW);
             digitalWrite(pin_positionAccuracyLED_10cm, LOW);
             digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
           }
-          else if (f_accuracy > 1.0)
+          else if (horizontalAccuracy > 1.0)
           {
             digitalWrite(pin_positionAccuracyLED_1cm, LOW);
             digitalWrite(pin_positionAccuracyLED_10cm, LOW);
@@ -310,12 +304,48 @@ void updateAccuracyLEDs()
       else
       {
         Serial.print(F("Rover Accuracy: "));
-        Serial.print(accuracy);
+        Serial.print(horizontalAccuracy);
         Serial.print(" ");
         Serial.print(F("No lock. SIV: "));
-        Serial.print(i2cGNSS.getSIV());
+        Serial.print(numSV);
         Serial.println();
       }
     } //End GNSS online checking
   } //Check every 2000ms
+}
+
+//These are the callbacks that get regularly called, globals are updated
+void storePVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
+{
+  altitude = ubxDataStruct->height / 1000.0;
+
+  gnssDay = ubxDataStruct->day;
+  gnssMonth = ubxDataStruct->month;
+  gnssYear = ubxDataStruct->year;
+
+  gnssHour = ubxDataStruct->hour;
+  gnssMinute = ubxDataStruct->min;
+  gnssSecond = ubxDataStruct->sec;
+  mseconds = ceil((ubxDataStruct->iTOW % 1000) / 10.0); //Limit to first two digits
+
+  numSV = ubxDataStruct->numSV;
+  fixType = ubxDataStruct->fixType;
+  carrSoln = ubxDataStruct->flags.bits.carrSoln;
+
+  validDate = ubxDataStruct->valid.bits.validDate;
+  validTime = ubxDataStruct->valid.bits.validTime;
+  confirmedDate = ubxDataStruct->flags2.bits.confirmedDate;
+  confirmedTime = ubxDataStruct->flags2.bits.confirmedTime;
+
+  ubloxUpdated = true;
+}
+
+void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)
+{
+  horizontalAccuracy = ((float)ubxDataStruct->hAcc) / 10000.0; // Convert hAcc from mm*0.1 to m
+
+  latitude = ((double)ubxDataStruct->lat) / 10000000.0;
+  latitude += ((double)ubxDataStruct->latHp) / 1000000000.0;
+  longitude = ((double)ubxDataStruct->lon) / 10000000.0;
+  longitude += ((double)ubxDataStruct->lonHp) / 1000000000.0;
 }

@@ -335,6 +335,7 @@ void beginDisplay()
 
     Serial.println(F("Display started"));
     displaySplash();
+    splashStart = millis();
   }
   else
   {
@@ -415,6 +416,9 @@ void beginGNSS()
 //Configuration can take >1s so configure during splash
 void configureGNSS()
 {
+  i2cGNSS.setAutoPVTcallbackPtr(&storePVTdata); // Enable automatic NAV PVT messages with callback to storePVTdata
+  i2cGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); // Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
+
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
   //the settings file or internal settings.

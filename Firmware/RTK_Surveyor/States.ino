@@ -71,7 +71,7 @@ void updateSystemState()
 
       case (STATE_ROVER_NO_FIX):
         {
-          if (i2cGNSS.getFixType() == 3 || i2cGNSS.getFixType() == 4) //3D, 3D+DR
+          if (fixType == 3 || fixType == 4) //3D, 3D+DR
             changeState(STATE_ROVER_FIX);
         }
         break;
@@ -80,10 +80,9 @@ void updateSystemState()
         {
           updateAccuracyLEDs();
 
-          byte rtkType = i2cGNSS.getCarrierSolutionType();
-          if (rtkType == 1) //RTK Float
+          if (carrSoln == 1) //RTK Float
             changeState(STATE_ROVER_RTK_FLOAT);
-          else if (rtkType == 2) //RTK Fix
+          else if (carrSoln == 2) //RTK Fix
             changeState(STATE_ROVER_RTK_FIX);
         }
         break;
@@ -92,10 +91,9 @@ void updateSystemState()
         {
           updateAccuracyLEDs();
 
-          byte rtkType = i2cGNSS.getCarrierSolutionType();
-          if (rtkType == 0) //No RTK
+          if (carrSoln == 0) //No RTK
             changeState(STATE_ROVER_FIX);
-          if (rtkType == 2) //RTK Fix
+          if (carrSoln == 2) //RTK Fix
             changeState(STATE_ROVER_RTK_FIX);
         }
         break;
@@ -104,10 +102,9 @@ void updateSystemState()
         {
           updateAccuracyLEDs();
 
-          byte rtkType = i2cGNSS.getCarrierSolutionType();
-          if (rtkType == 0) //No RTK
+          if (carrSoln == 0) //No RTK
             changeState(STATE_ROVER_FIX);
-          if (rtkType == 1) //RTK Float
+          if (carrSoln == 1) //RTK Float
             changeState(STATE_ROVER_RTK_FLOAT);
         }
         break;
@@ -176,14 +173,9 @@ void updateSystemState()
           }
 
           //Check for <1m horz accuracy before starting surveyIn
-          uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
+          Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\n\r", settings.surveyInStartingAccuracy, horizontalAccuracy);
 
-          float f_accuracy = accuracy;
-          f_accuracy = f_accuracy / 10000.0; // Convert the horizontal accuracy (mm * 10^-1) to a float
-
-          Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\n\r", settings.surveyInStartingAccuracy, f_accuracy);
-
-          if (f_accuracy > 0.0 && f_accuracy < settings.surveyInStartingAccuracy)
+          if (horizontalAccuracy > 0.0 && horizontalAccuracy < settings.surveyInStartingAccuracy)
           {
             displaySurveyStart(0); //Show 'Survey'
 
@@ -210,10 +202,10 @@ void updateSystemState()
           }
 
           //Get the data once to avoid duplicate slow responses
-          svinObservationTime = i2cGNSS.getSurveyInObservationTime(100);
-          svinMeanAccuracy = i2cGNSS.getSurveyInMeanAccuracy(100);
+          svinObservationTime = i2cGNSS.getSurveyInObservationTime(50);
+          svinMeanAccuracy = i2cGNSS.getSurveyInMeanAccuracy(50);
 
-          if (i2cGNSS.getSurveyInValid(100) == true) //Survey in complete
+          if (i2cGNSS.getSurveyInValid(50) == true) //Survey in complete
           {
             Serial.printf("Observation Time: %d\n\r", svinObservationTime);
             Serial.println(F("Base survey complete! RTCM now broadcasting."));
@@ -231,7 +223,7 @@ void updateSystemState()
             Serial.print(F(" Accuracy: "));
             Serial.print(svinMeanAccuracy);
             Serial.print(F(" SIV: "));
-            Serial.print(i2cGNSS.getSIV());
+            Serial.print(numSV);
             Serial.println();
 
             if (svinObservationTime > maxSurveyInWait_s)

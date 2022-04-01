@@ -105,7 +105,6 @@ int pin_radio_rts;
 
 //LittleFS for storing settings for different user profiles
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#include "FS.h"
 #include <LittleFS.h>
 #define FORMAT_LITTLEFS_IF_FAILED true
 
@@ -198,6 +197,27 @@ SFE_UBLOX_GNSS_ADD i2cGNSS;
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 #endif
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
+
+//These globals are updated regularly via the storePVTdata callback
+bool ubloxUpdated = false;
+double latitude;
+double longitude;
+float altitude;
+float horizontalAccuracy;
+bool validDate;
+bool validTime;
+bool confirmedDate;
+bool confirmedTime;
+uint8_t gnssDay;
+uint8_t gnssMonth;
+uint16_t gnssYear;
+uint8_t gnssHour;
+uint8_t gnssMinute;
+uint8_t gnssSecond;
+uint16_t mseconds;
+uint8_t numSV;
+uint8_t fixType;
+uint8_t carrSoln;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -401,6 +421,7 @@ unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update
 int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
 bool updateZEDSettings = false; //If settings from file are different from LittleFS, config the ZED
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
+unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
 
 unsigned long startTime = 0; //Used for checking longest running functions
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -619,18 +640,18 @@ void updateRTC()
       {
         lastRTCAttempt = millis();
 
-        i2cGNSS.checkUblox();
-
         bool timeValid = false;
-        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
+        if (validTime == true && validDate == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
           timeValid = true;
-        if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
+        if (confirmedTime == true && confirmedDate == true) //Requires GNSS fix
           timeValid = true;
 
         if (timeValid == true)
         {
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi
+          //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);  // 17th Jan 2021 15:24:30
+          i2cGNSS.checkUblox();
           rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());  // 17th Jan 2021 15:24:30
 
           online.rtc = true;

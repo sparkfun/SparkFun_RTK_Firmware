@@ -2,25 +2,28 @@
 //Configure specific aspects of the receiver for base mode
 bool configureUbloxModuleBase()
 {
-  if(online.gnss == false) return(false);
+  if (online.gnss == false) return (false);
 
   bool response = true;
   int maxWait = 2000;
 
   //If our settings haven't changed, and this is first config since power on, trust ZED's settings
-  if(updateZEDSettings == false && firstPowerOn == true)
+  if (updateZEDSettings == false && firstPowerOn == true)
   {
     firstPowerOn = false; //Next time user switches modes, new settings will be applied
     log_d("Skipping ZED Base configuration");
-    return(true);
+    return (true);
   }
+
+  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
   //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
   if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
     response &= i2cGNSS.setNavigationFrequency(1, maxWait);
+  //    response &= i2cGNSS.setNavigationFrequency(4, maxWait);
   if (response == false)
     Serial.println(F("Set rate failed"));
-    
+
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
   if (i2cGNSS.getSurveyInActive() == true)

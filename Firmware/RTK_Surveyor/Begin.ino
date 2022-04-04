@@ -505,7 +505,7 @@ void beginFuelGauge()
   checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
   //Check to see if we are dangerously low
-  if (battLevel < 5) //5%
+  if (battLevel < 5 && battChangeRate < 0) //5% and not charging
   {
     Serial.println("Battery too low. Please charge. Shutting down...");
 

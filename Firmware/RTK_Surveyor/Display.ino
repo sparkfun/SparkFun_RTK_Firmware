@@ -254,9 +254,7 @@ void paintWirelessIcon()
 
       //If we are connected to NTRIP Client, show download arrow
       if(online.ntripClient == true)
-        displayBitmap(18, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
-
-    oled.line(0, 11, 16, 11);
+        displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
 
     }
     else
@@ -1546,6 +1544,7 @@ void paintSystemTest()
       //begin() attempts 3 connections
       if (myGNSS.begin(serialGNSS) == true)
       {
+      
         zedUartPassed = true;
         oled.print(F("OK"));
       }

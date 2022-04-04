@@ -48,7 +48,7 @@ bool sdPresent(void)
 
   //Sending clocks while card power stabilizes...
   deselectCard();             // always make sure
-  for (byte i = 0; i < 10; i++) // send several clocks while card power stabilizes
+  for (byte i = 0; i < 30; i++) // send several clocks while card power stabilizes
     xchg(0xff);
 
   //Sending CMD0 - GO IDLE...
@@ -106,7 +106,7 @@ byte sdSendCommand(byte command, unsigned long arg)
   if (command == SD_SEND_IF_COND) crc = 0x87;  // special case, have to use different CRC
   xchg(crc);                  // send final byte
 
-  for (int i = 0; i < 10; i++)    // loop until timeout or response
+  for (int i = 0; i < 30; i++)    // loop until timeout or response
   {
     response = xchg(0xFF);
     if ((response & 0x80) == 0) break; // high bit cleared means we got a response

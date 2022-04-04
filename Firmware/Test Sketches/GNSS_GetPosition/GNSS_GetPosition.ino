@@ -21,17 +21,22 @@ long lastTime = 0; //Simple local timer. Limits amount of I2C traffic to u-blox 
 void setup()
 {
   Serial.begin(115200);
-  delay(500);
+  delay(1000);
   Serial.println("u-blox high precision example");
 
   Wire.begin();
+  //Wire.setClock(400000);
 
   //i2cGNSS.enableDebugging(Serial); // Uncomment this line to enable debug messages
 
   if (i2cGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Please check wiring. Freezing."));
-    while (1) ;
+    while (1)
+    {
+      if(Serial.available()) ESP.restart();
+      delay(10);
+    }
   }
 
   i2cGNSS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
@@ -92,4 +97,6 @@ void loop()
 
     Serial.println();
   }
+
+  if(Serial.available()) ESP.restart();
 }

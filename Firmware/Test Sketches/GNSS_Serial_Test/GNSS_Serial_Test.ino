@@ -26,12 +26,13 @@ void setup()
   Serial.println("GNSS UART2 Connection Test");
 
   Wire.begin();
+  //Wire.setClock(400000);
 
   if (i2cGNSS.begin() == false) //Connect to the u-blox module using Wire port
   {
     Serial.println(F("u-blox GNSS not detected at default I2C address. Trying again"));
 
-    //The ESP32 controls the power to the ZED. During power cycles, the ZED can take up to ~1000ms to respond to I2C pings.
+    //On the RTK Facet the ESP32 controls the power to the ZED. During power cycles, the ZED can take up to ~1000ms to respond to I2C pings.
     //delay(400); //Bad
     delay(500); //Good - may be a combination of startup delay of 200ms
 

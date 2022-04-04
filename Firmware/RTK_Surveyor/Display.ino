@@ -30,6 +30,17 @@ void updateDisplay()
         case (STATE_ROVER_RTK_FIX):
           paintRoverRTKFix();
           break;
+
+        case (STATE_ROVER_CLIENT_WIFI_STARTED):
+          paintRoverWiFiStarted();
+          break;
+        case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
+          paintRoverWiFiStarted();
+          break;
+        case (STATE_ROVER_CLIENT_STARTED):
+          paintRoverWiFiStarted();
+          break;
+
         case (STATE_BASE_NOT_STARTED):
           //Do nothing. Static display shown during state change.
           break;
@@ -230,7 +241,7 @@ void paintWirelessIcon()
           wifiIconDisplayed = true;
 
           //Draw the icon
-          displayBitmap(6, 1, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
+          displayBitmap(0, 1, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
         }
         else
           wifiIconDisplayed = false;
@@ -239,7 +250,14 @@ void paintWirelessIcon()
     else if (radioState == WIFI_CONNECTED)
     {
       //Solid WiFi icon
-      displayBitmap(6, 1, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
+      displayBitmap(0, 1, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
+
+      //If we are connected to NTRIP Client, show download arrow
+      if(online.ntripClient == true)
+        displayBitmap(18, 1, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+
+    oled.line(0, 11, 16, 11);
+
     }
     else
     {
@@ -480,7 +498,6 @@ void paintSIV()
   if (online.display == true && online.gnss == true)
   {
     //Blink satellite dish icon if we don't have a fix
-    uint8_t fixType = fixType;
     if (fixType == 3 || fixType == 4 || fixType == 5) //3D, 3D+DR, or Time
     {
       //Fix, turn on icon
@@ -509,13 +526,9 @@ void paintSIV()
     oled.print(":");
 
     if (fixType == 0) //0 = No Fix
-    {
       oled.print("0");
-    }
     else
-    {
       oled.print(numSV);
-    }
 
     paintResets();
   } //End gnss online
@@ -655,6 +668,25 @@ void paintRoverRTKFloat()
 }
 
 void paintRoverRTKFix()
+{
+  if (online.display == true)
+  {
+    paintBatteryLevel(); //Top right corner
+
+    paintWirelessIcon(); //Top left corner
+
+    paintBaseState(); //Top center
+
+    paintHorizontalAccuracy();
+
+    paintSIV();
+
+    paintLogging();
+  }
+}
+
+//Display Blinking WiFi
+void paintRoverWiFiStarted()
 {
   if (online.display == true)
   {

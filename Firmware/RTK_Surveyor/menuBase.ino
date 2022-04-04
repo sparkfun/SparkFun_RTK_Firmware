@@ -58,22 +58,22 @@ void menuBase()
     if (settings.enableNtripServer == true)
     {
       Serial.print(F("5) Set WiFi SSID: "));
-      Serial.println(settings.wifiSSID);
+      Serial.println(settings.ntripServer_wifiSSID);
 
       Serial.print(F("6) Set WiFi PW: "));
-      Serial.println(settings.wifiPW);
+      Serial.println(settings.ntripServer_wifiPW);
 
       Serial.print(F("7) Set Caster Address: "));
-      Serial.println(settings.casterHost);
+      Serial.println(settings.ntripServer_CasterHost);
 
       Serial.print(F("8) Set Caster Port: "));
-      Serial.println(settings.casterPort);
+      Serial.println(settings.ntripServer_CasterPort);
 
       Serial.print(F("9) Set Mountpoint: "));
-      Serial.println(settings.mountPointUpload);
+      Serial.println(settings.ntripServer_MountPoint);
 
       Serial.print(F("10) Set Mountpoint PW: "));
-      Serial.println(settings.mountPointUploadPW);
+      Serial.println(settings.ntripServer_MountPointPW);
     }
 
     Serial.println(F("x) Exit"));
@@ -174,37 +174,37 @@ void menuBase()
     else if (incoming == 5 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter local WiFi SSID: "));
-      readLine(settings.wifiSSID, sizeof(settings.wifiSSID), menuTimeoutExtended);
+      readLine(settings.ntripServer_wifiSSID, sizeof(settings.ntripServer_wifiSSID), menuTimeoutExtended);
     }
     else if (incoming == 6 && settings.enableNtripServer == true)
     {
-      Serial.printf("Enter password for WiFi network %s: ", settings.wifiSSID);
-      readLine(settings.wifiPW, sizeof(settings.wifiPW), menuTimeoutExtended);
+      Serial.printf("Enter password for WiFi network %s: ", settings.ntripServer_wifiSSID);
+      readLine(settings.ntripServer_wifiPW, sizeof(settings.ntripServer_wifiPW), menuTimeoutExtended);
     }
     else if (incoming == 7 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Caster Address: "));
-      readLine(settings.casterHost, sizeof(settings.casterHost), menuTimeoutExtended);
+      readLine(settings.ntripServer_CasterHost, sizeof(settings.ntripServer_CasterHost), menuTimeoutExtended);
     }
     else if (incoming == 8 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Caster Port: "));
 
-      int casterPort = getNumber(menuTimeoutExtended); //Timeout after x seconds
-      if (casterPort < 1 || casterPort > 99999) //Arbitrary 99k max port #
+      int ntripServer_CasterPort = getNumber(menuTimeoutExtended); //Timeout after x seconds
+      if (ntripServer_CasterPort < 1 || ntripServer_CasterPort > 99999) //Arbitrary 99k max port #
         Serial.println(F("Error: Caster Port out of range"));
       else
-        settings.casterPort = casterPort; //Recorded to NVM and file at main menu exit
+        settings.ntripServer_CasterPort = ntripServer_CasterPort; //Recorded to NVM and file at main menu exit
     }
     else if (incoming == 9 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Mount Point: "));
-      readLine(settings.mountPointUpload, sizeof(settings.mountPointUpload), menuTimeoutExtended);
+      readLine(settings.ntripServer_MountPoint, sizeof(settings.ntripServer_MountPoint), menuTimeoutExtended);
     }
     else if (incoming == 10 && settings.enableNtripServer == true)
     {
-      Serial.printf("Enter password for Mount Point %s: ", settings.mountPointUpload);
-      readLine(settings.mountPointUploadPW, sizeof(settings.mountPointUploadPW), menuTimeoutExtended);
+      Serial.printf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
+      readLine(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW), menuTimeoutExtended);
     }
     else if (incoming == STATUS_PRESSED_X)
       break;

@@ -118,14 +118,27 @@ bool customBTstop() {
 
 //Start WiFi assuming it was previously fully released
 //See WiFiBluetoothSwitch sketch for more info
-void startWiFi()
+void startServerWiFi()
 {
 #ifdef COMPILE_WIFI
   wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
   esp_wifi_init(&wifi_init_config); //Restart WiFi resources
 
-  Serial.printf("Connecting to local WiFi: %s\n\r", settings.wifiSSID);
-  WiFi.begin(settings.wifiSSID, settings.wifiPW);
+  Serial.printf("Connecting to local WiFi: %s\n\r", settings.ntripServer_wifiSSID);
+  WiFi.begin(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
+#endif
+
+  radioState = WIFI_ON_NOCONNECTION;
+}
+
+void startClientWiFi()
+{
+#ifdef COMPILE_WIFI
+  wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
+  esp_wifi_init(&wifi_init_config); //Restart WiFi resources
+
+  Serial.printf("Connecting to local WiFi: %s\n\r", settings.ntripClient_wifiSSID);
+  WiFi.begin(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
 #endif
 
   radioState = WIFI_ON_NOCONNECTION;
@@ -136,7 +149,7 @@ void startWiFi()
 void stopWiFi()
 {
 #ifdef COMPILE_WIFI
-  caster.stop();
+  ntripServer.stop();
   WiFi.mode(WIFI_OFF);
 
   if (radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
@@ -211,7 +224,7 @@ bool configureUbloxModule()
     response &= i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_RTCM3); //Set the UART2 to input RTCM
 
   if (settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
-    response &= i2cGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
+    response &= i2cGNSS.setPortInput(COM_PORT_I2C, (COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3)); //We don't want NMEA, but we will want to deliver RTCM over I2C
 
   //The USB port on the ZED may be used for RTCM to/from the computer (as an NTRIP caster or client)
   //So let's be sure all protocols are on for the USB port

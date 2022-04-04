@@ -26,6 +26,9 @@ bool configureUbloxModuleBase()
 
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
+  i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Disable GPGGA call back that may have been set during Rover Client mode
+  i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C); // Disable NMEA message
+
   if (i2cGNSS.getSurveyInActive() == true)
   {
     log_d("Disabling survey");
@@ -250,9 +253,9 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
   }
 
 #ifdef COMPILE_WIFI
-  if (caster.connected() == true)
+  if (ntripServer.connected() == true)
   {
-    caster.write(incoming); //Send this byte to socket
+    ntripServer.write(incoming); //Send this byte to socket
     casterBytesSent++;
     lastServerSent_ms = millis();
   }

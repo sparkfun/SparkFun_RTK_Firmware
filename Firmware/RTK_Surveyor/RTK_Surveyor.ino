@@ -40,9 +40,9 @@
     Enable various debug outputs sent over BT
 
   TODO:
-    Add mountPointDownload and PWDownload to AP config
-    Add casterTransmitGGA to AP config
-    Add casterUser/PW to AP config
+    Add ntripServer_MountPoint and PWDownload to AP config
+    Add ntripClient_TransmitGGA to AP config
+    Add ntripServer_CasterUser/PW to AP config
     Add maxLogLength_minutes to AP config
 
 */
@@ -106,7 +106,6 @@ int pin_radio_rts;
 //LittleFS for storing settings for different user profiles
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <LittleFS.h>
-#define FORMAT_LITTLEFS_IF_FAILED true
 
 const char *rtkProfileSettings = "SFERTK"; //Holds the profileNumber
 const char *rtkSettings[] = {"SFERTK_0", "SFERTK_1", "SFERTK_2", "SFERTK_3"}; //User profiles
@@ -153,8 +152,11 @@ uint32_t sdUsedSpaceMB = 0;
 #ifdef COMPILE_WIFI
 #include <WiFi.h>
 #include "esp_wifi.h" //Needed for init/deinit of resources to free up RAM
+#include "base64.h" //Built-in ESP32 library. Needed for NTRIP Client credential encoding.
 
-WiFiClient caster;
+WiFiClient ntripServer; // The WiFi connection to the NTRIP caster. We use this to push local RTCM to the caster.
+WiFiClient ntripClient; // The WiFi connection to the NTRIP caster. We use this to obtain RTCM from the caster.
+
 #endif
 
 unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
@@ -422,6 +424,8 @@ int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100
 bool updateZEDSettings = false; //If settings from file are different from LittleFS, config the ZED
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
+unsigned long clientWiFiStartTime = 0; //If we cannot connect to local wifi for NTRIP client, give up/go to Rover after 8 seconds
+bool restartRover = false; //If user modifies any NTRIP Client settings, we need to restart the rover
 
 unsigned long startTime = 0; //Used for checking longest running functions
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -487,6 +491,8 @@ void loop()
   reportHeap(); //If debug enabled, report free heap
 
   updateSerial(); //Menu system via ESP32 USB connection
+
+  updateNTRIPClient(); //Move any available incoming NTRIP to ZED
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;

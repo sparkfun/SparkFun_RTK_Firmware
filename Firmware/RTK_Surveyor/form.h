@@ -316,12 +316,12 @@ function validateFields() {
     checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
     checkElementValue("fixedAltitude", 0, 8849, "Must be 0 to 8849", "collapseBaseConfig");
 
-    checkElementString("wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-    checkElementString("wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
-    checkElementString("casterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-    checkElementValue("casterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
-    checkElementString("mountPointUpload", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-    checkElementString("mountPointUploadPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("ntripServer_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("ntripServer_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
+    checkElementString("ntripServer_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementValue("ntripServer_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
+    checkElementString("ntripServer_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("ntripServer_MountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
 
     //System Config
     checkElementValue("maxLogTime_minutes", 1, 2880, "Must be 1 to 2880", "collapseSystemConfig");
@@ -633,21 +633,21 @@ document.addEventListener("DOMContentLoaded", (event) => {
     ge("enableNtripServer").addEventListener("change", function () {
         if (ge("enableNtripServer").checked) {
             //Enable NTRIP inputs
-            ge("wifiSSID").disabled = false;
-            ge("wifiPW").disabled = false;
-            ge("casterHost").disabled = false;
-            ge("casterPort").disabled = false;
-            ge("mountPointUpload").disabled = false;
-            ge("mountPointUploadPW").disabled = false;
+            ge("ntripServer_wifiSSID").disabled = false;
+            ge("ntripServer_wifiPW").disabled = false;
+            ge("ntripServer_CasterHost").disabled = false;
+            ge("ntripServer_CasterPort").disabled = false;
+            ge("ntripServer_MountPoint").disabled = false;
+            ge("ntripServer_MountPointPW").disabled = false;
         }
         else {
             //Disable NTRIP inputs
-            ge("wifiSSID").disabled = true;
-            ge("wifiPW").disabled = true;
-            ge("casterHost").disabled = true;
-            ge("casterPort").disabled = true;
-            ge("mountPointUpload").disabled = true;
-            ge("mountPointUploadPW").disabled = true;
+            ge("ntripServer_wifiSSID").disabled = true;
+            ge("ntripServer_wifiPW").disabled = true;
+            ge("ntripServer_CasterHost").disabled = true;
+            ge("ntripServer_CasterPort").disabled = true;
+            ge("ntripServer_MountPoint").disabled = true;
+            ge("ntripServer_MountPointPW").disabled = true;
         }
     });
 
@@ -1582,55 +1582,55 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div class="form-group row">
-                        <label for="wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
+                        <label for="ntripServer_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
                             SSID:</label>
                         <div class="col-sm-8 col-7">
-                            <input type="text" class="form-control" id="wifiSSID">
-                            <p id="wifiSSIDError" class="inlineError"></p>
+                            <input type="text" class="form-control" id="ntripServer_wifiSSID">
+                            <p id="ntripServer_wifiSSIDError" class="inlineError"></p>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label for="wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi PW:</label>
+                        <label for="ntripServer_wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi PW:</label>
                         <div class="col-sm-8 col-7">
-                            <input type="text" class="form-control" id="wifiPW">
-                            <p id="wifiPWError" class="inlineError"></p>
+                            <input type="text" class="form-control" id="ntripServer_wifiPW">
+                            <p id="ntripServer_wifiPWError" class="inlineError"></p>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label for="casterHost" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                        <label for="ntripServer_CasterHost" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                             Host:</label>
                         <div class="col-sm-8 col-6">
-                            <input type="text" class="form-control" id="casterHost">
-                            <p id="casterHostError" class="inlineError"></p>
+                            <input type="text" class="form-control" id="ntripServer_CasterHost">
+                            <p id="ntripServer_CasterHostError" class="inlineError"></p>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label for="casterPort" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                        <label for="ntripServer_CasterPort" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                             Port:</label>
                         <div class="col-sm-8 col-6">
-                            <input type="text" class="form-control" id="casterPort">
-                            <p id="casterPortError" class="inlineError"></p>
+                            <input type="text" class="form-control" id="ntripServer_CasterPort">
+                            <p id="ntripServer_CasterPortError" class="inlineError"></p>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label for="mountPointUpload" class="box-margin20 col-sm-3 col-5 col-form-label">Mount
+                        <label for="ntripServer_MountPoint" class="box-margin20 col-sm-3 col-5 col-form-label">Mount
                             Point:</label>
                         <div class="col-sm-8 col-6">
-                            <input type="text" class="form-control" id="mountPointUpload">
-                            <p id="mountPointUploadError" class="inlineError"></p>
+                            <input type="text" class="form-control" id="ntripServer_MountPoint">
+                            <p id="ntripServer_MountPointError" class="inlineError"></p>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label for="mountPointUploadPW" class="box-margin20 col-sm-4 col-6 col-form-label">Mount Point
+                        <label for="ntripServer_MountPointPW" class="box-margin20 col-sm-4 col-6 col-form-label">Mount Point
                             PW:</label>
                         <div class="col-sm-7 col-5">
-                            <input type="text" class="form-control" id="mountPointUploadPW">
-                            <p id="mountPointUploadPWError" class="inlineError"></p>
+                            <input type="text" class="form-control" id="ntripServer_MountPointPW">
+                            <p id="ntripServer_MountPointPWError" class="inlineError"></p>
                         </div>
                     </div>
                 </div>

@@ -353,6 +353,7 @@ void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)
 //Used during Rover+WiFi NTRIP Client mode to provide caster with GGA sentence every 10 seconds
 void pushGPGGA(NMEA_GGA_data_t *nmeaData)
 {
+#ifdef COMPILE_WIFI
   //Provide the caster with our current position as needed
   if ((ntripClient.connected() == true) && (settings.ntripClient_TransmitGGA == true))
   {
@@ -360,12 +361,14 @@ void pushGPGGA(NMEA_GGA_data_t *nmeaData)
 
     ntripClient.print((const char *)nmeaData->nmea); //Push our current GGA sentence to caster
   }
+  #endif
 }
 
 //Check for the arrival of any correction data. Push it to the GNSS.
 //Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
 void updateNTRIPClient()
 {
+#ifdef COMPILE_WIFI
   if (online.ntripClient == true)
   {
     if (ntripClient.connected() == true) // Check that the connection is still open
@@ -405,4 +408,5 @@ void updateNTRIPClient()
       online.ntripClient = false;
     }
   }
+#endif
 }

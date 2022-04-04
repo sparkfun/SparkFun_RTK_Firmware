@@ -18,8 +18,9 @@ The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To comp
 1. Install [Arduino](https://www.arduino.cc/en/software). 
 2. Install ESP32 for Arduino. [Here](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide#installing-via-arduino-ide-boards-manager) are some good instructions for installing it via the Arduino Boards manager. **Note**: Use v2.0.2 of the core. **Note:** We use the 'ESP32 Dev Module' for pin numbering. Select the correct board under Tools->Board->ESP32 Arduino->ESP32 Dev Module.
 3. Change the Parition table. Replace 'C:\Users\\[user name]\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.2\tools\partitions\min_spiffs.csv' with the min_spiff.csv file found in this folder. This will increase the program partition from a maximum of 1.9MB to 3MB.
-3. Set the core settings: The 'Partition Scheme' must be set to 'Minimal SPIFFS (1.9MB APP with OTA/190KB SPIFFS). This will use the 'min_spiffs.csv' updated partition table.
-4. Obtain all the required libraries. **Note:** You should click on the link next to each of the #includes at the top of RTK_Surveyor.ino within the Arduino IDE to open the library manager and download them. Getting them directly from github also works but may not be 'official' releases:
+4. Set the core settings: The 'Partition Scheme' must be set to 'Minimal SPIFFS (1.9MB APP with OTA/190KB SPIFFS). This will use the 'min_spiffs.csv' updated partition table.
+5. Set the 'Flash Size' to 16MB (128mbit)
+6. Obtain all the required libraries. **Note:** You should click on the link next to each of the #includes at the top of RTK_Surveyor.ino within the Arduino IDE to open the library manager and download them. Getting them directly from github also works but may not be 'official' releases:
     * [ESP32Time](https://github.com/fbiego/ESP32Time)
     * [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) (not available via library manager)
     * [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) (not available via library manager)

@@ -45,11 +45,10 @@ bool configureUbloxModuleRover()
 
 #define OUTPUT_SETTING 14
 
-  //Turn off all traffic except UBX to reduce I2C bus errors and ESP32 resets as much as possible
   getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX))
-    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to output UBX (config)
-  //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3); //Not a valid state. Goes to UBX+I2C+ RTCM3 - Set the I2C port to output UBX (config), and RTCM3 (casting)
+    //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX); //Turn off all traffic except UBX to reduce I2C bus errors and ESP32 resets as much as possible
+    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //We need NMEA GGA output for NTRIP Client.
 
   //RTCM is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
@@ -354,14 +353,17 @@ void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)
 void pushGPGGA(NMEA_GGA_data_t *nmeaData)
 {
 #ifdef COMPILE_WIFI
+  log_d("GGA called");
+  
   //Provide the caster with our current position as needed
   if ((ntripClient.connected() == true) && (settings.ntripClient_TransmitGGA == true))
   {
-    log_d("Pushing GGA to server: %s", nmeaData->nmea); //nmea is printable (NULL-terminated) and already has \r\n on the end
+    Serial.printf("Pushing GGA to server: %s\n\r", nmeaData->nmea); //nmea is printable (NULL-terminated) and already has \r\n on the end
+    //log_d("Pushing GGA to server: %s", nmeaData->nmea); //nmea is printable (NULL-terminated) and already has \r\n on the end
 
     ntripClient.print((const char *)nmeaData->nmea); //Push our current GGA sentence to caster
   }
-  #endif
+#endif
 }
 
 //Check for the arrival of any correction data. Push it to the GNSS.

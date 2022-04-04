@@ -64,7 +64,7 @@ void menuSystem()
 
         //begin() attempts 3 connections with X timeout per attempt
         SFE_UBLOX_GNSS myGNSS;
-        if (myGNSS.begin(serialGNSS, 200) == true)
+        if (myGNSS.begin(serialGNSS) == true)
         {
           zedUartPassed = true;
           Serial.print(F("BT Online"));

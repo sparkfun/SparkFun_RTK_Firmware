@@ -1543,8 +1543,8 @@ void paintSystemTest()
 
       SFE_UBLOX_GNSS myGNSS;
 
-      //begin() attempts 3 connections with 20ms begin timeout
-      if (myGNSS.begin(serialGNSS, 20) == true)
+      //begin() attempts 3 connections
+      if (myGNSS.begin(serialGNSS) == true)
       {
         zedUartPassed = true;
         oled.print(F("OK"));

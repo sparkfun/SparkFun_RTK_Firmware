@@ -241,7 +241,7 @@ void paintWirelessIcon()
           wifiIconDisplayed = true;
 
           //Draw the icon
-          displayBitmap(0, 1, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
+          displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
         }
         else
           wifiIconDisplayed = false;
@@ -250,11 +250,11 @@ void paintWirelessIcon()
     else if (radioState == WIFI_CONNECTED)
     {
       //Solid WiFi icon
-      displayBitmap(0, 1, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
+      displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
 
       //If we are connected to NTRIP Client, show download arrow
       if(online.ntripClient == true)
-        displayBitmap(18, 1, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+        displayBitmap(18, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
 
     oled.line(0, 11, 16, 11);
 

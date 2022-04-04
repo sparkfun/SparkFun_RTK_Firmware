@@ -91,7 +91,10 @@ void menuMain()
     i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
 
   if(restartRover == true)
+  {
+    restartRover = false;
     requestChangeState(STATE_ROVER_NOT_STARTED); //Restart rover upon exit for latest changes to take effect
+  }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }

@@ -76,7 +76,7 @@ bool getSettings(uint8_t fileNumber, Settings &localSettings)
   //(It is possible for two different versions of the code to have the same sizeOfSettings - which causes problems!)
   if (localSettings.rtkIdentifier != RTK_IDENTIFIER)
   {
-    log_d("Settings are not valid for this variant of RTK %s. Found %s, should be %s. Using default settings.", platformPrefix, settings.rtkIdentifier, RTK_IDENTIFIER);
+    log_d("Settings are not valid for this variant of RTK %s. Found 0x%02X, should be 0x%02X. Using default settings.", platformPrefix, localSettings.rtkIdentifier, RTK_IDENTIFIER);
     return (false);
   }
 
@@ -815,7 +815,7 @@ bool parseLine(char* str) {
     //Last catch
     if (knownSetting == false)
     {
-      Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);
+      Serial.printf("Unknown setting %s\r\n", settingName);
     }
   }
 

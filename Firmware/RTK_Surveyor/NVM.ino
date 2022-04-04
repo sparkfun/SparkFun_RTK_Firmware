@@ -76,7 +76,7 @@ bool getSettings(uint8_t fileNumber, Settings &localSettings)
   //(It is possible for two different versions of the code to have the same sizeOfSettings - which causes problems!)
   if (localSettings.rtkIdentifier != RTK_IDENTIFIER)
   {
-    log_d("Settings are not valid for this variant of RTK %s. Found %s, should be %s. Using default settings.", platformPrefix, settings.rtkIdentifier, RTK_IDENTIFIER);
+    log_d("Settings are not valid for this variant of RTK %s. Found 0x%02X, should be 0x%02X. Using default settings.", platformPrefix, localSettings.rtkIdentifier, RTK_IDENTIFIER);
     return (false);
   }
 
@@ -251,6 +251,7 @@ void loadSettingsPartial()
 
   //Load the settings file into a temp holder until we know it's valid
   Settings tempSettings;
+
   if (getSettings(profileNumber, tempSettings) == true)
     settings = tempSettings; //Settings are good. Move them over.
 }
@@ -312,18 +313,6 @@ void recordSystemSettingsToFile()
 
       settingsFile.println("dataPortBaud=" + (String)settings.dataPortBaud);
       settingsFile.println("radioPortBaud=" + (String)settings.radioPortBaud);
-      settingsFile.println("enableNtripServer=" + (String)settings.enableNtripServer);
-      settingsFile.println("casterHost=" + (String)settings.casterHost);
-      settingsFile.println("casterPort=" + (String)settings.casterPort);
-      settingsFile.println("casterUser=" + (String)settings.casterUser);
-      settingsFile.println("casterUserPW=" + (String)settings.casterUserPW);
-      settingsFile.println("mountPointUpload=" + (String)settings.mountPointUpload);
-      settingsFile.println("mountPointUploadPW=" + (String)settings.mountPointUploadPW);
-      settingsFile.println("mountPointDownload=" + (String)settings.mountPointDownload);
-      settingsFile.println("mountPointDownloadPW=" + (String)settings.mountPointDownloadPW);
-      settingsFile.println("casterTransmitGGA=" + (String)settings.casterTransmitGGA);
-      settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
-      settingsFile.println("wifiPW=" + (String)settings.wifiPW);
       settingsFile.println("surveyInStartingAccuracy=" + (String)settings.surveyInStartingAccuracy);
       settingsFile.println("measurementRate=" + (String)settings.measurementRate);
       settingsFile.println("navigationRate=" + (String)settings.navigationRate);
@@ -346,6 +335,25 @@ void recordSystemSettingsToFile()
       settingsFile.println("externalPulsePolarity=" + (String)settings.externalPulsePolarity);
       settingsFile.println("enableExternalHardwareEventLogging=" + (String)settings.enableExternalHardwareEventLogging);
       settingsFile.println("profileName=" + (String)settings.profileName);
+      settingsFile.println("enableNtripServer=" + (String)settings.enableNtripServer);
+      settingsFile.println("ntripServer_CasterHost=" + (String)settings.ntripServer_CasterHost);
+      settingsFile.println("ntripServer_CasterPort=" + (String)settings.ntripServer_CasterPort);
+      settingsFile.println("ntripServer_CasterUser=" + (String)settings.ntripServer_CasterUser);
+      settingsFile.println("ntripServer_CasterUserPW=" + (String)settings.ntripServer_CasterUserPW);
+      settingsFile.println("ntripServer_MountPoint=" + (String)settings.ntripServer_MountPoint);
+      settingsFile.println("ntripServer_MountPointPW=" + (String)settings.ntripServer_MountPointPW);
+      settingsFile.println("ntripServer_wifiSSID=" + (String)settings.ntripServer_wifiSSID);
+      settingsFile.println("ntripServer_wifiPW=" + (String)settings.ntripServer_wifiPW);
+      settingsFile.println("enableNtripClient=" + (String)settings.enableNtripClient);
+      settingsFile.println("ntripClient_CasterHost=" + (String)settings.ntripClient_CasterHost);
+      settingsFile.println("ntripClient_CasterPort=" + (String)settings.ntripClient_CasterPort);
+      settingsFile.println("ntripClient_CasterUser=" + (String)settings.ntripClient_CasterUser);
+      settingsFile.println("ntripClient_CasterUserPW=" + (String)settings.ntripClient_CasterUserPW);
+      settingsFile.println("ntripClient_MountPoint=" + (String)settings.ntripClient_MountPoint);
+      settingsFile.println("ntripClient_MountPointPW=" + (String)settings.ntripClient_MountPointPW);
+      settingsFile.println("ntripClient_wifiSSID=" + (String)settings.ntripClient_wifiSSID);
+      settingsFile.println("ntripClient_wifiPW=" + (String)settings.ntripClient_wifiPW);
+      settingsFile.println("ntripClient_TransmitGGA=" + (String)settings.ntripClient_TransmitGGA);
 
       //Record constellation settings
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -506,9 +514,9 @@ bool parseLine(char* str) {
     }
   }
 
-  //  log_d("settingName: %s", settingName);
-  //  log_d("settingValue: %s", settingValue);
-  //  log_d("d: %0.3f", d);
+  //log_d("settingName: %s", settingName);
+  //log_d("settingValue: %s", settingValue);
+  //log_d("d: %0.3f", d);
 
   // Get setting name
   if (strcmp(settingName, "sizeOfSettings") == 0)
@@ -625,30 +633,6 @@ bool parseLine(char* str) {
     settings.dataPortBaud = d;
   else if (strcmp(settingName, "radioPortBaud") == 0)
     settings.radioPortBaud = d;
-  else if (strcmp(settingName, "enableNtripServer") == 0)
-    settings.enableNtripServer = d;
-  else if (strcmp(settingName, "casterHost") == 0)
-    strcpy(settings.casterHost, settingValue);
-  else if (strcmp(settingName, "casterPort") == 0)
-    settings.casterPort = d;
-  else if (strcmp(settingName, "casterUser") == 0)
-    strcpy(settings.casterUser, settingValue);
-  else if (strcmp(settingName, "casterUserPW") == 0)
-    strcpy(settings.casterUserPW, settingValue);
-  else if (strcmp(settingName, "mountPointUpload") == 0)
-    strcpy(settings.mountPointUpload, settingValue);
-  else if (strcmp(settingName, "mountPointUploadPW") == 0)
-    strcpy(settings.mountPointUploadPW, settingValue);
-  else if (strcmp(settingName, "mountPointDownload") == 0)
-    strcpy(settings.mountPointDownload, settingValue);
-  else if (strcmp(settingName, "mountPointDownloadPW") == 0)
-    strcpy(settings.mountPointDownloadPW, settingValue);
-  else if (strcmp(settingName, "casterTransmitGGA") == 0)
-    settings.casterTransmitGGA = d;
-  else if (strcmp(settingName, "wifiSSID") == 0)
-    strcpy(settings.wifiSSID, settingValue);
-  else if (strcmp(settingName, "wifiPW") == 0)
-    strcpy(settings.wifiPW, settingValue);
   else if (strcmp(settingName, "surveyInStartingAccuracy") == 0)
     settings.surveyInStartingAccuracy = d;
   else if (strcmp(settingName, "measurementRate") == 0)
@@ -761,6 +745,44 @@ bool parseLine(char* str) {
   }
   else if (strcmp(settingName, "profileName") == 0)
     strcpy(settings.profileName, settingValue);
+  else if (strcmp(settingName, "enableNtripServer") == 0)
+    settings.enableNtripServer = d;
+  else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
+    strcpy(settings.ntripServer_CasterHost, settingValue);
+  else if (strcmp(settingName, "ntripServer_CasterPort") == 0)
+    settings.ntripServer_CasterPort = d;
+  else if (strcmp(settingName, "ntripServer_CasterUser") == 0)
+    strcpy(settings.ntripServer_CasterUser, settingValue);
+  else if (strcmp(settingName, "ntripServer_CasterUserPW") == 0)
+    strcpy(settings.ntripServer_CasterUserPW, settingValue);
+  else if (strcmp(settingName, "ntripServer_MountPoint") == 0)
+    strcpy(settings.ntripServer_MountPoint, settingValue);
+  else if (strcmp(settingName, "ntripServer_MountPointPW") == 0)
+    strcpy(settings.ntripServer_MountPointPW, settingValue);
+  else if (strcmp(settingName, "ntripServer_wifiSSID") == 0)
+    strcpy(settings.ntripServer_wifiSSID, settingValue);
+  else if (strcmp(settingName, "ntripServer_wifiPW") == 0)
+    strcpy(settings.ntripServer_wifiPW, settingValue);
+  else if (strcmp(settingName, "enableNtripClient") == 0)
+    settings.enableNtripClient = d;
+  else if (strcmp(settingName, "ntripClient_CasterHost") == 0)
+    strcpy(settings.ntripClient_CasterHost, settingValue);
+  else if (strcmp(settingName, "ntripClient_CasterPort") == 0)
+    settings.ntripClient_CasterPort = d;
+  else if (strcmp(settingName, "ntripClient_CasterUser") == 0)
+    strcpy(settings.ntripClient_CasterUser, settingValue);
+  else if (strcmp(settingName, "ntripClient_CasterUserPW") == 0)
+    strcpy(settings.ntripClient_CasterUserPW, settingValue);
+  else if (strcmp(settingName, "ntripClient_MountPoint") == 0)
+    strcpy(settings.ntripClient_MountPoint, settingValue);
+  else if (strcmp(settingName, "ntripClient_MountPointPW") == 0)
+    strcpy(settings.ntripClient_MountPointPW, settingValue);
+  else if (strcmp(settingName, "ntripClient_wifiSSID") == 0)
+    strcpy(settings.ntripClient_wifiSSID, settingValue);
+  else if (strcmp(settingName, "ntripClient_wifiPW") == 0)
+    strcpy(settings.ntripClient_wifiPW, settingValue);
+  else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
+    settings.ntripClient_TransmitGGA = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list
@@ -805,7 +827,7 @@ bool parseLine(char* str) {
             settings.ubxMessages[x].msgRate = d;
             updateZEDSettings = true;
           }
-          
+
           knownSetting = true;
           break;
         }
@@ -815,7 +837,7 @@ bool parseLine(char* str) {
     //Last catch
     if (knownSetting == false)
     {
-      Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);
+      Serial.printf("Unknown setting %s\r\n", settingName);
     }
   }
 

@@ -94,8 +94,6 @@ void F9PSerialReadTask(void *e)
   }
 }
 
-
-
 //Control BT status LED according to radioState
 void updateBTled()
 {

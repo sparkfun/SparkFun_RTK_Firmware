@@ -2,6 +2,10 @@
 //Update rate, constellations, etc
 void menuGNSS()
 {
+  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, caster credentials, etc).
+
+  restartRover = false; //If user modifies any NTRIP settings, we need to restart the rover
+
   while (1)
   {
     Serial.println();
@@ -56,6 +60,41 @@ void menuGNSS()
     Serial.println();
 
     Serial.println(F("4) Set Constellations "));
+
+    Serial.print(F("5) Toggle NTRIP Client: "));
+    if (settings.enableNtripClient == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
+    if (settings.enableNtripClient == true)
+    {
+      Serial.print(F("6) Set WiFi SSID: "));
+      Serial.println(settings.ntripClient_wifiSSID);
+
+      Serial.print(F("7) Set WiFi PW: "));
+      Serial.println(settings.ntripClient_wifiPW);
+
+      Serial.print(F("8) Set Caster Address: "));
+      Serial.println(settings.ntripClient_CasterHost);
+
+      Serial.print(F("9) Set Caster Port: "));
+      Serial.println(settings.ntripClient_CasterPort);
+
+      Serial.print(F("10) Set Caster User Name: "));
+      Serial.println(settings.ntripClient_CasterUser);
+
+      Serial.print(F("11) Set Caster User Password: "));
+      Serial.println(settings.ntripClient_CasterUserPW);
+
+      Serial.print(F("12) Set Mountpoint: "));
+      Serial.println(settings.ntripClient_MountPoint);
+
+      Serial.print(F("13) Set Mountpoint PW: "));
+      Serial.println(settings.ntripClient_MountPointPW);
+
+      Serial.print(F("14) Toggle sending GGA Location to Caster: "));
+      if (settings.ntripClient_TransmitGGA == true) Serial.println(F("Enabled"));
+      else Serial.println(F("Disabled"));
+    }
 
     Serial.println(F("x) Exit"));
 
@@ -117,6 +156,69 @@ void menuGNSS()
     else if (incoming == 4)
     {
       menuConstellations();
+    }
+    else if (incoming == 5)
+    {
+      settings.enableNtripClient ^= 1;
+      restartRover = true;
+    }
+    else if (incoming == 6 && settings.enableNtripClient == true)
+    {
+      Serial.print(F("Enter local WiFi SSID: "));
+      readLine(settings.ntripClient_wifiSSID, sizeof(settings.ntripClient_wifiSSID), menuTimeoutExtended);
+      restartRover = true;
+    }
+    else if (incoming == 7 && settings.enableNtripClient == true)
+    {
+      Serial.printf("Enter password for WiFi network %s: ", settings.ntripClient_wifiSSID);
+      readLine(settings.ntripClient_wifiPW, sizeof(settings.ntripClient_wifiPW), menuTimeoutExtended);
+      restartRover = true;
+    }
+    else if (incoming == 8 && settings.enableNtripClient == true)
+    {
+      Serial.print(F("Enter new Caster Address: "));
+      readLine(settings.ntripClient_CasterHost, sizeof(settings.ntripClient_CasterHost), menuTimeoutExtended);
+      restartRover = true;
+    }
+    else if (incoming == 9 && settings.enableNtripClient == true)
+    {
+      Serial.print(F("Enter new Caster Port: "));
+
+      int ntripClient_CasterPort = getNumber(menuTimeoutExtended); //Timeout after x seconds
+      if (ntripClient_CasterPort < 1 || ntripClient_CasterPort > 99999) //Arbitrary 99k max port #
+        Serial.println(F("Error: Caster Port out of range"));
+      else
+        settings.ntripClient_CasterPort = ntripClient_CasterPort; //Recorded to NVM and file at main menu exit
+      restartRover = true;
+    }
+    else if (incoming == 10 && settings.enableNtripClient == true)
+    {
+      Serial.printf("Enter user name for %s: ", settings.ntripClient_CasterHost);
+      readLine(settings.ntripClient_CasterUser, sizeof(settings.ntripClient_CasterUser), menuTimeoutExtended);
+      restartRover = true;
+    }
+    else if (incoming == 11 && settings.enableNtripClient == true)
+    {
+      Serial.printf("Enter user password for %s: ", settings.ntripClient_CasterHost);
+      readLine(settings.ntripClient_CasterUserPW, sizeof(settings.ntripClient_CasterUserPW), menuTimeoutExtended);
+      restartRover = true;
+    }
+    else if (incoming == 12 && settings.enableNtripClient == true)
+    {
+      Serial.print(F("Enter new Mount Point: "));
+      readLine(settings.ntripClient_MountPoint, sizeof(settings.ntripClient_MountPoint), menuTimeoutExtended);
+      restartRover = true;
+    }
+    else if (incoming == 13 && settings.enableNtripClient == true)
+    {
+      Serial.printf("Enter password for Mount Point %s: ", settings.ntripClient_MountPoint);
+      readLine(settings.ntripClient_MountPointPW, sizeof(settings.ntripClient_MountPointPW), menuTimeoutExtended);
+      restartRover = true;
+    }
+    else if (incoming == 14 && settings.enableNtripClient == true)
+    {
+      settings.ntripClient_TransmitGGA ^= 1;
+      restartRover = true;
     }
     else if (incoming == STATUS_PRESSED_X)
       break;

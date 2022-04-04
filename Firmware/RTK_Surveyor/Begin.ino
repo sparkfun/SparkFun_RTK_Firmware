@@ -168,16 +168,20 @@ void beginSD()
 
   if (settings.enableSD == true)
   {
-    //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
-    //Max current is 200mA average across 1s, peak 300mA
-    delay(10);
-
     //Do a quick test to see if a card is present
-    if (sdPresent() == false)
+    int tries = 0;
+    int maxTries = 5;
+    while (tries++ < maxTries)
     {
-      log_d("SD card not detected");
-      return;
+      if (sdPresent() == true) break;
+      log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
+
+      //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
+      //Max current is 200mA average across 1s, peak 300mA
+      delay(10);
     }
+    if (tries == maxTries) return;
+
     //If an SD card is present, allow SdFat to take over
     log_d("SD card detected");
 
@@ -189,8 +193,8 @@ void beginSD()
 
     if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
-      int tries = 0;
-      int maxTries = 1;
+      tries = 0;
+      maxTries = 1;
       for ( ; tries < maxTries ; tries++)
       {
         log_d("SD init failed. Trying again %d out of %d", tries + 1, maxTries);
@@ -315,6 +319,8 @@ void stopUART2Tasks()
 
 void beginFS()
 {
+#define FORMAT_LITTLEFS_IF_FAILED true
+
   if (online.fs == false)
   {
     Serial.println("Starting FS");

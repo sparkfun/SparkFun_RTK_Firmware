@@ -90,6 +90,9 @@ void menuMain()
   if (online.gnss == true)
     i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
 
+  if(restartRover == true)
+    requestChangeState(STATE_ROVER_NOT_STARTED); //Restart rover upon exit for latest changes to take effect
+
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }
 
@@ -208,12 +211,11 @@ void factoryReset()
 {
   displaySytemReset(); //Display friendly message on OLED
 
-  LittleFS.format();
+  //With the given profile number, load appropriate settings file
+  char settingsFileName[40];
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
 
-  //Assemble settings file name
-  char settingsFileName[40]; //SFE_Express_Plus_Settings.txt
-  strcpy(settingsFileName, platformFilePrefix);
-  strcat(settingsFileName, "_Settings.txt");
+  LittleFS.format(); //Don't format before we getProfileNumber()
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
   if (settings.enableSD && online.microSD)

@@ -211,12 +211,11 @@ void factoryReset()
 {
   displaySytemReset(); //Display friendly message on OLED
 
-  LittleFS.format();
+  //With the given profile number, load appropriate settings file
+  char settingsFileName[40];
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
 
-  //Assemble settings file name
-  char settingsFileName[40]; //SFE_Express_Plus_Settings.txt
-  strcpy(settingsFileName, platformFilePrefix);
-  strcat(settingsFileName, "_Settings.txt");
+  LittleFS.format(); //Don't format before we getProfileNumber()
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
   if (settings.enableSD && online.microSD)

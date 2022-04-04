@@ -49,30 +49,34 @@ void menuBase()
       Serial.print(F("3) Set required Mean 3D Standard Deviation: "));
       Serial.print(settings.observationPositionAccuracy, 3);
       Serial.println(F(" meters"));
+
+      Serial.print(F("4) Set required initial positional accuracy before Survey-In: "));
+      Serial.print(settings.surveyInStartingAccuracy, 3);
+      Serial.println(F(" meters"));
     }
 
-    Serial.print(F("4) Toggle NTRIP Server: "));
+    Serial.print(F("5) Toggle NTRIP Server: "));
     if (settings.enableNtripServer == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
     if (settings.enableNtripServer == true)
     {
-      Serial.print(F("5) Set WiFi SSID: "));
+      Serial.print(F("6) Set WiFi SSID: "));
       Serial.println(settings.ntripServer_wifiSSID);
 
-      Serial.print(F("6) Set WiFi PW: "));
+      Serial.print(F("7) Set WiFi PW: "));
       Serial.println(settings.ntripServer_wifiPW);
 
-      Serial.print(F("7) Set Caster Address: "));
+      Serial.print(F("8) Set Caster Address: "));
       Serial.println(settings.ntripServer_CasterHost);
 
-      Serial.print(F("8) Set Caster Port: "));
+      Serial.print(F("9) Set Caster Port: "));
       Serial.println(settings.ntripServer_CasterPort);
 
-      Serial.print(F("9) Set Mountpoint: "));
+      Serial.print(F("10) Set Mountpoint: "));
       Serial.println(settings.ntripServer_MountPoint);
 
-      Serial.print(F("10) Set Mountpoint PW: "));
+      Serial.print(F("11) Set Mountpoint PW: "));
       Serial.println(settings.ntripServer_MountPointPW);
     }
 
@@ -167,26 +171,39 @@ void menuBase()
         settings.observationPositionAccuracy = observationPositionAccuracy; //Recorded to NVM and file at main menu exit
       }
     }
-    else if (incoming == 4)
+    else if (settings.fixedBase == false && incoming == 4)
+    {
+      Serial.print(F("Enter the positional accuracy required before Survey-In begins (0.1 to 5.0m): "));
+      float surveyInStartingAccuracy = getDouble(menuTimeout); //Timeout after x seconds
+      if (surveyInStartingAccuracy < 0.1 || surveyInStartingAccuracy > 5.0) //Arbitrary 0.1m minimum
+      {
+        Serial.println(F("Error: Starting accuracy out of range"));
+      }
+      else
+      {
+        settings.surveyInStartingAccuracy = surveyInStartingAccuracy; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 5)
     {
       settings.enableNtripServer ^= 1;
     }
-    else if (incoming == 5 && settings.enableNtripServer == true)
+    else if (incoming == 6 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter local WiFi SSID: "));
       readLine(settings.ntripServer_wifiSSID, sizeof(settings.ntripServer_wifiSSID), menuTimeoutExtended);
     }
-    else if (incoming == 6 && settings.enableNtripServer == true)
+    else if (incoming == 7 && settings.enableNtripServer == true)
     {
       Serial.printf("Enter password for WiFi network %s: ", settings.ntripServer_wifiSSID);
       readLine(settings.ntripServer_wifiPW, sizeof(settings.ntripServer_wifiPW), menuTimeoutExtended);
     }
-    else if (incoming == 7 && settings.enableNtripServer == true)
+    else if (incoming == 8 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Caster Address: "));
       readLine(settings.ntripServer_CasterHost, sizeof(settings.ntripServer_CasterHost), menuTimeoutExtended);
     }
-    else if (incoming == 8 && settings.enableNtripServer == true)
+    else if (incoming == 9 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Caster Port: "));
 
@@ -196,12 +213,12 @@ void menuBase()
       else
         settings.ntripServer_CasterPort = ntripServer_CasterPort; //Recorded to NVM and file at main menu exit
     }
-    else if (incoming == 9 && settings.enableNtripServer == true)
+    else if (incoming == 10 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Mount Point: "));
       readLine(settings.ntripServer_MountPoint, sizeof(settings.ntripServer_MountPoint), menuTimeoutExtended);
     }
-    else if (incoming == 10 && settings.enableNtripServer == true)
+    else if (incoming == 11 && settings.enableNtripServer == true)
     {
       Serial.printf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
       readLine(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW), menuTimeoutExtended);

@@ -168,7 +168,7 @@ void menuUserProfiles()
       {
         recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
 
-        recordProfileNumber(incoming - 1); //Align to array
+        recordProfileNumber(incoming - 1, true); //Align to array, reconfig ZED at next POR
       }
       //Reset settings to default
       Settings defaultSettings;

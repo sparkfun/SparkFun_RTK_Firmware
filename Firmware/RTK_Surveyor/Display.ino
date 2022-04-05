@@ -1422,7 +1422,7 @@ void paintProfile(uint8_t profileUnit)
   {
     //Lookup profileNumber based on unit
     uint8_t profileNumber = getProfileNumberFromUnit(profileUnit);
-    recordProfileNumber(profileNumber); //Update internal settings with user's choice
+    recordProfileNumber(profileNumber, true); //Update internal settings with user's choice, mark unit for config update
 
     snprintf(profileMessage, sizeof(profileMessage), "Loading %s", profileName);
     displayMessage(profileMessage, 2000);

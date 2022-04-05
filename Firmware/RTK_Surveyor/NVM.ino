@@ -37,7 +37,7 @@ void loadSettings()
 
   activeProfiles = getActiveProfiles(); //Count is used during menu display
 
-  log_d("Settings profile #%d loaded", profileNumber);
+  log_d("Settings profile #%d loaded of %d profiles", profileNumber, activeProfiles);
 }
 
 //Load a given settings file into a given settings array
@@ -96,11 +96,12 @@ uint8_t getProfileNumber()
     log_d("profileNumber.txt not found");
     profileNumber = 0;
     updateZEDSettings = true; //Force module update
-    recordProfileNumber(profileNumber);
+    recordProfileNumber(profileNumber, false); //Record profile but we don't need a module config at next POR
   }
   else
   {
     profileNumber = fileProfileNumber.read();
+    updateZEDSettings = fileProfileNumber.read();
     fileProfileNumber.close();
   }
 
@@ -109,7 +110,8 @@ uint8_t getProfileNumber()
   {
     log_d("ProfileNumber invalid. Going to zero.");
     profileNumber = 0;
-    recordProfileNumber(profileNumber);
+    updateZEDSettings = true; //Force module update
+    recordProfileNumber(profileNumber, false); //Record profile but we don't need a module config at next POR
   }
 
   log_d("Using profile #%d", profileNumber);
@@ -205,8 +207,8 @@ uint8_t getProfileNumberFromUnit(uint8_t profileUnit)
   return (false);
 }
 
-//Record the given profile number
-void recordProfileNumber(uint8_t profileNumber)
+//Record the given profile number as well as a config bool
+void recordProfileNumber(uint8_t profileNumber, bool markForUpdate)
 {
   File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_WRITE);
   if (!fileProfileNumber)
@@ -215,6 +217,7 @@ void recordProfileNumber(uint8_t profileNumber)
     return;
   }
   fileProfileNumber.write(profileNumber);
+  fileProfileNumber.write(markForUpdate); //If true, ZED will be config'd next POR  
   fileProfileNumber.close();
 }
 
@@ -375,7 +378,7 @@ void recordSystemSettingsToFile()
 
       settingsFile.close();
 
-      log_d("System settings recorded to file");
+      log_d("Settings recorded to SD: %s", settingsFileName);
 
       xSemaphoreGive(xFATSemaphore);
     }

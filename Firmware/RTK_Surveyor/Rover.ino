@@ -66,6 +66,10 @@ bool configureUbloxModuleRover()
   if (response == false)
     Serial.println(F("Disable RTCM failed"));
 
+  response = i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GN); //Turn GNGGA back on after NTRIP Client
+  if (response == false)
+    Serial.println(F("setMainTalkerID failed"));
+
   response = setNMEASettings(); //Enable high precision NMEA and extended sentences
   if (response == false)
     Serial.println(F("setNMEASettings failed"));
@@ -353,13 +357,10 @@ void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)
 void pushGPGGA(NMEA_GGA_data_t *nmeaData)
 {
 #ifdef COMPILE_WIFI
-  log_d("GGA called");
-  
   //Provide the caster with our current position as needed
   if ((ntripClient.connected() == true) && (settings.ntripClient_TransmitGGA == true))
   {
-    Serial.printf("Pushing GGA to server: %s\n\r", nmeaData->nmea); //nmea is printable (NULL-terminated) and already has \r\n on the end
-    //log_d("Pushing GGA to server: %s", nmeaData->nmea); //nmea is printable (NULL-terminated) and already has \r\n on the end
+    log_d("Pushing GGA to server: %s", nmeaData->nmea); //nmea is printable (NULL-terminated) and already has \r\n on the end
 
     ntripClient.print((const char *)nmeaData->nmea); //Push our current GGA sentence to caster
   }

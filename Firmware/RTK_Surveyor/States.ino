@@ -136,7 +136,9 @@ void updateSystemState()
 
             i2cGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
 
-            i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, 10); // Tell the module to output GGA every 10 seconds
+            float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+
+            i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency * 10); // Tell the module to output GGA every 10 seconds
 
             changeState(STATE_ROVER_CLIENT_WIFI_CONNECTED);
           }

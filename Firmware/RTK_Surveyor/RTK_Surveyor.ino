@@ -43,7 +43,6 @@
     Add ntripClient_TransmitGGA to AP config
     Add ntripServer_CasterUser/PW to AP config
     Add maxLogLength_minutes to AP config
-
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
@@ -425,6 +424,8 @@ bool firstPowerOn = true; //After boot, apply new settings to ZED if user switch
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
 unsigned long clientWiFiStartTime = 0; //If we cannot connect to local wifi for NTRIP client, give up/go to Rover after 8 seconds
 bool restartRover = false; //If user modifies any NTRIP Client settings, we need to restart the rover
+int ntripClientConnectionAttempts = 0;
+int maxNtripClientConnectionAttempts = 3; //Give up connecting after this number of attempts
 
 unsigned long startTime = 0; //Used for checking longest running functions
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

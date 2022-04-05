@@ -57,14 +57,14 @@ void menuSystem()
       if (zedUartPassed == false)
       {
         stopUART2Tasks(); //Stop absoring ZED serial via task
+        delay(250); //Wait for tasks to abort
 
         //Clear out buffer before starting
         while (serialGNSS.available()) serialGNSS.read();
         serialGNSS.flush();
 
-        //begin() attempts 3 connections with X timeout per attempt
         SFE_UBLOX_GNSS myGNSS;
-        if (myGNSS.begin(serialGNSS) == true)
+        if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
         {
           zedUartPassed = true;
           Serial.print(F("BT Online"));

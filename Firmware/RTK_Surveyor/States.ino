@@ -221,6 +221,21 @@ void updateSystemState()
 
             changeState(STATE_ROVER_CLIENT_STARTED);
           }
+          else
+          {
+            log_d("Caster failed to connect. Trying again.");
+            
+            if (ntripClientConnectionAttempts++ >= maxNtripClientConnectionAttempts)
+            {
+              Serial.println(F("Caster failed to connect. Do you have your caster address and port correct?"));
+              ntripClient.stop();
+
+              stopWiFi(); //Turn off WiFi and release all resources
+              startBluetooth(); //Turn on Bluetooth with 'Rover' name
+
+              changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
+            }
+          }
 #endif
         }
         break;

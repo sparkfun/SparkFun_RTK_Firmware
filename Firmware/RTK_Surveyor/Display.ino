@@ -549,7 +549,7 @@ void paintLogging()
 {
   if (online.display == true)
   {
-    if (logIncreasing == true)
+    if (online.logging == true && logIncreasing == true)
     {
       //Animate icon to show system running
       if (millis() - lastLoggingIconUpdate > 500)

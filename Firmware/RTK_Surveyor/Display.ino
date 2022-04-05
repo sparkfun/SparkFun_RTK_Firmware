@@ -355,7 +355,11 @@ void paintBaseState()
     if (systemState == STATE_ROVER_NO_FIX ||
         systemState == STATE_ROVER_FIX ||
         systemState == STATE_ROVER_RTK_FLOAT ||
-        systemState == STATE_ROVER_RTK_FIX)
+        systemState == STATE_ROVER_RTK_FIX ||
+        systemState == STATE_ROVER_CLIENT_WIFI_STARTED ||
+        systemState == STATE_ROVER_CLIENT_WIFI_CONNECTED ||
+        systemState == STATE_ROVER_CLIENT_STARTED        
+        )
     {
       //Display icon associated with current Dynamic Model
       switch (settings.dynamicModel)

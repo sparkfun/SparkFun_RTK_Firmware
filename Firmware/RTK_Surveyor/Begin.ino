@@ -171,7 +171,7 @@ void beginSD()
     //Do a quick test to see if a card is present
     int tries = 0;
     int maxTries = 5;
-    while (tries++ < maxTries)
+    while (tries < maxTries)
     {
       if (sdPresent() == true) break;
       log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
@@ -179,6 +179,7 @@ void beginSD()
       //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
       //Max current is 200mA average across 1s, peak 300mA
       delay(10);
+      tries++;
     }
     if (tries == maxTries) return;
 

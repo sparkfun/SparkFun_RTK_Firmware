@@ -311,10 +311,10 @@ function validateFields() {
     checkElementValue("fixedEcefX", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
     checkElementValue("fixedEcefY", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
     if (ge("fixedEcefZ").value == 0.0) ge("fixedEcefZ").value = 4084500;
-    checkElementValue("fixedEcefZ", 4084500, 5000000, "Must be 4084500 to 5000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefZ", 4073466, 5000000, "Must be 4073466 to 5000000", "collapseBaseConfig");
     checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
     checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
-    checkElementValue("fixedAltitude", 0, 8849, "Must be 0 to 8849", "collapseBaseConfig");
+    checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
 
     checkElementString("ntripServer_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
     checkElementString("ntripServer_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");

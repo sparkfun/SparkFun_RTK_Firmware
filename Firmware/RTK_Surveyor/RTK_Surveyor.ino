@@ -6,8 +6,7 @@
   This firmware runs the core of the SparkFun RTK Surveyor product. It runs on an ESP32
   and communicates with the ZED-F9P.
 
-  Compiled with Arduino v1.8.15 with ESP32 core v2.0.1.
-  v1.7 Moves to ESP32 core v2.0.0.
+  Compiled with Arduino v1.8.15 with ESP32 core v2.0.2.
 
   Select the ESP32 Dev Module from the boards list. This maps the same pins to the ESP32-WROOM module.
   Select 'Minimal SPIFFS (1.9MB App)' from the partition list. This will enable SD firmware updates.
@@ -19,7 +18,7 @@
   to the ZED-F9P to achieve RTK: F9PSerialWriteTask(), F9PSerialReadTask().
 
   A settings file is accessed on microSD if available otherwise settings are pulled from
-  ESP32's emulated EEPROM.
+  ESP32's file system LittleFS.
 
   As of v1.2, the heap is approximately 94072 during Rover Fix, 142260 during WiFi Casting. This is
   important to maintain as unit will begin to have stability issues at ~30k.
@@ -40,15 +39,14 @@
     Enable various debug outputs sent over BT
 
   TODO:
-    Change AP to 'mountPointUpload' and PW upload
-    Add mountPointDownload and PWDownload to AP config
-    Add casterTransmitGGA to AP config
-    Add casterUser/PW to AP ocnfig
-
+    Add ntripServer_MountPoint and PWDownload to AP config
+    Add ntripClient_TransmitGGA to AP config
+    Add ntripServer_CasterUser/PW to AP config
+    Add maxLogLength_minutes to AP config
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 10;
+const int FIRMWARE_VERSION_MINOR = 11;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
@@ -56,7 +54,7 @@ const int FIRMWARE_VERSION_MINOR = 10;
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
-//  to make sure that the settings in EEPROM are correct for this version of the RTK
+//  to make sure that the settings stored in flash (LittleFS) are correct for this version of the RTK
 //  (sizeOfSettings is not necessarily unique and we want to avoid problems when swapping from one variant to another)
 //  It is the sum of:
 //    the major firmware version * 0x10
@@ -103,10 +101,14 @@ int pin_radio_rts;
 #include <Wire.h>
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-//EEPROM for storing settings
+//LittleFS for storing settings for different user profiles
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#include <EEPROM.h>
-#define EEPROM_SIZE 4096 //ESP32 emulates EEPROM in non-volatile storage (external flash IC). Max is 508k.
+#include <LittleFS.h>
+
+const char *rtkProfileSettings = "SFERTK"; //Holds the profileNumber
+const char *rtkSettings[] = {"SFERTK_0", "SFERTK_1", "SFERTK_2", "SFERTK_3"}; //User profiles
+#define MAX_PROFILE_COUNT 4
+uint8_t activeProfiles = 1;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time
@@ -118,15 +120,17 @@ ESP32Time rtc;
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
-#include "SdFat.h" //Currently uses v2.1.1
+#include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 
 SdFat sd;
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
-SdFile ubxFile; //File that all gnss ubx messages setences are written to
+SdFile ubxFile; //File that all GNSS ubx messages sentences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
-int startLogTime_minutes = 0; //Mark when we start logging so we can stop logging after maxLogTime_minutes
+int startLogTime_minutes = 0; //Mark when we start any logging so we can stop logging after maxLogTime_minutes
+int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file so we can close it after x minutes and start a new one
+
 SdFile newFirmwareFile; //File that is available if user uploads new firmware via web gui
 
 //System crashes if two tasks access a file at the same time
@@ -146,8 +150,11 @@ uint32_t sdUsedSpaceMB = 0;
 #ifdef COMPILE_WIFI
 #include <WiFi.h>
 #include "esp_wifi.h" //Needed for init/deinit of resources to free up RAM
+#include "base64.h" //Built-in ESP32 library. Needed for NTRIP Client credential encoding.
 
-WiFiClient caster;
+WiFiClient ntripServer; // The WiFi connection to the NTRIP caster. We use this to push local RTCM to the caster.
+WiFiClient ntripClient; // The WiFi connection to the NTRIP caster. We use this to obtain RTCM from the caster.
+
 #endif
 
 unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
@@ -190,6 +197,27 @@ SFE_UBLOX_GNSS_ADD i2cGNSS;
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 #endif
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
+
+//These globals are updated regularly via the storePVTdata callback
+bool ubloxUpdated = false;
+double latitude;
+double longitude;
+float altitude;
+float horizontalAccuracy;
+bool validDate;
+bool validTime;
+bool confirmedDate;
+bool confirmedTime;
+uint8_t gnssDay;
+uint8_t gnssMonth;
+uint16_t gnssYear;
+uint8_t gnssHour;
+uint8_t gnssMinute;
+uint8_t gnssSecond;
+uint16_t mseconds;
+uint8_t numSV;
+uint8_t fixType;
+uint8_t carrSoln;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -197,7 +225,7 @@ uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 #include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
 SFE_MAX1704X lipo(MAX1704X_MAX17048);
 
-// setting PWM properties
+// RTK Surveyor LED PWM properties
 const int pwmFreq = 5000;
 const int ledRedChannel = 0;
 const int ledGreenChannel = 1;
@@ -215,11 +243,11 @@ float battChangeRate = 0.0;
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_BT
-//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/18
+//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/23
 #include "src/BluetoothSerial/BluetoothSerial.h"
 BluetoothSerial SerialBT;
 #include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
-#include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
+#include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/5
 #endif
 
 char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names
@@ -248,12 +276,14 @@ bool zedUartPassed = false; //Goes true during testing if ESP can communicate wi
 
 //External Display
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SFE_MicroOLED.h> //Click here to get the library: http://librarymanager/All#SparkFun_Micro_OLED
-#include "icons.h"
+#include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
+QwiicMicroOLED oled;
 
-#define PIN_RESET 9
-#define DC_JUMPER 1
-MicroOLED oled(PIN_RESET, DC_JUMPER);
+// Fonts
+#include <res/qw_fnt_5x7.h>
+#include <res/qw_fnt_8x16.h>
+
+#include "icons.h"
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Firmware binaries loaded from SD
@@ -310,16 +340,6 @@ AsyncWebSocket ws("/ws");
 char incomingSettings[3000];
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-//Cellular Radio
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_u-blox_SARA-R5_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_SARA-R5_Arduino_Library
-SARA_R5 *mySARA = NULL; //We can't instantiate here because we don't yet know what pin numbers to use
-
-#include "base64.h" //Built-in ESP32 library. Needed for Caster credentials.
-
-int socketNumber = -1;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Global variables
@@ -399,6 +419,13 @@ bool newAPSettings = false; //Goes true when new setting is received via AP conf
 
 unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update via AP config.
 int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
+bool updateZEDSettings = false; //If settings from file are different from LittleFS, config the ZED
+bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
+unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
+unsigned long clientWiFiStartTime = 0; //If we cannot connect to local wifi for NTRIP client, give up/go to Rover after 8 seconds
+bool restartRover = false; //If user modifies any NTRIP Client settings, we need to restart the rover
+int ntripClientConnectionAttempts = 0;
+int maxNtripClientConnectionAttempts = 3; //Give up connecting after this number of attempts
 
 unsigned long startTime = 0; //Used for checking longest running functions
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -408,12 +435,11 @@ void setup()
   Serial.begin(115200); //UART0 for programming and debugging
 
   Wire.begin(); //Start I2C on core 1
-  Wire.setClock(400000);
+  //Wire.setClock(400000);
 
   beginGNSS(); //Connect to GNSS to get module type
 
-  beginEEPROM(); //Start EEPROM for settings
-  //eepromErase(); //Must be before first use of EEPROM. Currently in beginBoard().
+  beginFS(); //Start file system for settings
 
   beginBoard(); //Determine what hardware platform we are running on and check on button
 
@@ -428,13 +454,10 @@ void setup()
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
   beginFuelGauge(); //Configure battery fuel guage monitor
-  checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
   configureGNSS(); //Configure ZED module
 
   beginAccelerometer();
-
-  //beginSARA();
 
   beginExternalTriggers(); //Configure the time pulse output and TM2 input
 
@@ -442,13 +465,18 @@ void setup()
 
   Serial.flush(); //Complete any previous prints
 
+  log_d("Boot time: %d", millis());
+
   danceLEDs(); //Turn on LEDs like a car dashboard
 }
 
 void loop()
 {
-  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-  i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+  if (online.gnss == true)
+  {
+    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+  }
 
   updateSystemState();
 
@@ -462,8 +490,9 @@ void loop()
 
   reportHeap(); //If debug enabled, report free heap
 
-  //Menu system via ESP32 USB connection
-  if (Serial.available()) menuMain(); //Present user menu
+  updateSerial(); //Menu system via ESP32 USB connection
+
+  updateNTRIPClient(); //Move any available incoming NTRIP to ZED
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;
@@ -487,7 +516,18 @@ void updateLogs()
       ubxFile.sync();
       ubxFile.close();
       online.logging = false;
-      //xSemaphoreGive(xFATSemaphore); //Do not release semaphore
+      xSemaphoreGive(xFATSemaphore); //Release semaphore
+    }
+  }
+  else if (online.logging == true && settings.enableLogging == true && (systemTime_minutes - startCurrentLogTime_minutes) >= settings.maxLogLength_minutes)
+  {
+    //Close down file. A new one will be created at the next calling of updateLogs().
+    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      ubxFile.sync();
+      ubxFile.close();
+      online.logging = false;
+      xSemaphoreGive(xFATSemaphore); //Release semaphore
     }
   }
 
@@ -586,7 +626,7 @@ void updateLogs()
         }
         else
         {
-          log_d("Log file: No increase in file size");
+          log_d("No increase in file size");
           logIncreasing = false;
         }
       }
@@ -606,18 +646,18 @@ void updateRTC()
       {
         lastRTCAttempt = millis();
 
-        i2cGNSS.checkUblox();
-
         bool timeValid = false;
-        if (i2cGNSS.getTimeValid() == true && i2cGNSS.getDateValid() == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
+        if (validTime == true && validDate == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
           timeValid = true;
-        if (i2cGNSS.getConfirmedTime() == true && i2cGNSS.getConfirmedDate() == true) //Requires GNSS fix
+        if (confirmedTime == true && confirmedDate == true) //Requires GNSS fix
           timeValid = true;
 
         if (timeValid == true)
         {
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi
+          //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);  // 17th Jan 2021 15:24:30
+          i2cGNSS.checkUblox();
           rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());  // 17th Jan 2021 15:24:30
 
           online.rtc = true;

@@ -6,15 +6,12 @@ typedef enum
   STATE_ROVER_FIX,
   STATE_ROVER_RTK_FLOAT,
   STATE_ROVER_RTK_FIX,
-  STATE_ROVER_CLIENT_WIFI_STARTED,
-  STATE_ROVER_CLIENT_WIFI_CONNECTED,
-  STATE_ROVER_CLIENT_STARTED,
   STATE_BASE_NOT_STARTED,
   STATE_BASE_TEMP_SETTLE, //User has indicated base, but current pos accuracy is too low
   STATE_BASE_TEMP_SURVEY_STARTED,
   STATE_BASE_TEMP_TRANSMITTING,
   STATE_BASE_TEMP_WIFI_STARTED,
-  STATE_BASE_TEMP_WIFI_CONNECTED,
+  STATE_BASE_TEMP_WIFI_CONNECTED, //10
   STATE_BASE_TEMP_CASTER_STARTED,
   STATE_BASE_TEMP_CASTER_CONNECTED,
   STATE_BASE_FIXED_NOT_STARTED,
@@ -24,17 +21,17 @@ typedef enum
   STATE_BASE_FIXED_CASTER_STARTED,
   STATE_BASE_FIXED_CASTER_CONNECTED,
   STATE_BUBBLE_LEVEL,
-  STATE_MARK_EVENT,
+  STATE_MARK_EVENT, //20
   STATE_DISPLAY_SETUP,
   STATE_WIFI_CONFIG_NOT_STARTED,
   STATE_WIFI_CONFIG,
   STATE_TEST,
-  STATE_TESTING,
+  STATE_TESTING, //25
   STATE_PROFILE_1,
   STATE_PROFILE_2,
   STATE_PROFILE_3,
   STATE_PROFILE_4,
-  STATE_SHUTDOWN,
+  STATE_SHUTDOWN, 
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
 SystemState lastSystemState = STATE_ROVER_NOT_STARTED;
@@ -163,7 +160,7 @@ typedef struct ubxMsg
 //This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
 typedef struct struct_settings {
   int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int
-  int rtkIdentifier = RTK_IDENTIFIER; // rtkIdentifier **must** be the second entry
+  //int rtkIdentifier = RTK_IDENTIFIER; // rtkIdentifier **must** be the second entry
   bool printDebugMessages = false;
   bool enableSD = true;
   bool enableDisplay = true;
@@ -180,6 +177,18 @@ typedef struct struct_settings {
   double fixedAltitude = 1560.089;
   uint32_t dataPortBaud = 460800; //Default to 460800bps to support >10Hz update rates
   uint32_t radioPortBaud = 57600; //Default to 57600bps to support connection to SiK1000 radios
+  bool enableNtripServer = false;
+  char casterHost[50] = "rtk2go.com"; //It's free...
+  uint16_t casterPort = 2101;
+  char casterUser[50] = "test@test.com"; //Some free casters require auth. User must provide their own email address to use RTK2Go
+  char casterUserPW[50] = "";
+  char mountPointUpload[50] = "bldr_dwntwn2";
+  char mountPointUploadPW[50] = "WR5wRo4H";
+  char mountPointDownload[50] = "bldr_SparkFun1";
+  char mountPointDownloadPW[50] = "";
+  bool casterTransmitGGA = true;
+  char wifiSSID[50] = "TRex";
+  char wifiPW[50] = "parachutes";
   float surveyInStartingAccuracy = 1.0; //Wait for 1m horizontal positional accuracy before starting survey in
   uint16_t measurementRate = 250; //Elapsed ms between GNSS measurements. 25ms to 65535ms. Default 4Hz.
   uint16_t navigationRate = 1; //Ratio between number of measurements and navigation solutions. Default 1 for 4Hz (with measurementRate).
@@ -304,7 +313,7 @@ typedef struct struct_settings {
   };
 
   //Constellations monitored/used for fix
-  ubxConstellation ubxConstellations[MAX_CONSTELLATIONS] =
+  ubxConstellation ubxConstellations[MAX_CONSTELLATIONS] = 
   {
     {UBLOX_CFG_SIGNAL_GPS_ENA, SFE_UBLOX_GNSS_ID_GPS, true, "GPS"},
     {UBLOX_CFG_SIGNAL_SBAS_ENA, SFE_UBLOX_GNSS_ID_SBAS, true, "SBAS"},
@@ -317,29 +326,6 @@ typedef struct struct_settings {
 
   int maxLogLength_minutes = 60 * 24; //Default to 24 hours
   char profileName[50] = "Default";
-
-  //NTRIP Server
-  bool enableNtripServer = false;
-  char ntripServer_CasterHost[50] = "rtk2go.com"; //It's free...
-  uint16_t ntripServer_CasterPort = 2101;
-  char ntripServer_CasterUser[50] = "test@test.com"; //Some free casters require auth. User must provide their own email address to use RTK2Go
-  char ntripServer_CasterUserPW[50] = "";
-  char ntripServer_MountPoint[50] = "bldr_dwntwn2"; //NTRIP Server
-  char ntripServer_MountPointPW[50] = "WR5wRo4H";
-  char ntripServer_wifiSSID[50] = "TRex"; //NTRIP Server Wifi
-  char ntripServer_wifiPW[50] = "parachutes";
-
-  //NTRIP Client
-  bool enableNtripClient = false;
-  char ntripClient_CasterHost[50] = "rtk2go.com"; //It's free...
-  uint16_t ntripClient_CasterPort = 2101;
-  char ntripClient_CasterUser[50] = "test@test.com"; //Some free casters require auth. User must provide their own email address to use RTK2Go
-  char ntripClient_CasterUserPW[50] = "";
-  char ntripClient_MountPoint[50] = "bldr_SparkFun1";
-  char ntripClient_MountPointPW[50] = "";
-  char ntripClient_wifiSSID[50] = "TRex"; //NTRIP Server Wifi
-  char ntripClient_wifiPW[50] = "parachutes";
-  bool ntripClient_TransmitGGA = true;
 
 } Settings;
 Settings settings;
@@ -355,5 +341,4 @@ struct struct_online {
   bool rtc = false;
   bool battery = false;
   bool accelerometer = false;
-  bool ntripClient = false;
 } online;

@@ -348,17 +348,25 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "fixedAltitude", settings.fixedAltitude, 4);
 
   stringRecord(settingsCSV, "enableNtripServer", settings.enableNtripServer);
-  stringRecord(settingsCSV, "casterHost", settings.casterHost);
-  stringRecord(settingsCSV, "casterPort", settings.casterPort);
-  stringRecord(settingsCSV, "casterUser", settings.casterUser);
-  stringRecord(settingsCSV, "casterUserPW", settings.casterUserPW);
-  stringRecord(settingsCSV, "mountPointUpload", settings.mountPointUpload);
-  stringRecord(settingsCSV, "mountPointUploadPW", settings.mountPointUploadPW);
-  stringRecord(settingsCSV, "mountPointDownload", settings.mountPointDownload);
-  stringRecord(settingsCSV, "mountPointDownloadPW", settings.mountPointDownloadPW);
-  stringRecord(settingsCSV, "casterTransmitGGA", settings.casterTransmitGGA);
-  stringRecord(settingsCSV, "wifiSSID", settings.wifiSSID);
-  stringRecord(settingsCSV, "wifiPW", settings.wifiPW);
+  stringRecord(settingsCSV, "ntripServer_CasterHost", settings.ntripServer_CasterHost);
+  stringRecord(settingsCSV, "ntripServer_CasterPort", settings.ntripServer_CasterPort);
+  stringRecord(settingsCSV, "ntripServer_CasterUser", settings.ntripServer_CasterUser);
+  stringRecord(settingsCSV, "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
+  stringRecord(settingsCSV, "ntripServer_MountPoint", settings.ntripServer_MountPoint);
+  stringRecord(settingsCSV, "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
+  stringRecord(settingsCSV, "ntripServer_wifiSSID", settings.ntripServer_wifiSSID);
+  stringRecord(settingsCSV, "ntripServer_wifiPW", settings.ntripServer_wifiPW);
+
+  stringRecord(settingsCSV, "enableNtripClient", settings.enableNtripClient);
+  stringRecord(settingsCSV, "ntripClient_CasterHost", settings.ntripClient_CasterHost);
+  stringRecord(settingsCSV, "ntripClient_CasterPort", settings.ntripClient_CasterPort);
+  stringRecord(settingsCSV, "ntripClient_CasterUser", settings.ntripClient_CasterUser);
+  stringRecord(settingsCSV, "ntripClient_CasterUserPW", settings.ntripClient_CasterUserPW);
+  stringRecord(settingsCSV, "ntripClient_MountPoint", settings.ntripClient_MountPoint);
+  stringRecord(settingsCSV, "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
+  stringRecord(settingsCSV, "ntripClient_wifiSSID", settings.ntripClient_wifiSSID);
+  stringRecord(settingsCSV, "ntripClient_wifiPW", settings.ntripClient_wifiPW);
+  stringRecord(settingsCSV, "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
 
   //Sensor Fusion Config
   stringRecord(settingsCSV, "enableSensorFusion", settings.enableSensorFusion);
@@ -367,6 +375,7 @@ void createSettingsString(char* settingsCSV)
   //System Config
   stringRecord(settingsCSV, "enableLogging", settings.enableLogging);
   stringRecord(settingsCSV, "maxLogTime_minutes", settings.maxLogTime_minutes);
+  stringRecord(settingsCSV, "maxLogLength_minutes", settings.maxLogLength_minutes);
 
   stringRecord(settingsCSV, "sdFreeSpaceMB", sdFreeSpaceMB);
   stringRecord(settingsCSV, "sdUsedSpaceMB", sdUsedSpaceMB);
@@ -381,10 +390,16 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "radioPortBaud", settings.radioPortBaud);
   stringRecord(settingsCSV, "dataPortChannel", settings.dataPortChannel);
 
+  //New settings not yet integrated
+  stringRecord(settingsCSV, "enableExternalPulse", settings.enableExternalPulse);
+  stringRecord(settingsCSV, "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
+  stringRecord(settingsCSV, "externalPulseLength_us", settings.externalPulseLength_us);
+  stringRecord(settingsCSV, "externalPulsePolarity", settings.externalPulsePolarity);
+  stringRecord(settingsCSV, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
+  stringRecord(settingsCSV, "profileName", settings.profileName);
+
   strcat(settingsCSV, "\0");
   Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
-
-  //Is baseTypeSurveyIn 1 or 0
   Serial.printf("settingsCSV: %s\n\r", settingsCSV);
 }
 
@@ -402,6 +417,9 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     newAPSettings = true; //Mark settings as new to force record before reset
     settings.maxLogTime_minutes = settingValue;
   }
+
+  else if (strcmp(settingName, "maxLogLength_minutes") == 0)
+    settings.maxLogLength_minutes = settingValue;
   else if (strcmp(settingName, "measurementRateHz") == 0)
     settings.measurementRate = (int)(1000.0 / settingValue);
   else if (strcmp(settingName, "dynamicModel") == 0)
@@ -430,30 +448,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.dataPortBaud = settingValue;
   else if (strcmp(settingName, "radioPortBaud") == 0)
     settings.radioPortBaud = settingValue;
-  else if (strcmp(settingName, "enableNtripServer") == 0)
-    settings.enableNtripServer = settingValueBool;
-  else if (strcmp(settingName, "casterHost") == 0)
-    strcpy(settings.casterHost, settingValueStr);
-  else if (strcmp(settingName, "casterPort") == 0)
-    settings.casterPort = settingValue;
-  else if (strcmp(settingName, "casterUser") == 0)
-    strcpy(settings.casterUser, settingValueStr);
-  else if (strcmp(settingName, "casterUserPW") == 0)
-    strcpy(settings.casterUserPW, settingValueStr);
-  else if (strcmp(settingName, "mountPointUpload") == 0)
-    strcpy(settings.mountPointUpload, settingValueStr);
-  else if (strcmp(settingName, "mountPointUploadPW") == 0)
-    strcpy(settings.mountPointUploadPW, settingValueStr);
-  else if (strcmp(settingName, "mountPointDownload") == 0)
-    strcpy(settings.mountPointDownload, settingValueStr);
-  else if (strcmp(settingName, "mountPointDownloadPW") == 0)
-    strcpy(settings.mountPointDownloadPW, settingValueStr);
-  else if (strcmp(settingName, "casterTransmitGGA") == 0)
-    settings.casterTransmitGGA = settingValueBool;
-  else if (strcmp(settingName, "wifiSSID") == 0)
-    strcpy(settings.wifiSSID, settingValueStr);
-  else if (strcmp(settingName, "wifiPW") == 0)
-    strcpy(settings.wifiPW, settingValueStr);
   else if (strcmp(settingName, "enableLogging") == 0)
     settings.enableLogging = settingValueBool;
   else if (strcmp(settingName, "dataPortChannel") == 0)
@@ -464,6 +458,59 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.enableSensorFusion = settingValueBool;
   else if (strcmp(settingName, "enableResetDisplay") == 0)
     settings.enableResetDisplay = settingValueBool;
+
+  else if (strcmp(settingName, "enableExternalPulse") == 0)
+    settings.enableExternalPulse = settingValueBool;
+  else if (strcmp(settingName, "externalPulseTimeBetweenPulse_us") == 0)
+    settings.externalPulseTimeBetweenPulse_us = settingValue;
+  else if (strcmp(settingName, "externalPulseLength_us") == 0)
+    settings.externalPulseLength_us = settingValue;
+  else if (strcmp(settingName, "externalPulsePolarity") == 0)
+    settings.externalPulsePolarity = (pulseEdgeType_e)settingValue;
+  else if (strcmp(settingName, "enableExternalHardwareEventLogging") == 0)
+    settings.enableExternalHardwareEventLogging = settingValueBool;
+  else if (strcmp(settingName, "profileName") == 0)
+    strcpy(settings.profileName, settingValueStr);
+
+  else if (strcmp(settingName, "enableNtripServer") == 0)
+    settings.enableNtripServer = settingValueBool;
+  else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
+    strcpy(settings.ntripServer_CasterHost, settingValueStr);
+  else if (strcmp(settingName, "ntripServer_CasterPort") == 0)
+    settings.ntripServer_CasterPort = settingValue;
+  else if (strcmp(settingName, "ntripServer_CasterUser") == 0)
+    strcpy(settings.ntripServer_CasterUser, settingValueStr);
+  else if (strcmp(settingName, "ntripServer_CasterUserPW") == 0)
+    strcpy(settings.ntripServer_CasterUserPW, settingValueStr);
+  else if (strcmp(settingName, "ntripServer_MountPoint") == 0)
+    strcpy(settings.ntripServer_MountPoint, settingValueStr);
+  else if (strcmp(settingName, "ntripServer_MountPointPW") == 0)
+    strcpy(settings.ntripServer_MountPointPW, settingValueStr);
+  else if (strcmp(settingName, "ntripServer_wifiSSID") == 0)
+    strcpy(settings.ntripServer_wifiSSID, settingValueStr);
+  else if (strcmp(settingName, "ntripServer_wifiPW") == 0)
+    strcpy(settings.ntripServer_wifiPW, settingValueStr);
+
+  else if (strcmp(settingName, "enableNtripClient") == 0)
+    settings.enableNtripClient = settingValueBool;
+  else if (strcmp(settingName, "ntripClient_CasterHost") == 0)
+    strcpy(settings.ntripClient_CasterHost, settingValueStr);
+  else if (strcmp(settingName, "ntripClient_CasterPort") == 0)
+    settings.ntripClient_CasterPort = settingValue;
+  else if (strcmp(settingName, "ntripClient_CasterUser") == 0)
+    strcpy(settings.ntripClient_CasterUser, settingValueStr);
+  else if (strcmp(settingName, "ntripClient_CasterUserPW") == 0)
+    strcpy(settings.ntripClient_CasterUserPW, settingValueStr);
+  else if (strcmp(settingName, "ntripClient_MountPoint") == 0)
+    strcpy(settings.ntripClient_MountPoint, settingValueStr);
+  else if (strcmp(settingName, "ntripClient_MountPointPW") == 0)
+    strcpy(settings.ntripClient_MountPointPW, settingValueStr);
+  else if (strcmp(settingName, "ntripClient_wifiSSID") == 0)
+    strcpy(settings.ntripClient_wifiSSID, settingValueStr);
+  else if (strcmp(settingName, "ntripClient_wifiPW") == 0)
+    strcpy(settings.ntripClient_wifiPW, settingValueStr);
+  else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
+    settings.ntripClient_TransmitGGA = settingValueBool;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

@@ -168,17 +168,37 @@ void beginSD()
 
   if (settings.enableSD == true)
   {
-    //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
-    //Max current is 200mA average across 1s, peak 300mA
-    delay(10);
+    //Do a quick test to see if a card is present
+    int tries = 0;
+    int maxTries = 5;
+    while (tries < maxTries)
+    {
+      if (sdPresent() == true) break;
+      log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
+
+      //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
+      //Max current is 200mA average across 1s, peak 300mA
+      delay(10);
+      tries++;
+    }
+    if (tries == maxTries) return;
+
+    //If an SD card is present, allow SdFat to take over
+    log_d("SD card detected");
+
+    if (settings.spiFrequency > 16)
+    {
+      Serial.println("Error: SPI Frequency out of range. Default to 16MHz");
+      settings.spiFrequency = 16;
+    }
 
     if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
-      int tries = 0;
-      int maxTries = 1;
+      tries = 0;
+      maxTries = 1;
       for ( ; tries < maxTries ; tries++)
       {
-        Serial.printf("SD init failed. Trying again %d out of %d\n\r", tries + 1, maxTries);
+        log_d("SD init failed. Trying again %d out of %d", tries + 1, maxTries);
 
         delay(250); //Give SD more time to power up, then try again
         if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
@@ -251,7 +271,7 @@ void beginUART2()
 void pinUART2Task( void *pvParameters )
 {
   serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
-  serialGNSS.setTimeout(50);
+  serialGNSS.setTimeout(0);
   serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
   uart2pinned = true;
@@ -298,25 +318,42 @@ void stopUART2Tasks()
   }
 }
 
-//ESP32 requires the creation of an EEPROM space
-void beginEEPROM()
+void beginFS()
 {
-  if (EEPROM.begin(EEPROM_SIZE) == false)
-    Serial.println(F("beginEEPROM: Failed to initialize EEPROM"));
-  else
-    online.eeprom = true;
+#define FORMAT_LITTLEFS_IF_FAILED true
+
+  if (online.fs == false)
+  {
+    Serial.println("Starting FS");
+
+    if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
+      log_d("Error: LittleFS not online");
+      return;
+    }
+    online.fs = true;
+  }
 }
 
 void beginDisplay()
 {
-  //0x3D is default on Qwiic board
-  if (isConnected(0x3D) == true || isConnected(0x3C) == true)
+  if (oled.begin() == true)
   {
     online.display = true;
 
-    oled.setI2CTransactionSize(64); //Increase to page size of 64. Slight speed improvement over 32 bytes.
-
+    Serial.println(F("Display started"));
     displaySplash();
+    splashStart = millis();
+  }
+  else
+  {
+    if (productVariant == RTK_SURVEYOR)
+    {
+      Serial.println(F("Display not detected"));
+    }
+    else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
+    {
+      Serial.println(F("Display Error: Not detected."));
+    }
   }
 }
 
@@ -325,33 +362,15 @@ void beginGNSS()
 {
   if (i2cGNSS.begin() == false)
   {
+    log_d("GNSS Failed to begin. Trying again.");
+
     //Try again with power on delay
     delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
     if (i2cGNSS.begin() == false)
     {
-      if (productVariant == RTK_SURVEYOR)
-        blinkError(ERROR_NO_I2C); //Infinite loop
-
-      displayGNSSFail(0);
-
-      //Present user with prompt to factory reset unit over serial
-      while (1)
-      {
-        Serial.println(F("GNSS Error: u-blox GNSS not detected at default I2C address. Press 'r' to factory reset."));
-        byte incoming = getByteChoice(2); //Timeout after x seconds
-
-        if (incoming == 'r')
-        {
-          Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
-          byte bContinue = getByteChoice(menuTimeout);
-          if (bContinue == 'y')
-          {
-            factoryReset();
-          }
-          else
-            Serial.println(F("Reset aborted"));
-        }
-      }
+      displayGNSSFail(1000);
+      online.gnss = false;
+      return;
     }
   }
 
@@ -404,39 +423,32 @@ void beginGNSS()
 //Configuration can take >1s so configure during splash
 void configureGNSS()
 {
+  i2cGNSS.setAutoPVTcallbackPtr(&storePVTdata); // Enable automatic NAV PVT messages with callback to storePVTdata
+  i2cGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); // Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
+
+  //Configuring the ZED can take more than 2000ms. We save configuration to
+  //ZED so there is no need to update settings unless user has modified
+  //the settings file or internal settings.
+  if (updateZEDSettings == false)
+  {
+    log_d("Skipping ZED configuration");
+    return;
+  }
+
   bool response = configureUbloxModule();
   if (response == false)
   {
     //Try once more
-    Serial.println(F("Failed to configure module. Trying again."));
+    Serial.println(F("Failed to configure GNSS module. Trying again."));
     delay(1000);
     response = configureUbloxModule();
 
     if (response == false)
     {
-      if (productVariant == RTK_SURVEYOR)
-        blinkError(ERROR_GPS_CONFIG_FAIL); //Infinite loop
-
-      displayGNSSFail(0);
-
-      //Present user with prompt to factory reset unit over serial
-      while (1)
-      {
-        Serial.println(F("GNSS Error: Failed to configure module. Press 'r' to factory reset."));
-        byte incoming = getByteChoice(2); //Timeout after x seconds
-
-        if (incoming == 'r')
-        {
-          Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
-          byte bContinue = getByteChoice(menuTimeout);
-          if (bContinue == 'y')
-          {
-            factoryReset();
-          }
-          else
-            Serial.println(F("Reset aborted"));
-        }
-      }
+      Serial.println(F("Failed to configure GNSS module."));
+      displayGNSSFail(1000);
+      online.gnss = false;
+      return;
     }
   }
 
@@ -491,6 +503,21 @@ void beginFuelGauge()
 
   Serial.println(F("MAX17048 configuration complete"));
 
+  checkBatteryLevels(); //Force check so you see battery level immediately at power on
+
+  //Check to see if we are dangerously low
+  if (battLevel < 5 && battChangeRate < 0) //5% and not charging
+  {
+    Serial.println("Battery too low. Please charge. Shutting down...");
+
+    if (online.display == true)
+      displayMessage("Charge Battery", 0);
+
+    delay(2000);
+
+    powerDown(false); //Don't display 'Shutting Down'
+  }
+
   online.battery = true;
 }
 
@@ -520,7 +547,12 @@ void beginSystemState()
 {
   if (productVariant == RTK_SURVEYOR)
   {
-    systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask_Switch() will correct as needed.
+    //If the rocker switch was moved while off, force module settings
+    //When switch is set to '1' = BASE, pin will be shorted to ground
+    if (settings.lastState == STATE_ROVER_NOT_STARTED && digitalRead(pin_setupButton) == LOW) updateZEDSettings = true;
+    else if (settings.lastState == STATE_BASE_NOT_STARTED && digitalRead(pin_setupButton) == HIGH) updateZEDSettings = true;
+
+    systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask() will correct as needed.
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
@@ -566,8 +598,17 @@ void beginSystemState()
 
 //Setup the timepulse output on the PPS pin for external triggering
 //Setup TM2 time stamp input as need
-void beginExternalTriggers()
+bool beginExternalTriggers()
 {
+  if (online.gnss == false) return (false);
+
+  //If our settings haven't changed, trust ZED's settings
+  if (updateZEDSettings == false)
+  {
+    log_d("Skipping ZED Trigger configuration");
+    return (true);
+  }
+
   UBX_CFG_TP5_data_t timePulseParameters;
 
   if (i2cGNSS.getTimePulseParameters(&timePulseParameters) == false)
@@ -596,54 +637,10 @@ void beginExternalTriggers()
     i2cGNSS.setAutoTIMTM2callback(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
   else
     i2cGNSS.setAutoTIMTM2callback(NULL);
-}
 
-//Test and begin serial1 connection with SARA
-void beginSARA()
-{
-  mySARA = new SARA_R5(pin_radio_pwr, pin_radio_rst, 3);
+  bool response = i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
+  if (response == false)
+    Serial.println(F("Module failed to save."));
 
-  //mySARA->enableDebugging();
-
-  int radioBaud = 115200;
-  Serial1.begin(radioBaud, SERIAL_8N1, pin_radio_tx, pin_radio_rx); //RX, TX
-
-  if (isRadioConnected() == false)
-  {
-    log_d("Radio not detected");
-    resetSARA();
-  }
-
-  if (mySARA->begin(Serial1, radioBaud) == true)
-  {
-    log_d("Cellular connected");
-    online.cellular = true;
-  }
-  else
-  {
-    log_d("Cellular failed to connected");
-    online.cellular = false;
-  }
-}
-
-//At POR SARA is at 115200
-//SARA does not respond to AT commands for ~2s after POR
-//Quick test at 115200. Should respond immediately if not at POR.
-bool isRadioConnected()
-{
-  for (int x = 0 ; x < 5 ; x++)
-  {
-    Serial1.print("AT\r");
-    delay(10);
-
-    if (Serial1.available())
-    {
-      log_d("Radio Responded");
-      return (true);
-    }
-    delay(10);
-  }
-
-  log_d("No radio response");
-  return (false);
+  return (response);
 }

@@ -25,6 +25,12 @@ void updateSystemState()
     {
       case (STATE_ROVER_NOT_STARTED):
         {
+          if (online.gnss == false)
+          {
+            firstRoverStart = false; //If GNSS is offline, we still need to allow button use
+            return;
+          }
+
           if (productVariant == RTK_SURVEYOR)
           {
             digitalWrite(pin_baseStatusLED, LOW);
@@ -58,14 +64,25 @@ void updateSystemState()
 
           displayRoverSuccess(500);
 
-          changeState(STATE_ROVER_NO_FIX);
+          if (settings.enableNtripClient == false)
+            changeState(STATE_ROVER_NO_FIX);
+          else
+          {
+            //Turn off Bluetooth and turn on WiFi
+            stopBluetooth();
+            startClientWiFi();
+            clientWiFiStartTime = millis();
+
+            changeState(STATE_ROVER_CLIENT_WIFI_STARTED);
+          }
+
           firstRoverStart = false; //Do not allow entry into test menu again
         }
         break;
 
       case (STATE_ROVER_NO_FIX):
         {
-          if (i2cGNSS.getFixType() == 3 || i2cGNSS.getFixType() == 4) //3D, 3D+DR
+          if (fixType == 3 || fixType == 4) //3D, 3D+DR
             changeState(STATE_ROVER_FIX);
         }
         break;
@@ -74,10 +91,9 @@ void updateSystemState()
         {
           updateAccuracyLEDs();
 
-          byte rtkType = i2cGNSS.getCarrierSolutionType();
-          if (rtkType == 1) //RTK Float
+          if (carrSoln == 1) //RTK Float
             changeState(STATE_ROVER_RTK_FLOAT);
-          else if (rtkType == 2) //RTK Fix
+          else if (carrSoln == 2) //RTK Fix
             changeState(STATE_ROVER_RTK_FIX);
         }
         break;
@@ -86,10 +102,9 @@ void updateSystemState()
         {
           updateAccuracyLEDs();
 
-          byte rtkType = i2cGNSS.getCarrierSolutionType();
-          if (rtkType == 0) //No RTK
+          if (carrSoln == 0) //No RTK
             changeState(STATE_ROVER_FIX);
-          if (rtkType == 2) //RTK Fix
+          if (carrSoln == 2) //RTK Fix
             changeState(STATE_ROVER_RTK_FIX);
         }
         break;
@@ -98,16 +113,207 @@ void updateSystemState()
         {
           updateAccuracyLEDs();
 
-          byte rtkType = i2cGNSS.getCarrierSolutionType();
-          if (rtkType == 0) //No RTK
+          if (carrSoln == 0) //No RTK
             changeState(STATE_ROVER_FIX);
-          if (rtkType == 1) //RTK Float
+          if (carrSoln == 1) //RTK Float
             changeState(STATE_ROVER_RTK_FLOAT);
+        }
+        break;
+
+      case (STATE_ROVER_CLIENT_WIFI_STARTED):
+        {
+          if (millis() - clientWiFiStartTime > 8000)
+            changeState(STATE_ROVER_NO_FIX); //Give up and move to normal Rover mode
+
+#ifdef COMPILE_WIFI
+          byte wifiStatus = WiFi.status();
+          if (wifiStatus == WL_CONNECTED)
+          {
+            radioState = WIFI_CONNECTED;
+
+            // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
+            i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
+
+            i2cGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
+
+            float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+
+            i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency * 10); // Tell the module to output GGA every 10 seconds
+
+            changeState(STATE_ROVER_CLIENT_WIFI_CONNECTED);
+          }
+          else
+          {
+            Serial.print(F("WiFi Status: "));
+            switch (wifiStatus) {
+              case WL_NO_SSID_AVAIL:
+                Serial.printf("SSID '%s' not detected\n\r", settings.ntripClient_wifiSSID);
+                break;
+              case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
+              case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
+              case WL_SCAN_COMPLETED: Serial.println(F("WL_SCAN_COMPLETED")); break;
+              case WL_CONNECTED: Serial.println(F("WL_CONNECTED")); break;
+              case WL_CONNECT_FAILED: Serial.println(F("WL_CONNECT_FAILED")); break;
+              case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
+              case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
+            }
+          }
+#endif
+        }
+        break;
+
+      case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
+        {
+          //Open connection to caster service
+#ifdef COMPILE_WIFI
+          if (ntripClient.connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort) == true) //Attempt connection
+          {
+            Serial.printf("Connected to %s:%d\n\r", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
+
+            // Set up the server request (GET)
+            const int SERVER_BUFFER_SIZE = 512;
+            char serverRequest[SERVER_BUFFER_SIZE];
+            snprintf(serverRequest,
+                     SERVER_BUFFER_SIZE,
+                     "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun SparkFun_RTK_%s_v%d.%d\r\n",
+                     settings.ntripClient_MountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+
+            // Set up the credentials
+            char credentials[512];
+            if (strlen(settings.ntripClient_CasterUser) == 0)
+            {
+              strncpy(credentials, "Accept: */*\r\nConnection: close\r\n", sizeof(credentials));
+            }
+            else
+            {
+              //Pass base64 encoded user:pw
+              char userCredentials[sizeof(settings.ntripClient_CasterUser) + sizeof(settings.ntripClient_CasterUserPW) + 1]; //The ':' takes up a spot
+              snprintf(userCredentials, sizeof(userCredentials), "%s:%s", settings.ntripClient_CasterUser, settings.ntripClient_CasterUserPW);
+
+              Serial.print(F("Sending credentials: "));
+              Serial.println(userCredentials);
+
+              //Encode with ESP32 built-in library
+              base64 b;
+              String strEncodedCredentials = b.encode(userCredentials);
+              char encodedCredentials[strEncodedCredentials.length() + 1];
+              strEncodedCredentials.toCharArray(encodedCredentials, sizeof(encodedCredentials)); //Convert String to char array
+
+              snprintf(credentials, sizeof(credentials), "Authorization: Basic %s\r\n", encodedCredentials);
+            }
+
+            // Add the encoded credentials to the server request
+            strncat(serverRequest, credentials, SERVER_BUFFER_SIZE - 1);
+            strncat(serverRequest, "\r\n", SERVER_BUFFER_SIZE - 1);
+
+            Serial.print(F("serverRequest size: "));
+            Serial.print(strlen(serverRequest));
+            Serial.print(F(" of "));
+            Serial.print(sizeof(serverRequest));
+            Serial.println(F(" bytes available"));
+
+            // Send the server request
+            Serial.println(F("Sending server request: "));
+            Serial.println(serverRequest);
+            ntripClient.write(serverRequest, strlen(serverRequest));
+
+            casterResponseWaitStartTime = millis();
+
+            changeState(STATE_ROVER_CLIENT_STARTED);
+          }
+          else
+          {
+            log_d("Caster failed to connect. Trying again.");
+            
+            if (ntripClientConnectionAttempts++ >= maxNtripClientConnectionAttempts)
+            {
+              Serial.println(F("Caster failed to connect. Do you have your caster address and port correct?"));
+              ntripClient.stop();
+
+              stopWiFi(); //Turn off WiFi and release all resources
+              startBluetooth(); //Turn on Bluetooth with 'Rover' name
+
+              changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
+            }
+          }
+#endif
+        }
+        break;
+
+      case (STATE_ROVER_CLIENT_STARTED):
+        {
+#ifdef COMPILE_WIFI
+          //Check if caster service responded
+          if (ntripClient.available() == 0)
+          {
+            if (millis() - casterResponseWaitStartTime > 5000)
+            {
+              Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
+              ntripClient.stop();
+
+              stopWiFi(); //Turn off WiFi and release all resources
+              startBluetooth(); //Turn on Bluetooth with 'Rover' name
+
+              changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
+            }
+          }
+          else
+          {
+            //Check reply
+            int connectionResult = 0;
+            char response[512];
+            size_t responseSpot = 0;
+            while (ntripClient.available()) // Read bytes from the caster and store them
+            {
+              if (responseSpot == sizeof(response) - 1) // Exit the loop if we get too much data
+                break;
+
+              response[responseSpot++] = ntripClient.read();
+
+              if (connectionResult == 0) // Only print success/fail once
+              {
+                if (strstr(response, "200") != NULL) //Look for '200 OK'
+                  connectionResult = 200;
+                if (strstr(response, "401") != NULL) //Look for '401 Unauthorized'
+                  connectionResult = 401;
+              }
+            }
+            response[responseSpot] = '\0'; // NULL-terminate the response
+
+            if (connectionResult != 200)
+            {
+              Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
+              ntripClient.stop();
+
+              stopWiFi(); //Turn off WiFi and release all resources
+              startBluetooth(); //Turn on Bluetooth with 'Rover' name
+
+              changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
+            }
+            else
+            {
+              log_d("Connected to caster");
+
+              lastReceivedRTCM_ms = millis(); //Reset timeout
+
+              //We don't use a task because we use I2C hardware (and don't have a semphore).
+              online.ntripClient = true;
+
+              changeState(STATE_ROVER_NO_FIX); //Start rover *with* WiFi
+            }
+          }
+#endif
         }
         break;
 
       case (STATE_BASE_NOT_STARTED):
         {
+          if (online.gnss == false)
+          {
+            firstRoverStart = false; //If GNSS is offline, we still need to allow button use
+            return;
+          }
+
           //Turn off base LED until we successfully enter temp/fix state
           if (productVariant == RTK_SURVEYOR)
           {
@@ -164,14 +370,9 @@ void updateSystemState()
           }
 
           //Check for <1m horz accuracy before starting surveyIn
-          uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
+          Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\n\r", settings.surveyInStartingAccuracy, horizontalAccuracy);
 
-          float f_accuracy = accuracy;
-          f_accuracy = f_accuracy / 10000.0; // Convert the horizontal accuracy (mm * 10^-1) to a float
-
-          Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\n\r", settings.surveyInStartingAccuracy, f_accuracy);
-
-          if (f_accuracy > 0.0 && f_accuracy < settings.surveyInStartingAccuracy)
+          if (horizontalAccuracy > 0.0 && horizontalAccuracy < settings.surveyInStartingAccuracy)
           {
             displaySurveyStart(0); //Show 'Survey'
 
@@ -198,12 +399,12 @@ void updateSystemState()
           }
 
           //Get the data once to avoid duplicate slow responses
-          svinObservationTime = i2cGNSS.getSurveyInObservationTime(100);
-          svinMeanAccuracy = i2cGNSS.getSurveyInMeanAccuracy(100);
+          svinObservationTime = i2cGNSS.getSurveyInObservationTime(50);
+          svinMeanAccuracy = i2cGNSS.getSurveyInMeanAccuracy(50);
 
-          if (i2cGNSS.getSurveyInValid(100) == true) //Survey in complete
+          if (i2cGNSS.getSurveyInValid(50) == true) //Survey in complete
           {
-            Serial.printf("obs time: %d\n\r", svinObservationTime);
+            Serial.printf("Observation Time: %d\n\r", svinObservationTime);
             Serial.println(F("Base survey complete! RTCM now broadcasting."));
 
             if (productVariant == RTK_SURVEYOR)
@@ -219,7 +420,7 @@ void updateSystemState()
             Serial.print(F(" Accuracy: "));
             Serial.print(svinMeanAccuracy);
             Serial.print(F(" SIV: "));
-            Serial.print(i2cGNSS.getSIV());
+            Serial.print(numSV);
             Serial.println();
 
             if (svinObservationTime > maxSurveyInWait_s)
@@ -241,7 +442,7 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
-            startWiFi();
+            startServerWiFi();
 
             changeState(STATE_BASE_TEMP_WIFI_STARTED);
           }
@@ -264,7 +465,7 @@ void updateSystemState()
             Serial.print(F("WiFi Status: "));
             switch (wifiStatus) {
               case WL_NO_SSID_AVAIL:
-                Serial.printf("SSID '%s' not detected\n\r", settings.wifiSSID);
+                Serial.printf("SSID '%s' not detected\n\r", settings.ntripServer_wifiSSID);
                 break;
               case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
               case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
@@ -274,7 +475,6 @@ void updateSystemState()
               case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
               case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
             }
-            delay(500);
           }
 #endif
         }
@@ -293,20 +493,20 @@ void updateSystemState()
           {
             //Open connection to caster service
 #ifdef COMPILE_WIFI
-            if (caster.connect(settings.casterHost, settings.casterPort) == true) //Attempt connection
+            if (ntripServer.connect(settings.ntripServer_CasterHost, settings.ntripServer_CasterPort) == true) //Attempt connection
             {
               changeState(STATE_BASE_TEMP_CASTER_STARTED);
 
-              Serial.printf("Connected to %s:%d\n\r", settings.casterHost, settings.casterPort);
+              Serial.printf("Connected to %s:%d\n\r", settings.ntripServer_CasterHost, settings.ntripServer_CasterPort);
 
               const int SERVER_BUFFER_SIZE = 512;
               char serverBuffer[SERVER_BUFFER_SIZE];
 
               snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
-                       settings.mountPointUploadPW, settings.mountPointUpload, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+                       settings.ntripServer_MountPointPW, settings.ntripServer_MountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
-              caster.write(serverBuffer, strlen(serverBuffer));
+              ntripServer.write(serverBuffer, strlen(serverBuffer));
 
               casterResponseWaitStartTime = millis();
             }
@@ -320,12 +520,12 @@ void updateSystemState()
         {
 #ifdef COMPILE_WIFI
           //Check if caster service responded
-          if (caster.available() == 0)
+          if (ntripServer.available() == 0)
           {
             if (millis() - casterResponseWaitStartTime > 5000)
             {
               Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
-              caster.stop();
+              ntripServer.stop();
 
               changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to previous state
             }
@@ -336,9 +536,9 @@ void updateSystemState()
             bool connectionSuccess = false;
             char response[512];
             int responseSpot = 0;
-            while (caster.available())
+            while (ntripServer.available())
             {
-              response[responseSpot++] = caster.read();
+              response[responseSpot++] = ntripServer.read();
               if (strstr(response, "200") != NULL) //Look for 'ICY 200 OK'
                 connectionSuccess = true;
               if (responseSpot == 512 - 1) break;
@@ -376,7 +576,7 @@ void updateSystemState()
           cyclePositionLEDs();
 
 #ifdef COMPILE_WIFI
-          if (caster.connected() == false)
+          if (ntripServer.connected() == false)
           {
             Serial.println(F("Caster no longer connected. Reconnecting..."));
             changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to 2 earlier states to try to reconnect
@@ -414,7 +614,7 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
-            startWiFi();
+            startServerWiFi();
 
             rtcmPacketsSent = 0; //Reset any previous number
 
@@ -439,7 +639,7 @@ void updateSystemState()
             Serial.print(F("WiFi Status: "));
             switch (wifiStatus) {
               case WL_NO_SSID_AVAIL:
-                Serial.printf("SSID '%s' not detected\n\r", settings.wifiSSID);
+                Serial.printf("SSID '%s' not detected\n\r", settings.ntripServer_wifiSSID);
                 break;
               case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
               case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
@@ -467,20 +667,20 @@ void updateSystemState()
           {
 #ifdef COMPILE_WIFI
             //Open connection to caster service
-            if (caster.connect(settings.casterHost, settings.casterPort) == true) //Attempt connection
+            if (ntripServer.connect(settings.ntripServer_CasterHost, settings.ntripServer_CasterPort) == true) //Attempt connection
             {
               changeState(STATE_BASE_FIXED_CASTER_STARTED);
 
-              Serial.printf("Connected to %s:%d\n\r", settings.casterHost, settings.casterPort);
+              Serial.printf("Connected to %s:%d\n\r", settings.ntripServer_CasterHost, settings.ntripServer_CasterPort);
 
               const int SERVER_BUFFER_SIZE  = 512;
               char serverBuffer[SERVER_BUFFER_SIZE];
 
               snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
-                       settings.mountPointUploadPW, settings.mountPointUpload, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+                       settings.ntripServer_MountPointPW, settings.ntripServer_MountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
               //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
-              caster.write(serverBuffer, strlen(serverBuffer));
+              ntripServer.write(serverBuffer, strlen(serverBuffer));
 
               casterResponseWaitStartTime = millis();
             }
@@ -494,12 +694,12 @@ void updateSystemState()
         {
 #ifdef COMPILE_WIFI
           //Check if caster service responded
-          if (caster.available() < 10)
+          if (ntripServer.available() < 10)
           {
             if (millis() - casterResponseWaitStartTime > 5000)
             {
               Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
-              caster.stop();
+              ntripServer.stop();
               delay(10); //Yield to RTOS
 
               changeState(STATE_BASE_FIXED_WIFI_CONNECTED); //Return to previous state
@@ -511,9 +711,9 @@ void updateSystemState()
             bool connectionSuccess = false;
             char response[512];
             int responseSpot = 0;
-            while (caster.available())
+            while (ntripServer.available())
             {
-              response[responseSpot++] = caster.read();
+              response[responseSpot++] = ntripServer.read();
               if (strstr(response, "200") != NULL) //Look for 'ICY 200 OK'
                 connectionSuccess = true;
               if (responseSpot == 512 - 1) break;
@@ -551,7 +751,7 @@ void updateSystemState()
           cyclePositionLEDs();
 
 #ifdef COMPILE_WIFI
-          if (caster.connected() == false)
+          if (ntripServer.connected() == false)
           {
             changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
           }
@@ -560,6 +760,30 @@ void updateSystemState()
         break;
 
       case (STATE_BUBBLE_LEVEL):
+        {
+          //Do nothing - display only
+        }
+        break;
+
+      case (STATE_PROFILE_1):
+        {
+          //Do nothing - display only
+        }
+        break;
+
+      case (STATE_PROFILE_2):
+        {
+          //Do nothing - display only
+        }
+        break;
+
+      case (STATE_PROFILE_3):
+        {
+          //Do nothing - display only
+        }
+        break;
+
+      case (STATE_PROFILE_4):
         {
           //Do nothing - display only
         }
@@ -643,7 +867,7 @@ void updateSystemState()
           //Debounce entry into test menu
           if (millis() - lastTestMenuChange > 500)
           {
-            stopUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+            stopUART2Tasks(); //Stop absoring ZED serial via task
             zedUartPassed = false;
 
             //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
@@ -711,6 +935,15 @@ void changeState(SystemState newState)
     case (STATE_ROVER_RTK_FIX):
       Serial.println(F("State: Rover - RTK Fix"));
       break;
+    case (STATE_ROVER_CLIENT_WIFI_STARTED):
+      Serial.println(F("State: Rover - Client WiFi Started"));
+      break;
+    case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
+      Serial.println(F("State: Rover - Client WiFi Connected"));
+      break;
+    case (STATE_ROVER_CLIENT_STARTED):
+      Serial.println(F("State: Rover - Client Started"));
+      break;
     case (STATE_BASE_NOT_STARTED):
       Serial.println(F("State: Base - Not Started"));
       break;
@@ -773,6 +1006,18 @@ void changeState(SystemState newState)
       break;
     case (STATE_TESTING):
       Serial.println(F("State: System Testing"));
+      break;
+    case (STATE_PROFILE_1):
+      Serial.println(F("State: Profile 1"));
+      break;
+    case (STATE_PROFILE_2):
+      Serial.println(F("State: Profile 2"));
+      break;
+    case (STATE_PROFILE_3):
+      Serial.println(F("State: Profile 3"));
+      break;
+    case (STATE_PROFILE_4):
+      Serial.println(F("State: Profile 4"));
       break;
     case (STATE_SHUTDOWN):
       Serial.println(F("State: Shut Down"));

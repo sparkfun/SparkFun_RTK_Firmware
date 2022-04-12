@@ -288,20 +288,21 @@ function validateFields() {
     checkElementValue("fixedEcefX", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
     checkElementValue("fixedEcefY", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
     if (ge("fixedEcefZ").value == 0.0) ge("fixedEcefZ").value = 4084500;
-    checkElementValue("fixedEcefZ", 4084500, 5000000, "Must be 4084500 to 5000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefZ", 3300000, 5000000, "Must be 3300000 to 5000000", "collapseBaseConfig");
     checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
     checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
-    checkElementValue("fixedAltitude", 0, 8849, "Must be 0 to 8849", "collapseBaseConfig");
+    checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
 
-    checkElementString("wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-    checkElementString("wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
-    checkElementString("casterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-    checkElementValue("casterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
-    checkElementString("mountPointUpload", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-    checkElementString("mountPointUploadPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("ntripServer_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("ntripServer_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
+    checkElementString("ntripServer_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementValue("ntripServer_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
+    checkElementString("ntripServer_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+    checkElementString("ntripServer_MountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
 
     //System Config
     checkElementValue("maxLogTime_minutes", 1, 2880, "Must be 1 to 2880", "collapseSystemConfig");
+    checkElementValue("maxLogLength_minutes", 1, 2880, "Must be 1 to 2880", "collapseSystemConfig");
 
     //Port Config
 
@@ -609,21 +610,21 @@ document.addEventListener("DOMContentLoaded", (event) => {
     ge("enableNtripServer").addEventListener("change", function () {
         if (ge("enableNtripServer").checked) {
             //Enable NTRIP inputs
-            ge("wifiSSID").disabled = false;
-            ge("wifiPW").disabled = false;
-            ge("casterHost").disabled = false;
-            ge("casterPort").disabled = false;
-            ge("mountPointUpload").disabled = false;
-            ge("mountPointUploadPW").disabled = false;
+            ge("ntripServer_wifiSSID").disabled = false;
+            ge("ntripServer_wifiPW").disabled = false;
+            ge("ntripServer_CasterHost").disabled = false;
+            ge("ntripServer_CasterPort").disabled = false;
+            ge("ntripServer_MountPoint").disabled = false;
+            ge("ntripServer_MountPointPW").disabled = false;
         }
         else {
             //Disable NTRIP inputs
-            ge("wifiSSID").disabled = true;
-            ge("wifiPW").disabled = true;
-            ge("casterHost").disabled = true;
-            ge("casterPort").disabled = true;
-            ge("mountPointUpload").disabled = true;
-            ge("mountPointUploadPW").disabled = true;
+            ge("ntripServer_wifiSSID").disabled = true;
+            ge("ntripServer_wifiPW").disabled = true;
+            ge("ntripServer_CasterHost").disabled = true;
+            ge("ntripServer_CasterPort").disabled = true;
+            ge("ntripServer_MountPoint").disabled = true;
+            ge("ntripServer_MountPointPW").disabled = true;
         }
     });
 
@@ -631,10 +632,12 @@ document.addEventListener("DOMContentLoaded", (event) => {
         if (ge("enableLogging").checked) {
             //Enable inputs
             ge("maxLogTime_minutes").disabled = false;
+            ge("maxLogLength_minutes").disabled = false;
         }
         else {
             //Disable inputs
             ge("maxLogTime_minutes").disabled = true;
+            ge("maxLogLength_minutes").disabled = true;
         }
     });
 

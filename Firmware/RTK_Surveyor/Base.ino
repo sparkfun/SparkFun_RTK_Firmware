@@ -2,13 +2,36 @@
 //Configure specific aspects of the receiver for base mode
 bool configureUbloxModuleBase()
 {
+  if (online.gnss == false) return (false);
+
   bool response = true;
   int maxWait = 2000;
 
+  //If our settings haven't changed, and this is first config since power on, trust ZED's settings
+  if (updateZEDSettings == false && firstPowerOn == true)
+  {
+    firstPowerOn = false; //Next time user switches modes, new settings will be applied
+    log_d("Skipping ZED Base configuration");
+    return (true);
+  }
+
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+
+  //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
+  if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
+    response &= i2cGNSS.setNavigationFrequency(1, maxWait);
+  //    response &= i2cGNSS.setNavigationFrequency(4, maxWait);
+  if (response == false)
+    Serial.println(F("Set rate failed"));
+
+  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+
+  i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Disable GPGGA call back that may have been set during Rover Client mode
+  i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C); // Disable NMEA message
 
   if (i2cGNSS.getSurveyInActive() == true)
   {
+    log_d("Disabling survey");
     response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
     if (response == false)
       Serial.println(F("Disable Survey failed"));
@@ -58,6 +81,10 @@ bool configureUbloxModuleBase()
     Serial.println(F("RTCM settings failed to enable"));
     return (false);
   }
+
+  response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
+  if (response == false)
+    Serial.println(F("Module failed to save."));
 
   return (response);
 }
@@ -226,9 +253,9 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
   }
 
 #ifdef COMPILE_WIFI
-  if (caster.connected() == true)
+  if (ntripServer.connected() == true)
   {
-    caster.write(incoming); //Send this byte to socket
+    ntripServer.write(incoming); //Send this byte to socket
     casterBytesSent++;
     lastServerSent_ms = millis();
   }

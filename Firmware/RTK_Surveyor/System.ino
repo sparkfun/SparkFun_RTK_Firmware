@@ -28,7 +28,7 @@ bool startBluetooth()
   }
 
   //Set PIN to 1234 so we can connect to older BT devices, but not require a PIN for modern device pairing
-  //See issue: https://github.com/sparkfun/SparkFun_RTK_Surveyor/issues/5
+  //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/5
   //https://github.com/espressif/esp-idf/issues/1541
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
@@ -118,14 +118,27 @@ bool customBTstop() {
 
 //Start WiFi assuming it was previously fully released
 //See WiFiBluetoothSwitch sketch for more info
-void startWiFi()
+void startServerWiFi()
 {
 #ifdef COMPILE_WIFI
   wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
   esp_wifi_init(&wifi_init_config); //Restart WiFi resources
 
-  Serial.printf("Connecting to local WiFi: %s\n\r", settings.wifiSSID);
-  WiFi.begin(settings.wifiSSID, settings.wifiPW);
+  Serial.printf("Connecting to local WiFi: %s\n\r", settings.ntripServer_wifiSSID);
+  WiFi.begin(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
+#endif
+
+  radioState = WIFI_ON_NOCONNECTION;
+}
+
+void startClientWiFi()
+{
+#ifdef COMPILE_WIFI
+  wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
+  esp_wifi_init(&wifi_init_config); //Restart WiFi resources
+
+  Serial.printf("Connecting to local WiFi: %s\n\r", settings.ntripClient_wifiSSID);
+  WiFi.begin(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
 #endif
 
   radioState = WIFI_ON_NOCONNECTION;
@@ -136,10 +149,10 @@ void startWiFi()
 void stopWiFi()
 {
 #ifdef COMPILE_WIFI
-  caster.stop();
+  ntripServer.stop();
   WiFi.mode(WIFI_OFF);
-  
-  if(radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
+
+  if (radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
     esp_wifi_deinit(); //Free all resources
 #endif
 
@@ -153,10 +166,18 @@ void stopWiFi()
 //corrupt. The worst is when the I2C port gets turned off or the I2C address gets borked.
 bool configureUbloxModule()
 {
+  if (online.gnss == false) return (false);
+
   boolean response = true;
   int maxWait = 2000;
 
-  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  //Wait for initial report from module
+  while(ubloxUpdated == false)
+  {
+    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+    delay(10);
+  }
 
   //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
   if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
@@ -167,9 +188,13 @@ bool configureUbloxModule()
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {
-    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-    if (response == false)
-      Serial.println(F("Disable Survey failed"));
+    if (i2cGNSS.getSurveyInActive(100) == true)
+    {
+      log_d("Disabling survey");
+      response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+      if (response == false)
+        Serial.println(F("Disable Survey failed"));
+    }
   }
 
 #define OUTPUT_SETTING 14
@@ -199,13 +224,14 @@ bool configureUbloxModule()
     response &= i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_RTCM3); //Set the UART2 to input RTCM
 
   if (settingPayload[INPUT_SETTING] != COM_TYPE_UBX)
-    response &= i2cGNSS.setPortInput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to input UBX only
+    response &= i2cGNSS.setPortInput(COM_PORT_I2C, (COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3)); //We don't want NMEA, but we will want to deliver RTCM over I2C
 
   //The USB port on the ZED may be used for RTCM to/from the computer (as an NTRIP caster or client)
   //So let's be sure all protocols are on for the USB port
   getPortSettings(COM_PORT_USB); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3))
     response &= i2cGNSS.setPortOutput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
+
   if (settingPayload[INPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3))
     response &= i2cGNSS.setPortInput(COM_PORT_USB, (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3)); //Set the USB port to everything
 
@@ -217,18 +243,15 @@ bool configureUbloxModule()
   response &= disableNMEASentences(COM_PORT_UART2);
   response &= disableNMEASentences(COM_PORT_SPI);
 
-  response &= i2cGNSS.setAutoPVT(true, false); //Tell the GPS to "send" each solution, but do not update stale data when accessed
-  response &= i2cGNSS.setAutoHPPOSLLH(true, false); //Tell the GPS to "send" each high res solution, but do not update stale data when accessed
-
   if (zedModuleType == PLATFORM_F9R)
     response &= i2cGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
 
   if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
     Serial.println(F("Updating UART1 rate"));
-    i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1);
+    i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
   }
-  if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud) //Defaults to 460800 to maximize message output support
+  if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud)
   {
     Serial.println(F("Updating UART2 rate"));
     i2cGNSS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Defaults to 57600 to match SiK telemetry radio firmware default
@@ -420,34 +443,6 @@ uint32_t getSerialRate(uint8_t portID)
   return (((uint32_t)settingPayload[10] << 16) | ((uint32_t)settingPayload[9] << 8) | settingPayload[8]);
 }
 
-//Freeze displaying a given error code
-void blinkError(t_errorNumber errorNumber)
-{
-  while (1)
-  {
-    for (int x = 0 ; x < errorNumber ; x++)
-    {
-      if (productVariant == RTK_SURVEYOR)
-      {
-        digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
-        digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
-        digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
-        digitalWrite(pin_baseStatusLED, HIGH);
-        digitalWrite(pin_bluetoothStatusLED, HIGH);
-        delay(200);
-        digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-        digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-        digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-        digitalWrite(pin_baseStatusLED, LOW);
-        digitalWrite(pin_bluetoothStatusLED, LOW);
-        delay(200);
-      }
-    }
-
-    delay(2000);
-  }
-}
-
 //Turn on indicator LEDs to verify LED function and indicate setup sucess
 void danceLEDs()
 {
@@ -486,6 +481,11 @@ void danceLEDs()
     digitalWrite(pin_baseStatusLED, LOW);
     delay(250);
     digitalWrite(pin_bluetoothStatusLED, LOW);
+  }
+  else
+  {
+    //Units can boot under 1s. Keep splash screen up for at least 2s.
+    while(millis() - splashStart < 2000) delay(1); 
   }
 }
 
@@ -593,16 +593,17 @@ void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8
     xPos += kerning;
   }
 }
+
 //Create a test file in file structure to make sure we can
 bool createTestFile()
 {
   SdFile testFile;
   char testFileName[40] = "testfile.txt";
 
-  if(xFATSemaphore == NULL)
+  if (xFATSemaphore == NULL)
   {
-    log_d("xFATSemaphote is Null");
-    return(false);
+    log_d("xFATSemaphore is Null");
+    return (false);
   }
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
@@ -762,8 +763,8 @@ void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, char *textMe
   //Currently we don't have messages longer than 82 char max so we hardcode the sentence numbers
   const uint8_t totalNumberOfSentences = 1;
   const uint8_t sentenceNumber = 1;
-  
-  char nmeaTxt[82]; //Max NMEA sentence length is 82
+
+  char nmeaTxt[200]; //Max NMEA sentence length is 82
   sprintf(nmeaTxt, "$GNTXT,%02d,%02d,%02d,%s*", totalNumberOfSentences, sentenceNumber, textID, textMessage);
 
   //From: http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html

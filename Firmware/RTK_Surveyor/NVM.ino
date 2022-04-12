@@ -1,102 +1,266 @@
+/*
+  For any new setting added to the settings struct, we must add it to setting file
+  recording and logging, and to the WiFi AP load/read in the following places:
+
+  recordSystemSettingsToFile();
+  parseLine();
+  createSettingsString();
+  updateSettingWithValue();
+
+  form.h also needs to be updated to include a space for user input. This is best
+  edited in the index.html and main.js files.
+*/
+
+//We use the LittleFS library to store user profiles in SPIFFs
+//Move selected user profile from SPIFFs into settings struct (RAM)
+//We originally used EEPROM but it was limited to 4096 bytes. Each settings struct is ~4000 bytes
+//so multiple user profiles wouldn't fit. Prefences was limited to a single putBytes of ~3000 bytes.
+//So we moved again to SPIFFs. It's being replaced by LittleFS so here we are.
 void loadSettings()
 {
-  if (online.eeprom == false)
+  //First, look up the last used profile number
+  uint8_t profileNumber = getProfileNumber();
+
+  //Load the settings file into a temp holder until we know it's valid
+  Settings tempSettings;
+  if (getSettings(profileNumber, tempSettings) == true)
+    settings = tempSettings; //Settings are good. Move them over.
+
+  loadSystemSettingsFromFile(); //Load any settings from config file. This will over-write any pre-existing LittleFS settings.
+
+  //Change default profile names to 'Profile1' etc
+  if (strcmp(settings.profileName, "Default") == 0)
+    sprintf(settings.profileName, "Profile%d", profileNumber + 1);
+
+  //Record these settings to LittleFS and SD file to be sure they are the same
+  recordSystemSettings();
+
+  activeProfiles = getActiveProfiles(); //Count is used during menu display
+
+  log_d("Settings profile #%d loaded of %d profiles", profileNumber, activeProfiles);
+}
+
+//Load a given settings file into a given settings array
+//Check settings file for correct length and ID
+//Returns true if settings file was loaded successfully
+bool getSettings(uint8_t fileNumber, Settings &localSettings)
+{
+  //Read the file into tempSettings for further verification
+  uint8_t *settingsBytes = (uint8_t *)&localSettings; // Cast the struct into a uint8_t ptr
+
+  //With the given profile number, load appropriate settings file
+  char settingsFileName[40];
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, fileNumber);
+
+  File settingsFile = LittleFS.open(settingsFileName, FILE_READ);
+  if (!settingsFile)
   {
-    log_d("Error: EEPROM not online");
-    return;
+    log_d("Setting file %s not found. Using default settings.", settingsFileName);
+    return (false);
   }
 
-  //First load any settings from NVM
-  //After, we'll load settings from config file if available
-  //We'll then re-record settings so that the settings from the file over-rides internal NVM settings
+  uint16_t fileSize = settingsFile.size();
+  if (fileSize > sizeof(Settings)) fileSize = sizeof(Settings); //Trim to max setting struct size
+  settingsFile.read(settingsBytes, fileSize); //Copy the bytes from file into testSettings struct
+  settingsFile.close();
 
-  //Check to see if EEPROM is blank
-  uint32_t testRead = 0;
-  if (EEPROM.get(0, testRead) == 0xFFFFFFFF)
-  {
-    Serial.println(F("EEPROM is blank. Default settings applied"));
-    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
-  }
-
-  //Check that the current settings struct size matches what is stored in EEPROM
+  //Check that the current settings struct size matches what is stored in this settings file
   //Misalignment happens when we add a new feature or setting
-  int tempSize = 0;
-  EEPROM.get(0, tempSize); //Load the sizeOfSettings
-  if (tempSize != sizeof(settings))
+  if (fileSize != sizeof(Settings))
   {
-    Serial.println(F("Settings wrong size. Default settings applied"));
-    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
+    log_d("Settings file wrong size: %d bytes, should be %d bytes. Using default settings.", fileSize, sizeof(settings));
+    return (false);
   }
 
   //Check that the rtkIdentifier is correct
   //(It is possible for two different versions of the code to have the same sizeOfSettings - which causes problems!)
-  int tempIdentifier = 0;
-  EEPROM.get(sizeof(int), tempIdentifier); //Load the identifier from the EEPROM location after sizeOfSettings (int)
-  if (tempIdentifier != RTK_IDENTIFIER)
+  if (localSettings.rtkIdentifier != RTK_IDENTIFIER)
   {
-    Serial.printf("Settings are not valid for this variant of RTK %s. Default settings applied.\n\r", platformPrefix);
-    recordSystemSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
+    log_d("Settings are not valid for this variant of RTK %s. Found 0x%02X, should be 0x%02X. Using default settings.", platformPrefix, localSettings.rtkIdentifier, RTK_IDENTIFIER);
+    return (false);
   }
 
-  //Read current settings
-  EEPROM.get(0, settings);
+  log_d("Using LittleFS file: %s", settingsFileName);
 
-  loadSystemSettingsFromFile(); //Load any settings from config file. This will over-write any pre-existing EEPROM settings.
-  //Record these new settings to EEPROM and config file to be sure they are the same
-  //(do this even if loadSystemSettingsFromFile returned false)
-  recordSystemSettings();
+  return (true);
+}
 
-  log_d("Settings loaded");
+//Load the special profileNumber file in LittleFS and return one byte value
+uint8_t getProfileNumber()
+{
+  uint8_t profileNumber = 0;
+
+  File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_READ);
+  if (!fileProfileNumber)
+  {
+    log_d("profileNumber.txt not found");
+    profileNumber = 0;
+    updateZEDSettings = true; //Force module update
+    recordProfileNumber(profileNumber, false); //Record profile but we don't need a module config at next POR
+  }
+  else
+  {
+    profileNumber = fileProfileNumber.read();
+    updateZEDSettings = fileProfileNumber.read();
+    fileProfileNumber.close();
+  }
+
+  //We have arbitrary limit of 4 user profiles
+  if (profileNumber >= MAX_PROFILE_COUNT)
+  {
+    log_d("ProfileNumber invalid. Going to zero.");
+    profileNumber = 0;
+    updateZEDSettings = true; //Force module update
+    recordProfileNumber(profileNumber, false); //Record profile but we don't need a module config at next POR
+  }
+
+  log_d("Using profile #%d", profileNumber);
+  return (profileNumber);
+}
+
+//Return the number of non-empty settings files
+uint8_t getActiveProfiles()
+{
+  int profileCount = 0;
+
+  for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
+  {
+    //With the given profile number, load appropriate settings file
+    char settingsFileName[40];
+    sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+
+    if (LittleFS.exists(settingsFileName))
+      profileCount++;
+  }
+
+  log_d("%d active profiles", profileCount);
+  return (profileCount);
+}
+
+//Loads a given profile name.
+//Profiles may not be sequential (user might have empty profile #2, but filled #3) so we load the profile unit, not the number
+//Return true if successful
+bool getProfileName(uint8_t profileUnit, char *profileName, uint8_t profileNameLength)
+{
+  uint8_t located = 0;
+
+  //Step through possible profiles looking for the 1st, 2nd, 3rd, or 4th unit
+  for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
+  {
+    //With the given profile number, load appropriate settings file
+    char settingsFileName[40];
+    sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+
+    if (LittleFS.exists(settingsFileName))
+    {
+      if (located == profileUnit)
+      {
+        //Open this profile and get the profile name from it
+        File settingsFile = LittleFS.open(settingsFileName, FILE_READ);
+
+        Settings tempSettings;
+        uint8_t *settingsBytes = (uint8_t *)&tempSettings; // Cast the struct into a uint8_t ptr
+
+        uint16_t fileSize = settingsFile.size();
+        if (fileSize > sizeof(tempSettings)) fileSize = sizeof(tempSettings); //Trim to max setting struct size
+
+        settingsFile.read(settingsBytes, fileSize); //Copy the bytes from file into testSettings struct
+        settingsFile.close();
+
+        snprintf(profileName, profileNameLength, "%s", tempSettings.profileName); //snprintf handles null terminator
+        return (true);
+      }
+
+      located++; //Valid settingFileName but not the unit we are looking for
+    }
+  }
+  log_d("Profile unit %d not found", profileUnit);
+
+  return (false);
+}
+
+//Return profile number based on units
+//Profiles may not be sequential (user might have empty profile #2, but filled #3) so we look up the profile unit and return the count
+uint8_t getProfileNumberFromUnit(uint8_t profileUnit)
+{
+  uint8_t located = 0;
+
+  //Step through possible profiles looking for the 1st, 2nd, 3rd, or 4th unit
+  for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
+  {
+    //With the given profile number, load appropriate settings file
+    char settingsFileName[40];
+    sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+
+    if (LittleFS.exists(settingsFileName))
+    {
+      if (located == profileUnit)
+      {
+        return (located);
+      }
+
+      located++; //Valid settingFileName but not the unit we are looking for
+    }
+  }
+  log_d("Profile unit %d not found", profileUnit);
+
+  return (false);
+}
+
+//Record the given profile number as well as a config bool
+void recordProfileNumber(uint8_t profileNumber, bool markForUpdate)
+{
+  File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_WRITE);
+  if (!fileProfileNumber)
+  {
+    log_d("profileNumber.txt failed to open");
+    return;
+  }
+  fileProfileNumber.write(profileNumber);
+  fileProfileNumber.write(markForUpdate); //If true, ZED will be config'd next POR  
+  fileProfileNumber.close();
+}
+
+//Record the current settings struct to LittleFS and then to SD file if available
+void recordSystemSettings()
+{
+  char settingsFileName[40];
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
+
+  File settingsFile = LittleFS.open(settingsFileName, FILE_WRITE);
+  if (!settingsFile)
+  {
+    log_d("Failed to write to settings file %s", settingsFileName);
+  }
+  else
+  {
+    settings.sizeOfSettings = sizeof(settings); //Update to current setting size
+
+    uint8_t *settingsBytes = (uint8_t *)&settings; // cast the struct into a uint8_t ptr
+    settingsFile.write(settingsBytes, sizeof(settings)); //Store raw settings bytes into file
+    settingsFile.close();
+    log_d("Settings recorded to LittleFS: %s", settingsFileName);
+  }
+
+  recordSystemSettingsToFile();
 }
 
 //Load settings without recording
 //Used at very first boot to test for resetCounter
 void loadSettingsPartial()
 {
-  if (online.eeprom == false)
-  {
-    log_d("Error: EEPROM not online");
-    return;
-  }
+  //First, look up the last used profile number
+  uint8_t profileNumber = getProfileNumber();
 
-  //Check to see if EEPROM is blank
-  uint32_t testRead = 0;
-  if (EEPROM.get(0, testRead) == 0xFFFFFFFF)
-  {
-    log_d("EEPROM is blank");
-    return; //EEPROM is blank, assume default settings
-  }
+  //Load the settings file into a temp holder until we know it's valid
+  Settings tempSettings;
 
-  EEPROM.get(0, settings); //Read current settings
-}
-
-//Record the current settings struct to EEPROM and then to config file
-void recordSystemSettings()
-{
-  settings.sizeOfSettings = sizeof(settings);
-  if (settings.sizeOfSettings > EEPROM_SIZE)
-  {
-    Serial.printf("Size of settings is %d bytes\n\r", sizeof(settings));
-    Serial.println(F("Increase the EEPROM footprint!"));
-    displayError("EEPROM"); //Hard freeze
-  }
-
-  if (online.eeprom == true)
-  {
-    EEPROM.put(0, settings);
-    EEPROM.commit();
-    delay(1); //Give CPU time to pet WDT
-    log_d("System settings recorded");
-  }
-  else
-  {
-    log_d("Error: EEPROM not online");
-  }
-
-  recordSystemSettingsToFile();
+  if (getSettings(profileNumber, tempSettings) == true)
+    settings = tempSettings; //Settings are good. Move them over.
 }
 
 //Export the current settings to a config file
+//We only record the active profile to the appropriate 'SFE_Facet_Settings_2.txt' file.
 void recordSystemSettingsToFile()
 {
   if (online.microSD == true)
@@ -106,8 +270,7 @@ void recordSystemSettingsToFile()
     {
       //Assemble settings file name
       char settingsFileName[40]; //SFE_Surveyor_Settings.txt
-      strcpy(settingsFileName, platformFilePrefix);
-      strcat(settingsFileName, "_Settings.txt");
+      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
 
       if (sd.exists(settingsFileName))
         sd.remove(settingsFileName);
@@ -133,6 +296,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("enableSD=" + (String)settings.enableSD);
       settingsFile.println("enableDisplay=" + (String)settings.enableDisplay);
       settingsFile.println("maxLogTime_minutes=" + (String)settings.maxLogTime_minutes);
+      settingsFile.println("maxLogLength_minutes=" + (String)settings.maxLogLength_minutes);
       settingsFile.println("observationSeconds=" + (String)settings.observationSeconds);
       settingsFile.println("observationPositionAccuracy=" + (String)settings.observationPositionAccuracy);
       settingsFile.println("fixedBase=" + (String)settings.fixedBase);
@@ -152,18 +316,6 @@ void recordSystemSettingsToFile()
 
       settingsFile.println("dataPortBaud=" + (String)settings.dataPortBaud);
       settingsFile.println("radioPortBaud=" + (String)settings.radioPortBaud);
-      settingsFile.println("enableNtripServer=" + (String)settings.enableNtripServer);
-      settingsFile.println("casterHost=" + (String)settings.casterHost);
-      settingsFile.println("casterPort=" + (String)settings.casterPort);
-      settingsFile.println("casterUser=" + (String)settings.casterUser);
-      settingsFile.println("casterUserPW=" + (String)settings.casterUserPW);
-      settingsFile.println("mountPointUpload=" + (String)settings.mountPointUpload);
-      settingsFile.println("mountPointUploadPW=" + (String)settings.mountPointUploadPW);
-      settingsFile.println("mountPointDownload=" + (String)settings.mountPointDownload);
-      settingsFile.println("mountPointDownloadPW=" + (String)settings.mountPointDownloadPW);
-      settingsFile.println("casterTransmitGGA=" + (String)settings.casterTransmitGGA);
-      settingsFile.println("wifiSSID=" + (String)settings.wifiSSID);
-      settingsFile.println("wifiPW=" + (String)settings.wifiPW);
       settingsFile.println("surveyInStartingAccuracy=" + (String)settings.surveyInStartingAccuracy);
       settingsFile.println("measurementRate=" + (String)settings.measurementRate);
       settingsFile.println("navigationRate=" + (String)settings.navigationRate);
@@ -180,6 +332,31 @@ void recordSystemSettingsToFile()
       settingsFile.println("enableSensorFusion=" + (String)settings.enableSensorFusion);
       settingsFile.println("autoIMUmountAlignment=" + (String)settings.autoIMUmountAlignment);
       settingsFile.println("enableResetDisplay=" + (String)settings.enableResetDisplay);
+      settingsFile.println("enableExternalPulse=" + (String)settings.enableExternalPulse);
+      settingsFile.println("externalPulseTimeBetweenPulse_us=" + (String)settings.externalPulseTimeBetweenPulse_us);
+      settingsFile.println("externalPulseLength_us=" + (String)settings.externalPulseLength_us);
+      settingsFile.println("externalPulsePolarity=" + (String)settings.externalPulsePolarity);
+      settingsFile.println("enableExternalHardwareEventLogging=" + (String)settings.enableExternalHardwareEventLogging);
+      settingsFile.println("profileName=" + (String)settings.profileName);
+      settingsFile.println("enableNtripServer=" + (String)settings.enableNtripServer);
+      settingsFile.println("ntripServer_CasterHost=" + (String)settings.ntripServer_CasterHost);
+      settingsFile.println("ntripServer_CasterPort=" + (String)settings.ntripServer_CasterPort);
+      settingsFile.println("ntripServer_CasterUser=" + (String)settings.ntripServer_CasterUser);
+      settingsFile.println("ntripServer_CasterUserPW=" + (String)settings.ntripServer_CasterUserPW);
+      settingsFile.println("ntripServer_MountPoint=" + (String)settings.ntripServer_MountPoint);
+      settingsFile.println("ntripServer_MountPointPW=" + (String)settings.ntripServer_MountPointPW);
+      settingsFile.println("ntripServer_wifiSSID=" + (String)settings.ntripServer_wifiSSID);
+      settingsFile.println("ntripServer_wifiPW=" + (String)settings.ntripServer_wifiPW);
+      settingsFile.println("enableNtripClient=" + (String)settings.enableNtripClient);
+      settingsFile.println("ntripClient_CasterHost=" + (String)settings.ntripClient_CasterHost);
+      settingsFile.println("ntripClient_CasterPort=" + (String)settings.ntripClient_CasterPort);
+      settingsFile.println("ntripClient_CasterUser=" + (String)settings.ntripClient_CasterUser);
+      settingsFile.println("ntripClient_CasterUserPW=" + (String)settings.ntripClient_CasterUserPW);
+      settingsFile.println("ntripClient_MountPoint=" + (String)settings.ntripClient_MountPoint);
+      settingsFile.println("ntripClient_MountPointPW=" + (String)settings.ntripClient_MountPointPW);
+      settingsFile.println("ntripClient_wifiSSID=" + (String)settings.ntripClient_wifiSSID);
+      settingsFile.println("ntripClient_wifiPW=" + (String)settings.ntripClient_wifiPW);
+      settingsFile.println("ntripClient_TransmitGGA=" + (String)settings.ntripClient_TransmitGGA);
 
       //Record constellation settings
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -201,7 +378,7 @@ void recordSystemSettingsToFile()
 
       settingsFile.close();
 
-      log_d("System settings recorded to file");
+      log_d("Settings recorded to SD: %s", settingsFileName);
 
       xSemaphoreGive(xFATSemaphore);
     }
@@ -221,8 +398,7 @@ bool loadSystemSettingsFromFile()
     {
       //Assemble settings file name
       char settingsFileName[40]; //SFE_Surveyor_Settings.txt
-      strcpy(settingsFileName, platformFilePrefix);
-      strcat(settingsFileName, "_Settings.txt");
+      sprintf(settingsFileName, "%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
 
       if (sd.exists(settingsFileName))
       {
@@ -276,7 +452,7 @@ bool loadSystemSettingsFromFile()
       }
       else
       {
-        Serial.println(F("No config file found. Using settings from EEPROM."));
+        Serial.println(F("No config file found. Using settings from internal FS."));
         //The defaults of the struct will be recorded to a file later on.
         xSemaphoreGive(xFATSemaphore);
         return (false);
@@ -285,7 +461,7 @@ bool loadSystemSettingsFromFile()
     } //End Semaphore check
   } //End SD online
 
-  Serial.println(F("Config file read failed: SD offline"));
+  log_d("Config file read failed: SD offline");
   return (false); //SD offline
 }
 
@@ -341,9 +517,9 @@ bool parseLine(char* str) {
     }
   }
 
-  //  log_d("settingName: %s", settingName);
-  //  log_d("settingValue: %s", settingValue);
-  //  log_d("d: %0.3f", d);
+  //log_d("settingName: %s", settingName);
+  //log_d("settingValue: %s", settingValue);
+  //log_d("d: %0.3f", d);
 
   // Get setting name
   if (strcmp(settingName, "sizeOfSettings") == 0)
@@ -352,7 +528,7 @@ bool parseLine(char* str) {
     //If user sets sizeOfSettings to -1 in config file, RTK Surveyor will factory reset
     if (d == -1)
     {
-      factoryReset(); //Erase EEPROM, erase settings file, reset u-blox module, display message on OLED
+      factoryReset(); //Erase file system, erase settings file, reset u-blox module, display message on OLED
     }
 
     //Check to see if this setting file is compatible with this version of RTK Surveyor
@@ -374,61 +550,110 @@ bool parseLine(char* str) {
     settings.enableDisplay = d;
   else if (strcmp(settingName, "maxLogTime_minutes") == 0)
     settings.maxLogTime_minutes = d;
+  else if (strcmp(settingName, "maxLogLength_minutes") == 0)
+    settings.maxLogLength_minutes = d;
   else if (strcmp(settingName, "observationSeconds") == 0)
-    settings.observationSeconds = d;
+  {
+    if (settings.observationSeconds != d) //If a setting for the ZED has changed, apply, and trigger module config update
+    {
+      settings.observationSeconds = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "observationPositionAccuracy") == 0)
-    settings.observationPositionAccuracy = d;
+  {
+    if (settings.observationPositionAccuracy != d)
+    {
+      settings.observationPositionAccuracy = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedBase") == 0)
-    settings.fixedBase = d;
+  {
+    if (settings.fixedBase != d)
+    {
+      settings.fixedBase = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedBaseCoordinateType") == 0)
-    settings.fixedBaseCoordinateType = d;
+  {
+    if (settings.fixedBaseCoordinateType != d)
+    {
+      settings.fixedBaseCoordinateType = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedEcefX") == 0)
-    settings.fixedEcefX = d;
+  {
+    if (settings.fixedEcefX != d)
+    {
+      settings.fixedEcefX = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedEcefY") == 0)
-    settings.fixedEcefY = d;
+  {
+    if (settings.fixedEcefY != d)
+    {
+      settings.fixedEcefY = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedEcefZ") == 0)
-    settings.fixedEcefZ = d;
+  {
+    if (settings.fixedEcefZ != d)
+    {
+      settings.fixedEcefZ = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedLat") == 0)
-    settings.fixedLat = d;
+  {
+    if (settings.fixedLat != d)
+    {
+      settings.fixedLat = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedLong") == 0)
-    settings.fixedLong = d;
+  {
+    if (settings.fixedLong != d)
+    {
+      settings.fixedLong = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "fixedAltitude") == 0)
-    settings.fixedAltitude = d;
+  {
+    if (settings.fixedAltitude != d)
+    {
+      settings.fixedAltitude = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "dataPortBaud") == 0)
     settings.dataPortBaud = d;
   else if (strcmp(settingName, "radioPortBaud") == 0)
     settings.radioPortBaud = d;
-  else if (strcmp(settingName, "enableNtripServer") == 0)
-    settings.enableNtripServer = d;
-  else if (strcmp(settingName, "casterHost") == 0)
-    strcpy(settings.casterHost, settingValue);
-  else if (strcmp(settingName, "casterPort") == 0)
-    settings.casterPort = d;
-
-  else if (strcmp(settingName, "casterUser") == 0)
-    strcpy(settings.casterUser, settingValue);
-  else if (strcmp(settingName, "casterUserPW") == 0)
-    strcpy(settings.casterUserPW, settingValue);
-  else if (strcmp(settingName, "mountPointUpload") == 0)
-    strcpy(settings.mountPointUpload, settingValue);
-  else if (strcmp(settingName, "mountPointUploadPW") == 0)
-    strcpy(settings.mountPointUploadPW, settingValue);
-  else if (strcmp(settingName, "mountPointDownload") == 0)
-    strcpy(settings.mountPointDownload, settingValue);
-  else if (strcmp(settingName, "mountPointDownloadPW") == 0)
-    strcpy(settings.mountPointDownloadPW, settingValue);
-  else if (strcmp(settingName, "casterTransmitGGA") == 0)
-    settings.casterTransmitGGA = d;
-  else if (strcmp(settingName, "wifiSSID") == 0)
-    strcpy(settings.wifiSSID, settingValue);
-  else if (strcmp(settingName, "wifiPW") == 0)
-    strcpy(settings.wifiPW, settingValue);
   else if (strcmp(settingName, "surveyInStartingAccuracy") == 0)
     settings.surveyInStartingAccuracy = d;
   else if (strcmp(settingName, "measurementRate") == 0)
-    settings.measurementRate = d;
+  {
+    if (settings.measurementRate != d)
+    {
+      settings.measurementRate = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "navigationRate") == 0)
-    settings.navigationRate = d;
+  {
+    if (settings.navigationRate != d)
+    {
+      settings.navigationRate = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "enableI2Cdebug") == 0)
     settings.enableI2Cdebug = d;
   else if (strcmp(settingName, "enableHeapReport") == 0)
@@ -446,17 +671,121 @@ bool parseLine(char* str) {
   else if (strcmp(settingName, "sppTxQueueSize") == 0)
     settings.sppTxQueueSize = d;
   else if (strcmp(settingName, "dynamicModel") == 0)
-    settings.dynamicModel = d;
+  {
+    if (settings.dynamicModel != d)
+    {
+      settings.dynamicModel = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "lastState") == 0)
-    settings.lastState = (SystemState)d;
+  {
+    if (settings.lastState != (SystemState)d)
+    {
+      settings.lastState = (SystemState)d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "throttleDuringSPPCongestion") == 0)
     settings.throttleDuringSPPCongestion = d;
   else if (strcmp(settingName, "enableSensorFusion") == 0)
-    settings.enableSensorFusion = d;
+  {
+    if (settings.enableSensorFusion != d)
+    {
+      settings.enableSensorFusion = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "autoIMUmountAlignment") == 0)
-    settings.autoIMUmountAlignment = d;
+  {
+    if (settings.autoIMUmountAlignment != d)
+    {
+      settings.autoIMUmountAlignment = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "enableResetDisplay") == 0)
     settings.enableResetDisplay = d;
+  else if (strcmp(settingName, "enableExternalPulse") == 0)
+  {
+    if (settings.enableExternalPulse != d)
+    {
+      settings.enableExternalPulse = d;
+      updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "externalPulseTimeBetweenPulse_us") == 0)
+  {
+    if (settings.externalPulseTimeBetweenPulse_us != d)
+    {
+      settings.externalPulseTimeBetweenPulse_us = d;
+      updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "externalPulseLength_us") == 0)
+  {
+    if (settings.externalPulseLength_us != d)
+    {
+      settings.externalPulseLength_us = d;
+      updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "externalPulsePolarity") == 0)
+  {
+    if (settings.externalPulsePolarity != (pulseEdgeType_e)d)
+    {
+      settings.externalPulsePolarity = (pulseEdgeType_e)d;
+      updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "enableExternalHardwareEventLogging") == 0)
+  {
+    if (settings.enableExternalHardwareEventLogging != d)
+    {
+      settings.enableExternalHardwareEventLogging = d;
+      updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "profileName") == 0)
+    strcpy(settings.profileName, settingValue);
+  else if (strcmp(settingName, "enableNtripServer") == 0)
+    settings.enableNtripServer = d;
+  else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
+    strcpy(settings.ntripServer_CasterHost, settingValue);
+  else if (strcmp(settingName, "ntripServer_CasterPort") == 0)
+    settings.ntripServer_CasterPort = d;
+  else if (strcmp(settingName, "ntripServer_CasterUser") == 0)
+    strcpy(settings.ntripServer_CasterUser, settingValue);
+  else if (strcmp(settingName, "ntripServer_CasterUserPW") == 0)
+    strcpy(settings.ntripServer_CasterUserPW, settingValue);
+  else if (strcmp(settingName, "ntripServer_MountPoint") == 0)
+    strcpy(settings.ntripServer_MountPoint, settingValue);
+  else if (strcmp(settingName, "ntripServer_MountPointPW") == 0)
+    strcpy(settings.ntripServer_MountPointPW, settingValue);
+  else if (strcmp(settingName, "ntripServer_wifiSSID") == 0)
+    strcpy(settings.ntripServer_wifiSSID, settingValue);
+  else if (strcmp(settingName, "ntripServer_wifiPW") == 0)
+    strcpy(settings.ntripServer_wifiPW, settingValue);
+  else if (strcmp(settingName, "enableNtripClient") == 0)
+    settings.enableNtripClient = d;
+  else if (strcmp(settingName, "ntripClient_CasterHost") == 0)
+    strcpy(settings.ntripClient_CasterHost, settingValue);
+  else if (strcmp(settingName, "ntripClient_CasterPort") == 0)
+    settings.ntripClient_CasterPort = d;
+  else if (strcmp(settingName, "ntripClient_CasterUser") == 0)
+    strcpy(settings.ntripClient_CasterUser, settingValue);
+  else if (strcmp(settingName, "ntripClient_CasterUserPW") == 0)
+    strcpy(settings.ntripClient_CasterUserPW, settingValue);
+  else if (strcmp(settingName, "ntripClient_MountPoint") == 0)
+    strcpy(settings.ntripClient_MountPoint, settingValue);
+  else if (strcmp(settingName, "ntripClient_MountPointPW") == 0)
+    strcpy(settings.ntripClient_MountPointPW, settingValue);
+  else if (strcmp(settingName, "ntripClient_wifiSSID") == 0)
+    strcpy(settings.ntripClient_wifiSSID, settingValue);
+  else if (strcmp(settingName, "ntripClient_wifiPW") == 0)
+    strcpy(settings.ntripClient_wifiPW, settingValue);
+  else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
+    settings.ntripClient_TransmitGGA = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list
@@ -474,7 +803,12 @@ bool parseLine(char* str) {
 
         if (strcmp(settingName, tempString) == 0)
         {
-          settings.ubxConstellations[x].enabled = d;
+          if (settings.ubxConstellations[x].enabled != d)
+          {
+            settings.ubxConstellations[x].enabled = d;
+            updateZEDSettings = true;
+          }
+
           knownSetting = true;
           break;
         }
@@ -491,7 +825,12 @@ bool parseLine(char* str) {
 
         if (strcmp(settingName, tempString) == 0)
         {
-          settings.ubxMessages[x].msgRate = d;
+          if (settings.ubxMessages[x].msgRate != d)
+          {
+            settings.ubxMessages[x].msgRate = d;
+            updateZEDSettings = true;
+          }
+
           knownSetting = true;
           break;
         }
@@ -501,25 +840,11 @@ bool parseLine(char* str) {
     //Last catch
     if (knownSetting == false)
     {
-      Serial.printf("Unknown setting %s on line: %s\r\n", settingName, str);
+      Serial.printf("Unknown setting %s\r\n", settingName);
     }
   }
 
   return (true);
-}
-
-//ESP32 doesn't have erase command so we do it here
-void eepromErase()
-{
-  if (online.eeprom == false)
-  {
-    log_d("Error: EEPROM not online");
-    return;
-  }
-  for (int i = 0 ; i < EEPROM_SIZE ; i++) {
-    EEPROM.write(i, 0xFF); //Reset to all 1s
-  }
-  EEPROM.commit();
 }
 
 //The SD library doesn't have a fgets function like SD fat so recreate it here

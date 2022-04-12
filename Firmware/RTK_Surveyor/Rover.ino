@@ -2,14 +2,33 @@
 //Configure specific aspects of the receiver for rover mode
 bool configureUbloxModuleRover()
 {
+  if (online.gnss == false) return (false);
+
   bool response = true;
   int maxWait = 2000;
+
+  //If our settings haven't changed, and this is first config since power on, trust ZED's settings
+  if (updateZEDSettings == false && firstPowerOn == true)
+  {
+    firstPowerOn = false; //Next time user switches modes, new settings will be applied
+    log_d("Skipping ZED Rover configuration");
+    return (true);
+  }
+
+  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+
+  //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
+  if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
+    response &= i2cGNSS.setNavigationFrequency(1, maxWait);
+  if (response == false)
+    Serial.println(F("Set rate failed"));
 
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {
     if (i2cGNSS.getSurveyInActive(100) == true)
     {
+      log_d("Disabling survey");
       response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
       if (response == false)
         Serial.println(F("Disable Survey failed"));
@@ -26,11 +45,10 @@ bool configureUbloxModuleRover()
 
 #define OUTPUT_SETTING 14
 
-  //Turn off all traffic except UBX to reduce I2C bus errors and ESP32 resets as much as possible
   getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX))
-    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX); //Set the I2C port to output UBX (config)
-  //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3); //Not a valid state. Goes to UBX+I2C+ RTCM3 - Set the I2C port to output UBX (config), and RTCM3 (casting)
+    //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX); //Turn off all traffic except UBX to reduce I2C bus errors and ESP32 resets as much as possible
+    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //We need NMEA GGA output for NTRIP Client.
 
   //RTCM is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
@@ -47,6 +65,10 @@ bool configureUbloxModuleRover()
 
   if (response == false)
     Serial.println(F("Disable RTCM failed"));
+
+  response = i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GN); //Turn GNGGA back on after NTRIP Client
+  if (response == false)
+    Serial.println(F("setMainTalkerID failed"));
 
   response = setNMEASettings(); //Enable high precision NMEA and extended sentences
   if (response == false)
@@ -71,6 +93,10 @@ bool configureUbloxModuleRover()
   }
   if (response == false)
     Serial.println(F("Set Nav Rate failed"));
+
+  response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
+  if (response == false)
+    Serial.println(F("Module failed to save."));
 
   return (response);
 }
@@ -242,54 +268,148 @@ void updateAccuracyLEDs()
   {
     lastAccuracyLEDUpdate = millis();
 
-    uint32_t accuracy = i2cGNSS.getHorizontalAccuracy();
-
-    if (accuracy > 0)
+    if (online.gnss == true)
     {
-      // Convert the horizontal accuracy (mm * 10^-1) to a float
-      float f_accuracy = accuracy;
-      f_accuracy = f_accuracy / 10000.0; // Convert from mm * 10^-1 to m
-
-      Serial.print(F("Rover Accuracy (m): "));
-      Serial.print(f_accuracy, 4); // Print the accuracy with 4 decimal places
-      Serial.println();
-
-      if (productVariant == RTK_SURVEYOR)
+      if (horizontalAccuracy > 0)
       {
-        if (f_accuracy <= 0.02)
+        Serial.print(F("Rover Accuracy (m): "));
+        Serial.print(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
+        Serial.println();
+
+        if (productVariant == RTK_SURVEYOR)
         {
-          digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
-          digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
-          digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+          if (horizontalAccuracy <= 0.02)
+          {
+            digitalWrite(pin_positionAccuracyLED_1cm, HIGH);
+            digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+            digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+          }
+          else if (horizontalAccuracy <= 0.100)
+          {
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
+            digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+          }
+          else if (horizontalAccuracy <= 1.0000)
+          {
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
+          }
+          else if (horizontalAccuracy > 1.0)
+          {
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
+          }
         }
-        else if (f_accuracy <= 0.100)
-        {
-          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_10cm, HIGH);
-          digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
-        }
-        else if (f_accuracy <= 1.0000)
-        {
-          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_100cm, HIGH);
-        }
-        else if (f_accuracy > 1.0)
-        {
-          digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-          digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-        }
+      }
+      else
+      {
+        Serial.print(F("Rover Accuracy: "));
+        Serial.print(horizontalAccuracy);
+        Serial.print(" ");
+        Serial.print(F("No lock. SIV: "));
+        Serial.print(numSV);
+        Serial.println();
+      }
+    } //End GNSS online checking
+  } //Check every 2000ms
+}
+
+//These are the callbacks that get regularly called, globals are updated
+void storePVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
+{
+  altitude = ubxDataStruct->height / 1000.0;
+
+  gnssDay = ubxDataStruct->day;
+  gnssMonth = ubxDataStruct->month;
+  gnssYear = ubxDataStruct->year;
+
+  gnssHour = ubxDataStruct->hour;
+  gnssMinute = ubxDataStruct->min;
+  gnssSecond = ubxDataStruct->sec;
+  mseconds = ceil((ubxDataStruct->iTOW % 1000) / 10.0); //Limit to first two digits
+
+  numSV = ubxDataStruct->numSV;
+  fixType = ubxDataStruct->fixType;
+  carrSoln = ubxDataStruct->flags.bits.carrSoln;
+
+  validDate = ubxDataStruct->valid.bits.validDate;
+  validTime = ubxDataStruct->valid.bits.validTime;
+  confirmedDate = ubxDataStruct->flags2.bits.confirmedDate;
+  confirmedTime = ubxDataStruct->flags2.bits.confirmedTime;
+
+  ubloxUpdated = true;
+}
+
+void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)
+{
+  horizontalAccuracy = ((float)ubxDataStruct->hAcc) / 10000.0; // Convert hAcc from mm*0.1 to m
+
+  latitude = ((double)ubxDataStruct->lat) / 10000000.0;
+  latitude += ((double)ubxDataStruct->latHp) / 1000000000.0;
+  longitude = ((double)ubxDataStruct->lon) / 10000000.0;
+  longitude += ((double)ubxDataStruct->lonHp) / 1000000000.0;
+}
+
+//Used during Rover+WiFi NTRIP Client mode to provide caster with GGA sentence every 10 seconds
+void pushGPGGA(NMEA_GGA_data_t *nmeaData)
+{
+#ifdef COMPILE_WIFI
+  //Provide the caster with our current position as needed
+  if ((ntripClient.connected() == true) && (settings.ntripClient_TransmitGGA == true))
+  {
+    log_d("Pushing GGA to server: %s", nmeaData->nmea); //nmea is printable (NULL-terminated) and already has \r\n on the end
+
+    ntripClient.print((const char *)nmeaData->nmea); //Push our current GGA sentence to caster
+  }
+#endif
+}
+
+//Check for the arrival of any correction data. Push it to the GNSS.
+//Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
+void updateNTRIPClient()
+{
+#ifdef COMPILE_WIFI
+  if (online.ntripClient == true)
+  {
+    if (ntripClient.connected() == true) // Check that the connection is still open
+    {
+      uint8_t rtcmData[512 * 4]; //Most incoming data is around 500 bytes but may be larger
+      size_t rtcmCount = 0;
+
+      //Collect any available RTCM data
+      while (ntripClient.available())
+      {
+        rtcmData[rtcmCount++] = ntripClient.read();
+        if (rtcmCount == sizeof(rtcmData))
+          break;
+      }
+
+      if (rtcmCount > 0)
+      {
+        lastReceivedRTCM_ms = millis();
+
+        //Push RTCM to GNSS module over I2C
+        i2cGNSS.pushRawData(rtcmData, rtcmCount);
+
+        //log_d("Pushed %d RTCM bytes to ZED", rtcmCount);
       }
     }
     else
     {
-      Serial.print(F("Rover Accuracy: "));
-      Serial.print(accuracy);
-      Serial.print(" ");
-      Serial.print(F("No lock. SIV: "));
-      Serial.print(i2cGNSS.getSIV());
-      Serial.println();
+      Serial.println(F("NTRIP Client connection dropped"));
+      online.ntripClient = false;
+    }
+
+    //Timeout if we don't have new data for maxTimeBeforeHangup_ms
+    if ((millis() - lastReceivedRTCM_ms) > maxTimeBeforeHangup_ms)
+    {
+      Serial.println(F("NTRIP Client timeout"));
+      ntripClient.stop();
+      online.ntripClient = false;
     }
   }
+#endif
 }

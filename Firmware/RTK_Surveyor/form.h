@@ -308,10 +308,9 @@ function validateFields() {
     //Base Config
     checkElementValue("observationSeconds", 60, 600, "Must be between 60 to 600", "collapseBaseConfig");
     checkElementValue("observationPositionAccuracy", 1, 5.1, "Must be between 1.0 to 5.0", "collapseBaseConfig");
-    checkElementValue("fixedEcefX", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
-    checkElementValue("fixedEcefY", -5000000, 5000000, "Must be -5000000 to 5000000", "collapseBaseConfig");
-    if (ge("fixedEcefZ").value == 0.0) ge("fixedEcefZ").value = 4084500;
-    checkElementValue("fixedEcefZ", 3300000, 5000000, "Must be 3300000 to 5000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefX", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefY", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefZ", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
     checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
     checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
     checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");

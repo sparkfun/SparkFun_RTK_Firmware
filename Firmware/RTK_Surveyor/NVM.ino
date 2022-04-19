@@ -101,7 +101,6 @@ uint8_t getProfileNumber()
   else
   {
     profileNumber = fileProfileNumber.read();
-    updateZEDSettings = fileProfileNumber.read();
     fileProfileNumber.close();
   }
 
@@ -634,9 +633,21 @@ bool parseLine(char* str) {
     }
   }
   else if (strcmp(settingName, "dataPortBaud") == 0)
-    settings.dataPortBaud = d;
+  {
+    if (settings.dataPortBaud != d)
+    {
+      settings.dataPortBaud = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "radioPortBaud") == 0)
-    settings.radioPortBaud = d;
+  {
+    if (settings.radioPortBaud != d)
+    {
+      settings.radioPortBaud = d;
+      updateZEDSettings = true;
+    }
+  }
   else if (strcmp(settingName, "surveyInStartingAccuracy") == 0)
     settings.surveyInStartingAccuracy = d;
   else if (strcmp(settingName, "measurementRate") == 0)

@@ -397,6 +397,7 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "externalPulsePolarity", settings.externalPulsePolarity);
   stringRecord(settingsCSV, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
   stringRecord(settingsCSV, "profileName", settings.profileName);
+  stringRecord(settingsCSV, "serialTimeoutGNSS", settings.serialTimeoutGNSS);
 
   strcat(settingsCSV, "\0");
   Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
@@ -511,6 +512,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.ntripClient_wifiPW, settingValueStr);
   else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
     settings.ntripClient_TransmitGGA = settingValueBool;
+  else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
+    settings.serialTimeoutGNSS = settingValue;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

@@ -341,6 +341,8 @@ typedef struct struct_settings {
   char ntripClient_wifiPW[50] = "parachutes";
   bool ntripClient_TransmitGGA = true;
 
+  int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
+
 } Settings;
 Settings settings;
 

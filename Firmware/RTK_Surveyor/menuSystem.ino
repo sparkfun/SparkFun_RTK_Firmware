@@ -172,6 +172,9 @@ void menuDebug()
     if (settings.enableResetDisplay == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
+    Serial.print(F("9) GNSS Serial Timeout: "));
+    Serial.println(settings.serialTimeoutGNSS);
+
     Serial.println(F("e) Erase LittleFS"));
 
     Serial.println(F("r) Force system reset"));
@@ -247,6 +250,19 @@ void menuDebug()
       {
         settings.resetCount = 0;
         recordSystemSettings(); //Record to NVM
+      }
+    }
+    else if (incoming == '9')
+    {
+      Serial.print(F("Enter GNSS Serial Timeout in milliseconds (0 to 1000): "));
+      uint16_t serialTimeoutGNSS = getNumber(menuTimeout); //Timeout after x seconds
+      if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
+      {
+        Serial.println(F("Error: Timeout is out of range"));
+      }
+      else
+      {
+        settings.serialTimeoutGNSS = serialTimeoutGNSS; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 'e')

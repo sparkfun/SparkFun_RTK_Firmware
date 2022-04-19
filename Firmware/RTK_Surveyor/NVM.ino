@@ -217,7 +217,7 @@ void recordProfileNumber(uint8_t profileNumber, bool markForUpdate)
     return;
   }
   fileProfileNumber.write(profileNumber);
-  fileProfileNumber.write(markForUpdate); //If true, ZED will be config'd next POR  
+  fileProfileNumber.write(markForUpdate); //If true, ZED will be config'd next POR
   fileProfileNumber.close();
 }
 
@@ -357,6 +357,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("ntripClient_wifiSSID=" + (String)settings.ntripClient_wifiSSID);
       settingsFile.println("ntripClient_wifiPW=" + (String)settings.ntripClient_wifiPW);
       settingsFile.println("ntripClient_TransmitGGA=" + (String)settings.ntripClient_TransmitGGA);
+      settingsFile.println("serialTimeoutGNSS=" + (String)settings.serialTimeoutGNSS);
 
       //Record constellation settings
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -786,6 +787,8 @@ bool parseLine(char* str) {
     strcpy(settings.ntripClient_wifiPW, settingValue);
   else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
     settings.ntripClient_TransmitGGA = d;
+  else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
+    settings.serialTimeoutGNSS = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

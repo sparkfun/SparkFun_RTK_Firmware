@@ -2,8 +2,16 @@
   Web server test program
 */
 
+//#define NO_LIBRARY              1
+//#define INDEX_PAGE              1
+//#define NOT_FOUND_PAGE          1
+//#define MARK_BOUNDARY           1
+
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#ifndef NO_LIBRARY
+#include <SdCardServer.h>
+#endif  // NO_LIBRARY
 #include <SPI.h>
 #include <pgmspace.h>
 #include <WiFi.h>
@@ -16,8 +24,6 @@
 int keyIndex = 0;
 char password[1024];          // WiFi network password
 char ssid[1024];              // WiFi network name
-
-#define MAX_FILE_NAME_SIZE        (256 * 3)
 
 const int pin_microSD_CS = 25;
 
@@ -35,11 +41,9 @@ const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 char htmlBuffer[256];
 Online online;
 SdFat sd;
-int sdCardEmpty;
 int sdCardMounted;
 float sdCardSizeMB;
 SdFile sdFile;
-int sdListingState;
 SdFile sdRootDir;
 AsyncWebServer server(80);
 Settings settings;
@@ -48,20 +52,24 @@ int wifiBeginCalled;
 int wifiConnected;
 SemaphoreHandle_t xFATSemaphore;
 
+#ifdef NO_LIBRARY
+#define MAX_FILE_NAME_SIZE        (256 * 3)
+
+int sdCardEmpty;
+int sdListingState;
+
 enum {
   LS_HEADER = 0,
   LS_DISPLAY_FILES,
   LS_TRAILER,
   LS_DONE
 } LISTING_STATE;
+#endif  // NO_LIBRARY
 
 // html document
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-prog_char htmlHeaderStart[] PROGMEM = R"rawliteral(<!DOCTYPE HTML>
-<html>
-<head>
-  <title>)rawliteral";
+prog_char htmlHeaderStart[] PROGMEM = "<!DOCTYPE HTML>\n<html lang=\"en\">\n<head>\n  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>\n  <title>";
 
 prog_char htmlHeaderEndBodyStart[] PROGMEM = R"rawliteral(</title>
 </head>
@@ -92,10 +100,10 @@ prog_char htmlListItemStart[] PROGMEM = R"rawliteral(    <li>)rawliteral";
 prog_char htmlListItemEnd[] PROGMEM = R"rawliteral(</li>
 )rawliteral";
 
-prog_char htmlUlListStart[] PROGMEM = R"rawliteral(  <ul>
+prog_char htmlUlListStart[] PROGMEM = R"rawliteral(  <ol>
 )rawliteral";
 
-prog_char htmlUlListEnd[] PROGMEM = R"rawliteral(  </ul>
+prog_char htmlUlListEnd[] PROGMEM = R"rawliteral(  </ol>
 )rawliteral";
 
 // sd/
@@ -120,11 +128,19 @@ prog_char sdDirectory[] PROGMEM = "/sd/";
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 const char htmlTitle[] PROGMEM = "SD Card Server";
 
+#ifdef NO_LIBRARY
 const char index_html[] PROGMEM = R"rawliteral(%H%%T%%/HB%
   <h1>%T%</h1>
   <p>%A%%SD%%Q%>%H1%</a></p>
 %/B%
 )rawliteral";
+#else   // NO_LIBRARY
+const char index_html[] PROGMEM = R"rawliteral(%H%%T%%/HB%
+  <h1>%T%</h1>
+  <p>%SD%</p>
+%/B%
+)rawliteral";
+#endif  // NO_LIBRARY
 
 const char no_sd_card_html[] PROGMEM = R"rawliteral(%H%%T%%/HB%
   <h1>%T%</h1>
@@ -139,6 +155,8 @@ const char not_formatted_html[] PROGMEM = R"rawliteral(%H%%T%%/HB%
 )rawliteral";
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+#ifdef NO_LIBRARY
 class HtmlPrint : public Print
 {
     uint8_t * buf;
@@ -165,6 +183,7 @@ public:
         return size;
     }
 };
+#endif  // NO_LIBRARY
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 void beginSD()
@@ -376,7 +395,13 @@ int mountSdCard(void) {
     return sdCardMounted;
 }
 
+#ifndef NO_LIBRARY
+SdCardServer sdCardServer(&sd, mountSdCard, "/sd/", "SD Card Files");
+#endif  // NO_LIBRARY
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#ifdef  INDEX_PAGE
+
 String processor(const String& var) {
     if (var == "A") {
         strcpy_P(htmlBuffer, htmlAnchorStart);
@@ -403,8 +428,15 @@ String processor(const String& var) {
         return String(htmlListItemStart);
     if (var == "/LI")
         return String(htmlListItemEnd);
+#ifdef NO_LIBRARY
     if (var == "SD")
         return String(sdDirectory);
+#else   // NO_LIBRARY
+    if (var == "SD") {
+        sdCardServer.sdCardListingWebPageLink((char *)&htmlBuffer[0], sizeof(htmlBuffer), "SD Card Files", "target=\"_blank\"");
+        return String(htmlBuffer);
+    }
+#endif  // NO_LIBRARY
     if (var == "SZ") {
         sprintf (htmlBuffer, "%3.0f %s",
                  sdCardSizeMB < 1000. ? sdCardSizeMB : sdCardSizeMB / 1000.,
@@ -428,7 +460,11 @@ indexHtml (AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", mountSdCard() ? index_html : no_sd_card_html, processor);
 }
 
+#endif  // INDEX_PAGE
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+#ifdef NO_LIBRARY
 void
 buildHtmlAnchor(HtmlPrint * htmlPrint, uint8_t *buffer) {
     uint64_t u64;
@@ -492,6 +528,8 @@ int addFileName(HtmlPrint * htmlPrint, uint8_t * buffer) {
         return strlen((char *)buffer);
 
     case LS_TRAILER:
+        if (!sdCardEmpty)
+            strcat_P((char*)buffer, htmlUlListEnd);
         strcat_P((char *)buffer, htmlBodyEnd);
         sdListingState = LS_DONE;
         return strlen((char *)buffer);
@@ -513,8 +551,17 @@ int sdCardListing(uint8_t * buffer, size_t maxLen) {
     do {
         // Determine if the buffer is full enough
         bytesWritten = buffer - bufferStart;
-        if (maxLen < MAX_FILE_NAME_SIZE)
+        if (maxLen < MAX_FILE_NAME_SIZE) {
+#ifdef  MARK_BOUNDARY
+            if (bytesWritten) {
+                Serial.println("Next buffer");
+                strcat ((char *)buffer, "--------------------<br>\n");
+                buffer += strlen((char *)buffer);
+                bytesWritten = buffer - bufferStart;
+            }
+#endif  // MARK_BOUNDARY
             break;
+        }
 
         // Add the next file name
         *buffer = 0;
@@ -543,6 +590,7 @@ void sdDirectoryListing (AsyncWebServerRequest *request) {
         request->send(404);
     else {
         // Open the root directory
+        sdCardEmpty = 1;
         sdRootDir = SdFile();
         if (!sdRootDir.openRoot(sd.vol())) {
             // Invalid SD card format
@@ -580,9 +628,18 @@ int returnFile(uint8_t * buffer, size_t maxLen) {
     // Return the number of bytes read
     return bytesRead;
 }
+#endif  // NO_LIBRARY
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#ifdef  NOT_FOUND_PAGE
+
 void httpRequestNotFound(AsyncWebServerRequest *request) {
+#ifndef NO_LIBRARY
+        // Display the SD card page if necessary
+        if (sdCardServer.isSdCardWebPage(request))
+            return;
+#else   // NO_LIBRARY
+
     int dirLength;
     const char * filename;
     const char * url;
@@ -626,10 +683,12 @@ void httpRequestNotFound(AsyncWebServerRequest *request) {
         request->send(response);
         return;
     } while (0);
+#endif  // NO_LIBRARY
 
     // URL not found
     request->send(404);
 }
+#endif  // NOT_FOUND_PAGE
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 void setup() {
@@ -717,19 +776,29 @@ void loop() {
             displayWiFiGatewayIp();
 
             // index.html
+#ifdef  INDEX_PAGE
             server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
                 indexHtml (request);
             });
+#else   // INDEX_PAGE
+            sdCardServer.sdCardWebSite(&server);
+#endif  // INDEX_PAGE
 
+#ifdef  NO_LIBRARY
             //  /sd/
             server.on("/sd/", HTTP_GET, [](AsyncWebServerRequest *request) {
                 sdDirectoryListing (request);
             });
+#endif  // NO_LIBRARY
 
             //  All other pages
+#ifdef  NOT_FOUND_PAGE
             server.onNotFound([](AsyncWebServerRequest *request) {
                 httpRequestNotFound(request);
             });
+#else   // NOT_FOUND_PAGE
+            sdCardServer.onNotFound(&server);
+#endif  // NOT_FOUND_PAGE
 
             // Start server
             server.begin();

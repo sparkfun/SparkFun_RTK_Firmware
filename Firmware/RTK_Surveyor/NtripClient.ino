@@ -263,6 +263,9 @@ void ntripClientStop(bool done)
 #ifdef  COMPILE_WIFI
   if (ntripClient)
   {
+    //Stop the SD card server
+    sdCardServerEnd();
+
     //Break the NTRIP client connection if necessary
     if (ntripClient->connected())
       ntripClient->stop();
@@ -329,6 +332,9 @@ void ntripClientUpdate()
       {
         //WiFi connection established
         ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTED);
+
+        // Start the SD card server
+        sdCardServerBegin(&server, true, true);
       }
       break;
 

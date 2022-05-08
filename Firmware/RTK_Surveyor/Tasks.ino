@@ -132,6 +132,39 @@ void ButtonCheckTask(void *e)
 
   while (true)
   {
+    /* RTK Surveyor
+
+                                  .----------------------------.
+                                  |                            |
+                                  V                            |
+                        .------------------.                   |
+                        |     Power On     |                   |
+                        '------------------'                   |
+                                  |                            |
+                                  | Setup button = 0           |
+                                  V                            |
+                        .------------------.                   |
+                .------>|    Rover Mode    |                   |
+                |       '------------------'                   |
+                |                 |                            |
+                |                 | Setup button = 1           |
+                |                 V                            |
+                |       .------------------.                   |
+                '-------|    Base Mode     |                   |
+       Setup button = 0 '------------------'                   |
+       after long time    |             |                      |
+                          |             | Setup button = 0     |
+         Setup button = 0 |             | after short time     |
+         after short time |             | (< 500 mSec)         |
+             (< 500 mSec) |             |                      |
+  STATE_ROVER_NOT_STARTED |             |                      |
+                          V             V                      |
+          .------------------.   .------------------.          |
+          |    Test Mode     |   | WiFi Config Mode |----------'
+          '------------------'   '------------------'
+
+    */
+
     if (productVariant == RTK_SURVEYOR)
     {
       setupBtn->read();

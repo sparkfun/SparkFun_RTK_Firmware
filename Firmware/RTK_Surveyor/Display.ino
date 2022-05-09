@@ -1424,9 +1424,12 @@ void paintProfile(uint8_t profileUnit)
   char profileName[8 + 1];
   if (getProfileName(profileUnit, profileName, 8) == true) //Load the profile name, limited to 8 chars
   {
+    settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
+    recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
+
     //Lookup profileNumber based on unit
     uint8_t profileNumber = getProfileNumberFromUnit(profileUnit);
-    recordProfileNumber(profileNumber, true); //Update internal settings with user's choice, mark unit for config update
+    recordProfileNumber(profileNumber); //Update internal settings with user's choice, mark unit for config update
 
     snprintf(profileMessage, sizeof(profileMessage), "Loading %s", profileName);
     displayMessage(profileMessage, 2000);
@@ -1548,7 +1551,7 @@ void paintSystemTest()
       //begin() attempts 3 connections
       if (myGNSS.begin(serialGNSS) == true)
       {
-      
+
         zedUartPassed = true;
         oled.print(F("OK"));
       }

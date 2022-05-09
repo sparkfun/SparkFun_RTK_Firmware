@@ -429,7 +429,7 @@ void configureGNSS()
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
   //the settings file or internal settings.
-  if (updateZEDSettings == false)
+  if (settings.updateZEDSettings == false)
   {
     log_d("Skipping ZED configuration");
     return;
@@ -549,8 +549,8 @@ void beginSystemState()
   {
     //If the rocker switch was moved while off, force module settings
     //When switch is set to '1' = BASE, pin will be shorted to ground
-    if (settings.lastState == STATE_ROVER_NOT_STARTED && digitalRead(pin_setupButton) == LOW) updateZEDSettings = true;
-    else if (settings.lastState == STATE_BASE_NOT_STARTED && digitalRead(pin_setupButton) == HIGH) updateZEDSettings = true;
+    if (settings.lastState == STATE_ROVER_NOT_STARTED && digitalRead(pin_setupButton) == LOW) settings.updateZEDSettings = true;
+    else if (settings.lastState == STATE_BASE_NOT_STARTED && digitalRead(pin_setupButton) == HIGH) settings.updateZEDSettings = true;
 
     systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask() will correct as needed.
 
@@ -603,7 +603,7 @@ bool beginExternalTriggers()
   if (online.gnss == false) return (false);
 
   //If our settings haven't changed, trust ZED's settings
-  if (updateZEDSettings == false)
+  if (settings.updateZEDSettings == false)
   {
     log_d("Skipping ZED Trigger configuration");
     return (true);

@@ -1,4 +1,6 @@
 //System can enter a variety of states starting at Rover_No_Fix at power on
+//System can enter a variety of states
+//See statemachine diagram at: https://lucid.app/lucidchart/53519501-9fa5-4352-aa40-673f88ca0c9b/edit?invitationId=inv_ebd4b988-513d-4169-93fd-c291851108f8
 typedef enum
 {
   STATE_ROVER_NOT_STARTED = 0,
@@ -343,6 +345,7 @@ typedef struct struct_settings {
 
   int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
 
+  bool updateZEDSettings = true; //When in doubt, update the ZED with current settings
 } Settings;
 Settings settings;
 

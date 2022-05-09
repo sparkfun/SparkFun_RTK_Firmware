@@ -47,6 +47,7 @@
 
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 12;
+const int FIRMWARE_VERSION_MINOR = 13;
 
 #define COMPILE_WIFI //Comment out to remove all WiFi functionality
 #define COMPILE_BT //Comment out to disable all Bluetooth
@@ -109,6 +110,7 @@ const char *rtkProfileSettings = "SFERTK"; //Holds the profileNumber
 const char *rtkSettings[] = {"SFERTK_0", "SFERTK_1", "SFERTK_2", "SFERTK_3"}; //User profiles
 #define MAX_PROFILE_COUNT 4
 uint8_t activeProfiles = 1;
+uint8_t profileNumber = MAX_PROFILE_COUNT; //profileNumber gets set once at boot to save loading time
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time
@@ -419,7 +421,6 @@ bool newAPSettings = false; //Goes true when new setting is received via AP conf
 
 unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update via AP config.
 int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
-bool updateZEDSettings = false; //If settings from file are different from LittleFS, config the ZED
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
 unsigned long clientWiFiStartTime = 0; //If we cannot connect to local wifi for NTRIP client, give up/go to Rover after 8 seconds

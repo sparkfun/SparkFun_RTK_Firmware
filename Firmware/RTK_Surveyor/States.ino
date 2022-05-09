@@ -59,6 +59,7 @@ void updateSystemState()
           startBluetooth(); //Turn on Bluetooth with 'Rover' name
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
+          settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
           settings.lastState = STATE_ROVER_NOT_STARTED;
           recordSystemSettings(); //Record this state for next POR
 
@@ -175,7 +176,7 @@ void updateSystemState()
             char serverRequest[SERVER_BUFFER_SIZE];
             snprintf(serverRequest,
                      SERVER_BUFFER_SIZE,
-                     "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun SparkFun_RTK_%s_v%d.%d\r\n",
+                     "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun_RTK_%s_v%d.%d\r\n",
                      settings.ntripClient_MountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
             // Set up the credentials
@@ -333,6 +334,7 @@ void updateSystemState()
 
           if (configureUbloxModuleBase() == true)
           {
+            settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
             settings.lastState = STATE_BASE_NOT_STARTED; //Record this state for next POR
             recordSystemSettings(); //Record this state for next POR
 
@@ -851,6 +853,7 @@ void updateSystemState()
               Serial.println();
 
               parseIncomingSettings();
+              settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
               recordSystemSettings(); //Record these settings to unit
 
               //Clear buffer

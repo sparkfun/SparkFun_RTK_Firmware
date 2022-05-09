@@ -100,17 +100,24 @@ void menuMain()
 }
 
 //Change system wide settings based on current user profile
+//Ways to change the ZED settings:
+//Menus - we apply ZED changes at the exit of each sub menu
+//Settings file - we detect differences between NVM and settings txt file and updateZEDSettings = true
+//Profile - Before profile is changed, set updateZEDSettings = true
+//AP - once new settings are parsed, set updateZEDSettings = true
+//Setup button - 
+//Factory reset - updatesZEDSettings = true by default
 void menuUserProfiles()
 {
   int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, ECEF coords, etc).
-  uint8_t originalProfileNumber = getProfileNumber();
+  uint8_t originalProfileNumber = profileNumber;
 
   while (1)
   {
     Serial.println();
     Serial.println(F("Menu: User Profiles Menu"));
 
-    Serial.printf("Current profile: %d-%s\n\r", getProfileNumber() + 1, settings.profileName);
+    Serial.printf("Current profile: %d-%s\n\r", profileNumber + 1, settings.profileName);
     Serial.println("1) Change profile");
 
     Serial.printf("2) Edit profile name: %s\n\r", settings.profileName);
@@ -166,9 +173,11 @@ void menuUserProfiles()
       }
       else
       {
+        settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
         recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
 
-        recordProfileNumber(incoming - 1, true); //Align to array, reconfig ZED at next POR
+        recordProfileNumber(incoming - 1); //Align to array
+        profileNumber = incoming - 1;
       }
       //Reset settings to default
       Settings defaultSettings;
@@ -176,7 +185,7 @@ void menuUserProfiles()
 
       //Load the settings file with the most recent profileNumber
       //If the settings file doesn't exist, defaults will be applied
-      getSettings(getProfileNumber(), settings);
+      getSettings(profileNumber, settings);
     }
     else if (incoming == '2')
     {
@@ -195,7 +204,7 @@ void menuUserProfiles()
       printUnknown(incoming);
   }
 
-  if (originalProfileNumber != getProfileNumber())
+  if (originalProfileNumber != profileNumber)
   {
     Serial.println(F("Changing profiles. Rebooting. Goodbye!"));
     delay(2000);
@@ -216,7 +225,7 @@ void factoryReset()
 
   //With the given profile number, load appropriate settings file
   char settingsFileName[40];
-  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
 
   LittleFS.format(); //Don't format before we getProfileNumber()
 

@@ -19,7 +19,7 @@
 void loadSettings()
 {
   //First, look up the last used profile number
-  uint8_t profileNumber = getProfileNumber();
+  loadProfileNumber();
 
   //Load the settings file into a temp holder until we know it's valid
   Settings tempSettings;
@@ -86,17 +86,17 @@ bool getSettings(uint8_t fileNumber, Settings &localSettings)
 }
 
 //Load the special profileNumber file in LittleFS and return one byte value
-uint8_t getProfileNumber()
+void loadProfileNumber()
 {
-  uint8_t profileNumber = 0;
-
+  if(profileNumber < MAX_PROFILE_COUNT) return; //Only load it once
+  
   File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_READ);
   if (!fileProfileNumber)
   {
     log_d("profileNumber.txt not found");
     profileNumber = 0;
-    updateZEDSettings = true; //Force module update
-    recordProfileNumber(profileNumber, false); //Record profile but we don't need a module config at next POR
+    settings.updateZEDSettings = true; //Force module update
+    recordProfileNumber(profileNumber); //Record profile
   }
   else
   {
@@ -109,12 +109,11 @@ uint8_t getProfileNumber()
   {
     log_d("ProfileNumber invalid. Going to zero.");
     profileNumber = 0;
-    updateZEDSettings = true; //Force module update
-    recordProfileNumber(profileNumber, false); //Record profile but we don't need a module config at next POR
+    settings.updateZEDSettings = true; //Force module update
+    recordProfileNumber(profileNumber); //Record profile
   }
 
   log_d("Using profile #%d", profileNumber);
-  return (profileNumber);
 }
 
 //Return the number of non-empty settings files
@@ -207,7 +206,7 @@ uint8_t getProfileNumberFromUnit(uint8_t profileUnit)
 }
 
 //Record the given profile number as well as a config bool
-void recordProfileNumber(uint8_t profileNumber, bool markForUpdate)
+void recordProfileNumber(uint8_t profileNumber)
 {
   File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_WRITE);
   if (!fileProfileNumber)
@@ -216,7 +215,6 @@ void recordProfileNumber(uint8_t profileNumber, bool markForUpdate)
     return;
   }
   fileProfileNumber.write(profileNumber);
-  fileProfileNumber.write(markForUpdate); //If true, ZED will be config'd next POR
   fileProfileNumber.close();
 }
 
@@ -224,7 +222,7 @@ void recordProfileNumber(uint8_t profileNumber, bool markForUpdate)
 void recordSystemSettings()
 {
   char settingsFileName[40];
-  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
 
   File settingsFile = LittleFS.open(settingsFileName, FILE_WRITE);
   if (!settingsFile)
@@ -249,7 +247,7 @@ void recordSystemSettings()
 void loadSettingsPartial()
 {
   //First, look up the last used profile number
-  uint8_t profileNumber = getProfileNumber();
+  loadProfileNumber();
 
   //Load the settings file into a temp holder until we know it's valid
   Settings tempSettings;
@@ -269,7 +267,7 @@ void recordSystemSettingsToFile()
     {
       //Assemble settings file name
       char settingsFileName[40]; //SFE_Surveyor_Settings.txt
-      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
+      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
 
       if (sd.exists(settingsFileName))
         sd.remove(settingsFileName);
@@ -357,6 +355,7 @@ void recordSystemSettingsToFile()
       settingsFile.println("ntripClient_wifiPW=" + (String)settings.ntripClient_wifiPW);
       settingsFile.println("ntripClient_TransmitGGA=" + (String)settings.ntripClient_TransmitGGA);
       settingsFile.println("serialTimeoutGNSS=" + (String)settings.serialTimeoutGNSS);
+      settingsFile.println("updateZEDSettings=" + (String)settings.updateZEDSettings);
 
       //Record constellation settings
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -398,7 +397,7 @@ bool loadSystemSettingsFromFile()
     {
       //Assemble settings file name
       char settingsFileName[40]; //SFE_Surveyor_Settings.txt
-      sprintf(settingsFileName, "%s_Settings_%d.txt", platformFilePrefix, getProfileNumber());
+      sprintf(settingsFileName, "%s_Settings_%d.txt", platformFilePrefix, profileNumber);
 
       if (sd.exists(settingsFileName))
       {
@@ -557,7 +556,7 @@ bool parseLine(char* str) {
     if (settings.observationSeconds != d) //If a setting for the ZED has changed, apply, and trigger module config update
     {
       settings.observationSeconds = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "observationPositionAccuracy") == 0)
@@ -565,7 +564,7 @@ bool parseLine(char* str) {
     if (settings.observationPositionAccuracy != d)
     {
       settings.observationPositionAccuracy = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "fixedBase") == 0)
@@ -573,7 +572,7 @@ bool parseLine(char* str) {
     if (settings.fixedBase != d)
     {
       settings.fixedBase = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "fixedBaseCoordinateType") == 0)
@@ -581,7 +580,7 @@ bool parseLine(char* str) {
     if (settings.fixedBaseCoordinateType != d)
     {
       settings.fixedBaseCoordinateType = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "fixedEcefX") == 0)
@@ -589,7 +588,7 @@ bool parseLine(char* str) {
     if (settings.fixedEcefX != d)
     {
       settings.fixedEcefX = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "fixedEcefY") == 0)
@@ -597,7 +596,7 @@ bool parseLine(char* str) {
     if (settings.fixedEcefY != d)
     {
       settings.fixedEcefY = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "fixedEcefZ") == 0)
@@ -605,7 +604,7 @@ bool parseLine(char* str) {
     if (settings.fixedEcefZ != d)
     {
       settings.fixedEcefZ = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "fixedLat") == 0)
@@ -613,7 +612,7 @@ bool parseLine(char* str) {
     if (settings.fixedLat != d)
     {
       settings.fixedLat = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "fixedLong") == 0)
@@ -621,7 +620,7 @@ bool parseLine(char* str) {
     if (settings.fixedLong != d)
     {
       settings.fixedLong = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "fixedAltitude") == 0)
@@ -629,7 +628,7 @@ bool parseLine(char* str) {
     if (settings.fixedAltitude != d)
     {
       settings.fixedAltitude = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "dataPortBaud") == 0)
@@ -637,7 +636,7 @@ bool parseLine(char* str) {
     if (settings.dataPortBaud != d)
     {
       settings.dataPortBaud = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "radioPortBaud") == 0)
@@ -645,7 +644,7 @@ bool parseLine(char* str) {
     if (settings.radioPortBaud != d)
     {
       settings.radioPortBaud = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "surveyInStartingAccuracy") == 0)
@@ -655,7 +654,7 @@ bool parseLine(char* str) {
     if (settings.measurementRate != d)
     {
       settings.measurementRate = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "navigationRate") == 0)
@@ -663,7 +662,7 @@ bool parseLine(char* str) {
     if (settings.navigationRate != d)
     {
       settings.navigationRate = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "enableI2Cdebug") == 0)
@@ -687,7 +686,7 @@ bool parseLine(char* str) {
     if (settings.dynamicModel != d)
     {
       settings.dynamicModel = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "lastState") == 0)
@@ -695,7 +694,7 @@ bool parseLine(char* str) {
     if (settings.lastState != (SystemState)d)
     {
       settings.lastState = (SystemState)d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "throttleDuringSPPCongestion") == 0)
@@ -705,7 +704,7 @@ bool parseLine(char* str) {
     if (settings.enableSensorFusion != d)
     {
       settings.enableSensorFusion = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "autoIMUmountAlignment") == 0)
@@ -713,7 +712,7 @@ bool parseLine(char* str) {
     if (settings.autoIMUmountAlignment != d)
     {
       settings.autoIMUmountAlignment = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "enableResetDisplay") == 0)
@@ -723,7 +722,7 @@ bool parseLine(char* str) {
     if (settings.enableExternalPulse != d)
     {
       settings.enableExternalPulse = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "externalPulseTimeBetweenPulse_us") == 0)
@@ -731,7 +730,7 @@ bool parseLine(char* str) {
     if (settings.externalPulseTimeBetweenPulse_us != d)
     {
       settings.externalPulseTimeBetweenPulse_us = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "externalPulseLength_us") == 0)
@@ -739,7 +738,7 @@ bool parseLine(char* str) {
     if (settings.externalPulseLength_us != d)
     {
       settings.externalPulseLength_us = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "externalPulsePolarity") == 0)
@@ -747,7 +746,7 @@ bool parseLine(char* str) {
     if (settings.externalPulsePolarity != (pulseEdgeType_e)d)
     {
       settings.externalPulsePolarity = (pulseEdgeType_e)d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "enableExternalHardwareEventLogging") == 0)
@@ -755,7 +754,7 @@ bool parseLine(char* str) {
     if (settings.enableExternalHardwareEventLogging != d)
     {
       settings.enableExternalHardwareEventLogging = d;
-      updateZEDSettings = true;
+      settings.updateZEDSettings = true;
     }
   }
   else if (strcmp(settingName, "profileName") == 0)
@@ -800,6 +799,11 @@ bool parseLine(char* str) {
     settings.ntripClient_TransmitGGA = d;
   else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
     settings.serialTimeoutGNSS = d;
+  else if (strcmp(settingName, "updateZEDSettings") == 0)
+  {
+    if (settings.updateZEDSettings != d)
+      settings.updateZEDSettings = true;
+  }
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list
@@ -820,7 +824,7 @@ bool parseLine(char* str) {
           if (settings.ubxConstellations[x].enabled != d)
           {
             settings.ubxConstellations[x].enabled = d;
-            updateZEDSettings = true;
+            settings.updateZEDSettings = true;
           }
 
           knownSetting = true;
@@ -842,7 +846,7 @@ bool parseLine(char* str) {
           if (settings.ubxMessages[x].msgRate != d)
           {
             settings.ubxMessages[x].msgRate = d;
-            updateZEDSettings = true;
+            settings.updateZEDSettings = true;
           }
 
           knownSetting = true;

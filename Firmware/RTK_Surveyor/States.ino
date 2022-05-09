@@ -72,7 +72,7 @@ void updateSystemState()
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
             startClientWiFi();
-            clientWiFiStartTime = millis();
+            wifiStartTime = millis();
 
             changeState(STATE_ROVER_CLIENT_WIFI_STARTED);
           }
@@ -123,7 +123,7 @@ void updateSystemState()
 
       case (STATE_ROVER_CLIENT_WIFI_STARTED):
         {
-          if (millis() - clientWiFiStartTime > 8000)
+          if (millis() - wifiStartTime > 8000)
             changeState(STATE_ROVER_NO_FIX); //Give up and move to normal Rover mode
 
 #ifdef COMPILE_WIFI
@@ -225,7 +225,7 @@ void updateSystemState()
           else
           {
             log_d("Caster failed to connect. Trying again.");
-            
+
             if (ntripClientConnectionAttempts++ >= maxNtripClientConnectionAttempts)
             {
               Serial.println(F("Caster failed to connect. Do you have your caster address and port correct?"));
@@ -889,6 +889,248 @@ void updateSystemState()
         }
         break;
 
+      case (STATE_KEYS_STARTED):
+        {
+          //We want an immediate change from this state
+          forceSystemStateUpdate = true; //Imediately go to this new state
+
+          //If user has turned off LBand, skip everything
+          if (settings.enableLBandCorrections == false)
+          {
+            changeState(settings.lastState); //Go to either rover or base
+          }
+
+          //If we don't have keys, begin zero touch provisioning
+          if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
+          {
+            startHomeWiFi();
+            wifiStartTime = millis(); //Start timer for WiFi connection timeout
+            changeState(STATE_KEYS_PROVISION_WIFI_STARTED);
+          }
+
+          //Determine if we have valid date/time RTC from last boot
+          else if (online.rtc == false)
+          {
+            //If RTC is not available, we will assume we need keys
+            log_d("RTC not available for keys");
+            changeState(STATE_KEYS_NEEDED);
+          }
+
+          else
+          {
+            //Determine days until next key expires
+            uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+            log_d("Days until keys expire: %d", daysRemaining);
+
+            if (daysRemaining >= 48)
+              //if (daysRemaining >= 28)
+              changeState(STATE_KEYS_LBAND_CONFIGURE);
+            else
+              changeState(STATE_KEYS_NEEDED);
+          }
+        }
+        break;
+
+      case (STATE_KEYS_NEEDED):
+        {
+          forceSystemStateUpdate = true; //Imediately go to this new state
+
+          if (online.rtc == false)
+          {
+            startHomeWiFi();
+            wifiStartTime = 0; //Start timer for WiFi connection timeout
+            changeState(STATE_KEYS_WIFI_STARTED); //If we can't check the RTC, continue
+          }
+
+          //When did we last try to get keys? Attempt every 24 hours
+          else if (rtc.getEpoch() - settings.lastKeyAttempt > (60 * 60 * 24))
+          {
+            settings.lastKeyAttempt = rtc.getEpoch(); //Mark it
+            recordSystemSettings(); //Record these settings to unit
+
+            startHomeWiFi();
+            wifiStartTime = 0; //Start timer for WiFi connection timeout
+            changeState(STATE_KEYS_WIFI_STARTED);
+          }
+          else
+          {
+            log_d("Already tried to obtain keys for today");
+            changeState(STATE_KEYS_LBAND_CONFIGURE); //We have valid keys, we've already tried today. No need to try again.
+          }
+        }
+        break;
+
+      case (STATE_KEYS_WIFI_STARTED):
+        {
+#ifdef COMPILE_WIFI
+          if (wifiStartTime == 0) wifiStartTime = millis();
+
+          byte wifiStatus = WiFi.status();
+          if (wifiStatus == WL_CONNECTED)
+          {
+            radioState = WIFI_CONNECTED;
+
+            changeState(STATE_KEYS_WIFI_CONNECTED);
+          }
+          else if (wifiStatus == WL_NO_SSID_AVAIL)
+          {
+            changeState(STATE_KEYS_WIFI_TIMEOUT);
+          }
+          else
+          {
+            Serial.print(".");
+            if (millis() - wifiStartTime > 8000)
+            {
+              //Give up after 8 seconds
+              changeState(STATE_KEYS_WIFI_TIMEOUT);
+            }
+          }
+#endif
+        }
+        break;
+
+      case (STATE_KEYS_WIFI_CONNECTED):
+        {
+          if (updatePointPerfectKeys() == true) //Connect to ThingStream MQTT and get LBand key UBX packet
+          {
+            displayKeysUpdated();
+          }
+
+          stopWiFi();
+
+          forceSystemStateUpdate = true; //Imediately go to this new state
+          changeState(STATE_KEYS_DAYS_REMAINING);
+        }
+        break;
+
+      case (STATE_KEYS_DAYS_REMAINING):
+        {
+          if (online.rtc == true)
+          {
+            if (settings.pointPerfectNextKeyStart > 0)
+            {
+              uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+              Serial.printf("Days until LBand keys expire: %d\n\r", daysRemaining);
+              paintKeyDaysRemaining(daysRemaining, 4000);
+            }
+          }
+
+          forceSystemStateUpdate = true; //Imediately go to this new state
+          changeState(STATE_KEYS_LBAND_CONFIGURE);
+        }
+        break;
+
+      case (STATE_KEYS_LBAND_CONFIGURE):
+        {
+          //Be sure we ignore any external RTCM sources
+          i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_UBX); //Set the UART2 to input UBX (no RTCM)
+
+          applyLBandKeys(); //Send current keys, if available, to ZED-F9P
+
+          forceSystemStateUpdate = true; //Imediately go to this new state
+          changeState(settings.lastState); //Go to either rover or base
+        }
+        break;
+
+      case (STATE_KEYS_WIFI_TIMEOUT):
+        {
+          stopWiFi();
+
+          paintKeyWiFiFail(2000);
+
+          forceSystemStateUpdate = true; //Imediately go to this new state
+
+          if (online.rtc == true)
+          {
+            uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+
+            if (daysRemaining >= 0)
+            {
+              changeState(STATE_KEYS_DAYS_REMAINING);
+            }
+            else
+            {
+              paintKeysExpired();
+              changeState(STATE_KEYS_LBAND_ENCRYPTED);
+            }
+          }
+          else
+          {
+            //No WiFi. No RTC. We don't know if the keys we have are expired. Attempt to use them.
+            changeState(STATE_KEYS_LBAND_CONFIGURE);
+          }
+        }
+        break;
+
+      case (STATE_KEYS_LBAND_ENCRYPTED):
+        {
+          //Since LBand is not available, be sure RTCM can be provided over UART2
+          i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_RTCM3); //Set the UART2 to input RTCM
+
+          forceSystemStateUpdate = true; //Imediately go to this new state
+          changeState(settings.lastState); //Go to either rover or base
+        }
+        break;
+
+      case (STATE_KEYS_PROVISION_WIFI_STARTED):
+        {
+#ifdef COMPILE_WIFI
+          if (wifiStartTime == 0) wifiStartTime = millis();
+
+          byte wifiStatus = WiFi.status();
+          if (wifiStatus == WL_CONNECTED)
+          {
+            radioState = WIFI_CONNECTED;
+
+            changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
+          }
+          else if (wifiStatus == WL_NO_SSID_AVAIL)
+          {
+            changeState(STATE_KEYS_WIFI_TIMEOUT);
+          }
+          else
+          {
+            Serial.print(".");
+            if (millis() - wifiStartTime > 8000)
+            {
+              //Give up after 8 seconds
+              changeState(STATE_KEYS_WIFI_TIMEOUT);
+            }
+          }
+#endif
+        }
+        break;
+
+      case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
+        {
+          forceSystemStateUpdate = true; //Imediately go to this new state
+
+          if (provisionDevice() == true)
+          {
+            displayKeysUpdated();
+            changeState(STATE_KEYS_DAYS_REMAINING);
+          }
+          else
+          {
+            paintKeyProvisionFail(10000); //Device not whitelisted. Show device ID.
+            changeState(STATE_KEYS_LBAND_ENCRYPTED);
+          }
+
+          stopWiFi();
+
+        }
+        break;
+
+      case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
+        {
+          stopWiFi();
+
+          paintKeyWiFiFail(2000);
+
+          changeState(settings.lastState); //Go to either rover or base
+        }
+        break;
+
       case (STATE_SHUTDOWN):
         {
           forceDisplayUpdate = true;
@@ -1022,6 +1264,43 @@ void changeState(SystemState newState)
     case (STATE_PROFILE_4):
       Serial.println(F("State: Profile 4"));
       break;
+    case (STATE_KEYS_STARTED):
+      Serial.println(F("State: Keys Started "));
+      break;
+    case (STATE_KEYS_NEEDED):
+      Serial.println(F("State: Keys Needed"));
+      break;
+    case (STATE_KEYS_WIFI_STARTED):
+      Serial.println(F("State: Keys WiFi Started"));
+      break;
+    case (STATE_KEYS_WIFI_CONNECTED):
+      Serial.println(F("State: Keys WiFi Connected"));
+      break;
+    case (STATE_KEYS_WIFI_TIMEOUT):
+      Serial.println(F("State: Keys WiFi Timeout"));
+      break;
+    case (STATE_KEYS_EXPIRED):
+      Serial.println(F("State: Keys Expired"));
+      break;
+    case (STATE_KEYS_DAYS_REMAINING):
+      Serial.println(F("State: Keys Days Remaining"));
+      break;
+    case (STATE_KEYS_LBAND_CONFIGURE):
+      Serial.println(F("State: Keys LBand Configure"));
+      break;
+    case (STATE_KEYS_LBAND_ENCRYPTED):
+      Serial.println(F("State: Keys LBand Encrypted"));
+      break;
+    case (STATE_KEYS_PROVISION_WIFI_STARTED):
+      Serial.println(F("State: Keys Provision - WiFi Started"));
+      break;
+    case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
+      Serial.println(F("State: Keys Provision - WiFi Connected"));
+      break;
+    case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
+      Serial.println(F("State: Keys Provision - WiFi Timeout"));
+      break;
+
     case (STATE_SHUTDOWN):
       Serial.println(F("State: Shut Down"));
       break;

@@ -355,6 +355,27 @@ void recordSystemSettingsToFile()
       settingsFile.println("ntripClient_wifiPW=" + (String)settings.ntripClient_wifiPW);
       settingsFile.println("ntripClient_TransmitGGA=" + (String)settings.ntripClient_TransmitGGA);
       settingsFile.println("serialTimeoutGNSS=" + (String)settings.serialTimeoutGNSS);
+      settingsFile.println("pointPerfectDeviceProfileToken=" + (String)settings.pointPerfectDeviceProfileToken);
+      settingsFile.println("enableLBandCorrections=" + (String)settings.enableLBandCorrections);
+      settingsFile.println("enableIPCorrections=" + (String)settings.enableIPCorrections);
+      settingsFile.println("home_wifiSSID=" + (String)settings.home_wifiSSID);
+      settingsFile.println("home_wifiPW=" + (String)settings.home_wifiPW);
+      settingsFile.println("autoKeyRenewal=" + (String)settings.autoKeyRenewal);
+      settingsFile.println("pointPerfectClientID=" + (String)settings.pointPerfectClientID);
+      settingsFile.println("pointPerfectBrokerHost=" + (String)settings.pointPerfectBrokerHost);
+      settingsFile.println("pointPerfectLBandTopic=" + (String)settings.pointPerfectLBandTopic);
+      settingsFile.println("pointPerfectNextKey=" + (String)settings.pointPerfectNextKey);
+      sprintf(longPrint, "%llu", settings.pointPerfectNextKeyDuration);
+      settingsFile.println("pointPerfectNextKeyDuration=" + (String)longPrint);
+      sprintf(longPrint, "%llu", settings.pointPerfectNextKeyStart);
+      settingsFile.println("pointPerfectNextKeyStart=" + (String)longPrint);
+      settingsFile.println("pointPerfectCurrentKey=" + (String)settings.pointPerfectCurrentKey);
+      sprintf(longPrint, "%llu", settings.pointPerfectCurrentKeyDuration);
+      settingsFile.println("pointPerfectCurrentKeyDuration=" + (String)longPrint);
+      sprintf(longPrint, "%llu", settings.pointPerfectCurrentKeyStart);
+      settingsFile.println("pointPerfectCurrentKeyStart=" + (String)longPrint);
+      sprintf(longPrint, "%llu", settings.lastKeyAttempt);
+      settingsFile.println("lastKeyAttempt=" + (String)longPrint);
       settingsFile.println("updateZEDSettings=" + (String)settings.updateZEDSettings);
 
       //Record constellation settings
@@ -488,7 +509,7 @@ bool parseLine(char* str) {
   sprintf(settingName, "%s", str);
 
   double d = 0.0;
-  char settingValue[50] = "";
+  char settingValue[100] = "";
 
   //Move pointer to end of line
   str = strtok(nullptr, "\n");
@@ -799,6 +820,38 @@ bool parseLine(char* str) {
     settings.ntripClient_TransmitGGA = d;
   else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
     settings.serialTimeoutGNSS = d;
+  else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)
+    strcpy(settings.pointPerfectDeviceProfileToken, settingValue);
+  else if (strcmp(settingName, "enableLBandCorrections") == 0)
+    settings.enableLBandCorrections = d;
+  else if (strcmp(settingName, "enableIPCorrections") == 0)
+    settings.enableIPCorrections = d;
+  else if (strcmp(settingName, "home_wifiSSID") == 0)
+    strcpy(settings.home_wifiSSID, settingValue);
+  else if (strcmp(settingName, "home_wifiPW") == 0)
+    strcpy(settings.home_wifiPW, settingValue);
+  else if (strcmp(settingName, "autoKeyRenewal") == 0)
+    settings.autoKeyRenewal = d;
+  else if (strcmp(settingName, "pointPerfectClientID") == 0)
+    strcpy(settings.pointPerfectClientID, settingValue);
+  else if (strcmp(settingName, "pointPerfectBrokerHost") == 0)
+    strcpy(settings.pointPerfectBrokerHost, settingValue);
+  else if (strcmp(settingName, "pointPerfectLBandTopic") == 0)
+    strcpy(settings.pointPerfectLBandTopic, settingValue);
+  else if (strcmp(settingName, "pointPerfectNextKey") == 0)
+    strcpy(settings.pointPerfectNextKey, settingValue);
+  else if (strcmp(settingName, "pointPerfectNextKeyDuration") == 0)
+    settings.pointPerfectNextKeyDuration = d;
+  else if (strcmp(settingName, "pointPerfectNextKeyStart") == 0)
+    settings.pointPerfectNextKeyStart = d;
+  else if (strcmp(settingName, "pointPerfectCurrentKey") == 0)
+    strcpy(settings.pointPerfectCurrentKey, settingValue);
+  else if (strcmp(settingName, "pointPerfectCurrentKeyDuration") == 0)
+    settings.pointPerfectCurrentKeyDuration = d;
+  else if (strcmp(settingName, "pointPerfectCurrentKeyStart") == 0)
+    settings.pointPerfectCurrentKeyStart = d;
+  else if (strcmp(settingName, "lastKeyAttempt") == 0)
+    settings.lastKeyAttempt = d;
   else if (strcmp(settingName, "updateZEDSettings") == 0)
   {
     if (settings.updateZEDSettings != d)
@@ -888,4 +941,44 @@ int getLine(File * openFile, char * lineChars, int lineSize)
   }
   lineChars[count] = '\0'; //Terminate string
   return (count);
+}
+
+//Record large character blob to file
+void recordFile(const char* fileID, char* fileContents, uint32_t fileSize)
+{
+  char fileName[80];
+  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
+
+  if (LittleFS.exists(fileName))
+    LittleFS.remove(fileName);
+
+  File fileToWrite = LittleFS.open(fileName, FILE_WRITE);
+  if (!fileToWrite)
+  {
+    log_d("Failed to write to file %s", fileName);
+  }
+  else
+  {
+    fileToWrite.write((uint8_t*)fileContents, fileSize); //Store cert into file
+    fileToWrite.close();
+    log_d("File recorded to LittleFS: %s", fileName);
+  }
+}
+
+void loadFile(const char* fileID, char* fileContents)
+{
+  char fileName[80];
+  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
+
+  File fileToRead = LittleFS.open(fileName, FILE_READ);
+  if (fileToRead)
+  {
+    fileToRead.read((uint8_t*)fileContents, fileToRead.size()); //Read contents into pointer
+    fileToRead.close();
+    log_d("File loaded from LittleFS: %s", fileName);
+  }
+  else
+  {
+    log_d("Failed to read from LittleFS: %s", fileName);
+  }
 }

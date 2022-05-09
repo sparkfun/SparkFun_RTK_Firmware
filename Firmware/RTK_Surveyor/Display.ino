@@ -116,6 +116,44 @@ void updateDisplay()
         case (STATE_TESTING):
           paintSystemTest();
           break;
+
+        case (STATE_KEYS_STARTED):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_NEEDED):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_WIFI_STARTED):
+          paintGettingKeys();
+          break;
+        case (STATE_KEYS_WIFI_CONNECTED):
+          paintGettingKeys();
+          break;
+        case (STATE_KEYS_WIFI_TIMEOUT):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_EXPIRED):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_DAYS_REMAINING):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_LBAND_CONFIGURE):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_LBAND_ENCRYPTED):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_PROVISION_WIFI_STARTED):
+          paintGettingKeys();
+          break;
+        case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
+          paintGettingKeys();
+          break;
+        case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
+          //Do nothing. Quick, fall through state.
+          break;
+
         case (STATE_SHUTDOWN):
           displayShutdown();
           break;
@@ -253,14 +291,18 @@ void paintWirelessIcon()
       displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
 
       //If we are connected to NTRIP Client, show download arrow
-      if(online.ntripClient == true)
+      if (online.ntripClient == true)
         displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
 
     }
     else
     {
       char macAddress[5];
+#ifdef COMPILE_BT
       sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
+#else
+      sprintf(macAddress, "%02X%02X", 0, 0); //If BT is not available, print zeroes
+#endif
       oled.setFont(QW_FONT_5X7); //Set font to smallest
       oled.setCursor(0, 3);
       oled.print(macAddress);
@@ -358,8 +400,8 @@ void paintBaseState()
         systemState == STATE_ROVER_RTK_FIX ||
         systemState == STATE_ROVER_CLIENT_WIFI_STARTED ||
         systemState == STATE_ROVER_CLIENT_WIFI_CONNECTED ||
-        systemState == STATE_ROVER_CLIENT_STARTED        
-        )
+        systemState == STATE_ROVER_CLIENT_STARTED
+       )
     {
       //Display icon associated with current Dynamic Model
       switch (settings.dynamicModel)
@@ -503,7 +545,10 @@ void paintSIV()
     if (fixType == 3 || fixType == 4 || fixType == 5) //3D, 3D+DR, or Time
     {
       //Fix, turn on icon
-      displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
+      if (lbandCorrectionsDecrypted == false)
+        displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
+      else
+        displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
     }
     else
     {
@@ -516,7 +561,10 @@ void paintSIV()
           satelliteDishIconDisplayed = true;
 
           //Draw the icon
-          displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
+          if (lbandCorrectionsDecrypted == false)
+            displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
+          else
+            displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
         }
         else
           satelliteDishIconDisplayed = false;
@@ -1927,4 +1975,180 @@ void paintResets()
 void displayBitmap(uint8_t x, uint8_t y, uint8_t imageWidth, uint8_t imageHeight, uint8_t *imageData)
 {
   oled.bitmap(x, y, x + imageWidth, y + imageHeight, imageData, imageWidth, imageHeight);
+}
+
+void displayKeysUpdated()
+{
+  displayMessage("Keys Updated", 2000);
+}
+
+void paintKeyDaysRemaining(int daysRemaining, uint16_t displayTime)
+{
+  //28 days
+  //until LBand
+  //keys expire
+
+  if (online.display == true)
+  {
+    oled.erase();
+
+    if (daysRemaining < 0) daysRemaining = 0;
+
+    int rightSideStart = 24; //Force the small text to rightside of screen
+
+    oled.setFont(QW_FONT_LARGENUM);
+
+    String days = String(daysRemaining);
+    int dayTextWidth = oled.getStringWidth(days);
+
+    int largeTextX = (rightSideStart / 2) - (dayTextWidth / 2); //Center point for x coord
+
+    oled.setCursor(largeTextX, 0);
+    oled.print(daysRemaining);
+
+    oled.setFont(QW_FONT_5X7);
+
+    int x = ((oled.getWidth() - rightSideStart) / 2) + rightSideStart; //Center point for x coord
+    int y = 0;
+    int fontHeight = 10;
+    int textX;
+
+    textX = x - (oled.getStringWidth("days") / 2); //Starting point of text
+    oled.setCursor(textX, y);
+    oled.print("Days");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Until") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Until");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("LBand") / 2);
+    oled.setCursor(textX, y);
+    oled.print("LBand");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Keys") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Keys");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Expire") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Expire");
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void paintKeyWiFiFail(uint16_t displayTime)
+{
+  //LBand
+  //Update
+  //Failed
+  //No WiFi
+
+  if (online.display == true)
+  {
+    oled.erase();
+
+    oled.setFont(QW_FONT_8X16);
+
+    int x = (oled.getWidth() / 2); //Center point for x coord
+    int y = 0;
+    int fontHeight = 13;
+    int textX;
+
+    textX = x - (oled.getStringWidth("LBand") / 2); //Starting point of text
+    oled.setCursor(textX, y);
+    oled.print("LBand");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Update") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Update");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Failed") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Failed");
+
+    oled.setFont(QW_FONT_5X7);
+    y += fontHeight + 1;
+    textX = x - (oled.getStringWidth("No WiFi") / 2);
+    oled.setCursor(textX, y);
+    oled.print("No WiFi");
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void paintKeysExpired()
+{
+  displayMessage("Keys Expired", 4000);
+}
+
+void paintGettingKeys()
+{
+  if (online.display == true)
+  {
+    paintWirelessIcon(); //Top left corner
+
+    displayMessage("Getting Keys", 0);
+  }
+}
+
+void paintKeyProvisionFail(uint16_t displayTime)
+{
+  //Whitelist Error
+
+  //ZTP
+  //Failed
+  //ID:
+  //10chars
+
+  if (online.display == true)
+  {
+    oled.erase();
+
+    oled.setFont(QW_FONT_8X16);
+
+    int x = (oled.getWidth() / 2); //Center point for x coord
+    int y = 0;
+    int fontHeight = 13;
+    int textX;
+
+    textX = x - (oled.getStringWidth("ZTP") / 2); //Starting point of text
+    oled.setCursor(textX, y);
+    oled.print("ZTP");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Failed") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Failed");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("ID:") / 2);
+    oled.setCursor(textX, y);
+    oled.print("ID:");
+
+    char hardwareID[11];
+    sprintf(hardwareID, "%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4]); //Get ready for JSON
+    Serial.printf("Device ID: %s\n\r", hardwareID);
+    String macAddress = String(hardwareID);
+
+    oled.setFont(QW_FONT_5X7);
+    y += fontHeight + 1;
+    textX = x - (oled.getStringWidth(macAddress) / 2);
+    oled.setCursor(textX, y);
+    oled.print(hardwareID);
+
+    oled.display();
+
+    delay(displayTime);
+  }
 }

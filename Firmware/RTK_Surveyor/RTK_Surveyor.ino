@@ -43,15 +43,15 @@
     Add ntripClient_TransmitGGA to AP config
     Add ntripServer_CasterUser/PW to AP config
     Add maxLogLength_minutes to AP config
+    Add LBand to AP config
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 12;
 const int FIRMWARE_VERSION_MINOR = 13;
 
-#define COMPILE_WIFI //Comment out to remove all WiFi functionality
-#define COMPILE_BT //Comment out to disable all Bluetooth
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+//#define COMPILE_WIFI //Comment out to remove all WiFi functionality
+//#define COMPILE_BT //Comment out to disable all Bluetooth
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -151,6 +151,11 @@ uint32_t sdUsedSpaceMB = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
 #include <WiFi.h>
+#include <HTTPClient.h> //Needed for ThingStream API for ZTP
+#include <ArduinoJson.h> //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h> //Used for MQTT obtaining of keys
+
 #include "esp_wifi.h" //Needed for init/deinit of resources to free up RAM
 #include "base64.h" //Built-in ESP32 library. Needed for NTRIP Client credential encoding.
 
@@ -165,6 +170,9 @@ int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame af
 
 uint32_t casterBytesSent = 0; //Just a running total
 uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service times out
+
+char certificateContents[2000]; //Holds the contents of the keys prior to MQTT connection
+char keyContents[2000];
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration
@@ -284,6 +292,7 @@ QwiicMicroOLED oled;
 // Fonts
 #include <res/qw_fnt_5x7.h>
 #include <res/qw_fnt_8x16.h>
+#include <res/qw_fnt_largenum.h>
 
 #include "icons.h"
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -342,6 +351,30 @@ AsyncWebSocket ws("/ws");
 char incomingSettings[3000];
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//LBand Corrections
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+SFE_UBLOX_GNSS i2cLBand; // NEO-D9S
+
+const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
+
+#if __has_include("tokens.h")
+#include "tokens.h"
+#else
+uint8_t pointPerfectTokenArray = {0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03}; //Token in HEX form
+
+static const char *AWS_PUBLIC_CERT = R"=====(
+-----BEGIN CERTIFICATE-----
+Certificate here
+-----END CERTIFICATE-----
+)=====";
+#endif
+
+const uint32_t myLBandFreq = 1556290000; // Uncomment this line to use the US SPARTN 1.8 service
+//const uint32_t myLBandFreq = 1545260000; // Uncomment this line to use the EU SPARTN 1.8 service
+const char* pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
+void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Global variables
@@ -423,12 +456,16 @@ unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update
 int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
-unsigned long clientWiFiStartTime = 0; //If we cannot connect to local wifi for NTRIP client, give up/go to Rover after 8 seconds
+unsigned long wifiStartTime = 0; //If we cannot connect to local wifi for NTRIP client, give up/go to Rover after 8 seconds
 bool restartRover = false; //If user modifies any NTRIP Client settings, we need to restart the rover
 int ntripClientConnectionAttempts = 0;
 int maxNtripClientConnectionAttempts = 3; //Give up connecting after this number of attempts
 
 unsigned long startTime = 0; //Used for checking longest running functions
+bool lbandCorrectionsDecrypted = false; //Used to display LBand SIV icon when corrections are successfully decrypted
+unsigned long lastLBandDecryption = 0; //Timestamp of last successfully decrypted PMP message
+bool mqttMessageReceived = false; //Goes true when the subscribed MQTT channel reports back
+uint8_t leapSeconds = 0; //Gets set if GNSS is online
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -460,9 +497,13 @@ void setup()
 
   beginAccelerometer();
 
+  beginLBand();
+
   beginExternalTriggers(); //Configure the time pulse output and TM2 input
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
+
+  updateRTC(); //The GNSS likely has time/date. Update ESP32 RTC to match. Needed for LBand key expiration.
 
   Serial.flush(); //Complete any previous prints
 
@@ -494,6 +535,8 @@ void loop()
   updateSerial(); //Menu system via ESP32 USB connection
 
   updateNTRIPClient(); //Move any available incoming NTRIP to ZED
+
+  updateLBand(); //Check if we've recently received LBand corrections or not
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;
@@ -646,6 +689,9 @@ void updateRTC()
       if (millis() - lastRTCAttempt > 1000)
       {
         lastRTCAttempt = millis();
+
+        i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+        i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
 
         bool timeValid = false;
         if (validTime == true && validDate == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)

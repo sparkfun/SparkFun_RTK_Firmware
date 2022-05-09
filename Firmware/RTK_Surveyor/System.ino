@@ -4,11 +4,6 @@
 bool startBluetooth()
 {
 #ifdef COMPILE_BT
-
-  //Get unit MAC address
-  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
-  unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
-
   char stateName[10];
   if (buttonPreviousState == BUTTON_ROVER)
     strcpy(stateName, "Rover");
@@ -144,6 +139,19 @@ void startClientWiFi()
   radioState = WIFI_ON_NOCONNECTION;
 }
 
+void startHomeWiFi()
+{
+#ifdef COMPILE_WIFI
+  wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
+  esp_wifi_init(&wifi_init_config); //Restart WiFi resources
+
+  Serial.printf("Connecting to home WiFi: %s", settings.home_wifiSSID);
+  WiFi.begin(settings.home_wifiSSID, settings.home_wifiPW);
+#endif
+
+  radioState = WIFI_ON_NOCONNECTION;
+}
+
 //Stop WiFi and release all resources
 //See WiFiBluetoothSwitch sketch for more info
 void stopWiFi()
@@ -156,7 +164,7 @@ void stopWiFi()
     esp_wifi_deinit(); //Free all resources
 #endif
 
-  Serial.println("WiFi Stopped");
+  log_d("WiFi Stopped");
 
   radioState = RADIO_OFF;
 }

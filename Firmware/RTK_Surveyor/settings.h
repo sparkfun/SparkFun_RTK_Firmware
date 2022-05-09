@@ -1,4 +1,3 @@
-//System can enter a variety of states starting at Rover_No_Fix at power on
 //System can enter a variety of states
 //See statemachine diagram at: https://lucid.app/lucidchart/53519501-9fa5-4352-aa40-673f88ca0c9b/edit?invitationId=inv_ebd4b988-513d-4169-93fd-c291851108f8
 typedef enum
@@ -36,6 +35,18 @@ typedef enum
   STATE_PROFILE_2,
   STATE_PROFILE_3,
   STATE_PROFILE_4,
+  STATE_KEYS_STARTED,
+  STATE_KEYS_NEEDED,
+  STATE_KEYS_WIFI_STARTED,
+  STATE_KEYS_WIFI_CONNECTED,
+  STATE_KEYS_WIFI_TIMEOUT,
+  STATE_KEYS_EXPIRED,
+  STATE_KEYS_DAYS_REMAINING,
+  STATE_KEYS_LBAND_CONFIGURE,
+  STATE_KEYS_LBAND_ENCRYPTED,
+  STATE_KEYS_PROVISION_WIFI_STARTED,
+  STATE_KEYS_PROVISION_WIFI_CONNECTED,
+  STATE_KEYS_PROVISION_WIFI_TIMEOUT,
   STATE_SHUTDOWN,
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
@@ -345,7 +356,24 @@ typedef struct struct_settings {
 
   int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
 
+  char pointPerfectDeviceProfileToken[40] = "";
+  bool enableLBandCorrections = true;
+  bool enableIPCorrections = false; //We do not plan to use IP based point perfect
+  char home_wifiSSID[50] = "TRex"; //WiFi network to use when attempting to obtain LBand keys and ThingStream provisioning
+  char home_wifiPW[50] = "parachutes";
+  bool autoKeyRenewal = true; //Attempt to get keys if we get under 28 days from the expiration date
+  char pointPerfectClientID[50];
+  char pointPerfectBrokerHost[50]; // pp.services.u-blox.com
+  char pointPerfectLBandTopic[20]; // /pp/key/Lb
+  char pointPerfectCurrentKey[33]; //32 hexadecimal digits = 128 bits = 16 Bytes
+  uint64_t pointPerfectCurrentKeyDuration = 0;
+  uint64_t pointPerfectCurrentKeyStart = 0;
+  char pointPerfectNextKey[33];
+  uint64_t pointPerfectNextKeyDuration = 0;
+  uint64_t pointPerfectNextKeyStart = 0;
+  uint64_t lastKeyAttempt = 0; //Epoch time of last attempt at obtaining keys
   bool updateZEDSettings = true; //When in doubt, update the ZED with current settings
+  
 } Settings;
 Settings settings;
 
@@ -361,4 +389,6 @@ struct struct_online {
   bool battery = false;
   bool accelerometer = false;
   bool ntripClient = false;
+  bool lband = false;
+  bool lbandCorrections = false;
 } online;

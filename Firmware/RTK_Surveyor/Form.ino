@@ -398,6 +398,12 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
   stringRecord(settingsCSV, "profileName", settings.profileName);
   stringRecord(settingsCSV, "serialTimeoutGNSS", settings.serialTimeoutGNSS);
+  stringRecord(settingsCSV, "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
+  stringRecord(settingsCSV, "enableLBandCorrections", settings.enableLBandCorrections);
+  stringRecord(settingsCSV, "enableIPCorrections", settings.enableIPCorrections);
+  stringRecord(settingsCSV, "home_wifiSSID", settings.home_wifiSSID);
+  stringRecord(settingsCSV, "home_wifiPW", settings.home_wifiPW);
+  stringRecord(settingsCSV, "autoKeyRenewal", settings.autoKeyRenewal);
 
   strcat(settingsCSV, "\0");
   Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
@@ -514,6 +520,18 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.ntripClient_TransmitGGA = settingValueBool;
   else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
     settings.serialTimeoutGNSS = settingValue;
+  else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)
+    strcpy(settings.pointPerfectDeviceProfileToken, settingValueStr);
+  else if (strcmp(settingName, "enableLBandCorrections") == 0)
+    settings.enableLBandCorrections = settingValue;
+  else if (strcmp(settingName, "enableIPCorrections") == 0)
+    settings.enableIPCorrections = settingValue;
+  else if (strcmp(settingName, "home_wifiSSID") == 0)
+    strcpy(settings.home_wifiSSID, settingValueStr);
+  else if (strcmp(settingName, "home_wifiPW") == 0)
+    strcpy(settings.home_wifiPW, settingValueStr);
+  else if (strcmp(settingName, "autoKeyRenewal") == 0)
+    settings.autoKeyRenewal = settingValue;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

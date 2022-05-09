@@ -119,6 +119,10 @@ void beginBoard()
 
   Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
+  //Get unit MAC address
+  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
+  unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
+
   //For all boards, check reset reason. If reset was due to wdt or panic, append last log
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
@@ -139,8 +143,8 @@ void beginBoard()
     if (settings.enableResetDisplay == true)
     {
       settings.resetCount++;
-      recordSystemSettings(); //Record to NVM
       Serial.printf("resetCount: %d\n\r", settings.resetCount);
+      recordSystemSettings(); //Record to NVM
     }
 
     Serial.print("Reset reason: ");
@@ -552,13 +556,19 @@ void beginSystemState()
     if (settings.lastState == STATE_ROVER_NOT_STARTED && digitalRead(pin_setupButton) == LOW) settings.updateZEDSettings = true;
     else if (settings.lastState == STATE_BASE_NOT_STARTED && digitalRead(pin_setupButton) == HIGH) settings.updateZEDSettings = true;
 
-    systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask() will correct as needed.
+    if (online.lband == false)
+      systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask() will correct as needed.
+    else
+      systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
   else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
-    systemState = settings.lastState; //Return to system state previous to power down.
+    if (online.lband == false)
+      systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
+    else
+      systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
 
     if (systemState > STATE_SHUTDOWN)
     {
@@ -571,7 +581,10 @@ void beginSystemState()
   }
   else if (productVariant == RTK_FACET)
   {
-    systemState = settings.lastState; //Return to system state previous to power down.
+    if (online.lband == false)
+      systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
+    else
+      systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
 
     if (systemState > STATE_SHUTDOWN)
     {
@@ -643,4 +656,45 @@ bool beginExternalTriggers()
     Serial.println(F("Module failed to save."));
 
   return (response);
+}
+
+//Check if NEO-D9S is connected. Configure if available.
+void beginLBand()
+{
+  if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
+  {
+    log_d("LBand not detected");
+    return;
+  }
+
+  bool response = true;
+
+  response &= i2cLBand.setVal32(UBLOX_CFG_PMP_CENTER_FREQUENCY,   myLBandFreq); // Default 1539812500 Hz
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SEARCH_WINDOW,      2200);        // Default 2200 Hz
+  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_SERVICE_ID,      0);           // Default 1
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SERVICE_ID,         21845);       // Default 50821
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DATA_RATE,          2400);        // Default 2400 bps
+  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_DESCRAMBLER,     1);           // Default 1
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DESCRAMBLER_INIT,   26969);       // Default 23560
+  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_PRESCRAMBLING,   0);           // Default 0
+  response &= i2cLBand.setVal64(UBLOX_CFG_PMP_UNIQUE_WORD,        16238547128276412563ull);
+  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C,   1); // Ensure UBX-RXM-PMP is enabled on the I2C port
+  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 1); // Output UBX-RXM-PMP on UART1
+  response &= i2cLBand.setVal(UBLOX_CFG_UART2OUTPROT_UBX, 1);         // Enable UBX output on UART2
+  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); // Output UBX-RXM-PMP on UART2
+  response &= i2cLBand.setVal32(UBLOX_CFG_UART1_BAUDRATE,         38400); // match baudrate with ZED default
+  response &= i2cLBand.setVal32(UBLOX_CFG_UART2_BAUDRATE,         38400); // match baudrate with ZED default
+
+  if (response == false)
+    Serial.println("LBand failed to configure");
+
+  i2cLBand.softwareResetGNSSOnly(); // Do a restart
+
+  i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
+
+  i2cGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Check if the PMP data is being decrypted successfully
+
+  log_d("LBand online");
+
+  online.lband = true;
 }

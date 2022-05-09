@@ -1,7 +1,7 @@
 /*
   Basic demonstration of the MAX17048 fuel gauge IC used in the RTK line.
 
-  On the RTK Surveyor, one LED is used to indicate status. Battery level LED goes 
+  On the RTK Surveyor, one LED is used to indicate status. Battery level LED goes
   from Green (50-100%) to Yellow (10-50%) to Red (<10%)
 */
 
@@ -30,6 +30,7 @@ uint32_t lastBattUpdate = 0;
 void setup()
 {
   Serial.begin(115200);
+  delay(500);
   Serial.println("Battery example");
 
   Wire.begin();

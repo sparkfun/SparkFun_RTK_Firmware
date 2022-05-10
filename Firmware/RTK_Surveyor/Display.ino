@@ -358,7 +358,7 @@ void paintBaseState()
         systemState == STATE_ROVER_RTK_FIX ||
         systemState == STATE_ROVER_CLIENT_WIFI_STARTED ||
         systemState == STATE_ROVER_CLIENT_WIFI_CONNECTED ||
-        systemState == STATE_ROVER_CLIENT_STARTED        
+        systemState == STATE_ROVER_CLIENT_STARTED
         )
     {
       //Display icon associated with current Dynamic Model
@@ -1548,7 +1548,7 @@ void paintSystemTest()
       //begin() attempts 3 connections
       if (myGNSS.begin(serialGNSS) == true)
       {
-      
+
         zedUartPassed = true;
         oled.print(F("OK"));
       }

@@ -419,7 +419,7 @@ bool parseLine(char* str, Settings *settings)
 
   }
   else if (strcmp(settingName, "rtkIdentifier") == 0)
-    settings->rtkIdentifier = d;
+  {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "rtkFirmwareVersion") == 0)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "zedFirmwareVersion") == 0)

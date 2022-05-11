@@ -197,14 +197,6 @@ void updateFromSD(const char *firmwareFileName)
           firmwareFile.close();
           sd.remove(firmwareFileName);
 
-          //Assemble settings file name
-          char settingsFileName[40]; //SFE_Surveyor_Settings.txt
-          strcpy(settingsFileName, platformFilePrefix);
-          strcat(settingsFileName, "_Settings.txt");
-
-          if (sd.exists(settingsFileName))
-            sd.remove(settingsFileName);
-
           i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
         }
 

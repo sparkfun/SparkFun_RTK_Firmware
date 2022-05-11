@@ -1470,7 +1470,7 @@ void paintProfile(uint8_t profileUnit)
   char profileMessage[20]; //'Loading HomeStar' max of ~18 chars
 
   char profileName[8 + 1];
-  if (getProfileName(profileUnit, profileName, 8) == true) //Load the profile name, limited to 8 chars
+  if (getProfileNameFromUnit(profileUnit, profileName, 8) == true) //Load the profile name, limited to 8 chars
   {
     settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
     recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
@@ -1748,7 +1748,7 @@ void paintDisplaySetup()
         printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
         printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_2)
@@ -1758,10 +1758,10 @@ void paintDisplaySetup()
         printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
         printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_3)
@@ -1770,29 +1770,29 @@ void paintDisplaySetup()
 
         printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_4)
       {
         char profileName[8 + 1];
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
+        getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
     } //end type F9P
@@ -1834,7 +1834,7 @@ void paintDisplaySetup()
         printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
         printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_2)
@@ -1844,10 +1844,10 @@ void paintDisplaySetup()
         printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
         printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_3)
@@ -1856,29 +1856,29 @@ void paintDisplaySetup()
 
         printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_4)
       {
         char profileName[8 + 1];
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
+        getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
     } //end type F9R

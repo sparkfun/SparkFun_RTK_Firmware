@@ -2,18 +2,18 @@
 //Report status if ~ received, otherwise present config menu
 void updateSerial()
 {
-  if (Serial.available()) 
+  if (Serial.available())
   {
     byte incoming = Serial.read();
-    
-    if(incoming == '~')
+
+    if (incoming == '~')
     {
       //Output custom GNTXT message with all current system data
       printCurrentConditionsNMEA();
     }
     else
       menuMain(); //Present user menu
-  }  
+  }
 }
 
 //Display the options
@@ -48,7 +48,7 @@ void menuMain()
 
     Serial.println(F("p) Configure Profiles"));
 
-    if(online.lband == true)
+    if (online.lband == true)
       Serial.println(F("l) Configure LBand"));
 
     Serial.println(F("s) System Status"));
@@ -95,7 +95,7 @@ void menuMain()
   if (online.gnss == true)
     i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
 
-  if(restartRover == true)
+  if (restartRover == true)
   {
     restartRover = false;
     requestChangeState(STATE_ROVER_NOT_STARTED); //Restart rover upon exit for latest changes to take effect
@@ -110,7 +110,7 @@ void menuMain()
 //Settings file - we detect differences between NVM and settings txt file and updateZEDSettings = true
 //Profile - Before profile is changed, set updateZEDSettings = true
 //AP - once new settings are parsed, set updateZEDSettings = true
-//Setup button - 
+//Setup button -
 //Factory reset - updatesZEDSettings = true by default
 void menuUserProfiles()
 {
@@ -122,89 +122,48 @@ void menuUserProfiles()
     Serial.println();
     Serial.println(F("Menu: User Profiles Menu"));
 
-    Serial.printf("Current profile: %d-%s\n\r", profileNumber + 1, settings.profileName);
-    Serial.println("1) Change profile");
+    //List available profiles
+    for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
+    {
+      if (strlen(profileNames[x]) > 0)
+      {
+        Serial.printf("%d) Select %s", x + 1, profileNames[x]);
+        if (x == profileNumber) Serial.print(" <- Current");
+      }
+      else
+        Serial.printf("%d) Select (Empty)", x + 1);
 
-    Serial.printf("2) Edit profile name: %s\n\r", settings.profileName);
+      Serial.println();
+    }
+
+    Serial.printf("%d) Edit profile name: %s\n\r", MAX_PROFILE_COUNT + 1, profileNames[profileNumber]);
 
     Serial.println(F("x) Exit"));
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
-    if (incoming == '1')
+    if (incoming >= 1 && incoming <= MAX_PROFILE_COUNT)
     {
-      Serial.println();
-      Serial.println("Available Profiles:");
 
-      //List available profiles
-      for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
-      {
-        //With the given profile number, load appropriate settings file
-        char settingsFileName[40];
-        sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+      settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
+      recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
 
-        char tempProfileName[50];
-
-        if (LittleFS.exists(settingsFileName))
-        {
-          //Open this profile and get the profile name from it
-          File settingsFile = LittleFS.open(settingsFileName, FILE_READ);
-
-          Settings tempSettings;
-          uint8_t *settingsBytes = (uint8_t *)&tempSettings; // Cast the struct into a uint8_t ptr
-
-          uint16_t fileSize = settingsFile.size();
-          if (fileSize > sizeof(tempSettings)) fileSize = sizeof(tempSettings); //Trim to max setting struct size
-
-          settingsFile.read(settingsBytes, fileSize); //Copy the bytes from file into testSettings struct
-          settingsFile.close();
-
-          strcpy(tempProfileName, tempSettings.profileName);
-        }
-        else
-        {
-          sprintf(tempProfileName, "(Empty)", x + 1);
-        }
-
-        Serial.printf("%d) %s\n\r", x + 1, tempProfileName);
-      }
-
-      //Wait for user to select new profile number
-      int incoming = getNumber(menuTimeout); //Timeout after x seconds
-
-      if (incoming < 1 || incoming > MAX_PROFILE_COUNT)
-      {
-        Serial.println(F("Error: Profile number out of range"));
-      }
-      else
-      {
-        settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
-        recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
-
-        recordProfileNumber(incoming - 1); //Align to array
-        profileNumber = incoming - 1;
-      }
-      //Reset settings to default
-      Settings defaultSettings;
-      settings = defaultSettings;
-
-      //Load the settings file with the most recent profileNumber
-      //If the settings file doesn't exist, defaults will be applied
-      getSettings(profileNumber, settings);
+      recordProfileNumber(incoming - 1); //Align to array
+      profileNumber = incoming - 1;
     }
-    else if (incoming == '2')
+    else if (incoming == MAX_PROFILE_COUNT + 1)
     {
       Serial.print("Enter new profile name: ");
       readLine(settings.profileName, sizeof(settings.profileName), menuTimeoutExtended);
       recordSystemSettings(); //We need to update this immediately in case user lists the available profiles again
+
+      strcpy(profileNames[profileNumber], settings.profileName); //Update array
     }
 
-    else if (incoming == 'x')
+    else if (incoming == STATUS_PRESSED_X)
       break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
-    {
+    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
       break;
-    }
     else
       printUnknown(incoming);
   }
@@ -218,7 +177,7 @@ void menuUserProfiles()
 
   //A user may edit the name of a profile, but then switch back to original profile.
   //Thus, no reset, and activeProfiles is not updated. Do it here.
-  activeProfiles = getActiveProfiles(); //Count is used during menu display
+  activeProfiles = loadProfileNames(); //Count is used during menu display
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }
@@ -228,19 +187,15 @@ void factoryReset()
 {
   displaySytemReset(); //Display friendly message on OLED
 
-  //With the given profile number, load appropriate settings file
-  char settingsFileName[40];
-  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
-
-  LittleFS.format(); //Don't format before we getProfileNumber()
+  LittleFS.format();
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
   if (settings.enableSD && online.microSD)
   {
     if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
-      if (sd.exists(settingsFileName))
-        sd.remove(settingsFileName);
+      //Remove this specific settings file. Don't remove the other profiles.
+      sd.remove(settingsFileName);
       xSemaphoreGive(xFATSemaphore);
     } //End xFATSemaphore
   }

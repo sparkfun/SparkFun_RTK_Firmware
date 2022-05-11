@@ -174,7 +174,7 @@ typedef struct ubxMsg
 #define MAX_UBX_MSG (13 + 25 + 5 + 10 + 3 + 12 + 5) //(sizeof(ubxMessages)/sizeof(ubxMsg))
 
 //This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
-typedef struct struct_settings {
+typedef struct {
   int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int
   int rtkIdentifier = RTK_IDENTIFIER; // rtkIdentifier **must** be the second entry
   bool printDebugMessages = false;

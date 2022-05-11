@@ -111,6 +111,8 @@ const char *rtkSettings[] = {"SFERTK_0", "SFERTK_1", "SFERTK_2", "SFERTK_3"}; //
 #define MAX_PROFILE_COUNT 4
 uint8_t activeProfiles = 1;
 uint8_t profileNumber = MAX_PROFILE_COUNT; //profileNumber gets set once at boot to save loading time
+char profileNames[MAX_PROFILE_COUNT][50]; //Populated based on names found in LittleFS and SD
+char settingsFileName[40]; //Contains the %s_Settings_%d.txt with current profile number set
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time
@@ -712,7 +714,7 @@ void updateRTC()
           Serial.print(F("System time set to: "));
           Serial.println(rtc.getDateTime(true));
 
-          recordSystemSettingsToFile(); //This will re-record the setting file with current date/time.
+          recordSystemSettingsToFileSD(settingsFileName); //This will re-record the setting file with current date/time.
         }
         else
         {

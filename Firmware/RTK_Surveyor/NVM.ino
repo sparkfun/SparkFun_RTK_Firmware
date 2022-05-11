@@ -954,3 +954,43 @@ uint8_t getProfileNumberFromUnit(uint8_t profileUnit)
 
   return (false);
 }
+
+//Record large character blob to file
+void recordFile(const char* fileID, char* fileContents, uint32_t fileSize)
+{
+  char fileName[80];
+  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
+
+  if (LittleFS.exists(fileName))
+    LittleFS.remove(fileName);
+
+  File fileToWrite = LittleFS.open(fileName, FILE_WRITE);
+  if (!fileToWrite)
+  {
+    log_d("Failed to write to file %s", fileName);
+  }
+  else
+  {
+    fileToWrite.write((uint8_t*)fileContents, fileSize); //Store cert into file
+    fileToWrite.close();
+    log_d("File recorded to LittleFS: %s", fileName);
+  }
+}
+
+void loadFile(const char* fileID, char* fileContents)
+{
+  char fileName[80];
+  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
+
+  File fileToRead = LittleFS.open(fileName, FILE_READ);
+  if (fileToRead)
+  {
+    fileToRead.read((uint8_t*)fileContents, fileToRead.size()); //Read contents into pointer
+    fileToRead.close();
+    log_d("File loaded from LittleFS: %s", fileName);
+  }
+  else
+  {
+    log_d("Failed to read from LittleFS: %s", fileName);
+  }
+}

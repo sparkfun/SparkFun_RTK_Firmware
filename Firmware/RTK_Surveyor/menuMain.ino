@@ -144,12 +144,13 @@ void menuUserProfiles()
 
     if (incoming >= 1 && incoming <= MAX_PROFILE_COUNT)
     {
-
       settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
       recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
 
       recordProfileNumber(incoming - 1); //Align to array
       profileNumber = incoming - 1;
+
+      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Update file name with new profileNumber
     }
     else if (incoming == MAX_PROFILE_COUNT + 1)
     {

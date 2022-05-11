@@ -18,8 +18,7 @@
 //So we moved again to SPIFFs. It's being replaced by LittleFS so here we are.
 void loadSettings()
 {
-  //First, look up the last used profile number
-  loadProfileNumber();
+  //loadProfileNumber(); - Previously loaded during loadSettingsPartial()
 
   //Set the settingsFileName used many places
   sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);

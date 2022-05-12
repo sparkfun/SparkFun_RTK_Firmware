@@ -6,6 +6,9 @@
 
 #include "settings.h"
 
+#define ASCII_LF      0x0a
+#define ASCII_CR      0x0d
+
 int pin_microSD_CS = 25;
 
 //microSD Interface
@@ -34,6 +37,10 @@ const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 uint32_t sdCardSizeMB = 0;
 uint32_t sdFreeSpaceMB = 0;
 uint32_t sdUsedSpaceMB = 0;
+
+char filename[1024];
+uint8_t buffer[5701];
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -52,9 +59,72 @@ void setup()
 
 void loop()
 {
+  int bytesRead;
+  int bytesToRead;
+  char data;
+  int length;
+  SdFile sdFile;
+  SdFile sdRootDir;
+
+  // Read the filename
+  Serial.println("\nPlease enter the filename:");
+  length = 0;
+  do {
+    while (!Serial.available());
+    data = Serial.read();
+    if ((data == ASCII_LF) || (data == ASCII_CR))
+      break;
+    filename[length++] = data;
+  } while (1);
+  filename[length] = 0;
+
+  // Skip reading the SD card if no filename is specified
+  if (length) {
+    Serial.printf("filename: %s\n", filename);
+    do {
+
+      // Attempt to open the root directory
+      Serial.println("Attempting to open the root directory");
+      sdRootDir = SdFile();
+      if (!sdRootDir.openRoot(sd.vol())) {
+          Serial.println("ERROR - Failed to open root directory!");
+          break;
+      }
+
+      // Attempt to open the file
+      Serial.printf("Attempting to open file %s\n", filename);
+      if (!sdFile.open(&sdRootDir, filename, O_RDONLY)) {
+        // File not found
+        Serial.println("ERROR - File not found!");
+        sdRootDir.close();
+        break;
+      }
+      Serial.printf("File %s opened successfully!\n", filename);
+
+      // Close the root directory
+      Serial.println("Closing the root directory");
+      sdRootDir.close();
+
+      // Read the file
+      do {
+
+        // Read data from the file
+        bytesToRead = sizeof(buffer);
+        Serial.printf("Attempting to read %d bytes from %s\n", bytesToRead, filename);
+        bytesRead = sdFile.read(buffer, bytesToRead);
+        Serial.printf("bytesRead: %d\n", bytesRead);
+      } while (bytesRead > 0);
+
+      // Close the file
+      Serial.printf("Closing %s\n", filename);
+      sdFile.close();
+      Serial.println();
+    } while (0);
+  }
+
+  // Wait for user to confirm reset
   Serial.println("Press a key to reset");
 
-  if (Serial.available()) ESP.restart();
-
-  delay(1000);
+  while (!Serial.available());
+  ESP.restart();
 }

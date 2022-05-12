@@ -23,6 +23,89 @@ void updateSystemState()
     //Move between states as needed
     switch (systemState)
     {
+      /*
+                        .-----------------------------------.
+           NTRIP Client |      STATE_ROVER_NOT_STARTED      |
+           .------------| Text: 'Rover' and 'Rover Started' |
+           |    Enabled '-----------------------------------'
+           |    = False                   |
+           |  Stop WiFi,                  | NTRIP Client Enabled = True
+           |      Start                   | Stop Bluetooth
+           |  Bluetooth                   | Start WiFi
+           |                              V
+           |            .-----------------------------------. 8 Sec
+           |            |  STATE_ROVER_CLIENT_WIFI_STARTED  | Connection
+           |            |         Blinking WiFi Icon        | Timeout
+           |            |           "HPA: >30m"             |--------------.
+           |            |             "SIV: 0"              |              |
+           |            '-----------------------------------'              |
+           |                              |                                |
+           |                              | radioState = WIFI_CONNECTED    |
+           |                              | WiFi connected = True          |
+           |                              V                                |
+           |            .-----------------------------------.              |
+           |            | STATE_ROVER_CLIENT_WIFI_CONNECTED | Connection   |
+           |            |         Solid WiFi Icon           |  failed      V
+           |            |           "HPA: >30m"             |------------->+
+           |            |             "SIV: 0"              | Stop WiFi,   |
+           |            '-----------------------------------' Start        |
+           |                              |                   Bluetooth    |
+           |                              |                                |
+           |                              | Client Started                 |
+           |                              V                                |
+           |            .-----------------------------------.              |
+           |            |     STATE_ROVER_CLIENT_STARTED    | No response, |
+           |            |         Blinking WiFi Icon        | unauthorized V
+           |            |           "HPA: >30m"             |------------->+
+           |            |             "SIV: 0"              | Stop WiFi,   |
+           |            '-----------------------------------' Start        |
+           |                              |                   Bluetooth    |
+           |                              |                                |
+           |                              | Client Connected               |
+           |                              V                                |
+           '----------------------------->+<-------------------------------'
+                                          |
+                                          V
+                        .-----------------------------------.
+                        |         STATE_ROVER_NO_FIX        |
+                        |           SIV Icon Blink          |
+                        |            "HPA: >30m"            |
+                        |             "SIV: 0"              |
+                        '-----------------------------------'
+                                          |
+                                          | GPS Lock
+                                          | 3D, 3D+DR
+                                          V
+                        .-----------------------------------.
+                        |          STATE_ROVER_FIX          | Carrier
+                        |           SIV Icon Solid          | Solution = 2
+              .-------->|            "HPA: .513"            |---------.
+              |         |             "SIV: 30"             |         |
+              |         '-----------------------------------'         |
+              |                           |                           |
+              |                           | Carrier Solution = 1      |
+              |                           V                           |
+              |         .-----------------------------------.         |
+              |         |       STATE_ROVER_RTK_FLOAT       |         |
+              |  No RTK |     Double Crosshair Blinking     |         |
+              +<--------|           "*HPA: .080"            |         |
+              ^         |             "SIV: 30"             |         |
+              |         '-----------------------------------'         |
+              |                        ^         |                    |
+              |                        |         | Carrier            |
+              |                        |         | Solution = 2       |
+              |                        |         V                    |
+              |                Carrier |         +<-------------------'
+              |           Solution = 1 |         |
+              |                        |         V
+              |         .-----------------------------------.
+              |         |        STATE_ROVER_RTK_FIX        |
+              |  No RTK |       Double Crosshair Solid      |
+              '---------|           "*HPA: .014"            |
+                        |             "SIV: 30"             |
+                        '-----------------------------------'
+
+      */
       case (STATE_ROVER_NOT_STARTED):
         {
           if (online.gnss == false)
@@ -305,6 +388,85 @@ void updateSystemState()
         }
         break;
 
+      /*
+                        .-----------------------------------.
+            startBase() |      STATE_BASE_NOT_STARTED       |
+           .------------|            Text: 'Base'           |
+           |    = false '-----------------------------------'
+           |                              |
+           |  Stop WiFi,                  | startBase() = true
+           |      Stop                    | Stop WiFi
+           |  Bluetooth                   | Start Bluetooth
+           |                              V
+           |            .-----------------------------------.
+           |            |      STATE_BASE_TEMP_SETTLE       |
+           |            |   Temp Base Icon. Blinking HPA.   |
+           |            |           "HPA: 7.15"             |
+           |            |             "SIV: 5"              |
+           |            '-----------------------------------'
+           V                              |
+        STATE_BASE_FIXED_NOT_STARTED      | horizontalAccuracy > 0.0
+        (next diagram)                    | && horizontalAccuracy
+                                          |  < settings.surveyInStartingAccuracy
+                                          | && beginSurveyIn() == true
+                                          V
+                        .-----------------------------------.
+                        |   STATE_BASE_TEMP_SURVEY_STARTED  | svinObservationTime >
+                        |       Temp Base Icon blinking     | maxSurveyInWait_s
+                        |           "Mean: 0.089"           |--------------.
+                        |            "Time: 36"             |              |
+                        '-----------------------------------'              |
+                                          |                                |
+                                          | getSurveyInValid()             |
+                                          | = true                         V
+                                          |              STATE_ROVER_NOT_STARTED
+                                          V                   (Previous diagram)
+                        .-----------------------------------.
+                        |    STATE_BASE_TEMP_TRANSMITTING   |
+                        |        Temp Base Icon solid       |
+                        |             "Xmitting"            |
+                        |            "RTCM: 2145"           |
+                        '-----------------------------------'
+                                          |
+                                          | NTRIP enabled = true
+                                          V
+                        .-----------------------------------.
+                        |    STATE_BASE_TEMP_WIFI_STARTED   |
+                        |         Blinking WiFi Icon        |
+                        |             "Xmitting"            |
+                        |              "RTCM: 0"            |
+                        '-----------------------------------'
+                                          |
+                                          | WiFi connected = true
+                                          | radioState = WIFI_CONNECTED
+                                          V
+                        .-----------------------------------.
+                        |   STATE_BASE_TEMP_WIFI_CONNECTED  |
+       .--------------->|          Solid WiFi Icon          |
+       |                |             "Xmitting"            |
+       |                |            "RTCM: 2145"           |
+       |                '-----------------------------------'
+       |                                  |
+       |                                  | Caster enabled
+       |                                  V
+       |                .-----------------------------------.
+       |                |   STATE_BASE_TEMP_CASTER_STARTED  |
+       |  Caster failed |          Solid WiFi Icon          |
+       +<---------------|            "Connecting"           |
+       ^  Authorization |            "RTCM: 2145"           |
+       |         failed '-----------------------------------'
+       |                                  |
+       |                                  | Caster connected
+       |                                  V
+       |                .-----------------------------------.
+       |  Caster failed |  STATE_BASE_TEMP_CASTER_CONNECTED |
+       '----------------|          Solid WiFi Icon          |
+                        |             "Casting"             |
+                        |            "RTCM: 2145"           |
+                        '-----------------------------------'
+
+      */
+
       case (STATE_BASE_NOT_STARTED):
         {
           if (online.gnss == false)
@@ -584,6 +746,63 @@ void updateSystemState()
 #endif
         }
         break;
+
+      /*
+                        .-----------------------------------.
+            startBase() |   STATE_BASE_FIXED_NOT_STARTED    |
+                = false |        Text: "Base Started"       |
+          .-------------|                                   |
+          |             '-----------------------------------'
+          V                               |
+      STATE_ROVER_NOT_STARTED             | startBase() = true
+      (Rover diagram)                     V
+                        .-----------------------------------.
+                        |   STATE_BASE_FIXED_TRANSMITTING   |
+                        |       Castle Base Icon solid      |
+                        |            "Xmitting"             |
+                        |            "RTCM: 0"              |
+                        '-----------------------------------'
+                                          |
+                                          | NTRIP enabled = true
+                                          | Stop Bluetooth
+                                          | Start WiFi
+                                          V
+                        .-----------------------------------.
+                        |   STATE_BASE_FIXED_WIFI_STARTED   |
+                        |         Blinking WiFi Icon        |
+                        |             "Xmitting"            |
+                        |             "RTCM: 0"             |
+                        '-----------------------------------'
+                                          |
+                                          | WiFi connected
+                                          | radioState = WIFI_CONNECTED
+                                          V
+                        .-----------------------------------.
+                        |  STATE_BASE_FIXED_WIFI_CONNECTED  |
+           .----------->|          Solid WiFi Icon          |
+           |            |             "Xmitting"            |
+           |            |            "RTCM: 2145"           |
+           |            '-----------------------------------'
+           |                              |
+           |                              | Caster enabled
+           |                              V
+           |            .-----------------------------------.
+           |     Caster |  STATE_BASE_FIXED_CASTER_STARTED  |
+           | Connection |          Solid WiFi Icon          |
+           |     Failed |             "Xmitting"            |
+           +------------|            "RTCM: 2145"           |
+           ^     Failed '-----------------------------------'
+           |  Authroization               |
+           |                              | Caster connected
+           |                              V
+           |            .-----------------------------------.
+           |     Caster |  STATE_BASE_FIXED_WIFI_CONNECTED  |
+           | Connection |          Solid WiFi Icon          |
+           |     Failed |             "Casting"             |
+           '------------|            "RTCM: 2145"           |
+                        '-----------------------------------'
+
+      */
 
       //User has set switch to base with fixed option enabled. Let's configure and try to get there.
       //If fixed base fails, we'll handle it here

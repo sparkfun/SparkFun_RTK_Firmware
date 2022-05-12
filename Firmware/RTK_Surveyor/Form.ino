@@ -8,6 +8,7 @@ void startConfigAP()
   stopUART2Tasks(); //Delete F9 serial tasks if running
 
 #ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
 
   wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
   esp_wifi_init(&wifi_init_config); //Restart WiFi resources
@@ -176,12 +177,14 @@ void startConfigAP()
 
   server.begin();
 #endif
+#endif
 
   radioState = WIFI_ON_NOCONNECTION;
 }
 
 //Handler for firmware file upload
 #ifdef COMPILE_WIFI
+#ifdef COMPILT_AP
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
   if (!index)
@@ -266,9 +269,11 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
   }
 }
 #endif
+#endif
 
 //Events triggered by web sockets
 #ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
   if (type == WS_EVT_CONNECT) {
@@ -291,10 +296,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   }
 }
 #endif
+#endif
 
 //Create a csv string with current settings
 void createSettingsString(char* settingsCSV)
 {
+#ifdef COMPILE_AP
   //System Info
   stringRecord(settingsCSV, "platformPrefix", platformPrefix);
 
@@ -408,11 +415,13 @@ void createSettingsString(char* settingsCSV)
   strcat(settingsCSV, "\0");
   Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
   Serial.printf("settingsCSV: %s\n\r", settingsCSV);
+#endif
 }
 
 //Given a settingName, and string value, update a given setting
 void updateSettingWithValue(const char *settingName, const char* settingValueStr)
 {
+#ifdef COMPILE_AP
   char* ptr;
   double settingValue = strtod(settingValueStr, &ptr);
 
@@ -602,6 +611,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       Serial.printf("Unknown '%s': %0.3lf\n\r", settingName, settingValue);
     }
   } //End last strcpy catch
+#endif
 }
 
 //Add record with int

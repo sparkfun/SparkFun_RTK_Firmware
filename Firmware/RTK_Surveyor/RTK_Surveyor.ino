@@ -49,8 +49,9 @@
 const int FIRMWARE_VERSION_MAJOR = 1;
 const int FIRMWARE_VERSION_MINOR = 13;
 
-//#define COMPILE_WIFI //Comment out to remove all WiFi functionality
-//#define COMPILE_BT //Comment out to disable all Bluetooth
+#define COMPILE_WIFI //Comment out to remove all WiFi functionality
+#define COMPILE_BT //Comment out to disable all Bluetooth
+//#define COMPILE_AP //Comment out to disable Access Point functionality
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
@@ -340,12 +341,13 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 //Webserver for serving config page from ESP32 as Acess Point
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
-
+#ifdef COMPILE_AP
 #include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer 
 #include "form.h"
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
+#endif
 #endif
 
 //Because the incoming string is longer than max len, there are multiple callbacks so we

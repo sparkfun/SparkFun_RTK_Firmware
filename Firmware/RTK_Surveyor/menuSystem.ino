@@ -43,13 +43,26 @@ void menuSystem()
     if (online.microSD == true) Serial.println(F("Online"));
     else Serial.println(F("Offline"));
 
+    if (online.lband == true)
+    {
+      Serial.print(F("L-Band: Online - "));
+      if (online.lbandCorrections == true) Serial.print(F("Keys Good"));
+      else Serial.print(F("No Keys"));
+      
+      if(lbandCorrectionsReceived == true) Serial.print(F(" / Corrections Received"));
+      else Serial.print(F(" / Corrections Received Failed"));
+
+      Serial.printf(" / Eb/N0[dB] (>9 is good): %0.2f", lBandEBNO);
+      Serial.println();
+    }
+
     //Display MAC address
     char macAddress[5];
     sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
 
-    Serial.print(F("MAC: "));
+    Serial.print(F("Bluetooth ("));
     Serial.print(macAddress);
-    Serial.print(F(" - "));
+    Serial.print(F("): "));
 
     //Verify the ESP UART2 can communicate TX/RX to ZED UART1
     if (online.gnss == true)
@@ -67,15 +80,15 @@ void menuSystem()
         if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
         {
           zedUartPassed = true;
-          Serial.print(F("BT Online"));
+          Serial.print(F("Online"));
         }
         else
-          Serial.print(F("BT Offline"));
+          Serial.print(F("Offline"));
 
         startUART2Tasks(); //Return to normal operation
       }
       else
-        Serial.print(F("BT Online"));
+        Serial.print(F("Online"));
     }
     else
     {

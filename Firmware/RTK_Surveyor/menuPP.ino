@@ -770,8 +770,8 @@ void updateLBand()
     i2cLBand.checkUblox(); // Check for the arrival of new PMP data and process it.
     i2cLBand.checkCallbacks(); // Check if any LBand callbacks are waiting to be processed.
 
-    if (lbandCorrectionsDecrypted == true && millis() - lastLBandDecryption > 5000)
-      lbandCorrectionsDecrypted = false;
+    if (lbandCorrectionsReceived == true && millis() - lastLBandDecryption > 5000)
+      lbandCorrectionsReceived = false;
   }
 }
 
@@ -852,10 +852,11 @@ void applyLBandKeys()
 void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 {
   log_d("LBand Eb/N0[dB] (>9 is good): %0.2f", ubxDataStruct->ebno * pow(2, -3));
+  lBandEBNO = ubxDataStruct->ebno * pow(2, -3);
 
   if (ubxDataStruct->statusInfo.bits.msgDecrypted == 2) //Successfully decrypted
   {
-    lbandCorrectionsDecrypted = true;
+    lbandCorrectionsReceived = true;
     lastLBandDecryption = millis();
   }
 }

@@ -379,6 +379,7 @@ const uint32_t myLBandFreq = 1556290000; // Uncomment this line to use the US SP
 //const uint32_t myLBandFreq = 1545260000; // Uncomment this line to use the EU SPARTN 1.8 service
 const char* pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
 void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
+float lBandEBNO = 0.0; //Used on system status menu
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Global variables
@@ -467,7 +468,7 @@ int maxNtripClientConnectionAttempts = 3; //Give up connecting after this number
 bool ntripClientAttempted = false; //Goes true once we attempt WiFi. Allows graceful failure.
 
 unsigned long startTime = 0; //Used for checking longest running functions
-bool lbandCorrectionsDecrypted = false; //Used to display LBand SIV icon when corrections are successfully decrypted
+bool lbandCorrectionsReceived = false; //Used to display LBand SIV icon when corrections are successfully decrypted
 unsigned long lastLBandDecryption = 0; //Timestamp of last successfully decrypted PMP message
 bool mqttMessageReceived = false; //Goes true when the subscribed MQTT channel reports back
 uint8_t leapSeconds = 0; //Gets set if GNSS is online

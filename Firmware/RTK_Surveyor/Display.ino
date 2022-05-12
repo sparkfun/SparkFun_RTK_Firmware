@@ -545,7 +545,7 @@ void paintSIV()
     if (fixType == 3 || fixType == 4 || fixType == 5) //3D, 3D+DR, or Time
     {
       //Fix, turn on icon
-      if (lbandCorrectionsDecrypted == false)
+      if (lbandCorrectionsReceived == false)
         displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
       else
         displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
@@ -561,7 +561,7 @@ void paintSIV()
           satelliteDishIconDisplayed = true;
 
           //Draw the icon
-          if (lbandCorrectionsDecrypted == false)
+          if (lbandCorrectionsReceived == false)
             displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
           else
             displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);

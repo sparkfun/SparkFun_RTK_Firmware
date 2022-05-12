@@ -126,7 +126,10 @@ void updateSystemState()
       case (STATE_ROVER_CLIENT_WIFI_STARTED):
         {
           if (millis() - wifiStartTime > 8000)
+          {
+            paintNClientWiFiFail(4000);
             changeState(STATE_ROVER_NOT_STARTED); //Give up and move to normal Rover mode
+          }
 
 #ifdef COMPILE_WIFI
           byte wifiStatus = WiFi.status();

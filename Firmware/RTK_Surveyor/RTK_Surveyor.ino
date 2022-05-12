@@ -462,6 +462,7 @@ unsigned long wifiStartTime = 0; //If we cannot connect to local wifi for NTRIP 
 bool restartRover = false; //If user modifies any NTRIP Client settings, we need to restart the rover
 int ntripClientConnectionAttempts = 0;
 int maxNtripClientConnectionAttempts = 3; //Give up connecting after this number of attempts
+bool ntripClientAttempted = false; //Goes true once we attempt WiFi. Allows graceful failure.
 
 unsigned long startTime = 0; //Used for checking longest running functions
 bool lbandCorrectionsDecrypted = false; //Used to display LBand SIV icon when corrections are successfully decrypted

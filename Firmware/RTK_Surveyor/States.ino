@@ -65,17 +65,19 @@ void updateSystemState()
 
           displayRoverSuccess(500);
 
-          if (settings.enableNtripClient == false)
-            changeState(STATE_ROVER_NO_FIX);
-          else
+          if (settings.enableNtripClient == true && ntripClientAttempted == false)
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
             startClientWiFi();
             wifiStartTime = millis();
 
+            ntripClientAttempted = true; //Do not allow re-entry into STATE_ROVER_CLIENT_WIFI_STARTED
+
             changeState(STATE_ROVER_CLIENT_WIFI_STARTED);
           }
+          else
+            changeState(STATE_ROVER_NO_FIX);
 
           firstRoverStart = false; //Do not allow entry into test menu again
         }
@@ -124,7 +126,7 @@ void updateSystemState()
       case (STATE_ROVER_CLIENT_WIFI_STARTED):
         {
           if (millis() - wifiStartTime > 8000)
-            changeState(STATE_ROVER_NO_FIX); //Give up and move to normal Rover mode
+            changeState(STATE_ROVER_NOT_STARTED); //Give up and move to normal Rover mode
 
 #ifdef COMPILE_WIFI
           byte wifiStatus = WiFi.status();
@@ -143,21 +145,14 @@ void updateSystemState()
 
             changeState(STATE_ROVER_CLIENT_WIFI_CONNECTED);
           }
+          else if (wifiStatus == WL_NO_SSID_AVAIL)
+          {
+            paintNClientWiFiFail(4000);
+            changeState(STATE_ROVER_NOT_STARTED); //Give up and return to Bluetooth
+          }
           else
           {
-            Serial.print(F("WiFi Status: "));
-            switch (wifiStatus) {
-              case WL_NO_SSID_AVAIL:
-                Serial.printf("SSID '%s' not detected\n\r", settings.ntripClient_wifiSSID);
-                break;
-              case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
-              case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
-              case WL_SCAN_COMPLETED: Serial.println(F("WL_SCAN_COMPLETED")); break;
-              case WL_CONNECTED: Serial.println(F("WL_CONNECTED")); break;
-              case WL_CONNECT_FAILED: Serial.println(F("WL_CONNECT_FAILED")); break;
-              case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
-              case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
-            }
+            Serial.print(".");
           }
 #endif
         }
@@ -651,7 +646,6 @@ void updateSystemState()
               case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
               case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
             }
-            delay(500);
           }
 #endif
         }

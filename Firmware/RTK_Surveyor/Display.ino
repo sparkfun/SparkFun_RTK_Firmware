@@ -2087,6 +2087,50 @@ void paintKeyWiFiFail(uint16_t displayTime)
   }
 }
 
+void paintNClientWiFiFail(uint16_t displayTime)
+{
+  //NTRIP
+  //Client
+  //Failed
+  //No WiFi
+
+  if (online.display == true)
+  {
+    oled.erase();
+
+    oled.setFont(QW_FONT_8X16);
+
+    int x = (oled.getWidth() / 2); //Center point for x coord
+    int y = 0;
+    int fontHeight = 13;
+    int textX;
+
+    textX = x - (oled.getStringWidth("NTRIP") / 2); //Starting point of text
+    oled.setCursor(textX, y);
+    oled.print("NTRIP");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Client") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Client");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Failed") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Failed");
+
+    oled.setFont(QW_FONT_5X7);
+    y += fontHeight + 1;
+    textX = x - (oled.getStringWidth("No WiFi") / 2);
+    oled.setCursor(textX, y);
+    oled.print("No WiFi");
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
 void paintKeysExpired()
 {
   displayMessage("Keys Expired", 4000);

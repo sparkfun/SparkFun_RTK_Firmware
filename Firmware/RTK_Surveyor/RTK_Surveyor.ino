@@ -46,12 +46,12 @@
     Add LBand to AP config
 */
 
-const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 13;
+const int FIRMWARE_VERSION_MAJOR = 2;
+const int FIRMWARE_VERSION_MINOR = 0;
 
-#define COMPILE_WIFI //Comment out to remove all WiFi functionality
-#define COMPILE_BT //Comment out to disable all Bluetooth
-#define COMPILE_AP //Comment out to disable Access Point functionality
+#define COMPILE_WIFI //Comment out to remove WiFi functionality
+#define COMPILE_BT //Comment out to remove Bluetooth functionality
+#define COMPILE_AP //Comment out to remove Access Point functionality
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:

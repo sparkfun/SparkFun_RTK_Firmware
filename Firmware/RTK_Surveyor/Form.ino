@@ -184,7 +184,7 @@ void startConfigAP()
 
 //Handler for firmware file upload
 #ifdef COMPILE_WIFI
-#ifdef COMPILT_AP
+#ifdef COMPILE_AP
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
   if (!index)

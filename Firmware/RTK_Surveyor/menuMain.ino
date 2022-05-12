@@ -2,10 +2,10 @@
 //Report status if ~ received, otherwise present config menu
 void updateSerial()
 {
-  if (Serial.available()) 
+  if (Serial.available())
   {
     byte incoming = Serial.read();
-    
+
     if(incoming == '~')
     {
       //Output custom GNTXT message with all current system data
@@ -13,7 +13,7 @@ void updateSerial()
     }
     else
       menuMain(); //Present user menu
-  }  
+  }
 }
 
 //Display the options

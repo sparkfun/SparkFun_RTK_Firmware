@@ -485,7 +485,7 @@ void danceLEDs()
   else
   {
     //Units can boot under 1s. Keep splash screen up for at least 2s.
-    while(millis() - splashStart < 2000) delay(1); 
+    while(millis() - splashStart < 2000) delay(1);
   }
 }
 

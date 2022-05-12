@@ -23,6 +23,89 @@ void updateSystemState()
     //Move between states as needed
     switch (systemState)
     {
+      /*
+                        .-----------------------------------.
+           NTRIP Client |      STATE_ROVER_NOT_STARTED      |
+           .------------| Text: 'Rover' and 'Rover Started' |
+           |    Enabled '-----------------------------------'
+           |    = False                   |
+           |  Stop WiFi,                  | NTRIP Client Enabled = True
+           |      Start                   | Stop Bluetooth
+           |  Bluetooth                   | Start WiFi
+           |                              V
+           |            .-----------------------------------. 8 Sec
+           |            |  STATE_ROVER_CLIENT_WIFI_STARTED  | Connection
+           |            |         Blinking WiFi Icon        | Timeout
+           |            |           "HPA: >30m"             |--------------.
+           |            |             "SIV: 0"              |              |
+           |            '-----------------------------------'              |
+           |                              |                                |
+           |                              | radioState = WIFI_CONNECTED    |
+           |                              | WiFi connected = True          |
+           |                              V                                |
+           |            .-----------------------------------.              |
+           |            | STATE_ROVER_CLIENT_WIFI_CONNECTED | Connection   |
+           |            |         Solid WiFi Icon           |  failed      V
+           |            |           "HPA: >30m"             |------------->+
+           |            |             "SIV: 0"              | Stop WiFi,   |
+           |            '-----------------------------------' Start        |
+           |                              |                   Bluetooth    |
+           |                              |                                |
+           |                              | Client Started                 |
+           |                              V                                |
+           |            .-----------------------------------.              |
+           |            |     STATE_ROVER_CLIENT_STARTED    | No response, |
+           |            |         Blinking WiFi Icon        | unauthorized V
+           |            |           "HPA: >30m"             |------------->+
+           |            |             "SIV: 0"              | Stop WiFi,   |
+           |            '-----------------------------------' Start        |
+           |                              |                   Bluetooth    |
+           |                              |                                |
+           |                              | Client Connected               |
+           |                              V                                |
+           '----------------------------->+<-------------------------------'
+                                          |
+                                          V
+                        .-----------------------------------.
+                        |         STATE_ROVER_NO_FIX        |
+                        |           SIV Icon Blink          |
+                        |            "HPA: >30m"            |
+                        |             "SIV: 0"              |
+                        '-----------------------------------'
+                                          |
+                                          | GPS Lock
+                                          | 3D, 3D+DR
+                                          V
+                        .-----------------------------------.
+                        |          STATE_ROVER_FIX          | Carrier
+                        |           SIV Icon Solid          | Solution = 2
+              .-------->|            "HPA: .513"            |---------.
+              |         |             "SIV: 30"             |         |
+              |         '-----------------------------------'         |
+              |                           |                           |
+              |                           | Carrier Solution = 1      |
+              |                           V                           |
+              |         .-----------------------------------.         |
+              |         |       STATE_ROVER_RTK_FLOAT       |         |
+              |  No RTK |     Double Crosshair Blinking     |         |
+              +<--------|           "*HPA: .080"            |         |
+              ^         |             "SIV: 30"             |         |
+              |         '-----------------------------------'         |
+              |                        ^         |                    |
+              |                        |         | Carrier            |
+              |                        |         | Solution = 2       |
+              |                        |         V                    |
+              |                Carrier |         +<-------------------'
+              |           Solution = 1 |         |
+              |                        |         V
+              |         .-----------------------------------.
+              |         |        STATE_ROVER_RTK_FIX        |
+              |  No RTK |       Double Crosshair Solid      |
+              '---------|           "*HPA: .014"            |
+                        |             "SIV: 30"             |
+                        '-----------------------------------'
+
+      */
       case (STATE_ROVER_NOT_STARTED):
         {
           if (online.gnss == false)

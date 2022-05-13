@@ -89,7 +89,6 @@ void menuPointPerfect()
         if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
         {
           provisionDevice(); //Connect to ThingStream API and get keys
-
         }
         else
           updatePointPerfectKeys();
@@ -355,6 +354,9 @@ bool provisionDevice()
   } //HTTP Response was 200
 
   Serial.println("Device successfully provisioned. Keys obtained.");
+
+  recordSystemSettings();
+  
   return (true);
 #else
   return (false);

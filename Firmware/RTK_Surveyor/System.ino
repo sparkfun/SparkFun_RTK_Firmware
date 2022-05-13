@@ -80,6 +80,7 @@ void stopBluetooth()
     log_d("Bluetooth turned off");
 
     btState = BT_OFF;
+    reportHeapNow();
   }
 }
 
@@ -109,6 +110,7 @@ void stopWiFi()
 
     log_d("WiFi Stopped");
     wifiState = WIFI_OFF;
+    reportHeapNow();
   }
 }
 

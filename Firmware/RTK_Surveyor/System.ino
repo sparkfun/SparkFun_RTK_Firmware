@@ -577,14 +577,23 @@ bool createTestFile()
 }
 
 //If debug option is on, print available heap
+void reportHeapNow()
+{
+  if (settings.enableHeapReport == true)
+  {
+    lastHeapReport = millis();
+    Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\n\r", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+  }
+}
+
+//If debug option is on, print available heap
 void reportHeap()
 {
   if (settings.enableHeapReport == true)
   {
     if (millis() - lastHeapReport > 1000)
     {
-      lastHeapReport = millis();
-      Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\n\r", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+      reportHeapNow();
     }
   }
 }

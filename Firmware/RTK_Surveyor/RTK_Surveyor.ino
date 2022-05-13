@@ -528,7 +528,7 @@ void loop()
 
   updateSystemState();
 
-  updateBattLEDs();
+  updateBattery();
 
   updateDisplay();
 

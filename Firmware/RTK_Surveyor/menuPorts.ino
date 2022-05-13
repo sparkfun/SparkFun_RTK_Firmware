@@ -2,7 +2,7 @@ void menuPorts()
 {
   if (productVariant == RTK_SURVEYOR)
     menuPortsSurveyor();
-  else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
+  else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
     menuPortsMultiplexed();
 }
 

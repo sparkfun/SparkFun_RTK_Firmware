@@ -56,8 +56,6 @@ void menuMain()
     if (binCount > 0)
       Serial.println(F("f) Firmware upgrade"));
 
-    //Serial.println(F("t) Test menu"));
-
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds

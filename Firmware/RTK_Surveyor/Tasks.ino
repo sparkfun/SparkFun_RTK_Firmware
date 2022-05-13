@@ -339,7 +339,7 @@ void ButtonCheckTask(void *e)
         }
       }
     } //End Platform = RTK Express
-    else if (productVariant == RTK_FACET) //Check one momentary button
+    else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND) //Check one momentary button
     {
       if (powerBtn != NULL) powerBtn->read();
 

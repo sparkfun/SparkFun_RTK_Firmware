@@ -518,7 +518,7 @@ void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
 #endif
 
 //Update Battery level LEDs every 5s
-void updateBattLEDs()
+void updateBattery()
 {
   if (millis() - lastBattUpdate > 5000)
   {
@@ -681,7 +681,7 @@ void cyclePositionLEDs()
 //This allows NMEA, I2C, PPS/Event, and ADC/DAC to be routed through data port via software select
 void setMuxport(int channelNumber)
 {
-  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
+  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
   {
     pinMode(pin_muxA, OUTPUT);
     pinMode(pin_muxB, OUTPUT);

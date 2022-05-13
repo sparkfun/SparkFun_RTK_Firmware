@@ -679,9 +679,37 @@ void beginLBand()
     return;
   }
 
-  bool response = true;
+  if (online.gnss == true)
+  {
+    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+  }
 
-  response &= i2cLBand.setVal32(UBLOX_CFG_PMP_CENTER_FREQUENCY,   myLBandFreq); // Default 1539812500 Hz
+  //If we have a fix, check which frequency to use
+  if (fixType == 2 || fixType == 3 || fixType == 4 || fixType == 5) //2D, 3D, 3D+DR, or Time
+  {
+    if ( (longitude > -125 && longitude < -67) && (latitude > -90 && latitude < 90))
+    {
+      log_d("Setting LBand to US");
+      settings.LBandFreq = 1556290000; //We are in US band
+    }
+    else if ( (longitude > -25 && longitude < 70) && (latitude > -90 && latitude < 90))
+    {
+      log_d("Setting LBand to EU");
+      settings.LBandFreq = 1545260000; //We are in EU band
+    }
+    else
+    {
+      Serial.println("Unknown band area");
+      settings.LBandFreq = 1556290000; //Default to US
+    }
+    recordSystemSettings();
+  }
+  else
+    log_d("No fix available for LBand frequency determination");
+
+  bool response = true;
+  response &= i2cLBand.setVal32(UBLOX_CFG_PMP_CENTER_FREQUENCY,   settings.LBandFreq); // Default 1539812500 Hz
   response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SEARCH_WINDOW,      2200);        // Default 2200 Hz
   response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_SERVICE_ID,      0);           // Default 1
   response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SERVICE_ID,         21845);       // Default 50821

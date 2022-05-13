@@ -199,6 +199,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%llu\n\r", F("pointPerfectNextKeyStart"), settings.pointPerfectNextKeyStart);
   settingsFile->printf("%s=%llu\n\r", F("lastKeyAttempt"), settings.lastKeyAttempt);
   settingsFile->printf("%s=%d\n\r", F("updateZEDSettings"), settings.updateZEDSettings);
+  settingsFile->printf("%s=%d\n\r", F("LBandFreq"), settings.LBandFreq);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -725,6 +726,8 @@ bool parseLine(char* str, Settings *settings)
     if (settings->updateZEDSettings != d)
       settings->updateZEDSettings = true; //If there is a discrepancy, push ZED reconfig
   }
+  else if (strcmp(settingName, "LBandFreq") == 0)
+    settings->LBandFreq = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

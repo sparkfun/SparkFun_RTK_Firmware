@@ -375,8 +375,6 @@ Certificate here
 )=====";
 #endif
 
-const uint32_t myLBandFreq = 1556290000; // Uncomment this line to use the US SPARTN 1.8 service
-//const uint32_t myLBandFreq = 1545260000; // Uncomment this line to use the EU SPARTN 1.8 service
 const char* pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
 void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
 float lBandEBNO = 0.0; //Used on system status menu

@@ -1643,6 +1643,7 @@ void paintSystemTest()
       oled.setCursor(xOffset, yOffset); //x, y
       oled.print(F("ZED Firm:"));
       oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
+      oled.print("  ");
       oled.print(zedFirmwareVersionInt);
       oled.print(F("-"));
       if (zedFirmwareVersionInt < 130)

@@ -1,6 +1,7 @@
 /*
   This is the main state machine for the device. It's big but controls each step of the system.
-  See system state chart document for a visual representation of how states can change to/from.
+  See system state diagram for a visual representation of how states can change to/from.
+  Statemachine diagram: https://lucid.app/lucidchart/53519501-9fa5-4352-aa40-673f88ca0c9b/edit?invitationId=inv_ebd4b988-513d-4169-93fd-c291851108f8
 */
 
 //Given the current state, see if conditions have moved us to a new state
@@ -442,25 +443,25 @@ void updateSystemState()
                                           V
                         .-----------------------------------.
                         |   STATE_BASE_TEMP_WIFI_CONNECTED  |
-       .--------------->|          Solid WiFi Icon          |
-       |                |             "Xmitting"            |
-       |                |            "RTCM: 2145"           |
-       |                '-----------------------------------'
-       |                                  |
-       |                                  | Caster enabled
-       |                                  V
-       |                .-----------------------------------.
-       |                |   STATE_BASE_TEMP_CASTER_STARTED  |
-       |  Caster failed |          Solid WiFi Icon          |
-       +<---------------|            "Connecting"           |
-       ^  Authorization |            "RTCM: 2145"           |
-       |         failed '-----------------------------------'
-       |                                  |
-       |                                  | Caster connected
-       |                                  V
-       |                .-----------------------------------.
-       |  Caster failed |  STATE_BASE_TEMP_CASTER_CONNECTED |
-       '----------------|          Solid WiFi Icon          |
+        .--------------->|          Solid WiFi Icon          |
+        |                |             "Xmitting"            |
+        |                |            "RTCM: 2145"           |
+        |                '-----------------------------------'
+        |                                  |
+        |                                  | Caster enabled
+        |                                  V
+        |                .-----------------------------------.
+        |                |   STATE_BASE_TEMP_CASTER_STARTED  |
+        |  Caster failed |          Solid WiFi Icon          |
+        +<---------------|            "Connecting"           |
+        ^  Authorization |            "RTCM: 2145"           |
+        |         failed '-----------------------------------'
+        |                                  |
+        |                                  | Caster connected
+        |                                  V
+        |                .-----------------------------------.
+        |  Caster failed |  STATE_BASE_TEMP_CASTER_CONNECTED |
+        '----------------|          Solid WiFi Icon          |
                         |             "Casting"             |
                         |            "RTCM: 2145"           |
                         '-----------------------------------'
@@ -754,8 +755,8 @@ void updateSystemState()
           .-------------|                                   |
           |             '-----------------------------------'
           V                               |
-      STATE_ROVER_NOT_STARTED             | startBase() = true
-      (Rover diagram)                     V
+        STATE_ROVER_NOT_STARTED             | startBase() = true
+        (Rover diagram)                     V
                         .-----------------------------------.
                         |   STATE_BASE_FIXED_TRANSMITTING   |
                         |       Castle Base Icon solid      |
@@ -1107,6 +1108,8 @@ void updateSystemState()
 
       case (STATE_KEYS_STARTED):
         {
+          if (rtcWaitTime == 0) rtcWaitTime = millis();
+
           //We want an immediate change from this state
           forceSystemStateUpdate = true; //Imediately go to this new state
 
@@ -1116,8 +1119,14 @@ void updateSystemState()
             changeState(settings.lastState); //Go to either rover or base
           }
 
+          //If there is no WiFi setup, skip everything
+          else if (strlen(settings.home_wifiSSID) == 0)
+          {
+            changeState(settings.lastState); //Go to either rover or base
+          }
+
           //If we don't have keys, begin zero touch provisioning
-          if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
+          else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
           {
             startHomeWiFi();
             wifiStartTime = millis(); //Start timer for WiFi connection timeout
@@ -1127,9 +1136,11 @@ void updateSystemState()
           //Determine if we have valid date/time RTC from last boot
           else if (online.rtc == false)
           {
-            //If RTC is not available, we will assume we need keys
-            log_d("RTC not available for keys");
-            changeState(STATE_KEYS_NEEDED);
+            if (millis() - rtcWaitTime > 2000)
+            {
+              //If RTC is not available, we will assume we need keys
+              changeState(STATE_KEYS_NEEDED);
+            }
           }
 
           else
@@ -1138,8 +1149,7 @@ void updateSystemState()
             uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
             log_d("Days until keys expire: %d", daysRemaining);
 
-            if (daysRemaining >= 48)
-              //if (daysRemaining >= 28)
+            if (daysRemaining >= 28)
               changeState(STATE_KEYS_LBAND_CONFIGURE);
             else
               changeState(STATE_KEYS_NEEDED);
@@ -1227,7 +1237,7 @@ void updateSystemState()
             {
               uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
               Serial.printf("Days until LBand keys expire: %d\n\r", daysRemaining);
-              paintKeyDaysRemaining(daysRemaining, 4000);
+              paintKeyDaysRemaining(daysRemaining, 2000);
             }
           }
 

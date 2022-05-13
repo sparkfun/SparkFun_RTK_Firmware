@@ -86,7 +86,14 @@ void menuPointPerfect()
         Serial.print("WiFi connected: ");
         Serial.println(WiFi.localIP());
 
-        if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
+        //Check if we have certificates
+        char fileName[80];
+        sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
+        if(LittleFS.exists(fileName) == false)
+        {
+          provisionDevice(); //Connect to ThingStream API and get keys
+        }
+        else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
         {
           provisionDevice(); //Connect to ThingStream API and get keys
         }
@@ -95,7 +102,7 @@ void menuPointPerfect()
       }
 
       stopWiFi();
-#endif      
+#endif
     }
     else if (incoming == '6')
     {
@@ -356,7 +363,7 @@ bool provisionDevice()
   Serial.println("Device successfully provisioned. Keys obtained.");
 
   recordSystemSettings();
-  
+
   return (true);
 #else
   return (false);

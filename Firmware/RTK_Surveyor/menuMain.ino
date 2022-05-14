@@ -149,6 +149,12 @@ void menuUserProfiles()
       profileNumber = incoming - 1;
 
       sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Update file name with new profileNumber
+
+      //Start this profile with default settings
+      Settings tempSettings;
+      settings = tempSettings;
+
+      recordSystemSettings();
     }
     else if (incoming == MAX_PROFILE_COUNT + 1)
     {

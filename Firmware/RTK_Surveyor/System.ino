@@ -180,11 +180,12 @@ bool configureUbloxModule()
   int maxWait = 2000;
 
   //Wait for initial report from module
-  while(ubloxUpdated == false)
+  while(pvtUpdated == false)
   {
     i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
     i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
     delay(10);
+    if(millis() - startTime > maxWait) break;
   }
 
   //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration

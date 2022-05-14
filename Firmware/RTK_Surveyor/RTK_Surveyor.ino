@@ -153,11 +153,11 @@ uint32_t sdUsedSpaceMB = 0;
 //Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
-#include <WiFi.h>
-#include <HTTPClient.h> //Needed for ThingStream API for ZTP
+#include <WiFi.h> //Built-in.
+#include <HTTPClient.h> //Built-in. Needed for ThingStream API for ZTP
 #include <ArduinoJson.h> //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
-#include <WiFiClientSecure.h>
-#include <PubSubClient.h> //Used for MQTT obtaining of keys
+#include <WiFiClientSecure.h> //Built-in. 
+#include <PubSubClient.h> //Built-in. Used for MQTT obtaining of keys
 
 #include "esp_wifi.h" //Needed for init/deinit of resources to free up RAM
 #include "base64.h" //Built-in ESP32 library. Needed for NTRIP Client credential encoding.
@@ -212,7 +212,7 @@ SFE_UBLOX_GNSS_ADD i2cGNSS;
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 
 //These globals are updated regularly via the storePVTdata callback
-bool ubloxUpdated = false;
+bool pvtUpdated = false;
 double latitude;
 double longitude;
 float altitude;

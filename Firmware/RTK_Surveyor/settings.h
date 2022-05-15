@@ -116,16 +116,22 @@ typedef enum
   ERROR_GPS_CONFIG_FAIL,
 } t_errorNumber;
 
-//Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
-enum RadioState
+enum WiFiState
 {
-  RADIO_OFF = 0,
-  BT_ON_NOCONNECTION, //WiFi is off
-  BT_CONNECTED,
-  WIFI_ON_NOCONNECTION, //BT is off
+  WIFI_OFF = 0,
+  WIFI_NOTCONNECTED,
   WIFI_CONNECTED,
 };
-volatile byte radioState = RADIO_OFF;
+volatile byte wifiState = WIFI_OFF;
+
+//Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
+enum BTState
+{
+  BT_OFF = 0,
+  BT_NOTCONNECTED,
+  BT_CONNECTED,
+};
+volatile byte btState = BT_OFF;
 
 //Return values for getByteChoice()
 enum returnStatus {

@@ -152,7 +152,7 @@ void updateSystemState()
           if (settings.enableNtripClient == true && ntripClientAttempted == false)
           {
             //Turn off Bluetooth and turn on WiFi
-            stopBluetooth();
+            //stopBluetooth();
             startWiFi(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
             wifiStartTime = millis();
 
@@ -219,7 +219,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
             i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
@@ -619,7 +619,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             changeState(STATE_BASE_TEMP_WIFI_CONNECTED);
           }
@@ -850,7 +850,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
           }
@@ -1194,7 +1194,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             changeState(STATE_KEYS_WIFI_CONNECTED);
           }
@@ -1306,7 +1306,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
           }

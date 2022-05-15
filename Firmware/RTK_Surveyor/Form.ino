@@ -10,9 +10,6 @@ void startConfigAP()
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-  wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
-  esp_wifi_init(&wifi_init_config); //Restart WiFi resources
-
   //Check SD Size
   if (online.microSD)
   {
@@ -179,7 +176,7 @@ void startConfigAP()
 #endif
 #endif
 
-  radioState = WIFI_ON_NOCONNECTION;
+  wifiState = WIFI_NOTCONNECTED;
 }
 
 //Handler for firmware file upload
@@ -282,11 +279,11 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     createSettingsString(settingsCSV);
     log_d("Sending command: %s\n\r", settingsCSV);
     client->text(settingsCSV);
-    radioState = WIFI_CONNECTED;
+    wifiState = WIFI_CONNECTED;
   }
   else if (type == WS_EVT_DISCONNECT) {
     log_d("Websocket client disconnected");
-    radioState = WIFI_ON_NOCONNECTION;
+    wifiState = WIFI_NOTCONNECTED;
   }
   else if (type == WS_EVT_DATA) {
     for (int i = 0; i < len; i++) {

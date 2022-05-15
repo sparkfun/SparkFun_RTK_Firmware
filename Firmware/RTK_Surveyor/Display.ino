@@ -265,14 +265,15 @@ void paintBatteryLevel()
 //Display Bluetooth icon, Bluetooth MAC, or WiFi depending on connection state
 void paintWirelessIcon()
 {
+  //TODO resolve if both BT and WiFi are on/connected
   if (online.display == true)
   {
     //Bluetooth icon if paired, or Bluetooth MAC address if not paired
-    if (radioState == BT_CONNECTED)
+    if (btState == BT_CONNECTED)
     {
       displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
     }
-    else if (radioState == WIFI_ON_NOCONNECTION)
+    else if (wifiState == WIFI_NOTCONNECTED)
     {
       //Blink WiFi icon
       if (millis() - lastWifiIconUpdate > 500)
@@ -289,7 +290,7 @@ void paintWirelessIcon()
           wifiIconDisplayed = false;
       }
     }
-    else if (radioState == WIFI_CONNECTED)
+    else if (wifiState == WIFI_CONNECTED)
     {
       //Solid WiFi icon
       displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
@@ -1317,7 +1318,7 @@ void displayWiFiConfigNotStarted()
 void displayWiFiConfig()
 {
   //Draw the WiFi icon
-  if (radioState == WIFI_ON_NOCONNECTION)
+  if (wifiState == WIFI_NOTCONNECTED)
   {
     //Blink WiFi icon
     if (millis() - lastWifiIconUpdate > 500)
@@ -1334,7 +1335,7 @@ void displayWiFiConfig()
         wifiIconDisplayed = false;
     }
   }
-  else if (radioState == WIFI_CONNECTED)
+  else if (wifiState == WIFI_CONNECTED)
   {
     //Solid WiFi icon
     displayBitmap((oled.getWidth() / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);

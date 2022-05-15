@@ -3,10 +3,7 @@
 //This allows multiple units to be on at same time
 void startBluetooth()
 {
-  if (radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
-    stopWiFi();
-
-  if (radioState == RADIO_OFF)
+  if (btState == BT_OFF)
   {
 #ifdef COMPILE_BT
     char stateName[10];
@@ -21,7 +18,6 @@ void startBluetooth()
     if (SerialBT.begin(deviceName, false) == false) //localName, isMaster
     {
       Serial.println(F("An error occurred initializing Bluetooth"));
-      radioState = RADIO_OFF;
 
       if (productVariant == RTK_SURVEYOR)
         digitalWrite(pin_bluetoothStatusLED, LOW);
@@ -63,7 +59,7 @@ void startBluetooth()
     }
 #endif
 
-    radioState = BT_ON_NOCONNECTION;
+    btState = BT_NOTCONNECTED;
   }
 
 }
@@ -72,7 +68,7 @@ void startBluetooth()
 //It also releases as much system resources as possible so that WiFi/caster is more stable
 void stopBluetooth()
 {
-  if (radioState == BT_ON_NOCONNECTION || radioState == BT_CONNECTED)
+  if (btState == BT_NOTCONNECTED || btState == BT_CONNECTED)
   {
 #ifdef COMPILE_BT
     SerialBT.register_callback(NULL);
@@ -82,23 +78,21 @@ void stopBluetooth()
 #endif
 
     log_d("Bluetooth turned off");
-    radioState = RADIO_OFF;
+
+    btState = BT_OFF;
   }
 }
 
 void startWiFi(char* ssid, char* pw)
 {
-  if (radioState == BT_ON_NOCONNECTION || radioState == BT_CONNECTED)
-    stopBluetooth();
-
-  if (radioState == RADIO_OFF)
+  if (wifiState == WIFI_OFF)
   {
 #ifdef COMPILE_WIFI
     Serial.printf("Connecting to WiFi: %s", ssid);
     WiFi.begin(ssid, pw);
 #endif
 
-    radioState = WIFI_ON_NOCONNECTION;
+    wifiState = WIFI_NOTCONNECTED;
   }
 }
 
@@ -106,15 +100,15 @@ void startWiFi(char* ssid, char* pw)
 //See WiFiBluetoothSwitch sketch for more info
 void stopWiFi()
 {
-  if (radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
+  if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
   {
 #ifdef COMPILE_WIFI
-  ntripServer.stop();
-  WiFi.mode(WIFI_OFF);
+    ntripServer.stop();
+    WiFi.mode(WIFI_OFF);
 #endif
 
-  log_d("WiFi Stopped");
-  radioState = RADIO_OFF;
+    log_d("WiFi Stopped");
+    wifiState = WIFI_OFF;
   }
 }
 
@@ -448,19 +442,19 @@ void danceLEDs()
 }
 
 //Call back for when BT connection event happens (connected/disconnect)
-//Used for updating the radioState state machine
+//Used for updating the btState state machine
 #ifdef COMPILE_BT
 void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
     Serial.println(F("Client Connected"));
-    radioState = BT_CONNECTED;
+    btState = BT_CONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, HIGH);
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
     Serial.println(F("Client disconnected"));
-    radioState = BT_ON_NOCONNECTION;
+    btState = BT_NOTCONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, LOW);
   }

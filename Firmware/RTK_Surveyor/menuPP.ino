@@ -69,7 +69,7 @@ void menuPointPerfect()
     else if (incoming == '5')
     {
 #ifdef COMPILE_WIFI
-      startHomeWiFi();
+      startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
 
       unsigned long startTime = millis();
       while (WiFi.status() != WL_CONNECTED)

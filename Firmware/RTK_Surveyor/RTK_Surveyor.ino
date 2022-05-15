@@ -44,6 +44,7 @@
     Add ntripServer_CasterUser/PW to AP config
     Add maxLogLength_minutes to AP config
     Add LBand to AP config
+
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
@@ -159,8 +160,7 @@ uint32_t sdUsedSpaceMB = 0;
 #include <WiFiClientSecure.h> //Built-in. 
 #include <PubSubClient.h> //Built-in. Used for MQTT obtaining of keys
 
-#include "esp_wifi.h" //Needed for init/deinit of resources to free up RAM
-#include "base64.h" //Built-in ESP32 library. Needed for NTRIP Client credential encoding.
+#include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
 WiFiClient ntripServer; // The WiFi connection to the NTRIP caster. We use this to push local RTCM to the caster.
 WiFiClient ntripClient; // The WiFi connection to the NTRIP caster. We use this to obtain RTCM from the caster.
@@ -259,8 +259,6 @@ float battChangeRate = 0.0;
 //We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/23
 #include "src/BluetoothSerial/BluetoothSerial.h"
 BluetoothSerial SerialBT;
-#include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
-#include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/5
 #endif
 
 char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names

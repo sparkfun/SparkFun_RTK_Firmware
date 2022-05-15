@@ -153,7 +153,7 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
-            startClientWiFi();
+            startWiFi(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
             wifiStartTime = millis();
 
             ntripClientAttempted = true; //Do not allow re-entry into STATE_ROVER_CLIENT_WIFI_STARTED
@@ -605,7 +605,7 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
-            startServerWiFi();
+            startWiFi(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
 
             changeState(STATE_BASE_TEMP_WIFI_STARTED);
           }
@@ -834,7 +834,7 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
-            startServerWiFi();
+            startWiFi(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
 
             rtcmPacketsSent = 0; //Reset any previous number
 
@@ -1128,7 +1128,7 @@ void updateSystemState()
           //If we don't have keys, begin zero touch provisioning
           else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
           {
-            startHomeWiFi();
+            startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
             wifiStartTime = millis(); //Start timer for WiFi connection timeout
             changeState(STATE_KEYS_PROVISION_WIFI_STARTED);
           }
@@ -1163,7 +1163,7 @@ void updateSystemState()
 
           if (online.rtc == false)
           {
-            startHomeWiFi();
+            startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
             wifiStartTime = 0; //Start timer for WiFi connection timeout
             changeState(STATE_KEYS_WIFI_STARTED); //If we can't check the RTC, continue
           }
@@ -1174,7 +1174,7 @@ void updateSystemState()
             settings.lastKeyAttempt = rtc.getEpoch(); //Mark it
             recordSystemSettings(); //Record these settings to unit
 
-            startHomeWiFi();
+            startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
             wifiStartTime = 0; //Start timer for WiFi connection timeout
             changeState(STATE_KEYS_WIFI_STARTED);
           }

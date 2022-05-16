@@ -327,7 +327,7 @@ class MainWidget(QWidget):
             command.append("0x10000")
             command.append(self.theFileName)
 
-            self.addMessage("Command: esptool.py %s\n" % " ".join(command))
+            self.addMessage("Command: esptool.exe %s\n" % " ".join(command))
 
             self.p.start(resource_path("esptool.exe"), command)
 

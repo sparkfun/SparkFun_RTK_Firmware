@@ -1386,6 +1386,7 @@ void requestChangeState(SystemState requestedState)
 //Change states and print the new state
 void changeState(SystemState newState)
 {
+  reportHeapNow();
   systemState = newState;
 
   //Debug print

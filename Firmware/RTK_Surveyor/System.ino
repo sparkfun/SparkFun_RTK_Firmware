@@ -60,6 +60,7 @@ void startBluetooth()
 #endif
 
     btState = BT_NOTCONNECTED;
+    reportHeapNow();
   }
 
 }
@@ -80,6 +81,7 @@ void stopBluetooth()
     log_d("Bluetooth turned off");
 
     btState = BT_OFF;
+    reportHeapNow();
   }
 }
 
@@ -93,6 +95,7 @@ void startWiFi(char* ssid, char* pw)
 #endif
 
     wifiState = WIFI_NOTCONNECTED;
+    reportHeapNow();
   }
 }
 
@@ -109,6 +112,7 @@ void stopWiFi()
 
     log_d("WiFi Stopped");
     wifiState = WIFI_OFF;
+    reportHeapNow();
   }
 }
 
@@ -577,14 +581,23 @@ bool createTestFile()
 }
 
 //If debug option is on, print available heap
+void reportHeapNow()
+{
+  if (settings.enableHeapReport == true)
+  {
+    lastHeapReport = millis();
+    Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\n\r", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+  }
+}
+
+//If debug option is on, print available heap
 void reportHeap()
 {
   if (settings.enableHeapReport == true)
   {
     if (millis() - lastHeapReport > 1000)
     {
-      lastHeapReport = millis();
-      Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\n\r", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+      reportHeapNow();
     }
   }
 }

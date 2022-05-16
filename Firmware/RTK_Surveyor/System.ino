@@ -60,6 +60,7 @@ void startBluetooth()
 #endif
 
     btState = BT_NOTCONNECTED;
+    reportHeapNow();
   }
 
 }
@@ -94,6 +95,7 @@ void startWiFi(char* ssid, char* pw)
 #endif
 
     wifiState = WIFI_NOTCONNECTED;
+    reportHeapNow();
   }
 }
 

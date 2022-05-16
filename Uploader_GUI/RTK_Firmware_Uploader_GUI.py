@@ -14,6 +14,8 @@ You may also need:
 Pyinstaller:
 Windows:
 pyinstaller --onefile --clean --noconsole --distpath=./Windows_exe --icon=RTK.ico --add-data="esptool.py;." --add-binary="RTK_Surveyor.ino.partitions.bin;." --add-binary="RTK_Surveyor.ino.bootloader.bin;." --add-binary="boot_app0.bin;." --add-binary="RTK.png;." RTK_Firmware_Uploader_GUI.py
+Linux:
+pyinstaller --onefile --clean --noconsole --distpath=./Linux_exe --icon=RTK.ico --add-data="esptool.py:." --add-binary="RTK_Surveyor.ino.partitions.bin:." --add-binary="RTK_Surveyor.ino.bootloader.bin:." --add-binary="boot_app0.bin:." --add-binary="RTK.png:." RTK_Firmware_Uploader_GUI.py
 
 Pyinstaller needs:
 RTK_Firmware_Uploader_GUI.py (this file!)
@@ -321,18 +323,14 @@ class MainWidget(QWidget):
 
             command = []
             command.append(resource_path("esptool.py"))
-            command.append("--chip")
-            command.append("esp32")
-            command.append("--port")
-            command.append(self.port)
-            command.append("--baud")
-            command.append(self.baudRate)
+            command.extend(["--chip","esp32"])
+            command.extend(["--port",self.port])
+            command.extend(["--baud",self.baudRate])
             command.extend(["--before","default_reset","--after","hard_reset","write_flash","-z","--flash_mode","dio","--flash_freq","80m","--flash_size","detect"])
             command.extend(["0x1000",resource_path("RTK_Surveyor.ino.bootloader.bin")])
             command.extend(["0x8000",resource_path("RTK_Surveyor.ino.partitions.bin")])
             command.extend(["0xe000",resource_path("boot_app0.bin")])
-            command.append("0x10000")
-            command.append(self.theFileName)
+            command.extend(["0x10000",self.theFileName])
 
             self.addMessage("Command: python %s\n" % " ".join(command))
 

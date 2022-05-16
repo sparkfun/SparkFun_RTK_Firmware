@@ -22,8 +22,8 @@ void loadSettings()
   //loadSystemSettingsFromFileLFS(settingsFileName, &settings); - Previously loaded during loadSettingsPartial()
   loadSystemSettingsFromFileSD(settingsFileName, &settings);
 
-  //Change default profile names to 'Profile1' etc
-  if (strcmp(settings.profileName, "Default") == 0)
+  //Change empty profile name to 'Profile1' etc
+  if (strcmp(settings.profileName, "(Empty)") == 0)
     sprintf(settings.profileName, "Profile%d", profileNumber + 1);
 
   //Record these settings to LittleFS and SD file to be sure they are the same

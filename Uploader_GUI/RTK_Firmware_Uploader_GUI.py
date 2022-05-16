@@ -13,13 +13,13 @@ You may also need:
 
 Pyinstaller:
 Windows:
-pyinstaller --onefile --clean --noconsole --distpath=./Windows_exe --icon=RTK.ico --add-binary="esptool.exe;." --add-binary="RTK_Surveyor.ino.partitions.bin;." --add-binary="RTK_Surveyor.ino.bootloader.bin;." --add-binary="boot_app0.bin;." --add-binary="RTK.png;." RTK_Firmware_Uploader_GUI.py
+pyinstaller --onefile --clean --noconsole --distpath=./Windows_exe --icon=RTK.ico --add-data="esptool.py;." --add-binary="RTK_Surveyor.ino.partitions.bin;." --add-binary="RTK_Surveyor.ino.bootloader.bin;." --add-binary="boot_app0.bin;." --add-binary="RTK.png;." RTK_Firmware_Uploader_GUI.py
 
 Pyinstaller needs:
 RTK_Firmware_Uploader_GUI.py (this file!)
 RTK.ico (icon file for the .exe)
 RTK.png (icon for the GUI widget)
-esptool.exe
+esptool.py (copied from https://github.com/tasmota/tasmota-pyflasher)
 RTK_Surveyor.ino.partitions.bin
 RTK_Surveyor.ino.bootloader.bin
 boot_app0.bin
@@ -39,8 +39,14 @@ from PyQt5.QtWidgets import QWidget, QLabel, QComboBox, QGridLayout, \
     QAction, QActionGroup, QMenu, QMenuBar, QMainWindow, QMessageBox
 from PyQt5.QtGui import QCloseEvent, QTextCursor, QIcon, QFont
 from PyQt5.QtSerialPort import QSerialPortInfo, QSerialPortInfo
+
 import sys
 import os
+
+import esptool
+from esptool import ESPLoader
+from esptool import NotImplementedInROMError
+from esptool import FatalError
 
 # Setting constants
 SETTING_PORT_NAME = 'port_name'
@@ -314,6 +320,7 @@ class MainWidget(QWidget):
             self.p.finished.connect(self.process_finished)
 
             command = []
+            command.append(resource_path("esptool.py"))
             command.append("--chip")
             command.append("esp32")
             command.append("--port")
@@ -327,9 +334,9 @@ class MainWidget(QWidget):
             command.append("0x10000")
             command.append(self.theFileName)
 
-            self.addMessage("Command: esptool.exe %s\n" % " ".join(command))
+            self.addMessage("Command: python %s\n" % " ".join(command))
 
-            self.p.start(resource_path("esptool.exe"), command)
+            self.p.start('python', command)
 
         else:
             self.addMessage("\nUploader is already running!\n")

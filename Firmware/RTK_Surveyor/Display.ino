@@ -1484,6 +1484,8 @@ void paintProfile(uint8_t profileUnit)
     uint8_t profileNumber = getProfileNumberFromUnit(profileUnit);
     recordProfileNumber(profileNumber); //Update internal settings with user's choice, mark unit for config update
 
+    log_d("Going to profile number %d from unit %d, name '%s'", profileNumber, profileUnit, profileName);
+
     snprintf(profileMessage, sizeof(profileMessage), "Loading %s", profileName);
     displayMessage(profileMessage, 2000);
     ESP.restart(); //Profiles require full restart to take effect

@@ -149,13 +149,7 @@ void menuUserProfiles()
       recordProfileNumber(incoming - 1); //Align to array
       profileNumber = incoming - 1;
 
-      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Update file name with new profileNumber
-
-      //Start this profile with default settings
-      Settings tempSettings;
-      settings = tempSettings;
-
-      recordSystemSettings();
+      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Enables Delete Profile
     }
     else if (incoming == MAX_PROFILE_COUNT + 1)
     {
@@ -182,13 +176,12 @@ void menuUserProfiles()
             sd.remove(settingsFileName);
         }
 
-        //Clear this profile profile with default settings
-        Settings tempSettings;
-        settings = tempSettings;
+        recordProfileNumber(0); //Move to Profile1
+        profileNumber = 0;
 
-        recordSystemSettings();
+        sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Update file name with new profileNumber
 
-        strcpy(profileNames[profileNumber], settings.profileName); //Update array
+        activeProfiles = loadProfileNames(); //Count is used during menu display
       }
       else
         Serial.println(F("Delete aborted"));

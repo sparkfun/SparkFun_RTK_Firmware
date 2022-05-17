@@ -336,7 +336,7 @@ typedef struct {
   };
 
   int maxLogLength_minutes = 60 * 24; //Default to 24 hours
-  char profileName[50] = "(Empty)";
+  char profileName[50] = "";
 
   //NTRIP Server
   bool enableNtripServer = false;

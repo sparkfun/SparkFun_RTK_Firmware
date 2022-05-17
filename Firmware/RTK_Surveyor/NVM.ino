@@ -23,7 +23,7 @@ void loadSettings()
   loadSystemSettingsFromFileSD(settingsFileName, &settings);
 
   //Change empty profile name to 'Profile1' etc
-  if (strcmp(settings.profileName, "(Empty)") == 0)
+  if (strlen(settings.profileName) == 0)
     sprintf(settings.profileName, "Profile%d", profileNumber + 1);
 
   //Record these settings to LittleFS and SD file to be sure they are the same
@@ -873,9 +873,7 @@ uint8_t loadProfileNames()
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
     profileNames[x][0] = '\0'; //Ensure every profile name is terminated
 
-  //Serial.printf("sizeof(Settings): %d\n\r", sizeof(Settings));
-
-  //Check LittleFS for profile names
+  //Check LittleFS and SD for profile names
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
   {
     char fileName[40];
@@ -885,11 +883,11 @@ uint8_t loadProfileNames()
       profileCount++;
   }
 
-  //    Serial.printf("profileCount: %d\n\r", profileCount);
-  //    Serial.println("Profiles:");
-  //    for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
-  //      Serial.printf("%d) %s\n\r", x, profileNames[x]);
-  //    Serial.println();
+//  Serial.printf("profileCount: %d\n\r", profileCount);
+//  Serial.println("Profiles:");
+//  for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
+//    Serial.printf("%d) %s\n\r", x, profileNames[x]);
+//  Serial.println();
 
   return (profileCount);
 }
@@ -953,16 +951,14 @@ uint8_t getProfileNumberFromUnit(uint8_t profileUnit)
     if (strlen(profileNames[x]) > 0)
     {
       if (located == profileUnit)
-      {
-        return (located);
-      }
+        return (x);
 
       located++; //Valid settingFileName but not the unit we are looking for
     }
   }
   log_d("Profile unit %d not found", profileUnit);
 
-  return (false);
+  return (0);
 }
 
 //Record large character blob to file

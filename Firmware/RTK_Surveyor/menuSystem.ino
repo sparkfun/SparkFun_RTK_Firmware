@@ -289,6 +289,8 @@ void menuDebug()
     }
     else if (incoming == 'r')
     {
+      recordSystemSettings();
+      
       ESP.restart();
     }
     else if (incoming == 't')

@@ -13,9 +13,9 @@ You may also need:
 
 Pyinstaller:
 Windows:
-pyinstaller --onefile --clean --noconsole --distpath=./Windows_exe --icon=RTK.ico --add-data="esptool.py;." --add-binary="RTK_Surveyor.ino.partitions.bin;." --add-binary="RTK_Surveyor.ino.bootloader.bin;." --add-binary="boot_app0.bin;." --add-binary="RTK.png;." RTK_Firmware_Uploader_GUI.py
+pyinstaller --onefile --clean --noconsole --distpath=./Windows_exe --icon=RTK.ico --add-binary="RTK_Surveyor.ino.partitions.bin;." --add-binary="RTK_Surveyor.ino.bootloader.bin;." --add-binary="boot_app0.bin;." --add-binary="RTK.png;." RTK_Firmware_Uploader_GUI.py
 Linux:
-pyinstaller --onefile --clean --noconsole --distpath=./Linux_exe --icon=RTK.ico --add-data="esptool.py:." --add-binary="RTK_Surveyor.ino.partitions.bin:." --add-binary="RTK_Surveyor.ino.bootloader.bin:." --add-binary="boot_app0.bin:." --add-binary="RTK.png:." RTK_Firmware_Uploader_GUI.py
+pyinstaller --onefile --clean --noconsole --distpath=./Linux_exe --icon=RTK.ico --add-binary="RTK_Surveyor.ino.partitions.bin:." --add-binary="RTK_Surveyor.ino.bootloader.bin:." --add-binary="boot_app0.bin:." --add-binary="RTK.png:." RTK_Firmware_Uploader_GUI.py
 
 Pyinstaller needs:
 RTK_Firmware_Uploader_GUI.py (this file!)
@@ -68,6 +68,30 @@ def resource_path(relative_path):
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
+class messageRedirect:
+    """Wrap a class around a QPlainTextEdit so we can redirect stdout and stderr to it"""
+
+    def __init__(self, edit, out=None) -> None:
+        self.edit = edit
+        self.out = out
+        self.edit.setReadOnly(True)
+        self.edit.clear()
+
+    def write(self, msg) -> None:
+        if msg.startswith("\r"):
+            self.edit.moveCursor(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
+            self.edit.cut()
+            self.edit.insertPlainText(msg[1:])
+        else:
+            self.edit.insertPlainText(msg)
+        self.edit.ensureCursorVisible()
+        self.edit.repaint()
+        if self.out: # Echo to out (stdout) too if desired
+            self.out.write(msg)
+
+    def flush(self) -> None:
+        None
+
 # noinspection PyArgumentList
 
 class MainWidget(QWidget):
@@ -75,8 +99,6 @@ class MainWidget(QWidget):
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
-
-        self.p = None # This will be the esptool QProcess
 
         # File location line edit
         self.msg_label = QLabel(self.tr('Firmware File:'))
@@ -118,7 +140,7 @@ class MainWidget(QWidget):
         self.messages_label = QLabel(self.tr('Status / Warnings:'))
 
         # Messages Window
-        self.messages = QPlainTextEdit()
+        self.messageBox = QPlainTextEdit()
 
         # Arrange Layout
         layout = QGridLayout()
@@ -136,7 +158,7 @@ class MainWidget(QWidget):
         layout.addWidget(self.upload_btn, 3, 2)
 
         layout.addWidget(self.messages_label, 4, 0)
-        layout.addWidget(self.messages, 5, 0, 5, 3)
+        layout.addWidget(self.messageBox, 5, 0, 5, 3)
 
         self.setLayout(layout)
 
@@ -144,25 +166,12 @@ class MainWidget(QWidget):
         
         self._load_settings()
 
-        # Make the text edit window read-only
-        self.messages.setReadOnly(True)
-        self.messages.clear()  # Clear the message window
-
-    def addMessage(self, msg: str) -> None:
-        """Add msg to the messages window, ensuring that it is visible"""
-        self.messages.moveCursor(QTextCursor.End)
-        self.messages.ensureCursorVisible()
-        self.messages.appendPlainText(msg)
-        self.messages.ensureCursorVisible()
-        self.repaint() # Update/refresh the message window
-
-    def insertMessageText(self, msg: str) -> None:
-        """Add msg to the messages window, ensuring that it is visible"""
-        self.messages.moveCursor(QTextCursor.End)
-        self.messages.ensureCursorVisible()
-        self.messages.insertPlainText(msg)
-        self.messages.ensureCursorVisible()
-        self.repaint() # Update/refresh the message window
+    def writeMessage(self, msg) -> None:
+        self.messageBox.moveCursor(QTextCursor.End)
+        self.messageBox.ensureCursorVisible()
+        self.messageBox.appendPlainText(msg)
+        self.messageBox.ensureCursorVisible()
+        self.messageBox.repaint()
 
     def _load_settings(self) -> None:
         """Load settings on startup."""
@@ -253,7 +262,7 @@ class MainWidget(QWidget):
 
     def on_refresh_btn_pressed(self) -> None:
         self.update_com_ports()
-        self.addMessage("Ports Refreshed\n")
+        self.writeMessage("Ports Refreshed\n")
 
     def on_browse_btn_pressed(self) -> None:
         """Open dialog to select bin file."""
@@ -267,29 +276,6 @@ class MainWidget(QWidget):
         if fileName:
             self.fileLocation_lineedit.setText(fileName)
 
-    def handle_stderr(self) -> None:
-        data = self.p.readAllStandardError()
-        stderr = bytes(data).decode("utf8")
-        self.insertMessageText(stderr)
-
-    def handle_stdout(self) -> None:
-        data = self.p.readAllStandardOutput()
-        stdout = bytes(data).decode("utf8")
-        self.insertMessageText(stdout)
-
-    def handle_state(self, state) -> None:
-        states = {
-            QProcess.NotRunning: 'Not running\n',
-            QProcess.Starting: 'Starting\n',
-            QProcess.Running: 'Running\n',
-        }
-        state_name = states[state]
-        self.addMessage(f"Upload state changed: {state_name}")
-
-    def process_finished(self) -> None:
-        self.addMessage("Upload finished\n")
-        self.p = None
-
     def on_upload_btn_pressed(self) -> None:
         """Upload the firmware"""
         portAvailable = False
@@ -297,7 +283,7 @@ class MainWidget(QWidget):
             if (sys == self.port):
                 portAvailable = True
         if (portAvailable == False):
-            self.addMessage("Port No Longer Available")
+            self.writeMessage("Port No Longer Available")
             return
 
         fileExists = False
@@ -308,37 +294,25 @@ class MainWidget(QWidget):
             fileExists = False
         finally:
             if (fileExists == False):
-                self.addMessage("File Not Found")
+                self.writeMessage("File Not Found")
                 return
             f.close()
 
-        if self.p is None:
-            self.addMessage("Uploading firmware\n")
+        self.writeMessage("Uploading firmware\n")
 
-            self.p = QProcess()
-            self.p.readyReadStandardOutput.connect(self.handle_stdout)
-            self.p.readyReadStandardError.connect(self.handle_stderr)
-            self.p.stateChanged.connect(self.handle_state)
-            self.p.finished.connect(self.process_finished)
+        command = []
+        command.extend(["--chip","esp32"])
+        command.extend(["--port",self.port])
+        command.extend(["--baud",self.baudRate])
+        command.extend(["--before","default_reset","--after","hard_reset","write_flash","-z","--flash_mode","dio","--flash_freq","80m","--flash_size","detect"])
+        command.extend(["0x1000",resource_path("RTK_Surveyor.ino.bootloader.bin")])
+        command.extend(["0x8000",resource_path("RTK_Surveyor.ino.partitions.bin")])
+        command.extend(["0xe000",resource_path("boot_app0.bin")])
+        command.extend(["0x10000",self.theFileName])
 
-            command = []
-            command.append(resource_path("esptool.py"))
-            command.extend(["--chip","esp32"])
-            command.extend(["--port",self.port])
-            command.extend(["--baud",self.baudRate])
-            command.extend(["--before","default_reset","--after","hard_reset","write_flash","-z","--flash_mode","dio","--flash_freq","80m","--flash_size","detect"])
-            command.extend(["0x1000",resource_path("RTK_Surveyor.ino.bootloader.bin")])
-            command.extend(["0x8000",resource_path("RTK_Surveyor.ino.partitions.bin")])
-            command.extend(["0xe000",resource_path("boot_app0.bin")])
-            command.extend(["0x10000",self.theFileName])
+        self.writeMessage("Command: esptool.main(%s)\n\n" % " ".join(command))
 
-            self.addMessage("Command: python %s\n" % " ".join(command))
-
-            self.p.start('python', command)
-
-        else:
-            self.addMessage("\nUploader is already running!\n")
-        
+        esptool.main(command)
 
 if __name__ == '__main__':
     from sys import exit as sysExit
@@ -347,5 +321,11 @@ if __name__ == '__main__':
     app.setApplicationName('SparkFun RTK Firmware Uploader ' + guiVersion)
     app.setWindowIcon(QIcon(resource_path("RTK.png")))
     w = MainWidget()
+    if 1:
+        sys.stdout = messageRedirect(w.messageBox) # Divert stdout to messageBox
+        sys.stderr = messageRedirect(w.messageBox) # Divert stderr to messageBox
+    else:
+        sys.stdout = messageRedirect(w.messageBox, sys.stdout) # Echo to stdout too
+        sys.stderr = messageRedirect(w.messageBox, sys.stderr) # Echo to stderr too
     w.show()
     sys.exit(app.exec_())

@@ -38,13 +38,15 @@ Note: The COMPILE_WIFI and COMPILE_BT defines at the top of RTK_Surveyor.ino can
 ----
 ### A note about ZED-F9P firmware
 
-The firmware loaded onto the ZED-F9P receiver can vary depending on manufacture date. Currently one of three versions: v1.12, v1.13, and v1.30. All field testing and device specific performance parameters were obtained with v1.30.
+The firmware loaded onto the ZED-F9P receiver can vary depending on manufacture date. All field testing and device specific performance parameters were obtained with v1.30.
 
-v1.12 has the benefit of working with SBAS and an operational RTK status signal (the LED illuminates correctly).
+v1.12 has the benefit of working with SBAS and an operational RTK status signal (the LED illuminates correctly). See [release notes](https://content.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG112_RN_%28UBX-19026698%29.pdf).
 
-v1.13 has a few RTK and receiver performance improvements but introduces a bug that causes the RTK Status LED to fail when SBAS is enabled.
+v1.13 has a few RTK and receiver performance improvements but introduces a bug that causes the RTK Status LED to fail when SBAS is enabled. See [release notes](https://content.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG113_RN_%28UBX-20019211%29.pdf).
 
-v1.30 has a few RTK and receiver performance improvements, I<sup>2</sup>C communication improvements, and most importantly support for Spartan PMP packets.
+v1.30 has a few RTK and receiver performance improvements, I<sup>2</sup>C communication improvements, and most importantly support for Spartan PMP packets. See [release notes](https://www.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG130_RN_UBX-21047459.pdf).
+
+v1.32 has a few Spartan protocol specific improvements. See [release notes](https://www.u-blox.com/sites/default/files/documents/ZED-F9P-FW100-HPG132_RN_UBX-22004887.pdf).
 
 The RTK Firmware is designed to work with any ZED-F9x firmware. Upgrading the ZED-F9x is a good thing to consider but is not crucial to the use of the RTK products.
 

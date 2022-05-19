@@ -106,6 +106,11 @@ void menuSystem()
 
     Serial.println(F("r) Reset all settings to default"));
 
+    // Support mode switching
+    Serial.println(F("B) Switch to Base mode"));
+    Serial.println(F("R) Switch to Rover mode"));
+    Serial.println(F("W) Switch to WiFi Config mode"));
+
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
@@ -137,6 +142,19 @@ void menuSystem()
       {
         Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
       }
+    }
+    // Support mode switching
+    else if (incoming == 'B') {
+      forceSystemStateUpdate = true; //Imediately go to this new state
+      changeState(STATE_BASE_NOT_STARTED);
+    }
+    else if (incoming == 'R') {
+      forceSystemStateUpdate = true; //Imediately go to this new state
+      changeState(STATE_ROVER_NOT_STARTED);
+    }
+    else if (incoming == 'W') {
+      forceSystemStateUpdate = true; //Imediately go to this new state
+      changeState(STATE_WIFI_CONFIG_NOT_STARTED);
     }
     else if (incoming == 'x')
       break;

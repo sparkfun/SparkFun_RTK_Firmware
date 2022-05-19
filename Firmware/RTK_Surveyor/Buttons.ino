@@ -3,22 +3,14 @@
 //Let's make sure they continue to press for 500ms
 void powerOnCheck()
 {
-#ifdef ENABLE_DEVELOPER
-  return;
-#endif
-
   powerPressedStartTime = millis();
+  if (digitalRead(pin_powerSenseAndControl) == LOW)
+    delay(500);
 
-  while (digitalRead(pin_powerSenseAndControl) == LOW)
-  {
-    delay(10);
-
-    if (millis() - powerPressedStartTime > 500)
-      break;
-  }
-
-  if (millis() - powerPressedStartTime < 500)
+#ifndef ENABLE_DEVELOPER
+  if (digitalRead(pin_powerSenseAndControl) != LOW)
     powerDown(false); //Power button tap. Returning to off state.
+#endif
 
   powerPressedStartTime = 0; //Reset var to return to normal 'on' state
 }

@@ -133,6 +133,10 @@ void menuSystem()
 
         xSemaphoreGive(sdCardSemaphore);
       }
+      else
+      {
+        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      }
     }
     else if (incoming == 'x')
       break;

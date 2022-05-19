@@ -38,6 +38,10 @@ void powerDown(bool displayInfo)
       ubxFile.close();
       //xSemaphoreGive(sdCardSemaphore); //Do not release semaphore
     } //End sdCardSemaphore
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
 
     online.logging = false;
   }

@@ -86,6 +86,10 @@ void recordSystemSettingsToFileSD(char *fileName)
 
       xSemaphoreGive(sdCardSemaphore);
     }
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
   }
 }
 
@@ -286,6 +290,10 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
       }
 
     } //End Semaphore check
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
   } //End SD online
 
   log_d("Config file read failed: SD offline");

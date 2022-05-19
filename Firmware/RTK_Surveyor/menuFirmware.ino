@@ -94,7 +94,10 @@ void scanForFirmware()
 
       xSemaphoreGive(sdCardSemaphore);
     }
-
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
   }
 }
 

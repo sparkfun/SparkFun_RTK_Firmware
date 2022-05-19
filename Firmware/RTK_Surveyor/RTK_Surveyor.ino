@@ -570,6 +570,10 @@ void updateLogs()
       online.logging = false;
       xSemaphoreGive(sdCardSemaphore); //Release semaphore
     }
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
   }
   else if (online.logging == true && settings.enableLogging == true && (systemTime_minutes - startCurrentLogTime_minutes) >= settings.maxLogLength_minutes)
   {
@@ -580,6 +584,10 @@ void updateLogs()
       ubxFile.close();
       online.logging = false;
       xSemaphoreGive(sdCardSemaphore); //Release semaphore
+    }
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
     }
   }
 
@@ -608,7 +616,7 @@ void updateLogs()
       } //End sdCardSemaphore
       else
       {
-        log_d("Semaphore failed to yield");
+        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
       }
     }
 
@@ -631,6 +639,10 @@ void updateLogs()
         xSemaphoreGive(sdCardSemaphore);
         newEventToRecord = false;
       }
+      else
+      {
+        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      }
     }
 
     //Report file sizes to show recording is working
@@ -644,6 +656,10 @@ void updateLogs()
         fileSize = ubxFile.fileSize();
 
         xSemaphoreGive(sdCardSemaphore);
+      }
+      else
+      {
+        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
       }
 
       if (fileSize > 0)

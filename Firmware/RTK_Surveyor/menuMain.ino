@@ -225,6 +225,10 @@ void factoryReset()
       sd.remove(settingsFileName);
       xSemaphoreGive(sdCardSemaphore);
     } //End sdCardSemaphore
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
   }
 
   if (online.gnss == true)

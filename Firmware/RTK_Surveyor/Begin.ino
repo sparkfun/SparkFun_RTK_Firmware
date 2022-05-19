@@ -418,19 +418,25 @@ void beginGNSS()
       zedFirmwareVersionInt = 121;
     else if (strstr(zedFirmwareVersion, "1.30") != NULL) //ZED-F9P released Dec, 2021
       zedFirmwareVersionInt = 130;
+    else if (strstr(zedFirmwareVersion, "1.32") != NULL) //ZED-F9P released May, 2022
+      zedFirmwareVersionInt = 132;
     else
+    {
       Serial.printf("Unknown firmware version: %s\n\r", zedFirmwareVersion);
+      zedFirmwareVersionInt = 99; //0.99 invalid firmware version
+    }
 
     //Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
     if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9P") != NULL)
+      zedModuleType = PLATFORM_F9P;
+    else if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9R") != NULL)
+      zedModuleType = PLATFORM_F9R;
+    else
     {
+      Serial.printf("Unknown ZED module: %s\n\r", i2cGNSS.minfo.extension[3]);
       zedModuleType = PLATFORM_F9P;
     }
-    else if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9R") != NULL)
-    {
-      zedModuleType = PLATFORM_F9R;
-    }
-
+    
     printModuleInfo(); //Print module type and firmware version
   }
 

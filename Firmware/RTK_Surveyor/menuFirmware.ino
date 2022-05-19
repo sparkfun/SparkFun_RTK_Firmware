@@ -102,6 +102,7 @@ void scanForFirmware()
 void updateFromSD(const char *firmwareFileName)
 {
   //Turn off any tasks so that we are not disrupted
+  stopWebServer();
   stopWiFi();
   stopBluetooth();
 

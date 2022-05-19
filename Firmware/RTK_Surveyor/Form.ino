@@ -2,11 +2,8 @@
 //After user clicks 'save', data is validated via main.js and a long string of values is returned.
 
 //Start webserver in AP mode
-void startConfigAP()
+void startWebServer()
 {
-  stopBluetooth();
-  stopUART2Tasks(); //Delete F9 serial tasks if running
-
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
@@ -37,6 +34,7 @@ void startConfigAP()
   //#define LOCAL_WIFI_TESTING 1
 
 #ifndef LOCAL_WIFI_TESTING
+
   //Start in AP mode
   WiFi.mode(WIFI_AP);
 
@@ -173,10 +171,29 @@ void startConfigAP()
   }, handleFirmwareFileUpload);
 
   server.begin();
+
+  log_d("Web Server Started");
+  reportHeapNow();
+
 #endif
 #endif
 
   wifiState = WIFI_NOTCONNECTED;
+}
+
+void stopWebServer()
+{
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
+
+  //server.reset();
+  server.end();
+
+  log_d("Web Server Stopped");
+  reportHeapNow();
+
+#endif
+#endif
 }
 
 //Handler for firmware file upload

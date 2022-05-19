@@ -23,7 +23,7 @@ void menuPointPerfect()
     else
       Serial.println("No keys");
 
-    Serial.print(F("1) Use LBand Corrections: "));
+    Serial.print(F("1) Use L-Band Corrections: "));
     if (settings.enableLBandCorrections == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
@@ -402,7 +402,7 @@ bool updatePointPerfectKeys()
     {
       Serial.println("connected");
       //mqttClient.subscribe(settings.pointPerfectLBandTopic); //The /pp/key/Lb channel fails to respond with keys
-      mqttClient.subscribe("/pp/ubx/0236/Lb"); //Alternate channel for LBand keys
+      mqttClient.subscribe("/pp/ubx/0236/Lb"); //Alternate channel for L-Band keys
 
       //if(settings.enableIPCorrections == true) ...
       //mqttClient.subscribe(mqtt_lband_correction_topic_eu);
@@ -770,14 +770,14 @@ long gpsToMjd(long GpsCycle, long GpsWeek, long GpsSeconds)
   return dateToMjd(1980, 1, 6) + GpsDays;
 }
 
-//Process any new LBand from I2C
-//If a certain amount of time has elapsed between last decryption, turn off LBand icon
+//Process any new L-Band from I2C
+//If a certain amount of time has elapsed between last decryption, turn off L-Band icon
 void updateLBand()
 {
   if (online.lbandCorrections == true)
   {
     i2cLBand.checkUblox(); // Check for the arrival of new PMP data and process it.
-    i2cLBand.checkCallbacks(); // Check if any LBand callbacks are waiting to be processed.
+    i2cLBand.checkCallbacks(); // Check if any L-Band callbacks are waiting to be processed.
 
     if (lbandCorrectionsReceived == true && millis() - lastLBandDecryption > 5000)
       lbandCorrectionsReceived = false;
@@ -794,7 +794,7 @@ void pushRXMPMP(UBX_RXM_PMP_message_data_t *pmpData)
   i2cGNSS.pushRawData(&pmpData->checksumA, (size_t)2); // Push the checksum bytes
 }
 
-//If we have decryption keys, and LBand is online, configure module
+//If we have decryption keys, and L-Band is online, configure module
 void applyLBandKeys()
 {
   if (online.lband == true)
@@ -808,12 +808,12 @@ void applyLBandKeys()
     //NEO-D9S encrypted PMP messages are only supported on ZED-F9P firmware v1.30 and above
     if (zedModuleType != PLATFORM_F9P)
     {
-      Serial.println("Error: LBand corrections currently only supported on the ZED-F9P.");
+      Serial.println("Error: L-Band corrections currently only supported on the ZED-F9P.");
       return;
     }
     if (zedFirmwareVersionInt < 130)
     {
-      Serial.println("Error: LBand corrections currently supported by ZED-F9P firmware v1.30 and above. Please upgrade your ZED firmware: https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver");
+      Serial.println("Error: L-Band corrections currently supported by ZED-F9P firmware v1.30 and above. Please upgrade your ZED firmware: https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver");
       return;
     }
 
@@ -846,13 +846,13 @@ void applyLBandKeys()
         Serial.println(F("setDynamicSPARTNKeys failed"));
       else
       {
-        log_d("LBand keys applied");
+        log_d("L-Band keys applied");
         online.lbandCorrections = true;
       }
     }
     else
     {
-      log_d("No LBand keys available");
+      log_d("No L-Band keys available");
     }
   }
 }
@@ -860,7 +860,7 @@ void applyLBandKeys()
 // Check if the PMP data is being decrypted successfully
 void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 {
-  log_d("LBand Eb/N0[dB] (>9 is good): %0.2f", ubxDataStruct->ebno * pow(2, -3));
+  log_d("L-Band Eb/N0[dB] (>9 is good): %0.2f", ubxDataStruct->ebno * pow(2, -3));
   lBandEBNO = ubxDataStruct->ebno * pow(2, -3);
 
   if (ubxDataStruct->statusInfo.bits.msgDecrypted == 2) //Successfully decrypted

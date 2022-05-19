@@ -366,7 +366,7 @@ typedef struct {
   char pointPerfectDeviceProfileToken[40] = "";
   bool enableLBandCorrections = true;
   bool enableIPCorrections = false; //We do not plan to use IP based point perfect
-  char home_wifiSSID[50] = ""; //WiFi network to use when attempting to obtain LBand keys and ThingStream provisioning
+  char home_wifiSSID[50] = ""; //WiFi network to use when attempting to obtain L-Band keys and ThingStream provisioning
   char home_wifiPW[50] = "";
   bool autoKeyRenewal = true; //Attempt to get keys if we get under 28 days from the expiration date
   char pointPerfectClientID[50] = "";

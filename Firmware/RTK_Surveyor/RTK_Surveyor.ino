@@ -43,7 +43,7 @@
     Add ntripClient_TransmitGGA to AP config
     Add ntripServer_CasterUser/PW to AP config
     Add maxLogLength_minutes to AP config
-    Add LBand to AP config
+    Add L-Band to AP config
 
 */
 
@@ -355,7 +355,7 @@ int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-//LBand Corrections
+//L-Band Corrections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 SFE_UBLOX_GNSS i2cLBand; // NEO-D9S
 
@@ -464,13 +464,13 @@ int maxNtripClientConnectionAttempts = 3; //Give up connecting after this number
 bool ntripClientAttempted = false; //Goes true once we attempt WiFi. Allows graceful failure.
 
 unsigned long startTime = 0; //Used for checking longest running functions
-bool lbandCorrectionsReceived = false; //Used to display LBand SIV icon when corrections are successfully decrypted
+bool lbandCorrectionsReceived = false; //Used to display L-Band SIV icon when corrections are successfully decrypted
 unsigned long lastLBandDecryption = 0; //Timestamp of last successfully decrypted PMP message
 bool mqttMessageReceived = false; //Goes true when the subscribed MQTT channel reports back
 uint8_t leapSeconds = 0; //Gets set if GNSS is online
 unsigned long systemTestDisplayTime = 0; //Timestamp for swapping the graphic during testing
 uint8_t systemTestDisplayNumber = 0; //Tracks which test screen we're looking at
-unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to update during LBand Key checking
+unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to update during L-Band Key checking
 bool setupButtonTestPassed = false; //Tracks button press during test screen
 bool powerButtonTestPassed = false; //Tracks button press during test screen
 
@@ -511,7 +511,7 @@ void setup()
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
-  updateRTC(); //The GNSS likely has time/date. Update ESP32 RTC to match. Needed for LBand key expiration.
+  updateRTC(); //The GNSS likely has time/date. Update ESP32 RTC to match. Needed for L-Band key expiration.
 
   Serial.flush(); //Complete any previous prints
 
@@ -544,7 +544,7 @@ void loop()
 
   updateNTRIPClient(); //Move any available incoming NTRIP to ZED
 
-  updateLBand(); //Check if we've recently received LBand corrections or not
+  updateLBand(); //Check if we've recently received L-Band corrections or not
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;

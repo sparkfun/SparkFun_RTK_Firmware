@@ -49,7 +49,7 @@ void menuMain()
     Serial.println(F("p) Configure Profiles"));
 
     if (online.lband == true)
-      Serial.println(F("l) Configure LBand"));
+      Serial.println(F("l) Configure L-Band"));
 
     Serial.println(F("s) System Status"));
 

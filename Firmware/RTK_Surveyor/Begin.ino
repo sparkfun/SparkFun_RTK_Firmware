@@ -128,7 +128,7 @@ void beginBoard()
     else if (productVariant == RTK_FACET_LBAND)
     {
       strcpy(platformFilePrefix, "SFE_Facet_LBand");
-      strcpy(platformPrefix, "Facet LBand");
+      strcpy(platformPrefix, "Facet L-Band");
     }
   }
 
@@ -681,7 +681,7 @@ void beginLBand()
 {
   if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
   {
-    log_d("LBand not detected");
+    log_d("L-Band not detected");
     return;
   }
 
@@ -696,12 +696,12 @@ void beginLBand()
   {
     if ( (longitude > -125 && longitude < -67) && (latitude > -90 && latitude < 90))
     {
-      log_d("Setting LBand to US");
+      log_d("Setting L-Band to US");
       settings.LBandFreq = 1556290000; //We are in US band
     }
     else if ( (longitude > -25 && longitude < 70) && (latitude > -90 && latitude < 90))
     {
-      log_d("Setting LBand to EU");
+      log_d("Setting L-Band to EU");
       settings.LBandFreq = 1545260000; //We are in EU band
     }
     else
@@ -712,7 +712,7 @@ void beginLBand()
     recordSystemSettings();
   }
   else
-    log_d("No fix available for LBand frequency determination");
+    log_d("No fix available for L-Band frequency determination");
 
   bool response = true;
   response &= i2cLBand.setVal32(UBLOX_CFG_PMP_CENTER_FREQUENCY,   settings.LBandFreq); // Default 1539812500 Hz
@@ -732,7 +732,7 @@ void beginLBand()
   response &= i2cLBand.setVal32(UBLOX_CFG_UART2_BAUDRATE,         38400); // match baudrate with ZED default
 
   if (response == false)
-    Serial.println("LBand failed to configure");
+    Serial.println("L-Band failed to configure");
 
   i2cLBand.softwareResetGNSSOnly(); // Do a restart
 
@@ -740,7 +740,7 @@ void beginLBand()
 
   i2cGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Check if the PMP data is being decrypted successfully
 
-  log_d("LBand online");
+  log_d("L-Band online");
 
   online.lband = true;
 }

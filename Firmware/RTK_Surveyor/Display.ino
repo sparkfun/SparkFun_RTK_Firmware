@@ -1639,7 +1639,7 @@ void paintSystemTest()
 
       drawFrame(); //Outside edge
 
-      //Test ZED Firmware, LBand, Buttons
+      //Test ZED Firmware, L-Band, Buttons
 
       oled.setFont(QW_FONT_5X7); //Set font to smallest
 
@@ -2074,7 +2074,7 @@ void displayKeysUpdated()
 void paintKeyDaysRemaining(int daysRemaining, uint16_t displayTime)
 {
   //28 days
-  //until LBand
+  //until L-Band
   //keys expire
 
   if (online.display == true)
@@ -2112,9 +2112,9 @@ void paintKeyDaysRemaining(int daysRemaining, uint16_t displayTime)
     oled.print("Until");
 
     y += fontHeight;
-    textX = x - (oled.getStringWidth("LBand") / 2);
+    textX = x - (oled.getStringWidth("L-Band") / 2);
     oled.setCursor(textX, y);
-    oled.print("LBand");
+    oled.print("L-Band");
 
     y += fontHeight;
     textX = x - (oled.getStringWidth("Keys") / 2);
@@ -2134,7 +2134,7 @@ void paintKeyDaysRemaining(int daysRemaining, uint16_t displayTime)
 
 void paintKeyWiFiFail(uint16_t displayTime)
 {
-  //LBand
+  //L-Band
   //Update
   //Failed
   //No WiFi
@@ -2150,9 +2150,9 @@ void paintKeyWiFiFail(uint16_t displayTime)
     int fontHeight = 13;
     int textX;
 
-    textX = x - (oled.getStringWidth("LBand") / 2); //Starting point of text
+    textX = x - (oled.getStringWidth("L-Band") / 2); //Starting point of text
     oled.setCursor(textX, y);
-    oled.print("LBand");
+    oled.print("L-Band");
 
     y += fontHeight;
     textX = x - (oled.getStringWidth("Update") / 2);
@@ -2227,7 +2227,7 @@ void paintKeysExpired()
 
 void paintLBandConfigure()
 {
-  displayMessage("LBand Config", 0);
+  displayMessage("L-Band Config", 0);
 }
 
 void paintGettingKeys()

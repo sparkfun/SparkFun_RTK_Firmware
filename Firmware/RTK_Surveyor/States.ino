@@ -1116,7 +1116,7 @@ void updateSystemState()
           //We want an immediate change from this state
           forceSystemStateUpdate = true; //Imediately go to this new state
 
-          //If user has turned off LBand, skip everything
+          //If user has turned off L-Band, skip everything
           if (settings.enableLBandCorrections == false)
           {
             changeState(settings.lastState); //Go to either rover or base
@@ -1220,7 +1220,7 @@ void updateSystemState()
 
       case (STATE_KEYS_WIFI_CONNECTED):
         {
-          if (updatePointPerfectKeys() == true) //Connect to ThingStream MQTT and get LBand key UBX packet
+          if (updatePointPerfectKeys() == true) //Connect to ThingStream MQTT and get L-Band key UBX packet
           {
             displayKeysUpdated();
           }
@@ -1239,7 +1239,7 @@ void updateSystemState()
             if (settings.pointPerfectNextKeyStart > 0)
             {
               uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
-              Serial.printf("Days until LBand keys expire: %d\n\r", daysRemaining);
+              Serial.printf("Days until L-Band keys expire: %d\n\r", daysRemaining);
               paintKeyDaysRemaining(daysRemaining, 2000);
             }
           }
@@ -1293,7 +1293,7 @@ void updateSystemState()
 
       case (STATE_KEYS_LBAND_ENCRYPTED):
         {
-          //Since LBand is not available, be sure RTCM can be provided over UART2
+          //Since L-Band is not available, be sure RTCM can be provided over UART2
           i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_RTCM3); //Set the UART2 to input RTCM
 
           forceSystemStateUpdate = true; //Imediately go to this new state
@@ -1519,10 +1519,10 @@ void changeState(SystemState newState)
       Serial.println(F("State: Keys Days Remaining"));
       break;
     case (STATE_KEYS_LBAND_CONFIGURE):
-      Serial.println(F("State: Keys LBand Configure"));
+      Serial.println(F("State: Keys L-Band Configure"));
       break;
     case (STATE_KEYS_LBAND_ENCRYPTED):
-      Serial.println(F("State: Keys LBand Encrypted"));
+      Serial.println(F("State: Keys L-Band Encrypted"));
       break;
     case (STATE_KEYS_PROVISION_WIFI_STARTED):
       Serial.println(F("State: Keys Provision - WiFi Started"));

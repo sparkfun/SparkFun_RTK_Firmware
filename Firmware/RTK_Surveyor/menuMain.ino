@@ -56,8 +56,6 @@ void menuMain()
     if (binCount > 0)
       Serial.println(F("f) Firmware upgrade"));
 
-    //Serial.println(F("t) Test menu"));
-
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
@@ -126,17 +124,18 @@ void menuUserProfiles()
     for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
     {
       if (strlen(profileNames[x]) > 0)
-      {
         Serial.printf("%d) Select %s", x + 1, profileNames[x]);
-        if (x == profileNumber) Serial.print(" <- Current");
-      }
       else
         Serial.printf("%d) Select (Empty)", x + 1);
+
+      if (x == profileNumber) Serial.print(" <- Current");
 
       Serial.println();
     }
 
     Serial.printf("%d) Edit profile name: %s\n\r", MAX_PROFILE_COUNT + 1, profileNames[profileNumber]);
+
+    Serial.printf("%d) Delete profile '%s'\n\r", MAX_PROFILE_COUNT + 2, profileNames[profileNumber]);
 
     Serial.println(F("x) Exit"));
 
@@ -150,7 +149,7 @@ void menuUserProfiles()
       recordProfileNumber(incoming - 1); //Align to array
       profileNumber = incoming - 1;
 
-      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Update file name with new profileNumber
+      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Enables Delete Profile
     }
     else if (incoming == MAX_PROFILE_COUNT + 1)
     {
@@ -159,6 +158,33 @@ void menuUserProfiles()
       recordSystemSettings(); //We need to update this immediately in case user lists the available profiles again
 
       strcpy(profileNames[profileNumber], settings.profileName); //Update array
+    }
+    else if (incoming == MAX_PROFILE_COUNT + 2)
+    {
+      Serial.printf("\r\nDelete profile '%s'. Press 'y' to confirm:", profileNames[profileNumber]);
+      byte bContinue = getByteChoice(menuTimeout);
+      if (bContinue == 'y')
+      {
+        //Remove profile from LittleFS
+        if (LittleFS.exists(settingsFileName))
+          LittleFS.remove(settingsFileName);
+
+        //Remove profile from SD if available
+        if (online.microSD == true)
+        {
+          if (sd.exists(settingsFileName))
+            sd.remove(settingsFileName);
+        }
+
+        recordProfileNumber(0); //Move to Profile1
+        profileNumber = 0;
+
+        sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Update file name with new profileNumber
+
+        activeProfiles = loadProfileNames(); //Count is used during menu display
+      }
+      else
+        Serial.println(F("Delete aborted"));
     }
 
     else if (incoming == STATUS_PRESSED_X)
@@ -193,12 +219,16 @@ void factoryReset()
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
   if (settings.enableSD && online.microSD)
   {
-    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       //Remove this specific settings file. Don't remove the other profiles.
       sd.remove(settingsFileName);
-      xSemaphoreGive(xFATSemaphore);
-    } //End xFATSemaphore
+      xSemaphoreGive(sdCardSemaphore);
+    } //End sdCardSemaphore
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
   }
 
   if (online.gnss == true)

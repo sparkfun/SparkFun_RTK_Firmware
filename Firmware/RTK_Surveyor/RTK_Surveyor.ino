@@ -44,14 +44,15 @@
     Add ntripServer_CasterUser/PW to AP config
     Add maxLogLength_minutes to AP config
     Add LBand to AP config
+
 */
 
-const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 13;
+const int FIRMWARE_VERSION_MAJOR = 2;
+const int FIRMWARE_VERSION_MINOR = 0;
 
-#define COMPILE_WIFI //Comment out to remove all WiFi functionality
-#define COMPILE_BT //Comment out to disable all Bluetooth
-//#define COMPILE_AP //Comment out to disable Access Point functionality
+#define COMPILE_WIFI //Comment out to remove WiFi functionality
+#define COMPILE_BT //Comment out to remove Bluetooth functionality
+#define COMPILE_AP //Comment out to remove Access Point functionality
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
@@ -140,7 +141,7 @@ SdFile newFirmwareFile; //File that is available if user uploads new firmware vi
 
 //System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
-SemaphoreHandle_t xFATSemaphore;
+SemaphoreHandle_t sdCardSemaphore;
 const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
 const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 
@@ -153,14 +154,13 @@ uint32_t sdUsedSpaceMB = 0;
 //Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
-#include <WiFi.h>
-#include <HTTPClient.h> //Needed for ThingStream API for ZTP
+#include <WiFi.h> //Built-in.
+#include <HTTPClient.h> //Built-in. Needed for ThingStream API for ZTP
 #include <ArduinoJson.h> //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
-#include <WiFiClientSecure.h>
-#include <PubSubClient.h> //Used for MQTT obtaining of keys
+#include <WiFiClientSecure.h> //Built-in.
+#include <PubSubClient.h> //Built-in. Used for MQTT obtaining of keys
 
-#include "esp_wifi.h" //Needed for init/deinit of resources to free up RAM
-#include "base64.h" //Built-in ESP32 library. Needed for NTRIP Client credential encoding.
+#include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
 WiFiClient ntripServer; // The WiFi connection to the NTRIP caster. We use this to push local RTCM to the caster.
 WiFiClient ntripClient; // The WiFi connection to the NTRIP caster. We use this to obtain RTCM from the caster.
@@ -212,7 +212,7 @@ SFE_UBLOX_GNSS_ADD i2cGNSS;
 uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 
 //These globals are updated regularly via the storePVTdata callback
-bool ubloxUpdated = false;
+bool pvtUpdated = false;
 double latitude;
 double longitude;
 float altitude;
@@ -259,8 +259,6 @@ float battChangeRate = 0.0;
 //We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/23
 #include "src/BluetoothSerial/BluetoothSerial.h"
 BluetoothSerial SerialBT;
-#include "esp_bt.h" //Core access is needed for BT stop. See customBTstop() for more info.
-#include "esp_gap_bt_api.h" //Needed for setting of pin. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/5
 #endif
 
 char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names
@@ -342,7 +340,7 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
-#include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer 
+#include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer
 #include "form.h"
 
 AsyncWebServer server(80);
@@ -366,7 +364,7 @@ const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 #if __has_include("tokens.h")
 #include "tokens.h"
 #else
-uint8_t pointPerfectTokenArray = {0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03}; //Token in HEX form
+uint8_t pointPerfectTokenArray[] = {0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03}; //Token in HEX form
 
 static const char *AWS_PUBLIC_CERT = R"=====(
 -----BEGIN CERTIFICATE-----
@@ -375,8 +373,6 @@ Certificate here
 )=====";
 #endif
 
-const uint32_t myLBandFreq = 1556290000; // Uncomment this line to use the US SPARTN 1.8 service
-//const uint32_t myLBandFreq = 1545260000; // Uncomment this line to use the EU SPARTN 1.8 service
 const char* pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
 void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
 float lBandEBNO = 0.0; //Used on system status menu
@@ -472,6 +468,12 @@ bool lbandCorrectionsReceived = false; //Used to display LBand SIV icon when cor
 unsigned long lastLBandDecryption = 0; //Timestamp of last successfully decrypted PMP message
 bool mqttMessageReceived = false; //Goes true when the subscribed MQTT channel reports back
 uint8_t leapSeconds = 0; //Gets set if GNSS is online
+unsigned long systemTestDisplayTime = 0; //Timestamp for swapping the graphic during testing
+uint8_t systemTestDisplayNumber = 0; //Tracks which test screen we're looking at
+unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to update during LBand Key checking
+bool setupButtonTestPassed = false; //Tracks button press during test screen
+bool powerButtonTestPassed = false; //Tracks button press during test screen
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -528,7 +530,7 @@ void loop()
 
   updateSystemState();
 
-  updateBattLEDs();
+  updateBattery();
 
   updateDisplay();
 
@@ -561,23 +563,31 @@ void updateLogs()
   else if (online.logging == true && settings.enableLogging == false)
   {
     //Close down file
-    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       ubxFile.sync();
       ubxFile.close();
       online.logging = false;
-      xSemaphoreGive(xFATSemaphore); //Release semaphore
+      xSemaphoreGive(sdCardSemaphore); //Release semaphore
+    }
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
     }
   }
   else if (online.logging == true && settings.enableLogging == true && (systemTime_minutes - startCurrentLogTime_minutes) >= settings.maxLogLength_minutes)
   {
     //Close down file. A new one will be created at the next calling of updateLogs().
-    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       ubxFile.sync();
       ubxFile.close();
       online.logging = false;
-      xSemaphoreGive(xFATSemaphore); //Release semaphore
+      xSemaphoreGive(sdCardSemaphore); //Release semaphore
+    }
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
     }
   }
 
@@ -586,7 +596,7 @@ void updateLogs()
     //Force file sync every 5000ms
     if (millis() - lastUBXLogSyncTime > 5000)
     {
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
         if (productVariant == RTK_SURVEYOR)
           digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
@@ -602,11 +612,11 @@ void updateLogs()
         updateDataFileAccess(&ubxFile); // Update the file access time & date
 
         lastUBXLogSyncTime = millis();
-        xSemaphoreGive(xFATSemaphore);
-      } //End xFATSemaphore
+        xSemaphoreGive(sdCardSemaphore);
+      } //End sdCardSemaphore
       else
       {
-        log_d("Semaphore failed to yield");
+        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
       }
     }
 
@@ -622,12 +632,16 @@ void updateLogs()
       char nmeaMessage[82]; //Max NMEA sentence length is 82
       createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, eventData); //textID, buffer, text
 
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
         ubxFile.println(nmeaMessage);
 
-        xSemaphoreGive(xFATSemaphore);
+        xSemaphoreGive(sdCardSemaphore);
         newEventToRecord = false;
+      }
+      else
+      {
+        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
       }
     }
 
@@ -637,11 +651,15 @@ void updateLogs()
       long fileSize = 0;
 
       //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
         fileSize = ubxFile.fileSize();
 
-        xSemaphoreGive(xFATSemaphore);
+        xSemaphoreGive(sdCardSemaphore);
+      }
+      else
+      {
+        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
       }
 
       if (fileSize > 0)

@@ -69,7 +69,7 @@ void menuPointPerfect()
     else if (incoming == '5')
     {
 #ifdef COMPILE_WIFI
-      startHomeWiFi();
+      startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
 
       unsigned long startTime = millis();
       while (WiFi.status() != WL_CONNECTED)
@@ -86,17 +86,23 @@ void menuPointPerfect()
         Serial.print("WiFi connected: ");
         Serial.println(WiFi.localIP());
 
-        if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
+        //Check if we have certificates
+        char fileName[80];
+        sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
+        if(LittleFS.exists(fileName) == false)
         {
           provisionDevice(); //Connect to ThingStream API and get keys
-
+        }
+        else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
+        {
+          provisionDevice(); //Connect to ThingStream API and get keys
         }
         else
           updatePointPerfectKeys();
       }
 
       stopWiFi();
-#endif      
+#endif
     }
     else if (incoming == '6')
     {
@@ -355,6 +361,9 @@ bool provisionDevice()
   } //HTTP Response was 200
 
   Serial.println("Device successfully provisioned. Keys obtained.");
+
+  recordSystemSettings();
+
   return (true);
 #else
   return (false);

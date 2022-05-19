@@ -9,7 +9,7 @@ void F9PSerialWriteTask(void *e)
   {
 #ifdef COMPILE_BT
     //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
-    if (radioState == BT_CONNECTED)
+    if (btState == BT_CONNECTED)
     {
       while (SerialBT.available())
       {
@@ -47,7 +47,7 @@ void F9PSerialReadTask(void *e)
         taskYIELD();
       }
 #ifdef COMPILE_BT
-      else if (radioState == BT_CONNECTED)
+      else if (btState == BT_CONNECTED)
       {
         if (SerialBT.isCongested() == false)
         {
@@ -75,15 +75,15 @@ void F9PSerialReadTask(void *e)
         if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
         {
           //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
-          if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+          if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
           {
             ubxFile.write(rBuffer, s);
 
-            xSemaphoreGive(xFATSemaphore);
-          } //End xFATSemaphore
+            xSemaphoreGive(sdCardSemaphore);
+          } //End sdCardSemaphore
           else
           {
-            log_d("Semaphore failed to yield");
+            Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
           }
         } //End maxLogTime
       } //End logging
@@ -94,21 +94,25 @@ void F9PSerialReadTask(void *e)
   }
 }
 
-//Control BT status LED according to radioState
+//Control BT status LED according to btState
 void updateBTled()
 {
   if (productVariant == RTK_SURVEYOR)
   {
-    if (radioState == BT_ON_NOCONNECTION)
+    //Blink on/off while we wait for BT connection
+    if (btState == BT_NOTCONNECTED)
     {
-      //Blink on/off while we wait for BT connection
       if (btFadeLevel == 0) btFadeLevel = 255;
       else btFadeLevel = 0;
       ledcWrite(ledBTChannel, btFadeLevel);
     }
-    else if (radioState == BT_CONNECTED)
+
+    //Solid LED if BT Connected
+    else if (btState == BT_CONNECTED)
       ledcWrite(ledBTChannel, 255);
-    else if (radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
+
+    //Pulse LED while no BT and we wait for WiFi connection
+    else if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
     {
       //Fade in/out the BT LED during WiFi AP mode
       btFadeLevel += pwmFadeAmount;
@@ -157,7 +161,7 @@ void ButtonCheckTask(void *e)
          Setup button = 0 |             | after short time     |
          after short time |             | (< 500 mSec)         |
              (< 500 mSec) |             |                      |
-  STATE_ROVER_NOT_STARTED |             |                      |
+      STATE_ROVER_NOT_STARTED |             |                      |
                           V             V                      |
           .------------------.   .------------------.          |
           |    Test Mode     |   | WiFi Config Mode |----------'
@@ -339,7 +343,7 @@ void ButtonCheckTask(void *e)
         }
       }
     } //End Platform = RTK Express
-    else if (productVariant == RTK_FACET) //Check one momentary button
+    else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND) //Check one momentary button
     {
       if (powerBtn != NULL) powerBtn->read();
 

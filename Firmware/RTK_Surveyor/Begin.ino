@@ -6,9 +6,16 @@ void beginBoard()
 {
   //Use ADC to check 50% resistor divider
   int pin_adc_rtk_facet = 35;
-  if (analogReadMilliVolts(pin_adc_rtk_facet) > (3300 / 2 * 0.9) && analogReadMilliVolts(pin_adc_rtk_facet) < (3300 / 2 * 1.1))
+  uint16_t idValue = analogReadMilliVolts(pin_adc_rtk_facet);
+  log_d("Board ADC ID: %d", idValue);
+
+  if (idValue > (3300 / 2 * 0.9) && idValue < (3300 / 2 * 1.1))
   {
     productVariant = RTK_FACET;
+  }
+  else if (idValue > (3300 * 2 / 3 * 0.9) && idValue < (3300 * 2 / 3 * 1.1))
+  {
+    productVariant = RTK_FACET_LBAND;
   }
   else if (isConnected(0x19) == true) //Check for accelerometer
   {
@@ -77,7 +84,7 @@ void beginBoard()
       strcpy(platformPrefix, "Express Plus");
     }
   }
-  else if (productVariant == RTK_FACET)
+  else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
   {
     //v11
     pin_muxA = 2;
@@ -113,8 +120,16 @@ void beginBoard()
     pinMode(pin_radio_cts, OUTPUT);
     digitalWrite(pin_radio_cts, LOW);
 
-    strcpy(platformFilePrefix, "SFE_Facet");
-    strcpy(platformPrefix, "Facet");
+    if (productVariant == RTK_FACET)
+    {
+      strcpy(platformFilePrefix, "SFE_Facet");
+      strcpy(platformPrefix, "Facet");
+    }
+    else if (productVariant == RTK_FACET_LBAND)
+    {
+      strcpy(platformFilePrefix, "SFE_Facet_LBand");
+      strcpy(platformPrefix, "Facet LBand");
+    }
   }
 
   Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
@@ -226,11 +241,11 @@ void beginSD()
     }
 
     //Setup FAT file access semaphore
-    if (xFATSemaphore == NULL)
+    if (sdCardSemaphore == NULL)
     {
-      xFATSemaphore = xSemaphoreCreateMutex();
-      if (xFATSemaphore != NULL)
-        xSemaphoreGive(xFATSemaphore);  //Make the file system available for use
+      sdCardSemaphore = xSemaphoreCreateMutex();
+      if (sdCardSemaphore != NULL)
+        xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
     }
 
     if (createTestFile() == false)
@@ -324,16 +339,14 @@ void stopUART2Tasks()
 
 void beginFS()
 {
-#define FORMAT_LITTLEFS_IF_FAILED true
-
   if (online.fs == false)
   {
-    Serial.println("Starting FS");
-
-    if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
+    if (!LittleFS.begin(true)) //Format LittleFS if begin fails
+    {
       log_d("Error: LittleFS not online");
       return;
     }
+    Serial.println("LittleFS Started");
     online.fs = true;
   }
 }
@@ -354,7 +367,7 @@ void beginDisplay()
     {
       Serial.println(F("Display not detected"));
     }
-    else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
+    else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
     {
       Serial.println(F("Display Error: Not detected."));
     }
@@ -579,7 +592,7 @@ void beginSystemState()
     setupBtn = new Button(pin_setupButton); //Create the button in memory
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }
-  else if (productVariant == RTK_FACET)
+  else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
   {
     if (online.lband == false)
       systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
@@ -592,8 +605,7 @@ void beginSystemState()
       factoryReset();
     }
 
-    if (systemState == STATE_ROVER_NOT_STARTED)
-      firstRoverStart = true; //Allow user to enter test screen during first rover start
+    firstRoverStart = true; //Allow user to enter test screen during first rover start
 
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }
@@ -667,9 +679,37 @@ void beginLBand()
     return;
   }
 
-  bool response = true;
+  if (online.gnss == true)
+  {
+    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+  }
 
-  response &= i2cLBand.setVal32(UBLOX_CFG_PMP_CENTER_FREQUENCY,   myLBandFreq); // Default 1539812500 Hz
+  //If we have a fix, check which frequency to use
+  if (fixType == 2 || fixType == 3 || fixType == 4 || fixType == 5) //2D, 3D, 3D+DR, or Time
+  {
+    if ( (longitude > -125 && longitude < -67) && (latitude > -90 && latitude < 90))
+    {
+      log_d("Setting LBand to US");
+      settings.LBandFreq = 1556290000; //We are in US band
+    }
+    else if ( (longitude > -25 && longitude < 70) && (latitude > -90 && latitude < 90))
+    {
+      log_d("Setting LBand to EU");
+      settings.LBandFreq = 1545260000; //We are in EU band
+    }
+    else
+    {
+      Serial.println("Unknown band area");
+      settings.LBandFreq = 1556290000; //Default to US
+    }
+    recordSystemSettings();
+  }
+  else
+    log_d("No fix available for LBand frequency determination");
+
+  bool response = true;
+  response &= i2cLBand.setVal32(UBLOX_CFG_PMP_CENTER_FREQUENCY,   settings.LBandFreq); // Default 1539812500 Hz
   response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SEARCH_WINDOW,      2200);        // Default 2200 Hz
   response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_SERVICE_ID,      0);           // Default 1
   response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SERVICE_ID,         21845);       // Default 50821

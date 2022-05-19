@@ -139,7 +139,7 @@ void updateDisplay()
           //Do nothing. Quick, fall through state.
           break;
         case (STATE_KEYS_LBAND_CONFIGURE):
-          //Do nothing. Quick, fall through state.
+          paintLBandConfigure();
           break;
         case (STATE_KEYS_LBAND_ENCRYPTED):
           //Do nothing. Quick, fall through state.
@@ -199,6 +199,10 @@ void displaySplash()
     else if (productVariant == RTK_FACET)
     {
       printTextCenter("Facet", yPos, QW_FONT_8X16, 1, false);
+    }
+    else if (productVariant == RTK_FACET_LBAND)
+    {
+      printTextCenter("Facet LB", yPos, QW_FONT_8X16, 1, false);
     }
 
     yPos = yPos + fontHeight + 7;
@@ -261,14 +265,15 @@ void paintBatteryLevel()
 //Display Bluetooth icon, Bluetooth MAC, or WiFi depending on connection state
 void paintWirelessIcon()
 {
+  //TODO resolve if both BT and WiFi are on/connected
   if (online.display == true)
   {
     //Bluetooth icon if paired, or Bluetooth MAC address if not paired
-    if (radioState == BT_CONNECTED)
+    if (btState == BT_CONNECTED)
     {
       displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
     }
-    else if (radioState == WIFI_ON_NOCONNECTION)
+    else if (wifiState == WIFI_NOTCONNECTED)
     {
       //Blink WiFi icon
       if (millis() - lastWifiIconUpdate > 500)
@@ -285,7 +290,7 @@ void paintWirelessIcon()
           wifiIconDisplayed = false;
       }
     }
-    else if (radioState == WIFI_CONNECTED)
+    else if (wifiState == WIFI_CONNECTED)
     {
       //Solid WiFi icon
       displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
@@ -1313,7 +1318,7 @@ void displayWiFiConfigNotStarted()
 void displayWiFiConfig()
 {
   //Draw the WiFi icon
-  if (radioState == WIFI_ON_NOCONNECTION)
+  if (wifiState == WIFI_NOTCONNECTED)
   {
     //Blink WiFi icon
     if (millis() - lastWifiIconUpdate > 500)
@@ -1330,7 +1335,7 @@ void displayWiFiConfig()
         wifiIconDisplayed = false;
     }
   }
-  else if (radioState == WIFI_CONNECTED)
+  else if (wifiState == WIFI_CONNECTED)
   {
     //Solid WiFi icon
     displayBitmap((oled.getWidth() / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
@@ -1479,6 +1484,8 @@ void paintProfile(uint8_t profileUnit)
     uint8_t profileNumber = getProfileNumberFromUnit(profileUnit);
     recordProfileNumber(profileNumber); //Update internal settings with user's choice, mark unit for config update
 
+    log_d("Going to profile number %d from unit %d, name '%s'", profileNumber, profileUnit, profileName);
+
     snprintf(profileMessage, sizeof(profileMessage), "Loading %s", profileName);
     displayMessage(profileMessage, 2000);
     ESP.restart(); //Profiles require full restart to take effect
@@ -1494,120 +1501,202 @@ void paintSystemTest()
 {
   if (online.display == true)
   {
-    int xOffset = 2;
-    int yOffset = 2;
-
-    int charHeight = 7;
-
-    char macAddress[5];
-    sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-
-    drawFrame(); //Outside edge
-
-    //Test SD, accel, batt, GNSS, mux
-    oled.setFont(QW_FONT_5X7); //Set font to smallest
-    oled.setCursor(xOffset, yOffset); //x, y
-    oled.print(F("SD:"));
-
-    if (online.microSD == false)
-      beginSD(); //Test if SD is present
-    if (online.microSD == true)
-      oled.print(F("OK"));
-    else
-      oled.print(F("FAIL"));
-
-    if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
+    //Toggle between two displays
+    if (millis() - systemTestDisplayTime > 3000)
     {
-      oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
-      oled.print(F("Accel:"));
-      if (online.accelerometer == true)
+      systemTestDisplayTime = millis();
+      systemTestDisplayNumber++;
+      systemTestDisplayNumber %= 2;
+    }
+
+    if (systemTestDisplayNumber == 1)
+    {
+      int xOffset = 2;
+      int yOffset = 2;
+
+      int charHeight = 7;
+
+      char macAddress[5];
+      sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
+
+      drawFrame(); //Outside edge
+
+      //Test SD, accel, batt, GNSS, mux
+      oled.setFont(QW_FONT_5X7); //Set font to smallest
+      oled.setCursor(xOffset, yOffset); //x, y
+      oled.print(F("SD:"));
+
+      if (online.microSD == false)
+        beginSD(); //Test if SD is present
+      if (online.microSD == true)
         oled.print(F("OK"));
       else
         oled.print(F("FAIL"));
-    }
 
-    oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
-    oled.print(F("Batt:"));
-    if (online.battery == true)
-      oled.print(F("OK"));
-    else
-      oled.print(F("FAIL"));
-
-    oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
-    oled.print(F("GNSS:"));
-    if (online.gnss == true)
-    {
-      i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-      i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
-
-      int satsInView = numSV;
-      if (satsInView > 5)
+      if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
       {
-        oled.print(F("OK"));
-        oled.print(F("/"));
-        oled.print(satsInView);
-      }
-      else
-        oled.print(F("FAIL"));
-    }
-    else
-      oled.print(F("FAIL"));
-
-    if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
-    {
-      oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
-      oled.print(F("Mux:"));
-
-      //Set mux to channel 3 and toggle pin and verify with loop back jumper wire inserted by test technician
-
-      setMuxport(MUX_ADC_DAC); //Set mux to DAC so we can toggle back/forth
-      pinMode(pin_dac26, OUTPUT);
-      pinMode(pin_adc39, INPUT_PULLUP);
-
-      digitalWrite(pin_dac26, HIGH);
-      if (digitalRead(pin_adc39) == HIGH)
-      {
-        digitalWrite(pin_dac26, LOW);
-        if (digitalRead(pin_adc39) == LOW)
+        oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
+        oled.print(F("Accel:"));
+        if (online.accelerometer == true)
           oled.print(F("OK"));
+        else
+          oled.print(F("FAIL"));
+      }
+
+      oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
+      oled.print(F("Batt:"));
+      if (online.battery == true)
+        oled.print(F("OK"));
+      else
+        oled.print(F("FAIL"));
+
+      oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
+      oled.print(F("GNSS:"));
+      if (online.gnss == true)
+      {
+        i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+        i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+
+        int satsInView = numSV;
+        if (satsInView > 5)
+        {
+          oled.print(F("OK"));
+          oled.print(F("/"));
+          oled.print(satsInView);
+        }
         else
           oled.print(F("FAIL"));
       }
       else
         oled.print(F("FAIL"));
-    }
 
-    //Display MAC address
-    oled.setCursor(xOffset, yOffset + (5 * charHeight) ); //x, y
-    oled.print(macAddress);
-    oled.print(":");
-
-    //Verify the ESP UART2 can communicate TX/RX to ZED UART1
-    if (zedUartPassed == false)
-    {
-      Serial.println("GNSS test");
-
-      setMuxport(MUX_UBLOX_NMEA); //Set mux to UART so we can debug over data port
-      delay(20);
-
-      //Clear out buffer before starting
-      while (serialGNSS.available()) serialGNSS.read();
-      serialGNSS.flush();
-
-      SFE_UBLOX_GNSS myGNSS;
-
-      //begin() attempts 3 connections
-      if (myGNSS.begin(serialGNSS) == true)
+      if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
       {
+        oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
+        oled.print(F("Mux:"));
 
-        zedUartPassed = true;
-        oled.print(F("OK"));
+        //Set mux to channel 3 and toggle pin and verify with loop back jumper wire inserted by test technician
+
+        setMuxport(MUX_ADC_DAC); //Set mux to DAC so we can toggle back/forth
+        pinMode(pin_dac26, OUTPUT);
+        pinMode(pin_adc39, INPUT_PULLUP);
+
+        digitalWrite(pin_dac26, HIGH);
+        if (digitalRead(pin_adc39) == HIGH)
+        {
+          digitalWrite(pin_dac26, LOW);
+          if (digitalRead(pin_adc39) == LOW)
+            oled.print(F("OK"));
+          else
+            oled.print(F("FAIL"));
+        }
+        else
+          oled.print(F("FAIL"));
+      }
+
+      //Display MAC address
+      oled.setCursor(xOffset, yOffset + (5 * charHeight) ); //x, y
+      oled.print(macAddress);
+      oled.print(":");
+
+      //Verify the ESP UART2 can communicate TX/RX to ZED UART1
+      if (zedUartPassed == false)
+      {
+        Serial.println("GNSS test");
+
+        setMuxport(MUX_UBLOX_NMEA); //Set mux to UART so we can debug over data port
+        delay(20);
+
+        //Clear out buffer before starting
+        while (serialGNSS.available()) serialGNSS.read();
+        serialGNSS.flush();
+
+        SFE_UBLOX_GNSS myGNSS;
+
+        //begin() attempts 3 connections
+        if (myGNSS.begin(serialGNSS) == true)
+        {
+
+          zedUartPassed = true;
+          oled.print(F("OK"));
+        }
+        else
+          oled.print(F("FAIL"));
       }
       else
+        oled.print(F("OK"));
+    } //End display 1
+
+    if (systemTestDisplayNumber == 0)
+    {
+      int xOffset = 2;
+      int yOffset = 2;
+
+      int charHeight = 7;
+
+      char macAddress[5];
+      sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
+
+      drawFrame(); //Outside edge
+
+      //Test ZED Firmware, LBand, Buttons
+
+      oled.setFont(QW_FONT_5X7); //Set font to smallest
+
+      oled.setCursor(xOffset, yOffset); //x, y
+      oled.print(F("ZED Firm:"));
+      oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
+      oled.print("  ");
+      oled.print(zedFirmwareVersionInt);
+      oled.print(F("-"));
+      if (zedFirmwareVersionInt < 130)
         oled.print(F("FAIL"));
-    }
-    else
-      oled.print(F("OK"));
+      else
+        oled.print(F("OK"));
+
+      oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
+      oled.print(F("LBand:"));
+      if (online.lband == true)
+        oled.print(F("OK"));
+      else
+        oled.print(F("FAIL"));
+
+      oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
+      if (powerBtn != NULL)
+      {
+        powerBtn->read();
+        oled.print(F("Power:"));
+
+        if (powerButtonTestPassed == false && powerBtn->isPressed() == true)
+          powerButtonTestPassed = true;
+
+        if (powerBtn->isPressed() == true)
+          oled.print(F("On"));
+        else if (powerButtonTestPassed == false)
+          oled.print(F("FAIL"));
+        else
+          oled.print(F("PASS"));
+      }
+      
+      oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
+      if (setupBtn != NULL)
+      {
+        setupBtn->read();
+        oled.print(F("Setup:"));
+
+        if (setupButtonTestPassed == false && setupBtn->isPressed() == true)
+          setupButtonTestPassed = true;
+
+        if (setupBtn->isPressed() == true)
+          oled.print(F("On"));
+        else if (setupButtonTestPassed == false)
+          oled.print(F("FAIL"));
+        else
+          oled.print(F("PASS"));
+      }
+
+
+    } //End display 0
   }
 }
 
@@ -1672,7 +1761,7 @@ void getAngles()
         accelZ *= -1.0;
         accelX *= -1.0;
       }
-      else if (productVariant == RTK_FACET)
+      else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
       {
         accelZ = accel.getX();
         accelX = accel.getY();
@@ -1886,7 +1975,7 @@ void paintDisplaySetup()
 }
 
 //Given text, and location, print text center of the screen
-void printTextCenter(const char *text, uint8_t yPos, QwiicFont &fontType, uint8_t kerning, bool highlight) //text, y, font type, kearning, inverted
+void printTextCenter(const char *text, uint8_t yPos, QwiicFont & fontType, uint8_t kerning, bool highlight) //text, y, font type, kearning, inverted
 {
   oled.setFont(fontType);
   oled.setDrawMode(grROPXOR);
@@ -2134,6 +2223,11 @@ void paintNClientWiFiFail(uint16_t displayTime)
 void paintKeysExpired()
 {
   displayMessage("Keys Expired", 4000);
+}
+
+void paintLBandConfigure()
+{
+  displayMessage("LBand Config", 0);
 }
 
 void paintGettingKeys()

@@ -1,6 +1,7 @@
 /*
   This is the main state machine for the device. It's big but controls each step of the system.
-  See system state chart document for a visual representation of how states can change to/from.
+  See system state diagram for a visual representation of how states can change to/from.
+  Statemachine diagram: https://lucid.app/lucidchart/53519501-9fa5-4352-aa40-673f88ca0c9b/edit?invitationId=inv_ebd4b988-513d-4169-93fd-c291851108f8
 */
 
 //Given the current state, see if conditions have moved us to a new state
@@ -138,6 +139,7 @@ void updateSystemState()
 
           i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
 
+          stopWebServer();
           stopWiFi(); //Turn off WiFi and release all resources
           startBluetooth(); //Turn on Bluetooth with 'Rover' name
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
@@ -152,7 +154,7 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
-            startClientWiFi();
+            startWiFi(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
             wifiStartTime = millis();
 
             ntripClientAttempted = true; //Do not allow re-entry into STATE_ROVER_CLIENT_WIFI_STARTED
@@ -218,7 +220,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
             i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
@@ -442,25 +444,25 @@ void updateSystemState()
                                           V
                         .-----------------------------------.
                         |   STATE_BASE_TEMP_WIFI_CONNECTED  |
-       .--------------->|          Solid WiFi Icon          |
-       |                |             "Xmitting"            |
-       |                |            "RTCM: 2145"           |
-       |                '-----------------------------------'
-       |                                  |
-       |                                  | Caster enabled
-       |                                  V
-       |                .-----------------------------------.
-       |                |   STATE_BASE_TEMP_CASTER_STARTED  |
-       |  Caster failed |          Solid WiFi Icon          |
-       +<---------------|            "Connecting"           |
-       ^  Authorization |            "RTCM: 2145"           |
-       |         failed '-----------------------------------'
-       |                                  |
-       |                                  | Caster connected
-       |                                  V
-       |                .-----------------------------------.
-       |  Caster failed |  STATE_BASE_TEMP_CASTER_CONNECTED |
-       '----------------|          Solid WiFi Icon          |
+        .--------------->|          Solid WiFi Icon          |
+        |                |             "Xmitting"            |
+        |                |            "RTCM: 2145"           |
+        |                '-----------------------------------'
+        |                                  |
+        |                                  | Caster enabled
+        |                                  V
+        |                .-----------------------------------.
+        |                |   STATE_BASE_TEMP_CASTER_STARTED  |
+        |  Caster failed |          Solid WiFi Icon          |
+        +<---------------|            "Connecting"           |
+        ^  Authorization |            "RTCM: 2145"           |
+        |         failed '-----------------------------------'
+        |                                  |
+        |                                  | Caster connected
+        |                                  V
+        |                .-----------------------------------.
+        |  Caster failed |  STATE_BASE_TEMP_CASTER_CONNECTED |
+        '----------------|          Solid WiFi Icon          |
                         |             "Casting"             |
                         |            "RTCM: 2145"           |
                         '-----------------------------------'
@@ -488,6 +490,7 @@ void updateSystemState()
           displayBaseStart(0); //Show 'Base'
 
           //Stop all WiFi and BT. Re-enable in each specific base start state.
+          stopWebServer();
           stopWiFi();
           stopBluetooth();
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
@@ -604,7 +607,7 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
-            startServerWiFi();
+            startWiFi(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
 
             changeState(STATE_BASE_TEMP_WIFI_STARTED);
           }
@@ -618,7 +621,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             changeState(STATE_BASE_TEMP_WIFI_CONNECTED);
           }
@@ -754,8 +757,8 @@ void updateSystemState()
           .-------------|                                   |
           |             '-----------------------------------'
           V                               |
-      STATE_ROVER_NOT_STARTED             | startBase() = true
-      (Rover diagram)                     V
+        STATE_ROVER_NOT_STARTED             | startBase() = true
+        (Rover diagram)                     V
                         .-----------------------------------.
                         |   STATE_BASE_FIXED_TRANSMITTING   |
                         |       Castle Base Icon solid      |
@@ -833,7 +836,7 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
-            startServerWiFi();
+            startWiFi(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
 
             rtcmPacketsSent = 0; //Reset any previous number
 
@@ -849,7 +852,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
           }
@@ -1050,8 +1053,9 @@ void updateSystemState()
 
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 
-          //Start in AP mode and show config html page
-          startConfigAP();
+          stopBluetooth();
+          stopUART2Tasks(); //Delete F9 serial tasks if running
+          startWebServer(); //Start in AP mode and show config html page
 
           changeState(STATE_WIFI_CONFIG);
         }
@@ -1107,6 +1111,8 @@ void updateSystemState()
 
       case (STATE_KEYS_STARTED):
         {
+          if (rtcWaitTime == 0) rtcWaitTime = millis();
+
           //We want an immediate change from this state
           forceSystemStateUpdate = true; //Imediately go to this new state
 
@@ -1116,10 +1122,16 @@ void updateSystemState()
             changeState(settings.lastState); //Go to either rover or base
           }
 
-          //If we don't have keys, begin zero touch provisioning
-          if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
+          //If there is no WiFi setup, skip everything
+          else if (strlen(settings.home_wifiSSID) == 0)
           {
-            startHomeWiFi();
+            changeState(settings.lastState); //Go to either rover or base
+          }
+
+          //If we don't have keys, begin zero touch provisioning
+          else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
+          {
+            startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
             wifiStartTime = millis(); //Start timer for WiFi connection timeout
             changeState(STATE_KEYS_PROVISION_WIFI_STARTED);
           }
@@ -1127,9 +1139,11 @@ void updateSystemState()
           //Determine if we have valid date/time RTC from last boot
           else if (online.rtc == false)
           {
-            //If RTC is not available, we will assume we need keys
-            log_d("RTC not available for keys");
-            changeState(STATE_KEYS_NEEDED);
+            if (millis() - rtcWaitTime > 2000)
+            {
+              //If RTC is not available, we will assume we need keys
+              changeState(STATE_KEYS_NEEDED);
+            }
           }
 
           else
@@ -1138,8 +1152,7 @@ void updateSystemState()
             uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
             log_d("Days until keys expire: %d", daysRemaining);
 
-            if (daysRemaining >= 48)
-              //if (daysRemaining >= 28)
+            if (daysRemaining >= 28)
               changeState(STATE_KEYS_LBAND_CONFIGURE);
             else
               changeState(STATE_KEYS_NEEDED);
@@ -1153,7 +1166,7 @@ void updateSystemState()
 
           if (online.rtc == false)
           {
-            startHomeWiFi();
+            startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
             wifiStartTime = 0; //Start timer for WiFi connection timeout
             changeState(STATE_KEYS_WIFI_STARTED); //If we can't check the RTC, continue
           }
@@ -1164,7 +1177,7 @@ void updateSystemState()
             settings.lastKeyAttempt = rtc.getEpoch(); //Mark it
             recordSystemSettings(); //Record these settings to unit
 
-            startHomeWiFi();
+            startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
             wifiStartTime = 0; //Start timer for WiFi connection timeout
             changeState(STATE_KEYS_WIFI_STARTED);
           }
@@ -1184,7 +1197,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             changeState(STATE_KEYS_WIFI_CONNECTED);
           }
@@ -1227,7 +1240,7 @@ void updateSystemState()
             {
               uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
               Serial.printf("Days until LBand keys expire: %d\n\r", daysRemaining);
-              paintKeyDaysRemaining(daysRemaining, 4000);
+              paintKeyDaysRemaining(daysRemaining, 2000);
             }
           }
 
@@ -1296,7 +1309,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
           }
@@ -1378,6 +1391,8 @@ void changeState(SystemState newState)
 {
   if (newState == systemState)
     Serial.print(F("*"));
+
+  reportHeapNow();
   systemState = newState;
 
   //Debug print

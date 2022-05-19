@@ -64,6 +64,7 @@ typedef enum
   RTK_EXPRESS,
   RTK_FACET,
   RTK_EXPRESS_PLUS,
+  RTK_FACET_LBAND,
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
 
@@ -115,16 +116,22 @@ typedef enum
   ERROR_GPS_CONFIG_FAIL,
 } t_errorNumber;
 
-//Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
-enum RadioState
+enum WiFiState
 {
-  RADIO_OFF = 0,
-  BT_ON_NOCONNECTION, //WiFi is off
-  BT_CONNECTED,
-  WIFI_ON_NOCONNECTION, //BT is off
+  WIFI_OFF = 0,
+  WIFI_NOTCONNECTED,
   WIFI_CONNECTED,
 };
-volatile byte radioState = RADIO_OFF;
+volatile byte wifiState = WIFI_OFF;
+
+//Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
+enum BTState
+{
+  BT_OFF = 0,
+  BT_NOTCONNECTED,
+  BT_CONNECTED,
+};
+volatile byte btState = BT_OFF;
 
 //Return values for getByteChoice()
 enum returnStatus {
@@ -329,7 +336,7 @@ typedef struct {
   };
 
   int maxLogLength_minutes = 60 * 24; //Default to 24 hours
-  char profileName[50] = "Default";
+  char profileName[50] = "";
 
   //NTRIP Server
   bool enableNtripServer = false;
@@ -359,21 +366,24 @@ typedef struct {
   char pointPerfectDeviceProfileToken[40] = "";
   bool enableLBandCorrections = true;
   bool enableIPCorrections = false; //We do not plan to use IP based point perfect
-  char home_wifiSSID[50] = "TRex"; //WiFi network to use when attempting to obtain LBand keys and ThingStream provisioning
-  char home_wifiPW[50] = "parachutes";
+  char home_wifiSSID[50] = ""; //WiFi network to use when attempting to obtain LBand keys and ThingStream provisioning
+  char home_wifiPW[50] = "";
   bool autoKeyRenewal = true; //Attempt to get keys if we get under 28 days from the expiration date
-  char pointPerfectClientID[50];
-  char pointPerfectBrokerHost[50]; // pp.services.u-blox.com
-  char pointPerfectLBandTopic[20]; // /pp/key/Lb
-  char pointPerfectCurrentKey[33]; //32 hexadecimal digits = 128 bits = 16 Bytes
+  char pointPerfectClientID[50] = "";
+  char pointPerfectBrokerHost[50] = ""; // pp.services.u-blox.com
+  char pointPerfectLBandTopic[20] = ""; // /pp/key/Lb
+
+  char pointPerfectCurrentKey[33] = ""; //32 hexadecimal digits = 128 bits = 16 Bytes
   uint64_t pointPerfectCurrentKeyDuration = 0;
   uint64_t pointPerfectCurrentKeyStart = 0;
-  char pointPerfectNextKey[33];
+
+  char pointPerfectNextKey[33] = "";
   uint64_t pointPerfectNextKeyDuration = 0;
   uint64_t pointPerfectNextKeyStart = 0;
+
   uint64_t lastKeyAttempt = 0; //Epoch time of last attempt at obtaining keys
   bool updateZEDSettings = true; //When in doubt, update the ZED with current settings
-  
+  uint32_t LBandFreq = 1556290000; //Default to US band
 } Settings;
 Settings settings;
 

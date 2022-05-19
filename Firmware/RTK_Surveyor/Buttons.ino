@@ -3,22 +3,14 @@
 //Let's make sure they continue to press for 500ms
 void powerOnCheck()
 {
-#ifdef ENABLE_DEVELOPER
-  return;
-#endif
-
   powerPressedStartTime = millis();
+  if (digitalRead(pin_powerSenseAndControl) == LOW)
+    delay(500);
 
-  while (digitalRead(pin_powerSenseAndControl) == LOW)
-  {
-    delay(10);
-
-    if (millis() - powerPressedStartTime > 500)
-      break;
-  }
-
-  if (millis() - powerPressedStartTime < 500)
+#ifndef ENABLE_DEVELOPER
+  if (digitalRead(pin_powerSenseAndControl) != LOW)
     powerDown(false); //Power button tap. Returning to off state.
+#endif
 
   powerPressedStartTime = 0; //Reset var to return to normal 'on' state
 }
@@ -31,13 +23,17 @@ void powerDown(bool displayInfo)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
     //Wait up to 1000ms
-    if (xSemaphoreTake(xFATSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS)
     {
       //Close down file system
       ubxFile.sync();
       ubxFile.close();
-      //xSemaphoreGive(xFATSemaphore); //Do not release semaphore
-    } //End xFATSemaphore
+      //xSemaphoreGive(sdCardSemaphore); //Do not release semaphore
+    } //End sdCardSemaphore
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
 
     online.logging = false;
   }

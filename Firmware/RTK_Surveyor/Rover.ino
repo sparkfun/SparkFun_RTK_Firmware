@@ -340,7 +340,7 @@ void storePVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
   confirmedDate = ubxDataStruct->flags2.bits.confirmedDate;
   confirmedTime = ubxDataStruct->flags2.bits.confirmedTime;
 
-  ubloxUpdated = true;
+  pvtUpdated = true;
 }
 
 void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)

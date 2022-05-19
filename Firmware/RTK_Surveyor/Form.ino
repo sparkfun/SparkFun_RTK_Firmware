@@ -2,16 +2,10 @@
 //After user clicks 'save', data is validated via main.js and a long string of values is returned.
 
 //Start webserver in AP mode
-void startConfigAP()
+void startWebServer()
 {
-  stopBluetooth();
-  stopUART2Tasks(); //Delete F9 serial tasks if running
-
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
-
-  wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
-  esp_wifi_init(&wifi_init_config); //Restart WiFi resources
 
   //Check SD Size
   if (online.microSD)
@@ -40,6 +34,7 @@ void startConfigAP()
   //#define LOCAL_WIFI_TESTING 1
 
 #ifndef LOCAL_WIFI_TESTING
+
   //Start in AP mode
   WiFi.mode(WIFI_AP);
 
@@ -176,15 +171,34 @@ void startConfigAP()
   }, handleFirmwareFileUpload);
 
   server.begin();
+
+  log_d("Web Server Started");
+  reportHeapNow();
+
 #endif
 #endif
 
-  radioState = WIFI_ON_NOCONNECTION;
+  wifiState = WIFI_NOTCONNECTED;
+}
+
+void stopWebServer()
+{
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
+
+  //server.reset();
+  server.end();
+
+  log_d("Web Server Stopped");
+  reportHeapNow();
+
+#endif
+#endif
 }
 
 //Handler for firmware file upload
 #ifdef COMPILE_WIFI
-#ifdef COMPILT_AP
+#ifdef COMPILE_AP
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
   if (!index)
@@ -282,11 +296,11 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     createSettingsString(settingsCSV);
     log_d("Sending command: %s\n\r", settingsCSV);
     client->text(settingsCSV);
-    radioState = WIFI_CONNECTED;
+    wifiState = WIFI_CONNECTED;
   }
   else if (type == WS_EVT_DISCONNECT) {
     log_d("Websocket client disconnected");
-    radioState = WIFI_ON_NOCONNECTION;
+    wifiState = WIFI_NOTCONNECTED;
   }
   else if (type == WS_EVT_DATA) {
     for (int i = 0; i < len; i++) {

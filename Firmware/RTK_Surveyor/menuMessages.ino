@@ -345,7 +345,7 @@ void beginLogging()
       }
 
       //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {
         // O_CREAT - create the file if it does not exist
         // O_APPEND - seek to the end of the file prior to each write
@@ -354,7 +354,7 @@ void beginLogging()
         {
           Serial.printf("Failed to create GNSS UBX data file: %s\n\r", fileName);
           online.logging = false;
-          xSemaphoreGive(xFATSemaphore);
+          xSemaphoreGive(sdCardSemaphore);
           return;
         }
 
@@ -405,7 +405,7 @@ void beginLogging()
           Serial.println(F("Appending last available log"));
         }
 
-        xSemaphoreGive(xFATSemaphore);
+        xSemaphoreGive(sdCardSemaphore);
       }
       else
       {
@@ -448,7 +448,7 @@ bool findLastLog(char *lastLogName)
   {
     //Attempt to access file system. This avoids collisions with file writing in F9PSerialReadTask()
     //Wait up to 5s, this is important
-    if (xSemaphoreTake(xFATSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
     {
       //Count available binaries
       SdFile tempFile;
@@ -478,7 +478,11 @@ bool findLastLog(char *lastLogName)
         tempFile.close();
       }
 
-      xSemaphoreGive(xFATSemaphore);
+      xSemaphoreGive(sdCardSemaphore);
+    }
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
     }
   }
 

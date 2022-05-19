@@ -75,15 +75,15 @@ void F9PSerialReadTask(void *e)
         if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
         {
           //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
-          if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+          if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
           {
             ubxFile.write(rBuffer, s);
 
-            xSemaphoreGive(xFATSemaphore);
-          } //End xFATSemaphore
+            xSemaphoreGive(sdCardSemaphore);
+          } //End sdCardSemaphore
           else
           {
-            log_d("Semaphore failed to yield");
+            Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
           }
         } //End maxLogTime
       } //End logging

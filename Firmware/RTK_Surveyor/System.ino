@@ -556,14 +556,14 @@ bool createTestFile()
   SdFile testFile;
   char testFileName[40] = "testfile.txt";
 
-  if (xFATSemaphore == NULL)
+  if (sdCardSemaphore == NULL)
   {
-    log_d("xFATSemaphore is Null");
+    log_d("sdCardSemaphore is Null");
     return (false);
   }
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-  if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+  if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
   {
     if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) == true)
     {
@@ -571,10 +571,14 @@ bool createTestFile()
 
       if (sd.exists(testFileName))
         sd.remove(testFileName);
-      xSemaphoreGive(xFATSemaphore);
+      xSemaphoreGive(sdCardSemaphore);
       return (true);
     }
-    xSemaphoreGive(xFATSemaphore);
+    xSemaphoreGive(sdCardSemaphore);
+  }
+  else
+  {
+    Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
   }
 
   return (false);

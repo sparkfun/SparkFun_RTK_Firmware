@@ -241,11 +241,11 @@ void beginSD()
     }
 
     //Setup FAT file access semaphore
-    if (xFATSemaphore == NULL)
+    if (sdCardSemaphore == NULL)
     {
-      xFATSemaphore = xSemaphoreCreateMutex();
-      if (xFATSemaphore != NULL)
-        xSemaphoreGive(xFATSemaphore);  //Make the file system available for use
+      sdCardSemaphore = xSemaphoreCreateMutex();
+      if (sdCardSemaphore != NULL)
+        xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
     }
 
     if (createTestFile() == false)

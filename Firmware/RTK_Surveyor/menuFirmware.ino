@@ -52,7 +52,7 @@ void scanForFirmware()
   {
     //Attempt to access file system. This avoids collisions with file writing in F9PSerialReadTask()
     //Wait up to 5s, this is important
-    if (xSemaphoreTake(xFATSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
     {
       //Count available binaries
       SdFile tempFile;
@@ -92,9 +92,12 @@ void scanForFirmware()
         tempFile.close();
       }
 
-      xSemaphoreGive(xFATSemaphore);
+      xSemaphoreGive(sdCardSemaphore);
     }
-
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
   }
 }
 

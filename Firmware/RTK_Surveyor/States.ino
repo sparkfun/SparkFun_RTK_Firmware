@@ -1389,6 +1389,9 @@ void requestChangeState(SystemState requestedState)
 //Change states and print the new state
 void changeState(SystemState newState)
 {
+  if (newState == systemState)
+    Serial.print(F("*"));
+
   reportHeapNow();
   systemState = newState;
 

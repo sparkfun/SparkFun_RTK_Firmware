@@ -219,12 +219,12 @@ void factoryReset()
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
   if (settings.enableSD && online.microSD)
   {
-    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       //Remove this specific settings file. Don't remove the other profiles.
       sd.remove(settingsFileName);
-      xSemaphoreGive(xFATSemaphore);
-    } //End xFATSemaphore
+      xSemaphoreGive(sdCardSemaphore);
+    } //End sdCardSemaphore
   }
 
   if (online.gnss == true)

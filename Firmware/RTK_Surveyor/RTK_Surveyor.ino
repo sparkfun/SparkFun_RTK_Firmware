@@ -141,7 +141,7 @@ SdFile newFirmwareFile; //File that is available if user uploads new firmware vi
 
 //System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
-SemaphoreHandle_t xFATSemaphore;
+SemaphoreHandle_t sdCardSemaphore;
 const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
 const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 
@@ -157,7 +157,7 @@ uint32_t sdUsedSpaceMB = 0;
 #include <WiFi.h> //Built-in.
 #include <HTTPClient.h> //Built-in. Needed for ThingStream API for ZTP
 #include <ArduinoJson.h> //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
-#include <WiFiClientSecure.h> //Built-in. 
+#include <WiFiClientSecure.h> //Built-in.
 #include <PubSubClient.h> //Built-in. Used for MQTT obtaining of keys
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
@@ -340,7 +340,7 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
-#include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer 
+#include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer
 #include "form.h"
 
 AsyncWebServer server(80);
@@ -563,23 +563,23 @@ void updateLogs()
   else if (online.logging == true && settings.enableLogging == false)
   {
     //Close down file
-    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       ubxFile.sync();
       ubxFile.close();
       online.logging = false;
-      xSemaphoreGive(xFATSemaphore); //Release semaphore
+      xSemaphoreGive(sdCardSemaphore); //Release semaphore
     }
   }
   else if (online.logging == true && settings.enableLogging == true && (systemTime_minutes - startCurrentLogTime_minutes) >= settings.maxLogLength_minutes)
   {
     //Close down file. A new one will be created at the next calling of updateLogs().
-    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       ubxFile.sync();
       ubxFile.close();
       online.logging = false;
-      xSemaphoreGive(xFATSemaphore); //Release semaphore
+      xSemaphoreGive(sdCardSemaphore); //Release semaphore
     }
   }
 
@@ -588,7 +588,7 @@ void updateLogs()
     //Force file sync every 5000ms
     if (millis() - lastUBXLogSyncTime > 5000)
     {
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
         if (productVariant == RTK_SURVEYOR)
           digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
@@ -604,8 +604,8 @@ void updateLogs()
         updateDataFileAccess(&ubxFile); // Update the file access time & date
 
         lastUBXLogSyncTime = millis();
-        xSemaphoreGive(xFATSemaphore);
-      } //End xFATSemaphore
+        xSemaphoreGive(sdCardSemaphore);
+      } //End sdCardSemaphore
       else
       {
         log_d("Semaphore failed to yield");
@@ -624,11 +624,11 @@ void updateLogs()
       char nmeaMessage[82]; //Max NMEA sentence length is 82
       createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, eventData); //textID, buffer, text
 
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
         ubxFile.println(nmeaMessage);
 
-        xSemaphoreGive(xFATSemaphore);
+        xSemaphoreGive(sdCardSemaphore);
         newEventToRecord = false;
       }
     }
@@ -639,11 +639,11 @@ void updateLogs()
       long fileSize = 0;
 
       //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
         fileSize = ubxFile.fileSize();
 
-        xSemaphoreGive(xFATSemaphore);
+        xSemaphoreGive(sdCardSemaphore);
       }
 
       if (fileSize > 0)

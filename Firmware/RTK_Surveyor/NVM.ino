@@ -62,7 +62,7 @@ void recordSystemSettingsToFileSD(char *fileName)
   if (online.microSD == true)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like updateLogs()
-    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       if (sd.exists(fileName))
         sd.remove(fileName);
@@ -84,7 +84,7 @@ void recordSystemSettingsToFileSD(char *fileName)
 
       log_d("Settings recorded to SD: %s", fileName);
 
-      xSemaphoreGive(xFATSemaphore);
+      xSemaphoreGive(sdCardSemaphore);
     }
   }
 }
@@ -226,7 +226,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
   if (online.microSD == true)
   {
     //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-    if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       if (sd.exists(fileName))
       {
@@ -234,7 +234,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
         if (settingsFile.open(fileName, O_READ) == false)
         {
           Serial.println(F("Failed to open settings file"));
-          xSemaphoreGive(xFATSemaphore);
+          xSemaphoreGive(sdCardSemaphore);
           return (false);
         }
 
@@ -255,7 +255,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
             {
               //If we can't read the first line of the settings file, give up
               Serial.println(F("Giving up on settings file"));
-              xSemaphoreGive(xFATSemaphore);
+              xSemaphoreGive(sdCardSemaphore);
               return (false);
             }
           }
@@ -265,7 +265,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
             {
               //If we can't read the first line of the settings file, give up
               Serial.println(F("Giving up on settings file"));
-              xSemaphoreGive(xFATSemaphore);
+              xSemaphoreGive(sdCardSemaphore);
               return (false);
             }
           }
@@ -275,13 +275,13 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
 
         //Serial.println(F("Config file read complete"));
         settingsFile.close();
-        xSemaphoreGive(xFATSemaphore);
+        xSemaphoreGive(sdCardSemaphore);
         return (true);
       }
       else
       {
         log_d("File %s not found", fileName);
-        xSemaphoreGive(xFATSemaphore);
+        xSemaphoreGive(sdCardSemaphore);
         return (false);
       }
 

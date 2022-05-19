@@ -126,12 +126,12 @@ void menuSystem()
     else if (incoming == 'f' && settings.enableSD == true && online.microSD == true)
     {
       //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {
         Serial.println(F("Files found (date time size name):\n\r"));
         sd.ls(LS_R | LS_DATE | LS_SIZE);
 
-        xSemaphoreGive(xFATSemaphore);
+        xSemaphoreGive(sdCardSemaphore);
       }
     }
     else if (incoming == 'x')
@@ -290,7 +290,7 @@ void menuDebug()
     else if (incoming == 'r')
     {
       recordSystemSettings();
-      
+
       ESP.restart();
     }
     else if (incoming == 't')

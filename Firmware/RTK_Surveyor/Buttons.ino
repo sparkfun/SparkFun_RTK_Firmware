@@ -31,13 +31,13 @@ void powerDown(bool displayInfo)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
     //Wait up to 1000ms
-    if (xSemaphoreTake(xFATSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS)
     {
       //Close down file system
       ubxFile.sync();
       ubxFile.close();
-      //xSemaphoreGive(xFATSemaphore); //Do not release semaphore
-    } //End xFATSemaphore
+      //xSemaphoreGive(sdCardSemaphore); //Do not release semaphore
+    } //End sdCardSemaphore
 
     online.logging = false;
   }

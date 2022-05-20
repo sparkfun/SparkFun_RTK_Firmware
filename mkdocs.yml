@@ -1,0 +1,89 @@
+
+site_name: SparkFun RTK Firmware Guide
+site_description: A guide to the SparkFun RTK Firmware features
+site_url: https://sparkfun.github.io/SparkFun_RTK_Firmware
+
+
+theme:
+  name: material
+  logo: img/sfe_logo_sm.png
+  palette:
+    primary: grey
+    accent: red
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - content.code.annotate
+    - navigation.tracking
+    - navigation.tabs.sticky
+    - navigation.tabs    
+
+  icon:
+    repo: fontawesome/brands/github
+    admonition:
+      note: octicons/tag-16
+      abstract: octicons/checklist-16
+      info: octicons/info-16
+      tip: octicons/squirrel-16
+      success: octicons/check-16
+      question: octicons/question-16
+      warning: octicons/alert-16
+      failure: octicons/x-circle-16
+      danger: octicons/zap-16
+      bug: octicons/bug-16
+      example: octicons/beaker-16
+      quote: octicons/quote-16
+
+plugins:
+  - search
+  - monorepo
+
+repo_url: https://github.com/sparkfun/SparkFun_RTK_Firmware
+repo_name: sparkfun/SparkFun_RTK_Firmware
+
+copyright: Copyright 2022 SparkFun Electronics (6333 Dry Creek Parkway, Niwot, Colorado 80503)
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.mark
+  - pymdownx.caret
+  - pymdownx.tilde
+  - tables
+  - admonition
+
+extra:
+  social:
+    - icon: fontawesome/brands/youtube
+      link: https://www.youtube.com/sparkfun
+    - icon: fontawesome/brands/instagram
+      link: https://www.instagram.com/sparkfun
+    - icon: fontawesome/brands/github
+      link: https://www.github.com/sparkfun
+    - icon: fontawesome/brands/facebook
+      link: https://www.facebook.com/SparkFun
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/sparkfun
+  
+nav:
+  - Introduction: index.md
+  - Connecting Over WiFi: connecting_over_wifi.md
+  - Getting Started:
+    - Software Setup: software.md
+    - hug_micro_view.md
+    - hug_transparent.md
+  - API Reference:
+    - Device: api_device.md
+    - Scrolling: api_scroll.md
+    - Drawing State: api_draw.md
+    - Graphics: api_graphics.md
+    - Arduino Print: api_arduino.md
+  - Examples: '!include ./examples/mkdocs.yml'
+    

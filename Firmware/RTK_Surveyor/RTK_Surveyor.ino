@@ -381,7 +381,7 @@ float lBandEBNO = 0.0; //Used on system status menu
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
-char deviceName[20]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
+char deviceName[30]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down

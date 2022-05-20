@@ -2253,11 +2253,11 @@ void paintKeyProvisionFail(uint16_t displayTime)
   {
     oled.erase();
 
-    oled.setFont(QW_FONT_8X16);
+    oled.setFont(QW_FONT_5X7);
 
     int x = (oled.getWidth() / 2); //Center point for x coord
     int y = 0;
-    int fontHeight = 13;
+    int fontHeight = 8;
     int textX;
 
     textX = x - (oled.getStringWidth("ZTP") / 2); //Starting point of text
@@ -2274,13 +2274,20 @@ void paintKeyProvisionFail(uint16_t displayTime)
     oled.setCursor(textX, y);
     oled.print("ID:");
 
-    char hardwareID[11];
-    sprintf(hardwareID, "%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4]); //Get ready for JSON
-    Serial.printf("Device ID: %s\n\r", hardwareID);
+    //The MAC address is characters long so we have to split it onto two lines
+    char hardwareID[13];
+    sprintf(hardwareID, "%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2]);
     String macAddress = String(hardwareID);
 
-    oled.setFont(QW_FONT_5X7);
-    y += fontHeight + 1;
+    y += fontHeight;
+    textX = x - (oled.getStringWidth(macAddress) / 2);
+    oled.setCursor(textX, y);
+    oled.print(hardwareID);
+
+    sprintf(hardwareID, "%02X%02X%02X", unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]);
+    macAddress = String(hardwareID);
+
+    y += fontHeight;
     textX = x - (oled.getStringWidth(macAddress) / 2);
     oled.setCursor(textX, y);
     oled.print(hardwareID);

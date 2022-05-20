@@ -69,6 +69,7 @@ void menuPointPerfect()
     else if (incoming == '5')
     {
 #ifdef COMPILE_WIFI
+      stopBluetooth();
       startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
 
       unsigned long startTime = millis();
@@ -102,6 +103,7 @@ void menuPointPerfect()
       }
 
       stopWiFi();
+      startBluetooth();
 #endif
     }
     else if (incoming == '6')

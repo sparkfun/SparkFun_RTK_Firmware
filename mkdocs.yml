@@ -74,16 +74,11 @@ extra:
   
 nav:
   - Introduction: index.md
-  - Connecting Over WiFi: connecting_over_wifi.md
-  - Getting Started:
-    - Software Setup: software.md
-    - hug_micro_view.md
-    - hug_transparent.md
-  - API Reference:
-    - Device: api_device.md
-    - Scrolling: api_scroll.md
-    - Drawing State: api_draw.md
-    - Graphics: api_graphics.md
-    - Arduino Print: api_arduino.md
-  - Examples: '!include ./examples/mkdocs.yml'
+    - system_configuration.md
+    - connecting_over_wifi.md
+  - Hardware Specifics:
+    - hardware_rtk_surveyor.md
+    - hardware_rtk_express.md
+    - hardware_rtk_express_plus.md
+    - hardware_rtk_facet.md
     

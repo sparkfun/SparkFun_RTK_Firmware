@@ -1,4 +1,4 @@
-# Software Setup
+# Connecting Over WiFi
 
 
 ## Installation

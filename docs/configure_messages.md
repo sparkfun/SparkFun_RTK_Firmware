@@ -35,4 +35,4 @@ These seven sentences are commonly used when logging and doing Precise Point Pos
 
 As mentioned is the microSD section of the [Hardware Overview](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#hardware-overview) there are a large number of messages supported. Each message sub menu will present the user with the ability to set the message report rate.
 
-Note: The message report rate is the *number of fixes* between message reports. In the image above, with GSV set to 4, the NMEA GSV message will be produced once every 4 fixes. Because the device defaults to 4Hz fix rate, the GSV message will appear once per second.
+**Note:** The message report rate is the *number of fixes* between message reports. In the image above, with GSV set to 4, the NMEA GSV message will be produced once every 4 fixes. Because the device defaults to 4Hz fix rate, the GSV message will appear once per second.

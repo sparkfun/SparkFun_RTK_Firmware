@@ -1,4 +1,4 @@
-# Configure Ports Menu
+# Ports Menu
 
 [![Baud rate configuration of Radio and Data ports](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu.jpg)
 
@@ -14,7 +14,13 @@ By default the **Data** port is set to 460800bps and can be configured from 4800
 
 If you must run the data port at lower than 460800bps, and you need to enable a large number of messages and/or increase the fix frequency beyond 4Hz, be sure to verify that UART1 usage stays below 99%. The image above shows the UART1 becoming overwhelmed because the ZED cannot transmit at 115200bps fast enough.
 
-The **Data** port on the RTK Facet is very flexible. It can be configured in four different ways:
+## Surveyor Data Port
+
+By default the Data port is set to 460800bps and can be configured from 4800bps to 921600bps. Note: The Data port does not output NMEA by default. The unit must be opened and the *Serial NMEA Connection* switch must be moved to 'Ext Connector'. See [Hardware Overview - Advanced Features](https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide/all#hardware-overview---advanced-features) for the location of the switch.
+
+## Facet / Express / Express Plus Data Port
+
+The **Data** port on the RTK Facet, Express, and Express Plus is very flexible. It can be configured in four different ways:
 
 [![RTK Facet Mux Menu](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu_Mux.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu_Mux.jpg)
 

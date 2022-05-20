@@ -10,17 +10,28 @@ The RTK device will present a webpage that is viewable from either a desktop/lap
 
 *Desktop vs Phone display size configuration*
 
+## RTK Express / Facet
+To get into WiFi configuration follow these steps:
+
+1. Power on the RTK Express or Facet.
+2. Once the device has started press the Setup button repeatedly until the *Config* menu is highlighted.
+3. The display will blink a WiFi icon indicating it is waiting for incoming connections.
+4. Connect to WiFi network named ‘RTK Config’.
+5. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
+
 [![Display showing IP address](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Display_WiFi_Config.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Display_WiFi_Config.jpg)
 
 *Device ready for cellphone configuration*
 
+## RTK Surveyor
+
 To get into WiFi configuration follow these steps:
 
-1. Power on the RTK Facet.
-2. Once the device has started press the Setup button repeatedly until the *Config* menu is highlighted.
-3. The RTK Facet will blink a WiFi icon indicating it is waiting for incoming connections.
-4. Connect to WiFi network named ‘RTK Config’.
-5. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
+1. Power the RTK Surveyor on in Rover mode.
+2. Once the device has started the Bluetooth status LED should be blinking at 1Hz. Now toggle the **SETUP** switch from Base and back to Rover within 1 second. If successful, the Bluetooth status LED will begin fading in/out. The device is now broadcasting as a WiFi access point.
+3. Connect to WiFi network named ‘RTK Config’.
+4. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
+
 
 [![Discovered WiFi networks](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Networks.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Networks.jpg)
 

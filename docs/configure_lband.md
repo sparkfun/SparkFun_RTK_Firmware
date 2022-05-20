@@ -1,0 +1,51 @@
+# LBand Menu
+
+**Note:** This section only applies to RTK Facet *LBand* products. Regular RTK Facet products do not have LBand antennas or receivers built in.
+
+-> [![LBand Menu showing Home WiFi credentials](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBandA.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBandA.jpg) <-
+
+-> *LBand Menu showing Home WiFi credentials* <-
+
+*RTK Facet LBand* products are equipped with a special antenna and extra receiver to decrypted the LBand corrections using the PointPerfect service from u-blox. The LBand sub menu allows a user to enter their 'Home' WiFi settings. This WiFi SSID and password are used to regularly obtain the needed decryption keys from u-blox. This is normally your home WiFi or other accessible WiFi.
+
+LBand decryption keys are valid for a maximum of 56 days. During that time, the RTK Facet LBand can operate normally without the need for WiFi access. However, when the keys are set to expire in 28 days or less, the RTK Facet LBand will attempt to log in to the 'Home' WiFi at each power on. If WiFi is not available, it will continue normal operation. 
+
+-> [![Display showing 14 days until LBand Keys Expire](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_DayToExpire.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_DayToExpire.jpg) <-
+
+-> *Display showing 14 days until LBand Keys Expire* <-
+
+The unit will display various messages to aid the user in obtaining keys as needed.
+
+-> [![Three pronged satellite dish indicating LBand reception](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_Indicator.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_Indicator.jpg) <-
+
+-> *Three pronged satellite dish indicating LBand reception* <-
+
+Upon successful reception and decryption of LBand corrections, the satellite dish icon will increase to a three pronged icon. As the unit's fix increases the cross hair will indicate a basic 3D solution, a double blinking cross hair will indicate a floating RTK solution, and a solid double cross hair will indicate a fixed RTK solution.
+
+
+-> [![LBand Menu showing Home WiFi credentials](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBandA.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBandA.jpg) <-
+
+-> *LBand Menu showing Home WiFi credentials* <-
+
+In addition to allowing the entry of WiFi credentials, the LBand Menu will display the Device ID. This is needed when a SparkFun RTK Facet LBand product needs to be added to the PointPerfect system. This is normally taken care of when you purchase the LBand unit with PointPerfect service added, but for customers who did not purchase the service and want to add it at a later date, this Device ID is what customer service needs.
+
+The *Days until keys expire* inform the user how many days the unit has until it needs to connect to WiFi to obtain new keys.
+
+* Option '1' disables the use of LBand corrections.
+
+* Option '2' or '3' enables the entry of WiFi credentials used for obtaining new keys from the PointPerfect API.
+
+* Option '4' disables the automatic attempts at WiFi connections when key expiry is less than 28 days.
+
+* Option '5' will trigger an immediate attempt to connect over WiFi and update the keys.
+
+* Option 'k' will bring up the Manual Key Entry menu.
+
+-> [![Manual Key Entry menu](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_ManualKeysA.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_ManualKeysA.jpg) <-
+
+-> *Manual Key Entry Menu* <-
+
+Because of the length and complexity of the keys, we do not recommend you manually enter them. This menu is most helpful for displaying the current keys.
+
+Option '1' will allow a user to enter their own Device Profile Token. This is the token that is used to provision a device on a PointPerfect account. By default, users may use the SparkFun token but must pay SparkFun for the annual service fee. If an organization would like to administer their own devices, the token can be changed here.
+

@@ -10,8 +10,8 @@ void menuPointPerfect()
     Serial.println();
     Serial.println(F("Menu: PointPerfect Corrections"));
 
-    char hardwareID[11];
-    sprintf(hardwareID, "%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4]); //Get ready for JSON
+    char hardwareID[13];
+    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]); //Get ready for JSON
     Serial.printf("Device ID: %s\n\r", hardwareID);
 
     Serial.print("Days until keys expire: ");
@@ -37,7 +37,7 @@ void menuPointPerfect()
     if (settings.autoKeyRenewal == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    if (strlen(settings.pointPerfectClientID) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
+    if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
       Serial.println(F("5) Provision Device"));
     else
       Serial.println(F("5) Update Keys"));
@@ -90,7 +90,7 @@ void menuPointPerfect()
         //Check if we have certificates
         char fileName[80];
         sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
-        if(LittleFS.exists(fileName) == false)
+        if (LittleFS.exists(fileName) == false)
         {
           provisionDevice(); //Connect to ThingStream API and get keys
         }
@@ -274,30 +274,40 @@ bool provisionDevice()
   WiFiClientSecure client;
   client.setCACert(AWS_PUBLIC_CERT);
 
-#ifdef WHITELISTED_ID
-  //Override device ID with testing ID
-  for (int x = 0 ; x < 5 ; x++)
-    unitMACAddress[x] = whitelistID[x];
-#endif
+  char hardwareID[13];
+  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]); //Get ready for JSON
 
-  char hardwareID[11];
-  sprintf(hardwareID, "%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4]); //Get ready for JSON
+#ifdef WHITELISTED_ID
+  //Override ID with testing ID
+  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1], whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
+#endif
 
   char givenName[50];
   sprintf(givenName, "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, hardwareID); //Get ready for JSON
 
   StaticJsonDocument<256> pointPerfectAPIPost;
 
-  //Convert uint8_t array into string with dashes in spots
-  //We must assume u-blox will not change the position of their dashes or length of their token
+  //Determine if we use the SparkFun token or custom token
   char tokenString[37] = "\0";
-  for (int x = 0 ; x < sizeof(pointPerfectTokenArray) ; x++)
+  if (strlen(settings.pointPerfectDeviceProfileToken) == 0)
   {
-    char temp[3];
-    sprintf(temp, "%02x", pointPerfectTokenArray[x]);
-    strcat(tokenString, temp);
-    if (x == 3 || x == 5 || x == 7 || x == 9) strcat(tokenString, "-");
+    //Convert uint8_t array into string with dashes in spots
+    //We must assume u-blox will not change the position of their dashes or length of their token
+    for (int x = 0 ; x < sizeof(pointPerfectTokenArray) ; x++)
+    {
+      char temp[3];
+      sprintf(temp, "%02x", pointPerfectTokenArray[x]);
+      strcat(tokenString, temp);
+      if (x == 3 || x == 5 || x == 7 || x == 9) strcat(tokenString, "-");
+    }
   }
+  else
+  {
+    //Use the user's custom token
+    strcpy(tokenString, settings.pointPerfectDeviceProfileToken);
+    Serial.printf("Using custom token: %s\n\r", tokenString);
+  }
+
   pointPerfectAPIPost["token"] = tokenString;
   pointPerfectAPIPost["givenName"] = givenName;
   pointPerfectAPIPost["hardwareId"] = hardwareID;

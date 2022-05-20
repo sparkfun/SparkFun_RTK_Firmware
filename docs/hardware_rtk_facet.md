@@ -50,7 +50,7 @@ The Charge LED is located on the front face. It will illuminate any time there i
 
 [![RTK Facet Connectors](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Ports.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Ports.jpg)
 
--> *The SparkFun RTK Facet connectors shown with the dust cover removed* <-
+*The SparkFun RTK Facet connectors shown with the dust cover removed*
 
 There are a variety of connectors protected by a dust flap.
 
@@ -228,27 +228,27 @@ The following 67 messages are supported for logging:
 
 #### **Qwiic:**
 
--> [![RTK Facet Qwiic connector](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Ports_-_Qwiic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Ports_-_Qwiic.jpg) <-
+[![RTK Facet Qwiic connector](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Ports_-_Qwiic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Ports_-_Qwiic.jpg)
 
 This 4-pin [Qwiic connector](https://www.sparkfun.com/qwiic) exposes the I2C bus of the ESP32 WROOM module. Currently, there is no firmware support for adding I<sup>2</sup>C devices to the RTK Facet but support may be added in the future.
 
 #### **Antenna:**
 
--> [![Internal RTK Facet Antenna](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_L1_L2_Antenna_-_1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_L1_L2_Antenna_-_1.jpg) <-
+[![Internal RTK Facet Antenna](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_L1_L2_Antenna_-_1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_L1_L2_Antenna_-_1.jpg)
 
 It's built in! Housed under the dome of the RTK Facet is a surveyor grade L1/L2 antenna. It is the same element found within our [GNSS Multi-Band L1/L2 Surveying Antenna](https://www.sparkfun.com/products/17751). Its datasheet is available [here](https://cdn.sparkfun.com/assets/b/4/6/d/e/TOP106_GNSS_Antenna.pdf).
 
--> [![SparkFun RTK Facet Antenna Reference Point](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_ARP-1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_ARP-1.jpg) <-
+[![SparkFun RTK Facet Antenna Reference Point](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_ARP-1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_ARP-1.jpg)
 
--> *SparkFun RTK Facet Antenna Reference Points* <-
+*SparkFun RTK Facet Antenna Reference Points*
 
 The built in antenna has an [ARP](https://geodesy.noaa.gov/ANTCAL/FAQ.xhtml#faq4) of 61.4mm from the base to the measuring point of the L1 antenna and an ARP of 57.4mm to the measuring point of the L2 antenna.
 
 ### **Power**
 
--> [![RTK Facet Display showing three battery bars](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Rover_RTK_Fixed.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Rover_RTK_Fixed.jpg) <-
+[![RTK Facet Display showing three battery bars](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Rover_RTK_Fixed.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Rover_RTK_Fixed.jpg)
 
--> *RTK Facet Display showing three battery bars* <-
+*RTK Facet Display showing three battery bars*
 
 The RTK Facet has a built in 6000mAh battery and consumes approximately 240mA worst case with Bluetooth connection active and GNSS fully tracking. This will allow for around 25 hours of use in the field. If more time is needed in the field a standard USB power bank can be attached. If a 10,000mAh bank is attached one can estimate 56 hours of run time assuming 25% is lost to efficiencies of the power bank and charge circuit within RTK Facet.
 
@@ -263,19 +263,19 @@ To quickly view the state of charge, turn on the unit. The battery icon will ind
 
 ## Advanced Features
 
--> [![RTK Facet Circuit Boards](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/RTK_Facet_Photos-07.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/RTK_Facet_Photos-07.jpg) <-
+[![RTK Facet Circuit Boards](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/RTK_Facet_Photos-07.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/RTK_Facet_Photos-07.jpg)
 
--> *The boards that make up the RTK Facet* <-
+*The boards that make up the RTK Facet*
 
 The RTK Facet is a hacker’s delight. Under the hood of the RTK Facet is an ESP32 WROOM connected to a ZED-F9P as well as some peripheral hardware (LiPo fuel gauge, microSD, etc). It is programmed in Arduino and can be tailored by the end user to fit their needs.
 
--> [![RTK Facet Schematic](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Main_Board_Schematic_Image.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Main_Schematic.pdf) <-
+[![RTK Facet Schematic](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Main_Board_Schematic_Image.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Main_Schematic.pdf)
 
--> *Click on the image to get a closer look at the Schematic!* <-
+*Click on the image to get a closer look at the Schematic!*
 
--> [![Internal RTK Facet Antenna](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_L1_L2_Antenna_-_1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_L1_L2_Antenna_-_1.jpg) <-
+[![Internal RTK Facet Antenna](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_L1_L2_Antenna_-_1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_L1_L2_Antenna_-_1.jpg)
 
--> *The Facet with three sub boards, the battery, and antenna* <-
+*The Facet with three sub boards, the battery, and antenna*
 
 ### ZED-F9P GNSS Receiver
 

@@ -1,8 +1,8 @@
 # System Status Menu
 
--> [![Showing various attributes of the system](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_SystemStatus.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_SystemStatus.jpg) <-
+[![Showing various attributes of the system](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_SystemStatus.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_SystemStatus.jpg)
 
--> *Showing various attributes of the system* <-
+*Showing various attributes of the system*
 
 The System Status menu will show a large number of system parameters including a full system check to verify what is and what is not online. For example, if an SD card is detected it will be shown as online. Not all systems have all hardware. For example, the RTK Surveyor does not have an accelerometer so it will always be shown offline.
 

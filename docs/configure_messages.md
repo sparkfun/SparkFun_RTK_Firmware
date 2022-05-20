@@ -1,8 +1,8 @@
 # Messages Menu
 
--> [![The Messages configuration menu](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Messages_Menu.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Messages_Menu.jpg) <-
+[![The Messages configuration menu](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Messages_Menu.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Messages_Menu.jpg)
 
--> *The messages configuration menu* <-
+*The messages configuration menu*
 
 From this menu a user can control the output of various NMEA, RTCM, RXM, and other messages. Any enabled message will be broadcast over Bluetooth *and* recorded to SD (if available).
 
@@ -29,9 +29,9 @@ These seven sentences are commonly used when logging and doing Precise Point Pos
 
 **Turn on all messages** will turn on all messages. This is a setting used for firmware testing and should not be needed in normal use.
 
--> [![Configuring the NMEA messages](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Messages_Menu_-_NMEA.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Messages_Menu_-_NMEA.jpg) <-
+[![Configuring the NMEA messages](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Messages_Menu_-_NMEA.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Messages_Menu_-_NMEA.jpg)
 
--> *Configuring the NMEA messages* <-
+*Configuring the NMEA messages*
 
 As mentioned is the microSD section of the [Hardware Overview](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#hardware-overview) there are a large number of messages supported. Each message sub menu will present the user with the ability to set the message report rate.
 

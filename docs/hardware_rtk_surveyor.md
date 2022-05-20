@@ -4,7 +4,7 @@ The RTK Surveyor is a fully enclosed, preprogrammed device. There are very few t
 
 ### Switches
 
--> [![RTK Surveyor Switches](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Switches.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Switches.jpg) <-
+[![RTK Surveyor Switches](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Switches.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Switches.jpg)
 
 ####<b>Setup</b>
 
@@ -26,7 +26,7 @@ The Power switch is self explanatory. When turned on the LED will turn Green, Ye
 
 ### LEDs
 
--> [![RTK Surveyor LEDs](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_LEDs1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_LEDs1.jpg) <-
+[![RTK Surveyor LEDs](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_LEDs1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_LEDs1.jpg)
 
 There are a variety of LEDs:
 
@@ -39,29 +39,29 @@ There are a variety of LEDs:
 
 ### Connectors
 
--> [![RTK Surveyor Connectors and label](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors1.jpg) <-
+[![RTK Surveyor Connectors and label](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors1.jpg)
 
--> *The SparkFun RTK Surveyor has a variety of connectors* <-
+*The SparkFun RTK Surveyor has a variety of connectors*
 
 
 ####<b>Antenna</b>: 
 
 This SMA connector is used to connect an L1/L2 type GNSS antenna to the RTK Surveyor. Please realize that a standard GPS antenna does not receive the L2 band signals and will greatly impede the performance of the RTK Surveyor (RTK fixes are nearly impossible). Be sure to use a proper [L1/L2 antenna](https://www.sparkfun.com/products/17751).
 
--> [![RTK Surveyor SMA connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Antenna.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Antenna.jpg) <-
+[![RTK Surveyor SMA connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Antenna.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Antenna.jpg)
 
 ####<b>Configure u-blox</b>: 
 
 This USB C connector is used for charging the device and/or directly configuring and inspecting the ZED-F9P GNSS receiver using [u-center](https://learn.sparkfun.com/tutorials/getting-started-with-u-center-for-u-blox/all). It’s not necessary in normal operation but is handy for tailoring the receiver to specific applications. As an added perk, the ZED-F9P can be detected automatically by some mobile phones and tablets. If desired, the receiver can be directly connected to a compatible phone or tablet removing the need for a Bluetooth connection.
 
--> [![RTK Surveyor u-blox connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_u-blox.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_u-blox.jpg) <-
+[![RTK Surveyor u-blox connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_u-blox.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_u-blox.jpg)
 
 
 ####<b>USB Configure ESP32</b>:
 
 This USB C connector is used for charging the device, configuring the device, and reprogramming the ESP32. Various debug messages are printed to this port at 115200bps and a serial menu can be opened to configure advanced settings. 
 
--> [![RTK Surveyor ESP32 connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_ESP32.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_ESP32.jpg) <-
+[![RTK Surveyor ESP32 connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_ESP32.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_ESP32.jpg)
 
  
 ####<b>Radio</b>:
@@ -69,26 +69,26 @@ This USB C connector is used for charging the device, configuring the device, an
 This 4-pin JST connector is used to allow RTCM correction data to flow into the device when it is acting as a rover or out of the device when it is acting as a base. You will most likely connect this port to one of our [Serial Telemetry Radios](https://www.sparkfun.com/products/19032) if you don’t have access to a correction source on the internet. The pinout is <b>3.5-5.5V</b> / TX / RX / GND. The connector is a 4-pin locking 1.25mm JST SMD connector (part#: SM04B-GHS-TB, mating connector part#: GHR-04V-S). <b>3.5V to 5.5V</b> is provided by this connector to power a radio with a voltage that depends on the power source. If USB is connected to the RTK Surveyor then voltage on this port will be <b>5V</b> (+/-10%). If running off of the internal battery then voltage on this port will vary with the battery voltage (<b>3.5V</b> to <b>4.2V</b> depending on the state of charge). While the port is capable of sourcing up to 2 amps, we do not recommend more than 500mA. This port should not be connected to a power source.
 
 
--> [![RTK Surveyor Radio connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Radio.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Radio.jpg) <-
+[![RTK Surveyor Radio connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Radio.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Radio.jpg)
  
 
 ####<b>Data</b>:
 
 This 4-pin JST connector is used to output NMEA sentences over 115200bps serial. Most applications will send the NMEA position data over Bluetooth. Alternatively, this port can be useful for sending position data to an embedded microcontroller or single board computer. The pinout is <b>3.3V</b> / TX / RX / GND. The connector is a 4-pin locking 1.25mm JST SMD connector (part#: SM04B-GHS-TB, mating connector part#: GHR-04V-S). <b>3.3V</b> is provided by this connector to power a remote device if needed. While the port is capable of sourcing up to 600mA, we do not recommend more than 300mA. This port should not be connected to a power source.
 
--> [![RTK Surveyor Data connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Data.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Data.jpg) <-
+[![RTK Surveyor Data connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Data.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Data.jpg)
 
 ####<b>microSD</b>:
 
 This slot accepts standard microSD cards up to 32GB formatted for FAT16 or FAT32. Logging NMEA and RAWX data at up to 4Hz is supported for all constellations.
 
--> [![RTK Surveyor microSD connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_microSD.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_microSD.jpg) <-
+[![RTK Surveyor microSD connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_microSD.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_microSD.jpg)
 
 ####<b>Qwiic</b>: 
 
 This 4-pin [Qwiic connector](https://www.sparkfun.com/qwiic) exposes the I2C bus of the ESP32 WROOM module. Currently, there is no firmware support for adding I2C devices to the RTK Surveyor but support may be added in the future.
 
--> [![RTK Surveyor Qwiic connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Qwiic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Qwiic.jpg) <-
+[![RTK Surveyor Qwiic connector](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Qwiic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Connectors_-_Qwiic.jpg)
 
 ### Power
 
@@ -102,7 +102,7 @@ To quickly view the state of charge, turn on the unit. A green LED indicates > 5
 
 The RTK Surveyor is a hacker’s delight. Under the hood of the RTK Surveyor is an ESP32 WROOM connected to a ZED-F9P as well as some peripheral hardware (LiPo fuel gauge, microSD, etc). It is programmed in Arduino and can be tailored by the end user to fit their needs.
 
--> [![RTK Survayor Schematic](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Schematic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_GPS_RTK_Surveyor-v13.pdf) <-
+[![RTK Survayor Schematic](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/SparkFun_RTK_Surveyor_-_Schematic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SparkFun_GPS_RTK_Surveyor-v13.pdf)
 
 ->_Click on the image to get a closer look at the Schematic!_<-
 
@@ -111,11 +111,11 @@ The RTK Surveyor is a hacker’s delight. Under the hood of the RTK Surveyor is 
 
 The [ZED-F9P GNSS receiver](https://www.sparkfun.com/products/16481) is configured over I<sup>2</sup>C and uses two UARTs to output NMEA (UART1) and input/output RTCM (UART2). 
 
--> [![ZED-F9P GNSS Receiver](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_ZED-F9P.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_ZED-F9P.jpg) <-
+[![ZED-F9P GNSS Receiver](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_ZED-F9P.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_ZED-F9P.jpg)
 
 Two internal slide switches control the flow of NMEA and RTCM traffic between the external connectors and the internal BT UART used on the ESP32. Ostensibly the *Bluetooth Broadcast* switch can be set to pipe RTCM data to the ESP32’s UART (instead of NMEA) so that correction data can be transmitted over Bluetooth. Point to point Bluetooth radio support is not supported because the useful range of Bluetooth is too short for most RTK applications but may be helpful in some advanced applications.
 
--> [![Communication switches](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_NMEA_Switches.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_NMEA_Switches.jpg) <-
+[![Communication switches](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_NMEA_Switches.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_NMEA_Switches.jpg)
 
 
 ### ESP32
@@ -129,36 +129,36 @@ The CH340 automatically resets and puts the ESP32 into bootload mode as needed. 
 If you've never connected a CH340 device to your computer before, you may need to install drivers for the USB-to-serial converter. Check out our section on <a href="https://learn.sparkfun.com/tutorials/sparkfun-serial-basic-ch340c-hookup-guide#drivers-if-you-need-them">"How to Install CH340 Drivers"</a> for help with the installation.
 </div>
 
--> [![ESP32 on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_ESP32-1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_ESP32-1.jpg) <-
+[![ESP32 on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_ESP32-1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_ESP32-1.jpg)
 
 
 ### Measurement Jumpers
 
 To facilitate the measurement of run, charge, and quiescent currents, two measurement jumpers are included. These are normally closed jumpers combined with a 2-pin 0.1” footprint. To take a measurement, cut the jumper and install a 2-pin header and use [banana to IC hook](https://www.sparkfun.com/products/506) cables to a DMM.
 
--> [![Measurement Jumpers on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Measurement_Jumpers.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Measurement_Jumpers.jpg) <-
+[![Measurement Jumpers on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Measurement_Jumpers.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Measurement_Jumpers.jpg)
 
 ### LiPo and Charging
 
 The RTK Surveyor houses a standard [1000mAh 3.7V LiPo](https://www.sparkfun.com/products/13813). The charge circuit is set to 1A so with an appropriate power source, charging an empty battery should take roughly one hour. USB C on the RTK Surveyor is configured for 2A draw so if the user attaches to a USB 3.0 port, the charge circuit should operate near the 1A max. If a user attaches to a USB 2.0 port, the charge circuit will operate at 500mA. 
 
--> [![LiPo and Charging on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_LiPo_Charging1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_LiPo_Charging1.jpg) <-
+[![LiPo and Charging on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_LiPo_Charging1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_LiPo_Charging1.jpg)
 
 
 ### MAX17048 Fuel Gauge
 
 The [MAX17048](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/MAX17048-MAX17049.pdf) is a simple to use fuel gauge IC that gives the user a statement of charge (SOC) that is basically a 0 to 100% report. The MAX17048 has a sophisticated algorithm to figure out what the SOC is based on cell voltage that is beyond the scope of this tutorial but for our purposes, allows us to control the color of the power LED.
 
--> [![MAX17048 Fuel Gauge on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_MAX17048_Fuel_Gauge1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_MAX17048_Fuel_Gauge1.jpg) <-
+[![MAX17048 Fuel Gauge on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_MAX17048_Fuel_Gauge1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_MAX17048_Fuel_Gauge1.jpg)
 
 ### Qwiic
 
 A [Qwiic connector](https://www.sparkfun.com/qwiic) is exposed on the end of the unit. This allows connection to the I<sup>2</sup>C bus on the ESP32. Currently the stock RTK Surveyor does not support any additional Qwiic sensors or display but users may add support for their own application.
 
--> [![Qwiic Connector on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Qwiic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Qwiic.jpg) <-
+[![Qwiic Connector on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Qwiic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Qwiic.jpg)
 
 ### microSD
 
 A microSD socket is situated on the ESP32 SPI bus. Any microSD up to 32GB is supported. RTK Surveyor supports RAWX and NMEA logging to the SD card. Max logging time can also be set (default is 10 hours) to avoid multi-gigabyte text files. For more information about RAWX and doing PPP please see [this tutorial](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data).
 
--> [![microSD socket on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_microSD.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_microSD.jpg) <-
+[![microSD socket on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_microSD.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_microSD.jpg)

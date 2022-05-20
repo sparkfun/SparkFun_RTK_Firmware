@@ -6,8 +6,8 @@ All device settings are stored both in internal memory and an SD card if one is 
 
 There are three ways to configure an RTK product: 
 
-* [WiFi](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#system-configuration---wifi) - Good for in field changes
-* [Serial Terminal](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#system-configuration---serial-terminal) - Requires a computer but allows for all configuration settings
-* [Settings File](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#system-configuration---settings-file) - Error Prone; for very advanced users only.
+* [WiFi](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_wifi/) - Good for in field changes
+* [Serial Terminal](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_serial/) - Requires a computer but allows for all configuration settings
+* [Settings File](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_settings_file/) - Error Prone; for very advanced users only.
 
 The serial terminal method is recommended for most advanced configurations. Most, but not all settings are also available over WiFi but can be tricky to input via mobile phone.

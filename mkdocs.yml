@@ -73,7 +73,7 @@ extra:
       link: https://twitter.com/sparkfun
   
 nav:
-  - Introduction: index.md
+  - Getting Started:
     - system_configuration.md
     - connecting_over_wifi.md
   - Hardware Specifics:

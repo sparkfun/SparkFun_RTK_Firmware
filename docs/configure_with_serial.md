@@ -10,7 +10,7 @@ To configure an RTK device using serial attach a [USB C cable](https://www.spark
 
 *The SparkFun RTK Surveyor has a variety of connectors*
 
-Connect the USB cable to the connector labeled 'ESP32 Config'.
+Connect the USB cable to the connector labeled **Config ESP32**.
 
 Once connected a COM port will enumerate. Open the `Device Manager` in Windows and look under the Ports branch to see what COM port the device is assigned to.
 
@@ -30,9 +30,9 @@ In the image above, the `USB Serial Device` is the ZED-F9P and the `USB-SERIAL C
 
 **Don't See 'USB Serial Device'?** The first time a u-blox module is connected to a computer you may need to adjust the COM driver. Check out our section on <a href="https://learn.sparkfun.com/tutorials/getting-started-with-u-center-for-u-blox#install-drivers">"How to Install u-blox Drivers"</a> for help with the installation.
 
-Configuring the RTK Facet can be done over the *USB-Serial CH340* COM port via serial text menu. Various debug messages are printed to this port at 115200bps and a serial menu can be opened to configure advanced settings. 
+Configuring the RTK device is done over the *USB-Serial CH340* COM port via serial text menu. Various debug messages are printed to this port at 115200bps and a serial menu can be opened to configure advanced settings. 
 
-Configuring the ZED-F9P can be configured over the *USB Serial Device* port using [u-center](https://learn.sparkfun.com/tutorials/getting-started-with-u-center-for-u-blox/all). It’s not necessary in normal operation but is handy for tailoring the receiver to specific applications. As an added perk, the ZED-F9P can be detected automatically by some mobile phones and tablets. If desired, the receiver can be directly connected to a compatible phone or tablet removing the need for a Bluetooth connection.
+Configuring the ZED-F9P is done over the *USB Serial Device* port using [u-center](https://learn.sparkfun.com/tutorials/getting-started-with-u-center-for-u-blox/all). It’s not necessary in normal operation but is handy for tailoring the receiver to specific applications. As an added perk, the ZED-F9P can be detected automatically by some mobile phones and tablets. If desired, the receiver can be directly connected to a compatible phone or tablet removing the need for a Bluetooth connection.
 
 Open a terminal window at 115200bps; you should see various status messages every second. Press any key to open the configuration menu. Not sure how to use a terminal? Checkout our [Serial Terminal Basics](https://learn.sparkfun.com/tutorials/terminal-basics) tutorial.
 

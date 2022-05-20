@@ -97,7 +97,7 @@ The RTK Surveyor can be charged from any USB port or adapter. The charge circuit
 
 To quickly view the state of charge, turn on the unit. A green LED indicates > 50% charge remaining. A yellow LED indicates > 10% charge remaining. A red LED indicates less than 10% charge remaining.
 
-# Advanced Features
+## Advanced Features
 
 The RTK Surveyor is a hacker’s delight. Under the hood of the RTK Surveyor is an ESP32 WROOM connected to a ZED-F9P as well as some peripheral hardware (LiPo fuel gauge, microSD, etc). It is programmed in Arduino and can be tailored by the end user to fit their needs.
 
@@ -105,7 +105,7 @@ The RTK Surveyor is a hacker’s delight. Under the hood of the RTK Surveyor is 
 
 *Click on the image to get a closer look at the Schematic*
 
-## ZED-F9P GNSS Receiver
+### ZED-F9P GNSS Receiver
 
 The [ZED-F9P GNSS receiver](https://www.sparkfun.com/products/16481) is configured over I<sup>2</sup>C and uses two UARTs to output NMEA (UART1) and input/output RTCM (UART2). 
 
@@ -115,7 +115,7 @@ Two internal slide switches control the flow of NMEA and RTCM traffic between th
 
 [![Communication switches](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_NMEA_Switches.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_NMEA_Switches.jpg)
 
-## ESP32
+### ESP32
 
 The [ESP32](https://www.sparkfun.com/products/15663) uses a standard USB to serial conversion IC ([CH340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all)) to program the device. You can use the ESP32 core for Arduino or Espressif’s [IoT Development Framework (IDF)](https://www.espressif.com/en/support/download/all).
 
@@ -129,32 +129,32 @@ If you've never connected a CH340 device to your computer before, you may need t
 [![ESP32 on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_ESP32-1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_ESP32-1.jpg)
 
 
-## Measurement Jumpers
+### Measurement Jumpers
 
 To facilitate the measurement of run, charge, and quiescent currents, two measurement jumpers are included. These are normally closed jumpers combined with a 2-pin 0.1” footprint. To take a measurement, cut the jumper and install a 2-pin header and use [banana to IC hook](https://www.sparkfun.com/products/506) cables to a DMM.
 
 [![Measurement Jumpers on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Measurement_Jumpers.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Measurement_Jumpers.jpg)
 
-## LiPo and Charging
+### LiPo and Charging
 
 The RTK Surveyor houses a standard [1000mAh 3.7V LiPo](https://www.sparkfun.com/products/13813). The charge circuit is set to 1A so with an appropriate power source, charging an empty battery should take roughly one hour. USB C on the RTK Surveyor is configured for 2A draw so if the user attaches to a USB 3.0 port, the charge circuit should operate near the 1A max. If a user attaches to a USB 2.0 port, the charge circuit will operate at 500mA. 
 
 [![LiPo and Charging on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_LiPo_Charging1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_LiPo_Charging1.jpg)
 
 
-## MAX17048 Fuel Gauge
+### MAX17048 Fuel Gauge
 
 The [MAX17048](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/MAX17048-MAX17049.pdf) is a simple to use fuel gauge IC that gives the user a statement of charge (SOC) that is basically a 0 to 100% report. The MAX17048 has a sophisticated algorithm to figure out what the SOC is based on cell voltage that is beyond the scope of this tutorial but for our purposes, allows us to control the color of the power LED.
 
 [![MAX17048 Fuel Gauge on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_MAX17048_Fuel_Gauge1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_MAX17048_Fuel_Gauge1.jpg)
 
-## Qwiic
+### Qwiic
 
 A [Qwiic connector](https://www.sparkfun.com/qwiic) is exposed on the end of the unit. This allows connection to the I<sup>2</sup>C bus on the ESP32. Currently the stock RTK Surveyor does not support any additional Qwiic sensors or display but users may add support for their own application.
 
 [![Qwiic Connector on SparkFun RTK Surveyor](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Qwiic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_Internal_-_Qwiic.jpg)
 
-## microSD
+### microSD
 
 A microSD socket is situated on the ESP32 SPI bus. Any microSD up to 32GB is supported. RTK Surveyor supports RAWX and NMEA logging to the SD card. Max logging time can also be set (default is 10 hours) to avoid multi-gigabyte text files. For more information about RAWX and doing PPP please see [this tutorial](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data).
 

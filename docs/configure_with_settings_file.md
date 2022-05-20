@@ -1,4 +1,4 @@
-# Configuring with Settings File
+# Configure with Settings File
 
 Surveyor: Yes* / Express: Yes / Express Plus: Yes / Facet: Yes
 

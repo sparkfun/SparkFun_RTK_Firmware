@@ -4,9 +4,8 @@ The RTK Facet is open source hardware meaning you have total access to the [firm
 
 There are two firmwares that operate on the device:
 
-* Firmware on the ESP32 microcontroller. See below.
-* Firmware on the ZED-F9P Receiver. See [How to Upgrade Firmware of a u-blox Receiver](https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver/all)
-
+* Firmware on the ESP32 microcontroller. Keep reading.
+* Firmware on the ZED-F9P Receiver. [See below](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#zed-f9x-firmware).
 
 [![[Main Menu showing RTK Firmware v1.8-Oct 7 2021](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Serial_Config_-_Main.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Serial_Config_-_Main.jpg)
 
@@ -146,7 +145,7 @@ After connecting a USB C cable to the ESP32 Config connector and selecting the c
 
 The firmware loaded onto the ZED-F9P or ZED-F9R receiver can vary depending on manufacture date. The RTK Firmware is designed to work with any ZED-F9x firmware. Upgrading the ZED-F9x is a good thing to consider but is not crucial to the use of the RTK products.
 
-A tutorial with step-by-step instructions for locating the firmware version as well as changing the firmware can be found [here](https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver/all).
+A tutorial with step-by-step instructions for locating the firmware version as well as changing the firmware can be found in [How to Upgrade Firmware of a u-blox Receiver](https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver/all).
 
 ### ZED-F9P
 

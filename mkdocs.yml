@@ -79,6 +79,7 @@ nav:
     - configure_with_wifi.md
     - configure_with_serial.md
     - configure_with_settings_file.md
+    - configure_ucenter.md
     - configure_gnss_receiver.md
     - configure_messages.md
     - configure_base.md
@@ -88,17 +89,9 @@ nav:
     - configure_lband.md
     - menu_system_status.md
     - firmware_update.md
-    - configure_ucenter.md
   - Hardware Specifics:
     - hardware_rtk_surveyor.md
     - hardware_rtk_express.md
     - hardware_rtk_express_plus.md
     - hardware_rtk_facet.md
-  - Updating Firmware:
-    - update_intro.md
-    - update_sd.md
-    - update_wifi.md
-    - update_serial.md
-    - update_gui.md
-    - update_custom.md
     

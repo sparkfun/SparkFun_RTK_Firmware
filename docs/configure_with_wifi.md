@@ -1,6 +1,6 @@
 # Configure with WiFi
 
-Surveyor: Yes* / Express: Yes / Express Plus: Yes / Facet: Yes
+Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
 
 Starting with firmware v1.7, WiFi based configuration is supported. For more information about updating the firmware on your device, please see [Firmware Updates and Customization](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#firmware-updates-and-customization).
 
@@ -32,6 +32,7 @@ To get into WiFi configuration follow these steps:
 3. Connect to WiFi network named ‘RTK Config’.
 4. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
 
+## Connecting to WiFi Network
 
 [![Discovered WiFi networks](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Networks.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Networks.jpg)
 

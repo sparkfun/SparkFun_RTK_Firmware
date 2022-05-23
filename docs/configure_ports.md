@@ -1,5 +1,7 @@
 # Ports Menu
 
+Surveyor: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
+
 [![Baud rate configuration of Radio and Data ports](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu.jpg)
 
 *Baud rate configuration of Radio and Data ports*
@@ -16,7 +18,9 @@ If you must run the data port at lower than 460800bps, and you need to enable a 
 
 ## Surveyor Data Port
 
-By default the Data port is set to 460800bps and can be configured from 4800bps to 921600bps. Note: The Data port does not output NMEA by default. The unit must be opened and the *Serial NMEA Connection* switch must be moved to 'Ext Connector'. See [Hardware Overview - Advanced Features](https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide/all#hardware-overview---advanced-features) for the location of the switch.
+By default the Data port is set to 460800bps and can be configured from 4800bps to 921600bps. 
+
+Note: The Data port does not output NMEA by default. The unit must be opened and the *Serial NMEA Connection* switch must be moved to 'Ext Connector'. See [Hardware Overview - Advanced Features](https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide/all#hardware-overview---advanced-features) for the location of the switch.
 
 ## Facet / Express / Express Plus Data Port
 

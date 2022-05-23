@@ -1,10 +1,30 @@
 # Base Menu
 
+Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Not Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/RedDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
+
 In addition to providing accurate local location fixes, the SparkFun RTK devices can also serve as a correction source, also called a *Base*. The Base doesn't move and 'knows' where it is so it can calculate the discrepancies between the signals it is receiving and what it should be receiving. These differences are the correction values passed to the Rover so that the Rover can have millimeter level accuracy.
 
 There are two types of bases: *Surveyed* and *Fixed*. A surveyed base is often a temporary base setup in the field. Called a 'Survey-In', this is less accurate but requires only 60 seconds to complete. The 'Fixed' base is much more accurate but the precise location at which the antenna is located must be known. A fixed base is often a structure with an antenna bolted to the side. Raw satellite signals are gathered for a few hours then processed using Precision Point Position. We have a variety of tutorials that go into depth on these subjects but all you need to know is that the RTK Facet supports both Survey-In and Fixed Base techniques.
 
+Please see the following tutorials for more information:
+
 <!-- tutorials_by_id(813, 815, 1362, 1363) -->
+
+<table class="table table-hover table-striped table-bordered">
+  <tr align="center">
+   <td><a href="https://learn.sparkfun.com/tutorials/what-is-gps-rtk"><img src="https://cdn.sparkfun.com/c/178-100/assets/learn_tutorials/8/1/3/Location-Wandering-GPS-combined.jpg"></a></td>
+   <td><a href="https://learn.sparkfun.com/tutorials/getting-started-with-u-center-for-u-blox"><img src="https://cdn.sparkfun.com/c/178-100/assets/learn_tutorials/8/1/5/u-center.jpg"></a></td>
+   <td><a href="https://learn.sparkfun.com/tutorials/setting-up-a-rover-base-rtk-system"><img src="https://cdn.sparkfun.com/c/178-100/assets/learn_tutorials/1/3/6/2/GNSS_RTK_DIY_Surveying_Tutorial.jpg"></a></td>
+   <td><a href="https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station"><img src="https://cdn.sparkfun.com/c/178-100/assets/learn_tutorials/1/3/6/3/Roof_Enclosure.jpg"></a></td>
+  </tr>
+  <tr align="center">
+    <td><a href="https://learn.sparkfun.com/tutorials/what-is-gps-rtk">What is GPS RTK?</a></td>
+    <td><a href="https://learn.sparkfun.com/tutorials/getting-started-with-u-center-for-u-blox">Getting Started with u-center for u-blox</a></td>
+    <td><a href="https://learn.sparkfun.com/tutorials/setting-up-a-rover-base-rtk-system">Setting up a Rover Base RTK System</a></td>
+    <td><a href="https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station">SparkFun RTK Facet (GPS-19029)</a></td>
+  </tr>
+</table>
+
 
 The Base Menu allows the user to select between Survey-In or Fixed Base setups.
 

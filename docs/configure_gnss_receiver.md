@@ -1,5 +1,7 @@
 # GNSS Receiver Menu
 
+Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
+
 From the main menu, pressing 1 will bring up the GNSS Receiver configuration menu. The ZED-F9P is immensely configurable. The RTK device will, by default, put the ZED-F9P into the most common configuration for rover/base RTK for use with *SW Maps*. 
 
 The GNSS Receiver menu allows a user to change the report rate, dynamic model, and select which constellations should be used for fix calculations.

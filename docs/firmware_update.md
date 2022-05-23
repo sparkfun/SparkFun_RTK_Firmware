@@ -14,6 +14,15 @@ There are two firmwares that operate on the device:
 
 You can check your firmware by opening the main menu by pressing a key at any time.
 
+Updating the firmware can be achieved by using one of the following methods:
+
+* [SD Method](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-the-sd-card): Load the firmware on an SD card, then use a serial terminal with *Firmware Upgrade* menu
+* [WiFi Method](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-wifi): Load the firmware over WiFi when the device is in WiFi AP Config Mode
+* [GUI Method](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-gui): Use the [Windows GUI](https://github.com/sparkfun/SparkFun_RTK_Firmware/Uploader_GUI) and a USB cable. (This method is python based which can also be used on Linux, Mac OS, and Raspberry Pi)
+* [CLI Method](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli): Use the command line *batch_program.bat* (see below)
+
+The SD method is generally recommended. For more information see [here](https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide/firmware-updates-and-customization).
+
 ## Updating Firmware From the SD Card
 
 [![Firmware update menu](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Firmware_Update.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Firmware_Update.jpg)
@@ -39,6 +48,32 @@ Alternatively, firmware may be uploaded via the WiFi AP interface.
 **Versions 1.1 to 1.9:** For firmware versions 1.1 to 1.9, the upload process is limited in speed resulting in upload times of nearly 2 minutes. Because of this, we recommend using the 'Updating Firmware From the SD Card' method instead. If you do upload firmware over WiFi, once it has been uploaded it will be viewable on the 'Available Firmware' on the page. To prevent accidental loading the *Enable Firmware Update* checkbox must first be checked before the button is enabled.
 
 **Versions 1.10 and Greater:** Firmware may be uploaded to the unit by clicking on 'Choose File', selecting the binary such as 'RTK_Surveyor_Firmware_v1_xx.bin' and pressing upload. The unit will automatically reset once firmware upload is complete.
+
+## Updating Firmware From GUI
+
+[![RTK Firmware GUI](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/Uploader_GUI/SparkFun%20RTK%20Firmware%20Uploader.jpg?raw=true)](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/Uploader_GUI/SparkFun%20RTK%20Firmware%20Uploader.jpg?raw=true)
+
+*RTK Firmware GUI*
+
+In general, the SD firmware update method is recommended, but for some firmware updates (for example from version v1.x to v2.x) a serial connection via USB is required. This GUI makes it easy to point and click your way through a firmware update.
+
+### To Use
+
+* Attach the RTK device to your computer using a USB cable. 
+* Turn the RTK device on.
+* Open Device Manager to confirm which COM port the device is operating on.
+
+![Device Manager showing USB Serial port on COM27](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/Uploader_GUI/SparkFun RTK Firmware Uploader COM Port.jpg)
+
+*Device Manager showing USB Serial port on COM27*
+
+* Get the latest binary firmware file from the *[Binaries](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries)* folder.
+* Run *RTK_Firmware_Uploader_GUI.exe* (it takes a few seconds to start)
+* Click *Browse* and select the binary file to upload
+* Select the COM port previously seen in the Device Manager.
+* Click *Upload Firmware*
+
+Once complete, the device will reset and power down.
 
 ## Updating Firmware From CLI
 
@@ -107,18 +142,30 @@ Pull the entire [RTK Firmware repo](https://github.com/sparkfun/SparkFun_RTK_Fir
 
 After connecting a USB C cable to the ESP32 Config connector and selecting the correct COM port you should be able to upload new firmware through the Arduino IDE. Note: The RTK Facet must be turned on for it to enumerate as a COM port.
 
-## A note about ZED-F9P firmware
+## ZED-F9x firmware
 
-The firmware loaded onto the ZED-F9P receiver can vary depending on manufacture date. All field testing and device specific performance parameters were obtained with v1.30.
+The firmware loaded onto the ZED-F9P or ZED-F9R receiver can vary depending on manufacture date. The RTK Firmware is designed to work with any ZED-F9x firmware. Upgrading the ZED-F9x is a good thing to consider but is not crucial to the use of the RTK products.
+
+A tutorial with step-by-step instructions for locating the firmware version as well as changing the firmware can be found [here](https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver/all).
+
+### ZED-F9P
+
+This module is used in the Surveyor, Express, and Facet.
+
+All field testing and device specific performance parameters were obtained with ZED-F9P v1.30.
 
 v1.12 has the benefit of working with SBAS and an operational RTK status signal (the LED illuminates correctly). See [release notes](https://content.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG112_RN_%28UBX-19026698%29.pdf).
 
 v1.13 has a few RTK and receiver performance improvements but introduces a bug that causes the RTK Status LED to fail when SBAS is enabled. See [release notes](https://content.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG113_RN_%28UBX-20019211%29.pdf).
 
-v1.30 has a few RTK and receiver performance improvements, I<sup>2</sup>C communication improvements, and most importantly support for Spartan PMP packets. See [release notes](https://www.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG130_RN_UBX-21047459.pdf).
+v1.30 has a few RTK and receiver performance improvements, I<sup>2</sup>C communication improvements, and most importantly support for SPARTN PMP packets. See [release notes](https://www.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG130_RN_UBX-21047459.pdf).
 
-v1.32 has a few Spartan protocol specific improvements. See [release notes](https://www.u-blox.com/sites/default/files/documents/ZED-F9P-FW100-HPG132_RN_UBX-22004887.pdf).
+v1.32 has a few SPARTN protocol specific improvements. See [release notes](https://www.u-blox.com/sites/default/files/documents/ZED-F9P-FW100-HPG132_RN_UBX-22004887.pdf).
 
-The RTK Firmware is designed to work with any ZED-F9x firmware. Upgrading the ZED-F9x is a good thing to consider but is not crucial to the use of the RTK products.
+### ZED-F9R
 
-A tutorial with step-by-step instructions for locating the firmware version as well as changing the firmware can be found [here](https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver/all).
+This module is used in the Express Plus. It contains an internal IMU and additional algorithms to support high precision location fixes using dead reckoning.
+
+v1.00 Initial release.
+
+v1.21 SPARTN support as well as adding E-scooter and robotic lawnmower dynamic models. See [release notes](https://www.u-blox.com/sites/default/files/ZED-F9R-02B_FW1.00HPS1.21_RN_UBX-21035491_1.3.pdf).

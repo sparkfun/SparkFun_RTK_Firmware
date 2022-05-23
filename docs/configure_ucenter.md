@@ -1,4 +1,4 @@
-# Configuring ZED-F9P with u-center
+# Configuring with u-center
 
 Surveyor: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Express: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Express Plus: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Facet: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png)
 

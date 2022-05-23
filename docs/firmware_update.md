@@ -1,19 +1,17 @@
 # Updating RTK Firmware
 
-The RTK Facet is open source hardware meaning you have total access to the [firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and [hardware](https://github.com/sparkfun/SparkFun_RTK_Facet). Be sure to checkout each repo for the latest firmware and hardware information. But for those who want to jump right in and tweak the firmware, we will discuss various methods.
-
 There are two firmwares that operate on the device:
 
 * Firmware on the ESP32 microcontroller. Keep reading.
 * Firmware on the ZED-F9P Receiver. [See below](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#zed-f9x-firmware).
 
-[![[Main Menu showing RTK Firmware v1.8-Oct 7 2021](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Serial_Config_-_Main.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Serial_Config_-_Main.jpg)
+![[Main Menu showing RTK Firmware v1.8-Oct 7 2021](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Serial_Config_-_Main.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Serial_Config_-_Main.jpg)
 
 *Main Menu showing RTK Firmware v1.8-Oct 7 2021*
 
 You can check your firmware by opening the main menu by pressing a key at any time.
 
-Updating the firmware can be achieved by using one of the following methods:
+From time to time SparkFun will release new firmware for the RTK product line to add and improve functionality. For most users, firmware can be upgraded by loading the appropriate binary file located on the [releases page](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [binaries folder](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries). Once the firmware is downloaded, loading the firmware onto an RTK product can be achieved by using one of the following methods:
 
 * [SD Method](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-the-sd-card): Load the firmware on an SD card, then use a serial terminal with *Firmware Upgrade* menu
 * [WiFi Method](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-wifi): Load the firmware over WiFi when the device is in WiFi AP Config Mode
@@ -21,6 +19,8 @@ Updating the firmware can be achieved by using one of the following methods:
 * [CLI Method](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli): Use the command line *batch_program.bat* (see below)
 
 The SD method is generally recommended. For more information see [here](https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide/firmware-updates-and-customization).
+
+Remember, the RTK Facet is open source hardware meaning you have total access to the [firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and [hardware](https://github.com/sparkfun/SparkFun_RTK_Facet). Be sure to checkout each repo for the latest firmware and hardware information.
 
 ## Updating Firmware From the SD Card
 
@@ -123,33 +123,15 @@ Once compiled, firmware can be uploaded directly to a unit when the RTK unit is 
 
 Note: The COMPILE_WIFI and COMPILE_BT defines at the top of RTK_Surveyor.ino can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on WiFi or Bluetooth (serial menus, system configuration, logging, etc).
 
-## Creating Custom Firmware
-
-The RTK Facet is an ESP32 and high-precision GNSS hackers’s delight. Writing custom firmware can be done using Arduino. 
-
-[![Selecting ESP32 Dev Module](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_-_Select_ESP32_Dev_Module.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_-_Select_ESP32_Dev_Module.jpg)
-
-*Selecting ESP32 Dev Module*
-
-Please see the [ESP32 Thing Plus Hookup Guide](https://learn.sparkfun.com/tutorials/esp32-thing-plus-hookup-guide/all#software-setup) for information about getting Arduino setup. The only difference is that you will need to select *ESP32 Dev Module* as your board.
-
-[![Arduino Library Links](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Arduino_Setup_-_Library_Link.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Arduino_Setup_-_Library_Link.jpg)
-
-*Arduino Library Links*
-
-Pull the entire [RTK Firmware repo](https://github.com/sparkfun/SparkFun_RTK_Firmware) and open `/Firmware/RTK_Surveyor/RTK_Surveyor.ino` and Arduino will open all the sub-files in new tabs. We’ve broken the functional pieces into smaller tabs to help users navigate it. There are a handful of libraries that will need to be installed. To make this easier, we’ve placed a link next to each library that will automatically open the Arduino Library Manager with that library ready for download.
-
-After connecting a USB C cable to the ESP32 Config connector and selecting the correct COM port you should be able to upload new firmware through the Arduino IDE. Note: The RTK Facet must be turned on for it to enumerate as a COM port.
-
 ## ZED-F9x firmware
 
-The firmware loaded onto the ZED-F9P or ZED-F9R receiver can vary depending on manufacture date. The RTK Firmware is designed to work with any ZED-F9x firmware. Upgrading the ZED-F9x is a good thing to consider but is not crucial to the use of the RTK products.
+The firmware loaded onto the ZED-F9P or ZED-F9R receiver can vary depending on manufacture date. The RTK Firmware (that runs on the ESP32) is designed to work with any ZED-F9x firmware. Upgrading the ZED-F9x is a good thing to consider but is not crucial to the use of the RTK products.
 
 A tutorial with step-by-step instructions for locating the firmware version as well as changing the firmware can be found in [How to Upgrade Firmware of a u-blox Receiver](https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver/all).
 
 ### ZED-F9P
 
-This module is used in the Surveyor, Express, and Facet.
+This module is used in the Surveyor, Express, and Facet. It is capable of both Rover *and* base modes.
 
 All field testing and device specific performance parameters were obtained with ZED-F9P v1.30.
 
@@ -163,7 +145,7 @@ v1.32 has a few SPARTN protocol specific improvements. See [release notes](https
 
 ### ZED-F9R
 
-This module is used in the Express Plus. It contains an internal IMU and additional algorithms to support high precision location fixes using dead reckoning.
+This module is used in the Express Plus. It contains an internal IMU and additional algorithms to support high precision location fixes using dead reckoning. The ZED-F9R is not capable of operating in base mode.
 
 v1.00 Initial release.
 

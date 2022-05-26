@@ -271,6 +271,7 @@ bool zedUartPassed = false; //Goes true during testing if ESP can communicate wi
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
 QwiicMicroOLED oled;
+uint32_t blinking_icons;
 
 // Fonts
 #include <res/qw_fnt_5x7.h>
@@ -391,8 +392,6 @@ uint32_t lastCrosshairIconUpdate = 0;
 bool crosshairIconDisplayed = false; //Toggles as lastCrosshairIconUpdate goes above 1000ms
 uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
-uint32_t lastWifiIconUpdate = 0;
-bool wifiIconDisplayed = false; //Toggles as lastWifiIconUpdate goes above 1000ms
 uint32_t lastLoggingIconUpdate = 0;
 int loggingIconDisplayed = 0; //Increases every 500ms while logging
 

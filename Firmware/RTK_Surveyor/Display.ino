@@ -50,36 +50,44 @@ void updateDisplay()
       switch (systemState)
       {
         case (STATE_ROVER_NOT_STARTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintRoverNoFix();
           break;
         case (STATE_ROVER_NO_FIX):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintRoverNoFix();
           break;
         case (STATE_ROVER_FIX):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintRoverFix();
           break;
         case (STATE_ROVER_RTK_FLOAT):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintRoverRTKFloat();
           break;
         case (STATE_ROVER_RTK_FIX):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintRoverRTKFix();
           break;
 
         case (STATE_ROVER_CLIENT_WIFI_STARTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintRoverWiFiStarted();
           break;
         case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintRoverWiFiStarted();
           break;
         case (STATE_ROVER_CLIENT_STARTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintRoverWiFiStarted();
           break;
 
@@ -87,55 +95,68 @@ void updateDisplay()
           //Do nothing. Static display shown during state change.
           break;
         case (STATE_BASE_TEMP_SETTLE):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseTempSettle();
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseTempSurveyStarted();
           break;
         case (STATE_BASE_TEMP_TRANSMITTING):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseTempTransmitting();
           break;
         case (STATE_BASE_TEMP_WIFI_STARTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseTempWiFiStarted();
           break;
         case (STATE_BASE_TEMP_WIFI_CONNECTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseTempWiFiConnected();
           break;
         case (STATE_BASE_TEMP_CASTER_STARTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseTempCasterStarted();
           break;
         case (STATE_BASE_TEMP_CASTER_CONNECTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseTempCasterConnected();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseFixedNotStarted();
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseFixedTransmitting();
           break;
         case (STATE_BASE_FIXED_WIFI_STARTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseFixedWiFiStarted();
           break;
         case (STATE_BASE_FIXED_WIFI_CONNECTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseFixedWiFiConnected();
           break;
         case (STATE_BASE_FIXED_CASTER_STARTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseFixedCasterStarted();
           break;
         case (STATE_BASE_FIXED_CASTER_CONNECTED):
-          icons = ICON_BATTERY;
+          icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY;       //Top right
           paintBaseFixedCasterConnected();
           break;
         case (STATE_BUBBLE_LEVEL):
@@ -163,7 +184,7 @@ void updateDisplay()
           displayWiFiConfigNotStarted(); //Display 'WiFi Config'
           break;
         case (STATE_WIFI_CONFIG):
-          displayWiFiConfig(); //Display SSID and IP
+          icons = displayWiFiConfig(); //Display SSID and IP
           break;
         case (STATE_TEST):
           paintSystemTest();
@@ -179,9 +200,11 @@ void updateDisplay()
           //Do nothing. Quick, fall through state.
           break;
         case (STATE_KEYS_WIFI_STARTED):
+          icons = paintWirelessIcon();  //Top left
           paintGettingKeys();
           break;
         case (STATE_KEYS_WIFI_CONNECTED):
+          icons = paintWirelessIcon();  //Top left
           paintGettingKeys();
           break;
         case (STATE_KEYS_WIFI_TIMEOUT):
@@ -200,9 +223,11 @@ void updateDisplay()
           //Do nothing. Quick, fall through state.
           break;
         case (STATE_KEYS_PROVISION_WIFI_STARTED):
+          icons = paintWirelessIcon();  //Top left
           paintGettingKeys();
           break;
         case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
+          icons = paintWirelessIcon();  //Top left
           paintGettingKeys();
           break;
         case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
@@ -217,6 +242,32 @@ void updateDisplay()
           displayError("Display");
           break;
       }
+
+      //Top left corner
+      if (icons & ICON_WIFI_SYMBOL_LEFT)
+      {
+        displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
+        if (icons & ICON_DOWN_ARROW)
+          displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+      }
+      else if (icons & ICON_BT_SYMBOL)
+        displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
+      else if (icons & ICON_MAC_ADDRESS)
+      {
+        char macAddress[5];
+#ifdef COMPILE_BT
+        sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
+#else
+        sprintf(macAddress, "%02X%02X", 0, 0); //If BT is not available, print zeroes
+#endif
+        oled.setFont(QW_FONT_5X7); //Set font to smallest
+        oled.setCursor(0, 3);
+        oled.print(macAddress);
+      }
+
+      //Top center
+      if (icons & ICON_WIFI_SYMBOL_CENTER)
+        displayBitmap((oled.getWidth() / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
 
       //Top right corner
       if (icons & ICON_BATTERY)
@@ -322,56 +373,36 @@ void paintBatteryLevel()
 }
 
 //Display Bluetooth icon, Bluetooth MAC, or WiFi depending on connection state
-void paintWirelessIcon()
+uint32_t paintWirelessIcon()
 {
+  uint32_t icons;
+
   //TODO resolve if both BT and WiFi are on/connected
+  icons = 0;
   if (online.display == true)
   {
     //Bluetooth icon if paired, or Bluetooth MAC address if not paired
     if (btState == BT_CONNECTED)
-    {
-      displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
-    }
+      icons = ICON_BT_SYMBOL;
     else if (wifiState == WIFI_NOTCONNECTED)
     {
       //Blink WiFi icon
-      if (millis() - lastWifiIconUpdate > 500)
-      {
-        lastWifiIconUpdate = millis();
-        if (wifiIconDisplayed == false)
-        {
-          wifiIconDisplayed = true;
-
-          //Draw the icon
-          displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
-        }
-        else
-          wifiIconDisplayed = false;
-      }
+      blinking_icons ^= ICON_WIFI_SYMBOL_LEFT;
+      if (blinking_icons & ICON_WIFI_SYMBOL_LEFT)
+        icons = ICON_WIFI_SYMBOL_LEFT;
     }
     else if (wifiState == WIFI_CONNECTED)
     {
-      //Solid WiFi icon
-      displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
+      icons = ICON_WIFI_SYMBOL_LEFT;
 
       //If we are connected to NTRIP Client, show download arrow
       if (online.ntripClient == true)
-        displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
-
+        icons |= ICON_DOWN_ARROW;
     }
     else
-    {
-      char macAddress[5];
-#ifdef COMPILE_BT
-      sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-#else
-      sprintf(macAddress, "%02X%02X", 0, 0); //If BT is not available, print zeroes
-#endif
-      oled.setFont(QW_FONT_5X7); //Set font to smallest
-      oled.setCursor(0, 3);
-      oled.print(macAddress);
-    }
+      icons = ICON_MAC_ADDRESS;
   }
+  return icons;
 }
 
 //Display cross hairs and horizontal accuracy
@@ -729,8 +760,6 @@ void paintRoverNoFix()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     paintHorizontalAccuracy();
@@ -746,8 +775,6 @@ void paintRoverFix()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     paintHorizontalAccuracy();
@@ -763,8 +790,6 @@ void paintRoverRTKFloat()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     paintHorizontalAccuracy();
@@ -779,8 +804,6 @@ void paintRoverRTKFix()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     paintHorizontalAccuracy();
@@ -796,8 +819,6 @@ void paintRoverWiFiStarted()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     paintHorizontalAccuracy();
@@ -815,8 +836,6 @@ void paintBaseTempSettle()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     paintHorizontalAccuracy(); //2nd line
@@ -832,8 +851,6 @@ void paintBaseTempSurveyStarted()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     oled.setFont(QW_FONT_5X7);
@@ -867,8 +884,6 @@ void paintBaseTempTransmitting()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     int textX = 1;
@@ -901,8 +916,6 @@ void paintBaseTempWiFiStarted()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     int textX = 1;
@@ -936,8 +949,6 @@ void paintBaseTempWiFiConnected()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     int textX = 1;
@@ -970,8 +981,6 @@ void paintBaseTempCasterStarted()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     int textX = 11;
@@ -995,8 +1004,6 @@ void paintBaseTempCasterConnected()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     int textX = 4;
@@ -1028,8 +1035,6 @@ void paintBaseFixedNotStarted()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
   }
 }
@@ -1039,8 +1044,6 @@ void paintBaseFixedTransmitting()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     int textX = 1;
@@ -1073,8 +1076,6 @@ void paintBaseFixedWiFiStarted()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     int textX = 1;
@@ -1108,8 +1109,6 @@ void paintBaseFixedWiFiConnected()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     int textX = 1;
@@ -1142,8 +1141,6 @@ void paintBaseFixedCasterStarted()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     int textX = 11;
@@ -1167,8 +1164,6 @@ void paintBaseFixedCasterConnected()
 {
   if (online.display == true)
   {
-    paintWirelessIcon(); //Top left corner
-
     paintBaseState(); //Top center
 
     int textX = 4;
@@ -1338,31 +1333,21 @@ void displayWiFiConfigNotStarted()
   displayMessage("WiFi Config", 0);
 }
 
-void displayWiFiConfig()
+uint32_t displayWiFiConfig()
 {
+  uint32_t icons;
+
   //Draw the WiFi icon
+  icons = 0;
   if (wifiState == WIFI_NOTCONNECTED)
   {
     //Blink WiFi icon
-    if (millis() - lastWifiIconUpdate > 500)
-    {
-      lastWifiIconUpdate = millis();
-      if (wifiIconDisplayed == false)
-      {
-        wifiIconDisplayed = true;
-
-        //Draw the icon
-        displayBitmap((oled.getWidth() / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
-      }
-      else
-        wifiIconDisplayed = false;
-    }
+    blinking_icons ^= ICON_WIFI_SYMBOL_LEFT;
+    if (blinking_icons & ICON_WIFI_SYMBOL_LEFT)
+      icons = ICON_WIFI_SYMBOL_CENTER;
   }
   else if (wifiState == WIFI_CONNECTED)
-  {
-    //Solid WiFi icon
-    displayBitmap((oled.getWidth() / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
-  }
+    icons = ICON_WIFI_SYMBOL_CENTER;
 
   int yPos = WiFi_Symbol_Height + 2;
   int fontHeight = 8;
@@ -1377,6 +1362,7 @@ void displayWiFiConfig()
 
   yPos = yPos + fontHeight + 1;
   printTextCenter("192.168.4.1", yPos, QW_FONT_5X7, 1, false);
+  return icons;
 }
 
 //When user does a factory reset, let us know
@@ -2221,11 +2207,7 @@ void paintLBandConfigure()
 void paintGettingKeys()
 {
   if (online.display == true)
-  {
-    paintWirelessIcon(); //Top left corner
-
     displayMessage("Getting Keys", 0);
-  }
 }
 
 void paintKeyProvisionFail(uint16_t displayTime)

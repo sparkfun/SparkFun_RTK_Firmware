@@ -353,6 +353,7 @@ void beginFS()
 
 void beginDisplay()
 {
+  blinking_icons = 0;
   if (oled.begin() == true)
   {
     online.display = true;

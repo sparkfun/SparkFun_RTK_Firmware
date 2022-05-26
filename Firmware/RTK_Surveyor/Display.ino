@@ -1509,7 +1509,7 @@ void paintSystemTest()
       systemTestDisplayNumber %= 2;
     }
 
-    if (systemTestDisplayNumber == 1)
+    if (systemTestDisplayNumber == 1 || productVariant != RTK_FACET_LBAND)
     {
       int xOffset = 2;
       int yOffset = 2;
@@ -1627,76 +1627,41 @@ void paintSystemTest()
         oled.print(F("OK"));
     } //End display 1
 
-    if (systemTestDisplayNumber == 0)
+    if (productVariant == RTK_FACET_LBAND)
     {
-      int xOffset = 2;
-      int yOffset = 2;
-
-      int charHeight = 7;
-
-      char macAddress[5];
-      sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-
-      drawFrame(); //Outside edge
-
-      //Test ZED Firmware, L-Band, Buttons
-
-      oled.setFont(QW_FONT_5X7); //Set font to smallest
-
-      oled.setCursor(xOffset, yOffset); //x, y
-      oled.print(F("ZED Firm:"));
-      oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
-      oled.print("  ");
-      oled.print(zedFirmwareVersionInt);
-      oled.print(F("-"));
-      if (zedFirmwareVersionInt < 130)
-        oled.print(F("FAIL"));
-      else
-        oled.print(F("OK"));
-
-      oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
-      oled.print(F("LBand:"));
-      if (online.lband == true)
-        oled.print(F("OK"));
-      else
-        oled.print(F("FAIL"));
-
-      oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
-      if (powerBtn != NULL)
+      if (systemTestDisplayNumber == 0)
       {
-        powerBtn->read();
-        oled.print(F("Power:"));
+        int xOffset = 2;
+        int yOffset = 2;
 
-        if (powerButtonTestPassed == false && powerBtn->isPressed() == true)
-          powerButtonTestPassed = true;
+        int charHeight = 7;
 
-        if (powerBtn->isPressed() == true)
-          oled.print(F("On"));
-        else if (powerButtonTestPassed == false)
+        drawFrame(); //Outside edge
+
+        //Test ZED Firmware, L-Band
+
+        oled.setFont(QW_FONT_5X7); //Set font to smallest
+
+        oled.setCursor(xOffset, yOffset); //x, y
+        oled.print(F("ZED Firm:"));
+        oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
+        oled.print("  ");
+        oled.print(zedFirmwareVersionInt);
+        oled.print(F("-"));
+        if (zedFirmwareVersionInt < 130)
           oled.print(F("FAIL"));
         else
-          oled.print(F("PASS"));
-      }
-      
-      oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
-      if (setupBtn != NULL)
-      {
-        setupBtn->read();
-        oled.print(F("Setup:"));
+          oled.print(F("OK"));
 
-        if (setupButtonTestPassed == false && setupBtn->isPressed() == true)
-          setupButtonTestPassed = true;
-
-        if (setupBtn->isPressed() == true)
-          oled.print(F("On"));
-        else if (setupButtonTestPassed == false)
-          oled.print(F("FAIL"));
+        oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
+        oled.print(F("LBand:"));
+        if (online.lband == true)
+          oled.print(F("OK"));
         else
-          oled.print(F("PASS"));
-      }
-
-
-    } //End display 0
+          oled.print(F("FAIL"));
+      } //End display 0
+    } //End Facet L-Band testing
+    
   }
 }
 

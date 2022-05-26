@@ -282,7 +282,7 @@ bool provisionDevice()
   sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1], whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
 #endif
 
-  char givenName[50];
+  char givenName[100];
   sprintf(givenName, "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, hardwareID); //Get ready for JSON
 
   StaticJsonDocument<256> pointPerfectAPIPost;

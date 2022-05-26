@@ -53,7 +53,7 @@ const int FIRMWARE_VERSION_MINOR = 0;
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_AP //Comment out to remove Access Point functionality
-#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -471,8 +471,6 @@ uint8_t leapSeconds = 0; //Gets set if GNSS is online
 unsigned long systemTestDisplayTime = 0; //Timestamp for swapping the graphic during testing
 uint8_t systemTestDisplayNumber = 0; //Tracks which test screen we're looking at
 unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to update during L-Band Key checking
-bool setupButtonTestPassed = false; //Tracks button press during test screen
-bool powerButtonTestPassed = false; //Tracks button press during test screen
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

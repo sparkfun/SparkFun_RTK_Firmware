@@ -1,3 +1,36 @@
+//Left top
+#define ICON_WIFI_SYMBOL_LEFT                1  //  0,  0
+#define ICON_DOWN_ARROW                      2  // 16,  0
+#define ICON_BT_SYMBOL                       4  //  4,  0
+#define ICON_MAC_ADDRESS                     8  //  0,  3
+
+//Center top
+#define ICON_WIFI_SYMBOL_CENTER           0x10  // center, 0
+#define ICON_BASE_TEMPORARY               0x20  // 27,  0
+#define ICON_BASE_FIXED                   0x40  // 27,  0
+#define ICON_ROVER_FUSION                 0x80  // 27,  2
+#define ICON_ROVER_FUSION_EMPTY          0x100  // 27,  2
+#define ICON_DYNAMIC_MODEL               0x200  // 27,  0
+
+//Right top
+#define ICON_BATTERY                     0x400  // 45,  0
+
+//Left center
+#define ICON_CROSS_HAIR                  0x800  //  0, 18
+#define ICON_CROSS_HAIR_DUAL            0x1000  //  0, 18
+
+//Right center
+#define ICON_HORIZONTAL_ACCURACY        0x2000  // 16, 20
+
+//Left bottom
+#define ICON_SIV_ANTENNA                0x4000  //  2, 35
+#define ICON_SIV_ANTENNA_LBAND          0x8000  //  2, 35
+
+//Right bottom
+#define ICON_LOGGING                   0x10000  // right, bottom
+
+static uint32_t icons;
+
 //Given the system state, display the appropriate information
 void updateDisplay()
 {
@@ -13,31 +46,40 @@ void updateDisplay()
 
       oled.erase();
 
+      icons = 0;
       switch (systemState)
       {
         case (STATE_ROVER_NOT_STARTED):
+          icons = ICON_BATTERY;
           paintRoverNoFix();
           break;
         case (STATE_ROVER_NO_FIX):
+          icons = ICON_BATTERY;
           paintRoverNoFix();
           break;
         case (STATE_ROVER_FIX):
+          icons = ICON_BATTERY;
           paintRoverFix();
           break;
         case (STATE_ROVER_RTK_FLOAT):
+          icons = ICON_BATTERY;
           paintRoverRTKFloat();
           break;
         case (STATE_ROVER_RTK_FIX):
+          icons = ICON_BATTERY;
           paintRoverRTKFix();
           break;
 
         case (STATE_ROVER_CLIENT_WIFI_STARTED):
+          icons = ICON_BATTERY;
           paintRoverWiFiStarted();
           break;
         case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
+          icons = ICON_BATTERY;
           paintRoverWiFiStarted();
           break;
         case (STATE_ROVER_CLIENT_STARTED):
+          icons = ICON_BATTERY;
           paintRoverWiFiStarted();
           break;
 
@@ -45,42 +87,55 @@ void updateDisplay()
           //Do nothing. Static display shown during state change.
           break;
         case (STATE_BASE_TEMP_SETTLE):
+          icons = ICON_BATTERY;
           paintBaseTempSettle();
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
+          icons = ICON_BATTERY;
           paintBaseTempSurveyStarted();
           break;
         case (STATE_BASE_TEMP_TRANSMITTING):
+          icons = ICON_BATTERY;
           paintBaseTempTransmitting();
           break;
         case (STATE_BASE_TEMP_WIFI_STARTED):
+          icons = ICON_BATTERY;
           paintBaseTempWiFiStarted();
           break;
         case (STATE_BASE_TEMP_WIFI_CONNECTED):
+          icons = ICON_BATTERY;
           paintBaseTempWiFiConnected();
           break;
         case (STATE_BASE_TEMP_CASTER_STARTED):
+          icons = ICON_BATTERY;
           paintBaseTempCasterStarted();
           break;
         case (STATE_BASE_TEMP_CASTER_CONNECTED):
+          icons = ICON_BATTERY;
           paintBaseTempCasterConnected();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
+          icons = ICON_BATTERY;
           paintBaseFixedNotStarted();
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
+          icons = ICON_BATTERY;
           paintBaseFixedTransmitting();
           break;
         case (STATE_BASE_FIXED_WIFI_STARTED):
+          icons = ICON_BATTERY;
           paintBaseFixedWiFiStarted();
           break;
         case (STATE_BASE_FIXED_WIFI_CONNECTED):
+          icons = ICON_BATTERY;
           paintBaseFixedWiFiConnected();
           break;
         case (STATE_BASE_FIXED_CASTER_STARTED):
+          icons = ICON_BATTERY;
           paintBaseFixedCasterStarted();
           break;
         case (STATE_BASE_FIXED_CASTER_CONNECTED):
+          icons = ICON_BATTERY;
           paintBaseFixedCasterConnected();
           break;
         case (STATE_BUBBLE_LEVEL):
@@ -162,6 +217,10 @@ void updateDisplay()
           displayError("Display");
           break;
       }
+
+      //Top right corner
+      if (icons & ICON_BATTERY)
+        paintBatteryLevel();
 
       oled.display(); //Push internal buffer to display
     }
@@ -670,8 +729,6 @@ void paintRoverNoFix()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -689,8 +746,6 @@ void paintRoverFix()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -708,8 +763,6 @@ void paintRoverRTKFloat()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -726,8 +779,6 @@ void paintRoverRTKFix()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -745,8 +796,6 @@ void paintRoverWiFiStarted()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -766,8 +815,6 @@ void paintBaseTempSettle()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -785,8 +832,6 @@ void paintBaseTempSurveyStarted()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -822,8 +867,6 @@ void paintBaseTempTransmitting()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -858,8 +901,6 @@ void paintBaseTempWiFiStarted()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -895,8 +936,6 @@ void paintBaseTempWiFiConnected()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -931,8 +970,6 @@ void paintBaseTempCasterStarted()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -958,8 +995,6 @@ void paintBaseTempCasterConnected()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -993,8 +1028,6 @@ void paintBaseFixedNotStarted()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -1006,8 +1039,6 @@ void paintBaseFixedTransmitting()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -1042,8 +1073,6 @@ void paintBaseFixedWiFiStarted()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -1079,8 +1108,6 @@ void paintBaseFixedWiFiConnected()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -1115,8 +1142,6 @@ void paintBaseFixedCasterStarted()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center
@@ -1142,8 +1167,6 @@ void paintBaseFixedCasterConnected()
 {
   if (online.display == true)
   {
-    paintBatteryLevel(); //Top right corner
-
     paintWirelessIcon(); //Top left corner
 
     paintBaseState(); //Top center

@@ -51,43 +51,51 @@ void updateDisplay()
       {
         case (STATE_ROVER_NOT_STARTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintRoverNoFix();
           break;
         case (STATE_ROVER_NO_FIX):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintRoverNoFix();
           break;
         case (STATE_ROVER_FIX):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintRoverFix();
           break;
         case (STATE_ROVER_RTK_FLOAT):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintRoverRTKFloat();
           break;
         case (STATE_ROVER_RTK_FIX):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintRoverRTKFix();
           break;
 
         case (STATE_ROVER_CLIENT_WIFI_STARTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintRoverWiFiStarted();
           break;
         case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintRoverWiFiStarted();
           break;
         case (STATE_ROVER_CLIENT_STARTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintRoverWiFiStarted();
           break;
 
@@ -96,27 +104,32 @@ void updateDisplay()
           break;
         case (STATE_BASE_TEMP_SETTLE):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintBaseTempSettle();
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintBaseTempSurveyStarted();
           break;
         case (STATE_BASE_TEMP_TRANSMITTING):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintBaseTempTransmitting();
           break;
         case (STATE_BASE_TEMP_WIFI_STARTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintBaseTempWiFiStarted();
           break;
         case (STATE_BASE_TEMP_WIFI_CONNECTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintBaseTempWiFiConnected();
           break;
         case (STATE_BASE_TEMP_CASTER_STARTED):
@@ -126,7 +139,8 @@ void updateDisplay()
           break;
         case (STATE_BASE_TEMP_CASTER_CONNECTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintBaseTempCasterConnected();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
@@ -136,17 +150,20 @@ void updateDisplay()
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintBaseFixedTransmitting();
           break;
         case (STATE_BASE_FIXED_WIFI_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
-          paintBaseFixedWiFiStarted();
+           icons = paintWirelessIcon() //Top left
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
+         paintBaseFixedWiFiStarted();
           break;
         case (STATE_BASE_FIXED_WIFI_CONNECTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintBaseFixedWiFiConnected();
           break;
         case (STATE_BASE_FIXED_CASTER_STARTED):
@@ -156,7 +173,8 @@ void updateDisplay()
           break;
         case (STATE_BASE_FIXED_CASTER_CONNECTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                | ICON_BATTERY        //Top right
+                | ICON_LOGGING;       //Bottom right
           paintBaseFixedCasterConnected();
           break;
         case (STATE_BUBBLE_LEVEL):
@@ -272,6 +290,10 @@ void updateDisplay()
       //Top right corner
       if (icons & ICON_BATTERY)
         paintBatteryLevel();
+
+      //Bottom right corner
+      if (icons & ICON_LOGGING)
+        paintLogging();
 
       oled.display(); //Push internal buffer to display
     }
@@ -694,62 +716,32 @@ void paintSIV()
 //Turn off icon if log file fails to get bigger
 void paintLogging()
 {
-  if (online.display == true)
+  //Animate icon to show system running
+  loggingIconDisplayed++; //Goto next icon
+  loggingIconDisplayed %= 4; //Wrap
+  if (online.logging == true && logIncreasing == true)
   {
-    if (online.logging == true && logIncreasing == true)
+    if (loggingIconDisplayed == 0)
+      displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+    else if (loggingIconDisplayed == 1)
+      displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1);
+    else if (loggingIconDisplayed == 2)
+      displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2);
+    else if (loggingIconDisplayed == 3)
+      displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3);
+  }
+  else
+  {
+    const int pulseX = 64 - 4;
+    const int pulseY = oled.getHeight();
+    int height;
+
+    //Paint pulse to show system activity
+    height = loggingIconDisplayed << 2;
+    if (height)
     {
-      //Animate icon to show system running
-      if (millis() - lastLoggingIconUpdate > 500)
-      {
-        lastLoggingIconUpdate = millis();
-
-        loggingIconDisplayed++; //Goto next icon
-        loggingIconDisplayed %= 4; //Wrap
-      }
-
-      if (loggingIconDisplayed == 0)
-        displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
-      else if (loggingIconDisplayed == 1)
-        displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1);
-      else if (loggingIconDisplayed == 2)
-        displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2);
-      else if (loggingIconDisplayed == 3)
-        displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3);
-    }
-    else
-    { //Paint pulse to show system activity
-      //Animate icon to show system running
-      if (millis() - lastLoggingIconUpdate > 500)
-      {
-        lastLoggingIconUpdate = millis();
-
-        loggingIconDisplayed++; //Goto next icon
-        loggingIconDisplayed %= 4; //Wrap
-
-        const int pulseX = 64 - 4;
-        const int pulseY = oled.getHeight();
-
-        if (loggingIconDisplayed == 0)
-        {
-          //Paint no line
-        }
-        else if (loggingIconDisplayed == 1)
-        {
-          oled.line(pulseX, pulseY, pulseX, pulseY - 4);
-          oled.line(pulseX - 1, pulseY, pulseX - 1, pulseY - 4);
-        }
-        else if (loggingIconDisplayed == 2)
-        {
-          oled.line(pulseX, pulseY, pulseX, pulseY - 8);
-          oled.line(pulseX - 1, pulseY, pulseX - 1, pulseY - 8);
-        }
-        else if (loggingIconDisplayed == 3)
-        {
-          oled.line(pulseX, pulseY, pulseX, pulseY - 12);
-          oled.line(pulseX - 1, pulseY, pulseX - 1, pulseY - 12);
-        }
-      }
-
+      oled.line(pulseX, pulseY, pulseX, pulseY - height);
+      oled.line(pulseX - 1, pulseY, pulseX - 1, pulseY - height);
     }
   }
 }
@@ -765,8 +757,6 @@ void paintRoverNoFix()
     paintHorizontalAccuracy();
 
     paintSIV();
-
-    paintLogging();
   }
 }
 
@@ -780,8 +770,6 @@ void paintRoverFix()
     paintHorizontalAccuracy();
 
     paintSIV();
-
-    paintLogging();
   }
 }
 
@@ -795,8 +783,6 @@ void paintRoverRTKFloat()
     paintHorizontalAccuracy();
 
     paintSIV();
-
-    paintLogging();
   }
 }
 
@@ -809,8 +795,6 @@ void paintRoverRTKFix()
     paintHorizontalAccuracy();
 
     paintSIV();
-
-    paintLogging();
   }
 }
 
@@ -824,8 +808,6 @@ void paintRoverWiFiStarted()
     paintHorizontalAccuracy();
 
     paintSIV();
-
-    paintLogging();
   }
 }
 
@@ -841,8 +823,6 @@ void paintBaseTempSettle()
     paintHorizontalAccuracy(); //2nd line
 
     paintSIV();
-
-    paintLogging();
   }
 }
 
@@ -874,8 +854,6 @@ void paintBaseTempSurveyStarted()
       oled.print(svinObservationTime);
     else
       oled.print("0");
-
-    paintLogging();
   }
 }
 
@@ -905,8 +883,6 @@ void paintBaseTempTransmitting()
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
-
-    paintLogging();
   }
 }
 
@@ -937,8 +913,6 @@ void paintBaseTempWiFiStarted()
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
-
-    paintLogging();
   }
 }
 
@@ -970,8 +944,6 @@ void paintBaseTempWiFiConnected()
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
-
-    paintLogging();
   }
 }
 
@@ -1025,8 +997,6 @@ void paintBaseTempCasterConnected()
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
-
-    paintLogging();
   }
 }
 
@@ -1065,8 +1035,6 @@ void paintBaseFixedTransmitting()
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
-
-    paintLogging();
   }
 }
 
@@ -1097,8 +1065,6 @@ void paintBaseFixedWiFiStarted()
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
-
-    paintLogging();
   }
 }
 
@@ -1130,8 +1096,6 @@ void paintBaseFixedWiFiConnected()
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
-
-    paintLogging();
   }
 }
 
@@ -1185,8 +1149,6 @@ void paintBaseFixedCasterConnected()
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
     paintResets();
-
-    paintLogging();
   }
 }
 

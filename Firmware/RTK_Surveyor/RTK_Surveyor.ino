@@ -392,7 +392,6 @@ uint32_t lastCrosshairIconUpdate = 0;
 bool crosshairIconDisplayed = false; //Toggles as lastCrosshairIconUpdate goes above 1000ms
 uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
-uint32_t lastLoggingIconUpdate = 0;
 int loggingIconDisplayed = 0; //Increases every 500ms while logging
 
 uint64_t lastLogSize = 0;

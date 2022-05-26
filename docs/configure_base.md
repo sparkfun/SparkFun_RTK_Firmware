@@ -28,13 +28,34 @@ Please see the following tutorials for more information:
 
 The Base Menu allows the user to select between Survey-In or Fixed Base setups.
 
-[![Dos CMD window showing Base menu optionns](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Base_Menu.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Base_Menu.jpg)
+[![DOS CMD window showing Base menu optionns](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Base_Menu.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Base_Menu.jpg)
+
+*Base Menu Options*
+
+[![Base type and location configuration](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Base_Config1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Base_Config1.jpg)
+
+*Controlling the type of Base from WiFi AP Config*
 
 ## Mode
 
 In **Survey-In** mode, the minimum observation time and Mean 3D Standard Deviation can be set. The defaults are 60s and 5m as directed by u-blox. The device will wait for the position accuracy to be better than 1 meter before a Survey-In is started. Don't be fooled; setting the observation time to 4 hours or an initial positional accuracy of 0.3m is not going to significantly improve the accuracy of the survey - use [PPP](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data) instead.
 
 In **Fixed** mode, the coordinates of the antenna need to be sent. These can be entered in ECEF or Geographic coordinates. Whenever a user enters Base mode by pressing the SETUP button the GNSS receiver will immediately go into base mode with these coordinates and immediately begin outputting RTCM correction data.
+
+[![RTK Facet in Survey-In Mode](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Survey-In.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Survey-In.jpg)
+
+*RTK Facet in Survey-In Mode*
+
+Once the device has been configured, pressing the Setup button will change the device to Base mode. If the device is configured for *Survey-In* base mode, a flag icon will be shown and the survey will begin. The mean standard deviation will be shown as well as the time elapsed. For most Survey-In setups, the survey will complete when both 60 seconds have elapsed *and* a mean of 5m or less is obtained.
+
+[![RTK Facet in Fixed Transmit Mode](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_FixedBase-Xmitting.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_FixedBase-Xmitting.jpg)
+
+*RTK Facet in Fixed Transmit Mode*
+
+Once the *survey-in* is complete the device enters RTCM Transmit mode. The number of RTCM transmissions is displayed. By default this is one per second.
+
+The *Fixed Base* mode is similar but uses a structure icon (shown above) to indicate a fixed base.
+
 
 ## NTRIP Server
 
@@ -45,6 +66,10 @@ Enabling NTRIP will present a handful of new options seen below:
 [![SparkFun RTK Facet NTRIP Settings](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Base_Menu_-_Fixed_NTRIP.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Base_Menu_-_Fixed_NTRIP.jpg)
 
 *Settings for the NTRIP Server*
+
+[![NTRIP Server Settings](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Base_Config2.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Base_Config2.jpg)
+
+*Configuring NTRIP Server settings via WiFi Config AP*
 
 This is a powerful feature of the RTK line of products. The RTK device can be configured to transmit its RTCM directly over WiFi to the user's mountpoint. This eliminates the need for a radio link.
 
@@ -58,8 +83,16 @@ Once the NTRIP server is enabled you will need a handful of credentials:
 
 *NTRIP Server Connected!*
 
-With these credentials set, RTK device will attempt to connect to WiFi, your caster of choice, and begin transmitting the RTCM data over WiFi. We tried to make it as easy as possible.
+[![RTK Facet in Transmit Mode with NTRIP](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_FixedBase-Casting.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_FixedBase-Casting.jpg)
+
+*RTK Facet in Transmit Mode with NTRIP Enabled*
+
+If the NTRIP server is enabled the device will first attempt to connect over WiFi. The WiFi icon will blink until a WiFi connection is obtained. If the WiFi icon continually blinks be sure to check your SSID and PW for the local WiFi.
+
+Once WiFi connects the device will attempt to connect to the NTRIP mount point. Once successful the display will show 'Casting' along with a solid WiFi icon. The number of successful RTCM transmissions will increase every second.
 
 [![Transmitting to mount point](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Device_Configuration_-_NTRIP_Server_Broadcasting_Bytes_v11.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Device_Configuration_-_NTRIP_Server_Broadcasting_Bytes_v11.jpg)
 
 Every second a few hundred bytes, up to ~2k, will be transmitted to your mount point.
+
+Note: During NTRIP transmission WiFi is turned on and Bluetooth is turned off. You should not need to know the location information of the base so Bluetooth should not be needed. If necessary, USB can be connected to the USB port to view detailed location and ZED-F9P configuration information.

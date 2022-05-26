@@ -88,6 +88,7 @@ nav:
     - configure_profiles.md
     - configure_lband.md
     - menu_system_status.md
+    - displays.md
     - firmware_update.md
   - Hardware Specifics:
     - hardware_rtk_surveyor.md

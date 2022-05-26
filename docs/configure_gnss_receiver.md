@@ -10,20 +10,24 @@ The GNSS Receiver menu allows a user to change the report rate, dynamic model, a
 
 *GNSS menu showing measurement rates and dynamic model*
 
-## Measurement Frequency
-Measurement Frequency can be set by either Hz or by seconds between measurements. Some users need many measurements per second; the RTK Facet supports up to 20Hz with RTK enabled. Some users are doing very long static surveys that require many seconds between measurements; RTK Facet supports up to 8255 seconds (137 minutes) between readings.
+[![GNSS Configuration menus](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config.jpg)
 
-Note: When in base mode, measurement frequency is set to 1Hz. This is because RTK transmission does not benefit from faster updates, nor does logging of RAWX for PPP.
+*The most common settings on the RTK Device WiFi AP Config*
+
+## Measurement Frequency
+Measurement Frequency can be set by either Hz or by seconds between measurements. Some users need many measurements per second; RTK devices support up to 20Hz with RTK enabled. Some users are doing very long static surveys that require many seconds between measurements; RTK devices support up to 8255 seconds (137 minutes) between readings.
+
+Note: When in **Base** mode, measurement frequency is set to 1Hz. This is because RTK transmission does not benefit from faster updates, nor does logging of RAWX for PPP.
 
 ## Dynamic Model
 
 The Dynamic Model can be changed but it is recommended to leave as *Portable*. For more information, please refer to the [ZED-F9P Integration Manual](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/ZED-F9P_IntegrationManual__UBX-18010802_.pdf).
 
+## Constellations Menu
+
 [![Enable or disable the constellations used for fixes](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_Receiver_Constellations.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_Receiver_Constellations.jpg)
 
 *Enable or disable the constellations used for fixes*
-
-## Constellations Menu
 
 The ZED-F9P is capable of tracking 184 channels across four constellations and two bands (L1/L2) including GPS (USA), Galileo (EU), BeiDou (China), and GLONASS (Russia). SBAS (satellite-based augmentation system) is also supported. By fault, all constellations are used. Some users may want to study, log, or monitor a subset. Disabling a constellation will cause the ZED to ignore those signals when calculating a location fix.
 

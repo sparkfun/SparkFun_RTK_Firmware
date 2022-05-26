@@ -1,11 +1,11 @@
-/* 
+/*
   These are low level functions to aid in detecting whether a card is present or not.
   Because of ESP32 v2 core, SdFat can only operate using Shared SPI. This makes the sd.begin test take over 1s
   which causes the RTK product to boot slowly. To circumvent this, we will ping the SD card directly to see if it responds.
   Failures take 2ms, successes take 1ms.
 
   From Prototype puzzle: https://github.com/sparkfunX/ThePrototype/blob/master/Firmware/TestSketches/sdLocker/sdLocker.ino
-  License: Public domain. This code is based on Karl Lunt's work: https://www.seanet.com/~karllunt/sdlocker2.html  
+  License: Public domain. This code is based on Karl Lunt's work: https://www.seanet.com/~karllunt/sdlocker2.html
 */
 
 //Define commands for the SD card

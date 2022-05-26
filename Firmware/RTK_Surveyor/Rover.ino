@@ -1,4 +1,3 @@
-
 //Configure specific aspects of the receiver for rover mode
 bool configureUbloxModuleRover()
 {

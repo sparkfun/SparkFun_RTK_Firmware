@@ -1,4 +1,3 @@
-
 //Configure specific aspects of the receiver for base mode
 bool configureUbloxModuleBase()
 {

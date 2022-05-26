@@ -140,7 +140,7 @@ void menuSystem()
       }
       else
       {
-        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+        log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
       }
     }
     // Support mode switching

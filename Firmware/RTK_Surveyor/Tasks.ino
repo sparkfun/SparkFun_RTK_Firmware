@@ -83,7 +83,7 @@ void F9PSerialReadTask(void *e)
           } //End sdCardSemaphore
           else
           {
-            Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+            log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
           }
         } //End maxLogTime
       } //End logging

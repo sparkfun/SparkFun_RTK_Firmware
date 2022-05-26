@@ -1,6 +1,7 @@
 /*
   This is the main state machine for the device. It's big but controls each step of the system.
-  See system state chart document for a visual representation of how states can change to/from.
+  See system state diagram for a visual representation of how states can change to/from.
+  Statemachine diagram: https://lucid.app/lucidchart/53519501-9fa5-4352-aa40-673f88ca0c9b/edit?invitationId=inv_ebd4b988-513d-4169-93fd-c291851108f8
 */
 
 //Given the current state, see if conditions have moved us to a new state
@@ -23,6 +24,89 @@ void updateSystemState()
     //Move between states as needed
     switch (systemState)
     {
+      /*
+                        .-----------------------------------.
+           NTRIP Client |      STATE_ROVER_NOT_STARTED      |
+           .------------| Text: 'Rover' and 'Rover Started' |
+           |    Enabled '-----------------------------------'
+           |    = False                   |
+           |  Stop WiFi,                  | NTRIP Client Enabled = True
+           |      Start                   | Stop Bluetooth
+           |  Bluetooth                   | Start WiFi
+           |                              V
+           |            .-----------------------------------. 8 Sec
+           |            |  STATE_ROVER_CLIENT_WIFI_STARTED  | Connection
+           |            |         Blinking WiFi Icon        | Timeout
+           |            |           "HPA: >30m"             |--------------.
+           |            |             "SIV: 0"              |              |
+           |            '-----------------------------------'              |
+           |                              |                                |
+           |                              | radioState = WIFI_CONNECTED    |
+           |                              | WiFi connected = True          |
+           |                              V                                |
+           |            .-----------------------------------.              |
+           |            | STATE_ROVER_CLIENT_WIFI_CONNECTED | Connection   |
+           |            |         Solid WiFi Icon           |  failed      V
+           |            |           "HPA: >30m"             |------------->+
+           |            |             "SIV: 0"              | Stop WiFi,   |
+           |            '-----------------------------------' Start        |
+           |                              |                   Bluetooth    |
+           |                              |                                |
+           |                              | Client Started                 |
+           |                              V                                |
+           |            .-----------------------------------.              |
+           |            |     STATE_ROVER_CLIENT_STARTED    | No response, |
+           |            |         Blinking WiFi Icon        | unauthorized V
+           |            |           "HPA: >30m"             |------------->+
+           |            |             "SIV: 0"              | Stop WiFi,   |
+           |            '-----------------------------------' Start        |
+           |                              |                   Bluetooth    |
+           |                              |                                |
+           |                              | Client Connected               |
+           |                              V                                |
+           '----------------------------->+<-------------------------------'
+                                          |
+                                          V
+                        .-----------------------------------.
+                        |         STATE_ROVER_NO_FIX        |
+                        |           SIV Icon Blink          |
+                        |            "HPA: >30m"            |
+                        |             "SIV: 0"              |
+                        '-----------------------------------'
+                                          |
+                                          | GPS Lock
+                                          | 3D, 3D+DR
+                                          V
+                        .-----------------------------------.
+                        |          STATE_ROVER_FIX          | Carrier
+                        |           SIV Icon Solid          | Solution = 2
+              .-------->|            "HPA: .513"            |---------.
+              |         |             "SIV: 30"             |         |
+              |         '-----------------------------------'         |
+              |                           |                           |
+              |                           | Carrier Solution = 1      |
+              |                           V                           |
+              |         .-----------------------------------.         |
+              |         |       STATE_ROVER_RTK_FLOAT       |         |
+              |  No RTK |     Double Crosshair Blinking     |         |
+              +<--------|           "*HPA: .080"            |         |
+              ^         |             "SIV: 30"             |         |
+              |         '-----------------------------------'         |
+              |                        ^         |                    |
+              |                        |         | Carrier            |
+              |                        |         | Solution = 2       |
+              |                        |         V                    |
+              |                Carrier |         +<-------------------'
+              |           Solution = 1 |         |
+              |                        |         V
+              |         .-----------------------------------.
+              |         |        STATE_ROVER_RTK_FIX        |
+              |  No RTK |       Double Crosshair Solid      |
+              '---------|           "*HPA: .014"            |
+                        |             "SIV: 30"             |
+                        '-----------------------------------'
+
+      */
       case (STATE_ROVER_NOT_STARTED):
         {
           if (online.gnss == false)
@@ -55,26 +139,30 @@ void updateSystemState()
 
           i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
 
+          stopWebServer();
           stopWiFi(); //Turn off WiFi and release all resources
           startBluetooth(); //Turn on Bluetooth with 'Rover' name
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
+          settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
           settings.lastState = STATE_ROVER_NOT_STARTED;
           recordSystemSettings(); //Record this state for next POR
 
           displayRoverSuccess(500);
 
-          if (settings.enableNtripClient == false)
-            changeState(STATE_ROVER_NO_FIX);
-          else
+          if (settings.enableNtripClient == true && ntripClientAttempted == false)
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
-            startClientWiFi();
-            clientWiFiStartTime = millis();
+            startWiFi(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
+            wifiStartTime = millis();
+
+            ntripClientAttempted = true; //Do not allow re-entry into STATE_ROVER_CLIENT_WIFI_STARTED
 
             changeState(STATE_ROVER_CLIENT_WIFI_STARTED);
           }
+          else
+            changeState(STATE_ROVER_NO_FIX);
 
           firstRoverStart = false; //Do not allow entry into test menu again
         }
@@ -122,14 +210,17 @@ void updateSystemState()
 
       case (STATE_ROVER_CLIENT_WIFI_STARTED):
         {
-          if (millis() - clientWiFiStartTime > 8000)
-            changeState(STATE_ROVER_NO_FIX); //Give up and move to normal Rover mode
+          if (millis() - wifiStartTime > 8000)
+          {
+            paintNClientWiFiFail(4000);
+            changeState(STATE_ROVER_NOT_STARTED); //Give up and move to normal Rover mode
+          }
 
 #ifdef COMPILE_WIFI
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
             i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
@@ -142,21 +233,14 @@ void updateSystemState()
 
             changeState(STATE_ROVER_CLIENT_WIFI_CONNECTED);
           }
+          else if (wifiStatus == WL_NO_SSID_AVAIL)
+          {
+            paintNClientWiFiFail(4000);
+            changeState(STATE_ROVER_NOT_STARTED); //Give up and return to Bluetooth
+          }
           else
           {
-            Serial.print(F("WiFi Status: "));
-            switch (wifiStatus) {
-              case WL_NO_SSID_AVAIL:
-                Serial.printf("SSID '%s' not detected\n\r", settings.ntripClient_wifiSSID);
-                break;
-              case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
-              case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
-              case WL_SCAN_COMPLETED: Serial.println(F("WL_SCAN_COMPLETED")); break;
-              case WL_CONNECTED: Serial.println(F("WL_CONNECTED")); break;
-              case WL_CONNECT_FAILED: Serial.println(F("WL_CONNECT_FAILED")); break;
-              case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
-              case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
-            }
+            Serial.print(".");
           }
 #endif
         }
@@ -175,7 +259,7 @@ void updateSystemState()
             char serverRequest[SERVER_BUFFER_SIZE];
             snprintf(serverRequest,
                      SERVER_BUFFER_SIZE,
-                     "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun SparkFun_RTK_%s_v%d.%d\r\n",
+                     "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun_RTK_%s_v%d.%d\r\n",
                      settings.ntripClient_MountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
             // Set up the credentials
@@ -306,6 +390,85 @@ void updateSystemState()
         }
         break;
 
+      /*
+                        .-----------------------------------.
+            startBase() |      STATE_BASE_NOT_STARTED       |
+           .------------|            Text: 'Base'           |
+           |    = false '-----------------------------------'
+           |                              |
+           |  Stop WiFi,                  | startBase() = true
+           |      Stop                    | Stop WiFi
+           |  Bluetooth                   | Start Bluetooth
+           |                              V
+           |            .-----------------------------------.
+           |            |      STATE_BASE_TEMP_SETTLE       |
+           |            |   Temp Base Icon. Blinking HPA.   |
+           |            |           "HPA: 7.15"             |
+           |            |             "SIV: 5"              |
+           |            '-----------------------------------'
+           V                              |
+        STATE_BASE_FIXED_NOT_STARTED      | horizontalAccuracy > 0.0
+        (next diagram)                    | && horizontalAccuracy
+                                          |  < settings.surveyInStartingAccuracy
+                                          | && beginSurveyIn() == true
+                                          V
+                        .-----------------------------------.
+                        |   STATE_BASE_TEMP_SURVEY_STARTED  | svinObservationTime >
+                        |       Temp Base Icon blinking     | maxSurveyInWait_s
+                        |           "Mean: 0.089"           |--------------.
+                        |            "Time: 36"             |              |
+                        '-----------------------------------'              |
+                                          |                                |
+                                          | getSurveyInValid()             |
+                                          | = true                         V
+                                          |              STATE_ROVER_NOT_STARTED
+                                          V                   (Previous diagram)
+                        .-----------------------------------.
+                        |    STATE_BASE_TEMP_TRANSMITTING   |
+                        |        Temp Base Icon solid       |
+                        |             "Xmitting"            |
+                        |            "RTCM: 2145"           |
+                        '-----------------------------------'
+                                          |
+                                          | NTRIP enabled = true
+                                          V
+                        .-----------------------------------.
+                        |    STATE_BASE_TEMP_WIFI_STARTED   |
+                        |         Blinking WiFi Icon        |
+                        |             "Xmitting"            |
+                        |              "RTCM: 0"            |
+                        '-----------------------------------'
+                                          |
+                                          | WiFi connected = true
+                                          | radioState = WIFI_CONNECTED
+                                          V
+                        .-----------------------------------.
+                        |   STATE_BASE_TEMP_WIFI_CONNECTED  |
+        .--------------->|          Solid WiFi Icon          |
+        |                |             "Xmitting"            |
+        |                |            "RTCM: 2145"           |
+        |                '-----------------------------------'
+        |                                  |
+        |                                  | Caster enabled
+        |                                  V
+        |                .-----------------------------------.
+        |                |   STATE_BASE_TEMP_CASTER_STARTED  |
+        |  Caster failed |          Solid WiFi Icon          |
+        +<---------------|            "Connecting"           |
+        ^  Authorization |            "RTCM: 2145"           |
+        |         failed '-----------------------------------'
+        |                                  |
+        |                                  | Caster connected
+        |                                  V
+        |                .-----------------------------------.
+        |  Caster failed |  STATE_BASE_TEMP_CASTER_CONNECTED |
+        '----------------|          Solid WiFi Icon          |
+                        |             "Casting"             |
+                        |            "RTCM: 2145"           |
+                        '-----------------------------------'
+
+      */
+
       case (STATE_BASE_NOT_STARTED):
         {
           if (online.gnss == false)
@@ -327,12 +490,14 @@ void updateSystemState()
           displayBaseStart(0); //Show 'Base'
 
           //Stop all WiFi and BT. Re-enable in each specific base start state.
+          stopWebServer();
           stopWiFi();
           stopBluetooth();
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           if (configureUbloxModuleBase() == true)
           {
+            settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
             settings.lastState = STATE_BASE_NOT_STARTED; //Record this state for next POR
             recordSystemSettings(); //Record this state for next POR
 
@@ -442,7 +607,7 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
-            startServerWiFi();
+            startWiFi(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
 
             changeState(STATE_BASE_TEMP_WIFI_STARTED);
           }
@@ -456,7 +621,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             changeState(STATE_BASE_TEMP_WIFI_CONNECTED);
           }
@@ -585,6 +750,63 @@ void updateSystemState()
         }
         break;
 
+      /*
+                        .-----------------------------------.
+            startBase() |   STATE_BASE_FIXED_NOT_STARTED    |
+                = false |        Text: "Base Started"       |
+          .-------------|                                   |
+          |             '-----------------------------------'
+          V                               |
+        STATE_ROVER_NOT_STARTED             | startBase() = true
+        (Rover diagram)                     V
+                        .-----------------------------------.
+                        |   STATE_BASE_FIXED_TRANSMITTING   |
+                        |       Castle Base Icon solid      |
+                        |            "Xmitting"             |
+                        |            "RTCM: 0"              |
+                        '-----------------------------------'
+                                          |
+                                          | NTRIP enabled = true
+                                          | Stop Bluetooth
+                                          | Start WiFi
+                                          V
+                        .-----------------------------------.
+                        |   STATE_BASE_FIXED_WIFI_STARTED   |
+                        |         Blinking WiFi Icon        |
+                        |             "Xmitting"            |
+                        |             "RTCM: 0"             |
+                        '-----------------------------------'
+                                          |
+                                          | WiFi connected
+                                          | radioState = WIFI_CONNECTED
+                                          V
+                        .-----------------------------------.
+                        |  STATE_BASE_FIXED_WIFI_CONNECTED  |
+           .----------->|          Solid WiFi Icon          |
+           |            |             "Xmitting"            |
+           |            |            "RTCM: 2145"           |
+           |            '-----------------------------------'
+           |                              |
+           |                              | Caster enabled
+           |                              V
+           |            .-----------------------------------.
+           |     Caster |  STATE_BASE_FIXED_CASTER_STARTED  |
+           | Connection |          Solid WiFi Icon          |
+           |     Failed |             "Xmitting"            |
+           +------------|            "RTCM: 2145"           |
+           ^     Failed '-----------------------------------'
+           |  Authroization               |
+           |                              | Caster connected
+           |                              V
+           |            .-----------------------------------.
+           |     Caster |  STATE_BASE_FIXED_WIFI_CONNECTED  |
+           | Connection |          Solid WiFi Icon          |
+           |     Failed |             "Casting"             |
+           '------------|            "RTCM: 2145"           |
+                        '-----------------------------------'
+
+      */
+
       //User has set switch to base with fixed option enabled. Let's configure and try to get there.
       //If fixed base fails, we'll handle it here
       case (STATE_BASE_FIXED_NOT_STARTED):
@@ -614,7 +836,7 @@ void updateSystemState()
           {
             //Turn off Bluetooth and turn on WiFi
             stopBluetooth();
-            startServerWiFi();
+            startWiFi(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
 
             rtcmPacketsSent = 0; //Reset any previous number
 
@@ -630,7 +852,7 @@ void updateSystemState()
           byte wifiStatus = WiFi.status();
           if (wifiStatus == WL_CONNECTED)
           {
-            radioState = WIFI_CONNECTED;
+            wifiState = WIFI_CONNECTED;
 
             changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
           }
@@ -649,7 +871,6 @@ void updateSystemState()
               case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
               case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
             }
-            delay(500);
           }
 #endif
         }
@@ -832,8 +1053,9 @@ void updateSystemState()
 
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 
-          //Start in AP mode and show config html page
-          startConfigAP();
+          stopBluetooth();
+          stopUART2Tasks(); //Delete F9 serial tasks if running
+          startWebServer(); //Start in AP mode and show config html page
 
           changeState(STATE_WIFI_CONFIG);
         }
@@ -851,6 +1073,7 @@ void updateSystemState()
               Serial.println();
 
               parseIncomingSettings();
+              settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
               recordSystemSettings(); //Record these settings to unit
 
               //Clear buffer
@@ -886,6 +1109,257 @@ void updateSystemState()
         }
         break;
 
+      case (STATE_KEYS_STARTED):
+        {
+          if (rtcWaitTime == 0) rtcWaitTime = millis();
+
+          //We want an immediate change from this state
+          forceSystemStateUpdate = true; //Imediately go to this new state
+
+          //If user has turned off L-Band, skip everything
+          if (settings.enableLBandCorrections == false)
+          {
+            changeState(settings.lastState); //Go to either rover or base
+          }
+
+          //If there is no WiFi setup, skip everything
+          else if (strlen(settings.home_wifiSSID) == 0)
+          {
+            changeState(settings.lastState); //Go to either rover or base
+          }
+
+          //If we don't have keys, begin zero touch provisioning
+          else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
+          {
+            startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
+            wifiStartTime = millis(); //Start timer for WiFi connection timeout
+            changeState(STATE_KEYS_PROVISION_WIFI_STARTED);
+          }
+
+          //Determine if we have valid date/time RTC from last boot
+          else if (online.rtc == false)
+          {
+            if (millis() - rtcWaitTime > 2000)
+            {
+              //If RTC is not available, we will assume we need keys
+              changeState(STATE_KEYS_NEEDED);
+            }
+          }
+
+          else
+          {
+            //Determine days until next key expires
+            uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+            log_d("Days until keys expire: %d", daysRemaining);
+
+            if (daysRemaining >= 28)
+              changeState(STATE_KEYS_LBAND_CONFIGURE);
+            else
+              changeState(STATE_KEYS_NEEDED);
+          }
+        }
+        break;
+
+      case (STATE_KEYS_NEEDED):
+        {
+          forceSystemStateUpdate = true; //Imediately go to this new state
+
+          if (online.rtc == false)
+          {
+            startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
+            wifiStartTime = 0; //Start timer for WiFi connection timeout
+            changeState(STATE_KEYS_WIFI_STARTED); //If we can't check the RTC, continue
+          }
+
+          //When did we last try to get keys? Attempt every 24 hours
+          else if (rtc.getEpoch() - settings.lastKeyAttempt > (60 * 60 * 24))
+          {
+            settings.lastKeyAttempt = rtc.getEpoch(); //Mark it
+            recordSystemSettings(); //Record these settings to unit
+
+            startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
+            wifiStartTime = 0; //Start timer for WiFi connection timeout
+            changeState(STATE_KEYS_WIFI_STARTED);
+          }
+          else
+          {
+            log_d("Already tried to obtain keys for today");
+            changeState(STATE_KEYS_LBAND_CONFIGURE); //We have valid keys, we've already tried today. No need to try again.
+          }
+        }
+        break;
+
+      case (STATE_KEYS_WIFI_STARTED):
+        {
+#ifdef COMPILE_WIFI
+          if (wifiStartTime == 0) wifiStartTime = millis();
+
+          byte wifiStatus = WiFi.status();
+          if (wifiStatus == WL_CONNECTED)
+          {
+            wifiState = WIFI_CONNECTED;
+
+            changeState(STATE_KEYS_WIFI_CONNECTED);
+          }
+          else if (wifiStatus == WL_NO_SSID_AVAIL)
+          {
+            changeState(STATE_KEYS_WIFI_TIMEOUT);
+          }
+          else
+          {
+            Serial.print(".");
+            if (millis() - wifiStartTime > 8000)
+            {
+              //Give up after 8 seconds
+              changeState(STATE_KEYS_WIFI_TIMEOUT);
+            }
+          }
+#endif
+        }
+        break;
+
+      case (STATE_KEYS_WIFI_CONNECTED):
+        {
+          if (updatePointPerfectKeys() == true) //Connect to ThingStream MQTT and get L-Band key UBX packet
+          {
+            displayKeysUpdated();
+          }
+
+          stopWiFi();
+
+          forceSystemStateUpdate = true; //Imediately go to this new state
+          changeState(STATE_KEYS_DAYS_REMAINING);
+        }
+        break;
+
+      case (STATE_KEYS_DAYS_REMAINING):
+        {
+          if (online.rtc == true)
+          {
+            if (settings.pointPerfectNextKeyStart > 0)
+            {
+              uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+              Serial.printf("Days until L-Band keys expire: %d\n\r", daysRemaining);
+              paintKeyDaysRemaining(daysRemaining, 2000);
+            }
+          }
+
+          forceSystemStateUpdate = true; //Imediately go to this new state
+          changeState(STATE_KEYS_LBAND_CONFIGURE);
+        }
+        break;
+
+      case (STATE_KEYS_LBAND_CONFIGURE):
+        {
+          //Be sure we ignore any external RTCM sources
+          i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_UBX); //Set the UART2 to input UBX (no RTCM)
+
+          applyLBandKeys(); //Send current keys, if available, to ZED-F9P
+
+          forceSystemStateUpdate = true; //Imediately go to this new state
+          changeState(settings.lastState); //Go to either rover or base
+        }
+        break;
+
+      case (STATE_KEYS_WIFI_TIMEOUT):
+        {
+          stopWiFi();
+
+          paintKeyWiFiFail(2000);
+
+          forceSystemStateUpdate = true; //Imediately go to this new state
+
+          if (online.rtc == true)
+          {
+            uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+
+            if (daysRemaining >= 0)
+            {
+              changeState(STATE_KEYS_DAYS_REMAINING);
+            }
+            else
+            {
+              paintKeysExpired();
+              changeState(STATE_KEYS_LBAND_ENCRYPTED);
+            }
+          }
+          else
+          {
+            //No WiFi. No RTC. We don't know if the keys we have are expired. Attempt to use them.
+            changeState(STATE_KEYS_LBAND_CONFIGURE);
+          }
+        }
+        break;
+
+      case (STATE_KEYS_LBAND_ENCRYPTED):
+        {
+          //Since L-Band is not available, be sure RTCM can be provided over UART2
+          i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_RTCM3); //Set the UART2 to input RTCM
+
+          forceSystemStateUpdate = true; //Imediately go to this new state
+          changeState(settings.lastState); //Go to either rover or base
+        }
+        break;
+
+      case (STATE_KEYS_PROVISION_WIFI_STARTED):
+        {
+#ifdef COMPILE_WIFI
+          if (wifiStartTime == 0) wifiStartTime = millis();
+
+          byte wifiStatus = WiFi.status();
+          if (wifiStatus == WL_CONNECTED)
+          {
+            wifiState = WIFI_CONNECTED;
+
+            changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
+          }
+          else if (wifiStatus == WL_NO_SSID_AVAIL)
+          {
+            changeState(STATE_KEYS_WIFI_TIMEOUT);
+          }
+          else
+          {
+            Serial.print(".");
+            if (millis() - wifiStartTime > 8000)
+            {
+              //Give up after 8 seconds
+              changeState(STATE_KEYS_WIFI_TIMEOUT);
+            }
+          }
+#endif
+        }
+        break;
+
+      case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
+        {
+          forceSystemStateUpdate = true; //Imediately go to this new state
+
+          if (provisionDevice() == true)
+          {
+            displayKeysUpdated();
+            changeState(STATE_KEYS_DAYS_REMAINING);
+          }
+          else
+          {
+            paintKeyProvisionFail(10000); //Device not whitelisted. Show device ID.
+            changeState(STATE_KEYS_LBAND_ENCRYPTED);
+          }
+
+          stopWiFi();
+
+        }
+        break;
+
+      case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
+        {
+          stopWiFi();
+
+          paintKeyWiFiFail(2000);
+
+          changeState(settings.lastState); //Go to either rover or base
+        }
+        break;
+
       case (STATE_SHUTDOWN):
         {
           forceDisplayUpdate = true;
@@ -915,6 +1389,10 @@ void requestChangeState(SystemState requestedState)
 //Change states and print the new state
 void changeState(SystemState newState)
 {
+  if (newState == systemState)
+    Serial.print(F("*"));
+
+  reportHeapNow();
   systemState = newState;
 
   //Debug print
@@ -1019,6 +1497,43 @@ void changeState(SystemState newState)
     case (STATE_PROFILE_4):
       Serial.println(F("State: Profile 4"));
       break;
+    case (STATE_KEYS_STARTED):
+      Serial.println(F("State: Keys Started "));
+      break;
+    case (STATE_KEYS_NEEDED):
+      Serial.println(F("State: Keys Needed"));
+      break;
+    case (STATE_KEYS_WIFI_STARTED):
+      Serial.println(F("State: Keys WiFi Started"));
+      break;
+    case (STATE_KEYS_WIFI_CONNECTED):
+      Serial.println(F("State: Keys WiFi Connected"));
+      break;
+    case (STATE_KEYS_WIFI_TIMEOUT):
+      Serial.println(F("State: Keys WiFi Timeout"));
+      break;
+    case (STATE_KEYS_EXPIRED):
+      Serial.println(F("State: Keys Expired"));
+      break;
+    case (STATE_KEYS_DAYS_REMAINING):
+      Serial.println(F("State: Keys Days Remaining"));
+      break;
+    case (STATE_KEYS_LBAND_CONFIGURE):
+      Serial.println(F("State: Keys L-Band Configure"));
+      break;
+    case (STATE_KEYS_LBAND_ENCRYPTED):
+      Serial.println(F("State: Keys L-Band Encrypted"));
+      break;
+    case (STATE_KEYS_PROVISION_WIFI_STARTED):
+      Serial.println(F("State: Keys Provision - WiFi Started"));
+      break;
+    case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
+      Serial.println(F("State: Keys Provision - WiFi Connected"));
+      break;
+    case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
+      Serial.println(F("State: Keys Provision - WiFi Timeout"));
+      break;
+
     case (STATE_SHUTDOWN):
       Serial.println(F("State: Shut Down"));
       break;

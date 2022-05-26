@@ -7,7 +7,7 @@ bool configureUbloxModuleRover()
   int maxWait = 2000;
 
   //If our settings haven't changed, and this is first config since power on, trust ZED's settings
-  if (updateZEDSettings == false && firstPowerOn == true)
+  if (settings.updateZEDSettings == false && firstPowerOn == true)
   {
     firstPowerOn = false; //Next time user switches modes, new settings will be applied
     log_d("Skipping ZED Rover configuration");
@@ -339,7 +339,7 @@ void storePVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
   confirmedDate = ubxDataStruct->flags2.bits.confirmedDate;
   confirmedTime = ubxDataStruct->flags2.bits.confirmedTime;
 
-  ubloxUpdated = true;
+  pvtUpdated = true;
 }
 
 void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)

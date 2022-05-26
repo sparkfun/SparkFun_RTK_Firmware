@@ -1,4 +1,5 @@
-//System can enter a variety of states starting at Rover_No_Fix at power on
+//System can enter a variety of states
+//See statemachine diagram at: https://lucid.app/lucidchart/53519501-9fa5-4352-aa40-673f88ca0c9b/edit?invitationId=inv_ebd4b988-513d-4169-93fd-c291851108f8
 typedef enum
 {
   STATE_ROVER_NOT_STARTED = 0,
@@ -34,6 +35,18 @@ typedef enum
   STATE_PROFILE_2,
   STATE_PROFILE_3,
   STATE_PROFILE_4,
+  STATE_KEYS_STARTED,
+  STATE_KEYS_NEEDED,
+  STATE_KEYS_WIFI_STARTED,
+  STATE_KEYS_WIFI_CONNECTED,
+  STATE_KEYS_WIFI_TIMEOUT,
+  STATE_KEYS_EXPIRED,
+  STATE_KEYS_DAYS_REMAINING,
+  STATE_KEYS_LBAND_CONFIGURE,
+  STATE_KEYS_LBAND_ENCRYPTED,
+  STATE_KEYS_PROVISION_WIFI_STARTED,
+  STATE_KEYS_PROVISION_WIFI_CONNECTED,
+  STATE_KEYS_PROVISION_WIFI_TIMEOUT,
   STATE_SHUTDOWN,
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
@@ -51,6 +64,7 @@ typedef enum
   RTK_EXPRESS,
   RTK_FACET,
   RTK_EXPRESS_PLUS,
+  RTK_FACET_LBAND,
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
 
@@ -102,16 +116,22 @@ typedef enum
   ERROR_GPS_CONFIG_FAIL,
 } t_errorNumber;
 
-//Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
-enum RadioState
+enum WiFiState
 {
-  RADIO_OFF = 0,
-  BT_ON_NOCONNECTION, //WiFi is off
-  BT_CONNECTED,
-  WIFI_ON_NOCONNECTION, //BT is off
+  WIFI_OFF = 0,
+  WIFI_NOTCONNECTED,
   WIFI_CONNECTED,
 };
-volatile byte radioState = RADIO_OFF;
+volatile byte wifiState = WIFI_OFF;
+
+//Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
+enum BTState
+{
+  BT_OFF = 0,
+  BT_NOTCONNECTED,
+  BT_CONNECTED,
+};
+volatile byte btState = BT_OFF;
 
 //Return values for getByteChoice()
 enum returnStatus {
@@ -161,7 +181,7 @@ typedef struct ubxMsg
 #define MAX_UBX_MSG (13 + 25 + 5 + 10 + 3 + 12 + 5) //(sizeof(ubxMessages)/sizeof(ubxMsg))
 
 //This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
-typedef struct struct_settings {
+typedef struct {
   int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int
   int rtkIdentifier = RTK_IDENTIFIER; // rtkIdentifier **must** be the second entry
   bool printDebugMessages = false;
@@ -316,7 +336,7 @@ typedef struct struct_settings {
   };
 
   int maxLogLength_minutes = 60 * 24; //Default to 24 hours
-  char profileName[50] = "Default";
+  char profileName[50] = "";
 
   //NTRIP Server
   bool enableNtripServer = false;
@@ -343,6 +363,27 @@ typedef struct struct_settings {
 
   int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
 
+  char pointPerfectDeviceProfileToken[40] = "";
+  bool enableLBandCorrections = true;
+  bool enableIPCorrections = false; //We do not plan to use IP based point perfect
+  char home_wifiSSID[50] = ""; //WiFi network to use when attempting to obtain L-Band keys and ThingStream provisioning
+  char home_wifiPW[50] = "";
+  bool autoKeyRenewal = true; //Attempt to get keys if we get under 28 days from the expiration date
+  char pointPerfectClientID[50] = "";
+  char pointPerfectBrokerHost[50] = ""; // pp.services.u-blox.com
+  char pointPerfectLBandTopic[20] = ""; // /pp/key/Lb
+
+  char pointPerfectCurrentKey[33] = ""; //32 hexadecimal digits = 128 bits = 16 Bytes
+  uint64_t pointPerfectCurrentKeyDuration = 0;
+  uint64_t pointPerfectCurrentKeyStart = 0;
+
+  char pointPerfectNextKey[33] = "";
+  uint64_t pointPerfectNextKeyDuration = 0;
+  uint64_t pointPerfectNextKeyStart = 0;
+
+  uint64_t lastKeyAttempt = 0; //Epoch time of last attempt at obtaining keys
+  bool updateZEDSettings = true; //When in doubt, update the ZED with current settings
+  uint32_t LBandFreq = 1556290000; //Default to US band
 } Settings;
 Settings settings;
 
@@ -358,4 +399,6 @@ struct struct_online {
   bool battery = false;
   bool accelerometer = false;
   bool ntripClient = false;
+  bool lband = false;
+  bool lbandCorrections = false;
 } online;

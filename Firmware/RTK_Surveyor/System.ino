@@ -1,164 +1,118 @@
 //Get MAC, start radio
 //Tack device's MAC address to end of friendly broadcast name
 //This allows multiple units to be on at same time
-bool startBluetooth()
+void startBluetooth()
 {
+  if (btState == BT_OFF)
+  {
 #ifdef COMPILE_BT
+    char stateName[10];
+    if (buttonPreviousState == BUTTON_ROVER)
+      strcpy(stateName, "Rover");
+    else
+      strcpy(stateName, "Base");
 
-  //Get unit MAC address
-  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
-  unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
+    sprintf(deviceName, "%s %s-%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]); //Base mode
 
-  char stateName[10];
-  if (buttonPreviousState == BUTTON_ROVER)
-    strcpy(stateName, "Rover");
-  else
-    strcpy(stateName, "Base");
+    if (SerialBT.begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
+    {
+      Serial.println(F("An error occurred initializing Bluetooth"));
 
-  sprintf(deviceName, "%s %s-%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]); //Base mode
+      if (productVariant == RTK_SURVEYOR)
+        digitalWrite(pin_bluetoothStatusLED, LOW);
+      return;
+    }
 
-  if (SerialBT.begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
-  {
-    Serial.println(F("An error occurred initializing Bluetooth"));
-    radioState = RADIO_OFF;
+    //Set PIN to 1234 so we can connect to older BT devices, but not require a PIN for modern device pairing
+    //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/5
+    //https://github.com/espressif/esp-idf/issues/1541
+    //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
 
+    esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_NONE; //Requires pin 1234 on old BT dongle, No prompt on new BT dongle
+    //esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_OUT; //Works but prompts for either pin (old) or 'Does this 6 pin appear on the device?' (new)
+
+    esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
+
+    esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
+    esp_bt_pin_code_t pin_code;
+    pin_code[0] = '1';
+    pin_code[1] = '2';
+    pin_code[2] = '3';
+    pin_code[3] = '4';
+    esp_bt_gap_set_pin(pin_type, 4, pin_code);
+    //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+    SerialBT.register_callback(btCallback); //Controls BT Status LED on Surveyor
+    SerialBT.setTimeout(250);
+
+    Serial.print(F("Bluetooth broadcasting as: "));
+    Serial.println(deviceName);
+
+    //Start task for controlling Bluetooth pair LED
     if (productVariant == RTK_SURVEYOR)
-      digitalWrite(pin_bluetoothStatusLED, LOW);
-    return (false);
-  }
-
-  //Set PIN to 1234 so we can connect to older BT devices, but not require a PIN for modern device pairing
-  //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/5
-  //https://github.com/espressif/esp-idf/issues/1541
-  //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
-
-  esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_NONE; //Requires pin 1234 on old BT dongle, No prompt on new BT dongle
-  //esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_OUT; //Works but prompts for either pin (old) or 'Does this 6 pin appear on the device?' (new)
-
-  esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
-
-  esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
-  esp_bt_pin_code_t pin_code;
-  pin_code[0] = '1';
-  pin_code[1] = '2';
-  pin_code[2] = '3';
-  pin_code[3] = '4';
-  esp_bt_gap_set_pin(pin_type, 4, pin_code);
-  //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-  SerialBT.register_callback(btCallback); //Controls BT Status LED on Surveyor
-  SerialBT.setTimeout(250);
-
-  Serial.print(F("Bluetooth broadcasting as: "));
-  Serial.println(deviceName);
-
-  radioState = BT_ON_NOCONNECTION;
-
-  //Start task for controlling Bluetooth pair LED
-  if (productVariant == RTK_SURVEYOR)
-  {
-    ledcWrite(ledBTChannel, 255); //Turn on BT LED
-    btLEDTask.detach(); //Slow down the BT LED blinker task
-    btLEDTask.attach(btLEDTaskPace2Hz, updateBTled); //Rate in seconds, callback
-  }
+    {
+      ledcWrite(ledBTChannel, 255); //Turn on BT LED
+      btLEDTask.detach(); //Slow down the BT LED blinker task
+      btLEDTask.attach(btLEDTaskPace2Hz, updateBTled); //Rate in seconds, callback
+    }
 #endif
 
-  return (true);
+    btState = BT_NOTCONNECTED;
+    reportHeapNow();
+  }
+
 }
 
 //This function stops BT so that it can be restarted later
 //It also releases as much system resources as possible so that WiFi/caster is more stable
 void stopBluetooth()
 {
-#ifdef COMPILE_BT
-  SerialBT.flush(); //Complete any transfers
-  SerialBT.disconnect(); //Drop any clients
-  SerialBT.end(); //SerialBT.end() will release significant RAM (~100k!) but a SerialBT.start will crash.
-#endif
-
-  //The following code releases the BT hardware so that it can be restarted with a SerialBT.begin
-  customBTstop();
-  Serial.println(F("Bluetooth turned off"));
-
-  radioState = RADIO_OFF;
-}
-
-//Starting and restarting BT is a problem. See issue: https://github.com/espressif/arduino-esp32/issues/2718
-//To work around the bug without modifying the core we create our own btStop() function with
-//the patch from github
-bool customBTstop() {
-#ifdef COMPILE_BT
-  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_IDLE) {
-    return true;
-  }
-  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED) {
-    if (esp_bt_controller_disable()) {
-      log_e("BT Disable failed");
-      return false;
-    }
-    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED);
-  }
-  if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
+  if (btState == BT_NOTCONNECTED || btState == BT_CONNECTED)
   {
-    log_i("inited");
-    if (esp_bt_controller_deinit())
-    {
-      log_e("BT deint failed");
-      return false;
-    }
-    while (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED)
-      ;
-    return true;
+#ifdef COMPILE_BT
+    SerialBT.register_callback(NULL);
+    SerialBT.flush(); //Complete any transfers
+    SerialBT.disconnect(); //Drop any clients
+    SerialBT.end(); //SerialBT.end() will release significant RAM (~100k!) but a SerialBT.start will crash.
+#endif
+
+    log_d("Bluetooth turned off");
+
+    btState = BT_OFF;
+    reportHeapNow();
   }
-  log_e("BT Stop failed");
-#endif
-  return false;
 }
 
-//Start WiFi assuming it was previously fully released
-//See WiFiBluetoothSwitch sketch for more info
-void startServerWiFi()
+void startWiFi(char* ssid, char* pw)
 {
+  if (wifiState == WIFI_OFF)
+  {
 #ifdef COMPILE_WIFI
-  wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
-  esp_wifi_init(&wifi_init_config); //Restart WiFi resources
-
-  Serial.printf("Connecting to local WiFi: %s\n\r", settings.ntripServer_wifiSSID);
-  WiFi.begin(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
+    Serial.printf("Connecting to WiFi: %s", ssid);
+    WiFi.begin(ssid, pw);
 #endif
 
-  radioState = WIFI_ON_NOCONNECTION;
-}
-
-void startClientWiFi()
-{
-#ifdef COMPILE_WIFI
-  wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
-  esp_wifi_init(&wifi_init_config); //Restart WiFi resources
-
-  Serial.printf("Connecting to local WiFi: %s\n\r", settings.ntripClient_wifiSSID);
-  WiFi.begin(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
-#endif
-
-  radioState = WIFI_ON_NOCONNECTION;
+    wifiState = WIFI_NOTCONNECTED;
+    reportHeapNow();
+  }
 }
 
 //Stop WiFi and release all resources
 //See WiFiBluetoothSwitch sketch for more info
 void stopWiFi()
 {
+  if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
+  {
 #ifdef COMPILE_WIFI
-  ntripServer.stop();
-  WiFi.mode(WIFI_OFF);
-
-  if (radioState == WIFI_ON_NOCONNECTION || radioState == WIFI_CONNECTED)
-    esp_wifi_deinit(); //Free all resources
+    ntripServer.stop();
+    WiFi.mode(WIFI_OFF);
 #endif
 
-  Serial.println("WiFi Stopped");
-
-  radioState = RADIO_OFF;
+    log_d("WiFi Stopped");
+    wifiState = WIFI_OFF;
+    reportHeapNow();
+  }
 }
 
 //Setup the u-blox module for any setup (base or rover)
@@ -172,11 +126,12 @@ bool configureUbloxModule()
   int maxWait = 2000;
 
   //Wait for initial report from module
-  while(ubloxUpdated == false)
+  while (pvtUpdated == false)
   {
     i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
     i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
     delay(10);
+    if (millis() - startTime > maxWait) break;
   }
 
   //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
@@ -485,24 +440,24 @@ void danceLEDs()
   else
   {
     //Units can boot under 1s. Keep splash screen up for at least 2s.
-    while(millis() - splashStart < 2000) delay(1);
+    while (millis() - splashStart < 2000) delay(1);
   }
 }
 
 //Call back for when BT connection event happens (connected/disconnect)
-//Used for updating the radioState state machine
+//Used for updating the btState state machine
 #ifdef COMPILE_BT
 void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
     Serial.println(F("Client Connected"));
-    radioState = BT_CONNECTED;
+    btState = BT_CONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, HIGH);
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
     Serial.println(F("Client disconnected"));
-    radioState = BT_ON_NOCONNECTION;
+    btState = BT_NOTCONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, LOW);
   }
@@ -510,7 +465,7 @@ void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
 #endif
 
 //Update Battery level LEDs every 5s
-void updateBattLEDs()
+void updateBattery()
 {
   if (millis() - lastBattUpdate > 5000)
   {
@@ -600,14 +555,14 @@ bool createTestFile()
   SdFile testFile;
   char testFileName[40] = "testfile.txt";
 
-  if (xFATSemaphore == NULL)
+  if (sdCardSemaphore == NULL)
   {
-    log_d("xFATSemaphore is Null");
+    log_d("sdCardSemaphore is Null");
     return (false);
   }
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-  if (xSemaphoreTake(xFATSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+  if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
   {
     if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) == true)
     {
@@ -615,13 +570,27 @@ bool createTestFile()
 
       if (sd.exists(testFileName))
         sd.remove(testFileName);
-      xSemaphoreGive(xFATSemaphore);
+      xSemaphoreGive(sdCardSemaphore);
       return (true);
     }
-    xSemaphoreGive(xFATSemaphore);
+    xSemaphoreGive(sdCardSemaphore);
+  }
+  else
+  {
+    Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
   }
 
   return (false);
+}
+
+//If debug option is on, print available heap
+void reportHeapNow()
+{
+  if (settings.enableHeapReport == true)
+  {
+    lastHeapReport = millis();
+    Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\n\r", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+  }
 }
 
 //If debug option is on, print available heap
@@ -631,8 +600,7 @@ void reportHeap()
   {
     if (millis() - lastHeapReport > 1000)
     {
-      lastHeapReport = millis();
-      Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\n\r", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+      reportHeapNow();
     }
   }
 }
@@ -673,7 +641,7 @@ void cyclePositionLEDs()
 //This allows NMEA, I2C, PPS/Event, and ADC/DAC to be routed through data port via software select
 void setMuxport(int channelNumber)
 {
-  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
+  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
   {
     pinMode(pin_muxA, OUTPUT);
     pinMode(pin_muxB, OUTPUT);

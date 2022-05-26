@@ -52,7 +52,7 @@ void scanForFirmware()
   {
     //Attempt to access file system. This avoids collisions with file writing in F9PSerialReadTask()
     //Wait up to 5s, this is important
-    if (xSemaphoreTake(xFATSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
+    if (xSemaphoreTake(sdCardSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
     {
       //Count available binaries
       SdFile tempFile;
@@ -92,9 +92,12 @@ void scanForFirmware()
         tempFile.close();
       }
 
-      xSemaphoreGive(xFATSemaphore);
+      xSemaphoreGive(sdCardSemaphore);
     }
-
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
   }
 }
 
@@ -102,6 +105,7 @@ void scanForFirmware()
 void updateFromSD(const char *firmwareFileName)
 {
   //Turn off any tasks so that we are not disrupted
+  stopWebServer();
   stopWiFi();
   stopBluetooth();
 
@@ -196,14 +200,6 @@ void updateFromSD(const char *firmwareFileName)
           //Remove forced firmware file to prevent endless loading
           firmwareFile.close();
           sd.remove(firmwareFileName);
-
-          //Assemble settings file name
-          char settingsFileName[40]; //SFE_Surveyor_Settings.txt
-          strcpy(settingsFileName, platformFilePrefix);
-          strcat(settingsFileName, "_Settings.txt");
-
-          if (sd.exists(settingsFileName))
-            sd.remove(settingsFileName);
 
           i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
         }

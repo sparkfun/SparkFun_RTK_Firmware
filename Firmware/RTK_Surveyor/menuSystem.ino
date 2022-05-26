@@ -43,13 +43,26 @@ void menuSystem()
     if (online.microSD == true) Serial.println(F("Online"));
     else Serial.println(F("Offline"));
 
+    if (online.lband == true)
+    {
+      Serial.print(F("L-Band: Online - "));
+      if (online.lbandCorrections == true) Serial.print(F("Keys Good"));
+      else Serial.print(F("No Keys"));
+
+      if (lbandCorrectionsReceived == true) Serial.print(F(" / Corrections Received"));
+      else Serial.print(F(" / Corrections Received Failed"));
+
+      Serial.printf(" / Eb/N0[dB] (>9 is good): %0.2f", lBandEBNO);
+      Serial.println();
+    }
+
     //Display MAC address
     char macAddress[5];
     sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
 
-    Serial.print(F("MAC: "));
+    Serial.print(F("Bluetooth ("));
     Serial.print(macAddress);
-    Serial.print(F(" - "));
+    Serial.print(F("): "));
 
     //Verify the ESP UART2 can communicate TX/RX to ZED UART1
     if (online.gnss == true)
@@ -57,25 +70,26 @@ void menuSystem()
       if (zedUartPassed == false)
       {
         stopUART2Tasks(); //Stop absoring ZED serial via task
-        delay(250); //Wait for tasks to abort
 
-        //Clear out buffer before starting
-        while (serialGNSS.available()) serialGNSS.read();
-        serialGNSS.flush();
+        i2cGNSS.setSerialRate(460800, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
+        serialGNSS.begin(460800); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
         SFE_UBLOX_GNSS myGNSS;
         if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
         {
           zedUartPassed = true;
-          Serial.print(F("BT Online"));
+          Serial.print(F("Online"));
         }
         else
-          Serial.print(F("BT Offline"));
+          Serial.print(F("Offline"));
+
+        i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
+        serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
         startUART2Tasks(); //Return to normal operation
       }
       else
-        Serial.print(F("BT Online"));
+        Serial.print(F("Online"));
     }
     else
     {
@@ -91,6 +105,11 @@ void menuSystem()
     Serial.println(F("d) Configure Debug"));
 
     Serial.println(F("r) Reset all settings to default"));
+
+    // Support mode switching
+    Serial.println(F("B) Switch to Base mode"));
+    Serial.println(F("R) Switch to Rover mode"));
+    Serial.println(F("W) Switch to WiFi Config mode"));
 
     Serial.println(F("x) Exit"));
 
@@ -112,13 +131,30 @@ void menuSystem()
     else if (incoming == 'f' && settings.enableSD == true && online.microSD == true)
     {
       //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-      if (xSemaphoreTake(xFATSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {
         Serial.println(F("Files found (date time size name):\n\r"));
         sd.ls(LS_R | LS_DATE | LS_SIZE);
 
-        xSemaphoreGive(xFATSemaphore);
+        xSemaphoreGive(sdCardSemaphore);
       }
+      else
+      {
+        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      }
+    }
+    // Support mode switching
+    else if (incoming == 'B') {
+      forceSystemStateUpdate = true; //Imediately go to this new state
+      changeState(STATE_BASE_NOT_STARTED);
+    }
+    else if (incoming == 'R') {
+      forceSystemStateUpdate = true; //Imediately go to this new state
+      changeState(STATE_ROVER_NOT_STARTED);
+    }
+    else if (incoming == 'W') {
+      forceSystemStateUpdate = true; //Imediately go to this new state
+      changeState(STATE_WIFI_CONFIG_NOT_STARTED);
     }
     else if (incoming == 'x')
       break;
@@ -174,6 +210,8 @@ void menuDebug()
 
     Serial.print(F("9) GNSS Serial Timeout: "));
     Serial.println(settings.serialTimeoutGNSS);
+
+    Serial.println(F("t) Enter Test Screen"));
 
     Serial.println(F("e) Erase LittleFS"));
 
@@ -273,7 +311,13 @@ void menuDebug()
     }
     else if (incoming == 'r')
     {
+      recordSystemSettings();
+
       ESP.restart();
+    }
+    else if (incoming == 't')
+    {
+      requestChangeState(STATE_TEST); //We'll enter test mode once exiting all serial menus
     }
     else if (incoming == 'x')
       break;

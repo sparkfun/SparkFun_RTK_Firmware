@@ -7,7 +7,7 @@ bool configureUbloxModuleBase()
   int maxWait = 2000;
 
   //If our settings haven't changed, and this is first config since power on, trust ZED's settings
-  if (updateZEDSettings == false && firstPowerOn == true)
+  if (settings.updateZEDSettings == false && firstPowerOn == true)
   {
     firstPowerOn = false; //Next time user switches modes, new settings will be applied
     log_d("Skipping ZED Base configuration");

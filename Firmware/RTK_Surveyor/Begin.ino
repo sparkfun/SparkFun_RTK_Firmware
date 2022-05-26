@@ -6,9 +6,16 @@ void beginBoard()
 {
   //Use ADC to check 50% resistor divider
   int pin_adc_rtk_facet = 35;
-  if (analogReadMilliVolts(pin_adc_rtk_facet) > (3300 / 2 * 0.9) && analogReadMilliVolts(pin_adc_rtk_facet) < (3300 / 2 * 1.1))
+  uint16_t idValue = analogReadMilliVolts(pin_adc_rtk_facet);
+  log_d("Board ADC ID: %d", idValue);
+
+  if (idValue > (3300 / 2 * 0.9) && idValue < (3300 / 2 * 1.1))
   {
     productVariant = RTK_FACET;
+  }
+  else if (idValue > (3300 * 2 / 3 * 0.9) && idValue < (3300 * 2 / 3 * 1.1))
+  {
+    productVariant = RTK_FACET_LBAND;
   }
   else if (isConnected(0x19) == true) //Check for accelerometer
   {
@@ -77,7 +84,7 @@ void beginBoard()
       strcpy(platformPrefix, "Express Plus");
     }
   }
-  else if (productVariant == RTK_FACET)
+  else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
   {
     //v11
     pin_muxA = 2;
@@ -113,11 +120,23 @@ void beginBoard()
     pinMode(pin_radio_cts, OUTPUT);
     digitalWrite(pin_radio_cts, LOW);
 
-    strcpy(platformFilePrefix, "SFE_Facet");
-    strcpy(platformPrefix, "Facet");
+    if (productVariant == RTK_FACET)
+    {
+      strcpy(platformFilePrefix, "SFE_Facet");
+      strcpy(platformPrefix, "Facet");
+    }
+    else if (productVariant == RTK_FACET_LBAND)
+    {
+      strcpy(platformFilePrefix, "SFE_Facet_LBand");
+      strcpy(platformPrefix, "Facet L-Band");
+    }
   }
 
   Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+
+  //Get unit MAC address
+  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
+  unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
   //For all boards, check reset reason. If reset was due to wdt or panic, append last log
   if (esp_reset_reason() == ESP_RST_POWERON)
@@ -139,8 +158,8 @@ void beginBoard()
     if (settings.enableResetDisplay == true)
     {
       settings.resetCount++;
-      recordSystemSettings(); //Record to NVM
       Serial.printf("resetCount: %d\n\r", settings.resetCount);
+      recordSystemSettings(); //Record to NVM
     }
 
     Serial.print("Reset reason: ");
@@ -222,11 +241,11 @@ void beginSD()
     }
 
     //Setup FAT file access semaphore
-    if (xFATSemaphore == NULL)
+    if (sdCardSemaphore == NULL)
     {
-      xFATSemaphore = xSemaphoreCreateMutex();
-      if (xFATSemaphore != NULL)
-        xSemaphoreGive(xFATSemaphore);  //Make the file system available for use
+      sdCardSemaphore = xSemaphoreCreateMutex();
+      if (sdCardSemaphore != NULL)
+        xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
     }
 
     if (createTestFile() == false)
@@ -320,16 +339,14 @@ void stopUART2Tasks()
 
 void beginFS()
 {
-#define FORMAT_LITTLEFS_IF_FAILED true
-
   if (online.fs == false)
   {
-    Serial.println("Starting FS");
-
-    if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
+    if (!LittleFS.begin(true)) //Format LittleFS if begin fails
+    {
       log_d("Error: LittleFS not online");
       return;
     }
+    Serial.println("LittleFS Started");
     online.fs = true;
   }
 }
@@ -350,7 +367,7 @@ void beginDisplay()
     {
       Serial.println(F("Display not detected"));
     }
-    else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
+    else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
     {
       Serial.println(F("Display Error: Not detected."));
     }
@@ -401,19 +418,25 @@ void beginGNSS()
       zedFirmwareVersionInt = 121;
     else if (strstr(zedFirmwareVersion, "1.30") != NULL) //ZED-F9P released Dec, 2021
       zedFirmwareVersionInt = 130;
+    else if (strstr(zedFirmwareVersion, "1.32") != NULL) //ZED-F9P released May, 2022
+      zedFirmwareVersionInt = 132;
     else
+    {
       Serial.printf("Unknown firmware version: %s\n\r", zedFirmwareVersion);
+      zedFirmwareVersionInt = 99; //0.99 invalid firmware version
+    }
 
     //Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
     if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9P") != NULL)
+      zedModuleType = PLATFORM_F9P;
+    else if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9R") != NULL)
+      zedModuleType = PLATFORM_F9R;
+    else
     {
+      Serial.printf("Unknown ZED module: %s\n\r", i2cGNSS.minfo.extension[3]);
       zedModuleType = PLATFORM_F9P;
     }
-    else if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9R") != NULL)
-    {
-      zedModuleType = PLATFORM_F9R;
-    }
-
+    
     printModuleInfo(); //Print module type and firmware version
   }
 
@@ -429,7 +452,7 @@ void configureGNSS()
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
   //the settings file or internal settings.
-  if (updateZEDSettings == false)
+  if (settings.updateZEDSettings == false)
   {
     log_d("Skipping ZED configuration");
     return;
@@ -549,16 +572,22 @@ void beginSystemState()
   {
     //If the rocker switch was moved while off, force module settings
     //When switch is set to '1' = BASE, pin will be shorted to ground
-    if (settings.lastState == STATE_ROVER_NOT_STARTED && digitalRead(pin_setupButton) == LOW) updateZEDSettings = true;
-    else if (settings.lastState == STATE_BASE_NOT_STARTED && digitalRead(pin_setupButton) == HIGH) updateZEDSettings = true;
+    if (settings.lastState == STATE_ROVER_NOT_STARTED && digitalRead(pin_setupButton) == LOW) settings.updateZEDSettings = true;
+    else if (settings.lastState == STATE_BASE_NOT_STARTED && digitalRead(pin_setupButton) == HIGH) settings.updateZEDSettings = true;
 
-    systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask() will correct as needed.
+    if (online.lband == false)
+      systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask() will correct as needed.
+    else
+      systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
   else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
-    systemState = settings.lastState; //Return to system state previous to power down.
+    if (online.lband == false)
+      systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
+    else
+      systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
 
     if (systemState > STATE_SHUTDOWN)
     {
@@ -569,9 +598,12 @@ void beginSystemState()
     setupBtn = new Button(pin_setupButton); //Create the button in memory
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }
-  else if (productVariant == RTK_FACET)
+  else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
   {
-    systemState = settings.lastState; //Return to system state previous to power down.
+    if (online.lband == false)
+      systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
+    else
+      systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
 
     if (systemState > STATE_SHUTDOWN)
     {
@@ -579,8 +611,7 @@ void beginSystemState()
       factoryReset();
     }
 
-    if (systemState == STATE_ROVER_NOT_STARTED)
-      firstRoverStart = true; //Allow user to enter test screen during first rover start
+    firstRoverStart = true; //Allow user to enter test screen during first rover start
 
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }
@@ -603,7 +634,7 @@ bool beginExternalTriggers()
   if (online.gnss == false) return (false);
 
   //If our settings haven't changed, trust ZED's settings
-  if (updateZEDSettings == false)
+  if (settings.updateZEDSettings == false)
   {
     log_d("Skipping ZED Trigger configuration");
     return (true);
@@ -643,4 +674,73 @@ bool beginExternalTriggers()
     Serial.println(F("Module failed to save."));
 
   return (response);
+}
+
+//Check if NEO-D9S is connected. Configure if available.
+void beginLBand()
+{
+  if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
+  {
+    log_d("L-Band not detected");
+    return;
+  }
+
+  if (online.gnss == true)
+  {
+    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+  }
+
+  //If we have a fix, check which frequency to use
+  if (fixType == 2 || fixType == 3 || fixType == 4 || fixType == 5) //2D, 3D, 3D+DR, or Time
+  {
+    if ( (longitude > -125 && longitude < -67) && (latitude > -90 && latitude < 90))
+    {
+      log_d("Setting L-Band to US");
+      settings.LBandFreq = 1556290000; //We are in US band
+    }
+    else if ( (longitude > -25 && longitude < 70) && (latitude > -90 && latitude < 90))
+    {
+      log_d("Setting L-Band to EU");
+      settings.LBandFreq = 1545260000; //We are in EU band
+    }
+    else
+    {
+      Serial.println("Unknown band area");
+      settings.LBandFreq = 1556290000; //Default to US
+    }
+    recordSystemSettings();
+  }
+  else
+    log_d("No fix available for L-Band frequency determination");
+
+  bool response = true;
+  response &= i2cLBand.setVal32(UBLOX_CFG_PMP_CENTER_FREQUENCY,   settings.LBandFreq); // Default 1539812500 Hz
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SEARCH_WINDOW,      2200);        // Default 2200 Hz
+  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_SERVICE_ID,      0);           // Default 1
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SERVICE_ID,         21845);       // Default 50821
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DATA_RATE,          2400);        // Default 2400 bps
+  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_DESCRAMBLER,     1);           // Default 1
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DESCRAMBLER_INIT,   26969);       // Default 23560
+  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_PRESCRAMBLING,   0);           // Default 0
+  response &= i2cLBand.setVal64(UBLOX_CFG_PMP_UNIQUE_WORD,        16238547128276412563ull);
+  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C,   1); // Ensure UBX-RXM-PMP is enabled on the I2C port
+  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 1); // Output UBX-RXM-PMP on UART1
+  response &= i2cLBand.setVal(UBLOX_CFG_UART2OUTPROT_UBX, 1);         // Enable UBX output on UART2
+  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); // Output UBX-RXM-PMP on UART2
+  response &= i2cLBand.setVal32(UBLOX_CFG_UART1_BAUDRATE,         38400); // match baudrate with ZED default
+  response &= i2cLBand.setVal32(UBLOX_CFG_UART2_BAUDRATE,         38400); // match baudrate with ZED default
+
+  if (response == false)
+    Serial.println("L-Band failed to configure");
+
+  i2cLBand.softwareResetGNSSOnly(); // Do a restart
+
+  i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
+
+  i2cGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Check if the PMP data is being decrypted successfully
+
+  log_d("L-Band online");
+
+  online.lband = true;
 }

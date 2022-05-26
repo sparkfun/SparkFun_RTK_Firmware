@@ -116,6 +116,44 @@ void updateDisplay()
         case (STATE_TESTING):
           paintSystemTest();
           break;
+
+        case (STATE_KEYS_STARTED):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_NEEDED):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_WIFI_STARTED):
+          paintGettingKeys();
+          break;
+        case (STATE_KEYS_WIFI_CONNECTED):
+          paintGettingKeys();
+          break;
+        case (STATE_KEYS_WIFI_TIMEOUT):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_EXPIRED):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_DAYS_REMAINING):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_LBAND_CONFIGURE):
+          paintLBandConfigure();
+          break;
+        case (STATE_KEYS_LBAND_ENCRYPTED):
+          //Do nothing. Quick, fall through state.
+          break;
+        case (STATE_KEYS_PROVISION_WIFI_STARTED):
+          paintGettingKeys();
+          break;
+        case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
+          paintGettingKeys();
+          break;
+        case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
+          //Do nothing. Quick, fall through state.
+          break;
+
         case (STATE_SHUTDOWN):
           displayShutdown();
           break;
@@ -161,6 +199,10 @@ void displaySplash()
     else if (productVariant == RTK_FACET)
     {
       printTextCenter("Facet", yPos, QW_FONT_8X16, 1, false);
+    }
+    else if (productVariant == RTK_FACET_LBAND)
+    {
+      printTextCenter("Facet LB", yPos, QW_FONT_8X16, 1, false);
     }
 
     yPos = yPos + fontHeight + 7;
@@ -223,14 +265,15 @@ void paintBatteryLevel()
 //Display Bluetooth icon, Bluetooth MAC, or WiFi depending on connection state
 void paintWirelessIcon()
 {
+  //TODO resolve if both BT and WiFi are on/connected
   if (online.display == true)
   {
     //Bluetooth icon if paired, or Bluetooth MAC address if not paired
-    if (radioState == BT_CONNECTED)
+    if (btState == BT_CONNECTED)
     {
       displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
     }
-    else if (radioState == WIFI_ON_NOCONNECTION)
+    else if (wifiState == WIFI_NOTCONNECTED)
     {
       //Blink WiFi icon
       if (millis() - lastWifiIconUpdate > 500)
@@ -247,20 +290,24 @@ void paintWirelessIcon()
           wifiIconDisplayed = false;
       }
     }
-    else if (radioState == WIFI_CONNECTED)
+    else if (wifiState == WIFI_CONNECTED)
     {
       //Solid WiFi icon
       displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
 
       //If we are connected to NTRIP Client, show download arrow
-      if(online.ntripClient == true)
+      if (online.ntripClient == true)
         displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
 
     }
     else
     {
       char macAddress[5];
+#ifdef COMPILE_BT
       sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
+#else
+      sprintf(macAddress, "%02X%02X", 0, 0); //If BT is not available, print zeroes
+#endif
       oled.setFont(QW_FONT_5X7); //Set font to smallest
       oled.setCursor(0, 3);
       oled.print(macAddress);
@@ -359,7 +406,7 @@ void paintBaseState()
         systemState == STATE_ROVER_CLIENT_WIFI_STARTED ||
         systemState == STATE_ROVER_CLIENT_WIFI_CONNECTED ||
         systemState == STATE_ROVER_CLIENT_STARTED
-        )
+       )
     {
       //Display icon associated with current Dynamic Model
       switch (settings.dynamicModel)
@@ -503,7 +550,10 @@ void paintSIV()
     if (fixType == 3 || fixType == 4 || fixType == 5) //3D, 3D+DR, or Time
     {
       //Fix, turn on icon
-      displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
+      if (lbandCorrectionsReceived == false)
+        displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
+      else
+        displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
     }
     else
     {
@@ -516,7 +566,10 @@ void paintSIV()
           satelliteDishIconDisplayed = true;
 
           //Draw the icon
-          displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
+          if (lbandCorrectionsReceived == false)
+            displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
+          else
+            displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
         }
         else
           satelliteDishIconDisplayed = false;
@@ -1265,7 +1318,7 @@ void displayWiFiConfigNotStarted()
 void displayWiFiConfig()
 {
   //Draw the WiFi icon
-  if (radioState == WIFI_ON_NOCONNECTION)
+  if (wifiState == WIFI_NOTCONNECTED)
   {
     //Blink WiFi icon
     if (millis() - lastWifiIconUpdate > 500)
@@ -1282,7 +1335,7 @@ void displayWiFiConfig()
         wifiIconDisplayed = false;
     }
   }
-  else if (radioState == WIFI_CONNECTED)
+  else if (wifiState == WIFI_CONNECTED)
   {
     //Solid WiFi icon
     displayBitmap((oled.getWidth() / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
@@ -1422,11 +1475,16 @@ void paintProfile(uint8_t profileUnit)
   char profileMessage[20]; //'Loading HomeStar' max of ~18 chars
 
   char profileName[8 + 1];
-  if (getProfileName(profileUnit, profileName, 8) == true) //Load the profile name, limited to 8 chars
+  if (getProfileNameFromUnit(profileUnit, profileName, 8) == true) //Load the profile name, limited to 8 chars
   {
+    settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
+    recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
+
     //Lookup profileNumber based on unit
     uint8_t profileNumber = getProfileNumberFromUnit(profileUnit);
-    recordProfileNumber(profileNumber, true); //Update internal settings with user's choice, mark unit for config update
+    recordProfileNumber(profileNumber); //Update internal settings with user's choice, mark unit for config update
+
+    log_d("Going to profile number %d from unit %d, name '%s'", profileNumber, profileUnit, profileName);
 
     snprintf(profileMessage, sizeof(profileMessage), "Loading %s", profileName);
     displayMessage(profileMessage, 2000);
@@ -1443,120 +1501,167 @@ void paintSystemTest()
 {
   if (online.display == true)
   {
-    int xOffset = 2;
-    int yOffset = 2;
-
-    int charHeight = 7;
-
-    char macAddress[5];
-    sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-
-    drawFrame(); //Outside edge
-
-    //Test SD, accel, batt, GNSS, mux
-    oled.setFont(QW_FONT_5X7); //Set font to smallest
-    oled.setCursor(xOffset, yOffset); //x, y
-    oled.print(F("SD:"));
-
-    if (online.microSD == false)
-      beginSD(); //Test if SD is present
-    if (online.microSD == true)
-      oled.print(F("OK"));
-    else
-      oled.print(F("FAIL"));
-
-    if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
+    //Toggle between two displays
+    if (millis() - systemTestDisplayTime > 3000)
     {
-      oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
-      oled.print(F("Accel:"));
-      if (online.accelerometer == true)
+      systemTestDisplayTime = millis();
+      systemTestDisplayNumber++;
+      systemTestDisplayNumber %= 2;
+    }
+
+    if (systemTestDisplayNumber == 1 || productVariant != RTK_FACET_LBAND)
+    {
+      int xOffset = 2;
+      int yOffset = 2;
+
+      int charHeight = 7;
+
+      char macAddress[5];
+      sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
+
+      drawFrame(); //Outside edge
+
+      //Test SD, accel, batt, GNSS, mux
+      oled.setFont(QW_FONT_5X7); //Set font to smallest
+      oled.setCursor(xOffset, yOffset); //x, y
+      oled.print(F("SD:"));
+
+      if (online.microSD == false)
+        beginSD(); //Test if SD is present
+      if (online.microSD == true)
         oled.print(F("OK"));
       else
         oled.print(F("FAIL"));
-    }
 
-    oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
-    oled.print(F("Batt:"));
-    if (online.battery == true)
-      oled.print(F("OK"));
-    else
-      oled.print(F("FAIL"));
-
-    oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
-    oled.print(F("GNSS:"));
-    if (online.gnss == true)
-    {
-      i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-      i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
-
-      int satsInView = numSV;
-      if (satsInView > 5)
+      if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
       {
-        oled.print(F("OK"));
-        oled.print(F("/"));
-        oled.print(satsInView);
-      }
-      else
-        oled.print(F("FAIL"));
-    }
-    else
-      oled.print(F("FAIL"));
-
-    if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET)
-    {
-      oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
-      oled.print(F("Mux:"));
-
-      //Set mux to channel 3 and toggle pin and verify with loop back jumper wire inserted by test technician
-
-      setMuxport(MUX_ADC_DAC); //Set mux to DAC so we can toggle back/forth
-      pinMode(pin_dac26, OUTPUT);
-      pinMode(pin_adc39, INPUT_PULLUP);
-
-      digitalWrite(pin_dac26, HIGH);
-      if (digitalRead(pin_adc39) == HIGH)
-      {
-        digitalWrite(pin_dac26, LOW);
-        if (digitalRead(pin_adc39) == LOW)
+        oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
+        oled.print(F("Accel:"));
+        if (online.accelerometer == true)
           oled.print(F("OK"));
+        else
+          oled.print(F("FAIL"));
+      }
+
+      oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
+      oled.print(F("Batt:"));
+      if (online.battery == true)
+        oled.print(F("OK"));
+      else
+        oled.print(F("FAIL"));
+
+      oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
+      oled.print(F("GNSS:"));
+      if (online.gnss == true)
+      {
+        i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+        i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+
+        int satsInView = numSV;
+        if (satsInView > 5)
+        {
+          oled.print(F("OK"));
+          oled.print(F("/"));
+          oled.print(satsInView);
+        }
         else
           oled.print(F("FAIL"));
       }
       else
         oled.print(F("FAIL"));
-    }
 
-    //Display MAC address
-    oled.setCursor(xOffset, yOffset + (5 * charHeight) ); //x, y
-    oled.print(macAddress);
-    oled.print(":");
-
-    //Verify the ESP UART2 can communicate TX/RX to ZED UART1
-    if (zedUartPassed == false)
-    {
-      Serial.println("GNSS test");
-
-      setMuxport(MUX_UBLOX_NMEA); //Set mux to UART so we can debug over data port
-      delay(20);
-
-      //Clear out buffer before starting
-      while (serialGNSS.available()) serialGNSS.read();
-      serialGNSS.flush();
-
-      SFE_UBLOX_GNSS myGNSS;
-
-      //begin() attempts 3 connections
-      if (myGNSS.begin(serialGNSS) == true)
+      if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
       {
+        oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
+        oled.print(F("Mux:"));
 
-        zedUartPassed = true;
-        oled.print(F("OK"));
+        //Set mux to channel 3 and toggle pin and verify with loop back jumper wire inserted by test technician
+
+        setMuxport(MUX_ADC_DAC); //Set mux to DAC so we can toggle back/forth
+        pinMode(pin_dac26, OUTPUT);
+        pinMode(pin_adc39, INPUT_PULLUP);
+
+        digitalWrite(pin_dac26, HIGH);
+        if (digitalRead(pin_adc39) == HIGH)
+        {
+          digitalWrite(pin_dac26, LOW);
+          if (digitalRead(pin_adc39) == LOW)
+            oled.print(F("OK"));
+          else
+            oled.print(F("FAIL"));
+        }
+        else
+          oled.print(F("FAIL"));
+      }
+
+      //Display MAC address
+      oled.setCursor(xOffset, yOffset + (5 * charHeight) ); //x, y
+      oled.print(macAddress);
+      oled.print(":");
+
+      //Verify the ESP UART2 can communicate TX/RX to ZED UART1
+      if (zedUartPassed == false)
+      {
+        Serial.println("GNSS test");
+
+        setMuxport(MUX_UBLOX_NMEA); //Set mux to UART so we can debug over data port
+        delay(20);
+
+        //Clear out buffer before starting
+        while (serialGNSS.available()) serialGNSS.read();
+        serialGNSS.flush();
+
+        SFE_UBLOX_GNSS myGNSS;
+
+        //begin() attempts 3 connections
+        if (myGNSS.begin(serialGNSS) == true)
+        {
+
+          zedUartPassed = true;
+          oled.print(F("OK"));
+        }
+        else
+          oled.print(F("FAIL"));
       }
       else
-        oled.print(F("FAIL"));
-    }
-    else
-      oled.print(F("OK"));
+        oled.print(F("OK"));
+    } //End display 1
+
+    if (productVariant == RTK_FACET_LBAND)
+    {
+      if (systemTestDisplayNumber == 0)
+      {
+        int xOffset = 2;
+        int yOffset = 2;
+
+        int charHeight = 7;
+
+        drawFrame(); //Outside edge
+
+        //Test ZED Firmware, L-Band
+
+        oled.setFont(QW_FONT_5X7); //Set font to smallest
+
+        oled.setCursor(xOffset, yOffset); //x, y
+        oled.print(F("ZED Firm:"));
+        oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
+        oled.print("  ");
+        oled.print(zedFirmwareVersionInt);
+        oled.print(F("-"));
+        if (zedFirmwareVersionInt < 130)
+          oled.print(F("FAIL"));
+        else
+          oled.print(F("OK"));
+
+        oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
+        oled.print(F("LBand:"));
+        if (online.lband == true)
+          oled.print(F("OK"));
+        else
+          oled.print(F("FAIL"));
+      } //End display 0
+    } //End Facet L-Band testing
+    
   }
 }
 
@@ -1621,7 +1726,7 @@ void getAngles()
         accelZ *= -1.0;
         accelX *= -1.0;
       }
-      else if (productVariant == RTK_FACET)
+      else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
       {
         accelZ = accel.getX();
         accelX = accel.getY();
@@ -1697,7 +1802,7 @@ void paintDisplaySetup()
         printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
         printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_2)
@@ -1707,10 +1812,10 @@ void paintDisplaySetup()
         printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
         printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_3)
@@ -1719,29 +1824,29 @@ void paintDisplaySetup()
 
         printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_4)
       {
         char profileName[8 + 1];
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
+        getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
     } //end type F9P
@@ -1783,7 +1888,7 @@ void paintDisplaySetup()
         printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
         printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_2)
@@ -1793,10 +1898,10 @@ void paintDisplaySetup()
         printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
         printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_3)
@@ -1805,29 +1910,29 @@ void paintDisplaySetup()
 
         printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (setupState == STATE_PROFILE_4)
       {
         char profileName[8 + 1];
 
-        getProfileName(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
 
-        getProfileName(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileName(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileName(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
+        getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
         printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
       }
     } //end type F9R
@@ -1835,7 +1940,7 @@ void paintDisplaySetup()
 }
 
 //Given text, and location, print text center of the screen
-void printTextCenter(const char *text, uint8_t yPos, QwiicFont &fontType, uint8_t kerning, bool highlight) //text, y, font type, kearning, inverted
+void printTextCenter(const char *text, uint8_t yPos, QwiicFont & fontType, uint8_t kerning, bool highlight) //text, y, font type, kearning, inverted
 {
   oled.setFont(fontType);
   oled.setDrawMode(grROPXOR);
@@ -1924,4 +2029,236 @@ void paintResets()
 void displayBitmap(uint8_t x, uint8_t y, uint8_t imageWidth, uint8_t imageHeight, uint8_t *imageData)
 {
   oled.bitmap(x, y, x + imageWidth, y + imageHeight, imageData, imageWidth, imageHeight);
+}
+
+void displayKeysUpdated()
+{
+  displayMessage("Keys Updated", 2000);
+}
+
+void paintKeyDaysRemaining(int daysRemaining, uint16_t displayTime)
+{
+  //28 days
+  //until L-Band
+  //keys expire
+
+  if (online.display == true)
+  {
+    oled.erase();
+
+    if (daysRemaining < 0) daysRemaining = 0;
+
+    int rightSideStart = 24; //Force the small text to rightside of screen
+
+    oled.setFont(QW_FONT_LARGENUM);
+
+    String days = String(daysRemaining);
+    int dayTextWidth = oled.getStringWidth(days);
+
+    int largeTextX = (rightSideStart / 2) - (dayTextWidth / 2); //Center point for x coord
+
+    oled.setCursor(largeTextX, 0);
+    oled.print(daysRemaining);
+
+    oled.setFont(QW_FONT_5X7);
+
+    int x = ((oled.getWidth() - rightSideStart) / 2) + rightSideStart; //Center point for x coord
+    int y = 0;
+    int fontHeight = 10;
+    int textX;
+
+    textX = x - (oled.getStringWidth("days") / 2); //Starting point of text
+    oled.setCursor(textX, y);
+    oled.print("Days");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Until") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Until");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("L-Band") / 2);
+    oled.setCursor(textX, y);
+    oled.print("L-Band");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Keys") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Keys");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Expire") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Expire");
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void paintKeyWiFiFail(uint16_t displayTime)
+{
+  //L-Band
+  //Update
+  //Failed
+  //No WiFi
+
+  if (online.display == true)
+  {
+    oled.erase();
+
+    oled.setFont(QW_FONT_8X16);
+
+    int x = (oled.getWidth() / 2); //Center point for x coord
+    int y = 0;
+    int fontHeight = 13;
+    int textX;
+
+    textX = x - (oled.getStringWidth("L-Band") / 2); //Starting point of text
+    oled.setCursor(textX, y);
+    oled.print("L-Band");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Update") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Update");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Failed") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Failed");
+
+    oled.setFont(QW_FONT_5X7);
+    y += fontHeight + 1;
+    textX = x - (oled.getStringWidth("No WiFi") / 2);
+    oled.setCursor(textX, y);
+    oled.print("No WiFi");
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void paintNClientWiFiFail(uint16_t displayTime)
+{
+  //NTRIP
+  //Client
+  //Failed
+  //No WiFi
+
+  if (online.display == true)
+  {
+    oled.erase();
+
+    oled.setFont(QW_FONT_8X16);
+
+    int x = (oled.getWidth() / 2); //Center point for x coord
+    int y = 0;
+    int fontHeight = 13;
+    int textX;
+
+    textX = x - (oled.getStringWidth("NTRIP") / 2); //Starting point of text
+    oled.setCursor(textX, y);
+    oled.print("NTRIP");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Client") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Client");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Failed") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Failed");
+
+    oled.setFont(QW_FONT_5X7);
+    y += fontHeight + 1;
+    textX = x - (oled.getStringWidth("No WiFi") / 2);
+    oled.setCursor(textX, y);
+    oled.print("No WiFi");
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void paintKeysExpired()
+{
+  displayMessage("Keys Expired", 4000);
+}
+
+void paintLBandConfigure()
+{
+  displayMessage("L-Band Config", 0);
+}
+
+void paintGettingKeys()
+{
+  if (online.display == true)
+  {
+    paintWirelessIcon(); //Top left corner
+
+    displayMessage("Getting Keys", 0);
+  }
+}
+
+void paintKeyProvisionFail(uint16_t displayTime)
+{
+  //Whitelist Error
+
+  //ZTP
+  //Failed
+  //ID:
+  //10chars
+
+  if (online.display == true)
+  {
+    oled.erase();
+
+    oled.setFont(QW_FONT_5X7);
+
+    int x = (oled.getWidth() / 2); //Center point for x coord
+    int y = 0;
+    int fontHeight = 8;
+    int textX;
+
+    textX = x - (oled.getStringWidth("ZTP") / 2); //Starting point of text
+    oled.setCursor(textX, y);
+    oled.print("ZTP");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("Failed") / 2);
+    oled.setCursor(textX, y);
+    oled.print("Failed");
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth("ID:") / 2);
+    oled.setCursor(textX, y);
+    oled.print("ID:");
+
+    //The MAC address is characters long so we have to split it onto two lines
+    char hardwareID[13];
+    sprintf(hardwareID, "%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2]);
+    String macAddress = String(hardwareID);
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth(macAddress) / 2);
+    oled.setCursor(textX, y);
+    oled.print(hardwareID);
+
+    sprintf(hardwareID, "%02X%02X%02X", unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]);
+    macAddress = String(hardwareID);
+
+    y += fontHeight;
+    textX = x - (oled.getStringWidth(macAddress) / 2);
+    oled.setCursor(textX, y);
+    oled.print(hardwareID);
+
+    oled.display();
+
+    delay(displayTime);
+  }
 }

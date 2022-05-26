@@ -571,7 +571,7 @@ void updateLogs()
     }
     else
     {
-      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
     }
   }
   else if (online.logging == true && settings.enableLogging == true && (systemTime_minutes - startCurrentLogTime_minutes) >= settings.maxLogLength_minutes)
@@ -586,7 +586,7 @@ void updateLogs()
     }
     else
     {
-      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
     }
   }
 
@@ -615,7 +615,7 @@ void updateLogs()
       } //End sdCardSemaphore
       else
       {
-        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+        log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
       }
     }
 
@@ -640,7 +640,7 @@ void updateLogs()
       }
       else
       {
-        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+        log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
       }
     }
 
@@ -658,7 +658,7 @@ void updateLogs()
       }
       else
       {
-        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+        log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
       }
 
       if (fileSize > 0)

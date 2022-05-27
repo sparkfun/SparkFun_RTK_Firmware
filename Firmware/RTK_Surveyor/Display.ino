@@ -683,85 +683,76 @@ void paintLogging()
 //Survey in is running. Show 3D Mean and elapsed time.
 void paintBaseTempSurveyStarted()
 {
-  if (online.display == true)
-  {
-    oled.setFont(QW_FONT_5X7);
-    oled.setCursor(0, 23); //x, y
-    oled.print("Mean:");
+  oled.setFont(QW_FONT_5X7);
+  oled.setCursor(0, 23); //x, y
+  oled.print("Mean:");
 
-    oled.setCursor(29, 20); //x, y
-    oled.setFont(QW_FONT_8X16);
-    if (svinMeanAccuracy < 10.0) //Error check
-      oled.print(svinMeanAccuracy, 2);
-    else
-      oled.print(">10");
+  oled.setCursor(29, 20); //x, y
+  oled.setFont(QW_FONT_8X16);
+  if (svinMeanAccuracy < 10.0) //Error check
+    oled.print(svinMeanAccuracy, 2);
+  else
+    oled.print(">10");
 
-    oled.setCursor(0, 39); //x, y
-    oled.setFont(QW_FONT_5X7);
-    oled.print("Time:");
+  oled.setCursor(0, 39); //x, y
+  oled.setFont(QW_FONT_5X7);
+  oled.print("Time:");
 
-    oled.setCursor(30, 36); //x, y
-    oled.setFont(QW_FONT_8X16);
-    if (svinObservationTime < 1000) //Error check
-      oled.print(svinObservationTime);
-    else
-      oled.print("0");
-  }
+  oled.setCursor(30, 36); //x, y
+  oled.setFont(QW_FONT_8X16);
+  if (svinObservationTime < 1000) //Error check
+    oled.print(svinObservationTime);
+  else
+    oled.print("0");
 }
 
 //Show transmission of RTCM packets
 void paintBaseTempTransmitting()
 {
-  if (online.display == true)
-  {
-    int textX = 1;
-    int textY = 17;
-    int textKerning = 8;
-    oled.setFont(QW_FONT_8X16);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+  int textX = 1;
+  int textY = 17;
+  int textKerning = 8;
+  oled.setFont(QW_FONT_8X16);
+  printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 39); //x, y
-    oled.setFont(QW_FONT_5X7);
-    oled.print("RTCM:");
+  oled.setCursor(0, 39); //x, y
+  oled.setFont(QW_FONT_5X7);
+  oled.print("RTCM:");
 
-    if (rtcmPacketsSent < 100)
-      oled.setCursor(30, 36); //x, y - Give space for two digits
-    else
-      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+  if (rtcmPacketsSent < 100)
+    oled.setCursor(30, 36); //x, y - Give space for two digits
+  else
+    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
-    paintResets();
-  }
+  paintResets();
 }
 
 //Show transmission of RTCM packets
 //Blink WiFi icon
 void paintBaseTempWiFiStarted()
 {
-  if (online.display == true)
-  {
-    int textX = 1;
-    int textY = 17;
-    int textKerning = 8;
-    oled.setFont(QW_FONT_8X16);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+  int textX = 1;
+  int textY = 17;
+  int textKerning = 8;
+  oled.setFont(QW_FONT_8X16);
+  printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 39); //x, y
-    oled.setFont(QW_FONT_5X7);
-    oled.print("RTCM:");
+  oled.setCursor(0, 39); //x, y
+  oled.setFont(QW_FONT_5X7);
+  oled.print("RTCM:");
 
-    if (rtcmPacketsSent < 100)
-      oled.setCursor(30, 36); //x, y - Give space for two digits
-    else
-      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+  if (rtcmPacketsSent < 100)
+    oled.setCursor(30, 36); //x, y - Give space for two digits
+  else
+    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
-    paintResets();
-  }
+  paintResets();
 }
 
 //Show transmission of RTCM packets
@@ -769,132 +760,117 @@ void paintBaseTempWiFiStarted()
 //This is identical to paintBaseTempWiFiStarted
 void paintBaseTempWiFiConnected()
 {
-  if (online.display == true)
-  {
-    int textX = 1;
-    int textY = 17;
-    int textKerning = 8;
-    oled.setFont(QW_FONT_8X16);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+  int textX = 1;
+  int textY = 17;
+  int textKerning = 8;
+  oled.setFont(QW_FONT_8X16);
+  printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 39); //x, y
-    oled.setFont(QW_FONT_5X7);
-    oled.print("RTCM:");
+  oled.setCursor(0, 39); //x, y
+  oled.setFont(QW_FONT_5X7);
+  oled.print("RTCM:");
 
-    if (rtcmPacketsSent < 100)
-      oled.setCursor(30, 36); //x, y - Give space for two digits
-    else
-      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+  if (rtcmPacketsSent < 100)
+    oled.setCursor(30, 36); //x, y - Give space for two digits
+  else
+    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
-    paintResets();
-  }
+  paintResets();
 }
 
 //Show connecting to caster service
 //Solid WiFi icon
 void paintBaseTempCasterStarted()
 {
-  if (online.display == true)
-  {
-    int textX = 11;
-    int textY = 17;
-    int textKerning = 8;
+  int textX = 11;
+  int textY = 17;
+  int textKerning = 8;
 
-    printTextwithKerning("Caster", textX, textY, textKerning);
+  printTextwithKerning("Caster", textX, textY, textKerning);
 
-    textX = 3;
-    textY = 33;
-    textKerning = 6;
-    oled.setFont(QW_FONT_8X16);
+  textX = 3;
+  textY = 33;
+  textKerning = 6;
+  oled.setFont(QW_FONT_8X16);
 
-    printTextwithKerning("Connecting", textX, textY, textKerning);
-  }
+  printTextwithKerning("Connecting", textX, textY, textKerning);
 }
 
 //Show transmission of RTCM packets to caster service
 //Solid WiFi icon
 void paintBaseTempCasterConnected()
 {
-  if (online.display == true)
-  {
-    int textX = 4;
-    int textY = 17;
-    int textKerning = 8;
-    oled.setFont(QW_FONT_8X16);
-    printTextwithKerning("Casting", textX, textY, textKerning);
+  int textX = 4;
+  int textY = 17;
+  int textKerning = 8;
+  oled.setFont(QW_FONT_8X16);
+  printTextwithKerning("Casting", textX, textY, textKerning);
 
-    oled.setCursor(0, 39); //x, y
-    oled.setFont(QW_FONT_5X7);
-    oled.print("RTCM:");
+  oled.setCursor(0, 39); //x, y
+  oled.setFont(QW_FONT_5X7);
+  oled.print("RTCM:");
 
-    if (rtcmPacketsSent < 100)
-      oled.setCursor(30, 36); //x, y - Give space for two digits
-    else
-      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+  if (rtcmPacketsSent < 100)
+    oled.setCursor(30, 36); //x, y - Give space for two digits
+  else
+    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
-    paintResets();
-  }
+  paintResets();
 }
 
 //Show transmission of RTCM packets
 void paintBaseFixedTransmitting()
 {
-  if (online.display == true)
-  {
-    int textX = 1;
-    int textY = 17;
-    int textKerning = 8;
-    oled.setFont(QW_FONT_8X16);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+  int textX = 1;
+  int textY = 17;
+  int textKerning = 8;
+  oled.setFont(QW_FONT_8X16);
+  printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 39); //x, y
-    oled.setFont(QW_FONT_5X7);
-    oled.print("RTCM:");
+  oled.setCursor(0, 39); //x, y
+  oled.setFont(QW_FONT_5X7);
+  oled.print("RTCM:");
 
-    if (rtcmPacketsSent < 100)
-      oled.setCursor(30, 36); //x, y - Give space for two digits
-    else
-      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+  if (rtcmPacketsSent < 100)
+    oled.setCursor(30, 36); //x, y - Give space for two digits
+  else
+    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
-    paintResets();
-  }
+  paintResets();
 }
 
 //Show transmission of RTCM packets
 //Blink WiFi icon
 void paintBaseFixedWiFiStarted()
 {
-  if (online.display == true)
-  {
-    int textX = 1;
-    int textY = 17;
-    int textKerning = 8;
-    oled.setFont(QW_FONT_8X16);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+  int textX = 1;
+  int textY = 17;
+  int textKerning = 8;
+  oled.setFont(QW_FONT_8X16);
+  printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 39); //x, y
-    oled.setFont(QW_FONT_5X7);
-    oled.print("RTCM:");
+  oled.setCursor(0, 39); //x, y
+  oled.setFont(QW_FONT_5X7);
+  oled.print("RTCM:");
 
-    if (rtcmPacketsSent < 100)
-      oled.setCursor(30, 36); //x, y - Give space for two digits
-    else
-      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+  if (rtcmPacketsSent < 100)
+    oled.setCursor(30, 36); //x, y - Give space for two digits
+  else
+    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
-    paintResets();
-  }
+  paintResets();
 }
 
 //Show transmission of RTCM packets
@@ -902,77 +878,68 @@ void paintBaseFixedWiFiStarted()
 //This is identical to paintBaseTempWiFiStarted
 void paintBaseFixedWiFiConnected()
 {
-  if (online.display == true)
-  {
-    int textX = 1;
-    int textY = 17;
-    int textKerning = 8;
-    oled.setFont(QW_FONT_8X16);
-    printTextwithKerning("Xmitting", textX, textY, textKerning);
+  int textX = 1;
+  int textY = 17;
+  int textKerning = 8;
+  oled.setFont(QW_FONT_8X16);
+  printTextwithKerning("Xmitting", textX, textY, textKerning);
 
-    oled.setCursor(0, 39); //x, y
-    oled.setFont(QW_FONT_5X7);
-    oled.print("RTCM:");
+  oled.setCursor(0, 39); //x, y
+  oled.setFont(QW_FONT_5X7);
+  oled.print("RTCM:");
 
-    if (rtcmPacketsSent < 100)
-      oled.setCursor(30, 36); //x, y - Give space for two digits
-    else
-      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+  if (rtcmPacketsSent < 100)
+    oled.setCursor(30, 36); //x, y - Give space for two digits
+  else
+    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
-    paintResets();
-  }
+  paintResets();
 }
 
 //Show connecting to caster service
 //Solid WiFi icon
 void paintBaseFixedCasterStarted()
 {
-  if (online.display == true)
-  {
-    int textX = 11;
-    int textY = 18;
-    int textKerning = 8;
+  int textX = 11;
+  int textY = 18;
+  int textKerning = 8;
 
-    printTextwithKerning("Caster", textX, textY, textKerning);
+  printTextwithKerning("Caster", textX, textY, textKerning);
 
-    textX = 3;
-    textY = 33;
-    textKerning = 6;
-    oled.setFont(QW_FONT_8X16);
+  textX = 3;
+  textY = 33;
+  textKerning = 6;
+  oled.setFont(QW_FONT_8X16);
 
-    printTextwithKerning("Connecting", textX, textY, textKerning);
-  }
+  printTextwithKerning("Connecting", textX, textY, textKerning);
 }
 
 //Show transmission of RTCM packets to caster service
 //Solid WiFi icon
 void paintBaseFixedCasterConnected()
 {
-  if (online.display == true)
-  {
-    int textX = 4;
-    int textY = 17;
-    int textKerning = 8;
-    oled.setFont(QW_FONT_8X16);
-    printTextwithKerning("Casting", textX, textY, textKerning);
+  int textX = 4;
+  int textY = 17;
+  int textKerning = 8;
+  oled.setFont(QW_FONT_8X16);
+  printTextwithKerning("Casting", textX, textY, textKerning);
 
-    oled.setCursor(0, 39); //x, y
-    oled.setFont(QW_FONT_5X7);
-    oled.print("RTCM:");
+  oled.setCursor(0, 39); //x, y
+  oled.setFont(QW_FONT_5X7);
+  oled.print("RTCM:");
 
-    if (rtcmPacketsSent < 100)
-      oled.setCursor(30, 36); //x, y - Give space for two digits
-    else
-      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+  if (rtcmPacketsSent < 100)
+    oled.setCursor(30, 36); //x, y - Give space for two digits
+  else
+    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
-    paintResets();
-  }
+  paintResets();
 }
 
 void displayBaseStart(uint16_t displayTime)
@@ -1466,31 +1433,28 @@ double averagedPitch = 0.0;
 //A bubble level
 void paintBubbleLevel()
 {
-  if (online.display == true)
+  if (online.accelerometer == true)
   {
-    if (online.accelerometer == true)
-    {
-      forceDisplayUpdate = true; //Update the display as quickly as possible
+    forceDisplayUpdate = true; //Update the display as quickly as possible
 
-      getAngles();
+    getAngles();
 
-      //Draw dot in middle
-      oled.pixel(oled.getWidth() / 2, oled.getHeight() / 2);
-      oled.pixel(oled.getWidth() / 2 + 1, oled.getHeight() / 2);
-      oled.pixel(oled.getWidth() / 2, oled.getHeight() / 2 + 1);
-      oled.pixel(oled.getWidth() / 2 + 1, oled.getHeight() / 2 + 1);
+    //Draw dot in middle
+    oled.pixel(oled.getWidth() / 2, oled.getHeight() / 2);
+    oled.pixel(oled.getWidth() / 2 + 1, oled.getHeight() / 2);
+    oled.pixel(oled.getWidth() / 2, oled.getHeight() / 2 + 1);
+    oled.pixel(oled.getWidth() / 2 + 1, oled.getHeight() / 2 + 1);
 
-      //Draw circle relative to dot
-      const int radiusLarge = 10;
-      const int radiusSmall = 4;
+    //Draw circle relative to dot
+    const int radiusLarge = 10;
+    const int radiusSmall = 4;
 
-      oled.circle(oled.getWidth() / 2 - averagedPitch, oled.getHeight() / 2 + averagedRoll, radiusLarge);
-      oled.circle(oled.getWidth() / 2 - averagedPitch, oled.getHeight() / 2 + averagedRoll, radiusSmall);
-    }
-    else
-    {
-      displayAccelFail(0);
-    }
+    oled.circle(oled.getWidth() / 2 - averagedPitch, oled.getHeight() / 2 + averagedRoll, radiusLarge);
+    oled.circle(oled.getWidth() / 2 - averagedPitch, oled.getHeight() / 2 + averagedRoll, radiusSmall);
+  }
+  else
+  {
+    displayAccelFail(0);
   }
 }
 
@@ -1549,188 +1513,185 @@ void getAngles()
 //Show different menu 'buttons' to allow user to pause on one to select it
 void paintDisplaySetup()
 {
-  if (online.display == true)
+  if (zedModuleType == PLATFORM_F9P)
   {
-    if (zedModuleType == PLATFORM_F9P)
+    if (setupState == STATE_MARK_EVENT)
     {
-      if (setupState == STATE_MARK_EVENT)
-      {
-        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
-        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
-      }
-      else if (setupState == STATE_ROVER_NOT_STARTED)
-      {
-        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
-        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
-        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
-      }
-      else if (setupState == STATE_BASE_NOT_STARTED)
-      {
-        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
-        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, true);
-        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
-      }
-      else if (setupState == STATE_BUBBLE_LEVEL)
-      {
-        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
-        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, true);
-      }
-      else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
-      {
-        printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
-        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
-      }
-      else if (setupState == STATE_PROFILE_1)
-      {
-        char profileName[8 + 1];
-
-        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
-        printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-
-        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-      }
-      else if (setupState == STATE_PROFILE_2)
-      {
-        char profileName[8 + 1];
-
-        printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
-
-        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-      }
-      else if (setupState == STATE_PROFILE_3)
-      {
-        char profileName[8 + 1];
-
-        printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
-
-        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
-
-        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-      }
-      else if (setupState == STATE_PROFILE_4)
-      {
-        char profileName[8 + 1];
-
-        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
-
-        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
-
-        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-        getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-      }
-    } //end type F9P
-    else if (zedModuleType == PLATFORM_F9R)
+      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
+      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
+    }
+    else if (setupState == STATE_ROVER_NOT_STARTED)
     {
-      if (setupState == STATE_MARK_EVENT)
-      {
-        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
-        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
-      }
-      else if (setupState == STATE_ROVER_NOT_STARTED)
-      {
-        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
-        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
-        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
-      }
-      else if (setupState == STATE_BUBBLE_LEVEL)
-      {
-        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
-        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, true);
-        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
-      }
-      else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
-      {
-        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
-        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
-      }
-      else if (setupState == STATE_PROFILE_1)
-      {
-        char profileName[8 + 1];
+      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
+      printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
+    }
+    else if (setupState == STATE_BASE_NOT_STARTED)
+    {
+      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, true);
+      printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
+    }
+    else if (setupState == STATE_BUBBLE_LEVEL)
+    {
+      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, true);
+    }
+    else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
+    {
+      printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
+    }
+    else if (setupState == STATE_PROFILE_1)
+    {
+      char profileName[8 + 1];
 
-        printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
-        printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-      }
-      else if (setupState == STATE_PROFILE_2)
-      {
-        char profileName[8 + 1];
+      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+    }
+    else if (setupState == STATE_PROFILE_2)
+    {
+      char profileName[8 + 1];
 
-        printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-      }
-      else if (setupState == STATE_PROFILE_3)
-      {
-        char profileName[8 + 1];
+      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+    }
+    else if (setupState == STATE_PROFILE_3)
+    {
+      char profileName[8 + 1];
 
-        printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
 
-        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
+      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-      }
-      else if (setupState == STATE_PROFILE_4)
-      {
-        char profileName[8 + 1];
+      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+    }
+    else if (setupState == STATE_PROFILE_4)
+    {
+      char profileName[8 + 1];
 
-        getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
+      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
 
-        getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
+      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
 
-        getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
 
-        getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
-        printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-      }
-    } //end type F9R
-  } //end display online
+      getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+    }
+  } //end type F9P
+  else if (zedModuleType == PLATFORM_F9R)
+  {
+    if (setupState == STATE_MARK_EVENT)
+    {
+      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
+      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+    }
+    else if (setupState == STATE_ROVER_NOT_STARTED)
+    {
+      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
+      printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+    }
+    else if (setupState == STATE_BUBBLE_LEVEL)
+    {
+      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, true);
+      printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+    }
+    else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
+    {
+      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
+    }
+    else if (setupState == STATE_PROFILE_1)
+    {
+      char profileName[8 + 1];
+
+      printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+
+      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+    }
+    else if (setupState == STATE_PROFILE_2)
+    {
+      char profileName[8 + 1];
+
+      printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
+
+      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+
+      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+    }
+    else if (setupState == STATE_PROFILE_3)
+    {
+      char profileName[8 + 1];
+
+      printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
+
+      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
+
+      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+
+      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+    }
+    else if (setupState == STATE_PROFILE_4)
+    {
+      char profileName[8 + 1];
+
+      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
+
+      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
+
+      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
+
+      getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
+      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
+    }
+  } //end type F9R
 }
 
 //Given text, and location, print text center of the screen
@@ -1808,14 +1769,11 @@ void displayMessage(const char* message, uint16_t displayTime)
 
 void paintResets()
 {
-  if (online.display == true)
+  if (settings.enableResetDisplay == true)
   {
-    if (settings.enableResetDisplay == true)
-    {
-      oled.setFont(QW_FONT_5X7); //Small font
-      oled.setCursor(16 + (8 * 3) + 6, 38); //x, y
-      oled.print(settings.resetCount);
-    }
+    oled.setFont(QW_FONT_5X7); //Small font
+    oled.setCursor(16 + (8 * 3) + 6, 38); //x, y
+    oled.print(settings.resetCount);
   }
 }
 
@@ -1991,8 +1949,7 @@ void paintLBandConfigure()
 
 void paintGettingKeys()
 {
-  if (online.display == true)
-    displayMessage("Getting Keys", 0);
+  displayMessage("Getting Keys", 0);
 }
 
 void paintKeyProvisionFail(uint16_t displayTime)

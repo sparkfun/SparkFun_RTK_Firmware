@@ -388,8 +388,6 @@ uint32_t lastRTCAttempt = 0; //Wait 1000ms between checking GNSS for current dat
 
 uint32_t lastSatelliteDishIconUpdate = 0;
 bool satelliteDishIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms
-uint32_t lastCrosshairIconUpdate = 0;
-bool crosshairIconDisplayed = false; //Toggles as lastCrosshairIconUpdate goes above 1000ms
 uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
 int loggingIconDisplayed = 0; //Increases every 500ms while logging

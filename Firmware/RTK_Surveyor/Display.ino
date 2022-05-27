@@ -52,6 +52,8 @@ void updateDisplay()
         case (STATE_ROVER_NOT_STARTED):
           icons = paintWirelessIcon() //Top left
                 | ICON_BATTERY        //Top right
+                | ICON_CROSS_HAIR     //Center left
+                | ICON_HORIZONTAL_ACCURACY //Center right
                 | ICON_LOGGING;       //Bottom right
           paintRoverNoFix();
           break;
@@ -59,6 +61,8 @@ void updateDisplay()
           icons = paintWirelessIcon() //Top left
                 | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
+                | ICON_CROSS_HAIR     //Center left
+                | ICON_HORIZONTAL_ACCURACY //Center right
                 | ICON_LOGGING;       //Bottom right
           paintRoverNoFix();
           break;
@@ -66,13 +70,18 @@ void updateDisplay()
           icons = paintWirelessIcon() //Top left
                 | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
+                | ICON_CROSS_HAIR     //Center left
+                | ICON_HORIZONTAL_ACCURACY //Center right
                 | ICON_LOGGING;       //Bottom right
           paintRoverFix();
           break;
         case (STATE_ROVER_RTK_FLOAT):
+          blinking_icons ^= ICON_CROSS_HAIR_DUAL;
           icons = paintWirelessIcon() //Top left
                 | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
+                | (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
+                | ICON_HORIZONTAL_ACCURACY //Center right
                 | ICON_LOGGING;       //Bottom right
           paintRoverRTKFloat();
           break;
@@ -80,6 +89,8 @@ void updateDisplay()
           icons = paintWirelessIcon() //Top left
                 | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
+                | ICON_CROSS_HAIR_DUAL//Center left
+                | ICON_HORIZONTAL_ACCURACY //Center right
                 | ICON_LOGGING;       //Bottom right
           paintRoverRTKFix();
           break;
@@ -88,6 +99,8 @@ void updateDisplay()
           icons = paintWirelessIcon() //Top left
                 | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
+                | ICON_CROSS_HAIR     //Center left
+                | ICON_HORIZONTAL_ACCURACY //Center right
                 | ICON_LOGGING;       //Bottom right
           paintRoverWiFiStarted();
           break;
@@ -95,6 +108,8 @@ void updateDisplay()
           icons = paintWirelessIcon() //Top left
                 | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
+                | ICON_CROSS_HAIR     //Center left
+                | ICON_HORIZONTAL_ACCURACY //Center right
                 | ICON_LOGGING;       //Bottom right
           paintRoverWiFiStarted();
           break;
@@ -102,6 +117,8 @@ void updateDisplay()
           icons = paintWirelessIcon() //Top left
                 | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
+                | ICON_CROSS_HAIR     //Center left
+                | ICON_HORIZONTAL_ACCURACY //Center right
                 | ICON_LOGGING;       //Bottom right
           paintRoverWiFiStarted();
           break;
@@ -110,10 +127,13 @@ void updateDisplay()
           //Do nothing. Static display shown during state change.
           break;
         case (STATE_BASE_TEMP_SETTLE):
-          blinking_icons ^= ICON_BASE_TEMPORARY;
+          //Blink crosshair icon until we achieve <5m horz accuracy (user definable)
+          blinking_icons ^= ICON_BASE_TEMPORARY | ICON_CROSS_HAIR;
           icons = paintWirelessIcon() //Top left
                 | (blinking_icons & ICON_BASE_TEMPORARY)  //Top center
                 | ICON_BATTERY        //Top right
+                | (blinking_icons & ICON_CROSS_HAIR)  //Center left
+                | ICON_HORIZONTAL_ACCURACY //Center right
                 | ICON_LOGGING;       //Bottom right
           paintBaseTempSettle();
           break;
@@ -317,6 +337,16 @@ void updateDisplay()
       if (icons & ICON_BATTERY)
         paintBatteryLevel();
 
+      //Center left
+      if (icons & ICON_CROSS_HAIR)
+        displayBitmap(0, 18, CrossHair_Width, CrossHair_Height, CrossHair);
+      else if (icons & ICON_CROSS_HAIR_DUAL)
+        displayBitmap(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual);
+
+      //Center right
+      if (icons & ICON_HORIZONTAL_ACCURACY)
+        paintHorizontalAccuracy();
+
       //Bottom right corner
       if (icons & ICON_LOGGING)
         paintLogging();
@@ -453,81 +483,33 @@ uint32_t paintWirelessIcon()
   return icons;
 }
 
-//Display cross hairs and horizontal accuracy
-//Display double circle if we have RTK (blink = float, solid = fix)
+//Display horizontal accuracy
 void paintHorizontalAccuracy()
 {
-  if (online.display == true)
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.setCursor(16, 20); //x, y
+  oled.print(":");
+
+  if (online.gnss == false)
   {
-    //Blink crosshair icon until we achieve <5m horz accuracy (user definable)
-    if (systemState == STATE_BASE_TEMP_SETTLE)
-    {
-      if (millis() - lastCrosshairIconUpdate > 500)
-      {
-        lastCrosshairIconUpdate = millis();
-        if (crosshairIconDisplayed == false)
-        {
-          crosshairIconDisplayed = true;
-
-          //Draw the icon
-          displayBitmap(0, 18, CrossHair_Width, CrossHair_Height, CrossHair);
-        }
-        else
-          crosshairIconDisplayed = false;
-      }
-    }
-    else if (systemState == STATE_ROVER_RTK_FLOAT)
-    {
-      if (millis() - lastCrosshairIconUpdate > 500)
-      {
-        lastCrosshairIconUpdate = millis();
-        if (crosshairIconDisplayed == false)
-        {
-          crosshairIconDisplayed = true;
-
-          //Draw dual crosshair
-          displayBitmap(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual);
-        }
-        else
-          crosshairIconDisplayed = false;
-      }
-    }
-    else if (systemState == STATE_ROVER_RTK_FIX)
-    {
-      //Draw dual crosshair
-      displayBitmap(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual);
-    }
-    else
-    {
-      //Draw crosshair
-      displayBitmap(0, 18, CrossHair_Width, CrossHair_Height, CrossHair);
-    }
-
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.setCursor(16, 20); //x, y
-    oled.print(":");
-
-    if (online.gnss == false)
-    {
-      oled.print(F("N/A"));
-    }
-    else if (horizontalAccuracy > 30.0)
-    {
-      oled.print(F(">30m"));
-    }
-    else if (horizontalAccuracy > 9.9)
-    {
-      oled.print(horizontalAccuracy, 1); //Print down to decimeter
-    }
-    else if (horizontalAccuracy > 1.0)
-    {
-      oled.print(horizontalAccuracy, 2); //Print down to centimeter
-    }
-    else
-    {
-      oled.print("."); //Remove leading zero
-      oled.printf("%03d", (int)(horizontalAccuracy * 1000)); //Print down to millimeter
-    }
+    oled.print(F("N/A"));
+  }
+  else if (horizontalAccuracy > 30.0)
+  {
+    oled.print(F(">30m"));
+  }
+  else if (horizontalAccuracy > 9.9)
+  {
+    oled.print(horizontalAccuracy, 1); //Print down to decimeter
+  }
+  else if (horizontalAccuracy > 1.0)
+  {
+    oled.print(horizontalAccuracy, 2); //Print down to centimeter
+  }
+  else
+  {
+    oled.print("."); //Remove leading zero
+    oled.printf("%03d", (int)(horizontalAccuracy * 1000)); //Print down to millimeter
   }
 }
 
@@ -705,8 +687,6 @@ void paintRoverNoFix()
 {
   if (online.display == true)
   {
-    paintHorizontalAccuracy();
-
     paintSIV();
   }
 }
@@ -716,8 +696,6 @@ void paintRoverFix()
 {
   if (online.display == true)
   {
-    paintHorizontalAccuracy();
-
     paintSIV();
   }
 }
@@ -727,8 +705,6 @@ void paintRoverRTKFloat()
 {
   if (online.display == true)
   {
-    paintHorizontalAccuracy();
-
     paintSIV();
   }
 }
@@ -737,8 +713,6 @@ void paintRoverRTKFix()
 {
   if (online.display == true)
   {
-    paintHorizontalAccuracy();
-
     paintSIV();
   }
 }
@@ -748,8 +722,6 @@ void paintRoverWiFiStarted()
 {
   if (online.display == true)
   {
-    paintHorizontalAccuracy();
-
     paintSIV();
   }
 }
@@ -761,8 +733,6 @@ void paintBaseTempSettle()
 {
   if (online.display == true)
   {
-    paintHorizontalAccuracy(); //2nd line
-
     paintSIV();
   }
 }

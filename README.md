@@ -18,7 +18,7 @@ SparkFun RTK Firmware
 
 The [SparkFun RTK Surveyor](https://www.sparkfun.com/products/18443), [SparkFun RTK Express](https://www.sparkfun.com/products/18442), [SparkFun RTK Express Plus](https://www.sparkfun.com/products/18590), and [SparkFun RTK Facet](https://www.sparkfun.com/products/19029) are centimeter-level GNSS receivers. With RTK enabled, these devices can output your location with 14mm horizontal and vertical *accuracy* at up to 20Hz!
 
-This repo houses the firmware that runs on the SparkFun RTK product line including:
+This repo houses the [RTK Product Manual](https://sparkfun.github.io/SparkFun_RTK_Firmware/intro/) and the firmware that runs on the SparkFun RTK product line including:
 
 * [SparkFun RTK Surveyor](https://www.sparkfun.com/products/18443)
 * [SparkFun RTK Express](https://www.sparkfun.com/products/18442)
@@ -41,10 +41,14 @@ Repository Contents
 
 * **/Binaries** - Loadable firmware either over USB or via SD card
 * **/Firmware** - Main firmware as well as various feature unit tests
+* **/Graphics** - Original bitmap icons for the display
+* **/Uploader_GUI** - A python and Windows executable GUI for updating the firmware on RTK units. See [Updating Firmware From GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-gui)
+* **/docs** - Markdown pages for the [RTK Product Manual](https://sparkfun.github.io/SparkFun_RTK_Firmware/intro/)
 
 Documentation
 --------------
 
+* **[RTK Product Manual](https://sparkfun.github.io/SparkFun_RTK_Firmware/intro/) - A detail guide describing all the various software features of the RTK product line.
 * **[RTK Surveyor Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide)** - Hookup guide for the SparkFun RTK Surveyor.
 * **[RTK Express Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-express-hookup-guide)** - Hookup guide for the SparkFun RTK Express and Express Plus.
 * **[RTK Facet Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide)** - Hookup guide for the SparkFun RTK Facet.

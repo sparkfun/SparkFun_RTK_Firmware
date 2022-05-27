@@ -75,6 +75,7 @@ extra:
 nav:
   - RTK Firmware:
     - firmware_intro.md
+    - displays.md
     - system_configuration.md
     - configure_with_wifi.md
     - configure_with_serial.md
@@ -88,7 +89,7 @@ nav:
     - configure_profiles.md
     - configure_lband.md
     - menu_system_status.md
-    - displays.md
+    - system_status_reporting.md
     - firmware_update.md
   - Hardware Specifics:
     - hardware_rtk_surveyor.md

@@ -2,7 +2,7 @@
 
 Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
 
-Starting with firmware v1.7, WiFi based configuration is supported. For more information about updating the firmware on your device, please see [Firmware Updates and Customization](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#firmware-updates-and-customization).
+Starting with firmware v1.7, WiFi based configuration is supported. For more information about updating the firmware on your device, please see [Updating RTK Firmware](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/).
 
 The RTK device will present a webpage that is viewable from either a desktop/laptop with WiFi or a cell phone. For advanced configurations, a desktop is recommended. For quick in-field changes, a cell phone works great.
 
@@ -10,10 +10,10 @@ The RTK device will present a webpage that is viewable from either a desktop/lap
 
 *Desktop vs Phone display size configuration*
 
-## RTK Express / Facet
+## RTK Express / Express Plus / Facet
 To get into WiFi configuration follow these steps:
 
-1. Power on the RTK Express or Facet.
+1. Power on the RTK Express, Express Plus, or Facet.
 2. Once the device has started press the Setup button repeatedly until the *Config* menu is highlighted.
 3. The display will blink a WiFi icon indicating it is waiting for incoming connections.
 4. Connect to WiFi network named ‘RTK Config’.

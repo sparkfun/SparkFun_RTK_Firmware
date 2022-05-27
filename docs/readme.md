@@ -1,0 +1,1 @@
+This folder contains the markdown files for the [RTK Product Manual](https://sparkfun.github.io/SparkFun_RTK_Firmware/intro/) that are rendered by [mkdocs](https://www.mkdocs.org/).

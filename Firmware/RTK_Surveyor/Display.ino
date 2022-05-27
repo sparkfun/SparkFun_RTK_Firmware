@@ -54,8 +54,8 @@ void updateDisplay()
                 | ICON_BATTERY        //Top right
                 | ICON_CROSS_HAIR     //Center left
                 | ICON_HORIZONTAL_ACCURACY //Center right
+                | paintSIV()          //Bottom left
                 | ICON_LOGGING;       //Bottom right
-          paintRoverNoFix();
           break;
         case (STATE_ROVER_NO_FIX):
           icons = paintWirelessIcon() //Top left
@@ -63,8 +63,8 @@ void updateDisplay()
                 | ICON_BATTERY        //Top right
                 | ICON_CROSS_HAIR     //Center left
                 | ICON_HORIZONTAL_ACCURACY //Center right
+                | paintSIV()          //Bottom left
                 | ICON_LOGGING;       //Bottom right
-          paintRoverNoFix();
           break;
         case (STATE_ROVER_FIX):
           icons = paintWirelessIcon() //Top left
@@ -72,8 +72,8 @@ void updateDisplay()
                 | ICON_BATTERY        //Top right
                 | ICON_CROSS_HAIR     //Center left
                 | ICON_HORIZONTAL_ACCURACY //Center right
+                | paintSIV()          //Bottom left
                 | ICON_LOGGING;       //Bottom right
-          paintRoverFix();
           break;
         case (STATE_ROVER_RTK_FLOAT):
           blinking_icons ^= ICON_CROSS_HAIR_DUAL;
@@ -82,8 +82,8 @@ void updateDisplay()
                 | ICON_BATTERY        //Top right
                 | (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
                 | ICON_HORIZONTAL_ACCURACY //Center right
+                | paintSIV()          //Bottom left
                 | ICON_LOGGING;       //Bottom right
-          paintRoverRTKFloat();
           break;
         case (STATE_ROVER_RTK_FIX):
           icons = paintWirelessIcon() //Top left
@@ -91,8 +91,8 @@ void updateDisplay()
                 | ICON_BATTERY        //Top right
                 | ICON_CROSS_HAIR_DUAL//Center left
                 | ICON_HORIZONTAL_ACCURACY //Center right
+                | paintSIV()          //Bottom left
                 | ICON_LOGGING;       //Bottom right
-          paintRoverRTKFix();
           break;
 
         case (STATE_ROVER_CLIENT_WIFI_STARTED):
@@ -101,8 +101,8 @@ void updateDisplay()
                 | ICON_BATTERY        //Top right
                 | ICON_CROSS_HAIR     //Center left
                 | ICON_HORIZONTAL_ACCURACY //Center right
+                | paintSIV()          //Bottom left
                 | ICON_LOGGING;       //Bottom right
-          paintRoverWiFiStarted();
           break;
         case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
           icons = paintWirelessIcon() //Top left
@@ -110,8 +110,8 @@ void updateDisplay()
                 | ICON_BATTERY        //Top right
                 | ICON_CROSS_HAIR     //Center left
                 | ICON_HORIZONTAL_ACCURACY //Center right
+                | paintSIV()          //Bottom left
                 | ICON_LOGGING;       //Bottom right
-          paintRoverWiFiStarted();
           break;
         case (STATE_ROVER_CLIENT_STARTED):
           icons = paintWirelessIcon() //Top left
@@ -119,23 +119,26 @@ void updateDisplay()
                 | ICON_BATTERY        //Top right
                 | ICON_CROSS_HAIR     //Center left
                 | ICON_HORIZONTAL_ACCURACY //Center right
+                | paintSIV()          //Bottom left
                 | ICON_LOGGING;       //Bottom right
-          paintRoverWiFiStarted();
           break;
 
         case (STATE_BASE_NOT_STARTED):
           //Do nothing. Static display shown during state change.
           break;
+
+        //Start of base / survey in / NTRIP mode
+        //Screen is displayed while we are waiting for horz accuracy to drop to appropriate level
+        //Blink crosshair icon until we have we have horz accuracy < user defined level
         case (STATE_BASE_TEMP_SETTLE):
-          //Blink crosshair icon until we achieve <5m horz accuracy (user definable)
           blinking_icons ^= ICON_BASE_TEMPORARY | ICON_CROSS_HAIR;
           icons = paintWirelessIcon() //Top left
                 | (blinking_icons & ICON_BASE_TEMPORARY)  //Top center
                 | ICON_BATTERY        //Top right
                 | (blinking_icons & ICON_CROSS_HAIR)  //Center left
                 | ICON_HORIZONTAL_ACCURACY //Center right
+                | paintSIV()          //Bottom left
                 | ICON_LOGGING;       //Bottom right
-          paintBaseTempSettle();
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
           blinking_icons ^= ICON_BASE_TEMPORARY;
@@ -346,6 +349,12 @@ void updateDisplay()
       //Center right
       if (icons & ICON_HORIZONTAL_ACCURACY)
         paintHorizontalAccuracy();
+
+      //Bottom left corner
+      if (icons & ICON_SIV_ANTENNA)
+        displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
+      else if (icons & ICON_SIV_ANTENNA_LBAND)
+        displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
 
       //Bottom right corner
       if (icons & ICON_LOGGING)
@@ -587,64 +596,54 @@ void paintDynamicModel()
   }
 }
 
-//Draw satellite icon and sats in view
+//Select satellite icon and draw sats in view
 //Blink icon if no fix
-void paintSIV()
+uint32_t paintSIV()
 {
-  if (online.display == true && online.gnss == true)
+  uint32_t blinking;
+  uint32_t icons;
+
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.setCursor(16, 36); //x, y
+  oled.print(":");
+
+  if (online.gnss)
   {
-    //Blink satellite dish icon if we don't have a fix
-    if (fixType == 3 || fixType == 4 || fixType == 5) //3D, 3D+DR, or Time
-    {
-      //Fix, turn on icon
-      if (lbandCorrectionsReceived == false)
-        displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
-      else
-        displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
-    }
-    else
-    {
-      if (millis() - lastSatelliteDishIconUpdate > 500)
-      {
-        //Serial.println("SIV Blink");
-        lastSatelliteDishIconUpdate = millis();
-        if (satelliteDishIconDisplayed == false)
-        {
-          satelliteDishIconDisplayed = true;
-
-          //Draw the icon
-          if (lbandCorrectionsReceived == false)
-            displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
-          else
-            displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
-        }
-        else
-          satelliteDishIconDisplayed = false;
-      }
-    }
-
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.setCursor(16, 36); //x, y
-    oled.print(":");
-
     if (fixType == 0) //0 = No Fix
       oled.print("0");
     else
       oled.print(numSV);
 
     paintResets();
+
+    //Determine which icon to display
+    icons = 0;
+    if (lbandCorrectionsReceived)
+      blinking = ICON_SIV_ANTENNA_LBAND;
+    else
+      blinking = ICON_SIV_ANTENNA;
+
+    //Determine if there is a fix
+    if (fixType == 3 || fixType == 4 || fixType == 5) //3D, 3D+DR, or Time
+    {
+      //Fix, turn on icon
+      icons = blinking;
+    }
+    else
+    {
+      //Blink satellite dish icon if we don't have a fix
+      blinking_icons ^= blinking;
+      if (blinking_icons & blinking)
+        icons = blinking;
+    }
   } //End gnss online
-  else if (online.display == true && online.gnss == false)
+  else
   {
-    //Fix, turn on icon
-    displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
-
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.setCursor(16, 36); //x, y
-    oled.print(":");
-
     oled.print("X");
+
+    icons = ICON_SIV_ANTENNA;
   }
+  return icons;
 }
 
 //Draw log icon
@@ -678,62 +677,6 @@ void paintLogging()
       oled.line(pulseX, pulseY, pulseX, pulseY - height);
       oled.line(pulseX - 1, pulseY, pulseX - 1, pulseY - height);
     }
-  }
-}
-
-//Base screen. Display BLE, rover, battery, HorzAcc and SIV
-//Blink SIV until fix
-void paintRoverNoFix()
-{
-  if (online.display == true)
-  {
-    paintSIV();
-  }
-}
-
-//Currently identical to RoverNoFix because paintSIV and paintHorizontalAccuracy takes into account system states
-void paintRoverFix()
-{
-  if (online.display == true)
-  {
-    paintSIV();
-  }
-}
-
-//Currently identical to RoverNoFix because paintSIV and paintHorizontalAccuracy takes into account system states
-void paintRoverRTKFloat()
-{
-  if (online.display == true)
-  {
-    paintSIV();
-  }
-}
-
-void paintRoverRTKFix()
-{
-  if (online.display == true)
-  {
-    paintSIV();
-  }
-}
-
-//Display Blinking WiFi
-void paintRoverWiFiStarted()
-{
-  if (online.display == true)
-  {
-    paintSIV();
-  }
-}
-
-//Start of base / survey in / NTRIP mode
-//Screen is displayed while we are waiting for horz accuracy to drop to appropriate level
-//Blink crosshair icon until we have we have horz accuracy < user defined level
-void paintBaseTempSettle()
-{
-  if (online.display == true)
-  {
-    paintSIV();
   }
 }
 

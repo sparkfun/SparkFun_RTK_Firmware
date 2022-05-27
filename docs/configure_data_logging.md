@@ -12,7 +12,15 @@ Because of the nature of these controls, the AP config page is different than th
 
 ### Log to SD
 
-If a microSD card is detected, all messages will be logged. Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes (24 hours). Limit: 1 to 2880 minutes.
+If a microSD card is detected, all messages will be logged. 
+
+### Max Log Time
+
+Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes (24 hours). Limit: 1 to 2880 minutes.
+
+### Max Log Length
+
+Every 'max long length' amount of time the current log will be closed and a new log will be started. This is known as cyclic logging and is convenient on *very* long surveys (ie, months or years) to prevent logs from getting too unwieldy and helps limit the risk of log corruption. This will continue until the unit is powered down or the *max logging time* is reached.
 
 ### Enable Factory Defaults
 
@@ -20,11 +28,11 @@ Factory Defaults will erase any user settings and reset the internal receiver to
 
 ### SD Card
 
-Various stats for the SD card are shown. If valid firmware is detected, available firmware files will be shown. The user must select the firmware they would like to update to. To prevent accidental updates the checkbox must first be checked before the button is pressed.
+Various stats for the SD card are shown. 
 
-### Add Firmware
+### Update Firmware
 
-New firmware may be uploaded via WiFi to the SD card. Firmware is only loaded to the SD card and must then be loaded to the unit.
+New firmware may be uploaded via WiFi to the unit. See [Updateing Firmware from the SD Card](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-the-sd-card) for more information.
 
 ### Reset Counter
 

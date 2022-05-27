@@ -34,6 +34,10 @@ The firmware upgrade menu will only display files that have the "RTK_Surveyor_Fi
 
 Note: The firmware is called `RTK_Surveyor_Firmware_vXX.bin` even though this product is called the *RTK Facet*. We united the different platforms into one. The [RTK Firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) runs on all our RTK products.
 
+### Force Firmware Loading
+
+In the rare event a unit is not staying on long enough for new firmware to be loaded into a COM port, the RTK Firmware (as of version 1.2) has an override function. If a file named *RTK_Surveyor_Firmware_Force.bin* is detected on the SD card at boot that file will be used to overwrite the current firmware, and then be deleted. This update path is generally not recommend. Use the [GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-gui) or [WiFi OTA](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-wifi) methods as first resort.
+
 ## Updating Firmware From WiFi
 
 **Note:** Firmware versions 1.1 to 1.9 have an issue that severely limit firmware upload over WiFi and is not recommended; use the 'Updating Firmware From the SD Card' method instead. Firmware versions v1.10 and beyond support direct firmware update via WiFi and is the preferred method for updating the firmware on a unit.
@@ -62,7 +66,7 @@ In general, the SD firmware update method is recommended, but for some firmware 
 * Turn the RTK device on.
 * Open Device Manager to confirm which COM port the device is operating on.
 
-![Device Manager showing USB Serial port on COM27](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/Uploader_GUI/SparkFun RTK Firmware Uploader COM Port.jpg)
+![Device Manager showing USB Serial port on COM27](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Firmware Uploader COM Port.jpg)
 
 *Device Manager showing USB Serial port on COM27*
 

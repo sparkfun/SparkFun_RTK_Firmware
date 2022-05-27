@@ -153,21 +153,21 @@ void updateDisplay()
                 | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-          paintBaseTempTransmitting();
+          paintXmittingRTCM();
           break;
         case (STATE_BASE_TEMP_WIFI_STARTED):
           icons = paintWirelessIcon() //Top left
                 | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-          paintBaseTempWiFiStarted();
+          paintXmittingRTCM();
           break;
         case (STATE_BASE_TEMP_WIFI_CONNECTED):
           icons = paintWirelessIcon() //Top left
                 | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-          paintBaseTempWiFiConnected();
+          paintXmittingRTCM();
           break;
         case (STATE_BASE_TEMP_CASTER_STARTED):
           icons = paintWirelessIcon() //Top left
@@ -191,21 +191,21 @@ void updateDisplay()
                 | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-          paintBaseFixedTransmitting();
+          paintXmittingRTCM();
           break;
         case (STATE_BASE_FIXED_WIFI_STARTED):
            icons = paintWirelessIcon() //Top left
                 | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-         paintBaseFixedWiFiStarted();
+         paintXmittingRTCM();
           break;
         case (STATE_BASE_FIXED_WIFI_CONNECTED):
           icons = paintWirelessIcon() //Top left
                 | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-          paintBaseFixedWiFiConnected();
+          paintXmittingRTCM();
           break;
         case (STATE_BASE_FIXED_CASTER_STARTED):
           icons = paintWirelessIcon() //Top left
@@ -707,58 +707,7 @@ void paintBaseTempSurveyStarted()
 }
 
 //Show transmission of RTCM packets
-void paintBaseTempTransmitting()
-{
-  int textX = 1;
-  int textY = 17;
-  int textKerning = 8;
-  oled.setFont(QW_FONT_8X16);
-  printTextwithKerning("Xmitting", textX, textY, textKerning);
-
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
-
-  if (rtcmPacketsSent < 100)
-    oled.setCursor(30, 36); //x, y - Give space for two digits
-  else
-    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
-
-  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
-
-  paintResets();
-}
-
-//Show transmission of RTCM packets
-//Blink WiFi icon
-void paintBaseTempWiFiStarted()
-{
-  int textX = 1;
-  int textY = 17;
-  int textKerning = 8;
-  oled.setFont(QW_FONT_8X16);
-  printTextwithKerning("Xmitting", textX, textY, textKerning);
-
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
-
-  if (rtcmPacketsSent < 100)
-    oled.setCursor(30, 36); //x, y - Give space for two digits
-  else
-    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
-
-  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
-
-  paintResets();
-}
-
-//Show transmission of RTCM packets
-//Solid WiFi icon
-//This is identical to paintBaseTempWiFiStarted
-void paintBaseTempWiFiConnected()
+void paintXmittingRTCM()
 {
   int textX = 1;
   int textY = 17;
@@ -808,81 +757,6 @@ void paintBaseTempCasterConnected()
   int textKerning = 8;
   oled.setFont(QW_FONT_8X16);
   printTextwithKerning("Casting", textX, textY, textKerning);
-
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
-
-  if (rtcmPacketsSent < 100)
-    oled.setCursor(30, 36); //x, y - Give space for two digits
-  else
-    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
-
-  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
-
-  paintResets();
-}
-
-//Show transmission of RTCM packets
-void paintBaseFixedTransmitting()
-{
-  int textX = 1;
-  int textY = 17;
-  int textKerning = 8;
-  oled.setFont(QW_FONT_8X16);
-  printTextwithKerning("Xmitting", textX, textY, textKerning);
-
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
-
-  if (rtcmPacketsSent < 100)
-    oled.setCursor(30, 36); //x, y - Give space for two digits
-  else
-    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
-
-  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
-
-  paintResets();
-}
-
-//Show transmission of RTCM packets
-//Blink WiFi icon
-void paintBaseFixedWiFiStarted()
-{
-  int textX = 1;
-  int textY = 17;
-  int textKerning = 8;
-  oled.setFont(QW_FONT_8X16);
-  printTextwithKerning("Xmitting", textX, textY, textKerning);
-
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
-
-  if (rtcmPacketsSent < 100)
-    oled.setCursor(30, 36); //x, y - Give space for two digits
-  else
-    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
-
-  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
-
-  paintResets();
-}
-
-//Show transmission of RTCM packets
-//Solid WiFi icon
-//This is identical to paintBaseTempWiFiStarted
-void paintBaseFixedWiFiConnected()
-{
-  int textX = 1;
-  int textY = 17;
-  int textKerning = 8;
-  oled.setFont(QW_FONT_8X16);
-  printTextwithKerning("Xmitting", textX, textY, textKerning);
 
   oled.setCursor(0, 39); //x, y
   oled.setFont(QW_FONT_5X7);

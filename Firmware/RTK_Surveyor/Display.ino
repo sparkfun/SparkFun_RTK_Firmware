@@ -57,24 +57,28 @@ void updateDisplay()
           break;
         case (STATE_ROVER_NO_FIX):
           icons = paintWirelessIcon() //Top left
+                | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintRoverNoFix();
           break;
         case (STATE_ROVER_FIX):
           icons = paintWirelessIcon() //Top left
+                | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintRoverFix();
           break;
         case (STATE_ROVER_RTK_FLOAT):
           icons = paintWirelessIcon() //Top left
+                | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintRoverRTKFloat();
           break;
         case (STATE_ROVER_RTK_FIX):
           icons = paintWirelessIcon() //Top left
+                | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintRoverRTKFix();
@@ -82,18 +86,21 @@ void updateDisplay()
 
         case (STATE_ROVER_CLIENT_WIFI_STARTED):
           icons = paintWirelessIcon() //Top left
+                | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintRoverWiFiStarted();
           break;
         case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
           icons = paintWirelessIcon() //Top left
+                | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintRoverWiFiStarted();
           break;
         case (STATE_ROVER_CLIENT_STARTED):
           icons = paintWirelessIcon() //Top left
+                | ICON_DYNAMIC_MODEL  //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintRoverWiFiStarted();
@@ -103,42 +110,51 @@ void updateDisplay()
           //Do nothing. Static display shown during state change.
           break;
         case (STATE_BASE_TEMP_SETTLE):
+          blinking_icons ^= ICON_BASE_TEMPORARY;
           icons = paintWirelessIcon() //Top left
+                | (blinking_icons & ICON_BASE_TEMPORARY)  //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintBaseTempSettle();
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
+          blinking_icons ^= ICON_BASE_TEMPORARY;
           icons = paintWirelessIcon() //Top left
+                | (blinking_icons & ICON_BASE_TEMPORARY)  //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintBaseTempSurveyStarted();
           break;
         case (STATE_BASE_TEMP_TRANSMITTING):
           icons = paintWirelessIcon() //Top left
+                | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintBaseTempTransmitting();
           break;
         case (STATE_BASE_TEMP_WIFI_STARTED):
           icons = paintWirelessIcon() //Top left
+                | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintBaseTempWiFiStarted();
           break;
         case (STATE_BASE_TEMP_WIFI_CONNECTED):
           icons = paintWirelessIcon() //Top left
+                | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintBaseTempWiFiConnected();
           break;
         case (STATE_BASE_TEMP_CASTER_STARTED):
           icons = paintWirelessIcon() //Top left
+                | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY;       //Top right
           paintBaseTempCasterStarted();
           break;
         case (STATE_BASE_TEMP_CASTER_CONNECTED):
           icons = paintWirelessIcon() //Top left
+                | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintBaseTempCasterConnected();
@@ -146,33 +162,37 @@ void updateDisplay()
         case (STATE_BASE_FIXED_NOT_STARTED):
           icons = paintWirelessIcon() //Top left
                 | ICON_BATTERY;       //Top right
-          paintBaseFixedNotStarted();
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
           icons = paintWirelessIcon() //Top left
+                | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintBaseFixedTransmitting();
           break;
         case (STATE_BASE_FIXED_WIFI_STARTED):
            icons = paintWirelessIcon() //Top left
+                | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
          paintBaseFixedWiFiStarted();
           break;
         case (STATE_BASE_FIXED_WIFI_CONNECTED):
           icons = paintWirelessIcon() //Top left
+                | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintBaseFixedWiFiConnected();
           break;
         case (STATE_BASE_FIXED_CASTER_STARTED):
           icons = paintWirelessIcon() //Top left
+                | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY;       //Top right
           paintBaseFixedCasterStarted();
           break;
         case (STATE_BASE_FIXED_CASTER_CONNECTED):
           icons = paintWirelessIcon() //Top left
+                | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintBaseFixedCasterConnected();
@@ -286,6 +306,12 @@ void updateDisplay()
       //Top center
       if (icons & ICON_WIFI_SYMBOL_CENTER)
         displayBitmap((oled.getWidth() / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
+      else if ((icons & ICON_DYNAMIC_MODEL) && (online.gnss == true))
+        paintDynamicModel();
+      else if (icons & ICON_BASE_TEMPORARY)
+        displayBitmap(27, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary);
+      else if (icons & ICON_BASE_FIXED)
+        displayBitmap(27, 0, BaseFixed_Width, BaseFixed_Height, BaseFixed); //true - blend with other pixels
 
       //Top right corner
       if (icons & ICON_BATTERY)
@@ -505,150 +531,77 @@ void paintHorizontalAccuracy()
   }
 }
 
-//Draw either a rover or base icon depending on screen
-//Draw a different base if we have fixed coordinate base type
-void paintBaseState()
+//Draw the rover icon depending on screen
+void paintDynamicModel()
 {
-  if (online.display == true && online.gnss == true)
+  //Display icon associated with current Dynamic Model
+  switch (settings.dynamicModel)
   {
-    if (systemState == STATE_ROVER_NO_FIX ||
-        systemState == STATE_ROVER_FIX ||
-        systemState == STATE_ROVER_RTK_FLOAT ||
-        systemState == STATE_ROVER_RTK_FIX ||
-        systemState == STATE_ROVER_CLIENT_WIFI_STARTED ||
-        systemState == STATE_ROVER_CLIENT_WIFI_CONNECTED ||
-        systemState == STATE_ROVER_CLIENT_STARTED
-       )
-    {
-      //Display icon associated with current Dynamic Model
-      switch (settings.dynamicModel)
+    case (DYN_MODEL_PORTABLE):
+      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_1_Portable);
+      break;
+    case (DYN_MODEL_STATIONARY):
+      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_2_Stationary);
+      break;
+    case (DYN_MODEL_PEDESTRIAN):
+      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_3_Pedestrian);
+      break;
+    case (DYN_MODEL_AUTOMOTIVE):
+      //Normal rover for ZED-F9P, fusion rover for ZED-F9R
+      if (zedModuleType == PLATFORM_F9P)
       {
-        case (DYN_MODEL_PORTABLE):
-          {
-            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_1_Portable);
-          }
-          break;
-        case (DYN_MODEL_STATIONARY):
-          {
-            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_2_Stationary);
-          }
-          break;
-        case (DYN_MODEL_PEDESTRIAN):
-          {
-            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_3_Pedestrian);
-          }
-          break;
-        case (DYN_MODEL_AUTOMOTIVE):
-          {
-            //Normal rover for ZED-F9P, fusion rover for ZED-F9R
-            if (zedModuleType == PLATFORM_F9P)
-            {
-              displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_4_Automotive);
-            }
-            else if (zedModuleType == PLATFORM_F9R)
-            {
-              //Blink fusion rover until we have calibration
-              if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0) //Initializing
-              {
-                //Blink Fusion Rover icon until sensor calibration is complete
-                if (millis() - lastBaseIconUpdate > 500)
-                {
-                  lastBaseIconUpdate = millis();
-                  if (baseIconDisplayed == false)
-                  {
-                    baseIconDisplayed = true;
-
-                    //Draw the icon
-                    displayBitmap(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion);
-                  }
-                  else
-                    baseIconDisplayed = false;
-                }
-              }
-              else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1) //Calibrated
-              {
-                //Solid fusion rover
-                displayBitmap(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion);
-              }
-              else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2 || i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3) //Suspended or disabled
-              {
-                //Empty rover
-                displayBitmap(27, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty);
-              }
-            }
-
-          }
-          break;
-        case (DYN_MODEL_SEA):
-          {
-            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_5_Sea);
-          }
-          break;
-        case (DYN_MODEL_AIRBORNE1g):
-          {
-            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_6_Airborne1g);
-          }
-          break;
-        case (DYN_MODEL_AIRBORNE2g):
-          {
-            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_7_Airborne2g);
-          }
-          break;
-        case (DYN_MODEL_AIRBORNE4g):
-          {
-            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_8_Airborne4g);
-          }
-          break;
-        case (DYN_MODEL_WRIST):
-          {
-            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_9_Wrist);
-          }
-          break;
-        case (DYN_MODEL_BIKE):
-          {
-            displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_10_Bike);
-          }
-          break;
+        displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_4_Automotive);
       }
-
-    }
-    else if (systemState == STATE_BASE_TEMP_SETTLE ||
-             systemState == STATE_BASE_TEMP_SURVEY_STARTED //Turn on base icon solid (blink crosshair in paintHorzAcc)
-            )
-    {
-      //Blink base icon until survey is complete
-      if (millis() - lastBaseIconUpdate > 500)
+      else if (zedModuleType == PLATFORM_F9R)
       {
-        lastBaseIconUpdate = millis();
-        if (baseIconDisplayed == false)
+        //Blink fusion rover until we have calibration
+        if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0) //Initializing
         {
-          baseIconDisplayed = true;
+          //Blink Fusion Rover icon until sensor calibration is complete
+          if (millis() - lastBaseIconUpdate > 500)
+          {
+            lastBaseIconUpdate = millis();
+            if (baseIconDisplayed == false)
+            {
+              baseIconDisplayed = true;
 
-          //Draw the icon
-          displayBitmap(27, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary);
+              //Draw the icon
+              displayBitmap(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion);
+            }
+            else
+              baseIconDisplayed = false;
+          }
         }
-        else
-          baseIconDisplayed = false;
+        else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1) //Calibrated
+        {
+          //Solid fusion rover
+          displayBitmap(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion);
+        }
+        else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2 || i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3) //Suspended or disabled
+        {
+          //Empty rover
+          displayBitmap(27, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty);
+        }
       }
-    }
-    else if (systemState == STATE_BASE_TEMP_TRANSMITTING ||
-             systemState == STATE_BASE_TEMP_WIFI_STARTED ||
-             systemState == STATE_BASE_TEMP_WIFI_CONNECTED ||
-             systemState == STATE_BASE_TEMP_CASTER_STARTED ||
-             systemState == STATE_BASE_TEMP_CASTER_CONNECTED)
-    {
-      //Draw the icon
-      displayBitmap(27, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary);
-    }
-    else if (systemState == STATE_BASE_FIXED_TRANSMITTING ||
-             systemState == STATE_BASE_FIXED_WIFI_STARTED ||
-             systemState == STATE_BASE_FIXED_WIFI_CONNECTED ||
-             systemState == STATE_BASE_FIXED_CASTER_STARTED ||
-             systemState == STATE_BASE_FIXED_CASTER_CONNECTED)
-    {
-      //Draw the icon
-      displayBitmap(27, 0, BaseFixed_Width, BaseFixed_Height, BaseFixed); //true - blend with other pixels
-    }
+      break;
+    case (DYN_MODEL_SEA):
+      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_5_Sea);
+      break;
+    case (DYN_MODEL_AIRBORNE1g):
+      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_6_Airborne1g);
+      break;
+    case (DYN_MODEL_AIRBORNE2g):
+      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_7_Airborne2g);
+      break;
+    case (DYN_MODEL_AIRBORNE4g):
+      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_8_Airborne4g);
+      break;
+    case (DYN_MODEL_WRIST):
+      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_9_Wrist);
+      break;
+    case (DYN_MODEL_BIKE):
+      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_10_Bike);
+      break;
   }
 }
 
@@ -752,8 +705,6 @@ void paintRoverNoFix()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     paintHorizontalAccuracy();
 
     paintSIV();
@@ -765,8 +716,6 @@ void paintRoverFix()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     paintHorizontalAccuracy();
 
     paintSIV();
@@ -778,8 +727,6 @@ void paintRoverRTKFloat()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     paintHorizontalAccuracy();
 
     paintSIV();
@@ -790,8 +737,6 @@ void paintRoverRTKFix()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     paintHorizontalAccuracy();
 
     paintSIV();
@@ -803,8 +748,6 @@ void paintRoverWiFiStarted()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     paintHorizontalAccuracy();
 
     paintSIV();
@@ -818,8 +761,6 @@ void paintBaseTempSettle()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     paintHorizontalAccuracy(); //2nd line
 
     paintSIV();
@@ -831,8 +772,6 @@ void paintBaseTempSurveyStarted()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     oled.setFont(QW_FONT_5X7);
     oled.setCursor(0, 23); //x, y
     oled.print("Mean:");
@@ -862,8 +801,6 @@ void paintBaseTempTransmitting()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
@@ -892,8 +829,6 @@ void paintBaseTempWiFiStarted()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
@@ -923,8 +858,6 @@ void paintBaseTempWiFiConnected()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
@@ -953,8 +886,6 @@ void paintBaseTempCasterStarted()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     int textX = 11;
     int textY = 17;
     int textKerning = 8;
@@ -976,8 +907,6 @@ void paintBaseTempCasterConnected()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     int textX = 4;
     int textY = 17;
     int textKerning = 8;
@@ -1001,21 +930,10 @@ void paintBaseTempCasterConnected()
 }
 
 //Show transmission of RTCM packets
-void paintBaseFixedNotStarted()
-{
-  if (online.display == true)
-  {
-    paintBaseState(); //Top center
-  }
-}
-
-//Show transmission of RTCM packets
 void paintBaseFixedTransmitting()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
@@ -1044,8 +962,6 @@ void paintBaseFixedWiFiStarted()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
@@ -1075,8 +991,6 @@ void paintBaseFixedWiFiConnected()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     int textX = 1;
     int textY = 17;
     int textKerning = 8;
@@ -1105,8 +1019,6 @@ void paintBaseFixedCasterStarted()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     int textX = 11;
     int textY = 18;
     int textKerning = 8;
@@ -1128,8 +1040,6 @@ void paintBaseFixedCasterConnected()
 {
   if (online.display == true)
   {
-    paintBaseState(); //Top center
-
     int textX = 4;
     int textY = 17;
     int textKerning = 8;

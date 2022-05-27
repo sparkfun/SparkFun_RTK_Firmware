@@ -1,6 +1,6 @@
 # Introduction
 
-Out of the box, the SparkFun RTK products are exceptional GNSS receivers out-of-box and can be used with little or no configuration. This tutorial is for advanced setups and for users looking to learn every knob that can be turned.
+Out of the box, the SparkFun RTK products are exceptional GNSS receivers out-of-box and can be used with little or no configuration. This RTK Product Manual provides detailed descriptions of all the available features on the RTK products.
 
 The line of RTK products offered by SparkFun all run identical firmware. The [RTK firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and this guide cover the following products:
 

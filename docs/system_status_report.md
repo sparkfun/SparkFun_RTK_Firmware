@@ -8,6 +8,8 @@ Sending the `~` character to the device over the serial port will trigger a syst
 
 *Terminal showing System Status*
 
+Below is an example system status report sentence:
+
 > $GNTXT,01,01,05,202447.00,270522,0.380,29,40.090355193,-105.184764700,1560.56,3,0,86*71
 
 * $GNTXT : Start of custom NMEA sentence

@@ -180,7 +180,7 @@ void updateDisplay()
                 | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-          paintBaseTempCasterConnected();
+          paintCastingRTCM();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
           icons = paintWirelessIcon() //Top left
@@ -218,7 +218,7 @@ void updateDisplay()
                 | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-          paintBaseFixedCasterConnected();
+          paintCastingRTCM();
           break;
         case (STATE_BUBBLE_LEVEL):
           paintBubbleLevel();
@@ -730,6 +730,30 @@ void paintXmittingRTCM()
   paintResets();
 }
 
+//Show transmission of RTCM packets to caster service
+void paintCastingRTCM()
+{
+  int textX = 4;
+  int textY = 17;
+  int textKerning = 8;
+  oled.setFont(QW_FONT_8X16);
+  printTextwithKerning("Casting", textX, textY, textKerning);
+
+  oled.setCursor(0, 39); //x, y
+  oled.setFont(QW_FONT_5X7);
+  oled.print("RTCM:");
+
+  if (rtcmPacketsSent < 100)
+    oled.setCursor(30, 36); //x, y - Give space for two digits
+  else
+    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+
+  paintResets();
+}
+
 //Show connecting to caster service
 //Solid WiFi icon
 void paintBaseTempCasterStarted()
@@ -748,31 +772,6 @@ void paintBaseTempCasterStarted()
   printTextwithKerning("Connecting", textX, textY, textKerning);
 }
 
-//Show transmission of RTCM packets to caster service
-//Solid WiFi icon
-void paintBaseTempCasterConnected()
-{
-  int textX = 4;
-  int textY = 17;
-  int textKerning = 8;
-  oled.setFont(QW_FONT_8X16);
-  printTextwithKerning("Casting", textX, textY, textKerning);
-
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
-
-  if (rtcmPacketsSent < 100)
-    oled.setCursor(30, 36); //x, y - Give space for two digits
-  else
-    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
-
-  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
-
-  paintResets();
-}
-
 //Show connecting to caster service
 //Solid WiFi icon
 void paintBaseFixedCasterStarted()
@@ -789,31 +788,6 @@ void paintBaseFixedCasterStarted()
   oled.setFont(QW_FONT_8X16);
 
   printTextwithKerning("Connecting", textX, textY, textKerning);
-}
-
-//Show transmission of RTCM packets to caster service
-//Solid WiFi icon
-void paintBaseFixedCasterConnected()
-{
-  int textX = 4;
-  int textY = 17;
-  int textKerning = 8;
-  oled.setFont(QW_FONT_8X16);
-  printTextwithKerning("Casting", textX, textY, textKerning);
-
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
-
-  if (rtcmPacketsSent < 100)
-    oled.setCursor(30, 36); //x, y - Give space for two digits
-  else
-    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
-
-  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
-
-  paintResets();
 }
 
 void displayBaseStart(uint16_t displayTime)

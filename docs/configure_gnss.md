@@ -2,20 +2,25 @@
 
 Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
 
-From the main menu, pressing 1 will bring up the GNSS Receiver configuration menu. The ZED-F9P is immensely configurable. The RTK device will, by default, put the ZED-F9P into the most common configuration for rover/base RTK for use with *SW Maps*. 
+The ZED-F9P is immensely configurable. The RTK device will, by default, put the ZED-F9P into the most common configuration for rover/base RTK for use with *SW Maps* and other GIS applications. 
 
-The GNSS Receiver menu allows a user to change the report rate, dynamic model, and select which constellations should be used for fix calculations.
+The GNSS Configuration menu allows a user to change the report rate, dynamic model, and select which constellations should be used for fix calculations.
+
+[![GNSS Configuration menu](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config.jpg)
+
+*The most common settings on the RTK Device WiFi AP Config*
+
+From the main menu, pressing 1 will bring up the GNSS configuration menu. 
 
 [![GNSS menu showing measurement rates and dynamic model](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_ReceiverNTRIP.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_ReceiverNTRIP.jpg)
 
 *GNSS menu showing measurement rates and dynamic model*
 
-[![GNSS Configuration menus](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config.jpg)
-
-*The most common settings on the RTK Device WiFi AP Config*
-
 ## Measurement Frequency
-Measurement Frequency can be set by either Hz or by seconds between measurements. Some users need many measurements per second; RTK devices support up to 20Hz with RTK enabled. Some users are doing very long static surveys that require many seconds between measurements; RTK devices support up to 8255 seconds (137 minutes) between readings.
+
+Measurement Frequency can be set by either Hz or by seconds between measurements. Some users need many measurements per second; RTK devices support up to 20Hz with RTK enabled. Some users are doing very long static surveys that require many seconds between measurements; the ZED-F9P supports up to 8255 seconds (137 minutes) between readings.
+
+![Table showing fix rates](https://user-images.githubusercontent.com/117102/168684162-4ffe6f39-5aaf-4137-a8ab-f88ee77a528d.png)
 
 Note: When in **Base** mode, measurement frequency is set to 1Hz. This is because RTK transmission does not benefit from faster updates, nor does logging of RAWX for PPP.
 

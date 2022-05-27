@@ -34,12 +34,14 @@ Configuring the RTK device is done over the *USB-Serial CH340* COM port via seri
 
 Configuring the ZED-F9P is done over the *USB Serial Device* port using [u-center](https://learn.sparkfun.com/tutorials/getting-started-with-u-center-for-u-blox/all). It’s not necessary in normal operation but is handy for tailoring the receiver to specific applications. As an added perk, the ZED-F9P can be detected automatically by some mobile phones and tablets. If desired, the receiver can be directly connected to a compatible phone or tablet removing the need for a Bluetooth connection.
 
+## Terminal Window
+
 Open a terminal window at 115200bps; you should see various status messages every second. Press any key to open the configuration menu. Not sure how to use a terminal? Checkout our [Serial Terminal Basics](https://learn.sparkfun.com/tutorials/terminal-basics) tutorial.
 
 [![Terminal showing menu](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_MainMenu.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_MainMenu.jpg)
 
 *Main Menu*
 
-Pressing any button will display the Main menu. The Main menu will display the current firmware version and the Bluetooth broadcast name. Note: When powered on, the RTK Facet will broadcast itself as either *Facet Rover-XXXX* or *Facet Base-XXXX* depending on which state it is in.
+Pressing any button will display the Main menu. The Main menu will display the current firmware version and the Bluetooth broadcast name. Note: When powered on, the RTK device will broadcast itself as either *[Platform] Rover-XXXX* or *[Platform] Base-XXXX* depending on which state it is in. The Platform is 'Facet', 'Express', 'Surveyor', etc.
 
 The menus will timeout after 15 seconds of inactivity, so if you do not press a key the device will exit the menu and return to reporting status messages after 15 seconds.

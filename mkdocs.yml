@@ -81,7 +81,7 @@ nav:
     - configure_with_serial.md
     - configure_with_settings_file.md
     - configure_ucenter.md
-    - configure_gnss_receiver.md
+    - configure_gnss.md
     - configure_messages.md
     - configure_base.md
     - configure_ports.md
@@ -89,7 +89,7 @@ nav:
     - configure_profiles.md
     - configure_lband.md
     - menu_system_status.md
-    - system_status_reporting.md
+    - system_status_report.md
     - firmware_update.md
   - Hardware Specifics:
     - hardware_rtk_surveyor.md

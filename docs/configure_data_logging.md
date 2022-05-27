@@ -2,6 +2,36 @@
 
 Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
 
+## WiFi Interface
+
+Because of the nature of these controls, the AP config page is different than the terminal menu.
+
+![System Config Menu on WiFi AP Config Page](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK System Config AP Menu.png)
+
+*System Config Menu on WiFi AP Config Page*
+
+### Log to SD
+
+If a microSD card is detected, all messages will be logged. Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes (24 hours). Limit: 1 to 2880 minutes.
+
+### Enable Factory Defaults
+
+Factory Defaults will erase any user settings and reset the internal receiver to stock settings. Any logs on SD are maintained. To prevent accidental reset the checkbox must first be checked before the button is pressed.
+
+### SD Card
+
+Various stats for the SD card are shown. If valid firmware is detected, available firmware files will be shown. The user must select the firmware they would like to update to. To prevent accidental updates the checkbox must first be checked before the button is pressed.
+
+### Add Firmware
+
+New firmware may be uploaded via WiFi to the SD card. Firmware is only loaded to the SD card and must then be loaded to the unit.
+
+### Reset Counter
+
+A counter is displayed indicating the number of non-power-on-resets since the last power on.
+
+## Terminal Interface
+
 [![RTK Facet Data Logging Configuration Menu](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_Logging_Cyclic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_Logging_Cyclic.jpg)
 
 *RTK Facet Data Logging Configuration Menu*

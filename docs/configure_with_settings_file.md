@@ -6,4 +6,4 @@ Surveyor: ![Feature Partially Supported](https://raw.githubusercontent.com/spark
 
 *SparkFun RTK Settings File*
 
-All system configuration can also be done by editing the *SFE_XXX_Settings_0.txt* file (example shown above) where XXX is Facet, Express, Surveyor, etc and 0 is the profile number (0, 1, 2, 3). This file is created when a microSD card is installed. The settings are clear text but there are no safety guards against setting illegal states. It is not recommended to use this method unless You Know What You're Doing®.
+All system configuration can also be done by editing the *SFE_[Platform]_Settings_0.txt* file (example shown above) where [Platform] is Facet, Express, Surveyor, etc and 0 is the profile number (0, 1, 2, 3). This file is created when a microSD card is installed. The settings are clear text but there are no safety guards against setting illegal states. It is not recommended to use this method unless You Know What You're Doing®.

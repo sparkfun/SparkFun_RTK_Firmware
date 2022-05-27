@@ -51,3 +51,9 @@ Clicking on a category 'carrot' will open or close that section. Clicking on an 
 *This unit has firmware version 1.8 and a ZED-F9P receiver*
 
 Please note that the firmware for the RTK device and the firmware for the ZED receiver are shown at the top of the page. This can be helpful when troubleshooting or requesting new features.
+
+## Saving and Exit
+
+[![Save and Exit buttons](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_System_Save_Exit.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_System_Save_Exit.jpg)
+
+Once settings are input, please press ‘Save Configuration’. This will validate any settings, show any errors that need adjustment, and send the settings to the unit. The page will remain active until the user presses ‘Exit to Rover Mode’ at which point the unit will exit WiFi configuration and return to standard Rover mode.

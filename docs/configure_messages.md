@@ -6,14 +6,19 @@ Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkF
 
 *The messages configuration menu*
 
+[![Message rate configuration boxes](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config_Messages.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config_Messages.jpg)
+
+*Message rate configuration from WiFi AP Config*
+
+
 From this menu a user can control the output of various NMEA, RTCM, RXM, and other messages. Any enabled message will be broadcast over Bluetooth *and* recorded to SD (if available).
 
 Because of the large number of configurations possible, we provide a few common settings:
 
 * Reset to Surveying Defaults (NMEAx5)
 * Reset to PPP Logging Defaults (NMEAx5 + RXMx2)
-* Turn off all messages
-* Turn on all messages
+* Turn off all messages (serial command only)
+* Turn on all messages (serial command only)
 
 ## Reset to Surveying Defaults (NMEAx5)
 
@@ -33,11 +38,11 @@ These seven sentences are commonly used when logging and doing Precise Point Pos
 
 ## Turn off all messages
 
-This will turn off all messages. This is handy for advanced users who need to start from a blank slate.
+This will turn off all messages. This is handy for advanced users who need to start from a blank slate. This setting is only available over serial configuration.
 
 ## Turn on all messages
 
-This will turn on all messages. This is a setting used for firmware testing and should not be needed in normal use.
+This will turn on all messages. This is a setting used for firmware testing and should not be needed in normal use. This setting is only available over serial configuration.
 
 [![Configuring the NMEA messages](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Messages_Menu_-_NMEA.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Messages_Menu_-_NMEA.jpg)
 
@@ -46,6 +51,8 @@ This will turn on all messages. This is a setting used for firmware testing and 
 As mentioned is the microSD section of the [Hardware Overview](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#hardware-overview) there are a large number of messages supported. Each message sub menu will present the user with the ability to set the message report rate.
 
 **Note:** The message report rate is the *number of fixes* between message reports. In the image above, with GSV set to 4, the NMEA GSV message will be produced once every 4 fixes. Because the device defaults to 4Hz fix rate, the GSV message will appear once per second.
+
+Each message rate input controls which messages are disabled (0) and how often the message is reported (1 = one message reported per 1 fix, 5 = one report every 5 fixes). The message rate range is 0 to 20.
 
 ## ESF Messages
 

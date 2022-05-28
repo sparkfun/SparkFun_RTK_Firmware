@@ -911,6 +911,18 @@ void paintBaseTempSurveyStarted()
     oled.print("0");
 }
 
+//Given text, a position, and kerning, print text to display
+//This is helpful for squishing or stretching a string to appropriately fill the display
+void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8_t kerning)
+{
+  for (int x = 0 ; x < strlen(newText) ; x++)
+  {
+    oled.setCursor(xPos, yPos);
+    oled.print(newText[x]);
+    xPos += kerning;
+  }
+}
+
 //Show transmission of RTCM packets
 void paintXmittingRTCM()
 {

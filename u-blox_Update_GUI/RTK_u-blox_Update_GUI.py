@@ -206,7 +206,7 @@ class MainWidget(QWidget):
         self._load_settings()
 
     def button_state(self, b) -> None:
-        if b.text() == "Safeboot":
+        if b.text() == "Enter Safeboot":
             if b.isChecked() == True:
                 self.training_btn.setChecked(True)
                 self.training_btn.setEnabled(True)
@@ -495,6 +495,8 @@ class MainWidget(QWidget):
         command.extend(["-b",self.baudRate + ":" + self.baudRate + ":115200"])
         if self.fisLocation_lineedit.text() != '':
             command.extend(["-F", self.theFisName])
+        else:
+            command.extend(["-F", resource_path("flash.xml")])
         if self.packet_dump_btn.isChecked() == True:
             command.extend(["-v","2"])
         else:

@@ -5,6 +5,7 @@ This GUI checks which device you are trying to update before calling ubxfwupdate
 This is to avoid you accidentally updating a NEO-D9S with ZED-F9P firmware and vice versa.
 (Don't worry if that happens. You can recover. But you need access to the SafeBoot pin to
  force the module into a safe state for re-updating.)
+If you _really_ know what you are doing, you can disable this check with the "Override" option.
 
 ubxfwupdate.exe is a Windows executable. This tool will only work on Windows. Sorry about that.
 
@@ -26,9 +27,9 @@ Pyinstaller needs:
 RTK_u-blox_Update_GUI.py (this file!)
 RTK.ico (icon file for the .exe)
 RTK.png (icon for the GUI widget)
-ubxfwupdate.exe (copied from u-center)
-libMPSSE.dll (copied from u-center)
-flash.xml (copied from u-center)
+ubxfwupdate.exe (copied from u-center v22.02)
+libMPSSE.dll (copied from u-center v22.02)
+flash.xml (copied from u-center v22.02)
 
 MIT license
 
@@ -41,7 +42,8 @@ from typing import Iterator, Tuple
 from PyQt5.QtCore import QSettings, QProcess, QTimer, Qt, QIODevice, pyqtSlot
 from PyQt5.QtWidgets import QWidget, QLabel, QComboBox, QGridLayout, \
     QPushButton, QApplication, QLineEdit, QFileDialog, QPlainTextEdit, \
-    QAction, QActionGroup, QMenu, QMenuBar, QMainWindow, QMessageBox
+    QAction, QActionGroup, QMenu, QMenuBar, QMainWindow, QMessageBox, \
+    QCheckBox
 from PyQt5.QtGui import QCloseEvent, QTextCursor, QIcon, QFont
 from PyQt5.QtSerialPort import QSerialPortInfo, QSerialPortInfo
 
@@ -133,11 +135,39 @@ class MainWidget(QWidget):
         self.upload_btn.setFont(myFont)
         self.upload_btn.clicked.connect(self.on_upload_btn_pressed)
 
+        # Packet Dump Button
+        self.packet_dump_btn = QCheckBox(self.tr('Packet Dump'))
+        self.packet_dump_btn.setChecked(False)
+
+        # Safeboot Button
+        self.safeboot_btn = QCheckBox(self.tr('Enter Safeboot'))
+        self.safeboot_btn.setChecked(True)
+        self.safeboot_btn.toggled.connect(lambda:self.button_state(self.safeboot_btn))
+
+        # Training Button
+        self.training_btn = QCheckBox(self.tr('Training Sequence'))
+        self.training_btn.setChecked(True)
+
+        # Reset After Button
+        self.reset_btn = QCheckBox(self.tr('Reset After'))
+        self.reset_btn.setChecked(True)
+
+        # Chip Erase Button
+        self.chip_erase_btn = QCheckBox(self.tr('Chip Erase'))
+        self.chip_erase_btn.setChecked(False)
+
+        # Override Button
+        self.override_btn = QCheckBox(self.tr('Override'))
+        self.override_btn.setChecked(False)
+        self.override_btn.toggled.connect(lambda:self.button_state(self.override_btn))
+
         # Messages Bar
         self.messages_label = QLabel(self.tr('Status / Warnings:'))
 
         # Messages Window
+        messageFont=QFont("Courier")
         self.messageBox = QPlainTextEdit()
+        self.messageBox.setFont(messageFont)
 
         # Arrange Layout
         layout = QGridLayout()
@@ -159,14 +189,33 @@ class MainWidget(QWidget):
         layout.addWidget(self.baud_combobox, 4, 1)
         layout.addWidget(self.upload_btn, 4, 2)
 
-        layout.addWidget(self.messages_label, 5, 0)
-        layout.addWidget(self.messageBox, 6, 0, 5, 4)
+        layout.addWidget(self.packet_dump_btn, 4, 3)
+        layout.addWidget(self.safeboot_btn, 5, 3)
+        layout.addWidget(self.training_btn, 6, 3)
+        layout.addWidget(self.reset_btn, 7, 3)
+        layout.addWidget(self.chip_erase_btn, 8, 3)
+        layout.addWidget(self.override_btn, 9, 3)
+
+        layout.addWidget(self.messages_label, 9, 0)
+        layout.addWidget(self.messageBox, 10, 0, 5, 4)
 
         self.setLayout(layout)
 
         self.settings = QSettings()
         #self._clean_settings() # This will delete all existing settings! Use with caution!
         self._load_settings()
+
+    def button_state(self, b) -> None:
+        if b.text() == "Safeboot":
+            if b.isChecked() == True:
+                self.training_btn.setChecked(True)
+                self.training_btn.setEnabled(True)
+            else:
+                self.training_btn.setChecked(False)
+                self.training_btn.setEnabled(False)
+        elif b.text() == "Override":
+            if b.isChecked() == True:
+                self.show_error_message(">>>>> Override enabled <<<<<\nFirmware version check is disabled")
 
     def writeMessage(self, msg) -> None:
         self.messageBox.moveCursor(QTextCursor.End)
@@ -424,7 +473,8 @@ class MainWidget(QWidget):
                 if endPos >= 0:
                     self.writeMessage(printable[startPos : endPos]) # Print the full product version
 
-        if 1: # Change this to 0 for "god mode" (always update - even if fwver does not match)
+        if self.override_btn.isChecked() == False:
+
             if fwver == '':
                 self.writeMessage("Unable to read the receiver and software version. Aborting...")
                 return
@@ -436,6 +486,8 @@ class MainWidget(QWidget):
                 self.writeMessage("\nThe firmware appears invalid for this module. Aborting...")
                 return
 
+        self.override_btn.setChecked(False)
+
         self.writeMessage("\nUpdating firmware\n")
 
         command = []
@@ -443,6 +495,26 @@ class MainWidget(QWidget):
         command.extend(["-b",self.baudRate + ":" + self.baudRate + ":115200"])
         if self.fisLocation_lineedit.text() != '':
             command.extend(["-F", self.theFisName])
+        if self.packet_dump_btn.isChecked() == True:
+            command.extend(["-v","2"])
+        else:
+            command.extend(["-v","1"])
+        if self.safeboot_btn.isChecked() == True:
+            command.extend(["-s","1"])
+            if self.training_btn.isChecked() == True:
+                command.extend(["-t","1"])
+            else:
+                command.extend(["-t","0"])
+        else:
+            command.extend(["-s","0"])
+        if self.reset_btn.isChecked() == True:
+            command.extend(["-R","1"])
+        else:
+            command.extend(["-R","0"])
+        if self.chip_erase_btn.isChecked() == True:
+            command.extend(["-C","1"])
+        else:
+            command.extend(["-C","0"])
         command.append(self.theFirmwareName)
 
         self.writeMessage("ubxfwupdate.exe %s\n\n" % " ".join(command))

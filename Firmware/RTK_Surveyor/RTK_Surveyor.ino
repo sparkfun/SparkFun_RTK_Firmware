@@ -270,15 +270,6 @@ bool zedUartPassed = false; //Goes true during testing if ESP can communicate wi
 //External Display
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
-QwiicMicroOLED oled;
-uint32_t blinking_icons;
-
-// Fonts
-#include <res/qw_fnt_5x7.h>
-#include <res/qw_fnt_8x16.h>
-#include <res/qw_fnt_largenum.h>
-
-#include "icons.h"
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Firmware binaries loaded from SD

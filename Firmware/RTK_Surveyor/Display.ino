@@ -1,3 +1,7 @@
+//----------------------------------------
+// Constants
+//----------------------------------------
+
 //Left top
 #define ICON_WIFI_SYMBOL_LEFT                1  //  0,  0
 #define ICON_DOWN_ARROW                      2  // 16,  0
@@ -29,7 +33,25 @@
 //Right bottom
 #define ICON_LOGGING                   0x10000  // right, bottom
 
+//----------------------------------------
+// Locals
+//----------------------------------------
+
+static QwiicMicroOLED oled;
+static uint32_t blinking_icons;
 static uint32_t icons;
+
+// Fonts
+#include <res/qw_fnt_5x7.h>
+#include <res/qw_fnt_8x16.h>
+#include <res/qw_fnt_largenum.h>
+
+// Icons
+#include "icons.h"
+
+//----------------------------------------
+// Routines
+//----------------------------------------
 
 void beginDisplay()
 {

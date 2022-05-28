@@ -58,6 +58,7 @@ SETTING_PORT_NAME = 'port_name'
 SETTING_FIS_LOCATION = 'fis_location'
 SETTING_FIRMWARE_LOCATION = 'firmware_location'
 SETTING_BAUD_RATE = 'baud'
+SETTING_UPDATE_BAUD_RATE = 'update_baud'
 
 guiVersion = 'v1.0'
 
@@ -108,8 +109,8 @@ class MainWidget(QWidget):
         self.fis_browse_btn.setEnabled(True)
         self.fis_browse_btn.pressed.connect(self.on_browse_fis_btn_pressed)
 
-        # Clear Button
-        self.clear_fis_btn = QPushButton(self.tr('Clear'))
+        # Clear (Default FIS) Button
+        self.clear_fis_btn = QPushButton(self.tr('Default FIS'))
         self.clear_fis_btn.clicked.connect(self.on_clear_fis_btn_pressed)
 
         # Port Combobox
@@ -122,16 +123,22 @@ class MainWidget(QWidget):
         self.refresh_btn = QPushButton(self.tr('Refresh'))
         self.refresh_btn.clicked.connect(self.on_refresh_btn_pressed)
 
-        # Baudrate Combobox
-        self.baud_label = QLabel(self.tr('Baud Rate:'))
+        # Current Baudrate Combobox
+        self.baud_label = QLabel(self.tr('Current Baud Rate:'))
         self.baud_combobox = QComboBox()
         self.baud_label.setBuddy(self.baud_combobox)
-        self.update_baud_rates()
+        self.update_baud_rates(self.baud_combobox)
+
+        # Update Baudrate Combobox
+        self.update_baud_label = QLabel(self.tr('Update Baud Rate:'))
+        self.update_baud_combobox = QComboBox()
+        self.update_baud_label.setBuddy(self.update_baud_combobox)
+        self.update_baud_rates(self.update_baud_combobox, 115200)
 
         # Upload Button
         myFont=QFont()
         myFont.setBold(True)
-        self.upload_btn = QPushButton(self.tr('  Update Firmware  '))
+        self.upload_btn = QPushButton(self.tr('Update Firmware'))
         self.upload_btn.setFont(myFont)
         self.upload_btn.clicked.connect(self.on_upload_btn_pressed)
 
@@ -149,12 +156,16 @@ class MainWidget(QWidget):
         self.training_btn.setChecked(True)
 
         # Reset After Button
-        self.reset_btn = QCheckBox(self.tr('Reset After'))
+        self.reset_btn = QCheckBox(self.tr('Reset After Update'))
         self.reset_btn.setChecked(True)
 
         # Chip Erase Button
         self.chip_erase_btn = QCheckBox(self.tr('Chip Erase'))
         self.chip_erase_btn.setChecked(False)
+
+        # No FIS Button
+        self.no_fis_btn = QCheckBox(self.tr('No FIS'))
+        self.no_fis_btn.setChecked(True)
 
         # Override Button
         self.override_btn = QCheckBox(self.tr('Override'))
@@ -175,29 +186,33 @@ class MainWidget(QWidget):
         layout.addWidget(self.firmware_label, 1, 0)
         layout.addWidget(self.firmwareLocation_lineedit, 1, 1)
         layout.addWidget(self.firmware_browse_btn, 1, 2)
+        layout.addWidget(self.override_btn, 1, 4)
 
         layout.addWidget(self.fis_label, 2, 0)
         layout.addWidget(self.fisLocation_lineedit, 2, 1)
         layout.addWidget(self.fis_browse_btn, 2, 2)
         layout.addWidget(self.clear_fis_btn, 2, 3)
+        layout.addWidget(self.no_fis_btn, 2, 4)
 
         layout.addWidget(self.port_label, 3, 0)
         layout.addWidget(self.port_combobox, 3, 1)
         layout.addWidget(self.refresh_btn, 3, 2)
+        layout.addWidget(self.packet_dump_btn, 3, 4)
 
         layout.addWidget(self.baud_label, 4, 0)
         layout.addWidget(self.baud_combobox, 4, 1)
-        layout.addWidget(self.upload_btn, 4, 2)
+        layout.addWidget(self.safeboot_btn, 4, 4)
 
-        layout.addWidget(self.packet_dump_btn, 4, 3)
-        layout.addWidget(self.safeboot_btn, 5, 3)
-        layout.addWidget(self.training_btn, 6, 3)
-        layout.addWidget(self.reset_btn, 7, 3)
-        layout.addWidget(self.chip_erase_btn, 8, 3)
-        layout.addWidget(self.override_btn, 9, 3)
+        layout.addWidget(self.update_baud_label, 5, 0)
+        layout.addWidget(self.update_baud_combobox, 5, 1)
+        layout.addWidget(self.training_btn, 5, 4)
 
-        layout.addWidget(self.messages_label, 9, 0)
-        layout.addWidget(self.messageBox, 10, 0, 5, 4)
+        layout.addWidget(self.chip_erase_btn, 6, 4)
+        layout.addWidget(self.reset_btn, 7, 4)
+
+        layout.addWidget(self.messages_label, 7, 0)
+        layout.addWidget(self.upload_btn, 7, 2, 1, 2)
+        layout.addWidget(self.messageBox, 8, 0, 5, 5)
 
         self.setLayout(layout)
 
@@ -249,6 +264,12 @@ class MainWidget(QWidget):
             if index > -1:
                 self.baud_combobox.setCurrentIndex(index)
 
+        baud = self.settings.value(SETTING_UPDATE_BAUD_RATE)
+        if baud is not None:
+            index = self.update_baud_combobox.findData(baud)
+            if index > -1:
+                self.update_baud_combobox.setCurrentIndex(index)
+
         lastFile = self.settings.value(SETTING_FIRMWARE_LOCATION)
         if lastFile is not None:
             self.firmwareLocation_lineedit.setText(lastFile)
@@ -256,13 +277,17 @@ class MainWidget(QWidget):
         lastFile = self.settings.value(SETTING_FIS_LOCATION)
         if lastFile is not None:
             self.fisLocation_lineedit.setText(lastFile)
+            if self.theFisName != '':
+                self.no_fis_btn.setChecked(False)
         else:
             self.fisLocation_lineedit.clear()
+            self.no_fis_btn.setChecked(True)
 
     def _save_settings(self) -> None:
         """Save settings on shutdown."""
         self.settings.setValue(SETTING_PORT_NAME, self.port)
         self.settings.setValue(SETTING_BAUD_RATE, self.baudRate)
+        self.settings.setValue(SETTING_UPDATE_BAUD_RATE, self.updateBaudRate)
         self.settings.setValue(SETTING_FIRMWARE_LOCATION, self.theFirmwareName)
         self.settings.setValue(SETTING_FIS_LOCATION, self.theFisName)
 
@@ -296,16 +321,19 @@ class MainWidget(QWidget):
         if indexOfPrevious > -1: # Restore the previous port if it still exists
             self.port_combobox.setCurrentIndex(indexOfPrevious)
 
-    def update_baud_rates(self) -> None:
+    def update_baud_rates(self, comboBox, minBaud = 9600) -> None:
         """Update baud rate list in GUI."""
         # Lowest speed first so code defaults to that
         # if settings.value(SETTING_BAUD_RATE) is None
-        self.baud_combobox.clear()
-        self.baud_combobox.addItem("9600", 9600)
-        self.baud_combobox.addItem("38400", 38400)
-        self.baud_combobox.addItem("115200", 115200)
-        self.baud_combobox.addItem("230400", 230400)
-        self.baud_combobox.addItem("460800", 460800)
+        comboBox.clear()
+        if minBaud <= 9600:
+            comboBox.addItem("9600", 9600)
+        if minBaud <= 38400:
+            comboBox.addItem("38400", 38400)
+        comboBox.addItem("115200", 115200)
+        comboBox.addItem("230400", 230400)
+        comboBox.addItem("460800", 460800)
+        comboBox.addItem("921600", 921600)
 
     @property
     def port(self) -> str:
@@ -316,6 +344,11 @@ class MainWidget(QWidget):
     def baudRate(self) -> str:
         """Return the current baud rate."""
         return str(self.baud_combobox.currentData())
+
+    @property
+    def updateBaudRate(self) -> str:
+        """Return the update baud rate."""
+        return str(self.update_baud_combobox.currentData())
 
     @property
     def theFirmwareName(self) -> str:
@@ -363,10 +396,12 @@ class MainWidget(QWidget):
             options=options)
         if fileName:
             self.fisLocation_lineedit.setText(fileName)
+            self.no_fis_btn.setChecked(False)
 
     def on_clear_fis_btn_pressed(self) -> None:
         """Clear the FIS filename."""
         self.fisLocation_lineedit.clear()
+        self.no_fis_btn.setChecked(False)
 
     def update_finished(self) -> None:
         """The update QProcess has finished."""
@@ -495,16 +530,23 @@ class MainWidget(QWidget):
         self.writeMessage("\nUpdating firmware\n")
 
         command = []
+
         command.extend(["-p",self.port])
-        command.extend(["-b",self.baudRate + ":" + self.baudRate + ":115200"])
-        if self.fisLocation_lineedit.text() != '':
-            command.extend(["-F", self.theFisName])
-        else:
+
+        command.extend(["-b",self.baudRate + ":" + self.baudRate + ":" + self.updateBaudRate])
+
+        if self.no_fis_btn.isChecked() == True:
+            command.extend(["--no-fis", "1"])
+        elif self.fisLocation_lineedit.text() == '':
             command.extend(["-F", resource_path("flash.xml")])
+        else:
+            command.extend(["-F", self.theFisName])
+
         if self.packet_dump_btn.isChecked() == True:
             command.extend(["-v","2"])
         else:
             command.extend(["-v","1"])
+
         if self.safeboot_btn.isChecked() == True:
             command.extend(["-s","1"])
             if self.training_btn.isChecked() == True:
@@ -513,14 +555,17 @@ class MainWidget(QWidget):
                 command.extend(["-t","0"])
         else:
             command.extend(["-s","0"])
+
         if self.reset_btn.isChecked() == True:
             command.extend(["-R","1"])
         else:
             command.extend(["-R","0"])
+
         if self.chip_erase_btn.isChecked() == True:
             command.extend(["-C","1"])
         else:
             command.extend(["-C","0"])
+
         command.append(self.theFirmwareName)
 
         self.writeMessage("ubxfwupdate.exe %s\n\n" % " ".join(command))

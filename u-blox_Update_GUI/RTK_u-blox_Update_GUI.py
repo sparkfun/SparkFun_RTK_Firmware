@@ -215,7 +215,7 @@ class MainWidget(QWidget):
                 self.training_btn.setEnabled(False)
         elif b.text() == "Override":
             if b.isChecked() == True:
-                self.show_error_message(">>>>> Override enabled <<<<<\nFirmware version check is disabled")
+                self.show_warning_message(">>>>> Override enabled <<<<<\nFirmware version check is disabled")
 
     def writeMessage(self, msg) -> None:
         self.messageBox.moveCursor(QTextCursor.End)
@@ -273,6 +273,10 @@ class MainWidget(QWidget):
     def show_error_message(self, msg: str) -> None:
         """Show a Message Box with the error message."""
         QMessageBox.critical(self, QApplication.applicationName(), str(msg))
+
+    def show_warning_message(self, msg: str) -> None:
+        """Show a Message Box with the warning."""
+        QMessageBox.warning(self, QApplication.applicationName(), str(msg))
 
     def update_com_ports(self) -> None:
         """Update COM Port list in GUI."""

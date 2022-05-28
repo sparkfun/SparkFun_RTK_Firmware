@@ -173,7 +173,7 @@ void updateDisplay()
           icons = paintWirelessIcon() //Top left
                 | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY;       //Top right
-          paintBaseTempCasterStarted();
+          paintConnectingToNtripCaster();
           break;
         case (STATE_BASE_TEMP_CASTER_CONNECTED):
           icons = paintWirelessIcon() //Top left
@@ -211,7 +211,7 @@ void updateDisplay()
           icons = paintWirelessIcon() //Top left
                 | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY;       //Top right
-          paintBaseFixedCasterStarted();
+          paintConnectingToNtripCaster();
           break;
         case (STATE_BASE_FIXED_CASTER_CONNECTED):
           icons = paintWirelessIcon() //Top left
@@ -754,27 +754,8 @@ void paintCastingRTCM()
   paintResets();
 }
 
-//Show connecting to caster service
-//Solid WiFi icon
-void paintBaseTempCasterStarted()
-{
-  int textX = 11;
-  int textY = 17;
-  int textKerning = 8;
-
-  printTextwithKerning("Caster", textX, textY, textKerning);
-
-  textX = 3;
-  textY = 33;
-  textKerning = 6;
-  oled.setFont(QW_FONT_8X16);
-
-  printTextwithKerning("Connecting", textX, textY, textKerning);
-}
-
-//Show connecting to caster service
-//Solid WiFi icon
-void paintBaseFixedCasterStarted()
+//Show connecting to NTRIP caster service
+void paintConnectingToNtripCaster()
 {
   int textX = 11;
   int textY = 18;

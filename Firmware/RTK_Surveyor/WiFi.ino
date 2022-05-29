@@ -222,6 +222,19 @@ bool ntripClientStart()
 }
 
 //----------------------------------------
+// WiFi Routines - compile out
+//----------------------------------------
+
+#ifdef  COMPILE_WIFI
+
+byte wifiGetStatus()
+{
+  return WiFi.status();
+}
+
+#endif  //COMPILE_WIFI}
+
+//----------------------------------------
 // Global WiFi Routines
 //----------------------------------------
 

@@ -85,6 +85,12 @@ void ntripClientResponse(char * response, size_t maxLength)
   *response = '\0';
 }
 
+//Stop the NTRIP client
+void ntripClientStop()
+{
+  ntripClient.stop();
+}
+
 //Used during Rover+WiFi NTRIP Client mode to provide caster with GGA sentence every 10 seconds
 void ntripClientPushGPGGA(NMEA_GGA_data_t *nmeaData)
 {
@@ -143,7 +149,7 @@ void ntripClientUpdate()
     if ((millis() - lastReceivedRTCM_ms) > maxTimeBeforeHangup_ms)
     {
       Serial.println(F("NTRIP Client timeout"));
-      ntripClient.stop();
+      ntripClientStop();
       online.ntripClient = false;
     }
   }

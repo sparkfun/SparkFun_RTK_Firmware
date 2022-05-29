@@ -502,7 +502,7 @@ void loop()
 
   updateSerial(); //Menu system via ESP32 USB connection
 
-  updateNTRIPClient(); //Move any available incoming NTRIP to ZED
+  ntripClientUpdate(); //Move any available incoming NTRIP to ZED
 
   updateLBand(); //Check if we've recently received PointPerfect corrections or not
 

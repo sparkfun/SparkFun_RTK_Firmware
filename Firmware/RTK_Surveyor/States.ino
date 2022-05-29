@@ -285,37 +285,11 @@ void updateSystemState()
           else
           {
             //Check reply
-            int connectionResult = 0;
             char response[512];
-            size_t responseSpot = 0;
-            while (ntripClient.available()) // Read bytes from the caster and store them
-            {
-              if (responseSpot == sizeof(response) - 1) // Exit the loop if we get too much data
-                break;
+            ntripClientResponse(&response[0], sizeof(response));
 
-              response[responseSpot++] = ntripClient.read();
-
-              if (connectionResult == 0) // Only print success/fail once
-              {
-                if (strstr(response, "200") != NULL) //Look for '200 OK'
-                  connectionResult = 200;
-                if (strstr(response, "401") != NULL) //Look for '401 Unauthorized'
-                  connectionResult = 401;
-              }
-            }
-            response[responseSpot] = '\0'; // NULL-terminate the response
-
-            if (connectionResult != 200)
-            {
-              Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
-              ntripClient.stop();
-
-              wifiStop(); //Turn off WiFi and release all resources
-              startBluetooth(); //Turn on Bluetooth with 'Rover' name
-
-              changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
-            }
-            else
+            //Look for '200 OK'
+            if (strstr(response, "200") != NULL)
             {
               log_d("Connected to caster");
 
@@ -325,6 +299,17 @@ void updateSystemState()
               online.ntripClient = true;
 
               changeState(STATE_ROVER_NO_FIX); //Start rover *with* WiFi
+            }
+            else
+            {
+              //Look for '401 Unauthorized'
+              Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
+              ntripClient.stop();
+
+              wifiStop(); //Turn off WiFi and release all resources
+              startBluetooth(); //Turn on Bluetooth with 'Rover' name
+
+              changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
             }
           }
 #endif

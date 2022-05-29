@@ -225,7 +225,7 @@ void updateSystemState()
             // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
             i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
 
-            i2cGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
+            i2cGNSS.setNMEAGPGGAcallbackPtr(&ntripClientPushGPGGA); // Set up the callback for GPGGA
 
             float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
 

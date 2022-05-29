@@ -69,6 +69,12 @@ bool ntripClientConnect()
   return true;
 }
 
+//Determine if NTRIP client data is available
+int ntripClientReceiveDataAvailable()
+{
+  return ntripClient.available();
+}
+
 //Read the response from the NTRIP client
 void ntripClientResponse(char * response, size_t maxLength)
 {
@@ -78,7 +84,7 @@ void ntripClientResponse(char * response, size_t maxLength)
   responseEnd = &response[maxLength - 1];
 
   // Read bytes from the caster and store them
-  while ((response < responseEnd) && ntripClient.available())
+  while ((response < responseEnd) && ntripClientReceiveDataAvailable())
     *response++ = ntripClient.read();
 
   // Zero terminate the response

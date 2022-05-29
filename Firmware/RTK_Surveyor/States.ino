@@ -268,9 +268,10 @@ void updateSystemState()
       case (STATE_ROVER_CLIENT_STARTED):
         {
 #ifdef COMPILE_WIFI
-          //Check if caster service responded
-          if (ntripClient.available() == 0)
+          //Check for no response from the caster service
+          if (ntripClientReceiveDataAvailable() == 0)
           {
+            //Check for response timeout
             if (millis() - casterResponseWaitStartTime > 5000)
             {
               Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
@@ -282,6 +283,7 @@ void updateSystemState()
               changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
             }
           }
+          // Caster service has provided a response
           else
           {
             //Check reply

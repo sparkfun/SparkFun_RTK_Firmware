@@ -208,7 +208,7 @@ void updateSystemState()
           }
 
 #ifdef COMPILE_WIFI
-          byte wifiStatus = WiFi.status();
+          byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
             wifiState = WIFI_CONNECTED;
@@ -608,7 +608,7 @@ void updateSystemState()
       case (STATE_BASE_TEMP_WIFI_STARTED):
         {
 #ifdef COMPILE_WIFI
-          byte wifiStatus = WiFi.status();
+          byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
             wifiState = WIFI_CONNECTED;
@@ -839,7 +839,7 @@ void updateSystemState()
       case (STATE_BASE_FIXED_WIFI_STARTED):
         {
 #ifdef COMPILE_WIFI
-          byte wifiStatus = WiFi.status();
+          byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
             wifiState = WIFI_CONNECTED;
@@ -1184,7 +1184,7 @@ void updateSystemState()
 #ifdef COMPILE_WIFI
           if (wifiStartTime == 0) wifiStartTime = millis();
 
-          byte wifiStatus = WiFi.status();
+          byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
             wifiState = WIFI_CONNECTED;
@@ -1296,7 +1296,7 @@ void updateSystemState()
 #ifdef COMPILE_WIFI
           if (wifiStartTime == 0) wifiStartTime = millis();
 
-          byte wifiStatus = WiFi.status();
+          byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
             wifiState = WIFI_CONNECTED;

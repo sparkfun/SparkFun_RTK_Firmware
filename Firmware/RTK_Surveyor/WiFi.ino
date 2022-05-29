@@ -201,6 +201,27 @@ void wifiStop()
 }
 
 //----------------------------------------
+// Global NTRIP Client Routines
+//----------------------------------------
+
+bool ntripClientStart()
+{
+#ifdef  COMPILE_WIFI
+  if (settings.enableNtripClient == true && ntripClientAttempted == false)
+  {
+    //Turn off Bluetooth and turn on WiFi
+    stopBluetooth();
+    startWiFi(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
+    wifiStartTime = millis();
+
+    ntripClientAttempted = true; //Do not allow re-entry into STATE_ROVER_CLIENT_WIFI_STARTED
+    return true;
+  }
+#endif  //COMPILE_WIFI
+  return false;
+}
+
+//----------------------------------------
 // Global WiFi Routines
 //----------------------------------------
 

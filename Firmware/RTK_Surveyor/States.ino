@@ -201,7 +201,7 @@ void updateSystemState()
 
       case (STATE_ROVER_CLIENT_WIFI_STARTED):
         {
-          if (millis() - wifiStartTime > 8000)
+          if (wifiConnectionTimeout())
           {
             paintNClientWiFiFail(4000);
             changeState(STATE_ROVER_NOT_STARTED); //Give up and move to normal Rover mode
@@ -1059,7 +1059,6 @@ void updateSystemState()
           else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
           {
             wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
-            wifiStartTime = millis(); //Start timer for WiFi connection timeout
             changeState(STATE_KEYS_PROVISION_WIFI_STARTED);
           }
 
@@ -1094,7 +1093,6 @@ void updateSystemState()
           if (online.rtc == false)
           {
             wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
-            wifiStartTime = 0; //Start timer for WiFi connection timeout
             changeState(STATE_KEYS_WIFI_STARTED); //If we can't check the RTC, continue
           }
 
@@ -1105,7 +1103,6 @@ void updateSystemState()
             recordSystemSettings(); //Record these settings to unit
 
             wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
-            wifiStartTime = 0; //Start timer for WiFi connection timeout
             changeState(STATE_KEYS_WIFI_STARTED);
           }
           else

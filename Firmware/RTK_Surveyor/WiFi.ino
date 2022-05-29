@@ -69,6 +69,22 @@ bool ntripClientConnect()
   return true;
 }
 
+//Read the response from the NTRIP client
+void ntripClientResponse(char * response, size_t maxLength)
+{
+  char * responseEnd;
+
+  //Make sure that we can zero terminate the response
+  responseEnd = &response[maxLength - 1];
+
+  // Read bytes from the caster and store them
+  while ((response < responseEnd) && ntripClient.available())
+    *response++ = ntripClient.read();
+
+  // Zero terminate the response
+  *response = '\0';
+}
+
 //Used during Rover+WiFi NTRIP Client mode to provide caster with GGA sentence every 10 seconds
 void ntripClientPushGPGGA(NMEA_GGA_data_t *nmeaData)
 {

@@ -1,4 +1,14 @@
 //----------------------------------------
+// Locals
+//----------------------------------------
+
+#ifdef  COMPILE_WIFI
+
+static bool ntripClientAttempted = false; //Goes true once we attempt WiFi. Allows graceful failure.
+
+#endif  //COMPILE_WIFI
+
+//----------------------------------------
 // NTRIP Client Routines - compiled out
 //----------------------------------------
 
@@ -67,6 +77,27 @@ void ntripClientUpdate()
     }
   }
 #endif  //COMPILE_WIFI
+}
+
+//----------------------------------------
+// Global NTRIP Client Routines
+//----------------------------------------
+
+bool ntripClientStart()
+{
+#ifdef  COMPILE_WIFI
+  if (settings.enableNtripClient == true && ntripClientAttempted == false)
+  {
+    //Turn off Bluetooth and turn on WiFi
+    stopBluetooth();
+    startWiFi(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
+    wifiStartTime = millis();
+
+    ntripClientAttempted = true; //Do not allow re-entry into STATE_ROVER_CLIENT_WIFI_STARTED
+    return true;
+  }
+#endif  //COMPILE_WIFI
+  return false;
 }
 
 //----------------------------------------

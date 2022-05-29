@@ -85,7 +85,7 @@ void menuPointPerfect()
 
         Serial.println();
         Serial.print("WiFi connected: ");
-        Serial.println(WiFi.localIP());
+        Serial.println(wifiGetIpAddress());
 
         //Check if we have certificates
         char fileName[80];

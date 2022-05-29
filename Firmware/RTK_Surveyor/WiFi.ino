@@ -14,6 +14,61 @@ static bool ntripClientAttempted = false; //Goes true once we attempt WiFi. Allo
 
 #ifdef  COMPILE_WIFI
 
+bool ntripClientConnect()
+{
+  if (!ntripClient.connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort))
+    return false;
+  Serial.printf("Connected to %s:%d\n\r", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
+
+  // Set up the server request (GET)
+  const int SERVER_BUFFER_SIZE = 512;
+  char serverRequest[SERVER_BUFFER_SIZE];
+  snprintf(serverRequest,
+           SERVER_BUFFER_SIZE,
+           "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun_RTK_%s_v%d.%d\r\n",
+           settings.ntripClient_MountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+
+  // Set up the credentials
+  char credentials[512];
+  if (strlen(settings.ntripClient_CasterUser) == 0)
+  {
+    strncpy(credentials, "Accept: */*\r\nConnection: close\r\n", sizeof(credentials));
+  }
+  else
+  {
+    //Pass base64 encoded user:pw
+    char userCredentials[sizeof(settings.ntripClient_CasterUser) + sizeof(settings.ntripClient_CasterUserPW) + 1]; //The ':' takes up a spot
+    snprintf(userCredentials, sizeof(userCredentials), "%s:%s", settings.ntripClient_CasterUser, settings.ntripClient_CasterUserPW);
+
+    Serial.print(F("Sending credentials: "));
+    Serial.println(userCredentials);
+
+    //Encode with ESP32 built-in library
+    base64 b;
+    String strEncodedCredentials = b.encode(userCredentials);
+    char encodedCredentials[strEncodedCredentials.length() + 1];
+    strEncodedCredentials.toCharArray(encodedCredentials, sizeof(encodedCredentials)); //Convert String to char array
+
+    snprintf(credentials, sizeof(credentials), "Authorization: Basic %s\r\n", encodedCredentials);
+  }
+
+  // Add the encoded credentials to the server request
+  strncat(serverRequest, credentials, SERVER_BUFFER_SIZE - 1);
+  strncat(serverRequest, "\r\n", SERVER_BUFFER_SIZE - 1);
+
+  Serial.print(F("serverRequest size: "));
+  Serial.print(strlen(serverRequest));
+  Serial.print(F(" of "));
+  Serial.print(sizeof(serverRequest));
+  Serial.println(F(" bytes available"));
+
+  // Send the server request
+  Serial.println(F("Sending server request: "));
+  Serial.println(serverRequest);
+  ntripClient.write(serverRequest, strlen(serverRequest));
+  return true;
+}
+
 //Used during Rover+WiFi NTRIP Client mode to provide caster with GGA sentence every 10 seconds
 void ntripClientPushGPGGA(NMEA_GGA_data_t *nmeaData)
 {

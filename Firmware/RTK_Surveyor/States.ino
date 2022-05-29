@@ -150,17 +150,8 @@ void updateSystemState()
 
           displayRoverSuccess(500);
 
-          if (settings.enableNtripClient == true && ntripClientAttempted == false)
-          {
-            //Turn off Bluetooth and turn on WiFi
-            stopBluetooth();
-            startWiFi(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
-            wifiStartTime = millis();
-
-            ntripClientAttempted = true; //Do not allow re-entry into STATE_ROVER_CLIENT_WIFI_STARTED
-
+          if (ntripClientStart())
             changeState(STATE_ROVER_CLIENT_WIFI_STARTED);
-          }
           else
             changeState(STATE_ROVER_NO_FIX);
 

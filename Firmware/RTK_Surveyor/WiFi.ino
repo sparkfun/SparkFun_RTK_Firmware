@@ -111,6 +111,11 @@ byte wifiGetStatus()
   return WiFi.status();
 }
 
+IPAddress wifiGetIpAddress()
+{
+  return WiFi.localIP();
+}
+
 void wifiStartAP()
 {
   //When testing, operate on local WiFi instead of AP

@@ -281,6 +281,16 @@ void wifiStartAP()
 // Global WiFi Routines
 //----------------------------------------
 
+//Determine if the WiFi connection has timed out
+bool wifiConnectionTimeout()
+{
+#ifdef  COMPILE_WIFI
+  if ((millis() - wifiStartTime) <= 8000)
+    return false;
+#endif  //COMPILE_WIFI
+  return true;
+}
+
 void wifiStart(char* ssid, char* pw)
 {
 #ifdef  COMPILE_WIFI
@@ -288,6 +298,7 @@ void wifiStart(char* ssid, char* pw)
   {
     Serial.printf("Connecting to WiFi: %s", ssid);
     WiFi.begin(ssid, pw);
+    wifiStartTime = millis();
 
     wifiState = WIFI_NOTCONNECTED;
     reportHeapNow();

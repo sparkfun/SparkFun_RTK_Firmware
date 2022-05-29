@@ -140,7 +140,7 @@ void updateSystemState()
           i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
 
           stopWebServer();
-          stopWiFi(); //Turn off WiFi and release all resources
+          wifiStop(); //Turn off WiFi and release all resources
           startBluetooth(); //Turn on Bluetooth with 'Rover' name
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
@@ -314,7 +314,7 @@ void updateSystemState()
               Serial.println(F("Caster failed to connect. Do you have your caster address and port correct?"));
               ntripClient.stop();
 
-              stopWiFi(); //Turn off WiFi and release all resources
+              wifiStop(); //Turn off WiFi and release all resources
               startBluetooth(); //Turn on Bluetooth with 'Rover' name
 
               changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
@@ -335,7 +335,7 @@ void updateSystemState()
               Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
               ntripClient.stop();
 
-              stopWiFi(); //Turn off WiFi and release all resources
+              wifiStop(); //Turn off WiFi and release all resources
               startBluetooth(); //Turn on Bluetooth with 'Rover' name
 
               changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
@@ -369,7 +369,7 @@ void updateSystemState()
               Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
               ntripClient.stop();
 
-              stopWiFi(); //Turn off WiFi and release all resources
+              wifiStop(); //Turn off WiFi and release all resources
               startBluetooth(); //Turn on Bluetooth with 'Rover' name
 
               changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
@@ -490,7 +490,7 @@ void updateSystemState()
 
           //Stop all WiFi and BT. Re-enable in each specific base start state.
           stopWebServer();
-          stopWiFi();
+          wifiStop();
           stopBluetooth();
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
@@ -1224,7 +1224,7 @@ void updateSystemState()
             displayKeysUpdated();
           }
 
-          stopWiFi();
+          wifiStop();
 
           forceSystemStateUpdate = true; //Imediately go to this new state
           changeState(STATE_KEYS_DAYS_REMAINING);
@@ -1262,7 +1262,7 @@ void updateSystemState()
 
       case (STATE_KEYS_WIFI_TIMEOUT):
         {
-          stopWiFi();
+          wifiStop();
 
           paintKeyWiFiFail(2000);
 
@@ -1344,14 +1344,14 @@ void updateSystemState()
             changeState(STATE_KEYS_LBAND_ENCRYPTED);
           }
 
-          stopWiFi();
+          wifiStop();
 
         }
         break;
 
       case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
         {
-          stopWiFi();
+          wifiStop();
 
           paintKeyWiFiFail(2000);
 

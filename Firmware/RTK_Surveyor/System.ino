@@ -98,23 +98,6 @@ void startWiFi(char* ssid, char* pw)
   }
 }
 
-//Stop WiFi and release all resources
-//See WiFiBluetoothSwitch sketch for more info
-void stopWiFi()
-{
-  if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
-  {
-#ifdef COMPILE_WIFI
-    ntripServer.stop();
-    WiFi.mode(WIFI_OFF);
-#endif
-
-    log_d("WiFi Stopped");
-    wifiState = WIFI_OFF;
-    reportHeapNow();
-  }
-}
-
 //Setup the u-blox module for any setup (base or rover)
 //In general we check if the setting is incorrect before writing it. Otherwise, the set commands have, on rare occasion, become
 //corrupt. The worst is when the I2C port gets turned off or the I2C address gets borked.

@@ -199,3 +199,24 @@ void wifiStop()
   }
 #endif  //COMPILE_WIFI
 }
+
+//----------------------------------------
+// Global WiFi Routines
+//----------------------------------------
+
+//Stop WiFi and release all resources
+//See WiFiBluetoothSwitch sketch for more info
+void wifiStop()
+{
+#ifdef  COMPILE_WIFI
+  if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
+  {
+    ntripServer.stop();
+    WiFi.mode(WIFI_OFF);
+
+    log_d("WiFi Stopped");
+    wifiState = WIFI_OFF;
+    reportHeapNow();
+  }
+#endif  //COMPILE_WIFI
+}

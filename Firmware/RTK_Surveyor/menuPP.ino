@@ -102,7 +102,6 @@ void menuPointPerfect()
           updatePointPerfectKeys();
       }
 
-      wifiStop();
       startBluetooth();
 #endif
     }

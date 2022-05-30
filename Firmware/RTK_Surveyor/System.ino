@@ -3,6 +3,7 @@
 //This allows multiple units to be on at same time
 void startBluetooth()
 {
+  wifiStop();
   if (btState == BT_OFF)
   {
 #ifdef COMPILE_BT

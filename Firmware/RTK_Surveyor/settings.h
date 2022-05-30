@@ -119,6 +119,7 @@ typedef enum
 enum WiFiState
 {
   WIFI_OFF = 0,
+  WIFI_ON,
   WIFI_NOTCONNECTED,
   WIFI_CONNECTED,
 };

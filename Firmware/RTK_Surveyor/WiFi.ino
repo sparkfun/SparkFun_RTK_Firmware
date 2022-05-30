@@ -102,6 +102,7 @@ void wifiStart(char* ssid, char* pw)
 void wifiStop()
 {
 #ifdef  COMPILE_WIFI
+  stopWebServer();
   if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
   {
     ntripServer.stop();

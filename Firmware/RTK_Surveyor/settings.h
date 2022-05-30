@@ -125,6 +125,17 @@ enum WiFiState
 };
 volatile byte wifiState = WIFI_OFF;
 
+enum NTRIPClientState
+{
+  NTRIP_CLIENT_OFF = 0,         //Using Bluetooth or NTRIP server
+  NTRIP_CLIENT_ON,              //WIFI_ON state
+  NTRIP_CLIENT_WIFI_CONNECTING, //Connecting to WiFi access point
+  NTRIP_CLIENT_WIFI_CONNECTED,  //WiFi connected to an access point
+  NTRIP_CLIENT_CONNECTING,      //Attempting a connection to the NTRIP caster
+  NTRIP_CLIENT_CONNECTED,       //Connected to the NTRIP caster
+};
+volatile byte ntripClientState = NTRIP_CLIENT_OFF;
+
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
 {

@@ -1,3 +1,45 @@
+/*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+WiFi Status Values:
+    WL_CONNECTED: assigned when connected to a WiFi network
+    WL_CONNECTION_LOST: assigned when the connection is lost
+    WL_CONNECT_FAILED: assigned when the connection fails for all the attempts
+    WL_DISCONNECTED: assigned when disconnected from a network
+    WL_IDLE_STATUS: it is a temporary status assigned when WiFi.begin() is called and
+                    remains active until the number of attempts expires (resulting in
+                    WL_CONNECT_FAILED) or a connection is established (resulting in
+                    WL_CONNECTED)
+    WL_NO_SHIELD: assigned when no WiFi shield is present
+    WL_NO_SSID_AVAIL: assigned when no SSID are available
+    WL_SCAN_COMPLETED: assigned when the scan networks is completed
+
+WiFi Station States:
+
+                                  WIFI_OFF (Using Bluetooth)
+                                    |   ^
+                           Use WiFi |   | Use Bluetooth
+                                    |   | WL_CONNECT_FAILED (Bad password)
+                                    |   | WL_NO_SSID_AVAIL (Out of range)
+                                    v   |
+                                   WIFI_ON
+                                    |   ^
+                         WiFi.begin |   | WiFi.stop
+                                    |   | WL_CONNECTION_LOST
+                                    |   | WL_CONNECT_FAILED (Bad password)
+                                    |   | WL_DISCONNECTED
+                                    |   | WL_NO_SSID_AVAIL (Out of range)
+                                    v   |
+                                  WIFI_NOT_CONNECTED
+                                    |   ^
+                       WL_CONNECTED |   | WiFi.disconnect
+                                    |   | WL_CONNECTION_LOST
+                                    |   | WL_CONNECT_FAILED (Bad password)
+                                    |   | WL_DISCONNECTED
+                                    |   | WL_NO_SSID_AVAIL (Out of range)
+                                    v   |
+                                  WIFI_CONNECTED
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+
 //----------------------------------------
 // Constants
 //----------------------------------------

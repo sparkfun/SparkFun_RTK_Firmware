@@ -250,7 +250,7 @@ void updateSystemState()
           {
             log_d("Caster failed to connect. Trying again.");
 
-            if (ntripClientConnectionAttempts++ >= maxNtripClientConnectionAttempts)
+            if (ntripClientConnectLimitReached())
             {
               Serial.println(F("Caster failed to connect. Do you have your caster address and port correct?"));
               ntripClientStop();

@@ -419,8 +419,6 @@ int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
 bool restartRover = false; //If user modifies any NTRIP Client settings, we need to restart the rover
-int ntripClientConnectionAttempts = 0;
-int maxNtripClientConnectionAttempts = 3; //Give up connecting after this number of attempts
 
 unsigned long startTime = 0; //Used for checking longest running functions
 bool lbandCorrectionsReceived = false; //Used to display L-Band SIV icon when corrections are successfully decrypted

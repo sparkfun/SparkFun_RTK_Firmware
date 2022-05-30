@@ -3,7 +3,7 @@ This is a simple Python3 PyQt5 u-blox firmware update GUI for the SparkFun RTK p
 It is a wrapper for u-blox's ubxfwupdate.exe. The actual updating is done by ubxfwupdate.exe.
 This GUI checks which device you are trying to update before calling ubxfwupdate.exe.
 This is to avoid you accidentally updating a NEO-D9S with ZED-F9P firmware and vice versa.
-(Don't worry if that happens. You can recover. But you need access to the SafeBoot pin to
+(Don't worry if that happens. You can recover. But you may need access to the SafeBoot pin to
  force the module into a safe state for re-updating.)
 If you _really_ know what you are doing, you can disable this check with the "Override" option.
 
@@ -109,9 +109,9 @@ class MainWidget(QWidget):
         self.fis_browse_btn.setEnabled(True)
         self.fis_browse_btn.pressed.connect(self.on_browse_fis_btn_pressed)
 
-        # Clear (Default FIS) Button
-        self.clear_fis_btn = QPushButton(self.tr('Default FIS'))
-        self.clear_fis_btn.clicked.connect(self.on_clear_fis_btn_pressed)
+        # Default FIS Button
+        self.default_fis_btn = QPushButton(self.tr('Default FIS'))
+        self.default_fis_btn.clicked.connect(self.on_default_fis_btn_pressed)
 
         # Port Combobox
         self.port_label = QLabel(self.tr('COM Port:'))
@@ -148,12 +148,13 @@ class MainWidget(QWidget):
 
         # Safeboot Button
         self.safeboot_btn = QCheckBox(self.tr('Enter Safeboot'))
-        self.safeboot_btn.setChecked(True)
+        self.safeboot_btn.setChecked(False)
         self.safeboot_btn.toggled.connect(lambda:self.button_state(self.safeboot_btn))
 
         # Training Button
         self.training_btn = QCheckBox(self.tr('Training Sequence'))
-        self.training_btn.setChecked(True)
+        self.training_btn.setChecked(False)
+        self.training_btn.setEnabled(False)
 
         # Reset After Button
         self.reset_btn = QCheckBox(self.tr('Reset After Update'))
@@ -166,6 +167,7 @@ class MainWidget(QWidget):
         # No FIS Button
         self.no_fis_btn = QCheckBox(self.tr('No FIS'))
         self.no_fis_btn.setChecked(True)
+        self.no_fis_btn.toggled.connect(lambda:self.button_state(self.no_fis_btn))
 
         # Override Button
         self.override_btn = QCheckBox(self.tr('Override'))
@@ -191,7 +193,7 @@ class MainWidget(QWidget):
         layout.addWidget(self.fis_label, 2, 0)
         layout.addWidget(self.fisLocation_lineedit, 2, 1)
         layout.addWidget(self.fis_browse_btn, 2, 2)
-        layout.addWidget(self.clear_fis_btn, 2, 3)
+        layout.addWidget(self.default_fis_btn, 2, 3)
         layout.addWidget(self.no_fis_btn, 2, 4)
 
         layout.addWidget(self.port_label, 3, 0)
@@ -231,6 +233,11 @@ class MainWidget(QWidget):
         elif b.text() == "Override":
             if b.isChecked() == True:
                 self.show_warning_message(">>>>> Override enabled <<<<<\nFirmware version check is disabled")
+        elif b.text() == "No FIS":
+            if b.isChecked() == True:
+                self.fisLocation_lineedit.clear()
+            else:
+                self.show_warning_message(">>> Expert users only <<<\n\"No FIS\" is recommended")
 
     def writeMessage(self, msg) -> None:
         self.messageBox.moveCursor(QTextCursor.End)
@@ -279,6 +286,8 @@ class MainWidget(QWidget):
             self.fisLocation_lineedit.setText(lastFile)
             if self.theFisName != '':
                 self.no_fis_btn.setChecked(False)
+            else:
+                self.no_fis_btn.setChecked(True)
         else:
             self.fisLocation_lineedit.clear()
             self.no_fis_btn.setChecked(True)
@@ -397,11 +406,13 @@ class MainWidget(QWidget):
         if fileName:
             self.fisLocation_lineedit.setText(fileName)
             self.no_fis_btn.setChecked(False)
+            self.show_warning_message(">>> Expert users only <<<\n\"No FIS\" is recommended")
 
-    def on_clear_fis_btn_pressed(self) -> None:
-        """Clear the FIS filename."""
-        self.fisLocation_lineedit.clear()
+    def on_default_fis_btn_pressed(self) -> None:
+        """Set the FIS filename to Default FIS."""
+        self.fisLocation_lineedit.setText("Default FIS")
         self.no_fis_btn.setChecked(False)
+        self.show_warning_message(">>> Expert users only <<<\n\"No FIS\" is recommended")
 
     def update_finished(self) -> None:
         """The update QProcess has finished."""
@@ -443,10 +454,13 @@ class MainWidget(QWidget):
                 return
             f.close()
 
-        if self.theFisName != '':
+        if self.no_fis_btn.isChecked() == False:
             fisExists = False
+            filename = self.theFisName
+            if filename == "Default FIS":
+                filename = resource_path("flash.xml")
             try:
-                f = open(self.theFisName)
+                f = open(filename)
                 fisExists = True
             except IOError:
                 fisExists = False
@@ -537,7 +551,7 @@ class MainWidget(QWidget):
 
         if self.no_fis_btn.isChecked() == True:
             command.extend(["--no-fis", "1"])
-        elif self.fisLocation_lineedit.text() == '':
+        elif (self.theFisName == '') or (self.theFisName == "Default FIS"):
             command.extend(["-F", resource_path("flash.xml")])
         else:
             command.extend(["-F", self.theFisName])

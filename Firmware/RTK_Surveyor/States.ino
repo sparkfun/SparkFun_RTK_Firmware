@@ -139,7 +139,6 @@ void updateSystemState()
 
           i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
 
-          stopWebServer();
           wifiStop(); //Turn off WiFi and release all resources
           startBluetooth(); //Turn on Bluetooth with 'Rover' name
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
@@ -417,7 +416,6 @@ void updateSystemState()
           displayBaseStart(0); //Show 'Base'
 
           //Stop all WiFi and BT. Re-enable in each specific base start state.
-          stopWebServer();
           wifiStop();
           stopBluetooth();
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)

@@ -90,7 +90,7 @@ bool ntripClientStart()
   {
     //Turn off Bluetooth and turn on WiFi
     stopBluetooth();
-    startWiFi(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
+    wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
     wifiStartTime = millis();
 
     ntripClientAttempted = true; //Do not allow re-entry into STATE_ROVER_CLIENT_WIFI_STARTED
@@ -149,11 +149,25 @@ void wifiStartAP()
 #endif  //LOCAL_WIFI_TESTING
 }
 
-#endif  //COMPILE_WIFI}
+#endif  //COMPILE_WIFI
 
 //----------------------------------------
 // Global WiFi Routines
 //----------------------------------------
+
+void wifiStart(char* ssid, char* pw)
+{
+#ifdef  COMPILE_WIFI
+  if (wifiState == WIFI_OFF)
+  {
+    Serial.printf("Connecting to WiFi: %s", ssid);
+    WiFi.begin(ssid, pw);
+
+    wifiState = WIFI_NOTCONNECTED;
+    reportHeapNow();
+  }
+#endif  //COMPILE_WIFI
+}
 
 //Stop WiFi and release all resources
 //See WiFiBluetoothSwitch sketch for more info

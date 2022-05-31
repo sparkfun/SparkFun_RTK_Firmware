@@ -219,7 +219,7 @@ typedef struct {
   bool enableResetDisplay = false;
   uint8_t resetCount = 0;
   bool enableExternalPulse = true; //Send pulse once lock is achieved
-  uint32_t externalPulseTimeBetweenPulse_us = 1000000; //us between pulses, max of 65s
+  uint32_t externalPulseTimeBetweenPulse_us = 900000; //us between pulses, max of 65s
   uint32_t externalPulseLength_us = 100000; //us length of pulse
   pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; //Pulse rises for pulse length, then falls
   bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
@@ -364,9 +364,8 @@ typedef struct {
   int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
 
   char pointPerfectDeviceProfileToken[40] = "";
-  bool enableLBandCorrections = true;
-  bool enableIPCorrections = false; //We do not plan to use IP based point perfect
-  char home_wifiSSID[50] = ""; //WiFi network to use when attempting to obtain L-Band keys and ThingStream provisioning
+  bool enablePointPerfectCorrections = true;
+  char home_wifiSSID[50] = ""; //WiFi network to use when attempting to obtain PointPerfect keys and ThingStream provisioning
   char home_wifiPW[50] = "";
   bool autoKeyRenewal = true; //Attempt to get keys if we get under 28 days from the expiration date
   char pointPerfectClientID[50] = "";

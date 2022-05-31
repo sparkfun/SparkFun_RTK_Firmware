@@ -2039,7 +2039,7 @@ void displayKeysUpdated()
 void paintKeyDaysRemaining(int daysRemaining, uint16_t displayTime)
 {
   //28 days
-  //until L-Band
+  //until PP
   //keys expire
 
   if (online.display == true)
@@ -2077,9 +2077,9 @@ void paintKeyDaysRemaining(int daysRemaining, uint16_t displayTime)
     oled.print("Until");
 
     y += fontHeight;
-    textX = x - (oled.getStringWidth("L-Band") / 2);
+    textX = x - (oled.getStringWidth("PP") / 2);
     oled.setCursor(textX, y);
-    oled.print("L-Band");
+    oled.print("PP");
 
     y += fontHeight;
     textX = x - (oled.getStringWidth("Keys") / 2);
@@ -2099,7 +2099,7 @@ void paintKeyDaysRemaining(int daysRemaining, uint16_t displayTime)
 
 void paintKeyWiFiFail(uint16_t displayTime)
 {
-  //L-Band
+  //PP
   //Update
   //Failed
   //No WiFi
@@ -2115,9 +2115,9 @@ void paintKeyWiFiFail(uint16_t displayTime)
     int fontHeight = 13;
     int textX;
 
-    textX = x - (oled.getStringWidth("L-Band") / 2); //Starting point of text
+    textX = x - (oled.getStringWidth("PP") / 2); //Starting point of text
     oled.setCursor(textX, y);
-    oled.print("L-Band");
+    oled.print("PP");
 
     y += fontHeight;
     textX = x - (oled.getStringWidth("Update") / 2);

@@ -36,24 +36,18 @@
     (Done) Ports - Configure Radio and Data port baud rates
     (Done) Test menu
     (Done) Firmware upgrade menu
-    Enable various debug outputs sent over BT
 
   TODO:
-    Add ntripServer_MountPoint and PWDownload to AP config
-    Add ntripClient_TransmitGGA to AP config
-    Add ntripServer_CasterUser/PW to AP config
-    Add maxLogLength_minutes to AP config
-    Add L-Band to AP config
 
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 0;
+const int FIRMWARE_VERSION_MINOR = 1;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
-#define COMPILE_BT //Comment out to remove Bluetooth functionality
+//#define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_AP //Comment out to remove Access Point functionality
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -356,7 +350,7 @@ int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-//L-Band Corrections
+//PointPerfect Corrections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 SFE_UBLOX_GNSS i2cLBand; // NEO-D9S
 
@@ -471,7 +465,7 @@ bool mqttMessageReceived = false; //Goes true when the subscribed MQTT channel r
 uint8_t leapSeconds = 0; //Gets set if GNSS is online
 unsigned long systemTestDisplayTime = 0; //Timestamp for swapping the graphic during testing
 uint8_t systemTestDisplayNumber = 0; //Tracks which test screen we're looking at
-unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to update during L-Band Key checking
+unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to update during PointPerfect Key checking
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -510,7 +504,7 @@ void setup()
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
-  updateRTC(); //The GNSS likely has time/date. Update ESP32 RTC to match. Needed for L-Band key expiration.
+  updateRTC(); //The GNSS likely has time/date. Update ESP32 RTC to match. Needed for PointPerfect key expiration.
 
   Serial.flush(); //Complete any previous prints
 
@@ -543,7 +537,7 @@ void loop()
 
   updateNTRIPClient(); //Move any available incoming NTRIP to ZED
 
-  updateLBand(); //Check if we've recently received L-Band corrections or not
+  updateLBand(); //Check if we've recently received PointPerfect corrections or not
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;

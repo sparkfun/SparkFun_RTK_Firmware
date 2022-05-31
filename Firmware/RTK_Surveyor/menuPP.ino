@@ -23,8 +23,8 @@ void menuPointPerfect()
     else
       Serial.println("No keys");
 
-    Serial.print(F("1) Use L-Band Corrections: "));
-    if (settings.enableLBandCorrections == true) Serial.println(F("Enabled"));
+    Serial.print(F("1) Use PointPerfect Corrections: "));
+    if (settings.enablePointPerfectCorrections == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
     Serial.print(F("2) Set Home WiFi SSID: "));
@@ -50,7 +50,7 @@ void menuPointPerfect()
 
     if (incoming == '1')
     {
-      settings.enableLBandCorrections ^= 1;
+      settings.enablePointPerfectCorrections ^= 1;
     }
     else if (incoming == '2')
     {
@@ -415,10 +415,6 @@ bool updatePointPerfectKeys()
       Serial.println("connected");
       //mqttClient.subscribe(settings.pointPerfectLBandTopic); //The /pp/key/Lb channel fails to respond with keys
       mqttClient.subscribe("/pp/ubx/0236/Lb"); //Alternate channel for L-Band keys
-
-      //if(settings.enableIPCorrections == true) ...
-      //mqttClient.subscribe(mqtt_lband_correction_topic_eu);
-      //mqttClient.subscribe(mqtt_lband_correction_topic_us);
     }
     else
     {
@@ -820,12 +816,12 @@ void applyLBandKeys()
     //NEO-D9S encrypted PMP messages are only supported on ZED-F9P firmware v1.30 and above
     if (zedModuleType != PLATFORM_F9P)
     {
-      Serial.println("Error: L-Band corrections currently only supported on the ZED-F9P.");
+      Serial.println("Error: PointPerfect corrections currently only supported on the ZED-F9P.");
       return;
     }
     if (zedFirmwareVersionInt < 130)
     {
-      Serial.println("Error: L-Band corrections currently supported by ZED-F9P firmware v1.30 and above. Please upgrade your ZED firmware: https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver");
+      Serial.println("Error: PointPerfect corrections currently supported by ZED-F9P firmware v1.30 and above. Please upgrade your ZED firmware: https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver");
       return;
     }
 
@@ -858,13 +854,13 @@ void applyLBandKeys()
         Serial.println(F("setDynamicSPARTNKeys failed"));
       else
       {
-        log_d("L-Band keys applied");
+        log_d("PointPerfect keys applied");
         online.lbandCorrections = true;
       }
     }
     else
     {
-      log_d("No L-Band keys available");
+      log_d("No PointPerfect keys available");
     }
   }
 }

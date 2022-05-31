@@ -49,7 +49,7 @@ void menuMain()
     Serial.println(F("p) Configure Profiles"));
 
     if (online.lband == true)
-      Serial.println(F("l) Configure L-Band"));
+      Serial.println(F("P) Configure PointPerfect"));
 
     Serial.println(F("s) System Status"));
 
@@ -76,7 +76,7 @@ void menuMain()
       menuSystem();
     else if (incoming == 'p')
       menuUserProfiles();
-    else if (incoming == 'l' && online.lband == true)
+    else if (incoming == 'P' && online.lband == true)
       menuPointPerfect();
     else if (incoming == 'f' && binCount > 0)
       menuFirmware();

@@ -1116,8 +1116,8 @@ void updateSystemState()
           //We want an immediate change from this state
           forceSystemStateUpdate = true; //Imediately go to this new state
 
-          //If user has turned off L-Band, skip everything
-          if (settings.enableLBandCorrections == false)
+          //If user has turned off PointPerfect, skip everything
+          if (settings.enablePointPerfectCorrections == false)
           {
             changeState(settings.lastState); //Go to either rover or base
           }
@@ -1220,7 +1220,7 @@ void updateSystemState()
 
       case (STATE_KEYS_WIFI_CONNECTED):
         {
-          if (updatePointPerfectKeys() == true) //Connect to ThingStream MQTT and get L-Band key UBX packet
+          if (updatePointPerfectKeys() == true) //Connect to ThingStream MQTT and get PointPerfect key UBX packet
           {
             displayKeysUpdated();
           }
@@ -1239,7 +1239,7 @@ void updateSystemState()
             if (settings.pointPerfectNextKeyStart > 0)
             {
               uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
-              Serial.printf("Days until L-Band keys expire: %d\n\r", daysRemaining);
+              Serial.printf("Days until PointPerfect keys expire: %d\n\r", daysRemaining);
               paintKeyDaysRemaining(daysRemaining, 2000);
             }
           }

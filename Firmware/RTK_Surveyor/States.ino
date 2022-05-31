@@ -26,45 +26,11 @@ void updateSystemState()
     {
       /*
                         .-----------------------------------.
-           NTRIP Client |      STATE_ROVER_NOT_STARTED      |
-           .------------| Text: 'Rover' and 'Rover Started' |
-           |    Enabled '-----------------------------------'
-           |    = False                   |
-           |  Stop WiFi,                  | NTRIP Client Enabled = True
-           |      Start                   | Stop Bluetooth
-           |  Bluetooth                   | Start WiFi
-           |                              V
-           |            .-----------------------------------. 8 Sec
-           |            |  STATE_ROVER_CLIENT_WIFI_STARTED  | Connection
-           |            |         Blinking WiFi Icon        | Timeout
-           |            |           "HPA: >30m"             |--------------.
-           |            |             "SIV: 0"              |              |
-           |            '-----------------------------------'              |
-           |                              |                                |
-           |                              | radioState = WIFI_CONNECTED    |
-           |                              | WiFi connected = True          |
-           |                              V                                |
-           |            .-----------------------------------.              |
-           |            | STATE_ROVER_CLIENT_WIFI_CONNECTED | Connection   |
-           |            |         Solid WiFi Icon           |  failed      V
-           |            |           "HPA: >30m"             |------------->+
-           |            |             "SIV: 0"              | Stop WiFi,   |
-           |            '-----------------------------------' Start        |
-           |                              |                   Bluetooth    |
-           |                              |                                |
-           |                              | Client Started                 |
-           |                              V                                |
-           |            .-----------------------------------.              |
-           |            |     STATE_ROVER_CLIENT_STARTED    | No response, |
-           |            |         Blinking WiFi Icon        | unauthorized V
-           |            |           "HPA: >30m"             |------------->+
-           |            |             "SIV: 0"              | Stop WiFi,   |
-           |            '-----------------------------------' Start        |
-           |                              |                   Bluetooth    |
-           |                              |                                |
-           |                              | Client Connected               |
-           |                              V                                |
-           '----------------------------->+<-------------------------------'
+                        |      STATE_ROVER_NOT_STARTED      |
+                        | Text: 'Rover' and 'Rover Started' |
+                        '-----------------------------------'
+                                          |
+                                          |
                                           |
                                           V
                         .-----------------------------------.
@@ -148,10 +114,8 @@ void updateSystemState()
 
           displayRoverSuccess(500);
 
-          if (ntripClientStart())
-            changeState(STATE_ROVER_CLIENT_WIFI_STARTED);
-          else
-            changeState(STATE_ROVER_NO_FIX);
+          ntripClientStart();
+          changeState(STATE_ROVER_NO_FIX);
 
           firstRoverStart = false; //Do not allow entry into test menu again
         }
@@ -194,125 +158,6 @@ void updateSystemState()
             changeState(STATE_ROVER_FIX);
           if (carrSoln == 1) //RTK Float
             changeState(STATE_ROVER_RTK_FLOAT);
-        }
-        break;
-
-      case (STATE_ROVER_CLIENT_WIFI_STARTED):
-        {
-          if (wifiConnectionTimeout())
-          {
-            paintNClientWiFiFail(4000);
-            changeState(STATE_ROVER_NOT_STARTED); //Give up and move to normal Rover mode
-          }
-
-#ifdef COMPILE_WIFI
-          byte wifiStatus = wifiGetStatus();
-          if (wifiStatus == WL_CONNECTED)
-          {
-            wifiState = WIFI_CONNECTED;
-
-            // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
-            i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
-
-            i2cGNSS.setNMEAGPGGAcallbackPtr(&ntripClientPushGPGGA); // Set up the callback for GPGGA
-
-            float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
-
-            i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency * 10); // Tell the module to output GGA every 10 seconds
-
-            changeState(STATE_ROVER_CLIENT_WIFI_CONNECTED);
-          }
-          else if (wifiStatus == WL_NO_SSID_AVAIL)
-          {
-            paintNClientWiFiFail(4000);
-            changeState(STATE_ROVER_NOT_STARTED); //Give up and return to Bluetooth
-          }
-          else
-          {
-            Serial.print(".");
-          }
-#endif
-        }
-        break;
-
-      case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
-        {
-          //Open connection to caster service
-#ifdef COMPILE_WIFI
-          if (ntripClientConnect())
-          {
-            casterResponseWaitStartTime = millis();
-            changeState(STATE_ROVER_CLIENT_STARTED);
-          }
-          else
-          {
-            log_d("Caster failed to connect. Trying again.");
-
-            if (ntripClientConnectLimitReached())
-            {
-              Serial.println(F("Caster failed to connect. Do you have your caster address and port correct?"));
-              ntripClientStop();
-
-              wifiStop(); //Turn off WiFi and release all resources
-              startBluetooth(); //Turn on Bluetooth with 'Rover' name
-
-              changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
-            }
-          }
-#endif
-        }
-        break;
-
-      case (STATE_ROVER_CLIENT_STARTED):
-        {
-#ifdef COMPILE_WIFI
-          //Check for no response from the caster service
-          if (ntripClientReceiveDataAvailable() == 0)
-          {
-            //Check for response timeout
-            if (millis() - casterResponseWaitStartTime > 5000)
-            {
-              Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
-              ntripClientStop();
-
-              wifiStop(); //Turn off WiFi and release all resources
-              startBluetooth(); //Turn on Bluetooth with 'Rover' name
-
-              changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
-            }
-          }
-          // Caster service has provided a response
-          else
-          {
-            //Check reply
-            char response[512];
-            ntripClientResponse(&response[0], sizeof(response));
-
-            //Look for '200 OK'
-            if (strstr(response, "200") != NULL)
-            {
-              log_d("Connected to caster");
-
-              lastReceivedRTCM_ms = millis(); //Reset timeout
-
-              //We don't use a task because we use I2C hardware (and don't have a semphore).
-              online.ntripClient = true;
-
-              changeState(STATE_ROVER_NO_FIX); //Start rover *with* WiFi
-            }
-            else
-            {
-              //Look for '401 Unauthorized'
-              Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
-              ntripClientStop();
-
-              wifiStop(); //Turn off WiFi and release all resources
-              startBluetooth(); //Turn on Bluetooth with 'Rover' name
-
-              changeState(STATE_ROVER_NO_FIX); //Start rover without WiFi
-            }
-          }
-#endif
         }
         break;
 
@@ -1327,15 +1172,6 @@ void changeState(SystemState newState)
       break;
     case (STATE_ROVER_RTK_FIX):
       Serial.println(F("State: Rover - RTK Fix"));
-      break;
-    case (STATE_ROVER_CLIENT_WIFI_STARTED):
-      Serial.println(F("State: Rover - Client WiFi Started"));
-      break;
-    case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
-      Serial.println(F("State: Rover - Client WiFi Connected"));
-      break;
-    case (STATE_ROVER_CLIENT_STARTED):
-      Serial.println(F("State: Rover - Client Started"));
       break;
     case (STATE_BASE_NOT_STARTED):
       Serial.println(F("State: Base - Not Started"));

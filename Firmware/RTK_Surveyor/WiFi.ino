@@ -4,6 +4,7 @@
 
 #ifdef  COMPILE_WIFI
 
+static WiFiClient ntripClient; // The WiFi connection to the NTRIP caster. We use this to obtain RTCM from the caster.
 static bool ntripClientAttempted = false; //Goes true once we attempt WiFi. Allows graceful failure.
 
 #endif  //COMPILE_WIFI

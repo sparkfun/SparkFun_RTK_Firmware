@@ -196,34 +196,6 @@ void updateDisplay()
                 | ICON_LOGGING;       //Bottom right
           break;
 
-        case (STATE_ROVER_CLIENT_WIFI_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_DYNAMIC_MODEL  //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_CROSS_HAIR     //Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
-          break;
-        case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_DYNAMIC_MODEL  //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_CROSS_HAIR     //Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
-          break;
-        case (STATE_ROVER_CLIENT_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_DYNAMIC_MODEL  //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_CROSS_HAIR     //Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
-          break;
-
         case (STATE_BASE_NOT_STARTED):
           //Do nothing. Static display shown during state change.
           break;
@@ -1514,7 +1486,6 @@ void paintSystemTest()
           oled.print(F("FAIL"));
       } //End display 0
     } //End Facet L-Band testing
-    
   }
 }
 

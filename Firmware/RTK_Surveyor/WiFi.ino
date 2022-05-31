@@ -86,6 +86,10 @@ void wifiStart(char* ssid, char* pw)
 {
 #ifdef  COMPILE_WIFI
   if (wifiState == WIFI_OFF)
+    //Turn off Bluetooth
+    stopBluetooth();
+
+  if (wifiState == WIFI_OFF)
   {
     Serial.printf("Connecting to WiFi: %s", ssid);
     WiFi.begin(ssid, pw);
@@ -233,8 +237,7 @@ bool ntripClientStart()
 #ifdef  COMPILE_WIFI
   if (settings.enableNtripClient == true && ntripClientAttempted == false)
   {
-    //Turn off Bluetooth and turn on WiFi
-    stopBluetooth();
+    //Start WiFi
     wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
 
     ntripClientAttempted = true; //Do not allow re-entry into STATE_ROVER_CLIENT_WIFI_STARTED

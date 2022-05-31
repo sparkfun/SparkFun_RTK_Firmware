@@ -84,20 +84,6 @@ void stopBluetooth()
   }
 }
 
-void startWiFi(char* ssid, char* pw)
-{
-  if (wifiState == WIFI_OFF)
-  {
-#ifdef COMPILE_WIFI
-    Serial.printf("Connecting to WiFi: %s", ssid);
-    WiFi.begin(ssid, pw);
-#endif
-
-    wifiState = WIFI_NOTCONNECTED;
-    reportHeapNow();
-  }
-}
-
 //Setup the u-blox module for any setup (base or rover)
 //In general we check if the setting is incorrect before writing it. Otherwise, the set commands have, on rare occasion, become
 //corrupt. The worst is when the I2C port gets turned off or the I2C address gets borked.

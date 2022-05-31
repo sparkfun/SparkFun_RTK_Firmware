@@ -70,7 +70,7 @@ void menuPointPerfect()
     {
 #ifdef COMPILE_WIFI
       stopBluetooth();
-      startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
+      wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
 
       unsigned long startTime = millis();
       while (wifiGetStatus() != WL_CONNECTED)

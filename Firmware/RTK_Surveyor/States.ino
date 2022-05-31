@@ -530,7 +530,6 @@ void updateSystemState()
           if (settings.enableNtripServer == true)
           {
             //Turn off Bluetooth and turn on WiFi
-            stopBluetooth();
             wifiStart(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
 
             changeState(STATE_BASE_TEMP_WIFI_STARTED);
@@ -759,7 +758,6 @@ void updateSystemState()
           if (settings.enableNtripServer == true)
           {
             //Turn off Bluetooth and turn on WiFi
-            stopBluetooth();
             wifiStart(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
 
             rtcmPacketsSent = 0; //Reset any previous number

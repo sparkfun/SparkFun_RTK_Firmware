@@ -31,6 +31,26 @@ NTRIP Client States:
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
+#ifdef  COMPILE_WIFI
+
+//----------------------------------------
+// Locals - compiled out
+//----------------------------------------
+
+//Count the number of connection attempts
+static int ntripClientConnectionAttempts;
+
+//----------------------------------------
+// NTRIP Client Routines - compiled out
+//----------------------------------------
+
+void ntripClientAllowMoreConnections()
+{
+  ntripClientConnectionAttempts = 0;
+}
+
+#endif  //COMPILE_WIFI
+
 //----------------------------------------
 // Constants - compiled out
 //----------------------------------------

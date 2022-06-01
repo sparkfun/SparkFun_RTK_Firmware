@@ -270,14 +270,6 @@ bool zedUartPassed = false; //Goes true during testing if ESP can communicate wi
 //External Display
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
-QwiicMicroOLED oled;
-
-// Fonts
-#include <res/qw_fnt_5x7.h>
-#include <res/qw_fnt_8x16.h>
-#include <res/qw_fnt_largenum.h>
-
-#include "icons.h"
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Firmware binaries loaded from SD
@@ -385,15 +377,8 @@ uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
 uint32_t lastRTCAttempt = 0; //Wait 1000ms between checking GNSS for current date/time
 
-uint32_t lastSatelliteDishIconUpdate = 0;
-bool satelliteDishIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms
-uint32_t lastCrosshairIconUpdate = 0;
-bool crosshairIconDisplayed = false; //Toggles as lastCrosshairIconUpdate goes above 1000ms
 uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
-uint32_t lastWifiIconUpdate = 0;
-bool wifiIconDisplayed = false; //Toggles as lastWifiIconUpdate goes above 1000ms
-uint32_t lastLoggingIconUpdate = 0;
 int loggingIconDisplayed = 0; //Increases every 500ms while logging
 
 uint64_t lastLogSize = 0;

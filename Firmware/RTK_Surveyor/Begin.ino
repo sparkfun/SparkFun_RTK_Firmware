@@ -351,29 +351,6 @@ void beginFS()
   }
 }
 
-void beginDisplay()
-{
-  if (oled.begin() == true)
-  {
-    online.display = true;
-
-    Serial.println(F("Display started"));
-    displaySplash();
-    splashStart = millis();
-  }
-  else
-  {
-    if (productVariant == RTK_SURVEYOR)
-    {
-      Serial.println(F("Display not detected"));
-    }
-    else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
-    {
-      Serial.println(F("Display Error: Not detected."));
-    }
-  }
-}
-
 //Connect to ZED module and identify particulars
 void beginGNSS()
 {
@@ -436,7 +413,7 @@ void beginGNSS()
       Serial.printf("Unknown ZED module: %s\n\r", i2cGNSS.minfo.extension[3]);
       zedModuleType = PLATFORM_F9P;
     }
-    
+
     printModuleInfo(); //Print module type and firmware version
   }
 

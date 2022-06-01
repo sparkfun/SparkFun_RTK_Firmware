@@ -89,7 +89,7 @@ I wrapped the SMA extension once around the base. In case anything pulls on the 
 
 ## Gather Raw GNSS Data
 
-Once you’ve got the antenna into a location where it *will not move or be moved* we need to establish its location. Open u-center and verify that you can get a lock and see 25+ satellites with your ZED-F9P. Assuming you’ve got good reception, we now need to set the receiver to output raw data from the satellites. 
+Once you’ve got the antenna into a location where it *will not move or be moved* we need to establish its location. Power on your RTK unit and verify that you can get a lock and see 25+ satellites. Assuming you’ve got good reception, we now need to set the receiver to output raw data from the satellites. 
 
 You will need a microSD card that is 1GB up to 32GB formatted for FAT16 or FAT32. 
 
@@ -121,21 +121,19 @@ Press the 'Save and Exit' button. Upon reset, the unit should begin displaying a
 
 After enabling the NMEA and RXM messages, exit from the serial menu by pressing x repeatedly. The system will save and apply the settings.
 
-#### Config via Serial
+### Deploy Unit
+
+Once the RTK product is configured, power it up with microSD inserted, and leave the unit in **Rover** mode. This will record all the data (NMEA, UBX, and RAWX) from the receiver to a *.ubx file. We do not yet know the location of the antenna so we stay in Rover mode to allow it to compile a large amount of satellite data. Only after we have confirmed its location should you enter **Base** mode.
 
 ![The logging icon will remain animated while the log file is increasing](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
 
 *The logging icon will remain animated while the log file is increasing*
 
-### Deploy Unit
-
-Once the RTK product is configured, power it up with microSD inserted, and leave the unit in **Rover** mode. This will record all the data (NMEA, UBX, and RAWX) from the receiver to a *.ubx file. We do not yet know the location of the antenna so we stay in Rover mode to allow it to compile a large amount of satellite data. Only after we have confirmed its location should you enter **Base** mode.
-
 #### Confirm Recording
 
 Before leaving the unit for 6 to 24 hours, it is recommended that you capture a few minutes of RAWX log data, with the antenna located with a clear view of the sky, and then inspect the log to confirm everything is working correctly. 
 
-[Getting UBX file from SD card](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet SD RAWX Log Files.png)
+![Getting UBX file from SD card](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet SD RAWX Log Files.png)
 
 *Getting UBX file from SD card*
 
@@ -143,7 +141,7 @@ Remove the microSD from the RTK unit and open it on a computer. The latest log f
 
 The quickest method to verify RAWX logging is to open the UBX file with a text editor.
 
-[Viewing a RAWX log in a text editor](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet Text Editor RAWX packets.png)
+![Viewing a RAWX log in a text editor](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet Text Editor RAWX packets.png)
 
 *NMEA and UBX binary data viewed in Visual Studio Code*
 
@@ -151,13 +149,13 @@ Your editor may render the binary UBX RAWX data in unknown ways. If you see NMEA
 
 If you have u-center installed, you can more easily inspect for successful logging. Double click on a UBX files  to open them in u-center.
 
-[Viewing a RAWX log in u-center](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet u-center view of Log Files.png)
+![Viewing a RAWX log in u-center](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet u-center view of Log Files.png)
 
 *Viewing a RAWX log in u-center*
 
 Press the play button (shown above) and you should see satellites quickly come in and out of view.
 
-[RAWX packet within the Packet Console](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet u-center RAWX packets.png)
+![RAWX packet within the Packet Console](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet u-center RAWX packets.png)
 
 *RAWX packet within the Packet Console*
 

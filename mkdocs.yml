@@ -75,6 +75,7 @@ extra:
 nav:
   - Software Specifics:
     - intro.md
+    - connecting_bluetooth.md
     - displays.md
     - system_configuration.md
     - configure_with_wifi.md

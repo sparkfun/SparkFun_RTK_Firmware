@@ -90,10 +90,6 @@ nav:
     - configure_lband.md
     - menu_system_status.md
     - system_status_report.md
+    - permanent_base.md
     - firmware_update.md
     - contribute.md
-  - Hardware Specifics:
-    - hardware_rtk_surveyor.md
-    - hardware_rtk_express.md
-    - hardware_rtk_express_plus.md
-    - hardware_rtk_facet.md

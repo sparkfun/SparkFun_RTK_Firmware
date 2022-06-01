@@ -6,6 +6,8 @@ Many applications using the RTK products will use a 3rd party GIS application or
 
 For this example we will connect the output from the **Data** port to a [USB to Serial adapter](https://www.sparkfun.com/products/15096) so that we can view the serial data over a terminal connection.
 
+The **Data** port on the RTK Facet, Express, and Express Plus can be configured to output a variety of different signals including NMEA Serial data. Be sure to checkout the [Ports Menu](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_ports/) section to be sure your device is configured to output NMEA.
+
 Connect the included [4-pin JST to breadboard cable](https://www.sparkfun.com/products/17240) to the **Data** port. The cable has the following pinout:
 
 * **Red** - 3.3V

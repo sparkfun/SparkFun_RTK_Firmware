@@ -153,7 +153,7 @@ If you have u-center installed, you can more easily inspect for successful loggi
 
 *Viewing a RAWX log in u-center*
 
-Press the play button (shown above) and you should see satellites quickly come in and out of view.
+Press the play button (shown above) and you should see satellites quickly come in and out of view as u-center 'plays' back the log file.
 
 ![RAWX packet within the Packet Console](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet u-center RAWX packets.png)
 
@@ -185,7 +185,7 @@ Using these times, you can limit the time window to whatever you need and re-con
 
 **Why don’t we crank up the fix rate? Moar is better!™**
 
-The ZED-F9P can go up to 30Hz. Why not get RAWX data at greater than 1Hz? Because nature doesn’t move that fast. Most PPP analyzation services will ignore anything greater than 1Hz. OPUS goes so far as to “decimate all recording rates to 30 seconds”. And, your OBS files will be monstrously large. If 24 hours is 300MB at 1Hz, it follows that 24 hours at 30Hz will be ~9 gig. So no, keep it at 1Hz.
+The RTK products can log fix rates up to 20Hz. Why not get RAWX data at greater than 1Hz? Because nature doesn’t move that fast. Most PPP analyzation services will ignore anything greater than 1Hz. OPUS goes so far as to “decimate all recording rates to 30 seconds”. And, your OBS files will be monstrously large. If 24 hours is 1GB at 1Hz, it follows that 24 hours at 30Hz will be ~30 gig. So no, keep it at 1Hz.
 
 We now need to pass the raw GNSS satellite data in RINEX format (*\*.obs*) through a post processing center to try to get the actual location of the antenna. There are a handful of services but we’ve had great luck using the Canadian [CSRS-PPP service](https://webapp.geod.nrcan.gc.ca/geod/tools-outils/ppp.php?locale=en). The US National Geodetic Service provides a service called [OPUS](https://www.ngs.noaa.gov/OPUS/) but we found it to be frustratingly limited by file size and format issues. Your mileage may vary. 
 
@@ -199,17 +199,17 @@ Click the 'Summary' link to open a summary of results. This summary contains the
 
 [![Output from CSRS](https://cdn.sparkfun.com/assets/learn_tutorials/1/3/6/3/SparkFun_PPP_Results.png)](https://cdn.sparkfun.com/assets/learn_tutorials/1/3/6/3/SparkFun_PPP_Results.png)
 
-*The SparkFun antenna with +/-2mm of accuracy! :O*<-
+*The SparkFun antenna with +/-2mm of accuracy! :O*
 
 The email will also include a [fancy PDF report](https://cdn.sparkfun.com/assets/learn_tutorials/1/3/6/3/SparkFun-PPP.pdf) of your antenna’s location but does not include the Cartesian coordinates we will need later.
 
-If all goes well you should have a very precise location for your antenna. For u-blox receivers we are most interested in ECEF coordinates. [ECEF](https://en.wikipedia.org/wiki/ECEF) is *fascinating*. Rather than lat and long, ECEF is the number of meters from the internationally agreed upon reference frame of the center of mass of the Earth. Basically, your ECEF coordinates are the distance you are from the *center of the Earth*. Neat.
+If all goes well you should have a very precise location for your antenna. For SparkFun RTK products we are most interested in ECEF coordinates. [ECEF](https://en.wikipedia.org/wiki/ECEF) is *fascinating*. Rather than lat and long, ECEF is the number of meters from the internationally agreed upon reference frame of the center of mass of the Earth. Basically, your ECEF coordinates are the distance you are from the *center of the Earth*. Neat.
 
 ### Configuring Fixed Location
 
 Now that you’ve got the ECEF position of your antenna, let’s tell the RTK product where its antenna is located with a few millimeters of accuracy. 
 
-Re-enter the WiFi AP config page or connect over Serial.
+Enter the WiFi AP config page or connect over Serial.
 
 ![Setting ECEF coordinates over WiFi](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Base_Config1.jpg) 
 
@@ -221,7 +221,7 @@ Select **Fixed** and **ECEF Coordinates** then enter the coordinates obtained fr
 
 *Configuring NTRIP Server settings via WiFi Config AP*
 
-If your RTK product has access to a WiFi network, consider enabling the NTRIP Server. This will allow the RTK device to automatically begin transmitting its RTCM data to an NTRIP Caster once it has entered Fixed Base mode.
+If your RTK product has access to a WiFi network, consider enabling the NTRIP Server. This will allow the RTK device to automatically begin transmitting its RTCM data to an NTRIP Caster once it has entered Fixed Base mode. See [Creating NTRIP Caster](https://sparkfun.github.io/SparkFun_RTK_Firmware/permanent_base/#creating-ntrip-caster) for more information.
 
 Save the settings to the RTK unit and exit. 
 
@@ -235,7 +235,7 @@ To configure over serial, press 3 to open the Base menu, then 1 to toggle the Ba
 
 *Settings for the NTRIP Server*
 
-If your RTK product has access to a WiFi network, consider enabling the NTRIP Server. This will allow the RTK device to automatically begin transmitting its RTCM data to an NTRIP Caster once it has entered Fixed Base mode.
+If your RTK product has access to a WiFi network, consider enabling the NTRIP Server. This will allow the RTK device to automatically begin transmitting its RTCM data to an NTRIP Caster once it has entered Fixed Base mode. See [Creating NTRIP Caster](https://sparkfun.github.io/SparkFun_RTK_Firmware/permanent_base/#creating-ntrip-caster) for more information.
 
 Press x multiple times to exit the serial menu.
 
@@ -268,6 +268,7 @@ There are a variety of Windows applications out there that claim to be an NTRIP 
 [RTK2Go](http://rtk2go.com/) seems to be a pet project of SNIP. We recommend creating a mount point and a password through RTK2GO.com. Yes, the RTK2go website looks looks spammy but the service works well and is used widely. Please see [RTK2Go](http://rtk2go.com/) for details about creating an account. It's free and takes only a few minutes. Once activated you will be provided with your Mountpoint name and Mountpoint PW. These two credentials are used in a NTRIP Server setup:
 
 **NTRIP Server:**
+
 * WiFi SSID/PW - These are your local WiFi credentials
 * Caster Host: rtk2go.com
 * Caster Port: 2101
@@ -277,6 +278,7 @@ There are a variety of Windows applications out there that claim to be an NTRIP 
 * Mount Point PW: Required and provided by RTK2Go
 
 **NTRIP Client:**
+
 * WiFi SSID/PW - These are your local WiFi credentials
 * Caster Host: rtk2go.com
 * Caster Port: 2101
@@ -285,21 +287,21 @@ There are a variety of Windows applications out there that claim to be an NTRIP 
 * Mount Point: Provided by RTK2Go
 * Mount Point PW: **Not Needed**
 
-The differences between Server and Client are small. The Server needs to know the mount point PW as it needs to be authorized to push data there. The Client needs to know which mount point, but does not need a mount point password. **Note:** You must provide a valid email address to RTK2Go.
+The differences between Server and Client are small. The Server needs to know the mount point PW as it needs to be authorized to push data there. The Client needs to know which mount point, but does not need a mount point password. 
 
-From RTK2Go:
+**Note:** You must provide a valid email address to RTK2Go. From RTK2Go:
 
 > It is now REQUIRED that all data consumers (Rover devices) provide a valid email address in the NTRIP Client user account name field when accessing the Caster.
 
 ![The SparkFun Mount Point bldr_SparkFun1](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK RTK2Go SparkFun Mount Point.png)
 
-*The SparkFun Mount Point bldr_SparkFun1*
+*The SparkFun Mount Point 'bldr_SparkFun1'*
 
 To verify that your RTK product is correctly broadcasting RTCM data, you can access RTK2Go from a browser on Port 2101. This link [RTK2Go.com:2101](RTK2go.com:2101) will show a list all current NTRIP Servers that are pushing data to the RTK2Go caster, and are available to be accessed, free of charge, by any NTRIP Client in the world.
 
 ### Emlid Caster
 
-Emlid Caster is also very easy to setup and has a bit more user friendly looking website. Creating an account is very straightforward.
+[Emlid Caster](caster.emlid.com) is also very easy to setup and has a bit more user friendly looking website. Creating an account is very straightforward.
 
 ![Emlid Mount Points](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Emlid Mount Points.png)
 

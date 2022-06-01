@@ -16,9 +16,12 @@ When powered on, the RTK product will broadcast itself as either '[Platform] Rov
 
 [![alt text](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Rover_Fixed.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Rover_Fixed.jpg)
 
-*MAC address 5522 is shown in the upper left corner*
+![Bluetooth MAC address B022 is shown in the upper left corner](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Rover Display.png)
 
-**Note:** *5522* is the last four digits of your unit's MAC address and will be unique to the device in front of you. This is helpful in case there are multiple RTK devices within Bluetooth range.
+
+*Bluetooth MAC address B022 is shown in the upper left corner*
+
+**Note:** *B022* is the last four digits of your unit's MAC address and will be unique to the device in front of you. This is helpful in case there are multiple RTK devices within Bluetooth range.
 
 [![Pairing with the RTK Express over Bluetooth](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/8/5/7/RTK_Express_-_Bluetooth_Connect.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/RTK_Express_-_Bluetooth_Connect.jpg)
 

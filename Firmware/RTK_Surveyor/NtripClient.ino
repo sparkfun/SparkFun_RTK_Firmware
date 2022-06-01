@@ -81,5 +81,17 @@ void ntripClientStart()
 void ntripClientUpdate()
 {
 #ifdef  COMPILE_WIFI
-#endif  //COMPILE_WIFI
+  //Enable WiFi and the NTRIP client if requested
+  switch (ntripClientState)
+  {
+    case NTRIP_CLIENT_OFF:
+      break;
+
+    //Start WiFi
+    case NTRIP_CLIENT_ON:
+      wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
+      ntripClientState = NTRIP_CLIENT_WIFI_CONNECTING;
+      break;
+  }
+ #endif  //COMPILE_WIFI
 }

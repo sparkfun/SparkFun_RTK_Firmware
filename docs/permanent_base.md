@@ -310,6 +310,7 @@ To verify that your RTK product is correctly broadcasting RTCM data, you can acc
 Once your account is created, you'll be presented with Mount Points and Rovers.
 
 **NTRIP Server:**
+
 * WiFi SSID/PW - These are your local WiFi credentials
 * Caster Host: caster.emlid.com
 * Caster Port: 2101
@@ -319,6 +320,7 @@ Once your account is created, you'll be presented with Mount Points and Rovers.
 * Mount Point PW: Required. Shown in your mount point dashboard.
 
 **NTRIP Client:**
+
 * WiFi SSID/PW - These are your local WiFi credentials
 * Caster Host: caster.emlid.com
 * Caster Port: 2101

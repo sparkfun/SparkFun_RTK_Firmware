@@ -13,6 +13,108 @@ const int maxNtripClientConnectionAttempts = 3; //Give up connecting after this 
 #endif  //COMPILE_WIFI
 
 //----------------------------------------
+// WiFi Routines - compiled out
+//----------------------------------------
+
+#ifdef  COMPILE_WIFI
+
+byte wifiGetStatus()
+{
+  return WiFi.status();
+}
+
+IPAddress wifiGetIpAddress()
+{
+  return WiFi.localIP();
+}
+
+void wifiStartAP()
+{
+  //When testing, operate on local WiFi instead of AP
+  //#define LOCAL_WIFI_TESTING 1
+#ifdef  LOCAL_WIFI_TESTING
+  //Connect to local router
+#define WIFI_SSID "TRex"
+#define WIFI_PASSWORD "parachutes"
+  WiFi.mode(WIFI_STA);
+
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while (wifiGetStatus() != WL_CONNECTED)
+  {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.print("Connected with IP: ");
+  Serial.println(WiFi.localIP());
+#else   //LOCAL_WIFI_TESTING
+  //Start in AP mode
+  WiFi.mode(WIFI_AP);
+
+  IPAddress local_IP(192, 168, 4, 1);
+  IPAddress gateway(192, 168, 1, 1);
+  IPAddress subnet(255, 255, 0, 0);
+
+  WiFi.softAPConfig(local_IP, gateway, subnet);
+  if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
+  {
+    Serial.println(F("AP failed to start"));
+    return;
+  }
+  Serial.print(F("AP Started with IP: "));
+  Serial.println(WiFi.softAPIP());
+#endif  //LOCAL_WIFI_TESTING
+}
+
+#endif  //COMPILE_WIFI
+
+//----------------------------------------
+// Global WiFi Routines
+//----------------------------------------
+
+//Determine if the WiFi connection has timed out
+bool wifiConnectionTimeout()
+{
+#ifdef  COMPILE_WIFI
+  if ((millis() - wifiStartTime) <= 8000)
+    return false;
+#endif  //COMPILE_WIFI
+  return true;
+}
+
+void wifiStart(char* ssid, char* pw)
+{
+#ifdef  COMPILE_WIFI
+  if (wifiState == WIFI_OFF)
+  {
+    Serial.printf("Connecting to WiFi: %s", ssid);
+    WiFi.begin(ssid, pw);
+    wifiStartTime = millis();
+
+    wifiState = WIFI_NOTCONNECTED;
+    reportHeapNow();
+  }
+#endif  //COMPILE_WIFI
+}
+
+//Stop WiFi and release all resources
+//See WiFiBluetoothSwitch sketch for more info
+void wifiStop()
+{
+#ifdef  COMPILE_WIFI
+  if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
+  {
+    ntripServer.stop();
+    WiFi.mode(WIFI_OFF);
+
+    log_d("WiFi Stopped");
+    wifiState = WIFI_OFF;
+    reportHeapNow();
+  }
+#endif  //COMPILE_WIFI
+}
+
+//----------------------------------------
 // NTRIP Client Routines - compiled out
 //----------------------------------------
 
@@ -125,6 +227,22 @@ void ntripClientPushGPGGA(NMEA_GGA_data_t *nmeaData)
 // Global NTRIP Client Routines
 //----------------------------------------
 
+bool ntripClientStart()
+{
+#ifdef  COMPILE_WIFI
+  if (settings.enableNtripClient == true && ntripClientAttempted == false)
+  {
+    //Turn off Bluetooth and turn on WiFi
+    stopBluetooth();
+    wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
+
+    ntripClientAttempted = true; //Do not allow re-entry into STATE_ROVER_CLIENT_WIFI_STARTED
+    return true;
+  }
+#endif  //COMPILE_WIFI
+  return false;
+}
+
 //Check for the arrival of any correction data. Push it to the GNSS.
 //Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
 void ntripClientUpdate()
@@ -168,129 +286,6 @@ void ntripClientUpdate()
       ntripClientStop();
       online.ntripClient = false;
     }
-  }
-#endif  //COMPILE_WIFI
-}
-
-//----------------------------------------
-// Global NTRIP Client Routines
-//----------------------------------------
-
-bool ntripClientStart()
-{
-#ifdef  COMPILE_WIFI
-  if (settings.enableNtripClient == true && ntripClientAttempted == false)
-  {
-    //Turn off Bluetooth and turn on WiFi
-    stopBluetooth();
-    wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
-    wifiStartTime = millis();
-
-    ntripClientAttempted = true; //Do not allow re-entry into STATE_ROVER_CLIENT_WIFI_STARTED
-    return true;
-  }
-#endif  //COMPILE_WIFI
-  return false;
-}
-
-//----------------------------------------
-// WiFi Routines - compile out
-//----------------------------------------
-
-#ifdef  COMPILE_WIFI
-
-byte wifiGetStatus()
-{
-  return WiFi.status();
-}
-
-IPAddress wifiGetIpAddress()
-{
-  return WiFi.localIP();
-}
-
-void wifiStartAP()
-{
-  //When testing, operate on local WiFi instead of AP
-  //#define LOCAL_WIFI_TESTING 1
-#ifdef  LOCAL_WIFI_TESTING
-  //Connect to local router
-#define WIFI_SSID "TRex"
-#define WIFI_PASSWORD "parachutes"
-  WiFi.mode(WIFI_STA);
-
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting to Wi-Fi");
-  while (wifiGetStatus() != WL_CONNECTED)
-  {
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.print("Connected with IP: ");
-  Serial.println(WiFi.localIP());
-#else   //LOCAL_WIFI_TESTING
-  //Start in AP mode
-  WiFi.mode(WIFI_AP);
-
-  IPAddress local_IP(192, 168, 4, 1);
-  IPAddress gateway(192, 168, 1, 1);
-  IPAddress subnet(255, 255, 0, 0);
-
-  WiFi.softAPConfig(local_IP, gateway, subnet);
-  if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
-  {
-    Serial.println(F("AP failed to start"));
-    return;
-  }
-  Serial.print(F("AP Started with IP: "));
-  Serial.println(WiFi.softAPIP());
-#endif  //LOCAL_WIFI_TESTING
-}
-
-#endif  //COMPILE_WIFI
-
-//----------------------------------------
-// Global WiFi Routines
-//----------------------------------------
-
-//Determine if the WiFi connection has timed out
-bool wifiConnectionTimeout()
-{
-#ifdef  COMPILE_WIFI
-  if ((millis() - wifiStartTime) <= 8000)
-    return false;
-#endif  //COMPILE_WIFI
-  return true;
-}
-
-void wifiStart(char* ssid, char* pw)
-{
-#ifdef  COMPILE_WIFI
-  if (wifiState == WIFI_OFF)
-  {
-    Serial.printf("Connecting to WiFi: %s", ssid);
-    WiFi.begin(ssid, pw);
-    wifiStartTime = millis();
-
-    wifiState = WIFI_NOTCONNECTED;
-    reportHeapNow();
-  }
-#endif  //COMPILE_WIFI
-}
-
-//Stop WiFi and release all resources
-//See WiFiBluetoothSwitch sketch for more info
-void wifiStop()
-{
-#ifdef  COMPILE_WIFI
-  if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
-  {
-    ntripServer.stop();
-    WiFi.mode(WIFI_OFF);
-
-    log_d("WiFi Stopped");
-    wifiState = WIFI_OFF;
-    reportHeapNow();
   }
 #endif  //COMPILE_WIFI
 }

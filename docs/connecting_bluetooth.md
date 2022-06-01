@@ -14,10 +14,7 @@ The best mobile app that we’ve found is the powerful, free, and easy to use *[
 
 When powered on, the RTK product will broadcast itself as either '[Platform] Rover-5556' or '[Platform] Base-5556' depending on which state it is in. [Platform] is Facet, Express, Surveyor, etc. Discover and pair with this device from your phone or tablet. Once paired, open SW Maps. 
 
-[![alt text](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Rover_Fixed.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Rover_Fixed.jpg)
-
 ![Bluetooth MAC address B022 is shown in the upper left corner](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Rover Display.png)
-
 
 *Bluetooth MAC address B022 is shown in the upper left corner*
 
@@ -47,13 +44,13 @@ Next we need to send RTCM correction data from the phone back to the RTK device 
 
 *NTRIP Connection - Not there? Be sure to select 'SparkFun RTK' was selected as the instrument*
 
-Enter your NTRIP caster credentials and click connect. You will see bytes begin to transfer from your phone to the RTK Express. Within a few seconds the RTK Express will go from ~300mm accuracy to 14mm. Pretty nifty, no?
-
 [![SW Maps NTRIP client](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/SW_Maps_-_NTRIP_Client.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/SW_Maps_-_NTRIP_Client.jpg)
 
 *Connecting to an NTRIP Caster*
 
-What's an NTRIP caster? In a nut shell it's a server that is sending out correction data every second. There are thousands of sites around the globe that calculate the perturbations in the ionosphere and troposphere that decrease the accuracy of GNSS accuracy. Once the inaccuracies are known, correction values are encoded into data packets in the RTCM format. You, the user, don't need to know how to decode or deal with RTCM, you simply need to get RTCM from a source within 10km of your location into the RTK Express. The NTRIP client logs into the server (also known as the NTRIP caster) and grabs that data, every second, and sends it over Bluetooth to the RTK Express.
+Enter your NTRIP Caster credentials and click connect. You will see bytes begin to transfer from your phone to the RTK Express. Within a few seconds the RTK Express will go from ~300mm accuracy to 14mm. Pretty nifty, no?
+
+What's an NTRIP Caster? In a nut shell it's a server that is sending out correction data every second. There are thousands of sites around the globe that calculate the perturbations in the ionosphere and troposphere that decrease the accuracy of GNSS accuracy. Once the inaccuracies are known, correction values are encoded into data packets in the RTCM format. You, the user, don't need to know how to decode or deal with RTCM, you simply need to get RTCM from a source within 10km of your location into the RTK Express. The NTRIP client logs into the server (also known as the NTRIP caster) and grabs that data, every second, and sends it over Bluetooth to the RTK Express.
 
 Don't have access to an NTRIP Caster? You can use a 2nd RTK product in operating in Base mode to provide the correction data. Checkout [Creating a Permanent Base](https://sparkfun.github.io/SparkFun_RTK_Firmware/permanent_base/). If you're the DIY sort, you can create your own low cost base station using an ESP32 and a ZED-F9P breakout board. Checkout [How to Build a DIY GNSS Reference Station](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station). If you'd just like a service, [Syklark](https://www.swiftnav.com/skylark) provides RTCM coverage for $49 a month (as of writing) and is extremely easy to setup and use. Remember, you can always use a 2nd RTK device in *Base* mode to provide RTCM correction data but it will less accurate than a fixed position caster.
 

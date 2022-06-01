@@ -88,7 +88,7 @@ nav:
     - configure_ports.md
     - configure_data_logging.md
     - configure_profiles.md
-    - configure_lband.md
+    - configure_pointperfect.md
     - menu_system_status.md
     - system_status_report.md
     - permanent_base.md

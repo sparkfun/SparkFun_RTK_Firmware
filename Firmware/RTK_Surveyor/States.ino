@@ -1116,8 +1116,6 @@ void updateSystemState()
       case (STATE_KEYS_WIFI_STARTED):
         {
 #ifdef COMPILE_WIFI
-          if (wifiStartTime == 0) wifiStartTime = millis();
-
           byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
@@ -1132,9 +1130,9 @@ void updateSystemState()
           else
           {
             Serial.print(".");
-            if (millis() - wifiStartTime > 8000)
+            if (wifiConnectionTimeout())
             {
-              //Give up after 8 seconds
+              //Give up after connection timeout
               changeState(STATE_KEYS_WIFI_TIMEOUT);
             }
           }
@@ -1228,8 +1226,6 @@ void updateSystemState()
       case (STATE_KEYS_PROVISION_WIFI_STARTED):
         {
 #ifdef COMPILE_WIFI
-          if (wifiStartTime == 0) wifiStartTime = millis();
-
           byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
@@ -1244,9 +1240,9 @@ void updateSystemState()
           else
           {
             Serial.print(".");
-            if (millis() - wifiStartTime > 8000)
+            if (wifiConnectionTimeout())
             {
-              //Give up after 8 seconds
+              //Give up after connection timeout
               changeState(STATE_KEYS_WIFI_TIMEOUT);
             }
           }

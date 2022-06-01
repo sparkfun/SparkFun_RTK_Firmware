@@ -6,6 +6,7 @@
 
 static WiFiClient ntripClient; // The WiFi connection to the NTRIP caster. We use this to obtain RTCM from the caster.
 static bool ntripClientAttempted = false; //Goes true once we attempt WiFi. Allows graceful failure.
+static unsigned long wifiStartTime = 0; //If we cannot connect to local wifi for NTRIP client, give up/go to Rover after 8 seconds
 
 #endif  //COMPILE_WIFI
 

@@ -47,6 +47,9 @@ WiFi Station States:
 //If we cannot connect to local wifi, give up/go to Rover
 static const int WIFI_CONNECTION_TIMEOUT = 8 * 1000;  //Milliseconds
 
+//Interval to use when displaying the IP address
+static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
+
 //----------------------------------------
 // Locals - compiled out
 //----------------------------------------
@@ -55,6 +58,7 @@ static const int WIFI_CONNECTION_TIMEOUT = 8 * 1000;  //Milliseconds
 
 //WiFi Timer usage:
 //  * Measure connection time to access point
+//  * Measure interval to display IP address
 static unsigned long wifiTimer = 0;
 
 //----------------------------------------
@@ -65,6 +69,7 @@ void wifiDisplayIpAddress()
 {
   Serial.print("Wi-Fi IP address: ");
   Serial.println(WiFi.localIP());
+  wifiTimer = millis();
 }
 
 IPAddress wifiGetIpAddress()
@@ -88,6 +93,13 @@ bool wifiIsConnected()
     wifiDisplayIpAddress();
   }
   return isConnected;
+}
+
+void wifiPeriodicallyDisplayIpAddress()
+{
+  if (wifiGetStatus() == WL_CONNECTED)
+    if ((millis() - wifiTimer) >= wifiTimer)
+      wifiDisplayIpAddress();
 }
 
 //----------------------------------------

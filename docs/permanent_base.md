@@ -205,9 +205,11 @@ The email will also include a [fancy PDF report](https://cdn.sparkfun.com/assets
 
 If all goes well you should have a very precise location for your antenna. For SparkFun RTK products we are most interested in ECEF coordinates. [ECEF](https://en.wikipedia.org/wiki/ECEF) is *fascinating*. Rather than lat and long, ECEF is the number of meters from the internationally agreed upon reference frame of the center of mass of the Earth. Basically, your ECEF coordinates are the distance you are from the *center of the Earth*. Neat.
 
-### Configuring Fixed Location
+## Configuring Fixed Location
 
 Now that you’ve got the ECEF position of your antenna, let’s tell the RTK product where its antenna is located with a few millimeters of accuracy. 
+
+### Config via WiFi
 
 Enter the WiFi AP config page or connect over Serial.
 
@@ -225,6 +227,8 @@ If your RTK product has access to a WiFi network, consider enabling the NTRIP Se
 
 Save the settings to the RTK unit and exit. 
 
+### Config via Serial
+
 ![Base Menu Options](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Base_Menu.jpg) 
 
 *Base Menu Options*
@@ -241,7 +245,7 @@ Press x multiple times to exit the serial menu.
 
 ## Beginning Base Mode
 
-Power cycle the unit to take the new settings. After boot, use the **Setup** button to enter **Base** mode.
+Power cycle the unit to load the Fixed ECEF coordinates. After boot, use the **Setup** button to enter **Base** mode.
 
 ![RTK Facet in Fixed Transmit Mode](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_FixedBase-Xmitting.jpg) 
 
@@ -261,11 +265,11 @@ Once WiFi connects the device will attempt to connect to the NTRIP mount point. 
 
 Your RTK device has the ability to both serve RTCM correction data (aka Server) to an NTRIP Caster, and get RTCM correction data (aka Client) from an NTRIP Caster. But how does one get an NTRIP Caster?
 
-There are a variety of Windows applications out there that claim to be an NTRIP caster. We found them to be generally terrible. The easiest solution is using [RTK2GO](rtk2go.com) and [Emlid Caster](caster.emlid.com). 
+There are a variety of Windows applications out there that claim to be an NTRIP caster. We found them to be generally terrible. The easiest solutions we've found are [RTK2GO](rtk2go.com) or [Emlid Caster](caster.emlid.com). Both are free and available to the public.
 
 ### RTK2Go
 
-[RTK2Go](http://rtk2go.com/) seems to be a pet project of SNIP. We recommend creating a mount point and a password through RTK2GO.com. Yes, the RTK2go website looks looks spammy but the service works well and is used widely. Please see [RTK2Go](http://rtk2go.com/) for details about creating an account. It's free and takes only a few minutes. Once activated you will be provided with your Mountpoint name and Mountpoint PW. These two credentials are used in a NTRIP Server setup:
+[RTK2Go](http://rtk2go.com/) seems to be a pet project of SNIP. We recommend creating a mount point and a password through RTK2GO.com. Yes, the RTK2go website looks looks spammy but the service works well and is used widely. Please see [RTK2Go](http://rtk2go.com/) for details about creating an account. It's free and takes only a few minutes. Once activated you will be provided with your Mount Point name and Mount Point PW. These two credentials are used in a NTRIP Server setup:
 
 **NTRIP Server:**
 

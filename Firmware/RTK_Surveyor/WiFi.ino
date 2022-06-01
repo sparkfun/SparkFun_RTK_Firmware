@@ -44,7 +44,7 @@ WiFi Station States:
 // Constants
 //----------------------------------------
 
-//If we cannot connect to local wifi for NTRIP client, give up/go to Rover after 8 seconds
+//If we cannot connect to local wifi, give up/go to Rover
 static const int WIFI_CONNECTION_TIMEOUT = 8 * 1000;  //Milliseconds
 
 //----------------------------------------
@@ -86,13 +86,13 @@ void wifiStartAP()
   WiFi.mode(WIFI_STA);
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting to Wi-Fi");
+  Serial.print("Wi-Fi connecting to");
   while (wifiGetStatus() != WL_CONNECTED)
   {
     Serial.print(".");
     delay(500);
   }
-  Serial.print("Connected with IP: ");
+  Serial.print("Wi-Fi connected with IP: ");
   Serial.println(WiFi.localIP());
 #else   //LOCAL_WIFI_TESTING
   //Start in AP mode
@@ -105,10 +105,10 @@ void wifiStartAP()
   WiFi.softAPConfig(local_IP, gateway, subnet);
   if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
   {
-    Serial.println(F("AP failed to start"));
+    Serial.println(F("Wi-Fi AP failed to start"));
     return;
   }
-  Serial.print(F("AP Started with IP: "));
+  Serial.print(F("Wi-Fi AP Started with IP: "));
   Serial.println(WiFi.softAPIP());
 #endif  //LOCAL_WIFI_TESTING
 }
@@ -125,6 +125,7 @@ bool wifiConnectionTimeout()
 #ifdef  COMPILE_WIFI
   if ((millis() - wifiTimer) <= WIFI_CONNECTION_TIMEOUT)
     return false;
+  Serial.println("Wi-Fi connection timeout!");
 #endif  //COMPILE_WIFI
   return true;
 }
@@ -136,13 +137,14 @@ void wifiStart(char* ssid, char* pw)
     //Turn off Bluetooth
     stopBluetooth();
 
-  if (wifiState == WIFI_OFF)
+  if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {
-    Serial.printf("WiFi connecting to %s\r\n", ssid);
+    Serial.printf("Wi-Fi connecting to %s\r\n", ssid);
     WiFi.begin(ssid, pw);
     wifiTimer = millis();
-
     wifiState = WIFI_NOTCONNECTED;
+
+    //Display the heap state
     reportHeapNow();
   }
 #endif  //COMPILE_WIFI
@@ -158,9 +160,10 @@ void wifiStop()
   {
     ntripServer.stop();
     WiFi.mode(WIFI_OFF);
-
-    log_d("WiFi Stopped");
     wifiState = WIFI_OFF;
+    Serial.println(F("Wi-Fi Stopped"));
+
+    //Display the heap state
     reportHeapNow();
   }
 #endif  //COMPILE_WIFI

@@ -10,7 +10,7 @@ Surveyor: ![Feature Not Supported](https://raw.githubusercontent.com/sparkfun/Sp
 
 *RTK Facet L-Band* products are equipped with a special antenna and extra receiver to decrypted the L-Band corrections using the PointPerfect service from u-blox. The PointPerfect sub menu allows a user to enter their 'Home' WiFi settings. This WiFi SSID and password are used to regularly obtain the needed decryption keys from u-blox. This is normally your home WiFi or other accessible WiFi.
 
-PointPerfect L-Band decryption keys are valid for a maximum of 56 days. During that time, the RTK Facet L-Band can operate normally without the need for WiFi access. However, when the keys are set to expire in 28 days or less, the RTK Facet L-Band will attempt to log in to the 'Home' WiFi at each power on. If WiFi is not available, it will continue normal operation. 
+PointPerfect L-Band decryption keys are valid for a maximum of 56 days. During that time, the RTK Facet L-Band can operate normally without the need for WiFi access. However, when the keys are set to expire in 28 days or less, the RTK Facet L-Band will attempt to log in to the 'Home' WiFi at each power on. If WiFi is not available, it will continue normal operation. If the keys full expire, the device will continue to receive the L-Band signal but will be unable to decrypt the signal, disabling high precision GNSS. The RTK Facet L-Band will continue to have extraordinary accuracy (we've seen better than 0.15m HPA) but not the centimeter level accuracy that comes with RTK.
 
 [![Display showing 14 days until Keys Expire](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_DayToExpire.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_DayToExpire.jpg)
 

@@ -23,6 +23,10 @@ The **Data** port on the RTK Facet, Express, and Express Plus is very flexible. 
 * **I2C** - The TX pin operates as SCL, RX pin as SDA on the I2C bus. This allows additional sensors to be connected to the I2C bus.
 * **GPIO** - The TX pin operates as a DAC capable GPIO on the ESP32. The RX pin operates as a ADC capable input on the ESP32. This is useful for custom applications.
 
+![Configuring the External Pulse and External Events](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Ports PPS Config.png)
+
+*Configuring the External Pulse and External Events over WiFi*
+
 [![RTK Facet Mux Menu](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu_Mux.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu_Mux.jpg)
 
 *Port menu showing mux data port connections*

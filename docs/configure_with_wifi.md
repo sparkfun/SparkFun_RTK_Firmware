@@ -38,7 +38,7 @@ To get into WiFi configuration follow these steps:
 
 *The WiFi network RTK Config as seen from a cellphone*
 
-Note: Upon connecting, your phone may warn you that this WiFi network has no internet. That's ok. Stay connected to the network and open a browser.
+Note: Upon connecting, your phone may warn you that this WiFi network has no internet. That's ok. Stay connected to the network and open a browser. If you still have problems turn off Mobile Data so that the phone does not default to cellular for internet connectivity and instead connects to the RTK Device.
 
 [![Webpage showing the RTK Configuration options](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_WiFi_Config_Main_Page.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_WiFi_Config_Main_Page.jpg)
 

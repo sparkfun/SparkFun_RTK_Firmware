@@ -449,9 +449,6 @@ void createSettingsString(char* settingsCSV)
   //...
 
   strcat(settingsCSV, "\0");
-  if(strlen(settingsCSV) > sizeof(settingsCSV))
-    Serial.println("Error: settingCSV too small");
-    
   Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
   Serial.printf("settingsCSV: %s\n\r", settingsCSV);
 #endif

@@ -61,9 +61,11 @@ function parseIncoming(msg) {
                 hide("dataPortChannelDropdown");
 
                 hide("sensorConfig");
+                hide("ppConfig");
             }
             else if (platformPrefix == "Express" || platformPrefix == "Facet") {
                 hide("sensorConfig");
+                hide("ppConfig");
             }
             else if (platformPrefix == "Express Plus") {
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";

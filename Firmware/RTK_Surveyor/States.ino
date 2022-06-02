@@ -471,11 +471,10 @@ void updateSystemState()
 
       case (STATE_BASE_NOT_STARTED):
         {
+          firstRoverStart = false; //If base is starting, no test menu, normal button use.
+
           if (online.gnss == false)
-          {
-            firstRoverStart = false; //If GNSS is offline, we still need to allow button use
             return;
-          }
 
           //Turn off base LED until we successfully enter temp/fix state
           if (productVariant == RTK_SURVEYOR)

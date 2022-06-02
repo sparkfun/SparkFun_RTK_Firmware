@@ -588,9 +588,8 @@ void beginSystemState()
       factoryReset();
     }
 
-    if (systemState == STATE_ROVER_NOT_STARTED)
-      firstRoverStart = true; //Allow user to enter test screen during first rover start
-    else
+    firstRoverStart = true; //Allow user to enter test screen during first rover start
+    if (systemState == STATE_BASE_NOT_STARTED)
       firstRoverStart = false;
 
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory

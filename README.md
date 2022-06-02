@@ -36,22 +36,49 @@ Thanks:
 
 * Special thanks to [Avinab Malla](https://github.com/avinabmalla) for the creation of [SW Maps](https://play.google.com/store/apps/details?id=np.com.softwel.swmaps&hl=en_US&gl=US) and for pointers on handling the ESP32 read/write tasks.
 
+Documentation
+--------------
+
+* **[RTK Product Manual](https://sparkfun.github.io/SparkFun_RTK_Firmware/intro/)** - A detail guide describing all the various software features of the RTK product line.   Essentially it is a manual for the firmware in this repository.
+* **[RTK Surveyor Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide)** - Hookup guide for the SparkFun RTK Surveyor.
+* **[RTK Express Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-express-hookup-guide)** - Hookup guide for the SparkFun RTK Express and Express Plus.
+* **[RTK Facet Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide)** - Hookup guide for the SparkFun RTK Facet.
+
 Repository Contents
 -------------------
 
-* **/Binaries** - Loadable firmware either over USB or via SD card
-* **/Firmware** - Main firmware as well as various feature unit tests
+* **/Binaries** - Pre-compiled binaries of SparkFun RTK firmware, suitable for loading (see manual).  Also copies of u-blox firmware and command-line scripts (Windows only) to install them.
+* **/Firmware** - Source code for SparkFun RTK firmware as well as various feature unit tests
 * **/Graphics** - Original bitmap icons for the display
 * **/Uploader_GUI** - A python and Windows executable GUI for updating the firmware on RTK units. See [Updating Firmware From GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-gui).
 * **/docs** - Markdown pages for the [RTK Product Manual](https://sparkfun.github.io/SparkFun_RTK_Firmware/intro/)
 
-Documentation
---------------
+Repository Branch Structure
+---------------------------
 
-* **[RTK Product Manual](https://sparkfun.github.io/SparkFun_RTK_Firmware/intro/)** - A detail guide describing all the various software features of the RTK product line.
-* **[RTK Surveyor Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide)** - Hookup guide for the SparkFun RTK Surveyor.
-* **[RTK Express Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-express-hookup-guide)** - Hookup guide for the SparkFun RTK Express and Express Plus.
-* **[RTK Facet Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide)** - Hookup guide for the SparkFun RTK Facet.
+This repository has two long-term branches: `main` and `release_candidate`.
+
+With respect to the firmware, and probably the Uploader GUI, main is a
+branch where only changes that are appropriate for all users are
+applied.  Thus, following `main` means updating to formal releases,
+and perhaps bugfixes to those releases.
+
+In contrast, `release_candidate` is a branch that might have been
+called `develop`, where new code is added as it is developed.
+
+Documentation is handled differently.  The documentation source code
+is in docs/ on `main`.  It is built automatically on push and stored
+in the branch `gh-pages`, from which it is served at the above URL.
+\todo Describe how and if docs are merged from `main` to `release_candidate`.
+
+Release Process
+---------------
+
+A release is made by merging `release_candidate` back to `main`, and
+then applying a tag to that commit on `main`.
+
+\todo Describe how the firmare is built from the tag and then
+committed to `main`, or if something else happens.
 
 License Information
 -------------------

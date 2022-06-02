@@ -61,6 +61,12 @@ static unsigned long wifiTimer = 0;
 // WiFi Routines - compiled out
 //----------------------------------------
 
+void wifiDisplayIpAddress()
+{
+  Serial.print("Wi-Fi IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
 IPAddress wifiGetIpAddress()
 {
   return WiFi.localIP();
@@ -69,6 +75,19 @@ IPAddress wifiGetIpAddress()
 byte wifiGetStatus()
 {
   return WiFi.status();
+}
+
+bool wifiIsConnected()
+{
+  bool isConnected;
+
+  isConnected = (wifiGetStatus() == WL_CONNECTED);
+  if (isConnected)
+  {
+    wifiState = WIFI_CONNECTED;
+    wifiDisplayIpAddress();
+  }
+  return isConnected;
 }
 
 //----------------------------------------

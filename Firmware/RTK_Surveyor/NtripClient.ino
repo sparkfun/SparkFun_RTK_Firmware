@@ -31,11 +31,21 @@ NTRIP Client States:
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
+//----------------------------------------
+// Constants - compiled out
+//----------------------------------------
+
 #ifdef  COMPILE_WIFI
+
+//Give up connecting after this number of attempts
+static const int MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS = 3;
 
 //----------------------------------------
 // Locals - compiled out
 //----------------------------------------
+
+//The WiFi connection to the NTRIP caster to obtain RTCM data.
+static WiFiClient * ntripClient;
 
 //Count the number of connection attempts
 static int ntripClientConnectionAttempts;
@@ -47,6 +57,53 @@ static int ntripClientConnectionAttempts;
 void ntripClientAllowMoreConnections()
 {
   ntripClientConnectionAttempts = 0;
+}
+
+//Determine if another connection is possible or if the limit has been reached
+bool ntripClientConnectLimitReached()
+{
+  //Shutdown the NTRIP client
+  ntripClientStop();
+
+  //Retry the connection a few times
+  bool limitReached = (ntripClientConnectionAttempts++ >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
+  if (!limitReached)
+    //Display the heap state
+    reportHeapNow();
+  else
+    //No more connection attempts, switching to Bluetooth
+    ntripClientSwitchToBluetooth();
+  return limitReached;
+}
+
+//Stop the NTRIP client
+void ntripClientStop()
+{
+  if (ntripClient)
+  {
+    if (ntripClient->connected())
+      ntripClient->stop();
+    delete ntripClient;
+    ntripClient = NULL;
+  }
+  if (ntripClientState > NTRIP_CLIENT_ON)
+    wifiStop();
+  ntripClientState = NTRIP_CLIENT_ON;
+}
+
+//Switch to Bluetooth operation
+void ntripClientSwitchToBluetooth()
+{
+  Serial.println(F("NTRIP Client failure, switching to Bluetooth!"));
+
+  //Stop WiFi operations
+  ntripClientStop();
+
+  //No more connection attempts
+  ntripClientState = NTRIP_CLIENT_OFF;
+
+  //Turn on Bluetooth with 'Rover' name
+  startBluetooth();
 }
 
 #endif  //COMPILE_WIFI

@@ -55,7 +55,7 @@ SETTING_PORT_NAME = 'port_name'
 SETTING_FILE_LOCATION = 'message'
 SETTING_BAUD_RATE = '921600' # Default to 921600 for upload
 
-guiVersion = 'v1.0'
+guiVersion = 'v1.1'
 
 def gen_serial_ports() -> Iterator[Tuple[str, str, str]]:
     """Return all available serial ports."""

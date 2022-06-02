@@ -20,7 +20,7 @@ From time to time SparkFun will release new firmware for the RTK product line to
 
 The SD method is generally recommended. For more information see [here](https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide/firmware-updates-and-customization).
 
-Remember, the RTK Facet is open source hardware meaning you have total access to the [firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and [hardware](https://github.com/sparkfun/SparkFun_RTK_Facet). Be sure to checkout each repo for the latest firmware and hardware information.
+Remember, all SparkFun RTK devices are open source hardware meaning you have total access to the [firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and [hardware](https://github.com/sparkfun/SparkFun_RTK_Facet). Be sure to checkout each repo for the latest firmware and hardware information.
 
 ## Updating Firmware From the SD Card
 
@@ -28,11 +28,11 @@ Remember, the RTK Facet is open source hardware meaning you have total access to
 
 *Firmware update taking place*
 
-From time to time SparkFun will release new firmware for the RTK Facet to add and improve functionality. For most users, firmware can be upgraded by loading the appropriate firmware file from the [binaries repo folder](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/For_SD_Loading) onto the SD card and bringing up the firmware menu as shown above.
+From time to time SparkFun will release new firmware for the RTK product line to add and improve functionality. For most users, firmware can be upgraded by loading the appropriate firmware file from the [binaries repo folder](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/For_SD_Loading) onto the SD card and bringing up the firmware menu as shown above.
 
 The firmware upgrade menu will only display files that have the "RTK_Surveyor_Firmware*.bin" file name format so don't change the file names once loaded onto the SD card. Select the firmware you'd like to load and the system will proceed to load the new firmware, then reboot.
 
-Note: The firmware is called `RTK_Surveyor_Firmware_vXX.bin` even though this product is called the *RTK Facet*. We united the different platforms into one. The [RTK Firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) runs on all our RTK products.
+**Note:** The firmware is called `RTK_Surveyor_Firmware_vXX.bin` even though there are various RTK products (Facet, Express, Surveyor, etc). We united the different platforms into one. The [RTK Firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) runs on all our RTK products.
 
 ### Force Firmware Loading
 
@@ -52,11 +52,13 @@ Alternatively, firmware may be uploaded via the WiFi AP interface.
 
 **Versions 1.10 and Greater:** Firmware may be uploaded to the unit by clicking on 'Choose File', selecting the binary such as 'RTK_Surveyor_Firmware_v1_xx.bin' and pressing upload. The unit will automatically reset once firmware upload is complete.
 
-## Updating Firmware From GUI
+## Updating Firmware Using Windows GUI
 
-[![RTK Firmware GUI](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/Uploader_GUI/SparkFun%20RTK%20Firmware%20Uploader.jpg?raw=true)](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/Uploader_GUI/SparkFun%20RTK%20Firmware%20Uploader.jpg?raw=true)
+![RTK Firmware GUI](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/Uploader_GUI/SparkFun%20RTK%20Firmware%20Uploader.jpg?raw=true)
 
 *RTK Firmware GUI*
+
+Download the GUI [here](https://github.com/sparkfun/SparkFun_RTK_Firmware/raw/main/Uploader_GUI/Windows_exe/RTK_Firmware_Uploader_GUI.exe). 
 
 In general, the SD firmware update method is recommended, but for some firmware updates (for example from version v1.x to v2.x) a serial connection via USB is required. This GUI makes it easy to point and click your way through a firmware update.
 
@@ -64,16 +66,16 @@ In general, the SD firmware update method is recommended, but for some firmware 
 
 * Attach the RTK device to your computer using a USB cable. 
 * Turn the RTK device on.
-* Open Device Manager to confirm which COM port the device is operating on.
+* Open Windows Device Manager to confirm which COM port the device is operating on.
 
-![Device Manager showing USB Serial port on COM27](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Firmware Uploader COM Port.jpg)
+![Device Manager showing USB-Serial CH340 port on COM27](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Firmware Uploader COM Port.jpg)
 
-*Device Manager showing USB Serial port on COM27*
+*Device Manager showing 'USB-Serial CH340' port on COM27*
 
 * Get the latest binary firmware file from the *[Binaries](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries)* folder.
-* Run *RTK_Firmware_Uploader_GUI.exe* (it takes a few seconds to start)
+* Run *[RTK_Firmware_Uploader_GUI.exe](https://github.com/sparkfun/SparkFun_RTK_Firmware/raw/main/Uploader_GUI/Windows_exe/RTK_Firmware_Uploader_GUI.exe)* (it takes a few seconds to start)
 * Click *Browse* and select the binary file to upload
-* Select the COM port previously seen in the Device Manager.
+* Select the COM port previously seen in the Device Manager
 * Click *Upload Firmware*
 
 Once complete, the device will reset and power down.
@@ -82,7 +84,7 @@ Once complete, the device will reset and power down.
 
 The command line interface is also available for more advanced users or users who want to avoid the hassle of swapping out SD cards. You’ll need to download esptool.exe and RTK_Surveyor_Firmware_vXXX_Combined.bin from [the repo](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries).
 
-Connect a USB A to C cable from your computer to the ESP32 port on the RTK Facet. Now identify the com port the RTK Enumerated at. The easiest way to do this is to open the device manager:
+Connect a USB A to C cable from your computer to the ESP32 port on the RTK device. Now identify the com port the RTK Enumerated at. The easiest way to do this is to open the device manager:
 
 [![CH340 is on COM6 as shown in Device Manager](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_COM_Port.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_COM_Port.jpg)
 
@@ -92,16 +94,15 @@ If the COM port is not showing be sure the unit is turned **On**. If an unknown 
 
 Navigate to the directory that contains the firmware file and esptool.exe. Run the following command:
 
-    language:c
-    esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0 RTK_Surveyor_Firmware_v19_combined.bin
+> esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0 RTK_Surveyor_Firmware_v19_combined.bin
 
-Note: You will need to modify **COM6** to match the serial port that RTK Facet enumerates at.
+Note: You will need to modify **COM6** to match the serial port that RTK device enumerates at.
 
 [![Programming via the esptool CLI](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_CLI.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_CLI.jpg)
 
 *Programming via the esptool CLI*
 
-Upon completion, your RTK Facet will have the latest and greatest features!
+Upon completion, your RTK device will have the latest and greatest features!
 
 ## Compiling from Source
 

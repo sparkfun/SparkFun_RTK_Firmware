@@ -82,9 +82,11 @@ Once complete, the device will reset and power down.
 
 ## Updating Firmware From CLI
 
-The command line interface is also available for more advanced users or users who want to avoid the hassle of swapping out SD cards. You’ll need to download esptool.exe and RTK_Surveyor_Firmware_vXXX_Combined.bin from [the repo](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries).
+The command line interface is also available. You’ll need to download the repo and navigate to the [`/Binaries/`](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/bin) folder. This contains the binaries but also various supporting tools including esptool.exe and the three binaries required along with the firmware (bootloader, partitions, and app0). 
 
-Connect a USB A to C cable from your computer to the ESP32 port on the RTK device. Now identify the com port the RTK Enumerated at. The easiest way to do this is to open the device manager:
+### Windows
+
+Connect a USB A to C cable from your computer to the ESP32 port on the RTK device. Turn the unit on. Now identify the COM port the RTK enumerated at. The easiest way to do this is to open the Device Manager:
 
 [![CH340 is on COM6 as shown in Device Manager](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_COM_Port.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_COM_Port.jpg)
 
@@ -92,17 +94,31 @@ Connect a USB A to C cable from your computer to the ESP32 port on the RTK devic
 
 If the COM port is not showing be sure the unit is turned **On**. If an unknown device is appearing, you’ll need to [install drivers for the CH340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Once you know the COM port, open a command prompt (Windows button + r then type ‘cmd’).
 
-Navigate to the directory that contains the firmware file and esptool.exe. Run the following command:
+![batch_program.bat running esptool](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Firmware Update CLI.png)
 
-> esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0 RTK_Surveyor_Firmware_v19_combined.bin
+*batch_program.bat running esptool*
 
-Note: You will need to modify **COM6** to match the serial port that RTK device enumerates at.
+Once the correct COM is identified, run 'batch_program.bat' along with the binary file name and COM port. For example *batch_program.bat RTK_Surveyor_Firmware_v2_0.bin COM6*. COM6 should be replaced by the COM port you identified earlier.
 
-[![Programming via the esptool CLI](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_CLI.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_CLI.jpg)
+The batch file runs the following commands:
 
-*Programming via the esptool CLI*
+esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor.ino.partitions.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
 
-Upon completion, your RTK device will have the latest and greatest features!
+Where *COM6* is replaced with the COM port that the RTK product enumerated at and *RTK_Surveyor_Firmware_vxx.bin* is the firmware you would like to load.
+
+Upon completion, your RTK device will reset and power down.
+
+### macOS / Linux
+
+Get [esptool.py](https://github.com/espressif/esptool). Connect a USB A to C cable from your computer to the ESP32 port on the RTK device. Turn the unit on. Now identify the COM port the RTK enumerated at. 
+
+If the COM port is not showing be sure the unit is turned **On**. If an unknown device is appearing, you’ll need to [install drivers for the CH340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Once you know the COM port, run the following command:
+
+py esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor.ino.partitions.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
+
+Where */dev/ttyUSB0* is replaced with the port that the RTK product enumerated at and *RTK_Surveyor_Firmware_vxx.bin* is the firmware you would like to load.
+
+Upon completion, your RTK device will reset and power down.
 
 ## Compiling from Source
 

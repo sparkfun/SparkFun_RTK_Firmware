@@ -43,6 +43,9 @@ static const int CREDENTIALS_BUFFER_SIZE = 512;
 //Give up connecting after this number of attempts
 static const int MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS = 3;
 
+//NTRIP caster response timeout
+static const uint32_t NTRIP_CLIENT_RESPONSE_TIMEOUT = 5 * 1000; //Milliseconds
+
 //NTRIP client server request buffer size
 static const int SERVER_BUFFER_SIZE = CREDENTIALS_BUFFER_SIZE + 3;
 
@@ -58,6 +61,7 @@ static int ntripClientConnectionAttempts;
 
 //NTRIP client timer usage:
 //  * Measure the connection response time
+//  * Receive NTRIP data timeout
 static uint32_t ntripClientTimer;
 
 //----------------------------------------
@@ -139,6 +143,28 @@ bool ntripClientConnectLimitReached()
     //No more connection attempts, switching to Bluetooth
     ntripClientSwitchToBluetooth();
   return limitReached;
+}
+
+//Determine if NTRIP client data is available
+int ntripClientReceiveDataAvailable()
+{
+  return ntripClient->available();
+}
+
+//Read the response from the NTRIP client
+void ntripClientResponse(char * response, size_t maxLength)
+{
+  char * responseEnd;
+
+  //Make sure that we can zero terminate the response
+  responseEnd = &response[maxLength - 1];
+
+  // Read bytes from the caster and store them
+  while ((response < responseEnd) && ntripClientReceiveDataAvailable())
+    *response++ = ntripClient->read();
+
+  // Zero terminate the response
+  *response = '\0';
 }
 
 //Stop the NTRIP client

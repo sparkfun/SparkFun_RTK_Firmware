@@ -328,82 +328,91 @@ function validateFields() {
     checkMessageValue("UBX_RTCM_4072_0");
     checkMessageValue("UBX_RTCM_4072_1");
 
-    checkMessageValue("UBX_ESF_MEAS");
-    checkMessageValue("UBX_ESF_RAW");
-    checkMessageValue("UBX_ESF_STATUS");
-    checkMessageValue("UBX_ESF_ALG");
-    checkMessageValue("UBX_ESF_INS");
+    if(platformPrefix == "Express Plus")
+    {
+        checkMessageValue("UBX_ESF_MEAS");
+        checkMessageValue("UBX_ESF_RAW");
+        checkMessageValue("UBX_ESF_STATUS");
+        checkMessageValue("UBX_ESF_ALG");
+        checkMessageValue("UBX_ESF_INS");
+    }
 
     //Base Config
-    if (ge("baseTypeSurveyIn").checked) {
-        checkElementValue("observationSeconds", 60, 600, "Must be between 60 to 600", "collapseBaseConfig");
-        checkElementValue("observationPositionAccuracy", 1, 5.1, "Must be between 1.0 to 5.0", "collapseBaseConfig");
+    if(platformPrefix != "Express Plus")
+    {
+        if (ge("baseTypeSurveyIn").checked) {
+            checkElementValue("observationSeconds", 60, 600, "Must be between 60 to 600", "collapseBaseConfig");
+            checkElementValue("observationPositionAccuracy", 1, 5.1, "Must be between 1.0 to 5.0", "collapseBaseConfig");
 
-        clearElement("fixedEcefX", -1280206.568);
-        clearElement("fixedEcefY", -4716804.403);
-        clearElement("fixedEcefZ", 4086665.484);
-        clearElement("fixedLat", 40.09029479);
-        clearElement("fixedLong", -105.18505761);
-        clearElement("fixedAltitude", 1560.089);
-    }
-    else {
-        clearElement("observationSeconds", 60);
-        clearElement("observationPositionAccuracy", 5.0);
-
-        if (ge("fixedBaseCoordinateTypeECEF").checked) {
-            clearElement("fixedLat", 40.09029479);
-            clearElement("fixedLong", -105.18505761);
-            clearElement("fixedAltitude", 1560.089);
-
-            checkElementValue("fixedEcefX", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
-            checkElementValue("fixedEcefY", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
-            checkElementValue("fixedEcefZ", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
-        }
-        else{
             clearElement("fixedEcefX", -1280206.568);
             clearElement("fixedEcefY", -4716804.403);
             clearElement("fixedEcefZ", 4086665.484);
+            clearElement("fixedLat", 40.09029479);
+            clearElement("fixedLong", -105.18505761);
+            clearElement("fixedAltitude", 1560.089);
+        }
+        else {
+            clearElement("observationSeconds", 60);
+            clearElement("observationPositionAccuracy", 5.0);
 
-            checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
-            checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
-            checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
+            if (ge("fixedBaseCoordinateTypeECEF").checked) {
+                clearElement("fixedLat", 40.09029479);
+                clearElement("fixedLong", -105.18505761);
+                clearElement("fixedAltitude", 1560.089);
+
+                checkElementValue("fixedEcefX", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
+                checkElementValue("fixedEcefY", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
+                checkElementValue("fixedEcefZ", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
+            }
+            else{
+                clearElement("fixedEcefX", -1280206.568);
+                clearElement("fixedEcefY", -4716804.403);
+                clearElement("fixedEcefZ", 4086665.484);
+
+                checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
+                checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
+                checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
+            }
+        }
+
+        if(ge("enableNtripServer").checked == true) {
+            checkElementString("ntripServer_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+            checkElementString("ntripServer_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
+            checkElementString("ntripServer_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+            checkElementValue("ntripServer_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
+            checkElementString("ntripServer_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+            checkElementString("ntripServer_MountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
+        }
+        else {
+            clearElement("ntripServer_wifiSSID", "TRex");
+            clearElement("ntripServer_wifiPW", "parachutes");
+            clearElement("ntripServer_CasterHost", "rtk2go.com");
+            clearElement("ntripServer_CasterPort", 2101);
+            clearElement("ntripServer_CasterUser", "");
+            clearElement("ntripServer_CasterUserPW", "");
+            clearElement("ntripServer_MountPoint", "bldr_dwntwn2");
+            clearElement("ntripServer_MountPointPW", "WR5wRo4H");
         }
     }
 
-    if(ge("enableNtripServer").checked == true) {
-        checkElementString("ntripServer_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-        checkElementString("ntripServer_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
-        checkElementString("ntripServer_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-        checkElementValue("ntripServer_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
-        checkElementString("ntripServer_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-        checkElementString("ntripServer_MountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-    }
-    else {
-        clearElement("ntripServer_wifiSSID", "TRex");
-        clearElement("ntripServer_wifiPW", "parachutes");
-        clearElement("ntripServer_CasterHost", "rtk2go.com");
-        clearElement("ntripServer_CasterPort", 2101);
-        clearElement("ntripServer_CasterUser", "");
-        clearElement("ntripServer_CasterUserPW", "");
-        clearElement("ntripServer_MountPoint", "bldr_dwntwn2");
-        clearElement("ntripServer_MountPointPW", "WR5wRo4H");
-    }
-
     //L-Band Config
-    if(ge("enablePointPerfectCorrections").checked == true) {
-        checkElementString("home_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapsePPConfig");
-        checkElementString("home_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapsePPConfig");
-        
-        value = ge("pointPerfectDeviceProfileToken").value;
-        console.log(value);
-        if (value.length > 0)
-            checkElementString("pointPerfectDeviceProfileToken", 36, 36, "Must be 36 characters", "collapsePPConfig");
-    }
-    else {
-        clearElement("home_wifiSSID", "");
-        clearElement("home_wifiPW", "");
-        clearElement("pointPerfectDeviceProfileToken", "");
-        ge("autoKeyRenewal").checked = true;
+    if(platformPrefix == "Facet L-Band")
+    {
+        if(ge("enablePointPerfectCorrections").checked == true) {
+            checkElementString("home_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapsePPConfig");
+            checkElementString("home_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapsePPConfig");
+            
+            value = ge("pointPerfectDeviceProfileToken").value;
+            console.log(value);
+            if (value.length > 0)
+                checkElementString("pointPerfectDeviceProfileToken", 36, 36, "Must be 36 characters", "collapsePPConfig");
+        }
+        else {
+            clearElement("home_wifiSSID", "");
+            clearElement("home_wifiPW", "");
+            clearElement("pointPerfectDeviceProfileToken", "");
+            ge("autoKeyRenewal").checked = true;
+        }
     }
 
     //System Config
@@ -417,14 +426,17 @@ function validateFields() {
     }
 
     //Port Config
-    if(ge("enableExternalPulse").checked) {
-        checkElementValue("externalPulseTimeBetweenPulse_us", 1, 65000000, "Must be 1 to 65,000,000", "collapsePortsConfig");
-        checkElementValue("externalPulseLength_us", 1, 65000000, "Must be 1 to 65,000,000", "collapsePortsConfig");
-    }
-    else {
-        clearElement("externalPulseTimeBetweenPulse_us", 100000);
-        clearElement("externalPulseLength_us", 900000);
-        ge("externalPulsePolarity").value = 0;
+    if(platformPrefix != "Surveyor")
+    {
+        if(ge("enableExternalPulse").checked) {
+            checkElementValue("externalPulseTimeBetweenPulse_us", 1, 65000000, "Must be 1 to 65,000,000", "collapsePortsConfig");
+            checkElementValue("externalPulseLength_us", 1, 65000000, "Must be 1 to 65,000,000", "collapsePortsConfig");
+        }
+        else {
+            clearElement("externalPulseTimeBetweenPulse_us", 100000);
+            clearElement("externalPulseLength_us", 900000);
+            ge("externalPulsePolarity").value = 0;
+        }
     }
 
     if (errorCount == 1) {

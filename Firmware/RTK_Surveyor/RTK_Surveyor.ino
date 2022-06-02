@@ -143,7 +143,6 @@ WiFiClient ntripServer; // The WiFi connection to the NTRIP caster. We use this 
 
 unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
 unsigned long lastServerReport_ms = 0; //Time of last report of caster bytes sent
-int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
 
 uint32_t casterBytesSent = 0; //Just a running total
 uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service times out
@@ -400,7 +399,6 @@ uint32_t triggerCount = 0; //Global copy - TM2 event counter
 uint32_t towMsR = 0; //Global copy - Time Of Week of rising edge (ms)
 uint32_t towSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
 
-long lastReceivedRTCM_ms = 0;       //5 RTCM messages take approximately ~300ms to arrive at 115200bps
 int timeBetweenGGAUpdate_ms = 10000; //GGA is required for Rev2 NTRIP casters. Don't transmit but once every 10 seconds
 long lastTransmittedGGA_ms = 0;
 

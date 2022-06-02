@@ -46,6 +46,12 @@ static const int MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS = 3;
 //NTRIP caster response timeout
 static const uint32_t NTRIP_CLIENT_RESPONSE_TIMEOUT = 5 * 1000; //Milliseconds
 
+//NTRIP client receive data timeout
+static const uint32_t NTRIP_CLIENT_RECEIVE_DATA_TIMEOUT = 10 * 1000; //Milliseconds
+
+//Most incoming data is around 500 bytes but may be larger
+static const int RTCM_DATA_SIZE = 512 * 4;
+
 //NTRIP client server request buffer size
 static const int SERVER_BUFFER_SIZE = CREDENTIALS_BUFFER_SIZE + 3;
 
@@ -319,6 +325,52 @@ void ntripClientUpdate()
           online.ntripClient = true;
           ntripClientAllowMoreConnections();
           ntripClientState = NTRIP_CLIENT_CONNECTED;
+        }
+      }
+      break;
+
+    case NTRIP_CLIENT_CONNECTED:
+      //Check for a broken connection
+      if (!ntripClient->connected())
+      {
+        //Broken connection, retry the NTRIP client connection
+        Serial.println(F("NTRIP Client connection dropped"));
+        ntripClientStop();
+      }
+      else
+      {
+        //Check for timeout receiving NTRIP data
+        if (!ntripClient->available())
+        {
+          if ((millis() - ntripClientTimer) > NTRIP_CLIENT_RECEIVE_DATA_TIMEOUT)
+          {
+            //Timeout receiving NTRIP data, retry the NTRIP client connection
+            Serial.println(F("NTRIP Client timeout"));
+            ntripClientStop();
+          }
+        }
+        else
+        {
+          //Received data from the NTRIP server
+          //5 RTCM messages take approximately ~300ms to arrive at 115200bps
+          uint8_t rtcmData[RTCM_DATA_SIZE];
+          size_t rtcmCount = 0;
+
+          //Collect any available RTCM data
+          while (ntripClient->available())
+          {
+            rtcmData[rtcmCount++] = ntripClient->read();
+            if (rtcmCount == sizeof(rtcmData))
+              break;
+          }
+
+          //Restart the NTRIP receive data timer
+          ntripClientTimer = millis();
+
+          //Push RTCM to GNSS module over I2C
+          i2cGNSS.pushRawData(rtcmData, rtcmCount);
+
+          //log_d("NTRIP Client pushed %d RTCM bytes to ZED", rtcmCount);
         }
       }
       break;

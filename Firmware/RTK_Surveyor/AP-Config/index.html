@@ -86,7 +86,8 @@
         <div class="col-sm-12 mt-3">
             <div align="center" class="small">
                 <span id="rtkFirmwareVersion" style="display:inline;">RTK Firmware: v0.0</span> <br>
-                <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span>
+                <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
+                <span id="profileName" style="display:inline;">Profile Name: Default</span>
             </div>
         </div>
 
@@ -183,6 +184,99 @@
                     </div>
                     <p id="ubxConstellationsError" class="inlineError"></p>
 
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="enableNtripClient">Enable NTRIP Client</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enableNtripClient">
+                        <span class="tt" data-bs-placement="right"
+                            title="Use this NTRIP client to download correction data from a casting service. Your device must be within WiFi range at all times. Default: Disabled.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div id="ntripClientConfig" class="collapse mb-2">
+                        <div class="form-group row">
+                            <label for="ntripClient_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
+                                SSID:</label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="ntripClient_wifiSSID">
+                                <p id="ntripClient_wifiSSIDError" class="inlineError"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="ntripClient_wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
+                                PW:</label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="ntripClient_wifiPW">
+                                <p id="ntripClient_wifiPWError" class="inlineError"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="ntripClient_CasterHost" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                                Host:</label>
+                            <div class="col-sm-8 col-6">
+                                <input type="text" class="form-control" id="ntripClient_CasterHost">
+                                <p id="ntripClient_CasterHostError" class="inlineError"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="ntripClient_CasterPort" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                                Port:</label>
+                            <div class="col-sm-8 col-6">
+                                <input type="number" class="form-control" id="ntripClient_CasterPort">
+                                <p id="ntripClient_CasterPortError" class="inlineError"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="ntripClient_CasterUser" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                                User:</label>
+                            <div class="col-sm-8 col-6">
+                                <input type="text" class="form-control" id="ntripClient_CasterUser">
+                                <p id="ntripClient_CasterUserError" class="inlineError"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="ntripClient_CasterUserPW" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                                User PW:</label>
+                            <div class="col-sm-8 col-6">
+                                <input type="text" class="form-control" id="ntripClient_CasterUserPW">
+                                <p id="ntripClient_CasterUserPWError" class="inlineError"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="ntripClient_MountPoint" class="box-margin20 col-sm-3 col-5 col-form-label">Mount
+                                Point:</label>
+                            <div class="col-sm-8 col-6">
+                                <input type="text" class="form-control" id="ntripClient_MountPoint">
+                                <p id="ntripClient_MountPointError" class="inlineError"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="ntripClient_MountPointPW" class="box-margin20 col-sm-4 col-6 col-form-label">Mount
+                                Point
+                                PW:</label>
+                            <div class="col-sm-7 col-5">
+                                <input type="text" class="form-control" id="ntripClient_MountPointPW">
+                                <p id="ntripClient_MountPointPWError" class="inlineError"></p>
+                            </div>
+                        </div>                    
+                        
+                        <div class="form-check mt-1 box-margin20">
+                            <label class="form-check-label" for="ntripClient_TransmitGGA">Transmit GGA to Caster</label>
+                            <input class="form-check-input" type="checkbox" value="" id="ntripClient_TransmitGGA" unchecked>
+                            <span class="tt" data-bs-placement="right"
+                                title="Some casters require a regular position update from the rover (GGA message) so that the caster can automatically select the nearest available correction data. Default: Disabled">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
+                    </div>
+                    
                     <div id="messageRateButton">
                         <button class="btn btn-md btn-outline-primary mt-3 toggle-btn" type="button"
                             data-toggle="collapse" data-target="#collapseGNSSConfigMsg" aria-expanded="false"
@@ -706,35 +800,35 @@
                                 </div>
                             </div>
 
-                            <div class="form-group row" id="msgUBX_ESF_MEAS">
+                            <div class="form-group row collapse" id="msgUBX_ESF_MEAS">
                                 <label for="UBX_ESF_MEAS" class="col-sm-4 col-6 col-form-label">ESF_MEAS:</label>
                                 <div class="col-sm-7 col-6"><input type="number" class="form-control" id="UBX_ESF_MEAS"
                                         value="0">
                                     <p id="UBX_ESF_MEASError" class="inlineError"></p>
                                 </div>
                             </div>
-                            <div class="form-group row" id="msgUBX_ESF_RAW">
+                            <div class="form-group row collapse" id="msgUBX_ESF_RAW">
                                 <label for="UBX_ESF_RAW" class="col-sm-4 col-6 col-form-label">ESF_RAW:</label>
                                 <div class="col-sm-7 col-6"><input type="number" class="form-control" id="UBX_ESF_RAW"
                                         value="0">
                                     <p id="UBX_ESF_RAWError" class="inlineError"></p>
                                 </div>
                             </div>
-                            <div class="form-group row" id="msgUBX_ESF_STATUS">
+                            <div class="form-group row collapse" id="msgUBX_ESF_STATUS">
                                 <label for="UBX_ESF_STATUS" class="col-sm-4 col-6 col-form-label">ESF_STATUS:</label>
                                 <div class="col-sm-7 col-6"><input type="number" class="form-control"
                                         id="UBX_ESF_STATUS" value="0">
                                     <p id="UBX_ESF_STATUSError" class="inlineError"></p>
                                 </div>
                             </div>
-                            <div class="form-group row" id="msgUBX_ESF_ALG">
+                            <div class="form-group row collapse" id="msgUBX_ESF_ALG">
                                 <label for="UBX_ESF_ALG" class="col-sm-4 col-6 col-form-label">ESF_ALG:</label>
                                 <div class="col-sm-7 col-6"><input type="number" class="form-control" id="UBX_ESF_ALG"
                                         value="0">
                                     <p id="UBX_ESF_ALGError" class="inlineError"></p>
                                 </div>
                             </div>
-                            <div class="form-group row" id="msgUBX_ESF_INS">
+                            <div class="form-group row collapse" id="msgUBX_ESF_INS">
                                 <label for="UBX_ESF_INS" class="col-sm-4 col-6 col-form-label">ESF_INS:</label>
                                 <div class="col-sm-7 col-6"><input type="number" class="form-control" id="UBX_ESF_INS"
                                         value="0">
@@ -767,22 +861,24 @@
                         </span>
                     </div>
 
-                    <div class="form-group row">
-                        <label for="observationSeconds" class="box-margin20 col-sm-12 col-form-label">Minimum
-                            observation time(s):</label>
-                        <div class="col-sm-4 col-5 ms-3 mb-2">
-                            <input type="number" class="form-control" id="observationSeconds">
-                            <p id="observationSecondsError" class="inlineError"></p>
+                    <div id="surveyInConfig" class="collapse mb-2">
+                        <div class="form-group row">
+                            <label for="observationSeconds" class="box-margin20 col-sm-12 col-form-label">Minimum
+                                observation time(s):</label>
+                            <div class="col-sm-4 col-5 ms-3 mb-2">
+                                <input type="number" class="form-control" id="observationSeconds">
+                                <p id="observationSecondsError" class="inlineError"></p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-group row">
-                        <label for="observationPositionAccuracy" class="box-margin20 col-sm-12 col-form-label">Required
-                            Mean 3D Standard Deviation
-                            (m):</label>
-                        <div class="col-sm-4 ms-3 col-5 mb-3">
-                            <input type="number" class="form-control" id="observationPositionAccuracy">
-                            <p id="observationPositionAccuracyError" class="inlineError"></p>
+                        <div class="form-group row">
+                            <label for="observationPositionAccuracy" class="box-margin20 col-sm-12 col-form-label">Required
+                                Mean 3D Standard Deviation
+                                (m):</label>
+                            <div class="col-sm-4 ms-3 col-5 mb-3">
+                                <input type="number" class="form-control" id="observationPositionAccuracy">
+                                <p id="observationPositionAccuracyError" class="inlineError"></p>
+                            </div>
                         </div>
                     </div>
 
@@ -794,73 +890,78 @@
                             title="If the location of the base is known it can be entered in either ECEF or Geodetic coordinates. In this mode the receiver will immediately begin outputting RTCM correction data. A fixed position is best obtained with PPP (please see our tutorial) or with post processing against a reference station. Default: SparkFun's location in Boulder, Colorado.">
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
-
                     </div>
 
-                    <div class="mt-3">
-                        <input type="radio" id="fixedBaseCoordinateTypeECEF" name="positionType" value="0"
-                            class="form-radio box-margin20">
-                        <label for="fixedBaseCoordinateTypeECEF">ECEF Coordinates</label><br>
-                    </div>
+                    <div id="fixedConfig" class="collapse mb-2">
+                        <div class="mt-3">
+                            <input type="radio" id="fixedBaseCoordinateTypeECEF" name="positionType" value="0"
+                                class="form-radio box-margin20">
+                            <label for="fixedBaseCoordinateTypeECEF">ECEF Coordinates</label><br>
+                        </div>
 
-                    <div class="form-group row">
-                        <div class="col-sm-2 col-3">
-                            <label for="fixedEcefX" class="box-margin40 col-form-label">X:</label>
-                        </div>
-                        <div class="col-sm-4 col-8">
-                            <input type="number" class="form-control" id="fixedEcefX" disabled>
-                            <p id="fixedEcefXError" class="inlineError"></p>
-                        </div>
-                    </div>
+                        <div id="ecefConfig" class="collapse mb-2">
+                                <div class="form-group row">
+                                <div class="col-sm-2 col-3">
+                                    <label for="fixedEcefX" class="box-margin40 col-form-label">X:</label>
+                                </div>
+                                <div class="col-sm-4 col-8">
+                                    <input type="number" class="form-control" id="fixedEcefX">
+                                    <p id="fixedEcefXError" class="inlineError"></p>
+                                </div>
+                            </div>
 
-                    <div class="form-group row">
-                        <div class="col-sm-2 col-3">
-                            <label for="fixedEcefY" class="box-margin40 col-form-label">Y:</label>
-                        </div>
-                        <div class="col-sm-4 col-8">
-                            <input type="number" class="form-control" id="fixedEcefY" disabled>
-                            <p id="fixedEcefYError" class="inlineError"></p>
-                        </div>
-                    </div>
+                            <div class="form-group row">
+                                <div class="col-sm-2 col-3">
+                                    <label for="fixedEcefY" class="box-margin40 col-form-label">Y:</label>
+                                </div>
+                                <div class="col-sm-4 col-8">
+                                    <input type="number" class="form-control" id="fixedEcefY">
+                                    <p id="fixedEcefYError" class="inlineError"></p>
+                                </div>
+                            </div>
 
-                    <div class="form-group row">
-                        <div class="col-sm-2 col-3">
-                            <label for="fixedEcefZ" class="box-margin40 col-form-label">Z:</label>
+                            <div class="form-group row">
+                                <div class="col-sm-2 col-3">
+                                    <label for="fixedEcefZ" class="box-margin40 col-form-label">Z:</label>
+                                </div>
+                                <div class="col-sm-4 col-8">
+                                    <input type="number" class="form-control" id="fixedEcefZ">
+                                    <p id="fixedEcefZError" class="inlineError"></p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-sm-4 col-8">
-                            <input type="number" class="form-control" id="fixedEcefZ" disabled>
-                            <p id="fixedEcefZError" class="inlineError"></p>
+
+                        <div class="mt-3">
+                            <input type="radio" id="fixedBaseCoordinateTypeGeo" name="positionType" value="1"
+                                class="form-radio box-margin20">
+                            <label for="fixedBaseCoordinateTypeGeo">Geodetic</label><br>
                         </div>
-                    </div>
 
-                    <div class="mt-3">
-                        <input type="radio" id="fixedBaseCoordinateTypeGeo" name="positionType" value="1"
-                            class="form-radio box-margin20">
-                        <label for="fixedBaseCoordinateTypeGeo">Geodetic:</label><br>
-                    </div>
+                        <div id="geodeticConfig" class="collapse mb-2">
+                            <div class="form-group row">
+                                <label for="fixedLat" class="box-margin40 col-sm-3 col-4 col-form-label">Latitude:</label>
+                                <div class="col-sm-4 col-6">
+                                    <input type="number" class="form-control" id="fixedLat">
+                                    <p id="fixedLatError" class="inlineError"></p>
+                                </div>
+                            </div>
 
-                    <div class="form-group row">
-                        <label for="fixedLat" class="box-margin40 col-sm-3 col-4 col-form-label">Latitude:</label>
-                        <div class="col-sm-4 col-6">
-                            <input type="number" class="form-control" id="fixedLat" disabled>
-                            <p id="fixedLatError" class="inlineError"></p>
-                        </div>
-                    </div>
+                            <div class="form-group row">
+                                <label for="fixedLong" class="box-margin40 col-sm-3 col-4 col-form-label">Longitude:</label>
+                                <div class="col-sm-4 col-6">
+                                    <input type="number" class="form-control" id="fixedLong">
+                                    <p id="fixedLongError" class="inlineError"></p>
+                                </div>
+                            </div>
 
-                    <div class="form-group row">
-                        <label for="fixedLong" class="box-margin40 col-sm-3 col-4 col-form-label">Longitude:</label>
-                        <div class="col-sm-4 col-6">
-                            <input type="number" class="form-control" id="fixedLong" disabled>
-                            <p id="fixedLongError" class="inlineError"></p>
-                        </div>
-                    </div>
-
-                    <div class="form-group row">
-                        <label for="fixedAltitude"
-                            class="box-margin40 col-sm-3 col-5 col-form-label">HAE/Alt(m):</label>
-                        <div class="col-sm-4 col-5">
-                            <input type="number" class="form-control" id="fixedAltitude" disabled>
-                            <p id="fixedAltitudeError" class="inlineError"></p>
+                            <div class="form-group row">
+                                <label for="fixedAltitude"
+                                    class="box-margin40 col-sm-3 col-5 col-form-label">HAE/Alt(m):</label>
+                                <div class="col-sm-4 col-5">
+                                    <input type="number" class="form-control" id="fixedAltitude">
+                                    <p id="fixedAltitudeError" class="inlineError"></p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -873,58 +974,78 @@
                         </span>
                     </div>
 
-                    <div class="form-group row">
-                        <label for="ntripServer_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
-                            SSID:</label>
-                        <div class="col-sm-8 col-7">
-                            <input type="text" class="form-control" id="ntripServer_wifiSSID">
-                            <p id="ntripServer_wifiSSIDError" class="inlineError"></p>
+                    <div id="ntripServerConfig" class="collapse mb-2">
+                        <div class="form-group row">
+                            <label for="ntripServer_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
+                                SSID:</label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="ntripServer_wifiSSID">
+                                <p id="ntripServer_wifiSSIDError" class="inlineError"></p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-group row">
-                        <label for="ntripServer_wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
-                            PW:</label>
-                        <div class="col-sm-8 col-7">
-                            <input type="text" class="form-control" id="ntripServer_wifiPW">
-                            <p id="ntripServer_wifiPWError" class="inlineError"></p>
+                        <div class="form-group row">
+                            <label for="ntripServer_wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
+                                PW:</label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="ntripServer_wifiPW">
+                                <p id="ntripServer_wifiPWError" class="inlineError"></p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-group row">
-                        <label for="ntripServer_CasterHost" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
-                            Host:</label>
-                        <div class="col-sm-8 col-6">
-                            <input type="text" class="form-control" id="ntripServer_CasterHost">
-                            <p id="ntripServer_CasterHostError" class="inlineError"></p>
+                        <div class="form-group row">
+                            <label for="ntripServer_CasterHost" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                                Host:</label>
+                            <div class="col-sm-8 col-6">
+                                <input type="text" class="form-control" id="ntripServer_CasterHost">
+                                <p id="ntripServer_CasterHostError" class="inlineError"></p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-group row">
-                        <label for="ntripServer_CasterPort" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
-                            Port:</label>
-                        <div class="col-sm-8 col-6">
-                            <input type="text" class="form-control" id="ntripServer_CasterPort">
-                            <p id="ntripServer_CasterPortError" class="inlineError"></p>
+                        <div class="form-group row">
+                            <label for="ntripServer_CasterPort" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                                Port:</label>
+                            <div class="col-sm-8 col-6">
+                                <input type="number" class="form-control" id="ntripServer_CasterPort">
+                                <p id="ntripServer_CasterPortError" class="inlineError"></p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-group row">
-                        <label for="ntripServer_MountPoint" class="box-margin20 col-sm-3 col-5 col-form-label">Mount
-                            Point:</label>
-                        <div class="col-sm-8 col-6">
-                            <input type="text" class="form-control" id="ntripServer_MountPoint">
-                            <p id="ntripServer_MountPointError" class="inlineError"></p>
+                        <div class="form-group row">
+                            <label for="ntripServer_CasterUser" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                                User:</label>
+                            <div class="col-sm-8 col-6">
+                                <input type="text" class="form-control" id="ntripServer_CasterUser">
+                                <p id="ntripServer_CasterUserError" class="inlineError"></p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-group row">
-                        <label for="ntripServer_MountPointPW" class="box-margin20 col-sm-4 col-6 col-form-label">Mount
-                            Point
-                            PW:</label>
-                        <div class="col-sm-7 col-5">
-                            <input type="text" class="form-control" id="ntripServer_MountPointPW">
-                            <p id="ntripServer_MountPointPWError" class="inlineError"></p>
+                        <div class="form-group row">
+                            <label for="ntripServer_CasterUserPW" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                                User PW:</label>
+                            <div class="col-sm-8 col-6">
+                                <input type="text" class="form-control" id="ntripServer_CasterUserPW">
+                                <p id="ntripServer_CasterUserPWError" class="inlineError"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="ntripServer_MountPoint" class="box-margin20 col-sm-3 col-5 col-form-label">Mount
+                                Point:</label>
+                            <div class="col-sm-8 col-6">
+                                <input type="text" class="form-control" id="ntripServer_MountPoint">
+                                <p id="ntripServer_MountPointError" class="inlineError"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="ntripServer_MountPointPW" class="box-margin20 col-sm-4 col-6 col-form-label">Mount
+                                Point
+                                PW:</label>
+                            <div class="col-sm-7 col-5">
+                                <input type="text" class="form-control" id="ntripServer_MountPointPW">
+                                <p id="ntripServer_MountPointPWError" class="inlineError"></p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -958,6 +1079,77 @@
                 </div>
             </div>
 
+            <!-- --------- Point Perfect Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary mt-3 toggle-btn" id="ppConfig" type="button" data-toggle="collapse"
+                    data-target="#collapsePPConfig" aria-expanded="false" aria-controls="collapsePPConfig">
+                    PointPerfect Configuration <i class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="collapsePPConfig">
+                <div class="card card-body">
+
+                    <div>
+                        Device ID: <p id="hardwareID" style="display:inline;">N/A</p><br>
+                        Days until keys expire: <p id="daysRemaining" style="display:inline;">No Keys</p>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="enablePointPerfectCorrections">Enable PointPerfect Corrections</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enablePointPerfectCorrections">
+                        <span class="tt" data-bs-placement="right"
+                            title="Use L-Band PointPerfect corrections when available. Default: Enabled">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div id="ppSettingsConfig">
+                        <div class="form-group row">
+                            <label for="home_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">Home WiFi
+                                SSID:</label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="home_wifiSSID">
+                                <p id="home_wifiSSIDError" class="inlineError"></p>
+                            </div>
+                            <span class="tt" data-bs-placement="right"
+                                title="The RTK Facet L-Band needs to obtain PointPerfect keys once every 28 days. This WiFi network will be connected to when necessary to obtain new keys.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="home_wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">Home WiFi
+                                PW:</label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="home_wifiPW">
+                                <p id="home_wifiPWError" class="inlineError"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-check mt-3">
+                            <label class="form-check-label" for="autoKeyRenewal">Auto Key Renewal </label>
+                            <input class="form-check-input" type="checkbox" value="" id="autoKeyRenewal">
+                            <span class="tt" data-bs-placement="right"
+                                title="When keys drop below 28 days to expiry, automatically attempt to connect to 'Home' WiFi, once a day, to renew keys. Default: Enabled">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="pointPerfectDeviceProfileToken" class="box-margin20 col-sm-3 col-4 col-form-label">Device Profile Token:</label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="pointPerfectDeviceProfileToken">
+                                <p id="pointPerfectDeviceProfileTokenError" class="inlineError"></p>
+                            </div>
+                            <span class="tt" data-bs-placement="right"
+                                title="If your organization has a corporate ThingStream and PointPerfect account, this is where you put your custom device profile token. Default: Empty - Use the SparkFun Token">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- --------- Ports Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
@@ -1021,6 +1213,55 @@
                         </span>
                     </div>
 
+                    <div id="externalPulseConfig" class="collapse mb-2">
+                        <div class="form-check mt-3">
+                            <label class="form-check-label" for="enableExternalPulse">Enable External Pulse</label>
+                            <input class="form-check-input" type="checkbox" value="" id="enableExternalPulse">
+                            <span class="tt" data-bs-placement="right"
+                                title="Generate a Pulse Per Second or a time base much faster, with extreme accuracy. Requires GNSS reception. Default: Enabled with 100,000us pulse length and 900,000us time between pulses.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
+
+                        <div id="externalPulseConfigDetails" class="collapse mb-2">
+                            <div class="form-group row">
+                                <label for="externalPulseTimeBetweenPulse_us" class="box-margin20 col-sm-3 col-4 col-form-label">Time between pulses (µs): </label>
+                                <div class="col-sm-8 col-7">
+                                    <input type="number" class="form-control" id="externalPulseTimeBetweenPulse_us">
+                                    <p id="externalPulseTimeBetweenPulse_usError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <label for="externalPulseLength_us" class="box-margin20 col-sm-3 col-4 col-form-label">Pulse length (µs):</label>
+                                <div class="col-sm-8 col-7">
+                                    <input type="number" class="form-control" id="externalPulseLength_us">
+                                    <p id="externalPulseLength_usError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                            <div id="pulseEdgeDropdown" class="mb-2">
+                                <label for="externalPulsePolarity" class="box-margin20 col-sm-3 col-4 col-form-label">Pulse Polarity: </label>
+                                <select name="externalPulsePolarity" id="externalPulsePolarity" class="form-dropdown">
+                                    <option value="0">Rising Edge</option>
+                                    <option value="1">Falling Edge</option>
+                                </select>
+                                <span class="tt" data-bs-placement="right"
+                                    title="The pulse signal will be high when active (rising edge) or low when active (falling edge). Default: Rising Edge">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="form-check mt-3">
+                            <label class="form-check-label" for="enableExternalHardwareEventLogging">Enable External Event Logging</label>
+                            <input class="form-check-input" type="checkbox" value="" id="enableExternalHardwareEventLogging">
+                            <span class="tt" data-bs-placement="right"
+                                title="Log external pulses (events) with 30ns accuracy RMS. Useful for things like audio triangulation. See the Timemark section of the ZED-F9P Integration Manual for more information. Requires GNSS reception. Default: Disabled">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1044,33 +1285,35 @@
                         </span>
                     </div>
 
-                    <div id="maxLogTime Input" class="row">
-                        <div class="col-sm-4 col-9 form-group">
-                            <label for="maxLogTime_minutes" class="form-group box-margin20">Max Log
-                                Time (min):</label><span class="tt" data-bs-placement="right"
-                                title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
+                    <div id="enableLoggingDetails" class="collapse mb-2">
+                        <div id="maxLogTime Input" class="row">
+                            <div class="col-sm-4 col-9 form-group">
+                                <label for="maxLogTime_minutes" class="form-group box-margin20">Max Log
+                                    Time (min):</label><span class="tt" data-bs-placement="right"
+                                    title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </div>
+
+                            <div class="col-sm-4 col-5 ms-3 form-group">
+                                <input type="number" class="form-control" id="maxLogTime_minutes">
+                                <p id="maxLogTime_minutesError" class="inlineError"></p>
+                            </div>
                         </div>
 
-                        <div class="col-sm-4 col-5 ms-3 form-group">
-                            <input type="number" class="form-control" id="maxLogTime_minutes">
-                            <p id="maxLogTime_minutesError" class="inlineError"></p>
-                        </div>
-                    </div>
+                        <div id="maxLogLength Input" class="row">
+                            <div class="col-sm-4 col-9 form-group">
+                                <label for="maxLogLength_minutes" class="form-group box-margin20">Max Log
+                                    Length (min):</label><span class="tt" data-bs-placement="right"
+                                    title="Once this length of time is achieved, a new log will be created. This is useful for creating multiple logs over a long survey. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </div>
 
-                    <div id="maxLogLength Input" class="row">
-                        <div class="col-sm-4 col-9 form-group">
-                            <label for="maxLogLength_minutes" class="form-group box-margin20">Max Log
-                                Length (min):</label><span class="tt" data-bs-placement="right"
-                                title="Once this length of time is achieved, a new log will be created. This is useful for creating multiple logs over a long survey. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
-                        </div>
-
-                        <div class="col-sm-4 col-5 ms-3 form-group">
-                            <input type="number" class="form-control" id="maxLogLength_minutes">
-                            <p id="maxLogLength_minutesError" class="inlineError"></p>
+                            <div class="col-sm-4 col-5 ms-3 form-group">
+                                <input type="number" class="form-control" id="maxLogLength_minutes">
+                                <p id="maxLogLength_minutesError" class="inlineError"></p>
+                            </div>
                         </div>
                     </div>
 
@@ -1120,6 +1363,10 @@
                     <div class="form-check mt-1 box-margin20">
                         <label class="form-check-label" for="enableResetDisplay">Display Reset Counter</label>
                         <input class="form-check-input" type="checkbox" value="" id="enableResetDisplay" unchecked>
+                        <span class="tt" data-bs-placement="right"
+                            title="A small number will be added to the display indicating the number of non-power-on-reset cycles. Used for debugging. Default: Disabled">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
                     </div>
                 </div>
             </div>

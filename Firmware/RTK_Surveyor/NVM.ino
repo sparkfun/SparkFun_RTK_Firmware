@@ -187,8 +187,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", F("ntripClient_TransmitGGA"), settings.ntripClient_TransmitGGA);
   settingsFile->printf("%s=%d\n\r", F("serialTimeoutGNSS"), settings.serialTimeoutGNSS);
   settingsFile->printf("%s=%s\n\r", F("pointPerfectDeviceProfileToken"), settings.pointPerfectDeviceProfileToken);
-  settingsFile->printf("%s=%d\n\r", F("enableLBandCorrections"), settings.enableLBandCorrections);
-  settingsFile->printf("%s=%d\n\r", F("enableIPCorrections"), settings.enableIPCorrections);
+  settingsFile->printf("%s=%d\n\r", F("enablePointPerfectCorrections"), settings.enablePointPerfectCorrections);
   settingsFile->printf("%s=%s\n\r", F("home_wifiSSID"), settings.home_wifiSSID);
   settingsFile->printf("%s=%s\n\r", F("home_wifiPW"), settings.home_wifiPW);
   settingsFile->printf("%s=%d\n\r", F("autoKeyRenewal"), settings.autoKeyRenewal);
@@ -696,10 +695,8 @@ bool parseLine(char* str, Settings *settings)
     settings->serialTimeoutGNSS = d;
   else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)
     strcpy(settings->pointPerfectDeviceProfileToken, settingValue);
-  else if (strcmp(settingName, "enableLBandCorrections") == 0)
-    settings->enableLBandCorrections = d;
-  else if (strcmp(settingName, "enableIPCorrections") == 0)
-    settings->enableIPCorrections = d;
+  else if (strcmp(settingName, "enablePointPerfectCorrections") == 0)
+    settings->enablePointPerfectCorrections = d;
   else if (strcmp(settingName, "home_wifiSSID") == 0)
     strcpy(settings->home_wifiSSID, settingValue);
   else if (strcmp(settingName, "home_wifiPW") == 0)

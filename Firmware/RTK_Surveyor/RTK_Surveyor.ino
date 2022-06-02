@@ -3,13 +3,12 @@
   SparkFun Electronics
   Nathan Seidle
 
-  This firmware runs the core of the SparkFun RTK Surveyor product. It runs on an ESP32
+  This firmware runs the core of the SparkFun RTK products. It runs on an ESP32
   and communicates with the ZED-F9P.
 
   Compiled with Arduino v1.8.15 with ESP32 core v2.0.2.
 
-  Select the ESP32 Dev Module from the boards list. This maps the same pins to the ESP32-WROOM module.
-  Select 'Minimal SPIFFS (1.9MB App)' from the partition list. This will enable SD firmware updates.
+  For compilation instructions see https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#compiling-from-source
 
   Special thanks to Avinab Malla for guidance on getting xTasks implemented.
 
@@ -17,38 +16,14 @@
   ZED-F9P to the phone and receive any RTCM from the phone and feed it back
   to the ZED-F9P to achieve RTK: F9PSerialWriteTask(), F9PSerialReadTask().
 
-  A settings file is accessed on microSD if available otherwise settings are pulled from
-  ESP32's file system LittleFS.
+  Settings are loaded from microSD if available otherwise settings are pulled from ESP32's file system LittleFS.
 
   As of v1.2, the heap is approximately 94072 during Rover Fix, 142260 during WiFi Casting. This is
   important to maintain as unit will begin to have stability issues at ~30k.
-
-  The main loop handles lower priority updates such as:
-    Fuel gauge checking and power LED color update
-    Setup switch monitoring (module configure between Rover and Base)
-    Text menu interactions
-
-  Main Menu (Display MAC address / broadcast name):
-    (Done) GNSS - Configure measurement rate, SBAS
-    (Done) Log - Control messages logged to SD
-    (Done) Broadcast - Control messages sent over BT SPP
-    (Done) Base - Enter fixed coordinates, survey-in settings, WiFi/Caster settings,
-    (Done) Ports - Configure Radio and Data port baud rates
-    (Done) Test menu
-    (Done) Firmware upgrade menu
-    Enable various debug outputs sent over BT
-
-  TODO:
-    Add ntripServer_MountPoint and PWDownload to AP config
-    Add ntripClient_TransmitGGA to AP config
-    Add ntripServer_CasterUser/PW to AP config
-    Add maxLogLength_minutes to AP config
-    Add L-Band to AP config
-
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 0;
+const int FIRMWARE_VERSION_MINOR = 1;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
@@ -288,14 +263,6 @@ bool zedUartPassed = false; //Goes true during testing if ESP can communicate wi
 //External Display
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
-QwiicMicroOLED oled;
-
-// Fonts
-#include <res/qw_fnt_5x7.h>
-#include <res/qw_fnt_8x16.h>
-#include <res/qw_fnt_largenum.h>
-
-#include "icons.h"
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Firmware binaries loaded from SD
@@ -356,7 +323,7 @@ int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-//L-Band Corrections
+//PointPerfect Corrections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 SFE_UBLOX_GNSS i2cLBand; // NEO-D9S
 
@@ -403,15 +370,8 @@ uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
 uint32_t lastRTCAttempt = 0; //Wait 1000ms between checking GNSS for current date/time
 
-uint32_t lastSatelliteDishIconUpdate = 0;
-bool satelliteDishIconDisplayed = false; //Toggles as lastSatelliteDishIconUpdate goes above 1000ms
-uint32_t lastCrosshairIconUpdate = 0;
-bool crosshairIconDisplayed = false; //Toggles as lastCrosshairIconUpdate goes above 1000ms
 uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
-uint32_t lastWifiIconUpdate = 0;
-bool wifiIconDisplayed = false; //Toggles as lastWifiIconUpdate goes above 1000ms
-uint32_t lastLoggingIconUpdate = 0;
 int loggingIconDisplayed = 0; //Increases every 500ms while logging
 
 uint64_t lastLogSize = 0;
@@ -471,7 +431,7 @@ bool mqttMessageReceived = false; //Goes true when the subscribed MQTT channel r
 uint8_t leapSeconds = 0; //Gets set if GNSS is online
 unsigned long systemTestDisplayTime = 0; //Timestamp for swapping the graphic during testing
 uint8_t systemTestDisplayNumber = 0; //Tracks which test screen we're looking at
-unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to update during L-Band Key checking
+unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to update during PointPerfect Key checking
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -510,7 +470,7 @@ void setup()
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
-  updateRTC(); //The GNSS likely has time/date. Update ESP32 RTC to match. Needed for L-Band key expiration.
+  updateRTC(); //The GNSS likely has time/date. Update ESP32 RTC to match. Needed for PointPerfect key expiration.
 
   Serial.flush(); //Complete any previous prints
 
@@ -543,7 +503,7 @@ void loop()
 
   updateNTRIPClient(); //Move any available incoming NTRIP to ZED
 
-  updateLBand(); //Check if we've recently received L-Band corrections or not
+  updateLBand(); //Check if we've recently received PointPerfect corrections or not
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;

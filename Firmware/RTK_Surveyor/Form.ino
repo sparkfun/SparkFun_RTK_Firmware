@@ -291,7 +291,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
   if (type == WS_EVT_CONNECT) {
-    char settingsCSV[3000];
+    char settingsCSV[4000];
     memset(settingsCSV, 0, sizeof(settingsCSV));
     createSettingsString(settingsCSV);
     log_d("Sending command: %s\n\r", settingsCSV);
@@ -411,20 +411,42 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "radioPortBaud", settings.radioPortBaud);
   stringRecord(settingsCSV, "dataPortChannel", settings.dataPortChannel);
 
-  //New settings not yet integrated
+  //LBand
+  char hardwareID[13];
+  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]); //Get ready for JSON
+  stringRecord(settingsCSV, "hardwareID", hardwareID);
+
+  char apDaysRemaining[50];
+  if (strlen(settings.pointPerfectCurrentKey) > 0)
+  {
+    uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+    sprintf(apDaysRemaining, "%d", daysRemaining);
+  }
+  else
+    sprintf(apDaysRemaining, "No Keys");
+
+  stringRecord(settingsCSV, "daysRemaining", apDaysRemaining);
+
+  stringRecord(settingsCSV, "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
+  stringRecord(settingsCSV, "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
+  stringRecord(settingsCSV, "home_wifiSSID", settings.home_wifiSSID);
+  stringRecord(settingsCSV, "home_wifiPW", settings.home_wifiPW);
+  stringRecord(settingsCSV, "autoKeyRenewal", settings.autoKeyRenewal);
+
+  //External PPS/Triggers
   stringRecord(settingsCSV, "enableExternalPulse", settings.enableExternalPulse);
   stringRecord(settingsCSV, "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
   stringRecord(settingsCSV, "externalPulseLength_us", settings.externalPulseLength_us);
   stringRecord(settingsCSV, "externalPulsePolarity", settings.externalPulsePolarity);
   stringRecord(settingsCSV, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
-  stringRecord(settingsCSV, "profileName", settings.profileName);
-  stringRecord(settingsCSV, "serialTimeoutGNSS", settings.serialTimeoutGNSS);
-  stringRecord(settingsCSV, "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
-  stringRecord(settingsCSV, "enableLBandCorrections", settings.enableLBandCorrections);
-  stringRecord(settingsCSV, "enableIPCorrections", settings.enableIPCorrections);
-  stringRecord(settingsCSV, "home_wifiSSID", settings.home_wifiSSID);
-  stringRecord(settingsCSV, "home_wifiPW", settings.home_wifiPW);
-  stringRecord(settingsCSV, "autoKeyRenewal", settings.autoKeyRenewal);
+
+  //Profiles
+  char apProfileName[50];
+  sprintf(apProfileName, "Profile Name: %s", settings.profileName);
+  stringRecord(settingsCSV, "profileName", apProfileName);
+
+  //New settings not yet integrated
+  //...
 
   strcat(settingsCSV, "\0");
   Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
@@ -545,10 +567,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.serialTimeoutGNSS = settingValue;
   else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)
     strcpy(settings.pointPerfectDeviceProfileToken, settingValueStr);
-  else if (strcmp(settingName, "enableLBandCorrections") == 0)
-    settings.enableLBandCorrections = settingValue;
-  else if (strcmp(settingName, "enableIPCorrections") == 0)
-    settings.enableIPCorrections = settingValue;
+  else if (strcmp(settingName, "enablePointPerfectCorrections") == 0)
+    settings.enablePointPerfectCorrections = settingValue;
   else if (strcmp(settingName, "home_wifiSSID") == 0)
     strcpy(settings.home_wifiSSID, settingValueStr);
   else if (strcmp(settingName, "home_wifiPW") == 0)
@@ -677,6 +697,14 @@ void stringRecord(char* settingsCSV, const char *id, char* settingValue)
 {
   char record[100];
   sprintf(record, "%s,%s,", id, settingValue);
+  strcat(settingsCSV, record);
+}
+
+//Add record with uint64_t
+void stringRecord(char* settingsCSV, const char *id, uint64_t settingValue)
+{
+  char record[100];
+  sprintf(record, "%s,%ld,", id, settingValue);
   strcat(settingsCSV, record);
 }
 

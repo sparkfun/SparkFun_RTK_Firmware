@@ -3,13 +3,12 @@
   SparkFun Electronics
   Nathan Seidle
 
-  This firmware runs the core of the SparkFun RTK Surveyor product. It runs on an ESP32
+  This firmware runs the core of the SparkFun RTK products. It runs on an ESP32
   and communicates with the ZED-F9P.
 
   Compiled with Arduino v1.8.15 with ESP32 core v2.0.2.
 
-  Select the ESP32 Dev Module from the boards list. This maps the same pins to the ESP32-WROOM module.
-  Select 'Minimal SPIFFS (1.9MB App)' from the partition list. This will enable SD firmware updates.
+  For compilation instructions see https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#compiling-from-source
 
   Special thanks to Avinab Malla for guidance on getting xTasks implemented.
 
@@ -17,16 +16,10 @@
   ZED-F9P to the phone and receive any RTCM from the phone and feed it back
   to the ZED-F9P to achieve RTK: F9PSerialWriteTask(), F9PSerialReadTask().
 
-  A settings file is accessed on microSD if available otherwise settings are pulled from
-  ESP32's file system LittleFS.
+  Settings are loaded from microSD if available otherwise settings are pulled from ESP32's file system LittleFS.
 
   As of v1.2, the heap is approximately 94072 during Rover Fix, 142260 during WiFi Casting. This is
   important to maintain as unit will begin to have stability issues at ~30k.
-
-  The main loop handles lower priority updates such as:
-    Fuel gauge checking and power LED color update
-    Setup switch monitoring (module configure between Rover and Base)
-    Text menu interactions
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;

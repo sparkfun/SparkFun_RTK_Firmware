@@ -80,6 +80,17 @@ then applying a tag to that commit on `main`.
 \todo Describe how the firmare is built from the tag and then
 committed to `main`, or if something else happens.
 
+Building from Source
+--------------------
+
+This repository contains a number of subdirectories which are mostly
+independent.  For building the firmware, see the [Firmware
+README](Firmware/readme.md).
+
+For the documention, see `.github/workflows/mkdocs.yml`.
+
+\todo Building the `Uploader_GUI` and the `u-blox_Update_GUI` is not documented.
+
 License Information
 -------------------
 

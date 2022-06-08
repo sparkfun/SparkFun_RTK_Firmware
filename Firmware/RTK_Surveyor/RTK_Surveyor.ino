@@ -23,7 +23,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 1;
+const int FIRMWARE_VERSION_MINOR = 2;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
@@ -318,7 +318,8 @@ AsyncWebSocket ws("/ws");
 
 //Because the incoming string is longer than max len, there are multiple callbacks so we
 //use a global to combine the incoming
-char incomingSettings[3000];
+#define AP_CONFIG_SETTING_SIZE 3500
+char incomingSettings[AP_CONFIG_SETTING_SIZE];
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -686,9 +687,9 @@ void updateRTC()
         {
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi
-          //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);  // 17th Jan 2021 15:24:30
+          //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
           i2cGNSS.checkUblox();
-          rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());  // 17th Jan 2021 15:24:30
+          rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());
 
           online.rtc = true;
 

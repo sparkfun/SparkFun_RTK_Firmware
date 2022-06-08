@@ -1121,8 +1121,8 @@ void updateSystemState()
             changeState(settings.lastState); //Go to either rover or base
           }
 
-          //If there is no WiFi setup, skip everything
-          else if (strlen(settings.home_wifiSSID) == 0)
+          //If there is no WiFi setup, and no keys, skip everything
+          else if (strlen(settings.home_wifiSSID) == 0 && strlen(settings.pointPerfectCurrentKey) == 0)
           {
             changeState(settings.lastState); //Go to either rover or base
           }

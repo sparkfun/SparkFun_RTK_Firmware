@@ -23,7 +23,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 1;
+const int FIRMWARE_VERSION_MINOR = 2;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_BT //Comment out to remove Bluetooth functionality

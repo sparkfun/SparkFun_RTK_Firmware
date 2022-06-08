@@ -318,7 +318,8 @@ AsyncWebSocket ws("/ws");
 
 //Because the incoming string is longer than max len, there are multiple callbacks so we
 //use a global to combine the incoming
-char incomingSettings[3000];
+#define AP_CONFIG_SETTING_SIZE 3500
+char incomingSettings[AP_CONFIG_SETTING_SIZE];
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

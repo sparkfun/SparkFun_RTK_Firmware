@@ -442,8 +442,8 @@ void updateSystemState()
                                           | WiFi connected = true
                                           | radioState = WIFI_CONNECTED
                                           V
-                        .-----------------------------------.
-                        |   STATE_BASE_TEMP_WIFI_CONNECTED  |
+                         .-----------------------------------.
+                         |   STATE_BASE_TEMP_WIFI_CONNECTED  |
         .--------------->|          Solid WiFi Icon          |
         |                |             "Xmitting"            |
         |                |            "RTCM: 2145"           |
@@ -463,9 +463,9 @@ void updateSystemState()
         |                .-----------------------------------.
         |  Caster failed |  STATE_BASE_TEMP_CASTER_CONNECTED |
         '----------------|          Solid WiFi Icon          |
-                        |             "Casting"             |
-                        |            "RTCM: 2145"           |
-                        '-----------------------------------'
+                         |             "Casting"             |
+                         |            "RTCM: 2145"           |
+                         '-----------------------------------'
 
       */
 
@@ -798,7 +798,7 @@ void updateSystemState()
            |                              | Caster connected
            |                              V
            |            .-----------------------------------.
-           |     Caster |  STATE_BASE_FIXED_WIFI_CONNECTED  |
+           |     Caster | STATE_BASE_FIXED_CASTER_CONNECTED |
            | Connection |          Solid WiFi Icon          |
            |     Failed |             "Casting"             |
            '------------|            "RTCM: 2145"           |

@@ -147,8 +147,11 @@ bool ntripClientConnectLimitReached()
     //Display the heap state
     reportHeapNow();
   else
+  {
     //No more connection attempts, switching to Bluetooth
+    Serial.println(F("NTRIP Client connection attempts exceeded!"));
     ntripClientSwitchToBluetooth();
+  }
   return limitReached;
 }
 

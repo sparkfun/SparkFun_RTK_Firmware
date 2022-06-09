@@ -152,13 +152,15 @@ The following products contain the following u-blox receviers:
 
 * RTK Surveyor: ZED-F9P
 * RTK Express: ZED-F9P
-* RTK Express Plus: : ZED-F9**R**
+* RTK Express Plus: : ZED-F9R
 * RTK Facet: ZED-F9P
 * RTK Facet L-Band: ZED-F9P and NEO-D9S
 
-The firmware loaded onto the ZED-F9P, ZED-F9R, and NEO-D9S receivers can vary depending on manufacture date. The RTK Firmware (that runs on the ESP32) is designed flexibly work with any u-blox firmware. Upgrading the ZED-F9x is a good thing to consider but is not crucial to the use of the RTK products.
+The firmware loaded onto the ZED-F9P, ZED-F9R, and NEO-D9S receivers is written by u-blox and can vary depending on manufacture date. The RTK Firmware (that runs on the ESP32) is designed to flexibly work with any u-blox firmware. Upgrading the ZED-F9x/NEO-D9S is a good thing to consider but is not crucial to the use of the RTK products.
 
-The firmware on u-blox devices can be achieved a few different ways. 
+Not sure what firmware is loaded onto your RTK product? Open the [System Status Menu](https://sparkfun.github.io/SparkFun_RTK_Firmware/menu_system_status/) to display the module's current firmware version.
+
+The firmware on u-blox devices can be updated using a [Windows based GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-using-windows-gui) or [u-center](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-using-u-center). A CLI method is also possible using the ubxfwupdate.exe tool provided with u-center. Additionally, u-blox offers the source for the ubxfwupdate tool that is written in C. It is currently released only under an NDA so contact your local u-blox Field Applications Engineer if you need a different method.
 
 ### Updating Using Windows GUI
 
@@ -166,11 +168,11 @@ The firmware on u-blox devices can be achieved a few different ways.
 
 *SparkFun RTK u-blox Firmware Update Tool*
 
-The [SparkFun RTK u-blox Firmware Update Tool](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/u-blox_Update_GUI) is a simple Windows GUI and python script that runs the ubxfwupdate.exe tool. This allows users to directly update module firmware without the need for u-center. Addtionally, this tool queries the module to verify that the firmware type matches the module. Because the RTK Facet L-Band contains two u-blox modules that both appear as identical serial ports, it can be difficult and perilous to know which port to load firmware. This tool prevents ZED-F9P firmware from being accidentally loaded onto a NEO-D9S receiver.
+The [SparkFun RTK u-blox Firmware Update Tool](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/u-blox_Update_GUI) is a simple Windows GUI and python script that runs the ubxfwupdate.exe tool. This allows users to directly update module firmware without the need for u-center. Addtionally, this tool queries the module to verify that the firmware type matches the module. Because the RTK Facet L-Band contains two u-blox modules that both appear as identical serial ports, it can be difficult and perilous to know which port to load firmware. This tool prevents ZED-F9P firmware from being accidentally loaded onto a NEO-D9S receiver and vice versa.
 
-The code will only run on Windows as it relies upon u-blox's ubxfwupdate.exe. The full, integrated executable for Windows is available [here](https://github.com/sparkfun/SparkFun_RTK_Firmware/raw/main/u-blox_Update_GUI/Windows_exe/RTK_u-blox_Update_GUI.exe).
+The SparkFun RTK u-blox Firmware Update Tool will only run on Windows as it relies upon u-blox's ubxfwupdate.exe. The full, integrated executable for Windows is available [here](https://github.com/sparkfun/SparkFun_RTK_Firmware/raw/main/u-blox_Update_GUI/Windows_exe/RTK_u-blox_Update_GUI.exe).
 
-* Attach the RTK device's CONFIG UBLOX port to your computer using a USB cable
+* Attach the RTK device's USB port to your computer using a USB cable
 * Turn the RTK device on
 * Open Device Manager to confirm which COM port the device is operating on
 

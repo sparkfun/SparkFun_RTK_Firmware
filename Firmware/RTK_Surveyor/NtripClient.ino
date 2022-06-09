@@ -81,7 +81,8 @@ void ntripClientAllowMoreConnections()
 
 bool ntripClientConnect()
 {
-  if (!ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort))
+  if ((!ntripClient)
+    || (!ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort)))
     return false;
   Serial.printf("NTRIP Client connected to %s:%d\n\r", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
 

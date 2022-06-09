@@ -3,6 +3,7 @@
 //This allows multiple units to be on at same time
 void startBluetooth()
 {
+  ntripClientStop(true);
   wifiStop();
   if (btState == BT_OFF)
   {
@@ -101,7 +102,11 @@ bool configureUbloxModule()
     i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
     i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
     delay(10);
-    if (millis() - startTime > maxWait) break;
+    if (millis() - startTime > maxWait)
+    {
+      log_d("PVT Update failed");
+      break;
+    }
   }
 
   //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration

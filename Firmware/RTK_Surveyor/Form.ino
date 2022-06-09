@@ -254,7 +254,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
   if (type == WS_EVT_CONNECT) {
-    char settingsCSV[4000];
+    char settingsCSV[AP_CONFIG_SETTING_SIZE];
     memset(settingsCSV, 0, sizeof(settingsCSV));
     createSettingsString(settingsCSV);
     log_d("Sending command: %s\n\r", settingsCSV);
@@ -374,12 +374,12 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "radioPortBaud", settings.radioPortBaud);
   stringRecord(settingsCSV, "dataPortChannel", settings.dataPortChannel);
 
-  //LBand
+  //L-Band
   char hardwareID[13];
   sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]); //Get ready for JSON
   stringRecord(settingsCSV, "hardwareID", hardwareID);
 
-  char apDaysRemaining[50];
+  char apDaysRemaining[20];
   if (strlen(settings.pointPerfectCurrentKey) > 0)
   {
     uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
@@ -531,13 +531,13 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)
     strcpy(settings.pointPerfectDeviceProfileToken, settingValueStr);
   else if (strcmp(settingName, "enablePointPerfectCorrections") == 0)
-    settings.enablePointPerfectCorrections = settingValue;
+    settings.enablePointPerfectCorrections = settingValueBool;
   else if (strcmp(settingName, "home_wifiSSID") == 0)
     strcpy(settings.home_wifiSSID, settingValueStr);
   else if (strcmp(settingName, "home_wifiPW") == 0)
     strcpy(settings.home_wifiPW, settingValueStr);
   else if (strcmp(settingName, "autoKeyRenewal") == 0)
-    settings.autoKeyRenewal = settingValue;
+    settings.autoKeyRenewal = settingValueBool;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

@@ -9,11 +9,11 @@ NTRIP Client States:
 
                                NTRIP_CLIENT_OFF
                                        |   ^
-                      ntripClientStart |   | No more retries
+                      ntripClientStart |   | ntripClientStop(true)
                                        v   |
                                NTRIP_CLIENT_ON <--------------.
                                        |                      |
-                                       |                      | ntripClientStop
+                                       |                      | ntripClientStop(false)
                                        v                Fail  |
                          NTRIP_CLIENT_WIFI_CONNECTING ------->+
                                        |                      ^
@@ -81,7 +81,8 @@ void ntripClientAllowMoreConnections()
 
 bool ntripClientConnect()
 {
-  if (!ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort))
+  if ((!ntripClient)
+    || (!ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort)))
     return false;
   Serial.printf("NTRIP Client connected to %s:%d\n\r", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
 
@@ -138,7 +139,7 @@ bool ntripClientConnect()
 bool ntripClientConnectLimitReached()
 {
   //Shutdown the NTRIP client
-  ntripClientStop();
+  ntripClientStop(false);
 
   //Retry the connection a few times
   bool limitReached = (ntripClientConnectionAttempts++ >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
@@ -146,8 +147,11 @@ bool ntripClientConnectLimitReached()
     //Display the heap state
     reportHeapNow();
   else
+  {
     //No more connection attempts, switching to Bluetooth
+    Serial.println(F("NTRIP Client connection attempts exceeded!"));
     ntripClientSwitchToBluetooth();
+  }
   return limitReached;
 }
 
@@ -174,18 +178,29 @@ void ntripClientResponse(char * response, size_t maxLength)
 }
 
 //Stop the NTRIP client
-void ntripClientStop()
+void ntripClientStop(bool done)
 {
   if (ntripClient)
   {
+    //Break the NTRIP client connection if necessary
     if (ntripClient->connected())
       ntripClient->stop();
+
+    //Free the NTRIP client resources
     delete ntripClient;
     ntripClient = NULL;
+
+    //Allocate the NTRIP client structure if not done
+    if (!done)
+      ntripClient = new WiFiClient();
   }
+
+  //Stop WiFi if in use
   if (ntripClientState > NTRIP_CLIENT_ON)
     wifiStop();
-  ntripClientState = NTRIP_CLIENT_ON;
+
+  //Determine the next NTRIP client state
+  ntripClientState = (ntripClient && (!done)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF;
 }
 
 //Switch to Bluetooth operation
@@ -194,10 +209,7 @@ void ntripClientSwitchToBluetooth()
   Serial.println(F("NTRIP Client failure, switching to Bluetooth!"));
 
   //Stop WiFi operations
-  ntripClientStop();
-
-  //No more connection attempts
-  ntripClientState = NTRIP_CLIENT_OFF;
+  ntripClientStop(true);
 
   //Turn on Bluetooth with 'Rover' name
   startBluetooth();
@@ -213,8 +225,7 @@ void ntripClientStart()
 {
 #ifdef  COMPILE_WIFI
   //Stop NTRIP client and WiFi
-  ntripClientStop();
-  ntripClientState = NTRIP_CLIENT_OFF;
+  ntripClientStop(true);
 
   //Start the NTRIP client if enabled
   if (settings.enableNtripClient == true)
@@ -338,7 +349,7 @@ void ntripClientUpdate()
       {
         //Broken connection, retry the NTRIP client connection
         Serial.println(F("NTRIP Client connection dropped"));
-        ntripClientStop();
+        ntripClientStop(false);
       }
       else
       {
@@ -349,7 +360,7 @@ void ntripClientUpdate()
           {
             //Timeout receiving NTRIP data, retry the NTRIP client connection
             Serial.println(F("NTRIP Client timeout"));
-            ntripClientStop();
+            ntripClientStop(false);
           }
         }
         else

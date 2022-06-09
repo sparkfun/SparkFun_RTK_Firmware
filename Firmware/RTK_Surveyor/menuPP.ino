@@ -402,7 +402,7 @@ bool updatePointPerfectKeys()
   log_d("Connecting to MQTT broker: %s", settings.pointPerfectBrokerHost);
 
   // Loop until we're reconnected
-  int maxTries = 3;
+  int maxTries = 2;
   int tries = 0;
   while (mqttClient.connected() == false)
   {
@@ -422,8 +422,8 @@ bool updatePointPerfectKeys()
         return (false);
       }
 
-      log_d("failed, status code: %d try again in 5 seconds", mqttClient.state());
-      delay(5000);
+      log_d("failed, status code: %d try again in 1 second", mqttClient.state());
+      delay(1000);
     }
   }
 
@@ -873,5 +873,9 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
   {
     lbandCorrectionsReceived = true;
     lastLBandDecryption = millis();
+  }
+  else
+  {
+    log_d("PMP decryption failed");
   }
 }

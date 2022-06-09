@@ -1,9 +1,11 @@
 # Updating RTK Firmware
 
-There are two firmwares that operate on the device:
+Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet L-Band: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
+
+There are two (or more) firmwares that operate on the device:
 
 * Firmware on the ESP32 microcontroller. Keep reading.
-* Firmware on the ZED-F9P Receiver. [See below](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#zed-f9x-firmware).
+* Firmware on the u-blox ZED-F9P, ZED-F9P, or NEO-D9S Receiver. [See below](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating_u-blox_firmware).
 
 ![[Main Menu showing RTK Firmware v1.8-Oct 7 2021](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Serial_Config_-_Main.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Serial_Config_-_Main.jpg)
 
@@ -144,30 +146,82 @@ Once compiled, firmware can be uploaded directly to a unit when the RTK unit is 
 
 Note: The COMPILE_WIFI and COMPILE_BT defines at the top of RTK_Surveyor.ino can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on WiFi or Bluetooth (serial menus, system configuration, logging, etc).
 
-## ZED-F9x firmware
+## Updating u-blox Firmware
 
-The firmware loaded onto the ZED-F9P or ZED-F9R receiver can vary depending on manufacture date. The RTK Firmware (that runs on the ESP32) is designed to work with any ZED-F9x firmware. Upgrading the ZED-F9x is a good thing to consider but is not crucial to the use of the RTK products.
+The following products contain the following u-blox receviers:
 
-A tutorial with step-by-step instructions for locating the firmware version as well as changing the firmware can be found in [How to Upgrade Firmware of a u-blox Receiver](https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver/all).
+* RTK Surveyor: ZED-F9P
+* RTK Express: ZED-F9P
+* RTK Express Plus: : ZED-F9**R**
+* RTK Facet: ZED-F9P
+* RTK Facet L-Band: ZED-F9P and NEO-D9S
 
-### ZED-F9P
+The firmware loaded onto the ZED-F9P, ZED-F9R, and NEO-D9S receivers can vary depending on manufacture date. The RTK Firmware (that runs on the ESP32) is designed flexibly work with any u-blox firmware. Upgrading the ZED-F9x is a good thing to consider but is not crucial to the use of the RTK products.
+
+The firmware on u-blox devices can be achieved a few different ways. 
+
+### Updating Using Windows GUI
+
+![SparkFun u-blox firmware update tool](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet L-Band u-blox Firmware Update GUI.png)
+
+*SparkFun RTK u-blox Firmware Update Tool*
+
+The [SparkFun RTK u-blox Firmware Update Tool](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/u-blox_Update_GUI) is a simple Windows GUI and python script that runs the ubxfwupdate.exe tool. This allows users to directly update module firmware without the need for u-center. Addtionally, this tool queries the module to verify that the firmware type matches the module. Because the RTK Facet L-Band contains two u-blox modules that both appear as identical serial ports, it can be difficult and perilous to know which port to load firmware. This tool prevents ZED-F9P firmware from being accidentally loaded onto a NEO-D9S receiver.
+
+The code will only run on Windows as it relies upon u-blox's ubxfwupdate.exe. The full, integrated executable for Windows is available [here](https://github.com/sparkfun/SparkFun_RTK_Firmware/raw/main/u-blox_Update_GUI/Windows_exe/RTK_u-blox_Update_GUI.exe).
+
+* Attach the RTK device's CONFIG UBLOX port to your computer using a USB cable
+* Turn the RTK device on
+* Open Device Manager to confirm which COM port the device is operating on
+
+![Device Manager showing USB Serial port on COM14](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/u-blox_Update_GUI/SparkFun_RTK_u-blox_Updater_COM_Port.jpg)
+
+*Device Manager showing USB Serial port on COM14*
+
+* Get the latest binary firmware file from the [ZED Firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/ZED%20Firmware), [NEO Firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/NEO%20Firmware) folder, or the [u-blox](https://www.u-blox.com/) website
+* Run *RTK_u-blox_Update_GUI.exe* (it takes a few seconds to start)
+* Click the Firmware File *Browse* and select the binary file for the update
+* Select the COM port previously seen in the Device Manager
+* Click *Update Firmware*
+
+Once complete, the u-blox module will restart.
+
+### Updating Using u-center
+
+If you're familiar with u-center a tutorial with step-by-step instructions for locating the firmware version as well as changing the firmware can be found in [How to Upgrade Firmware of a u-blox Receiver](https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver/all).
+
+### ZED-F9P Firmware Changes
 
 This module is used in the Surveyor, Express, and Facet. It is capable of both Rover *and* base modes.
 
+Most of these binaries can be found in the [ZED Firmware/ZED-F9P](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/ZED%20Firmware/ZED-F9P) folder.
+
 All field testing and device specific performance parameters were obtained with ZED-F9P v1.30.
 
-v1.12 has the benefit of working with SBAS and an operational RTK status signal (the LED illuminates correctly). See [release notes](https://content.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG112_RN_%28UBX-19026698%29.pdf).
+* v1.12 has the benefit of working with SBAS and an operational RTK status signal (the LED illuminates correctly). See [release notes](https://content.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG112_RN_%28UBX-19026698%29.pdf).
 
-v1.13 has a few RTK and receiver performance improvements but introduces a bug that causes the RTK Status LED to fail when SBAS is enabled. See [release notes](https://content.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG113_RN_%28UBX-20019211%29.pdf).
+* v1.13 has a few RTK and receiver performance improvements but introduces a bug that causes the RTK Status LED to fail when SBAS is enabled. See [release notes](https://content.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG113_RN_%28UBX-20019211%29.pdf).
 
-v1.30 has a few RTK and receiver performance improvements, I<sup>2</sup>C communication improvements, and most importantly support for SPARTN PMP packets. See [release notes](https://www.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG130_RN_UBX-21047459.pdf).
+* v1.30 has a few RTK and receiver performance improvements, I<sup>2</sup>C communication improvements, and most importantly support for SPARTN PMP packets. See [release notes](https://www.u-blox.com/sites/default/files/ZED-F9P-FW100-HPG130_RN_UBX-21047459.pdf).
 
-v1.32 has a few SPARTN protocol specific improvements. See [release notes](https://www.u-blox.com/sites/default/files/documents/ZED-F9P-FW100-HPG132_RN_UBX-22004887.pdf).
+* v1.32 has a few SPARTN protocol specific improvements. See [release notes](https://www.u-blox.com/sites/default/files/documents/ZED-F9P-FW100-HPG132_RN_UBX-22004887.pdf). This firmware is required for use with the NEO-D9S and the decryption of PMP messages.
 
-### ZED-F9R
+### ZED-F9R Firmware Changes
 
 This module is used in the Express Plus. It contains an internal IMU and additional algorithms to support high precision location fixes using dead reckoning. The ZED-F9R is not capable of operating in base mode.
 
-v1.00 Initial release.
+Most of these binaries can be found in the [ZED Firmware/ZED-F9R](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/ZED%20Firmware/ZED-F9R) folder.
 
-v1.21 SPARTN support as well as adding E-scooter and robotic lawnmower dynamic models. See [release notes](https://www.u-blox.com/sites/default/files/ZED-F9R-02B_FW1.00HPS1.21_RN_UBX-21035491_1.3.pdf).
+* v1.00 Initial release.
+
+* v1.21 SPARTN support as well as adding E-scooter and robotic lawnmower dynamic models. See [release notes](https://www.u-blox.com/sites/default/files/ZED-F9R-02B_FW1.00HPS1.21_RN_UBX-21035491_1.3.pdf).
+
+### NEO-D9S Firmware Changes
+
+This module is used in the Facet L-Band to receive encrypted PMP messages over ~1.55GHz broadcast via a geosynchronous Inmarsat.
+
+This binary file can be found in the [NEO Firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/NEO%20Firmware) folder.
+
+* v1.04 Initial release.
+
+As of writing, no addtional releases of the NEO-D9S firmware have been made.

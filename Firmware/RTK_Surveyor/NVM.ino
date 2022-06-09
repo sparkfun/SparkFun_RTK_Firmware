@@ -203,6 +203,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%llu\n\r", F("lastKeyAttempt"), settings.lastKeyAttempt);
   settingsFile->printf("%s=%d\n\r", F("updateZEDSettings"), settings.updateZEDSettings);
   settingsFile->printf("%s=%d\n\r", F("LBandFreq"), settings.LBandFreq);
+  settingsFile->printf("%s=%d\n\r", F("enableLogging"), settings.enableLogging);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)

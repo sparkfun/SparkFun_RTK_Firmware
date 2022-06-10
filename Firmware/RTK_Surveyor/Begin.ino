@@ -414,7 +414,7 @@ void beginGNSS()
       zedModuleType = PLATFORM_F9P;
     }
 
-    printModuleInfo(); //Print module type and firmware version
+    printZEDInfo(); //Print module type and firmware version
   }
 
   online.gnss = true;
@@ -662,6 +662,20 @@ void beginLBand()
   {
     log_d("L-Band not detected");
     return;
+  }
+
+  //Check the firmware version of the NEO-D9S. Based on Example21_ModuleInfo.
+  if (i2cLBand.getModuleInfo(1100) == true) // Try to get the module info
+  {
+    //i2cLBand.minfo.extension[1] looks like 'FWVER=HPG 1.12'
+    strcpy(neoFirmwareVersion, i2cLBand.minfo.extension[1]);
+
+    //Remove 'FWVER='. It's extraneous and = causes settings file parsing issues
+    char *ptr = strstr(neoFirmwareVersion, "FWVER=");
+    if (ptr != NULL)
+      strcpy(neoFirmwareVersion, ptr + strlen("FWVER="));
+
+    printNEOInfo(); //Print module firmware version
   }
 
   if (online.gnss == true)

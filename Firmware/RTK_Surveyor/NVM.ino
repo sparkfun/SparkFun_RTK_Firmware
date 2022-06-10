@@ -127,6 +127,8 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%s\n\r", F("rtkFirmwareVersion"), firmwareVersion);
 
   settingsFile->printf("%s=%s\n\r", F("zedFirmwareVersion"), zedFirmwareVersion);
+  if (productVariant == RTK_FACET_LBAND)
+    settingsFile->printf("%s=%s\n\r", F("neoFirmwareVersion"), neoFirmwareVersion);
   settingsFile->printf("%s=%d\n\r", F("printDebugMessages"), settings.printDebugMessages);
   settingsFile->printf("%s=%d\n\r", F("enableSD"), settings.enableSD);
   settingsFile->printf("%s=%d\n\r", F("enableDisplay"), settings.enableDisplay);
@@ -435,6 +437,8 @@ bool parseLine(char* str, Settings *settings)
   else if (strcmp(settingName, "rtkFirmwareVersion") == 0)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "zedFirmwareVersion") == 0)
+  {} //Do nothing. Just read it to avoid 'Unknown setting' error
+  else if (strcmp(settingName, "neoFirmwareVersion") == 0)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "printDebugMessages") == 0)
     settings->printDebugMessages = d;
@@ -889,11 +893,11 @@ uint8_t loadProfileNames()
       profileCount++;
   }
 
-//  Serial.printf("profileCount: %d\n\r", profileCount);
-//  Serial.println("Profiles:");
-//  for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
-//    Serial.printf("%d) %s\n\r", x, profileNames[x]);
-//  Serial.println();
+  //  Serial.printf("profileCount: %d\n\r", profileCount);
+  //  Serial.println("Profiles:");
+  //  for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
+  //    Serial.printf("%d) %s\n\r", x, profileNames[x]);
+  //  Serial.println();
 
   return (profileCount);
 }

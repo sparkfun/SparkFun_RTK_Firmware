@@ -114,6 +114,7 @@ void menuSystem()
     Serial.println(F("B) Switch to Base mode"));
     Serial.println(F("R) Switch to Rover mode"));
     Serial.println(F("W) Switch to WiFi Config mode"));
+    Serial.println(F("S) Shut down"));
 
     Serial.println(F("x) Exit"));
 
@@ -159,6 +160,11 @@ void menuSystem()
     else if (incoming == 'W') {
       forceSystemStateUpdate = true; //Imediately go to this new state
       changeState(STATE_WIFI_CONFIG_NOT_STARTED);
+    }
+    else if (incoming == 'S') {
+      Serial.println(F("Shutting down..."));
+      forceDisplayUpdate = true;
+      powerDown(true);
     }
     else if (incoming == 'x')
       break;

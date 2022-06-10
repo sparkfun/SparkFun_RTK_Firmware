@@ -69,23 +69,22 @@ void menuPointPerfect()
     else if (incoming == '5')
     {
 #ifdef COMPILE_WIFI
-      stopBluetooth();
-      startWiFi(settings.home_wifiSSID, settings.home_wifiPW);
+      wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
 
       unsigned long startTime = millis();
-      while (WiFi.status() != WL_CONNECTED)
+      while (wifiGetStatus() != WL_CONNECTED)
       {
         delay(500);
         Serial.print(".");
         if (millis() - startTime > 8000) break; //Give up after 8 seconds
       }
 
-      if (WiFi.status() == WL_CONNECTED)
+      if (wifiGetStatus() == WL_CONNECTED)
       {
 
         Serial.println();
         Serial.print("WiFi connected: ");
-        Serial.println(WiFi.localIP());
+        Serial.println(wifiGetIpAddress());
 
         //Check if we have certificates
         char fileName[80];
@@ -102,7 +101,6 @@ void menuPointPerfect()
           updatePointPerfectKeys();
       }
 
-      stopWiFi();
       startBluetooth();
 #endif
     }

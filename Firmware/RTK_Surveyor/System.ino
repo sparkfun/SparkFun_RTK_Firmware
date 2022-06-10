@@ -3,6 +3,8 @@
 //This allows multiple units to be on at same time
 void startBluetooth()
 {
+  ntripClientStop(true);
+  wifiStop();
   if (btState == BT_OFF)
   {
 #ifdef COMPILE_BT
@@ -80,37 +82,6 @@ void stopBluetooth()
     log_d("Bluetooth turned off");
 
     btState = BT_OFF;
-    reportHeapNow();
-  }
-}
-
-void startWiFi(char* ssid, char* pw)
-{
-  if (wifiState == WIFI_OFF)
-  {
-#ifdef COMPILE_WIFI
-    Serial.printf("Connecting to WiFi: %s", ssid);
-    WiFi.begin(ssid, pw);
-#endif
-
-    wifiState = WIFI_NOTCONNECTED;
-    reportHeapNow();
-  }
-}
-
-//Stop WiFi and release all resources
-//See WiFiBluetoothSwitch sketch for more info
-void stopWiFi()
-{
-  if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
-  {
-#ifdef COMPILE_WIFI
-    ntripServer.stop();
-    WiFi.mode(WIFI_OFF);
-#endif
-
-    log_d("WiFi Stopped");
-    wifiState = WIFI_OFF;
     reportHeapNow();
   }
 }

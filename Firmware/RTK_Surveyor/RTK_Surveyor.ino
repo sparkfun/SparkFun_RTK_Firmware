@@ -138,13 +138,11 @@ uint32_t sdUsedSpaceMB = 0;
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
 WiFiClient ntripServer; // The WiFi connection to the NTRIP caster. We use this to push local RTCM to the caster.
-WiFiClient ntripClient; // The WiFi connection to the NTRIP caster. We use this to obtain RTCM from the caster.
 
 #endif
 
 unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
 unsigned long lastServerReport_ms = 0; //Time of last report of caster bytes sent
-int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
 
 uint32_t casterBytesSent = 0; //Just a running total
 uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service times out
@@ -401,7 +399,6 @@ uint32_t triggerCount = 0; //Global copy - TM2 event counter
 uint32_t towMsR = 0; //Global copy - Time Of Week of rising edge (ms)
 uint32_t towSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
 
-long lastReceivedRTCM_ms = 0;       //5 RTCM messages take approximately ~300ms to arrive at 115200bps
 int timeBetweenGGAUpdate_ms = 10000; //GGA is required for Rev2 NTRIP casters. Don't transmit but once every 10 seconds
 long lastTransmittedGGA_ms = 0;
 
@@ -419,11 +416,7 @@ unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update
 int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
-unsigned long wifiStartTime = 0; //If we cannot connect to local wifi for NTRIP client, give up/go to Rover after 8 seconds
 bool restartRover = false; //If user modifies any NTRIP Client settings, we need to restart the rover
-int ntripClientConnectionAttempts = 0;
-int maxNtripClientConnectionAttempts = 3; //Give up connecting after this number of attempts
-bool ntripClientAttempted = false; //Goes true once we attempt WiFi. Allows graceful failure.
 
 unsigned long startTime = 0; //Used for checking longest running functions
 bool lbandCorrectionsReceived = false; //Used to display L-Band SIV icon when corrections are successfully decrypted
@@ -502,7 +495,7 @@ void loop()
 
   updateSerial(); //Menu system via ESP32 USB connection
 
-  updateNTRIPClient(); //Move any available incoming NTRIP to ZED
+  ntripClientUpdate(); //Move any available incoming NTRIP to ZED
 
   updateLBand(); //Check if we've recently received PointPerfect corrections or not
 

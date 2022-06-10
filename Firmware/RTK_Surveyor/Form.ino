@@ -30,44 +30,7 @@ void startWebServer()
     Serial.println(sdUsedSpaceMB);
   }
 
-  //When testing, operate on local WiFi instead of AP
-  //#define LOCAL_WIFI_TESTING 1
-
-#ifndef LOCAL_WIFI_TESTING
-
-  //Start in AP mode
-  WiFi.mode(WIFI_AP);
-
-  IPAddress local_IP(192, 168, 4, 1);
-  IPAddress gateway(192, 168, 1, 1);
-  IPAddress subnet(255, 255, 0, 0);
-
-  WiFi.softAPConfig(local_IP, gateway, subnet);
-  if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
-  {
-    Serial.println(F("AP failed to start"));
-    return;
-  }
-  Serial.print(F("AP Started with IP: "));
-  Serial.println(WiFi.softAPIP());
-#endif
-
-#ifdef LOCAL_WIFI_TESTING
-  //Connect to local router
-#define WIFI_SSID "TRex"
-#define WIFI_PASSWORD "parachutes"
-  WiFi.mode(WIFI_STA);
-
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting to Wi-Fi");
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.print("Connected with IP: ");
-  Serial.println(WiFi.localIP());
-#endif
+  wifiStartAP();
 
   //Clear any garbage from settings array
   memset(incomingSettings, 0, sizeof(incomingSettings));

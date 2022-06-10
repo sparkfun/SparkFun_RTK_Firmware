@@ -24,7 +24,7 @@ Click on 'CONNECT' to open a Bluetooth connection. Assuming this process takes a
 
 You can open the GNSS Status sub menu to view the current data.
 
-### NTRIP Client
+**NTRIP Client**
 
 If you’re using a serial radio to connect a Base to a Rover for your correction data, or if you're using the RTK Facet L-Band with built-in corrections, you can skip this part.
 

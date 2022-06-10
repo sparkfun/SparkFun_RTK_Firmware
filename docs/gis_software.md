@@ -10,6 +10,9 @@ Note: SparkFun is a hardware company; we don't use GIS software for our primary 
 
 The best mobile app that we’ve found is the powerful, free, and easy to use *[SW Maps](https://play.google.com/store/apps/details?id=np.com.softwel.swmaps)* by Softwel. You’ll need an Android phone or tablet with Bluetooth. What makes SW Maps truly powerful is its built-in NTRIP client. This is a fancy way of saying that we’ll be showing you how to get RTCM correction data over the cellular network. 
 
+Be sure your device is [paired over Bluetooth](https://sparkfun.github.io/SparkFun_RTK_Firmware/connecting_bluetooth/#android).
+
+
 ![List of BT Devices in SW Maps](img/SparkFun%20RTK%20SWMaps%20Bluetooth%20Connect.png)
 
 *List of available Bluetooth devices*
@@ -45,6 +48,76 @@ What's an NTRIP Caster? In a nut shell it's a server that is sending out correct
 Don't have access to an NTRIP Caster? You can use a 2nd RTK product in operating in Base mode to provide the correction data. Checkout [Creating a Permanent Base](https://sparkfun.github.io/SparkFun_RTK_Firmware/permanent_base/). If you're the DIY sort, you can create your own low cost base station using an ESP32 and a ZED-F9P breakout board. Checkout [How to Build a DIY GNSS Reference Station](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station). If you'd just like a service, [Syklark](https://www.swiftnav.com/skylark) provides RTCM coverage for $49 a month (as of writing) and is extremely easy to setup and use. Remember, you can always use a 2nd RTK device in *Base* mode to provide RTCM correction data but it will less accurate than a fixed position caster.
 
 Once you have a full RTK fix you'll notice the location bubble in SW Maps turns to green. Just for fun, rock your rover monopole back and forth on a fixed point. You'll see your location accurately reflected in SW Maps. Millimeter location precision is a truly staggering thing.
+
+## Field Genius
+
+[Field Genius for Android](https://www.microsurvey.com/products/fieldgenius-for-android/) is another good solution, albeit a lot more expensive than free. 
+
+Be sure your device is [paired over Bluetooth](https://sparkfun.github.io/SparkFun_RTK_Firmware/connecting_bluetooth/#android).
+
+![Main Menu](img/FieldGenius/Field%20Genius%202.png)
+
+From the Main Menu open `Select Instrument`.
+
+![Add Profile](img/FieldGenius/Field%20Genius%203.png)
+
+Click the 'Add Profile' button.
+
+![](img/FieldGenius/Field%20Genius%204.png)
+
+Click `GNSS Rover` and select *NMEA* as the Make. Set your Profile Name to something memorable like 'RTK-Express' then click the 'Create' button.
+
+![](img/FieldGenius/Field%20Genius%205.png)
+
+Click on 'SET UP COMMUNICATION'.
+
+![](img/FieldGenius/Field%20Genius%207.png)
+
+From the Bluetooth communication page, click the 'Search' button.
+
+![](img/FieldGenius/Field%20Genius%206.png)
+
+You will be shown a list of paired devices. Select the RTK device you'd like to connect to then click 'Connect'. The RTK device will connect and the MAC address shown on the RTK device OLED will change to the Bluetooth icon indicating a link is open.
+
+**NTRIP Client**
+
+If you’re using a serial radio to connect a Base to a Rover for your correction data, or if you're using the RTK Facet L-Band with built-in corrections, you can skip this part.
+
+![](img/FieldGenius/Field%20Genius%208.png)
+
+We need to send RTCM correction data from the phone back to the RTK device so that it can improve its fix accuracy. Your phone can be the radio link! Click on 'SET UP CORRECTIONS'.
+
+![](img/FieldGenius/Field%20Genius%209.png)
+
+Click on 'RTK via Internet' then 'SET UP INTERNET', then 'Done'.
+
+![](img/FieldGenius/Field%20Genius%2010.png)
+
+Click on 'SET UP DATA SOURCE'.
+
+![](img/FieldGenius/Field%20Genius%2011.png)
+
+Click 'Add New Source'.
+
+![NTRIP Credential Entry](img/FieldGenius/Field%20Genius%2012.png)
+
+Enter your NTRIP Caster credentials and click 'DONE'. 
+
+What's an NTRIP Caster? In a nut shell it's a server that is sending out correction data every second. There are thousands of sites around the globe that calculate the perturbations in the ionosphere and troposphere that decrease the accuracy of GNSS accuracy. Once the inaccuracies are known, correction values are encoded into data packets in the RTCM format. You, the user, don't need to know how to decode or deal with RTCM, you simply need to get RTCM from a source within 10km of your location into the RTK Express. The NTRIP client logs into the server (also known as the NTRIP caster) and grabs that data, every second, and sends it over Bluetooth to the RTK Express.
+
+Don't have access to an NTRIP Caster? You can use a 2nd RTK product in operating in Base mode to provide the correction data. Checkout [Creating a Permanent Base](https://sparkfun.github.io/SparkFun_RTK_Firmware/permanent_base/). If you're the DIY sort, you can create your own low cost base station using an ESP32 and a ZED-F9P breakout board. Checkout [How to Build a DIY GNSS Reference Station](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station). If you'd just like a service, [Syklark](https://www.swiftnav.com/skylark) provides RTCM coverage for $49 a month (as of writing) and is extremely easy to setup and use. Remember, you can always use a 2nd RTK device in *Base* mode to provide RTCM correction data but it will less accurate than a fixed position caster.
+
+![](img/FieldGenius/Field%20Genius%2011.png)
+
+Click 'My NTRIP1' then 'Done' and 'Connect'. 
+
+You will then be presented with a list of Mount Points. Select the mount point you'd like to use then click 'Select' then 'Confirm'.
+
+Select 'Done' then from the main menu select 'Survey' to begin using the device.
+
+![Surveying Screen](img/FieldGenius/Field%20Genius%201.png)
+
+Now you can begin using the SparkFun RTK device with Field Genius.
 
 ## SurvPC
 

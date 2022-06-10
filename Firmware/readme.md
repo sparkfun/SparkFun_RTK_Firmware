@@ -7,4 +7,4 @@ This folder contains the Arduino sketches that make up the firmware that runs on
 
 ## Compilation Instructions
 
-See [Compiling from Source](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#compiling-from-source) for detailed steps.
+See [Compiling from Source](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#compiling-source) for detailed steps.

@@ -23,12 +23,12 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 2;
+const int FIRMWARE_VERSION_MINOR = 3;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_AP //Comment out to remove Access Point functionality
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -155,7 +155,8 @@ char keyContents[2000];
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
-char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to debug menu and settings file.
+char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to system status menu and settings file.
+char neoFirmwareVersion[20]; //Output to system status menu.
 uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS)
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
@@ -324,8 +325,7 @@ unsigned long timeSinceLastIncomingSetting = 0;
 
 //PointPerfect Corrections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-SFE_UBLOX_GNSS i2cLBand; // NEO-D9S
-
+SFE_UBLOX_GNSS_ADD i2cLBand; // NEO-D9S
 const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 
 #if __has_include("tokens.h")

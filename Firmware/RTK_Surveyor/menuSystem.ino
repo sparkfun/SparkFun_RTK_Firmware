@@ -11,7 +11,7 @@ void menuSystem()
     {
       Serial.print(F("Online - "));
 
-      printModuleInfo();
+      printZEDInfo();
 
       printCurrentConditions();
     }
@@ -46,14 +46,18 @@ void menuSystem()
     if (online.lband == true)
     {
       Serial.print(F("L-Band: Online - "));
+
       if (online.lbandCorrections == true) Serial.print(F("Keys Good"));
       else Serial.print(F("No Keys"));
 
-      if (lbandCorrectionsReceived == true) Serial.print(F(" / Corrections Received"));
-      else Serial.print(F(" / Corrections Received Failed"));
+      Serial.print(F(" / Corrections Received"));
+      if (lbandCorrectionsReceived == false) Serial.print(F(" Failed"));
 
       Serial.printf(" / Eb/N0[dB] (>9 is good): %0.2f", lBandEBNO);
-      Serial.println();
+
+      Serial.print(F(" - "));
+
+      printNEOInfo();
     }
 
     //Display MAC address

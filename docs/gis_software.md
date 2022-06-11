@@ -213,3 +213,7 @@ Now that we have a connection, you can use the device as usual, storing points a
 Opening the Skyplot will allow you to see your GNSS details in real time.
 
 If you are a big fan of SurvPC please contact your sales rep and ask them to include SparkFun products in their Manufacturer drop down list.
+
+## Other
+
+Hopefully these examples give you an idea of how to connect the RTK product line to most any GIS software. If there is other GIS software that you'd like to see configuration information about, please open an issue on the [RTK Firmware repo](https://github.com/sparkfun/SparkFun_RTK_Firmware/issues) and we'll add it.

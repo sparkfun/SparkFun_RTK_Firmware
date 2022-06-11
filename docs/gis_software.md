@@ -4,8 +4,6 @@ Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkF
 
 While we recommend SW Maps for Android, there are a variety of 3rd party apps available for GIS and surveying. We will cover a few examples below that should give you an idea of how to get the incoming NMEA data over Bluetooth into the software of your choice.
 
-Note: SparkFun is a hardware company; we don't use GIS software for our primary job. We will demonstrate the settings needed to connect to the software, after that we assume you, the professional will know how to use the software once it's clear how to get data from the RTK device into the GIS product.
-
 ## SW Maps
 
 The best mobile app that we’ve found is the powerful, free, and easy to use *[SW Maps](https://play.google.com/store/apps/details?id=np.com.softwel.swmaps)* by Softwel. You’ll need an Android phone or tablet with Bluetooth. What makes SW Maps truly powerful is its built-in NTRIP client. This is a fancy way of saying that we’ll be showing you how to get RTCM correction data over the cellular network. 

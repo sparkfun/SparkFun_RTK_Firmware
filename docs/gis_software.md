@@ -63,19 +63,19 @@ From the Main Menu open `Select Instrument`.
 
 Click the 'Add Profile' button.
 
-![](img/FieldGenius/Field%20Genius%204.png)
+![New Instrument Profile](img/FieldGenius/Field%20Genius%204.png)
 
 Click `GNSS Rover` and select *NMEA* as the Make. Set your Profile Name to something memorable like 'RTK-Express' then click the 'Create' button.
 
-![](img/FieldGenius/Field%20Genius%205.png)
+![Set up communication](img/FieldGenius/Field%20Genius%205.png)
 
 Click on 'SET UP COMMUNICATION'.
 
-![](img/FieldGenius/Field%20Genius%207.png)
+![Bluetooth Search Button](img/FieldGenius/Field%20Genius%207.png)
 
 From the Bluetooth communication page, click the 'Search' button.
 
-![](img/FieldGenius/Field%20Genius%206.png)
+![List of paired Bluetooth devices](img/FieldGenius/Field%20Genius%206.png)
 
 You will be shown a list of paired devices. Select the RTK device you'd like to connect to then click 'Connect'. The RTK device will connect and the MAC address shown on the RTK device OLED will change to the Bluetooth icon indicating a link is open.
 
@@ -83,19 +83,19 @@ You will be shown a list of paired devices. Select the RTK device you'd like to 
 
 If you’re using a serial radio to connect a Base to a Rover for your correction data, or if you're using the RTK Facet L-Band with built-in corrections, you can skip this part.
 
-![](img/FieldGenius/Field%20Genius%208.png)
+![Set up corrections](img/FieldGenius/Field%20Genius%208.png)
 
 We need to send RTCM correction data from the phone back to the RTK device so that it can improve its fix accuracy. Your phone can be the radio link! Click on 'SET UP CORRECTIONS'.
 
-![](img/FieldGenius/Field%20Genius%209.png)
+![RTK via Internet](img/FieldGenius/Field%20Genius%209.png)
 
 Click on 'RTK via Internet' then 'SET UP INTERNET', then 'Done'.
 
-![](img/FieldGenius/Field%20Genius%2010.png)
+![Set up NTRIP data source](img/FieldGenius/Field%20Genius%2010.png)
 
 Click on 'SET UP DATA SOURCE'.
 
-![](img/FieldGenius/Field%20Genius%2011.png)
+![Adding a new source](img/FieldGenius/Field%20Genius%2011.png)
 
 Click 'Add New Source'.
 
@@ -107,7 +107,7 @@ What's an NTRIP Caster? In a nut shell it's a server that is sending out correct
 
 Don't have access to an NTRIP Caster? You can use a 2nd RTK product in operating in Base mode to provide the correction data. Checkout [Creating a Permanent Base](https://sparkfun.github.io/SparkFun_RTK_Firmware/permanent_base/). If you're the DIY sort, you can create your own low cost base station using an ESP32 and a ZED-F9P breakout board. Checkout [How to Build a DIY GNSS Reference Station](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station). If you'd just like a service, [Syklark](https://www.swiftnav.com/skylark) provides RTCM coverage for $49 a month (as of writing) and is extremely easy to setup and use. Remember, you can always use a 2nd RTK device in *Base* mode to provide RTCM correction data but it will less accurate than a fixed position caster.
 
-![](img/FieldGenius/Field%20Genius%2011.png)
+![Selecting data source](img/FieldGenius/Field%20Genius%2011.png)
 
 Click 'My NTRIP1' then 'Done' and 'Connect'. 
 

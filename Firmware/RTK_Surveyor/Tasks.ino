@@ -83,7 +83,8 @@ void F9PSerialReadTask(void *e)
           } //End sdCardSemaphore
           else
           {
-            log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+            //Error causing dropped bytes in the log file
+            Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
           }
         } //End maxLogTime
       } //End logging

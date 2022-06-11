@@ -145,7 +145,8 @@ void menuSystem()
       }
       else
       {
-        log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+        //Error failed to list the contents of the microSD card
+        Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
       }
     }
     // Support mode switching

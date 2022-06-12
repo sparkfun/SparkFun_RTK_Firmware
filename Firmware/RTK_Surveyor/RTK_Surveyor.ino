@@ -516,36 +516,12 @@ void updateLogs()
   else if (online.logging == true && settings.enableLogging == false)
   {
     //Close down file
-    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-    {
-      ubxFile.sync();
-      ubxFile.close();
-      online.logging = false;
-      xSemaphoreGive(sdCardSemaphore); //Release semaphore
-    }
-    else
-    {
-      //This is OK because in the interim more data will be written to the log
-      //and the log file will eventually be closed by the next call in loop
-      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
-    }
+    endLogging(false, true);
   }
   else if (online.logging == true && settings.enableLogging == true && (systemTime_minutes - startCurrentLogTime_minutes) >= settings.maxLogLength_minutes)
   {
     //Close down file. A new one will be created at the next calling of updateLogs().
-    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-    {
-      ubxFile.sync();
-      ubxFile.close();
-      online.logging = false;
-      xSemaphoreGive(sdCardSemaphore); //Release semaphore
-    }
-    else
-    {
-      //This is OK because in the interim more data will be written to the log
-      //and the log file will eventually be closed by the next call in loop
-      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
-    }
+    endLogging(false, true);
   }
 
   if (online.logging == true)

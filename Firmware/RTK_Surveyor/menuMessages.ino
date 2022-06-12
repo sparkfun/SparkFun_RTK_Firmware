@@ -421,6 +421,35 @@ void beginLogging()
   } //online.logging
 }
 
+//Stop writing to the log file on the microSD card
+void endLogging(bool gotSemaphore, bool releaseSemaphore)
+{
+  if (online.logging == true)
+  {
+    //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
+    //Wait up to 1000ms
+    if (gotSemaphore
+      || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
+    {
+      //Close down file system
+      ubxFile.sync();
+      ubxFile.close();
+
+      online.logging = false;
+
+      //Release the semaphore if requested
+      if (releaseSemaphore)
+        xSemaphoreGive(sdCardSemaphore);
+    } //End sdCardSemaphore
+    else
+    {
+      //This is OK because in the interim more data will be written to the log
+      //and the log file will eventually be closed by the next call in loop
+      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
+  }
+}
+
 //Update the file access and write time with date and time obtained from GNSS
 void updateDataFileAccess(SdFile *dataFile)
 {

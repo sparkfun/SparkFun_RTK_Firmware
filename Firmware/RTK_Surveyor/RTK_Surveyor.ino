@@ -107,7 +107,7 @@ SdFat sd;
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
-SdFile ubxFile; //File that all GNSS ubx messages sentences are written to
+SdFile * ubxFile; //File that all GNSS ubx messages sentences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
 int startLogTime_minutes = 0; //Mark when we start any logging so we can stop logging after maxLogTime_minutes
 int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file so we can close it after x minutes and start a new one
@@ -533,14 +533,14 @@ void updateLogs()
           digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
         long startWriteTime = micros();
-        ubxFile.sync();
+        ubxFile->sync();
         long stopWriteTime = micros();
         totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
 
         if (productVariant == RTK_SURVEYOR)
           digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
 
-        updateDataFileAccess(&ubxFile); // Update the file access time & date
+        updateDataFileAccess(ubxFile); // Update the file access time & date
 
         lastUBXLogSyncTime = millis();
         xSemaphoreGive(sdCardSemaphore);
@@ -567,7 +567,7 @@ void updateLogs()
 
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
-        ubxFile.println(nmeaMessage);
+        ubxFile->println(nmeaMessage);
 
         xSemaphoreGive(sdCardSemaphore);
         newEventToRecord = false;
@@ -589,7 +589,7 @@ void updateLogs()
       //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
-        fileSize = ubxFile.fileSize();
+        fileSize = ubxFile->fileSize();
 
         xSemaphoreGive(sdCardSemaphore);
       }

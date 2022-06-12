@@ -103,7 +103,7 @@ ESP32Time rtc;
 #include <SPI.h>
 #include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 
-SdFat sd;
+SdFat * sd;
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 

@@ -11,13 +11,13 @@ void startWebServer()
   if (online.microSD)
   {
     csd_t csd;
-    sd.card()->readCSD(&csd); //Card Specific Data
+    sd->card()->readCSD(&csd); //Card Specific Data
     sdCardSizeMB = 0.000512 * sdCardCapacity(&csd);
-    sd.volumeBegin();
+    sd->volumeBegin();
 
     //Find available cluster/space
-    sdFreeSpaceMB = sd.vol()->freeClusterCount(); //This takes a few seconds to complete
-    sdFreeSpaceMB *= sd.vol()->sectorsPerCluster() / 2;
+    sdFreeSpaceMB = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
+    sdFreeSpaceMB *= sd->vol()->sectorsPerCluster() / 2;
     sdFreeSpaceMB /= 1024;
 
     sdUsedSpaceMB = sdCardSizeMB - sdFreeSpaceMB; //Don't think of it as used, think of it as unusable

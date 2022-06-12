@@ -183,8 +183,8 @@ void menuUserProfiles()
         //Remove profile from SD if available
         if (online.microSD == true)
         {
-          if (sd.exists(settingsFileName))
-            sd.remove(settingsFileName);
+          if (sd->exists(settingsFileName))
+            sd->remove(settingsFileName);
         }
 
         recordProfileNumber(0); //Move to Profile1
@@ -244,7 +244,7 @@ void factoryReset()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       //Remove this specific settings file. Don't remove the other profiles.
-      sd.remove(settingsFileName);
+      sd->remove(settingsFileName);
       xSemaphoreGive(sdCardSemaphore);
     } //End sdCardSemaphore
     else

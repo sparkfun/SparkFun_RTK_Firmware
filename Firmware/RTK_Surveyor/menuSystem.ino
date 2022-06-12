@@ -150,7 +150,7 @@ void menuSystem()
         if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
         {
           Serial.println(F("Files found (date time size name):\n\r"));
-          sd.ls(LS_R | LS_DATE | LS_SIZE);
+          sd->ls(LS_R | LS_DATE | LS_SIZE);
         }
         else
         {

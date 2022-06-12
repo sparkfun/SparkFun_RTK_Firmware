@@ -135,7 +135,7 @@ void updateFromSD(const char *firmwareFileName)
   stopUART2Tasks();
 
   Serial.printf("Loading %s\n\r", firmwareFileName);
-  if (sd.exists(firmwareFileName))
+  if (sd->exists(firmwareFileName))
   {
     SdFile firmwareFile;
     firmwareFile.open(firmwareFileName, O_READ);
@@ -221,7 +221,7 @@ void updateFromSD(const char *firmwareFileName)
 
           //Remove forced firmware file to prevent endless loading
           firmwareFile.close();
-          sd.remove(firmwareFileName);
+          sd->remove(firmwareFileName);
 
           i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
         }

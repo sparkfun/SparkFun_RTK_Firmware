@@ -524,8 +524,8 @@ bool createTestFile()
 
   //File successfully created
   testFile.close();
-  if (sd.exists(testFileName))
-    sd.remove(testFileName);
+  if (sd->exists(testFileName))
+    sd->remove(testFileName);
   return (true);
 }
 

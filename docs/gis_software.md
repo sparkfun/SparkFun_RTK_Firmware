@@ -133,13 +133,7 @@ Select the *Equip* sub menu then `GPS Rover`
 
 *Select NMEA GPS Receiver*
 
-From the drop down, select `NMEA GPS Receiver`. We asked SurvPC how we might add the SparkFun line of RTK products and the Global Sales Director of Carlson Software said:
-
-> We don’t approve of you on use Carlson SurvPC to drive your GNSS and the reason be we would take all the support calls. We have been down this road with other cheap GNSS receives where the manufacture always blamed SurvPC as the problem and never their GNSS receive when it was their GNSS receiver. DO NOT promote SurvPC with your GNSS receiver.  
-
-*Typos as copied*
-
-So, ya, don't call Carlson Software if you run into problems. [Call us instead!](https://www.sparkfun.com/support#ContactUs) Our customer service is friendlier.
+From the drop down, select `NMEA GPS Receiver`.
 
 ![Select Model: DGPS](img/SurvPC/SparkFun%20RTK%20Software%20-%20SurvPC%20Rover%20DGPS.jpg)
 

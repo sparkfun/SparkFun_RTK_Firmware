@@ -518,33 +518,15 @@ bool createTestFile()
   SdFile testFile;
   char testFileName[40] = "testfile.txt";
 
-  if (sdCardSemaphore == NULL)
-  {
-    log_d("sdCardSemaphore is Null");
+  //Attempt to write to the file system
+  if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true)
     return (false);
-  }
 
-  //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-  if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
-  {
-    if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) == true)
-    {
-      testFile.close();
-
-      if (sd.exists(testFileName))
-        sd.remove(testFileName);
-      xSemaphoreGive(sdCardSemaphore);
-      return (true);
-    }
-    xSemaphoreGive(sdCardSemaphore);
-  }
-  else
-  {
-    //This is OK because the next loop will retry bringing the microSD card online
-    log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
-  }
-
-  return (false);
+  //File successfully created
+  testFile.close();
+  if (sd.exists(testFileName))
+    sd.remove(testFileName);
+  return (true);
 }
 
 //If debug option is on, print available heap

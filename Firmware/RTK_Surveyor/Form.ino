@@ -551,7 +551,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
   {
-    updateFromSD(settingValueStr);
+    mountSDThenUpdate(settingValueStr);
 
     //If update is successful, it will force system reset and not get here.
 

@@ -38,6 +38,9 @@ void menuLog()
     if (settings.enableMarksFile == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
+    Serial.print(F("5) SD card server: "));
+    Serial.println(settings.enableSdCardServer ? F("Enabled") : F("Disabled"));
+
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
@@ -75,6 +78,10 @@ void menuLog()
     else if (incoming == '4')
     {
       settings.enableMarksFile ^= 1;
+    }
+    else if (incoming == '5')
+    {
+      settings.enableSdCardServer ^= 1;
     }
     else if (incoming == 'x')
       break;

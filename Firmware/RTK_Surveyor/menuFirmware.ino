@@ -44,8 +44,43 @@ void menuFirmware()
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }
 
+void mountSDThenUpdate(const char * firmwareFileName)
+{
+  bool gotSemaphore;
+  bool wasSdCardOnline;
+
+  //Try to gain access the SD card
+  gotSemaphore = false;
+  wasSdCardOnline = online.microSD;
+  if (online.microSD != true)
+    beginSD();
+
+  if (online.microSD != true)
+    Serial.println(F("microSD card is offline!"));
+  else
+  {
+    //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      gotSemaphore = true;
+      updateFromSD(firmwareFileName);
+    } //End Semaphore check
+    else
+    {
+      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    }
+  }
+
+  //Release access the SD card
+  if (online.microSD && (!wasSdCardOnline))
+    endSD(gotSemaphore, true);
+  else if (gotSemaphore)
+    xSemaphoreGive(sdCardSemaphore);
+}
+
 //Looks for matching binary files in root
 //Loads a global called binCount
+//Called from beginSD with microSD card mounted and sdCardsemaphore held
 void scanForFirmware()
 {
   //Count available binaries
@@ -88,6 +123,8 @@ void scanForFirmware()
 }
 
 //Look for firmware file on SD card and update as needed
+//Called from scanForFirmware with microSD card mounted and sdCardsemaphore held
+//Called from mountSDThenUpdate with microSD card mounted and sdCardsemaphore held
 void updateFromSD(const char *firmwareFileName)
 {
   //Turn off any tasks so that we are not disrupted

@@ -516,12 +516,12 @@ void updateLogs()
   else if (online.logging == true && settings.enableLogging == false)
   {
     //Close down file
-    endLogging(false, true);
+    endSD(false, true);
   }
   else if (online.logging == true && settings.enableLogging == true && (systemTime_minutes - startCurrentLogTime_minutes) >= settings.maxLogLength_minutes)
   {
     //Close down file. A new one will be created at the next calling of updateLogs().
-    endLogging(false, true);
+    endSD(false, true);
   }
 
   if (online.logging == true)

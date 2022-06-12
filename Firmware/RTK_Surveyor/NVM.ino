@@ -59,11 +59,21 @@ void recordSystemSettings()
 //We share the recording with LittleFS so this is all the semphore and SD specific handling
 void recordSystemSettingsToFileSD(char *fileName)
 {
-  if (online.microSD == true)
+  bool gotSemaphore = false;
+  bool status = false;
+  bool wasSdCardOnline;
+
+  //Try to gain access the SD card
+  wasSdCardOnline = online.microSD;
+  if (online.microSD != true)
+    beginSD();
+
+  while (online.microSD == true)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like updateLogs()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
+      gotSemaphore = true;
       if (sd.exists(fileName))
         sd.remove(fileName);
 
@@ -71,7 +81,7 @@ void recordSystemSettingsToFileSD(char *fileName)
       if (settingsFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
         Serial.println(F("Failed to create settings file"));
-        return;
+        break;
       }
 
       updateDataFileCreate(&settingsFile); // Update the file to create time & date
@@ -92,7 +102,14 @@ void recordSystemSettingsToFileSD(char *fileName)
       //on the microSD card, and will not be restored to the expected settings!
       Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
     }
+    break;
   }
+
+  //Release access the SD card
+  if (online.microSD && (!wasSdCardOnline))
+    endSD(gotSemaphore, true);
+  else if (gotSemaphore)
+    xSemaphoreGive(sdCardSemaphore);
 }
 
 //Export the current settings to a config file on SD
@@ -231,19 +248,28 @@ void recordSystemSettingsToFile(File * settingsFile)
 //Returns false if a file was not opened/loaded
 bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
 {
-  if (online.microSD == true)
+  bool gotSemaphore = false;
+  bool status = false;
+  bool wasSdCardOnline;
+
+  //Try to gain access the SD card
+  wasSdCardOnline = online.microSD;
+  if (online.microSD != true)
+    beginSD();
+
+  while (online.microSD == true)
   {
     //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
+      gotSemaphore = true;
       if (sd.exists(fileName))
       {
         SdFile settingsFile; //FAT32
         if (settingsFile.open(fileName, O_READ) == false)
         {
           Serial.println(F("Failed to open settings file"));
-          xSemaphoreGive(sdCardSemaphore);
-          return (false);
+          break;
         }
 
         char line[60];
@@ -263,8 +289,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
             {
               //If we can't read the first line of the settings file, give up
               Serial.println(F("Giving up on settings file"));
-              xSemaphoreGive(sdCardSemaphore);
-              return (false);
+              break;
             }
           }
           else if (parseLine(line, settings) == false) {
@@ -273,8 +298,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
             {
               //If we can't read the first line of the settings file, give up
               Serial.println(F("Giving up on settings file"));
-              xSemaphoreGive(sdCardSemaphore);
-              return (false);
+              break;
             }
           }
 
@@ -283,16 +307,14 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
 
         //Serial.println(F("Config file read complete"));
         settingsFile.close();
-        xSemaphoreGive(sdCardSemaphore);
-        return (true);
+        status = true;
+        break;
       }
       else
       {
         log_d("File %s not found", fileName);
-        xSemaphoreGive(sdCardSemaphore);
-        return (false);
+        break;
       }
-
     } //End Semaphore check
     else
     {
@@ -300,10 +322,19 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
       //those settings are not overriding the current settings as documented!
       Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
     }
+    break;
   } //End SD online
 
-  log_d("Config file read failed: SD offline");
-  return (false); //SD offline
+  if (online.microSD != true)
+    log_d("Config file read failed: SD offline");
+
+  //Release access the SD card
+  if (online.microSD && (!wasSdCardOnline))
+    endSD(gotSemaphore, true);
+  else if (gotSemaphore)
+    xSemaphoreGive(sdCardSemaphore);
+
+  return status;
 }
 
 //Given a fileName, parse the file and load the given settings struct

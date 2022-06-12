@@ -74,8 +74,8 @@ void recordSystemSettingsToFileSD(char *fileName)
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       gotSemaphore = true;
-      if (sd.exists(fileName))
-        sd.remove(fileName);
+      if (sd->exists(fileName))
+        sd->remove(fileName);
 
       SdFile settingsFile; //FAT32
       if (settingsFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
@@ -263,7 +263,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       gotSemaphore = true;
-      if (sd.exists(fileName))
+      if (sd->exists(fileName))
       {
         SdFile settingsFile; //FAT32
         if (settingsFile.open(fileName, O_READ) == false)

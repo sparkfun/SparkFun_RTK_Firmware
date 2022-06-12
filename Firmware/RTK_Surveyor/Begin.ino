@@ -202,6 +202,17 @@ void beginSD()
     pinMode(pin_microSD_CS, OUTPUT);
     digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
 
+    //Allocate the data structure that manages the microSD card
+    if (!sd)
+    {
+      sd = new SdFat();
+      if (!sd)
+      {
+        log_d("Failed to allocate the SdFat structure!");
+        break;
+      }
+    }
+
     //Do a quick test to see if a card is present
     int tries = 0;
     int maxTries = 5;
@@ -226,7 +237,7 @@ void beginSD()
       settings.spiFrequency = 16;
     }
 
-    if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
+    if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
       tries = 0;
       maxTries = 1;
@@ -235,7 +246,7 @@ void beginSD()
         log_d("SD init failed. Trying again %d out of %d", tries + 1, maxTries);
 
         delay(250); //Give SD more time to power up, then try again
-        if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
+        if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
       }
 
       if (tries == maxTries)
@@ -247,7 +258,7 @@ void beginSD()
     }
 
     //Change to root directory. All new file creation will be in root.
-    if (sd.chdir() == false)
+    if (sd->chdir() == false)
     {
       Serial.println(F("SD change directory failed"));
       break;
@@ -281,9 +292,16 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   //Done with the SD card
   if (online.microSD)
   {
-    sd.end();
+    sd->end();
     online.microSD = false;
     Serial.println(F("microSD: Offline"));
+  }
+
+  //Free the caches for the microSD card
+  if (sd)
+  {
+    delete sd;
+    sd = NULL;
   }
 
   //Release the semaphore

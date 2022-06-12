@@ -182,11 +182,26 @@ void beginBoard()
 
 void beginSD()
 {
-  pinMode(pin_microSD_CS, OUTPUT);
-  digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+  bool gotSemaphore;
 
-  if (settings.enableSD == true)
+  online.microSD = false;
+  gotSemaphore = false;
+  while (settings.enableSD == true)
   {
+    //Setup SD card access semaphore
+    if (sdCardSemaphore == NULL)
+      sdCardSemaphore = xSemaphoreCreateMutex();
+    else if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) != pdPASS)
+    {
+      //This is OK since a retry will occur next loop
+      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      break;
+    }
+    gotSemaphore = true;
+
+    pinMode(pin_microSD_CS, OUTPUT);
+    digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+
     //Do a quick test to see if a card is present
     int tries = 0;
     int maxTries = 5;
@@ -200,7 +215,7 @@ void beginSD()
       delay(10);
       tries++;
     }
-    if (tries == maxTries) return;
+    if (tries == maxTries) break;
 
     //If an SD card is present, allow SdFat to take over
     log_d("SD card detected");
@@ -227,8 +242,7 @@ void beginSD()
       {
         Serial.println(F("SD init failed. Is card present? Formatted?"));
         digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
-        online.microSD = false;
-        return;
+        break;
       }
     }
 
@@ -236,35 +250,27 @@ void beginSD()
     if (sd.chdir() == false)
     {
       Serial.println(F("SD change directory failed"));
-      online.microSD = false;
-      return;
-    }
-
-    //Setup FAT file access semaphore
-    if (sdCardSemaphore == NULL)
-    {
-      sdCardSemaphore = xSemaphoreCreateMutex();
-      if (sdCardSemaphore != NULL)
-        xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
+      break;
     }
 
     if (createTestFile() == false)
     {
       Serial.println(F("Failed to create test file. Format SD card with 'SD Card Formatter'."));
       displaySDFail(5000);
-      online.microSD = false;
-      return;
+      break;
     }
 
-    online.microSD = true;
+    //Load firmware file from the microSD card if it is present
+    scanForFirmware();
 
-    Serial.println(F("microSD online"));
-    scanForFirmware(); //See if SD card contains new firmware that should be loaded at startup
+    Serial.println(F("microSD: Online"));
+    online.microSD = true;
+    break;
   }
-  else
-  {
-    online.microSD = false;
-  }
+
+  //Free the semaphore
+  if (sdCardSemaphore && gotSemaphore)
+    xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
 }
 
 //We want the UART2 interrupts to be pinned to core 0 to avoid competing with I2C interrupts

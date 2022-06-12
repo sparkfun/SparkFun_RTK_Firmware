@@ -48,57 +48,42 @@ void menuFirmware()
 //Loads a global called binCount
 void scanForFirmware()
 {
-  if (online.microSD == true)
+  //Count available binaries
+  SdFile tempFile;
+  SdFile dir;
+  const char* BIN_EXT = "bin";
+  const char* BIN_HEADER = "RTK_Surveyor_Firmware";
+
+  char fname[50]; //Handle long file names
+
+  dir.open("/"); //Open root
+
+  while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
   {
-    //Attempt to access file system. This avoids collisions with file writing in F9PSerialReadTask()
-    //Wait up to 5s, this is important
-    if (xSemaphoreTake(sdCardSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
+    if (tempFile.isFile())
     {
-      //Count available binaries
-      SdFile tempFile;
-      SdFile dir;
-      const char* BIN_EXT = "bin";
-      const char* BIN_HEADER = "RTK_Surveyor_Firmware";
+      tempFile.getName(fname, sizeof(fname));
 
-      char fname[50]; //Handle long file names
-
-      dir.open("/"); //Open root
-
-      while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
+      if (strcmp(forceFirmwareFileName, fname) == 0)
       {
-        if (tempFile.isFile())
-        {
-          tempFile.getName(fname, sizeof(fname));
-
-          if (strcmp(forceFirmwareFileName, fname) == 0)
-          {
-            Serial.println(F("Forced firmware detected. Loading..."));
-            displayForcedFirmwareUpdate();
-            updateFromSD(forceFirmwareFileName);
-          }
-
-          //Check 'bin' extension
-          if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
-          {
-            //Check for 'RTK_Surveyor_Firmware' start of file name
-            if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
-            {
-              strcpy(binFileNames[binCount++], fname); //Add this to the array
-            }
-            else
-              Serial.printf("Unknown: %s\n\r", fname);
-          }
-        }
-        tempFile.close();
+        Serial.println(F("Forced firmware detected. Loading..."));
+        displayForcedFirmwareUpdate();
+        updateFromSD(forceFirmwareFileName);
       }
 
-      xSemaphoreGive(sdCardSemaphore);
+      //Check 'bin' extension
+      if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
+      {
+        //Check for 'RTK_Surveyor_Firmware' start of file name
+        if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
+        {
+          strcpy(binFileNames[binCount++], fname); //Add this to the array
+        }
+        else
+          Serial.printf("Unknown: %s\n\r", fname);
+      }
     }
-    else
-    {
-      //This is an error when a firmware file is on the microSD card
-      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
-    }
+    tempFile.close();
   }
 }
 

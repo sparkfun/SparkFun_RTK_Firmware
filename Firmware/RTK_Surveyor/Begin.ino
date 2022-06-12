@@ -273,6 +273,24 @@ void beginSD()
     xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
 }
 
+void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
+{
+  //Disable logging
+  endLogging(alreadyHaveSemaphore, false);
+
+  //Done with the SD card
+  if (online.microSD)
+  {
+    sd.end();
+    online.microSD = false;
+    Serial.println(F("microSD: Offline"));
+  }
+
+  //Release the semaphore
+  if (releaseSemaphore)
+    xSemaphoreGive(sdCardSemaphore);
+}
+
 //We want the UART2 interrupts to be pinned to core 0 to avoid competing with I2C interrupts
 //We do not start the UART2 for GNSS->BT reception here because the interrupts would be pinned to core 1
 //We instead start a task that runs on core 0, that then begins serial

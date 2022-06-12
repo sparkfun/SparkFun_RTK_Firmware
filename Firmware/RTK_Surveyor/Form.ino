@@ -30,6 +30,7 @@ void startWebServer()
     Serial.println(sdUsedSpaceMB);
   }
 
+  sdCardServerEnd();
   ntripClientStop(true);
   wifiStartAP();
 
@@ -134,7 +135,7 @@ void startWebServer()
     request->send(200);
   }, handleFirmwareFileUpload);
 
-  server.begin();
+  sdCardServerBegin(&server, false, false);
 
   log_d("Web Server Started");
   reportHeapNow();

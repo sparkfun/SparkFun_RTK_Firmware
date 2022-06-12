@@ -207,6 +207,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%s\n\r", F("ntripClient_wifiSSID"), settings.ntripClient_wifiSSID);
   settingsFile->printf("%s=%s\n\r", F("ntripClient_wifiPW"), settings.ntripClient_wifiPW);
   settingsFile->printf("%s=%d\n\r", F("ntripClient_TransmitGGA"), settings.ntripClient_TransmitGGA);
+  settingsFile->printf("%s=%d\n\r", F("enableSdCardServer"), settings.enableSdCardServer);
   settingsFile->printf("%s=%d\n\r", F("serialTimeoutGNSS"), settings.serialTimeoutGNSS);
   settingsFile->printf("%s=%s\n\r", F("pointPerfectDeviceProfileToken"), settings.pointPerfectDeviceProfileToken);
   settingsFile->printf("%s=%d\n\r", F("enablePointPerfectCorrections"), settings.enablePointPerfectCorrections);
@@ -746,6 +747,8 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->ntripClient_wifiPW, settingValue);
   else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
     settings->ntripClient_TransmitGGA = d;
+  else if (strcmp(settingName, "enableSdCardServer") == 0)
+    settings->enableSdCardServer = d;
   else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
     settings->serialTimeoutGNSS = d;
   else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)

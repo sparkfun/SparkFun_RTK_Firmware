@@ -399,6 +399,9 @@ typedef struct {
   char ntripClient_wifiPW[50] = "parachutes";
   bool ntripClient_TransmitGGA = true;
 
+  //SD Card Server
+  bool enableSdCardServer = false;
+
   int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
 
   char pointPerfectDeviceProfileToken[40] = "";

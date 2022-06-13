@@ -409,7 +409,8 @@ void beginLogging()
       }
       else
       {
-        Serial.println(F("Failed to get file system lock to create GNSS UBX data file"));
+        //A retry will happen during the next loop, the log will eventually be opened
+        log_d(F("Failed to get file system lock to create GNSS UBX data file"));
         online.logging = false;
         return;
       }
@@ -482,7 +483,9 @@ bool findLastLog(char *lastLogName)
     }
     else
     {
-      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      //Error when a log file exists on the microSD card, data should be appended
+      //to the existing log file
+      Serial.printf("sdCardSemaphore failed to yield, menuMessages.ino line %d\r\n", __LINE__);
     }
   }
 

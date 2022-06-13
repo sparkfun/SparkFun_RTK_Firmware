@@ -540,7 +540,8 @@ bool createTestFile()
   }
   else
   {
-    log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+    //This is OK because the next loop will retry bringing the microSD card online
+    log_d("sdCardSemaphore failed to yield, System.ino line %d\r\n", __LINE__);
   }
 
   return (false);

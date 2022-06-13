@@ -97,7 +97,7 @@ void scanForFirmware()
     else
     {
       //This is an error when a firmware file is on the microSD card
-      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      Serial.printf("sdCardSemaphore failed to yield, menuFirmware.ino line %d\r\n", __LINE__);
     }
   }
 }

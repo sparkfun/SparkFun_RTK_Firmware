@@ -252,7 +252,7 @@ void factoryReset()
       //An error occurs when a settings file is on the microSD card and it is not
       //deleted, as such the settings on the microSD card will be loaded when the
       //RTK reboots, resulting in failure to achieve the factory reset condition
-      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      Serial.printf("sdCardSemaphore failed to yield, menuMain.ino line %d\r\n", __LINE__);
     }
   }
 

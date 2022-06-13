@@ -466,7 +466,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
     {
       //This is OK because in the interim more data will be written to the log
       //and the log file will eventually be closed by the next call in loop
-      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      log_d("sdCardSemaphore failed to yield, menuMessages.ino line %d\r\n", __LINE__);
     }
   }
 }

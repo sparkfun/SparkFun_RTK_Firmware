@@ -422,7 +422,7 @@ void beginLogging()
       else
       {
         //A retry will happen during the next loop, the log will eventually be opened
-        log_d(F("Failed to get file system lock to create GNSS UBX data file"));
+        log_d("Failed to get file system lock to create GNSS UBX data file");
         online.logging = false;
         return;
       }

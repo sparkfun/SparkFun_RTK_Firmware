@@ -30,6 +30,7 @@ void startWebServer()
     Serial.println(sdUsedSpaceMB);
   }
 
+  ntripClientStop(true);
   wifiStartAP();
 
   //Clear any garbage from settings array

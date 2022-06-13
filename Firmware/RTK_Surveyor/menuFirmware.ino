@@ -67,7 +67,7 @@ void mountSDThenUpdate(const char * firmwareFileName)
     } //End Semaphore check
     else
     {
-      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      Serial.printf("sdCardSemaphore failed to yield, menuFirmware.ino line %d\r\n", __LINE__);
     }
   }
 

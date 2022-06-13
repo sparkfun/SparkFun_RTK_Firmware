@@ -100,7 +100,7 @@ void recordSystemSettingsToFileSD(char *fileName)
     {
       //This is an error because the current settings no longer match the settings
       //on the microSD card, and will not be restored to the expected settings!
-      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      Serial.printf("sdCardSemaphore failed to yield, NVM.ino line %d\r\n", __LINE__);
     }
     break;
   }
@@ -320,7 +320,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
     {
       //This is an error because if the settings exist on the microSD card that
       //those settings are not overriding the current settings as documented!
-      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      Serial.printf("sdCardSemaphore failed to yield, NVM.ino line %d\r\n", __LINE__);
     }
     break;
   } //End SD online

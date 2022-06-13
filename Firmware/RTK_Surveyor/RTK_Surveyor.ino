@@ -549,7 +549,7 @@ void updateLogs()
       {
         //This is OK because in the interim more data will be written to the log
         //and the log file will eventually be synced by the next call in loop
-        log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
       }
     }
 
@@ -577,7 +577,7 @@ void updateLogs()
         //While a retry does occur during the next loop, it is possible to loose
         //trigger events if they occur too rapidly or if the log file is closed
         //before the trigger event is written!
-        log_w("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+        log_w("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
       }
     }
 
@@ -595,9 +595,9 @@ void updateLogs()
       }
       else
       {
-      //This is OK because outputting this message is not critical to the RTK
-      //operation and the message will be output by the next call in loop
-        log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+        //This is OK because outputting this message is not critical to the RTK
+        //operation and the message will be output by the next call in loop
+        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
       }
 
       if (fileSize > 0)

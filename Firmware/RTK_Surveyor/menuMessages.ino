@@ -535,7 +535,7 @@ bool findLastLog(char *lastLogName)
     {
       //Error when a log file exists on the microSD card, data should be appended
       //to the existing log file
-      Serial.printf("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      Serial.printf("sdCardSemaphore failed to yield, menuMessages.ino line %d\r\n", __LINE__);
     }
   }
 

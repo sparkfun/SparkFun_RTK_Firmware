@@ -1,6 +1,8 @@
 //Display current system status
 void menuSystem()
 {
+  bool sdCardAlreadyMounted;
+
   while (1)
   {
     Serial.println();
@@ -101,7 +103,7 @@ void menuSystem()
     }
     Serial.println();
 
-    if (settings.enableSD == true && online.microSD == true)
+    if (settings.enableSD == true)
     {
       Serial.println(F("f) Display microSD Files"));
     }
@@ -133,20 +135,34 @@ void menuSystem()
       else
         Serial.println(F("Reset aborted"));
     }
-    else if (incoming == 'f' && settings.enableSD == true && online.microSD == true)
+    else if ((incoming == 'f') && (settings.enableSD == true))
     {
-      //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-      {
-        Serial.println(F("Files found (date time size name):\n\r"));
-        sd.ls(LS_R | LS_DATE | LS_SIZE);
+      sdCardAlreadyMounted = online.microSD;
+      if (!online.microSD)
+        beginSD();
 
-        xSemaphoreGive(sdCardSemaphore);
-      }
+      //Notify the user if the microSD card is not available
+      if (!online.microSD)
+        Serial.println(F("microSD card not online!"));
       else
       {
-        //Error failed to list the contents of the microSD card
-        Serial.printf("sdCardSemaphore failed to yield, menuSystem.ino line %d\r\n", __LINE__);
+        //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+        if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+        {
+          Serial.println(F("Files found (date time size name):\n\r"));
+          sd->ls(LS_R | LS_DATE | LS_SIZE);
+        }
+        else
+        {
+          //Error failed to list the contents of the microSD card
+          Serial.printf("sdCardSemaphore failed to yield, menuSystem.ino line %d\r\n", __LINE__);
+        }
+
+        //Release the SD card if not originally mounted
+        if (sdCardAlreadyMounted)
+          xSemaphoreGive(sdCardSemaphore);
+        else
+          endSD(true, true);
       }
     }
     // Support mode switching

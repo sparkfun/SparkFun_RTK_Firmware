@@ -77,7 +77,7 @@ void F9PSerialReadTask(void *e)
           //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
           if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
           {
-            ubxFile.write(rBuffer, s);
+            ubxFile->write(rBuffer, s);
 
             xSemaphoreGive(sdCardSemaphore);
           } //End sdCardSemaphore

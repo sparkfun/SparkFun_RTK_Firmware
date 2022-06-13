@@ -344,13 +344,25 @@ void beginLogging()
                );
       }
 
+      //Allocate the ubxFile
+      if (!ubxFile)
+      {
+        ubxFile = new SdFile();
+        if (!ubxFile)
+        {
+          Serial.println(F("Failed to allocate ubxFile!"));
+          online.logging = false;
+          return;
+        }
+      }
+
       //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {
         // O_CREAT - create the file if it does not exist
         // O_APPEND - seek to the end of the file prior to each write
         // O_WRITE - open for write
-        if (ubxFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+        if (ubxFile->open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
         {
           Serial.printf("Failed to create GNSS UBX data file: %s\n\r", fileName);
           online.logging = false;
@@ -360,7 +372,7 @@ void beginLogging()
 
         lastLogSize = 0; //Reset counter - used for displaying active logging icon
 
-        updateDataFileCreate(&ubxFile); // Update the file to create time & date
+        updateDataFileCreate(ubxFile); // Update the file to create time & date
 
         startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 
@@ -386,7 +398,7 @@ void beginLogging()
 
         char nmeaMessage[82]; //Max NMEA sentence length is 82
         createNMEASentence(CUSTOM_NMEA_TYPE_RESET_REASON, nmeaMessage, rstReason); //textID, buffer, text
-        ubxFile.println(nmeaMessage);
+        ubxFile->println(nmeaMessage);
 
         //Record system firmware versions and info to log
 
@@ -394,11 +406,11 @@ void beginLogging()
         char firmwareVersion[30]; //v1.3 December 31 2021
         sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
         createNMEASentence(CUSTOM_NMEA_TYPE_SYSTEM_VERSION, nmeaMessage, firmwareVersion); //textID, buffer, text
-        ubxFile.println(nmeaMessage);
+        ubxFile->println(nmeaMessage);
 
         //ZED-F9P firmware: HPG 1.30
         createNMEASentence(CUSTOM_NMEA_TYPE_ZED_VERSION, nmeaMessage, zedFirmwareVersion); //textID, buffer, text
-        ubxFile.println(nmeaMessage);
+        ubxFile->println(nmeaMessage);
 
         if (reuseLastLog == true)
         {
@@ -410,7 +422,7 @@ void beginLogging()
       else
       {
         //A retry will happen during the next loop, the log will eventually be opened
-        log_d(F("Failed to get file system lock to create GNSS UBX data file"));
+        log_d("Failed to get file system lock to create GNSS UBX data file");
         online.logging = false;
         return;
       }
@@ -419,6 +431,44 @@ void beginLogging()
       online.logging = true;
     } //online.sd, enable.logging, online.rtc
   } //online.logging
+}
+
+//Stop writing to the log file on the microSD card
+void endLogging(bool gotSemaphore, bool releaseSemaphore)
+{
+  if (online.logging == true)
+  {
+    //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
+    //Wait up to 1000ms
+    if (gotSemaphore
+      || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
+    {
+      if (sdPresent())
+      {
+        //Close down file system
+        ubxFile->sync();
+        ubxFile->close();
+        Serial.println(F("Log file closed"));
+      }
+      else
+        Serial.println(F("Log file - SD card not present, failed to close file"));
+
+      //Done with the log file
+      delete ubxFile;
+      ubxFile = NULL;
+      online.logging = false;
+
+      //Release the semaphore if requested
+      if (releaseSemaphore)
+        xSemaphoreGive(sdCardSemaphore);
+    } //End sdCardSemaphore
+    else
+    {
+      //This is OK because in the interim more data will be written to the log
+      //and the log file will eventually be closed by the next call in loop
+      log_d("sdCardSemaphore failed to yield, menuMessages.ino line %d\r\n", __LINE__);
+    }
+  }
 }
 
 //Update the file access and write time with date and time obtained from GNSS

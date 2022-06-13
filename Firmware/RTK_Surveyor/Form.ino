@@ -11,13 +11,13 @@ void startWebServer()
   if (online.microSD)
   {
     csd_t csd;
-    sd.card()->readCSD(&csd); //Card Specific Data
+    sd->card()->readCSD(&csd); //Card Specific Data
     sdCardSizeMB = 0.000512 * sdCardCapacity(&csd);
-    sd.volumeBegin();
+    sd->volumeBegin();
 
     //Find available cluster/space
-    sdFreeSpaceMB = sd.vol()->freeClusterCount(); //This takes a few seconds to complete
-    sdFreeSpaceMB *= sd.vol()->sectorsPerCluster() / 2;
+    sdFreeSpaceMB = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
+    sdFreeSpaceMB *= sd->vol()->sectorsPerCluster() / 2;
     sdFreeSpaceMB /= 1024;
 
     sdUsedSpaceMB = sdCardSizeMB - sdFreeSpaceMB; //Don't think of it as used, think of it as unusable
@@ -551,7 +551,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
   {
-    updateFromSD(settingValueStr);
+    mountSDThenUpdate(settingValueStr);
 
     //If update is successful, it will force system reset and not get here.
 

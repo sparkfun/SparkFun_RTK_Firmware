@@ -44,65 +44,87 @@ void menuFirmware()
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }
 
-//Looks for matching binary files in root
-//Loads a global called binCount
-void scanForFirmware()
+void mountSDThenUpdate(const char * firmwareFileName)
 {
-  if (online.microSD == true)
+  bool gotSemaphore;
+  bool wasSdCardOnline;
+
+  //Try to gain access the SD card
+  gotSemaphore = false;
+  wasSdCardOnline = online.microSD;
+  if (online.microSD != true)
+    beginSD();
+
+  if (online.microSD != true)
+    Serial.println(F("microSD card is offline!"));
+  else
   {
-    //Attempt to access file system. This avoids collisions with file writing in F9PSerialReadTask()
-    //Wait up to 5s, this is important
-    if (xSemaphoreTake(sdCardSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
+    //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
-      //Count available binaries
-      SdFile tempFile;
-      SdFile dir;
-      const char* BIN_EXT = "bin";
-      const char* BIN_HEADER = "RTK_Surveyor_Firmware";
-
-      char fname[50]; //Handle long file names
-
-      dir.open("/"); //Open root
-
-      while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
-      {
-        if (tempFile.isFile())
-        {
-          tempFile.getName(fname, sizeof(fname));
-
-          if (strcmp(forceFirmwareFileName, fname) == 0)
-          {
-            Serial.println(F("Forced firmware detected. Loading..."));
-            displayForcedFirmwareUpdate();
-            updateFromSD(forceFirmwareFileName);
-          }
-
-          //Check 'bin' extension
-          if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
-          {
-            //Check for 'RTK_Surveyor_Firmware' start of file name
-            if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
-            {
-              strcpy(binFileNames[binCount++], fname); //Add this to the array
-            }
-            else
-              Serial.printf("Unknown: %s\n\r", fname);
-          }
-        }
-        tempFile.close();
-      }
-
-      xSemaphoreGive(sdCardSemaphore);
-    }
+      gotSemaphore = true;
+      updateFromSD(firmwareFileName);
+    } //End Semaphore check
     else
     {
-      //This is an error when a firmware file is on the microSD card
       Serial.printf("sdCardSemaphore failed to yield, menuFirmware.ino line %d\r\n", __LINE__);
     }
+  }
+
+  //Release access the SD card
+  if (online.microSD && (!wasSdCardOnline))
+    endSD(gotSemaphore, true);
+  else if (gotSemaphore)
+    xSemaphoreGive(sdCardSemaphore);
+}
+
+//Looks for matching binary files in root
+//Loads a global called binCount
+//Called from beginSD with microSD card mounted and sdCardsemaphore held
+void scanForFirmware()
+{
+  //Count available binaries
+  SdFile tempFile;
+  SdFile dir;
+  const char* BIN_EXT = "bin";
+  const char* BIN_HEADER = "RTK_Surveyor_Firmware";
+
+  char fname[50]; //Handle long file names
+
+  dir.open("/"); //Open root
+
+  while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
+  {
+    if (tempFile.isFile())
+    {
+      tempFile.getName(fname, sizeof(fname));
+
+      if (strcmp(forceFirmwareFileName, fname) == 0)
+      {
+        Serial.println(F("Forced firmware detected. Loading..."));
+        displayForcedFirmwareUpdate();
+        updateFromSD(forceFirmwareFileName);
+      }
+
+      //Check 'bin' extension
+      if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
+      {
+        //Check for 'RTK_Surveyor_Firmware' start of file name
+        if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
+        {
+          strcpy(binFileNames[binCount++], fname); //Add this to the array
+        }
+        else
+          Serial.printf("Unknown: %s\n\r", fname);
+      }
+    }
+    tempFile.close();
   }
 }
 
 //Look for firmware file on SD card and update as needed
+//Called from scanForFirmware with microSD card mounted and sdCardsemaphore held
+//Called from mountSDThenUpdate with microSD card mounted and sdCardsemaphore held
 void updateFromSD(const char *firmwareFileName)
 {
   //Turn off any tasks so that we are not disrupted
@@ -113,7 +135,7 @@ void updateFromSD(const char *firmwareFileName)
   stopUART2Tasks();
 
   Serial.printf("Loading %s\n\r", firmwareFileName);
-  if (sd.exists(firmwareFileName))
+  if (sd->exists(firmwareFileName))
   {
     SdFile firmwareFile;
     firmwareFile.open(firmwareFileName, O_READ);
@@ -199,7 +221,7 @@ void updateFromSD(const char *firmwareFileName)
 
           //Remove forced firmware file to prevent endless loading
           firmwareFile.close();
-          sd.remove(firmwareFileName);
+          sd->remove(firmwareFileName);
 
           i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
         }

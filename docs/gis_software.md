@@ -119,7 +119,7 @@ Now you can begin using the SparkFun RTK device with Field Genius.
 
 ## SurvPC
 
-Note: The company behind SurvPC, Carlson Software, is rather hostile to competitors of their $18,000 devices, so be warned.
+Note: The company behind SurvPC, Carlson Software, is not always welcoming to competitors of their $18,000 devices, so be warned.
 
 Be sure your device is [paired over Bluetooth](https://sparkfun.github.io/SparkFun_RTK_Firmware/connecting_bluetooth/#windows).
 

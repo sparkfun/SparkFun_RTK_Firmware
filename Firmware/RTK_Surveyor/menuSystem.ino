@@ -109,6 +109,9 @@ void menuSystem()
     }
 
     Serial.println(F("d) Configure Debug"));
+    Serial.printf("h) Set time zone hours: %d\r\n", timeZoneHours);
+    Serial.printf("m) Set time zone minutes: %d\r\n", timeZoneMinutes);
+    Serial.printf("s) Set time zone seconds: %d\r\n", timeZoneSeconds);
 
     Serial.println(F("r) Reset all settings to default"));
 
@@ -124,6 +127,45 @@ void menuSystem()
 
     if (incoming == 'd')
       menuDebug();
+    else if (incoming == 'h')
+    {
+      Serial.print(F("Enter time zone hour offset (-23 <= offset <= 23): "));
+      int64_t value = getNumber(menuTimeout);
+      if (value < -23 || value > 23)
+        Serial.println(F("Error: -24 < hours < 24"));
+      else
+      {
+        timeZoneHours = value;
+        online.rtc = false;
+        updateRTC();
+      }
+    }
+    else if (incoming == 'm')
+    {
+      Serial.print(F("Enter time zone minute offset (-59 <= offset <= 59): "));
+      int64_t value = getNumber(menuTimeout);
+      if (value < -59 || value > 59)
+        Serial.println(F("Error: -60 < minutes < 60"));
+      else
+      {
+        timeZoneMinutes = value;
+        online.rtc = false;
+        updateRTC();
+      }
+    }
+    else if (incoming == 's')
+    {
+      Serial.print(F("Enter time zone second offset (-59 <= offset <= 59): "));
+      int64_t value = getNumber(menuTimeout);
+      if (value < -59 || value > 59)
+        Serial.println(F("Error: -60 < seconds < 60"));
+      else
+      {
+        timeZoneSeconds = value;
+        online.rtc = false;
+        updateRTC();
+      }
+    }
     else if (incoming == 'r')
     {
       Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));

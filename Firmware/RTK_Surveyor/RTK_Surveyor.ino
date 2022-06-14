@@ -96,6 +96,9 @@ char settingsFileName[40]; //Contains the %s_Settings_%d.txt with current profil
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <ESP32Time.h> //http://librarymanager/All#ESP32Time
 ESP32Time rtc;
+int timeZoneHours;
+int timeZoneMinutes;
+int timeZoneSeconds;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //microSD Interface
@@ -640,6 +643,20 @@ void updateLogs()
   }
 }
 
+int getLeapDay(int month, int year)
+{
+  int leapDay;
+
+  //Determine if a leap day occurs in this month (February 29th exists)
+  //month range: 0 - 11
+  leapDay = ((month == (2 - 1))         //Leap day only occurs in February
+            && ((year & 3) == 0)        //Leap day occurs every 4 years
+            && (((year % 100) != 0)     //But not every 100 years
+              || ((year % 400) == 0)))  //But does occur every 400 years
+          ? 1 : 0;
+  return leapDay;
+}
+
 //Once we have a fix, sync system clock to GNSS
 //All SD writes will use the system date/time
 void updateRTC()
@@ -663,11 +680,115 @@ void updateRTC()
 
         if (timeValid == true)
         {
+          const int daysInMonth[] =
+          {
+            31, //January
+            28, //February
+            31, //March
+            30, //April
+            31, //May
+            30, //June
+            31, //July
+            31, //August
+            30, //September
+            31, //October
+            30, //November
+            31  //December
+          };
+          int year;
+          int month;
+          int day;
+          int hour;
+          int minute;
+          int second;
+
+          //Get the latest time in the GNSS
+          i2cGNSS.checkUblox();
+
+          //Get the time values
+          year = i2cGNSS.getYear();
+          month = i2cGNSS.getMonth();   //Range: 1 - 12
+          day = i2cGNSS.getDay();       //Range: 1 - daysInMonth
+          hour = i2cGNSS.getHour();     //Range: 0 - 23
+          minute = i2cGNSS.getMinute(); //Range: 0 - 59
+          second = i2cGNSS.getSecond(); //Range: 0 - 59
+
+          //Adjust month and day ranges
+          month -= 1;   //New range: 0 - 11
+          day -= 1;     //New range: 0 - (daysInMonth - 1)
+
+          //Perform time zone seconds adjustment
+          second += timeZoneSeconds;
+          while (second < 0)
+          {
+            second += 60;
+            minute -= 1;
+          }
+
+          //Perform time zone minutes adjustment
+          minute += timeZoneMinutes;
+          while (minute < 0)
+          {
+            minute += 60;
+            hour -= 1;
+          }
+
+          //Perform time zone hours adjustment
+          hour += timeZoneHours;
+          while (hour < 0)
+          {
+            hour += 24;
+            day -= 1;
+
+            //Handle the day ripple
+            if (day < 0)
+            {
+              month -= 1;
+
+              //Handle the month ripple
+              if (month < 0)
+              {
+                month = 11;
+                year -= 1;
+              }
+              day = daysInMonth[month] + getLeapDay(month, year) - 1;
+            }
+          }
+
+          //hour needs to be in the range of 0 - 23
+          //Determine if the time is in the next day
+          while (hour >= 24)
+          {
+            //Adjust the hour and day
+            hour -= 24;
+            day += 1;
+
+            //day needs to be within the range of 0 - (daysInMonth - 1)
+            //Determine if the time is in the next month
+            if (day >= (daysInMonth[month] + getLeapDay(month, year)))
+            {
+              //Adjust day and month
+              day = 0;
+              month += 1;
+              //month needs to be within the range of 0 - 11
+              //Determine if the time is in the next year
+              if (month >= 12)
+              {
+                //Adjust the month and year
+                month = 0;
+                year += 1;
+              }
+            }
+          }
+
+          //Adjust month and day ranges
+          month += 1;   //New range: 1 - 12
+          day += 1;     //New range: 1 - daysInMonth
+
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi
           //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
-          i2cGNSS.checkUblox();
-          rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());
+          rtc.setTime(second, minute, hour, day, month, year);
 
           online.rtc = true;
 

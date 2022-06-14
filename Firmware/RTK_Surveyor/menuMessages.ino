@@ -34,6 +34,10 @@ void menuLog()
       Serial.println(F(" minutes"));
     }
 
+    Serial.print(F("4) Write marks to microSD: "));
+    if (settings.enableMarksFile == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
@@ -67,6 +71,10 @@ void menuLog()
       {
         settings.maxLogLength_minutes = maxLogMinutes; //Recorded to NVM and file at main menu exit
       }
+    }
+    else if (incoming == '4')
+    {
+      settings.enableMarksFile ^= 1;
     }
     else if (incoming == 'x')
       break;

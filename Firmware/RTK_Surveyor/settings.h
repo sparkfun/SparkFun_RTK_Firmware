@@ -240,6 +240,7 @@ typedef struct {
   uint32_t externalPulseLength_us = 100000; //us length of pulse
   pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; //Pulse rises for pulse length, then falls
   bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
+  bool enableMarksFile = false; //Log marks to the marks file
 
   ubxMsg ubxMessages[MAX_UBX_MSG] = //Report rates for all known messages
   {

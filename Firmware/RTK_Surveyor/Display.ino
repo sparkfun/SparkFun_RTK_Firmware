@@ -1293,6 +1293,21 @@ void displayNoLogging(uint16_t displayTime)
   displayMessage("No Logging", displayTime);
 }
 
+void displayMarked(uint16_t displayTime)
+{
+  displayMessage("Marked", displayTime);
+}
+
+void displayMarkFailure(uint16_t displayTime)
+{
+  displayMessage("Mark Failure", displayTime);
+}
+
+void displayNotMarked(uint16_t displayTime)
+{
+  displayMessage("Not Marked", displayTime);
+}
+
 //Show 'Loading Home2' profile identified
 //Profiles may not be sequential (user might have empty profile #2, but filled #3) so we load the profile unit, not the number
 void paintProfile(uint8_t profileUnit)

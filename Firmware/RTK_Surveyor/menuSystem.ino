@@ -109,9 +109,9 @@ void menuSystem()
     }
 
     Serial.println(F("d) Configure Debug"));
-    Serial.printf("h) Set time zone hours: %d\r\n", timeZoneHours);
-    Serial.printf("m) Set time zone minutes: %d\r\n", timeZoneMinutes);
-    Serial.printf("s) Set time zone seconds: %d\r\n", timeZoneSeconds);
+    Serial.printf("h) Set time zone hours: %d\r\n", settings.timeZoneHours);
+    Serial.printf("m) Set time zone minutes: %d\r\n", settings.timeZoneMinutes);
+    Serial.printf("s) Set time zone seconds: %d\r\n", settings.timeZoneSeconds);
 
     Serial.println(F("r) Reset all settings to default"));
 
@@ -135,7 +135,7 @@ void menuSystem()
         Serial.println(F("Error: -24 < hours < 24"));
       else
       {
-        timeZoneHours = value;
+        settings.timeZoneHours = value;
         online.rtc = false;
         updateRTC();
       }
@@ -148,7 +148,7 @@ void menuSystem()
         Serial.println(F("Error: -60 < minutes < 60"));
       else
       {
-        timeZoneMinutes = value;
+        settings.timeZoneMinutes = value;
         online.rtc = false;
         updateRTC();
       }
@@ -161,7 +161,7 @@ void menuSystem()
         Serial.println(F("Error: -60 < seconds < 60"));
       else
       {
-        timeZoneSeconds = value;
+        settings.timeZoneSeconds = value;
         online.rtc = false;
         updateRTC();
       }

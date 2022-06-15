@@ -96,9 +96,6 @@ char settingsFileName[40]; //Contains the %s_Settings_%d.txt with current profil
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <ESP32Time.h> //http://librarymanager/All#ESP32Time
 ESP32Time rtc;
-int timeZoneHours;
-int timeZoneMinutes;
-int timeZoneSeconds;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //microSD Interface
@@ -679,9 +676,9 @@ void updateRTC()
           second = i2cGNSS.getSecond(); //Range: 0 - 59
 
           //Perform time zone adjustment
-          second += timeZoneSeconds;
-          minute += timeZoneMinutes;
-          hour += timeZoneHours;
+          second += settings.timeZoneSeconds;
+          minute += settings.timeZoneMinutes;
+          hour += settings.timeZoneHours;
 
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi

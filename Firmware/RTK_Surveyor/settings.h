@@ -392,6 +392,11 @@ typedef struct {
   uint64_t lastKeyAttempt = 0; //Epoch time of last attempt at obtaining keys
   bool updateZEDSettings = true; //When in doubt, update the ZED with current settings
   uint32_t LBandFreq = 1556290000; //Default to US band
+
+  //Time Zone - Default to UTC
+  int8_t timeZoneHours = 0;
+  int8_t timeZoneMinutes = 0;
+  int8_t timeZoneSeconds = 0;
 } Settings;
 Settings settings;
 

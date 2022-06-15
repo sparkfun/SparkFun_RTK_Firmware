@@ -811,7 +811,7 @@ void updateSystemState()
               char fileName[32];
               bool fileOpen = false;
               size_t fileSize;
-              char markBuffer[130];
+              char markBuffer[100];
               bool sdCardWasOnline;
               int year;
               int month;
@@ -823,7 +823,7 @@ void updateSystemState()
               day = rtc.getDay();
 
               //Build the file name
-              sprintf (fileName, "Marks_%04d_%02d_%02d.txt", year, month, day);
+              sprintf (fileName, "Marks_%04d_%02d_%02d.csv", year, month, day);
 
               //Try to gain access the SD card
               sdCardWasOnline = online.microSD;
@@ -832,38 +832,63 @@ void updateSystemState()
 
               if (online.microSD == true)
               {
-                //Create the mark text
-                //YYYYMMDDHHMMSS, Lat: xxxx, Long: xxxx, Alt: xxxx, SIV: xx, HPA: xxxx, Batt: xxx
-                sprintf (markBuffer, "%04d-%02d-%02d %02d:%02d:%02d, Lat: %14.9f, Long: %14.9f, Alt: %7.1f, SIV: %2d, HPA: %4f, Batt: %d%%, %4.2fV\n",
-                         year, month, day, rtc.getHour(), rtc.getMinute(), rtc.getSecond(),
-                         latitude, longitude, altitude, numSV, horizontalAccuracy,
-                         battLevel, battVoltage);
-
                 //Open the marks file
                 SdFile * marksFile = new SdFile();
                 if (marksFile && marksFile->open(fileName, O_APPEND | O_WRITE))
                 {
                   fileOpen = true;
                   marksFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                                 rtc.getHour(), rtc.getMinute(), rtc.getSecond());
+                                                 rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
                 }
                 else if (marksFile && marksFile->open(fileName, O_CREAT | O_WRITE))
                 {
                   fileOpen = true;
                   marksFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                                 rtc.getHour(), rtc.getMinute(), rtc.getSecond());
+                                                 rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
                   marksFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                                rtc.getHour(), rtc.getMinute(), rtc.getSecond());
+                                                rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+
+                  //Add the column headers
+                  //YYYYMMDDHHMMSS, Lat: xxxx, Long: xxxx, Alt: xxxx, SIV: xx, HPA: xxxx, Batt: xxx
+                  //                           1         2         3         4         5         6         7         8         9
+                  //                  1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901
+                  strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
+                  int writeBytes = marksFile->write(markBuffer, strlen(markBuffer));
                 }
                 if (fileOpen)
                 {
+                  //Create the mark text
+                  //         1         2         3         4         5         6         7         8
+                  //12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+                  //YYYY-MM-DD, HH:MM:SS, ---Latitude---, --Longitude---, --Alt--,SIV, --HPA---,Level,Volts\n
+                  if (horizontalAccuracy >= 100.)
+                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.0f, %3d%%, %4.2f\n",
+                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                             latitude, longitude, altitude, numSV, horizontalAccuracy,
+                             battLevel, battVoltage);
+                  else if (horizontalAccuracy >= 10.)
+                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.1f, %3d%%, %4.2f\n",
+                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                             latitude, longitude, altitude, numSV, horizontalAccuracy,
+                             battLevel, battVoltage);
+                  else if (horizontalAccuracy >= 1.)
+                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.2f, %3d%%, %4.2f\n",
+                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                             latitude, longitude, altitude, numSV, horizontalAccuracy,
+                             battLevel, battVoltage);
+                  else
+                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.3f, %3d%%, %4.2f\n",
+                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                             latitude, longitude, altitude, numSV, horizontalAccuracy,
+                             battLevel, battVoltage);
+
+                  //Write the mark to the file
+                  int writeBytes = marksFile->write(markBuffer, strlen(markBuffer));
+
                   // Update the file to create time & date
                   updateDataFileCreate(marksFile);
 
-                  //Write the waypoint to the file
-                  marksFile->write(markBuffer, strlen(markBuffer));
-
-                  //Close the waypoint file
+                  //Close the mark file
                   marksFile->close();
                   marked = true;
                 }

@@ -280,6 +280,9 @@ void menuDebug()
     Serial.print(F("9) GNSS Serial Timeout: "));
     Serial.println(settings.serialTimeoutGNSS);
 
+    Serial.print(F("10) Periodically print state: "));
+    Serial.printf("%s\r\n", settings.enablePrintState ? "Enabled" : "Disabled");
+
     Serial.println(F("t) Enter Test Screen"));
 
     Serial.println(F("e) Erase LittleFS"));
@@ -379,6 +382,10 @@ void menuDebug()
         {
           settings.serialTimeoutGNSS = serialTimeoutGNSS; //Recorded to NVM and file at main menu exit
         }
+      }
+      else if (incoming == 10)
+      {
+        settings.enablePrintState ^= 1;
       }
       else
         printUnknown(incoming);

@@ -27,6 +27,103 @@ void clearBuffer()
   while (Serial.available() > 0) Serial.read(); //Clear buffer
 }
 
+//Waits for and returns the menu choice that the user provides
+//Returns GMCS_TIMEOUT, GMCS_OVERFLOW, GMCS_CHARACTER or number of digits
+int getMenuChoice(int * value, int numberOfSeconds)
+{
+  int digits;
+  byte incoming;
+  bool makingChoice;
+  int previous_value;
+
+  clearBuffer();
+
+  long startTime = millis();
+
+  //Assume character value
+  *value = 0;
+  previous_value = 0;
+  digits = 0;
+  makingChoice = true;
+  while (makingChoice)
+  {
+    delay(10); //Yield to processor
+
+    //Regularly poll to get latest data
+    if (online.gnss == true)
+      i2cGNSS.checkUblox();
+
+    //Get the next input character
+    while (Serial.available() > 0)
+    {
+      incoming = Serial.read();
+
+      //Handle single character input
+      if ((!digits)
+        && (((incoming >= 'a') && (incoming <= 'z'))
+        || ((incoming >= 'A') && (incoming <= 'Z'))))
+      {
+        //Echo the incoming character
+        Serial.printf("%c\r\n", incoming);
+
+        //Return the character value
+        *value = incoming;
+        makingChoice = false;
+        break;
+      }
+
+      //Handle numeric input
+      else if ((incoming >= '0') && (incoming <= '9'))
+      {
+        //Echo the incoming character
+        Serial.write(incoming);
+
+        //Switch to numeric mode
+        *value = (*value * 10) + incoming - '0';
+        digits += 1;
+
+        //Check for overflow
+        if (*value < previous_value)
+        {
+          Serial.println(F("Error - number overflow!"));
+          return GMCS_OVERFLOW;
+        }
+        previous_value = *value;
+
+        //Handle backspace
+        if (digits && (incoming == 8))
+        {
+          Serial.print((char)0x08); //Move back one space
+          Serial.print(F(" ")); //Put a blank there to erase the letter from the terminal
+          Serial.print((char)0x08); //Move back again
+
+          //Switch to numeric mode
+          *value /= 10;
+          previous_value = *value;
+          digits -= 1;
+        }
+      }
+
+      //Handle end of number
+      else if (digits && ((incoming == '\r') || (incoming == '\n')))
+      {
+        //Echo the incoming character
+        Serial.print(F("\r\n"));
+        makingChoice = false;
+        break;
+      }
+    }
+
+    //Exit the routine when a timeout occurs
+    if (makingChoice && (millis() - startTime) / 1000 >= numberOfSeconds)
+    {
+      Serial.println(F("No user input received."));
+      return GMCS_TIMEOUT;
+    }
+  }
+  return (digits);
+}
+
 //Get single byte from user
 //Waits for and returns the character that the user provides
 //Returns STATUS_GETNUMBER_TIMEOUT if input times out

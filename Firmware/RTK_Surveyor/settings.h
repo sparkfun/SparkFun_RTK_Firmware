@@ -149,6 +149,14 @@ enum returnStatus {
   STATUS_PRESSED_X = 254,
 };
 
+//Return values for getMenuChoice()
+enum getMenuChoiceStatus
+{
+  GMCS_TIMEOUT = -2,
+  GMCS_OVERFLOW = -1,
+  GMCS_CHARACTER = 0
+};
+
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
 //Each constellation will have its config key, enable, and a visible name

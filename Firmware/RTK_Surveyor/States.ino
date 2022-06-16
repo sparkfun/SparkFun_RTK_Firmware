@@ -1149,147 +1149,158 @@ void requestChangeState(SystemState requestedState)
 //Change states and print the new state
 void changeState(SystemState newState)
 {
-  if (newState == systemState)
-    Serial.print(F("*"));
-
+  //Log the heap size at the state change
   reportHeapNow();
+
+  //Set the new state
   systemState = newState;
 
-  //Debug print
+  //Debug print of new state, add leading asterisk for repeated states
+  if (newState == systemState)
+    Serial.print(F("*"));
   switch (systemState)
   {
     case (STATE_ROVER_NOT_STARTED):
-      Serial.println(F("State: Rover - Not Started"));
+      Serial.print(F("State: Rover - Not Started"));
       break;
     case (STATE_ROVER_NO_FIX):
-      Serial.println(F("State: Rover - No Fix"));
+      Serial.print(F("State: Rover - No Fix"));
       break;
     case (STATE_ROVER_FIX):
-      Serial.println(F("State: Rover - Fix"));
+      Serial.print(F("State: Rover - Fix"));
       break;
     case (STATE_ROVER_RTK_FLOAT):
-      Serial.println(F("State: Rover - RTK Float"));
+      Serial.print(F("State: Rover - RTK Float"));
       break;
     case (STATE_ROVER_RTK_FIX):
-      Serial.println(F("State: Rover - RTK Fix"));
+      Serial.print(F("State: Rover - RTK Fix"));
       break;
     case (STATE_BASE_NOT_STARTED):
-      Serial.println(F("State: Base - Not Started"));
+      Serial.print(F("State: Base - Not Started"));
       break;
     case (STATE_BASE_TEMP_SETTLE):
-      Serial.println(F("State: Base-Temp - Settle"));
+      Serial.print(F("State: Base-Temp - Settle"));
       break;
     case (STATE_BASE_TEMP_SURVEY_STARTED):
-      Serial.println(F("State: Base-Temp - Survey Started"));
+      Serial.print(F("State: Base-Temp - Survey Started"));
       break;
     case (STATE_BASE_TEMP_TRANSMITTING):
-      Serial.println(F("State: Base-Temp - Transmitting"));
+      Serial.print(F("State: Base-Temp - Transmitting"));
       break;
     case (STATE_BASE_TEMP_WIFI_STARTED):
-      Serial.println(F("State: Base-Temp - WiFi Started"));
+      Serial.print(F("State: Base-Temp - WiFi Started"));
       break;
     case (STATE_BASE_TEMP_WIFI_CONNECTED):
-      Serial.println(F("State: Base-Temp - WiFi Connected"));
+      Serial.print(F("State: Base-Temp - WiFi Connected"));
       break;
     case (STATE_BASE_TEMP_CASTER_STARTED):
-      Serial.println(F("State: Base-Temp - Caster Started"));
+      Serial.print(F("State: Base-Temp - Caster Started"));
       break;
     case (STATE_BASE_TEMP_CASTER_CONNECTED):
-      Serial.println(F("State: Base-Temp - Caster Connected"));
+      Serial.print(F("State: Base-Temp - Caster Connected"));
       break;
     case (STATE_BASE_FIXED_NOT_STARTED):
-      Serial.println(F("State: Base-Fixed - Not Started"));
+      Serial.print(F("State: Base-Fixed - Not Started"));
       break;
     case (STATE_BASE_FIXED_TRANSMITTING):
-      Serial.println(F("State: Base-Fixed - Transmitting"));
+      Serial.print(F("State: Base-Fixed - Transmitting"));
       break;
     case (STATE_BASE_FIXED_WIFI_STARTED):
-      Serial.println(F("State: Base-Fixed - WiFi Started"));
+      Serial.print(F("State: Base-Fixed - WiFi Started"));
       break;
     case (STATE_BASE_FIXED_WIFI_CONNECTED):
-      Serial.println(F("State: Base-Fixed - WiFi Connected"));
+      Serial.print(F("State: Base-Fixed - WiFi Connected"));
       break;
     case (STATE_BASE_FIXED_CASTER_STARTED):
-      Serial.println(F("State: Base-Fixed - Caster Started"));
+      Serial.print(F("State: Base-Fixed - Caster Started"));
       break;
     case (STATE_BASE_FIXED_CASTER_CONNECTED):
-      Serial.println(F("State: Base-Fixed - Caster Connected"));
+      Serial.print(F("State: Base-Fixed - Caster Connected"));
       break;
     case (STATE_BUBBLE_LEVEL):
-      Serial.println(F("State: Bubble level"));
+      Serial.print(F("State: Bubble level"));
       break;
     case (STATE_MARK_EVENT):
-      Serial.println(F("State: Mark Event"));
+      Serial.print(F("State: Mark Event"));
       break;
     case (STATE_DISPLAY_SETUP):
-      Serial.println(F("State: Display Setup"));
+      Serial.print(F("State: Display Setup"));
       break;
     case (STATE_WIFI_CONFIG_NOT_STARTED):
-      Serial.println(F("State: WiFi Config Not Started"));
+      Serial.print(F("State: WiFi Config Not Started"));
       break;
     case (STATE_WIFI_CONFIG):
-      Serial.println(F("State: WiFi Config"));
+      Serial.print(F("State: WiFi Config"));
       break;
     case (STATE_TEST):
-      Serial.println(F("State: System Test Setup"));
+      Serial.print(F("State: System Test Setup"));
       break;
     case (STATE_TESTING):
-      Serial.println(F("State: System Testing"));
+      Serial.print(F("State: System Testing"));
       break;
     case (STATE_PROFILE_1):
-      Serial.println(F("State: Profile 1"));
+      Serial.print(F("State: Profile 1"));
       break;
     case (STATE_PROFILE_2):
-      Serial.println(F("State: Profile 2"));
+      Serial.print(F("State: Profile 2"));
       break;
     case (STATE_PROFILE_3):
-      Serial.println(F("State: Profile 3"));
+      Serial.print(F("State: Profile 3"));
       break;
     case (STATE_PROFILE_4):
-      Serial.println(F("State: Profile 4"));
+      Serial.print(F("State: Profile 4"));
       break;
     case (STATE_KEYS_STARTED):
-      Serial.println(F("State: Keys Started "));
+      Serial.print(F("State: Keys Started "));
       break;
     case (STATE_KEYS_NEEDED):
-      Serial.println(F("State: Keys Needed"));
+      Serial.print(F("State: Keys Needed"));
       break;
     case (STATE_KEYS_WIFI_STARTED):
-      Serial.println(F("State: Keys WiFi Started"));
+      Serial.print(F("State: Keys WiFi Started"));
       break;
     case (STATE_KEYS_WIFI_CONNECTED):
-      Serial.println(F("State: Keys WiFi Connected"));
+      Serial.print(F("State: Keys WiFi Connected"));
       break;
     case (STATE_KEYS_WIFI_TIMEOUT):
-      Serial.println(F("State: Keys WiFi Timeout"));
+      Serial.print(F("State: Keys WiFi Timeout"));
       break;
     case (STATE_KEYS_EXPIRED):
-      Serial.println(F("State: Keys Expired"));
+      Serial.print(F("State: Keys Expired"));
       break;
     case (STATE_KEYS_DAYS_REMAINING):
-      Serial.println(F("State: Keys Days Remaining"));
+      Serial.print(F("State: Keys Days Remaining"));
       break;
     case (STATE_KEYS_LBAND_CONFIGURE):
-      Serial.println(F("State: Keys L-Band Configure"));
+      Serial.print(F("State: Keys L-Band Configure"));
       break;
     case (STATE_KEYS_LBAND_ENCRYPTED):
-      Serial.println(F("State: Keys L-Band Encrypted"));
+      Serial.print(F("State: Keys L-Band Encrypted"));
       break;
     case (STATE_KEYS_PROVISION_WIFI_STARTED):
-      Serial.println(F("State: Keys Provision - WiFi Started"));
+      Serial.print(F("State: Keys Provision - WiFi Started"));
       break;
     case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
-      Serial.println(F("State: Keys Provision - WiFi Connected"));
+      Serial.print(F("State: Keys Provision - WiFi Connected"));
       break;
     case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
-      Serial.println(F("State: Keys Provision - WiFi Timeout"));
+      Serial.print(F("State: Keys Provision - WiFi Timeout"));
       break;
 
     case (STATE_SHUTDOWN):
-      Serial.println(F("State: Shut Down"));
+      Serial.print(F("State: Shut Down"));
       break;
     default:
-      Serial.printf("Change State Unknown: %d\n\r", systemState);
+      Serial.printf("Change State Unknown: %d", systemState);
       break;
   }
+
+  //Timestamp the state change
+  //         1         2
+  //12345678901234567890123456
+  //YYYY-mm-dd HH:MM:SS.xxxrn0
+  struct tm timeinfo = rtc.getTimeStruct();
+  char s[30];
+  strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", &timeinfo);
+  Serial.printf(", %s.%03d\r\n", s, rtc.getMillis());
 }

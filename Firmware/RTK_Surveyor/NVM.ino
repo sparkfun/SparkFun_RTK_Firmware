@@ -228,6 +228,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", F("timeZoneHours"), settings.timeZoneHours);
   settingsFile->printf("%s=%d\n\r", F("timeZoneMinutes"), settings.timeZoneMinutes);
   settingsFile->printf("%s=%d\n\r", F("timeZoneSeconds"), settings.timeZoneSeconds);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintState"), settings.enablePrintState);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -782,6 +783,8 @@ bool parseLine(char* str, Settings *settings)
     settings->timeZoneMinutes = d;
   else if (strcmp(settingName, "timeZoneSeconds") == 0)
     settings->timeZoneSeconds = d;
+  else if (strcmp(settingName, "enablePrintState") == 0)
+    settings->enablePrintState = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

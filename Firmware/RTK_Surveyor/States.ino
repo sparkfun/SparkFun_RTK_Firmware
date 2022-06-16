@@ -4,6 +4,8 @@
   Statemachine diagram: https://lucid.app/lucidchart/53519501-9fa5-4352-aa40-673f88ca0c9b/edit?invitationId=inv_ebd4b988-513d-4169-93fd-c291851108f8
 */
 
+static uint32_t lastStateTime = 0;
+
 //Given the current state, see if conditions have moved us to a new state
 //A user pressing the setup button (change between rover/base) is handled by checkpin_setupButton()
 void updateSystemState()
@@ -18,7 +20,16 @@ void updateSystemState()
     {
       newSystemStateRequested = false;
       if (systemState != requestedSystemState)
+      {
         changeState(requestedSystemState);
+        lastStateTime = millis();
+      }
+    }
+
+    if ((millis() - lastStateTime) > 15000)
+    {
+      changeState (systemState);
+      lastStateTime = millis();
     }
 
     //Move between states as needed

@@ -405,6 +405,9 @@ typedef struct {
   int8_t timeZoneHours = 0;
   int8_t timeZoneMinutes = 0;
   int8_t timeZoneSeconds = 0;
+
+  //Debug settings
+  bool enablePrintState = 0;
 } Settings;
 Settings settings;
 

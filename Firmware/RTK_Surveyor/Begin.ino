@@ -17,6 +17,14 @@ void beginBoard()
   {
     productVariant = RTK_FACET_LBAND;
   }
+  else if (idValue > (3300 * 3.3 / 13.3 * 0.9) && idValue < (3300 * 3.3 / 13.3 * 1.1))
+  {
+    productVariant = RTK_EXPRESS;
+  }
+  else if (idValue > (3300 * 10 / 13.3 * 0.9) && idValue < (3300 * 10 / 13.3 * 1.1))
+  {
+    productVariant = RTK_EXPRESS_PLUS;
+  }
   else if (isConnected(0x19) == true) //Check for accelerometer
   {
     if (zedModuleType == PLATFORM_F9P) productVariant = RTK_EXPRESS;

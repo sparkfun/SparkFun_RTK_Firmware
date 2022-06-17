@@ -4,7 +4,7 @@
 //Must be called after Wire.begin so that we can do I2C tests
 void beginBoard()
 {
-  //Use ADC to check 50% resistor divider
+  //Use ADC to check resistor divider
   int pin_adc_rtk_facet = 35;
   uint16_t idValue = analogReadMilliVolts(pin_adc_rtk_facet);
   log_d("Board ADC ID: %d", idValue);

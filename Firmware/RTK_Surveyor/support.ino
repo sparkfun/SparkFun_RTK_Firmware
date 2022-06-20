@@ -16,8 +16,7 @@ void printUnknown(uint8_t unknownChoice)
 void printUnknown(int unknownValue)
 {
   Serial.print(F("Unknown value: "));
-  Serial.write(unknownValue);
-  Serial.println();
+  Serial.printf("%d\r\n", unknownValue);
 }
 
 //Clear the Serial RX buffer before we begin scanning for characters

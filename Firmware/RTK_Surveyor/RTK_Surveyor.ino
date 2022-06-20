@@ -663,11 +663,27 @@ void updateRTC()
 
         if (timeValid == true)
         {
+          int hour;
+          int minute;
+          int second;
+
+          //Get the latest time in the GNSS
+          i2cGNSS.checkUblox();
+
+          //Get the time values
+          hour = i2cGNSS.getHour();     //Range: 0 - 23
+          minute = i2cGNSS.getMinute(); //Range: 0 - 59
+          second = i2cGNSS.getSecond(); //Range: 0 - 59
+
+          //Perform time zone adjustment
+          second += settings.timeZoneSeconds;
+          minute += settings.timeZoneMinutes;
+          hour += settings.timeZoneHours;
+
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi
           //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
-          i2cGNSS.checkUblox();
-          rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());
+          rtc.setTime(second, minute, hour, i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());
 
           online.rtc = true;
 

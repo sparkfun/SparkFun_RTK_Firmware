@@ -225,6 +225,9 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", F("updateZEDSettings"), settings.updateZEDSettings);
   settingsFile->printf("%s=%d\n\r", F("LBandFreq"), settings.LBandFreq);
   settingsFile->printf("%s=%d\n\r", F("enableLogging"), settings.enableLogging);
+  settingsFile->printf("%s=%d\n\r", F("timeZoneHours"), settings.timeZoneHours);
+  settingsFile->printf("%s=%d\n\r", F("timeZoneMinutes"), settings.timeZoneMinutes);
+  settingsFile->printf("%s=%d\n\r", F("timeZoneSeconds"), settings.timeZoneSeconds);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -773,6 +776,12 @@ bool parseLine(char* str, Settings *settings)
   }
   else if (strcmp(settingName, "LBandFreq") == 0)
     settings->LBandFreq = d;
+  else if (strcmp(settingName, "timeZoneHours") == 0)
+    settings->timeZoneHours = d;
+  else if (strcmp(settingName, "timeZoneMinutes") == 0)
+    settings->timeZoneMinutes = d;
+  else if (strcmp(settingName, "timeZoneSeconds") == 0)
+    settings->timeZoneSeconds = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

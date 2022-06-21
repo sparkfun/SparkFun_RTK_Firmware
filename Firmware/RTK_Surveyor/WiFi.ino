@@ -242,5 +242,9 @@ void wifiUpdate()
   //Support NTRIP client during Rover operation
   if (systemState < STATE_BASE_NOT_STARTED)
     ntripClientUpdate();
+
+  //Support NTRIP server during Base operation
+  else if (systemState < STATE_BUBBLE_LEVEL)
+    ntripServerUpdate();
 #endif  //COMPILE_WIFI
 }

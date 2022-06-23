@@ -228,33 +228,6 @@ void updateDisplay()
                 | ICON_LOGGING;       //Bottom right
           paintXmittingRTCM();
           break;
-        case (STATE_BASE_TEMP_WIFI_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_TEMP_WIFI_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_TEMP_CASTER_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY;       //Top right
-          paintConnectingToNtripCaster();
-          break;
-        case (STATE_BASE_TEMP_CASTER_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintCastingRTCM();
-          break;
         case (STATE_BASE_FIXED_NOT_STARTED):
           icons = paintWirelessIcon() //Top left
                 | ICON_BATTERY;       //Top right
@@ -265,33 +238,6 @@ void updateDisplay()
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
           paintXmittingRTCM();
-          break;
-        case (STATE_BASE_FIXED_WIFI_STARTED):
-           icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-         paintXmittingRTCM();
-          break;
-        case (STATE_BASE_FIXED_WIFI_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_FIXED_CASTER_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY;       //Top right
-          paintConnectingToNtripCaster();
-          break;
-        case (STATE_BASE_FIXED_CASTER_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintCastingRTCM();
           break;
         case (STATE_BUBBLE_LEVEL):
           paintBubbleLevel();

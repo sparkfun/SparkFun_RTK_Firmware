@@ -57,7 +57,7 @@ NTRIP Server States:
 //----------------------------------------
 
 // WiFi connection used to push RTCM to NTRIP caster over WiFi
-static WiFiClient ntripServer;
+static WiFiClient * ntripServer;
 
 //Last time the NTRIP server state was displayed
 static uint32_t ntripServerStateLastDisplayed = 0;
@@ -147,9 +147,9 @@ void ntripServerProcessRTCM(uint8_t incoming)
   }
 
 #ifdef  COMPILE_WIFI
-  if (ntripServer.connected() == true)
+  if (ntripServer && (ntripServer->connected() == true))
   {
-    ntripServer.write(incoming); //Send this byte to socket
+    ntripServer->write(incoming); //Send this byte to socket
     casterBytesSent++;
     lastServerSent_ms = millis();
   }
@@ -171,7 +171,7 @@ void ntripServerStart()
     Serial.println(F("NTRIP Server start"));
 
     //Allocate the ntripServer structure
-//    ntripServer = new WiFiClient();
+    ntripServer = new WiFiClient();
 
     //Restart WiFi and the NTRIP server if possible
     if (ntripServer)
@@ -191,16 +191,16 @@ void ntripServerStop(bool done)
   if (ntripServer)
   {
     //Break the NTRIP server connection if necessary
-    if (ntripServer.connected())
-      ntripServer.stop();
+    if (ntripServer->connected())
+      ntripServer->stop();
 
     //Free the NTRIP server resources
-//    delete ntripServer;
-//    ntripServer = NULL;
+    delete ntripServer;
+    ntripServer = NULL;
 
     //Allocate the NTRIP server structure if not done
-//    if (!done)
-//      ntripServer = new WiFiClient();
+    if (!done)
+      ntripServer = new WiFiClient();
   }
 
   //Stop WiFi if in use

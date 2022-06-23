@@ -229,34 +229,5 @@ bool startFixedBase()
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
 void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
-  //Count outgoing packets for display
-  //Assume 1Hz RTCM transmissions
-  if (millis() - lastRTCMPacketSent > 500)
-  {
-    lastRTCMPacketSent = millis();
-    rtcmPacketsSent++;
-  }
-
-  //Check for too many digits
-  if (settings.enableResetDisplay == true)
-  {
-    if (rtcmPacketsSent > 99) rtcmPacketsSent = 1; //Trim to two digits to avoid overlap
-  }
-  else if (logIncreasing == true)
-  {
-    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon
-  }
-  else
-  {
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
-  }
-
-#ifdef COMPILE_WIFI
-  if (ntripServer.connected() == true)
-  {
-    ntripServer.write(incoming); //Send this byte to socket
-    casterBytesSent++;
-    lastServerSent_ms = millis();
-  }
-#endif
+  ntripServerProcessRTCM(incoming);
 }

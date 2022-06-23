@@ -218,7 +218,6 @@ void wifiStop()
   stopWebServer();
   if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
   {
-    ntripServer.stop();
     WiFi.mode(WIFI_OFF);
     wifiSetState(WIFI_OFF);
     Serial.println(F("Wi-Fi Stopped"));

@@ -135,8 +135,6 @@ uint32_t sdUsedSpaceMB = 0;
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
-WiFiClient ntripServer; // The WiFi connection to the NTRIP caster. We use this to push local RTCM to the caster.
-
 #endif
 
 unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster

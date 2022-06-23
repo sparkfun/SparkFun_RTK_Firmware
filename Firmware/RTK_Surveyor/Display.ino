@@ -1971,10 +1971,10 @@ void paintKeyWiFiFail(uint16_t displayTime)
   }
 }
 
-void paintNClientWiFiFail(uint16_t displayTime)
+void paintNtripWiFiFail(uint16_t displayTime, bool Client)
 {
   //NTRIP
-  //Client
+  //Client or Server
   //Failed
   //No WiFi
 
@@ -1988,15 +1988,16 @@ void paintNClientWiFiFail(uint16_t displayTime)
     int y = 0;
     int fontHeight = 13;
     int textX;
+    const char * string = Client ? "Client" : "Server";
 
     textX = x - (oled.getStringWidth("NTRIP") / 2); //Starting point of text
     oled.setCursor(textX, y);
     oled.print("NTRIP");
 
     y += fontHeight;
-    textX = x - (oled.getStringWidth("Client") / 2);
+    textX = x - (oled.getStringWidth(string) / 2);
     oled.setCursor(textX, y);
-    oled.print("Client");
+    oled.print(string);
 
     y += fontHeight;
     textX = x - (oled.getStringWidth("Failed") / 2);

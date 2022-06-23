@@ -56,12 +56,20 @@ NTRIP Server States:
 // Locals - compiled out
 //----------------------------------------
 
+// WiFi connection used to push RTCM to NTRIP caster over WiFi
+static WiFiClient ntripServer;
+
 //Last time the NTRIP server state was displayed
 static uint32_t ntripServerStateLastDisplayed = 0;
 
 //----------------------------------------
 // NTRIP Server Routines - compiled out
 //----------------------------------------
+
+//Determine if more connections are allowed
+void ntripServerAllowMoreConnections()
+{
+}
 
 //Determine if the connection limit has been reached
 bool ntripServerConnectLimitReached()
@@ -112,6 +120,97 @@ void ntripServerSetState(byte newState)
 //----------------------------------------
 // Global NTRIP Server Routines
 //----------------------------------------
+
+//This function gets called as each RTCM byte comes in
+void ntripServerProcessRTCM(uint8_t incoming)
+{
+  //Count outgoing packets for display
+  //Assume 1Hz RTCM transmissions
+  if (millis() - lastRTCMPacketSent > 500)
+  {
+    lastRTCMPacketSent = millis();
+    rtcmPacketsSent++;
+  }
+
+  //Check for too many digits
+  if (settings.enableResetDisplay == true)
+  {
+    if (rtcmPacketsSent > 99) rtcmPacketsSent = 1; //Trim to two digits to avoid overlap
+  }
+  else if (logIncreasing == true)
+  {
+    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon
+  }
+  else
+  {
+    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
+  }
+
+#ifdef  COMPILE_WIFI
+  if (ntripServer.connected() == true)
+  {
+    ntripServer.write(incoming); //Send this byte to socket
+    casterBytesSent++;
+    lastServerSent_ms = millis();
+  }
+#endif  //COMPILE_WIFI
+}
+
+//Start the NTRIP server
+void ntripServerStart()
+{
+#ifdef  COMPILE_WIFI
+  //Stop NTRIP server and WiFi
+  ntripServerStop(true);
+
+  //Start the NTRIP server if enabled
+  if (settings.enableNtripServer == true)
+  {
+    //Display the heap state
+    reportHeapNow();
+    Serial.println(F("NTRIP Server start"));
+
+    //Allocate the ntripServer structure
+//    ntripServer = new WiFiClient();
+
+    //Restart WiFi and the NTRIP server if possible
+    if (ntripServer)
+      ntripServerSetState(NTRIP_SERVER_ON);
+  }
+
+  //Only fallback to Bluetooth once, then try WiFi again.  This enables changes
+  //to the WiFi SSID and password to properly restart the WiFi.
+  ntripServerAllowMoreConnections();
+#endif  //COMPILE_WIFI
+}
+
+//Stop the NTRIP server
+void ntripServerStop(bool done)
+{
+#ifdef  COMPILE_WIFI
+  if (ntripServer)
+  {
+    //Break the NTRIP server connection if necessary
+    if (ntripServer.connected())
+      ntripServer.stop();
+
+    //Free the NTRIP server resources
+//    delete ntripServer;
+//    ntripServer = NULL;
+
+    //Allocate the NTRIP server structure if not done
+//    if (!done)
+//      ntripServer = new WiFiClient();
+  }
+
+  //Stop WiFi if in use
+  if (ntripServerState > NTRIP_SERVER_ON)
+    wifiStop();
+
+  //Determine the next NTRIP server state
+  ntripServerSetState((ntripServer && (!done)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
+#endif  //COMPILE_WIFI
+}
 
 //Update the NTRIP server state machine
 void ntripServerUpdate()

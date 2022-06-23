@@ -4,6 +4,7 @@
 void startBluetooth()
 {
   ntripClientStop(true);
+  ntripServerStop(true);
   wifiStop();
   if (btState == BT_OFF)
   {

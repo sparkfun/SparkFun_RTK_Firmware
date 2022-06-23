@@ -494,7 +494,7 @@ void ntripClientUpdate()
           //Assume AP weak signal, the AP is unable to respond successfully
           if (ntripClientConnectLimitReached())
             //Display the WiFi failure
-            paintNClientWiFiFail(4000);
+            paintNtripWiFiFail(4000, true);
         }
       }
       else

@@ -229,6 +229,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", F("timeZoneMinutes"), settings.timeZoneMinutes);
   settingsFile->printf("%s=%d\n\r", F("timeZoneSeconds"), settings.timeZoneSeconds);
   settingsFile->printf("%s=%d\n\r", F("enablePrintState"), settings.enablePrintState);
+  settingsFile->printf("%s=%d\n\r", F("enableMarksFile"), settings.enableMarksFile);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -615,6 +616,8 @@ bool parseLine(char* str, Settings *settings)
     settings->spiFrequency = d;
   else if (strcmp(settingName, "enableLogging") == 0)
     settings->enableLogging = d;
+  else if (strcmp(settingName, "enableMarksFile") == 0)
+    settings->enableMarksFile = d;
   else if (strcmp(settingName, "sppRxQueueSize") == 0)
     settings->sppRxQueueSize = d;
   else if (strcmp(settingName, "sppTxQueueSize") == 0)

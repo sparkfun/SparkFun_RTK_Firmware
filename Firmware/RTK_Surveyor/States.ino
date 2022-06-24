@@ -790,18 +790,154 @@ void updateSystemState()
 
       case (STATE_MARK_EVENT):
         {
-          //Record this event to the log
-          if (online.logging == true)
-          {
-            char nmeaMessage[82]; //Max NMEA sentence length is 82
-            createNMEASentence(CUSTOM_NMEA_TYPE_WAYPOINT, nmeaMessage, (char*)"CustomEvent"); //textID, buffer, text
-            ubxFile->println(nmeaMessage);
-            displayEventMarked(500); //Show 'Event Marked'
-          }
-          else
-            displayNoLogging(500); //Show 'No Logging'
+          bool logged = false;
+          bool marked = false;
 
-          changeState(lastSystemState);
+          //Gain access to the SPI controller for the microSD card
+          if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+          {
+            //Record this event to the log
+            if (online.logging == true)
+            {
+              char nmeaMessage[82]; //Max NMEA sentence length is 82
+              createNMEASentence(CUSTOM_NMEA_TYPE_WAYPOINT, nmeaMessage, (char*)"CustomEvent"); //textID, buffer, text
+              ubxFile->println(nmeaMessage);
+              logged = true;
+            }
+
+            //Record this point to the marks file
+            if (settings.enableMarksFile) {
+              //Get the marks file name
+              char fileName[32];
+              bool fileOpen = false;
+              size_t fileSize;
+              char markBuffer[100];
+              bool sdCardWasOnline;
+              int year;
+              int month;
+              int day;
+
+              //Get the date
+              year = rtc.getYear();
+              month = rtc.getMonth() + 1;
+              day = rtc.getDay();
+
+              //Build the file name
+              sprintf (fileName, "Marks_%04d_%02d_%02d.csv", year, month, day);
+
+              //Try to gain access the SD card
+              sdCardWasOnline = online.microSD;
+              if (online.microSD != true)
+                  beginSD();
+
+              if (online.microSD == true)
+              {
+                //Open the marks file
+                SdFile * marksFile = new SdFile();
+                if (marksFile && marksFile->open(fileName, O_APPEND | O_WRITE))
+                {
+                  fileOpen = true;
+                  marksFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
+                                                 rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+                }
+                else if (marksFile && marksFile->open(fileName, O_CREAT | O_WRITE))
+                {
+                  fileOpen = true;
+                  marksFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
+                                                 rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+                  marksFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
+                                                rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+
+                  //Add the column headers
+                  //YYYYMMDDHHMMSS, Lat: xxxx, Long: xxxx, Alt: xxxx, SIV: xx, HPA: xxxx, Batt: xxx
+                  //                           1         2         3         4         5         6         7         8         9
+                  //                  1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901
+                  strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
+                  int writeBytes = marksFile->write(markBuffer, strlen(markBuffer));
+                }
+                if (fileOpen)
+                {
+                  //Create the mark text
+                  //         1         2         3         4         5         6         7         8
+                  //12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+                  //YYYY-MM-DD, HH:MM:SS, ---Latitude---, --Longitude---, --Alt--,SIV, --HPA---,Level,Volts\n
+                  if (horizontalAccuracy >= 100.)
+                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.0f, %3d%%, %4.2f\n",
+                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                             latitude, longitude, altitude, numSV, horizontalAccuracy,
+                             battLevel, battVoltage);
+                  else if (horizontalAccuracy >= 10.)
+                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.1f, %3d%%, %4.2f\n",
+                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                             latitude, longitude, altitude, numSV, horizontalAccuracy,
+                             battLevel, battVoltage);
+                  else if (horizontalAccuracy >= 1.)
+                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.2f, %3d%%, %4.2f\n",
+                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                             latitude, longitude, altitude, numSV, horizontalAccuracy,
+                             battLevel, battVoltage);
+                  else
+                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.3f, %3d%%, %4.2f\n",
+                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                             latitude, longitude, altitude, numSV, horizontalAccuracy,
+                             battLevel, battVoltage);
+
+                  //Write the mark to the file
+                  int writeBytes = marksFile->write(markBuffer, strlen(markBuffer));
+
+                  // Update the file to create time & date
+                  updateDataFileCreate(marksFile);
+
+                  //Close the mark file
+                  marksFile->close();
+                  marked = true;
+                }
+
+                //Done with the file
+                if (marksFile)
+                  delete (marksFile);
+
+                //Dismount the SD card
+                if (!sdCardWasOnline)
+                    endSD(true, false);
+              }
+            }
+
+            //Done with the SPI controller
+            xSemaphoreGive(sdCardSemaphore);
+
+            //Record this event to the log
+            if ((online.logging == true) && (settings.enableMarksFile))
+            {
+              if (logged && marked)
+                displayEventMarked(500); //Show 'Event Marked'
+              else if (marked)
+                displayNoLogging(500); //Show 'No Logging'
+              else if (logged)
+                displayNotMarked(500); //Show 'Not Marked'
+              else
+                displayMarkFailure(500); //Show 'Mark Failure'
+            }
+            else if (settings.enableMarksFile)
+            {
+              if (marked)
+                displayMarked(500);  //Show 'Marked'
+              else
+                displayNotMarked(500); //Show 'Not Marked'
+            }
+            else if (logged)
+              displayEventMarked(500); //Show 'Event Marked'
+            else
+              displayNoLogging(500); //Show 'No Logging'
+
+            // Return to the previous state
+            changeState(lastSystemState);
+          } //End sdCardSemaphore
+          else
+          {
+            //Enable retry by not changing states
+            log_d("sdCardSemaphore failed to yield in STATE_MARK_EVENT\r\n");
+          }
         }
         break;
 

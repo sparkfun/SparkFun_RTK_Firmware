@@ -177,32 +177,6 @@ void ntripClientResponse(char * response, size_t maxLength)
   *response = '\0';
 }
 
-//Stop the NTRIP client
-void ntripClientStop(bool done)
-{
-  if (ntripClient)
-  {
-    //Break the NTRIP client connection if necessary
-    if (ntripClient->connected())
-      ntripClient->stop();
-
-    //Free the NTRIP client resources
-    delete ntripClient;
-    ntripClient = NULL;
-
-    //Allocate the NTRIP client structure if not done
-    if (!done)
-      ntripClient = new WiFiClient();
-  }
-
-  //Stop WiFi if in use
-  if (ntripClientState > NTRIP_CLIENT_ON)
-    wifiStop();
-
-  //Determine the next NTRIP client state
-  ntripClientState = (ntripClient && (!done)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF;
-}
-
 //Switch to Bluetooth operation
 void ntripClientSwitchToBluetooth()
 {
@@ -245,6 +219,34 @@ void ntripClientStart()
   //Only fallback to Bluetooth once, then try WiFi again.  This enables changes
   //to the WiFi SSID and password to properly restart the WiFi.
   ntripClientAllowMoreConnections();
+#endif  //COMPILE_WIFI
+}
+
+//Stop the NTRIP client
+void ntripClientStop(bool done)
+{
+#ifdef  COMPILE_WIFI
+  if (ntripClient)
+  {
+    //Break the NTRIP client connection if necessary
+    if (ntripClient->connected())
+      ntripClient->stop();
+
+    //Free the NTRIP client resources
+    delete ntripClient;
+    ntripClient = NULL;
+
+    //Allocate the NTRIP client structure if not done
+    if (!done)
+      ntripClient = new WiFiClient();
+  }
+
+  //Stop WiFi if in use
+  if (ntripClientState > NTRIP_CLIENT_ON)
+    wifiStop();
+
+  //Determine the next NTRIP client state
+  ntripClientState = (ntripClient && (!done)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF;
 #endif  //COMPILE_WIFI
 }
 

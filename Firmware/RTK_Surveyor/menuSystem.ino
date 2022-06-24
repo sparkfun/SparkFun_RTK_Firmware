@@ -280,6 +280,9 @@ void menuDebug()
     Serial.print(F("9) GNSS Serial Timeout: "));
     Serial.println(settings.serialTimeoutGNSS);
 
+    Serial.print(F("10) Periodically print state: "));
+    Serial.printf("%s\r\n", settings.enablePrintState ? "Enabled" : "Disabled");
+
     Serial.println(F("t) Enter Test Screen"));
 
     Serial.println(F("e) Erase LittleFS"));
@@ -288,114 +291,130 @@ void menuDebug()
 
     Serial.println(F("x) Exit"));
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    int incoming;
+    int digits = getMenuChoice(&incoming, menuTimeout); //Timeout after x seconds
 
-    if (incoming == '1')
-    {
-      settings.enableI2Cdebug ^= 1;
-
-      if (settings.enableI2Cdebug)
-        i2cGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
-      else
-        i2cGNSS.disableDebugging();
-    }
-    else if (incoming == '2')
-    {
-      settings.enableHeapReport ^= 1;
-    }
-    else if (incoming == '3')
-    {
-      settings.enableTaskReports ^= 1;
-    }
-    else if (incoming == '4')
-    {
-      Serial.print(F("Enter SPI frequency in MHz (1 to 16): "));
-      int freq = getNumber(menuTimeout); //Timeout after x seconds
-      if (freq < 1 || freq > 16) //Arbitrary 16MHz limit
-      {
-        Serial.println(F("Error: SPI frequency out of range"));
-      }
-      else
-      {
-        settings.spiFrequency = freq; //Recorded to NVM and file at main menu exit
-      }
-    }
-    else if (incoming == '5')
-    {
-      Serial.print(F("Enter SPP RX Queue Size in Bytes (32 to 16384): "));
-      uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
-      if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
-      {
-        Serial.println(F("Error: Queue size out of range"));
-      }
-      else
-      {
-        settings.sppRxQueueSize = queSize; //Recorded to NVM and file at main menu exit
-      }
-    }
-    else if (incoming == '6')
-    {
-      Serial.print(F("Enter SPP TX Queue Size in Bytes (32 to 16384): "));
-      uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
-      if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
-      {
-        Serial.println(F("Error: Queue size out of range"));
-      }
-      else
-      {
-        settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
-      }
-    }
-    else if (incoming == '7')
-    {
-      settings.throttleDuringSPPCongestion ^= 1;
-    }
-    else if (incoming == '8')
-    {
-      settings.enableResetDisplay ^= 1;
-      if (settings.enableResetDisplay == true)
-      {
-        settings.resetCount = 0;
-        recordSystemSettings(); //Record to NVM
-      }
-    }
-    else if (incoming == '9')
-    {
-      Serial.print(F("Enter GNSS Serial Timeout in milliseconds (0 to 1000): "));
-      uint16_t serialTimeoutGNSS = getNumber(menuTimeout); //Timeout after x seconds
-      if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
-      {
-        Serial.println(F("Error: Timeout is out of range"));
-      }
-      else
-      {
-        settings.serialTimeoutGNSS = serialTimeoutGNSS; //Recorded to NVM and file at main menu exit
-      }
-    }
-    else if (incoming == 'e')
-    {
-      Serial.println("Erasing LittleFS and resetting");
-      LittleFS.format();
-      ESP.restart();
-    }
-    else if (incoming == 'r')
-    {
-      recordSystemSettings();
-
-      ESP.restart();
-    }
-    else if (incoming == 't')
-    {
-      requestChangeState(STATE_TEST); //We'll enter test mode once exiting all serial menus
-    }
-    else if (incoming == 'x')
+    //Handle input timeout
+    if (digits == GMCS_TIMEOUT)
       break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+
+    //Handle numeric input
+    if (digits > 0)
     {
-      break;
+      if (incoming == 1)
+      {
+        settings.enableI2Cdebug ^= 1;
+
+        if (settings.enableI2Cdebug)
+          i2cGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
+        else
+          i2cGNSS.disableDebugging();
+      }
+      else if (incoming == 2)
+      {
+        settings.enableHeapReport ^= 1;
+      }
+      else if (incoming == 3)
+      {
+        settings.enableTaskReports ^= 1;
+      }
+      else if (incoming == 4)
+      {
+        Serial.print(F("Enter SPI frequency in MHz (1 to 16): "));
+        int freq = getNumber(menuTimeout); //Timeout after x seconds
+        if (freq < 1 || freq > 16) //Arbitrary 16MHz limit
+        {
+          Serial.println(F("Error: SPI frequency out of range"));
+        }
+        else
+        {
+          settings.spiFrequency = freq; //Recorded to NVM and file at main menu exit
+        }
+      }
+      else if (incoming == 5)
+      {
+        Serial.print(F("Enter SPP RX Queue Size in Bytes (32 to 16384): "));
+        uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+        {
+          Serial.println(F("Error: Queue size out of range"));
+        }
+        else
+        {
+          settings.sppRxQueueSize = queSize; //Recorded to NVM and file at main menu exit
+        }
+      }
+      else if (incoming == 6)
+      {
+        Serial.print(F("Enter SPP TX Queue Size in Bytes (32 to 16384): "));
+        uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+        {
+          Serial.println(F("Error: Queue size out of range"));
+        }
+        else
+        {
+          settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
+        }
+      }
+      else if (incoming == 7)
+      {
+        settings.throttleDuringSPPCongestion ^= 1;
+      }
+      else if (incoming == 8)
+      {
+        settings.enableResetDisplay ^= 1;
+        if (settings.enableResetDisplay == true)
+        {
+          settings.resetCount = 0;
+          recordSystemSettings(); //Record to NVM
+        }
+      }
+      else if (incoming == 9)
+      {
+        Serial.print(F("Enter GNSS Serial Timeout in milliseconds (0 to 1000): "));
+        uint16_t serialTimeoutGNSS = getNumber(menuTimeout); //Timeout after x seconds
+        if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
+        {
+          Serial.println(F("Error: Timeout is out of range"));
+        }
+        else
+        {
+          settings.serialTimeoutGNSS = serialTimeoutGNSS; //Recorded to NVM and file at main menu exit
+        }
+      }
+      else if (incoming == 10)
+      {
+        settings.enablePrintState ^= 1;
+      }
+      else
+        printUnknown(incoming);
     }
-    else
-      printUnknown(incoming);
+
+    //Handle character input
+    else if (digits == GMCS_CHARACTER)
+    {
+      if (incoming == 'e')
+      {
+        Serial.println("Erasing LittleFS and resetting");
+        LittleFS.format();
+        ESP.restart();
+      }
+      else if (incoming == 'r')
+      {
+        recordSystemSettings();
+
+        ESP.restart();
+      }
+      else if (incoming == 't')
+      {
+        requestChangeState(STATE_TEST); //We'll enter test mode once exiting all serial menus
+      }
+      else if (incoming == 'x')
+        break;
+      else
+        printUnknown(((uint8_t)incoming));
+    }
   }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars

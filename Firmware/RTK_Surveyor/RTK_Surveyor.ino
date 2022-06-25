@@ -493,7 +493,7 @@ void loop()
 
   updateSerial(); //Menu system via ESP32 USB connection
 
-  ntripClientUpdate(); //Move any available incoming NTRIP to ZED
+  wifiUpdate(); //Bring up WiFi, NTRIP connection and move data NTRIP <--> ZED
 
   updateLBand(); //Check if we've recently received PointPerfect corrections or not
 

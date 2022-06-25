@@ -410,6 +410,7 @@ typedef struct {
   //Debug settings
   bool enablePrintWifiIpAddress = false;
   bool enablePrintState = false;
+  bool enablePrintWifiState = false;
 } Settings;
 Settings settings;
 

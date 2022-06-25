@@ -17,6 +17,8 @@ The Debug menu enables the user to enable and disable various debug features. Th
 7. Throttle Bluetooth transmissions during SPP congestion
 8. Display reset counter
 9. Set GNSS serial timeout in seconds
+10. Periodically display WiFi IP Address
+11. Periodically display system states
 
 &nbsp;&nbsp;&nbsp;e. Erase LittleFS: Clear settings and profiles saved internally (not on microSD card)
 &nbsp;&nbsp;&nbsp;r. &nbsp;Reset the system

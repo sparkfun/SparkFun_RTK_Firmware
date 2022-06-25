@@ -228,6 +228,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", F("timeZoneHours"), settings.timeZoneHours);
   settingsFile->printf("%s=%d\n\r", F("timeZoneMinutes"), settings.timeZoneMinutes);
   settingsFile->printf("%s=%d\n\r", F("timeZoneSeconds"), settings.timeZoneSeconds);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintWifiIpAddress"), settings.enablePrintWifiIpAddress);
   settingsFile->printf("%s=%d\n\r", F("enablePrintState"), settings.enablePrintState);
   settingsFile->printf("%s=%d\n\r", F("enableMarksFile"), settings.enableMarksFile);
 
@@ -786,6 +787,8 @@ bool parseLine(char* str, Settings *settings)
     settings->timeZoneMinutes = d;
   else if (strcmp(settingName, "timeZoneSeconds") == 0)
     settings->timeZoneSeconds = d;
+  else if (strcmp(settingName, "enablePrintWifiIpAddress") == 0)
+    settings->enablePrintWifiIpAddress = d;
   else if (strcmp(settingName, "enablePrintState") == 0)
     settings->enablePrintState = d;
 

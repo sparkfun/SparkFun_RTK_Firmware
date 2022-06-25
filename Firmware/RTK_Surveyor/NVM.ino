@@ -232,6 +232,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", F("enablePrintState"), settings.enablePrintState);
   settingsFile->printf("%s=%d\n\r", F("enablePrintWifiState"), settings.enablePrintWifiState);
   settingsFile->printf("%s=%d\n\r", F("enablePrintNtripClientState"), settings.enablePrintNtripClientState);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintNtripServerState"), settings.enablePrintNtripServerState);
   settingsFile->printf("%s=%d\n\r", F("enableMarksFile"), settings.enableMarksFile);
 
   //Record constellation settings
@@ -797,6 +798,8 @@ bool parseLine(char* str, Settings *settings)
     settings->enablePrintWifiState = d;
   else if (strcmp(settingName, "enablePrintNtripClientState") == 0)
     settings->enablePrintNtripClientState = d;
+  else if (strcmp(settingName, "enablePrintNtripServerState") == 0)
+    settings->enablePrintNtripServerState = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

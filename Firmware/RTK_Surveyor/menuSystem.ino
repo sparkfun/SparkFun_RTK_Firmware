@@ -292,6 +292,9 @@ void menuDebug()
     Serial.print(F("13) Periodically print NTRIP client state: "));
     Serial.printf("%s\r\n", settings.enablePrintNtripClientState ? "Enabled" : "Disabled");
 
+    Serial.print(F("14) Periodically print NTRIP server state: "));
+    Serial.printf("%s\r\n", settings.enablePrintNtripServerState ? "Enabled" : "Disabled");
+
     Serial.println(F("t) Enter Test Screen"));
 
     Serial.println(F("e) Erase LittleFS"));
@@ -407,6 +410,10 @@ void menuDebug()
       else if (incoming == 13)
       {
         settings.enablePrintNtripClientState ^= 1;
+      }
+      else if (incoming == 14)
+      {
+        settings.enablePrintNtripServerState ^= 1;
       }
       else
         printUnknown(incoming);

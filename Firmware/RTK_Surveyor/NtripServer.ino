@@ -164,7 +164,8 @@ void ntripServerStart()
   ntripServerStop(true);
 
   //Start the NTRIP server if enabled
-  if (settings.enableNtripServer == true)
+  if ((settings.ntripServer_StartAtSurveyIn == true)
+    || (settings.enableNtripServer == true))
   {
     //Display the heap state
     reportHeapNow();

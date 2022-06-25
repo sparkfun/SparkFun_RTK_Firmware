@@ -250,11 +250,15 @@ void updateSystemState()
             {
               //Restart Bluetooth with 'Base' name
               //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
-              startBluetooth();
+              if (settings.ntripServer_StartAtSurveyIn)
+                ntripServerStart();
+              else
+                startBluetooth();
               changeState(STATE_BASE_TEMP_SETTLE);
             }
             else if (settings.fixedBase == true)
             {
+              ntripServerStart();
               changeState(STATE_BASE_FIXED_NOT_STARTED);
             }
           }
@@ -317,6 +321,13 @@ void updateSystemState()
 
             if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, HIGH); //Indicate survey complete
+
+            //Start the NTRIP server if requested
+            if ((settings.ntripServer_StartAtSurveyIn == false)
+              && (settings.enableNtripServer == true))
+            {
+              ntripServerStart();
+            }
 
             rtcmPacketsSent = 0; //Reset any previous number
             changeState(STATE_BASE_TEMP_TRANSMITTING);

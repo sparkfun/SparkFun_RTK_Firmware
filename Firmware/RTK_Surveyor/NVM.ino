@@ -188,6 +188,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", F("enableExternalHardwareEventLogging"), settings.enableExternalHardwareEventLogging);
   settingsFile->printf("%s=%s\n\r", F("profileName"), settings.profileName);
   settingsFile->printf("%s=%d\n\r", F("enableNtripServer"), settings.enableNtripServer);
+  settingsFile->printf("%s=%d\n\r", F("ntripServer_StartAtSurveyIn"), settings.ntripServer_StartAtSurveyIn);
   settingsFile->printf("%s=%s\n\r", F("ntripServer_CasterHost"), settings.ntripServer_CasterHost);
   settingsFile->printf("%s=%d\n\r", F("ntripServer_CasterPort"), settings.ntripServer_CasterPort);
   settingsFile->printf("%s=%s\n\r", F("ntripServer_CasterUser"), settings.ntripServer_CasterUser);
@@ -706,6 +707,8 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->profileName, settingValue);
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings->enableNtripServer = d;
+  else if (strcmp(settingName, "ntripServer_StartAtSurveyIn") == 0)
+    settings->ntripServer_StartAtSurveyIn = d;
   else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
     strcpy(settings->ntripServer_CasterHost, settingValue);
   else if (strcmp(settingName, "ntripServer_CasterPort") == 0)

@@ -80,6 +80,9 @@ void menuBase()
       Serial.println(settings.ntripServer_MountPointPW);
     }
 
+    Serial.print(F("12) Select survey-in radio: "));
+    Serial.printf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? F("WiFi") : F("Bluetooth"));
+
     Serial.println(F("x) Exit"));
 
     int incoming = getNumber(menuTimeoutExtended); //Timeout after x seconds
@@ -229,6 +232,11 @@ void menuBase()
     {
       Serial.printf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
       readLine(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW), menuTimeoutExtended);
+      restartBase = true;
+    }
+    else if (incoming == 12)
+    {
+      settings.ntripServer_StartAtSurveyIn ^= 1;
       restartBase = true;
     }
     else if (incoming == STATUS_PRESSED_X)

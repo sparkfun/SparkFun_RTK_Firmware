@@ -363,6 +363,7 @@ typedef struct {
 
   //NTRIP Server
   bool enableNtripServer = false;
+  bool ntripServer_StartAtSurveyIn = false; //true = Start Wifi instead of Bluetooth at Survey-In
   char ntripServer_CasterHost[50] = "rtk2go.com"; //It's free...
   uint16_t ntripServer_CasterPort = 2101;
   char ntripServer_CasterUser[50] = "test@test.com"; //Some free casters require auth. User must provide their own email address to use RTK2Go

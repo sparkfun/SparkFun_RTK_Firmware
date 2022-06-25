@@ -417,6 +417,7 @@ typedef struct {
   bool enablePrintState = false;
   bool enablePrintWifiState = false;
   bool enablePrintNtripClientState = false;
+  bool enablePrintNtripServerState = false;
 } Settings;
 Settings settings;
 

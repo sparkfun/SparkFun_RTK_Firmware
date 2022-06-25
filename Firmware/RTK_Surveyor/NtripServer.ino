@@ -56,6 +56,9 @@ NTRIP Server States:
 // Locals - compiled out
 //----------------------------------------
 
+//Last time the NTRIP server state was displayed
+static uint32_t ntripServerStateLastDisplayed = 0;
+
 //----------------------------------------
 // NTRIP Server Routines - compiled out
 //----------------------------------------
@@ -114,6 +117,13 @@ void ntripServerSetState(byte newState)
 void ntripServerUpdate()
 {
 #ifdef  COMPILE_WIFI
+  //Periodically display the NTRIP server state
+  if (settings.enablePrintNtripServerState && ((millis() - ntripServerStateLastDisplayed) > 15000))
+  {
+    ntripServerSetState (ntripServerState);
+    ntripServerStateLastDisplayed = millis();
+  }
+
   //Periodically display the IP address
   wifiPeriodicallyDisplayIpAddress();
 

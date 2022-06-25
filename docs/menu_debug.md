@@ -21,6 +21,7 @@ The Debug menu enables the user to enable and disable various debug features. Th
 11. Periodically display system states
 12. Periodically display WiFi states
 13. Periodically display NTRIP Client states
+14. Periodically display NTRIP Server states
 
 &nbsp;&nbsp;&nbsp;e. Erase LittleFS: Clear settings and profiles saved internally (not on microSD card)
 &nbsp;&nbsp;&nbsp;r. &nbsp;Reset the system

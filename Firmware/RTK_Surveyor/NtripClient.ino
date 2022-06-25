@@ -70,6 +70,9 @@ static int ntripClientConnectionAttempts;
 //  * Receive NTRIP data timeout
 static uint32_t ntripClientTimer;
 
+//Last time the NTRIP client state was displayed
+static uint32_t lastNtripClientState = 0;
+
 //----------------------------------------
 // NTRIP Client Routines - compiled out
 //----------------------------------------
@@ -187,6 +190,38 @@ void ntripClientSwitchToBluetooth()
 
   //Turn on Bluetooth with 'Rover' name
   startBluetooth();
+}
+
+//Update the state of the NTRIP client state machine
+void ntripClientSetState(byte newState)
+{
+  if (ntripClientState == newState)
+    Serial.print(F("*"));
+  ntripClientState = newState;
+  switch (newState)
+  {
+    default:
+      Serial.printf("Unknown NTRIP Client state: %d\r\n", newState);
+      break;
+    case NTRIP_CLIENT_OFF:
+      Serial.println(F("NTRIP_CLIENT_OFF"));
+      break;
+    case NTRIP_CLIENT_ON:
+      Serial.println(F("NTRIP_CLIENT_ON"));
+      break;
+    case NTRIP_CLIENT_WIFI_CONNECTING:
+      Serial.println(F("NTRIP_CLIENT_WIFI_CONNECTING"));
+      break;
+    case NTRIP_CLIENT_WIFI_CONNECTED:
+      Serial.println(F("NTRIP_CLIENT_WIFI_CONNECTED"));
+      break;
+    case NTRIP_CLIENT_CONNECTING:
+      Serial.println(F("NTRIP_CLIENT_CONNECTING"));
+      break;
+    case NTRIP_CLIENT_CONNECTED:
+      Serial.println(F("NTRIP_CLIENT_CONNECTED"));
+      break;
+  }
 }
 
 #endif  //COMPILE_WIFI
@@ -387,7 +422,7 @@ void ntripClientStart()
 
     //Startup WiFi and the NTRIP client
     if (ntripClient)
-      ntripClientState = NTRIP_CLIENT_ON;
+      ntripClientSetState(NTRIP_CLIENT_ON);
   }
 
   //Only fallback to Bluetooth once, then try WiFi again.  This enables changes
@@ -420,7 +455,7 @@ void ntripClientStop(bool done)
     wifiStop();
 
   //Determine the next NTRIP client state
-  ntripClientState = (ntripClient && (!done)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF;
+  ntripClientSetState((ntripClient && (!done)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
 #endif  //COMPILE_WIFI
 }
 
@@ -429,6 +464,13 @@ void ntripClientStop(bool done)
 void ntripClientUpdate()
 {
 #ifdef  COMPILE_WIFI
+  //Periodically display the NTRIP client state
+  if (settings.enablePrintNtripClientState && ((millis() - lastNtripClientState) > 15000))
+  {
+    ntripClientSetState (ntripClientState);
+    lastNtripClientState = millis();
+  }
+
   //Periodically display the IP address
   wifiPeriodicallyDisplayIpAddress();
 
@@ -441,7 +483,7 @@ void ntripClientUpdate()
     //Start WiFi
     case NTRIP_CLIENT_ON:
       wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
-      ntripClientState = NTRIP_CLIENT_WIFI_CONNECTING;
+      ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTING);
       break;
 
     case NTRIP_CLIENT_WIFI_CONNECTING:
@@ -458,7 +500,7 @@ void ntripClientUpdate()
       else
       {
         //WiFi connection established
-        ntripClientState = NTRIP_CLIENT_WIFI_CONNECTED;
+        ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTED);
       }
       break;
 
@@ -474,7 +516,7 @@ void ntripClientUpdate()
       }
       else
         //Socket opened to NTRIP system
-        ntripClientState = NTRIP_CLIENT_CONNECTING;
+        ntripClientSetState(NTRIP_CLIENT_CONNECTING);
       break;
 
     case NTRIP_CLIENT_CONNECTING:
@@ -514,7 +556,7 @@ void ntripClientUpdate()
           //We don't use a task because we use I2C hardware (and don't have a semphore).
           online.ntripClient = true;
           ntripClientAllowMoreConnections();
-          ntripClientState = NTRIP_CLIENT_CONNECTED;
+          ntripClientSetState(NTRIP_CLIENT_CONNECTED);
         }
       }
       break;

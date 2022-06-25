@@ -289,6 +289,9 @@ void menuDebug()
     Serial.print(F("12) Periodically print Wifi state: "));
     Serial.printf("%s\r\n", settings.enablePrintWifiState ? "Enabled" : "Disabled");
 
+    Serial.print(F("13) Periodically print NTRIP client state: "));
+    Serial.printf("%s\r\n", settings.enablePrintNtripClientState ? "Enabled" : "Disabled");
+
     Serial.println(F("t) Enter Test Screen"));
 
     Serial.println(F("e) Erase LittleFS"));
@@ -400,6 +403,10 @@ void menuDebug()
       else if (incoming == 12)
       {
         settings.enablePrintWifiState ^= 1;
+      }
+      else if (incoming == 13)
+      {
+        settings.enablePrintNtripClientState ^= 1;
       }
       else
         printUnknown(incoming);

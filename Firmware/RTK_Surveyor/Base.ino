@@ -14,6 +14,8 @@ bool configureUbloxModuleBase()
     return (true);
   }
 
+  firstPowerOn = false; //If we switch between rover/base in the future, force config of module.
+
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
   //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration

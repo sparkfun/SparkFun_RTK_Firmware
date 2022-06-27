@@ -139,6 +139,7 @@ void menuSystem()
 
     Serial.println(F("s) Scan I2C"));
     Serial.println(F("S) Verbose scan of I2C"));
+    Serial.println(F("t) Toggle pin"));
     Serial.println(F("r) Reset"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
@@ -213,7 +214,50 @@ void menuSystem()
         Serial.println();
       }
       Serial.println("Done");
-    }    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    }
+    else if (incoming == 't')
+    {
+      Serial.println("Select pin to toggle:");
+      Serial.println("0 - Stat LED");
+      Serial.println("21 - SDA");
+      Serial.println("22 - SCL");
+      Serial.println("23 - SD COPI");
+      Serial.println("13 - Power Control");
+      int pinNumber = getNumber(menuTimeout); //Timeout after x seconds
+
+      if (pinNumber >= 0 && pinNumber < STATUS_PRESSED_X)
+      {
+        Wire.end();
+        delete sd;
+
+        clearBuffer();
+        pinMode(pinNumber, OUTPUT);
+
+        Serial.printf("\n\rToggling pin %d. Press x to exit\n\r", pinNumber);
+
+        while (Serial.available() == 0)
+        {
+          digitalWrite(pinNumber, HIGH);
+          for (int x = 0 ; x < 100 ; x++)
+          {
+            delay(30);
+            if (Serial.available()) break;
+          }
+
+          digitalWrite(pinNumber, LOW);
+          for (int x = 0 ; x < 100 ; x++)
+          {
+            delay(30);
+            if (Serial.available()) break;
+          }
+        }
+        pinMode(pinNumber, INPUT);
+
+        Serial.println("Done");
+        ESP.restart();
+      }
+    }
+    else if (incoming == STATUS_GETBYTE_TIMEOUT)
     {
       //break;
     }

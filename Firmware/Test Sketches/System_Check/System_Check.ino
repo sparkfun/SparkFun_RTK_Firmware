@@ -197,17 +197,47 @@ bool i2cBorked = false;
 void setup()
 {
   Serial.begin(115200);
+  delay(250);
+
+//  int pinNumber1 = 21;
+//  int pinNumber2 = 22;
+//  clearBuffer();
+//  pinMode(pinNumber1, OUTPUT);
+//  pinMode(pinNumber2, OUTPUT);
+//
+//  Serial.printf("\n\rToggling pin %d. Press x to exit\n\r", pinNumber1);
+//  Serial.printf("\n\rToggling pin %d. Press x to exit\n\r", pinNumber2);
+//
+//  while (Serial.available() == 0)
+//  {
+//    digitalWrite(pinNumber1, HIGH);
+//    digitalWrite(pinNumber2, HIGH);
+//    for (int x = 0 ; x < 100 ; x++)
+//    {
+//      delay(30);
+//      if (Serial.available()) break;
+//    }
+//
+//    digitalWrite(pinNumber1, LOW);
+//    digitalWrite(pinNumber2, LOW);
+//    for (int x = 0 ; x < 100 ; x++)
+//    {
+//      delay(30);
+//      if (Serial.available()) break;
+//    }
+//  }
+//  pinMode(pinNumber1, INPUT);
+//  pinMode(pinNumber2, INPUT);
+//
+//  Serial.println("Done");
 
   Wire.begin();
 
-  unsigned long startTime = millis();
-
   //begin/end wire transmission should take a few ms. If it's taking longer,
   //it's likely the I2C bus being shorted or pulled in
-
+  unsigned long startTime = millis();
   Wire.beginTransmission(0x15); //Dummy address
   int endValue = Wire.endTransmission();
-
   if (millis() - startTime > 100) i2cBorked = true;
 
   beginBoard(); //Determine what hardware platform we are running on and check on button

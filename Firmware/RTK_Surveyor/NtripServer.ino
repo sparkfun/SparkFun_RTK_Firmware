@@ -261,6 +261,18 @@ void ntripServerUpdate()
 //        sdCardServerBegin(&server, true, true);
       }
       break;
+
+    //WiFi connected to an access point
+    case NTRIP_SERVER_WIFI_CONNECTED:
+      if (settings.enableNtripServer)
+      {
+        //No RTCM correction data sent yet
+        rtcmPacketsSent = 0;
+
+        //Open socket to NTRIP caster
+        ntripServerSetState(NTRIP_SERVER_WAIT_GNSS_DATA);
+      }
+      break;
   }
 #endif  //COMPILE_WIFI
 }

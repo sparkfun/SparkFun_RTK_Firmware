@@ -120,13 +120,9 @@ bool configureUbloxModule()
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {
-    if (i2cGNSS.getSurveyInActive(100) == true)
-    {
-      log_d("Disabling survey");
-      response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-      if (response == false)
-        Serial.println(F("Disable Survey failed"));
-    }
+    response = i2cGNSS.setSurveyMode(0, 0, 0); //Disable Survey-In or Fixed Mode
+    if (response == false)
+      Serial.println(F("Disable TMODE3 failed"));
   }
 
 #define OUTPUT_SETTING 14

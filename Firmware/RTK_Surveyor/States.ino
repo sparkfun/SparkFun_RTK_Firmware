@@ -211,43 +211,6 @@ void updateSystemState()
                         |             "Xmitting"            |
                         |            "RTCM: 2145"           |
                         '-----------------------------------'
-                                          |
-                                          | NTRIP enabled = true
-                                          V
-                        .-----------------------------------.
-                        |    STATE_BASE_TEMP_WIFI_STARTED   |
-                        |         Blinking WiFi Icon        |
-                        |             "Xmitting"            |
-                        |              "RTCM: 0"            |
-                        '-----------------------------------'
-                                          |
-                                          | WiFi connected = true
-                                          | radioState = WIFI_CONNECTED
-                                          V
-                         .-----------------------------------.
-                         |   STATE_BASE_TEMP_WIFI_CONNECTED  |
-        .--------------->|          Solid WiFi Icon          |
-        |                |             "Xmitting"            |
-        |                |            "RTCM: 2145"           |
-        |                '-----------------------------------'
-        |                                  |
-        |                                  | Caster enabled
-        |                                  V
-        |                .-----------------------------------.
-        |                |   STATE_BASE_TEMP_CASTER_STARTED  |
-        |  Caster failed |          Solid WiFi Icon          |
-        +<---------------|            "Connecting"           |
-        ^  Authorization |            "RTCM: 2145"           |
-        |         failed '-----------------------------------'
-        |                                  |
-        |                                  | Caster connected
-        |                                  V
-        |                .-----------------------------------.
-        |  Caster failed |  STATE_BASE_TEMP_CASTER_CONNECTED |
-        '----------------|          Solid WiFi Icon          |
-                         |             "Casting"             |
-                         |            "RTCM: 2145"           |
-                         '-----------------------------------'
 
       */
 
@@ -287,11 +250,15 @@ void updateSystemState()
             {
               //Restart Bluetooth with 'Base' name
               //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
-              startBluetooth();
+              if (settings.ntripServer_StartAtSurveyIn)
+                ntripServerStart();
+              else
+                startBluetooth();
               changeState(STATE_BASE_TEMP_SETTLE);
             }
             else if (settings.fixedBase == true)
             {
+              ntripServerStart();
               changeState(STATE_BASE_FIXED_NOT_STARTED);
             }
           }
@@ -355,6 +322,13 @@ void updateSystemState()
             if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, HIGH); //Indicate survey complete
 
+            //Start the NTRIP server if requested
+            if ((settings.ntripServer_StartAtSurveyIn == false)
+              && (settings.enableNtripServer == true))
+            {
+              ntripServerStart();
+            }
+
             rtcmPacketsSent = 0; //Reset any previous number
             changeState(STATE_BASE_TEMP_TRANSMITTING);
           }
@@ -383,149 +357,6 @@ void updateSystemState()
       //Leave base temp transmitting if user has enabled WiFi/NTRIP
       case (STATE_BASE_TEMP_TRANSMITTING):
         {
-          if (settings.enableNtripServer == true)
-          {
-            //Turn off Bluetooth and turn on WiFi
-            wifiStart(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
-
-            changeState(STATE_BASE_TEMP_WIFI_STARTED);
-          }
-        }
-        break;
-
-      //Check to see if we have connected over WiFi
-      case (STATE_BASE_TEMP_WIFI_STARTED):
-        {
-#ifdef COMPILE_WIFI
-          byte wifiStatus = wifiGetStatus();
-          if (wifiStatus == WL_CONNECTED)
-          {
-            wifiState = WIFI_CONNECTED;
-
-            changeState(STATE_BASE_TEMP_WIFI_CONNECTED);
-          }
-          else
-          {
-            Serial.print(F("WiFi Status: "));
-            switch (wifiStatus) {
-              case WL_NO_SSID_AVAIL:
-                Serial.printf("SSID '%s' not detected\n\r", settings.ntripServer_wifiSSID);
-                break;
-              case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
-              case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
-              case WL_SCAN_COMPLETED: Serial.println(F("WL_SCAN_COMPLETED")); break;
-              case WL_CONNECTED: Serial.println(F("WL_CONNECTED")); break;
-              case WL_CONNECT_FAILED: Serial.println(F("WL_CONNECT_FAILED")); break;
-              case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
-              case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
-            }
-          }
-#endif
-        }
-        break;
-
-      case (STATE_BASE_TEMP_WIFI_CONNECTED):
-        {
-          if (productVariant == RTK_SURVEYOR)
-          {
-            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-          }
-
-          if (settings.enableNtripServer == true)
-          {
-            //Open connection to caster service
-#ifdef COMPILE_WIFI
-            if (ntripServer.connect(settings.ntripServer_CasterHost, settings.ntripServer_CasterPort) == true) //Attempt connection
-            {
-              changeState(STATE_BASE_TEMP_CASTER_STARTED);
-
-              Serial.printf("Connected to %s:%d\n\r", settings.ntripServer_CasterHost, settings.ntripServer_CasterPort);
-
-              const int SERVER_BUFFER_SIZE = 512;
-              char serverBuffer[SERVER_BUFFER_SIZE];
-
-              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
-                       settings.ntripServer_MountPointPW, settings.ntripServer_MountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-
-              //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
-              ntripServer.write(serverBuffer, strlen(serverBuffer));
-
-              casterResponseWaitStartTime = millis();
-            }
-#endif
-          }
-        }
-        break;
-
-      //Wait for response for caster service and make sure it's valid
-      case (STATE_BASE_TEMP_CASTER_STARTED):
-        {
-#ifdef COMPILE_WIFI
-          //Check if caster service responded
-          if (ntripServer.available() == 0)
-          {
-            if (millis() - casterResponseWaitStartTime > 5000)
-            {
-              Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
-              ntripServer.stop();
-
-              changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to previous state
-            }
-          }
-          else
-          {
-            //Check reply
-            bool connectionSuccess = false;
-            char response[512];
-            int responseSpot = 0;
-            while (ntripServer.available())
-            {
-              response[responseSpot++] = ntripServer.read();
-              if (strstr(response, "200") != NULL) //Look for 'ICY 200 OK'
-                connectionSuccess = true;
-              if (responseSpot == 512 - 1) break;
-            }
-            response[responseSpot] = '\0';
-            //Serial.printf("Caster responded with: %s\n\r", response);
-
-            if (connectionSuccess == false)
-            {
-              Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
-              changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to previous state
-            }
-            else
-            {
-              //We're connected!
-              //Serial.println(F("Connected to caster"));
-
-              //Reset flags
-              lastServerReport_ms = millis();
-              lastServerSent_ms = millis();
-              casterBytesSent = 0;
-
-              rtcmPacketsSent = 0; //Reset any previous number
-
-              changeState(STATE_BASE_TEMP_CASTER_CONNECTED);
-            }
-          }
-#endif
-        }
-        break;
-
-      //Monitor connected state
-      case (STATE_BASE_TEMP_CASTER_CONNECTED):
-        {
-          cyclePositionLEDs();
-
-#ifdef COMPILE_WIFI
-          if (ntripServer.connected() == false)
-          {
-            Serial.println(F("Caster no longer connected. Reconnecting..."));
-            changeState(STATE_BASE_TEMP_WIFI_CONNECTED); //Return to 2 earlier states to try to reconnect
-          }
-#endif
         }
         break;
 
@@ -543,45 +374,6 @@ void updateSystemState()
                         |       Castle Base Icon solid      |
                         |            "Xmitting"             |
                         |            "RTCM: 0"              |
-                        '-----------------------------------'
-                                          |
-                                          | NTRIP enabled = true
-                                          | Stop Bluetooth
-                                          | Start WiFi
-                                          V
-                        .-----------------------------------.
-                        |   STATE_BASE_FIXED_WIFI_STARTED   |
-                        |         Blinking WiFi Icon        |
-                        |             "Xmitting"            |
-                        |             "RTCM: 0"             |
-                        '-----------------------------------'
-                                          |
-                                          | WiFi connected
-                                          | radioState = WIFI_CONNECTED
-                                          V
-                        .-----------------------------------.
-                        |  STATE_BASE_FIXED_WIFI_CONNECTED  |
-           .----------->|          Solid WiFi Icon          |
-           |            |             "Xmitting"            |
-           |            |            "RTCM: 2145"           |
-           |            '-----------------------------------'
-           |                              |
-           |                              | Caster enabled
-           |                              V
-           |            .-----------------------------------.
-           |     Caster |  STATE_BASE_FIXED_CASTER_STARTED  |
-           | Connection |          Solid WiFi Icon          |
-           |     Failed |             "Xmitting"            |
-           +------------|            "RTCM: 2145"           |
-           ^     Failed '-----------------------------------'
-           |  Authroization               |
-           |                              | Caster connected
-           |                              V
-           |            .-----------------------------------.
-           |     Caster | STATE_BASE_FIXED_CASTER_CONNECTED |
-           | Connection |          Solid WiFi Icon          |
-           |     Failed |             "Casting"             |
-           '------------|            "RTCM: 2145"           |
                         '-----------------------------------'
 
       */
@@ -611,150 +403,6 @@ void updateSystemState()
       //Leave base fixed transmitting if user has enabled WiFi/NTRIP
       case (STATE_BASE_FIXED_TRANSMITTING):
         {
-          if (settings.enableNtripServer == true)
-          {
-            //Turn off Bluetooth and turn on WiFi
-            wifiStart(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
-
-            rtcmPacketsSent = 0; //Reset any previous number
-
-            changeState(STATE_BASE_FIXED_WIFI_STARTED);
-          }
-        }
-        break;
-
-      //Check to see if we have connected over WiFi
-      case (STATE_BASE_FIXED_WIFI_STARTED):
-        {
-#ifdef COMPILE_WIFI
-          byte wifiStatus = wifiGetStatus();
-          if (wifiStatus == WL_CONNECTED)
-          {
-            wifiState = WIFI_CONNECTED;
-
-            changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
-          }
-          else
-          {
-            Serial.print(F("WiFi Status: "));
-            switch (wifiStatus) {
-              case WL_NO_SSID_AVAIL:
-                Serial.printf("SSID '%s' not detected\n\r", settings.ntripServer_wifiSSID);
-                break;
-              case WL_NO_SHIELD: Serial.println(F("WL_NO_SHIELD")); break;
-              case WL_IDLE_STATUS: Serial.println(F("WL_IDLE_STATUS")); break;
-              case WL_SCAN_COMPLETED: Serial.println(F("WL_SCAN_COMPLETED")); break;
-              case WL_CONNECTED: Serial.println(F("WL_CONNECTED")); break;
-              case WL_CONNECT_FAILED: Serial.println(F("WL_CONNECT_FAILED")); break;
-              case WL_CONNECTION_LOST: Serial.println(F("WL_CONNECTION_LOST")); break;
-              case WL_DISCONNECTED: Serial.println(F("WL_DISCONNECTED")); break;
-            }
-          }
-#endif
-        }
-        break;
-
-      case (STATE_BASE_FIXED_WIFI_CONNECTED):
-        {
-          if (productVariant == RTK_SURVEYOR)
-          {
-            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-          }
-          if (settings.enableNtripServer == true)
-          {
-#ifdef COMPILE_WIFI
-            //Open connection to caster service
-            if (ntripServer.connect(settings.ntripServer_CasterHost, settings.ntripServer_CasterPort) == true) //Attempt connection
-            {
-              changeState(STATE_BASE_FIXED_CASTER_STARTED);
-
-              Serial.printf("Connected to %s:%d\n\r", settings.ntripServer_CasterHost, settings.ntripServer_CasterPort);
-
-              const int SERVER_BUFFER_SIZE  = 512;
-              char serverBuffer[SERVER_BUFFER_SIZE];
-
-              snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
-                       settings.ntripServer_MountPointPW, settings.ntripServer_MountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-
-              //Serial.printf("Sending credentials:\n%s\n\r", serverBuffer);
-              ntripServer.write(serverBuffer, strlen(serverBuffer));
-
-              casterResponseWaitStartTime = millis();
-            }
-#endif
-          }
-        }
-        break;
-
-      //Wait for response for caster service and make sure it's valid
-      case (STATE_BASE_FIXED_CASTER_STARTED):
-        {
-#ifdef COMPILE_WIFI
-          //Check if caster service responded
-          if (ntripServer.available() < 10)
-          {
-            if (millis() - casterResponseWaitStartTime > 5000)
-            {
-              Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
-              ntripServer.stop();
-              delay(10); //Yield to RTOS
-
-              changeState(STATE_BASE_FIXED_WIFI_CONNECTED); //Return to previous state
-            }
-          }
-          else
-          {
-            //Check reply
-            bool connectionSuccess = false;
-            char response[512];
-            int responseSpot = 0;
-            while (ntripServer.available())
-            {
-              response[responseSpot++] = ntripServer.read();
-              if (strstr(response, "200") != NULL) //Look for 'ICY 200 OK'
-                connectionSuccess = true;
-              if (responseSpot == 512 - 1) break;
-            }
-            response[responseSpot] = '\0';
-            //Serial.printf("Caster responded with: %s\n\r", response);
-
-            if (connectionSuccess == false)
-            {
-              Serial.printf("Caster responded with bad news: %s. Are you sure your caster credentials are correct?", response);
-              changeState(STATE_BASE_FIXED_WIFI_CONNECTED); //Return to previous state
-            }
-            else
-            {
-              //We're connected!
-              //Serial.println(F("Connected to caster"));
-
-              //Reset flags
-              lastServerReport_ms = millis();
-              lastServerSent_ms = millis();
-              casterBytesSent = 0;
-
-              rtcmPacketsSent = 0; //Reset any previous number
-
-              changeState(STATE_BASE_FIXED_CASTER_CONNECTED);
-            }
-          }
-#endif
-        }
-        break;
-
-      //Monitor connected state
-      case (STATE_BASE_FIXED_CASTER_CONNECTED):
-        {
-          cyclePositionLEDs();
-
-#ifdef COMPILE_WIFI
-          if (ntripServer.connected() == false)
-          {
-            changeState(STATE_BASE_FIXED_WIFI_CONNECTED);
-          }
-#endif
         }
         break;
 
@@ -1334,35 +982,11 @@ void changeState(SystemState newState)
     case (STATE_BASE_TEMP_TRANSMITTING):
       Serial.print(F("State: Base-Temp - Transmitting"));
       break;
-    case (STATE_BASE_TEMP_WIFI_STARTED):
-      Serial.print(F("State: Base-Temp - WiFi Started"));
-      break;
-    case (STATE_BASE_TEMP_WIFI_CONNECTED):
-      Serial.print(F("State: Base-Temp - WiFi Connected"));
-      break;
-    case (STATE_BASE_TEMP_CASTER_STARTED):
-      Serial.print(F("State: Base-Temp - Caster Started"));
-      break;
-    case (STATE_BASE_TEMP_CASTER_CONNECTED):
-      Serial.print(F("State: Base-Temp - Caster Connected"));
-      break;
     case (STATE_BASE_FIXED_NOT_STARTED):
       Serial.print(F("State: Base-Fixed - Not Started"));
       break;
     case (STATE_BASE_FIXED_TRANSMITTING):
       Serial.print(F("State: Base-Fixed - Transmitting"));
-      break;
-    case (STATE_BASE_FIXED_WIFI_STARTED):
-      Serial.print(F("State: Base-Fixed - WiFi Started"));
-      break;
-    case (STATE_BASE_FIXED_WIFI_CONNECTED):
-      Serial.print(F("State: Base-Fixed - WiFi Connected"));
-      break;
-    case (STATE_BASE_FIXED_CASTER_STARTED):
-      Serial.print(F("State: Base-Fixed - Caster Started"));
-      break;
-    case (STATE_BASE_FIXED_CASTER_CONNECTED):
-      Serial.print(F("State: Base-Fixed - Caster Connected"));
       break;
     case (STATE_BUBBLE_LEVEL):
       Serial.print(F("State: Bubble level"));

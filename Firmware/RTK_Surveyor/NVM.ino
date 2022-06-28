@@ -188,6 +188,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", F("enableExternalHardwareEventLogging"), settings.enableExternalHardwareEventLogging);
   settingsFile->printf("%s=%s\n\r", F("profileName"), settings.profileName);
   settingsFile->printf("%s=%d\n\r", F("enableNtripServer"), settings.enableNtripServer);
+  settingsFile->printf("%s=%d\n\r", F("ntripServer_StartAtSurveyIn"), settings.ntripServer_StartAtSurveyIn);
   settingsFile->printf("%s=%s\n\r", F("ntripServer_CasterHost"), settings.ntripServer_CasterHost);
   settingsFile->printf("%s=%d\n\r", F("ntripServer_CasterPort"), settings.ntripServer_CasterPort);
   settingsFile->printf("%s=%s\n\r", F("ntripServer_CasterUser"), settings.ntripServer_CasterUser);
@@ -232,6 +233,8 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", F("enablePrintState"), settings.enablePrintState);
   settingsFile->printf("%s=%d\n\r", F("enablePrintWifiState"), settings.enablePrintWifiState);
   settingsFile->printf("%s=%d\n\r", F("enablePrintNtripClientState"), settings.enablePrintNtripClientState);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintNtripServerState"), settings.enablePrintNtripServerState);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintNtripServerRtcm"), settings.enablePrintNtripServerRtcm);
   settingsFile->printf("%s=%d\n\r", F("enableMarksFile"), settings.enableMarksFile);
 
   //Record constellation settings
@@ -705,6 +708,8 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->profileName, settingValue);
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings->enableNtripServer = d;
+  else if (strcmp(settingName, "ntripServer_StartAtSurveyIn") == 0)
+    settings->ntripServer_StartAtSurveyIn = d;
   else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
     strcpy(settings->ntripServer_CasterHost, settingValue);
   else if (strcmp(settingName, "ntripServer_CasterPort") == 0)
@@ -797,6 +802,10 @@ bool parseLine(char* str, Settings *settings)
     settings->enablePrintWifiState = d;
   else if (strcmp(settingName, "enablePrintNtripClientState") == 0)
     settings->enablePrintNtripClientState = d;
+  else if (strcmp(settingName, "enablePrintNtripServerState") == 0)
+    settings->enablePrintNtripServerState = d;
+  else if (strcmp(settingName, "enablePrintNtripServerRtcm") == 0)
+    settings->enablePrintNtripServerRtcm = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

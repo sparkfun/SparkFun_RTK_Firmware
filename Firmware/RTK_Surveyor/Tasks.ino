@@ -16,6 +16,7 @@ void F9PSerialWriteTask(void *e)
         //Pass bytes to GNSS receiver
         auto s = SerialBT.readBytes(wBuffer, sizeof(wBuffer));
         serialGNSS.write(wBuffer, s);
+        online.rxRtcmCorrectionData = true;
 
         if (settings.enableTaskReports == true)
           Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
@@ -240,16 +241,8 @@ void ButtonCheckTask(void *e)
           case STATE_BASE_TEMP_SETTLE:
           case STATE_BASE_TEMP_SURVEY_STARTED:
           case STATE_BASE_TEMP_TRANSMITTING:
-          case STATE_BASE_TEMP_WIFI_STARTED:
-          case STATE_BASE_TEMP_WIFI_CONNECTED:
-          case STATE_BASE_TEMP_CASTER_STARTED:
-          case STATE_BASE_TEMP_CASTER_CONNECTED:
           case STATE_BASE_FIXED_NOT_STARTED:
           case STATE_BASE_FIXED_TRANSMITTING:
-          case STATE_BASE_FIXED_WIFI_STARTED:
-          case STATE_BASE_FIXED_WIFI_CONNECTED:
-          case STATE_BASE_FIXED_CASTER_STARTED:
-          case STATE_BASE_FIXED_CASTER_CONNECTED:
           case STATE_BUBBLE_LEVEL:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
@@ -377,16 +370,8 @@ void ButtonCheckTask(void *e)
           case STATE_BASE_TEMP_SETTLE:
           case STATE_BASE_TEMP_SURVEY_STARTED:
           case STATE_BASE_TEMP_TRANSMITTING:
-          case STATE_BASE_TEMP_WIFI_STARTED:
-          case STATE_BASE_TEMP_WIFI_CONNECTED:
-          case STATE_BASE_TEMP_CASTER_STARTED:
-          case STATE_BASE_TEMP_CASTER_CONNECTED:
           case STATE_BASE_FIXED_NOT_STARTED:
           case STATE_BASE_FIXED_TRANSMITTING:
-          case STATE_BASE_FIXED_WIFI_STARTED:
-          case STATE_BASE_FIXED_WIFI_CONNECTED:
-          case STATE_BASE_FIXED_CASTER_STARTED:
-          case STATE_BASE_FIXED_CASTER_CONNECTED:
           case STATE_BUBBLE_LEVEL:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:

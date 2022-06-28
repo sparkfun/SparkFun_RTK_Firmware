@@ -5,33 +5,34 @@
 //Left top
 #define ICON_WIFI_SYMBOL_LEFT                1  //  0,  0
 #define ICON_DOWN_ARROW                      2  // 16,  0
-#define ICON_BT_SYMBOL                       4  //  4,  0
-#define ICON_MAC_ADDRESS                     8  //  0,  3
+#define ICON_UP_ARROW                        4  // 16,  0
+#define ICON_BT_SYMBOL                       8  //  4,  0
+#define ICON_MAC_ADDRESS                  0x10  //  0,  3
 
 //Center top
-#define ICON_WIFI_SYMBOL_CENTER           0x10  // center, 0
-#define ICON_BASE_TEMPORARY               0x20  // 27,  0
-#define ICON_BASE_FIXED                   0x40  // 27,  0
-#define ICON_ROVER_FUSION                 0x80  // 27,  2
-#define ICON_ROVER_FUSION_EMPTY          0x100  // 27,  2
-#define ICON_DYNAMIC_MODEL               0x200  // 27,  0
+#define ICON_WIFI_SYMBOL_CENTER           0x20  // center, 0
+#define ICON_BASE_TEMPORARY               0x40  // 27,  0
+#define ICON_BASE_FIXED                   0x80  // 27,  0
+#define ICON_ROVER_FUSION                0x100  // 27,  2
+#define ICON_ROVER_FUSION_EMPTY          0x200  // 27,  2
+#define ICON_DYNAMIC_MODEL               0x400  // 27,  0
 
 //Right top
-#define ICON_BATTERY                     0x400  // 45,  0
+#define ICON_BATTERY                     0x800  // 45,  0
 
 //Left center
-#define ICON_CROSS_HAIR                  0x800  //  0, 18
-#define ICON_CROSS_HAIR_DUAL            0x1000  //  0, 18
+#define ICON_CROSS_HAIR                 0x1000  //  0, 18
+#define ICON_CROSS_HAIR_DUAL            0x2000  //  0, 18
 
 //Right center
-#define ICON_HORIZONTAL_ACCURACY        0x2000  // 16, 20
+#define ICON_HORIZONTAL_ACCURACY        0x4000  // 16, 20
 
 //Left bottom
-#define ICON_SIV_ANTENNA                0x4000  //  2, 35
-#define ICON_SIV_ANTENNA_LBAND          0x8000  //  2, 35
+#define ICON_SIV_ANTENNA                0x8000  //  2, 35
+#define ICON_SIV_ANTENNA_LBAND         0x10000  //  2, 35
 
 //Right bottom
-#define ICON_LOGGING                   0x10000  // right, bottom
+#define ICON_LOGGING                   0x20000  // right, bottom
 
 //----------------------------------------
 // Locals
@@ -226,34 +227,7 @@ void updateDisplay()
                 | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_TEMP_WIFI_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_TEMP_WIFI_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_TEMP_CASTER_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY;       //Top right
-          paintConnectingToNtripCaster();
-          break;
-        case (STATE_BASE_TEMP_CASTER_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintCastingRTCM();
+          paintRTCM();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
           icons = paintWirelessIcon() //Top left
@@ -264,34 +238,7 @@ void updateDisplay()
                 | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_FIXED_WIFI_STARTED):
-           icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-         paintXmittingRTCM();
-          break;
-        case (STATE_BASE_FIXED_WIFI_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_FIXED_CASTER_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY;       //Top right
-          paintConnectingToNtripCaster();
-          break;
-        case (STATE_BASE_FIXED_CASTER_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintCastingRTCM();
+          paintRTCM();
           break;
         case (STATE_BUBBLE_LEVEL):
           paintBubbleLevel();
@@ -382,10 +329,27 @@ void updateDisplay()
       {
         displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
         if (icons & ICON_DOWN_ARROW)
+        {
           displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+          online.rxRtcmCorrectionData = false;
+        }
+        else if (icons & ICON_UP_ARROW)
+          displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
       }
       else if (icons & ICON_BT_SYMBOL)
+      {
         displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
+        if (btState == BT_CONNECTED)
+        {
+          if (icons & ICON_DOWN_ARROW)
+          {
+            displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+            online.rxRtcmCorrectionData = false;
+          }
+          else if (icons & ICON_UP_ARROW)
+            displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
+        }
+      }
       else if (icons & ICON_MAC_ADDRESS)
       {
         char macAddress[5];
@@ -614,7 +578,13 @@ uint32_t paintWirelessIcon()
   {
     //Bluetooth icon if paired, or Bluetooth MAC address if not paired
     if (btState == BT_CONNECTED)
+    {
       icons = ICON_BT_SYMBOL;
+      if ((systemState <= STATE_BASE_NOT_STARTED) && online.rxRtcmCorrectionData)
+        icons |= ICON_DOWN_ARROW;
+      else if (systemState <= STATE_BUBBLE_LEVEL)
+        icons |= ICON_UP_ARROW;
+    }
     else if (wifiState == WIFI_NOTCONNECTED)
     {
       //Blink WiFi icon
@@ -627,8 +597,10 @@ uint32_t paintWirelessIcon()
       icons = ICON_WIFI_SYMBOL_LEFT;
 
       //If we are connected to NTRIP Client, show download arrow
-      if (online.ntripClient == true)
+      if ((online.ntripClient == true) && online.rxRtcmCorrectionData)
         icons |= ICON_DOWN_ARROW;
+      else if (online.ntripServer == true)
+        icons |= ICON_UP_ARROW;
     }
     else
       icons = ICON_MAC_ADDRESS;
@@ -941,38 +913,22 @@ void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8
   }
 }
 
-//Show transmission of RTCM packets
-void paintXmittingRTCM()
+//Show transmission of RTCM correction data packets to NTRIP caster
+void paintRTCM()
 {
-  int textX = 1;
   int textY = 17;
   int textKerning = 8;
   oled.setFont(QW_FONT_8X16);
-  printTextwithKerning("Xmitting", textX, textY, textKerning);
-
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
-
-  if (rtcmPacketsSent < 100)
-    oled.setCursor(30, 36); //x, y - Give space for two digits
+  if (btState != BT_OFF)
+  {
+    int textX = 1;
+    printTextwithKerning("Xmitting", textX, textY, textKerning);  //via Bluetooth
+  }
   else
-    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
-
-  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
-
-  paintResets();
-}
-
-//Show transmission of RTCM packets to caster service
-void paintCastingRTCM()
-{
-  int textX = 4;
-  int textY = 17;
-  int textKerning = 8;
-  oled.setFont(QW_FONT_8X16);
-  printTextwithKerning("Casting", textX, textY, textKerning);
+  {
+    int textX = 4;
+    printTextwithKerning("Casting", textX, textY, textKerning);   //via WiFi
+  }
 
   oled.setCursor(0, 39); //x, y
   oled.setFont(QW_FONT_5X7);
@@ -1971,10 +1927,10 @@ void paintKeyWiFiFail(uint16_t displayTime)
   }
 }
 
-void paintNClientWiFiFail(uint16_t displayTime)
+void paintNtripWiFiFail(uint16_t displayTime, bool Client)
 {
   //NTRIP
-  //Client
+  //Client or Server
   //Failed
   //No WiFi
 
@@ -1988,15 +1944,16 @@ void paintNClientWiFiFail(uint16_t displayTime)
     int y = 0;
     int fontHeight = 13;
     int textX;
+    const char * string = Client ? "Client" : "Server";
 
     textX = x - (oled.getStringWidth("NTRIP") / 2); //Starting point of text
     oled.setCursor(textX, y);
     oled.print("NTRIP");
 
     y += fontHeight;
-    textX = x - (oled.getStringWidth("Client") / 2);
+    textX = x - (oled.getStringWidth(string) / 2);
     oled.setCursor(textX, y);
-    oled.print("Client");
+    oled.print(string);
 
     y += fontHeight;
     textX = x - (oled.getStringWidth("Failed") / 2);

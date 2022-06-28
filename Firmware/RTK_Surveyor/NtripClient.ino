@@ -282,6 +282,8 @@ void ntripClientStop(bool done)
 
   //Determine the next NTRIP client state
   ntripClientSetState((ntripClient && (!done)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
+  online.ntripClient = false;
+  online.rxRtcmCorrectionData = false;
 #endif  //COMPILE_WIFI
 }
 
@@ -320,7 +322,7 @@ void ntripClientUpdate()
           //Assume AP weak signal, the AP is unable to respond successfully
           if (ntripClientConnectLimitReached())
             //Display the WiFi failure
-            paintNClientWiFiFail(4000);
+            paintNtripWiFiFail(4000, true);
         }
       }
       else
@@ -427,6 +429,7 @@ void ntripClientUpdate()
 
           //Push RTCM to GNSS module over I2C
           i2cGNSS.pushRawData(rtcmData, rtcmCount);
+          online.rxRtcmCorrectionData = true;
 
           //log_d("NTRIP Client pushed %d RTCM bytes to ZED", rtcmCount);
         }

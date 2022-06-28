@@ -80,6 +80,9 @@ void menuBase()
       Serial.println(settings.ntripServer_MountPointPW);
     }
 
+    Serial.print(F("12) Select survey-in radio: "));
+    Serial.printf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? F("WiFi") : F("Bluetooth"));
+
     Serial.println(F("x) Exit"));
 
     int incoming = getNumber(menuTimeoutExtended); //Timeout after x seconds
@@ -87,6 +90,7 @@ void menuBase()
     if (incoming == 1)
     {
       settings.fixedBase ^= 1;
+      restartBase = true;
     }
     else if (settings.fixedBase == true && incoming == 2)
     {
@@ -187,21 +191,25 @@ void menuBase()
     else if (incoming == 5)
     {
       settings.enableNtripServer ^= 1;
+      restartBase = true;
     }
     else if (incoming == 6 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter local WiFi SSID: "));
       readLine(settings.ntripServer_wifiSSID, sizeof(settings.ntripServer_wifiSSID), menuTimeoutExtended);
+      restartBase = true;
     }
     else if (incoming == 7 && settings.enableNtripServer == true)
     {
       Serial.printf("Enter password for WiFi network %s: ", settings.ntripServer_wifiSSID);
       readLine(settings.ntripServer_wifiPW, sizeof(settings.ntripServer_wifiPW), menuTimeoutExtended);
+      restartBase = true;
     }
     else if (incoming == 8 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Caster Address: "));
       readLine(settings.ntripServer_CasterHost, sizeof(settings.ntripServer_CasterHost), menuTimeoutExtended);
+      restartBase = true;
     }
     else if (incoming == 9 && settings.enableNtripServer == true)
     {
@@ -212,16 +220,24 @@ void menuBase()
         Serial.println(F("Error: Caster Port out of range"));
       else
         settings.ntripServer_CasterPort = ntripServer_CasterPort; //Recorded to NVM and file at main menu exit
+      restartBase = true;
     }
     else if (incoming == 10 && settings.enableNtripServer == true)
     {
       Serial.print(F("Enter new Mount Point: "));
       readLine(settings.ntripServer_MountPoint, sizeof(settings.ntripServer_MountPoint), menuTimeoutExtended);
+      restartBase = true;
     }
     else if (incoming == 11 && settings.enableNtripServer == true)
     {
       Serial.printf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
       readLine(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW), menuTimeoutExtended);
+      restartBase = true;
+    }
+    else if (incoming == 12)
+    {
+      settings.ntripServer_StartAtSurveyIn ^= 1;
+      restartBase = true;
     }
     else if (incoming == STATUS_PRESSED_X)
       break;

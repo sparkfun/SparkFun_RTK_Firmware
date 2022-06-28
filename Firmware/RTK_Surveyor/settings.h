@@ -11,16 +11,8 @@ typedef enum
   STATE_BASE_TEMP_SETTLE, //User has indicated base, but current pos accuracy is too low
   STATE_BASE_TEMP_SURVEY_STARTED,
   STATE_BASE_TEMP_TRANSMITTING,
-  STATE_BASE_TEMP_WIFI_STARTED,
-  STATE_BASE_TEMP_WIFI_CONNECTED,
-  STATE_BASE_TEMP_CASTER_STARTED,
-  STATE_BASE_TEMP_CASTER_CONNECTED,
   STATE_BASE_FIXED_NOT_STARTED,
   STATE_BASE_FIXED_TRANSMITTING,
-  STATE_BASE_FIXED_WIFI_STARTED,
-  STATE_BASE_FIXED_WIFI_CONNECTED,
-  STATE_BASE_FIXED_CASTER_STARTED,
-  STATE_BASE_FIXED_CASTER_CONNECTED,
   STATE_BUBBLE_LEVEL,
   STATE_MARK_EVENT,
   STATE_DISPLAY_SETUP,
@@ -132,6 +124,33 @@ enum NTRIPClientState
   NTRIP_CLIENT_CONNECTED,       //Connected to the NTRIP caster
 };
 volatile byte ntripClientState = NTRIP_CLIENT_OFF;
+
+enum NTRIPServerState
+{
+  NTRIP_SERVER_OFF = 0,         //Using Bluetooth or NTRIP client
+  NTRIP_SERVER_ON,              //WIFI_ON state
+  NTRIP_SERVER_WIFI_CONNECTING, //Connecting to WiFi access point
+  NTRIP_SERVER_WIFI_CONNECTED,  //WiFi connected to an access point
+  NTRIP_SERVER_WAIT_GNSS_DATA,  //Waiting for correction data from GNSS
+  NTRIP_SERVER_CONNECTING,      //Attempting a connection to the NTRIP caster
+  NTRIP_SERVER_AUTHORIZATION,   //Validate the credentials
+  NTRIP_SERVER_CASTING,         //Sending correction data to the NTRIP caster
+};
+volatile byte ntripServerState = NTRIP_SERVER_OFF;
+
+enum RtcmTransportState
+{
+  RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3 = 0,
+  RTCM_TRANSPORT_STATE_READ_LENGTH_1,
+  RTCM_TRANSPORT_STATE_READ_LENGTH_2,
+  RTCM_TRANSPORT_STATE_READ_MESSAGE_1,
+  RTCM_TRANSPORT_STATE_READ_MESSAGE_2,
+  RTCM_TRANSPORT_STATE_READ_DATA,
+  RTCM_TRANSPORT_STATE_READ_CRC_1,
+  RTCM_TRANSPORT_STATE_READ_CRC_2,
+  RTCM_TRANSPORT_STATE_READ_CRC_3,
+  RTCM_TRANSPORT_STATE_CHECK_CRC
+};
 
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
@@ -358,6 +377,7 @@ typedef struct {
 
   //NTRIP Server
   bool enableNtripServer = false;
+  bool ntripServer_StartAtSurveyIn = false; //true = Start Wifi instead of Bluetooth at Survey-In
   char ntripServer_CasterHost[50] = "rtk2go.com"; //It's free...
   uint16_t ntripServer_CasterPort = 2101;
   char ntripServer_CasterUser[50] = "test@test.com"; //Some free casters require auth. User must provide their own email address to use RTK2Go
@@ -412,6 +432,8 @@ typedef struct {
   bool enablePrintState = false;
   bool enablePrintWifiState = false;
   bool enablePrintNtripClientState = false;
+  bool enablePrintNtripServerState = false;
+  bool enablePrintNtripServerRtcm = false;
 } Settings;
 Settings settings;
 
@@ -427,6 +449,8 @@ struct struct_online {
   bool battery = false;
   bool accelerometer = false;
   bool ntripClient = false;
+  bool ntripServer = false;
+  bool rxRtcmCorrectionData = false;
   bool lband = false;
   bool lbandCorrections = false;
 } online;

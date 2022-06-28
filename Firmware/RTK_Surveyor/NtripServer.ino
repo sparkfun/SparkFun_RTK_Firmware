@@ -173,6 +173,10 @@ bool ntripServerRtcmMessage(uint8_t data)
   if (crcState == RTCM_TRANSPORT_STATE_CHECK_CRC)
   {
     crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+
+    //Display the RTCM message header
+    if (settings.enablePrintNtripServerRtcm)
+      Serial.printf ("    Message %d, %2d bytes\r\n", message, 3 + 1 + length + 3);
   }
 
   //Let the upper layer know if this message should be sent
@@ -226,9 +230,13 @@ void ntripServerSetState(byte newState)
 //This function gets called as each RTCM byte comes in
 void ntripServerProcessRTCM(uint8_t incoming)
 {
+  uint32_t currentMilliseconds;
+  static uint32_t previousMilliseconds = 0;
+
   //Count outgoing packets for display
   //Assume 1Hz RTCM transmissions
-  if (millis() - lastRTCMPacketSent > 500)
+  currentMilliseconds = millis();
+  if (currentMilliseconds - lastRTCMPacketSent > 500)
   {
     lastRTCMPacketSent = millis();
     rtcmPacketsSent++;
@@ -251,6 +259,20 @@ void ntripServerProcessRTCM(uint8_t incoming)
 #ifdef  COMPILE_WIFI
   if (online.rtc)
   {
+    //Timestamp the RTCM messages
+    if (settings.enablePrintNtripServerRtcm
+        && ((currentMilliseconds - previousMilliseconds) > 1))
+    {
+      //         1         2         3
+      //123456789012345678901234567890
+      //YYYY-mm-dd HH:MM:SS.xxxrn0
+      struct tm timeinfo = rtc.getTimeStruct();
+      char timestamp[30];
+      strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
+      Serial.printf("RTCM: %s.%03d\r\n", timestamp, rtc.getMillis());
+    }
+    previousMilliseconds = currentMilliseconds;
+
     //Parse the RTCM message
     if (ntripServerRtcmMessage(incoming))
     {

@@ -52,6 +52,9 @@ NTRIP Server States:
 
 #ifdef  COMPILE_WIFI
 
+//Give up connecting after this number of attempts
+static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 3;
+
 //----------------------------------------
 // Locals - compiled out
 //----------------------------------------
@@ -62,10 +65,14 @@ static WiFiClient * ntripServer;
 //Count of bytes sent by the NTRIP server to the NTRIP caster
 uint32_t ntripServerBytesSent = 0;
 
+//Count the number of connection attempts
+static int ntripServerConnectionAttempts;
+
 //Last time the NTRIP server state was displayed
 static uint32_t ntripServerStateLastDisplayed = 0;
 
 //NTRIP server timer usage:
+//  * Measure the connection response time
 //  * Receive RTCM correction data timeout
 static uint32_t ntripServerTimer;
 
@@ -76,12 +83,59 @@ static uint32_t ntripServerTimer;
 //Determine if more connections are allowed
 void ntripServerAllowMoreConnections()
 {
+  ntripServerConnectionAttempts = 0;
+}
+
+//Initiate a connection to the NTRIP caster
+bool ntripServerConnectCaster()
+{
+  const int SERVER_BUFFER_SIZE = 512;
+  char serverBuffer[SERVER_BUFFER_SIZE];
+
+  //Attempt a connection to the NTRIP caster
+  if (!ntripServer->connect(settings.ntripServer_CasterHost,
+                            settings.ntripServer_CasterPort))
+    return false;
+
+  //Note the connection to the NTRIP caster
+  Serial.printf("Connected to %s:%d\n\r", settings.ntripServer_CasterHost,
+                                          settings.ntripServer_CasterPort);
+
+  //Build the authorization credentials message
+  //  * Mount point
+  //  * Password
+  //  * Agent
+  snprintf(serverBuffer, SERVER_BUFFER_SIZE,
+           "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
+           settings.ntripServer_MountPointPW,
+           settings.ntripServer_MountPoint,
+           platformPrefix,
+           FIRMWARE_VERSION_MAJOR,
+           FIRMWARE_VERSION_MINOR);
+
+  //Send the authorization credentials to the NTRIP caster
+  ntripServer->write(serverBuffer, strlen(serverBuffer));
+  return true;
 }
 
 //Determine if the connection limit has been reached
 bool ntripServerConnectLimitReached()
 {
-  return true;
+  //Shutdown the NTRIP server
+  ntripServerStop(false);
+
+  //Retry the connection a few times
+  bool limitReached = (ntripServerConnectionAttempts++ >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS);
+  if (!limitReached)
+    //Display the heap state
+    reportHeapNow();
+  else
+  {
+    //No more connection attempts, switching to Bluetooth
+    Serial.println(F("NTRIP Server connection attempts exceeded!"));
+    ntripServerSwitchToBluetooth();
+  }
+  return limitReached;
 }
 
 //Parse the RTCM transport data
@@ -219,6 +273,18 @@ void ntripServerSetState(byte newState)
       Serial.println(F("NTRIP_SERVER_CASTING"));
       break;
   }
+}
+
+//Switch to Bluetooth operation
+void ntripServerSwitchToBluetooth()
+{
+  Serial.println(F("NTRIP Server failure, switching to Bluetooth!"));
+
+  //Stop WiFi operations
+  ntripServerStop(true);
+
+  //Turn on Bluetooth with 'Rover' name
+  startBluetooth();
 }
 
 #endif  // COMPILE_WIFI
@@ -409,6 +475,25 @@ void ntripServerUpdate()
     //Wait for GNSS correction data
     case NTRIP_SERVER_WAIT_GNSS_DATA:
       //State change handled in ntripServerProcessRTCM
+      break;
+
+    //Initiate the connection to the NTRIP caster
+    case NTRIP_SERVER_CONNECTING:
+        //Attempt a connection to the NTRIP caster
+        if (!ntripServerConnectCaster())
+        {
+          log_d("NTRIP Server caster failed to connect. Trying again.");
+
+          //Assume service not available
+          if (ntripServerConnectLimitReached())
+            Serial.println(F("NTRIP Server failed to connect! Do you have your caster address and port correct?"));
+        }
+        else
+        {
+          //Connection open to NTRIP caster, wait for the authorization response
+          ntripServerTimer = millis();
+          ntripServerSetState(NTRIP_SERVER_AUTHORIZATION);
+        }
       break;
   }
 #endif  //COMPILE_WIFI

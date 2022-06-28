@@ -153,6 +153,10 @@ void ntripServerProcessRTCM(uint8_t incoming)
     casterBytesSent++;
     lastServerSent_ms = millis();
   }
+
+  //Indicate that the GNSS is providing correction data
+  else if (ntripServerState == NTRIP_SERVER_WAIT_GNSS_DATA)
+    ntripServerSetState(NTRIP_SERVER_CONNECTING);
 #endif  //COMPILE_WIFI
 }
 
@@ -272,6 +276,11 @@ void ntripServerUpdate()
         //Open socket to NTRIP caster
         ntripServerSetState(NTRIP_SERVER_WAIT_GNSS_DATA);
       }
+      break;
+
+    //Wait for GNSS correction data
+    case NTRIP_SERVER_WAIT_GNSS_DATA:
+      //State change handled in ntripServerProcessRTCM
       break;
   }
 #endif  //COMPILE_WIFI

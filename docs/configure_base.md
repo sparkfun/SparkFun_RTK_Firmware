@@ -97,3 +97,7 @@ Once WiFi connects the device will attempt to connect to the NTRIP mount point. 
 Every second a few hundred bytes, up to ~2k, will be transmitted to your mount point.
 
 Note: During NTRIP transmission WiFi is turned on and Bluetooth is turned off. You should not need to know the location information of the base so Bluetooth should not be needed. If necessary, USB can be connected to view detailed location information using the [System Report](https://sparkfun.github.io/SparkFun_RTK_Firmware/system_status_reporting/) command.
+
+## L-Band Assisted Base
+
+The RTK Facet L-Band can be setup as a relay: the L-Band device can be located in a good reception area, and then transmit very accurate corrections to a rover via Radio or internet link. To setup an assisted base, set up RTK Facet L-Band unit with a clear view of the sky, and let it obtain RTK Fix from a fixed position in *Rover* mode. Once RTK fix is achieved, change the device to temporary *Base* mode. The device will take 60 seconds of positional readings, at which point the fixed position will be set using RTK fixed coordinates. The RTK Facet L-Band will then output very accurate RTCM corrections that can relayed to a rover that is in a less optimal reception setting.

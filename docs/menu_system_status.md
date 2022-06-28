@@ -12,6 +12,6 @@ This menu is helpful when reporting technical issues or requesting support as it
 
 The local timezone hours, minutes or seconds may be set by pressing 'h', 'm' or 's'.  The timezone values change the RTC clock setting and the file system's timestamps for new files.
 
-Pressing 'r' will allow a user to reset all settings to default including a factory reset of the ZED-F9x receiver. This can be helpful is the unit has been configured into an unknown or problematic state. 
+Pressing 'r' will allow a user to reset all settings to default including a factory reset of the ZED-F9x receiver. This can be helpful is the unit has been configured into an unknown or problematic state.
 
-Pressing 'd' will enter a debug menu that is for advanced users.
+Pressing 'd' will enter a [debug menu](https://sparkfun.github.io/SparkFun_RTK_Firmware/menu_debug/) that is for advanced users.

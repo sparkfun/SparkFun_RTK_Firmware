@@ -280,8 +280,17 @@ void menuDebug()
     Serial.print(F("9) GNSS Serial Timeout: "));
     Serial.println(settings.serialTimeoutGNSS);
 
-    Serial.print(F("10) Periodically print state: "));
+    Serial.print(F("10) Periodically print Wifi IP Address: "));
+    Serial.printf("%s\r\n", settings.enablePrintWifiIpAddress ? "Enabled" : "Disabled");
+
+    Serial.print(F("11) Periodically print state: "));
     Serial.printf("%s\r\n", settings.enablePrintState ? "Enabled" : "Disabled");
+
+    Serial.print(F("12) Periodically print Wifi state: "));
+    Serial.printf("%s\r\n", settings.enablePrintWifiState ? "Enabled" : "Disabled");
+
+    Serial.print(F("13) Periodically print NTRIP client state: "));
+    Serial.printf("%s\r\n", settings.enablePrintNtripClientState ? "Enabled" : "Disabled");
 
     Serial.println(F("t) Enter Test Screen"));
 
@@ -385,7 +394,19 @@ void menuDebug()
       }
       else if (incoming == 10)
       {
+        settings.enablePrintWifiIpAddress ^= 1;
+      }
+      else if (incoming == 11)
+      {
         settings.enablePrintState ^= 1;
+      }
+      else if (incoming == 12)
+      {
+        settings.enablePrintWifiState ^= 1;
+      }
+      else if (incoming == 13)
+      {
+        settings.enablePrintNtripClientState ^= 1;
       }
       else
         printUnknown(incoming);

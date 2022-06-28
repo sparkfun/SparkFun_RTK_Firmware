@@ -61,6 +61,9 @@ static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
 //  * Measure interval to display IP address
 static unsigned long wifiTimer = 0;
 
+//Last time the WiFi state was displayed
+static uint32_t lastWifiState = 0;
+
 //----------------------------------------
 // WiFi Routines - compiled out
 //----------------------------------------
@@ -89,7 +92,7 @@ bool wifiIsConnected()
   isConnected = (wifiGetStatus() == WL_CONNECTED);
   if (isConnected)
   {
-    wifiState = WIFI_CONNECTED;
+    wifiSetState(WIFI_CONNECTED);
     wifiDisplayIpAddress();
   }
   return isConnected;
@@ -97,9 +100,35 @@ bool wifiIsConnected()
 
 void wifiPeriodicallyDisplayIpAddress()
 {
-  if (wifiGetStatus() == WL_CONNECTED)
+  if (settings.enablePrintWifiIpAddress && (wifiGetStatus() == WL_CONNECTED))
     if ((millis() - wifiTimer) >= wifiTimer)
       wifiDisplayIpAddress();
+}
+
+//Update the state of the WiFi state machine
+void wifiSetState (byte newState)
+{
+  if (wifiState == newState)
+    Serial.print(F("*"));
+  wifiState = newState;
+  switch (newState)
+  {
+    default:
+      Serial.printf("Unknown WiFi state: %d\r\n", newState);
+      break;
+    case WIFI_OFF:
+      Serial.println(F("WIFI_OFF"));
+      break;
+    case WIFI_ON:
+      Serial.println(F("WIFI_ON"));
+      break;
+    case WIFI_NOTCONNECTED:
+      Serial.println(F("WIFI_NOTCONNECTED"));
+      break;
+    case WIFI_CONNECTED:
+      Serial.println(F("WIFI_CONNECTED"));
+      break;
+    }
 }
 
 //----------------------------------------
@@ -173,7 +202,7 @@ void wifiStart(char* ssid, char* pw)
     Serial.printf("Wi-Fi connecting to %s\r\n", ssid);
     WiFi.begin(ssid, pw);
     wifiTimer = millis();
-    wifiState = WIFI_NOTCONNECTED;
+    wifiSetState(WIFI_NOTCONNECTED);
 
     //Display the heap state
     reportHeapNow();
@@ -191,11 +220,27 @@ void wifiStop()
   {
     ntripServer.stop();
     WiFi.mode(WIFI_OFF);
-    wifiState = WIFI_OFF;
+    wifiSetState(WIFI_OFF);
     Serial.println(F("Wi-Fi Stopped"));
 
     //Display the heap state
     reportHeapNow();
   }
+#endif  //COMPILE_WIFI
+}
+
+void wifiUpdate()
+{
+#ifdef  COMPILE_WIFI
+  //Periodically display the WiFi state
+  if (settings.enablePrintWifiState && ((millis() - lastWifiState) > 15000))
+  {
+    wifiSetState (wifiState);
+    lastWifiState = millis();
+  }
+
+  //Support NTRIP client during Rover operation
+  if (systemState < STATE_BASE_NOT_STARTED)
+    ntripClientUpdate();
 #endif  //COMPILE_WIFI
 }

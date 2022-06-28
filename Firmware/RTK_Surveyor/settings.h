@@ -408,7 +408,10 @@ typedef struct {
   int8_t timeZoneSeconds = 0;
 
   //Debug settings
-  bool enablePrintState = 0;
+  bool enablePrintWifiIpAddress = false;
+  bool enablePrintState = false;
+  bool enablePrintWifiState = false;
+  bool enablePrintNtripClientState = false;
 } Settings;
 Settings settings;
 

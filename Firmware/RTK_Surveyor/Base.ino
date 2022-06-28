@@ -30,13 +30,9 @@ bool configureUbloxModuleBase()
   i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Disable GPGGA call back that may have been set during Rover Client mode
   i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C); // Disable NMEA message
 
-  if (i2cGNSS.getSurveyInActive() == true)
-  {
-    log_d("Disabling survey");
-    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-    if (response == false)
-      Serial.println(F("Disable Survey failed"));
-  }
+  response = i2cGNSS.setSurveyMode(0, 0, 0); //Disable Survey-In or Fixed Mode
+  if (response == false)
+    Serial.println(F("Disable TMODE3 failed"));
 
   //In base mode we force 1Hz
   if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
@@ -141,11 +137,11 @@ bool resetSurvey()
   int maxWait = 2000;
 
   //Slightly modified method for restarting survey-in from: https://portal.u-blox.com/s/question/0D52p00009IsVoMCAV/restarting-surveyin-on-an-f9p
-  bool response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+  bool response = i2cGNSS.setSurveyMode(maxWait, 0, 0); //Disable Survey-In or Fixed Mode
   delay(1000);
   response &= i2cGNSS.enableSurveyMode(1000, 400.000, maxWait); //Enable Survey in with bogus values
   delay(1000);
-  response &= i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+  response &= i2cGNSS.setSurveyMode(maxWait, 0, 0); //Disable Survey-In or Fixed Mode
 
   if (response == false)
     return (response);

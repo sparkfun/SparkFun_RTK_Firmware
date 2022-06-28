@@ -83,6 +83,7 @@ void stopBluetooth()
     log_d("Bluetooth turned off");
 
     btState = BT_OFF;
+    online.rxRtcmCorrectionData = false;
     reportHeapNow();
   }
 }

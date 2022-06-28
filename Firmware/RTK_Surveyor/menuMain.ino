@@ -242,6 +242,7 @@ void factoryReset()
 {
   displaySytemReset(); //Display friendly message on OLED
 
+  Serial.println("Formatting settings file system...");
   LittleFS.format();
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()

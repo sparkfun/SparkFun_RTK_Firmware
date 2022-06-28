@@ -680,3 +680,23 @@ uint8_t DownloadArrow [] = {
 };
 int DownloadArrow_Height = 9;
 int DownloadArrow_Width = 8;
+
+/*
+    UploadArrow [8, 9]
+
+           **
+          ****
+         ******
+        ** ** **
+           **
+           **
+           **
+           **
+           **
+*/
+
+uint8_t UploadArrow [] = {
+  0x08, 0x0C, 0x06, 0xFF, 0xFF, 0x06, 0x0C, 0x08, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00
+};
+int UploadArrow_Height = 9;
+int UploadArrow_Width = 8;

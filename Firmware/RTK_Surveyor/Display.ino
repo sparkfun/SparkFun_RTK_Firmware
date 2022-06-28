@@ -5,33 +5,34 @@
 //Left top
 #define ICON_WIFI_SYMBOL_LEFT                1  //  0,  0
 #define ICON_DOWN_ARROW                      2  // 16,  0
-#define ICON_BT_SYMBOL                       4  //  4,  0
-#define ICON_MAC_ADDRESS                     8  //  0,  3
+#define ICON_UP_ARROW                        4  // 16,  0
+#define ICON_BT_SYMBOL                       8  //  4,  0
+#define ICON_MAC_ADDRESS                  0x10  //  0,  3
 
 //Center top
-#define ICON_WIFI_SYMBOL_CENTER           0x10  // center, 0
-#define ICON_BASE_TEMPORARY               0x20  // 27,  0
-#define ICON_BASE_FIXED                   0x40  // 27,  0
-#define ICON_ROVER_FUSION                 0x80  // 27,  2
-#define ICON_ROVER_FUSION_EMPTY          0x100  // 27,  2
-#define ICON_DYNAMIC_MODEL               0x200  // 27,  0
+#define ICON_WIFI_SYMBOL_CENTER           0x20  // center, 0
+#define ICON_BASE_TEMPORARY               0x40  // 27,  0
+#define ICON_BASE_FIXED                   0x80  // 27,  0
+#define ICON_ROVER_FUSION                0x100  // 27,  2
+#define ICON_ROVER_FUSION_EMPTY          0x200  // 27,  2
+#define ICON_DYNAMIC_MODEL               0x400  // 27,  0
 
 //Right top
-#define ICON_BATTERY                     0x400  // 45,  0
+#define ICON_BATTERY                     0x800  // 45,  0
 
 //Left center
-#define ICON_CROSS_HAIR                  0x800  //  0, 18
-#define ICON_CROSS_HAIR_DUAL            0x1000  //  0, 18
+#define ICON_CROSS_HAIR                 0x1000  //  0, 18
+#define ICON_CROSS_HAIR_DUAL            0x2000  //  0, 18
 
 //Right center
-#define ICON_HORIZONTAL_ACCURACY        0x2000  // 16, 20
+#define ICON_HORIZONTAL_ACCURACY        0x4000  // 16, 20
 
 //Left bottom
-#define ICON_SIV_ANTENNA                0x4000  //  2, 35
-#define ICON_SIV_ANTENNA_LBAND          0x8000  //  2, 35
+#define ICON_SIV_ANTENNA                0x8000  //  2, 35
+#define ICON_SIV_ANTENNA_LBAND         0x10000  //  2, 35
 
 //Right bottom
-#define ICON_LOGGING                   0x10000  // right, bottom
+#define ICON_LOGGING                   0x20000  // right, bottom
 
 //----------------------------------------
 // Locals
@@ -332,6 +333,8 @@ void updateDisplay()
           displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
           online.rxRtcmCorrectionData = false;
         }
+        else if (icons & ICON_UP_ARROW)
+          displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
       }
       else if (icons & ICON_BT_SYMBOL)
       {
@@ -343,6 +346,8 @@ void updateDisplay()
             displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
             online.rxRtcmCorrectionData = false;
           }
+          else if (icons & ICON_UP_ARROW)
+            displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
         }
       }
       else if (icons & ICON_MAC_ADDRESS)
@@ -577,6 +582,8 @@ uint32_t paintWirelessIcon()
       icons = ICON_BT_SYMBOL;
       if ((systemState <= STATE_BASE_NOT_STARTED) && online.rxRtcmCorrectionData)
         icons |= ICON_DOWN_ARROW;
+      else if (systemState <= STATE_BUBBLE_LEVEL)
+        icons |= ICON_UP_ARROW;
     }
     else if (wifiState == WIFI_NOTCONNECTED)
     {
@@ -592,6 +599,8 @@ uint32_t paintWirelessIcon()
       //If we are connected to NTRIP Client, show download arrow
       if ((online.ntripClient == true) && online.rxRtcmCorrectionData)
         icons |= ICON_DOWN_ARROW;
+      else if (online.ntripServer == true)
+        icons |= ICON_UP_ARROW;
     }
     else
       icons = ICON_MAC_ADDRESS;

@@ -558,6 +558,25 @@ void ntripServerUpdate()
         }
       }
       break;
+
+    //NTRIP server authorized to send RTCM correction data to NTRIP caster
+    case NTRIP_SERVER_CASTING:
+      //Check for a broken connection
+      if (!ntripServer->connected())
+      {
+        //Broken connection, retry the NTRIP server connection
+        Serial.println(F("NTRIP Server connection dropped"));
+        ntripServerStop(false);
+      }
+      else if ((millis() - ntripServerTimer) > 1000)
+      {
+        //GNSS stopped sending RTCM correction data
+        Serial.println(F("NTRIP Server breaking caster connection due to lack of RTCM data!"));
+        ntripServerStop(false);
+      }
+      else
+        cyclePositionLEDs();
+      break;
   }
 #endif  //COMPILE_WIFI
 }

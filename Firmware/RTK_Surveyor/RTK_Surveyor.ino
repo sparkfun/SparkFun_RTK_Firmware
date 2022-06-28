@@ -137,12 +137,6 @@ uint32_t sdUsedSpaceMB = 0;
 
 #endif
 
-unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
-unsigned long lastServerReport_ms = 0; //Time of last report of caster bytes sent
-
-uint32_t casterBytesSent = 0; //Just a running total
-uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service times out
-
 char certificateContents[2000]; //Holds the contents of the keys prior to MQTT connection
 char keyContents[2000];
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

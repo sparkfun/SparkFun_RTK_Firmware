@@ -328,10 +328,23 @@ void updateDisplay()
       {
         displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
         if (icons & ICON_DOWN_ARROW)
+        {
           displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+          online.rxRtcmCorrectionData = false;
+        }
       }
       else if (icons & ICON_BT_SYMBOL)
+      {
         displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
+        if (btState == BT_CONNECTED)
+        {
+          if (icons & ICON_DOWN_ARROW)
+          {
+            displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+            online.rxRtcmCorrectionData = false;
+          }
+        }
+      }
       else if (icons & ICON_MAC_ADDRESS)
       {
         char macAddress[5];
@@ -560,7 +573,11 @@ uint32_t paintWirelessIcon()
   {
     //Bluetooth icon if paired, or Bluetooth MAC address if not paired
     if (btState == BT_CONNECTED)
+    {
       icons = ICON_BT_SYMBOL;
+      if ((systemState <= STATE_BASE_NOT_STARTED) && online.rxRtcmCorrectionData)
+        icons |= ICON_DOWN_ARROW;
+    }
     else if (wifiState == WIFI_NOTCONNECTED)
     {
       //Blink WiFi icon
@@ -573,7 +590,7 @@ uint32_t paintWirelessIcon()
       icons = ICON_WIFI_SYMBOL_LEFT;
 
       //If we are connected to NTRIP Client, show download arrow
-      if (online.ntripClient == true)
+      if ((online.ntripClient == true) && online.rxRtcmCorrectionData)
         icons |= ICON_DOWN_ARROW;
     }
     else

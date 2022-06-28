@@ -450,6 +450,7 @@ struct struct_online {
   bool accelerometer = false;
   bool ntripClient = false;
   bool ntripServer = false;
+  bool rxRtcmCorrectionData = false;
   bool lband = false;
   bool lbandCorrections = false;
 } online;

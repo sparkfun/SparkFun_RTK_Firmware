@@ -16,6 +16,7 @@ void F9PSerialWriteTask(void *e)
         //Pass bytes to GNSS receiver
         auto s = SerialBT.readBytes(wBuffer, sizeof(wBuffer));
         serialGNSS.write(wBuffer, s);
+        online.rxRtcmCorrectionData = true;
 
         if (settings.enableTaskReports == true)
           Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));

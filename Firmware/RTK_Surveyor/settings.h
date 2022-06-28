@@ -449,6 +449,7 @@ struct struct_online {
   bool battery = false;
   bool accelerometer = false;
   bool ntripClient = false;
+  bool ntripServer = false;
   bool lband = false;
   bool lbandCorrections = false;
 } online;

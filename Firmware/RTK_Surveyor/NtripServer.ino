@@ -138,6 +138,22 @@ bool ntripServerConnectLimitReached()
   return limitReached;
 }
 
+//Read the authorization response from the NTRIP caster
+void ntripServerResponse(char * response, size_t maxLength)
+{
+  char * responseEnd;
+
+  //Make sure that we can zero terminate the response
+  responseEnd = &response[maxLength - 1];
+
+  // Read bytes from the caster and store them
+  while ((response < responseEnd) && ntripServer->available())
+    *response++ = ntripServer->read();
+
+  // Zero terminate the response
+  *response = '\0';
+}
+
 //Parse the RTCM transport data
 bool ntripServerRtcmMessage(uint8_t data)
 {
@@ -408,6 +424,7 @@ void ntripServerStop(bool done)
 
   //Determine the next NTRIP server state
   ntripServerSetState((ntripServer && (!done)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
+  online.ntripServer = false;
 #endif  //COMPILE_WIFI
 }
 
@@ -494,6 +511,52 @@ void ntripServerUpdate()
           ntripServerTimer = millis();
           ntripServerSetState(NTRIP_SERVER_AUTHORIZATION);
         }
+      break;
+
+    //Wait for authorization response
+    case NTRIP_SERVER_AUTHORIZATION:
+      //Check if caster service responded
+      if (ntripServer->available() == 0)
+      {
+        //Check for response timeout
+        if (millis() - ntripServerTimer > 5000)
+        {
+          //NTRIP web service did not respone
+          if (ntripServerConnectLimitReached())
+            Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
+        }
+      }
+      else
+      {
+        //NTRIP caster's authorization response received
+        char response[512];
+        ntripServerResponse(response, sizeof(response));
+
+        //Look for '200 OK'
+        if (strstr(response, "200") == NULL)
+        {
+          //Look for '401 Unauthorized'
+          Serial.printf("NTRIP Server caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
+
+          //Switch to Bluetooth operation
+          ntripServerSwitchToBluetooth();
+        }
+        else
+        {
+          Serial.printf("NTRIP Server connected to %s:%d %s\r\n",
+                        settings.ntripServer_CasterHost,
+                        settings.ntripServer_CasterPort,
+                        settings.ntripServer_MountPoint);
+
+          //Connection is now open, start the RTCM correction data timer
+          ntripServerTimer = millis();
+
+          //We don't use a task because we use I2C hardware (and don't have a semphore).
+          online.ntripServer = true;
+          ntripServerAllowMoreConnections();
+          ntripServerSetState(NTRIP_SERVER_CASTING);
+        }
+      }
       break;
   }
 #endif  //COMPILE_WIFI

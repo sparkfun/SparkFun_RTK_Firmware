@@ -414,6 +414,7 @@ unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update
 int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
+bool restartBase = false; //If user modifies any NTRIP Server settings, we need to restart the base
 bool restartRover = false; //If user modifies any NTRIP Client settings, we need to restart the rover
 
 unsigned long startTime = 0; //Used for checking longest running functions

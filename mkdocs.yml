@@ -94,6 +94,7 @@ nav:
     - menu_system_status.md
     - system_status_report.md
     - permanent_base.md
+    - accuracy_verification.md
     - embeddedsystem_connection.md
     - firmware_update.md
     - contribute.md

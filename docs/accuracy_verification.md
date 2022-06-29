@@ -1,6 +1,10 @@
-# Base Menu
+# Accuracy Verification
 
 Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
+
+![Facet in the field](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2016%20Facet%20in%20the%20Field.jpg)
+
+*Facet in the field*
 
 You’ve got an incredibly powerful GNSS receiver in your hands. How do you verify that you can get really accurate location readings? It's a bit of work but it's a lot of fun and you'll learn a tremendous amount about surveying along the way.
 
@@ -8,11 +12,16 @@ This is, admitedly, a very US-centric tutorial. We hope that it will provide som
 
 This is a replication and confirmation of the procedure done by [RTKLibExplorer in 2018](https://rtklibexplorer.wordpress.com/2018/03/17/measuring-a-survey-marker-with-the-datagnss-d302-rtk/). We modified it to demonstrate a similar process but using u-blox hardware and with a few updates.
 
-Before you head out into the field, there are a few steps to get through:
+The process goes like this: 
 
-## Get an RTK Fix
+* Find a local monument
+* Covert the coordinates
+* Take measurements
+* Calculate differences
 
-Verify you can get your device into RTK Fix mode. This includes setting up a permanent base and/or using a service like Skylark to provide the correction data to the RTK product. Before planning a trip to the field get really used to using the RTK product in Rover mode with NTRIP corrections being passed over Bluetooth to your device.
+## Get Used to RTK
+
+Before we can consider doing anything in the field, we need to get really comfortable using the RTK product. Verify you can get your device into RTK Fix mode. This includes setting up a permanent base and/or using a service like Skylark to provide the correction data to the RTK product. Before planning a trip to the field get really used to using the RTK product in Rover mode with NTRIP corrections being passed over Bluetooth to your device.
 
 ## Locate GPS Monument
 

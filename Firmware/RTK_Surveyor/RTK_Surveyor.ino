@@ -343,6 +343,7 @@ const byte menuTimeout = 15; //Menus will exit/timeout after this number of seco
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
 uint8_t debounceDelay = 20; //ms to delay between button reads
+bool inMainMenu = false; //Set true when in the serial config menu system.
 
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;

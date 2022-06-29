@@ -245,7 +245,7 @@ bool ntripServerRtcmMessage(uint8_t data)
     crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
 
     //Display the RTCM message header
-    if (settings.enablePrintNtripServerRtcm)
+    if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
       Serial.printf ("    Message %d, %2d bytes\r\n", message, 3 + 1 + length + 3);
   }
 
@@ -343,6 +343,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
   {
     //Timestamp the RTCM messages
     if (settings.enablePrintNtripServerRtcm
+        && (!inMainMenu)
         && ((currentMilliseconds - previousMilliseconds) > 1))
     {
       //         1         2         3

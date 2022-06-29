@@ -83,7 +83,7 @@ The earth is not static and the tectonic plates have this [annoying habit of mov
 
 *Plate tectonic time machine*
 
-Thankfully the NGS has a tool called the [**Horizontal Time-Dependent Positioning**](https://www.ngs.noaa.gov/cgi-bin/HTDP/htdp.prl?f1=4&f2=1). This allows both the conversion between coordinate system, and adjusting a given location to a given start and end time. Use the tool to the NAD83 coordinates of your monument from the time they were taken (June 27, of 2012 in our example) to WGS84(G2139) coordinates in today's date of 2022. If you convert the location for your monument on a Tuesday and visit it 5 days later, the coordinates should still be perfectly fine. This tool is needed both for the coordinate change (NAD83 to WGS84) and for long (months or years) periods of time between when the monument was surveyed.
+Thankfully the NGS has a tool called the [**Horizontal Time-Dependent Positioning**](https://www.ngs.noaa.gov/cgi-bin/HTDP/htdp.prl?f1=4&f2=1). This allows both the conversion between coordinate system, and adjusting a given location to a given start and end time. Use the tool to convert the NAD83 coordinates of your monument from the time they were taken (June 27, of 2012 in our example) to WGS84(G2139) coordinates in today's date. If you convert the location for your monument on a Tuesday and visit it 5 days later, the coordinates should still be perfectly fine. This tool is needed both for the coordinate change (NAD83 to WGS84) and for long (months or years) periods of time between when the monument was surveyed.
 
 ![Monument converted to WGS84 corrected to 2022](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%205%20Conversion%20to%20WGS84.jpg)
 
@@ -109,13 +109,13 @@ And in ECEF (this will be handy in a minute):
 
 *Conversion to Decimal*
 
-The NGS coordinates are in the hour/minute/second format (ie, 40 05 14.86880). We need decimal format when we're in the field viewing locations in SW Maps. We recommend the [LatLong.net](https://www.latlong.net/degrees-minutes-seconds-to-decimal-degrees) converter, but there are many options. Make sure the tools you use maintain 8 decimal places and use converters and calculators that also support this number of decimal places.
+The NGS coordinates are in the hour/minute/second format (ie, 40 05 14.86880). We need decimal format when we're in the field viewing locations in SW Maps. We recommend the [LatLong.net](https://www.latlong.net/degrees-minutes-seconds-to-decimal-degrees) converter, but there are many options. Make sure the tools, converters, and calculators you use maintain 8 decimal places.
 
 The SparkFun example monument is at:
 
-Latitude: 40.08746852 (WGS84 in 2022)
-Longitude: -105.15048340 (WGS84 in 2022)
-Elliptical Height: 1613.737 meters (WGS84 in 2022)
+* Latitude: 40.08746852 (WGS84 in 2022)
+* Longitude: -105.15048340 (WGS84 in 2022)
+* Elliptical Height: 1613.737 meters (WGS84 in 2022)
 
 These are the coordinates we hope to see using SW Maps once we get out into the field. Write down your monument coordinates so that you have some idea of how close your unit is to the ideal in real time.
 
@@ -127,7 +127,7 @@ These are the coordinates we hope to see using SW Maps once we get out into the 
 
 Not a bad view!
 
-You will need to decide how cheap you want your setup to be. I went too cheap; my tripod doesn’t have a hook on the bottom so the string with a bolt (I didn’t even have a plumbob) to center above the marker was not really center to the Facet. The height measurement from the mark to the ARP (bottom of the Facet) was done with a tape measure, in other words, not very accurate. But *it works*!
+You will need to decide how cheap you want your setup to be. I went too cheap; my tripod doesn’t have a hook on the bottom so the string with a bolt (I didn’t even have a plumb bob) to center above the marker was not really center to the Facet. The height measurement from the mark to the ARP (bottom of the Facet) was done with a tape measure, in other words, not very accurate. But *it works*!
 
 Find the monument and locate your Facet (or RTK Surveyor, Express, Express Plus, Facet L-Band, etc) over the monument. Using a tape measure or other tool, measure the distance from the top of the monument to the bottom of the Facet. In this example it was 45 ¾” or 1162mm. Obviously milimeters matter here but don't let 'perfection' be the enemy of 'done'.
 
@@ -135,7 +135,7 @@ Find the monument and locate your Facet (or RTK Surveyor, Express, Express Plus,
 
 *L-Band Facet ARP*
 
-Locate the ARP of your given RTK product ([53mm](https://geodesy.noaa.gov/ANTCAL/LoadFile?file=SFETOP106_NONE.atx) for units using the TOP106 Antenna, [61mm](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#hardware-assembly) for Facet, [69mm](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-l-band-hookup-guide/all) for Facet L-Band). Add your ARP to the height above the monument you measured previously. Enter that total height into SW Maps as the ‘Instrument Height’. This will allow the software to subtract the antenna location height from the current 3D location to gain the location of the point where the plumbob (or bolt) below your apparatus is located. In this example 1416 + 69 = 1.485m is our instrument height.
+Locate the ARP of your given RTK product ([53mm](https://geodesy.noaa.gov/ANTCAL/LoadFile?file=SFETOP106_NONE.atx) for units using the TOP106 Antenna, [61mm](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#hardware-assembly) for Facet, [69mm](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-l-band-hookup-guide/all) for Facet L-Band). Add your ARP to the height above the monument you measured previously. In this example 1416 + 69 = 1.485m. Enter that total height into SW Maps as the ‘Instrument Height’. This will allow the software to subtract the antenna location height from the current 3D location to gain the location of the point where the plumbob (or bolt) below your apparatus is located.
 
 With your instrument height determined, connect to the RTK product, begin sending RTCM corrections (either over NTRIP or radio link) and enter RTK Fix.
 
@@ -151,9 +151,9 @@ We can see the approximate location of the monument in the above location.
 
 *Screen shot of a point in time*
 
-Screenshots are an easy way to record lat/long/alt but SW Maps (and other GIS software) allows the averaging of a position. Choose your own adventure. For our example, we took screenshots / snapshots of the location. Some surveyors hold a position for multiple minutes to get a point, we can do the same in under a second.
+Note the 8 decimal places on the Lat/Long. 
 
-Note the 8 decimal places. They are necessary.
+Screenshots are an easy way to record lat/long/alt but SW Maps (and other GIS software) allows the averaging of a position. Choose your own adventure. For our example, we took screenshots / snapshots of the location. Some surveyors hold a position for multiple minutes to get a point, we can do the same in under a second.
 
 ![Comparsion of three RTK correction sources](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2013%20Compare%20Points.jpg)
 
@@ -179,7 +179,7 @@ We’ve established the monument’s location, we’ve captured the location of 
 
 *Convert LLA to ECEF*
 
-Enter your lat, long, and altitude coordinates into a LLA to ECEF converter. We found the [Sysense calculator](http://www.sysense.com/products/ecef_lla_converter/index.html) to work very well. How do we know it’s accurate? Take the [original coordinates] (todo) from the NGS Datasheet, and use the calculator to convert to ECEF. They are identical.
+Enter your lat, long, and altitude coordinates into a LLA to ECEF converter. We found the [Sysense calculator](http://www.sysense.com/products/ecef_lla_converter/index.html) to work very well. How do we know it’s accurate? Take the [original coordinates](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2013%20Datasheet%20for%20Monument.jpg) from the NGS Datasheet, and use the calculator to convert to ECEF. They are identical.
 
 ![ECEF difference between monument and readings](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2015%20Spreadsheet%20Results.jpg)
 

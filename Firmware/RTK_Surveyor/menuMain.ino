@@ -20,6 +20,7 @@ void updateSerial()
 //If user doesn't respond within a few seconds, return to main loop
 void menuMain()
 {
+  inMainMenu = true;
   displaySerialConfig(); //Display 'Serial Config' while user is configuring
 
   while (1)
@@ -106,6 +107,7 @@ void menuMain()
   }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  inMainMenu = false;
 }
 
 //Change system wide settings based on current user profile

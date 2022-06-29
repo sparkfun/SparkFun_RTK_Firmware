@@ -21,11 +21,19 @@ The process goes like this:
 
 ## Get Used to RTK
 
+
+
+![RTK Fix Mode](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Rover_RTK_Fixed.jpg)
+
+*RTK Fix Mode*
+
 Before we can consider doing anything in the field, we need to get really comfortable using the RTK product. Verify you can get your device into RTK Fix mode. This includes setting up a permanent base and/or using a service like Skylark to provide the correction data to the RTK product. Before planning a trip to the field get really used to using the RTK product in Rover mode with NTRIP corrections being passed over Bluetooth to your device.
 
 ## Locate GPS Monument
 
-A common metal surveyor's mark
+![A common metal surveyor's mark](https://s0.geograph.org.uk/geophotos/04/57/60/4576097_3881f66f.jpg)
+
+*A common metal surveyor's mark*
 
 Locate a GPS monument. These are the little metal caps, placed by surveyors, embedded into the sidewalk and roads around populated areas. While monuments are fairly common, we need a monument whose location is precisely known.
 

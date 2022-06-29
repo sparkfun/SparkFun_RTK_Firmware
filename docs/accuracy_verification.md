@@ -153,7 +153,7 @@ We can see the approximate location of the monument in the above location.
 
 Note the 8 decimal places on the Lat/Long. 
 
-Screenshots are an easy way to record lat/long/alt but SW Maps (and other GIS software) allows the averaging of a position. Choose your own adventure. For our example, we took screenshots / snapshots of the location. Some surveyors hold a position for multiple minutes to get a point, we can do the same in under a second.
+Screenshots are an easy way to record lat/long/alt but SW Maps (and other GIS software) allows the averaging of a position. Choose your own adventure. For our example, we took screenshots / snapshots of the location. Some surveyors hold a position for multiple minutes to get a point; we can do the same in under a second.
 
 ![Comparsion of three RTK correction sources](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2013%20Compare%20Points.jpg)
 
@@ -161,7 +161,7 @@ Screenshots are an easy way to record lat/long/alt but SW Maps (and other GIS so
 
 Off the shelf we regularly see 300 down to 150mm horizontal positional accuracy using any RTK product with a good L1/L2 antenna. This is shown in the picture above as the circle with 'No Corrections'. 
 
-With corrections turned on, the benefit of an RTK fix is obvious. The SparkFun base station is documented [here](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station) and has a location accuracy of approximately 8.4mm. The two surveyed points overlap each other so closely they are nearly indistinguishable. Using a base station is great but L-Band corrections will also get you *incredibly* similar accuracy with a lot less hassle.
+With corrections turned on, the benefit of an RTK fix is obvious. The two surveyed points overlap each other so closely they are nearly indistinguishable. The SparkFun base station is documented [here](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station) and has a location accuracy of approximately 8.4mm. Using a base station is more accurate (as we will see) but L-Band corrections will also get you *incredibly* similar accuracy with a lot less hassle. 
 
 ## Why doesn’t it match the image?
 

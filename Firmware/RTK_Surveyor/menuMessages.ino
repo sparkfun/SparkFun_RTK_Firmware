@@ -34,7 +34,7 @@ void menuLog()
       Serial.println(F(" minutes"));
     }
 
-    Serial.print(F("4) Write marks to microSD: "));
+    Serial.print(F("4) Write Marks_date.csv file to microSD: "));
     if (settings.enableMarksFile == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 

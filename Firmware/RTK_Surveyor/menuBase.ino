@@ -80,8 +80,10 @@ void menuBase()
       Serial.println(settings.ntripServer_MountPointPW);
     }
 
-    Serial.print(F("12) Select survey-in radio: "));
-    Serial.printf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? F("WiFi") : F("Bluetooth"));
+    if (!settings.fixedBase) {
+      Serial.print(F("12) Select survey-in radio: "));
+      Serial.printf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? F("WiFi") : F("Bluetooth"));
+    }
 
     Serial.println(F("x) Exit"));
 
@@ -234,7 +236,7 @@ void menuBase()
       readLine(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW), menuTimeoutExtended);
       restartBase = true;
     }
-    else if (incoming == 12)
+    else if ((!settings.fixedBase) && (incoming == 12))
     {
       settings.ntripServer_StartAtSurveyIn ^= 1;
       restartBase = true;

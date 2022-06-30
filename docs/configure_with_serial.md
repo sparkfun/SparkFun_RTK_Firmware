@@ -44,13 +44,13 @@ Pressing any button will display the Main menu. The Main menu will display the c
 The menu choices are:
 
 1. Configure GNSS Receiver
-2. Configure GNSS Messages
-3. Configure Base
-4. Configure Ports
-5. Configure Logging
+2. Configure GNSS [Messages](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_messages/)
+3. Configure [Base](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_base/)
+4. Configure [Ports](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_ports/)
+5. Configure [Logging](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_data_logging/)
 
-&nbsp;&nbsp;&nbsp;p. Configure Profiles
-&nbsp;&nbsp;&nbsp;s. System Status
+&nbsp;&nbsp;&nbsp;p. Configure [Profiles](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_profiles/)
+&nbsp;&nbsp;&nbsp;s. [System Status](https://sparkfun.github.io/SparkFun_RTK_Firmware/menu_system_status/)
 &nbsp;&nbsp;&nbsp;f. Firmware upgrade
 &nbsp;&nbsp;&nbsp;x. Exit
 

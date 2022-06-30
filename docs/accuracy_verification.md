@@ -21,8 +21,6 @@ The process goes like this:
 
 ## Get Used to RTK
 
-
-
 ![RTK Fix Mode](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Rover_RTK_Fixed.jpg)
 
 *RTK Fix Mode*
@@ -31,7 +29,7 @@ Before we can consider doing anything in the field, we need to get really comfor
 
 ## Locate GPS Monument
 
-![A common metal surveyor's mark](https://s0.geograph.org.uk/geophotos/04/57/60/4576097_3881f66f.jpg)
+![A common metal surveyor's mark](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2017%20Surveyor%20Monument.jpg)
 
 *A common metal surveyor's mark*
 

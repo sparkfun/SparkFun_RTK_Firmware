@@ -426,13 +426,15 @@ void setup()
   Wire.begin(); //Start I2C on core 1
   //Wire.setClock(400000);
 
+  beginDisplay(); //Start display first to be able to display any errors
+
   beginGNSS(); //Connect to GNSS to get module type
 
   beginFS(); //Start file system for settings
 
   beginBoard(); //Determine what hardware platform we are running on and check on button
 
-  beginDisplay(); //Start display first to be able to display any errors
+  displaySplash(); //Display the RTK product name and firmware version
 
   beginLEDs(); //LED and PWM setup
 

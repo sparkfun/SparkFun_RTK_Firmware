@@ -62,7 +62,11 @@ void beginDisplay()
     online.display = true;
 
     Serial.println(F("Display started"));
-    displaySplash();
+
+    //Display the SparkFun LOGO
+    oled.erase();
+    displayBitmap(0, 0, logoSparkFun_Width, logoSparkFun_Height, logoSparkFun);
+    oled.display();
     splashStart = millis();
   }
   else
@@ -397,6 +401,10 @@ void displaySplash()
 {
   if (online.display == true)
   {
+    //Display SparkFun Logo for at least 1/10 of a second
+    while ((millis() - splashStart) < 100)
+      delay(10);
+
     oled.erase();
 
     int yPos = 0;
@@ -440,6 +448,9 @@ void displaySplash()
     printTextCenter(unitFirmware, yPos, QW_FONT_5X7, 1, false);
 
     oled.display();
+
+    //Start the timer for the splash screen display
+    splashStart = millis();
   }
 }
 

@@ -131,7 +131,7 @@ void menuUserProfiles()
     //List available profiles
     for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
     {
-      if (strlen(profileNames[x]) > 0)
+      if (activeProfiles & (1 << x))
         Serial.printf("%d) Select %s", x + 1, profileNames[x]);
       else
         Serial.printf("%d) Select (Empty)", x + 1);
@@ -211,7 +211,8 @@ void menuUserProfiles()
           settings = tempSettings;
         }
 
-        activeProfiles = loadProfileNames(); //Count is used during menu display
+        //Get bitmask of active profiles
+        activeProfiles = loadProfileNames();
       }
       else
         Serial.println(F("Delete aborted"));
@@ -234,7 +235,8 @@ void menuUserProfiles()
 
   //A user may edit the name of a profile, but then switch back to original profile.
   //Thus, no reset, and activeProfiles is not updated. Do it here.
-  activeProfiles = loadProfileNames(); //Count is used during menu display
+  //Get bitmask of active profiles
+  activeProfiles = loadProfileNames();
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }

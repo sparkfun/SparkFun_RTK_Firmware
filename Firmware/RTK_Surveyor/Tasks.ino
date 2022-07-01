@@ -133,6 +133,8 @@ void updateBTled()
 //For RTK Express and RTK Facet, monitor momentary buttons
 void ButtonCheckTask(void *e)
 {
+  uint8_t index;
+
   if (setupBtn != NULL) setupBtn->begin();
   if (powerBtn != NULL) powerBtn->begin();
 
@@ -257,10 +259,7 @@ void ButtonCheckTask(void *e)
             //Allow system to return to lastSystemState
             break;
 
-          case STATE_PROFILE_1:
-          case STATE_PROFILE_2:
-          case STATE_PROFILE_3:
-          case STATE_PROFILE_4:
+          case STATE_PROFILE:
             //If the user presses the setup button during a profile change, do nothing
             //Allow system to return to lastSystemState
             break;
@@ -300,28 +299,34 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
-                if (activeProfiles == 1) //If we have only one active profile, do not show any profiles
+                //Determine the first profile
+                for (displayProfile = 0; displayProfile < MAX_PROFILE_COUNT; displayProfile++)
+                {
+                  if (activeProfiles & (1 << displayProfile))
+                    break;
+                }
+
+                //Determine if there is more than one profile
+                for (index = displayProfile + 1; index < MAX_PROFILE_COUNT; index++)
+                {
+                  if (activeProfiles & (1 << index))
+                    break;
+                }
+
+                //If only one active profile do not show any profiles
+                setupState = (index >= MAX_PROFILE_COUNT) ? STATE_MARK_EVENT : STATE_PROFILE;
+                break;
+              case STATE_PROFILE:
+                //Determine if there is another profile
+                for (displayProfile++; displayProfile < MAX_PROFILE_COUNT; displayProfile++)
+                {
+                  if (activeProfiles & (1 << displayProfile))
+                    break;
+                }
+
+                //Done when no more active profiles
+                if (displayProfile >= MAX_PROFILE_COUNT)
                   setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_1;
-                break;
-              case STATE_PROFILE_1:
-                setupState = STATE_PROFILE_2;
-                break;
-              case STATE_PROFILE_2:
-                if (activeProfiles == 2)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_3;
-                break;
-              case STATE_PROFILE_3:
-                if (activeProfiles == 3)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_4;
-                break;
-              case STATE_PROFILE_4:
-                setupState = STATE_MARK_EVENT;
                 break;
               default:
                 Serial.printf("ButtonCheckTask unknown setup state: %d\n\r", setupState);
@@ -386,10 +391,7 @@ void ButtonCheckTask(void *e)
             //Allow system to return to lastSystemState
             break;
 
-          case STATE_PROFILE_1:
-          case STATE_PROFILE_2:
-          case STATE_PROFILE_3:
-          case STATE_PROFILE_4:
+          case STATE_PROFILE:
             //If the user presses the setup button during a profile change, do nothing
             //Allow system to return to lastSystemState
             break;
@@ -429,28 +431,34 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
-                if (activeProfiles == 1) //If we have only one active profile, do not show any profiles
+                //Determine the first profile
+                for (displayProfile = 0; displayProfile < MAX_PROFILE_COUNT; displayProfile++)
+                {
+                  if (activeProfiles & (1 << displayProfile))
+                    break;
+                }
+
+                //Determine if there is more than one profile
+                for (index = displayProfile + 1; index < MAX_PROFILE_COUNT; index++)
+                {
+                  if (activeProfiles & (1 << index))
+                    break;
+                }
+
+                //If only one active profile do not show any profiles
+                setupState = (index >= MAX_PROFILE_COUNT) ? STATE_MARK_EVENT : STATE_PROFILE;
+                break;
+              case STATE_PROFILE:
+                //Determine if there is another profile
+                for (displayProfile++; displayProfile < MAX_PROFILE_COUNT; displayProfile++)
+                {
+                  if (activeProfiles & (1 << displayProfile))
+                    break;
+                }
+
+                //Done when no more active profiles
+                if (displayProfile >= MAX_PROFILE_COUNT)
                   setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_1;
-                break;
-              case STATE_PROFILE_1:
-                setupState = STATE_PROFILE_2;
-                break;
-              case STATE_PROFILE_2:
-                if (activeProfiles == 2)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_3;
-                break;
-              case STATE_PROFILE_3:
-                if (activeProfiles == 3)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_4;
-                break;
-              case STATE_PROFILE_4:
-                setupState = STATE_MARK_EVENT;
                 break;
               default:
                 Serial.printf("ButtonCheckTask unknown setup state: %d\n\r", setupState);

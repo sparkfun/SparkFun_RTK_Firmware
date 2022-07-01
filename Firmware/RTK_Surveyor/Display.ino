@@ -243,17 +243,8 @@ void updateDisplay()
         case (STATE_BUBBLE_LEVEL):
           paintBubbleLevel();
           break;
-        case (STATE_PROFILE_1):
-          paintProfile(0);
-          break;
-        case (STATE_PROFILE_2):
-          paintProfile(1);
-          break;
-        case (STATE_PROFILE_3):
-          paintProfile(2);
-          break;
-        case (STATE_PROFILE_4):
-          paintProfile(3);
+        case (STATE_PROFILE):
+          paintProfile(displayProfile);
           break;
         case (STATE_MARK_EVENT):
           //Do nothing. Static display shown during state change.
@@ -1271,7 +1262,7 @@ void paintProfile(uint8_t profileUnit)
   char profileMessage[20]; //'Loading HomeStar' max of ~18 chars
 
   char profileName[8 + 1];
-  if (getProfileNameFromUnit(profileUnit, profileName, 8) == true) //Load the profile name, limited to 8 chars
+  if (getProfileNameFromUnit(profileUnit, profileName, sizeof(profileName)) == true) //Load the profile name, limited to 8 chars
   {
     settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
     recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
@@ -1544,6 +1535,67 @@ void getAngles()
   }
 }
 
+//Display the setup profiles
+void paintDisplaySetupProfile(const char * firstState)
+{
+  int index;
+  int itemsDisplayed;
+  char profileName[8 + 1];
+
+  //Display the first state if this is the first profile
+  itemsDisplayed = 0;
+  for (index = displayProfile - 1; index >= 0; index--)
+  {
+    if (activeProfiles & (1 << index))
+      break;
+  }
+  if (index < 0)
+  {
+    printTextCenter(firstState, 12 * itemsDisplayed, QW_FONT_8X16, 1, false);
+    itemsDisplayed++;
+  }
+
+  //Display Bubble if this is the second profile
+  for (index--; index >= 0; index--)
+  {
+    if (activeProfiles & (1 << index))
+      break;
+  }
+  if (index < 0)
+  {
+    printTextCenter("Bubble", 12 * itemsDisplayed, QW_FONT_8X16, 1, false);
+    itemsDisplayed++;
+  }
+
+  //Display Config if this is the third profile
+  for (index--; index >= 0; index--)
+  {
+    if (activeProfiles & (1 << index))
+      break;
+  }
+  if (index < 0)
+  {
+    printTextCenter("Config", 12 * itemsDisplayed, QW_FONT_8X16, 1, false);
+    itemsDisplayed++;
+  }
+
+  //Display the profile names
+  for (; itemsDisplayed < 4; itemsDisplayed++)
+  {
+    //Find the next profile
+    for (; index < MAX_PROFILE_COUNT; index++)
+    {
+      if (activeProfiles & (1 << index))
+        break;
+    }
+
+    //Lookup next available profile, limit to 8 characters
+    getProfileNameFromUnit(index, profileName, sizeof(profileName));
+    printTextCenter(profileName, 12 * itemsDisplayed, QW_FONT_8X16, 1, itemsDisplayed == 3);
+    index++;
+  }
+}
+
 //Show different menu 'buttons' to allow user to pause on one to select it
 void paintDisplaySetup()
 {
@@ -1584,61 +1636,8 @@ void paintDisplaySetup()
       printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
     }
-    else if (setupState == STATE_PROFILE_1)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_2)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_3)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_4)
-    {
-      char profileName[8 + 1];
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
+    else if (setupState == STATE_PROFILE)
+      paintDisplaySetupProfile("Base");
   } //end type F9P
   else if (zedModuleType == PLATFORM_F9R)
   {
@@ -1670,61 +1669,8 @@ void paintDisplaySetup()
       printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
     }
-    else if (setupState == STATE_PROFILE_1)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_2)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_3)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_4)
-    {
-      char profileName[8 + 1];
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
+    else if (setupState == STATE_PROFILE)
+      paintDisplaySetupProfile("Rover");
   } //end type F9R
 }
 

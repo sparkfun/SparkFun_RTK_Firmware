@@ -83,8 +83,6 @@ int pin_radio_rts;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <LittleFS.h>
 
-const char *rtkProfileSettings = "SFERTK"; //Holds the profileNumber
-const char *rtkSettings[] = {"SFERTK_0", "SFERTK_1", "SFERTK_2", "SFERTK_3"}; //User profiles
 #define MAX_PROFILE_COUNT 4
 uint8_t activeProfiles = 1;
 uint8_t profileNumber = MAX_PROFILE_COUNT; //profileNumber gets set once at boot to save loading time

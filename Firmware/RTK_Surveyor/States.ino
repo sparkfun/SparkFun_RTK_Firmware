@@ -412,25 +412,7 @@ void updateSystemState()
         }
         break;
 
-      case (STATE_PROFILE_1):
-        {
-          //Do nothing - display only
-        }
-        break;
-
-      case (STATE_PROFILE_2):
-        {
-          //Do nothing - display only
-        }
-        break;
-
-      case (STATE_PROFILE_3):
-        {
-          //Do nothing - display only
-        }
-        break;
-
-      case (STATE_PROFILE_4):
+      case (STATE_PROFILE):
         {
           //Do nothing - display only
         }
@@ -1009,17 +991,8 @@ void changeState(SystemState newState)
     case (STATE_TESTING):
       Serial.print(F("State: System Testing"));
       break;
-    case (STATE_PROFILE_1):
-      Serial.print(F("State: Profile 1"));
-      break;
-    case (STATE_PROFILE_2):
-      Serial.print(F("State: Profile 2"));
-      break;
-    case (STATE_PROFILE_3):
-      Serial.print(F("State: Profile 3"));
-      break;
-    case (STATE_PROFILE_4):
-      Serial.print(F("State: Profile 4"));
+    case (STATE_PROFILE):
+      Serial.print(F("State: Profile"));
       break;
     case (STATE_KEYS_STARTED):
       Serial.print(F("State: Keys Started "));

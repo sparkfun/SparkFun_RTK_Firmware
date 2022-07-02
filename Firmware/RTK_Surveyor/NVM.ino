@@ -35,6 +35,12 @@ void loadSettings()
   Serial.printf("Profile '%s' loaded\n\r", profileNames[profileNumber]);
 }
 
+//Set the settingsFileName used many places
+void setSettingsFileName()
+{
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
+}
+
 //Load only LFS settings without recording
 //Used at very first boot to test for resetCounter
 void loadSettingsPartial()
@@ -43,7 +49,7 @@ void loadSettingsPartial()
   loadProfileNumber();
 
   //Set the settingsFileName used many places
-  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
+  setSettingsFileName();
 
   loadSystemSettingsFromFileLFS(settingsFileName, &settings);
 }
@@ -908,9 +914,8 @@ void loadProfileNumber()
   if (!fileProfileNumber)
   {
     log_d("profileNumber.txt not found");
-    profileNumber = 0;
     settings.updateZEDSettings = true; //Force module update
-    recordProfileNumber(profileNumber); //Record profile
+    recordProfileNumber(0); //Record profile
   }
   else
   {
@@ -922,24 +927,24 @@ void loadProfileNumber()
   if (profileNumber >= MAX_PROFILE_COUNT)
   {
     log_d("ProfileNumber invalid. Going to zero.");
-    profileNumber = 0;
     settings.updateZEDSettings = true; //Force module update
-    recordProfileNumber(profileNumber); //Record profile
+    recordProfileNumber(0); //Record profile
   }
 
   log_d("Using profile #%d", profileNumber);
 }
 
 //Record the given profile number as well as a config bool
-void recordProfileNumber(uint8_t profileNumber)
+void recordProfileNumber(uint8_t newProfileNumber)
 {
+  profileNumber = newProfileNumber;
   File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_WRITE);
   if (!fileProfileNumber)
   {
     log_d("profileNumber.txt failed to open");
     return;
   }
-  fileProfileNumber.write(profileNumber);
+  fileProfileNumber.write(newProfileNumber);
   fileProfileNumber.close();
 }
 

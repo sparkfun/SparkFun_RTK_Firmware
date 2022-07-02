@@ -24,7 +24,7 @@ void loadSettings()
 
   //Change empty profile name to 'Profile1' etc
   if (strlen(settings.profileName) == 0)
-    sprintf(settings.profileName, "Profile%d", profileNumber + 1);
+    sprintf(settings.profileName, "Profile%d", settings.profileNumber + 1);
 
   //Record these settings to LittleFS and SD file to be sure they are the same
   recordSystemSettings();
@@ -32,7 +32,7 @@ void loadSettings()
   //Get bitmask of active profiles
   activeProfiles = loadProfileNames();
 
-  Serial.printf("Profile '%s' loaded\n\r", profileNames[profileNumber]);
+  Serial.printf("Profile '%s' loaded\n\r", profileNames[settings.profileNumber]);
 }
 
 //Load only LFS settings without recording
@@ -43,7 +43,7 @@ void loadSettingsPartial()
   loadProfileNumber();
 
   //Set the settingsFileName used many places
-  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, settings.profileNumber);
 
   loadSystemSettingsFromFileLFS(settingsFileName, &settings);
 }
@@ -902,37 +902,36 @@ char* skipSpace(char* str) {
 //Load the special profileNumber file in LittleFS and return one byte value
 void loadProfileNumber()
 {
-  if (profileNumber < MAX_PROFILE_COUNT) return; //Only load it once
+  if (settings.profileNumber < MAX_PROFILE_COUNT) return; //Only load it once
 
   File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_READ);
   if (!fileProfileNumber)
   {
     log_d("profileNumber.txt not found");
-    profileNumber = 0;
     settings.updateZEDSettings = true; //Force module update
-    recordProfileNumber(profileNumber); //Record profile
+    recordProfileNumber(0); //Record profile
   }
   else
   {
-    profileNumber = fileProfileNumber.read();
+    settings.profileNumber = fileProfileNumber.read();
     fileProfileNumber.close();
   }
 
   //We have arbitrary limit of user profiles
-  if (profileNumber >= MAX_PROFILE_COUNT)
+  if (settings.profileNumber >= MAX_PROFILE_COUNT)
   {
     log_d("ProfileNumber invalid. Going to zero.");
-    profileNumber = 0;
     settings.updateZEDSettings = true; //Force module update
-    recordProfileNumber(profileNumber); //Record profile
+    recordProfileNumber(0); //Record profile
   }
 
-  log_d("Using profile #%d", profileNumber);
+  log_d("Using profile #%d", settings.profileNumber);
 }
 
 //Record the given profile number as well as a config bool
 void recordProfileNumber(uint8_t profileNumber)
 {
+  settings.profileNumber = profileNumber;
   File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_WRITE);
   if (!fileProfileNumber)
   {
@@ -1041,7 +1040,7 @@ uint8_t getProfileNumberFromUnit(uint8_t profileUnit)
 void recordFile(const char* fileID, char* fileContents, uint32_t fileSize)
 {
   char fileName[80];
-  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
+  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, settings.profileNumber);
 
   if (LittleFS.exists(fileName))
     LittleFS.remove(fileName);
@@ -1062,7 +1061,7 @@ void recordFile(const char* fileID, char* fileContents, uint32_t fileSize)
 void loadFile(const char* fileID, char* fileContents)
 {
   char fileName[80];
-  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
+  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, settings.profileNumber);
 
   File fileToRead = LittleFS.open(fileName, FILE_READ);
   if (fileToRead)

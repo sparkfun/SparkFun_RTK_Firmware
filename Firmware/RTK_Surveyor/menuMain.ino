@@ -121,7 +121,7 @@ void menuMain()
 void menuUserProfiles()
 {
   int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, ECEF coords, etc).
-  uint8_t originalProfileNumber = profileNumber;
+  uint8_t originalProfileNumber = settings.profileNumber;
 
   while (1)
   {
@@ -136,14 +136,14 @@ void menuUserProfiles()
       else
         Serial.printf("%d) Select (Empty)", x + 1);
 
-      if (x == profileNumber) Serial.print(" <- Current");
+      if (x == settings.profileNumber) Serial.print(" <- Current");
 
       Serial.println();
     }
 
-    Serial.printf("%d) Edit profile name: %s\n\r", MAX_PROFILE_COUNT + 1, profileNames[profileNumber]);
+    Serial.printf("%d) Edit profile name: %s\n\r", MAX_PROFILE_COUNT + 1, profileNames[settings.profileNumber]);
 
-    Serial.printf("%d) Delete profile '%s'\n\r", MAX_PROFILE_COUNT + 2, profileNames[profileNumber]);
+    Serial.printf("%d) Delete profile '%s'\n\r", MAX_PROFILE_COUNT + 2, profileNames[settings.profileNumber]);
 
     Serial.println(F("x) Exit"));
 
@@ -155,9 +155,8 @@ void menuUserProfiles()
       recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
 
       recordProfileNumber(incoming - 1); //Align to array
-      profileNumber = incoming - 1;
 
-      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Enables Delete Profile
+      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, settings.profileNumber); //Enables Delete Profile
 
       //We need to load these settings from file so that we can record a profile name change correctly
       bool responseLFS = loadSystemSettingsFromFileLFS(settingsFileName, &settings);
@@ -168,6 +167,8 @@ void menuUserProfiles()
       {
         Settings tempSettings;
         settings = tempSettings;
+        settings.profileNumber = incoming - 1;
+        sprintf(settings.profileName, "Profile%d", settings.profileNumber + 1);
       }
     }
     else if (incoming == MAX_PROFILE_COUNT + 1)
@@ -176,14 +177,16 @@ void menuUserProfiles()
       readLine(settings.profileName, sizeof(settings.profileName), menuTimeoutExtended);
       recordSystemSettings(); //We need to update this immediately in case user lists the available profiles again
 
-      strcpy(profileNames[profileNumber], settings.profileName); //Update array
+      strcpy(profileNames[settings.profileNumber], settings.profileName); //Update array
     }
     else if (incoming == MAX_PROFILE_COUNT + 2)
     {
-      Serial.printf("\r\nDelete profile '%s'. Press 'y' to confirm:", profileNames[profileNumber]);
+      Serial.printf("\r\nDelete profile '%s'. Press 'y' to confirm:", profileNames[settings.profileNumber]);
       byte bContinue = getByteChoice(menuTimeout);
       if (bContinue == 'y')
       {
+        int index;
+
         //Remove profile from LittleFS
         if (LittleFS.exists(settingsFileName))
           LittleFS.remove(settingsFileName);
@@ -195,20 +198,39 @@ void menuUserProfiles()
             sd->remove(settingsFileName);
         }
 
-        recordProfileNumber(0); //Move to Profile1
-        profileNumber = 0;
+        //Switch to an active profile
+        for (int index = 0; index < MAX_PROFILE_COUNT; index++)
+        {
+          if (activeProfiles & (1 << index))
+            break;
+        }
 
-        sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Update file name with new profileNumber
+        //Use Profile1 (0) if no other active profile is found
+        if (index >= MAX_PROFILE_COUNT)
+        {
+          index = 0;
+        }
 
-        //We need to load these settings from file so that we can record a profile name change correctly
+        //Start with default values
+        Settings tempSettings;
+        settings = tempSettings;
+        settings.profileNumber = index;
+        sprintf(settings.profileName, "Profile%d", index + 1);
+
+        //Use this profile
+        recordProfileNumber(settings.profileNumber);
+
+        //Load settings from files to override the defaults
+        sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, settings.profileNumber); //Update file name with new profileNumber
         bool responseLFS = loadSystemSettingsFromFileLFS(settingsFileName, &settings);
         bool responseSD = loadSystemSettingsFromFileSD(settingsFileName, &settings);
 
         //If this is an empty/new profile slot, overwrite our current settings with defaults
         if (responseLFS == false && responseSD == false)
         {
-          Settings tempSettings;
-          settings = tempSettings;
+          //Save the profile if it is not already saved
+          strcpy(profileNames[0], settings.profileName);
+          recordSystemSettings();
         }
 
         //Get bitmask of active profiles
@@ -226,7 +248,7 @@ void menuUserProfiles()
       printUnknown(incoming);
   }
 
-  if (originalProfileNumber != profileNumber)
+  if (originalProfileNumber != settings.profileNumber)
   {
     Serial.println(F("Changing profiles. Rebooting. Goodbye!"));
     delay(2000);

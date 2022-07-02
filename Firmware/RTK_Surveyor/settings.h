@@ -1,3 +1,5 @@
+#define MAX_PROFILE_COUNT 4
+
 //System can enter a variety of states
 //See statemachine diagram at: https://lucid.app/lucidchart/53519501-9fa5-4352-aa40-673f88ca0c9b/edit?invitationId=inv_ebd4b988-513d-4169-93fd-c291851108f8
 typedef enum
@@ -370,6 +372,7 @@ typedef struct {
   };
 
   int maxLogLength_minutes = 60 * 24; //Default to 24 hours
+  uint8_t profileNumber = MAX_PROFILE_COUNT;
   char profileName[50] = "";
 
   //NTRIP Server

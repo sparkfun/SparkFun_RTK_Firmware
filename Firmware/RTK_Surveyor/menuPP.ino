@@ -88,7 +88,7 @@ void menuPointPerfect()
 
         //Check if we have certificates
         char fileName[80];
-        sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
+        sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", settings.profileNumber);
         if (LittleFS.exists(fileName) == false)
         {
           provisionDevice(); //Connect to ThingStream API and get keys

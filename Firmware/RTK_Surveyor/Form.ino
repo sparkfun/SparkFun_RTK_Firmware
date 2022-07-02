@@ -405,9 +405,8 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
 
   //Profiles
-  char apProfileName[50];
-  sprintf(apProfileName, "Profile Name: %s", settings.profileName);
-  stringRecord(settingsCSV, "profileName", apProfileName);
+  stringRecord(settingsCSV, "profileNumber", profileNumber + 1);
+  stringRecord(settingsCSV, "profileName", profileNames[profileNumber]);
 
   //New settings not yet integrated
   //...
@@ -423,6 +422,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 {
 #ifdef COMPILE_AP
   char* ptr;
+  int newProfileNumber;
   double settingValue = strtod(settingValueStr, &ptr);
 
   bool settingValueBool = false;
@@ -486,7 +486,23 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "enableExternalHardwareEventLogging") == 0)
     settings.enableExternalHardwareEventLogging = settingValueBool;
   else if (strcmp(settingName, "profileName") == 0)
+  {
     strcpy(settings.profileName, settingValueStr);
+    strcpy(profileNames[profileNumber], settingValueStr);
+  }
+  else if (strcmp(settingName, "profileNumber") == 0)
+  {
+    if ((sscanf(settingValueStr, "%d", &newProfileNumber) == 1)
+      && (newProfileNumber >= 1) && (newProfileNumber <= MAX_PROFILE_COUNT)
+      && (profileNumber != newProfileNumber))
+    {
+      profileNumber = newProfileNumber - 1;
+
+      //Switch to a new profile
+      setSettingsFileName();
+      recordProfileNumber(profileNumber);
+    }
+  }
 
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;

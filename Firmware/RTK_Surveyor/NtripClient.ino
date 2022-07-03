@@ -473,9 +473,6 @@ void ntripClientUpdate()
     lastNtripClientState = millis();
   }
 
-  //Periodically display the IP address
-  wifiPeriodicallyDisplayIpAddress();
-
   //Enable WiFi and the NTRIP client if requested
   switch (ntripClientState)
   {

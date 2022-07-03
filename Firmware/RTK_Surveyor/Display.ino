@@ -580,8 +580,11 @@ uint32_t paintWirelessIcon()
     if (btState == BT_CONNECTED)
     {
       icons = ICON_BT_SYMBOL;
-      if ((systemState <= STATE_BASE_NOT_STARTED) && online.rxRtcmCorrectionData)
+      if (systemState <= STATE_BASE_NOT_STARTED)
+      {
+        if (online.rxRtcmCorrectionData)
         icons |= ICON_DOWN_ARROW;
+      }
       else if (systemState <= STATE_BUBBLE_LEVEL)
         icons |= ICON_UP_ARROW;
     }

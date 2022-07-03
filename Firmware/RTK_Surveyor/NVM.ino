@@ -29,9 +29,16 @@ void loadSettings()
   //Record these settings to LittleFS and SD file to be sure they are the same
   recordSystemSettings();
 
-  activeProfiles = loadProfileNames(); //Count is used during menu display
+  //Get bitmask of active profiles
+  activeProfiles = loadProfileNames();
 
   Serial.printf("Profile '%s' loaded\n\r", profileNames[profileNumber]);
+}
+
+//Set the settingsFileName used many places
+void setSettingsFileName()
+{
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
 }
 
 //Load only LFS settings without recording
@@ -42,7 +49,7 @@ void loadSettingsPartial()
   loadProfileNumber();
 
   //Set the settingsFileName used many places
-  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
+  setSettingsFileName();
 
   loadSystemSettingsFromFileLFS(settingsFileName, &settings);
 }
@@ -907,9 +914,8 @@ void loadProfileNumber()
   if (!fileProfileNumber)
   {
     log_d("profileNumber.txt not found");
-    profileNumber = 0;
     settings.updateZEDSettings = true; //Force module update
-    recordProfileNumber(profileNumber); //Record profile
+    recordProfileNumber(0); //Record profile
   }
   else
   {
@@ -917,28 +923,28 @@ void loadProfileNumber()
     fileProfileNumber.close();
   }
 
-  //We have arbitrary limit of 4 user profiles
+  //We have arbitrary limit of user profiles
   if (profileNumber >= MAX_PROFILE_COUNT)
   {
     log_d("ProfileNumber invalid. Going to zero.");
-    profileNumber = 0;
     settings.updateZEDSettings = true; //Force module update
-    recordProfileNumber(profileNumber); //Record profile
+    recordProfileNumber(0); //Record profile
   }
 
   log_d("Using profile #%d", profileNumber);
 }
 
 //Record the given profile number as well as a config bool
-void recordProfileNumber(uint8_t profileNumber)
+void recordProfileNumber(uint8_t newProfileNumber)
 {
+  profileNumber = newProfileNumber;
   File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_WRITE);
   if (!fileProfileNumber)
   {
     log_d("profileNumber.txt failed to open");
     return;
   }
-  fileProfileNumber.write(profileNumber);
+  fileProfileNumber.write(newProfileNumber);
   fileProfileNumber.close();
 }
 
@@ -946,7 +952,7 @@ void recordProfileNumber(uint8_t profileNumber)
 //If both SD and LittleFS contain a profile, SD wins.
 uint8_t loadProfileNames()
 {
-  int profileCount = 0;
+  int profiles = 0;
 
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
     profileNames[x][0] = '\0'; //Ensure every profile name is terminated
@@ -958,16 +964,12 @@ uint8_t loadProfileNames()
     sprintf(fileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
 
     if (getProfileName(fileName, profileNames[x], sizeof(profileNames[x])) == true)
-      profileCount++;
+      //Mark this profile as active
+      profiles |= 1 << x;
   }
 
-  //  Serial.printf("profileCount: %d\n\r", profileCount);
-  //  Serial.println("Profiles:");
-  //  for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
-  //    Serial.printf("%d) %s\n\r", x, profileNames[x]);
-  //  Serial.println();
-
-  return (profileCount);
+Serial.printf("profiles: 0x%02x\r\n", profiles);
+  return (profiles);
 }
 
 //Open the clear text file, scan for 'profileName' and return the string
@@ -982,8 +984,9 @@ bool getProfileName(char *fileName, char *profileName, uint8_t profileNameLength
   bool responseLFS = loadSystemSettingsFromFileLFS(fileName, tempSettings);
   bool responseSD = loadSystemSettingsFromFileSD(fileName, tempSettings);
 
+  //Zero terminate the profile name
+  *profileName = 0;
   if (responseLFS == true || responseSD == true)
-    //strncpy(profileName, tempSettings->profileName, profileNameLength); //strncpy does not automatically null terminate
     snprintf(profileName, profileNameLength, "%s", tempSettings->profileName); //snprintf handles null terminator
 
   delete tempSettings;
@@ -998,10 +1001,10 @@ bool getProfileNameFromUnit(uint8_t profileUnit, char *profileName, uint8_t prof
 {
   uint8_t located = 0;
 
-  //Step through possible profiles looking for the 1st, 2nd, 3rd, or 4th unit
+  //Step through possible profiles looking for the specified unit
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
   {
-    if (strlen(profileNames[x]) > 0)
+    if (activeProfiles & (1 << x))
     {
       if (located == profileUnit)
       {
@@ -1026,7 +1029,7 @@ uint8_t getProfileNumberFromUnit(uint8_t profileUnit)
   //Step through possible profiles looking for the 1st, 2nd, 3rd, or 4th unit
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
   {
-    if (strlen(profileNames[x]) > 0)
+    if (activeProfiles & (1 << x))
     {
       if (located == profileUnit)
         return (x);

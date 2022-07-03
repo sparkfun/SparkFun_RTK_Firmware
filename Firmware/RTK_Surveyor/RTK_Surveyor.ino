@@ -85,7 +85,7 @@ int pin_radio_rts;
 
 const char *rtkProfileSettings = "SFERTK"; //Holds the profileNumber
 const char *rtkSettings[] = {"SFERTK_0", "SFERTK_1", "SFERTK_2", "SFERTK_3"}; //User profiles
-#define MAX_PROFILE_COUNT 4
+#define MAX_PROFILE_COUNT 8
 uint8_t activeProfiles = 0; //Bit vector indicating which profiles are active
 uint8_t displayProfile; //Range: 0 - (MAX_PROFILE_COUNT - 1)
 uint8_t profileNumber = MAX_PROFILE_COUNT; //profileNumber gets set once at boot to save loading time

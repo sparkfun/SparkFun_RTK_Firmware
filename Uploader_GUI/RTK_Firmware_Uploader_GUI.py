@@ -21,7 +21,7 @@ Pyinstaller needs:
 RTK_Firmware_Uploader_GUI.py (this file!)
 RTK.ico (icon file for the .exe)
 RTK.png (icon for the GUI widget)
-esptool.py (copied from https://github.com/tasmota/tasmota-pyflasher)
+esptool.py (v3.3, copied from https://github.com/espressif/esptool/releases/tag/v3.3)
 RTK_Surveyor.ino.partitions.bin
 RTK_Surveyor.ino.bootloader.bin
 boot_app0.bin
@@ -47,15 +47,17 @@ import os
 
 import esptool
 from esptool import ESPLoader
+from esptool import UnsupportedCommandError
+from esptool import NotSupportedError
 from esptool import NotImplementedInROMError
 from esptool import FatalError
 
 # Setting constants
 SETTING_PORT_NAME = 'port_name'
-SETTING_FILE_LOCATION = 'message'
-SETTING_BAUD_RATE = '921600' # Default to 921600 for upload
+SETTING_FILE_LOCATION = 'file_location'
+SETTING_BAUD_RATE = 'baud'
 
-guiVersion = 'v1.1'
+guiVersion = 'v1.2'
 
 def gen_serial_ports() -> Iterator[Tuple[str, str, str]]:
     """Return all available serial ports."""
@@ -74,8 +76,6 @@ class messageRedirect:
     def __init__(self, edit, out=None) -> None:
         self.edit = edit
         self.out = out
-        self.edit.setReadOnly(True)
-        self.edit.clear()
 
     def write(self, msg) -> None:
         if msg.startswith("\r"):
@@ -92,6 +92,9 @@ class messageRedirect:
     def flush(self) -> None:
         None
 
+    def isatty(self):
+        return True
+
 # noinspection PyArgumentList
 
 class MainWidget(QWidget):
@@ -100,13 +103,15 @@ class MainWidget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
+        self.timer=QTimer()
+        self.timer.timeout.connect(self.repaintMessageBox)
+
         # File location line edit
         self.msg_label = QLabel(self.tr('Firmware File:'))
         self.fileLocation_lineedit = QLineEdit()
         self.msg_label.setBuddy(self.fileLocation_lineedit)
         self.fileLocation_lineedit.setEnabled(False)
-        self.fileLocation_lineedit.returnPressed.connect(
-            self.on_browse_btn_pressed)
+        self.fileLocation_lineedit.returnPressed.connect(self.on_browse_btn_pressed)
 
         # Browse for new file button
         self.browse_btn = QPushButton(self.tr('Browse'))
@@ -141,6 +146,8 @@ class MainWidget(QWidget):
 
         # Messages Window
         self.messageBox = QPlainTextEdit()
+        self.messageBox.setReadOnly(True)
+        self.messageBox.clear()
 
         # Arrange Layout
         layout = QGridLayout()
@@ -162,8 +169,8 @@ class MainWidget(QWidget):
 
         self.setLayout(layout)
 
-        #self._clean_settings() # This will delete all existing settings! Use with caution!
-        
+        self.settings = QSettings()
+        #self._clean_settings() # This will delete all existing settings! Use with caution!        
         self._load_settings()
 
     def writeMessage(self, msg) -> None:
@@ -173,10 +180,18 @@ class MainWidget(QWidget):
         self.messageBox.ensureCursorVisible()
         self.messageBox.repaint()
 
+    def startTimer(self) -> None:
+        self.timer.start(1000)
+
+    def endTimer(self) -> None:
+        self.timer.stop()
+
+    def repaintMessageBox(self) -> None:
+        self.messageBox.ensureCursorVisible()
+        self.messageBox.repaint()
+
     def _load_settings(self) -> None:
         """Load settings on startup."""
-        self.settings = QSettings()
-
         port_name = self.settings.value(SETTING_PORT_NAME)
         if port_name is not None:
             index = self.port_combobox.findData(port_name)
@@ -195,14 +210,12 @@ class MainWidget(QWidget):
 
     def _save_settings(self) -> None:
         """Save settings on shutdown."""
-        self.settings = QSettings()
         self.settings.setValue(SETTING_PORT_NAME, self.port)
-        self.settings.setValue(SETTING_FILE_LOCATION, self.fileLocation_lineedit.text())
+        self.settings.setValue(SETTING_FILE_LOCATION, self.theFileName)
         self.settings.setValue(SETTING_BAUD_RATE, self.baudRate)
 
     def _clean_settings(self) -> None:
         """Clean (remove) all existing settings."""
-        self.settings = QSettings()
         self.settings.clear()
 
     def show_error_message(self, msg: str) -> None:
@@ -258,6 +271,8 @@ class MainWidget(QWidget):
         except:
             pass
 
+        self.endTimer()
+        
         event.accept()
 
     def on_refresh_btn_pressed(self) -> None:
@@ -298,9 +313,15 @@ class MainWidget(QWidget):
                 return
             f.close()
 
+        try:
+            self._save_settings() # Save the settings in case the upload crashes
+        except:
+            pass
+
         self.writeMessage("Uploading firmware\n")
 
         command = []
+        #command.extend(["--trace"]) # Useful for debugging
         command.extend(["--chip","esp32"])
         command.extend(["--port",self.port])
         command.extend(["--baud",self.baudRate])
@@ -312,7 +333,16 @@ class MainWidget(QWidget):
 
         self.writeMessage("Command: esptool.main(%s)\n\n" % " ".join(command))
 
-        esptool.main(command)
+        #print("python esptool.py %s\n\n" % " ".join(command)) # Useful for debugging - cut and paste into a command prompt
+
+        self.startTimer()
+
+        try:
+            esptool.main(command)
+        except (ValueError, IOError, FatalError, ImportError, NotImplementedInROMError, UnsupportedCommandError, NotSupportedError, RuntimeError) as err:
+            self.writeMessage(str(err))
+
+        self.endTimer()
 
 if __name__ == '__main__':
     from sys import exit as sysExit
@@ -321,7 +351,7 @@ if __name__ == '__main__':
     app.setApplicationName('SparkFun RTK Firmware Uploader ' + guiVersion)
     app.setWindowIcon(QIcon(resource_path("RTK.png")))
     w = MainWidget()
-    if 1:
+    if 1: # Change to 0 to have the messages echoed on stdout
         sys.stdout = messageRedirect(w.messageBox) # Divert stdout to messageBox
         sys.stderr = messageRedirect(w.messageBox) # Divert stderr to messageBox
     else:

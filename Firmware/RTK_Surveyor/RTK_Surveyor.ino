@@ -358,6 +358,7 @@ uint32_t lastHeapReport = 0; //Report heap every 1s if option enabled
 uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
 uint32_t lastRTCAttempt = 0; //Wait 1000ms between checking GNSS for current date/time
+uint32_t lastPrintPosition = 0; //For periodic display of the position
 
 uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
@@ -488,6 +489,13 @@ void loop()
   wifiUpdate(); //Bring up WiFi, NTRIP connection and move data NTRIP <--> ZED
 
   updateLBand(); //Check if we've recently received PointPerfect corrections or not
+
+  //Periodically print the position
+  if (settings.enablePrintPosition && ((millis() - lastPrintPosition) > 15000))
+  {
+    printCurrentConditions();
+    lastPrintPosition = millis();
+  }
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;

@@ -101,7 +101,7 @@ bool wifiIsConnected()
 void wifiPeriodicallyDisplayIpAddress()
 {
   if (settings.enablePrintWifiIpAddress && (wifiGetStatus() == WL_CONNECTED))
-    if ((millis() - wifiTimer) >= wifiTimer)
+    if ((millis() - wifiTimer) >= WIFI_IP_ADDRESS_DISPLAY_INTERVAL)
       wifiDisplayIpAddress();
 }
 

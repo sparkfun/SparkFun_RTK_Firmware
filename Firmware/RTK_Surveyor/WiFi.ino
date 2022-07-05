@@ -75,9 +75,10 @@ void wifiDisplayIpAddress()
   wifiTimer = millis();
 }
 
-//----------------------------------------
-// WiFi Config Support Routines - compiled out
-//----------------------------------------
+IPAddress wifiGetIpAddress()
+{
+  return WiFi.localIP();
+}
 
 byte wifiGetStatus()
 {

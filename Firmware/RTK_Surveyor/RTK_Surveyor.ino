@@ -368,7 +368,6 @@ uint64_t lastLogSize = 0;
 bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
 bool reuseLastLog = false; //Goes true if we have a reset due to software (rather than POR)
 
-uint32_t lastRTCMPacketSent = 0; //Used to count RTCM packets sent during base mode
 uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM()
 
 uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds

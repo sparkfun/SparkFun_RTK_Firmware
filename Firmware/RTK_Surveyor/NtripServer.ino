@@ -244,6 +244,9 @@ bool ntripServerRtcmMessage(uint8_t data)
   {
     crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
 
+    //Account for this message
+    rtcmPacketsSent++;
+
     //Display the RTCM message header
     if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
       Serial.printf ("    Message %d, %2d bytes\r\n", message, 3 + 1 + length + 3);
@@ -315,15 +318,6 @@ void ntripServerProcessRTCM(uint8_t incoming)
   uint32_t currentMilliseconds;
   static uint32_t previousMilliseconds = 0;
 
-  //Count outgoing packets for display
-  //Assume 1Hz RTCM transmissions
-  currentMilliseconds = millis();
-  if (currentMilliseconds - lastRTCMPacketSent > 500)
-  {
-    lastRTCMPacketSent = millis();
-    rtcmPacketsSent++;
-  }
-
   //Check for too many digits
   if (settings.enableResetDisplay == true)
   {
@@ -342,6 +336,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
   if (online.rtc)
   {
     //Timestamp the RTCM messages
+    currentMilliseconds = millis();
     if (settings.enablePrintNtripServerRtcm
         && (!inMainMenu)
         && ((currentMilliseconds - previousMilliseconds) > 1))

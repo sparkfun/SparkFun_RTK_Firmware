@@ -126,8 +126,8 @@ Upon completion, your RTK device will reset and power down.
 
 RTK Surveyors sold prior to September 2021 may have an ESP32 WROOM module with 4MB flash instead of 16MB flash. These units still support all the functionality of other RTK products with the following limitations:
 
-* A firmware compatible with 4MB systems must be used to update a device
-* Upgrading the firmware must be done via [CLI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli) or [GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui).
+* A firmware compatible with 4MB systems must be used to update a device.
+* Upgrading the firmware must be done via [CLI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli) or [GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui). WiFi or SD update paths are not possible.
 
 ### Determining Size of Flash
 

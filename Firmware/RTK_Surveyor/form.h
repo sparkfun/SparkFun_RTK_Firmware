@@ -2115,6 +2115,8 @@ static const char *index_html = R"=====(
                             Free: <p id="sdFreeSpaceMB" style="display:inline;">0</p>MB
                             <br>
                             Used: <p id="sdUsedSpaceMB" style="display:inline;">0</p>MB
+                            <br>
+                            <a target="_blank" href="microSD/">SD Card Files</a>
                         </div>
                     </div>
                     <div class="col-sm-7 col-6 mt-2">

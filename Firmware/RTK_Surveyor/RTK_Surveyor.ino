@@ -221,7 +221,6 @@ float battChangeRate = 0.0;
 #ifdef COMPILE_BT
 //We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/23
 #include "src/BluetoothSerial/BluetoothSerial.h"
-BluetoothSerial SerialBT;
 #endif
 
 char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names

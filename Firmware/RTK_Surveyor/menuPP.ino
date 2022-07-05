@@ -101,7 +101,7 @@ void menuPointPerfect()
           updatePointPerfectKeys();
       }
 
-      startBluetooth();
+      bluetoothStart();
 #endif
     }
     else if (incoming == '6')

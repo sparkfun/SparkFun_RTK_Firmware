@@ -116,7 +116,7 @@ void updateSystemState()
 
           i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
 
-          startBluetooth(); //Turn on Bluetooth with 'Rover' name
+          bluetoothStart(); //Turn on Bluetooth with 'Rover' name
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
@@ -235,7 +235,7 @@ void updateSystemState()
 
           //Stop all WiFi and BT. Re-enable in each specific base start state.
           wifiStop();
-          stopBluetooth();
+          bluetoothStop();
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           if (configureUbloxModuleBase() == true)
@@ -253,7 +253,7 @@ void updateSystemState()
               if (settings.ntripServer_StartAtSurveyIn)
                 ntripServerStart();
               else
-                startBluetooth();
+                bluetoothStart();
               changeState(STATE_BASE_TEMP_SETTLE);
             }
             else if (settings.fixedBase == true)
@@ -597,7 +597,7 @@ void updateSystemState()
 
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 
-          stopBluetooth();
+          bluetoothStop();
           stopUART2Tasks(); //Delete F9 serial tasks if running
           startWebServer(); //Start in AP mode and show config html page
 

@@ -194,7 +194,7 @@ void wifiStart(char* ssid, char* pw)
 #ifdef  COMPILE_WIFI
   if (wifiState == WIFI_OFF)
     //Turn off Bluetooth
-    stopBluetooth();
+    bluetoothStop();
 
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {

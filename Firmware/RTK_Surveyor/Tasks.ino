@@ -7,14 +7,13 @@ void F9PSerialWriteTask(void *e)
 {
   while (true)
   {
-#ifdef COMPILE_BT
     //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
-    if (btState == BT_CONNECTED)
+    if (bluetoothGetState() == BT_CONNECTED)
     {
-      while (SerialBT.available())
+      while (bluetoothRxDataAvailable())
       {
         //Pass bytes to GNSS receiver
-        auto s = SerialBT.readBytes(wBuffer, sizeof(wBuffer));
+        int s = bluetoothReadBytes(wBuffer, sizeof(wBuffer));
         serialGNSS.write(wBuffer, s);
         online.rxRtcmCorrectionData = true;
 
@@ -24,7 +23,6 @@ void F9PSerialWriteTask(void *e)
       delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
       taskYIELD();
     }
-#endif
 
     delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
@@ -39,7 +37,7 @@ void F9PSerialReadTask(void *e)
   {
     while (serialGNSS.available())
     {
-      auto s = serialGNSS.readBytes(rBuffer, sizeof(rBuffer));
+      int s = serialGNSS.readBytes(rBuffer, sizeof(rBuffer));
 
       //If we are actively survey-in then do not pass NMEA data from ZED to phone
       if (systemState == STATE_BASE_TEMP_SETTLE || systemState == STATE_BASE_TEMP_SURVEY_STARTED)
@@ -47,16 +45,12 @@ void F9PSerialReadTask(void *e)
         //Do nothing
         taskYIELD();
       }
-#ifdef COMPILE_BT
-      else if (btState == BT_CONNECTED)
+      else if (bluetoothGetState() == BT_CONNECTED)
       {
-        if (SerialBT.isCongested() == false)
+        if ((bluetoothIsCongested() == false) || (settings.throttleDuringSPPCongestion == false))
         {
-          SerialBT.write(rBuffer, s); //Push new data to BT SPP
-        }
-        else if (settings.throttleDuringSPPCongestion == false)
-        {
-          SerialBT.write(rBuffer, s); //Push new data to SPP regardless of congestion
+          //Push new data to BT SPP if not congested or not throttling
+          bluetoothWriteBytes(rBuffer, s);
         }
         else
         {
@@ -64,7 +58,6 @@ void F9PSerialReadTask(void *e)
           log_d("Dropped SPP Bytes: %d", s);
         }
       }
-#endif
 
       if (settings.enableTaskReports == true)
         Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
@@ -96,13 +89,13 @@ void F9PSerialReadTask(void *e)
   }
 }
 
-//Control BT status LED according to btState
+//Control BT status LED according to bluetoothGetState()
 void updateBTled()
 {
   if (productVariant == RTK_SURVEYOR)
   {
     //Blink on/off while we wait for BT connection
-    if (btState == BT_NOTCONNECTED)
+    if (bluetoothGetState() == BT_NOTCONNECTED)
     {
       if (btFadeLevel == 0) btFadeLevel = 255;
       else btFadeLevel = 0;
@@ -110,7 +103,7 @@ void updateBTled()
     }
 
     //Solid LED if BT Connected
-    else if (btState == BT_CONNECTED)
+    else if (bluetoothGetState() == BT_CONNECTED)
       ledcWrite(ledBTChannel, 255);
 
     //Pulse LED while no BT and we wait for WiFi connection

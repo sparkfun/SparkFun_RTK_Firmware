@@ -156,7 +156,6 @@ enum BTState
   BT_NOTCONNECTED,
   BT_CONNECTED,
 };
-volatile byte btState = BT_OFF;
 
 //Return values for getByteChoice()
 enum returnStatus {

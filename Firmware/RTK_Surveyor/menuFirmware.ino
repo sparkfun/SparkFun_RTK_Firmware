@@ -129,7 +129,7 @@ void updateFromSD(const char *firmwareFileName)
 {
   //Turn off any tasks so that we are not disrupted
   wifiStop();
-  stopBluetooth();
+  bluetoothStop();
 
   //Delete tasks if running
   stopUART2Tasks();

@@ -303,7 +303,7 @@ void ntripServerSwitchToBluetooth()
   ntripServerStop(true);
 
   //Turn on Bluetooth with 'Rover' name
-  startBluetooth();
+  bluetoothStart();
 }
 
 #endif  // COMPILE_WIFI

@@ -298,6 +298,9 @@ void menuDebug()
     Serial.print(F("15) Print GNSS --> NTRIP caster messages: "));
     Serial.printf("%s\r\n", settings.enablePrintNtripServerRtcm ? "Enabled" : "Disabled");
 
+    Serial.print(F("16) Periodically print position: "));
+    Serial.printf("%s\r\n", settings.enablePrintPosition ? "Enabled" : "Disabled");
+
     Serial.println(F("t) Enter Test Screen"));
 
     Serial.println(F("e) Erase LittleFS"));
@@ -421,6 +424,10 @@ void menuDebug()
       else if (incoming == 15)
       {
         settings.enablePrintNtripServerRtcm ^= 1;
+      }
+      else if (incoming == 16)
+      {
+        settings.enablePrintPosition ^= 1;
       }
       else
         printUnknown(incoming);

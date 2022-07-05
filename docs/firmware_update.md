@@ -1,6 +1,6 @@
 # Updating RTK Firmware
 
-Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet L-Band: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
+Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
 
 There are two (or more) firmwares that operate on the device:
 
@@ -64,13 +64,13 @@ Download the GUI [here](https://github.com/sparkfun/SparkFun_RTK_Firmware/raw/ma
 
 In general, the SD firmware update method is recommended, but for some firmware updates (for example from version v1.x to v2.x) a serial connection via USB is required. This GUI makes it easy to point and click your way through a firmware update.
 
-### To Use
+**To Use**
 
 * Attach the RTK device to your computer using a USB cable. 
 * Turn the RTK device on.
 * Open Windows Device Manager to confirm which COM port the device is operating on.
 
-![Device Manager showing USB-Serial CH340 port on COM27](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Firmware Uploader COM Port.jpg)
+![Device Manager showing USB-Serial CH340 port on COM27](img/SparkFun%20RTK%20Firmware%20Uploader%20COM%20Port.jpg)
 
 *Device Manager showing 'USB-Serial CH340' port on COM27*
 
@@ -96,7 +96,7 @@ Connect a USB A to C cable from your computer to the ESP32 port on the RTK devic
 
 If the COM port is not showing be sure the unit is turned **On**. If an unknown device is appearing, you’ll need to [install drivers for the CH340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Once you know the COM port, open a command prompt (Windows button + r then type ‘cmd’).
 
-![batch_program.bat running esptool](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Firmware Update CLI.png)
+![batch_program.bat running esptool](img/SparkFun%20RTK%20Firmware%20Update%20CLI.png)
 
 *batch_program.bat running esptool*
 
@@ -122,6 +122,23 @@ Where */dev/ttyUSB0* is replaced with the port that the RTK product enumerated a
 
 Upon completion, your RTK device will reset and power down.
 
+## Updating 4MB Surveyors
+
+RTK Surveyors sold prior to September 2021 may have an ESP32 WROOM module with 4MB flash instead of 16MB flash. These units still support all the functionality of other RTK products with the following limitations:
+
+* A firmware compatible with 4MB systems must be used to update a device
+* Upgrading the firmware must be done via [CLI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli) or [GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui).
+
+### Determining Size of Flash
+
+To determine if the device has a 4MB module:
+
+* Use the GUI or CLI and attempt a firmware update. The output will auto-detect and show the flash size, as shown below:
+
+![Module with 4MB flash](img/SparkFun%20RTK%20Firmware%20Update%20GUI%20-%204MB.png)
+
+More information can be found within github issues [#151](https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/151) and [#207](https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/207).
+
 ## Updating u-blox Firmware
 
 The following products contain the following u-blox receviers:
@@ -140,7 +157,7 @@ The firmware on u-blox devices can be updated using a [Windows based GUI](https:
 
 ### Updating Using Windows GUI
 
-![SparkFun u-blox firmware update tool](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet L-Band u-blox Firmware Update GUI.png)
+![SparkFun u-blox firmware update tool](img/SparkFun%20RTK%20Facet%20L-Band%20u-blox%20Firmware%20Update%20GUI.png)
 
 *SparkFun RTK u-blox Firmware Update Tool*
 

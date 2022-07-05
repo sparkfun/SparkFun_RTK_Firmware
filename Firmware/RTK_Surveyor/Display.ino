@@ -339,7 +339,7 @@ void updateDisplay()
       else if (icons & ICON_BT_SYMBOL)
       {
         displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
-        if (btState == BT_CONNECTED)
+        if (bluetoothGetState() == BT_CONNECTED)
         {
           if (icons & ICON_DOWN_ARROW)
           {
@@ -577,7 +577,7 @@ uint32_t paintWirelessIcon()
   if (online.display == true)
   {
     //Bluetooth icon if paired, or Bluetooth MAC address if not paired
-    if (btState == BT_CONNECTED)
+    if (bluetoothGetState() == BT_CONNECTED)
     {
       icons = ICON_BT_SYMBOL;
       if ((systemState <= STATE_BASE_NOT_STARTED) && online.rxRtcmCorrectionData)
@@ -919,7 +919,7 @@ void paintRTCM()
   int textY = 17;
   int textKerning = 8;
   oled.setFont(QW_FONT_8X16);
-  if (btState != BT_OFF)
+  if (bluetoothGetState() != BT_OFF)
   {
     int textX = 1;
     printTextwithKerning("Xmitting", textX, textY, textKerning);  //via Bluetooth

@@ -189,7 +189,7 @@ void ntripClientSwitchToBluetooth()
   ntripClientStop(true);
 
   //Turn on Bluetooth with 'Rover' name
-  startBluetooth();
+  bluetoothStart();
 }
 
 //Update the state of the NTRIP client state machine

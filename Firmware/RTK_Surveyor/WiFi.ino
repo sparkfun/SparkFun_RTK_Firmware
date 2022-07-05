@@ -238,6 +238,9 @@ void wifiUpdate()
     lastWifiState = millis();
   }
 
+  //Periodically display the IP address
+  wifiPeriodicallyDisplayIpAddress();
+
   //Support NTRIP client during Rover operation
   if (systemState < STATE_BASE_NOT_STARTED)
     ntripClientUpdate();

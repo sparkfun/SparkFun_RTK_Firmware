@@ -35,15 +35,17 @@ Please see the LICENSE.md for more details
 
 from typing import Iterator, Tuple
 
-from PyQt5.QtCore import QSettings, QProcess, QTimer, Qt, QIODevice, pyqtSlot
+from PyQt5.QtCore import QSettings, QProcess, QTimer, Qt, QIODevice, pyqtSlot, \
+    QObject, QThread, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QLabel, QComboBox, QGridLayout, \
     QPushButton, QApplication, QLineEdit, QFileDialog, QPlainTextEdit, \
     QAction, QActionGroup, QMenu, QMenuBar, QMainWindow, QMessageBox
 from PyQt5.QtGui import QCloseEvent, QTextCursor, QIcon, QFont
-from PyQt5.QtSerialPort import QSerialPortInfo, QSerialPortInfo
+from PyQt5.QtSerialPort import QSerialPortInfo
 
 import sys
 import os
+from time import sleep
 
 import esptool
 from esptool import ESPLoader
@@ -55,9 +57,10 @@ from esptool import FatalError
 # Setting constants
 SETTING_PORT_NAME = 'port_name'
 SETTING_FILE_LOCATION = 'file_location'
+SETTING_PARTITION_LOCATION = 'partition_location'
 SETTING_BAUD_RATE = 'baud'
 
-guiVersion = 'v1.2'
+guiVersion = 'v1.3'
 
 def gen_serial_ports() -> Iterator[Tuple[str, str, str]]:
     """Return all available serial ports."""
@@ -95,6 +98,19 @@ class messageRedirect:
     def isatty(self):
         return True
 
+class ESPTool(QObject):
+    finished = pyqtSignal()
+
+    def run(self, command):
+        """Run esptool in a separate thread to stop the GUI from freezing"""
+        try:
+            esptool.main(command)
+        except (ValueError, IOError, FatalError, ImportError, NotImplementedInROMError, UnsupportedCommandError, NotSupportedError, RuntimeError) as err:
+            print(str(err))
+        except:
+            pass
+        self.finished.emit()
+
 # noinspection PyArgumentList
 
 class MainWidget(QWidget):
@@ -103,13 +119,10 @@ class MainWidget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.timer=QTimer()
-        self.timer.timeout.connect(self.repaintMessageBox)
-
         # File location line edit
-        self.msg_label = QLabel(self.tr('Firmware File:'))
+        self.file_label = QLabel(self.tr('Firmware File:'))
         self.fileLocation_lineedit = QLineEdit()
-        self.msg_label.setBuddy(self.fileLocation_lineedit)
+        self.file_label.setBuddy(self.fileLocation_lineedit)
         self.fileLocation_lineedit.setEnabled(False)
         self.fileLocation_lineedit.returnPressed.connect(self.on_browse_btn_pressed)
 
@@ -117,6 +130,18 @@ class MainWidget(QWidget):
         self.browse_btn = QPushButton(self.tr('Browse'))
         self.browse_btn.setEnabled(True)
         self.browse_btn.pressed.connect(self.on_browse_btn_pressed)
+
+        # Partition file location line edit
+        self.partition_label = QLabel(self.tr('Partition File:'))
+        self.partitionFileLocation_lineedit = QLineEdit()
+        self.partition_label.setBuddy(self.partitionFileLocation_lineedit)
+        self.partitionFileLocation_lineedit.setEnabled(False)
+        self.partitionFileLocation_lineedit.returnPressed.connect(self.on_partition_browse_btn_pressed)
+
+        # Browse for new file button
+        self.partition_browse_btn = QPushButton(self.tr('Browse'))
+        self.partition_browse_btn.setEnabled(True)
+        self.partition_browse_btn.pressed.connect(self.on_partition_browse_btn_pressed)
 
         # Port Combobox
         self.port_label = QLabel(self.tr('COM Port:'))
@@ -152,20 +177,24 @@ class MainWidget(QWidget):
         # Arrange Layout
         layout = QGridLayout()
         
-        layout.addWidget(self.msg_label, 1, 0)
+        layout.addWidget(self.file_label, 1, 0)
         layout.addWidget(self.fileLocation_lineedit, 1, 1)
         layout.addWidget(self.browse_btn, 1, 2)
 
-        layout.addWidget(self.port_label, 2, 0)
-        layout.addWidget(self.port_combobox, 2, 1)
-        layout.addWidget(self.refresh_btn, 2, 2)
+        layout.addWidget(self.partition_label, 2, 0)
+        layout.addWidget(self.partitionFileLocation_lineedit, 2, 1)
+        layout.addWidget(self.partition_browse_btn, 2, 2)
 
-        layout.addWidget(self.baud_label, 3, 0)
-        layout.addWidget(self.baud_combobox, 3, 1)
-        layout.addWidget(self.upload_btn, 3, 2)
+        layout.addWidget(self.port_label, 3, 0)
+        layout.addWidget(self.port_combobox, 3, 1)
+        layout.addWidget(self.refresh_btn, 3, 2)
 
-        layout.addWidget(self.messages_label, 4, 0)
-        layout.addWidget(self.messageBox, 5, 0, 5, 3)
+        layout.addWidget(self.baud_label, 4, 0)
+        layout.addWidget(self.baud_combobox, 4, 1)
+        layout.addWidget(self.upload_btn, 4, 2)
+
+        layout.addWidget(self.messages_label, 5, 0)
+        layout.addWidget(self.messageBox, 6, 0, 5, 3)
 
         self.setLayout(layout)
 
@@ -177,16 +206,6 @@ class MainWidget(QWidget):
         self.messageBox.moveCursor(QTextCursor.End)
         self.messageBox.ensureCursorVisible()
         self.messageBox.appendPlainText(msg)
-        self.messageBox.ensureCursorVisible()
-        self.messageBox.repaint()
-
-    def startTimer(self) -> None:
-        self.timer.start(1000)
-
-    def endTimer(self) -> None:
-        self.timer.stop()
-
-    def repaintMessageBox(self) -> None:
         self.messageBox.ensureCursorVisible()
         self.messageBox.repaint()
 
@@ -202,6 +221,12 @@ class MainWidget(QWidget):
         if lastFile is not None:
             self.fileLocation_lineedit.setText(lastFile)
 
+        lastFile = self.settings.value(SETTING_PARTITION_LOCATION)
+        if lastFile is not None:
+            self.partitionFileLocation_lineedit.setText(lastFile)
+        else:
+            self.partitionFileLocation_lineedit.setText(resource_path("RTK_Surveyor.ino.partitions.bin"))
+
         baud = self.settings.value(SETTING_BAUD_RATE)
         if baud is not None:
             index = self.baud_combobox.findData(baud)
@@ -212,6 +237,7 @@ class MainWidget(QWidget):
         """Save settings on shutdown."""
         self.settings.setValue(SETTING_PORT_NAME, self.port)
         self.settings.setValue(SETTING_FILE_LOCATION, self.theFileName)
+        self.settings.setValue(SETTING_PARTITION_LOCATION, self.thePartitionFileName)
         self.settings.setValue(SETTING_BAUD_RATE, self.baudRate)
 
     def _clean_settings(self) -> None:
@@ -264,6 +290,11 @@ class MainWidget(QWidget):
         """Return the file name."""
         return self.fileLocation_lineedit.text()
 
+    @property
+    def thePartitionFileName(self) -> str:
+        """Return the partition file name."""
+        return self.partitionFileLocation_lineedit.text()
+
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle Close event of the Widget."""
         try:
@@ -271,8 +302,6 @@ class MainWidget(QWidget):
         except:
             pass
 
-        self.endTimer()
-        
         event.accept()
 
     def on_refresh_btn_pressed(self) -> None:
@@ -290,6 +319,18 @@ class MainWidget(QWidget):
             options=options)
         if fileName:
             self.fileLocation_lineedit.setText(fileName)
+
+    def on_partition_browse_btn_pressed(self) -> None:
+        """Open dialog to select partition bin file."""
+        options = QFileDialog.Options()
+        fileName, _ = QFileDialog.getOpenFileName(
+            None,
+            "Select Partition File",
+            "",
+            "Parition Files (*.bin);;All Files (*)",
+            options=options)
+        if fileName:
+            self.partitionFileLocation_lineedit.setText(fileName)
 
     def on_upload_btn_pressed(self) -> None:
         """Upload the firmware"""
@@ -327,7 +368,7 @@ class MainWidget(QWidget):
         command.extend(["--baud",self.baudRate])
         command.extend(["--before","default_reset","--after","hard_reset","write_flash","-z","--flash_mode","dio","--flash_freq","80m","--flash_size","detect"])
         command.extend(["0x1000",resource_path("RTK_Surveyor.ino.bootloader.bin")])
-        command.extend(["0x8000",resource_path("RTK_Surveyor.ino.partitions.bin")])
+        command.extend(["0x8000",self.thePartitionFileName])
         command.extend(["0xe000",resource_path("boot_app0.bin")])
         command.extend(["0x10000",self.theFileName])
 
@@ -335,14 +376,24 @@ class MainWidget(QWidget):
 
         #print("python esptool.py %s\n\n" % " ".join(command)) # Useful for debugging - cut and paste into a command prompt
 
-        self.startTimer()
+        self.thread = QThread()
+        self.espTool = ESPTool()
+        self.espTool.moveToThread(self.thread)
+        self.thread.started.connect(self.espTool.run(command))
+        self.thread.finished.connect(lambda: self.upload_btn.setEnabled(True))
+        self.espTool.finished.connect(self.thread.quit)
+        self.espTool.finished.connect(self.espTool.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.upload_btn.setEnabled(False)
+        #self.thread.start()
 
         try:
             esptool.main(command)
         except (ValueError, IOError, FatalError, ImportError, NotImplementedInROMError, UnsupportedCommandError, NotSupportedError, RuntimeError) as err:
             self.writeMessage(str(err))
+        except:
+            pass
 
-        self.endTimer()
 
 if __name__ == '__main__':
     from sys import exit as sysExit

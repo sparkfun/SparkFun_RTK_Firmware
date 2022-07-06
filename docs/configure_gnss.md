@@ -2,7 +2,7 @@
 
 Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet L-Band: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
 
-The ZED-F9P is immensely configurable. The RTK device will, by default, put the ZED-F9P into the most common configuration for rover/base RTK for use with *SW Maps* and other GIS applications. 
+The ZED-F9P is immensely configurable. The RTK device will, by default, put the ZED-F9P into the most common configuration for rover/base RTK for use with *SW Maps* and other GIS applications.
 
 The GNSS Configuration menu allows a user to change the report rate, dynamic model, and select which constellations should be used for fix calculations.
 
@@ -10,7 +10,7 @@ The GNSS Configuration menu allows a user to change the report rate, dynamic mod
 
 *The most common settings on the RTK Device WiFi AP Config*
 
-From the main menu, pressing 1 will bring up the GNSS configuration menu. 
+From the main menu, pressing 1 will bring up the GNSS configuration menu.
 
 [![GNSS menu showing measurement rates and dynamic model](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_ReceiverNTRIP.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_ReceiverNTRIP.jpg)
 
@@ -61,3 +61,5 @@ With these credentials set, RTK device will attempt to connect to WiFi, then con
 *Rover with Active NTRIP Client Connection*
 
 Once the device connects to WiFi, it will attempt to connect to the user's chosen NTRIP Caster. If WiFi or the NTRIP connection fails, the rover will return to normal operation.
+
+When the NTRIP client is enabled, enabling the [SD Card Server](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_data_logging/) provides access the files on the microSD card using WiFi.

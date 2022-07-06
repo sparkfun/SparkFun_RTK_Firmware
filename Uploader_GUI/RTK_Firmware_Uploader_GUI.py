@@ -35,7 +35,7 @@ Please see the LICENSE.md for more details
 
 from typing import Iterator, Tuple
 
-from PyQt5.QtCore import QSettings, QProcess, QTimer, Qt, QIODevice, pyqtSlot
+from PyQt5.QtCore import QSettings, QProcess, QTimer, Qt, QIODevice, pyqtSlot, QObject
 from PyQt5.QtWidgets import QWidget, QLabel, QComboBox, QGridLayout, \
     QPushButton, QApplication, QLineEdit, QFileDialog, QPlainTextEdit, \
     QAction, QActionGroup, QMenu, QMenuBar, QMainWindow, QMessageBox
@@ -71,7 +71,7 @@ def resource_path(relative_path):
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
-class messageRedirect:
+class messageRedirect(QObject):
     """Wrap a class around a QPlainTextEdit so we can redirect stdout and stderr to it"""
 
     def __init__(self, edit, out=None) -> None:
@@ -89,6 +89,7 @@ class messageRedirect:
         self.edit.repaint()
         if self.out: # Echo to out (stdout) too if desired
             self.out.write(msg)
+        QApplication.processEvents()
 
     def flush(self) -> None:
         None
@@ -189,10 +190,11 @@ class MainWidget(QWidget):
 
     def writeMessage(self, msg) -> None:
         self.messageBox.moveCursor(QTextCursor.End)
-        self.messageBox.ensureCursorVisible()
+        #self.messageBox.ensureCursorVisible()
         self.messageBox.appendPlainText(msg)
         self.messageBox.ensureCursorVisible()
         self.messageBox.repaint()
+        QApplication.processEvents()
 
     def _load_settings(self) -> None:
         """Load settings on startup."""
@@ -368,6 +370,8 @@ class MainWidget(QWidget):
         except:
             pass
 
+        self.messageBox.ensureCursorVisible()
+        self.messageBox.repaint()
 
 if __name__ == '__main__':
     from sys import exit as sysExit
@@ -376,7 +380,7 @@ if __name__ == '__main__':
     app.setApplicationName('SparkFun RTK Firmware Uploader ' + guiVersion)
     app.setWindowIcon(QIcon(resource_path("RTK.png")))
     w = MainWidget()
-    if 1: # Change to 0 to have the messages echoed on stdout
+    if 0: # Change to 0 to have the messages echoed on stdout
         sys.stdout = messageRedirect(w.messageBox) # Divert stdout to messageBox
         sys.stderr = messageRedirect(w.messageBox) # Divert stderr to messageBox
     else:

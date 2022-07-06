@@ -82,7 +82,6 @@ function parseIncoming(msg) {
             || id.includes("sdUsedSpace")
             || id.includes("rtkFirmwareVersion")
             || id.includes("zedFirmwareVersion")
-            || id.includes("profileName")
             || id.includes("hardwareID")
             || id.includes("daysRemaining")
         ) {
@@ -123,6 +122,8 @@ function parseIncoming(msg) {
     //console.log("Settings loaded");
 
     //Force element updates
+    ge("profileNumber").dispatchEvent(new CustomEvent('change'));
+    ge("profileName").dispatchEvent(new CustomEvent('change'));
     ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
     ge("baseTypeSurveyIn").dispatchEvent(new CustomEvent('change'));
     ge("baseTypeFixed").dispatchEvent(new CustomEvent('change'));
@@ -195,6 +196,7 @@ function collapseSection(section, caret) {
 
 function validateFields() {
     //Collapse all sections
+    collapseSection("collapseProfileConfig", "profileCaret");
     collapseSection("collapseGNSSConfig", "gnssCaret");
     collapseSection("collapseGNSSConfigMsg", "gnssMsgCaret");
     collapseSection("collapseBaseConfig", "baseCaret");
@@ -204,6 +206,10 @@ function validateFields() {
     collapseSection("collapseSystemConfig", "systemCaret");
 
     errorCount = 0;
+
+    //Profile Config
+    checkElementValue("profileNumber", 1, 4, "Must be between 1 and 4", "collapseProfileConfig");
+    checkElementString("profileName", 1, 49, "Must be 1 to 49 characters", "collapseProfileConfig");
 
     //GNSS Config
     checkElementValue("measurementRateHz", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseGNSSConfig");

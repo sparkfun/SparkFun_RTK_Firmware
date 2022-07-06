@@ -363,6 +363,8 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "maxLogTime_minutes", settings.maxLogTime_minutes);
   stringRecord(settingsCSV, "maxLogLength_minutes", settings.maxLogLength_minutes);
 
+  stringRecord(settingsCSV, "enableSdCardServer", settings.enableSdCardServer);
+
   stringRecord(settingsCSV, "sdFreeSpaceMB", sdFreeSpaceMB);
   stringRecord(settingsCSV, "sdUsedSpaceMB", sdUsedSpaceMB);
 
@@ -467,6 +469,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.radioPortBaud = settingValue;
   else if (strcmp(settingName, "enableLogging") == 0)
     settings.enableLogging = settingValueBool;
+  else if (strcmp(settingName, "enableSdCardServer") == 0)
+    settings.enableSdCardServer = settingValueBool;
   else if (strcmp(settingName, "dataPortChannel") == 0)
     settings.dataPortChannel = (muxConnectionType_e)settingValue;
   else if (strcmp(settingName, "autoIMUmountAlignment") == 0)

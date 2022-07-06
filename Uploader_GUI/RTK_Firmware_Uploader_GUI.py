@@ -35,8 +35,7 @@ Please see the LICENSE.md for more details
 
 from typing import Iterator, Tuple
 
-from PyQt5.QtCore import QSettings, QProcess, QTimer, Qt, QIODevice, pyqtSlot, \
-    QObject, QThread, pyqtSignal
+from PyQt5.QtCore import QSettings, QProcess, QTimer, Qt, QIODevice, pyqtSlot
 from PyQt5.QtWidgets import QWidget, QLabel, QComboBox, QGridLayout, \
     QPushButton, QApplication, QLineEdit, QFileDialog, QPlainTextEdit, \
     QAction, QActionGroup, QMenu, QMenuBar, QMainWindow, QMessageBox
@@ -45,7 +44,6 @@ from PyQt5.QtSerialPort import QSerialPortInfo
 
 import sys
 import os
-from time import sleep
 
 import esptool
 from esptool import ESPLoader
@@ -97,19 +95,6 @@ class messageRedirect:
 
     def isatty(self):
         return True
-
-class ESPTool(QObject):
-    finished = pyqtSignal()
-
-    def run(self, command):
-        """Run esptool in a separate thread to stop the GUI from freezing"""
-        try:
-            esptool.main(command)
-        except (ValueError, IOError, FatalError, ImportError, NotImplementedInROMError, UnsupportedCommandError, NotSupportedError, RuntimeError) as err:
-            print(str(err))
-        except:
-            pass
-        self.finished.emit()
 
 # noinspection PyArgumentList
 
@@ -375,17 +360,6 @@ class MainWidget(QWidget):
         self.writeMessage("Command: esptool.main(%s)\n\n" % " ".join(command))
 
         #print("python esptool.py %s\n\n" % " ".join(command)) # Useful for debugging - cut and paste into a command prompt
-
-        self.thread = QThread()
-        self.espTool = ESPTool()
-        self.espTool.moveToThread(self.thread)
-        self.thread.started.connect(self.espTool.run(command))
-        self.thread.finished.connect(lambda: self.upload_btn.setEnabled(True))
-        self.espTool.finished.connect(self.thread.quit)
-        self.espTool.finished.connect(self.espTool.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.upload_btn.setEnabled(False)
-        #self.thread.start()
 
         try:
             esptool.main(command)

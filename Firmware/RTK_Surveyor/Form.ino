@@ -319,6 +319,7 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "baseTypeFixed", settings.fixedBase);
   stringRecord(settingsCSV, "observationSeconds", settings.observationSeconds);
   stringRecord(settingsCSV, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
+  stringRecord(settingsCSV, "ntripServer_StartAtSurveyIn", settings.ntripServer_StartAtSurveyIn);
 
   if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
   {
@@ -530,6 +531,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       bootProfileNumber = 1;
     Serial.printf("bootProfileNumber: %d\r\n", bootProfileNumber);
   }
+
+  //NTRIP Server settings
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;
   else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
@@ -548,7 +551,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.ntripServer_wifiSSID, settingValueStr);
   else if (strcmp(settingName, "ntripServer_wifiPW") == 0)
     strcpy(settings.ntripServer_wifiPW, settingValueStr);
+  else if (strcmp(settingName, "ntripServer_StartAtSurveyIn") == 0)
+    settings.ntripServer_StartAtSurveyIn = settingValueBool;
 
+  //NTRIP Client settings
   else if (strcmp(settingName, "enableNtripClient") == 0)
     settings.enableNtripClient = settingValueBool;
   else if (strcmp(settingName, "ntripClient_CasterHost") == 0)

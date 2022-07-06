@@ -2,7 +2,7 @@
 
 Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Not Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/RedDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet L-Band: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
 
-**Note:** The RTK Express Plus does not support Base mode. The Express Press contains an internal IMU and additional algorithms to support high precision location fixes using dead reckoning. 
+**Note:** The RTK Express Plus does not support Base mode. The Express Press contains an internal IMU and additional algorithms to support high precision location fixes using dead reckoning.
 
 **Note:** The RTK Facet L-Band is designed to use corrections provided via u-blox's PointPerfect system therefore, a Base/Rover setup is not needed. However, if the service is not available the RTK Facet L-Band can still be used in a traditional Base/Rover setup. Here we’ll describe how to assemble a Rover and Base.
 
@@ -60,7 +60,7 @@ The *Fixed Base* mode is similar but uses a structure icon (shown above) to indi
 
 ## NTRIP Server
 
-**NTRIP** is where the real fun begins. The Base needs a method for getting the correction data to the Rover. This can be done using radios but that's limited to a few kilometers at best. If you've got WiFi reception, use the internet! 
+**NTRIP** is where the real fun begins. The Base needs a method for getting the correction data to the Rover. This can be done using radios but that's limited to a few kilometers at best. If you've got WiFi reception, use the internet!
 
 Enabling NTRIP will present a handful of new options seen below:
 
@@ -96,7 +96,7 @@ Once WiFi connects the device will attempt to connect to the NTRIP mount point. 
 
 Every second a few hundred bytes, up to ~2k, will be transmitted to your mount point.
 
-Note: During NTRIP transmission WiFi is turned on and Bluetooth is turned off. You should not need to know the location information of the base so Bluetooth should not be needed. If necessary, USB can be connected to view detailed location information using the [System Report](https://sparkfun.github.io/SparkFun_RTK_Firmware/system_status_reporting/) command.
+Note: During NTRIP transmission WiFi is turned on and Bluetooth is turned off. You should not need to know the location information of the base so Bluetooth should not be needed. If necessary, USB can be connected to view detailed location information using the [System Report](https://sparkfun.github.io/SparkFun_RTK_Firmware/system_status_report/) command.
 
 ## L-Band Assisted Base
 

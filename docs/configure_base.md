@@ -96,6 +96,8 @@ Once WiFi connects the device will attempt to connect to the NTRIP mount point. 
 
 Every second a few hundred bytes, up to ~2k, will be transmitted to your mount point.
 
+When the NTRIP server is enabled, enabling the [SD Card Server](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_data_logging/) provides access the files on the microSD card using WiFi.  The NTRIP server configuration also supports enabling WiFi during the Survey-In process.
+
 Note: During NTRIP transmission WiFi is turned on and Bluetooth is turned off. You should not need to know the location information of the base so Bluetooth should not be needed. If necessary, USB can be connected to view detailed location information using the [System Report](https://sparkfun.github.io/SparkFun_RTK_Firmware/system_status_report/) command.
 
 ## L-Band Assisted Base

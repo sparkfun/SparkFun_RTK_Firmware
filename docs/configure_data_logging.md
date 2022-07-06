@@ -12,7 +12,7 @@ Because of the nature of these controls, the AP config page is different than th
 
 ### Log to SD
 
-If a microSD card is detected, all messages will be logged. 
+If a microSD card is detected, all messages will be logged.
 
 ### Max Log Time
 
@@ -28,7 +28,7 @@ Factory Defaults will erase any user settings and reset the internal receiver to
 
 ### SD Card
 
-Various stats for the SD card are shown. 
+Various stats for the SD card are shown.
 
 ### Update Firmware
 
@@ -50,5 +50,6 @@ From the Main Menu, pressing 5 will enter the Logging Menu. This menu will repor
 * Option 2 allows a user to set the max logging time. This is convenient to determine the location of a fixed antenna or a receiver on a repeatable landmark. Set the RTK Facet to log RAWX data for 10 hours, convert to RINEX, run through an observation processing station and you’ll get the corrected position with <10mm accuracy. Please see the [How to Build a DIY GNSS Reference Station](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station) tutorial for more information.
 * Option 3 allows a user to set the max logging length in minutes. Every 'max long length' amount of time the current log will be closed and a new log will be started. This is known as cyclic logging and is convenient on *very* long surveys (ie, months or years) to prevent logs from getting too unwieldy and helps limit the risk of log corruption. This will continue until the unit is powered down or the *max logging time* is reached.
 * Option 4 will enable/disable creating a comma separated file (Marks_date.csv) that is written each time the mark state is selected with the setup button on the RTK Surveyor, RTK Express or RTK Express Plus, or the power button on the RTK Facet.
+* Option 5 will enable/disable the SD card server which provides access to the microSD card via WiFi in Rover and Base modes.  In Rover mode the NTRIP client must be enabled.  In Base mode the NTRIP server must be enabled, and it is possible to enable WiFi during Survey-In mode.  The SD card server is always available in WiFi Config mode.
 
 **Note:** If you are wanting to log RAWX sentences to create RINEX files useful for post-processing the position of the receiver please see the GNSS Configuration Menu. For more information on how to use a RAWX GNSS log to get a higher accuracy base location please see the [How to Build a DIY GNSS Reference Station](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data) tutorial.

@@ -2193,6 +2193,15 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div class="form-check mt-3">
+                        <label class="form-check-label" for="enableSdCardServer">Enable the SD Card Server</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enableSdCardServer">
+                        <span class="tt" data-bs-placement="right"
+                            title="Access the SD card files via WiFi when the NTRIP client is enabled in Rover mode or the NTRIP server is enabled in Base mode.  Default: Disabled">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="form-check mt-3">
                         <label class="form-check-label" for="enableFactoryDefaults">Enable Factory Defaults</label>
                         <input class="form-check-input" type="checkbox" value="" id="enableFactoryDefaults" unchecked>
                         <span class="tt" data-bs-placement="right"

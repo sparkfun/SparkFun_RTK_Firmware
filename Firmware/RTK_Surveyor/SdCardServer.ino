@@ -28,7 +28,8 @@ void
 sdCardServerBegin(AsyncWebServer * server, bool createWebSite, bool redirect)
 {
   //Enable the SD card server
-  if (settings.enableSdCardServer && (!sdCardServer))
+  if ((settings.enableSdCardServer || (systemState == STATE_WIFI_CONFIG_NOT_STARTED))
+    && (!sdCardServer))
   {
     static const char * sdCardPages = "/microSD/";
     sdCardServer = new SdCardServer(sd, sdCardServerIsSdCardPresent, sdCardPages, NULL);

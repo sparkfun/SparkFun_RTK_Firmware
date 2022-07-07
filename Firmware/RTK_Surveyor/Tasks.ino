@@ -295,7 +295,7 @@ void ButtonCheckTask(void *e)
                 //If only one active profile do not show any profiles
                 index = getProfileNumberFromUnit(0);
                 displayProfile = getProfileNumberFromUnit(1);
-                setupState = (index >= MAX_PROFILE_COUNT) ? STATE_MARK_EVENT : STATE_PROFILE;
+                setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
                 displayProfile = 0;
                 break;
               case STATE_PROFILE:
@@ -410,7 +410,7 @@ void ButtonCheckTask(void *e)
                 //If only one active profile do not show any profiles
                 index = getProfileNumberFromUnit(0);
                 displayProfile = getProfileNumberFromUnit(1);
-                setupState = (index >= MAX_PROFILE_COUNT) ? STATE_MARK_EVENT : STATE_PROFILE;
+                setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
                 displayProfile = 0;
                 break;
               case STATE_PROFILE:

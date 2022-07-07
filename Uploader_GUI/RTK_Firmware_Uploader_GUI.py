@@ -13,16 +13,17 @@ You may also need:
 
 Pyinstaller:
 Windows:
-pyinstaller --onefile --clean --noconsole --distpath=./Windows_exe --icon=RTK.ico --add-binary="RTK_Surveyor.ino.partitions.bin;." --add-binary="RTK_Surveyor.ino.bootloader.bin;." --add-binary="boot_app0.bin;." --add-binary="RTK.png;." RTK_Firmware_Uploader_GUI.py
+pyinstaller --onefile --clean --noconsole --distpath=./Windows_exe --icon=RTK.ico --add-binary="RTK_Surveyor_Partitions_4MB.bin;." --add-binary="RTK_Surveyor_Partitions_16MB.bin;." --add-binary="RTK_Surveyor.ino.bootloader.bin;." --add-binary="boot_app0.bin;." --add-binary="RTK.png;." RTK_Firmware_Uploader_GUI.py
 Linux:
-pyinstaller --onefile --clean --noconsole --distpath=./Linux_exe --icon=RTK.ico --add-binary="RTK_Surveyor.ino.partitions.bin:." --add-binary="RTK_Surveyor.ino.bootloader.bin:." --add-binary="boot_app0.bin:." --add-binary="RTK.png:." RTK_Firmware_Uploader_GUI.py
+pyinstaller --onefile --clean --noconsole --distpath=./Linux_exe --icon=RTK.ico --add-binary="RTK_Surveyor_Partitions_4MB.bin:." --add-binary="RTK_Surveyor_Partitions_16MB.bin:." --add-binary="RTK_Surveyor.ino.bootloader.bin:." --add-binary="boot_app0.bin:." --add-binary="RTK.png:." RTK_Firmware_Uploader_GUI.py
 
 Pyinstaller needs:
 RTK_Firmware_Uploader_GUI.py (this file!)
 RTK.ico (icon file for the .exe)
 RTK.png (icon for the GUI widget)
 esptool.py (v3.3, copied from https://github.com/espressif/esptool/releases/tag/v3.3)
-RTK_Surveyor.ino.partitions.bin
+RTK_Surveyor_Partitions_4MB.bin
+RTK_Surveyor_Partitions_16MB.bin
 RTK_Surveyor.ino.bootloader.bin
 boot_app0.bin
 
@@ -55,7 +56,7 @@ from esptool import FatalError
 # Setting constants
 SETTING_PORT_NAME = 'port_name'
 SETTING_FILE_LOCATION = 'file_location'
-SETTING_PARTITION_LOCATION = 'partition_location'
+#SETTING_PARTITION_LOCATION = 'partition_location'
 SETTING_BAUD_RATE = 'baud'
 
 guiVersion = 'v1.3'
@@ -74,9 +75,10 @@ def resource_path(relative_path):
 class messageRedirect(QObject):
     """Wrap a class around a QPlainTextEdit so we can redirect stdout and stderr to it"""
 
-    def __init__(self, edit, out=None) -> None:
+    def __init__(self, edit, out=None, flashSize=None) -> None:
         self.edit = edit
         self.out = out
+        self.flashSize = flashSize
 
     def write(self, msg) -> None:
         if msg.startswith("\r"):
@@ -87,9 +89,20 @@ class messageRedirect(QObject):
             self.edit.insertPlainText(msg)
         self.edit.ensureCursorVisible()
         self.edit.repaint()
+        QApplication.processEvents() # This prevents the circle of doom...
+
         if self.out: # Echo to out (stdout) too if desired
             self.out.write(msg)
-        QApplication.processEvents()
+
+        if self.flashSize:
+            if msg.find("Detected flash size: 4MB") >= 0:
+                self.flashSize[0] = 4
+            elif msg.find("Detected flash size: 8MB") >= 0:
+                self.flashSize[0] = 8
+            elif msg.find("Detected flash size: 16MB") >= 0:
+                self.flashSize[0] = 16
+            elif msg.find("Detected flash size: ") >= 0:
+                self.flashSize[0] = 0
 
     def flush(self) -> None:
         None
@@ -105,6 +118,8 @@ class MainWidget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
+        self.flashSize = [0] # flashSize needs to be mutable. Use a single element list
+
         # File location line edit
         self.file_label = QLabel(self.tr('Firmware File:'))
         self.fileLocation_lineedit = QLineEdit()
@@ -117,17 +132,17 @@ class MainWidget(QWidget):
         self.browse_btn.setEnabled(True)
         self.browse_btn.pressed.connect(self.on_browse_btn_pressed)
 
-        # Partition file location line edit
-        self.partition_label = QLabel(self.tr('Partition File:'))
-        self.partitionFileLocation_lineedit = QLineEdit()
-        self.partition_label.setBuddy(self.partitionFileLocation_lineedit)
-        self.partitionFileLocation_lineedit.setEnabled(False)
-        self.partitionFileLocation_lineedit.returnPressed.connect(self.on_partition_browse_btn_pressed)
+        # # Partition file location line edit
+        # self.partition_label = QLabel(self.tr('Partition File:'))
+        # self.partitionFileLocation_lineedit = QLineEdit()
+        # self.partition_label.setBuddy(self.partitionFileLocation_lineedit)
+        # self.partitionFileLocation_lineedit.setEnabled(False)
+        # self.partitionFileLocation_lineedit.returnPressed.connect(self.on_partition_browse_btn_pressed)
 
-        # Browse for new file button
-        self.partition_browse_btn = QPushButton(self.tr('Browse'))
-        self.partition_browse_btn.setEnabled(True)
-        self.partition_browse_btn.pressed.connect(self.on_partition_browse_btn_pressed)
+        # # Browse for new file button
+        # self.partition_browse_btn = QPushButton(self.tr('Browse'))
+        # self.partition_browse_btn.setEnabled(True)
+        # self.partition_browse_btn.pressed.connect(self.on_partition_browse_btn_pressed)
 
         # Port Combobox
         self.port_label = QLabel(self.tr('COM Port:'))
@@ -167,20 +182,20 @@ class MainWidget(QWidget):
         layout.addWidget(self.fileLocation_lineedit, 1, 1)
         layout.addWidget(self.browse_btn, 1, 2)
 
-        layout.addWidget(self.partition_label, 2, 0)
-        layout.addWidget(self.partitionFileLocation_lineedit, 2, 1)
-        layout.addWidget(self.partition_browse_btn, 2, 2)
+        # layout.addWidget(self.partition_label, 2, 0)
+        # layout.addWidget(self.partitionFileLocation_lineedit, 2, 1)
+        # layout.addWidget(self.partition_browse_btn, 2, 2)
 
-        layout.addWidget(self.port_label, 3, 0)
-        layout.addWidget(self.port_combobox, 3, 1)
-        layout.addWidget(self.refresh_btn, 3, 2)
+        layout.addWidget(self.port_label, 2, 0)
+        layout.addWidget(self.port_combobox, 2, 1)
+        layout.addWidget(self.refresh_btn, 2, 2)
 
-        layout.addWidget(self.baud_label, 4, 0)
-        layout.addWidget(self.baud_combobox, 4, 1)
-        layout.addWidget(self.upload_btn, 4, 2)
+        layout.addWidget(self.baud_label, 3, 0)
+        layout.addWidget(self.baud_combobox, 3, 1)
+        layout.addWidget(self.upload_btn, 3, 2)
 
-        layout.addWidget(self.messages_label, 5, 0)
-        layout.addWidget(self.messageBox, 6, 0, 5, 3)
+        layout.addWidget(self.messages_label, 4, 0)
+        layout.addWidget(self.messageBox, 5, 0, 5, 3)
 
         self.setLayout(layout)
 
@@ -208,11 +223,11 @@ class MainWidget(QWidget):
         if lastFile is not None:
             self.fileLocation_lineedit.setText(lastFile)
 
-        lastFile = self.settings.value(SETTING_PARTITION_LOCATION)
-        if lastFile is not None:
-            self.partitionFileLocation_lineedit.setText(lastFile)
-        else:
-            self.partitionFileLocation_lineedit.setText(resource_path("RTK_Surveyor.ino.partitions.bin"))
+        # lastFile = self.settings.value(SETTING_PARTITION_LOCATION)
+        # if lastFile is not None:
+        #     self.partitionFileLocation_lineedit.setText(lastFile)
+        # else:
+        #     self.partitionFileLocation_lineedit.setText(resource_path("RTK_Surveyor.ino.partitions.bin"))
 
         baud = self.settings.value(SETTING_BAUD_RATE)
         if baud is not None:
@@ -224,7 +239,7 @@ class MainWidget(QWidget):
         """Save settings on shutdown."""
         self.settings.setValue(SETTING_PORT_NAME, self.port)
         self.settings.setValue(SETTING_FILE_LOCATION, self.theFileName)
-        self.settings.setValue(SETTING_PARTITION_LOCATION, self.thePartitionFileName)
+        # self.settings.setValue(SETTING_PARTITION_LOCATION, self.thePartitionFileName)
         self.settings.setValue(SETTING_BAUD_RATE, self.baudRate)
 
     def _clean_settings(self) -> None:
@@ -277,10 +292,10 @@ class MainWidget(QWidget):
         """Return the file name."""
         return self.fileLocation_lineedit.text()
 
-    @property
-    def thePartitionFileName(self) -> str:
-        """Return the partition file name."""
-        return self.partitionFileLocation_lineedit.text()
+    # @property
+    # def thePartitionFileName(self) -> str:
+    #     """Return the partition file name."""
+    #     return self.partitionFileLocation_lineedit.text()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle Close event of the Widget."""
@@ -307,17 +322,17 @@ class MainWidget(QWidget):
         if fileName:
             self.fileLocation_lineedit.setText(fileName)
 
-    def on_partition_browse_btn_pressed(self) -> None:
-        """Open dialog to select partition bin file."""
-        options = QFileDialog.Options()
-        fileName, _ = QFileDialog.getOpenFileName(
-            None,
-            "Select Partition File",
-            "",
-            "Parition Files (*.bin);;All Files (*)",
-            options=options)
-        if fileName:
-            self.partitionFileLocation_lineedit.setText(fileName)
+    # def on_partition_browse_btn_pressed(self) -> None:
+    #     """Open dialog to select partition bin file."""
+    #     options = QFileDialog.Options()
+    #     fileName, _ = QFileDialog.getOpenFileName(
+    #         None,
+    #         "Select Partition File",
+    #         "",
+    #         "Parition Files (*.bin);;All Files (*)",
+    #         options=options)
+    #     if fileName:
+    #         self.partitionFileLocation_lineedit.setText(fileName)
 
     def on_upload_btn_pressed(self) -> None:
         """Upload the firmware"""
@@ -331,7 +346,7 @@ class MainWidget(QWidget):
 
         fileExists = False
         try:
-            f = open(self.fileLocation_lineedit.text())
+            f = open(self.theFileName)
             fileExists = True
         except IOError:
             fileExists = False
@@ -341,10 +356,66 @@ class MainWidget(QWidget):
                 return
             f.close()
 
+        # fileExists = False
+        # try:
+        #     f = open(self.thePartitionFileName)
+        #     fileExists = True
+        # except IOError:
+        #     fileExists = False
+        # finally:
+        #     if (fileExists == False):
+        #         self.writeMessage("File Not Found")
+        #         return
+        #     f.close()
+
         try:
             self._save_settings() # Save the settings in case the upload crashes
         except:
             pass
+
+        self.flashSize[0] = 0
+
+        self.writeMessage("Detecting flash size\n\n")
+
+        command = []
+        command.extend(["--chip","esp32"])
+        command.extend(["--port",self.port])
+        command.extend(["--baud",self.baudRate])
+        command.extend(["flash_id"])
+
+        try:
+            esptool.main(command)
+        except (ValueError, IOError, FatalError, ImportError, NotImplementedInROMError, UnsupportedCommandError, NotSupportedError, RuntimeError) as err:
+            self.writeMessage(str(err))
+            self.messageBox.ensureCursorVisible()
+            self.messageBox.repaint()
+            return
+        except:
+            self.messageBox.ensureCursorVisible()
+            self.messageBox.repaint()
+            return
+
+        if self.flashSize[0] == 0:
+            self.writeMessage("Flash size not detected! Defaulting to 16MB\n")
+            self.flashSize[0] = 16
+        else:
+            self.writeMessage("Flash size is " + str(self.flashSize[0]) + "MB\n")
+
+        thePartitionFileName = ''
+        firmwareSizeCorrect = True
+        if self.flashSize[0] == 16:
+            thePartitionFileName = resource_path("RTK_Surveyor_Partitions_16MB.bin")
+            # if self.theFileName.find("16MB") < 0:
+            #     firmwareSizeCorrect = False
+        else:
+            thePartitionFileName = resource_path("RTK_Surveyor_Partitions_4MB.bin")
+            # if self.theFileName.find("4MB") < 0:
+            #     firmwareSizeCorrect = False
+
+        if firmwareSizeCorrect == False:
+            reply = QMessageBox.warning(self, "Firmware size mismatch", "Do you want to continue?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.No:
+                return
 
         self.writeMessage("Uploading firmware\n")
 
@@ -355,7 +426,7 @@ class MainWidget(QWidget):
         command.extend(["--baud",self.baudRate])
         command.extend(["--before","default_reset","--after","hard_reset","write_flash","-z","--flash_mode","dio","--flash_freq","80m","--flash_size","detect"])
         command.extend(["0x1000",resource_path("RTK_Surveyor.ino.bootloader.bin")])
-        command.extend(["0x8000",self.thePartitionFileName])
+        command.extend(["0x8000",thePartitionFileName])
         command.extend(["0xe000",resource_path("boot_app0.bin")])
         command.extend(["0x10000",self.theFileName])
 
@@ -380,11 +451,11 @@ if __name__ == '__main__':
     app.setApplicationName('SparkFun RTK Firmware Uploader ' + guiVersion)
     app.setWindowIcon(QIcon(resource_path("RTK.png")))
     w = MainWidget()
-    if 0: # Change to 0 to have the messages echoed on stdout
-        sys.stdout = messageRedirect(w.messageBox) # Divert stdout to messageBox
+    if 1: # Change to 0 to have the messages echoed on stdout
+        sys.stdout = messageRedirect(w.messageBox, flashSize=w.flashSize) # Divert stdout to messageBox. Report flash size via flashSize
         sys.stderr = messageRedirect(w.messageBox) # Divert stderr to messageBox
     else:
-        sys.stdout = messageRedirect(w.messageBox, sys.stdout) # Echo to stdout too
-        sys.stderr = messageRedirect(w.messageBox, sys.stderr) # Echo to stderr too
+        sys.stdout = messageRedirect(w.messageBox, flashSize=w.flashSize, out=sys.stdout) # Echo to stdout too
+        sys.stderr = messageRedirect(w.messageBox, out=sys.stderr) # Echo to stderr too
     w.show()
     sys.exit(app.exec_())

@@ -156,8 +156,7 @@ void menuUserProfiles()
 
       recordProfileNumber(incoming - 1); //Align to array
       profileNumber = incoming - 1;
-
-      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Enables Delete Profile
+      setSettingsFileName(); //Enables Delete Profile
 
       //We need to load these settings from file so that we can record a profile name change correctly
       bool responseLFS = loadSystemSettingsFromFileLFS(settingsFileName, &settings);
@@ -175,8 +174,7 @@ void menuUserProfiles()
       Serial.print("Enter new profile name: ");
       readLine(settings.profileName, sizeof(settings.profileName), menuTimeoutExtended);
       recordSystemSettings(); //We need to update this immediately in case user lists the available profiles again
-
-      strcpy(profileNames[profileNumber], settings.profileName); //Update array
+      setProfileName(profileNumber);
     }
     else if (incoming == MAX_PROFILE_COUNT + 2)
     {

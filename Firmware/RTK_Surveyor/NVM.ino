@@ -975,6 +975,16 @@ Serial.printf("profiles: 0x%02x\r\n", profiles);
   return (profiles);
 }
 
+//Copy the profile name into the array of profile names
+void setProfileName(uint8_t ProfileNumber)
+{
+  //Update the name in the array of profile names
+  strcpy(profileNames[profileNumber], settings.profileName);
+
+  //Mark this profile as active
+  activeProfiles |= 1 << ProfileNumber;
+}
+
 //Open the clear text file, scan for 'profileName' and return the string
 //Returns true if successfully found tag in file, length may be zero
 //Looks at LittleFS first, then SD

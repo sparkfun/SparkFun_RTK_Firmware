@@ -971,7 +971,6 @@ uint8_t loadProfileNames()
       profiles |= 1 << x;
   }
 
-Serial.printf("profiles: 0x%02x\r\n", profiles);
   return (profiles);
 }
 

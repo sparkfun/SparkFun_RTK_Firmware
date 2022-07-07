@@ -488,7 +488,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "profileName") == 0)
   {
     strcpy(settings.profileName, settingValueStr);
-    strcpy(profileNames[profileNumber], settingValueStr);
+    setProfileName(profileNumber);
   }
   else if (strcmp(settingName, "profileNumber") == 0)
   {

@@ -8,7 +8,7 @@ Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported]
 
 You’ve got an incredibly powerful GNSS receiver in your hands. How do you verify that you can get really accurate location readings? It's a bit of work but it's a lot of fun and you'll learn a tremendous amount about surveying along the way.
 
-This is, admitedly, a very US-centric tutorial. We hope that it will provide some of the tools and basic guidance to be replicated in other countries. If you have additional sources for GPS/GNSS surveyed monuments in your own country, consider [adding them](/contribute) to this document!
+This is, admittedly, a very US-centric tutorial. We hope that it will provide some of the tools and basic guidance to be replicated in other countries. If you have additional sources for GPS/GNSS surveyed monuments in your own country, consider [adding them](/contribute) to this document!
 
 This is a replication and confirmation of the procedure done by [RTKLibExplorer in 2018](https://rtklibexplorer.wordpress.com/2018/03/17/measuring-a-survey-marker-with-the-datagnss-d302-rtk/). We modified it to demonstrate a similar process but using u-blox hardware and with a few updates.
 
@@ -25,7 +25,7 @@ The process goes like this:
 
 *RTK Fix Mode*
 
-Before we can consider doing anything in the field, we need to get really comfortable using the RTK product. Verify you can get your device into RTK Fix mode. This includes setting up a permanent base and/or using a service like Skylark to provide the correction data to the RTK product. Before planning a trip to the field get really used to using the RTK product in Rover mode with NTRIP corrections being passed over Bluetooth to your device.
+Before we can consider doing anything in the field, we need to get really comfortable using the RTK product. Verify you can get your device into RTK Fix mode. This includes setting up a permanent base and/or using a service like Skylark to provide the correction data to the RTK product. Before planning a trip to the field get used to using the RTK product in Rover mode with NTRIP corrections being passed over Bluetooth to your device.
 
 ## Locate GPS Monument
 
@@ -59,7 +59,7 @@ Find a GPS monument that is easiest for you to get to, click on it, and open the
 
 *Position in both NAD83 and ECEF*
 
-My respect for the surveying industry grows daily, but that doesn't mean they are free from competing and confusing standards. What you need to know is that the SparkFun RTK product line outputs coordinates in the **WGS84** coordinate system by default and can output **ECEF** as well. Most of the coordinates by the NGS are **NAD83** which has about 1.5 meter difference from the WGS84 coordinate system. No big deal for general mapping but it'll throw a wrench in your testing if you're not careful.
+My respect for the surveying industry grows daily, but that doesn't mean they are free from competing and confusing standards. What you need to know is that the SparkFun RTK product line outputs coordinates in the **WGS84** coordinate system by default and can output **ECEF** as well. Most of the coordinates by the NGS are **NAD83** which has about a 1.5-meter difference from the WGS84 coordinate system. No big deal for general mapping but it'll throw a wrench in your testing if you're not careful.
 
 The SparkFun example monument is at:
 
@@ -81,13 +81,13 @@ The earth is not static and the tectonic plates have this [annoying habit of mov
 
 *Plate tectonic time machine*
 
-Thankfully the NGS has a tool called the [**Horizontal Time-Dependent Positioning**](https://www.ngs.noaa.gov/cgi-bin/HTDP/htdp.prl?f1=4&f2=1). This allows both the conversion between coordinate system, and adjusting a given location to a given start and end time. Use the tool to convert the NAD83 coordinates of your monument from the time they were taken (June 27, of 2012 in our example) to WGS84(G2139) coordinates in today's date. If you convert the location for your monument on a Tuesday and visit it 5 days later, the coordinates should still be perfectly fine. This tool is needed both for the coordinate change (NAD83 to WGS84) and for long (months or years) periods of time between when the monument was surveyed.
+Thankfully the NGS has a tool called [**Horizontal Time-Dependent Positioning**](https://www.ngs.noaa.gov/cgi-bin/HTDP/htdp.prl?f1=4&f2=1). This allows both the conversion between coordinate systems and adjusting a given location to a given start and end time. Use the tool to convert the NAD83 coordinates of your monument from the time they were taken (June 27, 2012, in our example) to WGS84(G2139) coordinates on today's date. If you convert the location for your monument on a Tuesday and visit it 5 days later, the coordinates should still be perfectly fine. This tool is needed both for the coordinate change (NAD83 to WGS84) and for long (months or years) periods between when the monument was surveyed.
 
 ![Monument converted to WGS84 corrected to 2022](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%205%20Conversion%20to%20WGS84.jpg)
 
 *Monument converted to WGS84 corrected to 2022*
 
-Once we enter all the pertinent data, we receive a nice output showing us our modern day WGS84 coordinates! Also note the X/Y/Z ECEF coordinates.
+Once we enter all the pertinent data, we receive a nice output showing us our modern-day WGS84 coordinates! Also, note the X/Y/Z ECEF coordinates.
 
 The SparkFun example monument is at:
 
@@ -115,7 +115,7 @@ The SparkFun example monument is at:
 * Longitude: -105.15048340 (WGS84 in 2022)
 * Elliptical Height: 1613.737 meters (WGS84 in 2022)
 
-These are the coordinates we hope to see using SW Maps once we get out into the field. Write down your monument coordinates so that you have some idea of how close your unit is to the ideal in real time.
+These are the coordinates we hope to see using SW Maps once we get out into the field. Write down your monument coordinates so that you have some idea of how close your unit is to the ideal in real-time.
 
 ## Field Trip!
 
@@ -125,15 +125,15 @@ These are the coordinates we hope to see using SW Maps once we get out into the 
 
 Not a bad view!
 
-You will need to decide how cheap you want your setup to be. I went too cheap; my tripod doesn’t have a hook on the bottom so the string with a bolt (I didn’t even have a plumb bob) to center above the marker was not really center to the Facet. The height measurement from the mark to the ARP (bottom of the Facet) was done with a tape measure, in other words, not very accurate. But *it works*!
+You will need to decide how cheap you want your setup to be. I went too cheap; my tripod doesn’t have a hook on the bottom so the string with a bolt (I didn’t even have a plumb bob) to center above the marker was not central to the Facet. The height measurement from the mark to the ARP (bottom of the Facet) was done with a tape measure, in other words, not very accurate. But *it works*!
 
-Find the monument and locate your Facet (or RTK Surveyor, Express, Express Plus, Facet L-Band, etc) over the monument. Using a tape measure or other tool, measure the distance from the top of the monument to the bottom of the Facet. In this example it was 45 ¾” or 1162mm. Obviously milimeters matter here but don't let 'perfection' be the enemy of 'done'.
+Find the monument and locate your Facet (or RTK Surveyor, Express, Express Plus, Facet L-Band, etc) over the monument. Using a tape measure or other tool, measure the distance from the top of the monument to the bottom of the Facet. In this example, it was 45 ¾” or 1162mm. Obviously, millimeters matter here but don't let 'perfection' be the enemy of 'done'.
 
 ![L-Band Facet ARP](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/5/8/3/SparkFun_RTK_Facet_L-Band_ARP.jpg)
 
 *L-Band Facet ARP*
 
-Locate the ARP of your given RTK product ([53mm](https://geodesy.noaa.gov/ANTCAL/LoadFile?file=SFETOP106_NONE.atx) for units using the TOP106 Antenna, [61mm](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#hardware-assembly) for Facet, [69mm](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-l-band-hookup-guide/all) for Facet L-Band). Add your ARP to the height above the monument you measured previously. In this example 1416 + 69 = 1.485m. Enter that total height into SW Maps as the ‘Instrument Height’. This will allow the software to subtract the antenna location height from the current 3D location to gain the location of the point where the plumbob (or bolt) below your apparatus is located.
+Locate the ARP of your given RTK product ([53mm](https://geodesy.noaa.gov/ANTCAL/LoadFile?file=SFETOP106_NONE.atx) for units using the TOP106 Antenna, [61mm](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide/all#hardware-assembly) for Facet, [69mm](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-l-band-hookup-guide/all) for Facet L-Band). Add your ARP to the height above the monument you measured previously. In this example 1416 + 69 = 1.485m. Enter that total height into SW Maps as the ‘Instrument Height’. This will allow the software to subtract the antenna location height from the current 3D location to gain the location of the point where the plumb bob (or bolt) below your apparatus is located.
 
 With your instrument height determined, connect to the RTK product, begin sending RTCM corrections (either over NTRIP or radio link) and enter RTK Fix.
 
@@ -145,19 +145,19 @@ With your instrument height determined, connect to the RTK product, begin sendin
 
 We can see the approximate location of the monument in the above location.
 
-![Screen shot of a point in time](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%209%20SW%20Maps%20Point.jpg)
+![Screenshot of a point in time](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%209%20SW%20Maps%20Point.jpg)
 
-*Screen shot of a point in time*
+*Screenshot of a point in time*
 
 Note the 8 decimal places on the Lat/Long. 
 
-Screenshots are an easy way to record lat/long/alt but SW Maps (and other GIS software) allows the averaging of a position. Choose your own adventure. For our example, we took screenshots / snapshots of the location. Some surveyors hold a position for multiple minutes to get a point; we can do the same in under a second.
+Screenshots are an easy way to record lat/long/alt but SW Maps (and other GIS software) allows the averaging of a position. Choose your own adventure. For our example, we took screenshots/snapshots of the location. Some surveyors hold a position for multiple minutes to get a point; we can do the same in under a second.
 
-![Comparsion of three RTK correction sources](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2013%20Compare%20Points.jpg)
+![Comparison of three RTK correction sources](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2013%20Compare%20Points.jpg)
 
-*Comparsion of three RTK correction sources*
+*Comparison of three RTK correction sources*
 
-Off the shelf we regularly see 300 down to 150mm horizontal positional accuracy using any RTK product with a good L1/L2 antenna. This is shown in the picture above as the circle with 'No Corrections'. 
+Off the shelf, we regularly see 300 down to 150mm horizontal positional accuracy using any RTK product with a good L1/L2 antenna. This is shown in the picture above as the circle with 'No Corrections'. 
 
 With corrections turned on, the benefit of an RTK fix is obvious. The two surveyed points overlap each other so closely they are nearly indistinguishable. The SparkFun base station is documented [here](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station) and has a location accuracy of approximately 8.4mm. Using a base station is more accurate (as we will see) but L-Band corrections will also get you *incredibly* similar accuracy with a lot less hassle. 
 
@@ -177,23 +177,23 @@ We’ve established the monument’s location, we’ve captured the location of 
 
 *Convert LLA to ECEF*
 
-Enter your lat, long, and altitude coordinates into a LLA to ECEF converter. We found the [Sysense calculator](http://www.sysense.com/products/ecef_lla_converter/index.html) to work very well. How do we know it’s accurate? Take the [original coordinates](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2013%20Datasheet%20for%20Monument.jpg) from the NGS Datasheet, and use the calculator to convert to ECEF. They are identical.
+Enter your lat, long, and altitude coordinates into an LLA to ECEF converter. We found the [Sysense calculator](http://www.sysense.com/products/ecef_lla_converter/index.html) to work very well. How do we know it’s accurate? Take the [original coordinates](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2013%20Datasheet%20for%20Monument.jpg) from the NGS Datasheet, and use the calculator to convert them to ECEF. They are identical.
 
 ![ECEF difference between monument and readings](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2015%20Spreadsheet%20Results.jpg)
 
 *ECEF difference between monument and readings*
 
-Feel free to look at and make a copy of the [SparkFun example](https://docs.google.com/spreadsheets/d/1uEGnceLoAVwG3xnyWp8XTN8BBa__z4pg0l7IQRBcj8c/edit?usp=sharing) spreadsheet. ECEF is a wonderfully simplistic frame of reference; the comparison between two points is simply X/Y/Z in meters. We can use the Pythagorean theorem to calculate the 3D variance. In our example it is 52mm using corrections from a fixed based, and 189mm for an L-Band corrected base.
+Feel free to look at and make a copy of the [SparkFun example](https://docs.google.com/spreadsheets/d/1uEGnceLoAVwG3xnyWp8XTN8BBa__z4pg0l7IQRBcj8c/edit?usp=sharing) spreadsheet. ECEF is a wonderfully simplistic frame of reference; the comparison between two points is simply X/Y/Z in meters. We can use the Pythagorean theorem to calculate the 3D variance. In our example, it is 52mm using corrections from a fixed base, and 189mm for an L-Band corrected base.
 
-52mm off a professional mark is a clear indicator we are *very close* to the limit of our equipment. The sheer amount of geoscience, coordinate math, and relativistic phsyics that very smart people have contributed to enable any part of this experiment is awe inspiring. It gave me great satisfaction and reassurance that our base at SparkFun HQ is setup well, and that, in the hands of a professional, the RTK product line is quite capable of providing *very* accurate readings.
+52mm off a professional mark is a clear indicator we are *very close* to the limit of our equipment. The sheer amount of geoscience, coordinate math, and relativistic physics that very smart people have contributed to enable any part of this experiment is awe-inspiring. It gave me great satisfaction and reassurance that our base at SparkFun HQ is set up well, and that, in the hands of a professional, the RTK product line is quite capable of providing *very* accurate readings.
 
 ## How do I get 14mm?!
 
-* Use the best equipment. Our mechanical setup was rickety and cheap. Use a surveyor’s bi-pod setup, with a bubble level, and a prism pole to accurately level the RTK receiver and measure the distance to the monument.
+* Use the best equipment. Our mechanical setup was rickety and cheap. Use a surveyor’s bipod setup, with a bubble level, and a prism pole to accurately level the RTK receiver and measure the distance to the monument.
 * Use an antenna that is NGS calibrated to obtain accurate ARPs. The [SparkFun TOP106 antenna](https://www.sparkfun.com/products/17751) has been calibrated and we are in the process of calibrating the RTK Facet and RTK Facet L-Band.
 * Use an accurate base. A temporary or ‘survey-in’ base will not be accurate. The base needs 24 hours of logging with a [PPP analysis](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station/all#gather-raw-gnss-data). 
 * Be within 10km of your base. A baseline that is more than 10km will introduce inaccuracies to the RTK fix readings.
 * Correction services are not as accurate as a fixed base. While services such as Skylark and PointPerfect are *convenient*, they use models to estimate the overall isotropic disturbance. A local, fixed base will outperform a correction service.
-* Take an average of points. All the points taken in this example were single snapshots. Average a few seconds worth of readings.
+* Take an average of points. All the points taken in this example were single snapshots. Average a few seconds' worth of readings.
 
 This was a lot of fun and a good excuse to get outdoors. We hope you enjoy finding some new points in your world.

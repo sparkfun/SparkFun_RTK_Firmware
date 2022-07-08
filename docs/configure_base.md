@@ -2,13 +2,13 @@
 
 Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Not Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/RedDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet L-Band: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
 
-**Note:** The RTK Express Plus does not support Base mode. The Express Press contains an internal IMU and additional algorithms to support high precision location fixes using dead reckoning.
+**Note:** The RTK Express Plus does not support Base mode. The Express Press contains an internal IMU and additional algorithms to support high-precision location fixes using dead reckoning.
 
 **Note:** The RTK Facet L-Band is designed to use corrections provided via u-blox's PointPerfect system therefore, a Base/Rover setup is not needed. However, if the service is not available the RTK Facet L-Band can still be used in a traditional Base/Rover setup. Here we’ll describe how to assemble a Rover and Base.
 
-In addition to providing accurate local location fixes, the SparkFun RTK devices can also serve as a correction source, also called a *Base*. The Base doesn't move and 'knows' where it is so it can calculate the discrepancies between the signals it is receiving and what it should be receiving. Said differently, the 'Base' is told where it is, and that it's not moving. If the GPS signals say otherwise, the Base knows there was a disturbance in the ~~Force~~ ionosphere. These differences are the correction values passed to the Rover so that the Rover can have millimeter level accuracy.
+In addition to providing accurate local location fixes, the SparkFun RTK devices can also serve as a correction source, also called a *Base*. The Base doesn't move and 'knows' where it is so it can calculate the discrepancies between the signals it is receiving and what it should be receiving. Said differently, the 'Base' is told where it is, and that it's not moving. If the GPS signals say otherwise, the Base knows there was a disturbance in the ~~Force~~ ionosphere. These differences are the correction values passed to the Rover so that the Rover can have millimeter-level accuracy.
 
-There are two types of bases: *Surveyed* and *Fixed*. A surveyed base is often a temporary base setup in the field. Called a 'Survey-In', this is less accurate but requires only 60 seconds to complete. The 'Fixed' base is much more accurate but the precise location at which the antenna is located must be known. A fixed base is often a structure with an antenna bolted to the side. Raw satellite signals are gathered for a few hours then processed using Precision Point Position. We have a variety of tutorials that go into depth on these subjects but all you need to know is that the RTK Facet supports both Survey-In and Fixed Base techniques.
+There are two types of bases: *Surveyed* and *Fixed*. A surveyed base is often a temporary base set up in the field. Called a 'Survey-In', this is less accurate but requires only 60 seconds to complete. The 'Fixed' base is much more accurate but the precise location at which the antenna is located must be known. A fixed base is often a structure with an antenna bolted to the side. Raw satellite signals are gathered for a few hours and then processed using Precision Point Position. We have a variety of tutorials that go into depth on these subjects but all you need to know is that the RTK Facet supports both Survey-In and Fixed Base techniques.
 
 Please see the following tutorials for more information:
 
@@ -34,15 +34,15 @@ The Base Menu allows the user to select between Survey-In or Fixed Base setups.
 
 *Controlling the type of Base from WiFi AP Config*
 
-[![DOS CMD window showing Base menu optionns](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Base_Menu.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Base_Menu.jpg)
+[![DOS CMD window showing Base menu options](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Base_Menu.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Base_Menu.jpg)
 
 *Base Menu Options*
 
 ## Mode
 
-In **Survey-In** mode, the minimum observation time and Mean 3D Standard Deviation can be set. The defaults are 60s and 5m as directed by u-blox. The device will wait for the position accuracy to be better than 1 meter before a Survey-In is started. Don't be fooled; setting the observation time to 4 hours or an initial positional accuracy of 0.3m is not going to significantly improve the accuracy of the survey - use [PPP](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data) instead.
+In **Survey-In** mode, the minimum observation time and Mean 3D Standard Deviation can be set. The defaults are 60 seconds and 5 meters as directed by u-blox. The device will wait for the position accuracy to be better than 1 meter before a Survey-In is started. Don't be fooled; setting the observation time to 4 hours or an initial positional accuracy of 0.3m is not going to significantly improve the accuracy of the survey - use [PPP](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data) instead.
 
-In **Fixed** mode, the coordinates of the antenna need to be sent. These can be entered in ECEF or Geographic coordinates. Whenever a user enters Base mode by pressing the SETUP button the GNSS receiver will immediately go into base mode with these coordinates and immediately begin outputting RTCM correction data.
+In **Fixed** mode, the coordinates of the antenna need to be sent. These can be entered in ECEF or Geographic coordinates. Whenever a user enters Base mode by pressing the SETUP button the GNSS receiver will immediately go into Base mode with these coordinates and immediately begin outputting RTCM correction data.
 
 [![RTK Facet in Survey-In Mode](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Survey-In.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Survey-In.jpg)
 
@@ -54,7 +54,7 @@ Once the device has been configured, pressing the Setup button will change the d
 
 *RTK Facet in Fixed Transmit Mode*
 
-Once the *survey-in* is complete the device enters RTCM Transmit mode. The number of RTCM transmissions is displayed. By default this is one per second. During this phase the ZED-F9P is outputting the RTCM corrections out the **RADIO** port. Attaching an external serial radio to this port will allow the Base to send corrections to any Rover.
+Once the *survey-in* is complete the device enters RTCM Transmit mode. The number of RTCM transmissions is displayed. By default, this is one per second. During this phase, the ZED-F9P is outputting the RTCM corrections out of the **RADIO** port. Attaching an external serial radio to this port will allow the Base to send corrections to any Rover.
 
 The *Fixed Base* mode is similar but uses a structure icon (shown above) to indicate a fixed base.
 
@@ -72,7 +72,7 @@ Enabling NTRIP will present a handful of new options seen below:
 
 *Settings for the NTRIP Server*
 
-This is a powerful feature of the RTK line of products. The RTK device can be configured to transmit its RTCM directly over WiFi to the user's mountpoint. This eliminates the need for a radio link.
+This is a powerful feature of the RTK line of products. The RTK device can be configured to transmit its RTCM directly over WiFi to the user's mount point. This eliminates the need for a radio link.
 
 Once the NTRIP server is enabled you will need a handful of credentials:
 
@@ -100,4 +100,4 @@ Note: During NTRIP transmission WiFi is turned on and Bluetooth is turned off. Y
 
 ## L-Band Assisted Base
 
-The RTK Facet L-Band can be setup as a relay: the L-Band device can be located in a good reception area, and then transmit very accurate corrections to a rover via Radio or internet link. To setup an assisted base, set up RTK Facet L-Band unit with a clear view of the sky, and let it obtain RTK Fix from a fixed position in *Rover* mode. Once RTK fix is achieved, change the device to temporary *Base* mode. The device will take 60 seconds of positional readings, at which point the fixed position will be set using RTK fixed coordinates. The RTK Facet L-Band will then output very accurate RTCM corrections that can relayed to a rover that is in a less optimal reception setting.
+The RTK Facet L-Band can be set up as a relay: the L-Band device can be located in a good reception area, and then transmit very accurate corrections to a rover via Radio or internet link. To set up an assisted base, set up an RTK Facet L-Band unit with a clear view of the sky, and let it obtain RTK Fix from a fixed position in *Rover* mode. Once an RTK fix is achieved, change the device to temporary *Base* mode. The device will take 60 seconds of positional readings, at which point the fixed position will be set using RTK fixed coordinates. The RTK Facet L-Band will then output very accurate RTCM corrections that can be relayed to a rover that is in a less optimal reception setting.

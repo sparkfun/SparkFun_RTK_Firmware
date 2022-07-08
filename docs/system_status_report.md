@@ -2,7 +2,7 @@
 
 Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet L-Band: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
 
-Sending the `~` character to the device over the serial port will trigger a system status report. This is a custom NMEA style sentence, complete with CRC.
+Sending the `~` character to the device over the serial port will trigger a system status report. This is a custom NMEA-style sentence, complete with CRC.
 
 ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK System Status Trigger.png)
 
@@ -28,4 +28,4 @@ Below is an example system status report sentence:
 * 86 : Battery level (% remaining)
 * *71 : The completion of the sentence and a [CRC](http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html)
 
-**Note:** This is a custom NMEA setence, can vary in length, and may  exceed the [maximum permitted sentence length](https://www.nmea.org/Assets/20160520%20txt%20amendment.pdf) of 61 characters.
+**Note:** This is a custom NMEA sentence, can vary in length, and may exceed the [maximum](https://www.nmea.org/Assets/20160520%20txt%20amendment.pdf) permitted sentence length](https://www.nmea.org/Assets/20160520%20txt%20amendment.pdf) of 61 characters.

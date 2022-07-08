@@ -16,7 +16,7 @@ If a microSD card is detected, all messages will be logged.
 
 ### Max Log Time
 
-Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes (24 hours). Limit: 1 to 2880 minutes.
+Once the max log time is achieved, logging will cease. This is useful for limiting long-term, overnight, static surveys to a certain length of time. Default: 1440 minutes (24 hours). Limit: 1 to 2880 minutes.
 
 ### Max Log Length
 
@@ -32,7 +32,7 @@ Various stats for the SD card are shown.
 
 ### Update Firmware
 
-New firmware may be uploaded via WiFi to the unit. See [Updateing Firmware from the SD Card](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-the-sd-card) for more information.
+New firmware may be uploaded via WiFi to the unit. See [Updating Firmware from the SD Card](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-the-sd-card) for more information.
 
 ### Reset Counter
 
@@ -51,4 +51,4 @@ From the Main Menu, pressing 5 will enter the Logging Menu. This menu will repor
 * Option 3 allows a user to set the max logging length in minutes. Every 'max long length' amount of time the current log will be closed and a new log will be started. This is known as cyclic logging and is convenient on *very* long surveys (ie, months or years) to prevent logs from getting too unwieldy and helps limit the risk of log corruption. This will continue until the unit is powered down or the *max logging time* is reached.
 * Option 4 will enable/disable creating a comma separated file (Marks_date.csv) that is written each time the mark state is selected with the setup button on the RTK Surveyor, RTK Express or RTK Express Plus, or the power button on the RTK Facet.
 
-**Note:** If you are wanting to log RAWX sentences to create RINEX files useful for post processing the position of the receiver please see the GNSS Configuration Menu. For more information on how to use a RAWX GNSS log to get higher accuracy base location please see the [How to Build a DIY GNSS Reference Station](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data) tutorial.
+**Note:** If you are wanting to log RAWX sentences to create RINEX files useful for post-processing the position of the receiver please see the GNSS Configuration Menu. For more information on how to use a RAWX GNSS log to get a higher accuracy base location please see the [How to Build a DIY GNSS Reference Station](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data) tutorial.

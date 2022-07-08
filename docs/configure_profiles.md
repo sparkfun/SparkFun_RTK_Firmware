@@ -6,7 +6,7 @@ Surveyor: ![Feature Not Supported](https://raw.githubusercontent.com/sparkfun/Sp
 
 *User Profiles Menu*
 
-Profiles are a very powerful feature. A profile is a complete copy of all the settings on the RTK product. Switching profiles changes all the settings in one step. This is handy for creating a complex setup for surveying, and a different setup for a NTRIP enabled base station. Rather than changing the variety of parameters, a user can simply switch profiles.
+Profiles are a very powerful feature. A profile is a complete copy of all the settings on the RTK product. Switching profiles changes all the settings in one step. This is handy for creating a complex setup for surveying, and a different setup for an NTRIP-enabled base station. Rather than changing the variety of parameters, a user can simply switch profiles.
 
 [![Multiple Profiles on Menu](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_Profile.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_Profile.jpg)
 

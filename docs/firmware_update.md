@@ -126,18 +126,18 @@ Upon completion, your RTK device will reset and power down.
 
 RTK Surveyors sold before September 2021 may have an ESP32 WROOM module with 4MB flash instead of 16MB flash. These units still support all the functionality of other RTK products with the following limitations:
 
-* A firmware compatible with 4MB systems must be used to update a device.
-* Upgrading the firmware must be done via [CLI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli) or [GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui). WiFi or SD update paths are not possible.
+* There is not enough flash space for OTA. Upgrading the firmware must be done via [CLI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli) or [GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui). WiFi or SD update paths are not possible.
+
+The GUI (as of v1.3) will autodetect the ESP32's flash size and load the appropriate partition file. No user interaction is required.
 
 ### Determining Size of Flash
 
 To determine if the device has a 4MB module:
 
-* Use the GUI or CLI and attempt a firmware update. The output will auto-detect and show the flash size, as shown below:
+* Use the esptool via CLI. Please see the [flash_id](https://docs.espressif.com/projects/esptool/en/latest/esp32s3/esptool/basic-commands.html#read-spi-flash-id-flash-id) command for usage.
+* Use the GUI and attempt a firmware update. The output will auto-detect and show the flash size, as shown below:
 
 ![Module with 4MB flash](img/SparkFun%20RTK%20Firmware%20Update%20GUI%20-%204MB.png)
-
-More information can be found within Github issues [#151](https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/151) and [#207](https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/207).
 
 ## Updating u-blox Firmware
 

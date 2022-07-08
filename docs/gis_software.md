@@ -208,7 +208,92 @@ If you are a big fan of SurvPC please contact your sales rep and ask them to inc
 
 ## Survey Master
 
-[Survey Master](https://www.comnavtech.com/companyfile/4/) by ComNam / SinoGNSS is an Android based option. The download location can vary so google 'Survey Master ComNav Download' if the link above fails. tsestr asdfsd
+[Survey Master](https://www.comnavtech.com/companyfile/4/) by ComNam / SinoGNSS is an Android-based option. The download location can vary so google 'Survey Master ComNav Download' if the link above fails. Download the zip file, send the APK file to a phone and install the program.
+
+![Startup wizard](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2001.png)
+
+By default, a wizard will guide you through the setup. The Project step will ask you for the name of the project, the datum, etc. 
+
+![Connection Setup
+](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2027.png)
+
+Next select your connection. 
+
+![Connection specifics](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2029.png)
+
+For the Device Model select 'NMEA Device'. 
+
+![TOP106 Antenna Parameters](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2002.png)
+
+If you are just getting started, use one of the default antenna types. If you are attempting to get sub-centimeter accuracy, enter the parameters of your antenna and add it. Above are the NGS-certified parameters for the [TOP106 antenna](https://www.sparkfun.com/products/17751).
+
+![List of Bluetooth devices](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2003.png)
+
+Click the 'Target Device' option to get a list of available Bluetooth devices. Make sure your RTK product is on and you should see the device. In this example 'Express Rover-B022' was chosen.
+
+To finish, click 'Connect'. You should see the Bluetooth MAC address on your RTK product change to the Bluetooth icon indicating a connection is established.
+
+![Rover Work Mode Configuration](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2004.png)
+
+Next is configuring the 'Work mode' of the device. The step is where we set up our NTRIP correction source.
+
+![Empty mode list](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2005.png)
+
+Click 'Add' to create a new work mode.
+
+![NTRIP Client](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2009.png)
+
+Shown above, we configure the NTRIP Client. Survey Master calls this the 'SinoGNSS' Protocol. Click on the three bars to the right of 'Server' to enter a new NTRIP connection.
+
+![List of Services](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2030.png)
+
+Here you can add different NTRIP Caster providers. If you're using RTK2Go be sure to enter your contact email into the user name.
+
+![Server and mount point selected](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2009.png)
+
+Return to the 'Datalink type' window and select the Server you just entered. Re-enter the server address and port for your NTRIP Caster. Once complete, click on the down-pointing arrow. This will ping the Caster and obtain the mount point table. Select your mount point.
+
+![Rover with work list in place](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2011.png)
+
+Select the newly created work mode and press the 'Apply' button.
+
+![Connecting to service](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2033.png)
+
+Survey Master will attempt to connect to your specified RTK corrections source (NTRIP Caster). Upon success, you will be located on the Project menu.
+
+Survey Master expects many more NMEA sentences than most GIS software. We must enable some additional messages on the RTK device to correctly communicate with Survey Master. 
+
+![Configured NMEA messages](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2026%20.jpg)
+
+Note above: There are 9 enabled messages and GSV is set to '1'.
+
+Connect to the RTK device either over [WiFi AP config](/configure_with_wifi/) or via [Serial](/configure_with_serial/). Above is shown the serial method.
+
+Open a terminal at 115200bps and press a key to open the serial configuration menu. Press '2' for GNSS Messages, press '1' for NMEA messages, now be sure to enable 9 messages to a rate of 1:
+
+* GGA
+* GLL
+* GRS
+* GSA
+* GST
+* GSV
+* RMC
+* VTG
+* ZDA
+
+Once complete, press x until you exit the serial menus. Now we may return to Survey Master.
+
+![Survey Master showing the location of RTK Express](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2025.png)
+
+Click on the 'Survey' menu and then 'Topo Survey'. Above we can see a device with RTK float, and 117mm horizontal positional accuracy.
+
+Known Issues:
+
+* Survey Master parses the GxGSV sentence improperly and will only indicate GPS satellites even though the fix solution is using all satellites.
+
+![NMEA Sentences](img/SurveyMaster/SparkFun%20RTK%20Survey%20Master%20-%2015.png)
+
+To verify the NMEA sentences are being delivered correctly, Survey Master has a built-in tool. Select the Device->Rover->More->'H-Terminal'. 
 
 ## Other
 Hopefully, these examples give you an idea of how to connect the RTK product line to most any GIS software. If there is other GIS software that you'd like to see configuration information about, please open an issue on the [RTK Firmware repo](https://github.com/sparkfun/SparkFun_RTK_Firmware/issues) and we'll add it.

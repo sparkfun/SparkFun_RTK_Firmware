@@ -10,6 +10,6 @@ The System Status menu will show a large number of system parameters including a
 
 This menu is helpful when reporting technical issues or requesting support as it displays helpful information about the current ZED-F9x firmware version, and which parts of the unit are online.
 
-Pressing 'r' will allow a user to reset all settings to default including a factory reset of the ZED-F9x receiver. This can be helpful is the unit has been configured into an unknown or problematic state. 
+Pressing 'r' will allow a user to reset all settings to default including a factory reset of the ZED-F9x receiver. This can be helpful if the unit has been configured into an unknown or problematic state. 
 
 Pressing 'd' will enter a debug menu that is for advanced users.

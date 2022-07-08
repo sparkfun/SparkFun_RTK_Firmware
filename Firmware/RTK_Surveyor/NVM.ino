@@ -29,9 +29,16 @@ void loadSettings()
   //Record these settings to LittleFS and SD file to be sure they are the same
   recordSystemSettings();
 
-  activeProfiles = loadProfileNames(); //Count is used during menu display
+  //Get bitmask of active profiles
+  activeProfiles = loadProfileNames();
 
   Serial.printf("Profile '%s' loaded\n\r", profileNames[profileNumber]);
+}
+
+//Set the settingsFileName used many places
+void setSettingsFileName()
+{
+  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
 }
 
 //Load only LFS settings without recording
@@ -42,7 +49,7 @@ void loadSettingsPartial()
   loadProfileNumber();
 
   //Set the settingsFileName used many places
-  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
+  setSettingsFileName();
 
   loadSystemSettingsFromFileLFS(settingsFileName, &settings);
 }
@@ -59,19 +66,29 @@ void recordSystemSettings()
 //We share the recording with LittleFS so this is all the semphore and SD specific handling
 void recordSystemSettingsToFileSD(char *fileName)
 {
-  if (online.microSD == true)
+  bool gotSemaphore = false;
+  bool status = false;
+  bool wasSdCardOnline;
+
+  //Try to gain access the SD card
+  wasSdCardOnline = online.microSD;
+  if (online.microSD != true)
+    beginSD();
+
+  while (online.microSD == true)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like updateLogs()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
-      if (sd.exists(fileName))
-        sd.remove(fileName);
+      gotSemaphore = true;
+      if (sd->exists(fileName))
+        sd->remove(fileName);
 
       SdFile settingsFile; //FAT32
       if (settingsFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
         Serial.println(F("Failed to create settings file"));
-        return;
+        break;
       }
 
       updateDataFileCreate(&settingsFile); // Update the file to create time & date
@@ -88,9 +105,18 @@ void recordSystemSettingsToFileSD(char *fileName)
     }
     else
     {
-      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      //This is an error because the current settings no longer match the settings
+      //on the microSD card, and will not be restored to the expected settings!
+      Serial.printf("sdCardSemaphore failed to yield, NVM.ino line %d\r\n", __LINE__);
     }
+    break;
   }
+
+  //Release access the SD card
+  if (online.microSD && (!wasSdCardOnline))
+    endSD(gotSemaphore, true);
+  else if (gotSemaphore)
+    xSemaphoreGive(sdCardSemaphore);
 }
 
 //Export the current settings to a config file on SD
@@ -127,6 +153,8 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%s\n\r", F("rtkFirmwareVersion"), firmwareVersion);
 
   settingsFile->printf("%s=%s\n\r", F("zedFirmwareVersion"), zedFirmwareVersion);
+  if (productVariant == RTK_FACET_LBAND)
+    settingsFile->printf("%s=%s\n\r", F("neoFirmwareVersion"), neoFirmwareVersion);
   settingsFile->printf("%s=%d\n\r", F("printDebugMessages"), settings.printDebugMessages);
   settingsFile->printf("%s=%d\n\r", F("enableSD"), settings.enableSD);
   settingsFile->printf("%s=%d\n\r", F("enableDisplay"), settings.enableDisplay);
@@ -167,6 +195,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", F("enableExternalHardwareEventLogging"), settings.enableExternalHardwareEventLogging);
   settingsFile->printf("%s=%s\n\r", F("profileName"), settings.profileName);
   settingsFile->printf("%s=%d\n\r", F("enableNtripServer"), settings.enableNtripServer);
+  settingsFile->printf("%s=%d\n\r", F("ntripServer_StartAtSurveyIn"), settings.ntripServer_StartAtSurveyIn);
   settingsFile->printf("%s=%s\n\r", F("ntripServer_CasterHost"), settings.ntripServer_CasterHost);
   settingsFile->printf("%s=%d\n\r", F("ntripServer_CasterPort"), settings.ntripServer_CasterPort);
   settingsFile->printf("%s=%s\n\r", F("ntripServer_CasterUser"), settings.ntripServer_CasterUser);
@@ -203,6 +232,18 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%llu\n\r", F("lastKeyAttempt"), settings.lastKeyAttempt);
   settingsFile->printf("%s=%d\n\r", F("updateZEDSettings"), settings.updateZEDSettings);
   settingsFile->printf("%s=%d\n\r", F("LBandFreq"), settings.LBandFreq);
+  settingsFile->printf("%s=%d\n\r", F("enableLogging"), settings.enableLogging);
+  settingsFile->printf("%s=%d\n\r", F("timeZoneHours"), settings.timeZoneHours);
+  settingsFile->printf("%s=%d\n\r", F("timeZoneMinutes"), settings.timeZoneMinutes);
+  settingsFile->printf("%s=%d\n\r", F("timeZoneSeconds"), settings.timeZoneSeconds);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintWifiIpAddress"), settings.enablePrintWifiIpAddress);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintState"), settings.enablePrintState);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintWifiState"), settings.enablePrintWifiState);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintNtripClientState"), settings.enablePrintNtripClientState);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintNtripServerState"), settings.enablePrintNtripServerState);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintNtripServerRtcm"), settings.enablePrintNtripServerRtcm);
+  settingsFile->printf("%s=%d\n\r", F("enablePrintPosition"), settings.enablePrintPosition);
+  settingsFile->printf("%s=%d\n\r", F("enableMarksFile"), settings.enableMarksFile);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -226,19 +267,28 @@ void recordSystemSettingsToFile(File * settingsFile)
 //Returns false if a file was not opened/loaded
 bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
 {
-  if (online.microSD == true)
+  bool gotSemaphore = false;
+  bool status = false;
+  bool wasSdCardOnline;
+
+  //Try to gain access the SD card
+  wasSdCardOnline = online.microSD;
+  if (online.microSD != true)
+    beginSD();
+
+  while (online.microSD == true)
   {
     //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
-      if (sd.exists(fileName))
+      gotSemaphore = true;
+      if (sd->exists(fileName))
       {
         SdFile settingsFile; //FAT32
         if (settingsFile.open(fileName, O_READ) == false)
         {
           Serial.println(F("Failed to open settings file"));
-          xSemaphoreGive(sdCardSemaphore);
-          return (false);
+          break;
         }
 
         char line[60];
@@ -258,8 +308,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
             {
               //If we can't read the first line of the settings file, give up
               Serial.println(F("Giving up on settings file"));
-              xSemaphoreGive(sdCardSemaphore);
-              return (false);
+              break;
             }
           }
           else if (parseLine(line, settings) == false) {
@@ -268,8 +317,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
             {
               //If we can't read the first line of the settings file, give up
               Serial.println(F("Giving up on settings file"));
-              xSemaphoreGive(sdCardSemaphore);
-              return (false);
+              break;
             }
           }
 
@@ -278,25 +326,34 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
 
         //Serial.println(F("Config file read complete"));
         settingsFile.close();
-        xSemaphoreGive(sdCardSemaphore);
-        return (true);
+        status = true;
+        break;
       }
       else
       {
         log_d("File %s not found", fileName);
-        xSemaphoreGive(sdCardSemaphore);
-        return (false);
+        break;
       }
-
     } //End Semaphore check
     else
     {
-      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      //This is an error because if the settings exist on the microSD card that
+      //those settings are not overriding the current settings as documented!
+      Serial.printf("sdCardSemaphore failed to yield, NVM.ino line %d\r\n", __LINE__);
     }
+    break;
   } //End SD online
 
-  log_d("Config file read failed: SD offline");
-  return (false); //SD offline
+  if (online.microSD != true)
+    log_d("Config file read failed: SD offline");
+
+  //Release access the SD card
+  if (online.microSD && (!wasSdCardOnline))
+    endSD(gotSemaphore, true);
+  else if (gotSemaphore)
+    xSemaphoreGive(sdCardSemaphore);
+
+  return status;
 }
 
 //Given a fileName, parse the file and load the given settings struct
@@ -435,6 +492,8 @@ bool parseLine(char* str, Settings *settings)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "zedFirmwareVersion") == 0)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
+  else if (strcmp(settingName, "neoFirmwareVersion") == 0)
+  {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "printDebugMessages") == 0)
     settings->printDebugMessages = d;
   else if (strcmp(settingName, "enableSD") == 0)
@@ -571,6 +630,8 @@ bool parseLine(char* str, Settings *settings)
     settings->spiFrequency = d;
   else if (strcmp(settingName, "enableLogging") == 0)
     settings->enableLogging = d;
+  else if (strcmp(settingName, "enableMarksFile") == 0)
+    settings->enableMarksFile = d;
   else if (strcmp(settingName, "sppRxQueueSize") == 0)
     settings->sppRxQueueSize = d;
   else if (strcmp(settingName, "sppTxQueueSize") == 0)
@@ -655,6 +716,8 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->profileName, settingValue);
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings->enableNtripServer = d;
+  else if (strcmp(settingName, "ntripServer_StartAtSurveyIn") == 0)
+    settings->ntripServer_StartAtSurveyIn = d;
   else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
     strcpy(settings->ntripServer_CasterHost, settingValue);
   else if (strcmp(settingName, "ntripServer_CasterPort") == 0)
@@ -733,6 +796,26 @@ bool parseLine(char* str, Settings *settings)
   }
   else if (strcmp(settingName, "LBandFreq") == 0)
     settings->LBandFreq = d;
+  else if (strcmp(settingName, "timeZoneHours") == 0)
+    settings->timeZoneHours = d;
+  else if (strcmp(settingName, "timeZoneMinutes") == 0)
+    settings->timeZoneMinutes = d;
+  else if (strcmp(settingName, "timeZoneSeconds") == 0)
+    settings->timeZoneSeconds = d;
+  else if (strcmp(settingName, "enablePrintWifiIpAddress") == 0)
+    settings->enablePrintWifiIpAddress = d;
+  else if (strcmp(settingName, "enablePrintState") == 0)
+    settings->enablePrintState = d;
+  else if (strcmp(settingName, "enablePrintWifiState") == 0)
+    settings->enablePrintWifiState = d;
+  else if (strcmp(settingName, "enablePrintNtripClientState") == 0)
+    settings->enablePrintNtripClientState = d;
+  else if (strcmp(settingName, "enablePrintNtripServerState") == 0)
+    settings->enablePrintNtripServerState = d;
+  else if (strcmp(settingName, "enablePrintNtripServerRtcm") == 0)
+    settings->enablePrintNtripServerRtcm = d;
+  else if (strcmp(settingName, "enablePrintPosition") == 0)
+    settings->enablePrintPosition = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list
@@ -834,9 +917,8 @@ void loadProfileNumber()
   if (!fileProfileNumber)
   {
     log_d("profileNumber.txt not found");
-    profileNumber = 0;
     settings.updateZEDSettings = true; //Force module update
-    recordProfileNumber(profileNumber); //Record profile
+    recordProfileNumber(0); //Record profile
   }
   else
   {
@@ -844,28 +926,28 @@ void loadProfileNumber()
     fileProfileNumber.close();
   }
 
-  //We have arbitrary limit of 4 user profiles
+  //We have arbitrary limit of user profiles
   if (profileNumber >= MAX_PROFILE_COUNT)
   {
     log_d("ProfileNumber invalid. Going to zero.");
-    profileNumber = 0;
     settings.updateZEDSettings = true; //Force module update
-    recordProfileNumber(profileNumber); //Record profile
+    recordProfileNumber(0); //Record profile
   }
 
   log_d("Using profile #%d", profileNumber);
 }
 
 //Record the given profile number as well as a config bool
-void recordProfileNumber(uint8_t profileNumber)
+void recordProfileNumber(uint8_t newProfileNumber)
 {
+  profileNumber = newProfileNumber;
   File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_WRITE);
   if (!fileProfileNumber)
   {
     log_d("profileNumber.txt failed to open");
     return;
   }
-  fileProfileNumber.write(profileNumber);
+  fileProfileNumber.write(newProfileNumber);
   fileProfileNumber.close();
 }
 
@@ -873,7 +955,7 @@ void recordProfileNumber(uint8_t profileNumber)
 //If both SD and LittleFS contain a profile, SD wins.
 uint8_t loadProfileNames()
 {
-  int profileCount = 0;
+  int profiles = 0;
 
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
     profileNames[x][0] = '\0'; //Ensure every profile name is terminated
@@ -885,16 +967,21 @@ uint8_t loadProfileNames()
     sprintf(fileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
 
     if (getProfileName(fileName, profileNames[x], sizeof(profileNames[x])) == true)
-      profileCount++;
+      //Mark this profile as active
+      profiles |= 1 << x;
   }
 
-//  Serial.printf("profileCount: %d\n\r", profileCount);
-//  Serial.println("Profiles:");
-//  for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
-//    Serial.printf("%d) %s\n\r", x, profileNames[x]);
-//  Serial.println();
+  return (profiles);
+}
 
-  return (profileCount);
+//Copy the profile name into the array of profile names
+void setProfileName(uint8_t ProfileNumber)
+{
+  //Update the name in the array of profile names
+  strcpy(profileNames[profileNumber], settings.profileName);
+
+  //Mark this profile as active
+  activeProfiles |= 1 << ProfileNumber;
 }
 
 //Open the clear text file, scan for 'profileName' and return the string
@@ -909,8 +996,9 @@ bool getProfileName(char *fileName, char *profileName, uint8_t profileNameLength
   bool responseLFS = loadSystemSettingsFromFileLFS(fileName, tempSettings);
   bool responseSD = loadSystemSettingsFromFileSD(fileName, tempSettings);
 
+  //Zero terminate the profile name
+  *profileName = 0;
   if (responseLFS == true || responseSD == true)
-    //strncpy(profileName, tempSettings->profileName, profileNameLength); //strncpy does not automatically null terminate
     snprintf(profileName, profileNameLength, "%s", tempSettings->profileName); //snprintf handles null terminator
 
   delete tempSettings;
@@ -925,10 +1013,10 @@ bool getProfileNameFromUnit(uint8_t profileUnit, char *profileName, uint8_t prof
 {
   uint8_t located = 0;
 
-  //Step through possible profiles looking for the 1st, 2nd, 3rd, or 4th unit
+  //Step through possible profiles looking for the specified unit
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
   {
-    if (strlen(profileNames[x]) > 0)
+    if (activeProfiles & (1 << x))
     {
       if (located == profileUnit)
       {
@@ -953,7 +1041,7 @@ uint8_t getProfileNumberFromUnit(uint8_t profileUnit)
   //Step through possible profiles looking for the 1st, 2nd, 3rd, or 4th unit
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
   {
-    if (strlen(profileNames[x]) > 0)
+    if (activeProfiles & (1 << x))
     {
       if (located == profileUnit)
         return (x);

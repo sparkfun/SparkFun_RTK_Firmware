@@ -4,7 +4,7 @@
 //Must be called after Wire.begin so that we can do I2C tests
 void beginBoard()
 {
-  //Use ADC to check 50% resistor divider
+  //Use ADC to check resistor divider
   int pin_adc_rtk_facet = 35;
   uint16_t idValue = analogReadMilliVolts(pin_adc_rtk_facet);
   log_d("Board ADC ID: %d", idValue);
@@ -16,6 +16,14 @@ void beginBoard()
   else if (idValue > (3300 * 2 / 3 * 0.9) && idValue < (3300 * 2 / 3 * 1.1))
   {
     productVariant = RTK_FACET_LBAND;
+  }
+  else if (idValue > (3300 * 3.3 / 13.3 * 0.9) && idValue < (3300 * 3.3 / 13.3 * 1.1))
+  {
+    productVariant = RTK_EXPRESS;
+  }
+  else if (idValue > (3300 * 10 / 13.3 * 0.9) && idValue < (3300 * 10 / 13.3 * 1.1))
+  {
+    productVariant = RTK_EXPRESS_PLUS;
   }
   else if (isConnected(0x19) == true) //Check for accelerometer
   {
@@ -182,11 +190,37 @@ void beginBoard()
 
 void beginSD()
 {
-  pinMode(pin_microSD_CS, OUTPUT);
-  digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+  bool gotSemaphore;
 
-  if (settings.enableSD == true)
+  online.microSD = false;
+  gotSemaphore = false;
+  while (settings.enableSD == true)
   {
+    //Setup SD card access semaphore
+    if (sdCardSemaphore == NULL)
+      sdCardSemaphore = xSemaphoreCreateMutex();
+    else if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) != pdPASS)
+    {
+      //This is OK since a retry will occur next loop
+      log_d("sdCardSemaphore failed to yield, Begin.ino line %d\r\n", __LINE__);
+      break;
+    }
+    gotSemaphore = true;
+
+    pinMode(pin_microSD_CS, OUTPUT);
+    digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+
+    //Allocate the data structure that manages the microSD card
+    if (!sd)
+    {
+      sd = new SdFat();
+      if (!sd)
+      {
+        log_d("Failed to allocate the SdFat structure!");
+        break;
+      }
+    }
+
     //Do a quick test to see if a card is present
     int tries = 0;
     int maxTries = 5;
@@ -200,7 +234,7 @@ void beginSD()
       delay(10);
       tries++;
     }
-    if (tries == maxTries) return;
+    if (tries == maxTries) break;
 
     //If an SD card is present, allow SdFat to take over
     log_d("SD card detected");
@@ -211,7 +245,7 @@ void beginSD()
       settings.spiFrequency = 16;
     }
 
-    if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
+    if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
       tries = 0;
       maxTries = 1;
@@ -220,51 +254,67 @@ void beginSD()
         log_d("SD init failed. Trying again %d out of %d", tries + 1, maxTries);
 
         delay(250); //Give SD more time to power up, then try again
-        if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
+        if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
       }
 
       if (tries == maxTries)
       {
         Serial.println(F("SD init failed. Is card present? Formatted?"));
         digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
-        online.microSD = false;
-        return;
+        break;
       }
     }
 
     //Change to root directory. All new file creation will be in root.
-    if (sd.chdir() == false)
+    if (sd->chdir() == false)
     {
       Serial.println(F("SD change directory failed"));
-      online.microSD = false;
-      return;
-    }
-
-    //Setup FAT file access semaphore
-    if (sdCardSemaphore == NULL)
-    {
-      sdCardSemaphore = xSemaphoreCreateMutex();
-      if (sdCardSemaphore != NULL)
-        xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
+      break;
     }
 
     if (createTestFile() == false)
     {
       Serial.println(F("Failed to create test file. Format SD card with 'SD Card Formatter'."));
       displaySDFail(5000);
-      online.microSD = false;
-      return;
+      break;
     }
 
-    online.microSD = true;
+    //Load firmware file from the microSD card if it is present
+    scanForFirmware();
 
-    Serial.println(F("microSD online"));
-    scanForFirmware(); //See if SD card contains new firmware that should be loaded at startup
+    Serial.println(F("microSD: Online"));
+    online.microSD = true;
+    break;
   }
-  else
+
+  //Free the semaphore
+  if (sdCardSemaphore && gotSemaphore)
+    xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
+}
+
+void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
+{
+  //Disable logging
+  endLogging(alreadyHaveSemaphore, false);
+
+  //Done with the SD card
+  if (online.microSD)
   {
+    sd->end();
     online.microSD = false;
+    Serial.println(F("microSD: Offline"));
   }
+
+  //Free the caches for the microSD card
+  if (sd)
+  {
+    delete sd;
+    sd = NULL;
+  }
+
+  //Release the semaphore
+  if (releaseSemaphore)
+    xSemaphoreGive(sdCardSemaphore);
 }
 
 //We want the UART2 interrupts to be pinned to core 0 to avoid competing with I2C interrupts
@@ -414,7 +464,7 @@ void beginGNSS()
       zedModuleType = PLATFORM_F9P;
     }
 
-    printModuleInfo(); //Print module type and firmware version
+    printZEDInfo(); //Print module type and firmware version
   }
 
   online.gnss = true;
@@ -662,6 +712,20 @@ void beginLBand()
   {
     log_d("L-Band not detected");
     return;
+  }
+
+  //Check the firmware version of the NEO-D9S. Based on Example21_ModuleInfo.
+  if (i2cLBand.getModuleInfo(1100) == true) // Try to get the module info
+  {
+    //i2cLBand.minfo.extension[1] looks like 'FWVER=HPG 1.12'
+    strcpy(neoFirmwareVersion, i2cLBand.minfo.extension[1]);
+
+    //Remove 'FWVER='. It's extraneous and = causes settings file parsing issues
+    char *ptr = strstr(neoFirmwareVersion, "FWVER=");
+    if (ptr != NULL)
+      strcpy(neoFirmwareVersion, ptr + strlen("FWVER="));
+
+    printNEOInfo(); //Print module firmware version
   }
 
   if (online.gnss == true)

@@ -105,7 +105,6 @@ function parseIncoming(msg) {
             || id.includes("sdUsedSpace")
             || id.includes("rtkFirmwareVersion")
             || id.includes("zedFirmwareVersion")
-            || id.includes("profileName")
             || id.includes("hardwareID")
             || id.includes("daysRemaining")
         ) {
@@ -146,6 +145,8 @@ function parseIncoming(msg) {
     //console.log("Settings loaded");
 
     //Force element updates
+    ge("profileNumber").dispatchEvent(new CustomEvent('change'));
+    ge("profileName").dispatchEvent(new CustomEvent('change'));
     ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
     ge("baseTypeSurveyIn").dispatchEvent(new CustomEvent('change'));
     ge("baseTypeFixed").dispatchEvent(new CustomEvent('change'));
@@ -209,17 +210,29 @@ function checkMessageValue(id) {
     checkElementValue(id, 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 }
 
+function collapseSection(section, caret) {
+    ge(section).classList.remove('show');
+    ge(caret).classList.remove('icon-caret-down');
+    ge(caret).classList.remove('icon-caret-up');
+    ge(caret).classList.add('icon-caret-down');
+}
+
 function validateFields() {
     //Collapse all sections
-    ge("collapseGNSSConfig").classList.remove('show');
-    ge("collapseGNSSConfigMsg").classList.remove('show');
-    ge("collapseBaseConfig").classList.remove('show');
-    ge("collapseSensorConfig").classList.remove('show');
-    ge("collapsePPConfig").classList.remove('show');
-    ge("collapsePortsConfig").classList.remove('show');
-    ge("collapseSystemConfig").classList.remove('show');
+    collapseSection("collapseProfileConfig", "profileCaret");
+    collapseSection("collapseGNSSConfig", "gnssCaret");
+    collapseSection("collapseGNSSConfigMsg", "gnssMsgCaret");
+    collapseSection("collapseBaseConfig", "baseCaret");
+    collapseSection("collapseSensorConfig", "sensorCaret");
+    collapseSection("collapsePPConfig", "pointPerfectCaret");
+    collapseSection("collapsePortsConfig", "portsCaret");
+    collapseSection("collapseSystemConfig", "systemCaret");
 
     errorCount = 0;
+
+    //Profile Config
+    checkElementValue("profileNumber", 1, 4, "Must be between 1 and 4", "collapseProfileConfig");
+    checkElementString("profileName", 1, 49, "Must be 1 to 49 characters", "collapseProfileConfig");
 
     //GNSS Config
     checkElementValue("measurementRateHz", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseGNSSConfig");
@@ -401,7 +414,7 @@ function validateFields() {
         if(ge("enablePointPerfectCorrections").checked == true) {
             checkElementString("home_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapsePPConfig");
             checkElementString("home_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapsePPConfig");
-            
+
             value = ge("pointPerfectDeviceProfileToken").value;
             console.log(value);
             if (value.length > 0)
@@ -853,17 +866,44 @@ static const char *index_html = R"=====(
             <div align="center" class="small">
                 <span id="rtkFirmwareVersion" style="display:inline;">RTK Firmware: v0.0</span> <br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
-                <span id="profileName" style="display:inline;">Profile Name: Default</span>
             </div>
         </div>
 
         <hr class="mt-0">
         <div style="margin-top:20px;">
+
+            <!-- --------- Profile Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary toggle-btn" id="profileConfig" type="button" data-toggle="collapse"
+                    data-target="#collapseProfileConfig" aria-expanded="false" aria-controls="collapseProfileConfig">
+                    Profile Configuration <i id="profileCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse mb-2" id="collapseProfileConfig">
+                <div class="card card-body">
+                    <div class="form-group row">
+                        <label for="profileNumber" class="box-margin20 col-sm-3 col-4 col-form-label">Profile Number</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="number" class="form-control mb-2" id="profileNumber">
+                            <p id="profileNumberError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="profileName" class="box-margin20 col-sm-3 col-4 col-form-label">Profile Name</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="profileName">
+                            <p id="profileNameError" class="inlineError"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- --------- GNSS Config --------- -->
             <div class="d-grid gap-2">
-                <button class="btn btn-primary toggle-btn" type="button" data-toggle="collapse"
+                <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapseGNSSConfig" aria-expanded="false" aria-controls="collapseGNSSConfig">
-                    GNSS Configuration <i class="caret-icon bi icon-caret-up"></i>
+                    GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-up"></i>
                 </button>
             </div>
             <div class="collapse show" id="collapseGNSSConfig">
@@ -1031,8 +1071,8 @@ static const char *index_html = R"=====(
                                 <input type="text" class="form-control" id="ntripClient_MountPointPW">
                                 <p id="ntripClient_MountPointPWError" class="inlineError"></p>
                             </div>
-                        </div>                    
-                        
+                        </div>
+
                         <div class="form-check mt-1 box-margin20">
                             <label class="form-check-label" for="ntripClient_TransmitGGA">Transmit GGA to Caster</label>
                             <input class="form-check-input" type="checkbox" value="" id="ntripClient_TransmitGGA" unchecked>
@@ -1042,12 +1082,12 @@ static const char *index_html = R"=====(
                             </span>
                         </div>
                     </div>
-                    
+
                     <div id="messageRateButton">
                         <button class="btn btn-md btn-outline-primary mt-3 toggle-btn" type="button"
                             data-toggle="collapse" data-target="#collapseGNSSConfigMsg" aria-expanded="false"
                             aria-controls="collapseGNSSConfigMsg">
-                            Message Rates <i class="caret-icon bi icon-caret-down"></i>
+                            Message Rates <i id="gnssMsgCaret" class="caret-icon bi icon-caret-down"></i>
                         </button>
                         <span class="tt" data-bs-placement="right"
                             title="NMEA and RAWX are the two most commonly reported types of message but the receiver supports more than 70 different messages. Each message rate input controls which messages are disabled (0) and how often the message is reported (1 = one message reported per 1 fix, 5 = one report every 5 fixes). Default: NMEA GGA, GSA, GST, GSV, and RMC. Limits: 0 to 20.">
@@ -1612,7 +1652,7 @@ static const char *index_html = R"=====(
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="baseConfig" type="button" data-toggle="collapse"
                     data-target="#collapseBaseConfig" aria-expanded="false" aria-controls="collapseBaseConfig">
-                    Base Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    Base Configuration <i id="baseCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseBaseConfig">
@@ -1821,7 +1861,7 @@ static const char *index_html = R"=====(
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="sensorConfig" type="button" data-toggle="collapse"
                     data-target="#collapseSensorConfig" aria-expanded="false" aria-controls="collapseSensorConfig">
-                    Sensor Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    Sensor Configuration <i id="sensorCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseSensorConfig">
@@ -1849,7 +1889,7 @@ static const char *index_html = R"=====(
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="ppConfig" type="button" data-toggle="collapse"
                     data-target="#collapsePPConfig" aria-expanded="false" aria-controls="collapsePPConfig">
-                    PointPerfect Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    PointPerfect Configuration <i id="pointPerfectCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapsePPConfig">
@@ -1870,7 +1910,6 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div id="ppSettingsConfig">
-
                         <div class="form-group row">
                             <label for="home_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">Home WiFi
                                 SSID:</label>
@@ -1916,12 +1955,12 @@ static const char *index_html = R"=====(
                     </div>
                 </div>
             </div>
-            
+
             <!-- --------- Ports Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapsePortsConfig" aria-expanded="false" aria-controls="collapsePortsConfig">
-                    Ports Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    Ports Configuration <i id="portsCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapsePortsConfig">
@@ -2037,7 +2076,7 @@ static const char *index_html = R"=====(
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapseSystemConfig" aria-expanded="false" aria-controls="collapseSystemConfig">
-                    System Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    System Configuration <i id="systemCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseSystemConfig">

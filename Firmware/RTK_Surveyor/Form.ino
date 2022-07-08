@@ -11,13 +11,13 @@ void startWebServer()
   if (online.microSD)
   {
     csd_t csd;
-    sd.card()->readCSD(&csd); //Card Specific Data
+    sd->card()->readCSD(&csd); //Card Specific Data
     sdCardSizeMB = 0.000512 * sdCardCapacity(&csd);
-    sd.volumeBegin();
+    sd->volumeBegin();
 
     //Find available cluster/space
-    sdFreeSpaceMB = sd.vol()->freeClusterCount(); //This takes a few seconds to complete
-    sdFreeSpaceMB *= sd.vol()->sectorsPerCluster() / 2;
+    sdFreeSpaceMB = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
+    sdFreeSpaceMB *= sd->vol()->sectorsPerCluster() / 2;
     sdFreeSpaceMB /= 1024;
 
     sdUsedSpaceMB = sdCardSizeMB - sdFreeSpaceMB; //Don't think of it as used, think of it as unusable
@@ -30,44 +30,8 @@ void startWebServer()
     Serial.println(sdUsedSpaceMB);
   }
 
-  //When testing, operate on local WiFi instead of AP
-  //#define LOCAL_WIFI_TESTING 1
-
-#ifndef LOCAL_WIFI_TESTING
-
-  //Start in AP mode
-  WiFi.mode(WIFI_AP);
-
-  IPAddress local_IP(192, 168, 4, 1);
-  IPAddress gateway(192, 168, 1, 1);
-  IPAddress subnet(255, 255, 0, 0);
-
-  WiFi.softAPConfig(local_IP, gateway, subnet);
-  if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
-  {
-    Serial.println(F("AP failed to start"));
-    return;
-  }
-  Serial.print(F("AP Started with IP: "));
-  Serial.println(WiFi.softAPIP());
-#endif
-
-#ifdef LOCAL_WIFI_TESTING
-  //Connect to local router
-#define WIFI_SSID "TRex"
-#define WIFI_PASSWORD "parachutes"
-  WiFi.mode(WIFI_STA);
-
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting to Wi-Fi");
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.print("Connected with IP: ");
-  Serial.println(WiFi.localIP());
-#endif
+  ntripClientStop(true);
+  wifiStartAP();
 
   //Clear any garbage from settings array
   memset(incomingSettings, 0, sizeof(incomingSettings));
@@ -441,9 +405,8 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
 
   //Profiles
-  char apProfileName[50];
-  sprintf(apProfileName, "Profile Name: %s", settings.profileName);
-  stringRecord(settingsCSV, "profileName", apProfileName);
+  stringRecord(settingsCSV, "profileNumber", profileNumber + 1);
+  stringRecord(settingsCSV, "profileName", profileNames[profileNumber]);
 
   //New settings not yet integrated
   //...
@@ -459,6 +422,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 {
 #ifdef COMPILE_AP
   char* ptr;
+  int newProfileNumber;
   double settingValue = strtod(settingValueStr, &ptr);
 
   bool settingValueBool = false;
@@ -522,7 +486,23 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "enableExternalHardwareEventLogging") == 0)
     settings.enableExternalHardwareEventLogging = settingValueBool;
   else if (strcmp(settingName, "profileName") == 0)
+  {
     strcpy(settings.profileName, settingValueStr);
+    setProfileName(profileNumber);
+  }
+  else if (strcmp(settingName, "profileNumber") == 0)
+  {
+    if ((sscanf(settingValueStr, "%d", &newProfileNumber) == 1)
+      && (newProfileNumber >= 1) && (newProfileNumber <= MAX_PROFILE_COUNT)
+      && (profileNumber != newProfileNumber))
+    {
+      profileNumber = newProfileNumber - 1;
+
+      //Switch to a new profile
+      setSettingsFileName();
+      recordProfileNumber(profileNumber);
+    }
+  }
 
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;
@@ -587,7 +567,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
   {
-    updateFromSD(settingValueStr);
+    mountSDThenUpdate(settingValueStr);
 
     //If update is successful, it will force system reset and not get here.
 

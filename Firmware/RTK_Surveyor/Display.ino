@@ -5,33 +5,34 @@
 //Left top
 #define ICON_WIFI_SYMBOL_LEFT                1  //  0,  0
 #define ICON_DOWN_ARROW                      2  // 16,  0
-#define ICON_BT_SYMBOL                       4  //  4,  0
-#define ICON_MAC_ADDRESS                     8  //  0,  3
+#define ICON_UP_ARROW                        4  // 16,  0
+#define ICON_BT_SYMBOL                       8  //  4,  0
+#define ICON_MAC_ADDRESS                  0x10  //  0,  3
 
 //Center top
-#define ICON_WIFI_SYMBOL_CENTER           0x10  // center, 0
-#define ICON_BASE_TEMPORARY               0x20  // 27,  0
-#define ICON_BASE_FIXED                   0x40  // 27,  0
-#define ICON_ROVER_FUSION                 0x80  // 27,  2
-#define ICON_ROVER_FUSION_EMPTY          0x100  // 27,  2
-#define ICON_DYNAMIC_MODEL               0x200  // 27,  0
+#define ICON_WIFI_SYMBOL_CENTER           0x20  // center, 0
+#define ICON_BASE_TEMPORARY               0x40  // 27,  0
+#define ICON_BASE_FIXED                   0x80  // 27,  0
+#define ICON_ROVER_FUSION                0x100  // 27,  2
+#define ICON_ROVER_FUSION_EMPTY          0x200  // 27,  2
+#define ICON_DYNAMIC_MODEL               0x400  // 27,  0
 
 //Right top
-#define ICON_BATTERY                     0x400  // 45,  0
+#define ICON_BATTERY                     0x800  // 45,  0
 
 //Left center
-#define ICON_CROSS_HAIR                  0x800  //  0, 18
-#define ICON_CROSS_HAIR_DUAL            0x1000  //  0, 18
+#define ICON_CROSS_HAIR                 0x1000  //  0, 18
+#define ICON_CROSS_HAIR_DUAL            0x2000  //  0, 18
 
 //Right center
-#define ICON_HORIZONTAL_ACCURACY        0x2000  // 16, 20
+#define ICON_HORIZONTAL_ACCURACY        0x4000  // 16, 20
 
 //Left bottom
-#define ICON_SIV_ANTENNA                0x4000  //  2, 35
-#define ICON_SIV_ANTENNA_LBAND          0x8000  //  2, 35
+#define ICON_SIV_ANTENNA                0x8000  //  2, 35
+#define ICON_SIV_ANTENNA_LBAND         0x10000  //  2, 35
 
 //Right bottom
-#define ICON_LOGGING                   0x10000  // right, bottom
+#define ICON_LOGGING                   0x20000  // right, bottom
 
 //----------------------------------------
 // Locals
@@ -61,7 +62,11 @@ void beginDisplay()
     online.display = true;
 
     Serial.println(F("Display started"));
-    displaySplash();
+
+    //Display the SparkFun LOGO
+    oled.erase();
+    displayBitmap(0, 0, logoSparkFun_Width, logoSparkFun_Height, logoSparkFun);
+    oled.display();
     splashStart = millis();
   }
   else
@@ -196,34 +201,6 @@ void updateDisplay()
                 | ICON_LOGGING;       //Bottom right
           break;
 
-        case (STATE_ROVER_CLIENT_WIFI_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_DYNAMIC_MODEL  //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_CROSS_HAIR     //Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
-          break;
-        case (STATE_ROVER_CLIENT_WIFI_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_DYNAMIC_MODEL  //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_CROSS_HAIR     //Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
-          break;
-        case (STATE_ROVER_CLIENT_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_DYNAMIC_MODEL  //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_CROSS_HAIR     //Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
-          break;
-
         case (STATE_BASE_NOT_STARTED):
           //Do nothing. Static display shown during state change.
           break;
@@ -254,34 +231,7 @@ void updateDisplay()
                 | ICON_BASE_TEMPORARY //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_TEMP_WIFI_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_TEMP_WIFI_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_TEMP_CASTER_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY;       //Top right
-          paintConnectingToNtripCaster();
-          break;
-        case (STATE_BASE_TEMP_CASTER_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintCastingRTCM();
+          paintRTCM();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
           icons = paintWirelessIcon() //Top left
@@ -292,49 +242,13 @@ void updateDisplay()
                 | ICON_BASE_FIXED     //Top center
                 | ICON_BATTERY        //Top right
                 | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_FIXED_WIFI_STARTED):
-           icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-         paintXmittingRTCM();
-          break;
-        case (STATE_BASE_FIXED_WIFI_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintXmittingRTCM();
-          break;
-        case (STATE_BASE_FIXED_CASTER_STARTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY;       //Top right
-          paintConnectingToNtripCaster();
-          break;
-        case (STATE_BASE_FIXED_CASTER_CONNECTED):
-          icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
-          paintCastingRTCM();
+          paintRTCM();
           break;
         case (STATE_BUBBLE_LEVEL):
           paintBubbleLevel();
           break;
-        case (STATE_PROFILE_1):
-          paintProfile(0);
-          break;
-        case (STATE_PROFILE_2):
-          paintProfile(1);
-          break;
-        case (STATE_PROFILE_3):
-          paintProfile(2);
-          break;
-        case (STATE_PROFILE_4):
-          paintProfile(3);
+        case (STATE_PROFILE):
+          paintProfile(displayProfile);
           break;
         case (STATE_MARK_EVENT):
           //Do nothing. Static display shown during state change.
@@ -410,10 +324,27 @@ void updateDisplay()
       {
         displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
         if (icons & ICON_DOWN_ARROW)
+        {
           displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+          online.rxRtcmCorrectionData = false;
+        }
+        else if (icons & ICON_UP_ARROW)
+          displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
       }
       else if (icons & ICON_BT_SYMBOL)
+      {
         displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
+        if (bluetoothGetState() == BT_CONNECTED)
+        {
+          if (icons & ICON_DOWN_ARROW)
+          {
+            displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+            online.rxRtcmCorrectionData = false;
+          }
+          else if (icons & ICON_UP_ARROW)
+            displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
+        }
+      }
       else if (icons & ICON_MAC_ADDRESS)
       {
         char macAddress[5];
@@ -470,6 +401,10 @@ void displaySplash()
 {
   if (online.display == true)
   {
+    //Display SparkFun Logo for at least 1/10 of a second
+    while ((millis() - splashStart) < 100)
+      delay(10);
+
     oled.erase();
 
     int yPos = 0;
@@ -513,6 +448,9 @@ void displaySplash()
     printTextCenter(unitFirmware, yPos, QW_FONT_5X7, 1, false);
 
     oled.display();
+
+    //Start the timer for the splash screen display
+    splashStart = millis();
   }
 }
 
@@ -641,8 +579,17 @@ uint32_t paintWirelessIcon()
   if (online.display == true)
   {
     //Bluetooth icon if paired, or Bluetooth MAC address if not paired
-    if (btState == BT_CONNECTED)
+    if (bluetoothGetState() == BT_CONNECTED)
+    {
       icons = ICON_BT_SYMBOL;
+      if (systemState <= STATE_BASE_NOT_STARTED)
+      {
+        if (online.rxRtcmCorrectionData)
+        icons |= ICON_DOWN_ARROW;
+      }
+      else if (systemState <= STATE_BUBBLE_LEVEL)
+        icons |= ICON_UP_ARROW;
+    }
     else if (wifiState == WIFI_NOTCONNECTED)
     {
       //Blink WiFi icon
@@ -655,8 +602,10 @@ uint32_t paintWirelessIcon()
       icons = ICON_WIFI_SYMBOL_LEFT;
 
       //If we are connected to NTRIP Client, show download arrow
-      if (online.ntripClient == true)
+      if ((online.ntripClient == true) && online.rxRtcmCorrectionData)
         icons |= ICON_DOWN_ARROW;
+      else if (online.ntripServer == true)
+        icons |= ICON_UP_ARROW;
     }
     else
       icons = ICON_MAC_ADDRESS;
@@ -969,38 +918,22 @@ void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8
   }
 }
 
-//Show transmission of RTCM packets
-void paintXmittingRTCM()
+//Show transmission of RTCM correction data packets to NTRIP caster
+void paintRTCM()
 {
-  int textX = 1;
   int textY = 17;
   int textKerning = 8;
   oled.setFont(QW_FONT_8X16);
-  printTextwithKerning("Xmitting", textX, textY, textKerning);
-
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
-
-  if (rtcmPacketsSent < 100)
-    oled.setCursor(30, 36); //x, y - Give space for two digits
+  if (bluetoothGetState() != BT_OFF)
+  {
+    int textX = 1;
+    printTextwithKerning("Xmitting", textX, textY, textKerning);  //via Bluetooth
+  }
   else
-    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
-
-  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
-
-  paintResets();
-}
-
-//Show transmission of RTCM packets to caster service
-void paintCastingRTCM()
-{
-  int textX = 4;
-  int textY = 17;
-  int textKerning = 8;
-  oled.setFont(QW_FONT_8X16);
-  printTextwithKerning("Casting", textX, textY, textKerning);
+  {
+    int textX = 4;
+    printTextwithKerning("Casting", textX, textY, textKerning);   //via WiFi
+  }
 
   oled.setCursor(0, 39); //x, y
   oled.setFont(QW_FONT_5X7);
@@ -1321,6 +1254,21 @@ void displayNoLogging(uint16_t displayTime)
   displayMessage("No Logging", displayTime);
 }
 
+void displayMarked(uint16_t displayTime)
+{
+  displayMessage("Marked", displayTime);
+}
+
+void displayMarkFailure(uint16_t displayTime)
+{
+  displayMessage("Mark Failure", displayTime);
+}
+
+void displayNotMarked(uint16_t displayTime)
+{
+  displayMessage("Not Marked", displayTime);
+}
+
 //Show 'Loading Home2' profile identified
 //Profiles may not be sequential (user might have empty profile #2, but filled #3) so we load the profile unit, not the number
 void paintProfile(uint8_t profileUnit)
@@ -1328,7 +1276,7 @@ void paintProfile(uint8_t profileUnit)
   char profileMessage[20]; //'Loading HomeStar' max of ~18 chars
 
   char profileName[8 + 1];
-  if (getProfileNameFromUnit(profileUnit, profileName, 8) == true) //Load the profile name, limited to 8 chars
+  if (getProfileNameFromUnit(profileUnit, profileName, sizeof(profileName)) == true) //Load the profile name, limited to 8 chars
   {
     settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
     recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
@@ -1514,7 +1462,6 @@ void paintSystemTest()
           oled.print(F("FAIL"));
       } //End display 0
     } //End Facet L-Band testing
-    
   }
 }
 
@@ -1602,6 +1549,54 @@ void getAngles()
   }
 }
 
+//Display the setup profiles
+void paintDisplaySetupProfile(const char * firstState)
+{
+  int index;
+  int itemsDisplayed;
+  char profileName[8 + 1];
+
+  //Display the first state if this is the first profile
+  itemsDisplayed = 0;
+  if (displayProfile == 0)
+  {
+    printTextCenter(firstState, 12 * itemsDisplayed, QW_FONT_8X16, 1, false);
+    itemsDisplayed++;
+  }
+
+  //Display Bubble if this is the second profile
+  if (displayProfile <= 1)
+  {
+    printTextCenter("Bubble", 12 * itemsDisplayed, QW_FONT_8X16, 1, false);
+    itemsDisplayed++;
+  }
+
+  //Display Config if this is the third profile
+  if (displayProfile <= 2)
+  {
+    printTextCenter("Config", 12 * itemsDisplayed, QW_FONT_8X16, 1, false);
+    itemsDisplayed++;
+  }
+
+  //  displayProfile  itemsDisplayed  index
+  //        0               3           0
+  //        1               2           0
+  //        2               1           0
+  //        3               0           0
+  //        4               0           1
+  //        5               0           2
+  //        n >= 3          0           n - 3
+
+  //Display the profile names
+  for (index = (displayProfile >= 3) ? displayProfile - 3 : 0; itemsDisplayed < 4; itemsDisplayed++)
+  {
+    //Lookup next available profile, limit to 8 characters
+    getProfileNameFromUnit(index, profileName, sizeof(profileName));
+    printTextCenter(profileName, 12 * itemsDisplayed, QW_FONT_8X16, 1, itemsDisplayed == 3);
+    index++;
+  }
+}
+
 //Show different menu 'buttons' to allow user to pause on one to select it
 void paintDisplaySetup()
 {
@@ -1642,61 +1637,8 @@ void paintDisplaySetup()
       printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
     }
-    else if (setupState == STATE_PROFILE_1)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_2)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_3)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_4)
-    {
-      char profileName[8 + 1];
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
+    else if (setupState == STATE_PROFILE)
+      paintDisplaySetupProfile("Base");
   } //end type F9P
   else if (zedModuleType == PLATFORM_F9R)
   {
@@ -1728,61 +1670,8 @@ void paintDisplaySetup()
       printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
     }
-    else if (setupState == STATE_PROFILE_1)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_2)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Bubble", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_3)
-    {
-      char profileName[8 + 1];
-
-      printTextCenter("Config", 12 * 0, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
-    else if (setupState == STATE_PROFILE_4)
-    {
-      char profileName[8 + 1];
-
-      getProfileNameFromUnit(0, profileName, 8); //Lookup first available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 0, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(1, profileName, 8); //Lookup second available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 1, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(2, profileName, 8); //Lookup third available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 2, QW_FONT_8X16, 1, false);
-
-      getProfileNameFromUnit(3, profileName, 8); //Lookup forth available profile, limit to 8 characters
-      printTextCenter(profileName, 12 * 3, QW_FONT_8X16, 1, true);
-    }
+    else if (setupState == STATE_PROFILE)
+      paintDisplaySetupProfile("Rover");
   } //end type F9R
 }
 
@@ -1985,10 +1874,10 @@ void paintKeyWiFiFail(uint16_t displayTime)
   }
 }
 
-void paintNClientWiFiFail(uint16_t displayTime)
+void paintNtripWiFiFail(uint16_t displayTime, bool Client)
 {
   //NTRIP
-  //Client
+  //Client or Server
   //Failed
   //No WiFi
 
@@ -2002,15 +1891,16 @@ void paintNClientWiFiFail(uint16_t displayTime)
     int y = 0;
     int fontHeight = 13;
     int textX;
+    const char * string = Client ? "Client" : "Server";
 
     textX = x - (oled.getStringWidth("NTRIP") / 2); //Starting point of text
     oled.setCursor(textX, y);
     oled.print("NTRIP");
 
     y += fontHeight;
-    textX = x - (oled.getStringWidth("Client") / 2);
+    textX = x - (oled.getStringWidth(string) / 2);
     oled.setCursor(textX, y);
-    oled.print("Client");
+    oled.print(string);
 
     y += fontHeight;
     textX = x - (oled.getStringWidth("Failed") / 2);

@@ -19,24 +19,11 @@ void powerOnCheck()
 //then don't display a shutdown screen
 void powerDown(bool displayInfo)
 {
-  if (online.logging == true)
-  {
-    //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
-    //Wait up to 1000ms
-    if (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS)
-    {
-      //Close down file system
-      ubxFile.sync();
-      ubxFile.close();
-      //xSemaphoreGive(sdCardSemaphore); //Do not release semaphore
-    } //End sdCardSemaphore
-    else
-    {
-      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
-    }
+  //Disable SD card use
+  endSD(false, false);
 
-    online.logging = false;
-  }
+  //Prevent other tasks from logging, even if access to the microSD card was denied
+  online.logging = false;
 
   if (displayInfo == true)
   {

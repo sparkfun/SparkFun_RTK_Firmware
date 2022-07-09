@@ -208,7 +208,7 @@ function validateFields() {
     errorCount = 0;
 
     //Profile Config
-    checkElementValue("profileNumber", 1, 4, "Must be between 1 and 4", "collapseProfileConfig");
+    checkElementValue("profileNumber", 1, 8, "Must be between 1 and 8", "collapseProfileConfig");
     checkElementString("profileName", 1, 49, "Must be 1 to 49 characters", "collapseProfileConfig");
 
     //GNSS Config

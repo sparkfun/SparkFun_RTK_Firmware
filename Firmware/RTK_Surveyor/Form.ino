@@ -1,6 +1,8 @@
 //Once connected to the access point for WiFi Config, the ESP32 sends current setting values in one long string to websocket
 //After user clicks 'save', data is validated via main.js and a long string of values is returned.
 
+static uint8_t bootProfileNumber;
+
 //Start webserver in AP mode
 void startWebServer()
 {
@@ -280,6 +282,9 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 void createSettingsString(char* settingsCSV)
 {
 #ifdef COMPILE_AP
+  char tagText[32];
+  char nameText[64];
+
   //System Info
   stringRecord(settingsCSV, "platformPrefix", platformPrefix);
 
@@ -407,6 +412,15 @@ void createSettingsString(char* settingsCSV)
   //Profiles
   stringRecord(settingsCSV, "profileNumber", profileNumber + 1);
   stringRecord(settingsCSV, "profileName", profileNames[profileNumber]);
+  for (int index = 0; index < MAX_PROFILE_COUNT; index++)
+  {
+    sprintf(tagText, "profile%dName", index);
+    sprintf(nameText, "%d: %s", index + 1, profileNames[index]);
+    stringRecord(settingsCSV, tagText, nameText);
+  }
+  bootProfileNumber = profileNumber + 1;
+  stringRecord(settingsCSV, "bootProfileNumber", bootProfileNumber);
+  stringRecord(settingsCSV, "activeProfiles", activeProfiles);
 
   //New settings not yet integrated
   //...
@@ -503,7 +517,13 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       recordProfileNumber(profileNumber);
     }
   }
-
+  else if (strcmp(settingName, "bootProfileNumber") == 0)
+  {
+    if ((sscanf(settingValueStr, "%d", &bootProfileNumber) != 1)
+      || (bootProfileNumber < 1)
+      || (bootProfileNumber > (MAX_PROFILE_COUNT + 1)))
+      bootProfileNumber = 1;
+  }
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;
   else if (strcmp(settingName, "ntripServer_CasterHost") == 0)

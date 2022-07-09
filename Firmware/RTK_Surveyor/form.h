@@ -107,6 +107,14 @@ function parseIncoming(msg) {
             || id.includes("zedFirmwareVersion")
             || id.includes("hardwareID")
             || id.includes("daysRemaining")
+            || id.includes("profile0Name")
+            || id.includes("profile1Name")
+            || id.includes("profile2Name")
+            || id.includes("profile3Name")
+            || id.includes("profile4Name")
+            || id.includes("profile5Name")
+            || id.includes("profile6Name")
+            || id.includes("profile7Name")
         ) {
             ge(id).innerHTML = val;
         }

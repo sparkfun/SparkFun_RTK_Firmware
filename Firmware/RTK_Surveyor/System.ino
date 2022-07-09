@@ -14,7 +14,15 @@ void startBluetooth()
 
     sprintf(deviceName, "%s %s-%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]); //Base mode
 
-    if (SerialBT.begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
+    // BLE vs Bluetooth Classic
+    if (settings.enableBLE)
+      SerialBT = new BTLESerial();
+    else
+    {
+      SerialBT = new BTClassicSerial();
+    }
+
+    if (SerialBT->begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
     {
       Serial.println(F("An error occurred initializing Bluetooth"));
 
@@ -43,8 +51,8 @@ void startBluetooth()
     esp_bt_gap_set_pin(pin_type, 4, pin_code);
     //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-    SerialBT.register_callback(btCallback); //Controls BT Status LED on Surveyor
-    SerialBT.setTimeout(250);
+    SerialBT->register_callback(btCallback); //Controls BT Status LED on Surveyor
+    SerialBT->setTimeout(250);
 
     Serial.print(F("Bluetooth broadcasting as: "));
     Serial.println(deviceName);
@@ -71,10 +79,10 @@ void stopBluetooth()
   if (btState == BT_NOTCONNECTED || btState == BT_CONNECTED)
   {
 #ifdef COMPILE_BT
-    SerialBT.register_callback(NULL);
-    SerialBT.flush(); //Complete any transfers
-    SerialBT.disconnect(); //Drop any clients
-    SerialBT.end(); //SerialBT.end() will release significant RAM (~100k!) but a SerialBT.start will crash.
+    SerialBT->register_callback(NULL);
+    SerialBT->flush(); //Complete any transfers
+    SerialBT->disconnect(); //Drop any clients
+    SerialBT->end(); //SerialBT->end() will release significant RAM (~100k!) but a SerialBT->start will crash.
 #endif
 
     log_d("Bluetooth turned off");

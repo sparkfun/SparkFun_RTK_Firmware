@@ -231,9 +231,17 @@ float battChangeRate = 0.0;
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_BT
+// See btSelect.h for implemenation
+#include "btSelect.h"
+BTSerialInterface * SerialBT;
+
 //We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/23
-#include "src/BluetoothSerial/BluetoothSerial.h"
-BluetoothSerial SerialBT;
+// #include "src/BluetoothSerial/BluetoothSerial.h"
+// BluetoothSerial SerialBT;
+
+// BLE Support originally from https://github.com/avinabmalla/ESP32_BleSerial/tree/bad5ff841800853a61e431ea751f8ea9d7a1df21
+// #include "src/BleSerial/BleSerial.h"
+// BleSerial SerialBLE;
 #endif
 
 char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names

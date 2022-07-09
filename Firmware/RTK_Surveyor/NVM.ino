@@ -203,6 +203,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%llu\n\r", F("lastKeyAttempt"), settings.lastKeyAttempt);
   settingsFile->printf("%s=%d\n\r", F("updateZEDSettings"), settings.updateZEDSettings);
   settingsFile->printf("%s=%d\n\r", F("LBandFreq"), settings.LBandFreq);
+  settingsFile->printf("%s=%d\n\r", F("enableBLE"), settings.enableBLE);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -733,6 +734,8 @@ bool parseLine(char* str, Settings *settings)
   }
   else if (strcmp(settingName, "LBandFreq") == 0)
     settings->LBandFreq = d;
+  else if (strcmp(settingName, "enableBLE") == 0)
+    settings->enableBLE = d;
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list

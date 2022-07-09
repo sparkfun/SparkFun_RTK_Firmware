@@ -11,10 +11,10 @@ void F9PSerialWriteTask(void *e)
     //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
     if (btState == BT_CONNECTED)
     {
-      while (SerialBT.available())
+      while (SerialBT->available())
       {
         //Pass bytes to GNSS receiver
-        auto s = SerialBT.readBytes(wBuffer, sizeof(wBuffer));
+        auto s = SerialBT->readBytes(wBuffer, sizeof(wBuffer));
         serialGNSS.write(wBuffer, s);
 
         if (settings.enableTaskReports == true)
@@ -49,13 +49,13 @@ void F9PSerialReadTask(void *e)
 #ifdef COMPILE_BT
       else if (btState == BT_CONNECTED)
       {
-        if (SerialBT.isCongested() == false)
+        if (SerialBT->isCongested() == false)
         {
-          SerialBT.write(rBuffer, s); //Push new data to BT SPP
+          SerialBT->write(rBuffer, s); //Push new data to BT SPP
         }
         else if (settings.throttleDuringSPPCongestion == false)
         {
-          SerialBT.write(rBuffer, s); //Push new data to SPP regardless of congestion
+          SerialBT->write(rBuffer, s); //Push new data to SPP regardless of congestion
         }
         else
         {

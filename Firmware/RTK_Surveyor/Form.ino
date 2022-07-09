@@ -523,6 +523,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       || (bootProfileNumber < 1)
       || (bootProfileNumber > (MAX_PROFILE_COUNT + 1)))
       bootProfileNumber = 1;
+Serial.printf("bootProfileNumber: %d\r\n", bootProfileNumber);
   }
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;

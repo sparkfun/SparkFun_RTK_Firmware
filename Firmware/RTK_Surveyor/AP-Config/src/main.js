@@ -132,6 +132,7 @@ function parseIncoming(msg) {
     //Force element updates
     ge("profileNumber").dispatchEvent(new CustomEvent('change'));
     ge("profileName").dispatchEvent(new CustomEvent('change'));
+    ge("bootProfileNumber").dispatchEvent(new CustomEvent('change'));
     ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
     ge("baseTypeSurveyIn").dispatchEvent(new CustomEvent('change'));
     ge("baseTypeFixed").dispatchEvent(new CustomEvent('change'));
@@ -218,6 +219,7 @@ function validateFields() {
     //Profile Config
     checkElementValue("profileNumber", 1, 8, "Must be between 1 and 8", "collapseProfileConfig");
     checkElementString("profileName", 1, 49, "Must be 1 to 49 characters", "collapseProfileConfig");
+    checkBitMapValue("bootProfileNumber", 1, 8, "activeProfiles", "Must be an active profile between 1 and 8", "collapseProfileConfig");
 
     //GNSS Config
     checkElementValue("measurementRateHz", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseGNSSConfig");
@@ -465,6 +467,19 @@ function checkConstellations() {
     }
     else
         clearError("ubxConstellations");
+}
+
+function checkBitMapValue(id, min, max, bitMap, errorText, collapseID) {
+    value = ge(id).value;
+    mask = ge(bitMap).value;
+    if ((value < min) || (value > max) || ((mask & (1 << value)) == 0)) {
+        ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else {
+        clearError(id);
+    }
 }
 
 function checkElementValue(id, min, max, errorText, collapseID) {

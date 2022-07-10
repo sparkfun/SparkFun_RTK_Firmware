@@ -600,6 +600,12 @@ Serial.printf("bootProfileNumber: %d\r\n", bootProfileNumber);
   {
     if (newAPSettings == true) recordSystemSettings(); //If we've recieved settings, record before restart
 
+    //Determine which profile to boot
+    bootProfileNumber -= 1;
+    if (bootProfileNumber != profileNumber)
+      recordProfileNumber(bootProfileNumber);
+
+    //Reboot the machine
     ESP.restart();
   }
 

@@ -471,6 +471,16 @@ function validateFields() {
         clearSuccess('saveBtn');
     }
     else {
+        //Update the profile name
+        profile = "profile" + ge("bootProfileNumber").value + "Name";
+console.log(ge("bootProfileNumber").value);
+console.log(profile);
+console.log(ge(profile).value);
+console.log(ge("profileName").value);
+        ge(profile).value = ge("profileName").value;
+console.log(ge(profile).value);
+        ge(profile).dispatchEvent(new CustomEvent('change'));
+
         //Tell Arduino we're ready to save
         sendData();
         clearError('saveBtn');

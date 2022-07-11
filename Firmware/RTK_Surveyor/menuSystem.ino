@@ -301,6 +301,9 @@ void menuDebug()
     Serial.print(F("16) Periodically print position: "));
     Serial.printf("%s\r\n", settings.enablePrintPosition ? "Enabled" : "Disabled");
 
+    Serial.print(F("17) Periodically print CPU idle time: "));
+    Serial.printf("%s\r\n", settings.enablePrintIdleTime ? "Enabled" : "Disabled");
+
     Serial.println(F("t) Enter Test Screen"));
 
     Serial.println(F("e) Erase LittleFS"));
@@ -428,6 +431,10 @@ void menuDebug()
       else if (incoming == 16)
       {
         settings.enablePrintPosition ^= 1;
+      }
+      else if (incoming == 17)
+      {
+        settings.enablePrintIdleTime ^= 1;
       }
       else
         printUnknown(incoming);

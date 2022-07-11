@@ -787,3 +787,22 @@ void beginLBand()
 
   online.lband = true;
 }
+
+void beginIdleTasks()
+{
+  char taskName[32];
+
+  for (int index = 0; index < MAX_CPU_CORES; index++)
+  {
+    sprintf(taskName, "IdleTask%d", index);
+    if (idleTaskHandle[index] == NULL)
+      xTaskCreatePinnedToCore(
+        idleTask,
+        taskName, //Just for humans
+        2000, //Stack Size
+        NULL, //Task input parameter
+        0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+        &idleTaskHandle[index], //Task handle
+        index); //Core where task should run, 0=core, 1=Arduino
+  }
+}

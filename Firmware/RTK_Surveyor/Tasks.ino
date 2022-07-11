@@ -438,3 +438,30 @@ void ButtonCheckTask(void *e)
     taskYIELD();
   }
 }
+
+void idleTask(void *e)
+{
+  uint32_t lastStackPrintTime;
+
+  while (1)
+  {
+    if (settings.enablePrintIdleTime)
+    {
+      //Increment a count during the idle time
+      cpuIdleCount[xPortGetCoreID()]++;
+
+      //Let other same priority tasks run
+      yield();
+    }
+    else
+      delay(1000);
+
+    //Display the high water mark if requested
+    if ((settings.enableTaskReports == true) && ((millis() - lastStackPrintTime) >= 1000))
+    {
+      lastStackPrintTime = millis();
+      Serial.printf("idleTask %d High watermark: %d\n\r",
+                    xPortGetCoreID(), uxTaskGetStackHighWaterMark(NULL));
+    }
+  }
+}

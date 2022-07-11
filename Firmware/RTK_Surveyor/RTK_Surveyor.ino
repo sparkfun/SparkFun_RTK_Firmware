@@ -41,6 +41,11 @@ const int FIRMWARE_VERSION_MINOR = 3;
 
 #include "settings.h"
 
+#define MAX_CPU_CORES               2
+#define IDLE_COUNT_PER_SECOND       196289
+#define IDLE_TIME_DISPLAY_SECONDS   5
+#define MAX_IDLE_TIME_COUNT         (IDLE_TIME_DISPLAY_SECONDS * IDLE_COUNT_PER_SECOND)
+
 //Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //These pins are set in beginBoard()
@@ -417,6 +422,10 @@ unsigned long systemTestDisplayTime = 0; //Timestamp for swapping the graphic du
 uint8_t systemTestDisplayNumber = 0; //Tracks which test screen we're looking at
 unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to update during PointPerfect Key checking
 
+uint32_t cpuIdleCount[MAX_CPU_CORES];
+TaskHandle_t idleTaskHandle[MAX_CPU_CORES];
+uint32_t cpuLastIdleDisplayTime;
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -425,6 +434,11 @@ void setup()
 
   Wire.begin(); //Start I2C on core 1
   //Wire.setClock(400000);
+
+  //Initialize the CPU idle time counts
+  for (int index = 0; index < MAX_CPU_CORES; index++)
+    cpuIdleCount[index] = 0;
+  cpuLastIdleDisplayTime = millis();
 
   beginDisplay(); //Start display first to be able to display any errors
 
@@ -463,10 +477,15 @@ void setup()
   log_d("Boot time: %d", millis());
 
   danceLEDs(); //Turn on LEDs like a car dashboard
+
+  beginIdleTasks();
 }
 
 void loop()
 {
+  uint32_t delayTime;
+
+
   if (online.gnss == true)
   {
     i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
@@ -501,7 +520,40 @@ void loop()
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;
 
-  delay(10); //A small delay prevents panic if no other I2C or functions are called
+  //Display the CPU idle time
+  if (settings.enablePrintIdleTime)
+    printIdleTimes();
+
+  //A small delay prevents panic if no other I2C or functions are called
+  delay(10);
+}
+
+//Print the CPU idle times
+void printIdleTimes()
+{
+  uint32_t idleCount[MAX_CPU_CORES];
+  int index;
+
+  //Determine if it is time to print the CPU idle times
+  if ((millis() - cpuLastIdleDisplayTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000))
+  {
+    //Get the idle times
+    cpuLastIdleDisplayTime = millis();
+    for (index = 0; index < MAX_CPU_CORES; index++)
+    {
+      idleCount[index] = cpuIdleCount[index];
+      cpuIdleCount[index] = 0;
+    }
+
+    //Display the idle times
+    for (int index = 0; index < MAX_CPU_CORES; index++)
+      Serial.printf("CPU %d idle time: %d%% (%d/%d)\r\n", index,
+                    idleCount[index] * 100 / MAX_IDLE_TIME_COUNT,
+                    idleCount[index], MAX_IDLE_TIME_COUNT);
+
+    //Print the task count
+    Serial.printf("%d Tasks\r\n", uxTaskGetNumberOfTasks());
+  }
 }
 
 //Create or close files as needed (startup or as user changes settings)

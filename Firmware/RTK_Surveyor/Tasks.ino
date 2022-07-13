@@ -441,27 +441,50 @@ void ButtonCheckTask(void *e)
 
 void idleTask(void *e)
 {
-  uint32_t lastStackPrintTime;
+  int cpu = xPortGetCoreID();
+  uint32_t idleCount = 0;
+  uint32_t lastDisplayIdleTime = 0;
+  uint32_t lastStackPrintTime = 0;
 
   while (1)
   {
-    if (settings.enablePrintIdleTime)
-    {
-      //Increment a count during the idle time
-      cpuIdleCount[xPortGetCoreID()]++;
+    //Increment a count during the idle time
+    idleCount++;
 
-      //Let other same priority tasks run
-      yield();
+    //Determine if it is time to print the CPU idle times
+    if ((millis() - lastDisplayIdleTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000))
+    {
+      lastDisplayIdleTime = millis();
+
+      //Get the idle time
+      if (idleCount > max_idle_count)
+        max_idle_count = idleCount;
+
+      //Display the idle times
+      if (settings.enablePrintIdleTime) {
+        Serial.printf("CPU %d idle time: %d%% (%d/%d)\r\n", cpu,
+                      idleCount * 100 / max_idle_count,
+                      idleCount, max_idle_count);
+
+        //Print the task count
+        if (cpu)
+          Serial.printf("%d Tasks\r\n", uxTaskGetNumberOfTasks());
+      }
+
+      //Restart the idle count for the next display time
+      idleCount = 0;
     }
-    else
-      delay(1000);
 
     //Display the high water mark if requested
-    if ((settings.enableTaskReports == true) && ((millis() - lastStackPrintTime) >= 1000))
+    if ((settings.enableTaskReports == true)
+      && ((millis() - lastStackPrintTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000)))
     {
       lastStackPrintTime = millis();
       Serial.printf("idleTask %d High watermark: %d\n\r",
                     xPortGetCoreID(), uxTaskGetStackHighWaterMark(NULL));
     }
+
+    //Let other same priority tasks run
+    taskYIELD();
   }
 }

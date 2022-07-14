@@ -93,6 +93,8 @@ nav:
     - configure_pointperfect.md
     - menu_system_status.md
     - system_status_report.md
+    - correction_sources.md
+    - correction_transport.md
     - permanent_base.md
     - accuracy_verification.md
     - embeddedsystem_connection.md

@@ -2,13 +2,13 @@
 
 Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Not Supported](img/RedDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
 
-**Note:** The RTK Express Plus does not support Base mode. The Express Press contains an internal IMU and additional algorithms to support high-precision location fixes using dead reckoning.
-
-**Note:** The RTK Facet L-Band is designed to use corrections provided via u-blox's PointPerfect system therefore, a Base/Rover setup is not needed. However, if the service is not available the RTK Facet L-Band can still be used in a traditional Base/Rover setup. Here we’ll describe how to assemble a Rover and Base.
-
 In addition to providing accurate local location fixes, the SparkFun RTK devices can also serve as a correction source, also called a *Base*. The Base doesn't move and 'knows' where it is so it can calculate the discrepancies between the signals it is receiving and what it should be receiving. Said differently, the 'Base' is told where it is, and that it's not moving. If the GPS signals say otherwise, the Base knows there was a disturbance in the ~~Force~~ ionosphere. These differences are the correction values passed to the Rover so that the Rover can have millimeter-level accuracy.
 
 There are two types of bases: *Surveyed* and *Fixed*. A surveyed base is often a temporary base set up in the field. Called a 'Survey-In', this is less accurate but requires only 60 seconds to complete. The 'Fixed' base is much more accurate but the precise location at which the antenna is located must be known. A fixed base is often a structure with an antenna bolted to the side. Raw satellite signals are gathered for a few hours and then processed using Precision Point Position. We have a variety of tutorials that go into depth on these subjects but all you need to know is that the RTK Facet supports both Survey-In and Fixed Base techniques.
+
+**Note:** The RTK Express Plus does not support Base mode. The Express Press contains an internal IMU and additional algorithms to support high-precision location fixes using dead reckoning.
+
+**Note:** The RTK Facet L-Band is designed to use corrections provided via u-blox's PointPerfect system therefore, a Base/Rover setup is not needed. However, if the service is not available the RTK Facet L-Band can still be used in a traditional Base/Rover setup. Here we’ll describe how to assemble a Rover and Base.
 
 Please see the following tutorials for more information:
 

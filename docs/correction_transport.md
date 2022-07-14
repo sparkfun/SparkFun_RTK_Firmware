@@ -1,10 +1,14 @@
 # Correction Transport
 
+Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Not Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/YellowDot.png)
+
 Once a [correction source](https://docs.sparkfun.com/SparkFun_RTK_Firmware/correction_sources/) is chosen, the correction data must be transported from the base to the rover. The RTCM serial data is approximately 530 bytes per second and is transmitted at 57600bps out of the **RADIO** port on a SparkFun RTK device.
 
 There are a variety of ways to move data from a base to a rover. We will cover the most common below. 
 
 Note: RTK calculations require RTCM data to be delivered approximately once per second. If RTCM data is lost or not received by a rover, RTK Fix can still be maintained for many seconds before the device will enter RTK Float mode. This is beneficial where devices like Serial Radios may drop packets due to RF congestion.
+
+**Note:** The RTK Facet L-Band is capable of receiving RTCM corrections from a terrestrial source but because it has a built-in L-Band receiver, we recommend using the satellite-based corrections.
 
 ## WiFi
 

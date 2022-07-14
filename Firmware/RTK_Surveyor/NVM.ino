@@ -19,7 +19,7 @@
 void loadSettings()
 {
   //If we have a profile in both LFS and SD, the SD settings will overwrite LFS
-  //loadSystemSettingsFromFileLFS(settingsFileName, &settings); - Previously loaded during loadSettingsPartial()
+  loadSystemSettingsFromFileLFS(settingsFileName, &settings);
   loadSystemSettingsFromFileSD(settingsFileName, &settings);
 
   //Change empty profile name to 'Profile1' etc

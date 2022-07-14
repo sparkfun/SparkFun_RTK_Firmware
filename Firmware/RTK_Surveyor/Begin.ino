@@ -227,7 +227,7 @@ void beginSD()
     while (tries < maxTries)
     {
       if (sdPresent() == true) break;
-      log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
+      //log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
 
       //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
       //Max current is 200mA average across 1s, peak 300mA

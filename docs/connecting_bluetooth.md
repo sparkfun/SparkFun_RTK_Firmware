@@ -14,7 +14,7 @@ Open Android's system settings and find the 'Bluetooth' or 'Connected devices' o
 
 When powered on, the RTK product will broadcast itself as either '[Platform] Rover-5556' or '[Platform] Base-5556' depending on which state it is in. [Platform] is Facet, Express, Surveyor, etc. Discover and pair with this device from your phone or tablet. Once paired, open SW Maps. 
 
-![Bluetooth MAC address B022 is shown in the upper left corner](/docs/img/SparkFun%20RTK%20Rover%20Display.png)
+![Bluetooth MAC address B022 is shown in the upper left corner](img/SparkFun%20RTK%20Rover%20Display.png)
 
 *Bluetooth MAC address B022 is shown in the upper left corner*
 

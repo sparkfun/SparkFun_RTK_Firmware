@@ -41,11 +41,123 @@ These seven sentences are commonly used when logging and doing Precise Point Pos
 
 *Configuring the NMEA messages*
 
-As mentioned in the microSD section of the [Hardware Overview](https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_facet/#microsd) there are a large number of messages supported. Each message sub-menu will present the user with the ability to set the message report rate.
+There are a large number of messages supported (listed below). Each message sub-menu will present the user with the ability to set the message report rate.
 
 Each message rate input controls which messages are disabled (0) and how often the message is reported (1 = one message reported per 1 fix, 5 = one report every 5 fixes). The message rate range is 0 to 20.
 
 **Note:** The message report rate is the *number of fixes* between message reports. In the image above, with GSV set to 4, the NMEA GSV message will be produced once every 4 fixes. Because the device defaults to a 4Hz fix rate, the GSV message will appear once per second.
+
+The following 67 messages are supported for Bluetooth output and logging:
+
+<table class="table">
+ <table>
+  <COLGROUP><COL WIDTH=200><COL WIDTH=200><COL WIDTH=200></COLGROUP>
+  <tr>
+	<td>&#8226; NMEA-GSA</td>
+	<td>&#8226; NMEA-GST</td>
+	<td>&#8226; NMEA-GSV</td>
+  </tr>
+  <tr>
+	<td>&#8226; NMEA-RMC</td>
+	<td>&#8226; NMEA-VLW</td>
+	<td>&#8226; NMEA-VTG</td>
+  </tr>
+  <tr>
+    <td>&#8226; NMEA-ZDA</td>
+    <td>&#8226; NAV-CLOCK</td>
+    <td>&#8226; NAV-DOP</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-EOE</td>
+    <td>&#8226; NAV-GEOFENCE</td>
+    <td>&#8226; NAV-HPPOSECEF</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-HPPOSLLH</td>
+    <td>&#8226; NAV-ODO</td>
+    <td>&#8226; NAV-ORB</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-POSECEF</td>
+    <td>&#8226; NAV-POSLLH</td>
+    <td>&#8226; NAV-PVT</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-RELPOSNED</td>
+    <td>&#8226; NAV-SAT</td>
+    <td>&#8226; NAV-SIG</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-STATUS</td>
+    <td>&#8226; NAV-SVIN</td>
+    <td>&#8226; NAV-TIMEBDS</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-TIMEGAL</td>
+    <td>&#8226; NAV-TIMEGLO</td>
+    <td>&#8226; NAV-TIMEGPS</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-TIMELS</td>
+    <td>&#8226; NAV-TIMEUTC</td>
+    <td>&#8226; NAV-VELECEF</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-VELNED</td>
+    <td>&#8226; RXM-MEASX</td>
+    <td>&#8226; RXM-RAWX</td>
+  </tr>
+  <tr>
+    <td>&#8226; RXM-RLM</td>
+    <td>&#8226; RXM-RTCM</td>
+    <td>&#8226; RXM-SFRBX</td>
+  </tr>
+  <tr>
+    <td>&#8226; MON-COMMS</td>
+    <td>&#8226; MON-HW2</td>
+    <td>&#8226; MON-HW3</td>
+  </tr>
+  <tr>
+    <td>&#8226; MON-HW</td>
+    <td>&#8226; MON-IO</td>
+    <td>&#8226; MON-MSGPP</td>
+  </tr>
+  <tr>
+    <td>&#8226; MON-RF</td>
+    <td>&#8226; MON-RXBUF</td>
+    <td>&#8226; MON-RXR</td>
+  </tr>
+  <tr>
+    <td>&#8226; MON-TXBUF</td>
+    <td>&#8226; TIM-TM2</td>
+    <td>&#8226; TIM-TP</td>
+  </tr>
+  <tr>
+    <td>&#8226; TIM-VRFY</td>
+    <td>&#8226; RTCM3x-1005</td>
+    <td>&#8226; RTCM3x-1074</td>
+  </tr>
+  <tr>
+    <td>&#8226; RTCM3x-1077</td>
+    <td>&#8226; RTCM3x-1084</td>
+    <td>&#8226; RTCM3x-1087</td>
+  </tr>
+  <tr>
+    <td>&#8226; RTCM3x-1094</td>
+    <td>&#8226; RTCM3x-1097</td>
+    <td>&#8226; RTCM3x-1124</td>
+  </tr>
+  <tr>
+    <td>&#8226; RTCM3x-1127</td>
+    <td>&#8226; RTCM3x-1230</td>
+    <td>&#8226; RTCM3x-4072-0</td>
+  </tr>
+  <tr>
+    <td>&#8226; RTCM3x-4072-1</td>
+    <td></td>
+    <td></td>
+  </tr>
+</table></table>
 
 ## Turn off all messages
 

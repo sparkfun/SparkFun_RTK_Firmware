@@ -20,6 +20,7 @@ void updateSerial()
 //If user doesn't respond within a few seconds, return to main loop
 void menuMain()
 {
+  inMainMenu = true;
   displaySerialConfig(); //Display 'Serial Config' while user is configuring
 
   while (1)
@@ -93,6 +94,12 @@ void menuMain()
   if (online.gnss == true)
     i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
 
+  if (restartBase == true)
+  {
+    restartBase = false;
+    requestChangeState(STATE_BASE_NOT_STARTED); //Restart base upon exit for latest changes to take effect
+  }
+
   if (restartRover == true)
   {
     restartRover = false;
@@ -100,6 +107,7 @@ void menuMain()
   }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  inMainMenu = false;
 }
 
 //Change system wide settings based on current user profile
@@ -123,7 +131,7 @@ void menuUserProfiles()
     //List available profiles
     for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
     {
-      if (strlen(profileNames[x]) > 0)
+      if (activeProfiles & (1 << x))
         Serial.printf("%d) Select %s", x + 1, profileNames[x]);
       else
         Serial.printf("%d) Select (Empty)", x + 1);
@@ -143,32 +151,14 @@ void menuUserProfiles()
 
     if (incoming >= 1 && incoming <= MAX_PROFILE_COUNT)
     {
-      settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
-      recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
-
-      recordProfileNumber(incoming - 1); //Align to array
-      profileNumber = incoming - 1;
-
-      sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Enables Delete Profile
-
-      //We need to load these settings from file so that we can record a profile name change correctly
-      bool responseLFS = loadSystemSettingsFromFileLFS(settingsFileName, &settings);
-      bool responseSD = loadSystemSettingsFromFileSD(settingsFileName, &settings);
-
-      //If this is an empty/new profile slot, overwrite our current settings with defaults
-      if (responseLFS == false && responseSD == false)
-      {
-        Settings tempSettings;
-        settings = tempSettings;
-      }
+      changeProfileNumber(incoming - 1); //Align inputs to array
     }
     else if (incoming == MAX_PROFILE_COUNT + 1)
     {
       Serial.print("Enter new profile name: ");
       readLine(settings.profileName, sizeof(settings.profileName), menuTimeoutExtended);
       recordSystemSettings(); //We need to update this immediately in case user lists the available profiles again
-
-      strcpy(profileNames[profileNumber], settings.profileName); //Update array
+      setProfileName(profileNumber);
     }
     else if (incoming == MAX_PROFILE_COUNT + 2)
     {
@@ -183,8 +173,8 @@ void menuUserProfiles()
         //Remove profile from SD if available
         if (online.microSD == true)
         {
-          if (sd.exists(settingsFileName))
-            sd.remove(settingsFileName);
+          if (sd->exists(settingsFileName))
+            sd->remove(settingsFileName);
         }
 
         recordProfileNumber(0); //Move to Profile1
@@ -203,7 +193,8 @@ void menuUserProfiles()
           settings = tempSettings;
         }
 
-        activeProfiles = loadProfileNames(); //Count is used during menu display
+        //Get bitmask of active profiles
+        activeProfiles = loadProfileNames();
       }
       else
         Serial.println(F("Delete aborted"));
@@ -226,9 +217,35 @@ void menuUserProfiles()
 
   //A user may edit the name of a profile, but then switch back to original profile.
   //Thus, no reset, and activeProfiles is not updated. Do it here.
-  activeProfiles = loadProfileNames(); //Count is used during menu display
+  //Get bitmask of active profiles
+  activeProfiles = loadProfileNames();
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+}
+
+//Change the active profile number, without unit reset
+void changeProfileNumber(byte newProfileNumber)
+{
+  settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
+  recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
+
+  recordProfileNumber(newProfileNumber);
+  profileNumber = newProfileNumber;
+  setSettingsFileName(); //Load the settings file name into memory (enabled profile name delete)
+
+  //We need to load these settings from file so that we can record a profile name change correctly
+  bool responseLFS = loadSystemSettingsFromFileLFS(settingsFileName, &settings);
+  bool responseSD = loadSystemSettingsFromFileSD(settingsFileName, &settings);
+
+  //If this is an empty/new profile slot, overwrite our current settings with defaults
+  if (responseLFS == false && responseSD == false)
+  {
+    Serial.println("Default the settings");
+    //Create a temporary settings struc on the heap (not the stack because it is ~4500 bytes)
+    Settings *tempSettings = new Settings;
+    settings = *tempSettings;
+    delete tempSettings;
+  }
 }
 
 //Erase all settings. Upon restart, unit will use defaults
@@ -236,6 +253,7 @@ void factoryReset()
 {
   displaySytemReset(); //Display friendly message on OLED
 
+  Serial.println("Formatting settings file system...");
   LittleFS.format();
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
@@ -244,12 +262,15 @@ void factoryReset()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       //Remove this specific settings file. Don't remove the other profiles.
-      sd.remove(settingsFileName);
+      sd->remove(settingsFileName);
       xSemaphoreGive(sdCardSemaphore);
     } //End sdCardSemaphore
     else
     {
-      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      //An error occurs when a settings file is on the microSD card and it is not
+      //deleted, as such the settings on the microSD card will be loaded when the
+      //RTK reboots, resulting in failure to achieve the factory reset condition
+      Serial.printf("sdCardSemaphore failed to yield, menuMain.ino line %d\r\n", __LINE__);
     }
   }
 

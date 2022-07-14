@@ -87,17 +87,96 @@
             <div align="center" class="small">
                 <span id="rtkFirmwareVersion" style="display:inline;">RTK Firmware: v0.0</span> <br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
-                <span id="profileName" style="display:inline;">Profile Name: Default</span>
             </div>
         </div>
 
         <hr class="mt-0">
         <div style="margin-top:20px;">
+
+            <!-- --------- Profile Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary toggle-btn" id="profileConfig" type="button" data-toggle="collapse"
+                    data-target="#collapseProfileConfig" aria-expanded="false" aria-controls="collapseProfileConfig">
+                    Profile Configuration <i id="profileCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse mb-2" id="collapseProfileConfig">
+                <div class="card card-body">
+
+                    <div class="form-group mt-2">
+                        Profile:
+                        <span class="tt" data-bs-placement="right"
+                            title="Select a profile and then assign settings to that profile. At reset, RTK device will use selected profile. Profile changes are saved when a different profile is selected or when 'Save Configuration' is pressed.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="0">
+                            <label id="profile0Name">Profile1</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="1">
+                            <label id="profile1Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="2">
+                            <label id="profile2Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="3">
+                            <label id="profile3Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="4">
+                            <label id="profile4Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="5">
+                            <label id="profile5Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="6">
+                            <label id="profile6Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="7">
+                            <label id="profile7Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="profileName" class="box-margin20 col-sm-3 col-4 col-form-label">Profile Name:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="profileName">
+                            <p id="profileNameError" class="inlineError"></p>
+                        </div>
+                        <p id="profileChangeMessage" class="inlineSuccess"></p>
+                    </div>
+
+                </div>
+            </div>
+
             <!-- --------- GNSS Config --------- -->
             <div class="d-grid gap-2">
-                <button class="btn btn-primary toggle-btn" type="button" data-toggle="collapse"
+                <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapseGNSSConfig" aria-expanded="false" aria-controls="collapseGNSSConfig">
-                    GNSS Configuration <i class="caret-icon bi icon-caret-up"></i>
+                    GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-up"></i>
                 </button>
             </div>
             <div class="collapse show" id="collapseGNSSConfig">
@@ -265,8 +344,8 @@
                                 <input type="text" class="form-control" id="ntripClient_MountPointPW">
                                 <p id="ntripClient_MountPointPWError" class="inlineError"></p>
                             </div>
-                        </div>                    
-                        
+                        </div>
+
                         <div class="form-check mt-1 box-margin20">
                             <label class="form-check-label" for="ntripClient_TransmitGGA">Transmit GGA to Caster</label>
                             <input class="form-check-input" type="checkbox" value="" id="ntripClient_TransmitGGA" unchecked>
@@ -276,12 +355,12 @@
                             </span>
                         </div>
                     </div>
-                    
+
                     <div id="messageRateButton">
                         <button class="btn btn-md btn-outline-primary mt-3 toggle-btn" type="button"
                             data-toggle="collapse" data-target="#collapseGNSSConfigMsg" aria-expanded="false"
                             aria-controls="collapseGNSSConfigMsg">
-                            Message Rates <i class="caret-icon bi icon-caret-down"></i>
+                            Message Rates <i id="gnssMsgCaret" class="caret-icon bi icon-caret-down"></i>
                         </button>
                         <span class="tt" data-bs-placement="right"
                             title="NMEA and RAWX are the two most commonly reported types of message but the receiver supports more than 70 different messages. Each message rate input controls which messages are disabled (0) and how often the message is reported (1 = one message reported per 1 fix, 5 = one report every 5 fixes). Default: NMEA GGA, GSA, GST, GSV, and RMC. Limits: 0 to 20.">
@@ -846,7 +925,7 @@
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="baseConfig" type="button" data-toggle="collapse"
                     data-target="#collapseBaseConfig" aria-expanded="false" aria-controls="collapseBaseConfig">
-                    Base Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    Base Configuration <i id="baseCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseBaseConfig">
@@ -854,7 +933,7 @@
 
                     <div id="surveyInRadio">
                         <input type="radio" id="baseTypeSurveyIn" name="baseType" class="form-radio" checked>
-                        <label for="baseTypeSurveyIn"><strong>Survey-In</strong></label>
+                        <label for="baseTypeSurveyIn">Survey-In</label>
                         <span class="tt" data-bs-placement="right"
                             title="If the precise location of a base station is not known it may be obtained by ‘surveying’ the location. The base is fixed in one place and takes approximately 60 seconds worth of readings to obtain a best fit location based on the measurements. This method achieves ~30cm accurate position but can vary. Increasing the Minimum Observation Time and/or Required Mean Deviation will increase accuracy but only to a point. Better accuracy is achieved with long-term logging and post processing. Default: 60s and 5.0m. Limits: 60 to 900s, 1.0 to 5.0m.">
                             <span class="icon-info-circle text-primary ms-2"></span>
@@ -884,7 +963,7 @@
 
                     <div id="fixedRadio">
                         <input type="radio" id="baseTypeFixed" name="baseType" value="1" class="form-radio">
-                        <label for="baseTypeFixed"><strong>Fixed</strong> <span class="small">(Choose ECEF or
+                        <label for="baseTypeFixed">Fixed<span class="small">(Choose ECEF or
                                 Geodetic)</span></label>
                         <span class="tt" data-bs-placement="right"
                             title="If the location of the base is known it can be entered in either ECEF or Geodetic coordinates. In this mode the receiver will immediately begin outputting RTCM correction data. A fixed position is best obtained with PPP (please see our tutorial) or with post processing against a reference station. Default: SparkFun's location in Boulder, Colorado.">
@@ -1055,7 +1134,7 @@
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="sensorConfig" type="button" data-toggle="collapse"
                     data-target="#collapseSensorConfig" aria-expanded="false" aria-controls="collapseSensorConfig">
-                    Sensor Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    Sensor Configuration <i id="sensorCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseSensorConfig">
@@ -1083,7 +1162,7 @@
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="ppConfig" type="button" data-toggle="collapse"
                     data-target="#collapsePPConfig" aria-expanded="false" aria-controls="collapsePPConfig">
-                    PointPerfect Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    PointPerfect Configuration <i id="pointPerfectCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapsePPConfig">
@@ -1149,12 +1228,12 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- --------- Ports Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapsePortsConfig" aria-expanded="false" aria-controls="collapsePortsConfig">
-                    Ports Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    Ports Configuration <i id="portsCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapsePortsConfig">
@@ -1270,7 +1349,7 @@
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapseSystemConfig" aria-expanded="false" aria-controls="collapseSystemConfig">
-                    System Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    System Configuration <i id="systemCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseSystemConfig">
@@ -1374,7 +1453,7 @@
             <hr>
             <div class="row">
                 <div align="center" class="col-sm-5 offset-sm-1 col-12 offset-0 mb-2">
-                    <button type="button" id="saveBtn" class="btn btn-secondary" onclick="validateFields()">Save
+                    <button type="button" id="saveBtn" class="btn btn-secondary" onclick="saveConfig()">Save
                         Configuration <span class="icon-save ms-1"></span></button>
                     <p id="saveBtnError" class="inlineError"></p>
                     <p id="saveBtnSuccess" class="inlineSuccess"></p>

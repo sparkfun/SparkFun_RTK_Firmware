@@ -14,6 +14,8 @@ bool configureUbloxModuleBase()
     return (true);
   }
 
+  firstPowerOn = false; //If we switch between rover/base in the future, force config of module.
+
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
   //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
@@ -28,13 +30,9 @@ bool configureUbloxModuleBase()
   i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Disable GPGGA call back that may have been set during Rover Client mode
   i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C); // Disable NMEA message
 
-  if (i2cGNSS.getSurveyInActive() == true)
-  {
-    log_d("Disabling survey");
-    response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-    if (response == false)
-      Serial.println(F("Disable Survey failed"));
-  }
+  response = i2cGNSS.setSurveyMode(0, 0, 0); //Disable Survey-In or Fixed Mode
+  if (response == false)
+    Serial.println(F("Disable TMODE3 failed"));
 
   //In base mode we force 1Hz
   if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
@@ -139,11 +137,11 @@ bool resetSurvey()
   int maxWait = 2000;
 
   //Slightly modified method for restarting survey-in from: https://portal.u-blox.com/s/question/0D52p00009IsVoMCAV/restarting-surveyin-on-an-f9p
-  bool response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+  bool response = i2cGNSS.setSurveyMode(maxWait, 0, 0); //Disable Survey-In or Fixed Mode
   delay(1000);
   response &= i2cGNSS.enableSurveyMode(1000, 400.000, maxWait); //Enable Survey in with bogus values
   delay(1000);
-  response &= i2cGNSS.disableSurveyMode(maxWait); //Disable survey
+  response &= i2cGNSS.setSurveyMode(maxWait, 0, 0); //Disable Survey-In or Fixed Mode
 
   if (response == false)
     return (response);
@@ -229,34 +227,5 @@ bool startFixedBase()
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
 void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
-  //Count outgoing packets for display
-  //Assume 1Hz RTCM transmissions
-  if (millis() - lastRTCMPacketSent > 500)
-  {
-    lastRTCMPacketSent = millis();
-    rtcmPacketsSent++;
-  }
-
-  //Check for too many digits
-  if (settings.enableResetDisplay == true)
-  {
-    if (rtcmPacketsSent > 99) rtcmPacketsSent = 1; //Trim to two digits to avoid overlap
-  }
-  else if (logIncreasing == true)
-  {
-    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon
-  }
-  else
-  {
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
-  }
-
-#ifdef COMPILE_WIFI
-  if (ntripServer.connected() == true)
-  {
-    ntripServer.write(incoming); //Send this byte to socket
-    casterBytesSent++;
-    lastServerSent_ms = millis();
-  }
-#endif
+  ntripServerProcessRTCM(incoming);
 }

@@ -105,11 +105,22 @@ function parseIncoming(msg) {
             || id.includes("sdUsedSpace")
             || id.includes("rtkFirmwareVersion")
             || id.includes("zedFirmwareVersion")
-            || id.includes("profileName")
             || id.includes("hardwareID")
             || id.includes("daysRemaining")
+            || id.includes("profile0Name")
+            || id.includes("profile1Name")
+            || id.includes("profile2Name")
+            || id.includes("profile3Name")
+            || id.includes("profile4Name")
+            || id.includes("profile5Name")
+            || id.includes("profile6Name")
+            || id.includes("profile7Name")
         ) {
             ge(id).innerHTML = val;
+        }
+        else if (id.includes("profileNumber")) {
+            currentProfileNumber = val;
+            $("input[name=profileRadio][value=" + currentProfileNumber + "]").prop('checked', true);
         }
         else if (id.includes("firmwareUploadComplete")) {
             firmwareUploadComplete();
@@ -144,6 +155,8 @@ function parseIncoming(msg) {
         }
     }
     //console.log("Settings loaded");
+
+    ge("profileChangeMessage").innerHTML = '';
 
     //Force element updates
     ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
@@ -209,17 +222,28 @@ function checkMessageValue(id) {
     checkElementValue(id, 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 }
 
+function collapseSection(section, caret) {
+    ge(section).classList.remove('show');
+    ge(caret).classList.remove('icon-caret-down');
+    ge(caret).classList.remove('icon-caret-up');
+    ge(caret).classList.add('icon-caret-down');
+}
+
 function validateFields() {
     //Collapse all sections
-    ge("collapseGNSSConfig").classList.remove('show');
-    ge("collapseGNSSConfigMsg").classList.remove('show');
-    ge("collapseBaseConfig").classList.remove('show');
-    ge("collapseSensorConfig").classList.remove('show');
-    ge("collapsePPConfig").classList.remove('show');
-    ge("collapsePortsConfig").classList.remove('show');
-    ge("collapseSystemConfig").classList.remove('show');
+    collapseSection("collapseProfileConfig", "profileCaret");
+    collapseSection("collapseGNSSConfig", "gnssCaret");
+    collapseSection("collapseGNSSConfigMsg", "gnssMsgCaret");
+    collapseSection("collapseBaseConfig", "baseCaret");
+    collapseSection("collapseSensorConfig", "sensorCaret");
+    collapseSection("collapsePPConfig", "pointPerfectCaret");
+    collapseSection("collapsePortsConfig", "portsCaret");
+    collapseSection("collapseSystemConfig", "systemCaret");
 
     errorCount = 0;
+
+    //Profile Config
+    checkElementString("profileName", 1, 49, "Must be 1 to 49 characters", "collapseProfileConfig");
 
     //GNSS Config
     checkElementValue("measurementRateHz", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseGNSSConfig");
@@ -401,7 +425,7 @@ function validateFields() {
         if(ge("enablePointPerfectCorrections").checked == true) {
             checkElementString("home_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapsePPConfig");
             checkElementString("home_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapsePPConfig");
-            
+
             value = ge("pointPerfectDeviceProfileToken").value;
             console.log(value);
             if (value.length > 0)
@@ -438,6 +462,47 @@ function validateFields() {
             ge("externalPulsePolarity").value = 0;
         }
     }
+}
+
+var currentProfileNumber = 0;
+
+function changeConfig() {
+    validateFields();
+
+    if (errorCount == 1) {
+        showError('saveBtn', "Please clear " + errorCount + " error");
+        clearSuccess('saveBtn');
+        $("input[name=profileRadio][value=" + currentProfileNumber + "]").prop('checked', true);
+    }
+    else if (errorCount > 1) {
+        showError('saveBtn', "Please clear " + errorCount + " errors");
+        clearSuccess('saveBtn');
+        $("input[name=profileRadio][value=" + currentProfileNumber + "]").prop('checked', true);
+    }
+    else {
+        ge("profileChangeMessage").innerHTML = 'Loading. Please wait...';
+
+        currentProfileNumber = document.querySelector('input[name=profileRadio]:checked').value;
+
+        sendData();
+        clearError('saveBtn');
+        showSuccess('saveBtn', "All saved!");
+
+        ws.send("setProfile," + currentProfileNumber + ",");
+
+        ge("collapseProfileConfig").classList.add('show');
+        ge("collapseGNSSConfig").classList.add('show');
+        collapseSection("collapseGNSSConfigMsg", "gnssMsgCaret");
+        collapseSection("collapseBaseConfig", "baseCaret");
+        collapseSection("collapseSensorConfig", "sensorCaret");
+        collapseSection("collapsePPConfig", "pointPerfectCaret");
+        collapseSection("collapsePortsConfig", "portsCaret");
+        collapseSection("collapseSystemConfig", "systemCaret");
+    }
+}
+
+function saveConfig() {
+    validateFields();
 
     if (errorCount == 1) {
         showError('saveBtn', "Please clear " + errorCount + " error");
@@ -453,6 +518,7 @@ function validateFields() {
         clearError('saveBtn');
         showSuccess('saveBtn', "All saved!");
     }
+
 }
 
 function checkConstellations() {
@@ -467,6 +533,19 @@ function checkConstellations() {
     }
     else
         clearError("ubxConstellations");
+}
+
+function checkBitMapValue(id, min, max, bitMap, errorText, collapseID) {
+    value = ge(id).value;
+    mask = ge(bitMap).value;
+    if ((value < min) || (value > max) || ((mask & (1 << value)) == 0)) {
+        ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else {
+        clearError(id);
+    }
 }
 
 function checkElementValue(id, min, max, errorText, collapseID) {
@@ -635,6 +714,22 @@ function firmwareUploadComplete() {
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
+
+    //https://stackoverflow.com/questions/23835150/how-can-i-add-an-event-listener-for-multiple-buttons-with-same-class-name
+    var radios = document.querySelectorAll('input[name=profileRadio]');
+    for(var i = 0, max = radios.length; i < max; i++) {
+        radios[i].onclick = function() {
+            
+            console.log("Profile number: " + this.value);
+            
+            //Validate. If fail, reset radio button value to original
+            changeConfig();
+
+            //Record previous settings to unit
+
+            //Request unit for new settings
+        }
+    }
 
     ge("measurementRateHz").addEventListener("change", function () {
         ge("measurementRateSec").value = 1.0 / ge("measurementRateHz").value;
@@ -853,17 +948,96 @@ static const char *index_html = R"=====(
             <div align="center" class="small">
                 <span id="rtkFirmwareVersion" style="display:inline;">RTK Firmware: v0.0</span> <br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
-                <span id="profileName" style="display:inline;">Profile Name: Default</span>
             </div>
         </div>
 
         <hr class="mt-0">
         <div style="margin-top:20px;">
+
+            <!-- --------- Profile Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary toggle-btn" id="profileConfig" type="button" data-toggle="collapse"
+                    data-target="#collapseProfileConfig" aria-expanded="false" aria-controls="collapseProfileConfig">
+                    Profile Configuration <i id="profileCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse mb-2" id="collapseProfileConfig">
+                <div class="card card-body">
+
+                    <div class="form-group mt-2">
+                        Profile:
+                        <span class="tt" data-bs-placement="right"
+                            title="Select a profile and then assign settings to that profile. At reset, RTK device will use selected profile. Profile changes are saved when a different profile is selected or when 'Save Configuration' is pressed.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="0">
+                            <label id="profile0Name">Profile1</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="1">
+                            <label id="profile1Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="2">
+                            <label id="profile2Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="3">
+                            <label id="profile3Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="4">
+                            <label id="profile4Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="5">
+                            <label id="profile5Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="6">
+                            <label id="profile6Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="7">
+                            <label id="profile7Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="profileName" class="box-margin20 col-sm-3 col-4 col-form-label">Profile Name:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="profileName">
+                            <p id="profileNameError" class="inlineError"></p>
+                        </div>
+                        <p id="profileChangeMessage" class="inlineSuccess"></p>
+                    </div>
+
+                </div>
+            </div>
+
             <!-- --------- GNSS Config --------- -->
             <div class="d-grid gap-2">
-                <button class="btn btn-primary toggle-btn" type="button" data-toggle="collapse"
+                <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapseGNSSConfig" aria-expanded="false" aria-controls="collapseGNSSConfig">
-                    GNSS Configuration <i class="caret-icon bi icon-caret-up"></i>
+                    GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-up"></i>
                 </button>
             </div>
             <div class="collapse show" id="collapseGNSSConfig">
@@ -1031,8 +1205,8 @@ static const char *index_html = R"=====(
                                 <input type="text" class="form-control" id="ntripClient_MountPointPW">
                                 <p id="ntripClient_MountPointPWError" class="inlineError"></p>
                             </div>
-                        </div>                    
-                        
+                        </div>
+
                         <div class="form-check mt-1 box-margin20">
                             <label class="form-check-label" for="ntripClient_TransmitGGA">Transmit GGA to Caster</label>
                             <input class="form-check-input" type="checkbox" value="" id="ntripClient_TransmitGGA" unchecked>
@@ -1042,12 +1216,12 @@ static const char *index_html = R"=====(
                             </span>
                         </div>
                     </div>
-                    
+
                     <div id="messageRateButton">
                         <button class="btn btn-md btn-outline-primary mt-3 toggle-btn" type="button"
                             data-toggle="collapse" data-target="#collapseGNSSConfigMsg" aria-expanded="false"
                             aria-controls="collapseGNSSConfigMsg">
-                            Message Rates <i class="caret-icon bi icon-caret-down"></i>
+                            Message Rates <i id="gnssMsgCaret" class="caret-icon bi icon-caret-down"></i>
                         </button>
                         <span class="tt" data-bs-placement="right"
                             title="NMEA and RAWX are the two most commonly reported types of message but the receiver supports more than 70 different messages. Each message rate input controls which messages are disabled (0) and how often the message is reported (1 = one message reported per 1 fix, 5 = one report every 5 fixes). Default: NMEA GGA, GSA, GST, GSV, and RMC. Limits: 0 to 20.">
@@ -1612,7 +1786,7 @@ static const char *index_html = R"=====(
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="baseConfig" type="button" data-toggle="collapse"
                     data-target="#collapseBaseConfig" aria-expanded="false" aria-controls="collapseBaseConfig">
-                    Base Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    Base Configuration <i id="baseCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseBaseConfig">
@@ -1620,7 +1794,7 @@ static const char *index_html = R"=====(
 
                     <div id="surveyInRadio">
                         <input type="radio" id="baseTypeSurveyIn" name="baseType" class="form-radio" checked>
-                        <label for="baseTypeSurveyIn"><strong>Survey-In</strong></label>
+                        <label for="baseTypeSurveyIn">Survey-In</label>
                         <span class="tt" data-bs-placement="right"
                             title="If the precise location of a base station is not known it may be obtained by ‘surveying’ the location. The base is fixed in one place and takes approximately 60 seconds worth of readings to obtain a best fit location based on the measurements. This method achieves ~30cm accurate position but can vary. Increasing the Minimum Observation Time and/or Required Mean Deviation will increase accuracy but only to a point. Better accuracy is achieved with long-term logging and post processing. Default: 60s and 5.0m. Limits: 60 to 900s, 1.0 to 5.0m.">
                             <span class="icon-info-circle text-primary ms-2"></span>
@@ -1650,7 +1824,7 @@ static const char *index_html = R"=====(
 
                     <div id="fixedRadio">
                         <input type="radio" id="baseTypeFixed" name="baseType" value="1" class="form-radio">
-                        <label for="baseTypeFixed"><strong>Fixed</strong> <span class="small">(Choose ECEF or
+                        <label for="baseTypeFixed">Fixed<span class="small">(Choose ECEF or
                                 Geodetic)</span></label>
                         <span class="tt" data-bs-placement="right"
                             title="If the location of the base is known it can be entered in either ECEF or Geodetic coordinates. In this mode the receiver will immediately begin outputting RTCM correction data. A fixed position is best obtained with PPP (please see our tutorial) or with post processing against a reference station. Default: SparkFun's location in Boulder, Colorado.">
@@ -1821,7 +1995,7 @@ static const char *index_html = R"=====(
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="sensorConfig" type="button" data-toggle="collapse"
                     data-target="#collapseSensorConfig" aria-expanded="false" aria-controls="collapseSensorConfig">
-                    Sensor Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    Sensor Configuration <i id="sensorCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseSensorConfig">
@@ -1849,7 +2023,7 @@ static const char *index_html = R"=====(
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="ppConfig" type="button" data-toggle="collapse"
                     data-target="#collapsePPConfig" aria-expanded="false" aria-controls="collapsePPConfig">
-                    PointPerfect Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    PointPerfect Configuration <i id="pointPerfectCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapsePPConfig">
@@ -1870,7 +2044,6 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div id="ppSettingsConfig">
-
                         <div class="form-group row">
                             <label for="home_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">Home WiFi
                                 SSID:</label>
@@ -1916,12 +2089,12 @@ static const char *index_html = R"=====(
                     </div>
                 </div>
             </div>
-            
+
             <!-- --------- Ports Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapsePortsConfig" aria-expanded="false" aria-controls="collapsePortsConfig">
-                    Ports Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    Ports Configuration <i id="portsCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapsePortsConfig">
@@ -2037,7 +2210,7 @@ static const char *index_html = R"=====(
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapseSystemConfig" aria-expanded="false" aria-controls="collapseSystemConfig">
-                    System Configuration <i class="caret-icon bi icon-caret-down"></i>
+                    System Configuration <i id="systemCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseSystemConfig">
@@ -2141,7 +2314,7 @@ static const char *index_html = R"=====(
             <hr>
             <div class="row">
                 <div align="center" class="col-sm-5 offset-sm-1 col-12 offset-0 mb-2">
-                    <button type="button" id="saveBtn" class="btn btn-secondary" onclick="validateFields()">Save
+                    <button type="button" id="saveBtn" class="btn btn-secondary" onclick="saveConfig()">Save
                         Configuration <span class="icon-save ms-1"></span></button>
                     <p id="saveBtnError" class="inlineError"></p>
                     <p id="saveBtnSuccess" class="inlineSuccess"></p>

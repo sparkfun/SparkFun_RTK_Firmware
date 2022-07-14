@@ -7,15 +7,15 @@ void F9PSerialWriteTask(void *e)
 {
   while (true)
   {
-#ifdef COMPILE_BT
     //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
-    if (btState == BT_CONNECTED)
+    if (bluetoothGetState() == BT_CONNECTED)
     {
-      while (SerialBT.available())
+      while (bluetoothRxDataAvailable())
       {
         //Pass bytes to GNSS receiver
-        auto s = SerialBT.readBytes(wBuffer, sizeof(wBuffer));
+        int s = bluetoothReadBytes(wBuffer, sizeof(wBuffer));
         serialGNSS.write(wBuffer, s);
+        online.rxRtcmCorrectionData = true;
 
         if (settings.enableTaskReports == true)
           Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
@@ -23,7 +23,6 @@ void F9PSerialWriteTask(void *e)
       delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
       taskYIELD();
     }
-#endif
 
     delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
@@ -38,7 +37,7 @@ void F9PSerialReadTask(void *e)
   {
     while (serialGNSS.available())
     {
-      auto s = serialGNSS.readBytes(rBuffer, sizeof(rBuffer));
+      int s = serialGNSS.readBytes(rBuffer, sizeof(rBuffer));
 
       //If we are actively survey-in then do not pass NMEA data from ZED to phone
       if (systemState == STATE_BASE_TEMP_SETTLE || systemState == STATE_BASE_TEMP_SURVEY_STARTED)
@@ -46,16 +45,12 @@ void F9PSerialReadTask(void *e)
         //Do nothing
         taskYIELD();
       }
-#ifdef COMPILE_BT
-      else if (btState == BT_CONNECTED)
+      else if (bluetoothGetState() == BT_CONNECTED)
       {
-        if (SerialBT.isCongested() == false)
+        if ((bluetoothIsCongested() == false) || (settings.throttleDuringSPPCongestion == false))
         {
-          SerialBT.write(rBuffer, s); //Push new data to BT SPP
-        }
-        else if (settings.throttleDuringSPPCongestion == false)
-        {
-          SerialBT.write(rBuffer, s); //Push new data to SPP regardless of congestion
+          //Push new data to BT SPP if not congested or not throttling
+          bluetoothWriteBytes(rBuffer, s);
         }
         else
         {
@@ -63,7 +58,6 @@ void F9PSerialReadTask(void *e)
           log_d("Dropped SPP Bytes: %d", s);
         }
       }
-#endif
 
       if (settings.enableTaskReports == true)
         Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
@@ -77,13 +71,14 @@ void F9PSerialReadTask(void *e)
           //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
           if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
           {
-            ubxFile.write(rBuffer, s);
+            ubxFile->write(rBuffer, s);
 
             xSemaphoreGive(sdCardSemaphore);
           } //End sdCardSemaphore
           else
           {
-            log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+            //Error causing dropped bytes in the log file
+            Serial.printf("sdCardSemaphore failed to yield, Tasks.ino line %d\r\n", __LINE__);
           }
         } //End maxLogTime
       } //End logging
@@ -94,13 +89,13 @@ void F9PSerialReadTask(void *e)
   }
 }
 
-//Control BT status LED according to btState
+//Control BT status LED according to bluetoothGetState()
 void updateBTled()
 {
   if (productVariant == RTK_SURVEYOR)
   {
     //Blink on/off while we wait for BT connection
-    if (btState == BT_NOTCONNECTED)
+    if (bluetoothGetState() == BT_NOTCONNECTED)
     {
       if (btFadeLevel == 0) btFadeLevel = 255;
       else btFadeLevel = 0;
@@ -108,7 +103,7 @@ void updateBTled()
     }
 
     //Solid LED if BT Connected
-    else if (btState == BT_CONNECTED)
+    else if (bluetoothGetState() == BT_CONNECTED)
       ledcWrite(ledBTChannel, 255);
 
     //Pulse LED while no BT and we wait for WiFi connection
@@ -131,6 +126,8 @@ void updateBTled()
 //For RTK Express and RTK Facet, monitor momentary buttons
 void ButtonCheckTask(void *e)
 {
+  uint8_t index;
+
   if (setupBtn != NULL) setupBtn->begin();
   if (powerBtn != NULL) powerBtn->begin();
 
@@ -239,16 +236,8 @@ void ButtonCheckTask(void *e)
           case STATE_BASE_TEMP_SETTLE:
           case STATE_BASE_TEMP_SURVEY_STARTED:
           case STATE_BASE_TEMP_TRANSMITTING:
-          case STATE_BASE_TEMP_WIFI_STARTED:
-          case STATE_BASE_TEMP_WIFI_CONNECTED:
-          case STATE_BASE_TEMP_CASTER_STARTED:
-          case STATE_BASE_TEMP_CASTER_CONNECTED:
           case STATE_BASE_FIXED_NOT_STARTED:
           case STATE_BASE_FIXED_TRANSMITTING:
-          case STATE_BASE_FIXED_WIFI_STARTED:
-          case STATE_BASE_FIXED_WIFI_CONNECTED:
-          case STATE_BASE_FIXED_CASTER_STARTED:
-          case STATE_BASE_FIXED_CASTER_CONNECTED:
           case STATE_BUBBLE_LEVEL:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
@@ -263,10 +252,7 @@ void ButtonCheckTask(void *e)
             //Allow system to return to lastSystemState
             break;
 
-          case STATE_PROFILE_1:
-          case STATE_PROFILE_2:
-          case STATE_PROFILE_3:
-          case STATE_PROFILE_4:
+          case STATE_PROFILE:
             //If the user presses the setup button during a profile change, do nothing
             //Allow system to return to lastSystemState
             break;
@@ -306,28 +292,17 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
-                if (activeProfiles == 1) //If we have only one active profile, do not show any profiles
+                //If only one active profile do not show any profiles
+                index = getProfileNumberFromUnit(0);
+                displayProfile = getProfileNumberFromUnit(1);
+                setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
+                displayProfile = 0;
+                break;
+              case STATE_PROFILE:
+                //Done when no more active profiles
+                displayProfile++;
+                if (!getProfileNumberFromUnit(displayProfile))
                   setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_1;
-                break;
-              case STATE_PROFILE_1:
-                setupState = STATE_PROFILE_2;
-                break;
-              case STATE_PROFILE_2:
-                if (activeProfiles == 2)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_3;
-                break;
-              case STATE_PROFILE_3:
-                if (activeProfiles == 3)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_4;
-                break;
-              case STATE_PROFILE_4:
-                setupState = STATE_MARK_EVENT;
                 break;
               default:
                 Serial.printf("ButtonCheckTask unknown setup state: %d\n\r", setupState);
@@ -376,16 +351,8 @@ void ButtonCheckTask(void *e)
           case STATE_BASE_TEMP_SETTLE:
           case STATE_BASE_TEMP_SURVEY_STARTED:
           case STATE_BASE_TEMP_TRANSMITTING:
-          case STATE_BASE_TEMP_WIFI_STARTED:
-          case STATE_BASE_TEMP_WIFI_CONNECTED:
-          case STATE_BASE_TEMP_CASTER_STARTED:
-          case STATE_BASE_TEMP_CASTER_CONNECTED:
           case STATE_BASE_FIXED_NOT_STARTED:
           case STATE_BASE_FIXED_TRANSMITTING:
-          case STATE_BASE_FIXED_WIFI_STARTED:
-          case STATE_BASE_FIXED_WIFI_CONNECTED:
-          case STATE_BASE_FIXED_CASTER_STARTED:
-          case STATE_BASE_FIXED_CASTER_CONNECTED:
           case STATE_BUBBLE_LEVEL:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
@@ -400,10 +367,7 @@ void ButtonCheckTask(void *e)
             //Allow system to return to lastSystemState
             break;
 
-          case STATE_PROFILE_1:
-          case STATE_PROFILE_2:
-          case STATE_PROFILE_3:
-          case STATE_PROFILE_4:
+          case STATE_PROFILE:
             //If the user presses the setup button during a profile change, do nothing
             //Allow system to return to lastSystemState
             break;
@@ -443,28 +407,17 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
-                if (activeProfiles == 1) //If we have only one active profile, do not show any profiles
+                //If only one active profile do not show any profiles
+                index = getProfileNumberFromUnit(0);
+                displayProfile = getProfileNumberFromUnit(1);
+                setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
+                displayProfile = 0;
+                break;
+              case STATE_PROFILE:
+                //Done when no more active profiles
+                displayProfile++;
+                if (!getProfileNumberFromUnit(displayProfile))
                   setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_1;
-                break;
-              case STATE_PROFILE_1:
-                setupState = STATE_PROFILE_2;
-                break;
-              case STATE_PROFILE_2:
-                if (activeProfiles == 2)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_3;
-                break;
-              case STATE_PROFILE_3:
-                if (activeProfiles == 3)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_4;
-                break;
-              case STATE_PROFILE_4:
-                setupState = STATE_MARK_EVENT;
                 break;
               default:
                 Serial.printf("ButtonCheckTask unknown setup state: %d\n\r", setupState);
@@ -483,5 +436,32 @@ void ButtonCheckTask(void *e)
 
     delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
+  }
+}
+
+void idleTask(void *e)
+{
+  uint32_t lastStackPrintTime;
+
+  while (1)
+  {
+    if (settings.enablePrintIdleTime)
+    {
+      //Increment a count during the idle time
+      cpuIdleCount[xPortGetCoreID()]++;
+
+      //Let other same priority tasks run
+      yield();
+    }
+    else
+      delay(1000);
+
+    //Display the high water mark if requested
+    if ((settings.enableTaskReports == true) && ((millis() - lastStackPrintTime) >= 1000))
+    {
+      lastStackPrintTime = millis();
+      Serial.printf("idleTask %d High watermark: %d\n\r",
+                    xPortGetCoreID(), uxTaskGetStackHighWaterMark(NULL));
+    }
   }
 }

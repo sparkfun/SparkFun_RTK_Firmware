@@ -45,6 +45,10 @@ const int FIRMWARE_VERSION_MINOR = 3;
 #define IDLE_COUNT_PER_SECOND       196289
 #define IDLE_TIME_DISPLAY_SECONDS   5
 #define MAX_IDLE_TIME_COUNT         (IDLE_TIME_DISPLAY_SECONDS * IDLE_COUNT_PER_SECOND)
+#define MILLISECONDS_IN_A_SECOND    1000
+#define MILLISECONDS_IN_A_MINUTE    (60 * MILLISECONDS_IN_A_SECOND)
+#define MILLISECONDS_IN_AN_HOUR     (60 * MILLISECONDS_IN_A_MINUTE)
+#define MILLISECONDS_IN_A_DAY       (24 * MILLISECONDS_IN_AN_HOUR)
 
 //Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -425,6 +429,9 @@ uint32_t cpuIdleCount[MAX_CPU_CORES];
 TaskHandle_t idleTaskHandle[MAX_CPU_CORES];
 uint32_t cpuLastIdleDisplayTime;
 
+uint64_t uptime;
+uint32_t previousMilliseconds;
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -482,6 +489,9 @@ void setup()
 
 void loop()
 {
+  uint32_t delayTime;
+  uint32_t currentMilliseconds;
+
   if (online.gnss == true)
   {
     i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
@@ -519,6 +529,13 @@ void loop()
   //Display the CPU idle time
   if (settings.enablePrintIdleTime)
     printIdleTimes();
+
+  //Monitor the days in uptime
+  currentMilliseconds = millis();
+  uptime = (uptime & 0xffffffff00000000ull) | currentMilliseconds;
+  if (currentMilliseconds < previousMilliseconds)
+    uptime += 0x100000000ull;
+  previousMilliseconds = currentMilliseconds;
 
   //A small delay prevents panic if no other I2C or functions are called
   delay(10);

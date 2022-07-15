@@ -333,7 +333,7 @@ void beginLogging()
   {
     if (online.microSD == true && settings.enableLogging == true && online.rtc == true) //We can't create a file until we have date/time
     {
-      char fileName[40] = "";
+      char fileName[66 + 6 + 40] = "";
 
       if (reuseLastLog == true) //attempt to use previous log
       {

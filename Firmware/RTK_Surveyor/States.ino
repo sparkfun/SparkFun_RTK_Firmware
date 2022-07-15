@@ -440,7 +440,6 @@ void updateSystemState()
               //Get the marks file name
               char fileName[32];
               bool fileOpen = false;
-              size_t fileSize;
               char markBuffer[100];
               bool sdCardWasOnline;
               int year;
@@ -483,7 +482,7 @@ void updateSystemState()
                   //                           1         2         3         4         5         6         7         8         9
                   //                  1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901
                   strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
-                  int writeBytes = marksFile->write(markBuffer, strlen(markBuffer));
+                  marksFile->write(markBuffer, strlen(markBuffer));
                 }
                 if (fileOpen)
                 {
@@ -513,7 +512,7 @@ void updateSystemState()
                              battLevel, battVoltage);
 
                   //Write the mark to the file
-                  int writeBytes = marksFile->write(markBuffer, strlen(markBuffer));
+                  marksFile->write(markBuffer, strlen(markBuffer));
 
                   // Update the file to create time & date
                   updateDataFileCreate(marksFile);
@@ -1048,6 +1047,6 @@ void changeState(SystemState newState)
     struct tm timeinfo = rtc.getTimeStruct();
     char s[30];
     strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", &timeinfo);
-    Serial.printf(", %s.%03d\r\n", s, rtc.getMillis());
+    Serial.printf(", %s.%03ld\r\n", s, rtc.getMillis());
   }
 }

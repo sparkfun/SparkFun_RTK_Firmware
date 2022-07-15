@@ -441,7 +441,7 @@ void ButtonCheckTask(void *e)
 
 void idleTask(void *e)
 {
-  uint32_t lastStackPrintTime;
+  uint32_t lastStackPrintTime = 0;
 
   while (1)
   {

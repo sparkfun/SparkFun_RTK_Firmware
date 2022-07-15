@@ -14,7 +14,7 @@ void startWebServer()
   {
     csd_t csd;
     sd->card()->readCSD(&csd); //Card Specific Data
-    sdCardSizeMB = 0.000512 * sdCardCapacity(&csd);
+    sdCardSizeMB = 0.000512 * sd->card()->sectorCount();
     sd->volumeBegin();
 
     //Find available cluster/space

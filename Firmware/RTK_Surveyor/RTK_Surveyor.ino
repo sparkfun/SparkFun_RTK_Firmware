@@ -93,7 +93,7 @@ uint8_t activeProfiles = 0; //Bit vector indicating which profiles are active
 uint8_t displayProfile; //Range: 0 - (MAX_PROFILE_COUNT - 1)
 uint8_t profileNumber = MAX_PROFILE_COUNT; //profileNumber gets set once at boot to save loading time
 char profileNames[MAX_PROFILE_COUNT][50]; //Populated based on names found in LittleFS and SD
-char settingsFileName[40]; //Contains the %s_Settings_%d.txt with current profile number set
+char settingsFileName[60]; //Contains the %s_Settings_%d.txt with current profile number set
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time
@@ -228,7 +228,7 @@ float battChangeRate = 0.0;
 #include "src/BluetoothSerial/BluetoothSerial.h"
 #endif
 
-char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names
+char platformPrefix[55] = "Surveyor"; //Sets the prefix for broadcast names
 
 HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
@@ -341,7 +341,7 @@ float lBandEBNO = 0.0; //Used on system status menu
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
-char deviceName[30]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
+char deviceName[70]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
@@ -483,9 +483,6 @@ void setup()
 
 void loop()
 {
-  uint32_t delayTime;
-
-
   if (online.gnss == true)
   {
     i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
@@ -756,5 +753,5 @@ void updateRTC()
 
 void printElapsedTime(const char* title)
 {
-  Serial.printf("%s: %d\n\r", title, millis() - startTime);
+  Serial.printf("%s: %ld\n\r", title, millis() - startTime);
 }

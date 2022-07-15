@@ -273,7 +273,7 @@ void menuDebug()
     if (settings.throttleDuringSPPCongestion == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    Serial.print(F("8) Display Reset Counter: "));
+    Serial.printf("8) Display Reset Counter: %d - ", settings.resetCount);
     if (settings.enableResetDisplay == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 

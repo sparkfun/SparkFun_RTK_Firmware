@@ -151,23 +151,7 @@ void menuUserProfiles()
 
     if (incoming >= 1 && incoming <= MAX_PROFILE_COUNT)
     {
-      settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
-      recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
-
-      recordProfileNumber(incoming - 1); //Align to array
-      profileNumber = incoming - 1;
-      setSettingsFileName(); //Enables Delete Profile
-
-      //We need to load these settings from file so that we can record a profile name change correctly
-      bool responseLFS = loadSystemSettingsFromFileLFS(settingsFileName, &settings);
-      bool responseSD = loadSystemSettingsFromFileSD(settingsFileName, &settings);
-
-      //If this is an empty/new profile slot, overwrite our current settings with defaults
-      if (responseLFS == false && responseSD == false)
-      {
-        Settings tempSettings;
-        settings = tempSettings;
-      }
+      changeProfileNumber(incoming - 1); //Align inputs to array
     }
     else if (incoming == MAX_PROFILE_COUNT + 1)
     {
@@ -237,6 +221,31 @@ void menuUserProfiles()
   activeProfiles = loadProfileNames();
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+}
+
+//Change the active profile number, without unit reset
+void changeProfileNumber(byte newProfileNumber)
+{
+  settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
+  recordSystemSettings(); //Before switching, we need to record the current settings to LittleFS and SD
+
+  recordProfileNumber(newProfileNumber);
+  profileNumber = newProfileNumber;
+  setSettingsFileName(); //Load the settings file name into memory (enabled profile name delete)
+
+  //We need to load these settings from file so that we can record a profile name change correctly
+  bool responseLFS = loadSystemSettingsFromFileLFS(settingsFileName, &settings);
+  bool responseSD = loadSystemSettingsFromFileSD(settingsFileName, &settings);
+
+  //If this is an empty/new profile slot, overwrite our current settings with defaults
+  if (responseLFS == false && responseSD == false)
+  {
+    Serial.println("Default the settings");
+    //Create a temporary settings struc on the heap (not the stack because it is ~4500 bytes)
+    Settings *tempSettings = new Settings;
+    settings = *tempSettings;
+    delete tempSettings;
+  }
 }
 
 //Erase all settings. Upon restart, unit will use defaults

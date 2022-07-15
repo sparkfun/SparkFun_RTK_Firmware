@@ -95,6 +95,10 @@ function parseIncoming(msg) {
         ) {
             ge(id).innerHTML = val;
         }
+        else if (id.includes("profileNumber")) {
+            currentProfileNumber = val;
+            $("input[name=profileRadio][value=" + currentProfileNumber + "]").prop('checked', true);
+        }
         else if (id.includes("firmwareUploadComplete")) {
             firmwareUploadComplete();
         }
@@ -129,10 +133,9 @@ function parseIncoming(msg) {
     }
     //console.log("Settings loaded");
 
+    ge("profileChangeMessage").innerHTML = '';
+
     //Force element updates
-    ge("profileNumber").dispatchEvent(new CustomEvent('change'));
-    ge("profileName").dispatchEvent(new CustomEvent('change'));
-    ge("bootProfileNumber").dispatchEvent(new CustomEvent('change'));
     ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
     ge("baseTypeSurveyIn").dispatchEvent(new CustomEvent('change'));
     ge("baseTypeFixed").dispatchEvent(new CustomEvent('change'));
@@ -217,9 +220,7 @@ function validateFields() {
     errorCount = 0;
 
     //Profile Config
-    checkElementValue("profileNumber", 1, 8, "Must be between 1 and 8", "collapseProfileConfig");
     checkElementString("profileName", 1, 49, "Must be 1 to 49 characters", "collapseProfileConfig");
-    checkBitMapValue("bootProfileNumber", 1, 8, "activeProfiles", "Must be an active profile between 1 and 8", "collapseProfileConfig");
 
     //GNSS Config
     checkElementValue("measurementRateHz", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseGNSSConfig");
@@ -438,6 +439,47 @@ function validateFields() {
             ge("externalPulsePolarity").value = 0;
         }
     }
+}
+
+var currentProfileNumber = 0;
+
+function changeConfig() {
+    validateFields();
+
+    if (errorCount == 1) {
+        showError('saveBtn', "Please clear " + errorCount + " error");
+        clearSuccess('saveBtn');
+        $("input[name=profileRadio][value=" + currentProfileNumber + "]").prop('checked', true);
+    }
+    else if (errorCount > 1) {
+        showError('saveBtn', "Please clear " + errorCount + " errors");
+        clearSuccess('saveBtn');
+        $("input[name=profileRadio][value=" + currentProfileNumber + "]").prop('checked', true);
+    }
+    else {
+        ge("profileChangeMessage").innerHTML = 'Loading. Please wait...';
+
+        currentProfileNumber = document.querySelector('input[name=profileRadio]:checked').value;
+
+        sendData();
+        clearError('saveBtn');
+        showSuccess('saveBtn', "All saved!");
+
+        ws.send("setProfile," + currentProfileNumber + ",");
+
+        ge("collapseProfileConfig").classList.add('show');
+        ge("collapseGNSSConfig").classList.add('show');
+        collapseSection("collapseGNSSConfigMsg", "gnssMsgCaret");
+        collapseSection("collapseBaseConfig", "baseCaret");
+        collapseSection("collapseSensorConfig", "sensorCaret");
+        collapseSection("collapsePPConfig", "pointPerfectCaret");
+        collapseSection("collapsePortsConfig", "portsCaret");
+        collapseSection("collapseSystemConfig", "systemCaret");
+    }
+}
+
+function saveConfig() {
+    validateFields();
 
     if (errorCount == 1) {
         showError('saveBtn', "Please clear " + errorCount + " error");
@@ -448,21 +490,12 @@ function validateFields() {
         clearSuccess('saveBtn');
     }
     else {
-        //Update the profile name
-        profile = "profile" + ge("bootProfileNumber").value + "Name";
-console.log(ge("bootProfileNumber").value);
-console.log(profile);
-console.log(ge(profile).value);
-console.log(ge("profileName").value);
-        ge(profile).value = ge("profileName").value;
-console.log(ge(profile).value);
-        ge(profile).dispatchEvent(new CustomEvent('change'));
-
         //Tell Arduino we're ready to save
         sendData();
         clearError('saveBtn');
         showSuccess('saveBtn', "All saved!");
     }
+
 }
 
 function checkConstellations() {
@@ -658,6 +691,13 @@ function firmwareUploadComplete() {
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
+
+    var radios = document.querySelectorAll('input[name=profileRadio]');
+    for(var i = 0, max = radios.length; i < max; i++) {
+        radios[i].onclick = function() {
+            changeConfig();
+        }
+    }
 
     ge("measurementRateHz").addEventListener("change", function () {
         ge("measurementRateSec").value = 1.0 / ge("measurementRateHz").value;

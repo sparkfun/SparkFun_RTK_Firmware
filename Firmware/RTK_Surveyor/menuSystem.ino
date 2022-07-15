@@ -65,7 +65,6 @@ void menuSystem()
     //Display MAC address
     char macAddress[5];
     sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-
     Serial.print(F("Bluetooth ("));
     Serial.print(macAddress);
     Serial.print(F("): "));
@@ -102,6 +101,36 @@ void menuSystem()
       Serial.print("GNSS Offline");
     }
     Serial.println();
+
+    //Display the uptime
+    uint64_t uptimeMilliseconds = uptime;
+    uint32_t uptimeDays = 0;
+    while (uptimeMilliseconds >= MILLISECONDS_IN_A_DAY) {
+      uptimeMilliseconds -= MILLISECONDS_IN_A_DAY;
+      uptimeDays += 1;
+    }
+    byte uptimeHours = 0;
+    while (uptimeMilliseconds >= MILLISECONDS_IN_AN_HOUR) {
+      uptimeMilliseconds -= MILLISECONDS_IN_AN_HOUR;
+      uptimeHours += 1;
+    }
+    byte uptimeMinutes = 0;
+    while (uptimeMilliseconds >= MILLISECONDS_IN_A_MINUTE) {
+      uptimeMilliseconds -= MILLISECONDS_IN_A_MINUTE;
+      uptimeMinutes += 1;
+    }
+    byte uptimeSeconds = 0;
+    while (uptimeMilliseconds >= MILLISECONDS_IN_A_SECOND) {
+      uptimeMilliseconds -= MILLISECONDS_IN_A_SECOND;
+      uptimeSeconds += 1;
+    }
+    Serial.print(F("Uptime: "));
+    Serial.printf("%d %02d:%02d:%02d.%03ld\r\n",
+                  uptimeDays,
+                  uptimeHours,
+                  uptimeMinutes,
+                  uptimeSeconds,
+                  uptimeMilliseconds);
 
     if (settings.enableSD == true)
     {
@@ -273,7 +302,7 @@ void menuDebug()
     if (settings.throttleDuringSPPCongestion == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    Serial.print(F("8) Display Reset Counter: "));
+    Serial.printf("8) Display Reset Counter: %d - ", settings.resetCount);
     if (settings.enableResetDisplay == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 

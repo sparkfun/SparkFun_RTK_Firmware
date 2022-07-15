@@ -164,7 +164,7 @@ void menuPointPerfectKeys()
       long expYear;
       gpsWeekToWToDate(keyGPSWeek, keyGPSToW, &expDay, &expMonth, &expYear);
 
-      Serial.printf("%02d/%02d/%d\n\r", expDay, expMonth, expYear);
+      Serial.printf("%02ld/%02ld/%ld\n\r", expDay, expMonth, expYear);
     }
     else
       Serial.println("N/A");
@@ -189,7 +189,7 @@ void menuPointPerfectKeys()
       long expYear;
       gpsWeekToWToDate(keyGPSWeek, keyGPSToW, &expDay, &expMonth, &expYear);
 
-      Serial.printf("%02d/%02d/%d\n\r", expDay, expMonth, expYear);
+      Serial.printf("%02ld/%02ld/%ld\n\r", expDay, expMonth, expYear);
     }
     else
       Serial.println("N/A");

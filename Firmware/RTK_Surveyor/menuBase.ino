@@ -82,7 +82,7 @@ void menuBase()
 
     if (!settings.fixedBase) {
       Serial.print(F("12) Select survey-in radio: "));
-      Serial.printf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? F("WiFi") : F("Bluetooth"));
+      Serial.printf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
     }
 
     Serial.println(F("x) Exit"));

@@ -38,7 +38,7 @@ New firmware may be uploaded via WiFi to the unit. See [Updating Firmware from t
 
 A counter is displayed indicating the number of non-power-on-resets since the last power on.
 
-## Terminal Interface
+## Serial Interface
 
 [![RTK Data Logging Configuration Menu](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_Logging_Cyclic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_Logging_Cyclic.jpg)
 

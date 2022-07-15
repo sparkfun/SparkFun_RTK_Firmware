@@ -28,4 +28,4 @@ Below is an example system status report sentence:
 * 86 : Battery level (% remaining)
 * *71 : The completion of the sentence and a [CRC](http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html)
 
-**Note:** This is a custom NMEA sentence, can vary in length, and may exceed the [maximum](https://www.nmea.org/Assets/20160520%20txt%20amendment.pdf) permitted sentence length](https://www.nmea.org/Assets/20160520%20txt%20amendment.pdf) of 61 characters.
+**Note:** This is a custom NMEA sentence, can vary in length, and may exceed the [maximum permitted sentence length](https://www.nmea.org/Assets/20160520%20txt%20amendment.pdf) of 61 characters.

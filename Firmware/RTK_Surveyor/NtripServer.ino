@@ -347,7 +347,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
       struct tm timeinfo = rtc.getTimeStruct();
       char timestamp[30];
       strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
-      Serial.printf("RTCM: %s.%03d\r\n", timestamp, rtc.getMillis());
+      Serial.printf("RTCM: %s.%03ld\r\n", timestamp, rtc.getMillis());
     }
     previousMilliseconds = currentMilliseconds;
 

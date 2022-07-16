@@ -25,14 +25,14 @@ bool configureUbloxModule()
   if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
     response &= i2cGNSS.setNavigationFrequency(1, maxWait);
   if (response == false)
-    Serial.println(F("Set rate failed"));
+    Serial.println("Set rate failed");
 
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {
     response = i2cGNSS.setSurveyMode(0, 0, 0); //Disable Survey-In or Fixed Mode
     if (response == false)
-      Serial.println(F("Disable TMODE3 failed"));
+      Serial.println("Disable TMODE3 failed");
   }
 
 #define OUTPUT_SETTING 14
@@ -86,23 +86,23 @@ bool configureUbloxModule()
 
   if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
-    Serial.println(F("Updating UART1 rate"));
+    Serial.println("Updating UART1 rate");
     i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
   }
   if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud)
   {
-    Serial.println(F("Updating UART2 rate"));
+    Serial.println("Updating UART2 rate");
     i2cGNSS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Defaults to 57600 to match SiK telemetry radio firmware default
   }
 
   if (response == false)
   {
-    Serial.println(F("Module failed initial config."));
+    Serial.println("Module failed initial config.");
   }
 
   response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   if (response == false)
-    Serial.println(F("Module failed to save."));
+    Serial.println("Module failed to save.");
 
   //Turn on/off debug messages
   if (settings.enableI2Cdebug)
@@ -200,7 +200,7 @@ bool getPortSettings(uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getPortSettings failed"));
+    Serial.println("getPortSettings failed");
     return (false);
   }
 
@@ -225,7 +225,7 @@ uint8_t getNMEASettings(uint8_t msgID, uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getNMEASettings failed"));
+    Serial.println("getNMEASettings failed");
     return (false);
   }
 
@@ -250,7 +250,7 @@ uint8_t getRTCMSettings(uint8_t msgID, uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getRTCMSettings failed"));
+    Serial.println("getRTCMSettings failed");
     return (false);
   }
 
@@ -274,7 +274,7 @@ uint32_t getSerialRate(uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getSerialRate failed"));
+    Serial.println("getSerialRate failed");
     return (false);
   }
 

@@ -107,7 +107,7 @@ void updateSystemState()
           //If we are survey'd in, but switch is rover then disable survey
           if (configureUbloxModuleRover() == false)
           {
-            Serial.println(F("Rover config failed"));
+            Serial.println("Rover config failed");
             displayRoverFail(1000);
             return;
           }
@@ -317,7 +317,7 @@ void updateSystemState()
           if (i2cGNSS.getSurveyInValid(50) == true) //Survey in complete
           {
             Serial.printf("Observation Time: %d\n\r", svinObservationTime);
-            Serial.println(F("Base survey complete! RTCM now broadcasting."));
+            Serial.println("Base survey complete! RTCM now broadcasting.");
 
             if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, HIGH); //Indicate survey complete
@@ -334,11 +334,11 @@ void updateSystemState()
           }
           else
           {
-            Serial.print(F("Time elapsed: "));
+            Serial.print("Time elapsed: ");
             Serial.print(svinObservationTime);
-            Serial.print(F(" Accuracy: "));
+            Serial.print(" Accuracy: ");
             Serial.print(svinMeanAccuracy);
-            Serial.print(F(" SIV: "));
+            Serial.print(" SIV: ");
             Serial.print(numSV);
             Serial.println();
 
@@ -392,7 +392,7 @@ void updateSystemState()
           }
           else
           {
-            Serial.println(F("Fixed base start failed"));
+            Serial.println("Fixed base start failed");
             displayBaseFail(1000);
 
             changeState(STATE_ROVER_NOT_STARTED); //Return to rover mode to avoid being in fixed base mode
@@ -933,105 +933,105 @@ void changeState(SystemState newState)
 
   //Debug print of new state, add leading asterisk for repeated states
   if (newState == systemState)
-    Serial.print(F("*"));
+    Serial.print("*");
   switch (systemState)
   {
     case (STATE_ROVER_NOT_STARTED):
-      Serial.print(F("State: Rover - Not Started"));
+      Serial.print("State: Rover - Not Started");
       break;
     case (STATE_ROVER_NO_FIX):
-      Serial.print(F("State: Rover - No Fix"));
+      Serial.print("State: Rover - No Fix");
       break;
     case (STATE_ROVER_FIX):
-      Serial.print(F("State: Rover - Fix"));
+      Serial.print("State: Rover - Fix");
       break;
     case (STATE_ROVER_RTK_FLOAT):
-      Serial.print(F("State: Rover - RTK Float"));
+      Serial.print("State: Rover - RTK Float");
       break;
     case (STATE_ROVER_RTK_FIX):
-      Serial.print(F("State: Rover - RTK Fix"));
+      Serial.print("State: Rover - RTK Fix");
       break;
     case (STATE_BASE_NOT_STARTED):
-      Serial.print(F("State: Base - Not Started"));
+      Serial.print("State: Base - Not Started");
       break;
     case (STATE_BASE_TEMP_SETTLE):
-      Serial.print(F("State: Base-Temp - Settle"));
+      Serial.print("State: Base-Temp - Settle");
       break;
     case (STATE_BASE_TEMP_SURVEY_STARTED):
-      Serial.print(F("State: Base-Temp - Survey Started"));
+      Serial.print("State: Base-Temp - Survey Started");
       break;
     case (STATE_BASE_TEMP_TRANSMITTING):
-      Serial.print(F("State: Base-Temp - Transmitting"));
+      Serial.print("State: Base-Temp - Transmitting");
       break;
     case (STATE_BASE_FIXED_NOT_STARTED):
-      Serial.print(F("State: Base-Fixed - Not Started"));
+      Serial.print("State: Base-Fixed - Not Started");
       break;
     case (STATE_BASE_FIXED_TRANSMITTING):
-      Serial.print(F("State: Base-Fixed - Transmitting"));
+      Serial.print("State: Base-Fixed - Transmitting");
       break;
     case (STATE_BUBBLE_LEVEL):
-      Serial.print(F("State: Bubble level"));
+      Serial.print("State: Bubble level");
       break;
     case (STATE_MARK_EVENT):
-      Serial.print(F("State: Mark Event"));
+      Serial.print("State: Mark Event");
       break;
     case (STATE_DISPLAY_SETUP):
-      Serial.print(F("State: Display Setup"));
+      Serial.print("State: Display Setup");
       break;
     case (STATE_WIFI_CONFIG_NOT_STARTED):
-      Serial.print(F("State: WiFi Config Not Started"));
+      Serial.print("State: WiFi Config Not Started");
       break;
     case (STATE_WIFI_CONFIG):
-      Serial.print(F("State: WiFi Config"));
+      Serial.print("State: WiFi Config");
       break;
     case (STATE_TEST):
-      Serial.print(F("State: System Test Setup"));
+      Serial.print("State: System Test Setup");
       break;
     case (STATE_TESTING):
-      Serial.print(F("State: System Testing"));
+      Serial.print("State: System Testing");
       break;
     case (STATE_PROFILE):
-      Serial.print(F("State: Profile"));
+      Serial.print("State: Profile");
       break;
     case (STATE_KEYS_STARTED):
-      Serial.print(F("State: Keys Started "));
+      Serial.print("State: Keys Started ");
       break;
     case (STATE_KEYS_NEEDED):
-      Serial.print(F("State: Keys Needed"));
+      Serial.print("State: Keys Needed");
       break;
     case (STATE_KEYS_WIFI_STARTED):
-      Serial.print(F("State: Keys WiFi Started"));
+      Serial.print("State: Keys WiFi Started");
       break;
     case (STATE_KEYS_WIFI_CONNECTED):
-      Serial.print(F("State: Keys WiFi Connected"));
+      Serial.print("State: Keys WiFi Connected");
       break;
     case (STATE_KEYS_WIFI_TIMEOUT):
-      Serial.print(F("State: Keys WiFi Timeout"));
+      Serial.print("State: Keys WiFi Timeout");
       break;
     case (STATE_KEYS_EXPIRED):
-      Serial.print(F("State: Keys Expired"));
+      Serial.print("State: Keys Expired");
       break;
     case (STATE_KEYS_DAYS_REMAINING):
-      Serial.print(F("State: Keys Days Remaining"));
+      Serial.print("State: Keys Days Remaining");
       break;
     case (STATE_KEYS_LBAND_CONFIGURE):
-      Serial.print(F("State: Keys L-Band Configure"));
+      Serial.print("State: Keys L-Band Configure");
       break;
     case (STATE_KEYS_LBAND_ENCRYPTED):
-      Serial.print(F("State: Keys L-Band Encrypted"));
+      Serial.print("State: Keys L-Band Encrypted");
       break;
     case (STATE_KEYS_PROVISION_WIFI_STARTED):
-      Serial.print(F("State: Keys Provision - WiFi Started"));
+      Serial.print("State: Keys Provision - WiFi Started");
       break;
     case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
-      Serial.print(F("State: Keys Provision - WiFi Connected"));
+      Serial.print("State: Keys Provision - WiFi Connected");
       break;
     case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
-      Serial.print(F("State: Keys Provision - WiFi Timeout"));
+      Serial.print("State: Keys Provision - WiFi Timeout");
       break;
 
     case (STATE_SHUTDOWN):
-      Serial.print(F("State: Shut Down"));
+      Serial.print("State: Shut Down");
       break;
     default:
       Serial.printf("Change State Unknown: %d", systemState);

@@ -28,36 +28,36 @@ void menuMain()
     Serial.println();
     Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
-    Serial.print(F("** Bluetooth broadcasting as: "));
+    Serial.print("** Bluetooth broadcasting as: ");
     Serial.print(deviceName);
-    Serial.println(F(" **"));
+    Serial.println(" **");
 
-    Serial.println(F("Menu: Main Menu"));
+    Serial.println("Menu: Main Menu");
 
-    Serial.println(F("1) Configure GNSS Receiver"));
+    Serial.println("1) Configure GNSS Receiver");
 
-    Serial.println(F("2) Configure GNSS Messages"));
+    Serial.println("2) Configure GNSS Messages");
 
     if (zedModuleType == PLATFORM_F9P)
-      Serial.println(F("3) Configure Base"));
+      Serial.println("3) Configure Base");
     else if (zedModuleType == PLATFORM_F9R)
-      Serial.println(F("3) Configure Sensor Fusion"));
+      Serial.println("3) Configure Sensor Fusion");
 
-    Serial.println(F("4) Configure Ports"));
+    Serial.println("4) Configure Ports");
 
-    Serial.println(F("5) Configure Logging"));
+    Serial.println("5) Configure Logging");
 
-    Serial.println(F("p) Configure Profiles"));
+    Serial.println("p) Configure Profiles");
 
     if (online.lband == true)
-      Serial.println(F("P) Configure PointPerfect"));
+      Serial.println("P) Configure PointPerfect");
 
-    Serial.println(F("s) System Status"));
+    Serial.println("s) System Status");
 
     if (binCount > 0)
-      Serial.println(F("f) Firmware upgrade"));
+      Serial.println("f) Firmware upgrade");
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
@@ -126,7 +126,7 @@ void menuUserProfiles()
   while (1)
   {
     Serial.println();
-    Serial.println(F("Menu: User Profiles Menu"));
+    Serial.println("Menu: User Profiles Menu");
 
     //List available profiles
     for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
@@ -145,7 +145,7 @@ void menuUserProfiles()
 
     Serial.printf("%d) Delete profile '%s'\n\r", MAX_PROFILE_COUNT + 2, profileNames[profileNumber]);
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
@@ -197,7 +197,7 @@ void menuUserProfiles()
         activeProfiles = loadProfileNames();
       }
       else
-        Serial.println(F("Delete aborted"));
+        Serial.println("Delete aborted");
     }
 
     else if (incoming == STATUS_PRESSED_X)
@@ -210,7 +210,7 @@ void menuUserProfiles()
 
   if (originalProfileNumber != profileNumber)
   {
-    Serial.println(F("Changing profiles. Rebooting. Goodbye!"));
+    Serial.println("Changing profiles. Rebooting. Goodbye!");
     delay(2000);
     ESP.restart();
   }
@@ -277,7 +277,7 @@ void factoryReset()
   if (online.gnss == true)
     i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
-  Serial.println(F("Settings erased successfully. Rebooting. Goodbye!"));
+  Serial.println("Settings erased successfully. Rebooting. Goodbye!");
   delay(2000);
   ESP.restart();
 }

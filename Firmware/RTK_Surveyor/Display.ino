@@ -61,7 +61,7 @@ void beginDisplay()
   {
     online.display = true;
 
-    Serial.println(F("Display started"));
+    Serial.println("Display started");
 
     //Display the SparkFun LOGO
     oled.erase();
@@ -73,11 +73,11 @@ void beginDisplay()
   {
     if (productVariant == RTK_SURVEYOR)
     {
-      Serial.println(F("Display not detected"));
+      Serial.println("Display not detected");
     }
     else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
     {
-      Serial.println(F("Display Error: Not detected."));
+      Serial.println("Display Error: Not detected.");
     }
   }
 }
@@ -469,7 +469,7 @@ void displayError(const char * errorMessage)
 
     oled.setCursor(0, 0); //x, y
     oled.setFont(QW_FONT_5X7); //Set font to smallest
-    oled.print(F("Error:"));
+    oled.print("Error:");
 
     oled.setCursor(2, 10);
     //oled.setFont(QW_FONT_8X16);
@@ -644,11 +644,11 @@ void paintHorizontalAccuracy()
 
   if (online.gnss == false)
   {
-    oled.print(F("N/A"));
+    oled.print("N/A");
   }
   else if (horizontalAccuracy > 30.0)
   {
-    oled.print(F(">30m"));
+    oled.print(">30m");
   }
   else if (horizontalAccuracy > 9.9)
   {
@@ -1325,34 +1325,34 @@ void paintSystemTest()
       //Test SD, accel, batt, GNSS, mux
       oled.setFont(QW_FONT_5X7); //Set font to smallest
       oled.setCursor(xOffset, yOffset); //x, y
-      oled.print(F("SD:"));
+      oled.print("SD:");
 
       if (online.microSD == false)
         beginSD(); //Test if SD is present
       if (online.microSD == true)
-        oled.print(F("OK"));
+        oled.print("OK");
       else
-        oled.print(F("FAIL"));
+        oled.print("FAIL");
 
       if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
       {
         oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
-        oled.print(F("Accel:"));
+        oled.print("Accel:");
         if (online.accelerometer == true)
-          oled.print(F("OK"));
+          oled.print("OK");
         else
-          oled.print(F("FAIL"));
+          oled.print("FAIL");
       }
 
       oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
-      oled.print(F("Batt:"));
+      oled.print("Batt:");
       if (online.battery == true)
-        oled.print(F("OK"));
+        oled.print("OK");
       else
-        oled.print(F("FAIL"));
+        oled.print("FAIL");
 
       oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
-      oled.print(F("GNSS:"));
+      oled.print("GNSS:");
       if (online.gnss == true)
       {
         i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
@@ -1361,20 +1361,20 @@ void paintSystemTest()
         int satsInView = numSV;
         if (satsInView > 5)
         {
-          oled.print(F("OK"));
-          oled.print(F("/"));
+          oled.print("OK");
+          oled.print("/");
           oled.print(satsInView);
         }
         else
-          oled.print(F("FAIL"));
+          oled.print("FAIL");
       }
       else
-        oled.print(F("FAIL"));
+        oled.print("FAIL");
 
       if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
       {
         oled.setCursor(xOffset, yOffset + (4 * charHeight) ); //x, y
-        oled.print(F("Mux:"));
+        oled.print("Mux:");
 
         //Set mux to channel 3 and toggle pin and verify with loop back jumper wire inserted by test technician
 
@@ -1387,12 +1387,12 @@ void paintSystemTest()
         {
           digitalWrite(pin_dac26, LOW);
           if (digitalRead(pin_adc39) == LOW)
-            oled.print(F("OK"));
+            oled.print("OK");
           else
-            oled.print(F("FAIL"));
+            oled.print("FAIL");
         }
         else
-          oled.print(F("FAIL"));
+          oled.print("FAIL");
       }
 
       //Display MAC address
@@ -1419,13 +1419,13 @@ void paintSystemTest()
         {
 
           zedUartPassed = true;
-          oled.print(F("OK"));
+          oled.print("OK");
         }
         else
-          oled.print(F("FAIL"));
+          oled.print("FAIL");
       }
       else
-        oled.print(F("OK"));
+        oled.print("OK");
     } //End display 1
 
     if (productVariant == RTK_FACET_LBAND)
@@ -1444,22 +1444,22 @@ void paintSystemTest()
         oled.setFont(QW_FONT_5X7); //Set font to smallest
 
         oled.setCursor(xOffset, yOffset); //x, y
-        oled.print(F("ZED Firm:"));
+        oled.print("ZED Firm:");
         oled.setCursor(xOffset, yOffset + (1 * charHeight) ); //x, y
         oled.print("  ");
         oled.print(zedFirmwareVersionInt);
-        oled.print(F("-"));
+        oled.print("-");
         if (zedFirmwareVersionInt < 130)
-          oled.print(F("FAIL"));
+          oled.print("FAIL");
         else
-          oled.print(F("OK"));
+          oled.print("OK");
 
         oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
-        oled.print(F("LBand:"));
+        oled.print("LBand:");
         if (online.lband == true)
-          oled.print(F("OK"));
+          oled.print("OK");
         else
-          oled.print(F("FAIL"));
+          oled.print("FAIL");
       } //End display 0
     } //End Facet L-Band testing
   }

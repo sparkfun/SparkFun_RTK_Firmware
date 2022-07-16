@@ -173,17 +173,17 @@ void beginBoard()
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())
     {
-      case ESP_RST_UNKNOWN: Serial.println(F("ESP_RST_UNKNOWN")); break;
-      case ESP_RST_POWERON : Serial.println(F("ESP_RST_POWERON")); break;
-      case ESP_RST_SW : Serial.println(F("ESP_RST_SW")); break;
-      case ESP_RST_PANIC : Serial.println(F("ESP_RST_PANIC")); break;
-      case ESP_RST_INT_WDT : Serial.println(F("ESP_RST_INT_WDT")); break;
-      case ESP_RST_TASK_WDT : Serial.println(F("ESP_RST_TASK_WDT")); break;
-      case ESP_RST_WDT : Serial.println(F("ESP_RST_WDT")); break;
-      case ESP_RST_DEEPSLEEP : Serial.println(F("ESP_RST_DEEPSLEEP")); break;
-      case ESP_RST_BROWNOUT : Serial.println(F("ESP_RST_BROWNOUT")); break;
-      case ESP_RST_SDIO : Serial.println(F("ESP_RST_SDIO")); break;
-      default : Serial.println(F("Unknown"));
+      case ESP_RST_UNKNOWN: Serial.println("ESP_RST_UNKNOWN"); break;
+      case ESP_RST_POWERON : Serial.println("ESP_RST_POWERON"); break;
+      case ESP_RST_SW : Serial.println("ESP_RST_SW"); break;
+      case ESP_RST_PANIC : Serial.println("ESP_RST_PANIC"); break;
+      case ESP_RST_INT_WDT : Serial.println("ESP_RST_INT_WDT"); break;
+      case ESP_RST_TASK_WDT : Serial.println("ESP_RST_TASK_WDT"); break;
+      case ESP_RST_WDT : Serial.println("ESP_RST_WDT"); break;
+      case ESP_RST_DEEPSLEEP : Serial.println("ESP_RST_DEEPSLEEP"); break;
+      case ESP_RST_BROWNOUT : Serial.println("ESP_RST_BROWNOUT"); break;
+      case ESP_RST_SDIO : Serial.println("ESP_RST_SDIO"); break;
+      default : Serial.println("Unknown");
     }
   }
 }
@@ -259,7 +259,7 @@ void beginSD()
 
       if (tries == maxTries)
       {
-        Serial.println(F("SD init failed. Is card present? Formatted?"));
+        Serial.println("SD init failed. Is card present? Formatted?");
         digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
         break;
       }
@@ -268,13 +268,13 @@ void beginSD()
     //Change to root directory. All new file creation will be in root.
     if (sd->chdir() == false)
     {
-      Serial.println(F("SD change directory failed"));
+      Serial.println("SD change directory failed");
       break;
     }
 
     if (createTestFile() == false)
     {
-      Serial.println(F("Failed to create test file. Format SD card with 'SD Card Formatter'."));
+      Serial.println("Failed to create test file. Format SD card with 'SD Card Formatter'.");
       displaySDFail(5000);
       break;
     }
@@ -282,7 +282,7 @@ void beginSD()
     //Load firmware file from the microSD card if it is present
     scanForFirmware();
 
-    Serial.println(F("microSD: Online"));
+    Serial.println("microSD: Online");
     online.microSD = true;
     break;
   }
@@ -302,7 +302,7 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   {
     sd->end();
     online.microSD = false;
-    Serial.println(F("microSD: Offline"));
+    Serial.println("microSD: Offline");
   }
 
   //Free the caches for the microSD card
@@ -489,20 +489,20 @@ void configureGNSS()
   if (response == false)
   {
     //Try once more
-    Serial.println(F("Failed to configure GNSS module. Trying again."));
+    Serial.println("Failed to configure GNSS module. Trying again.");
     delay(1000);
     response = configureUbloxModule();
 
     if (response == false)
     {
-      Serial.println(F("Failed to configure GNSS module."));
+      Serial.println("Failed to configure GNSS module.");
       displayGNSSFail(1000);
       online.gnss = false;
       return;
     }
   }
 
-  Serial.println(F("GNSS configuration complete"));
+  Serial.println("GNSS configuration complete");
 }
 
 //Set LEDs for output and configure PWM
@@ -543,7 +543,7 @@ void beginFuelGauge()
   // Set up the MAX17048 LiPo fuel gauge
   if (lipo.begin() == false)
   {
-    Serial.println(F("MAX17048 not detected. Continuing."));
+    Serial.println("MAX17048 not detected. Continuing.");
     return;
   }
 
@@ -551,7 +551,7 @@ void beginFuelGauge()
   if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
   if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
 
-  Serial.println(F("MAX17048 configuration complete"));
+  Serial.println("MAX17048 configuration complete");
 
   checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
@@ -587,7 +587,7 @@ void beginAccelerometer()
   //accel.setDataRate(LIS2DH12_ODR_100Hz); //6 measurements a second
   accel.setDataRate(LIS2DH12_ODR_400Hz); //25 measurements a second
 
-  Serial.println(F("Accelerometer configuration complete"));
+  Serial.println("Accelerometer configuration complete");
 
   online.accelerometer = true;
 }
@@ -700,7 +700,7 @@ bool beginExternalTriggers()
 
   bool response = i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   if (response == false)
-    Serial.println(F("Module failed to save."));
+    Serial.println("Module failed to save.");
 
   return (response);
 }

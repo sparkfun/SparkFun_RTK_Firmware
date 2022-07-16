@@ -9,104 +9,104 @@ void menuGNSS()
   while (1)
   {
     Serial.println();
-    Serial.println(F("Menu: GNSS Menu"));
+    Serial.println("Menu: GNSS Menu");
 
     //Because we may be in base mode (always 1Hz), do not get freq from module, use settings instead
     float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
 
-    Serial.print(F("1) Set measurement rate in Hz: "));
+    Serial.print("1) Set measurement rate in Hz: ");
     Serial.println(measurementFrequency, 4);
 
-    Serial.print(F("2) Set measurement rate in seconds between measurements: "));
+    Serial.print("2) Set measurement rate in seconds between measurements: ");
     Serial.println(1 / measurementFrequency, 2);
 
-    Serial.print(F("3) Set dynamic model: "));
+    Serial.print("3) Set dynamic model: ");
     switch (settings.dynamicModel)
     {
       case DYN_MODEL_PORTABLE:
-        Serial.print(F("Portable"));
+        Serial.print("Portable");
         break;
       case DYN_MODEL_STATIONARY:
-        Serial.print(F("Stationary"));
+        Serial.print("Stationary");
         break;
       case DYN_MODEL_PEDESTRIAN:
-        Serial.print(F("Pedestrian"));
+        Serial.print("Pedestrian");
         break;
       case DYN_MODEL_AUTOMOTIVE:
-        Serial.print(F("Automotive"));
+        Serial.print("Automotive");
         break;
       case DYN_MODEL_SEA:
-        Serial.print(F("Sea"));
+        Serial.print("Sea");
         break;
       case DYN_MODEL_AIRBORNE1g:
-        Serial.print(F("Airborne 1g"));
+        Serial.print("Airborne 1g");
         break;
       case DYN_MODEL_AIRBORNE2g:
-        Serial.print(F("Airborne 2g"));
+        Serial.print("Airborne 2g");
         break;
       case DYN_MODEL_AIRBORNE4g:
-        Serial.print(F("Airborne 4g"));
+        Serial.print("Airborne 4g");
         break;
       case DYN_MODEL_WRIST:
-        Serial.print(F("Wrist"));
+        Serial.print("Wrist");
         break;
       case DYN_MODEL_BIKE:
-        Serial.print(F("Bike"));
+        Serial.print("Bike");
         break;
       default:
-        Serial.print(F("Unknown"));
+        Serial.print("Unknown");
         break;
     }
     Serial.println();
 
-    Serial.println(F("4) Set Constellations "));
+    Serial.println("4) Set Constellations ");
 
-    Serial.print(F("5) Toggle NTRIP Client: "));
-    if (settings.enableNtripClient == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    Serial.print("5) Toggle NTRIP Client: ");
+    if (settings.enableNtripClient == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
 
     if (settings.enableNtripClient == true)
     {
-      Serial.print(F("6) Set WiFi SSID: "));
+      Serial.print("6) Set WiFi SSID: ");
       Serial.println(settings.ntripClient_wifiSSID);
 
-      Serial.print(F("7) Set WiFi PW: "));
+      Serial.print("7) Set WiFi PW: ");
       Serial.println(settings.ntripClient_wifiPW);
 
-      Serial.print(F("8) Set Caster Address: "));
+      Serial.print("8) Set Caster Address: ");
       Serial.println(settings.ntripClient_CasterHost);
 
-      Serial.print(F("9) Set Caster Port: "));
+      Serial.print("9) Set Caster Port: ");
       Serial.println(settings.ntripClient_CasterPort);
 
-      Serial.print(F("10) Set Caster User Name: "));
+      Serial.print("10) Set Caster User Name: ");
       Serial.println(settings.ntripClient_CasterUser);
 
-      Serial.print(F("11) Set Caster User Password: "));
+      Serial.print("11) Set Caster User Password: ");
       Serial.println(settings.ntripClient_CasterUserPW);
 
-      Serial.print(F("12) Set Mountpoint: "));
+      Serial.print("12) Set Mountpoint: ");
       Serial.println(settings.ntripClient_MountPoint);
 
-      Serial.print(F("13) Set Mountpoint PW: "));
+      Serial.print("13) Set Mountpoint PW: ");
       Serial.println(settings.ntripClient_MountPointPW);
 
-      Serial.print(F("14) Toggle sending GGA Location to Caster: "));
-      if (settings.ntripClient_TransmitGGA == true) Serial.println(F("Enabled"));
-      else Serial.println(F("Disabled"));
+      Serial.print("14) Toggle sending GGA Location to Caster: ");
+      if (settings.ntripClient_TransmitGGA == true) Serial.println("Enabled");
+      else Serial.println("Disabled");
     }
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
     {
-      Serial.print(F("Enter GNSS measurement rate in Hz: "));
+      Serial.print("Enter GNSS measurement rate in Hz: ");
       double rate = getDouble(menuTimeout); //Timeout after x seconds
       if (rate < 0.0 || rate > 20.0) //20Hz limit with all constellations enabled.
       {
-        Serial.println(F("Error: measurement rate out of range"));
+        Serial.println("Error: measurement rate out of range");
       }
       else
       {
@@ -116,11 +116,11 @@ void menuGNSS()
     }
     else if (incoming == 2)
     {
-      Serial.print(F("Enter GNSS measurement rate in seconds between measurements: "));
+      Serial.print("Enter GNSS measurement rate in seconds between measurements: ");
       double rate = getDouble(menuTimeout); //Timeout after x seconds
       if (rate < 0.0 || rate > 8255.0) //Limit of 127 (navRate) * 65000ms (measRate) = 137 minute limit.
       {
-        Serial.println(F("Error: measurement rate out of range"));
+        Serial.println("Error: measurement rate out of range");
       }
       else
       {
@@ -130,21 +130,21 @@ void menuGNSS()
     }
     else if (incoming == 3)
     {
-      Serial.println(F("Enter the dynamic model to use: "));
-      Serial.println(F("1) Portable"));
-      Serial.println(F("2) Stationary"));
-      Serial.println(F("3) Pedestrian"));
-      Serial.println(F("4) Automotive"));
-      Serial.println(F("5) Sea"));
-      Serial.println(F("6) Airborne 1g"));
-      Serial.println(F("7) Airborne 2g"));
-      Serial.println(F("8) Airborne 4g"));
-      Serial.println(F("9) Wrist"));
-      Serial.println(F("10) Bike"));
+      Serial.println("Enter the dynamic model to use: ");
+      Serial.println("1) Portable");
+      Serial.println("2) Stationary");
+      Serial.println("3) Pedestrian");
+      Serial.println("4) Automotive");
+      Serial.println("5) Sea");
+      Serial.println("6) Airborne 1g");
+      Serial.println("7) Airborne 2g");
+      Serial.println("8) Airborne 4g");
+      Serial.println("9) Wrist");
+      Serial.println("10) Bike");
 
       int dynamicModel = getNumber(menuTimeout); //Timeout after x seconds
       if (dynamicModel < 1 || dynamicModel > DYN_MODEL_BIKE)
-        Serial.println(F("Error: Dynamic model out of range"));
+        Serial.println("Error: Dynamic model out of range");
       else
       {
         if (dynamicModel == 1)
@@ -164,7 +164,7 @@ void menuGNSS()
     }
     else if (incoming == 6 && settings.enableNtripClient == true)
     {
-      Serial.print(F("Enter local WiFi SSID: "));
+      Serial.print("Enter local WiFi SSID: ");
       readLine(settings.ntripClient_wifiSSID, sizeof(settings.ntripClient_wifiSSID), menuTimeoutExtended);
       restartRover = true;
     }
@@ -176,17 +176,17 @@ void menuGNSS()
     }
     else if (incoming == 8 && settings.enableNtripClient == true)
     {
-      Serial.print(F("Enter new Caster Address: "));
+      Serial.print("Enter new Caster Address: ");
       readLine(settings.ntripClient_CasterHost, sizeof(settings.ntripClient_CasterHost), menuTimeoutExtended);
       restartRover = true;
     }
     else if (incoming == 9 && settings.enableNtripClient == true)
     {
-      Serial.print(F("Enter new Caster Port: "));
+      Serial.print("Enter new Caster Port: ");
 
       int ntripClient_CasterPort = getNumber(menuTimeoutExtended); //Timeout after x seconds
       if (ntripClient_CasterPort < 1 || ntripClient_CasterPort > 99999) //Arbitrary 99k max port #
-        Serial.println(F("Error: Caster Port out of range"));
+        Serial.println("Error: Caster Port out of range");
       else
         settings.ntripClient_CasterPort = ntripClient_CasterPort; //Recorded to NVM and file at main menu exit
       restartRover = true;
@@ -205,7 +205,7 @@ void menuGNSS()
     }
     else if (incoming == 12 && settings.enableNtripClient == true)
     {
-      Serial.print(F("Enter new Mount Point: "));
+      Serial.print("Enter new Mount Point: ");
       readLine(settings.ntripClient_MountPoint, sizeof(settings.ntripClient_MountPoint), menuTimeoutExtended);
       restartRover = true;
     }
@@ -234,7 +234,7 @@ void menuGNSS()
   if (i2cGNSS.getDynamicModel(maxWait) != settings.dynamicModel)
   {
     if (i2cGNSS.setDynamicModel((dynModel)settings.dynamicModel, maxWait) == false)
-      Serial.println(F("menuGNSS: setDynamicModel failed"));
+      Serial.println("menuGNSS: setDynamicModel failed");
   }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
@@ -246,7 +246,7 @@ void menuConstellations()
   while (1)
   {
     Serial.println();
-    Serial.println(F("Menu: Constellations Menu"));
+    Serial.println("Menu: Constellations Menu");
 
     for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
     {
@@ -258,7 +258,7 @@ void menuConstellations()
       Serial.println();
     }
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
@@ -330,7 +330,7 @@ void setMeasurementRates(float secondsBetweenSolutions)
   }
   else
   {
-    Serial.println(F("menuGNSS: Failed to set measurement and navigation rates"));
+    Serial.println("menuGNSS: Failed to set measurement and navigation rates");
   }
 }
 

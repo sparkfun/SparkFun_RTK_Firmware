@@ -23,7 +23,7 @@ bool configureUbloxModuleBase()
     response &= i2cGNSS.setNavigationFrequency(1, maxWait);
   //    response &= i2cGNSS.setNavigationFrequency(4, maxWait);
   if (response == false)
-    Serial.println(F("Set rate failed"));
+    Serial.println("Set rate failed");
 
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
@@ -32,14 +32,14 @@ bool configureUbloxModuleBase()
 
   response = i2cGNSS.setSurveyMode(0, 0, 0); //Disable Survey-In or Fixed Mode
   if (response == false)
-    Serial.println(F("Disable TMODE3 failed"));
+    Serial.println("Disable TMODE3 failed");
 
   //In base mode we force 1Hz
   if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
     response &= i2cGNSS.setNavigationFrequency(1, maxWait);
   if (response == false)
   {
-    Serial.println(F("configureUbloxModuleBase: Set rate failed"));
+    Serial.println("configureUbloxModuleBase: Set rate failed");
     return (false);
   }
 
@@ -49,7 +49,7 @@ bool configureUbloxModuleBase()
     response &= i2cGNSS.setDynamicModel(DYN_MODEL_STATIONARY, maxWait);
     if (response == false)
     {
-      Serial.println(F("setDynamicModel failed"));
+      Serial.println("setDynamicModel failed");
       return (false);
     }
   }
@@ -75,13 +75,13 @@ bool configureUbloxModuleBase()
 
   if (response == false)
   {
-    Serial.println(F("RTCM settings failed to enable"));
+    Serial.println("RTCM settings failed to enable");
     return (false);
   }
 
   response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   if (response == false)
-    Serial.println(F("Module failed to save."));
+    Serial.println("Module failed to save.");
 
   return (response);
 }
@@ -100,10 +100,10 @@ bool beginSurveyIn()
 
     if (resetSurvey() == false)
     {
-      Serial.println(F("Survey reset failed"));
+      Serial.println("Survey reset failed");
       if (resetSurvey() == false)
       {
-        Serial.println(F("Survey reset failed - 2nd attempt"));
+        Serial.println("Survey reset failed - 2nd attempt");
       }
     }
   }
@@ -111,7 +111,7 @@ bool beginSurveyIn()
   bool response = i2cGNSS.enableSurveyMode(settings.observationSeconds, settings.observationPositionAccuracy, 5000); //Enable Survey in, with user parameters. Wait up to 5s.
   if (response == false)
   {
-    Serial.println(F("Survey start failed"));
+    Serial.println("Survey start failed");
     return (false);
   }
 

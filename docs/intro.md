@@ -1,6 +1,6 @@
 # Introduction
 
-Out of the box, the SparkFun RTK products are exceptional GNSS receivers out-of-box and can be used with little or no configuration. This RTK Product Manual provides detailed descriptions of all the available features on the RTK products.
+Out of the box, the SparkFun RTK products are exceptional GNSS receivers out-of-box and can be used with little or no configuration. This RTK Product Manual provides detailed descriptions of all the available features of the RTK products.
 
 The line of RTK products offered by SparkFun all run identical firmware. The [RTK firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and this guide cover the following products:
 
@@ -19,12 +19,31 @@ The line of RTK products offered by SparkFun all run identical firmware. The [RT
     <td><a href="https://www.sparkfun.com/products/18442">SparkFun RTK Express (GPS-18442)</a></td>
     <td><a href="https://www.sparkfun.com/products/18443">SparkFun RTK Surveyor (GPS-18443)</a></td>
   </tr>
+  <tr align="center">
+    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_facet/">Hardware Overview</a></td>
+    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_facet/">Hardware Overview</a></td>
+    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_express_plus/">Hardware Overview</a></td>
+    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_express/">Hardware Overview</a></td>
+    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_surveyor/">Hardware Overview</a></td>
+  </tr>
+  <tr align="center">
+    <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-l-band-hookup-guide">Hookup Guide</a></td>
+    <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide">Hookup Guide</a></td>
+    <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-express-hookup-guide">Hookup Guide</a></td>
+    <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-express-hookup-guide">Hookup Guide</a></td>
+    <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-surveyor-hookup-guide">Hookup Guide</a></td>
+  </tr>
 </table>
 
 Depending on the hardware platform different features may or may not be supported. We will denote each product in each section so that you know what is supported.
 
+[Configuring](https://sparkfun.github.io/SparkFun_RTK_Firmware/system_configuration/) the RTK device
+may be done using [WiFi](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_wifi/),
+[serial](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_serial/)
+or modifying a [setup file](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_settings_file/).
+
 If you have an issue, feature request, bug report, or a general question about the RTK firmware specifically we encourage you to post your comments on the [firmware's repository](https://github.com/sparkfun/SparkFun_RTK_Firmware/issues). If you feel like bragging or showing off what you did with your RTK product, we'd be thrilled to hear about it on the issues list as well!
 
-Things like how to attach an antenna or other hardware specific topics are best read on the Hookup Guides for the individual products:
+Things like how to attach an antenna or other hardware-specific topics are best read on the Hookup Guides for the individual products.
 
 <!-- tutorials_by_id(1463, 1857, 2188) -->

@@ -2,11 +2,11 @@
 
 Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet L-Band: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
 
-Many applications using the RTK products will use a 3rd party GIS application or mobile app like SW Maps and receive the data over Bluetooth. Alternatively, for embedded applications a user can obtain the NMEA data over serial directly.
+Many applications using the RTK products will use a 3rd party GIS application or mobile app like SW Maps and receive the data over Bluetooth. Alternatively, for embedded applications, a user can obtain the NMEA data over serial directly.
 
-For this example we will connect the output from the **Data** port to a [USB to Serial adapter](https://www.sparkfun.com/products/15096) so that we can view the serial data over a terminal connection.
+For this example, we will connect the output from the **Data** port to a [USB to Serial adapter](https://www.sparkfun.com/products/15096) so that we can view the serial data over a terminal connection.
 
-The **Data** port on the RTK Facet, Express, and Express Plus can be configured to output a variety of different signals including NMEA Serial data. Be sure to checkout the [Ports Menu](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_ports/) section to be sure your device is configured to output NMEA.
+The **Data** port on the RTK Facet, Express, and Express Plus can be configured to output a variety of different signals including NMEA Serial data. Be sure to check out the [Ports Menu](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_ports/) section to be sure your device is configured to output NMEA.
 
 Connect the included [4-pin JST to breadboard cable](https://www.sparkfun.com/products/17240) to the **Data** port. The cable has the following pinout:
 
@@ -31,4 +31,4 @@ The Data connector on all RTK products is a 4-pin locking 1.25mm JST SMD connect
 
 **Warning!** All data in and out of RTK products is **3.3V**. Exposing these pins to **5V** or higher voltage logic will damage the device.
 
-The parsing of NMEA sentences is straightforward and left to the reader. There are ample NMEA parsing libraries available in C++, Arduino, python, and many more languages.
+The parsing of NMEA sentences is straightforward and left to the reader. There are ample NMEA parsing libraries available in C++, Arduino, Python, and many more languages.

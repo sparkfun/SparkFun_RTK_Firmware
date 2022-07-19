@@ -16,7 +16,7 @@ If a microSD card is detected, all messages will be logged.
 
 ### Max Log Time
 
-Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes (24 hours). Limit: 1 to 2880 minutes.
+Once the max log time is achieved, logging will cease. This is useful for limiting long-term, overnight, static surveys to a certain length of time. Default: 1440 minutes (24 hours). Limit: 1 to 2880 minutes.
 
 ### Max Log Length
 
@@ -32,13 +32,13 @@ Various stats for the SD card are shown.
 
 ### Update Firmware
 
-New firmware may be uploaded via WiFi to the unit. See [Updateing Firmware from the SD Card](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-the-sd-card) for more information.
+New firmware may be uploaded via WiFi to the unit. See [Updating Firmware from the SD Card](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-the-sd-card) for more information.
 
 ### Reset Counter
 
 A counter is displayed indicating the number of non-power-on-resets since the last power on.
 
-## Terminal Interface
+## Serial Interface
 
 [![RTK Facet Data Logging Configuration Menu](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_Logging_Cyclic.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_Logging_Cyclic.jpg)
 
@@ -50,4 +50,4 @@ From the Main Menu, pressing 5 will enter the Logging Menu. This menu will repor
 * Option 2 allows a user to set the max logging time. This is convenient to determine the location of a fixed antenna or a receiver on a repeatable landmark. Set the RTK Facet to log RAWX data for 10 hours, convert to RINEX, run through an observation processing station and you’ll get the corrected position with <10mm accuracy. Please see the [How to Build a DIY GNSS Reference Station](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station) tutorial for more information.
 * Option 3 allows a user to set the max logging length in minutes. Every 'max long length' amount of time the current log will be closed and a new log will be started. This is known as cyclic logging and is convenient on *very* long surveys (ie, months or years) to prevent logs from getting too unwieldy and helps limit the risk of log corruption. This will continue until the unit is powered down or the *max logging time* is reached.
 
-**Note:** If you are wanting to log RAWX sentences to create RINEX files useful for post processing the position of the receiver please see the GNSS Configuration Menu. For more information on how to use a RAWX GNSS log to get higher accuracy base location please see the [How to Build a DIY GNSS Reference Station](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data) tutorial.
+**Note:** If you are wanting to log RAWX sentences to create RINEX files useful for post-processing the position of the receiver please see the GNSS Configuration Menu. For more information on how to use a RAWX GNSS log to get a higher accuracy base location please see the [How to Build a DIY GNSS Reference Station](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data) tutorial.

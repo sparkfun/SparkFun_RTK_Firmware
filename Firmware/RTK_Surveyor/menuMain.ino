@@ -94,7 +94,8 @@ void menuMain()
   if (online.gnss == true)
     i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
 
-  if (restartBase == true)
+  //Reboot as base only if currently operating as a base station
+  if (restartBase && (systemState >= STATE_BASE_NOT_STARTED) && (systemState < STATE_BUBBLE_LEVEL))
   {
     restartBase = false;
     requestChangeState(STATE_BASE_NOT_STARTED); //Restart base upon exit for latest changes to take effect

@@ -51,6 +51,8 @@ void menuMain()
 
     Serial.println("5) Configure Logging");
 
+    Serial.println("6) Configure Bluetooth");
+
     Serial.println("p) Configure Profiles");
 
 #ifdef COMPILE_ESPNOW
@@ -81,6 +83,8 @@ void menuMain()
       menuPorts();
     else if (incoming == '5')
       menuLog();
+    else if (incoming == '6')
+      menuBluetooth();
     else if (incoming == 's')
       menuSystem();
     else if (incoming == 'p')

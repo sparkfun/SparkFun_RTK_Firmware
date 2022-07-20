@@ -127,7 +127,7 @@ void F9PSerialReadTask(void *e)
       if (length)
         s = serialGNSS.readBytes(rBuffer, length);
 
-      //Account for the byte read
+      //Account for the bytes read
       if (s > 0)
       {
         //Set the next fill offset
@@ -158,8 +158,11 @@ void F9PSerialReadTask(void *e)
           length = sizeof(rBuffer) - rBufferBtOffset;
 
         if ((bluetoothIsCongested() == false) || (settings.throttleDuringSPPCongestion == false))
+        {
           //Push new data to BT SPP if not congested or not throttling
           length = bluetoothWriteBytes(&rBuffer[rBufferBtOffset], length);
+          online.txNtripDataCasting = true;
+        }
         else
         {
           //Don't push data to BT SPP if there is congestion to prevent heap hits.

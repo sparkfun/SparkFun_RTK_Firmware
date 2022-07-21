@@ -385,6 +385,10 @@ void stopUART2Tasks()
     vTaskDelete(F9PSerialWriteTaskHandle);
     F9PSerialWriteTaskHandle = NULL;
   }
+
+  //Give the other CPU time to finish
+  //Eliminates CPU bus hang condition
+  delay(10);
 }
 
 void beginFS()

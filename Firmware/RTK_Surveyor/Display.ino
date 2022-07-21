@@ -921,6 +921,7 @@ void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8
 //Show transmission of RTCM correction data packets to NTRIP caster
 void paintRTCM()
 {
+  static uint32_t lastCorrectionDataSeen;
   int textY = 17;
   int textKerning = 8;
   oled.setFont(QW_FONT_8X16);
@@ -935,17 +936,30 @@ void paintRTCM()
     printTextwithKerning("Casting", textX, textY, textKerning);   //via WiFi
   }
 
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
-
-  if (rtcmPacketsSent < 100)
-    oled.setCursor(30, 36); //x, y - Give space for two digits
+  //Determine if correction data has been sent recently
+  if (online.txNtripDataCasting)
+    lastCorrectionDataSeen = millis();
+  if ((millis() - lastCorrectionDataSeen) >= 5000)
+  {
+    //No correction data seen
+    oled.setCursor(0, 33); //x, y
+    oled.print("Off");
+  }
   else
-    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+  {
+    oled.setCursor(0, 39); //x, y
+    oled.setFont(QW_FONT_5X7);
+    oled.print("RTCM:");
 
-  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+    if (rtcmPacketsSent < 100)
+      oled.setCursor(30, 36); //x, y - Give space for two digits
+    else
+      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
+
+    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+    oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
+    online.txNtripDataCasting = false;
+  }
 
   paintResets();
 }

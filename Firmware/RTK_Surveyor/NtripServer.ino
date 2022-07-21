@@ -357,6 +357,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
       ntripServer->write(incoming); //Send this byte to socket
       ntripServerBytesSent++;
       ntripServerTimer = millis();
+      online.txNtripDataCasting = true;
     }
 
     //Indicate that the GNSS is providing correction data

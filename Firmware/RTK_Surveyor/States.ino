@@ -258,7 +258,10 @@ void updateSystemState()
             }
             else if (settings.fixedBase == true)
             {
-              ntripServerStart();
+              if (settings.enableNtripServer)
+                ntripServerStart();
+              else
+                bluetoothStart();
               changeState(STATE_BASE_FIXED_NOT_STARTED);
             }
           }

@@ -8,7 +8,7 @@ void menuPointPerfect()
   while (1)
   {
     Serial.println();
-    Serial.println(F("Menu: PointPerfect Corrections"));
+    Serial.println("Menu: PointPerfect Corrections");
 
     char hardwareID[13];
     sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]); //Get ready for JSON
@@ -23,28 +23,28 @@ void menuPointPerfect()
     else
       Serial.println("No keys");
 
-    Serial.print(F("1) Use PointPerfect Corrections: "));
-    if (settings.enablePointPerfectCorrections == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    Serial.print("1) Use PointPerfect Corrections: ");
+    if (settings.enablePointPerfectCorrections == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
 
-    Serial.print(F("2) Set Home WiFi SSID: "));
+    Serial.print("2) Set Home WiFi SSID: ");
     Serial.println(settings.home_wifiSSID);
 
-    Serial.print(F("3) Set Home WiFi PW: "));
+    Serial.print("3) Set Home WiFi PW: ");
     Serial.println(settings.home_wifiPW);
 
-    Serial.print(F("4) Toggle Auto Key Renewal: "));
-    if (settings.autoKeyRenewal == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    Serial.print("4) Toggle Auto Key Renewal: ");
+    if (settings.autoKeyRenewal == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
 
     if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
-      Serial.println(F("5) Provision Device"));
+      Serial.println("5) Provision Device");
     else
-      Serial.println(F("5) Update Keys"));
+      Serial.println("5) Update Keys");
 
-    Serial.println(F("k) Manual Key Entry"));
+    Serial.println("k) Manual Key Entry");
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
@@ -54,7 +54,7 @@ void menuPointPerfect()
     }
     else if (incoming == '2')
     {
-      Serial.print(F("Enter Home WiFi SSID: "));
+      Serial.print("Enter Home WiFi SSID: ");
       readLine(settings.home_wifiSSID, sizeof(settings.home_wifiSSID), menuTimeoutExtended);
     }
     else if (incoming == '3')
@@ -136,13 +136,13 @@ void menuPointPerfectKeys()
   while (1)
   {
     Serial.println();
-    Serial.println(F("Menu: PointPerfect Keys"));
+    Serial.println("Menu: PointPerfect Keys");
 
     Serial.print("1) Set ThingStream Device Profile Token: ");
     if (strlen(settings.pointPerfectDeviceProfileToken) > 0)
       Serial.println(settings.pointPerfectDeviceProfileToken);
     else
-      Serial.println(F("Use SparkFun Token"));
+      Serial.println("Use SparkFun Token");
 
     Serial.print("2) Set Current Key: ");
     if (strlen(settings.pointPerfectCurrentKey) > 0)
@@ -194,25 +194,25 @@ void menuPointPerfectKeys()
     else
       Serial.println("N/A");
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
     if (incoming == 1)
     {
-      Serial.print(F("Enter Device Profile Token: "));
+      Serial.print("Enter Device Profile Token: ");
       readLine(settings.pointPerfectDeviceProfileToken, sizeof(settings.pointPerfectDeviceProfileToken), menuTimeoutExtended);
     }
     else if (incoming == 2)
     {
-      Serial.print(F("Enter Current Key: "));
+      Serial.print("Enter Current Key: ");
       readLine(settings.pointPerfectCurrentKey, sizeof(settings.pointPerfectCurrentKey), menuTimeoutExtended);
     }
     else if (incoming == 3)
     {
       while (Serial.available()) Serial.read();
 
-      Serial.println(F("Enter Current Key Expiration Date: "));
+      Serial.println("Enter Current Key Expiration Date: ");
       uint8_t expDay;
       uint8_t expMonth;
       uint16_t expYear;
@@ -235,14 +235,14 @@ void menuPointPerfectKeys()
     }
     else if (incoming == 4)
     {
-      Serial.print(F("Enter Next Key: "));
+      Serial.print("Enter Next Key: ");
       readLine(settings.pointPerfectNextKey, sizeof(settings.pointPerfectNextKey), menuTimeoutExtended);
     }
     else if (incoming == 5)
     {
       while (Serial.available()) Serial.read();
 
-      Serial.println(F("Enter Next Key Expiration Date: "));
+      Serial.println("Enter Next Key Expiration Date: ");
       uint8_t expDay;
       uint8_t expMonth;
       uint16_t expYear;
@@ -318,7 +318,7 @@ bool provisionDevice()
 
   HTTPClient http;
   http.begin(client, pointPerfectAPI);
-  http.addHeader(F("Content-Type"), F("application/json"));
+  http.addHeader("Content-Type", "application/json");
 
   int httpResponseCode = http.POST(json);
 
@@ -549,15 +549,15 @@ bool getDate(uint8_t &dd, uint8_t &mm, uint16_t &yy)
 
   char temp[10];
 
-  Serial.print(F("Enter Day: "));
+  Serial.print("Enter Day: ");
   readLine(temp, sizeof(temp), menuTimeoutExtended);
   dd = atoi(temp);
 
-  Serial.print(F("Enter Month: "));
+  Serial.print("Enter Month: ");
   readLine(temp, sizeof(temp), menuTimeoutExtended);
   mm = atoi(temp);
 
-  Serial.print(F("Enter Year (YYYY): "));
+  Serial.print("Enter Year (YYYY): ");
   readLine(temp, sizeof(temp), menuTimeoutExtended);
   yy = atoi(temp);
 
@@ -849,7 +849,7 @@ void applyLBandKeys()
                         nextKeyLengthBytes, nextKeyGPSWeek, nextKeyGPSToW, settings.pointPerfectNextKey);
 
       if (response == false)
-        Serial.println(F("setDynamicSPARTNKeys failed"));
+        Serial.println("setDynamicSPARTNKeys failed");
       else
       {
         log_d("PointPerfect keys applied");

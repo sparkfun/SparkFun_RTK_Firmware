@@ -132,7 +132,7 @@ bool ntripServerConnectLimitReached()
   else
   {
     //No more connection attempts, switching to Bluetooth
-    Serial.println(F("NTRIP Server connection attempts exceeded!"));
+    Serial.println("NTRIP Server connection attempts exceeded!");
     ntripServerSwitchToBluetooth();
   }
   return limitReached;
@@ -260,7 +260,7 @@ bool ntripServerRtcmMessage(uint8_t data)
 void ntripServerSetState(byte newState)
 {
   if (ntripServerState == newState)
-    Serial.print(F("*"));
+    Serial.print("*");
   ntripServerState = newState;
   switch (newState)
   {
@@ -268,28 +268,28 @@ void ntripServerSetState(byte newState)
       Serial.printf("Unknown NTRIP Server state: %d\r\n", newState);
       break;
     case NTRIP_SERVER_OFF:
-      Serial.println(F("NTRIP_SERVER_OFF"));
+      Serial.println("NTRIP_SERVER_OFF");
       break;
     case NTRIP_SERVER_ON:
-      Serial.println(F("NTRIP_SERVER_ON"));
+      Serial.println("NTRIP_SERVER_ON");
       break;
     case NTRIP_SERVER_WIFI_CONNECTING:
-      Serial.println(F("NTRIP_SERVER_WIFI_CONNECTING"));
+      Serial.println("NTRIP_SERVER_WIFI_CONNECTING");
       break;
     case NTRIP_SERVER_WIFI_CONNECTED:
-      Serial.println(F("NTRIP_SERVER_WIFI_CONNECTED"));
+      Serial.println("NTRIP_SERVER_WIFI_CONNECTED");
       break;
     case NTRIP_SERVER_WAIT_GNSS_DATA:
-      Serial.println(F("NTRIP_SERVER_WAIT_GNSS_DATA"));
+      Serial.println("NTRIP_SERVER_WAIT_GNSS_DATA");
       break;
     case NTRIP_SERVER_CONNECTING:
-      Serial.println(F("NTRIP_SERVER_CONNECTING"));
+      Serial.println("NTRIP_SERVER_CONNECTING");
       break;
     case NTRIP_SERVER_AUTHORIZATION:
-      Serial.println(F("NTRIP_SERVER_AUTHORIZATION"));
+      Serial.println("NTRIP_SERVER_AUTHORIZATION");
       break;
     case NTRIP_SERVER_CASTING:
-      Serial.println(F("NTRIP_SERVER_CASTING"));
+      Serial.println("NTRIP_SERVER_CASTING");
       break;
   }
 }
@@ -297,7 +297,7 @@ void ntripServerSetState(byte newState)
 //Switch to Bluetooth operation
 void ntripServerSwitchToBluetooth()
 {
-  Serial.println(F("NTRIP Server failure, switching to Bluetooth!"));
+  Serial.println("NTRIP Server failure, switching to Bluetooth!");
 
   //Stop WiFi operations
   ntripServerStop(true);
@@ -380,7 +380,7 @@ void ntripServerStart()
   {
     //Display the heap state
     reportHeapNow();
-    Serial.println(F("NTRIP Server start"));
+    Serial.println("NTRIP Server start");
 
     //Allocate the ntripServer structure
     ntripServer = new WiFiClient();
@@ -497,7 +497,7 @@ void ntripServerUpdate()
 
           //Assume service not available
           if (ntripServerConnectLimitReached())
-            Serial.println(F("NTRIP Server failed to connect! Do you have your caster address and port correct?"));
+            Serial.println("NTRIP Server failed to connect! Do you have your caster address and port correct?");
         }
         else
         {
@@ -517,7 +517,7 @@ void ntripServerUpdate()
         {
           //NTRIP web service did not respone
           if (ntripServerConnectLimitReached())
-            Serial.println(F("Caster failed to respond. Do you have your caster address and port correct?"));
+            Serial.println("Caster failed to respond. Do you have your caster address and port correct?");
         }
       }
       else
@@ -559,13 +559,13 @@ void ntripServerUpdate()
       if (!ntripServer->connected())
       {
         //Broken connection, retry the NTRIP server connection
-        Serial.println(F("NTRIP Server connection dropped"));
+        Serial.println("NTRIP Server connection dropped");
         ntripServerStop(false);
       }
       else if ((millis() - ntripServerTimer) > 1000)
       {
         //GNSS stopped sending RTCM correction data
-        Serial.println(F("NTRIP Server breaking caster connection due to lack of RTCM data!"));
+        Serial.println("NTRIP Server breaking caster connection due to lack of RTCM data!");
         ntripServerStop(false);
       }
       else

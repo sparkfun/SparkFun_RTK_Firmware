@@ -22,14 +22,14 @@ bool configureUbloxModuleRover()
   if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
     response &= i2cGNSS.setNavigationFrequency(1, maxWait);
   if (response == false)
-    Serial.println(F("Set rate failed"));
+    Serial.println("Set rate failed");
 
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {
     response = i2cGNSS.setSurveyMode(0, 0, 0); //Disable Survey-In or Fixed Mode
     if (response == false)
-      Serial.println(F("Disable TMODE3 failed"));
+      Serial.println("Disable TMODE3 failed");
   }
 
   // Set dynamic model
@@ -37,7 +37,7 @@ bool configureUbloxModuleRover()
   {
     response = i2cGNSS.setDynamicModel((dynModel)settings.dynamicModel, maxWait);
     if (response == false)
-      Serial.println(F("setDynamicModel failed"));
+      Serial.println("setDynamicModel failed");
   }
 
 #define OUTPUT_SETTING 14
@@ -61,15 +61,15 @@ bool configureUbloxModuleRover()
   response &= configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //Make sure the appropriate messages are enabled
 
   if (response == false)
-    Serial.println(F("Disable RTCM failed"));
+    Serial.println("Disable RTCM failed");
 
   response = i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GN); //Turn GNGGA back on after NTRIP Client
   if (response == false)
-    Serial.println(F("setMainTalkerID failed"));
+    Serial.println("setMainTalkerID failed");
 
   response = setNMEASettings(); //Enable high precision NMEA and extended sentences
   if (response == false)
-    Serial.println(F("setNMEASettings failed"));
+    Serial.println("setNMEASettings failed");
 
   response = true; //Reset
   if (zedModuleType == PLATFORM_F9R)
@@ -89,11 +89,11 @@ bool configureUbloxModuleRover()
     response &= i2cGNSS.setNavigationRate(settings.navigationRate);
   }
   if (response == false)
-    Serial.println(F("Set Nav Rate failed"));
+    Serial.println("Set Nav Rate failed");
 
   response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   if (response == false)
-    Serial.println(F("Module failed to save."));
+    Serial.println("Module failed to save.");
 
   return (response);
 }
@@ -114,7 +114,7 @@ bool setNMEASettings()
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("NMEA setting failed"));
+    Serial.println("NMEA setting failed");
     return (false);
   }
 
@@ -125,7 +125,7 @@ bool setNMEASettings()
   // Now we write the custom packet back again to change the setting
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
   {
-    Serial.println(F("NMEA setting failed"));
+    Serial.println("NMEA setting failed");
     return (false);
   }
   return (true);
@@ -147,7 +147,7 @@ bool getConstellation(uint8_t constellationID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("Get Constellation failed"));
+    Serial.println("Get Constellation failed");
     return (false);
   }
 
@@ -172,7 +172,7 @@ bool setConstellation(uint8_t constellation, bool enable)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("Set Constellation failed"));
+    Serial.println("Set Constellation failed");
     return (false);
   }
 
@@ -234,7 +234,7 @@ bool setConstellation(uint8_t constellation, bool enable)
   // Now we write the custom packet back again to change the setting
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
   {
-    Serial.println(F("Constellation setting failed"));
+    Serial.println("Constellation setting failed");
     return (false);
   }
 
@@ -252,7 +252,7 @@ uint8_t locateGNSSID(uint8_t *customPayload, uint8_t constellation)
       return (4 + x * 8);
   }
 
-  Serial.print(F("locateGNSSID failed: "));
+  Serial.print("locateGNSSID failed: ");
   Serial.println(constellation);
   return (0);
 }
@@ -269,7 +269,7 @@ void updateAccuracyLEDs()
     {
       if (horizontalAccuracy > 0)
       {
-        Serial.print(F("Rover Accuracy (m): "));
+        Serial.print("Rover Accuracy (m): ");
         Serial.print(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
         Serial.println();
 
@@ -303,10 +303,10 @@ void updateAccuracyLEDs()
       }
       else
       {
-        Serial.print(F("Rover Accuracy: "));
+        Serial.print("Rover Accuracy: ");
         Serial.print(horizontalAccuracy);
         Serial.print(" ");
-        Serial.print(F("No lock. SIV: "));
+        Serial.print("No lock. SIV: ");
         Serial.print(numSV);
         Serial.println();
       }

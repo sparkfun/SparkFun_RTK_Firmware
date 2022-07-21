@@ -12,27 +12,27 @@ void menuPortsSurveyor()
   while (1)
   {
     Serial.println();
-    Serial.println(F("Menu: Port Menu"));
+    Serial.println("Menu: Port Menu");
 
-    Serial.print(F("1) Set serial baud rate for Radio Port: "));
+    Serial.print("1) Set serial baud rate for Radio Port: ");
     Serial.print(getSerialRate(COM_PORT_UART2));
-    Serial.println(F(" bps"));
+    Serial.println(" bps");
 
-    Serial.print(F("2) Set serial baud rate for Data Port: "));
+    Serial.print("2) Set serial baud rate for Data Port: ");
     Serial.print(getSerialRate(COM_PORT_UART1));
-    Serial.println(F(" bps"));
+    Serial.println(" bps");
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == '1')
     {
-      Serial.print(F("Enter baud rate (4800 to 921600) for Radio Port: "));
+      Serial.print("Enter baud rate (4800 to 921600) for Radio Port: ");
       int newBaud = getNumber(menuTimeout); //Timeout after x seconds
       if (newBaud < 4800 || newBaud > 921600)
       {
-        Serial.println(F("Error: baud rate out of range"));
+        Serial.println("Error: baud rate out of range");
       }
       else
       {
@@ -43,11 +43,11 @@ void menuPortsSurveyor()
     }
     else if (incoming == '2')
     {
-      Serial.print(F("Enter baud rate (4800 to 921600) for Data Port: "));
+      Serial.print("Enter baud rate (4800 to 921600) for Data Port: ");
       int newBaud = getNumber(menuTimeout); //Timeout after x seconds
       if (newBaud < 4800 || newBaud > 921600)
       {
-        Serial.println(F("Error: baud rate out of range"));
+        Serial.println("Error: baud rate out of range");
       }
       else
       {
@@ -74,50 +74,50 @@ void menuPortsMultiplexed()
   while (1)
   {
     Serial.println();
-    Serial.println(F("Menu: Port Menu"));
+    Serial.println("Menu: Port Menu");
 
-    Serial.print(F("1) Set Radio port serial baud rate: "));
+    Serial.print("1) Set Radio port serial baud rate: ");
     Serial.print(getSerialRate(COM_PORT_UART2));
-    Serial.println(F(" bps"));
+    Serial.println(" bps");
 
-    Serial.print(F("2) Set Data port connections: "));
+    Serial.print("2) Set Data port connections: ");
     if (settings.dataPortChannel == MUX_UBLOX_NMEA)
-      Serial.println(F("NMEA TX Out/RX In"));
+      Serial.println("NMEA TX Out/RX In");
     else if (settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)
-      Serial.println(F("PPS OUT/Event Trigger In"));
+      Serial.println("PPS OUT/Event Trigger In");
     else if (settings.dataPortChannel == MUX_I2C_WT)
     {
       if (zedModuleType == PLATFORM_F9P)
-        Serial.println(F("I2C SDA/SCL"));
+        Serial.println("I2C SDA/SCL");
       else if (zedModuleType == PLATFORM_F9R)
-        Serial.println(F("Wheel Tick/Direction"));
+        Serial.println("Wheel Tick/Direction");
     }
     else if (settings.dataPortChannel == MUX_ADC_DAC)
-      Serial.println(F("ESP32 DAC Out/ADC In"));
+      Serial.println("ESP32 DAC Out/ADC In");
 
 
     if (settings.dataPortChannel == MUX_UBLOX_NMEA)
     {
-      Serial.print(F("3) Set Data port serial baud rate: "));
+      Serial.print("3) Set Data port serial baud rate: ");
       Serial.print(getSerialRate(COM_PORT_UART1));
-      Serial.println(F(" bps"));
+      Serial.println(" bps");
     }
     else if (settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)
     {
-      Serial.println(F("3) Configure External Triggers"));
+      Serial.println("3) Configure External Triggers");
     }
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == '1')
     {
-      Serial.print(F("Enter baud rate (4800 to 921600) for Radio Port: "));
+      Serial.print("Enter baud rate (4800 to 921600) for Radio Port: ");
       int newBaud = getNumber(menuTimeout); //Timeout after x seconds
       if (newBaud < 4800 || newBaud > 921600)
       {
-        Serial.println(F("Error: baud rate out of range"));
+        Serial.println("Error: baud rate out of range");
       }
       else
       {
@@ -128,19 +128,19 @@ void menuPortsMultiplexed()
     }
     else if (incoming == '2')
     {
-      Serial.println(F("\n\rEnter the pin connection to use (1 to 4) for Data Port: "));
-      Serial.println(F("1) NMEA TX Out/RX In"));
-      Serial.println(F("2) PPS OUT/Event Trigger In"));
+      Serial.println("\n\rEnter the pin connection to use (1 to 4) for Data Port: ");
+      Serial.println("1) NMEA TX Out/RX In");
+      Serial.println("2) PPS OUT/Event Trigger In");
       if (zedModuleType == PLATFORM_F9P)
-        Serial.println(F("3) I2C SDA/SCL"));
+        Serial.println("3) I2C SDA/SCL");
       else if (zedModuleType == PLATFORM_F9R)
-        Serial.println(F("3) Wheel Tick/Direction"));
-      Serial.println(F("4) ESP32 DAC Out/ADC In"));
+        Serial.println("3) Wheel Tick/Direction");
+      Serial.println("4) ESP32 DAC Out/ADC In");
 
       int muxPort = getNumber(menuTimeout); //Timeout after x seconds
       if (muxPort < 1 || muxPort > 4)
       {
-        Serial.println(F("Error: Pin connection out of range"));
+        Serial.println("Error: Pin connection out of range");
       }
       else
       {
@@ -150,11 +150,11 @@ void menuPortsMultiplexed()
     }
     else if (incoming == '3' && settings.dataPortChannel == MUX_UBLOX_NMEA)
     {
-      Serial.print(F("Enter baud rate (4800 to 921600) for Data Port: "));
+      Serial.print("Enter baud rate (4800 to 921600) for Data Port: ");
       int newBaud = getNumber(menuTimeout); //Timeout after x seconds
       if (newBaud < 4800 || newBaud > 921600)
       {
-        Serial.println(F("Error: baud rate out of range"));
+        Serial.println("Error: baud rate out of range");
       }
       else
       {
@@ -187,32 +187,32 @@ void menuPortHardwareTriggers()
   while (1)
   {
     Serial.println();
-    Serial.println(F("Menu: Port Hardware Trigger Menu"));
+    Serial.println("Menu: Port Hardware Trigger Menu");
 
-    Serial.print(F("1) Enable External Pulse: "));
-    if (settings.enableExternalPulse == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    Serial.print("1) Enable External Pulse: ");
+    if (settings.enableExternalPulse == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
 
     if (settings.enableExternalPulse == true)
     {
-      Serial.print(F("2) Set time between pulses: "));
+      Serial.print("2) Set time between pulses: ");
       Serial.print(settings.externalPulseTimeBetweenPulse_us / 1000.0);
-      Serial.println(F("ms"));
+      Serial.println("ms");
 
-      Serial.print(F("3) Set pulse length: "));
+      Serial.print("3) Set pulse length: ");
       Serial.print(settings.externalPulseLength_us / 1000.0);
-      Serial.println(F("ms"));
+      Serial.println("ms");
 
-      Serial.print(F("4) Set pulse polarity: "));
-      if (settings.externalPulsePolarity == PULSE_RISING_EDGE) Serial.println(F("Rising"));
-      else Serial.println(F("Falling"));
+      Serial.print("4) Set pulse polarity: ");
+      if (settings.externalPulsePolarity == PULSE_RISING_EDGE) Serial.println("Rising");
+      else Serial.println("Falling");
     }
 
-    Serial.print(F("5) Log External Events: "));
-    if (settings.enableExternalHardwareEventLogging == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    Serial.print("5) Log External Events: ");
+    if (settings.enableExternalHardwareEventLogging == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
@@ -222,7 +222,7 @@ void menuPortHardwareTriggers()
     }
     else if (incoming == '2' && settings.enableExternalPulse == true)
     {
-      Serial.print(F("Time between pulses in milliseconds: "));
+      Serial.print("Time between pulses in milliseconds: ");
       double pulseTime = getDouble(menuTimeoutExtended); //Timeout after x seconds
 
       if (pulseTime != STATUS_GETNUMBER_TIMEOUT && pulseTime != STATUS_PRESSED_X)
@@ -232,7 +232,7 @@ void menuPortHardwareTriggers()
     }
     else if (incoming == '3' && settings.enableExternalPulse == true)
     {
-      Serial.print(F("Pulse length in milliseconds: "));
+      Serial.print("Pulse length in milliseconds: ");
       double pulseLength = getDouble(menuTimeoutExtended); //Timeout after x seconds
 
       if (pulseLength != STATUS_GETNUMBER_TIMEOUT && pulseLength != STATUS_PRESSED_X)

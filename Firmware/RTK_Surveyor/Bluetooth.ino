@@ -40,14 +40,14 @@ static volatile byte bluetoothState = BT_OFF;
 //Used for updating the bluetoothState state machine
 void bluetoothCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
-    Serial.println(F("Client Connected"));
+    Serial.println("Client Connected");
     bluetoothState = BT_CONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, HIGH);
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
-    Serial.println(F("Client disconnected"));
+    Serial.println("Client disconnected");
     bluetoothState = BT_NOTCONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, LOW);
@@ -121,7 +121,7 @@ void bluetoothStart()
 
     if (bluetoothSerial.begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
     {
-      Serial.println(F("An error occurred initializing Bluetooth"));
+      Serial.println("An error occurred initializing Bluetooth");
 
       if (productVariant == RTK_SURVEYOR)
         digitalWrite(pin_bluetoothStatusLED, LOW);
@@ -151,7 +151,7 @@ void bluetoothStart()
     bluetoothSerial.register_callback(bluetoothCallback); //Controls BT Status LED on Surveyor
     bluetoothSerial.setTimeout(250);
 
-    Serial.print(F("Bluetooth broadcasting as: "));
+    Serial.print("Bluetooth broadcasting as: ");
     Serial.println(deviceName);
 
     //Start task for controlling Bluetooth pair LED

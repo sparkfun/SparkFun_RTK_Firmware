@@ -86,7 +86,7 @@ void recordSystemSettingsToFileSD(char *fileName)
       SdFile settingsFile; //FAT32
       if (settingsFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
-        Serial.println(F("Failed to create settings file"));
+        Serial.println("Failed to create settings file");
         break;
       }
 
@@ -284,7 +284,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
         SdFile settingsFile; //FAT32
         if (settingsFile.open(fileName, O_READ) == false)
         {
-          Serial.println(F("Failed to open settings file"));
+          Serial.println("Failed to open settings file");
           break;
         }
 
@@ -304,7 +304,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
             if (lineNumber == 0)
             {
               //If we can't read the first line of the settings file, give up
-              Serial.println(F("Giving up on settings file"));
+              Serial.println("Giving up on settings file");
               break;
             }
           }
@@ -313,7 +313,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
             if (lineNumber == 0)
             {
               //If we can't read the first line of the settings file, give up
-              Serial.println(F("Giving up on settings file"));
+              Serial.println("Giving up on settings file");
               break;
             }
           }
@@ -321,7 +321,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
           lineNumber++;
         }
 
-        //Serial.println(F("Config file read complete"));
+        //Serial.println("Config file read complete");
         settingsFile.close();
         status = true;
         break;
@@ -378,7 +378,7 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
       if (lineNumber == 0)
       {
         //If we can't read the first line of the settings file, give up
-        Serial.println(F("Giving up on settings file"));
+        Serial.println("Giving up on settings file");
         return (false);
       }
     }
@@ -387,7 +387,7 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
       if (lineNumber == 0)
       {
         //If we can't read the first line of the settings file, give up
-        Serial.println(F("Giving up on settings file"));
+        Serial.println("Giving up on settings file");
         return (false);
       }
     }

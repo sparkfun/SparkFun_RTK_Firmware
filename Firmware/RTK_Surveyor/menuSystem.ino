@@ -6,31 +6,31 @@ void menuSystem()
   while (1)
   {
     Serial.println();
-    Serial.println(F("Menu: System Menu"));
+    Serial.println("Menu: System Menu");
 
-    Serial.print(F("GNSS: "));
+    Serial.print("GNSS: ");
     if (online.gnss == true)
     {
-      Serial.print(F("Online - "));
+      Serial.print("Online - ");
 
       printZEDInfo();
 
       printCurrentConditions();
     }
-    else Serial.println(F("Offline"));
+    else Serial.println("Offline");
 
-    Serial.print(F("Display: "));
-    if (online.display == true) Serial.println(F("Online"));
-    else Serial.println(F("Offline"));
+    Serial.print("Display: ");
+    if (online.display == true) Serial.println("Online");
+    else Serial.println("Offline");
 
-    Serial.print(F("Accelerometer: "));
-    if (online.display == true) Serial.println(F("Online"));
-    else Serial.println(F("Offline"));
+    Serial.print("Accelerometer: ");
+    if (online.display == true) Serial.println("Online");
+    else Serial.println("Offline");
 
-    Serial.print(F("Fuel Gauge: "));
+    Serial.print("Fuel Gauge: ");
     if (online.battery == true)
     {
-      Serial.print(F("Online - "));
+      Serial.print("Online - ");
 
       battLevel = lipo.getSOC();
       battVoltage = lipo.getVoltage();
@@ -39,25 +39,25 @@ void menuSystem()
       Serial.printf("Batt (%d%%) / Voltage: %0.02fV", battLevel, battVoltage);
       Serial.println();
     }
-    else Serial.println(F("Offline"));
+    else Serial.println("Offline");
 
-    Serial.print(F("microSD: "));
-    if (online.microSD == true) Serial.println(F("Online"));
-    else Serial.println(F("Offline"));
+    Serial.print("microSD: ");
+    if (online.microSD == true) Serial.println("Online");
+    else Serial.println("Offline");
 
     if (online.lband == true)
     {
-      Serial.print(F("L-Band: Online - "));
+      Serial.print("L-Band: Online - ");
 
-      if (online.lbandCorrections == true) Serial.print(F("Keys Good"));
-      else Serial.print(F("No Keys"));
+      if (online.lbandCorrections == true) Serial.print("Keys Good");
+      else Serial.print("No Keys");
 
-      Serial.print(F(" / Corrections Received"));
-      if (lbandCorrectionsReceived == false) Serial.print(F(" Failed"));
+      Serial.print(" / Corrections Received");
+      if (lbandCorrectionsReceived == false) Serial.print(" Failed");
 
       Serial.printf(" / Eb/N0[dB] (>9 is good): %0.2f", lBandEBNO);
 
-      Serial.print(F(" - "));
+      Serial.print(" - ");
 
       printNEOInfo();
     }
@@ -65,9 +65,9 @@ void menuSystem()
     //Display MAC address
     char macAddress[5];
     sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-    Serial.print(F("Bluetooth ("));
+    Serial.print("Bluetooth (");
     Serial.print(macAddress);
-    Serial.print(F("): "));
+    Serial.print("): ");
 
     //Verify the ESP UART2 can communicate TX/RX to ZED UART1
     if (online.gnss == true)
@@ -83,10 +83,10 @@ void menuSystem()
         if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
         {
           zedUartPassed = true;
-          Serial.print(F("Online"));
+          Serial.print("Online");
         }
         else
-          Serial.print(F("Offline"));
+          Serial.print("Offline");
 
         i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
         serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
@@ -94,7 +94,7 @@ void menuSystem()
         startUART2Tasks(); //Return to normal operation
       }
       else
-        Serial.print(F("Online"));
+        Serial.print("Online");
     }
     else
     {
@@ -124,7 +124,7 @@ void menuSystem()
       uptimeMilliseconds -= MILLISECONDS_IN_A_SECOND;
       uptimeSeconds += 1;
     }
-    Serial.print(F("Uptime: "));
+    Serial.print("Uptime: ");
     Serial.printf("%d %02d:%02d:%02d.%03ld\r\n",
                   uptimeDays,
                   uptimeHours,
@@ -134,23 +134,23 @@ void menuSystem()
 
     if (settings.enableSD == true)
     {
-      Serial.println(F("f) Display microSD Files"));
+      Serial.println("f) Display microSD Files");
     }
 
-    Serial.println(F("d) Configure Debug"));
+    Serial.println("d) Configure Debug");
     Serial.printf("h) Set time zone hours: %d\r\n", settings.timeZoneHours);
     Serial.printf("m) Set time zone minutes: %d\r\n", settings.timeZoneMinutes);
     Serial.printf("s) Set time zone seconds: %d\r\n", settings.timeZoneSeconds);
 
-    Serial.println(F("r) Reset all settings to default"));
+    Serial.println("r) Reset all settings to default");
 
     // Support mode switching
-    Serial.println(F("B) Switch to Base mode"));
-    Serial.println(F("R) Switch to Rover mode"));
-    Serial.println(F("W) Switch to WiFi Config mode"));
-    Serial.println(F("S) Shut down"));
+    Serial.println("B) Switch to Base mode");
+    Serial.println("R) Switch to Rover mode");
+    Serial.println("W) Switch to WiFi Config mode");
+    Serial.println("S) Shut down");
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
@@ -158,10 +158,10 @@ void menuSystem()
       menuDebug();
     else if (incoming == 'h')
     {
-      Serial.print(F("Enter time zone hour offset (-23 <= offset <= 23): "));
+      Serial.print("Enter time zone hour offset (-23 <= offset <= 23): ");
       int64_t value = getNumber(menuTimeout);
       if (value < -23 || value > 23)
-        Serial.println(F("Error: -24 < hours < 24"));
+        Serial.println("Error: -24 < hours < 24");
       else
       {
         settings.timeZoneHours = value;
@@ -171,10 +171,10 @@ void menuSystem()
     }
     else if (incoming == 'm')
     {
-      Serial.print(F("Enter time zone minute offset (-59 <= offset <= 59): "));
+      Serial.print("Enter time zone minute offset (-59 <= offset <= 59): ");
       int64_t value = getNumber(menuTimeout);
       if (value < -59 || value > 59)
-        Serial.println(F("Error: -60 < minutes < 60"));
+        Serial.println("Error: -60 < minutes < 60");
       else
       {
         settings.timeZoneMinutes = value;
@@ -184,10 +184,10 @@ void menuSystem()
     }
     else if (incoming == 's')
     {
-      Serial.print(F("Enter time zone second offset (-59 <= offset <= 59): "));
+      Serial.print("Enter time zone second offset (-59 <= offset <= 59): ");
       int64_t value = getNumber(menuTimeout);
       if (value < -59 || value > 59)
-        Serial.println(F("Error: -60 < seconds < 60"));
+        Serial.println("Error: -60 < seconds < 60");
       else
       {
         settings.timeZoneSeconds = value;
@@ -197,14 +197,14 @@ void menuSystem()
     }
     else if (incoming == 'r')
     {
-      Serial.println(F("\r\nResetting to factory defaults. Press 'y' to confirm:"));
+      Serial.println("\r\nResetting to factory defaults. Press 'y' to confirm:");
       byte bContinue = getByteChoice(menuTimeout);
       if (bContinue == 'y')
       {
         factoryReset();
       }
       else
-        Serial.println(F("Reset aborted"));
+        Serial.println("Reset aborted");
     }
     else if ((incoming == 'f') && (settings.enableSD == true))
     {
@@ -214,13 +214,13 @@ void menuSystem()
 
       //Notify the user if the microSD card is not available
       if (!online.microSD)
-        Serial.println(F("microSD card not online!"));
+        Serial.println("microSD card not online!");
       else
       {
         //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
         if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
         {
-          Serial.println(F("Files found (date time size name):\n\r"));
+          Serial.println("Files found (date time size name):\n\r");
           sd->ls(LS_R | LS_DATE | LS_SIZE);
         }
         else
@@ -250,7 +250,7 @@ void menuSystem()
       changeState(STATE_WIFI_CONFIG_NOT_STARTED);
     }
     else if (incoming == 'S') {
-      Serial.println(F("Shutting down..."));
+      Serial.println("Shutting down...");
       forceDisplayUpdate = true;
       powerDown(true);
     }
@@ -274,74 +274,74 @@ void menuDebug()
   while (1)
   {
     Serial.println();
-    Serial.println(F("Menu: Debug Menu"));
+    Serial.println("Menu: Debug Menu");
 
-    Serial.print(F("1) I2C Debugging Output: "));
-    if (settings.enableI2Cdebug == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    Serial.print("1) I2C Debugging Output: ");
+    if (settings.enableI2Cdebug == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
 
-    Serial.print(F("2) Heap Reporting: "));
-    if (settings.enableHeapReport == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    Serial.print("2) Heap Reporting: ");
+    if (settings.enableHeapReport == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
 
-    Serial.print(F("3) Task Highwater Reporting: "));
-    if (settings.enableTaskReports == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    Serial.print("3) Task Highwater Reporting: ");
+    if (settings.enableTaskReports == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
 
-    Serial.print(F("4) Set SPI/SD Interface Frequency: "));
+    Serial.print("4) Set SPI/SD Interface Frequency: ");
     Serial.print(settings.spiFrequency);
     Serial.println(" MHz");
 
-    Serial.print(F("5) Set SPP RX Buffer Size: "));
+    Serial.print("5) Set SPP RX Buffer Size: ");
     Serial.println(settings.sppRxQueueSize);
 
-    Serial.print(F("6) Set SPP TX Buffer Size: "));
+    Serial.print("6) Set SPP TX Buffer Size: ");
     Serial.println(settings.sppTxQueueSize);
 
-    Serial.print(F("7) Throttle BT Transmissions During SPP Congestion: "));
-    if (settings.throttleDuringSPPCongestion == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    Serial.print("7) Throttle BT Transmissions During SPP Congestion: ");
+    if (settings.throttleDuringSPPCongestion == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
 
     Serial.printf("8) Display Reset Counter: %d - ", settings.resetCount);
-    if (settings.enableResetDisplay == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    if (settings.enableResetDisplay == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
 
-    Serial.print(F("9) GNSS Serial Timeout: "));
+    Serial.print("9) GNSS Serial Timeout: ");
     Serial.println(settings.serialTimeoutGNSS);
 
-    Serial.print(F("10) Periodically print Wifi IP Address: "));
+    Serial.print("10) Periodically print Wifi IP Address: ");
     Serial.printf("%s\r\n", settings.enablePrintWifiIpAddress ? "Enabled" : "Disabled");
 
-    Serial.print(F("11) Periodically print state: "));
+    Serial.print("11) Periodically print state: ");
     Serial.printf("%s\r\n", settings.enablePrintState ? "Enabled" : "Disabled");
 
-    Serial.print(F("12) Periodically print Wifi state: "));
+    Serial.print("12) Periodically print Wifi state: ");
     Serial.printf("%s\r\n", settings.enablePrintWifiState ? "Enabled" : "Disabled");
 
-    Serial.print(F("13) Periodically print NTRIP client state: "));
+    Serial.print("13) Periodically print NTRIP client state: ");
     Serial.printf("%s\r\n", settings.enablePrintNtripClientState ? "Enabled" : "Disabled");
 
-    Serial.print(F("14) Periodically print NTRIP server state: "));
+    Serial.print("14) Periodically print NTRIP server state: ");
     Serial.printf("%s\r\n", settings.enablePrintNtripServerState ? "Enabled" : "Disabled");
 
-    Serial.print(F("15) Print GNSS --> NTRIP caster messages: "));
+    Serial.print("15) Print GNSS --> NTRIP caster messages: ");
     Serial.printf("%s\r\n", settings.enablePrintNtripServerRtcm ? "Enabled" : "Disabled");
 
-    Serial.print(F("16) Periodically print position: "));
+    Serial.print("16) Periodically print position: ");
     Serial.printf("%s\r\n", settings.enablePrintPosition ? "Enabled" : "Disabled");
 
-    Serial.print(F("17) Periodically print CPU idle time: "));
+    Serial.print("17) Periodically print CPU idle time: ");
     Serial.printf("%s\r\n", settings.enablePrintIdleTime ? "Enabled" : "Disabled");
 
-    Serial.println(F("18) Mirror ZED-F9x's UART1 settings to USB"));
+    Serial.println("18) Mirror ZED-F9x's UART1 settings to USB");
 
-    Serial.println(F("t) Enter Test Screen"));
+    Serial.println("t) Enter Test Screen");
 
-    Serial.println(F("e) Erase LittleFS"));
+    Serial.println("e) Erase LittleFS");
 
-    Serial.println(F("r) Force system reset"));
+    Serial.println("r) Force system reset");
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     int incoming;
     int digits = getMenuChoice(&incoming, menuTimeout); //Timeout after x seconds
@@ -372,11 +372,11 @@ void menuDebug()
       }
       else if (incoming == 4)
       {
-        Serial.print(F("Enter SPI frequency in MHz (1 to 16): "));
+        Serial.print("Enter SPI frequency in MHz (1 to 16): ");
         int freq = getNumber(menuTimeout); //Timeout after x seconds
         if (freq < 1 || freq > 16) //Arbitrary 16MHz limit
         {
-          Serial.println(F("Error: SPI frequency out of range"));
+          Serial.println("Error: SPI frequency out of range");
         }
         else
         {
@@ -385,11 +385,11 @@ void menuDebug()
       }
       else if (incoming == 5)
       {
-        Serial.print(F("Enter SPP RX Queue Size in Bytes (32 to 16384): "));
+        Serial.print("Enter SPP RX Queue Size in Bytes (32 to 16384): ");
         uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
         if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
         {
-          Serial.println(F("Error: Queue size out of range"));
+          Serial.println("Error: Queue size out of range");
         }
         else
         {
@@ -398,11 +398,11 @@ void menuDebug()
       }
       else if (incoming == 6)
       {
-        Serial.print(F("Enter SPP TX Queue Size in Bytes (32 to 16384): "));
+        Serial.print("Enter SPP TX Queue Size in Bytes (32 to 16384): ");
         uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
         if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
         {
-          Serial.println(F("Error: Queue size out of range"));
+          Serial.println("Error: Queue size out of range");
         }
         else
         {
@@ -424,11 +424,11 @@ void menuDebug()
       }
       else if (incoming == 9)
       {
-        Serial.print(F("Enter GNSS Serial Timeout in milliseconds (0 to 1000): "));
+        Serial.print("Enter GNSS Serial Timeout in milliseconds (0 to 1000): ");
         uint16_t serialTimeoutGNSS = getNumber(menuTimeout); //Timeout after x seconds
         if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
         {
-          Serial.println(F("Error: Timeout is out of range"));
+          Serial.println("Error: Timeout is out of range");
         }
         else
         {
@@ -516,7 +516,7 @@ void printCurrentConditions()
 {
   if (online.gnss == true)
   {
-    Serial.print(F("SIV: "));
+    Serial.print("SIV: ");
     Serial.print(numSV);
 
     Serial.print(", HPA (m): ");

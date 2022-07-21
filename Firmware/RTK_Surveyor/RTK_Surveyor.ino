@@ -708,7 +708,7 @@ void updateRTC()
 
           online.rtc = true;
 
-          Serial.print(F("System time set to: "));
+          Serial.print("System time set to: ");
           Serial.println(rtc.getDateTime(true));
 
           recordSystemSettingsToFileSD(settingsFileName); //This will re-record the setting file with current date/time.

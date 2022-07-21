@@ -109,7 +109,7 @@ void wifiPeriodicallyDisplayIpAddress()
 void wifiSetState (byte newState)
 {
   if (wifiState == newState)
-    Serial.print(F("*"));
+    Serial.print("*");
   wifiState = newState;
   switch (newState)
   {
@@ -117,16 +117,16 @@ void wifiSetState (byte newState)
       Serial.printf("Unknown WiFi state: %d\r\n", newState);
       break;
     case WIFI_OFF:
-      Serial.println(F("WIFI_OFF"));
+      Serial.println("WIFI_OFF");
       break;
     case WIFI_ON:
-      Serial.println(F("WIFI_ON"));
+      Serial.println("WIFI_ON");
       break;
     case WIFI_NOTCONNECTED:
-      Serial.println(F("WIFI_NOTCONNECTED"));
+      Serial.println("WIFI_NOTCONNECTED");
       break;
     case WIFI_CONNECTED:
-      Serial.println(F("WIFI_CONNECTED"));
+      Serial.println("WIFI_CONNECTED");
       break;
     }
 }
@@ -165,10 +165,10 @@ void wifiStartAP()
   WiFi.softAPConfig(local_IP, gateway, subnet);
   if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
   {
-    Serial.println(F("Wi-Fi AP failed to start"));
+    Serial.println("Wi-Fi AP failed to start");
     return;
   }
-  Serial.print(F("Wi-Fi AP Started with IP: "));
+  Serial.print("Wi-Fi AP Started with IP: ");
   Serial.println(WiFi.softAPIP());
 #endif  //LOCAL_WIFI_TESTING
 }
@@ -220,7 +220,7 @@ void wifiStop()
   {
     WiFi.mode(WIFI_OFF);
     wifiSetState(WIFI_OFF);
-    Serial.println(F("Wi-Fi Stopped"));
+    Serial.println("Wi-Fi Stopped");
 
     //Display the heap state
     reportHeapNow();

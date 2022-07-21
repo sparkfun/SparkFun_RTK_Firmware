@@ -434,6 +434,7 @@ typedef struct {
   bool enablePrintNtripServerState = false;
   bool enablePrintNtripServerRtcm = false;
   bool enablePrintPosition = false;
+  bool enablePrintIdleTime = false;
 } Settings;
 Settings settings;
 

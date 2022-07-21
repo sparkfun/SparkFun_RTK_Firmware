@@ -23,7 +23,7 @@ The device's firmware version is shown during the Power On display.
 Upon power up the device will enter either Rover mode or Base mode. Above, the Rover mode is displayed.
 
 * **MAC:** The MAC address of the internal Bluetooth module. This is helpful knowledge when attempting to connect to the device from your phone. This will change to a Bluetooth symbol once connected.
-* **HPA:** Horizontal positional accuracy is an estimate of how accurate the current positional readings are. This number will decrease rapidly after first power up and settle around 0.3m depending on your antenna and view of the sky. When RTK fix is achieved this icon will change to a double circle and the HPA number will decrease even further to as low as 0.014m.
+* **HPA:** Horizontal positional accuracy is an estimate of how accurate the current positional readings are. This number will decrease rapidly after the first power-up and settle around 0.3m depending on your antenna and view of the sky. When RTK fix is achieved this icon will change to a double circle and the HPA number will decrease even further to as low as 0.014m.
 * **SIV:** Satellites in view is the number of satellites used for the fix calculation. This symbol will blink before a location fix is generated and become solid when the device has a good location fix. SIV is a good indicator of how good of a view the antenna has. This number will vary but anything above 10 is adequate. We've seen as high as 31.
 * **Model:** This icon will change depending on the selected dynamic model: Portable (default) Pedestrian, Sea, Bike, Stationary, etc.
 * **Log:** This icon will remain animated while the log file is increasing. This is a good visual indication that you have an SD card inserted and RTK Facet can successfully record to it.
@@ -50,7 +50,7 @@ Pressing the Setup button will change the device to Base mode. If the device is 
 
 *RTK Facet in Fixed Transmit Mode*
 
-Once the *survey-in* is complete the device enters RTCM Transmit mode. The number of RTCM transmissions is displayed. By default this is one per second.
+Once the *survey-in* is complete the device enters RTCM Transmit mode. The number of RTCM transmissions is displayed. By default, this is one per second.
 
 The *Fixed Base* mode is similar but uses a structure icon (shown above) to indicate a fixed base.
 
@@ -77,11 +77,11 @@ L-Band decryption keys are valid for a maximum of 56 days. During that time, the
 
 The unit will display various messages to aid the user in obtaining keys as needed.
 
-[![Three pronged satellite dish indicating L-Band reception](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_Indicator.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_Indicator.jpg)
+[![Three-pronged satellite dish indicating L-Band reception](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_Indicator.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_LBand_Indicator.jpg)
 
-*Three pronged satellite dish indicating L-Band reception*
+*Three-pronged satellite dish indicating L-Band reception*
 
-Upon successful reception and decryption of L-Band corrections, the satellite dish icon will increase to a three pronged icon. As the unit's fix increases the cross hair will indicate a basic 3D solution, a double blinking cross hair will indicate a floating RTK solution, and a solid double cross hair will indicate a fixed RTK solution.
+Upon successful reception and decryption of L-Band corrections, the satellite dish icon will increase to a three-pronged icon. As the unit's fix increases the cross-hair will indicate a basic 3D solution, a double blinking cross-hair will indicate a floating RTK solution, and a solid double cross-hair will indicate a fixed RTK solution.
 
 ## Adding a Display to the RTK Surveyor
 

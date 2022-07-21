@@ -2,7 +2,7 @@
 
 Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet L-Band: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
 
-Starting with firmware v1.7, WiFi based configuration is supported. For more information about updating the firmware on your device, please see [Updating RTK Firmware](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/).
+Starting with firmware v1.7, WiFi-based configuration is supported. For more information about updating the firmware on your device, please see [Updating RTK Firmware](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/).
 
 The RTK device will present a webpage that is viewable from either a desktop/laptop with WiFi or a cell phone. For advanced configurations, a desktop is recommended. For quick in-field changes, a cell phone works great.
 
@@ -44,13 +44,13 @@ Note: Upon connecting, your phone may warn you that this WiFi network has no int
 
 *Connected to the RTK WiFi Setup Page*
 
-Clicking on a category 'carrot' will open or close that section. Clicking on an ‘i’ will give you a brief description of the options within that section.
+Clicking on the category 'carrot' will open or close that section. Clicking on an ‘i’ will give you a brief description of the options within that section.
 
 [![Firmware highlighted](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_WiFi_Config_Main_Page_-_Firmware.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_WiFi_Config_Main_Page_-_Firmware.jpg)
 
 *This unit has firmware version 1.8 and a ZED-F9P receiver*
 
-Please note that the firmware for the RTK device and the firmware for the ZED receiver are shown at the top of the page. This can be helpful when troubleshooting or requesting new features.
+Please note that the firmware for the RTK device and the firmware for the ZED receiver is shown at the top of the page. This can be helpful when troubleshooting or requesting new features.
 
 ## Saving and Exit
 

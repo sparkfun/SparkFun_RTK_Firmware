@@ -1,6 +1,8 @@
 //Once connected to the access point for WiFi Config, the ESP32 sends current setting values in one long string to websocket
 //After user clicks 'save', data is validated via main.js and a long string of values is returned.
 
+static uint8_t bootProfileNumber;
+
 //Start webserver in AP mode
 void startWebServer()
 {
@@ -281,6 +283,9 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 void createSettingsString(char* settingsCSV)
 {
 #ifdef COMPILE_AP
+  char tagText[32];
+  char nameText[64];
+
   //System Info
   stringRecord(settingsCSV, "platformPrefix", platformPrefix);
 
@@ -411,6 +416,15 @@ void createSettingsString(char* settingsCSV)
   //Profiles
   stringRecord(settingsCSV, "profileNumber", profileNumber + 1);
   stringRecord(settingsCSV, "profileName", profileNames[profileNumber]);
+  for (int index = 0; index < MAX_PROFILE_COUNT; index++)
+  {
+    sprintf(tagText, "profile%dName", index);
+    sprintf(nameText, "%d: %s", index + 1, profileNames[index]);
+    stringRecord(settingsCSV, tagText, nameText);
+  }
+  bootProfileNumber = profileNumber + 1;
+  stringRecord(settingsCSV, "bootProfileNumber", bootProfileNumber);
+  stringRecord(settingsCSV, "activeProfiles", activeProfiles);
 
   //New settings not yet integrated
   //...
@@ -494,7 +508,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "profileName") == 0)
   {
     strcpy(settings.profileName, settingValueStr);
-    strcpy(profileNames[profileNumber], settingValueStr);
+    setProfileName(profileNumber);
   }
   else if (strcmp(settingName, "profileNumber") == 0)
   {
@@ -508,6 +522,13 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       setSettingsFileName();
       recordProfileNumber(profileNumber);
     }
+  }
+  else if (strcmp(settingName, "bootProfileNumber") == 0)
+  {
+    if ((sscanf(settingValueStr, "%d", &bootProfileNumber) != 1)
+      || (bootProfileNumber < 1)
+      || (bootProfileNumber > (MAX_PROFILE_COUNT + 1)))
+      bootProfileNumber = 1;
   }
 
   //NTRIP Server settings
@@ -589,6 +610,12 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   {
     if (newAPSettings == true) recordSystemSettings(); //If we've recieved settings, record before restart
 
+    //Determine which profile to boot
+    bootProfileNumber -= 1;
+    if (bootProfileNumber != profileNumber)
+      recordProfileNumber(bootProfileNumber);
+
+    //Reboot the machine
     ESP.restart();
   }
 

@@ -295,7 +295,7 @@ void ButtonCheckTask(void *e)
                 //If only one active profile do not show any profiles
                 index = getProfileNumberFromUnit(0);
                 displayProfile = getProfileNumberFromUnit(1);
-                setupState = (index >= MAX_PROFILE_COUNT) ? STATE_MARK_EVENT : STATE_PROFILE;
+                setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
                 displayProfile = 0;
                 break;
               case STATE_PROFILE:
@@ -410,7 +410,7 @@ void ButtonCheckTask(void *e)
                 //If only one active profile do not show any profiles
                 index = getProfileNumberFromUnit(0);
                 displayProfile = getProfileNumberFromUnit(1);
-                setupState = (index >= MAX_PROFILE_COUNT) ? STATE_MARK_EVENT : STATE_PROFILE;
+                setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
                 displayProfile = 0;
                 break;
               case STATE_PROFILE:
@@ -436,5 +436,32 @@ void ButtonCheckTask(void *e)
 
     delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
+  }
+}
+
+void idleTask(void *e)
+{
+  uint32_t lastStackPrintTime;
+
+  while (1)
+  {
+    if (settings.enablePrintIdleTime)
+    {
+      //Increment a count during the idle time
+      cpuIdleCount[xPortGetCoreID()]++;
+
+      //Let other same priority tasks run
+      yield();
+    }
+    else
+      delay(1000);
+
+    //Display the high water mark if requested
+    if ((settings.enableTaskReports == true) && ((millis() - lastStackPrintTime) >= 1000))
+    {
+      lastStackPrintTime = millis();
+      Serial.printf("idleTask %d High watermark: %d\n\r",
+                    xPortGetCoreID(), uxTaskGetStackHighWaterMark(NULL));
+    }
   }
 }

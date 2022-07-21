@@ -10,7 +10,7 @@ Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkF
 
 *The messages configuration menu*
 
-From this menu a user can control the output of various NMEA, RTCM, RXM, and other messages. Any enabled message will be broadcast over Bluetooth *and* recorded to SD (if available).
+From this menu, a user can control the output of various NMEA, RTCM, RXM, and other messages. Any enabled message will be broadcast over Bluetooth *and* recorded to SD (if available).
 
 Because of the large number of configurations possible, we provide a few common settings:
 
@@ -41,11 +41,11 @@ These seven sentences are commonly used when logging and doing Precise Point Pos
 
 *Configuring the NMEA messages*
 
-As mentioned is the microSD section of the [Hardware Overview](https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_facet/#microsd) there are a large number of messages supported. Each message sub menu will present the user with the ability to set the message report rate.
+As mentioned in the microSD section of the [Hardware Overview](https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_facet/#microsd) there are a large number of messages supported. Each message sub-menu will present the user with the ability to set the message report rate.
 
 Each message rate input controls which messages are disabled (0) and how often the message is reported (1 = one message reported per 1 fix, 5 = one report every 5 fixes). The message rate range is 0 to 20.
 
-**Note:** The message report rate is the *number of fixes* between message reports. In the image above, with GSV set to 4, the NMEA GSV message will be produced once every 4 fixes. Because the device defaults to 4Hz fix rate, the GSV message will appear once per second.
+**Note:** The message report rate is the *number of fixes* between message reports. In the image above, with GSV set to 4, the NMEA GSV message will be produced once every 4 fixes. Because the device defaults to a 4Hz fix rate, the GSV message will appear once per second.
 
 ## Turn off all messages
 

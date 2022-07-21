@@ -22,11 +22,11 @@ Measurement Frequency can be set by either Hz or by seconds between measurements
 
 ![Table showing fix rates](https://user-images.githubusercontent.com/117102/168684162-4ffe6f39-5aaf-4137-a8ab-f88ee77a528d.png)
 
-Note: When in **Base** mode, measurement frequency is set to 1Hz. This is because RTK transmission does not benefit from faster updates, nor does logging of RAWX for PPP.
+Note: When in **Base** mode, the measurement frequency is set to 1Hz. This is because RTK transmission does not benefit from faster updates, nor does logging of RAWX for PPP.
 
 ## Dynamic Model
 
-The Dynamic Model can be changed but it is recommended to leave as *Portable*. For more information, please refer to the [ZED-F9P Integration Manual](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/ZED-F9P_IntegrationManual__UBX-18010802_.pdf).
+The Dynamic Model can be changed but it is recommended to leave it as *Portable*. For more information, please refer to the [ZED-F9P Integration Manual](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/ZED-F9P_IntegrationManual__UBX-18010802_.pdf).
 
 ## Constellations Menu
 
@@ -34,7 +34,7 @@ The Dynamic Model can be changed but it is recommended to leave as *Portable*. F
 
 *Enable or disable the constellations used for fixes*
 
-The ZED-F9P is capable of tracking 184 channels across four constellations and two bands (L1/L2) including GPS (USA), Galileo (EU), BeiDou (China), and GLONASS (Russia). SBAS (satellite-based augmentation system) is also supported. By fault, all constellations are used. Some users may want to study, log, or monitor a subset. Disabling a constellation will cause the ZED to ignore those signals when calculating a location fix.
+The ZED-F9P is capable of tracking 184 channels across four constellations and two bands (L1/L2) including GPS (USA), Galileo (EU), BeiDou (China), and GLONASS (Russia). SBAS (satellite-based augmentation system) is also supported. By default, all constellations are used. Some users may want to study, log, or monitor a subset. Disabling a constellation will cause the ZED to ignore those signals when calculating a location fix.
 
 ## NTRIP Client
 
@@ -54,7 +54,7 @@ Once the NTRIP Client is enabled you will need a handful of credentials:
 * A casting service and port such as [RTK2Go](http://rtk2go.com/) or [Emlid](https://emlid.com/ntrip-caster/) (the port is almost always 2101)
 * A mount point and password
 
-With these credentials set, RTK device will attempt to connect to WiFi, then connect to your caster of choice, and then begin downloading the RTCM data over WiFi. We tried to make it as easy as possible. Every second a few hundred bytes, up to ~2k, will be downloaded from the mount point you've entered. Remember, the rover must be in WiFi range to connect in this mode.
+With these credentials set, the RTK device will attempt to connect to WiFi, then connect to your caster of choice, and then begin downloading the RTCM data over WiFi. We tried to make it as easy as possible. Every second a few hundred bytes, up to ~2k, will be downloaded from the mount point you've entered. Remember, the rover must be in WiFi range to connect in this mode.
 
 [![Rover with Active NTRIP Client Connection](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Rover_NTRIP_Client_Connection.png)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Rover_NTRIP_Client_Connection.png)
 

@@ -107,6 +107,14 @@ function parseIncoming(msg) {
             || id.includes("zedFirmwareVersion")
             || id.includes("hardwareID")
             || id.includes("daysRemaining")
+            || id.includes("profile0Name")
+            || id.includes("profile1Name")
+            || id.includes("profile2Name")
+            || id.includes("profile3Name")
+            || id.includes("profile4Name")
+            || id.includes("profile5Name")
+            || id.includes("profile6Name")
+            || id.includes("profile7Name")
         ) {
             ge(id).innerHTML = val;
         }
@@ -147,6 +155,7 @@ function parseIncoming(msg) {
     //Force element updates
     ge("profileNumber").dispatchEvent(new CustomEvent('change'));
     ge("profileName").dispatchEvent(new CustomEvent('change'));
+    ge("bootProfileNumber").dispatchEvent(new CustomEvent('change'));
     ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
     ge("baseTypeSurveyIn").dispatchEvent(new CustomEvent('change'));
     ge("baseTypeFixed").dispatchEvent(new CustomEvent('change'));
@@ -231,8 +240,9 @@ function validateFields() {
     errorCount = 0;
 
     //Profile Config
-    checkElementValue("profileNumber", 1, 4, "Must be between 1 and 4", "collapseProfileConfig");
+    checkElementValue("profileNumber", 1, 8, "Must be between 1 and 8", "collapseProfileConfig");
     checkElementString("profileName", 1, 49, "Must be 1 to 49 characters", "collapseProfileConfig");
+    checkBitMapValue("bootProfileNumber", 1, 8, "activeProfiles", "Must be an active profile between 1 and 8", "collapseProfileConfig");
 
     //GNSS Config
     checkElementValue("measurementRateHz", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseGNSSConfig");
@@ -461,6 +471,16 @@ function validateFields() {
         clearSuccess('saveBtn');
     }
     else {
+        //Update the profile name
+        profile = "profile" + ge("bootProfileNumber").value + "Name";
+console.log(ge("bootProfileNumber").value);
+console.log(profile);
+console.log(ge(profile).value);
+console.log(ge("profileName").value);
+        ge(profile).value = ge("profileName").value;
+console.log(ge(profile).value);
+        ge(profile).dispatchEvent(new CustomEvent('change'));
+
         //Tell Arduino we're ready to save
         sendData();
         clearError('saveBtn');
@@ -480,6 +500,19 @@ function checkConstellations() {
     }
     else
         clearError("ubxConstellations");
+}
+
+function checkBitMapValue(id, min, max, bitMap, errorText, collapseID) {
+    value = ge(id).value;
+    mask = ge(bitMap).value;
+    if ((value < min) || (value > max) || ((mask & (1 << value)) == 0)) {
+        ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else {
+        clearError(id);
+    }
 }
 
 function checkElementValue(id, min, max, errorText, collapseID) {
@@ -894,6 +927,42 @@ static const char *index_html = R"=====(
                         <div class="col-sm-8 col-7">
                             <input type="text" class="form-control" id="profileName">
                             <p id="profileNameError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row mt-2">
+                        <span id="activeProfiles" style="display:inline; margin-left:20px;"><Strong>Profiles</strong></span>
+                    </div>
+                    <div class="form-group row">
+                        <span id="profile0Name" style="display:inline; margin-left:40px;">1: 12345678901234567890123456789012345678901234567890</span>
+                    </div>
+                    <div class="form-group row">
+                        <span id="profile1Name" style="display:inline; margin-left:40px;">2: 12345678901234567890123456789012345678901234567890</span>
+                    </div>
+                    <div class="form-group row">
+                        <span id="profile2Name" style="display:inline; margin-left:40px;">3: 12345678901234567890123456789012345678901234567890</span>
+                    </div>
+                    <div class="form-group row">
+                        <span id="profile3Name" style="display:inline; margin-left:40px;">4: 12345678901234567890123456789012345678901234567890</span>
+                    </div>
+                    <div class="form-group row">
+                        <span id="profile4Name" style="display:inline; margin-left:40px;">5: 12345678901234567890123456789012345678901234567890</span>
+                    </div>
+                    <div class="form-group row">
+                        <span id="profile5Name" style="display:inline; margin-left:40px;">6: 12345678901234567890123456789012345678901234567890</span>
+                    </div>
+                    <div class="form-group row">
+                        <span id="profile6Name" style="display:inline; margin-left:40px;">7: 12345678901234567890123456789012345678901234567890</span>
+                    </div>
+                    <div class="form-group row mb-3">
+                        <span id="profile7Name" style="display:inline; margin-left:40px;">8: 12345678901234567890123456789012345678901234567890</span>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="bootProfileName" class="box-margin20 col-sm-3 col-4 col-form-label">Boot Profile</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="bootProfileNumber">
+                            <p id="bootProfileNumberError" class="inlineError"></p>
                         </div>
                     </div>
                 </div>

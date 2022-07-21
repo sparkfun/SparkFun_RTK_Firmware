@@ -99,8 +99,6 @@ void recordSystemSettingsToFileSD(char *fileName)
       settingsFile.close();
 
       log_d("Settings recorded to SD: %s", fileName);
-
-      xSemaphoreGive(sdCardSemaphore);
     }
     else
     {

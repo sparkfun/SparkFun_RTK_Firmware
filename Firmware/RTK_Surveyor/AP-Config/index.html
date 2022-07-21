@@ -102,57 +102,73 @@
             </div>
             <div class="collapse mb-2" id="collapseProfileConfig">
                 <div class="card card-body">
-                    <div class="form-group row">
-                        <label for="profileNumber" class="box-margin20 col-sm-3 col-4 col-form-label">Profile Number</label>
-                        <div class="col-sm-8 col-7">
-                            <input type="number" class="form-control mb-2" id="profileNumber">
-                            <p id="profileNumberError" class="inlineError"></p>
-                        </div>
+
+                    <div class="form-group mt-2">
+                        Profile:
+                        <span class="tt" data-bs-placement="right"
+                            title="Select a profile and then assign settings to that profile. At reset, RTK device will use selected profile. Profile changes are saved when a different profile is selected or when 'Save Configuration' is pressed.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
                     </div>
 
                     <div class="form-group row">
-                        <label for="profileName" class="box-margin20 col-sm-3 col-4 col-form-label">Profile Name</label>
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="0">
+                            <label id="profile0Name">Profile1</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="1">
+                            <label id="profile1Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="2">
+                            <label id="profile2Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="3">
+                            <label id="profile3Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="4">
+                            <label id="profile4Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="5">
+                            <label id="profile5Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="6">
+                            <label id="profile6Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+                    <div class="form-group row">
+                        <span style="display:inline; margin-left:20px;">
+                            <input type="radio" name="profileRadio" value="7">
+                            <label id="profile7Name">12345678901234567890123456789012345678901234567890</label>
+                        </span>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="profileName" class="box-margin20 col-sm-3 col-4 col-form-label">Profile Name:</label>
                         <div class="col-sm-8 col-7">
                             <input type="text" class="form-control" id="profileName">
                             <p id="profileNameError" class="inlineError"></p>
                         </div>
+                        <p id="profileChangeMessage" class="inlineSuccess"></p>
                     </div>
 
-                    <div class="form-group row mt-2">
-                        <span id="activeProfiles" style="display:inline; margin-left:20px;"><Strong>Profiles</strong></span>
-                    </div>
-                    <div class="form-group row">
-                        <span id="profile0Name" style="display:inline; margin-left:40px;">1: 12345678901234567890123456789012345678901234567890</span>
-                    </div>
-                    <div class="form-group row">
-                        <span id="profile1Name" style="display:inline; margin-left:40px;">2: 12345678901234567890123456789012345678901234567890</span>
-                    </div>
-                    <div class="form-group row">
-                        <span id="profile2Name" style="display:inline; margin-left:40px;">3: 12345678901234567890123456789012345678901234567890</span>
-                    </div>
-                    <div class="form-group row">
-                        <span id="profile3Name" style="display:inline; margin-left:40px;">4: 12345678901234567890123456789012345678901234567890</span>
-                    </div>
-                    <div class="form-group row">
-                        <span id="profile4Name" style="display:inline; margin-left:40px;">5: 12345678901234567890123456789012345678901234567890</span>
-                    </div>
-                    <div class="form-group row">
-                        <span id="profile5Name" style="display:inline; margin-left:40px;">6: 12345678901234567890123456789012345678901234567890</span>
-                    </div>
-                    <div class="form-group row">
-                        <span id="profile6Name" style="display:inline; margin-left:40px;">7: 12345678901234567890123456789012345678901234567890</span>
-                    </div>
-                    <div class="form-group row mb-3">
-                        <span id="profile7Name" style="display:inline; margin-left:40px;">8: 12345678901234567890123456789012345678901234567890</span>
-                    </div>
-
-                    <div class="form-group row">
-                        <label for="bootProfileName" class="box-margin20 col-sm-3 col-4 col-form-label">Boot Profile</label>
-                        <div class="col-sm-8 col-7">
-                            <input type="text" class="form-control" id="bootProfileNumber">
-                            <p id="bootProfileNumberError" class="inlineError"></p>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -917,7 +933,7 @@
 
                     <div id="surveyInRadio">
                         <input type="radio" id="baseTypeSurveyIn" name="baseType" class="form-radio" checked>
-                        <label for="baseTypeSurveyIn"><strong>Survey-In</strong></label>
+                        <label for="baseTypeSurveyIn">Survey-In</label>
                         <span class="tt" data-bs-placement="right"
                             title="If the precise location of a base station is not known it may be obtained by ‘surveying’ the location. The base is fixed in one place and takes approximately 60 seconds worth of readings to obtain a best fit location based on the measurements. This method achieves ~30cm accurate position but can vary. Increasing the Minimum Observation Time and/or Required Mean Deviation will increase accuracy but only to a point. Better accuracy is achieved with long-term logging and post processing. Default: 60s and 5.0m. Limits: 60 to 900s, 1.0 to 5.0m.">
                             <span class="icon-info-circle text-primary ms-2"></span>
@@ -956,7 +972,7 @@
 
                     <div id="fixedRadio">
                         <input type="radio" id="baseTypeFixed" name="baseType" value="1" class="form-radio">
-                        <label for="baseTypeFixed"><strong>Fixed</strong> <span class="small">(Choose ECEF or
+                        <label for="baseTypeFixed">Fixed<span class="small">(Choose ECEF or
                                 Geodetic)</span></label>
                         <span class="tt" data-bs-placement="right"
                             title="If the location of the base is known it can be entered in either ECEF or Geodetic coordinates. In this mode the receiver will immediately begin outputting RTCM correction data. A fixed position is best obtained with PPP (please see our tutorial) or with post processing against a reference station. Default: SparkFun's location in Boulder, Colorado.">
@@ -1457,7 +1473,7 @@
             <hr>
             <div class="row">
                 <div align="center" class="col-sm-5 offset-sm-1 col-12 offset-0 mb-2">
-                    <button type="button" id="saveBtn" class="btn btn-secondary" onclick="validateFields()">Save
+                    <button type="button" id="saveBtn" class="btn btn-secondary" onclick="saveConfig()">Save
                         Configuration <span class="icon-save ms-1"></span></button>
                     <p id="saveBtnError" class="inlineError"></p>
                     <p id="saveBtnSuccess" class="inlineSuccess"></p>

@@ -258,7 +258,10 @@ void updateSystemState()
             }
             else if (settings.fixedBase == true)
             {
-              ntripServerStart();
+              if (settings.enableNtripServer)
+                ntripServerStart();
+              else
+                bluetoothStart();
               changeState(STATE_BASE_FIXED_NOT_STARTED);
             }
           }
@@ -324,7 +327,7 @@ void updateSystemState()
 
             //Start the NTRIP server if requested
             if ((settings.ntripServer_StartAtSurveyIn == false)
-              && (settings.enableNtripServer == true))
+                && (settings.enableNtripServer == true))
             {
               ntripServerStart();
             }
@@ -440,7 +443,6 @@ void updateSystemState()
               //Get the marks file name
               char fileName[32];
               bool fileOpen = false;
-              size_t fileSize;
               char markBuffer[100];
               bool sdCardWasOnline;
               int year;
@@ -458,7 +460,7 @@ void updateSystemState()
               //Try to gain access the SD card
               sdCardWasOnline = online.microSD;
               if (online.microSD != true)
-                  beginSD();
+                beginSD();
 
               if (online.microSD == true)
               {
@@ -468,22 +470,22 @@ void updateSystemState()
                 {
                   fileOpen = true;
                   marksFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                                 rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+                                       rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
                 }
                 else if (marksFile && marksFile->open(fileName, O_CREAT | O_WRITE))
                 {
                   fileOpen = true;
                   marksFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                                 rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+                                       rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
                   marksFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                                rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+                                       rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
 
                   //Add the column headers
                   //YYYYMMDDHHMMSS, Lat: xxxx, Long: xxxx, Alt: xxxx, SIV: xx, HPA: xxxx, Batt: xxx
                   //                           1         2         3         4         5         6         7         8         9
                   //                  1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901
                   strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
-                  int writeBytes = marksFile->write(markBuffer, strlen(markBuffer));
+                  marksFile->write(markBuffer, strlen(markBuffer));
                 }
                 if (fileOpen)
                 {
@@ -513,7 +515,7 @@ void updateSystemState()
                              battLevel, battVoltage);
 
                   //Write the mark to the file
-                  int writeBytes = marksFile->write(markBuffer, strlen(markBuffer));
+                  marksFile->write(markBuffer, strlen(markBuffer));
 
                   // Update the file to create time & date
                   updateDataFileCreate(marksFile);
@@ -529,7 +531,7 @@ void updateSystemState()
 
                 //Dismount the SD card
                 if (!sdCardWasOnline)
-                    endSD(true, false);
+                  endSD(true, false);
               }
             }
 
@@ -1039,12 +1041,15 @@ void changeState(SystemState newState)
       break;
   }
 
-  //Timestamp the state change
-  //         1         2
-  //12345678901234567890123456
-  //YYYY-mm-dd HH:MM:SS.xxxrn0
-  struct tm timeinfo = rtc.getTimeStruct();
-  char s[30];
-  strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", &timeinfo);
-  Serial.printf(", %s.%03d\r\n", s, rtc.getMillis());
+  if (online.rtc)
+  {
+    //Timestamp the state change
+    //         1         2
+    //12345678901234567890123456
+    //YYYY-mm-dd HH:MM:SS.xxxrn0
+    struct tm timeinfo = rtc.getTimeStruct();
+    char s[30];
+    strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", &timeinfo);
+    Serial.printf(", %s.%03ld\r\n", s, rtc.getMillis());
+  }
 }

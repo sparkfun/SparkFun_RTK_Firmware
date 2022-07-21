@@ -414,8 +414,8 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
 
   //Profiles
-  stringRecord(settingsCSV, "profileNumber", profileNumber + 1);
-  stringRecord(settingsCSV, "profileName", profileNames[profileNumber]);
+  stringRecord(settingsCSV, "profileName", profileNames[profileNumber]); //Must come before profile number so AP config page JS has name before number
+  stringRecord(settingsCSV, "profileNumber", profileNumber);
   for (int index = 0; index < MAX_PROFILE_COUNT; index++)
   {
     sprintf(tagText, "profile%dName", index);
@@ -513,8 +513,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "profileNumber") == 0)
   {
     if ((sscanf(settingValueStr, "%d", &newProfileNumber) == 1)
-      && (newProfileNumber >= 1) && (newProfileNumber <= MAX_PROFILE_COUNT)
-      && (profileNumber != newProfileNumber))
+        && (newProfileNumber >= 1) && (newProfileNumber <= MAX_PROFILE_COUNT)
+        && (profileNumber != newProfileNumber))
     {
       profileNumber = newProfileNumber - 1;
 
@@ -526,8 +526,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "bootProfileNumber") == 0)
   {
     if ((sscanf(settingValueStr, "%d", &bootProfileNumber) != 1)
-      || (bootProfileNumber < 1)
-      || (bootProfileNumber > (MAX_PROFILE_COUNT + 1)))
+        || (bootProfileNumber < 1)
+        || (bootProfileNumber > (MAX_PROFILE_COUNT + 1)))
       bootProfileNumber = 1;
   }
 
@@ -617,6 +617,21 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     //Reboot the machine
     ESP.restart();
+  }
+  else if (strcmp(settingName, "setProfile") == 0)
+  {
+    //Change to new profile
+    changeProfileNumber(settingValue);
+
+    //Load new profile into system
+    loadSettings();
+
+    //Send settings to browser
+    char settingsCSV[AP_CONFIG_SETTING_SIZE];
+    memset(settingsCSV, 0, sizeof(settingsCSV));
+    createSettingsString(settingsCSV);
+    log_d("Sending command: %s\n\r", settingsCSV);
+    ws.textAll(String(settingsCSV));
   }
 
   //Check for bulk settings (constellations and message rates)
@@ -751,7 +766,7 @@ bool parseIncomingSettings()
       headPtr = commaPtr + 1;
     }
 
-    log_d("settingName: %s value: %s", settingName, valueStr);
+    //log_d("settingName: %s value: %s", settingName, valueStr);
 
     updateSettingWithValue(settingName, valueStr);
   }

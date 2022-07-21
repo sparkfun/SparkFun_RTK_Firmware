@@ -42,9 +42,13 @@ const int FIRMWARE_VERSION_MINOR = 3;
 #include "settings.h"
 
 #define MAX_CPU_CORES               2
-#define IDLE_COUNT_PER_SECOND       196289
+#define IDLE_COUNT_PER_SECOND       1000
 #define IDLE_TIME_DISPLAY_SECONDS   5
 #define MAX_IDLE_TIME_COUNT         (IDLE_TIME_DISPLAY_SECONDS * IDLE_COUNT_PER_SECOND)
+#define MILLISECONDS_IN_A_SECOND    1000
+#define MILLISECONDS_IN_A_MINUTE    (60 * MILLISECONDS_IN_A_SECOND)
+#define MILLISECONDS_IN_AN_HOUR     (60 * MILLISECONDS_IN_A_MINUTE)
+#define MILLISECONDS_IN_A_DAY       (24 * MILLISECONDS_IN_AN_HOUR)
 
 //Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -93,7 +97,7 @@ uint8_t activeProfiles = 0; //Bit vector indicating which profiles are active
 uint8_t displayProfile; //Range: 0 - (MAX_PROFILE_COUNT - 1)
 uint8_t profileNumber = MAX_PROFILE_COUNT; //profileNumber gets set once at boot to save loading time
 char profileNames[MAX_PROFILE_COUNT][50]; //Populated based on names found in LittleFS and SD
-char settingsFileName[40]; //Contains the %s_Settings_%d.txt with current profile number set
+char settingsFileName[60]; //Contains the %s_Settings_%d.txt with current profile number set
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time
@@ -228,12 +232,11 @@ float battChangeRate = 0.0;
 #include "src/BluetoothSerial/BluetoothSerial.h"
 #endif
 
-char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names
+char platformPrefix[55] = "Surveyor"; //Sets the prefix for broadcast names
 
 HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
 #define SERIAL_SIZE_RX (1024 * 6) //Should match buffer size in BluetoothSerial.cpp. Reduced from 16384 to make room for WiFi/NTRIP server capabilities
-uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
 
@@ -341,7 +344,7 @@ float lBandEBNO = 0.0; //Used on system status menu
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
-char deviceName[30]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
+char deviceName[70]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
@@ -422,9 +425,11 @@ unsigned long systemTestDisplayTime = 0; //Timestamp for swapping the graphic du
 uint8_t systemTestDisplayNumber = 0; //Tracks which test screen we're looking at
 unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to update during PointPerfect Key checking
 
-uint32_t cpuIdleCount[MAX_CPU_CORES];
 TaskHandle_t idleTaskHandle[MAX_CPU_CORES];
-uint32_t cpuLastIdleDisplayTime;
+uint32_t max_idle_count = MAX_IDLE_TIME_COUNT;
+
+uint64_t uptime;
+uint32_t previousMilliseconds;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -432,13 +437,10 @@ void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
 
+  beginIdleTasks();
+
   Wire.begin(); //Start I2C on core 1
   //Wire.setClock(400000);
-
-  //Initialize the CPU idle time counts
-  for (int index = 0; index < MAX_CPU_CORES; index++)
-    cpuIdleCount[index] = 0;
-  cpuLastIdleDisplayTime = millis();
 
   beginDisplay(); //Start display first to be able to display any errors
 
@@ -477,14 +479,12 @@ void setup()
   log_d("Boot time: %d", millis());
 
   danceLEDs(); //Turn on LEDs like a car dashboard
-
-  beginIdleTasks();
 }
 
 void loop()
 {
   uint32_t delayTime;
-
+  uint32_t currentMilliseconds;
 
   if (online.gnss == true)
   {
@@ -520,40 +520,8 @@ void loop()
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;
 
-  //Display the CPU idle time
-  if (settings.enablePrintIdleTime)
-    printIdleTimes();
-
   //A small delay prevents panic if no other I2C or functions are called
   delay(10);
-}
-
-//Print the CPU idle times
-void printIdleTimes()
-{
-  uint32_t idleCount[MAX_CPU_CORES];
-  int index;
-
-  //Determine if it is time to print the CPU idle times
-  if ((millis() - cpuLastIdleDisplayTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000))
-  {
-    //Get the idle times
-    cpuLastIdleDisplayTime = millis();
-    for (index = 0; index < MAX_CPU_CORES; index++)
-    {
-      idleCount[index] = cpuIdleCount[index];
-      cpuIdleCount[index] = 0;
-    }
-
-    //Display the idle times
-    for (int index = 0; index < MAX_CPU_CORES; index++)
-      Serial.printf("CPU %d idle time: %d%% (%d/%d)\r\n", index,
-                    idleCount[index] * 100 / MAX_IDLE_TIME_COUNT,
-                    idleCount[index], MAX_IDLE_TIME_COUNT);
-
-    //Print the task count
-    Serial.printf("%d Tasks\r\n", uxTaskGetNumberOfTasks());
-  }
 }
 
 //Create or close files as needed (startup or as user changes settings)
@@ -756,5 +724,5 @@ void updateRTC()
 
 void printElapsedTime(const char* title)
 {
-  Serial.printf("%s: %d\n\r", title, millis() - startTime);
+  Serial.printf("%s: %ld\n\r", title, millis() - startTime);
 }

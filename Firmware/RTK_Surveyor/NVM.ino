@@ -19,7 +19,7 @@
 void loadSettings()
 {
   //If we have a profile in both LFS and SD, the SD settings will overwrite LFS
-  //loadSystemSettingsFromFileLFS(settingsFileName, &settings); - Previously loaded during loadSettingsPartial()
+  loadSystemSettingsFromFileLFS(settingsFileName, &settings);
   loadSystemSettingsFromFileSD(settingsFileName, &settings);
 
   //Change empty profile name to 'Profile1' etc
@@ -67,7 +67,6 @@ void recordSystemSettings()
 void recordSystemSettingsToFileSD(char *fileName)
 {
   bool gotSemaphore = false;
-  bool status = false;
   bool wasSdCardOnline;
 
   //Try to gain access the SD card
@@ -100,8 +99,6 @@ void recordSystemSettingsToFileSD(char *fileName)
       settingsFile.close();
 
       log_d("Settings recorded to SD: %s", fileName);
-
-      xSemaphoreGive(sdCardSemaphore);
     }
     else
     {
@@ -145,106 +142,106 @@ void recordSystemSettingsToFileLFS(char *fileName)
 //Write the settings struct to a clear text file
 void recordSystemSettingsToFile(File * settingsFile)
 {
-  settingsFile->printf("%s=%d\n\r", F("sizeOfSettings"), settings.sizeOfSettings);
-  settingsFile->printf("%s=%d\n\r", F("rtkIdentifier"), settings.rtkIdentifier);
+  settingsFile->printf("%s=%d\n\r", "sizeOfSettings", settings.sizeOfSettings);
+  settingsFile->printf("%s=%d\n\r", "rtkIdentifier", settings.rtkIdentifier);
 
   char firmwareVersion[30]; //v1.3 December 31 2021
   sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
-  settingsFile->printf("%s=%s\n\r", F("rtkFirmwareVersion"), firmwareVersion);
+  settingsFile->printf("%s=%s\n\r", "rtkFirmwareVersion", firmwareVersion);
 
-  settingsFile->printf("%s=%s\n\r", F("zedFirmwareVersion"), zedFirmwareVersion);
+  settingsFile->printf("%s=%s\n\r", "zedFirmwareVersion", zedFirmwareVersion);
   if (productVariant == RTK_FACET_LBAND)
-    settingsFile->printf("%s=%s\n\r", F("neoFirmwareVersion"), neoFirmwareVersion);
-  settingsFile->printf("%s=%d\n\r", F("printDebugMessages"), settings.printDebugMessages);
-  settingsFile->printf("%s=%d\n\r", F("enableSD"), settings.enableSD);
-  settingsFile->printf("%s=%d\n\r", F("enableDisplay"), settings.enableDisplay);
-  settingsFile->printf("%s=%d\n\r", F("maxLogTime_minutes"), settings.maxLogTime_minutes);
-  settingsFile->printf("%s=%d\n\r", F("maxLogLength_minutes"), settings.maxLogLength_minutes);
-  settingsFile->printf("%s=%d\n\r", F("observationSeconds"), settings.observationSeconds);
-  settingsFile->printf("%s=%0.2f\n\r", F("observationPositionAccuracy"), settings.observationPositionAccuracy);
-  settingsFile->printf("%s=%d\n\r", F("fixedBase"), settings.fixedBase);
-  settingsFile->printf("%s=%d\n\r", F("fixedBaseCoordinateType"), settings.fixedBaseCoordinateType);
-  settingsFile->printf("%s=%0.3f\n\r", F("fixedEcefX"), settings.fixedEcefX); //-1280206.568
-  settingsFile->printf("%s=%0.3f\n\r", F("fixedEcefY"), settings.fixedEcefY);
-  settingsFile->printf("%s=%0.3f\n\r", F("fixedEcefZ"), settings.fixedEcefZ);
-  settingsFile->printf("%s=%0.9f\n\r", F("fixedLat"), settings.fixedLat); //40.09029479
-  settingsFile->printf("%s=%0.9f\n\r", F("fixedLong"), settings.fixedLong);
-  settingsFile->printf("%s=%0.4f\n\r", F("fixedAltitude"), settings.fixedAltitude);
-  settingsFile->printf("%s=%d\n\r", F("dataPortBaud"), settings.dataPortBaud);
-  settingsFile->printf("%s=%d\n\r", F("radioPortBaud"), settings.radioPortBaud);
-  settingsFile->printf("%s=%0.1f\n\r", F("surveyInStartingAccuracy"), settings.surveyInStartingAccuracy);
-  settingsFile->printf("%s=%d\n\r", F("measurementRate"), settings.measurementRate);
-  settingsFile->printf("%s=%d\n\r", F("navigationRate"), settings.navigationRate);
-  settingsFile->printf("%s=%d\n\r", F("enableI2Cdebug"), settings.enableI2Cdebug);
-  settingsFile->printf("%s=%d\n\r", F("enableHeapReport"), settings.enableHeapReport);
-  settingsFile->printf("%s=%d\n\r", F("enableTaskReports"), settings.enableTaskReports);
-  settingsFile->printf("%s=%d\n\r", F("dataPortChannel"), (uint8_t)settings.dataPortChannel);
-  settingsFile->printf("%s=%d\n\r", F("spiFrequency"), settings.spiFrequency);
-  settingsFile->printf("%s=%d\n\r", F("sppRxQueueSize"), settings.sppRxQueueSize);
-  settingsFile->printf("%s=%d\n\r", F("sppTxQueueSize"), settings.sppTxQueueSize);
-  settingsFile->printf("%s=%d\n\r", F("dynamicModel"), settings.dynamicModel);
-  settingsFile->printf("%s=%d\n\r", F("lastState"), settings.lastState);
-  settingsFile->printf("%s=%d\n\r", F("throttleDuringSPPCongestion"), settings.throttleDuringSPPCongestion);
-  settingsFile->printf("%s=%d\n\r", F("enableSensorFusion"), settings.enableSensorFusion);
-  settingsFile->printf("%s=%d\n\r", F("autoIMUmountAlignment"), settings.autoIMUmountAlignment);
-  settingsFile->printf("%s=%d\n\r", F("enableResetDisplay"), settings.enableResetDisplay);
-  settingsFile->printf("%s=%d\n\r", F("enableExternalPulse"), settings.enableExternalPulse);
-  settingsFile->printf("%s=%d\n\r", F("externalPulseTimeBetweenPulse_us"), settings.externalPulseTimeBetweenPulse_us);
-  settingsFile->printf("%s=%d\n\r", F("externalPulseLength_us"), settings.externalPulseLength_us);
-  settingsFile->printf("%s=%d\n\r", F("externalPulsePolarity"), settings.externalPulsePolarity);
-  settingsFile->printf("%s=%d\n\r", F("enableExternalHardwareEventLogging"), settings.enableExternalHardwareEventLogging);
-  settingsFile->printf("%s=%s\n\r", F("profileName"), settings.profileName);
-  settingsFile->printf("%s=%d\n\r", F("enableNtripServer"), settings.enableNtripServer);
-  settingsFile->printf("%s=%d\n\r", F("ntripServer_StartAtSurveyIn"), settings.ntripServer_StartAtSurveyIn);
-  settingsFile->printf("%s=%s\n\r", F("ntripServer_CasterHost"), settings.ntripServer_CasterHost);
-  settingsFile->printf("%s=%d\n\r", F("ntripServer_CasterPort"), settings.ntripServer_CasterPort);
-  settingsFile->printf("%s=%s\n\r", F("ntripServer_CasterUser"), settings.ntripServer_CasterUser);
-  settingsFile->printf("%s=%s\n\r", F("ntripServer_CasterUserPW"), settings.ntripServer_CasterUserPW);
-  settingsFile->printf("%s=%s\n\r", F("ntripServer_MountPoint"), settings.ntripServer_MountPoint);
-  settingsFile->printf("%s=%s\n\r", F("ntripServer_MountPointPW"), settings.ntripServer_MountPointPW);
-  settingsFile->printf("%s=%s\n\r", F("ntripServer_wifiSSID"), settings.ntripServer_wifiSSID);
-  settingsFile->printf("%s=%s\n\r", F("ntripServer_wifiPW"), settings.ntripServer_wifiPW);
-  settingsFile->printf("%s=%d\n\r", F("enableNtripClient"), settings.enableNtripClient);
-  settingsFile->printf("%s=%s\n\r", F("ntripClient_CasterHost"), settings.ntripClient_CasterHost);
-  settingsFile->printf("%s=%d\n\r", F("ntripClient_CasterPort"), settings.ntripClient_CasterPort);
-  settingsFile->printf("%s=%s\n\r", F("ntripClient_CasterUser"), settings.ntripClient_CasterUser);
-  settingsFile->printf("%s=%s\n\r", F("ntripClient_CasterUserPW"), settings.ntripClient_CasterUserPW);
-  settingsFile->printf("%s=%s\n\r", F("ntripClient_MountPoint"), settings.ntripClient_MountPoint);
-  settingsFile->printf("%s=%s\n\r", F("ntripClient_MountPointPW"), settings.ntripClient_MountPointPW);
-  settingsFile->printf("%s=%s\n\r", F("ntripClient_wifiSSID"), settings.ntripClient_wifiSSID);
-  settingsFile->printf("%s=%s\n\r", F("ntripClient_wifiPW"), settings.ntripClient_wifiPW);
-  settingsFile->printf("%s=%d\n\r", F("ntripClient_TransmitGGA"), settings.ntripClient_TransmitGGA);
-  settingsFile->printf("%s=%d\n\r", F("enableSdCardServer"), settings.enableSdCardServer);
-  settingsFile->printf("%s=%d\n\r", F("serialTimeoutGNSS"), settings.serialTimeoutGNSS);
-  settingsFile->printf("%s=%s\n\r", F("pointPerfectDeviceProfileToken"), settings.pointPerfectDeviceProfileToken);
-  settingsFile->printf("%s=%d\n\r", F("enablePointPerfectCorrections"), settings.enablePointPerfectCorrections);
-  settingsFile->printf("%s=%s\n\r", F("home_wifiSSID"), settings.home_wifiSSID);
-  settingsFile->printf("%s=%s\n\r", F("home_wifiPW"), settings.home_wifiPW);
-  settingsFile->printf("%s=%d\n\r", F("autoKeyRenewal"), settings.autoKeyRenewal);
-  settingsFile->printf("%s=%s\n\r", F("pointPerfectClientID"), settings.pointPerfectClientID);
-  settingsFile->printf("%s=%s\n\r", F("pointPerfectBrokerHost"), settings.pointPerfectBrokerHost);
-  settingsFile->printf("%s=%s\n\r", F("pointPerfectLBandTopic"), settings.pointPerfectLBandTopic);
-  settingsFile->printf("%s=%s\n\r", F("pointPerfectCurrentKey"), settings.pointPerfectCurrentKey);
-  settingsFile->printf("%s=%llu\n\r", F("pointPerfectCurrentKeyDuration"), settings.pointPerfectCurrentKeyDuration);
-  settingsFile->printf("%s=%llu\n\r", F("pointPerfectCurrentKeyStart"), settings.pointPerfectCurrentKeyStart);
-  settingsFile->printf("%s=%s\n\r", F("pointPerfectNextKey"), settings.pointPerfectNextKey);
-  settingsFile->printf("%s=%llu\n\r", F("pointPerfectNextKeyDuration"), settings.pointPerfectNextKeyDuration);
-  settingsFile->printf("%s=%llu\n\r", F("pointPerfectNextKeyStart"), settings.pointPerfectNextKeyStart);
-  settingsFile->printf("%s=%llu\n\r", F("lastKeyAttempt"), settings.lastKeyAttempt);
-  settingsFile->printf("%s=%d\n\r", F("updateZEDSettings"), settings.updateZEDSettings);
-  settingsFile->printf("%s=%d\n\r", F("LBandFreq"), settings.LBandFreq);
-  settingsFile->printf("%s=%d\n\r", F("enableLogging"), settings.enableLogging);
-  settingsFile->printf("%s=%d\n\r", F("timeZoneHours"), settings.timeZoneHours);
-  settingsFile->printf("%s=%d\n\r", F("timeZoneMinutes"), settings.timeZoneMinutes);
-  settingsFile->printf("%s=%d\n\r", F("timeZoneSeconds"), settings.timeZoneSeconds);
-  settingsFile->printf("%s=%d\n\r", F("enablePrintWifiIpAddress"), settings.enablePrintWifiIpAddress);
-  settingsFile->printf("%s=%d\n\r", F("enablePrintState"), settings.enablePrintState);
-  settingsFile->printf("%s=%d\n\r", F("enablePrintWifiState"), settings.enablePrintWifiState);
-  settingsFile->printf("%s=%d\n\r", F("enablePrintNtripClientState"), settings.enablePrintNtripClientState);
-  settingsFile->printf("%s=%d\n\r", F("enablePrintNtripServerState"), settings.enablePrintNtripServerState);
-  settingsFile->printf("%s=%d\n\r", F("enablePrintNtripServerRtcm"), settings.enablePrintNtripServerRtcm);
-  settingsFile->printf("%s=%d\n\r", F("enablePrintPosition"), settings.enablePrintPosition);
-  settingsFile->printf("%s=%d\n\r", F("enableMarksFile"), settings.enableMarksFile);
+    settingsFile->printf("%s=%s\n\r", "neoFirmwareVersion", neoFirmwareVersion);
+  settingsFile->printf("%s=%d\n\r", "printDebugMessages", settings.printDebugMessages);
+  settingsFile->printf("%s=%d\n\r", "enableSD", settings.enableSD);
+  settingsFile->printf("%s=%d\n\r", "enableDisplay", settings.enableDisplay);
+  settingsFile->printf("%s=%d\n\r", "maxLogTime_minutes", settings.maxLogTime_minutes);
+  settingsFile->printf("%s=%d\n\r", "maxLogLength_minutes", settings.maxLogLength_minutes);
+  settingsFile->printf("%s=%d\n\r", "observationSeconds", settings.observationSeconds);
+  settingsFile->printf("%s=%0.2f\n\r", "observationPositionAccuracy", settings.observationPositionAccuracy);
+  settingsFile->printf("%s=%d\n\r", "fixedBase", settings.fixedBase);
+  settingsFile->printf("%s=%d\n\r", "fixedBaseCoordinateType", settings.fixedBaseCoordinateType);
+  settingsFile->printf("%s=%0.3f\n\r", "fixedEcefX", settings.fixedEcefX); //-1280206.568
+  settingsFile->printf("%s=%0.3f\n\r", "fixedEcefY", settings.fixedEcefY);
+  settingsFile->printf("%s=%0.3f\n\r", "fixedEcefZ", settings.fixedEcefZ);
+  settingsFile->printf("%s=%0.9f\n\r", "fixedLat", settings.fixedLat); //40.09029479
+  settingsFile->printf("%s=%0.9f\n\r", "fixedLong", settings.fixedLong);
+  settingsFile->printf("%s=%0.4f\n\r", "fixedAltitude", settings.fixedAltitude);
+  settingsFile->printf("%s=%d\n\r", "dataPortBaud", settings.dataPortBaud);
+  settingsFile->printf("%s=%d\n\r", "radioPortBaud", settings.radioPortBaud);
+  settingsFile->printf("%s=%0.1f\n\r", "surveyInStartingAccuracy", settings.surveyInStartingAccuracy);
+  settingsFile->printf("%s=%d\n\r", "measurementRate", settings.measurementRate);
+  settingsFile->printf("%s=%d\n\r", "navigationRate", settings.navigationRate);
+  settingsFile->printf("%s=%d\n\r", "enableI2Cdebug", settings.enableI2Cdebug);
+  settingsFile->printf("%s=%d\n\r", "enableHeapReport", settings.enableHeapReport);
+  settingsFile->printf("%s=%d\n\r", "enableTaskReports", settings.enableTaskReports);
+  settingsFile->printf("%s=%d\n\r", "dataPortChannel", (uint8_t)settings.dataPortChannel);
+  settingsFile->printf("%s=%d\n\r", "spiFrequency", settings.spiFrequency);
+  settingsFile->printf("%s=%d\n\r", "sppRxQueueSize", settings.sppRxQueueSize);
+  settingsFile->printf("%s=%d\n\r", "sppTxQueueSize", settings.sppTxQueueSize);
+  settingsFile->printf("%s=%d\n\r", "dynamicModel", settings.dynamicModel);
+  settingsFile->printf("%s=%d\n\r", "lastState", settings.lastState);
+  settingsFile->printf("%s=%d\n\r", "throttleDuringSPPCongestion", settings.throttleDuringSPPCongestion);
+  settingsFile->printf("%s=%d\n\r", "enableSensorFusion", settings.enableSensorFusion);
+  settingsFile->printf("%s=%d\n\r", "autoIMUmountAlignment", settings.autoIMUmountAlignment);
+  settingsFile->printf("%s=%d\n\r", "enableResetDisplay", settings.enableResetDisplay);
+  settingsFile->printf("%s=%d\n\r", "enableExternalPulse", settings.enableExternalPulse);
+  settingsFile->printf("%s=%d\n\r", "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
+  settingsFile->printf("%s=%d\n\r", "externalPulseLength_us", settings.externalPulseLength_us);
+  settingsFile->printf("%s=%d\n\r", "externalPulsePolarity", settings.externalPulsePolarity);
+  settingsFile->printf("%s=%d\n\r", "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
+  settingsFile->printf("%s=%s\n\r", "profileName", settings.profileName);
+  settingsFile->printf("%s=%d\n\r", "enableNtripServer", settings.enableNtripServer);
+  settingsFile->printf("%s=%d\n\r", "ntripServer_StartAtSurveyIn", settings.ntripServer_StartAtSurveyIn);
+  settingsFile->printf("%s=%s\n\r", "ntripServer_CasterHost", settings.ntripServer_CasterHost);
+  settingsFile->printf("%s=%d\n\r", "ntripServer_CasterPort", settings.ntripServer_CasterPort);
+  settingsFile->printf("%s=%s\n\r", "ntripServer_CasterUser", settings.ntripServer_CasterUser);
+  settingsFile->printf("%s=%s\n\r", "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
+  settingsFile->printf("%s=%s\n\r", "ntripServer_MountPoint", settings.ntripServer_MountPoint);
+  settingsFile->printf("%s=%s\n\r", "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
+  settingsFile->printf("%s=%s\n\r", "ntripServer_wifiSSID", settings.ntripServer_wifiSSID);
+  settingsFile->printf("%s=%s\n\r", "ntripServer_wifiPW", settings.ntripServer_wifiPW);
+  settingsFile->printf("%s=%d\n\r", "enableNtripClient", settings.enableNtripClient);
+  settingsFile->printf("%s=%s\n\r", "ntripClient_CasterHost", settings.ntripClient_CasterHost);
+  settingsFile->printf("%s=%d\n\r", "ntripClient_CasterPort", settings.ntripClient_CasterPort);
+  settingsFile->printf("%s=%s\n\r", "ntripClient_CasterUser", settings.ntripClient_CasterUser);
+  settingsFile->printf("%s=%s\n\r", "ntripClient_CasterUserPW", settings.ntripClient_CasterUserPW);
+  settingsFile->printf("%s=%s\n\r", "ntripClient_MountPoint", settings.ntripClient_MountPoint);
+  settingsFile->printf("%s=%s\n\r", "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
+  settingsFile->printf("%s=%s\n\r", "ntripClient_wifiSSID", settings.ntripClient_wifiSSID);
+  settingsFile->printf("%s=%s\n\r", "ntripClient_wifiPW", settings.ntripClient_wifiPW);
+  settingsFile->printf("%s=%d\n\r", "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
+  settingsFile->printf("%s=%d\n\r", "enableSdCardServer", settings.enableSdCardServer);
+  settingsFile->printf("%s=%d\n\r", "serialTimeoutGNSS", settings.serialTimeoutGNSS);
+  settingsFile->printf("%s=%s\n\r", "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
+  settingsFile->printf("%s=%d\n\r", "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
+  settingsFile->printf("%s=%s\n\r", "home_wifiSSID", settings.home_wifiSSID);
+  settingsFile->printf("%s=%s\n\r", "home_wifiPW", settings.home_wifiPW);
+  settingsFile->printf("%s=%d\n\r", "autoKeyRenewal", settings.autoKeyRenewal);
+  settingsFile->printf("%s=%s\n\r", "pointPerfectClientID", settings.pointPerfectClientID);
+  settingsFile->printf("%s=%s\n\r", "pointPerfectBrokerHost", settings.pointPerfectBrokerHost);
+  settingsFile->printf("%s=%s\n\r", "pointPerfectLBandTopic", settings.pointPerfectLBandTopic);
+  settingsFile->printf("%s=%s\n\r", "pointPerfectCurrentKey", settings.pointPerfectCurrentKey);
+  settingsFile->printf("%s=%llu\n\r", "pointPerfectCurrentKeyDuration", settings.pointPerfectCurrentKeyDuration);
+  settingsFile->printf("%s=%llu\n\r", "pointPerfectCurrentKeyStart", settings.pointPerfectCurrentKeyStart);
+  settingsFile->printf("%s=%s\n\r", "pointPerfectNextKey", settings.pointPerfectNextKey);
+  settingsFile->printf("%s=%llu\n\r", "pointPerfectNextKeyDuration", settings.pointPerfectNextKeyDuration);
+  settingsFile->printf("%s=%llu\n\r", "pointPerfectNextKeyStart", settings.pointPerfectNextKeyStart);
+  settingsFile->printf("%s=%llu\n\r", "lastKeyAttempt", settings.lastKeyAttempt);
+  settingsFile->printf("%s=%d\n\r", "updateZEDSettings", settings.updateZEDSettings);
+  settingsFile->printf("%s=%d\n\r", "LBandFreq", settings.LBandFreq);
+  settingsFile->printf("%s=%d\n\r", "enableLogging", settings.enableLogging);
+  settingsFile->printf("%s=%d\n\r", "timeZoneHours", settings.timeZoneHours);
+  settingsFile->printf("%s=%d\n\r", "timeZoneMinutes", settings.timeZoneMinutes);
+  settingsFile->printf("%s=%d\n\r", "timeZoneSeconds", settings.timeZoneSeconds);
+  settingsFile->printf("%s=%d\n\r", "enablePrintWifiIpAddress", settings.enablePrintWifiIpAddress);
+  settingsFile->printf("%s=%d\n\r", "enablePrintState", settings.enablePrintState);
+  settingsFile->printf("%s=%d\n\r", "enablePrintWifiState", settings.enablePrintWifiState);
+  settingsFile->printf("%s=%d\n\r", "enablePrintNtripClientState", settings.enablePrintNtripClientState);
+  settingsFile->printf("%s=%d\n\r", "enablePrintNtripServerState", settings.enablePrintNtripServerState);
+  settingsFile->printf("%s=%d\n\r", "enablePrintNtripServerRtcm", settings.enablePrintNtripServerRtcm);
+  settingsFile->printf("%s=%d\n\r", "enablePrintPosition", settings.enablePrintPosition);
+  settingsFile->printf("%s=%d\n\r", "enableMarksFile", settings.enableMarksFile);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -919,7 +916,7 @@ void loadProfileNumber()
   File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_READ);
   if (!fileProfileNumber)
   {
-    log_d("profileNumber.txt not found");
+    Serial.println("profileNumber.txt not found");
     settings.updateZEDSettings = true; //Force module update
     recordProfileNumber(0); //Record profile
   }
@@ -932,7 +929,7 @@ void loadProfileNumber()
   //We have arbitrary limit of user profiles
   if (profileNumber >= MAX_PROFILE_COUNT)
   {
-    log_d("ProfileNumber invalid. Going to zero.");
+    Serial.println("ProfileNumber invalid. Going to zero.");
     settings.updateZEDSettings = true; //Force module update
     recordProfileNumber(0); //Record profile
   }
@@ -966,7 +963,7 @@ uint8_t loadProfileNames()
   //Check LittleFS and SD for profile names
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
   {
-    char fileName[40];
+    char fileName[56];
     sprintf(fileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
 
     if (getProfileName(fileName, profileNames[x], sizeof(profileNames[x])) == true)

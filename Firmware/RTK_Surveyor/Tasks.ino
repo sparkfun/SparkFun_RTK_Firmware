@@ -33,15 +33,17 @@ void F9PSerialWriteTask(void *e)
 //Task for reading data from the GNSS receiver.
 void F9PSerialReadTask(void *e)
 {
-  int btConnected;  //Is the RTK in a state to send Bluetooth data?
-  int btData;       //Amount of buffered Bluetooth data
-  int length;
   static uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
-  static uint16_t rBufferBtOffset;        //Removal offset for Bluetooth
-  static uint16_t rBufferFillOffset;      //Fill offset for serial data
-  static uint16_t rBufferSdOffset;        //Removal offset for microSD card logging
-  int s;
-  int sdData; //Amount of buffered microSD card logging data
+  static uint16_t dataHead = 0; //Head advances as data comes in from GNSS's UART
+  static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
+  static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
+
+  int btBytesToSend; //Amount of buffered Bluetooth data
+  int sdBytesToRecord; //Amount of buffered microSD card logging data
+  int availableBufferSpace; //Distance between head and furthest away tail
+
+  int btConnected; //Is the RTK in a state to send Bluetooth data?
+  int newBytesToRecord; //Size of data from GNSS
 
   while (true)
   {
@@ -55,128 +57,147 @@ void F9PSerialReadTask(void *e)
       //approximately 2 seconds worth of data.  Bluetooth congestion or conflicts
       //with the SD card semaphore should clear within this time.  At 57600 baud
       //the Bluetooth UART is able to send 7200 characters a second.  With a 10
-      //mSec delay this rouitne runs approximately 100 times per second providing
+      //mSec delay this routine runs approximately 100 times per second providing
       //multiple chances to empty the buffer.
       //
-      //Ring buffer empty when (rBufferFillOffset == rBufferBtOffset) and
-      //(rBufferFillOffset == rBufferSdOffset)
+      //Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
       //
       //        +---------+
       //        |         |
       //        |         |
       //        |         |
       //        |         |
-      //        +---------+ <-- rBufferFillOffset, rBufferBtOffset, rBufferSdOffset
+      //        +---------+ <-- dataHead, btTail, sdTail
       //
-      //Ring buffer contains data when (rBufferFillOffset != rBufferBtOffset) or
-      //(rBufferFillOffset != rBufferSdOffset)
-      //
-      //        +---------+
-      //        |         |
-      //        |         |
-      //        | yyyyyyy | <-- rBufferFillOffset
-      //        | xxxxxxx | <-- rBufferBtOffset (1 byte in buffer)
-      //        +---------+ <-- rBufferSdOffset (2 bytes in buffer)
+      //Ring buffer contains data when (dataHead != btTail) or (dataHead != sdTail)
       //
       //        +---------+
-      //        | yyyyyyy | <-- rBufferBtOffset (1 byte in buffer)
-      //        | xxxxxxx | <-- rBufferSdOffset (2 bytes in buffer)
       //        |         |
       //        |         |
-      //        +---------+ <-- rBufferFillOffset
+      //        | yyyyyyy | <-- dataHead
+      //        | xxxxxxx | <-- btTail (1 byte in buffer)
+      //        +---------+ <-- sdTail (2 bytes in buffer)
+      //
+      //        +---------+
+      //        | yyyyyyy | <-- btTail (1 byte in buffer)
+      //        | xxxxxxx | <-- sdTail (2 bytes in buffer)
+      //        |         |
+      //        |         |
+      //        +---------+ <-- dataHead
       //
       //Maximum ring buffer fill is sizeof(rBuffer) - 1
       //----------------------------------------------------------------------
 
-      //Determine the amount of Bluetooth data in the buffer
-      length = sizeof(rBuffer);
-      btData = 0;
+      availableBufferSpace = sizeof(rBuffer);
+
+      //Determine BT connection state
       btConnected = (bluetoothGetState() == BT_CONNECTED)
-                     && (systemState != STATE_BASE_TEMP_SETTLE)
-                     && (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
+                    && (systemState != STATE_BASE_TEMP_SETTLE)
+                    && (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
+
+      //Determine the amount of Bluetooth data in the buffer
+      btBytesToSend = 0;
       if (btConnected)
       {
-        btData = rBufferFillOffset - rBufferBtOffset;
-        if (btData < 0)
-          btData += sizeof(rBuffer);
-        length = sizeof(rBuffer) - btData;
+        btBytesToSend = dataHead - btTail;
+        if (btBytesToSend < 0)
+          btBytesToSend += sizeof(rBuffer);
       }
+      Serial.printf("btBytesToSend: %d ", btBytesToSend);
 
       //Determine the amount of microSD card logging data in the buffer
-      sdData = 0;
+      sdBytesToRecord = 0;
       if (online.logging)
       {
-        sdData = rBufferFillOffset - rBufferSdOffset;
-        if (sdData < 0)
-          sdData += sizeof(rBuffer);
-        if (length > (sizeof(rBuffer) - sdData))
-          length = sizeof(rBuffer) - sdData;
+        sdBytesToRecord = dataHead - sdTail;
+        if (sdBytesToRecord < 0)
+          sdBytesToRecord += sizeof(rBuffer);
       }
+      Serial.printf("sdBytesToRecord: %d ", sdBytesToRecord);
 
       //Determine the free bytes in the buffer
+      if (btBytesToSend >= sdBytesToRecord)
+        availableBufferSpace = sizeof(rBuffer) - btBytesToSend;
+      else
+        availableBufferSpace = sizeof(rBuffer) - sdBytesToRecord;
+
+      Serial.printf("pure: %d ", availableBufferSpace);
+
       //Don't fill the last byte to prevent buffer overflow
-      if (length)
-        length -= 1;
+      if (availableBufferSpace)
+        availableBufferSpace -= 1;
+
+      Serial.printf("protected: %d ", availableBufferSpace);
 
       //Fill the buffer to the end and then start at the beginning
-      if ((rBufferFillOffset + length) > sizeof(rBuffer))
-        length = sizeof(rBuffer) - rBufferFillOffset;
+      if ((dataHead + availableBufferSpace) > sizeof(rBuffer))
+        availableBufferSpace = sizeof(rBuffer) - dataHead;
 
-      //Read more data from the GNSS into the buffer
-      s = 0;
-      if (length)
-        s = serialGNSS.readBytes(rBuffer, length);
+      Serial.printf("trimmed: %d ", availableBufferSpace);
 
-      //Account for the bytes read
-      if (s > 0)
+      //If we have buffer space, read data from the GNSS into the buffer
+      newBytesToRecord = 0;
+      if (availableBufferSpace)
+      {
+        //Add new data into circular buffer in front of the head
+        //availableBufferSpace is already reduced to avoid buffer overflow
+        newBytesToRecord = serialGNSS.readBytes(&rBuffer[dataHead], availableBufferSpace);
+      }
+
+      //Account for the byte read
+      if (newBytesToRecord > 0)
       {
         //Set the next fill offset
-        rBufferFillOffset += s;
-        if (rBufferFillOffset >= sizeof(rBuffer))
-          rBufferFillOffset -= sizeof(rBuffer);
+        dataHead += newBytesToRecord;
+        if (dataHead >= sizeof(rBuffer))
+          dataHead -= sizeof(rBuffer);
 
         //Account for the new data
         if (btConnected)
-          btData += s;
+          btBytesToSend += newBytesToRecord;
         if (online.logging)
-          sdData += s;
+          sdBytesToRecord += newBytesToRecord;
       }
+
+      Serial.printf("btBytesToSend: %d ", btBytesToSend);
+      Serial.printf("sdBytesToRecord: %d ", sdBytesToRecord);
+
+      Serial.println();
 
       //----------------------------------------------------------------------
       //Send data over Bluetooth
       //----------------------------------------------------------------------
 
       //If we are actively survey-in then do not pass NMEA data from ZED to phone
-      if (!btData)
+      if (!btConnected)
         //Discard the data
-        rBufferBtOffset = rBufferFillOffset;
+        btTail = dataHead;
       else
       {
-        //Fill the buffer to the end and then start at the beginning
-        length = btData;
-        if ((rBufferBtOffset + length) > sizeof(rBuffer))
-          length = sizeof(rBuffer) - rBufferBtOffset;
+        //Reduce bytes to send if we have more to send then the end of the buffer
+        //We'll wrap next loop
+        if ((btTail + btBytesToSend) > sizeof(rBuffer))
+          btBytesToSend = sizeof(rBuffer) - btTail;
 
         if ((bluetoothIsCongested() == false) || (settings.throttleDuringSPPCongestion == false))
         {
           //Push new data to BT SPP if not congested or not throttling
-          length = bluetoothWriteBytes(&rBuffer[rBufferBtOffset], length);
+          btBytesToSend = bluetoothWriteBytes(&rBuffer[btTail], btBytesToSend);
           online.txNtripDataCasting = true;
         }
         else
         {
           //Don't push data to BT SPP if there is congestion to prevent heap hits.
-          if (btData < (sizeof(rBuffer) - 1))
-            length = 0;
+          if (btBytesToSend < (sizeof(rBuffer) - 1))
+            btBytesToSend = 0;
           else
-            Serial.printf("ERROR - Congestion, dropped %d bytes: GNSS --> Bluetooth\r\n", length);
+            Serial.printf("ERROR - Congestion, dropped %d bytes: GNSS --> Bluetooth\r\n", btBytesToSend);
         }
 
         //Account for the sent data or dropped
-        //Set the next removal offset
-        rBufferBtOffset += length;
-        if (rBufferBtOffset >= sizeof(rBuffer))
-          rBufferBtOffset -= sizeof(rBuffer);
+        btTail += btBytesToSend;
+        if (btTail >= sizeof(rBuffer))
+          btTail -= sizeof(rBuffer);
       }
 
       //----------------------------------------------------------------------
@@ -186,7 +207,7 @@ void F9PSerialReadTask(void *e)
       //If user wants to log, record to SD
       if (!online.logging)
         //Discard the data
-        rBufferSdOffset = rBufferFillOffset;
+        sdTail = dataHead;
       else
       {
         //Check if we are inside the max time window for logging
@@ -196,29 +217,29 @@ void F9PSerialReadTask(void *e)
           //writing from other functions like recordSystemSettingsToFile()
           if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
           {
-            //Fill the buffer to the end and then start at the beginning
-            length = sdData;
-            if ((rBufferSdOffset + length) > sizeof(rBuffer))
-              length = sizeof(rBuffer) - rBufferSdOffset;
+            //Reduce bytes to send if we have more to send then the end of the buffer
+            //We'll wrap next loop
+            if ((sdTail + sdBytesToRecord) > sizeof(rBuffer))
+              sdBytesToRecord = sizeof(rBuffer) - sdTail;
 
             //Write the data to the file
-            length = ubxFile->write(rBuffer, length);
+            sdBytesToRecord = ubxFile->write(rBuffer, sdBytesToRecord);
             xSemaphoreGive(sdCardSemaphore);
 
             //Account for the sent data or dropped
-            rBufferSdOffset += length;
-            if (rBufferSdOffset >= sizeof(rBuffer))
-              rBufferSdOffset -= sizeof(rBuffer);
+            sdTail += sdBytesToRecord;
+            if (sdTail >= sizeof(rBuffer))
+              sdTail -= sizeof(rBuffer);
           } //End sdCardSemaphore
           else
           {
             //Retry the semaphore a little later if possible
-            if (sdData == (sizeof(rBuffer) - 1))
+            if (sdBytesToRecord == (sizeof(rBuffer) - 1))
             {
               //Error - no more room in the buffer, drop a buffer's worth of data
-              rBufferSdOffset = rBufferFillOffset;
+              sdTail = dataHead;
               log_e("ERROR - sdCardSemaphore failed to yield, Tasks.ino line %d\r\n", __LINE__);
-              Serial.printf("ERROR - Dropped %d bytes: GNSS --> log file\r\n", sdData);
+              Serial.printf("ERROR - Dropped %d bytes: GNSS --> log file\r\n", sdBytesToRecord);
             }
             else
               log_w("WARNING - sdCardSemaphore failed to yield, Tasks.ino line %d\r\n", __LINE__);
@@ -231,7 +252,7 @@ void F9PSerialReadTask(void *e)
     //Let other tasks run, prevent watch dog timer (WDT) resets
     //----------------------------------------------------------------------
 
-    delay(10);
+    delay(50);
   }
 }
 
@@ -623,7 +644,7 @@ void idleTask(void *e)
 
     //Display the high water mark if requested
     if ((settings.enableTaskReports == true)
-      && ((millis() - lastStackPrintTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000)))
+        && ((millis() - lastStackPrintTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000)))
     {
       lastStackPrintTime = millis();
       Serial.printf("idleTask %d High watermark: %d\n\r",

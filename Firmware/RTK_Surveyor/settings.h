@@ -149,6 +149,53 @@ enum RtcmTransportState
   RTCM_TRANSPORT_STATE_CHECK_CRC
 };
 
+//Message parsing state for RTCM and NMEA messages
+enum ParseState
+{
+  PARSE_STATE_WAIT_FOR_PREAMBLE = 0,
+  PARSE_STATE_RTCM_READ_LENGTH_1,
+  PARSE_STATE_RTCM_READ_LENGTH_2,
+  PARSE_STATE_RTCM_READ_MESSAGE_1,
+  PARSE_STATE_RTCM_READ_MESSAGE_2,
+  PARSE_STATE_RTCM_READ_DATA,
+  PARSE_STATE_RTCM_READ_CRC_1,
+  PARSE_STATE_RTCM_READ_CRC_2,
+  PARSE_STATE_RTCM_READ_CRC_3,
+  PARSE_STATE_RTCM_CHECK_CRC,
+  PARSE_STATE_NMEA_FIND_COMMA,
+  PARSE_STATE_NMEA_FIND_ASTERISK,
+  PARSE_STATE_NMEA_VERIFY_CHECKSUM_1,
+  PARSE_STATE_NMEA_VERIFY_CHECKSUM_2
+};
+
+typedef struct _PARSE_STATE
+{
+  uint32_t crc;
+  uint32_t rtcmCrc;
+  uint32_t rtcmPackets;
+  uint32_t invalidCharacters;
+  uint32_t invalidNmeaChecksums;
+  uint32_t invalidRtcmCrcs;
+  uint16_t bytesRemaining;
+  uint16_t length;
+  uint16_t message;
+  uint16_t messageNumber;
+  uint16_t nameLength;
+  byte checksumByte1;
+  byte checksumByte2;
+  byte crcByte[3];
+  byte nmeaChecksum;
+  char messageName[16];
+  char name[16];
+  bool invalidByte;
+  bool invalidNmeaChecksum;
+  bool invalidRtcmCrc;
+  bool printMessageName;
+  bool printMessageNumber;
+  bool sendMessage;
+  byte state;
+} PARSE_STATE;
+
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
 {

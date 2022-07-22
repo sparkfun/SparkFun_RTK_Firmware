@@ -278,7 +278,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
           if (parseState.invalidRtcmCrc)
           {
             parseState.invalidRtcmCrc = false;
-            Serial.printf("    RTCM %d, %2d bytes, bad CRC, actual 0x%06x, expecting 0x%02x%02x%02x\r\n",
+            Serial.printf("    RTCM %d, %2d bytes, bad CRC, computed 0x%06x, sent 0x%02x%02x%02x\r\n",
                           parseState.messageNumber,
                           3 + 1 + parseState.length + 3,
                           parseState.rtcmCrc,
@@ -297,12 +297,12 @@ void ntripServerProcessRTCM(uint8_t incoming)
           if (parseState.invalidNmeaChecksum)
           {
             parseState.invalidNmeaChecksum = false;
-            Serial.printf("    NMEA %s, %2d bytes, bad checksum, actual 0x%c%c, expected 0x%02x\r\n",
+            Serial.printf("    NMEA %s, %2d bytes, bad checksum, computed 0x%02x, sent 0x%c%c\r\n",
                           parseState.messageName,
                           parseState.length,
+                          parseState.nmeaChecksum,
                           parseState.checksumByte1,
-                          parseState.checksumByte2,
-                          parseState.nmeaChecksum);
+                          parseState.checksumByte2);
           }
           else
             Serial.printf("    NMEA %s, %2d bytes\r\n",

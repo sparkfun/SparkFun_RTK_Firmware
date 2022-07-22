@@ -169,6 +169,7 @@ typedef struct _PARSE_STATE
   uint16_t nameLength;
   byte checksumByte1;
   byte checksumByte2;
+  bool computeCRC;
   byte crcByte[3];
   byte nmeaChecksum;
   char messageName[16];

@@ -421,6 +421,8 @@ bool invalidChecksumByte(uint8_t data, uint32_t checksum)
   return ((checksum & 0xf) != data);
 }
 
+#define COMPUTE_CRC24Q(data)  ((parse->crc << 8) ^ crc24q[data ^ ((parse->crc >> 16) & 0xff)])
+
 //Parse the NMEA and RTCM messages
 bool parseNmeaAndRtcmMessages(PARSE_STATE * parse, uint8_t data, bool sendMessage)
 {
@@ -452,14 +454,15 @@ bool parseNmeaAndRtcmMessages(PARSE_STATE * parse, uint8_t data, bool sendMessag
     //Wait for the preamble byte (0xd3)
     case PARSE_STATE_WAIT_FOR_PREAMBLE:
       parse->sendMessage = false;
+      parse->crc = 0;
       if (data == 0xd3)
       {
+        parse->computeCRC = true;
         parse->sendMessage = sendMessage;
         parse->state = PARSE_STATE_RTCM_READ_LENGTH_1;
       }
       else if (data == '$')
       {
-        parse->crc = 0;
         parse->length = 1;
         parse->nameLength = 0;
         parse->sendMessage = sendMessage;
@@ -508,6 +511,7 @@ bool parseNmeaAndRtcmMessages(PARSE_STATE * parse, uint8_t data, bool sendMessag
 
     //Read the upper 8 bits of the CRC
     case PARSE_STATE_RTCM_READ_CRC_1:
+      parse->rtcmCrc = parse->crc & 0x00ffffff;
       parse->crcByte[0] = data;
       parse->state = PARSE_STATE_RTCM_READ_CRC_2;
       break;
@@ -521,7 +525,9 @@ bool parseNmeaAndRtcmMessages(PARSE_STATE * parse, uint8_t data, bool sendMessag
     //Read the lower 8 bits of the CRC
     case PARSE_STATE_RTCM_READ_CRC_3:
       parse->crcByte[2] = data;
-      parse->rtcmCrc = parse->crc;
+      parse->crc = COMPUTE_CRC24Q(data);
+      parse->invalidRtcmCrc = ((parse->crc & 0x00ffffff) != 0);
+      parse->computeCRC = false;
       parse->rtcmPackets++;
       parse->messageNumber = parse->message;
       parse->printMessageNumber = true;
@@ -578,6 +584,10 @@ bool parseNmeaAndRtcmMessages(PARSE_STATE * parse, uint8_t data, bool sendMessag
       strcpy(parse->messageName, parse->name);
       break;
   }
+
+  //Compute the CRC if necessary
+  if (parse->computeCRC)
+    parse->crc = COMPUTE_CRC24Q(data);
 
   //Let the upper layer know if this message should be sent
   return parse->sendMessage && sendMessage;

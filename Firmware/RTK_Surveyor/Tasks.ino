@@ -37,6 +37,7 @@ void F9PSerialReadTask(void *e)
   static uint16_t dataHead = 0; //Head advances as data comes in from GNSS's UART
   static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
   static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
+  static PARSE_STATE parseState;
 
   int btBytesToSend; //Amount of buffered Bluetooth data
   int sdBytesToRecord; //Amount of buffered microSD card logging data
@@ -103,7 +104,6 @@ void F9PSerialReadTask(void *e)
         if (btBytesToSend < 0)
           btBytesToSend += sizeof(rBuffer);
       }
-      Serial.printf("btBytesToSend: %d ", btBytesToSend);
 
       //Determine the amount of microSD card logging data in the buffer
       sdBytesToRecord = 0;
@@ -113,7 +113,6 @@ void F9PSerialReadTask(void *e)
         if (sdBytesToRecord < 0)
           sdBytesToRecord += sizeof(rBuffer);
       }
-      Serial.printf("sdBytesToRecord: %d ", sdBytesToRecord);
 
       //Determine the free bytes in the buffer
       if (btBytesToSend >= sdBytesToRecord)
@@ -121,19 +120,13 @@ void F9PSerialReadTask(void *e)
       else
         availableBufferSpace = sizeof(rBuffer) - sdBytesToRecord;
 
-      Serial.printf("pure: %d ", availableBufferSpace);
-
       //Don't fill the last byte to prevent buffer overflow
       if (availableBufferSpace)
         availableBufferSpace -= 1;
 
-      Serial.printf("protected: %d ", availableBufferSpace);
-
       //Fill the buffer to the end and then start at the beginning
       if ((dataHead + availableBufferSpace) > sizeof(rBuffer))
         availableBufferSpace = sizeof(rBuffer) - dataHead;
-
-      Serial.printf("trimmed: %d ", availableBufferSpace);
 
       //If we have buffer space, read data from the GNSS into the buffer
       newBytesToRecord = 0;
@@ -147,10 +140,62 @@ void F9PSerialReadTask(void *e)
       //Account for the byte read
       if (newBytesToRecord > 0)
       {
+        //Parse the incoming messages
+        for (int index = 0; index < newBytesToRecord; index++)
+        {
+          parseNmeaAndRtcmMessages(&parseState, rBuffer[dataHead + index], false);
+          if (parseState.invalidByte)
+          {
+            Serial.printf("    Invalid byte: 0x%02x\r\n", rBuffer[dataHead + index]);
+            parseState.invalidByte = false;
+          }
+          if (parseState.printMessageNumber)
+          {
+            parseState.printMessageNumber = false;
+            if (parseState.invalidRtcmCrc)
+            {
+              parseState.invalidRtcmCrc = false;
+              Serial.printf("    RTCM %d, %2d bytes, bad CRC, actual 0x%06x, expecting 0x%02x%02x%02x\r\n",
+                            parseState.messageNumber,
+                            3 + 1 + parseState.length + 3,
+                            parseState.rtcmCrc,
+                            parseState.crcByte[0],
+                            parseState.crcByte[1],
+                            parseState.crcByte[2]);
+            }
+            else if (settings.enablePrintRingBufferMessages)
+              Serial.printf("    RTCM %d, %2d bytes\r\n",
+                            parseState.messageNumber,
+                            3 + 1 + parseState.length + 3);
+          }
+          if (parseState.printMessageName)
+          {
+            parseState.printMessageName = false;
+            if (parseState.invalidNmeaChecksum)
+            {
+              parseState.invalidNmeaChecksum = false;
+              Serial.printf("    NMEA %s, %2d bytes, bad checksum, actual 0x%c%c, expected 0x%02x\r\n",
+                            parseState.messageName,
+                            parseState.length,
+                            parseState.checksumByte1,
+                            parseState.checksumByte2,
+                            parseState.nmeaChecksum);
+            }
+            else if (settings.enablePrintRingBufferMessages)
+              Serial.printf("    NMEA %s, %2d bytes\r\n",
+                            parseState.messageName,
+                            parseState.length);
+          }
+        }
+
         //Set the next fill offset
+        if (settings.enablePrintRingBuffer)
+          Serial.printf("GNSS rbh: %d", dataHead);
         dataHead += newBytesToRecord;
         if (dataHead >= sizeof(rBuffer))
           dataHead -= sizeof(rBuffer);
+        if (settings.enablePrintRingBuffer)
+          Serial.printf(" --> %d", dataHead);
 
         //Account for the new data
         if (btConnected)
@@ -158,11 +203,6 @@ void F9PSerialReadTask(void *e)
         if (online.logging)
           sdBytesToRecord += newBytesToRecord;
       }
-
-      Serial.printf("btBytesToSend: %d ", btBytesToSend);
-      Serial.printf("sdBytesToRecord: %d ", sdBytesToRecord);
-
-      Serial.println();
 
       //----------------------------------------------------------------------
       //Send data over Bluetooth
@@ -189,15 +229,22 @@ void F9PSerialReadTask(void *e)
         {
           //Don't push data to BT SPP if there is congestion to prevent heap hits.
           if (btBytesToSend < (sizeof(rBuffer) - 1))
+            //The ring buffer still has more space, no data sent now, the data
+            //will be sent later
             btBytesToSend = 0;
           else
-            Serial.printf("ERROR - Congestion, dropped %d bytes: GNSS --> Bluetooth\r\n", btBytesToSend);
+            Serial.printf("ERROR - Congestion, dropped %d bytes: GNSS --> Bluetooth\r\n",
+                          btBytesToSend);
         }
 
         //Account for the sent data or dropped
+        if (settings.enablePrintRingBuffer)
+          Serial.printf(" bt: %d", btTail);
         btTail += btBytesToSend;
         if (btTail >= sizeof(rBuffer))
           btTail -= sizeof(rBuffer);
+        if (settings.enablePrintRingBuffer)
+          Serial.printf(" --> %d", btTail);
       }
 
       //----------------------------------------------------------------------
@@ -227,9 +274,13 @@ void F9PSerialReadTask(void *e)
             xSemaphoreGive(sdCardSemaphore);
 
             //Account for the sent data or dropped
+            if (settings.enablePrintRingBuffer)
+              Serial.printf(" sd: %d", sdTail);
             sdTail += sdBytesToRecord;
             if (sdTail >= sizeof(rBuffer))
               sdTail -= sizeof(rBuffer);
+            if (settings.enablePrintRingBuffer)
+              Serial.printf(" --> %d", sdTail);
           } //End sdCardSemaphore
           else
           {
@@ -246,6 +297,8 @@ void F9PSerialReadTask(void *e)
           }
         } //End maxLogTime
       } //End logging
+      if (settings.enablePrintRingBuffer)
+        Serial.println();
     } //End Serial.available()
 
     //----------------------------------------------------------------------

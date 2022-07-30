@@ -154,108 +154,6 @@ void ntripServerResponse(char * response, size_t maxLength)
   *response = '\0';
 }
 
-//Parse the RTCM transport data
-bool ntripServerRtcmMessage(uint8_t data)
-{
-  static uint16_t bytesRemaining;
-  static byte crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
-  static uint16_t length;
-  static uint16_t message;
-  static bool sendMessage = false;
-
-  //
-  //    RTCM Standard 10403.2 - Chapter 4, Transport Layer
-  //
-  //    |<------------- 3 bytes ------------>|<----- length ----->|<- 3 bytes ->|
-  //    |                                    |                    |             |
-  //    +----------+--------+----------------+---------+----------+-------------+
-  //    | Preamble |  Fill  | Message Length | Message |   Fill   |   CRC-24Q   |
-  //    |  8 bits  | 6 bits |    10 bits     |  n-bits | 0-7 bits |   24 bits   |
-  //    |   0xd3   | 000000 |   (in bytes)   |         |   zeros  |             |
-  //    +----------+--------+----------------+---------+----------+-------------+
-  //    |                                                                       |
-  //    |<-------------------------------- CRC -------------------------------->|
-  //
-
-  switch (crcState)
-  {
-    //Wait for the preamble byte (0xd3)
-    case RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3:
-      sendMessage = false;
-      if (data == 0xd3)
-      {
-        crcState = RTCM_TRANSPORT_STATE_READ_LENGTH_1;
-        sendMessage = (ntripServerState == NTRIP_SERVER_CASTING);
-      }
-      break;
-
-    //Read the upper two bits of the length
-    case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
-      length = data << 8;
-      crcState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
-      break;
-
-    //Read the lower 8 bits of the length
-    case RTCM_TRANSPORT_STATE_READ_LENGTH_2:
-      length |= data;
-      bytesRemaining = length;
-      crcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_1;
-      break;
-
-    //Read the upper 8 bits of the message number
-    case RTCM_TRANSPORT_STATE_READ_MESSAGE_1:
-      message = data << 4;
-      bytesRemaining -= 1;
-      crcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_2;
-      break;
-
-    //Read the lower 4 bits of the message number
-    case RTCM_TRANSPORT_STATE_READ_MESSAGE_2:
-      message |= data >> 4;
-      bytesRemaining -= 1;
-      crcState = RTCM_TRANSPORT_STATE_READ_DATA;
-      break;
-
-    //Read the rest of the message
-    case RTCM_TRANSPORT_STATE_READ_DATA:
-      bytesRemaining -= 1;
-      if (bytesRemaining <= 0)
-        crcState = RTCM_TRANSPORT_STATE_READ_CRC_1;
-      break;
-
-    //Read the upper 8 bits of the CRC
-    case RTCM_TRANSPORT_STATE_READ_CRC_1:
-      crcState = RTCM_TRANSPORT_STATE_READ_CRC_2;
-      break;
-
-    //Read the middle 8 bits of the CRC
-    case RTCM_TRANSPORT_STATE_READ_CRC_2:
-      crcState = RTCM_TRANSPORT_STATE_READ_CRC_3;
-      break;
-
-    //Read the lower 8 bits of the CRC
-    case RTCM_TRANSPORT_STATE_READ_CRC_3:
-      crcState = RTCM_TRANSPORT_STATE_CHECK_CRC;
-      break;
-  }
-
-  //Check the CRC
-  if (crcState == RTCM_TRANSPORT_STATE_CHECK_CRC)
-  {
-    crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
-
-    //Account for this message
-    rtcmPacketsSent++;
-
-    //Display the RTCM message header
-    if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
-      Serial.printf ("    Message %d, %2d bytes\r\n", message, 3 + 1 + length + 3);
-  }
-
-  //Let the upper layer know if this message should be sent
-  return sendMessage && (ntripServerState == NTRIP_SERVER_CASTING);
-}
-
 //Update the state of the NTRIP server state machine
 void ntripServerSetState(byte newState)
 {
@@ -335,29 +233,83 @@ void ntripServerProcessRTCM(uint8_t incoming)
 #ifdef  COMPILE_WIFI
   if (online.rtc)
   {
-    //Timestamp the RTCM messages
-    currentMilliseconds = millis();
-    if (settings.enablePrintNtripServerRtcm
-        && (!inMainMenu)
-        && ((currentMilliseconds - previousMilliseconds) > 1))
-    {
-      //         1         2         3
-      //123456789012345678901234567890
-      //YYYY-mm-dd HH:MM:SS.xxxrn0
-      struct tm timeinfo = rtc.getTimeStruct();
-      char timestamp[30];
-      strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
-      Serial.printf("RTCM: %s.%03ld\r\n", timestamp, rtc.getMillis());
-    }
-    previousMilliseconds = currentMilliseconds;
+    static PARSE_STATE parseState;
 
     //Parse the RTCM message
-    if (ntripServerRtcmMessage(incoming))
+    if (parseNmeaAndRtcmMessages(&parseState, incoming, (ntripServerState == NTRIP_SERVER_CASTING)))
     {
       ntripServer->write(incoming); //Send this byte to socket
       ntripServerBytesSent++;
       ntripServerTimer = millis();
       online.txNtripDataCasting = true;
+
+      //Timestamp the RTCM messages
+      currentMilliseconds = millis();
+      if (settings.enablePrintNtripServerRtcm
+          && parseState.rtcmPackets
+          && (!inMainMenu)
+          && ((currentMilliseconds - previousMilliseconds) >= 1000))
+      {
+        //         1         2         3
+        //123456789012345678901234567890
+        //YYYY-mm-dd HH:MM:SS.xxxrn0
+        struct tm timeinfo = rtc.getTimeStruct();
+        char timestamp[30];
+        strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
+        Serial.printf("RTCM: %s.%03ld\r\n", timestamp, rtc.getMillis());
+        previousMilliseconds += 1000;
+      }
+
+      //Update the RTCM message count
+      rtcmPacketsSent += parseState.rtcmPackets;
+      parseState.rtcmPackets = 0;
+
+      //Display the RTCM message header
+      if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
+      {
+        if (parseState.invalidByte)
+        {
+          Serial.printf ("    Invalid byte: 0x%02x\r\n", incoming);
+          parseState.invalidByte = false;
+        }
+        if (parseState.printMessageNumber)
+        {
+          parseState.printMessageNumber = false;
+          if (parseState.invalidRtcmCrc)
+          {
+            parseState.invalidRtcmCrc = false;
+            Serial.printf("    RTCM %d, %2d bytes, bad CRC, computed 0x%06x, sent 0x%02x%02x%02x\r\n",
+                          parseState.messageNumber,
+                          3 + 1 + parseState.length + 3,
+                          parseState.rtcmCrc,
+                          parseState.crcByte[0],
+                          parseState.crcByte[1],
+                          parseState.crcByte[2]);
+          }
+          else
+            Serial.printf("    RTCM %d, %2d bytes\r\n",
+                          parseState.messageNumber,
+                          3 + 1 + parseState.length + 3);
+        }
+        if (parseState.printMessageName)
+        {
+          parseState.printMessageName = false;
+          if (parseState.invalidNmeaChecksum)
+          {
+            parseState.invalidNmeaChecksum = false;
+            Serial.printf("    NMEA %s, %2d bytes, bad checksum, computed 0x%02x, sent 0x%c%c\r\n",
+                          parseState.messageName,
+                          parseState.length,
+                          parseState.nmeaChecksum,
+                          parseState.checksumByte1,
+                          parseState.checksumByte2);
+          }
+          else
+            Serial.printf("    NMEA %s, %2d bytes\r\n",
+                          parseState.messageName,
+                          parseState.length);
+        }
+      }
     }
 
     //Indicate that the GNSS is providing correction data

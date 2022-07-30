@@ -333,13 +333,7 @@ void menuDebug()
     Serial.print("17) Periodically print CPU idle time: ");
     Serial.printf("%s\r\n", settings.enablePrintIdleTime ? "Enabled" : "Disabled");
 
-    Serial.print("18) Print the ring buffer offsets: ");
-    Serial.printf("%s\r\n", settings.enablePrintRingBuffer ? "Enabled" : "Disabled");
-
-    Serial.print("19) Print the ring buffer messages: ");
-    Serial.printf("%s\r\n", settings.enablePrintRingBufferMessages ? "Enabled" : "Disabled");
-
-    Serial.println("20) Mirror ZED-F9x's UART1 settings to USB");
+    Serial.println("18) Mirror ZED-F9x's UART1 settings to USB");
 
     Serial.println("t) Enter Test Screen");
 
@@ -474,14 +468,6 @@ void menuDebug()
         settings.enablePrintIdleTime ^= 1;
       }
       else if (incoming == 18)
-      {
-        settings.enablePrintRingBuffer ^= 1;
-      }
-      else if (incoming == 19)
-      {
-        settings.enablePrintRingBufferMessages ^= 1;
-      }
-      else if (incoming == 20)
       {
         bool response = configureGNSSMessageRates(COM_PORT_USB, settings.ubxMessages); //Make sure the appropriate messages are enabled
         response &= i2cGNSS.setPortOutput(COM_PORT_USB, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Duplicate UART1

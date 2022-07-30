@@ -103,7 +103,6 @@ void F9PSerialReadTask(void *e)
         if (btBytesToSend < 0)
           btBytesToSend += sizeof(rBuffer);
       }
-      Serial.printf("btBytesToSend: %d ", btBytesToSend);
 
       //Determine the amount of microSD card logging data in the buffer
       sdBytesToRecord = 0;
@@ -113,7 +112,6 @@ void F9PSerialReadTask(void *e)
         if (sdBytesToRecord < 0)
           sdBytesToRecord += sizeof(rBuffer);
       }
-      Serial.printf("sdBytesToRecord: %d ", sdBytesToRecord);
 
       //Determine the free bytes in the buffer
       if (btBytesToSend >= sdBytesToRecord)
@@ -121,19 +119,16 @@ void F9PSerialReadTask(void *e)
       else
         availableBufferSpace = sizeof(rBuffer) - sdBytesToRecord;
 
-      Serial.printf("pure: %d ", availableBufferSpace);
 
       //Don't fill the last byte to prevent buffer overflow
       if (availableBufferSpace)
         availableBufferSpace -= 1;
 
-      Serial.printf("protected: %d ", availableBufferSpace);
 
       //Fill the buffer to the end and then start at the beginning
       if ((dataHead + availableBufferSpace) > sizeof(rBuffer))
         availableBufferSpace = sizeof(rBuffer) - dataHead;
 
-      Serial.printf("trimmed: %d ", availableBufferSpace);
 
       //If we have buffer space, read data from the GNSS into the buffer
       newBytesToRecord = 0;
@@ -159,10 +154,6 @@ void F9PSerialReadTask(void *e)
           sdBytesToRecord += newBytesToRecord;
       }
 
-      Serial.printf("btBytesToSend: %d ", btBytesToSend);
-      Serial.printf("sdBytesToRecord: %d ", sdBytesToRecord);
-
-      Serial.println();
 
       //----------------------------------------------------------------------
       //Send data over Bluetooth

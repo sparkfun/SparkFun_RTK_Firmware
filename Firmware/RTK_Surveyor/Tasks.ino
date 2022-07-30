@@ -223,7 +223,7 @@ void F9PSerialReadTask(void *e)
               sdBytesToRecord = sizeof(rBuffer) - sdTail;
 
             //Write the data to the file
-            sdBytesToRecord = ubxFile->write(rBuffer, sdBytesToRecord);
+            sdBytesToRecord = ubxFile->write(&rBuffer[sdTail], sdBytesToRecord);
             xSemaphoreGive(sdCardSemaphore);
 
             //Account for the sent data or dropped

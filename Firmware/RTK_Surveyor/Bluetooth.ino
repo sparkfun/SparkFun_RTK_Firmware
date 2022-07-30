@@ -112,12 +112,12 @@ void bluetoothStart()
   if (bluetoothState == BT_OFF)
   {
     char stateName[10];
-    if (buttonPreviousState == BUTTON_ROVER)
-      strcpy(stateName, "Rover");
-    else
-      strcpy(stateName, "Base");
+    if (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX)
+      strcpy(stateName, "Rover-");
+    else if(systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+      strcpy(stateName, "Base-");
 
-    sprintf(deviceName, "%s %s-%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]); //Base mode
+    sprintf(deviceName, "%s %s%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]);
 
     if (bluetoothSerial.begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
     {

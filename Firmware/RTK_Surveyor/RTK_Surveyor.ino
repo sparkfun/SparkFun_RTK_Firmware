@@ -40,6 +40,7 @@ const int FIRMWARE_VERSION_MINOR = 3;
 #define RTK_IDENTIFIER (FIRMWARE_VERSION_MAJOR * 0x10 + FIRMWARE_VERSION_MINOR)
 
 #include "settings.h"
+#include "Crc24q.h"
 
 #define MAX_CPU_CORES               2
 #define IDLE_COUNT_PER_SECOND       1000
@@ -152,6 +153,11 @@ char keyContents[2000];
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+
+#define SENTENCE_TYPE_NMEA              SFE_UBLOX_GNSS::NMEA
+#define SENTENCE_TYPE_NONE              SFE_UBLOX_GNSS::NONE
+#define SENTENCE_TYPE_RTCM              SFE_UBLOX_GNSS::RTCM
+#define SENTENCE_TYPE_UBX               SFE_UBLOX_GNSS::UBX
 
 char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to system status menu and settings file.
 char neoFirmwareVersion[20]; //Output to system status menu.

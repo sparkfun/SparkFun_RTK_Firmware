@@ -346,25 +346,28 @@ void checkBatteryLevels()
   battVoltage = lipo.getVoltage();
   battChangeRate = lipo.getChangeRate();
 
-  Serial.printf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
+  if (settings.enablePrintBatteryMessages)
+  {
+    Serial.printf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
 
-  char tempStr[25];
-  if (battChangeRate > 0)
-    sprintf(tempStr, "C");
-  else
-    sprintf(tempStr, "Disc");
-  Serial.printf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
+    char tempStr[25];
+    if (battChangeRate > 0)
+      sprintf(tempStr, "C");
+    else
+      sprintf(tempStr, "Disc");
+    Serial.printf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
-  if (battLevel < 10)
-    sprintf(tempStr, "Red");
-  else if (battLevel < 50)
-    sprintf(tempStr, "Yellow");
-  else if (battLevel >= 50)
-    sprintf(tempStr, "Green");
-  else
-    sprintf(tempStr, "No batt");
+    if (battLevel < 10)
+      sprintf(tempStr, "Red");
+    else if (battLevel < 50)
+      sprintf(tempStr, "Yellow");
+    else if (battLevel >= 50)
+      sprintf(tempStr, "Green");
+    else
+      sprintf(tempStr, "No batt");
 
-  Serial.printf("%s\n\r", tempStr);
+    Serial.printf("%s\n\r", tempStr);
+  }
 
   if (productVariant == RTK_SURVEYOR)
   {

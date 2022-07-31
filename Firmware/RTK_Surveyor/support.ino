@@ -405,3 +405,29 @@ byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
 
   return readLength;
 }
+
+#define TIMESTAMP_INTERVAL              1000    //Milliseconds
+
+//Print the timestamp
+void printTimeStamp()
+{
+  uint32_t currentMilliseconds;
+  static uint32_t previousMilliseconds;
+
+  //Timestamp the messages
+  currentMilliseconds = millis();
+  if ((currentMilliseconds - previousMilliseconds) >= TIMESTAMP_INTERVAL)
+  {
+    //         1         2         3
+    //123456789012345678901234567890
+    //YYYY-mm-dd HH:MM:SS.xxxrn0
+    struct tm timeinfo = rtc.getTimeStruct();
+    char timestamp[30];
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
+    Serial.printf("%s.%03ld\r\n", timestamp, rtc.getMillis());
+
+    //Select the next time to display the timestamp
+    previousMilliseconds = currentMilliseconds;
+  }
+}
+

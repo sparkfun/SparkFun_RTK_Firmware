@@ -154,117 +154,95 @@ void ntripServerResponse(char * response, size_t maxLength)
   *response = '\0';
 }
 
-//Parse the RTCM transport data
-bool ntripServerRtcmMessage(uint8_t data)
+//Process the RTCM message
+void ntripServerProcessMessage(PARSE_STATE * parse, uint8_t type)
 {
-  static uint16_t bytesRemaining;
-  static byte crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
-  static uint16_t length;
-  static uint16_t message;
-  static bool sendMessage = false;
+  static uint8_t dataBuffer[PARSE_BUFFER_LENGTH];
+  static uint16_t dataLength;
+  uint16_t dataSent;
 
-  //
-  //    RTCM Standard 10403.2 - Chapter 4, Transport Layer
-  //
-  //    |<------------- 3 bytes ------------>|<----- length ----->|<- 3 bytes ->|
-  //    |                                    |                    |             |
-  //    +----------+--------+----------------+---------+----------+-------------+
-  //    | Preamble |  Fill  | Message Length | Message |   Fill   |   CRC-24Q   |
-  //    |  8 bits  | 6 bits |    10 bits     |  n-bits | 0-7 bits |   24 bits   |
-  //    |   0xd3   | 000000 |   (in bytes)   |         |   zeros  |             |
-  //    +----------+--------+----------------+---------+----------+-------------+
-  //    |                                                                       |
-  //    |<-------------------------------- CRC -------------------------------->|
-  //
-
-  switch (crcState)
+  if (type != SENTENCE_TYPE_RTCM)
   {
-    //Read the upper two bits of the length
-    case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
-      if (!(data & 3))
-      {
-        length = data << 8;
-        crcState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
-        break;
-      }
-
-      //Wait for the preamble byte
-      crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
-
-      //Fall through
-      //     |
-      //     |
-      //     V
-
-    //Wait for the preamble byte (0xd3)
-    case RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3:
-      sendMessage = false;
-      if (data == 0xd3)
-      {
-        crcState = RTCM_TRANSPORT_STATE_READ_LENGTH_1;
-        sendMessage = (ntripServerState == NTRIP_SERVER_CASTING);
-      }
-      break;
-
-    //Read the lower 8 bits of the length
-    case RTCM_TRANSPORT_STATE_READ_LENGTH_2:
-      length |= data;
-      bytesRemaining = length;
-      crcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_1;
-      break;
-
-    //Read the upper 8 bits of the message number
-    case RTCM_TRANSPORT_STATE_READ_MESSAGE_1:
-      message = data << 4;
-      bytesRemaining -= 1;
-      crcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_2;
-      break;
-
-    //Read the lower 4 bits of the message number
-    case RTCM_TRANSPORT_STATE_READ_MESSAGE_2:
-      message |= data >> 4;
-      bytesRemaining -= 1;
-      crcState = RTCM_TRANSPORT_STATE_READ_DATA;
-      break;
-
-    //Read the rest of the message
-    case RTCM_TRANSPORT_STATE_READ_DATA:
-      bytesRemaining -= 1;
-      if (bytesRemaining <= 0)
-        crcState = RTCM_TRANSPORT_STATE_READ_CRC_1;
-      break;
-
-    //Read the upper 8 bits of the CRC
-    case RTCM_TRANSPORT_STATE_READ_CRC_1:
-      crcState = RTCM_TRANSPORT_STATE_READ_CRC_2;
-      break;
-
-    //Read the middle 8 bits of the CRC
-    case RTCM_TRANSPORT_STATE_READ_CRC_2:
-      crcState = RTCM_TRANSPORT_STATE_READ_CRC_3;
-      break;
-
-    //Read the lower 8 bits of the CRC
-    case RTCM_TRANSPORT_STATE_READ_CRC_3:
-      crcState = RTCM_TRANSPORT_STATE_CHECK_CRC;
-      break;
+    Serial.printf("NTRIP Server: Unknown Tx message type: %d\r\n", type);
+    return;
   }
 
-  //Check the CRC
-  if (crcState == RTCM_TRANSPORT_STATE_CHECK_CRC)
+  //Skip further processing if the NTRIP server is not ready
+  if ((ntripServerState != NTRIP_SERVER_CASTING) || (!(online.rtc)))
   {
-    crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+    //Indicate that the GNSS is providing correction data
+    if (ntripServerState == NTRIP_SERVER_WAIT_GNSS_DATA)
+      ntripServerSetState(NTRIP_SERVER_CONNECTING);
+  }
+  else
+  {
+    //Display the RTCM message header
+    if (settings.enablePrintNtripServerRtcm && (!parse->crc) && (!inMainMenu))
+    {
+      printTimeStamp();
+      Serial.printf ("    Tx RTCM %d, %2d bytes\r\n", parse->message, parse->length);
+    }
 
     //Account for this message
     rtcmPacketsSent++;
 
-    //Display the RTCM message header
-    if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
-      Serial.printf ("    Message %d, %2d bytes\r\n", message, 3 + 1 + length + 3);
+    //Check for too many digits
+    if (settings.enableResetDisplay == true)
+    {
+      if (rtcmPacketsSent > 99) rtcmPacketsSent = 1; //Trim to two digits to avoid overlap
+    }
+    else if (logIncreasing == true)
+    {
+      if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon
+    }
+    else
+    {
+      if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
+    }
+
+    //Send any previous data first
+    if (dataLength)
+    {
+      dataSent = ntripServer->write(dataBuffer, dataLength);
+      ntripServerBytesSent += dataSent;
+      online.txNtripDataCasting = true;
+      if (dataSent && (dataSent < dataLength))
+      {
+        //Only sent part of the previous data, move the remaining to the beginning of the buffer
+        memcpy(dataBuffer,
+               &dataBuffer[dataSent],
+               dataLength - dataSent);
+      }
+      dataLength -= dataSent;
+    }
+
+    //Send this data to the NTRIP server
+    dataSent = 0;
+    if (!dataLength)
+    {
+      dataSent = ntripServer->write(parse->buffer, parse->length);
+      ntripServerBytesSent += dataSent;
+      online.txNtripDataCasting = true;
+    }
+
+    //Save any remaining data
+    if (dataSent < parse->length)
+    {
+      if ((dataLength + parse->length) > sizeof(dataBuffer))
+        Serial.printf("ERROR: NTRIP Server discarded RTCM message, increase dataBuffer to %d bytes\r\n",
+                      dataLength + parse->length);
+      else
+      {
+        memcpy(&dataBuffer[dataLength],
+               &parse->buffer[dataSent],
+               parse->length - dataSent);
+        dataLength += parse->length - dataSent;
+      }
+    }
   }
 
-  //Let the upper layer know if this message should be sent
-  return sendMessage && (ntripServerState == NTRIP_SERVER_CASTING);
+  //Remember this message was received
+  ntripServerTimer = millis();
 }
 
 //Update the state of the NTRIP server state machine
@@ -323,59 +301,40 @@ void ntripServerSwitchToBluetooth()
 // Global NTRIP Server Routines
 //----------------------------------------
 
-//This function gets called as each RTCM byte comes in
-void ntripServerProcessRTCM(uint8_t incoming)
+//This routine is called directly from the SparkFun_u-blox_GNSS_Arduino_Library
+//and is responsible for parsing the incoming RTCM message
+SFE_UBLOX_GNSS::SentenceTypes SFE_UBLOX_GNSS::processRTCMframe(uint8_t incoming, uint16_t * rtcmFrameCounter)
 {
-  uint32_t currentMilliseconds;
-  static uint32_t previousMilliseconds = 0;
-
-  //Check for too many digits
-  if (settings.enableResetDisplay == true)
-  {
-    if (rtcmPacketsSent > 99) rtcmPacketsSent = 1; //Trim to two digits to avoid overlap
-  }
-  else if (logIncreasing == true)
-  {
-    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon
-  }
-  else
-  {
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
-  }
-
 #ifdef  COMPILE_WIFI
-  if (online.rtc)
+  static PARSE_STATE parse = {waitForPreamble, ntripServerProcessMessage, "Tx"};
+
+  //Save the data byte
+  parse.buffer[parse.length++] = incoming;
+
+  //Compute the CRC value for the message
+  if (parse.computeCrc)
+    parse.crc = COMPUTE_CRC24Q(&parse, incoming);
+
+  //Parse the RTCM message
+  return (SFE_UBLOX_GNSS::SentenceTypes)parse.state(&parse, incoming);
+#else   //COMPILE_WIFI
+  static uint16_t rtcmLen = 0;
+
+  if (*rtcmFrameCounter == 1)
   {
-    //Timestamp the RTCM messages
-    currentMilliseconds = millis();
-    if (settings.enablePrintNtripServerRtcm
-        && (!inMainMenu)
-        && ((currentMilliseconds - previousMilliseconds) > 1))
-    {
-      //         1         2         3
-      //123456789012345678901234567890
-      //YYYY-mm-dd HH:MM:SS.xxxrn0
-      struct tm timeinfo = rtc.getTimeStruct();
-      char timestamp[30];
-      strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
-      Serial.printf("RTCM: %s.%03ld\r\n", timestamp, rtc.getMillis());
-    }
-    previousMilliseconds = currentMilliseconds;
-
-    //Parse the RTCM message
-    if (ntripServerRtcmMessage(incoming))
-    {
-      ntripServer->write(incoming); //Send this byte to socket
-      ntripServerBytesSent++;
-      ntripServerTimer = millis();
-      online.txNtripDataCasting = true;
-    }
-
-    //Indicate that the GNSS is providing correction data
-    else if (ntripServerState == NTRIP_SERVER_WAIT_GNSS_DATA)
-      ntripServerSetState(NTRIP_SERVER_CONNECTING);
+    rtcmLen = (incoming & 0x03) << 8; // Get the last two bits of this byte. Bits 8&9 of 10-bit length
   }
-#endif  //COMPILE_WIFI
+  else if (*rtcmFrameCounter == 2)
+  {
+    rtcmLen |= incoming; // Bits 0-7 of packet length
+    rtcmLen += 6;        // There are 6 additional bytes of what we presume is header, msgType, CRC, and stuff
+  }
+
+  (*rtcmFrameCounter)++;
+
+  // Reset and start looking for next sentence type when done
+  return (*rtcmFrameCounter == rtcmLen) ? NONE : RTCM;
+#endif  // COMPILE_WIFI
 }
 
 //Start the NTRIP server
@@ -573,7 +532,7 @@ void ntripServerUpdate()
         Serial.println("NTRIP Server connection dropped");
         ntripServerStop(false);
       }
-      else if ((millis() - ntripServerTimer) > 1000)
+      else if ((millis() - ntripServerTimer) > 2000)
       {
         //GNSS stopped sending RTCM correction data
         Serial.println("NTRIP Server breaking caster connection due to lack of RTCM data!");

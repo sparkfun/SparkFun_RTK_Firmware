@@ -238,9 +238,18 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", "enablePrintWifiState", settings.enablePrintWifiState);
   settingsFile->printf("%s=%d\n\r", "enablePrintNtripClientState", settings.enablePrintNtripClientState);
   settingsFile->printf("%s=%d\n\r", "enablePrintNtripServerState", settings.enablePrintNtripServerState);
-  settingsFile->printf("%s=%d\n\r", "enablePrintNtripServerRtcm", settings.enablePrintNtripServerRtcm);
   settingsFile->printf("%s=%d\n\r", "enablePrintPosition", settings.enablePrintPosition);
   settingsFile->printf("%s=%d\n\r", "enableMarksFile", settings.enableMarksFile);
+  settingsFile->printf("%s=%d\n\r", "enablePrintBatteryMessages", settings.enablePrintBatteryMessages);
+  settingsFile->printf("%s=%d\n\r", "enablePrintRoverAccuracy", settings.enablePrintRoverAccuracy);
+  settingsFile->printf("%s=%d\n\r", "enablePrintBadMessages", settings.enablePrintBadMessages);
+  settingsFile->printf("%s=%d\n\r", "enablePrintLogFileMessages", settings.enablePrintLogFileMessages);
+  settingsFile->printf("%s=%d\n\r", "enablePrintLogFileStatus", settings.enablePrintLogFileStatus);
+  settingsFile->printf("%s=%d\n\r", "enablePrintRingBufferOffsets", settings.enablePrintRingBufferOffsets);
+  settingsFile->printf("%s=%d\n\r", "enablePrintNtripServerRtcm", settings.enablePrintNtripServerRtcm);
+  settingsFile->printf("%s=%d\n\r", "enablePrintNtripClientRtcm", settings.enablePrintNtripClientRtcm);
+  settingsFile->printf("%s=%d\n\r", "enablePrintStates", settings.enablePrintStates);
+  settingsFile->printf("%s=%d\n\r", "enablePrintDuplicateStates", settings.enablePrintDuplicateStates);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -809,11 +818,28 @@ bool parseLine(char* str, Settings *settings)
     settings->enablePrintNtripClientState = d;
   else if (strcmp(settingName, "enablePrintNtripServerState") == 0)
     settings->enablePrintNtripServerState = d;
-  else if (strcmp(settingName, "enablePrintNtripServerRtcm") == 0)
-    settings->enablePrintNtripServerRtcm = d;
   else if (strcmp(settingName, "enablePrintPosition") == 0)
     settings->enablePrintPosition = d;
-
+  else if (strcmp(settingName, "enablePrintBatteryMessages") == 0)
+    settings->enablePrintBatteryMessages = d;
+  else if (strcmp(settingName, "enablePrintRoverAccuracy") == 0)
+    settings->enablePrintRoverAccuracy = d;
+  else if (strcmp(settingName, "enablePrintBadMessages") == 0)
+    settings->enablePrintBadMessages = d;
+  else if (strcmp(settingName, "enablePrintLogFileMessages") == 0)
+    settings->enablePrintLogFileMessages = d;
+  else if (strcmp(settingName, "enablePrintLogFileStatus") == 0)
+    settings->enablePrintLogFileStatus = d;
+  else if (strcmp(settingName, "enablePrintRingBufferOffsets") == 0)
+    settings->enablePrintRingBufferOffsets = d;
+  else if (strcmp(settingName, "enablePrintNtripServerRtcm") == 0)
+    settings->enablePrintNtripServerRtcm = d;
+  else if (strcmp(settingName, "enablePrintNtripClientRtcm") == 0)
+    settings->enablePrintNtripClientRtcm = d;
+  else if (strcmp(settingName, "enablePrintStates") == 0)
+    settings->enablePrintStates = d;
+  else if (strcmp(settingName, "enablePrintDuplicateStates") == 0)
+    settings->enablePrintDuplicateStates = d;
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list
   else

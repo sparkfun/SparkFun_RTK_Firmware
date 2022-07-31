@@ -224,6 +224,34 @@ void ntripClientSetState(byte newState)
   }
 }
 
+//Process the NTRIP caster's RTCM message
+void ntripClientProcessMessage(struct _PARSE_STATE * parse, //Parser state
+                               uint8_t type)                //Message type
+{
+  if (type != SENTENCE_TYPE_RTCM)
+  {
+    Serial.printf("NTRIP Client: Unknown Rx message type: %d\r\n", type);
+    return;
+  }
+
+  //Restart the NTRIP receive data timer
+  ntripClientTimer = millis();
+
+  //Push RTCM to GNSS module over I2C
+  i2cGNSS.pushRawData(parse->buffer, parse->length);
+  online.rxRtcmCorrectionData = true;
+
+  //Display the RTCM message header
+  if (settings.enablePrintNtripClientRtcm && (!parse->crc) && (!inMainMenu))
+  {
+    printTimeStamp();
+    Serial.printf ("    %s RTCM %d, %2d bytes\r\n", parse->parserName,
+                   parse->message, parse->length);
+  }
+
+  //log_d("NTRIP Client pushed %d RTCM bytes to ZED", rtcmCount);
+}
+
 #endif
 
 //----------------------------------------
@@ -292,6 +320,8 @@ void ntripClientStop(bool done)
 void ntripClientUpdate()
 {
 #ifdef  COMPILE_WIFI
+  static PARSE_STATE parse = {waitForPreamble, ntripClientProcessMessage, "Rx"};
+
   //Periodically display the NTRIP client state
   if (settings.enablePrintNtripClientState && ((millis() - lastNtripClientState) > 15000))
   {
@@ -410,25 +440,22 @@ void ntripClientUpdate()
         {
           //Received data from the NTRIP server
           //5 RTCM messages take approximately ~300ms to arrive at 115200bps
-          uint8_t rtcmData[RTCM_DATA_SIZE];
-          size_t rtcmCount = 0;
+          uint8_t data;
 
           //Collect any available RTCM data
           while (ntripClient->available())
           {
-            rtcmData[rtcmCount++] = ntripClient->read();
-            if (rtcmCount == sizeof(rtcmData))
-              break;
+            //Get the data byte
+            data = ntripClient->read();
+            parse.buffer[parse.length++] = data;
+
+            //Compute the CRC value for the message
+            if (parse.computeCrc)
+              parse.crc = COMPUTE_CRC24Q(&parse, data);
+
+            //Parse the RTCM message
+            parse.state(&parse, data);
           }
-
-          //Restart the NTRIP receive data timer
-          ntripClientTimer = millis();
-
-          //Push RTCM to GNSS module over I2C
-          i2cGNSS.pushRawData(rtcmData, rtcmCount);
-          online.rxRtcmCorrectionData = true;
-
-          //log_d("NTRIP Client pushed %d RTCM bytes to ZED", rtcmCount);
         }
       }
       break;

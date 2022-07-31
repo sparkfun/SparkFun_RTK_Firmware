@@ -429,9 +429,18 @@ typedef struct {
   bool enablePrintWifiState = false;
   bool enablePrintNtripClientState = false;
   bool enablePrintNtripServerState = false;
-  bool enablePrintNtripServerRtcm = false;
   bool enablePrintPosition = false;
   bool enablePrintIdleTime = false;
+  bool enablePrintBatteryMessages = true;
+  bool enablePrintRoverAccuracy = true;
+  bool enablePrintBadMessages = false;
+  bool enablePrintLogFileMessages = false;
+  bool enablePrintLogFileStatus = true;
+  bool enablePrintRingBufferOffsets = false;
+  bool enablePrintNtripServerRtcm = false;
+  bool enablePrintNtripClientRtcm = false;
+  bool enablePrintStates = true;
+  bool enablePrintDuplicateStates = false;
 } Settings;
 Settings settings;
 

@@ -328,16 +328,43 @@ void menuDebug()
     Serial.print("14) Periodically print NTRIP server state: ");
     Serial.printf("%s\r\n", settings.enablePrintNtripServerState ? "Enabled" : "Disabled");
 
-    Serial.print("15) Print GNSS --> NTRIP caster messages: ");
-    Serial.printf("%s\r\n", settings.enablePrintNtripServerRtcm ? "Enabled" : "Disabled");
-
-    Serial.print("16) Periodically print position: ");
+    Serial.print("15) Periodically print position: ");
     Serial.printf("%s\r\n", settings.enablePrintPosition ? "Enabled" : "Disabled");
 
-    Serial.print("17) Periodically print CPU idle time: ");
+    Serial.print("16) Periodically print CPU idle time: ");
     Serial.printf("%s\r\n", settings.enablePrintIdleTime ? "Enabled" : "Disabled");
 
-    Serial.println("18) Mirror ZED-F9x's UART1 settings to USB");
+    Serial.println("17) Mirror ZED-F9x's UART1 settings to USB");
+
+    Serial.print("18) Print battery status messages: ");
+    Serial.printf("%s\r\n", settings.enablePrintBatteryMessages ? "Enabled" : "Disabled");
+
+    Serial.print("19) Print Rover accuracy messages: ");
+    Serial.printf("%s\r\n", settings.enablePrintRoverAccuracy ? "Enabled" : "Disabled");
+
+    Serial.print("20) Print messages with bad checksums or CRCs: ");
+    Serial.printf("%s\r\n", settings.enablePrintBadMessages ? "Enabled" : "Disabled");
+
+    Serial.print("21) Print log file messages: ");
+    Serial.printf("%s\r\n", settings.enablePrintLogFileMessages ? "Enabled" : "Disabled");
+
+    Serial.print("22) Print log file status: ");
+    Serial.printf("%s\r\n", settings.enablePrintLogFileStatus ? "Enabled" : "Disabled");
+
+    Serial.print("23) Print ring buffer offsets: ");
+    Serial.printf("%s\r\n", settings.enablePrintRingBufferOffsets ? "Enabled" : "Disabled");
+
+    Serial.print("24) Print GNSS --> NTRIP caster messages: ");
+    Serial.printf("%s\r\n", settings.enablePrintNtripServerRtcm ? "Enabled" : "Disabled");
+
+    Serial.print("25) Print NTRIP caster --> GNSS messages: ");
+    Serial.printf("%s\r\n", settings.enablePrintNtripClientRtcm ? "Enabled" : "Disabled");
+
+    Serial.print("26) Print states: ");
+    Serial.printf("%s\r\n", settings.enablePrintStates ? "Enabled" : "Disabled");
+
+    Serial.print("27) Print duplicate states: ");
+    Serial.printf("%s\r\n", settings.enablePrintDuplicateStates ? "Enabled" : "Disabled");
 
     Serial.println("t) Enter Test Screen");
 
@@ -461,17 +488,13 @@ void menuDebug()
       }
       else if (incoming == 15)
       {
-        settings.enablePrintNtripServerRtcm ^= 1;
+        settings.enablePrintPosition ^= 1;
       }
       else if (incoming == 16)
       {
-        settings.enablePrintPosition ^= 1;
-      }
-      else if (incoming == 17)
-      {
         settings.enablePrintIdleTime ^= 1;
       }
-      else if (incoming == 18)
+      else if (incoming == 17)
       {
         bool response = configureGNSSMessageRates(COM_PORT_USB, settings.ubxMessages); //Make sure the appropriate messages are enabled
         response &= i2cGNSS.setPortOutput(COM_PORT_USB, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Duplicate UART1
@@ -480,6 +503,46 @@ void menuDebug()
           Serial.println(F("Failed to enable USB messages"));
         else
           Serial.println(F("USB messages successfully enabled"));
+      }
+      else if (incoming == 18)
+      {
+        settings.enablePrintBatteryMessages ^= 1;
+      }
+      else if (incoming == 19)
+      {
+        settings.enablePrintRoverAccuracy ^= 1;
+      }
+      else if (incoming == 20)
+      {
+        settings.enablePrintBadMessages ^= 1;
+      }
+      else if (incoming == 21)
+      {
+        settings.enablePrintLogFileMessages ^= 1;
+      }
+      else if (incoming == 22)
+      {
+        settings.enablePrintLogFileStatus ^= 1;
+      }
+      else if (incoming == 23)
+      {
+        settings.enablePrintRingBufferOffsets ^= 1;
+      }
+      else if (incoming == 24)
+      {
+        settings.enablePrintNtripServerRtcm ^= 1;
+      }
+      else if (incoming == 25)
+      {
+        settings.enablePrintNtripClientRtcm ^= 1;
+      }
+      else if (incoming == 26)
+      {
+        settings.enablePrintStates ^= 1;
+      }
+      else if (incoming == 27)
+      {
+        settings.enablePrintDuplicateStates ^= 1;
       }
       else
         printUnknown(incoming);

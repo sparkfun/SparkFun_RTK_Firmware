@@ -28,9 +28,13 @@ void menuMain()
     Serial.println();
     Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
+#ifdef COMPILE_BT
     Serial.print("** Bluetooth broadcasting as: ");
     Serial.print(deviceName);
     Serial.println(" **");
+#else
+    Serial.println("** Bluetooth Not Compiled **");
+#endif
 
     Serial.println("Menu: Main Menu");
 

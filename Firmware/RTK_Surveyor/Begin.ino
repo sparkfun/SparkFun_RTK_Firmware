@@ -388,7 +388,7 @@ void stopUART2Tasks()
 
   //Give the other CPU time to finish
   //Eliminates CPU bus hang condition
-  delay(10);
+  delay(100);
 }
 
 void beginFS()
@@ -417,7 +417,6 @@ void beginGNSS()
     if (i2cGNSS.begin() == false)
     {
       displayGNSSFail(1000);
-      online.gnss = false;
       return;
     }
   }
@@ -477,6 +476,8 @@ void beginGNSS()
 //Configuration can take >1s so configure during splash
 void configureGNSS()
 {
+  if(online.gnss == false) return;
+  
   i2cGNSS.setAutoPVTcallbackPtr(&storePVTdata); // Enable automatic NAV PVT messages with callback to storePVTdata
   i2cGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); // Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
 
@@ -547,7 +548,7 @@ void beginFuelGauge()
   // Set up the MAX17048 LiPo fuel gauge
   if (lipo.begin() == false)
   {
-    Serial.println("MAX17048 not detected. Continuing.");
+    Serial.println("Fuel gauge not detected.");
     return;
   }
 

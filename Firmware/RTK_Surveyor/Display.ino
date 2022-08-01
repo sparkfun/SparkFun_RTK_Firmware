@@ -157,48 +157,48 @@ void updateDisplay()
 
         case (STATE_ROVER_NOT_STARTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY        //Top right
-                | ICON_CROSS_HAIR     //Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
+                  | ICON_BATTERY        //Top right
+                  | ICON_CROSS_HAIR     //Center left
+                  | ICON_HORIZONTAL_ACCURACY //Center right
+                  | paintSIV()          //Bottom left
+                  | ICON_LOGGING;       //Bottom right
           break;
         case (STATE_ROVER_NO_FIX):
           icons = paintWirelessIcon() //Top left
-                | ICON_DYNAMIC_MODEL  //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_CROSS_HAIR     //Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
+                  | ICON_DYNAMIC_MODEL  //Top center
+                  | ICON_BATTERY        //Top right
+                  | ICON_CROSS_HAIR     //Center left
+                  | ICON_HORIZONTAL_ACCURACY //Center right
+                  | paintSIV()          //Bottom left
+                  | ICON_LOGGING;       //Bottom right
           break;
         case (STATE_ROVER_FIX):
           icons = paintWirelessIcon() //Top left
-                | ICON_DYNAMIC_MODEL  //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_CROSS_HAIR     //Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
+                  | ICON_DYNAMIC_MODEL  //Top center
+                  | ICON_BATTERY        //Top right
+                  | ICON_CROSS_HAIR     //Center left
+                  | ICON_HORIZONTAL_ACCURACY //Center right
+                  | paintSIV()          //Bottom left
+                  | ICON_LOGGING;       //Bottom right
           break;
         case (STATE_ROVER_RTK_FLOAT):
           blinking_icons ^= ICON_CROSS_HAIR_DUAL;
           icons = paintWirelessIcon() //Top left
-                | ICON_DYNAMIC_MODEL  //Top center
-                | ICON_BATTERY        //Top right
-                | (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
+                  | ICON_DYNAMIC_MODEL  //Top center
+                  | ICON_BATTERY        //Top right
+                  | (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
+                  | ICON_HORIZONTAL_ACCURACY //Center right
+                  | paintSIV()          //Bottom left
+                  | ICON_LOGGING;       //Bottom right
           break;
         case (STATE_ROVER_RTK_FIX):
           icons = paintWirelessIcon() //Top left
-                | ICON_DYNAMIC_MODEL  //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_CROSS_HAIR_DUAL//Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
+                  | ICON_DYNAMIC_MODEL  //Top center
+                  | ICON_BATTERY        //Top right
+                  | ICON_CROSS_HAIR_DUAL//Center left
+                  | ICON_HORIZONTAL_ACCURACY //Center right
+                  | paintSIV()          //Bottom left
+                  | ICON_LOGGING;       //Bottom right
           break;
 
         case (STATE_BASE_NOT_STARTED):
@@ -211,37 +211,37 @@ void updateDisplay()
         case (STATE_BASE_TEMP_SETTLE):
           blinking_icons ^= ICON_BASE_TEMPORARY | ICON_CROSS_HAIR;
           icons = paintWirelessIcon() //Top left
-                | (blinking_icons & ICON_BASE_TEMPORARY)  //Top center
-                | ICON_BATTERY        //Top right
-                | (blinking_icons & ICON_CROSS_HAIR)  //Center left
-                | ICON_HORIZONTAL_ACCURACY //Center right
-                | paintSIV()          //Bottom left
-                | ICON_LOGGING;       //Bottom right
+                  | (blinking_icons & ICON_BASE_TEMPORARY)  //Top center
+                  | ICON_BATTERY        //Top right
+                  | (blinking_icons & ICON_CROSS_HAIR)  //Center left
+                  | ICON_HORIZONTAL_ACCURACY //Center right
+                  | paintSIV()          //Bottom left
+                  | ICON_LOGGING;       //Bottom right
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
           blinking_icons ^= ICON_BASE_TEMPORARY;
           icons = paintWirelessIcon() //Top left
-                | (blinking_icons & ICON_BASE_TEMPORARY)  //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
+                  | (blinking_icons & ICON_BASE_TEMPORARY)  //Top center
+                  | ICON_BATTERY        //Top right
+                  | ICON_LOGGING;       //Bottom right
           paintBaseTempSurveyStarted();
           break;
         case (STATE_BASE_TEMP_TRANSMITTING):
           icons = paintWirelessIcon() //Top left
-                | ICON_BASE_TEMPORARY //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
+                  | ICON_BASE_TEMPORARY //Top center
+                  | ICON_BATTERY        //Top right
+                  | ICON_LOGGING;       //Bottom right
           paintRTCM();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
           icons = paintWirelessIcon() //Top left
-                | ICON_BATTERY;       //Top right
+                  | ICON_BATTERY;       //Top right
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
           icons = paintWirelessIcon() //Top left
-                | ICON_BASE_FIXED     //Top center
-                | ICON_BATTERY        //Top right
-                | ICON_LOGGING;       //Bottom right
+                  | ICON_BASE_FIXED     //Top center
+                  | ICON_BATTERY        //Top right
+                  | ICON_LOGGING;       //Bottom right
           paintRTCM();
           break;
         case (STATE_BUBBLE_LEVEL):
@@ -533,7 +533,7 @@ void paintBatteryLevel()
   10|
   11|
 
-or
+  or
 
                111111111122222222223333333333444444444455555555556666
      0123456789012345678901234567890123456789012345678901234567890123
@@ -553,7 +553,7 @@ or
   12|       **
   13|       *
 
-or
+  or
 
                111111111122222222223333333333444444444455555555556666
      0123456789012345678901234567890123456789012345678901234567890123
@@ -585,7 +585,7 @@ uint32_t paintWirelessIcon()
       if (systemState <= STATE_BASE_NOT_STARTED)
       {
         if (online.rxRtcmCorrectionData)
-        icons |= ICON_DOWN_ARROW;
+          icons |= ICON_DOWN_ARROW;
       }
       else if (systemState <= STATE_BUBBLE_LEVEL)
         icons |= ICON_UP_ARROW;

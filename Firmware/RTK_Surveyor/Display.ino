@@ -57,29 +57,31 @@ static uint32_t icons;
 void beginDisplay()
 {
   blinking_icons = 0;
-  if (oled.begin() == true)
-  {
-    online.display = true;
 
-    Serial.println("Display started");
-
-    //Display the SparkFun LOGO
-    oled.erase();
-    displayBitmap(0, 0, logoSparkFun_Width, logoSparkFun_Height, logoSparkFun);
-    oled.display();
-    splashStart = millis();
-  }
-  else
+  //At this point we have not identified the RTK platform
+  //If it's surveyor, there won't be a display and we have a 100ms delay
+  //If it's other platforms, we will try 3 times
+  int maxTries = 3;
+  for (int x = 0 ; x < maxTries ; x++)
   {
-    if (productVariant == RTK_SURVEYOR)
+    if (oled.begin() == true)
     {
-      Serial.println("Display not detected");
+      online.display = true;
+
+      Serial.println("Display started");
+
+      //Display the SparkFun LOGO
+      oled.erase();
+      displayBitmap(0, 0, logoSparkFun_Width, logoSparkFun_Height, logoSparkFun);
+      oled.display();
+      splashStart = millis();
+      return;
     }
-    else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
-    {
-      Serial.println("Display Error: Not detected.");
-    }
+
+    delay(50); //Give display time to startup before attempting again
   }
+
+  Serial.println("Display not detected");
 }
 
 //Given the system state, display the appropriate information

@@ -53,12 +53,13 @@ void F9PSerialReadTask(void *e)
         Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
 
       //----------------------------------------------------------------------
-      //At approximately 3.3K characters/second, a 6K byte buffer should hold
-      //approximately 2 seconds worth of data.  Bluetooth congestion or conflicts
-      //with the SD card semaphore should clear within this time.  At 57600 baud
-      //the Bluetooth UART is able to send 7200 characters a second.  With a 10
-      //mSec delay this routine runs approximately 100 times per second providing
-      //multiple chances to empty the buffer.
+      //The ESP32<->ZED-F9P serial connection is default 460,800bps to facilitate
+      //10Hz fix rate with PPP Logging Defaults (NMEAx5 + RXMx2) messages enabled.
+      //ESP32 UART2 is begun with SERIAL_SIZE_RX size buffer. The circular buffer 
+      //is SERIAL_SIZE_RX. At approximately 46.1K characters/second, a 6144 * 2 
+      //byte buffer should hold 267ms worth of serial data. Assuming SD writes are 
+      //250ms worst case, we should record incoming all data. Bluetooth congestion 
+      //or conflicts with the SD card semaphore should clear within this time.  
       //
       //Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
       //
@@ -103,7 +104,6 @@ void F9PSerialReadTask(void *e)
         if (btBytesToSend < 0)
           btBytesToSend += sizeof(rBuffer);
       }
-      Serial.printf("btBytesToSend: %d ", btBytesToSend);
 
       //Determine the amount of microSD card logging data in the buffer
       sdBytesToRecord = 0;
@@ -113,7 +113,6 @@ void F9PSerialReadTask(void *e)
         if (sdBytesToRecord < 0)
           sdBytesToRecord += sizeof(rBuffer);
       }
-      Serial.printf("sdBytesToRecord: %d ", sdBytesToRecord);
 
       //Determine the free bytes in the buffer
       if (btBytesToSend >= sdBytesToRecord)
@@ -121,19 +120,13 @@ void F9PSerialReadTask(void *e)
       else
         availableBufferSpace = sizeof(rBuffer) - sdBytesToRecord;
 
-      Serial.printf("pure: %d ", availableBufferSpace);
-
       //Don't fill the last byte to prevent buffer overflow
       if (availableBufferSpace)
         availableBufferSpace -= 1;
 
-      Serial.printf("protected: %d ", availableBufferSpace);
-
       //Fill the buffer to the end and then start at the beginning
       if ((dataHead + availableBufferSpace) > sizeof(rBuffer))
         availableBufferSpace = sizeof(rBuffer) - dataHead;
-
-      Serial.printf("trimmed: %d ", availableBufferSpace);
 
       //If we have buffer space, read data from the GNSS into the buffer
       newBytesToRecord = 0;
@@ -159,11 +152,6 @@ void F9PSerialReadTask(void *e)
           sdBytesToRecord += newBytesToRecord;
       }
 
-      Serial.printf("btBytesToSend: %d ", btBytesToSend);
-      Serial.printf("sdBytesToRecord: %d ", sdBytesToRecord);
-
-      Serial.println();
-
       //----------------------------------------------------------------------
       //Send data over Bluetooth
       //----------------------------------------------------------------------
@@ -178,6 +166,10 @@ void F9PSerialReadTask(void *e)
         //We'll wrap next loop
         if ((btTail + btBytesToSend) > sizeof(rBuffer))
           btBytesToSend = sizeof(rBuffer) - btTail;
+
+        //Reduce bytes to send to match BT buffer size
+        if (btBytesToSend > settings.sppTxQueueSize)
+          btBytesToSend = settings.sppTxQueueSize;
 
         if ((bluetoothIsCongested() == false) || (settings.throttleDuringSPPCongestion == false))
         {
@@ -223,7 +215,7 @@ void F9PSerialReadTask(void *e)
               sdBytesToRecord = sizeof(rBuffer) - sdTail;
 
             //Write the data to the file
-            sdBytesToRecord = ubxFile->write(rBuffer, sdBytesToRecord);
+            sdBytesToRecord = ubxFile->write(&rBuffer[sdTail], sdBytesToRecord);
             xSemaphoreGive(sdCardSemaphore);
 
             //Account for the sent data or dropped
@@ -238,11 +230,11 @@ void F9PSerialReadTask(void *e)
             {
               //Error - no more room in the buffer, drop a buffer's worth of data
               sdTail = dataHead;
-              log_e("ERROR - sdCardSemaphore failed to yield, Tasks.ino line %d\r\n", __LINE__);
+              log_e("ERROR - sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
               Serial.printf("ERROR - Dropped %d bytes: GNSS --> log file\r\n", sdBytesToRecord);
             }
             else
-              log_w("WARNING - sdCardSemaphore failed to yield, Tasks.ino line %d\r\n", __LINE__);
+              log_w("WARNING - sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
           }
         } //End maxLogTime
       } //End logging
@@ -252,7 +244,7 @@ void F9PSerialReadTask(void *e)
     //Let other tasks run, prevent watch dog timer (WDT) resets
     //----------------------------------------------------------------------
 
-    delay(50);
+    delay(10);
   }
 }
 

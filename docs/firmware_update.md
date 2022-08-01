@@ -84,7 +84,7 @@ Once complete, the device will reset and power down.
 
 ## Updating Firmware From CLI
 
-The command-line interface is also available. You’ll need to download the repo and navigate to the [`/Binaries/`](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/bin) folder. This contains the binaries but also various supporting tools including esptool.exe and the three binaries required along with the firmware (bootloader, partitions, and app0). 
+The command-line interface is also available. You’ll need to download the repo and navigate to the [`/Binaries/`](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/bin) folder. This contains the binaries but also various supporting tools including esptool.exe and the three binaries required along with the firmware (bootloader, partitions, and app0).
 
 ### Windows
 
@@ -104,7 +104,7 @@ Once the correct COM is identified, run 'batch_program.bat' along with the binar
 
 The batch file runs the following commands:
 
-esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor.ino.partitions.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
+esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor_Partitions_16MB.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
 
 Where *COM6* is replaced with the COM port that the RTK product enumerated at and *RTK_Surveyor_Firmware_vxx.bin* is the firmware you would like to load.
 
@@ -116,7 +116,7 @@ Get [esptool.py](https://github.com/espressif/esptool). Connect a USB A to C cab
 
 If the COM port is not showing be sure the unit is turned **On**. If an unknown device is appearing, you’ll need to [install drivers for the CH340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Once you know the COM port, run the following command:
 
-py esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor.ino.partitions.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
+py esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor_Partitions_16MB.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
 
 Where */dev/ttyUSB0* is replaced with the port that the RTK product enumerated at and *RTK_Surveyor_Firmware_vxx.bin* is the firmware you would like to load.
 
@@ -129,6 +129,10 @@ RTK Surveyors sold before September 2021 may have an ESP32 WROOM module with 4MB
 * There is not enough flash space for OTA. Upgrading the firmware must be done via [CLI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli) or [GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui). WiFi or SD update paths are not possible.
 
 The GUI (as of v1.3) will autodetect the ESP32's flash size and load the appropriate partition file. No user interaction is required.
+
+If you are using the CLI method, be sure to point at the 4MB partition file. For example:
+
+esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/**RTK_Surveyor_Partitions_4MB**.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
 
 ### Determining Size of Flash
 

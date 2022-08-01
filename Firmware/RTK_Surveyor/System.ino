@@ -1,120 +1,3 @@
-//Get MAC, start radio
-//Tack device's MAC address to end of friendly broadcast name
-//This allows multiple units to be on at same time
-void startBluetooth()
-{
-  if (btState == BT_OFF)
-  {
-#ifdef COMPILE_BT
-    char stateName[10];
-    if (buttonPreviousState == BUTTON_ROVER)
-      strcpy(stateName, "Rover");
-    else
-      strcpy(stateName, "Base");
-
-    sprintf(deviceName, "%s %s-%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]); //Base mode
-
-    if (SerialBT.begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
-    {
-      Serial.println(F("An error occurred initializing Bluetooth"));
-
-      if (productVariant == RTK_SURVEYOR)
-        digitalWrite(pin_bluetoothStatusLED, LOW);
-      return;
-    }
-
-    //Set PIN to 1234 so we can connect to older BT devices, but not require a PIN for modern device pairing
-    //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/5
-    //https://github.com/espressif/esp-idf/issues/1541
-    //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
-
-    esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_NONE; //Requires pin 1234 on old BT dongle, No prompt on new BT dongle
-    //esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_OUT; //Works but prompts for either pin (old) or 'Does this 6 pin appear on the device?' (new)
-
-    esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
-
-    esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
-    esp_bt_pin_code_t pin_code;
-    pin_code[0] = '1';
-    pin_code[1] = '2';
-    pin_code[2] = '3';
-    pin_code[3] = '4';
-    esp_bt_gap_set_pin(pin_type, 4, pin_code);
-    //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-    SerialBT.register_callback(btCallback); //Controls BT Status LED on Surveyor
-    SerialBT.setTimeout(250);
-
-    Serial.print(F("Bluetooth broadcasting as: "));
-    Serial.println(deviceName);
-
-    //Start task for controlling Bluetooth pair LED
-    if (productVariant == RTK_SURVEYOR)
-    {
-      ledcWrite(ledBTChannel, 255); //Turn on BT LED
-      btLEDTask.detach(); //Slow down the BT LED blinker task
-      btLEDTask.attach(btLEDTaskPace2Hz, updateBTled); //Rate in seconds, callback
-    }
-#endif
-
-    btState = BT_NOTCONNECTED;
-    reportHeapNow();
-  }
-
-}
-
-//This function stops BT so that it can be restarted later
-//It also releases as much system resources as possible so that WiFi/caster is more stable
-void stopBluetooth()
-{
-  if (btState == BT_NOTCONNECTED || btState == BT_CONNECTED)
-  {
-#ifdef COMPILE_BT
-    SerialBT.register_callback(NULL);
-    SerialBT.flush(); //Complete any transfers
-    SerialBT.disconnect(); //Drop any clients
-    SerialBT.end(); //SerialBT.end() will release significant RAM (~100k!) but a SerialBT.start will crash.
-#endif
-
-    log_d("Bluetooth turned off");
-
-    btState = BT_OFF;
-    reportHeapNow();
-  }
-}
-
-void startWiFi(char* ssid, char* pw)
-{
-  if (wifiState == WIFI_OFF)
-  {
-#ifdef COMPILE_WIFI
-    Serial.printf("Connecting to WiFi: %s", ssid);
-    WiFi.begin(ssid, pw);
-#endif
-
-    wifiState = WIFI_NOTCONNECTED;
-    reportHeapNow();
-  }
-}
-
-//Stop WiFi and release all resources
-//See WiFiBluetoothSwitch sketch for more info
-void stopWiFi()
-{
-  if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
-  {
-#ifdef COMPILE_WIFI
-    ntripServer.stop();
-    WiFi.mode(WIFI_OFF);
-#endif
-
-    log_d("WiFi Stopped");
-    wifiState = WIFI_OFF;
-    reportHeapNow();
-  }
-}
-
 //Setup the u-blox module for any setup (base or rover)
 //In general we check if the setting is incorrect before writing it. Otherwise, the set commands have, on rare occasion, become
 //corrupt. The worst is when the I2C port gets turned off or the I2C address gets borked.
@@ -142,18 +25,14 @@ bool configureUbloxModule()
   if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
     response &= i2cGNSS.setNavigationFrequency(1, maxWait);
   if (response == false)
-    Serial.println(F("Set rate failed"));
+    Serial.println("Set rate failed");
 
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {
-    if (i2cGNSS.getSurveyInActive(100) == true)
-    {
-      log_d("Disabling survey");
-      response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-      if (response == false)
-        Serial.println(F("Disable Survey failed"));
-    }
+    response = i2cGNSS.setSurveyMode(0, 0, 0); //Disable Survey-In or Fixed Mode
+    if (response == false)
+      Serial.println("Disable TMODE3 failed");
   }
 
 #define OUTPUT_SETTING 14
@@ -207,23 +86,23 @@ bool configureUbloxModule()
 
   if (getSerialRate(COM_PORT_UART1) != settings.dataPortBaud)
   {
-    Serial.println(F("Updating UART1 rate"));
+    Serial.println("Updating UART1 rate");
     i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
   }
   if (getSerialRate(COM_PORT_UART2) != settings.radioPortBaud)
   {
-    Serial.println(F("Updating UART2 rate"));
+    Serial.println("Updating UART2 rate");
     i2cGNSS.setSerialRate(settings.radioPortBaud, COM_PORT_UART2); //Defaults to 57600 to match SiK telemetry radio firmware default
   }
 
   if (response == false)
   {
-    Serial.println(F("Module failed initial config."));
+    Serial.println("Module failed initial config.");
   }
 
   response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   if (response == false)
-    Serial.println(F("Module failed to save."));
+    Serial.println("Module failed to save.");
 
   //Turn on/off debug messages
   if (settings.enableI2Cdebug)
@@ -321,7 +200,7 @@ bool getPortSettings(uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getPortSettings failed"));
+    Serial.println("getPortSettings failed");
     return (false);
   }
 
@@ -346,7 +225,7 @@ uint8_t getNMEASettings(uint8_t msgID, uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getNMEASettings failed"));
+    Serial.println("getNMEASettings failed");
     return (false);
   }
 
@@ -371,7 +250,7 @@ uint8_t getRTCMSettings(uint8_t msgID, uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getRTCMSettings failed"));
+    Serial.println("getRTCMSettings failed");
     return (false);
   }
 
@@ -395,7 +274,7 @@ uint32_t getSerialRate(uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("getSerialRate failed"));
+    Serial.println("getSerialRate failed");
     return (false);
   }
 
@@ -448,26 +327,6 @@ void danceLEDs()
   }
 }
 
-//Call back for when BT connection event happens (connected/disconnect)
-//Used for updating the btState state machine
-#ifdef COMPILE_BT
-void btCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
-  if (event == ESP_SPP_SRV_OPEN_EVT) {
-    Serial.println(F("Client Connected"));
-    btState = BT_CONNECTED;
-    if (productVariant == RTK_SURVEYOR)
-      digitalWrite(pin_bluetoothStatusLED, HIGH);
-  }
-
-  if (event == ESP_SPP_CLOSE_EVT ) {
-    Serial.println(F("Client disconnected"));
-    btState = BT_NOTCONNECTED;
-    if (productVariant == RTK_SURVEYOR)
-      digitalWrite(pin_bluetoothStatusLED, LOW);
-  }
-}
-#endif
-
 //Update Battery level LEDs every 5s
 void updateBattery()
 {
@@ -483,9 +342,19 @@ void updateBattery()
 //And outputs a serial message to USB
 void checkBatteryLevels()
 {
-  battLevel = lipo.getSOC();
-  battVoltage = lipo.getVoltage();
-  battChangeRate = lipo.getChangeRate();
+  if (online.battery == true)
+  {
+    battLevel = lipo.getSOC();
+    battVoltage = lipo.getVoltage();
+    battChangeRate = lipo.getChangeRate();
+  }
+  else
+  {
+    //False numbers but above system cut-off level
+    battLevel = 10;
+    battVoltage = 3.7;
+    battChangeRate = 0;
+  }
 
   Serial.printf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
 
@@ -547,32 +416,15 @@ bool createTestFile()
   SdFile testFile;
   char testFileName[40] = "testfile.txt";
 
-  if (sdCardSemaphore == NULL)
-  {
-    log_d("sdCardSemaphore is Null");
+  //Attempt to write to the file system
+  if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true)
     return (false);
-  }
 
-  //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-  if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
-  {
-    if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) == true)
-    {
-      testFile.close();
-
-      if (sd.exists(testFileName))
-        sd.remove(testFileName);
-      xSemaphoreGive(sdCardSemaphore);
-      return (true);
-    }
-    xSemaphoreGive(sdCardSemaphore);
-  }
-  else
-  {
-    log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
-  }
-
-  return (false);
+  //File successfully created
+  testFile.close();
+  if (sd->exists(testFileName))
+    sd->remove(testFileName);
+  return (true);
 }
 
 //If debug option is on, print available heap

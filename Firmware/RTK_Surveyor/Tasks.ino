@@ -7,15 +7,15 @@ void F9PSerialWriteTask(void *e)
 {
   while (true)
   {
-#ifdef COMPILE_BT
     //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
-    if (btState == BT_CONNECTED)
+    if (bluetoothGetState() == BT_CONNECTED)
     {
-      while (SerialBT.available())
+      while (bluetoothRxDataAvailable())
       {
         //Pass bytes to GNSS receiver
-        auto s = SerialBT.readBytes(wBuffer, sizeof(wBuffer));
+        int s = bluetoothReadBytes(wBuffer, sizeof(wBuffer));
         serialGNSS.write(wBuffer, s);
+        online.rxRtcmCorrectionData = true;
 
         if (settings.enableTaskReports == true)
           Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
@@ -23,7 +23,6 @@ void F9PSerialWriteTask(void *e)
       delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
       taskYIELD();
     }
-#endif
 
     delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
@@ -34,73 +33,228 @@ void F9PSerialWriteTask(void *e)
 //Task for reading data from the GNSS receiver.
 void F9PSerialReadTask(void *e)
 {
+  static uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
+  static uint16_t dataHead = 0; //Head advances as data comes in from GNSS's UART
+  static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
+  static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
+
+  int btBytesToSend; //Amount of buffered Bluetooth data
+  int sdBytesToRecord; //Amount of buffered microSD card logging data
+  int availableBufferSpace; //Distance between head and furthest away tail
+
+  int btConnected; //Is the RTK in a state to send Bluetooth data?
+  int newBytesToRecord; //Size of data from GNSS
+
   while (true)
   {
     while (serialGNSS.available())
     {
-      auto s = serialGNSS.readBytes(rBuffer, sizeof(rBuffer));
+      if (settings.enableTaskReports == true)
+        Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+
+      //----------------------------------------------------------------------
+      //The ESP32<->ZED-F9P serial connection is default 460,800bps to facilitate
+      //10Hz fix rate with PPP Logging Defaults (NMEAx5 + RXMx2) messages enabled.
+      //ESP32 UART2 is begun with SERIAL_SIZE_RX size buffer. The circular buffer 
+      //is SERIAL_SIZE_RX. At approximately 46.1K characters/second, a 6144 * 2 
+      //byte buffer should hold 267ms worth of serial data. Assuming SD writes are 
+      //250ms worst case, we should record incoming all data. Bluetooth congestion 
+      //or conflicts with the SD card semaphore should clear within this time.  
+      //
+      //Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
+      //
+      //        +---------+
+      //        |         |
+      //        |         |
+      //        |         |
+      //        |         |
+      //        +---------+ <-- dataHead, btTail, sdTail
+      //
+      //Ring buffer contains data when (dataHead != btTail) or (dataHead != sdTail)
+      //
+      //        +---------+
+      //        |         |
+      //        |         |
+      //        | yyyyyyy | <-- dataHead
+      //        | xxxxxxx | <-- btTail (1 byte in buffer)
+      //        +---------+ <-- sdTail (2 bytes in buffer)
+      //
+      //        +---------+
+      //        | yyyyyyy | <-- btTail (1 byte in buffer)
+      //        | xxxxxxx | <-- sdTail (2 bytes in buffer)
+      //        |         |
+      //        |         |
+      //        +---------+ <-- dataHead
+      //
+      //Maximum ring buffer fill is sizeof(rBuffer) - 1
+      //----------------------------------------------------------------------
+
+      availableBufferSpace = sizeof(rBuffer);
+
+      //Determine BT connection state
+      btConnected = (bluetoothGetState() == BT_CONNECTED)
+                    && (systemState != STATE_BASE_TEMP_SETTLE)
+                    && (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
+
+      //Determine the amount of Bluetooth data in the buffer
+      btBytesToSend = 0;
+      if (btConnected)
+      {
+        btBytesToSend = dataHead - btTail;
+        if (btBytesToSend < 0)
+          btBytesToSend += sizeof(rBuffer);
+      }
+
+      //Determine the amount of microSD card logging data in the buffer
+      sdBytesToRecord = 0;
+      if (online.logging)
+      {
+        sdBytesToRecord = dataHead - sdTail;
+        if (sdBytesToRecord < 0)
+          sdBytesToRecord += sizeof(rBuffer);
+      }
+
+      //Determine the free bytes in the buffer
+      if (btBytesToSend >= sdBytesToRecord)
+        availableBufferSpace = sizeof(rBuffer) - btBytesToSend;
+      else
+        availableBufferSpace = sizeof(rBuffer) - sdBytesToRecord;
+
+      //Don't fill the last byte to prevent buffer overflow
+      if (availableBufferSpace)
+        availableBufferSpace -= 1;
+
+      //Fill the buffer to the end and then start at the beginning
+      if ((dataHead + availableBufferSpace) > sizeof(rBuffer))
+        availableBufferSpace = sizeof(rBuffer) - dataHead;
+
+      //If we have buffer space, read data from the GNSS into the buffer
+      newBytesToRecord = 0;
+      if (availableBufferSpace)
+      {
+        //Add new data into circular buffer in front of the head
+        //availableBufferSpace is already reduced to avoid buffer overflow
+        newBytesToRecord = serialGNSS.readBytes(&rBuffer[dataHead], availableBufferSpace);
+      }
+
+      //Account for the byte read
+      if (newBytesToRecord > 0)
+      {
+        //Set the next fill offset
+        dataHead += newBytesToRecord;
+        if (dataHead >= sizeof(rBuffer))
+          dataHead -= sizeof(rBuffer);
+
+        //Account for the new data
+        if (btConnected)
+          btBytesToSend += newBytesToRecord;
+        if (online.logging)
+          sdBytesToRecord += newBytesToRecord;
+      }
+
+      //----------------------------------------------------------------------
+      //Send data over Bluetooth
+      //----------------------------------------------------------------------
 
       //If we are actively survey-in then do not pass NMEA data from ZED to phone
-      if (systemState == STATE_BASE_TEMP_SETTLE || systemState == STATE_BASE_TEMP_SURVEY_STARTED)
+      if (!btConnected)
+        //Discard the data
+        btTail = dataHead;
+      else
       {
-        //Do nothing
-        taskYIELD();
-      }
-#ifdef COMPILE_BT
-      else if (btState == BT_CONNECTED)
-      {
-        if (SerialBT.isCongested() == false)
+        //Reduce bytes to send if we have more to send then the end of the buffer
+        //We'll wrap next loop
+        if ((btTail + btBytesToSend) > sizeof(rBuffer))
+          btBytesToSend = sizeof(rBuffer) - btTail;
+
+        //Reduce bytes to send to match BT buffer size
+        if (btBytesToSend > settings.sppTxQueueSize)
+          btBytesToSend = settings.sppTxQueueSize;
+
+        if ((bluetoothIsCongested() == false) || (settings.throttleDuringSPPCongestion == false))
         {
-          SerialBT.write(rBuffer, s); //Push new data to BT SPP
-        }
-        else if (settings.throttleDuringSPPCongestion == false)
-        {
-          SerialBT.write(rBuffer, s); //Push new data to SPP regardless of congestion
+          //Push new data to BT SPP if not congested or not throttling
+          btBytesToSend = bluetoothWriteBytes(&rBuffer[btTail], btBytesToSend);
+          online.txNtripDataCasting = true;
         }
         else
         {
           //Don't push data to BT SPP if there is congestion to prevent heap hits.
-          log_d("Dropped SPP Bytes: %d", s);
+          if (btBytesToSend < (sizeof(rBuffer) - 1))
+            btBytesToSend = 0;
+          else
+            Serial.printf("ERROR - Congestion, dropped %d bytes: GNSS --> Bluetooth\r\n", btBytesToSend);
         }
-      }
-#endif
 
-      if (settings.enableTaskReports == true)
-        Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+        //Account for the sent data or dropped
+        btTail += btBytesToSend;
+        if (btTail >= sizeof(rBuffer))
+          btTail -= sizeof(rBuffer);
+      }
+
+      //----------------------------------------------------------------------
+      //Log data to the SD card
+      //----------------------------------------------------------------------
 
       //If user wants to log, record to SD
-      if (online.logging == true)
+      if (!online.logging)
+        //Discard the data
+        sdTail = dataHead;
+      else
       {
         //Check if we are inside the max time window for logging
         if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
         {
-          //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
+          //Attempt to gain access to the SD card, avoids collisions with file
+          //writing from other functions like recordSystemSettingsToFile()
           if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
           {
-            ubxFile.write(rBuffer, s);
+            //Reduce bytes to send if we have more to send then the end of the buffer
+            //We'll wrap next loop
+            if ((sdTail + sdBytesToRecord) > sizeof(rBuffer))
+              sdBytesToRecord = sizeof(rBuffer) - sdTail;
 
+            //Write the data to the file
+            sdBytesToRecord = ubxFile->write(&rBuffer[sdTail], sdBytesToRecord);
             xSemaphoreGive(sdCardSemaphore);
+
+            //Account for the sent data or dropped
+            sdTail += sdBytesToRecord;
+            if (sdTail >= sizeof(rBuffer))
+              sdTail -= sizeof(rBuffer);
           } //End sdCardSemaphore
           else
           {
-            log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+            //Retry the semaphore a little later if possible
+            if (sdBytesToRecord == (sizeof(rBuffer) - 1))
+            {
+              //Error - no more room in the buffer, drop a buffer's worth of data
+              sdTail = dataHead;
+              log_e("ERROR - sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
+              Serial.printf("ERROR - Dropped %d bytes: GNSS --> log file\r\n", sdBytesToRecord);
+            }
+            else
+              log_w("WARNING - sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
           }
         } //End maxLogTime
       } //End logging
     } //End Serial.available()
 
-    delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
-    taskYIELD();
+    //----------------------------------------------------------------------
+    //Let other tasks run, prevent watch dog timer (WDT) resets
+    //----------------------------------------------------------------------
+
+    delay(10);
   }
 }
 
-//Control BT status LED according to btState
+//Control BT status LED according to bluetoothGetState()
 void updateBTled()
 {
   if (productVariant == RTK_SURVEYOR)
   {
     //Blink on/off while we wait for BT connection
-    if (btState == BT_NOTCONNECTED)
+    if (bluetoothGetState() == BT_NOTCONNECTED)
     {
       if (btFadeLevel == 0) btFadeLevel = 255;
       else btFadeLevel = 0;
@@ -108,7 +262,7 @@ void updateBTled()
     }
 
     //Solid LED if BT Connected
-    else if (btState == BT_CONNECTED)
+    else if (bluetoothGetState() == BT_CONNECTED)
       ledcWrite(ledBTChannel, 255);
 
     //Pulse LED while no BT and we wait for WiFi connection
@@ -131,6 +285,8 @@ void updateBTled()
 //For RTK Express and RTK Facet, monitor momentary buttons
 void ButtonCheckTask(void *e)
 {
+  uint8_t index;
+
   if (setupBtn != NULL) setupBtn->begin();
   if (powerBtn != NULL) powerBtn->begin();
 
@@ -239,16 +395,8 @@ void ButtonCheckTask(void *e)
           case STATE_BASE_TEMP_SETTLE:
           case STATE_BASE_TEMP_SURVEY_STARTED:
           case STATE_BASE_TEMP_TRANSMITTING:
-          case STATE_BASE_TEMP_WIFI_STARTED:
-          case STATE_BASE_TEMP_WIFI_CONNECTED:
-          case STATE_BASE_TEMP_CASTER_STARTED:
-          case STATE_BASE_TEMP_CASTER_CONNECTED:
           case STATE_BASE_FIXED_NOT_STARTED:
           case STATE_BASE_FIXED_TRANSMITTING:
-          case STATE_BASE_FIXED_WIFI_STARTED:
-          case STATE_BASE_FIXED_WIFI_CONNECTED:
-          case STATE_BASE_FIXED_CASTER_STARTED:
-          case STATE_BASE_FIXED_CASTER_CONNECTED:
           case STATE_BUBBLE_LEVEL:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
@@ -263,10 +411,7 @@ void ButtonCheckTask(void *e)
             //Allow system to return to lastSystemState
             break;
 
-          case STATE_PROFILE_1:
-          case STATE_PROFILE_2:
-          case STATE_PROFILE_3:
-          case STATE_PROFILE_4:
+          case STATE_PROFILE:
             //If the user presses the setup button during a profile change, do nothing
             //Allow system to return to lastSystemState
             break;
@@ -306,28 +451,17 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
-                if (activeProfiles == 1) //If we have only one active profile, do not show any profiles
+                //If only one active profile do not show any profiles
+                index = getProfileNumberFromUnit(0);
+                displayProfile = getProfileNumberFromUnit(1);
+                setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
+                displayProfile = 0;
+                break;
+              case STATE_PROFILE:
+                //Done when no more active profiles
+                displayProfile++;
+                if (!getProfileNumberFromUnit(displayProfile))
                   setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_1;
-                break;
-              case STATE_PROFILE_1:
-                setupState = STATE_PROFILE_2;
-                break;
-              case STATE_PROFILE_2:
-                if (activeProfiles == 2)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_3;
-                break;
-              case STATE_PROFILE_3:
-                if (activeProfiles == 3)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_4;
-                break;
-              case STATE_PROFILE_4:
-                setupState = STATE_MARK_EVENT;
                 break;
               default:
                 Serial.printf("ButtonCheckTask unknown setup state: %d\n\r", setupState);
@@ -376,16 +510,8 @@ void ButtonCheckTask(void *e)
           case STATE_BASE_TEMP_SETTLE:
           case STATE_BASE_TEMP_SURVEY_STARTED:
           case STATE_BASE_TEMP_TRANSMITTING:
-          case STATE_BASE_TEMP_WIFI_STARTED:
-          case STATE_BASE_TEMP_WIFI_CONNECTED:
-          case STATE_BASE_TEMP_CASTER_STARTED:
-          case STATE_BASE_TEMP_CASTER_CONNECTED:
           case STATE_BASE_FIXED_NOT_STARTED:
           case STATE_BASE_FIXED_TRANSMITTING:
-          case STATE_BASE_FIXED_WIFI_STARTED:
-          case STATE_BASE_FIXED_WIFI_CONNECTED:
-          case STATE_BASE_FIXED_CASTER_STARTED:
-          case STATE_BASE_FIXED_CASTER_CONNECTED:
           case STATE_BUBBLE_LEVEL:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
@@ -400,10 +526,7 @@ void ButtonCheckTask(void *e)
             //Allow system to return to lastSystemState
             break;
 
-          case STATE_PROFILE_1:
-          case STATE_PROFILE_2:
-          case STATE_PROFILE_3:
-          case STATE_PROFILE_4:
+          case STATE_PROFILE:
             //If the user presses the setup button during a profile change, do nothing
             //Allow system to return to lastSystemState
             break;
@@ -443,28 +566,17 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
-                if (activeProfiles == 1) //If we have only one active profile, do not show any profiles
+                //If only one active profile do not show any profiles
+                index = getProfileNumberFromUnit(0);
+                displayProfile = getProfileNumberFromUnit(1);
+                setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
+                displayProfile = 0;
+                break;
+              case STATE_PROFILE:
+                //Done when no more active profiles
+                displayProfile++;
+                if (!getProfileNumberFromUnit(displayProfile))
                   setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_1;
-                break;
-              case STATE_PROFILE_1:
-                setupState = STATE_PROFILE_2;
-                break;
-              case STATE_PROFILE_2:
-                if (activeProfiles == 2)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_3;
-                break;
-              case STATE_PROFILE_3:
-                if (activeProfiles == 3)
-                  setupState = STATE_MARK_EVENT;
-                else
-                  setupState = STATE_PROFILE_4;
-                break;
-              case STATE_PROFILE_4:
-                setupState = STATE_MARK_EVENT;
                 break;
               default:
                 Serial.printf("ButtonCheckTask unknown setup state: %d\n\r", setupState);
@@ -482,6 +594,56 @@ void ButtonCheckTask(void *e)
     } //End Platform = RTK Facet
 
     delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
+    taskYIELD();
+  }
+}
+
+void idleTask(void *e)
+{
+  int cpu = xPortGetCoreID();
+  uint32_t idleCount = 0;
+  uint32_t lastDisplayIdleTime = 0;
+  uint32_t lastStackPrintTime = 0;
+
+  while (1)
+  {
+    //Increment a count during the idle time
+    idleCount++;
+
+    //Determine if it is time to print the CPU idle times
+    if ((millis() - lastDisplayIdleTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000))
+    {
+      lastDisplayIdleTime = millis();
+
+      //Get the idle time
+      if (idleCount > max_idle_count)
+        max_idle_count = idleCount;
+
+      //Display the idle times
+      if (settings.enablePrintIdleTime) {
+        Serial.printf("CPU %d idle time: %d%% (%d/%d)\r\n", cpu,
+                      idleCount * 100 / max_idle_count,
+                      idleCount, max_idle_count);
+
+        //Print the task count
+        if (cpu)
+          Serial.printf("%d Tasks\r\n", uxTaskGetNumberOfTasks());
+      }
+
+      //Restart the idle count for the next display time
+      idleCount = 0;
+    }
+
+    //Display the high water mark if requested
+    if ((settings.enableTaskReports == true)
+        && ((millis() - lastStackPrintTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000)))
+    {
+      lastStackPrintTime = millis();
+      Serial.printf("idleTask %d High watermark: %d\n\r",
+                    xPortGetCoreID(), uxTaskGetStackHighWaterMark(NULL));
+    }
+
+    //Let other same priority tasks run
     taskYIELD();
   }
 }

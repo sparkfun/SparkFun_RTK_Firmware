@@ -23,7 +23,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 2;
+const int FIRMWARE_VERSION_MINOR = 3;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
@@ -40,6 +40,15 @@ const int FIRMWARE_VERSION_MINOR = 2;
 #define RTK_IDENTIFIER (FIRMWARE_VERSION_MAJOR * 0x10 + FIRMWARE_VERSION_MINOR)
 
 #include "settings.h"
+
+#define MAX_CPU_CORES               2
+#define IDLE_COUNT_PER_SECOND       1000
+#define IDLE_TIME_DISPLAY_SECONDS   5
+#define MAX_IDLE_TIME_COUNT         (IDLE_TIME_DISPLAY_SECONDS * IDLE_COUNT_PER_SECOND)
+#define MILLISECONDS_IN_A_SECOND    1000
+#define MILLISECONDS_IN_A_MINUTE    (60 * MILLISECONDS_IN_A_SECOND)
+#define MILLISECONDS_IN_AN_HOUR     (60 * MILLISECONDS_IN_A_MINUTE)
+#define MILLISECONDS_IN_A_DAY       (24 * MILLISECONDS_IN_AN_HOUR)
 
 //Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -83,13 +92,12 @@ int pin_radio_rts;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <LittleFS.h>
 
-const char *rtkProfileSettings = "SFERTK"; //Holds the profileNumber
-const char *rtkSettings[] = {"SFERTK_0", "SFERTK_1", "SFERTK_2", "SFERTK_3"}; //User profiles
-#define MAX_PROFILE_COUNT 4
-uint8_t activeProfiles = 1;
+#define MAX_PROFILE_COUNT 8
+uint8_t activeProfiles = 0; //Bit vector indicating which profiles are active
+uint8_t displayProfile; //Range: 0 - (MAX_PROFILE_COUNT - 1)
 uint8_t profileNumber = MAX_PROFILE_COUNT; //profileNumber gets set once at boot to save loading time
 char profileNames[MAX_PROFILE_COUNT][50]; //Populated based on names found in LittleFS and SD
-char settingsFileName[40]; //Contains the %s_Settings_%d.txt with current profile number set
+char settingsFileName[60]; //Contains the %s_Settings_%d.txt with current profile number set
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time
@@ -103,16 +111,14 @@ ESP32Time rtc;
 #include <SPI.h>
 #include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 
-SdFat sd;
+SdFat * sd;
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
-SdFile ubxFile; //File that all GNSS ubx messages sentences are written to
+SdFile * ubxFile; //File that all GNSS ubx messages sentences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
 int startLogTime_minutes = 0; //Mark when we start any logging so we can stop logging after maxLogTime_minutes
 int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file so we can close it after x minutes and start a new one
-
-SdFile newFirmwareFile; //File that is available if user uploads new firmware via web gui
 
 //System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
@@ -137,17 +143,7 @@ uint32_t sdUsedSpaceMB = 0;
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
-WiFiClient ntripServer; // The WiFi connection to the NTRIP caster. We use this to push local RTCM to the caster.
-WiFiClient ntripClient; // The WiFi connection to the NTRIP caster. We use this to obtain RTCM from the caster.
-
 #endif
-
-unsigned long lastServerSent_ms = 0; //Time of last data pushed to caster
-unsigned long lastServerReport_ms = 0; //Time of last report of caster bytes sent
-int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
-
-uint32_t casterBytesSent = 0; //Just a running total
-uint32_t casterResponseWaitStartTime = 0; //Used to detect if caster service times out
 
 char certificateContents[2000]; //Holds the contents of the keys prior to MQTT connection
 char keyContents[2000];
@@ -157,7 +153,8 @@ char keyContents[2000];
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
-char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to debug menu and settings file.
+char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to system status menu and settings file.
+char neoFirmwareVersion[20]; //Output to system status menu.
 uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS)
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
@@ -233,15 +230,13 @@ float battChangeRate = 0.0;
 #ifdef COMPILE_BT
 //We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/23
 #include "src/BluetoothSerial/BluetoothSerial.h"
-BluetoothSerial SerialBT;
 #endif
 
-char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names
+char platformPrefix[55] = "Surveyor"; //Sets the prefix for broadcast names
 
 HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
-#define SERIAL_SIZE_RX (1024 * 6) //Should match buffer size in BluetoothSerial.cpp. Reduced from 16384 to make room for WiFi/NTRIP server capabilities
-uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
+#define SERIAL_SIZE_RX (1024 * 6) //Must be large enough to handle incoming ZED UART traffic. See F9PSerialReadTask().
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
 
@@ -318,7 +313,7 @@ AsyncWebSocket ws("/ws");
 
 //Because the incoming string is longer than max len, there are multiple callbacks so we
 //use a global to combine the incoming
-#define AP_CONFIG_SETTING_SIZE 3500
+#define AP_CONFIG_SETTING_SIZE 5000
 char incomingSettings[AP_CONFIG_SETTING_SIZE];
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
@@ -326,8 +321,7 @@ unsigned long timeSinceLastIncomingSetting = 0;
 
 //PointPerfect Corrections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-SFE_UBLOX_GNSS i2cLBand; // NEO-D9S
-
+SFE_UBLOX_GNSS_ADD i2cLBand; // NEO-D9S
 const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 
 #if __has_include("tokens.h")
@@ -350,11 +344,12 @@ float lBandEBNO = 0.0; //Used on system status menu
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
-char deviceName[30]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
+char deviceName[70]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
 uint8_t debounceDelay = 20; //ms to delay between button reads
+bool inMainMenu = false; //Set true when in the serial config menu system.
 
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
@@ -370,6 +365,7 @@ uint32_t lastHeapReport = 0; //Report heap every 1s if option enabled
 uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
 uint32_t lastRTCAttempt = 0; //Wait 1000ms between checking GNSS for current date/time
+uint32_t lastPrintPosition = 0; //For periodic display of the position
 
 uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
@@ -379,7 +375,6 @@ uint64_t lastLogSize = 0;
 bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
 bool reuseLastLog = false; //Goes true if we have a reset due to software (rather than POR)
 
-uint32_t lastRTCMPacketSent = 0; //Used to count RTCM packets sent during base mode
 uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM()
 
 uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
@@ -401,7 +396,6 @@ uint32_t triggerCount = 0; //Global copy - TM2 event counter
 uint32_t towMsR = 0; //Global copy - Time Of Week of rising edge (ms)
 uint32_t towSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
 
-long lastReceivedRTCM_ms = 0;       //5 RTCM messages take approximately ~300ms to arrive at 115200bps
 int timeBetweenGGAUpdate_ms = 10000; //GGA is required for Rev2 NTRIP casters. Don't transmit but once every 10 seconds
 long lastTransmittedGGA_ms = 0;
 
@@ -419,11 +413,8 @@ unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update
 int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
-unsigned long wifiStartTime = 0; //If we cannot connect to local wifi for NTRIP client, give up/go to Rover after 8 seconds
+bool restartBase = false; //If user modifies any NTRIP Server settings, we need to restart the base
 bool restartRover = false; //If user modifies any NTRIP Client settings, we need to restart the rover
-int ntripClientConnectionAttempts = 0;
-int maxNtripClientConnectionAttempts = 3; //Give up connecting after this number of attempts
-bool ntripClientAttempted = false; //Goes true once we attempt WiFi. Allows graceful failure.
 
 unsigned long startTime = 0; //Used for checking longest running functions
 bool lbandCorrectionsReceived = false; //Used to display L-Band SIV icon when corrections are successfully decrypted
@@ -434,14 +425,95 @@ unsigned long systemTestDisplayTime = 0; //Timestamp for swapping the graphic du
 uint8_t systemTestDisplayNumber = 0; //Tracks which test screen we're looking at
 unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to update during PointPerfect Key checking
 
+TaskHandle_t idleTaskHandle[MAX_CPU_CORES];
+uint32_t max_idle_count = MAX_IDLE_TIME_COUNT;
+
+uint64_t uptime;
+uint32_t previousMilliseconds;
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+/*
+                     +---------------------------------------+      +----------+
+                     |                 ESP32                 |      |   GNSS   |  Antenna
+  +-------------+    |                                       |      |          |     |
+  | Phone       |    |   .-----------.          .--------.   |27  42|          |     |
+  |        RTCM |--->|-->|           |--------->|        |-->|----->|TXD, MISO |     |
+  |             |    |   | Bluetooth |          | UART 2 |   |      | UART1    |     |
+  | NMEA + RTCM |<---|<--|           |<-------+-|        |<--|<-----|RXD, MOSI |<----'
+  +-------------+    |   '-----------'        | '--------'   |28  42|          |
+                     |                        |              |      |          |
+      .---------+    |                        |              |      |          |
+     / uSD Card |    |                        |              |      |          |
+    /           |    |   .----.               V              |      |          |
+   |   Log File |<---|<--|    |<--------------+              |      |          |47
+   |            |    |   |    |               |              |      |    D_SEL |<---- N/C (1)
+   |  Profile # |<-->|<->| SD |<--> Profile   |              |      | 0 = SPI  |
+   |            |    |   |    |               |              |      | 1 = I2C  |
+   |  Settings  |<-->|<->|    |<--> Settings  |              |      |    UART1 |
+   |            |    |   '----'               |              |      |          |
+   +------------+    |                        |              |      |          |
+                     |   .--------.           |              |      |          |
+                     |   |        |<----------'              |      |          |
+                     |   |  USB   |                          |      |          |
+       USB UART <--->|<->| Serial |<-- Debug Output          |      |          |
+    (Config ESP32)   |   |        |                          |      |          |
+                     |   |        |<-- Serial Config         |      |   UART 2 |<--> Radio
+                     |   '--------'                          |      |          |   Connector
+                     |                                       |      |          |  (Correction
+                     |   .------.                            |      |          |      Data)
+        Browser <--->|<->|      |<---> WiFi Config           |      |          |
+                     |   |      |                            |      |          |
+  +--------------+   |   |      |                            |      |      USB |<--> USB UART
+  |              |<--|<--| WiFi |<---- NMEA + RTCM <-.       |      |          |  (Config UBLOX)
+  | NTRIP Caster |   |   |      |                    |       |      |          |
+  |              |-->|-->|      |-----------.        |       |6   46|          |
+  +--------------+   |   |      |           |        |  .----|<-----|TXREADY   |
+                     |   '------'           |        |  v    |      |          |
+                     |                      |      .-----.   |      |          |
+                     |                      '----->|     |   |33  44|          |
+                     |                             |     |<->|<---->|SDA, CS_N |
+                     |           Commands -------->| I2C |   |      |    I2C   |
+                     |                             |     |-->|----->|SCL, CLK  |
+                     |             Status <--------|     |   |36  45|          |
+                     |                             '-----'   |      +----------+
+                     |                                       |
+                     +---------------------------------------+
+                                  26|   |24   A B
+                                    |   |     0 0 = X0, Y0
+                                    V   V     0 1 = X1, Y1
+                                  +-------+   1 0 = X2, Y2
+                                  | B   A |   1 1 = X3, Y3
+                                  |       |
+                                  |     X0|<--- GNSS UART1 TXD
+                                  |       |
+                                  |     X1|<--- GNSS PPS STAT
+                            3 <---|X      |
+                                  |     X2|<--- SCL
+                                  |       |
+                                  |     X3|<--- DAC2
+                   Data Port      |       |
+                                  |     Y0|----> ZED UART1 RXD
+                                  |       |
+                                  |     Y1|<--> ZED EXT INT
+                            2 <-->|Y      |
+                                  |     Y2|---> SDA
+                                  |       |
+                                  |     Y3|---> ADC39
+                                  |       |
+                                  |  MUX  |
+                                  +-------+
+*/
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
 
-  Wire.begin(); //Start I2C on core 1
-  //Wire.setClock(400000);
+  beginIdleTasks();
+
+  beginI2C();
+
+  beginDisplay(); //Start display first to be able to display any errors
 
   beginGNSS(); //Connect to GNSS to get module type
 
@@ -449,7 +521,7 @@ void setup()
 
   beginBoard(); //Determine what hardware platform we are running on and check on button
 
-  beginDisplay(); //Start display first to be able to display any errors
+  displaySplash(); //Display the RTK product name and firmware version
 
   beginLEDs(); //LED and PWM setup
 
@@ -482,6 +554,9 @@ void setup()
 
 void loop()
 {
+  uint32_t delayTime;
+  uint32_t currentMilliseconds;
+
   if (online.gnss == true)
   {
     i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
@@ -502,14 +577,22 @@ void loop()
 
   updateSerial(); //Menu system via ESP32 USB connection
 
-  updateNTRIPClient(); //Move any available incoming NTRIP to ZED
+  wifiUpdate(); //Bring up WiFi, NTRIP connection and move data NTRIP <--> ZED
 
   updateLBand(); //Check if we've recently received PointPerfect corrections or not
+
+  //Periodically print the position
+  if (settings.enablePrintPosition && ((millis() - lastPrintPosition) > 15000))
+  {
+    printCurrentConditions();
+    lastPrintPosition = millis();
+  }
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;
 
-  delay(10); //A small delay prevents panic if no other I2C or functions are called
+  //A small delay prevents panic if no other I2C or functions are called
+  delay(10);
 }
 
 //Create or close files as needed (startup or as user changes settings)
@@ -523,32 +606,12 @@ void updateLogs()
   else if (online.logging == true && settings.enableLogging == false)
   {
     //Close down file
-    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-    {
-      ubxFile.sync();
-      ubxFile.close();
-      online.logging = false;
-      xSemaphoreGive(sdCardSemaphore); //Release semaphore
-    }
-    else
-    {
-      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
-    }
+    endSD(false, true);
   }
   else if (online.logging == true && settings.enableLogging == true && (systemTime_minutes - startCurrentLogTime_minutes) >= settings.maxLogLength_minutes)
   {
     //Close down file. A new one will be created at the next calling of updateLogs().
-    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-    {
-      ubxFile.sync();
-      ubxFile.close();
-      online.logging = false;
-      xSemaphoreGive(sdCardSemaphore); //Release semaphore
-    }
-    else
-    {
-      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
-    }
+    endSD(false, true);
   }
 
   if (online.logging == true)
@@ -562,21 +625,23 @@ void updateLogs()
           digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
         long startWriteTime = micros();
-        ubxFile.sync();
+        ubxFile->sync();
         long stopWriteTime = micros();
         totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
 
         if (productVariant == RTK_SURVEYOR)
           digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
 
-        updateDataFileAccess(&ubxFile); // Update the file access time & date
+        updateDataFileAccess(ubxFile); // Update the file access time & date
 
         lastUBXLogSyncTime = millis();
         xSemaphoreGive(sdCardSemaphore);
       } //End sdCardSemaphore
       else
       {
-        log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+        //This is OK because in the interim more data will be written to the log
+        //and the log file will eventually be synced by the next call in loop
+        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
       }
     }
 
@@ -594,14 +659,17 @@ void updateLogs()
 
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
-        ubxFile.println(nmeaMessage);
+        ubxFile->println(nmeaMessage);
 
         xSemaphoreGive(sdCardSemaphore);
         newEventToRecord = false;
       }
       else
       {
-        log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+        //While a retry does occur during the next loop, it is possible to loose
+        //trigger events if they occur too rapidly or if the log file is closed
+        //before the trigger event is written!
+        log_w("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
       }
     }
 
@@ -613,13 +681,15 @@ void updateLogs()
       //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
-        fileSize = ubxFile.fileSize();
+        fileSize = ubxFile->fileSize();
 
         xSemaphoreGive(sdCardSemaphore);
       }
       else
       {
-        log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+        //This is OK because outputting this message is not critical to the RTK
+        //operation and the message will be output by the next call in loop
+        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
       }
 
       if (fileSize > 0)
@@ -685,15 +755,31 @@ void updateRTC()
 
         if (timeValid == true)
         {
+          int hour;
+          int minute;
+          int second;
+
+          //Get the latest time in the GNSS
+          i2cGNSS.checkUblox();
+
+          //Get the time values
+          hour = i2cGNSS.getHour();     //Range: 0 - 23
+          minute = i2cGNSS.getMinute(); //Range: 0 - 59
+          second = i2cGNSS.getSecond(); //Range: 0 - 59
+
+          //Perform time zone adjustment
+          second += settings.timeZoneSeconds;
+          minute += settings.timeZoneMinutes;
+          hour += settings.timeZoneHours;
+
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi
           //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
-          i2cGNSS.checkUblox();
-          rtc.setTime(i2cGNSS.getSecond(), i2cGNSS.getMinute(), i2cGNSS.getHour(), i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());
+          rtc.setTime(second, minute, hour, i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());
 
           online.rtc = true;
 
-          Serial.print(F("System time set to: "));
+          Serial.print("System time set to: ");
           Serial.println(rtc.getDateTime(true));
 
           recordSystemSettingsToFileSD(settingsFileName); //This will re-record the setting file with current date/time.
@@ -709,5 +795,5 @@ void updateRTC()
 
 void printElapsedTime(const char* title)
 {
-  Serial.printf("%s: %d\n\r", title, millis() - startTime);
+  Serial.printf("%s: %ld\n\r", title, millis() - startTime);
 }

@@ -3,12 +3,12 @@ void menuFirmware()
 {
   if (online.microSD == false)
   {
-    Serial.println(F("No SD card detected"));
+    Serial.println("No SD card detected");
   }
 
   if (binCount == 0)
   {
-    Serial.println(F("No valid binary files found."));
+    Serial.println("No valid binary files found.");
     delay(2000);
     return;
   }
@@ -16,14 +16,14 @@ void menuFirmware()
   while (1)
   {
     Serial.println();
-    Serial.println(F("Menu: Update Firmware Menu"));
+    Serial.println("Menu: Update Firmware Menu");
 
     for (int x = 0 ; x < binCount ; x++)
     {
       Serial.printf("%d) Load %s\n\r", x + 1, binFileNames[x]);
     }
 
-    Serial.println(F("x) Exit"));
+    Serial.println("x) Exit");
 
     int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
@@ -44,76 +44,98 @@ void menuFirmware()
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }
 
-//Looks for matching binary files in root
-//Loads a global called binCount
-void scanForFirmware()
+void mountSDThenUpdate(const char * firmwareFileName)
 {
-  if (online.microSD == true)
+  bool gotSemaphore;
+  bool wasSdCardOnline;
+
+  //Try to gain access the SD card
+  gotSemaphore = false;
+  wasSdCardOnline = online.microSD;
+  if (online.microSD != true)
+    beginSD();
+
+  if (online.microSD != true)
+    Serial.println("microSD card is offline!");
+  else
   {
-    //Attempt to access file system. This avoids collisions with file writing in F9PSerialReadTask()
-    //Wait up to 5s, this is important
-    if (xSemaphoreTake(sdCardSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
+    //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
-      //Count available binaries
-      SdFile tempFile;
-      SdFile dir;
-      const char* BIN_EXT = "bin";
-      const char* BIN_HEADER = "RTK_Surveyor_Firmware";
-
-      char fname[50]; //Handle long file names
-
-      dir.open("/"); //Open root
-
-      while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
-      {
-        if (tempFile.isFile())
-        {
-          tempFile.getName(fname, sizeof(fname));
-
-          if (strcmp(forceFirmwareFileName, fname) == 0)
-          {
-            Serial.println(F("Forced firmware detected. Loading..."));
-            displayForcedFirmwareUpdate();
-            updateFromSD(forceFirmwareFileName);
-          }
-
-          //Check 'bin' extension
-          if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
-          {
-            //Check for 'RTK_Surveyor_Firmware' start of file name
-            if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
-            {
-              strcpy(binFileNames[binCount++], fname); //Add this to the array
-            }
-            else
-              Serial.printf("Unknown: %s\n\r", fname);
-          }
-        }
-        tempFile.close();
-      }
-
-      xSemaphoreGive(sdCardSemaphore);
-    }
+      gotSemaphore = true;
+      updateFromSD(firmwareFileName);
+    } //End Semaphore check
     else
     {
-      log_d("sdCardSemaphore failed to yield, %s line %d\r\n", __FILE__, __LINE__);
+      Serial.printf("sdCardSemaphore failed to yield, menuFirmware.ino line %d\r\n", __LINE__);
     }
+  }
+
+  //Release access the SD card
+  if (online.microSD && (!wasSdCardOnline))
+    endSD(gotSemaphore, true);
+  else if (gotSemaphore)
+    xSemaphoreGive(sdCardSemaphore);
+}
+
+//Looks for matching binary files in root
+//Loads a global called binCount
+//Called from beginSD with microSD card mounted and sdCardsemaphore held
+void scanForFirmware()
+{
+  //Count available binaries
+  SdFile tempFile;
+  SdFile dir;
+  const char* BIN_EXT = "bin";
+  const char* BIN_HEADER = "RTK_Surveyor_Firmware";
+
+  char fname[50]; //Handle long file names
+
+  dir.open("/"); //Open root
+
+  while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
+  {
+    if (tempFile.isFile())
+    {
+      tempFile.getName(fname, sizeof(fname));
+
+      if (strcmp(forceFirmwareFileName, fname) == 0)
+      {
+        Serial.println("Forced firmware detected. Loading...");
+        displayForcedFirmwareUpdate();
+        updateFromSD(forceFirmwareFileName);
+      }
+
+      //Check 'bin' extension
+      if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
+      {
+        //Check for 'RTK_Surveyor_Firmware' start of file name
+        if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
+        {
+          strcpy(binFileNames[binCount++], fname); //Add this to the array
+        }
+        else
+          Serial.printf("Unknown: %s\n\r", fname);
+      }
+    }
+    tempFile.close();
   }
 }
 
 //Look for firmware file on SD card and update as needed
+//Called from scanForFirmware with microSD card mounted and sdCardsemaphore held
+//Called from mountSDThenUpdate with microSD card mounted and sdCardsemaphore held
 void updateFromSD(const char *firmwareFileName)
 {
   //Turn off any tasks so that we are not disrupted
-  stopWebServer();
-  stopWiFi();
-  stopBluetooth();
+  wifiStop();
+  bluetoothStop();
 
   //Delete tasks if running
   stopUART2Tasks();
 
   Serial.printf("Loading %s\n\r", firmwareFileName);
-  if (sd.exists(firmwareFileName))
+  if (sd->exists(firmwareFileName))
   {
     SdFile firmwareFile;
     firmwareFile.open(firmwareFileName, O_READ);
@@ -121,20 +143,20 @@ void updateFromSD(const char *firmwareFileName)
     size_t updateSize = firmwareFile.fileSize();
     if (updateSize == 0)
     {
-      Serial.println(F("Error: Binary is empty"));
+      Serial.println("Error: Binary is empty");
       firmwareFile.close();
       return;
     }
 
     if (Update.begin(updateSize) == false)
     {
-      Serial.println(F("Update begin failed. Not enough partition space available."));
+      Serial.println("Update begin failed. Not enough partition space available.");
       firmwareFile.close();
       return;
     }
 
-    Serial.println(F("Moving file to OTA section"));
-    Serial.print(F("Bytes to write: "));
+    Serial.println("Moving file to OTA section");
+    Serial.print("Bytes to write: ");
     Serial.print(updateSize);
 
     const int pageSize = 512 * 4;
@@ -159,7 +181,7 @@ void updateFromSD(const char *firmwareFileName)
 
       if (Update.write(dataArray, bytesToWrite) != bytesToWrite)
       {
-        Serial.println(F("\nWrite failed. Binary may be incorrectly aligned."));
+        Serial.println("\nWrite failed. Binary may be incorrectly aligned.");
         break;
       }
       else
@@ -170,7 +192,7 @@ void updateFromSD(const char *firmwareFileName)
       {
         //Advance the bar
         barWidth++;
-        Serial.print(F("\n["));
+        Serial.print("\n[");
         for (int x = 0 ; x < barWidth ; x++)
           Serial.print("=");
         Serial.printf("%d%%", bytesWritten * 100 / updateSize);
@@ -179,7 +201,7 @@ void updateFromSD(const char *firmwareFileName)
         displayFirmwareUpdateProgress(bytesWritten * 100 / updateSize);
       }
     }
-    Serial.println(F("\nFile move complete"));
+    Serial.println("\nFile move complete");
 
     if (Update.end())
     {
@@ -190,16 +212,16 @@ void updateFromSD(const char *firmwareFileName)
         //Clear all settings from LittleFS
         LittleFS.format();
 
-        Serial.println(F("Firmware updated successfully. Rebooting. Goodbye!"));
+        Serial.println("Firmware updated successfully. Rebooting. Goodbye!");
 
         //If forced firmware is detected, do a full reset of config as well
         if (strcmp(forceFirmwareFileName, firmwareFileName) == 0)
         {
-          Serial.println(F("Removing firmware file"));
+          Serial.println("Removing firmware file");
 
           //Remove forced firmware file to prevent endless loading
           firmwareFile.close();
-          sd.remove(firmwareFileName);
+          sd->remove(firmwareFileName);
 
           i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
         }
@@ -208,11 +230,11 @@ void updateFromSD(const char *firmwareFileName)
         ESP.restart();
       }
       else
-        Serial.println(F("Update not finished? Something went wrong!"));
+        Serial.println("Update not finished? Something went wrong!");
     }
     else
     {
-      Serial.print(F("Error Occurred. Error #: "));
+      Serial.print("Error Occurred. Error #: ");
       Serial.println(String(Update.getError()));
     }
 
@@ -220,10 +242,10 @@ void updateFromSD(const char *firmwareFileName)
 
     displayMessage("Update Failed", 0);
 
-    Serial.println(F("Firmware update failed. Please try again."));
+    Serial.println("Firmware update failed. Please try again.");
   }
   else
   {
-    Serial.println(F("No firmware file found"));
+    Serial.println("No firmware file found");
   }
 }

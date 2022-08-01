@@ -44,4 +44,15 @@ Open a terminal window at 115200bps; you should see various status messages ever
 
 Pressing any button will display the Main menu. The Main menu will display the current firmware version and the Bluetooth broadcast name. Note: When powered on, the RTK device will broadcast itself as either *[Platform] Rover-XXXX* or *[Platform] Base-XXXX* depending on which state it is in. The Platform is 'Facet', 'Express', 'Surveyor', etc.
 
+1. Configure GNSS Receiver
+2. Configure GNSS [Messages](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_messages/)
+3. Configure [Base](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_base/)
+4. Configure [Ports](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_ports/)
+5. Configure [Logging](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_data_logging/)
+
+&nbsp;&nbsp;&nbsp;p. Configure [Profiles](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_profiles/)
+&nbsp;&nbsp;&nbsp;s. [System Status](https://sparkfun.github.io/SparkFun_RTK_Firmware/menu_system_status/)
+&nbsp;&nbsp;&nbsp;f. Firmware upgrade
+&nbsp;&nbsp;&nbsp;x. Exit
+
 The menus will timeout after 15 seconds of inactivity, so if you do not press a key the device will exit the menu and return to reporting status messages after 15 seconds.

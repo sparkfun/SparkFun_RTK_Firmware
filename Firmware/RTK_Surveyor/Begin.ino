@@ -4,7 +4,7 @@
 //Must be called after Wire.begin so that we can do I2C tests
 void beginBoard()
 {
-  //Use ADC to check 50% resistor divider
+  //Use ADC to check resistor divider
   int pin_adc_rtk_facet = 35;
   uint16_t idValue = analogReadMilliVolts(pin_adc_rtk_facet);
   log_d("Board ADC ID: %d", idValue);
@@ -16,6 +16,14 @@ void beginBoard()
   else if (idValue > (3300 * 2 / 3 * 0.9) && idValue < (3300 * 2 / 3 * 1.1))
   {
     productVariant = RTK_FACET_LBAND;
+  }
+  else if (idValue > (3300 * 3.3 / 13.3 * 0.9) && idValue < (3300 * 3.3 / 13.3 * 1.1))
+  {
+    productVariant = RTK_EXPRESS;
+  }
+  else if (idValue > (3300 * 10 / 13.3 * 0.9) && idValue < (3300 * 10 / 13.3 * 1.1))
+  {
+    productVariant = RTK_EXPRESS_PLUS;
   }
   else if (isConnected(0x19) == true) //Check for accelerometer
   {
@@ -165,42 +173,68 @@ void beginBoard()
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())
     {
-      case ESP_RST_UNKNOWN: Serial.println(F("ESP_RST_UNKNOWN")); break;
-      case ESP_RST_POWERON : Serial.println(F("ESP_RST_POWERON")); break;
-      case ESP_RST_SW : Serial.println(F("ESP_RST_SW")); break;
-      case ESP_RST_PANIC : Serial.println(F("ESP_RST_PANIC")); break;
-      case ESP_RST_INT_WDT : Serial.println(F("ESP_RST_INT_WDT")); break;
-      case ESP_RST_TASK_WDT : Serial.println(F("ESP_RST_TASK_WDT")); break;
-      case ESP_RST_WDT : Serial.println(F("ESP_RST_WDT")); break;
-      case ESP_RST_DEEPSLEEP : Serial.println(F("ESP_RST_DEEPSLEEP")); break;
-      case ESP_RST_BROWNOUT : Serial.println(F("ESP_RST_BROWNOUT")); break;
-      case ESP_RST_SDIO : Serial.println(F("ESP_RST_SDIO")); break;
-      default : Serial.println(F("Unknown"));
+      case ESP_RST_UNKNOWN: Serial.println("ESP_RST_UNKNOWN"); break;
+      case ESP_RST_POWERON : Serial.println("ESP_RST_POWERON"); break;
+      case ESP_RST_SW : Serial.println("ESP_RST_SW"); break;
+      case ESP_RST_PANIC : Serial.println("ESP_RST_PANIC"); break;
+      case ESP_RST_INT_WDT : Serial.println("ESP_RST_INT_WDT"); break;
+      case ESP_RST_TASK_WDT : Serial.println("ESP_RST_TASK_WDT"); break;
+      case ESP_RST_WDT : Serial.println("ESP_RST_WDT"); break;
+      case ESP_RST_DEEPSLEEP : Serial.println("ESP_RST_DEEPSLEEP"); break;
+      case ESP_RST_BROWNOUT : Serial.println("ESP_RST_BROWNOUT"); break;
+      case ESP_RST_SDIO : Serial.println("ESP_RST_SDIO"); break;
+      default : Serial.println("Unknown");
     }
   }
 }
 
 void beginSD()
 {
-  pinMode(pin_microSD_CS, OUTPUT);
-  digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+  bool gotSemaphore;
 
-  if (settings.enableSD == true)
+  online.microSD = false;
+  gotSemaphore = false;
+  while (settings.enableSD == true)
   {
+    //Setup SD card access semaphore
+    if (sdCardSemaphore == NULL)
+      sdCardSemaphore = xSemaphoreCreateMutex();
+    else if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) != pdPASS)
+    {
+      //This is OK since a retry will occur next loop
+      log_d("sdCardSemaphore failed to yield, Begin.ino line %d\r\n", __LINE__);
+      break;
+    }
+    gotSemaphore = true;
+
+    pinMode(pin_microSD_CS, OUTPUT);
+    digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+
+    //Allocate the data structure that manages the microSD card
+    if (!sd)
+    {
+      sd = new SdFat();
+      if (!sd)
+      {
+        log_d("Failed to allocate the SdFat structure!");
+        break;
+      }
+    }
+
     //Do a quick test to see if a card is present
     int tries = 0;
     int maxTries = 5;
     while (tries < maxTries)
     {
       if (sdPresent() == true) break;
-      log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
+      //log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
 
       //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
       //Max current is 200mA average across 1s, peak 300mA
       delay(10);
       tries++;
     }
-    if (tries == maxTries) return;
+    if (tries == maxTries) break;
 
     //If an SD card is present, allow SdFat to take over
     log_d("SD card detected");
@@ -211,7 +245,7 @@ void beginSD()
       settings.spiFrequency = 16;
     }
 
-    if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
+    if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
       tries = 0;
       maxTries = 1;
@@ -220,51 +254,67 @@ void beginSD()
         log_d("SD init failed. Trying again %d out of %d", tries + 1, maxTries);
 
         delay(250); //Give SD more time to power up, then try again
-        if (sd.begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
+        if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
       }
 
       if (tries == maxTries)
       {
-        Serial.println(F("SD init failed. Is card present? Formatted?"));
+        Serial.println("SD init failed. Is card present? Formatted?");
         digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
-        online.microSD = false;
-        return;
+        break;
       }
     }
 
     //Change to root directory. All new file creation will be in root.
-    if (sd.chdir() == false)
+    if (sd->chdir() == false)
     {
-      Serial.println(F("SD change directory failed"));
-      online.microSD = false;
-      return;
-    }
-
-    //Setup FAT file access semaphore
-    if (sdCardSemaphore == NULL)
-    {
-      sdCardSemaphore = xSemaphoreCreateMutex();
-      if (sdCardSemaphore != NULL)
-        xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
+      Serial.println("SD change directory failed");
+      break;
     }
 
     if (createTestFile() == false)
     {
-      Serial.println(F("Failed to create test file. Format SD card with 'SD Card Formatter'."));
+      Serial.println("Failed to create test file. Format SD card with 'SD Card Formatter'.");
       displaySDFail(5000);
-      online.microSD = false;
-      return;
+      break;
     }
 
-    online.microSD = true;
+    //Load firmware file from the microSD card if it is present
+    scanForFirmware();
 
-    Serial.println(F("microSD online"));
-    scanForFirmware(); //See if SD card contains new firmware that should be loaded at startup
+    Serial.println("microSD: Online");
+    online.microSD = true;
+    break;
   }
-  else
+
+  //Free the semaphore
+  if (sdCardSemaphore && gotSemaphore)
+    xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
+}
+
+void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
+{
+  //Disable logging
+  endLogging(alreadyHaveSemaphore, false);
+
+  //Done with the SD card
+  if (online.microSD)
   {
+    sd->end();
     online.microSD = false;
+    Serial.println("microSD: Offline");
   }
+
+  //Free the caches for the microSD card
+  if (sd)
+  {
+    delete sd;
+    sd = NULL;
+  }
+
+  //Release the semaphore
+  if (releaseSemaphore)
+    xSemaphoreGive(sdCardSemaphore);
 }
 
 //We want the UART2 interrupts to be pinned to core 0 to avoid competing with I2C interrupts
@@ -335,6 +385,10 @@ void stopUART2Tasks()
     vTaskDelete(F9PSerialWriteTaskHandle);
     F9PSerialWriteTaskHandle = NULL;
   }
+
+  //Give the other CPU time to finish
+  //Eliminates CPU bus hang condition
+  delay(100);
 }
 
 void beginFS()
@@ -363,7 +417,6 @@ void beginGNSS()
     if (i2cGNSS.begin() == false)
     {
       displayGNSSFail(1000);
-      online.gnss = false;
       return;
     }
   }
@@ -414,7 +467,7 @@ void beginGNSS()
       zedModuleType = PLATFORM_F9P;
     }
 
-    printModuleInfo(); //Print module type and firmware version
+    printZEDInfo(); //Print module type and firmware version
   }
 
   online.gnss = true;
@@ -423,6 +476,8 @@ void beginGNSS()
 //Configuration can take >1s so configure during splash
 void configureGNSS()
 {
+  if (online.gnss == false) return;
+
   i2cGNSS.setAutoPVTcallbackPtr(&storePVTdata); // Enable automatic NAV PVT messages with callback to storePVTdata
   i2cGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); // Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
 
@@ -439,20 +494,20 @@ void configureGNSS()
   if (response == false)
   {
     //Try once more
-    Serial.println(F("Failed to configure GNSS module. Trying again."));
+    Serial.println("Failed to configure GNSS module. Trying again.");
     delay(1000);
     response = configureUbloxModule();
 
     if (response == false)
     {
-      Serial.println(F("Failed to configure GNSS module."));
+      Serial.println("Failed to configure GNSS module.");
       displayGNSSFail(1000);
       online.gnss = false;
       return;
     }
   }
 
-  Serial.println(F("GNSS configuration complete"));
+  Serial.println("GNSS configuration complete");
 }
 
 //Set LEDs for output and configure PWM
@@ -493,7 +548,7 @@ void beginFuelGauge()
   // Set up the MAX17048 LiPo fuel gauge
   if (lipo.begin() == false)
   {
-    Serial.println(F("MAX17048 not detected. Continuing."));
+    Serial.println("Fuel gauge not detected.");
     return;
   }
 
@@ -501,7 +556,7 @@ void beginFuelGauge()
   if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
   if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
 
-  Serial.println(F("MAX17048 configuration complete"));
+  Serial.println("MAX17048 configuration complete");
 
   checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
@@ -537,7 +592,7 @@ void beginAccelerometer()
   //accel.setDataRate(LIS2DH12_ODR_100Hz); //6 measurements a second
   accel.setDataRate(LIS2DH12_ODR_400Hz); //25 measurements a second
 
-  Serial.println(F("Accelerometer configuration complete"));
+  Serial.println("Accelerometer configuration complete");
 
   online.accelerometer = true;
 }
@@ -650,7 +705,7 @@ bool beginExternalTriggers()
 
   bool response = i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   if (response == false)
-    Serial.println(F("Module failed to save."));
+    Serial.println("Module failed to save.");
 
   return (response);
 }
@@ -662,6 +717,20 @@ void beginLBand()
   {
     log_d("L-Band not detected");
     return;
+  }
+
+  //Check the firmware version of the NEO-D9S. Based on Example21_ModuleInfo.
+  if (i2cLBand.getModuleInfo(1100) == true) // Try to get the module info
+  {
+    //i2cLBand.minfo.extension[1] looks like 'FWVER=HPG 1.12'
+    strcpy(neoFirmwareVersion, i2cLBand.minfo.extension[1]);
+
+    //Remove 'FWVER='. It's extraneous and = causes settings file parsing issues
+    char *ptr = strstr(neoFirmwareVersion, "FWVER=");
+    if (ptr != NULL)
+      strcpy(neoFirmwareVersion, ptr + strlen("FWVER="));
+
+    printNEOInfo(); //Print module firmware version
   }
 
   if (online.gnss == true)
@@ -722,4 +791,44 @@ void beginLBand()
   log_d("L-Band online");
 
   online.lband = true;
+}
+
+void beginIdleTasks()
+{
+  char taskName[32];
+
+  for (int index = 0; index < MAX_CPU_CORES; index++)
+  {
+    sprintf(taskName, "IdleTask%d", index);
+    if (idleTaskHandle[index] == NULL)
+      xTaskCreatePinnedToCore(
+        idleTask,
+        taskName, //Just for humans
+        2000, //Stack Size
+        NULL, //Task input parameter
+        0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+        &idleTaskHandle[index], //Task handle
+        index); //Core where task should run, 0=core, 1=Arduino
+  }
+}
+
+void beginI2C()
+{
+  Wire.begin(); //Start I2C on core 1
+  //Wire.setClock(400000);
+
+  //begin/end wire transmission to see if bus is responding correctly
+  //All good: 0ms, response 2
+  //SDA/SCL shorted: 1000ms timeout, response 5
+  //SCL/VCC shorted: 14ms, response 5
+  //SCL/GND shorted: 1000ms, response 5
+  //SDA/VCC shorted: 1000ms, reponse 5
+  //SDA/GND shorted: 14ms, response 5
+  unsigned long startTime = millis();
+  Wire.beginTransmission(0x15); //Dummy address
+  int endValue = Wire.endTransmission();
+  if (endValue == 2)
+    online.i2c = true;
+  else
+    Serial.println("Error: I2C Bus Not Responding");
 }

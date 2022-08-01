@@ -82,11 +82,22 @@ function parseIncoming(msg) {
             || id.includes("sdUsedSpace")
             || id.includes("rtkFirmwareVersion")
             || id.includes("zedFirmwareVersion")
-            || id.includes("profileName")
             || id.includes("hardwareID")
             || id.includes("daysRemaining")
+            || id.includes("profile0Name")
+            || id.includes("profile1Name")
+            || id.includes("profile2Name")
+            || id.includes("profile3Name")
+            || id.includes("profile4Name")
+            || id.includes("profile5Name")
+            || id.includes("profile6Name")
+            || id.includes("profile7Name")
         ) {
             ge(id).innerHTML = val;
+        }
+        else if (id.includes("profileNumber")) {
+            currentProfileNumber = val;
+            $("input[name=profileRadio][value=" + currentProfileNumber + "]").prop('checked', true);
         }
         else if (id.includes("firmwareUploadComplete")) {
             firmwareUploadComplete();
@@ -121,6 +132,8 @@ function parseIncoming(msg) {
         }
     }
     //console.log("Settings loaded");
+
+    ge("profileChangeMessage").innerHTML = '';
 
     //Force element updates
     ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
@@ -186,17 +199,28 @@ function checkMessageValue(id) {
     checkElementValue(id, 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
 }
 
+function collapseSection(section, caret) {
+    ge(section).classList.remove('show');
+    ge(caret).classList.remove('icon-caret-down');
+    ge(caret).classList.remove('icon-caret-up');
+    ge(caret).classList.add('icon-caret-down');
+}
+
 function validateFields() {
     //Collapse all sections
-    ge("collapseGNSSConfig").classList.remove('show');
-    ge("collapseGNSSConfigMsg").classList.remove('show');
-    ge("collapseBaseConfig").classList.remove('show');
-    ge("collapseSensorConfig").classList.remove('show');
-    ge("collapsePPConfig").classList.remove('show');
-    ge("collapsePortsConfig").classList.remove('show');
-    ge("collapseSystemConfig").classList.remove('show');
+    collapseSection("collapseProfileConfig", "profileCaret");
+    collapseSection("collapseGNSSConfig", "gnssCaret");
+    collapseSection("collapseGNSSConfigMsg", "gnssMsgCaret");
+    collapseSection("collapseBaseConfig", "baseCaret");
+    collapseSection("collapseSensorConfig", "sensorCaret");
+    collapseSection("collapsePPConfig", "pointPerfectCaret");
+    collapseSection("collapsePortsConfig", "portsCaret");
+    collapseSection("collapseSystemConfig", "systemCaret");
 
     errorCount = 0;
+
+    //Profile Config
+    checkElementString("profileName", 1, 49, "Must be 1 to 49 characters", "collapseProfileConfig");
 
     //GNSS Config
     checkElementValue("measurementRateHz", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseGNSSConfig");
@@ -378,7 +402,7 @@ function validateFields() {
         if(ge("enablePointPerfectCorrections").checked == true) {
             checkElementString("home_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapsePPConfig");
             checkElementString("home_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapsePPConfig");
-            
+
             value = ge("pointPerfectDeviceProfileToken").value;
             console.log(value);
             if (value.length > 0)
@@ -415,6 +439,47 @@ function validateFields() {
             ge("externalPulsePolarity").value = 0;
         }
     }
+}
+
+var currentProfileNumber = 0;
+
+function changeConfig() {
+    validateFields();
+
+    if (errorCount == 1) {
+        showError('saveBtn', "Please clear " + errorCount + " error");
+        clearSuccess('saveBtn');
+        $("input[name=profileRadio][value=" + currentProfileNumber + "]").prop('checked', true);
+    }
+    else if (errorCount > 1) {
+        showError('saveBtn', "Please clear " + errorCount + " errors");
+        clearSuccess('saveBtn');
+        $("input[name=profileRadio][value=" + currentProfileNumber + "]").prop('checked', true);
+    }
+    else {
+        ge("profileChangeMessage").innerHTML = 'Loading. Please wait...';
+
+        currentProfileNumber = document.querySelector('input[name=profileRadio]:checked').value;
+
+        sendData();
+        clearError('saveBtn');
+        showSuccess('saveBtn', "All saved!");
+
+        ws.send("setProfile," + currentProfileNumber + ",");
+
+        ge("collapseProfileConfig").classList.add('show');
+        ge("collapseGNSSConfig").classList.add('show');
+        collapseSection("collapseGNSSConfigMsg", "gnssMsgCaret");
+        collapseSection("collapseBaseConfig", "baseCaret");
+        collapseSection("collapseSensorConfig", "sensorCaret");
+        collapseSection("collapsePPConfig", "pointPerfectCaret");
+        collapseSection("collapsePortsConfig", "portsCaret");
+        collapseSection("collapseSystemConfig", "systemCaret");
+    }
+}
+
+function saveConfig() {
+    validateFields();
 
     if (errorCount == 1) {
         showError('saveBtn', "Please clear " + errorCount + " error");
@@ -430,6 +495,7 @@ function validateFields() {
         clearError('saveBtn');
         showSuccess('saveBtn', "All saved!");
     }
+
 }
 
 function checkConstellations() {
@@ -444,6 +510,19 @@ function checkConstellations() {
     }
     else
         clearError("ubxConstellations");
+}
+
+function checkBitMapValue(id, min, max, bitMap, errorText, collapseID) {
+    value = ge(id).value;
+    mask = ge(bitMap).value;
+    if ((value < min) || (value > max) || ((mask & (1 << value)) == 0)) {
+        ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else {
+        clearError(id);
+    }
 }
 
 function checkElementValue(id, min, max, errorText, collapseID) {
@@ -612,6 +691,13 @@ function firmwareUploadComplete() {
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
+
+    var radios = document.querySelectorAll('input[name=profileRadio]');
+    for(var i = 0, max = radios.length; i < max; i++) {
+        radios[i].onclick = function() {
+            changeConfig();
+        }
+    }
 
     ge("measurementRateHz").addEventListener("change", function () {
         ge("measurementRateSec").value = 1.0 / ge("measurementRateHz").value;

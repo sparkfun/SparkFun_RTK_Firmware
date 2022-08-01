@@ -199,50 +199,56 @@ void setup()
   Serial.begin(115200);
   delay(250);
 
-//  int pinNumber1 = 21;
-//  int pinNumber2 = 22;
-//  clearBuffer();
-//  pinMode(pinNumber1, OUTPUT);
-//  pinMode(pinNumber2, OUTPUT);
-//
-//  Serial.printf("\n\rToggling pin %d. Press x to exit\n\r", pinNumber1);
-//  Serial.printf("\n\rToggling pin %d. Press x to exit\n\r", pinNumber2);
-//
-//  while (Serial.available() == 0)
-//  {
-//    digitalWrite(pinNumber1, HIGH);
-//    digitalWrite(pinNumber2, HIGH);
-//    for (int x = 0 ; x < 100 ; x++)
-//    {
-//      delay(30);
-//      if (Serial.available()) break;
-//    }
-//
-//    digitalWrite(pinNumber1, LOW);
-//    digitalWrite(pinNumber2, LOW);
-//    for (int x = 0 ; x < 100 ; x++)
-//    {
-//      delay(30);
-//      if (Serial.available()) break;
-//    }
-//  }
-//  pinMode(pinNumber1, INPUT);
-//  pinMode(pinNumber2, INPUT);
-//
-//  Serial.println("Done");
+  //  int pinNumber1 = 21;
+  //  int pinNumber2 = 22;
+  //  clearBuffer();
+  //  pinMode(pinNumber1, OUTPUT);
+  //  pinMode(pinNumber2, OUTPUT);
+  //
+  //  Serial.printf("\n\rToggling pin %d. Press x to exit\n\r", pinNumber1);
+  //  Serial.printf("\n\rToggling pin %d. Press x to exit\n\r", pinNumber2);
+  //
+  //  while (Serial.available() == 0)
+  //  {
+  //    digitalWrite(pinNumber1, HIGH);
+  //    digitalWrite(pinNumber2, HIGH);
+  //    for (int x = 0 ; x < 100 ; x++)
+  //    {
+  //      delay(30);
+  //      if (Serial.available()) break;
+  //    }
+  //
+  //    digitalWrite(pinNumber1, LOW);
+  //    digitalWrite(pinNumber2, LOW);
+  //    for (int x = 0 ; x < 100 ; x++)
+  //    {
+  //      delay(30);
+  //      if (Serial.available()) break;
+  //    }
+  //  }
+  //  pinMode(pinNumber1, INPUT);
+  //  pinMode(pinNumber2, INPUT);
+  //
+  //  Serial.println("Done");
 
   Wire.begin();
 
-  //begin/end wire transmission should take a few ms. If it's taking longer,
-  //it's likely the I2C bus being shorted or pulled in
+  //begin/end wire transmission to see if bus is responding correctly
+  //All good: 0ms, response 2
+  //SDA/SCL shorted: 1000ms timeout, response 5
+  //SCL/VCC shorted: 14ms, response 5
+  //SCL/GND shorted: 1000ms, response 5
+  //SDA/VCC shorted: 1000ms, reponse 5
+  //SDA/GND shorted: 14ms, response 5
   unsigned long startTime = millis();
   Wire.beginTransmission(0x15); //Dummy address
   int endValue = Wire.endTransmission();
-  if (millis() - startTime > 100) i2cBorked = true;
+  Serial.printf("Response time: %d endValue: %d\n\r", millis() - startTime, endValue);
+  if(endValue == 2) online.i2c = true;
 
   beginBoard(); //Determine what hardware platform we are running on and check on button
 
-  if (i2cBorked == false)
+  if (online.i2c == true)
   {
     beginGNSS(); //Connect to GNSS to get module type
 

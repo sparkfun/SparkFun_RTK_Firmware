@@ -1,6 +1,8 @@
 //Once connected to the access point for WiFi Config, the ESP32 sends current setting values in one long string to websocket
 //After user clicks 'save', data is validated via main.js and a long string of values is returned.
 
+static uint8_t bootProfileNumber;
+
 //Start webserver in AP mode
 void startWebServer()
 {
@@ -11,13 +13,13 @@ void startWebServer()
   if (online.microSD)
   {
     csd_t csd;
-    sd.card()->readCSD(&csd); //Card Specific Data
-    sdCardSizeMB = 0.000512 * sdCardCapacity(&csd);
-    sd.volumeBegin();
+    sd->card()->readCSD(&csd); //Card Specific Data
+    sdCardSizeMB = 0.000512 * sd->card()->sectorCount();
+    sd->volumeBegin();
 
     //Find available cluster/space
-    sdFreeSpaceMB = sd.vol()->freeClusterCount(); //This takes a few seconds to complete
-    sdFreeSpaceMB *= sd.vol()->sectorsPerCluster() / 2;
+    sdFreeSpaceMB = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
+    sdFreeSpaceMB *= sd->vol()->sectorsPerCluster() / 2;
     sdFreeSpaceMB /= 1024;
 
     sdUsedSpaceMB = sdCardSizeMB - sdFreeSpaceMB; //Don't think of it as used, think of it as unusable
@@ -30,44 +32,8 @@ void startWebServer()
     Serial.println(sdUsedSpaceMB);
   }
 
-  //When testing, operate on local WiFi instead of AP
-  //#define LOCAL_WIFI_TESTING 1
-
-#ifndef LOCAL_WIFI_TESTING
-
-  //Start in AP mode
-  WiFi.mode(WIFI_AP);
-
-  IPAddress local_IP(192, 168, 4, 1);
-  IPAddress gateway(192, 168, 1, 1);
-  IPAddress subnet(255, 255, 0, 0);
-
-  WiFi.softAPConfig(local_IP, gateway, subnet);
-  if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
-  {
-    Serial.println(F("AP failed to start"));
-    return;
-  }
-  Serial.print(F("AP Started with IP: "));
-  Serial.println(WiFi.softAPIP());
-#endif
-
-#ifdef LOCAL_WIFI_TESTING
-  //Connect to local router
-#define WIFI_SSID "TRex"
-#define WIFI_PASSWORD "parachutes"
-  WiFi.mode(WIFI_STA);
-
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting to Wi-Fi");
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.print("Connected with IP: ");
-  Serial.println(WiFi.localIP());
-#endif
+  ntripClientStop(true);
+  wifiStartAP();
 
   //Clear any garbage from settings array
   memset(incomingSettings, 0, sizeof(incomingSettings));
@@ -316,6 +282,9 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 void createSettingsString(char* settingsCSV)
 {
 #ifdef COMPILE_AP
+  char tagText[32];
+  char nameText[64];
+
   //System Info
   stringRecord(settingsCSV, "platformPrefix", platformPrefix);
 
@@ -441,9 +410,17 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
 
   //Profiles
-  char apProfileName[50];
-  sprintf(apProfileName, "Profile Name: %s", settings.profileName);
-  stringRecord(settingsCSV, "profileName", apProfileName);
+  stringRecord(settingsCSV, "profileName", profileNames[profileNumber]); //Must come before profile number so AP config page JS has name before number
+  stringRecord(settingsCSV, "profileNumber", profileNumber);
+  for (int index = 0; index < MAX_PROFILE_COUNT; index++)
+  {
+    sprintf(tagText, "profile%dName", index);
+    sprintf(nameText, "%d: %s", index + 1, profileNames[index]);
+    stringRecord(settingsCSV, tagText, nameText);
+  }
+  bootProfileNumber = profileNumber + 1;
+  stringRecord(settingsCSV, "bootProfileNumber", bootProfileNumber);
+  stringRecord(settingsCSV, "activeProfiles", activeProfiles);
 
   //New settings not yet integrated
   //...
@@ -459,6 +436,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 {
 #ifdef COMPILE_AP
   char* ptr;
+  int newProfileNumber;
   double settingValue = strtod(settingValueStr, &ptr);
 
   bool settingValueBool = false;
@@ -522,8 +500,31 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "enableExternalHardwareEventLogging") == 0)
     settings.enableExternalHardwareEventLogging = settingValueBool;
   else if (strcmp(settingName, "profileName") == 0)
+  {
     strcpy(settings.profileName, settingValueStr);
+    setProfileName(profileNumber);
+  }
+  else if (strcmp(settingName, "profileNumber") == 0)
+  {
+    if ((sscanf(settingValueStr, "%d", &newProfileNumber) == 1)
+        && (newProfileNumber >= 1) && (newProfileNumber <= MAX_PROFILE_COUNT)
+        && (profileNumber != newProfileNumber))
+    {
+      profileNumber = newProfileNumber - 1;
 
+      //Switch to a new profile
+      setSettingsFileName();
+      recordProfileNumber(profileNumber);
+    }
+  }
+  else if (strcmp(settingName, "bootProfileNumber") == 0)
+  {
+    if ((sscanf(settingValueStr, "%d", &bootProfileNumber) != 1)
+        || (bootProfileNumber < 1)
+        || (bootProfileNumber > (MAX_PROFILE_COUNT + 1)))
+      bootProfileNumber = 1;
+    Serial.printf("bootProfileNumber: %d\r\n", bootProfileNumber);
+  }
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;
   else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
@@ -587,7 +588,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
   {
-    updateFromSD(settingValueStr);
+    mountSDThenUpdate(settingValueStr);
 
     //If update is successful, it will force system reset and not get here.
 
@@ -599,7 +600,28 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   {
     if (newAPSettings == true) recordSystemSettings(); //If we've recieved settings, record before restart
 
+    //Determine which profile to boot
+    bootProfileNumber -= 1;
+    if (bootProfileNumber != profileNumber)
+      recordProfileNumber(bootProfileNumber);
+
+    //Reboot the machine
     ESP.restart();
+  }
+  else if (strcmp(settingName, "setProfile") == 0)
+  {
+    //Change to new profile
+    changeProfileNumber(settingValue);
+
+    //Load new profile into system
+    loadSettings();
+
+    //Send settings to browser
+    char settingsCSV[AP_CONFIG_SETTING_SIZE];
+    memset(settingsCSV, 0, sizeof(settingsCSV));
+    createSettingsString(settingsCSV);
+    log_d("Sending command: %s\n\r", settingsCSV);
+    ws.textAll(String(settingsCSV));
   }
 
   //Check for bulk settings (constellations and message rates)
@@ -734,7 +756,7 @@ bool parseIncomingSettings()
       headPtr = commaPtr + 1;
     }
 
-    log_d("settingName: %s value: %s", settingName, valueStr);
+    //log_d("settingName: %s value: %s", settingName, valueStr);
 
     updateSettingWithValue(settingName, valueStr);
   }

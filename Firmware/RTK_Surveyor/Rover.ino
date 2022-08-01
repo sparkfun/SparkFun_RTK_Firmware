@@ -14,24 +14,22 @@ bool configureUbloxModuleRover()
     return (true);
   }
 
+  firstPowerOn = false; //If we switch between rover/base in the future, force config of module.
+
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
   //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
   if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
     response &= i2cGNSS.setNavigationFrequency(1, maxWait);
   if (response == false)
-    Serial.println(F("Set rate failed"));
+    Serial.println("Set rate failed");
 
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {
-    if (i2cGNSS.getSurveyInActive(100) == true)
-    {
-      log_d("Disabling survey");
-      response = i2cGNSS.disableSurveyMode(maxWait); //Disable survey
-      if (response == false)
-        Serial.println(F("Disable Survey failed"));
-    }
+    response = i2cGNSS.setSurveyMode(0, 0, 0); //Disable Survey-In or Fixed Mode
+    if (response == false)
+      Serial.println("Disable TMODE3 failed");
   }
 
   // Set dynamic model
@@ -39,7 +37,7 @@ bool configureUbloxModuleRover()
   {
     response = i2cGNSS.setDynamicModel((dynModel)settings.dynamicModel, maxWait);
     if (response == false)
-      Serial.println(F("setDynamicModel failed"));
+      Serial.println("setDynamicModel failed");
   }
 
 #define OUTPUT_SETTING 14
@@ -63,15 +61,15 @@ bool configureUbloxModuleRover()
   response &= configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //Make sure the appropriate messages are enabled
 
   if (response == false)
-    Serial.println(F("Disable RTCM failed"));
+    Serial.println("Disable RTCM failed");
 
   response = i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GN); //Turn GNGGA back on after NTRIP Client
   if (response == false)
-    Serial.println(F("setMainTalkerID failed"));
+    Serial.println("setMainTalkerID failed");
 
   response = setNMEASettings(); //Enable high precision NMEA and extended sentences
   if (response == false)
-    Serial.println(F("setNMEASettings failed"));
+    Serial.println("setNMEASettings failed");
 
   response = true; //Reset
   if (zedModuleType == PLATFORM_F9R)
@@ -91,11 +89,11 @@ bool configureUbloxModuleRover()
     response &= i2cGNSS.setNavigationRate(settings.navigationRate);
   }
   if (response == false)
-    Serial.println(F("Set Nav Rate failed"));
+    Serial.println("Set Nav Rate failed");
 
   response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   if (response == false)
-    Serial.println(F("Module failed to save."));
+    Serial.println("Module failed to save.");
 
   return (response);
 }
@@ -116,7 +114,7 @@ bool setNMEASettings()
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("NMEA setting failed"));
+    Serial.println("NMEA setting failed");
     return (false);
   }
 
@@ -127,7 +125,7 @@ bool setNMEASettings()
   // Now we write the custom packet back again to change the setting
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
   {
-    Serial.println(F("NMEA setting failed"));
+    Serial.println("NMEA setting failed");
     return (false);
   }
   return (true);
@@ -149,7 +147,7 @@ bool getConstellation(uint8_t constellationID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("Get Constellation failed"));
+    Serial.println("Get Constellation failed");
     return (false);
   }
 
@@ -174,7 +172,7 @@ bool setConstellation(uint8_t constellation, bool enable)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.println(F("Set Constellation failed"));
+    Serial.println("Set Constellation failed");
     return (false);
   }
 
@@ -236,7 +234,7 @@ bool setConstellation(uint8_t constellation, bool enable)
   // Now we write the custom packet back again to change the setting
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
   {
-    Serial.println(F("Constellation setting failed"));
+    Serial.println("Constellation setting failed");
     return (false);
   }
 
@@ -254,7 +252,7 @@ uint8_t locateGNSSID(uint8_t *customPayload, uint8_t constellation)
       return (4 + x * 8);
   }
 
-  Serial.print(F("locateGNSSID failed: "));
+  Serial.print("locateGNSSID failed: ");
   Serial.println(constellation);
   return (0);
 }
@@ -271,7 +269,7 @@ void updateAccuracyLEDs()
     {
       if (horizontalAccuracy > 0)
       {
-        Serial.print(F("Rover Accuracy (m): "));
+        Serial.print("Rover Accuracy (m): ");
         Serial.print(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
         Serial.println();
 
@@ -305,10 +303,10 @@ void updateAccuracyLEDs()
       }
       else
       {
-        Serial.print(F("Rover Accuracy: "));
+        Serial.print("Rover Accuracy: ");
         Serial.print(horizontalAccuracy);
         Serial.print(" ");
-        Serial.print(F("No lock. SIV: "));
+        Serial.print("No lock. SIV: ");
         Serial.print(numSV);
         Serial.println();
       }
@@ -350,65 +348,4 @@ void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)
   latitude += ((double)ubxDataStruct->latHp) / 1000000000.0;
   longitude = ((double)ubxDataStruct->lon) / 10000000.0;
   longitude += ((double)ubxDataStruct->lonHp) / 1000000000.0;
-}
-
-//Used during Rover+WiFi NTRIP Client mode to provide caster with GGA sentence every 10 seconds
-void pushGPGGA(NMEA_GGA_data_t *nmeaData)
-{
-#ifdef COMPILE_WIFI
-  //Provide the caster with our current position as needed
-  if ((ntripClient.connected() == true) && (settings.ntripClient_TransmitGGA == true))
-  {
-    log_d("Pushing GGA to server: %s", nmeaData->nmea); //nmea is printable (NULL-terminated) and already has \r\n on the end
-
-    ntripClient.print((const char *)nmeaData->nmea); //Push our current GGA sentence to caster
-  }
-#endif
-}
-
-//Check for the arrival of any correction data. Push it to the GNSS.
-//Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
-void updateNTRIPClient()
-{
-#ifdef COMPILE_WIFI
-  if (online.ntripClient == true)
-  {
-    if (ntripClient.connected() == true) // Check that the connection is still open
-    {
-      uint8_t rtcmData[512 * 4]; //Most incoming data is around 500 bytes but may be larger
-      size_t rtcmCount = 0;
-
-      //Collect any available RTCM data
-      while (ntripClient.available())
-      {
-        rtcmData[rtcmCount++] = ntripClient.read();
-        if (rtcmCount == sizeof(rtcmData))
-          break;
-      }
-
-      if (rtcmCount > 0)
-      {
-        lastReceivedRTCM_ms = millis();
-
-        //Push RTCM to GNSS module over I2C
-        i2cGNSS.pushRawData(rtcmData, rtcmCount);
-
-        //log_d("Pushed %d RTCM bytes to ZED", rtcmCount);
-      }
-    }
-    else
-    {
-      Serial.println(F("NTRIP Client connection dropped"));
-      online.ntripClient = false;
-    }
-
-    //Timeout if we don't have new data for maxTimeBeforeHangup_ms
-    if ((millis() - lastReceivedRTCM_ms) > maxTimeBeforeHangup_ms)
-    {
-      Serial.println(F("NTRIP Client timeout"));
-      ntripClient.stop();
-      online.ntripClient = false;
-    }
-  }
-#endif
 }

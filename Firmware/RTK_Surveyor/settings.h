@@ -7,23 +7,12 @@ typedef enum
   STATE_ROVER_FIX,
   STATE_ROVER_RTK_FLOAT,
   STATE_ROVER_RTK_FIX,
-  STATE_ROVER_CLIENT_WIFI_STARTED,
-  STATE_ROVER_CLIENT_WIFI_CONNECTED,
-  STATE_ROVER_CLIENT_STARTED,
   STATE_BASE_NOT_STARTED,
   STATE_BASE_TEMP_SETTLE, //User has indicated base, but current pos accuracy is too low
   STATE_BASE_TEMP_SURVEY_STARTED,
   STATE_BASE_TEMP_TRANSMITTING,
-  STATE_BASE_TEMP_WIFI_STARTED,
-  STATE_BASE_TEMP_WIFI_CONNECTED,
-  STATE_BASE_TEMP_CASTER_STARTED,
-  STATE_BASE_TEMP_CASTER_CONNECTED,
   STATE_BASE_FIXED_NOT_STARTED,
   STATE_BASE_FIXED_TRANSMITTING,
-  STATE_BASE_FIXED_WIFI_STARTED,
-  STATE_BASE_FIXED_WIFI_CONNECTED,
-  STATE_BASE_FIXED_CASTER_STARTED,
-  STATE_BASE_FIXED_CASTER_CONNECTED,
   STATE_BUBBLE_LEVEL,
   STATE_MARK_EVENT,
   STATE_DISPLAY_SETUP,
@@ -31,10 +20,7 @@ typedef enum
   STATE_WIFI_CONFIG,
   STATE_TEST,
   STATE_TESTING,
-  STATE_PROFILE_1,
-  STATE_PROFILE_2,
-  STATE_PROFILE_3,
-  STATE_PROFILE_4,
+  STATE_PROFILE,
   STATE_KEYS_STARTED,
   STATE_KEYS_NEEDED,
   STATE_KEYS_WIFI_STARTED,
@@ -119,10 +105,49 @@ typedef enum
 enum WiFiState
 {
   WIFI_OFF = 0,
+  WIFI_ON,
   WIFI_NOTCONNECTED,
   WIFI_CONNECTED,
 };
 volatile byte wifiState = WIFI_OFF;
+
+enum NTRIPClientState
+{
+  NTRIP_CLIENT_OFF = 0,         //Using Bluetooth or NTRIP server
+  NTRIP_CLIENT_ON,              //WIFI_ON state
+  NTRIP_CLIENT_WIFI_CONNECTING, //Connecting to WiFi access point
+  NTRIP_CLIENT_WIFI_CONNECTED,  //WiFi connected to an access point
+  NTRIP_CLIENT_CONNECTING,      //Attempting a connection to the NTRIP caster
+  NTRIP_CLIENT_CONNECTED,       //Connected to the NTRIP caster
+};
+volatile byte ntripClientState = NTRIP_CLIENT_OFF;
+
+enum NTRIPServerState
+{
+  NTRIP_SERVER_OFF = 0,         //Using Bluetooth or NTRIP client
+  NTRIP_SERVER_ON,              //WIFI_ON state
+  NTRIP_SERVER_WIFI_CONNECTING, //Connecting to WiFi access point
+  NTRIP_SERVER_WIFI_CONNECTED,  //WiFi connected to an access point
+  NTRIP_SERVER_WAIT_GNSS_DATA,  //Waiting for correction data from GNSS
+  NTRIP_SERVER_CONNECTING,      //Attempting a connection to the NTRIP caster
+  NTRIP_SERVER_AUTHORIZATION,   //Validate the credentials
+  NTRIP_SERVER_CASTING,         //Sending correction data to the NTRIP caster
+};
+volatile byte ntripServerState = NTRIP_SERVER_OFF;
+
+enum RtcmTransportState
+{
+  RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3 = 0,
+  RTCM_TRANSPORT_STATE_READ_LENGTH_1,
+  RTCM_TRANSPORT_STATE_READ_LENGTH_2,
+  RTCM_TRANSPORT_STATE_READ_MESSAGE_1,
+  RTCM_TRANSPORT_STATE_READ_MESSAGE_2,
+  RTCM_TRANSPORT_STATE_READ_DATA,
+  RTCM_TRANSPORT_STATE_READ_CRC_1,
+  RTCM_TRANSPORT_STATE_READ_CRC_2,
+  RTCM_TRANSPORT_STATE_READ_CRC_3,
+  RTCM_TRANSPORT_STATE_CHECK_CRC
+};
 
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
@@ -131,13 +156,20 @@ enum BTState
   BT_NOTCONNECTED,
   BT_CONNECTED,
 };
-volatile byte btState = BT_OFF;
 
 //Return values for getByteChoice()
 enum returnStatus {
   STATUS_GETBYTE_TIMEOUT = 255,
   STATUS_GETNUMBER_TIMEOUT = -123455555,
   STATUS_PRESSED_X = 254,
+};
+
+//Return values for getMenuChoice()
+enum getMenuChoiceStatus
+{
+  GMCS_TIMEOUT = -2,
+  GMCS_OVERFLOW = -1,
+  GMCS_CHARACTER = 0
 };
 
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
@@ -223,6 +255,7 @@ typedef struct {
   uint32_t externalPulseLength_us = 100000; //us length of pulse
   pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; //Pulse rises for pulse length, then falls
   bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
+  bool enableMarksFile = false; //Log marks to the marks file
 
   ubxMsg ubxMessages[MAX_UBX_MSG] = //Report rates for all known messages
   {
@@ -340,6 +373,7 @@ typedef struct {
 
   //NTRIP Server
   bool enableNtripServer = false;
+  bool ntripServer_StartAtSurveyIn = false; //true = Start Wifi instead of Bluetooth at Survey-In
   char ntripServer_CasterHost[50] = "rtk2go.com"; //It's free...
   uint16_t ntripServer_CasterPort = 2101;
   char ntripServer_CasterUser[50] = "test@test.com"; //Some free casters require auth. User must provide their own email address to use RTK2Go
@@ -383,6 +417,21 @@ typedef struct {
   uint64_t lastKeyAttempt = 0; //Epoch time of last attempt at obtaining keys
   bool updateZEDSettings = true; //When in doubt, update the ZED with current settings
   uint32_t LBandFreq = 1556290000; //Default to US band
+
+  //Time Zone - Default to UTC
+  int8_t timeZoneHours = 0;
+  int8_t timeZoneMinutes = 0;
+  int8_t timeZoneSeconds = 0;
+
+  //Debug settings
+  bool enablePrintWifiIpAddress = false;
+  bool enablePrintState = false;
+  bool enablePrintWifiState = false;
+  bool enablePrintNtripClientState = false;
+  bool enablePrintNtripServerState = false;
+  bool enablePrintNtripServerRtcm = false;
+  bool enablePrintPosition = false;
+  bool enablePrintIdleTime = false;
 } Settings;
 Settings settings;
 
@@ -398,6 +447,10 @@ struct struct_online {
   bool battery = false;
   bool accelerometer = false;
   bool ntripClient = false;
+  bool rxRtcmCorrectionData = false;
+  bool ntripServer = false;
+  bool txNtripDataCasting = false;
   bool lband = false;
   bool lbandCorrections = false;
+  bool i2c = false;
 } online;

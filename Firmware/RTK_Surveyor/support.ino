@@ -9,15 +9,14 @@ void printDebug(String thingToPrint)
 //Option not known
 void printUnknown(uint8_t unknownChoice)
 {
-  Serial.print(F("Unknown choice: "));
+  Serial.print("Unknown choice: ");
   Serial.write(unknownChoice);
   Serial.println();
 }
 void printUnknown(int unknownValue)
 {
-  Serial.print(F("Unknown value: "));
-  Serial.write(unknownValue);
-  Serial.println();
+  Serial.print("Unknown value: ");
+  Serial.printf("%d\r\n", unknownValue);
 }
 
 //Clear the Serial RX buffer before we begin scanning for characters
@@ -26,6 +25,103 @@ void clearBuffer()
   Serial.flush();
   delay(20);//Wait for any incoming chars to hit buffer
   while (Serial.available() > 0) Serial.read(); //Clear buffer
+}
+
+//Waits for and returns the menu choice that the user provides
+//Returns GMCS_TIMEOUT, GMCS_OVERFLOW, GMCS_CHARACTER or number of digits
+int getMenuChoice(int * value, int numberOfSeconds)
+{
+  int digits;
+  byte incoming;
+  bool makingChoice;
+  int previous_value;
+
+  clearBuffer();
+
+  long startTime = millis();
+
+  //Assume character value
+  *value = 0;
+  previous_value = 0;
+  digits = 0;
+  makingChoice = true;
+  while (makingChoice)
+  {
+    delay(10); //Yield to processor
+
+    //Regularly poll to get latest data
+    if (online.gnss == true)
+      i2cGNSS.checkUblox();
+
+    //Get the next input character
+    while (Serial.available() > 0)
+    {
+      incoming = Serial.read();
+
+      //Handle single character input
+      if ((!digits)
+        && (((incoming >= 'a') && (incoming <= 'z'))
+        || ((incoming >= 'A') && (incoming <= 'Z'))))
+      {
+        //Echo the incoming character
+        Serial.printf("%c\r\n", incoming);
+
+        //Return the character value
+        *value = incoming;
+        makingChoice = false;
+        break;
+      }
+
+      //Handle numeric input
+      else if ((incoming >= '0') && (incoming <= '9'))
+      {
+        //Echo the incoming character
+        Serial.write(incoming);
+
+        //Switch to numeric mode
+        *value = (*value * 10) + incoming - '0';
+        digits += 1;
+
+        //Check for overflow
+        if (*value < previous_value)
+        {
+          Serial.println("Error - number overflow!");
+          return GMCS_OVERFLOW;
+        }
+        previous_value = *value;
+
+        //Handle backspace
+        if (digits && (incoming == 8))
+        {
+          Serial.print((char)0x08); //Move back one space
+          Serial.print(" "); //Put a blank there to erase the letter from the terminal
+          Serial.print((char)0x08); //Move back again
+
+          //Switch to numeric mode
+          *value /= 10;
+          previous_value = *value;
+          digits -= 1;
+        }
+      }
+
+      //Handle end of number
+      else if (digits && ((incoming == '\r') || (incoming == '\n')))
+      {
+        //Echo the incoming character
+        Serial.print("\r\n");
+        makingChoice = false;
+        break;
+      }
+    }
+
+    //Exit the routine when a timeout occurs
+    if (makingChoice && (millis() - startTime) / 1000 >= numberOfSeconds)
+    {
+      Serial.println("No user input received.");
+      return GMCS_TIMEOUT;
+    }
+  }
+  return (digits);
 }
 
 //Get single byte from user
@@ -54,7 +150,7 @@ uint8_t getByteChoice(int numberOfSeconds)
 
     if ( (millis() - startTime) / 1000 >= numberOfSeconds)
     {
-      Serial.println(F("No user input received."));
+      Serial.println("No user input received.");
       return (STATUS_GETBYTE_TIMEOUT); //Timeout. No user input.
     }
   }
@@ -86,7 +182,7 @@ int64_t getNumber(int numberOfSeconds)
       {
         if (spot == 0)
         {
-          Serial.println(F("No user input received. Do you have line endings turned on?"));
+          Serial.println("No user input received. Do you have line endings turned on?");
           return (STATUS_GETNUMBER_TIMEOUT); //Timeout. No user input.
         }
         else if (spot > 0)
@@ -99,7 +195,7 @@ int64_t getNumber(int numberOfSeconds)
     //See if we timed out waiting for a line ending
     if (spot > 0 && (millis() - startTime) / 1000 >= numberOfSeconds)
     {
-      Serial.println(F("Do you have line endings turned on?"));
+      Serial.println("Do you have line endings turned on?");
       break; //Timeout, but we have data
     }
 
@@ -167,7 +263,7 @@ double getDouble(int numberOfSeconds)
       {
         if (spot == 0)
         {
-          Serial.println(F("No user input received. Do you have line endings turned on?"));
+          Serial.println("No user input received. Do you have line endings turned on?");
           return (STATUS_GETNUMBER_TIMEOUT); //Timeout. No user input.
         }
         else if (spot > 0)
@@ -180,7 +276,7 @@ double getDouble(int numberOfSeconds)
     //See if we timed out waiting for a line ending
     if (spot > 0 && (millis() - startTime) / 1000 >= numberOfSeconds)
     {
-      Serial.println(F("Do you have line endings turned on?"));
+      Serial.println("Do you have line endings turned on?");
       break; //Timeout, but we have data
     }
 
@@ -251,7 +347,7 @@ byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
     //See if we timed out waiting for a line ending
     if (readLength > 0 && (millis() - startTime) / 1000 >= numberOfSeconds)
     {
-      Serial.println(F("Do you have line endings turned on?"));
+      Serial.println("Do you have line endings turned on?");
       break; //Timeout, but we have data
     }
 
@@ -265,7 +361,7 @@ byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
       {
         if (readLength == 0)
         {
-          Serial.println(F("No user input received. Do you have line endings turned on?"));
+          Serial.println("No user input received. Do you have line endings turned on?");
           return (STATUS_GETBYTE_TIMEOUT); //Timeout. No user input.
         }
         else if (readLength > 0)
@@ -286,7 +382,7 @@ byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
       buffer[readLength] = '\0'; //Put a terminator on the string in case we are finished
 
       Serial.print((char)0x08); //Move back one space
-      Serial.print(F(" ")); //Put a blank there to erase the letter from the terminal
+      Serial.print(" "); //Put a blank there to erase the letter from the terminal
       Serial.print((char)0x08); //Move back again
 
       continue;

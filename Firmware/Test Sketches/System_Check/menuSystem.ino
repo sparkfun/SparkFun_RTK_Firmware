@@ -35,12 +35,14 @@ void menuSystem()
     }
     Serial.println();
 
-    if (i2cBorked == true)
+    if (online.i2c == false)
     {
-      Serial.println("The I2C bus is borked! Something is shorting SDA/SCL pins. Check accelerometer. All devices offline.");
+      Serial.println("I2C: Offline - Something is causing bus problems");
     }
     else
     {
+      Serial.println("I2C: Online");
+
       Serial.print(F("GNSS: "));
       if (online.gnss == true)
       {
@@ -166,8 +168,8 @@ void menuSystem()
           if (address == 0x2C) Serial.print(" USB Hub");
           if (address == 0x36) Serial.print(" Fuel Gauge");
           if (address == 0x19) Serial.print(" Accelerometer");
-          if (address == 0x3D) Serial.print(" Dsiplay Main");
-          if (address == 0x3C) Serial.print(" Dsiplay Alternate");
+          if (address == 0x3D) Serial.print(" Display Main");
+          if (address == 0x3C) Serial.print(" Display Alternate");
           Serial.println();
         }
       }

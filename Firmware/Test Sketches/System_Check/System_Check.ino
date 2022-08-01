@@ -50,8 +50,6 @@ int pin_microSD_CS;
 int pin_zed_tx_ready;
 int pin_zed_reset;
 int pin_batteryLevel_alert;
-int pin_i2c_sda = 21;
-int pin_i2c_scl = 22;
 
 int pin_muxA;
 int pin_muxB;
@@ -233,7 +231,20 @@ void setup()
   //
   //  Serial.println("Done");
 
-  beginI2C();
+  Wire.begin();
+
+  //begin/end wire transmission to see if bus is responding correctly
+  //All good: 0ms, response 2
+  //SDA/SCL shorted: 1000ms timeout, response 5
+  //SCL/VCC shorted: 14ms, response 5
+  //SCL/GND shorted: 1000ms, response 5
+  //SDA/VCC shorted: 1000ms, reponse 5
+  //SDA/GND shorted: 14ms, response 5
+  unsigned long startTime = millis();
+  Wire.beginTransmission(0x15); //Dummy address
+  int endValue = Wire.endTransmission();
+  Serial.printf("Response time: %d endValue: %d\n\r", millis() - startTime, endValue);
+  if(endValue == 2) online.i2c = true;
 
   beginBoard(); //Determine what hardware platform we are running on and check on button
 
@@ -254,73 +265,4 @@ void setup()
 void loop()
 {
   delay(10);
-}
-
-//Verify the I2C bus is clear of impediments
-void beginI2C()
-{
-  typedef enum
-  {
-    I2C_CLEAR = 0,
-    I2C_SCL_GND, //SCL Shorted to Ground
-    I2C_SDA_GND, //SDA Shorted to Ground
-    I2C_SHORTED, //SDA/SCL Shorted together
-    I2C_SCL_VCC, //SCL Shorted to VCC
-    I2C_SDA_VCC, //SDA Shorted to VCC
-  } I2cState;
-  I2cState i2cState = I2C_CLEAR;
-
-  pinMode(pin_i2c_sda, INPUT_PULLUP);
-  pinMode(pin_i2c_scl, INPUT_PULLUP);
-
-  //Both pins should float high
-  if (digitalRead(pin_i2c_scl) == LOW) i2cState = I2C_SCL_GND;
-  if (digitalRead(pin_i2c_sda) == LOW) i2cState = I2C_SDA_GND;
-
-  //SCL should be independant of SDA
-  pinMode(pin_i2c_sda, OUTPUT);
-  digitalWrite(pin_i2c_sda, LOW);
-
-  //Skip check if SCL is already shorted to GND
-  if(i2cState == I2C_CLEAR)
-    if (digitalRead(pin_i2c_scl) == LOW) i2cState = I2C_SHORTED;
-
-  //SDA should drive low
-  if (digitalRead(pin_i2c_sda) == HIGH) i2cState = I2C_SDA_VCC;
-
-  //SCL should drive low
-  pinMode(pin_i2c_scl, OUTPUT);
-  digitalWrite(pin_i2c_scl, LOW);
-  if (digitalRead(pin_i2c_scl) == HIGH) i2cState = I2C_SCL_VCC;
-
-  if (i2cState == I2C_CLEAR)
-  {
-    Wire.begin();
-    online.i2c = true;
-    return;
-  }
-
-  Serial.print("I2C Error: ");
-  switch (i2cState)
-  {
-    case (I2C_SCL_GND):
-      Serial.print("SCL shorted to GND");
-      break;
-    case (I2C_SDA_GND):
-      Serial.print("SDA shorted to GND");
-      break;
-    case (I2C_SHORTED):
-      Serial.print("SCL shorted to SDA");
-      break;
-    case (I2C_SDA_VCC):
-      Serial.print("SDA shorted to VCC");
-      break;
-    case (I2C_SCL_VCC):
-      Serial.print("SCL shorted to VCC");
-      break;
-    default:
-      Serial.print("Unknown");
-      break;
-  }
-  Serial.println();
 }

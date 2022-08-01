@@ -1,14 +1,14 @@
 # PointPerfect Menu
 
-Surveyor: ![Feature Not Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/RedDot.png) / Express: ![Feature Not Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/RedDot.png) / Express Plus: ![Feature Not Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/RedDot.png) / Facet: ![Feature Not Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/RedDot.png) / Facet L-Band: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
+Surveyor: ![Feature Not Supported](img/RedDot.png) / Express: ![Feature Not Supported](img/RedDot.png) / Express Plus: ![Feature Not Supported](img/RedDot.png) / Facet: ![Feature Not Supported](img/RedDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
 
 **Note:** This section only applies to RTK Facet *L-Band* products. Regular RTK Facet, Surveyor, Express, and Express Plus products do not have L-Band antennas or receivers built-in.
 
-![PointPerfect Menu showing Home WiFi credentials](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK PointPerfect Menu.png)
+![PointPerfect Menu showing Home WiFi credentials](img/SparkFun%20RTK%20PointPerfect%20Config.png)
 
 *Configuring PointPerfect settings over WiFi*
 
-![PointPerfect Menu showing Home WiFi credentials](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK PointPerfect Menu.png)
+![PointPerfect Menu showing Home WiFi credentials](img/SparkFun%20RTK%20PointPerfect%20Menu.png)
 
 *Configuring PointPerfect settings over serial*
 
@@ -30,7 +30,7 @@ The unit will display various messages to aid the user in obtaining keys as need
 
 Upon successful reception and decryption of PointPerfect corrections, the satellite dish icon will increase to a three-pronged icon. As the unit's fix increases the cross-hair will indicate a basic 3D solution, a double blinking cross-hair will indicate a floating RTK solution, and a solid double cross-hair will indicate a fixed RTK solution.
 
-![PointPerfect Menu showing Home WiFi credentials](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK PointPerfect Menu.png)
+![PointPerfect Menu showing Home WiFi credentials](img/SparkFun%20RTK%20PointPerfect%20Menu.png)
 
 *PointPerfect Menu showing Home WiFi credentials*
 

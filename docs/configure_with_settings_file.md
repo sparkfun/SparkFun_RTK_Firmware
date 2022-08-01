@@ -1,6 +1,6 @@
 # Configure with Settings File
 
-Surveyor: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Express: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Express Plus: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Facet: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png)
+Surveyor: ![Feature Partially Supported](img/YellowDot.png) / Express: ![Feature Partially Supported](img/YellowDot.png) / Express Plus: ![Feature Partially Supported](img/YellowDot.png) / Facet: ![Feature Partially Supported](img/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](img/YellowDot.png)
 
 [![SparkFun RTK Facet Settings File](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Settings_File.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Settings_File.jpg)
 

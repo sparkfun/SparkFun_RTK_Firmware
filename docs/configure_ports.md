@@ -1,6 +1,6 @@
 # Ports Menu
 
-Surveyor: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet L-Band: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
+Surveyor: ![Feature Partially Supported](img/YellowDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
 
 [![Setting the baud rate of the ports](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/RTK_Surveyor_-_WiFi_Config_-_Express_Ports_Config.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/RTK_Surveyor_-_WiFi_Config_-_Express_Ports_Config.jpg)
 
@@ -23,7 +23,7 @@ The **Data** port on the RTK Facet, Express, and Express Plus is very flexible. 
 * **I2C** - The TX pin operates as SCL, RX pin as SDA on the I2C bus. This allows additional sensors to be connected to the I2C bus.
 * **GPIO** - The TX pin operates as a DAC-capable GPIO on the ESP32. The RX pin operates as an ADC-capable input on the ESP32. This is useful for custom applications.
 
-![Configuring the External Pulse and External Events](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Ports PPS Config.png)
+![Configuring the External Pulse and External Events](img/SparkFun%20RTK%20Ports%20PPS%20Config.png)
 
 *Configuring the External Pulse and External Events over WiFi*
 

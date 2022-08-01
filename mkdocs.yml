@@ -92,6 +92,7 @@ nav:
     - configure_profiles.md
     - configure_pointperfect.md
     - menu_system_status.md
+    - menu_debug.md
     - system_status_report.md
     - correction_sources.md
     - correction_transport.md

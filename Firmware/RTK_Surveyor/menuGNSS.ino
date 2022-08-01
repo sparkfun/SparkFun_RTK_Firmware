@@ -327,6 +327,18 @@ void setMeasurementRates(float secondsBetweenSolutions)
   {
     settings.measurementRate = measRate;
     settings.navigationRate = navRate;
+
+    //If enabled, adjust GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
+    if (settings.ubxMessages[8].msgRate > 0)
+    {
+      float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+      if (measurementFrequency < 1.0) measurementFrequency = 1.0;
+
+      Serial.printf("Adjusting GSV setting to %f\n\r", measurementFrequency);
+
+      setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //Update GSV setting in file
+      configureMessageRate(COM_PORT_UART1, settings.ubxMessages[8]); //Update rate on module
+    }
   }
   else
   {

@@ -137,7 +137,12 @@ void menuMessages()
       setMessageRateByName("UBX_NMEA_GGA", 1);
       setMessageRateByName("UBX_NMEA_GSA", 1);
       setMessageRateByName("UBX_NMEA_GST", 1);
-      setMessageRateByName("UBX_NMEA_GSV", 4); //One update per 4 fixes to avoid swamping SPP connection
+
+      //We want GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
+      float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+      if(measurementFrequency < 1.0) measurementFrequency = 1.0;
+      setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //One report per second
+
       setMessageRateByName("UBX_NMEA_RMC", 1);
       Serial.println("Reset to Surveying Defaults (NMEAx5)");
     }
@@ -147,7 +152,12 @@ void menuMessages()
       setMessageRateByName("UBX_NMEA_GGA", 1);
       setMessageRateByName("UBX_NMEA_GSA", 1);
       setMessageRateByName("UBX_NMEA_GST", 1);
-      setMessageRateByName("UBX_NMEA_GSV", 4); //One update per 4 fixes to avoid swamping SPP connection
+      
+      //We want GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
+      float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+      if(measurementFrequency < 1.0) measurementFrequency = 1.0;
+      setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //One report per second
+
       setMessageRateByName("UBX_NMEA_RMC", 1);
 
       setMessageRateByName("UBX_RXM_RAWX", 1);

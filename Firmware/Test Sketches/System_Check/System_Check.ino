@@ -50,6 +50,8 @@ int pin_microSD_CS;
 int pin_zed_tx_ready;
 int pin_zed_reset;
 int pin_batteryLevel_alert;
+int pin_i2c_sda = 21;
+int pin_i2c_scl = 22;
 
 int pin_muxA;
 int pin_muxB;
@@ -199,50 +201,43 @@ void setup()
   Serial.begin(115200);
   delay(250);
 
-//  int pinNumber1 = 21;
-//  int pinNumber2 = 22;
-//  clearBuffer();
-//  pinMode(pinNumber1, OUTPUT);
-//  pinMode(pinNumber2, OUTPUT);
-//
-//  Serial.printf("\n\rToggling pin %d. Press x to exit\n\r", pinNumber1);
-//  Serial.printf("\n\rToggling pin %d. Press x to exit\n\r", pinNumber2);
-//
-//  while (Serial.available() == 0)
-//  {
-//    digitalWrite(pinNumber1, HIGH);
-//    digitalWrite(pinNumber2, HIGH);
-//    for (int x = 0 ; x < 100 ; x++)
-//    {
-//      delay(30);
-//      if (Serial.available()) break;
-//    }
-//
-//    digitalWrite(pinNumber1, LOW);
-//    digitalWrite(pinNumber2, LOW);
-//    for (int x = 0 ; x < 100 ; x++)
-//    {
-//      delay(30);
-//      if (Serial.available()) break;
-//    }
-//  }
-//  pinMode(pinNumber1, INPUT);
-//  pinMode(pinNumber2, INPUT);
-//
-//  Serial.println("Done");
+  //  int pinNumber1 = 21;
+  //  int pinNumber2 = 22;
+  //  clearBuffer();
+  //  pinMode(pinNumber1, OUTPUT);
+  //  pinMode(pinNumber2, OUTPUT);
+  //
+  //  Serial.printf("\n\rToggling pin %d. Press x to exit\n\r", pinNumber1);
+  //  Serial.printf("\n\rToggling pin %d. Press x to exit\n\r", pinNumber2);
+  //
+  //  while (Serial.available() == 0)
+  //  {
+  //    digitalWrite(pinNumber1, HIGH);
+  //    digitalWrite(pinNumber2, HIGH);
+  //    for (int x = 0 ; x < 100 ; x++)
+  //    {
+  //      delay(30);
+  //      if (Serial.available()) break;
+  //    }
+  //
+  //    digitalWrite(pinNumber1, LOW);
+  //    digitalWrite(pinNumber2, LOW);
+  //    for (int x = 0 ; x < 100 ; x++)
+  //    {
+  //      delay(30);
+  //      if (Serial.available()) break;
+  //    }
+  //  }
+  //  pinMode(pinNumber1, INPUT);
+  //  pinMode(pinNumber2, INPUT);
+  //
+  //  Serial.println("Done");
 
-  Wire.begin();
-
-  //begin/end wire transmission should take a few ms. If it's taking longer,
-  //it's likely the I2C bus being shorted or pulled in
-  unsigned long startTime = millis();
-  Wire.beginTransmission(0x15); //Dummy address
-  int endValue = Wire.endTransmission();
-  if (millis() - startTime > 100) i2cBorked = true;
+  beginI2C();
 
   beginBoard(); //Determine what hardware platform we are running on and check on button
 
-  if (i2cBorked == false)
+  if (online.i2c == true)
   {
     beginGNSS(); //Connect to GNSS to get module type
 
@@ -259,4 +254,73 @@ void setup()
 void loop()
 {
   delay(10);
+}
+
+//Verify the I2C bus is clear of impediments
+void beginI2C()
+{
+  typedef enum
+  {
+    I2C_CLEAR = 0,
+    I2C_SCL_GND, //SCL Shorted to Ground
+    I2C_SDA_GND, //SDA Shorted to Ground
+    I2C_SHORTED, //SDA/SCL Shorted together
+    I2C_SCL_VCC, //SCL Shorted to VCC
+    I2C_SDA_VCC, //SDA Shorted to VCC
+  } I2cState;
+  I2cState i2cState = I2C_CLEAR;
+
+  pinMode(pin_i2c_sda, INPUT_PULLUP);
+  pinMode(pin_i2c_scl, INPUT_PULLUP);
+
+  //Both pins should float high
+  if (digitalRead(pin_i2c_scl) == LOW) i2cState = I2C_SCL_GND;
+  if (digitalRead(pin_i2c_sda) == LOW) i2cState = I2C_SDA_GND;
+
+  //SCL should be independant of SDA
+  pinMode(pin_i2c_sda, OUTPUT);
+  digitalWrite(pin_i2c_sda, LOW);
+
+  //Skip check if SCL is already shorted to GND
+  if(i2cState == I2C_CLEAR)
+    if (digitalRead(pin_i2c_scl) == LOW) i2cState = I2C_SHORTED;
+
+  //SDA should drive low
+  if (digitalRead(pin_i2c_sda) == HIGH) i2cState = I2C_SDA_VCC;
+
+  //SCL should drive low
+  pinMode(pin_i2c_scl, OUTPUT);
+  digitalWrite(pin_i2c_scl, LOW);
+  if (digitalRead(pin_i2c_scl) == HIGH) i2cState = I2C_SCL_VCC;
+
+  if (i2cState == I2C_CLEAR)
+  {
+    Wire.begin();
+    online.i2c = true;
+    return;
+  }
+
+  Serial.print("I2C Error: ");
+  switch (i2cState)
+  {
+    case (I2C_SCL_GND):
+      Serial.print("SCL shorted to GND");
+      break;
+    case (I2C_SDA_GND):
+      Serial.print("SDA shorted to GND");
+      break;
+    case (I2C_SHORTED):
+      Serial.print("SCL shorted to SDA");
+      break;
+    case (I2C_SDA_VCC):
+      Serial.print("SDA shorted to VCC");
+      break;
+    case (I2C_SCL_VCC):
+      Serial.print("SCL shorted to VCC");
+      break;
+    default:
+      Serial.print("Unknown");
+      break;
+  }
+  Serial.println();
 }

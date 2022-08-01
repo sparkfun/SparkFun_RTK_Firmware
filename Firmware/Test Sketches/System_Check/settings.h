@@ -409,4 +409,5 @@ struct struct_online {
   bool ntripClient = false;
   bool lband = false;
   bool lbandCorrections = false;
+  bool i2c = false;
 } online;

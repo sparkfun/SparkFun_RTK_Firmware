@@ -342,9 +342,19 @@ void updateBattery()
 //And outputs a serial message to USB
 void checkBatteryLevels()
 {
-  battLevel = lipo.getSOC();
-  battVoltage = lipo.getVoltage();
-  battChangeRate = lipo.getChangeRate();
+  if (online.battery == true)
+  {
+    battLevel = lipo.getSOC();
+    battVoltage = lipo.getVoltage();
+    battChangeRate = lipo.getChangeRate();
+  }
+  else
+  {
+    //False numbers but above system cut-off level
+    battLevel = 10;
+    battVoltage = 3.7;
+    battChangeRate = 0;
+  }
 
   Serial.printf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
 

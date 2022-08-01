@@ -8,6 +8,10 @@ void menuSystem()
     Serial.println();
     Serial.println("Menu: System Menu");
 
+    beginI2C();
+    if (online.i2c == false)
+      Serial.println("I2C: Offline - Something is causing bus problems");
+
     Serial.print("GNSS: ");
     if (online.gnss == true)
     {

@@ -476,8 +476,8 @@ void beginGNSS()
 //Configuration can take >1s so configure during splash
 void configureGNSS()
 {
-  if(online.gnss == false) return;
-  
+  if (online.gnss == false) return;
+
   i2cGNSS.setAutoPVTcallbackPtr(&storePVTdata); // Enable automatic NAV PVT messages with callback to storePVTdata
   i2cGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); // Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
 
@@ -810,4 +810,25 @@ void beginIdleTasks()
         &idleTaskHandle[index], //Task handle
         index); //Core where task should run, 0=core, 1=Arduino
   }
+}
+
+void beginI2C()
+{
+  Wire.begin(); //Start I2C on core 1
+  //Wire.setClock(400000);
+
+  //begin/end wire transmission to see if bus is responding correctly
+  //All good: 0ms, response 2
+  //SDA/SCL shorted: 1000ms timeout, response 5
+  //SCL/VCC shorted: 14ms, response 5
+  //SCL/GND shorted: 1000ms, response 5
+  //SDA/VCC shorted: 1000ms, reponse 5
+  //SDA/GND shorted: 14ms, response 5
+  unsigned long startTime = millis();
+  Wire.beginTransmission(0x15); //Dummy address
+  int endValue = Wire.endTransmission();
+  if (endValue == 2)
+    online.i2c = true;
+  else
+    Serial.println("Error: I2C Bus Not Responding");
 }

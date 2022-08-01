@@ -452,4 +452,5 @@ struct struct_online {
   bool txNtripDataCasting = false;
   bool lband = false;
   bool lbandCorrections = false;
+  bool i2c = false;
 } online;

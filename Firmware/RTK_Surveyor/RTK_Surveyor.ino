@@ -511,8 +511,7 @@ void setup()
 
   beginIdleTasks();
 
-  Wire.begin(); //Start I2C on core 1
-  //Wire.setClock(400000);
+  beginI2C(); 
 
   beginDisplay(); //Start display first to be able to display any errors
 

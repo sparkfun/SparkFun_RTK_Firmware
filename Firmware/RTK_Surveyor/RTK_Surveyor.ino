@@ -669,7 +669,7 @@ void updateLogs()
     }
 
     //Report file sizes to show recording is working
-    if (millis() - lastFileReport > 5000)
+    if ((millis() - lastFileReport) > 5000)
     {
       long fileSize = 0;
 
@@ -690,25 +690,28 @@ void updateLogs()
       if (fileSize > 0)
       {
         lastFileReport = millis();
-        Serial.printf("UBX file size: %ld", fileSize);
-
-        if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+        if (settings.enablePrintLogFileStatus)
         {
-          //Calculate generation and write speeds every 5 seconds
-          uint32_t fileSizeDelta = fileSize - lastLogSize;
-          Serial.printf(" - Generation rate: %0.1fkB/s", fileSizeDelta / 5.0 / 1000.0);
+          Serial.printf("UBX file size: %ld", fileSize);
 
-          if (totalWriteTime > 0)
-            Serial.printf(" - Write speed: %0.1fkB/s", fileSizeDelta / (totalWriteTime / 1000000.0) / 1000.0);
+          if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+          {
+            //Calculate generation and write speeds every 5 seconds
+            uint32_t fileSizeDelta = fileSize - lastLogSize;
+            Serial.printf(" - Generation rate: %0.1fkB/s", fileSizeDelta / 5.0 / 1000.0);
+
+            if (totalWriteTime > 0)
+              Serial.printf(" - Write speed: %0.1fkB/s", fileSizeDelta / (totalWriteTime / 1000000.0) / 1000.0);
+            else
+              Serial.printf(" - Write speed: 0.0kB/s");
+          }
           else
-            Serial.printf(" - Write speed: 0.0kB/s");
-        }
-        else
-        {
-          Serial.printf(" reached max log time %d", settings.maxLogTime_minutes);
-        }
+          {
+            Serial.printf(" reached max log time %d", settings.maxLogTime_minutes);
+          }
 
-        Serial.println();
+          Serial.println();
+        }
 
         totalWriteTime = 0; //Reset write time every 5s
 

@@ -29,221 +29,272 @@ void F9PSerialWriteTask(void *e)
   }
 }
 
-//If the ZED has any new NMEA data, pass it out over Bluetooth
-//Task for reading data from the GNSS receiver.
+static uint8_t ringBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
+static int availableBufferSpace = sizeof(ringBuffer) - 1; //Distance between head and furthest away tail
+static uint16_t dataHead = 0; //Head advances as data comes in from GNSS's UART
+static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
+static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
+
+void emptyRingBuffer(bool writeLogFile)
+{
+  bool btConnected;
+  uint16_t btBytesToSend;
+  uint16_t bytesSent;
+  uint16_t sdBytesToRecord;
+
+  //Determine BT connection state
+  btConnected = (bluetoothGetState() == BT_CONNECTED)
+                && (systemState != STATE_BASE_TEMP_SETTLE)
+                && (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
+
+  //If we are actively survey-in then do not pass NMEA data from ZED to phone
+  if (!btConnected)
+    //Discard the data
+    btTail = dataHead;
+  else
+  {
+    //Display the Bluetooth tail offset
+    if (settings.enablePrintRingBufferOffsets && (!inMainMenu))
+      Serial.printf("BT: %4d --> ", btTail);
+
+    //Reduce bytes to send if we have more to send then the end of the buffer
+    //We'll wrap next loop
+    btBytesToSend = (btTail > dataHead) ? dataHead + sizeof(ringBuffer) - btTail
+                                        : dataHead - btTail;
+    if ((btTail + btBytesToSend) > sizeof(ringBuffer))
+      btBytesToSend = sizeof(ringBuffer) - btTail;
+
+    //Reduce bytes to send to match BT buffer size
+    if (btBytesToSend > settings.sppTxQueueSize)
+      btBytesToSend = settings.sppTxQueueSize;
+
+    //Send the data if Bluetooth is not congested
+    if ((bluetoothIsCongested() == false) || (settings.throttleDuringSPPCongestion == false))
+    {
+      //Push new data to BT SPP if not congested or not throttling
+      bytesSent = bluetoothWriteBytes(&ringBuffer[btTail], btBytesToSend);
+      online.txNtripDataCasting = true;
+    }
+    else
+    {
+      //Don't push data to BT SPP if there is congestion to prevent heap hits.
+      bytesSent = btBytesToSend;
+      if (btBytesToSend < (sizeof(ringBuffer) - 1))
+        bytesSent = 0;
+      else
+        Serial.printf("ERROR - Congestion, dropped %d bytes: GNSS --> Bluetooth\r\n", btBytesToSend);
+    }
+
+    //Account for the sent data or dropped
+    btTail += bytesSent;
+    if (btTail >= sizeof(ringBuffer))
+      btTail -= sizeof(ringBuffer);
+
+    //Display the Bluetooth tail offset
+    if (settings.enablePrintRingBufferOffsets && (!inMainMenu))
+      Serial.printf("%4d\r\n", btTail);
+  }
+
+  //Determine how much Bluetooth data is in the ring buffer
+  btBytesToSend = (btTail > dataHead) ? dataHead + sizeof(ringBuffer) - btTail
+                                      : dataHead - btTail;
+
+  //If user wants to log, record to SD
+  if (writeLogFile)
+  {
+    if (!online.logging)
+      //Discard the data
+      sdTail = dataHead;
+    else
+    {
+      //Check if we are inside the max time window for logging
+      if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+      {
+        //Display the SD tail offset
+        if (settings.enablePrintRingBufferOffsets && (!inMainMenu))
+          Serial.printf("SD: %4d --> ", sdTail);
+
+        //Determine how much SD card data is in the ring buffer
+        sdBytesToRecord = (sdTail > dataHead) ? dataHead + sizeof(ringBuffer) - sdTail
+                                            : dataHead - sdTail;
+
+        //Attempt to gain access to the SD card, avoids collisions with file
+        //writing from other functions like recordSystemSettingsToFile()
+        if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+        {
+          //Reduce bytes to send if we have more to send then the end of the buffer
+          //We'll wrap next loop
+          if ((sdTail + sdBytesToRecord) > sizeof(ringBuffer))
+            sdBytesToRecord = sizeof(ringBuffer) - sdTail;
+
+          //Write the data to the file
+          bytesSent = ubxFile->write(&ringBuffer[sdTail], sdBytesToRecord);
+          xSemaphoreGive(sdCardSemaphore);
+
+          //Account for the sent data or dropped
+          sdTail += bytesSent;
+          if (sdTail >= sizeof(ringBuffer))
+            sdTail -= sizeof(ringBuffer);
+        } //End sdCardSemaphore
+        else
+          log_w("WARNING - sdCardSemaphore failed to yield, Tasks.ino line %d\r\n", __LINE__);
+
+        //Display the SD tail offset
+        if (settings.enablePrintRingBufferOffsets && (!inMainMenu))
+          Serial.printf("%4d\r\n", sdTail);
+      } //End maxLogTime
+    } //End logging
+  }
+
+  //Determine how much SD card data is in the ring buffer
+  sdBytesToRecord = (sdTail > dataHead) ? dataHead + sizeof(ringBuffer) - sdTail
+                                      : dataHead - sdTail;
+
+  //Update the number of bytes available in the ring buffer
+  availableBufferSpace = sizeof(ringBuffer) - 1
+                       - ((btBytesToSend > sdBytesToRecord) ? btBytesToSend
+                                                            : sdBytesToRecord);
+}
+
+//Process the RTCM message
+void processUart1Message(PARSE_STATE * parse, uint8_t type)
+{
+  uint16_t bytesToCopy;
+  uint16_t remainingBytes;
+
+  //----------------------------------------------------------------------
+  //At approximately 3.3K characters/second, a 6K byte buffer should hold
+  //approximately 2 seconds worth of data.  Bluetooth congestion or conflicts
+  //with the SD card semaphore should clear within this time.  At 57600 baud
+  //the Bluetooth UART is able to send 7200 characters a second.  With a 10
+  //mSec delay this routine runs approximately 100 times per second providing
+  //multiple chances to empty the buffer.
+  //
+  //Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
+  //
+  //        +---------+
+  //        |         |
+  //        |         |
+  //        |         |
+  //        |         |
+  //        +---------+ <-- dataHead, btTail, sdTail
+  //
+  //Ring buffer contains data when (dataHead != btTail) or (dataHead != sdTail)
+  //
+  //        +---------+
+  //        |         |
+  //        |         |
+  //        | yyyyyyy | <-- dataHead
+  //        | xxxxxxx | <-- btTail (1 byte in buffer)
+  //        +---------+ <-- sdTail (2 bytes in buffer)
+  //
+  //        +---------+
+  //        | yyyyyyy | <-- btTail (1 byte in buffer)
+  //        | xxxxxxx | <-- sdTail (2 bytes in buffer)
+  //        |         |
+  //        |         |
+  //        +---------+ <-- dataHead
+  //
+  //Maximum ring buffer fill is sizeof(rBuffer) - 1
+  //----------------------------------------------------------------------
+
+  //Display the message
+  if (settings.enablePrintLogFileMessages && (!parse->crc) && (!inMainMenu))
+  {
+    printTimeStamp();
+    switch(type)
+    {
+    case SENTENCE_TYPE_NMEA:
+      Serial.printf ("    %s NMEA %s, %2d bytes\r\n", parse->parserName,
+                     parse->nmeaMessageName, parse->length);
+      break;
+
+    case SENTENCE_TYPE_RTCM:
+      Serial.printf ("    %s RTCM %d, %2d bytes\r\n", parse->parserName,
+                     parse->message, parse->length);
+      break;
+
+    case SENTENCE_TYPE_UBX:
+      Serial.printf ("    %s UBX %d.%d, %2d bytes\r\n", parse->parserName,
+                     parse->message >> 8, parse->message & 0xff, parse->length);
+      break;
+    }
+  }
+
+  //Determine if this message will fit into the ring buffer
+  bytesToCopy = parse->length;
+  if ((bytesToCopy > availableBufferSpace) && (!inMainMenu))
+  {
+    Serial.printf("Ring buffer full, discarding %d bytes\r\n", bytesToCopy);
+    return;
+  }
+
+  //Account for this message
+  availableBufferSpace -= bytesToCopy;
+
+  //Fill the buffer to the end and then start at the beginning
+  if ((dataHead + bytesToCopy) > sizeof(ringBuffer))
+    bytesToCopy = sizeof(ringBuffer) - dataHead;
+
+  //Display the dataHead offset
+  if (settings.enablePrintRingBufferOffsets && (!inMainMenu))
+    Serial.printf("DH: %4d --> ", dataHead);
+
+  //Copy the data into the ring buffer
+  memcpy(&ringBuffer[dataHead], parse->buffer, bytesToCopy);
+  dataHead += bytesToCopy;
+  if (dataHead >= sizeof(ringBuffer))
+    dataHead -= sizeof(ringBuffer);
+
+  //Determine the remaining bytes
+  remainingBytes = parse->length - bytesToCopy;
+  if (remainingBytes)
+  {
+    //Copy the remaining bytes into the beginning of the ring buffer
+    memcpy(ringBuffer, &parse->buffer[bytesToCopy], remainingBytes);
+    dataHead = remainingBytes;
+  }
+
+  //Display the dataHead offset
+  if (settings.enablePrintRingBufferOffsets && (!inMainMenu))
+    Serial.printf("%4d\r\n", dataHead);
+
+  //Start emptying the ring buffer
+  emptyRingBuffer(false);
+}
+
+//Read data from the ZED (GNSS receiver) into the parse buffer
 void F9PSerialReadTask(void *e)
 {
-  static uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
-  static uint16_t dataHead = 0; //Head advances as data comes in from GNSS's UART
-  static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
-  static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
-
-  int btBytesToSend; //Amount of buffered Bluetooth data
-  int sdBytesToRecord; //Amount of buffered microSD card logging data
-  int availableBufferSpace; //Distance between head and furthest away tail
-
-  int btConnected; //Is the RTK in a state to send Bluetooth data?
-  int newBytesToRecord; //Size of data from GNSS
+  static PARSE_STATE parse = {waitForPreamble, processUart1Message, "Log"};
+  uint8_t data;
 
   while (true)
   {
+    if (settings.enableTaskReports == true)
+      Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+
+    //Determine if serial data is available
     while (serialGNSS.available())
     {
-      if (settings.enableTaskReports == true)
-        Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+      //Read the data from UART1
+      data = serialGNSS.read();
 
-      //----------------------------------------------------------------------
-      //The ESP32<->ZED-F9P serial connection is default 460,800bps to facilitate
-      //10Hz fix rate with PPP Logging Defaults (NMEAx5 + RXMx2) messages enabled.
-      //ESP32 UART2 is begun with SERIAL_SIZE_RX size buffer. The circular buffer 
-      //is SERIAL_SIZE_RX. At approximately 46.1K characters/second, a 6144 * 2 
-      //byte buffer should hold 267ms worth of serial data. Assuming SD writes are 
-      //250ms worst case, we should record incoming all data. Bluetooth congestion 
-      //or conflicts with the SD card semaphore should clear within this time.  
-      //
-      //Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
-      //
-      //        +---------+
-      //        |         |
-      //        |         |
-      //        |         |
-      //        |         |
-      //        +---------+ <-- dataHead, btTail, sdTail
-      //
-      //Ring buffer contains data when (dataHead != btTail) or (dataHead != sdTail)
-      //
-      //        +---------+
-      //        |         |
-      //        |         |
-      //        | yyyyyyy | <-- dataHead
-      //        | xxxxxxx | <-- btTail (1 byte in buffer)
-      //        +---------+ <-- sdTail (2 bytes in buffer)
-      //
-      //        +---------+
-      //        | yyyyyyy | <-- btTail (1 byte in buffer)
-      //        | xxxxxxx | <-- sdTail (2 bytes in buffer)
-      //        |         |
-      //        |         |
-      //        +---------+ <-- dataHead
-      //
-      //Maximum ring buffer fill is sizeof(rBuffer) - 1
-      //----------------------------------------------------------------------
+      //Save the data byte
+      parse.buffer[parse.length++] = data;
 
-      availableBufferSpace = sizeof(rBuffer);
+      //Compute the CRC value for the message
+      if (parse.computeCrc)
+        parse.crc = COMPUTE_CRC24Q(&parse, data);
 
-      //Determine BT connection state
-      btConnected = (bluetoothGetState() == BT_CONNECTED)
-                    && (systemState != STATE_BASE_TEMP_SETTLE)
-                    && (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
+      //Parse the RTCM message
+      parse.state(&parse, data);
+    }
 
-      //Determine the amount of Bluetooth data in the buffer
-      btBytesToSend = 0;
-      if (btConnected)
-      {
-        btBytesToSend = dataHead - btTail;
-        if (btBytesToSend < 0)
-          btBytesToSend += sizeof(rBuffer);
-      }
+    //Finish emptying the ring buffer
+    emptyRingBuffer(true);
 
-      //Determine the amount of microSD card logging data in the buffer
-      sdBytesToRecord = 0;
-      if (online.logging)
-      {
-        sdBytesToRecord = dataHead - sdTail;
-        if (sdBytesToRecord < 0)
-          sdBytesToRecord += sizeof(rBuffer);
-      }
-
-      //Determine the free bytes in the buffer
-      if (btBytesToSend >= sdBytesToRecord)
-        availableBufferSpace = sizeof(rBuffer) - btBytesToSend;
-      else
-        availableBufferSpace = sizeof(rBuffer) - sdBytesToRecord;
-
-      //Don't fill the last byte to prevent buffer overflow
-      if (availableBufferSpace)
-        availableBufferSpace -= 1;
-
-      //Fill the buffer to the end and then start at the beginning
-      if ((dataHead + availableBufferSpace) > sizeof(rBuffer))
-        availableBufferSpace = sizeof(rBuffer) - dataHead;
-
-      //If we have buffer space, read data from the GNSS into the buffer
-      newBytesToRecord = 0;
-      if (availableBufferSpace)
-      {
-        //Add new data into circular buffer in front of the head
-        //availableBufferSpace is already reduced to avoid buffer overflow
-        newBytesToRecord = serialGNSS.readBytes(&rBuffer[dataHead], availableBufferSpace);
-      }
-
-      //Account for the byte read
-      if (newBytesToRecord > 0)
-      {
-        //Set the next fill offset
-        dataHead += newBytesToRecord;
-        if (dataHead >= sizeof(rBuffer))
-          dataHead -= sizeof(rBuffer);
-
-        //Account for the new data
-        if (btConnected)
-          btBytesToSend += newBytesToRecord;
-        if (online.logging)
-          sdBytesToRecord += newBytesToRecord;
-      }
-
-      //----------------------------------------------------------------------
-      //Send data over Bluetooth
-      //----------------------------------------------------------------------
-
-      //If we are actively survey-in then do not pass NMEA data from ZED to phone
-      if (!btConnected)
-        //Discard the data
-        btTail = dataHead;
-      else
-      {
-        //Reduce bytes to send if we have more to send then the end of the buffer
-        //We'll wrap next loop
-        if ((btTail + btBytesToSend) > sizeof(rBuffer))
-          btBytesToSend = sizeof(rBuffer) - btTail;
-
-        //Reduce bytes to send to match BT buffer size
-        if (btBytesToSend > settings.sppTxQueueSize)
-          btBytesToSend = settings.sppTxQueueSize;
-
-        if ((bluetoothIsCongested() == false) || (settings.throttleDuringSPPCongestion == false))
-        {
-          //Push new data to BT SPP if not congested or not throttling
-          btBytesToSend = bluetoothWriteBytes(&rBuffer[btTail], btBytesToSend);
-          online.txNtripDataCasting = true;
-        }
-        else
-        {
-          //Don't push data to BT SPP if there is congestion to prevent heap hits.
-          if (btBytesToSend < (sizeof(rBuffer) - 1))
-            btBytesToSend = 0;
-          else
-            Serial.printf("ERROR - Congestion, dropped %d bytes: GNSS --> Bluetooth\r\n", btBytesToSend);
-        }
-
-        //Account for the sent data or dropped
-        btTail += btBytesToSend;
-        if (btTail >= sizeof(rBuffer))
-          btTail -= sizeof(rBuffer);
-      }
-
-      //----------------------------------------------------------------------
-      //Log data to the SD card
-      //----------------------------------------------------------------------
-
-      //If user wants to log, record to SD
-      if (!online.logging)
-        //Discard the data
-        sdTail = dataHead;
-      else
-      {
-        //Check if we are inside the max time window for logging
-        if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
-        {
-          //Attempt to gain access to the SD card, avoids collisions with file
-          //writing from other functions like recordSystemSettingsToFile()
-          if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
-          {
-            //Reduce bytes to send if we have more to send then the end of the buffer
-            //We'll wrap next loop
-            if ((sdTail + sdBytesToRecord) > sizeof(rBuffer))
-              sdBytesToRecord = sizeof(rBuffer) - sdTail;
-
-            //Write the data to the file
-            sdBytesToRecord = ubxFile->write(&rBuffer[sdTail], sdBytesToRecord);
-            xSemaphoreGive(sdCardSemaphore);
-
-            //Account for the sent data or dropped
-            sdTail += sdBytesToRecord;
-            if (sdTail >= sizeof(rBuffer))
-              sdTail -= sizeof(rBuffer);
-          } //End sdCardSemaphore
-          else
-          {
-            //Retry the semaphore a little later if possible
-            if (sdBytesToRecord == (sizeof(rBuffer) - 1))
-            {
-              //Error - no more room in the buffer, drop a buffer's worth of data
-              sdTail = dataHead;
-              log_e("ERROR - sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
-              Serial.printf("ERROR - Dropped %d bytes: GNSS --> log file\r\n", sdBytesToRecord);
-            }
-            else
-              log_w("WARNING - sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
-          }
-        } //End maxLogTime
-      } //End logging
-    } //End Serial.available()
-
-    //----------------------------------------------------------------------
     //Let other tasks run, prevent watch dog timer (WDT) resets
-    //----------------------------------------------------------------------
-
     delay(10);
   }
 }

@@ -324,17 +324,12 @@ unsigned long timeSinceLastIncomingSetting = 0;
 SFE_UBLOX_GNSS_ADD i2cLBand; // NEO-D9S
 const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 
-#if __has_include("tokens.h")
-#include "tokens.h"
-#else
-uint8_t pointPerfectTokenArray[] = {0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03}; //Token in HEX form
-
-static const char *AWS_PUBLIC_CERT = R"=====(
------BEGIN CERTIFICATE-----
-Certificate here
------END CERTIFICATE-----
-)=====";
+//The PointPerfect token is provided at compile time via build flags
+#ifndef POINTPERFECT_TOKEN
+#define POINTPERFECT_TOKEN 0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03
 #endif
+
+uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; //Token in HEX form
 
 const char* pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
 void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);

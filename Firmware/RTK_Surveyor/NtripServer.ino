@@ -352,7 +352,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
     previousMilliseconds = currentMilliseconds;
 
     //Parse the RTCM message
-    if (ntripServerRtcmMessage(incoming))
+    if ((!settings.enableNtripServerMessageParsing) || ntripServerRtcmMessage(incoming))
     {
       ntripServer->write(incoming); //Send this byte to socket
       ntripServerBytesSent++;

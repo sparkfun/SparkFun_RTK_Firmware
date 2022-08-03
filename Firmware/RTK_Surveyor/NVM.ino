@@ -250,6 +250,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", "enablePrintNtripClientRtcm", settings.enablePrintNtripClientRtcm);
   settingsFile->printf("%s=%d\n\r", "enablePrintStates", settings.enablePrintStates);
   settingsFile->printf("%s=%d\n\r", "enablePrintDuplicateStates", settings.enablePrintDuplicateStates);
+  settingsFile->printf("%s=%d\n\r", "enableNtripServerMessageParsing", settings.enableNtripServerMessageParsing);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -840,6 +841,9 @@ bool parseLine(char* str, Settings *settings)
     settings->enablePrintStates = d;
   else if (strcmp(settingName, "enablePrintDuplicateStates") == 0)
     settings->enablePrintDuplicateStates = d;
+  else if (strcmp(settingName, "enableNtripServerMessageParsing") == 0)
+    settings->enableNtripServerMessageParsing = d;
+
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list
   else

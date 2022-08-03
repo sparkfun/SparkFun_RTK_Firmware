@@ -333,7 +333,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
   }
 
 #ifdef  COMPILE_WIFI
-  if (online.rtc)
+  if (online.rtc && (ntripServerState == NTRIP_SERVER_CASTING))
   {
     //Timestamp the RTCM messages
     currentMilliseconds = millis();
@@ -359,11 +359,11 @@ void ntripServerProcessRTCM(uint8_t incoming)
       ntripServerTimer = millis();
       online.txNtripDataCasting = true;
     }
-
-    //Indicate that the GNSS is providing correction data
-    else if (ntripServerState == NTRIP_SERVER_WAIT_GNSS_DATA)
-      ntripServerSetState(NTRIP_SERVER_CONNECTING);
   }
+
+  //Indicate that the GNSS is providing correction data
+  else if (ntripServerState == NTRIP_SERVER_WAIT_GNSS_DATA)
+    ntripServerSetState(NTRIP_SERVER_CONNECTING);
 #endif  //COMPILE_WIFI
 }
 

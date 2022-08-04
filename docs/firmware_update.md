@@ -130,7 +130,7 @@ RTK Surveyors sold before September 2021 may have an ESP32 WROOM module with 4MB
 
 The GUI (as of v1.3) will autodetect the ESP32's flash size and load the appropriate partition file. No user interaction is required.
 
-If you are using the CLI method, be sure to point at the 4MB partition file. For example:
+If you are using the CLI method, be sure to point at the [4MB partition file](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/Binaries/bin/RTK_Surveyor_Partitions_4MB.bin). For example:
 
 esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/**RTK_Surveyor_Partitions_4MB**.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
 

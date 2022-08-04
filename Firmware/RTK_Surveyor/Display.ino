@@ -857,14 +857,39 @@ void paintLogging()
   loggingIconDisplayed %= 4; //Wrap
   if (online.logging == true && logIncreasing == true)
   {
-    if (loggingIconDisplayed == 0)
-      displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
-    else if (loggingIconDisplayed == 1)
-      displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1);
-    else if (loggingIconDisplayed == 2)
-      displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2);
-    else if (loggingIconDisplayed == 3)
-      displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3);
+    if (loggingType == LOGGING_STANDARD)
+    {
+      if (loggingIconDisplayed == 0)
+        displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+      else if (loggingIconDisplayed == 1)
+        displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1);
+      else if (loggingIconDisplayed == 2)
+        displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2);
+      else if (loggingIconDisplayed == 3)
+        displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3);
+    }
+    else if (loggingType == LOGGING_PPP)
+    {
+      if (loggingIconDisplayed == 0)
+        displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+      else if (loggingIconDisplayed == 1)
+        displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_PPP_1);
+      else if (loggingIconDisplayed == 2)
+        displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_PPP_2);
+      else if (loggingIconDisplayed == 3)
+        displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_PPP_3);
+    }
+    else if (loggingType == LOGGING_CUSTOM)
+    {
+      if (loggingIconDisplayed == 0)
+        displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+      else if (loggingIconDisplayed == 1)
+        displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_Custom_1);
+      else if (loggingIconDisplayed == 2)
+        displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_Custom_2);
+      else if (loggingIconDisplayed == 3)
+        displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_Custom_3);
+    }
   }
   else
   {

@@ -236,11 +236,11 @@ char platformPrefix[55] = "Surveyor"; //Sets the prefix for broadcast names
 
 HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
-#define SERIAL_SIZE_RX (1024 * 6) //Must be large enough to handle incoming ZED UART traffic. See F9PSerialReadTask().
+#define SERIAL_SIZE_RX (1024 * 4) //Must be large enough to handle incoming ZED UART traffic. See F9PSerialReadTask().
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
 
-#define SERIAL_SIZE_TX (1024 * 2)
+#define SERIAL_SIZE_TX (1024 * 1)
 uint8_t wBuffer[SERIAL_SIZE_TX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest

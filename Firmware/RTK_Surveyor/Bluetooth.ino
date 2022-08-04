@@ -40,14 +40,14 @@ static volatile byte bluetoothState = BT_OFF;
 //Used for updating the bluetoothState state machine
 void bluetoothCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
-    Serial.println("Client Connected");
+    Serial.println("BT client Connected");
     bluetoothState = BT_CONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, HIGH);
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
-    Serial.println("Client disconnected");
+    Serial.println("BT client disconnected");
     bluetoothState = BT_NOTCONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, LOW);

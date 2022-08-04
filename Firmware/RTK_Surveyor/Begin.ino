@@ -395,13 +395,15 @@ void beginFS()
 {
   if (online.fs == false)
   {
-    if (!LittleFS.begin(true)) //Format LittleFS if begin fails
+    if (LittleFS.begin(true) == false) //Format LittleFS if begin fails
     {
-      log_d("Error: LittleFS not online");
-      return;
+      Serial.println("Error: LittleFS not online");
     }
-    Serial.println("LittleFS Started");
-    online.fs = true;
+    else
+    {
+      Serial.println("LittleFS Started");
+      online.fs = true;
+    }
   }
 }
 

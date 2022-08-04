@@ -275,12 +275,14 @@ void menuSystem()
 //Toggle control of heap reports and I2C GNSS debug
 void menuDebug()
 {
+  int menuTimeoutExtended = 30; //Increase time needed as it's a large menu
+
   while (1)
   {
     Serial.println();
     Serial.println("Menu: Debug Menu");
 
-    Serial.print("1) I2C Debugging Output: ");
+    Serial.print("1) u-blox I2C Debugging Output: ");
     if (settings.enableI2Cdebug == true) Serial.println("Enabled");
     else Serial.println("Disabled");
 
@@ -375,7 +377,7 @@ void menuDebug()
     Serial.println("x) Exit");
 
     int incoming;
-    int digits = getMenuChoice(&incoming, menuTimeout); //Timeout after x seconds
+    int digits = getMenuChoice(&incoming, menuTimeoutExtended); //Timeout after x seconds
 
     //Handle input timeout
     if (digits == GMCS_TIMEOUT)

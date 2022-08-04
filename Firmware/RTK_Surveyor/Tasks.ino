@@ -55,11 +55,11 @@ void F9PSerialReadTask(void *e)
       //----------------------------------------------------------------------
       //The ESP32<->ZED-F9P serial connection is default 460,800bps to facilitate
       //10Hz fix rate with PPP Logging Defaults (NMEAx5 + RXMx2) messages enabled.
-      //ESP32 UART2 is begun with SERIAL_SIZE_RX size buffer. The circular buffer 
-      //is SERIAL_SIZE_RX. At approximately 46.1K characters/second, a 6144 * 2 
-      //byte buffer should hold 267ms worth of serial data. Assuming SD writes are 
-      //250ms worst case, we should record incoming all data. Bluetooth congestion 
-      //or conflicts with the SD card semaphore should clear within this time.  
+      //ESP32 UART2 is begun with SERIAL_SIZE_RX size buffer. The circular buffer
+      //is SERIAL_SIZE_RX. At approximately 46.1K characters/second, a 6144 * 2
+      //byte buffer should hold 267ms worth of serial data. Assuming SD writes are
+      //250ms worst case, we should record incoming all data. Bluetooth congestion
+      //or conflicts with the SD card semaphore should clear within this time.
       //
       //Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
       //
@@ -125,7 +125,7 @@ void F9PSerialReadTask(void *e)
         availableBufferSpace -= 1;
 
       //Fill the buffer to the end and then start at the beginning
-      if ((dataHead + availableBufferSpace) > sizeof(rBuffer))
+      if ((dataHead + availableBufferSpace) >= sizeof(rBuffer))
         availableBufferSpace = sizeof(rBuffer) - dataHead;
 
       //If we have buffer space, read data from the GNSS into the buffer
@@ -164,7 +164,7 @@ void F9PSerialReadTask(void *e)
       {
         //Reduce bytes to send if we have more to send then the end of the buffer
         //We'll wrap next loop
-        if ((btTail + btBytesToSend) > sizeof(rBuffer))
+        if ((btTail + btBytesToSend) >= sizeof(rBuffer))
           btBytesToSend = sizeof(rBuffer) - btTail;
 
         //Reduce bytes to send to match BT buffer size
@@ -180,13 +180,20 @@ void F9PSerialReadTask(void *e)
         else
         {
           //Don't push data to BT SPP if there is congestion to prevent heap hits.
-          if (btBytesToSend < (sizeof(rBuffer) - 1))
-            btBytesToSend = 0;
-          else
+          if (btBytesToSend == (sizeof(rBuffer) - 1))
+          {
+            //Error - no more room in the buffer, drop a buffer's worth of data
+            btTail = dataHead;
             Serial.printf("ERROR - Congestion, dropped %d bytes: GNSS --> Bluetooth\r\n", btBytesToSend);
+          }
+          else
+          {
+            log_w("WARNING - BT failed to send, Tasks.ino line %d", __LINE__);
+            btBytesToSend = 0;
+          }
         }
 
-        //Account for the sent data or dropped
+        //Account for the sent or dropped data
         btTail += btBytesToSend;
         if (btTail >= sizeof(rBuffer))
           btTail -= sizeof(rBuffer);
@@ -211,7 +218,7 @@ void F9PSerialReadTask(void *e)
           {
             //Reduce bytes to send if we have more to send then the end of the buffer
             //We'll wrap next loop
-            if ((sdTail + sdBytesToRecord) > sizeof(rBuffer))
+            if ((sdTail + sdBytesToRecord) >= sizeof(rBuffer))
               sdBytesToRecord = sizeof(rBuffer) - sdTail;
 
             //Write the data to the file

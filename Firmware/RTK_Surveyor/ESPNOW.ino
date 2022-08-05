@@ -52,10 +52,7 @@ void espnowOnDataRecieved(const uint8_t *mac, const uint8_t *incomingData, int l
 
       if (tempCRC == pairMessage.crc) //2nd error check
       {
-        //Record this MAC to peer list
-        memcpy(settings.espnowPeers[settings.espnowPeerCount++], &pairMessage.macAddress, 6);
-        settings.espnowPeerCount %= ESPNOW_MAX_PEERS;
-
+        memcpy(&receivedMAC, pairMessage.macAddress, 6);
         wifiSetState(WIFI_ESPNOW_MAC_RECEIVED);
       }
       //else Pair CRC failed
@@ -66,10 +63,10 @@ void espnowOnDataRecieved(const uint8_t *mac, const uint8_t *incomingData, int l
     espnowRSSI = packetRSSI; //Record this packets RSSI as an ESP NOW packet
 
     //Pass RTCM bytes (presumably) from ESP NOW out ESP32-UART2 to ZED-UART1
-    serialGNSS.write(incomingData, len);
+    //serialGNSS.write(incomingData, len);
     log_d("ESPNOW: Rececived %d bytes, RSSI: %d", len, espnowRSSI);
 
-    online.rxRtcmCorrectionData = true;
+    //online.rxRtcmCorrectionData = true;
     lastEspnowRssiUpdate = millis();
   }
 #endif
@@ -141,7 +138,7 @@ void espnowStart()
 //Begin broadcasting our MAC and wait for remote unit to respond
 void espnowBeginPairing()
 {
-#ifndef COMPILE_WIFI  
+#ifndef COMPILE_WIFI
   return;
 #endif
 
@@ -177,11 +174,24 @@ void espnowBeginPairing()
 
       if (wifiState == WIFI_ESPNOW_MAC_RECEIVED)
       {
-        //Add new peer to system
-        espnowAddPeer(settings.espnowPeers[settings.espnowPeerCount - 1]);
+        //Remove broadcast peer
+        espnowRemovePeer(broadcastMac);
 
-        //Send message directly to the last peer stored (not unicast), then exit
-        espnowSendPairMessage(settings.espnowPeers[settings.espnowPeerCount - 1]);
+        if (esp_now_is_peer_exist(receivedMAC) == true)
+          log_d("Peer already exists");
+        else
+        {
+          //Add new peer to system
+          espnowAddPeer(receivedMAC);
+
+          //Record this MAC to peer list
+          memcpy(settings.espnowPeers[settings.espnowPeerCount], receivedMAC, 6);
+          settings.espnowPeerCount++;
+          settings.espnowPeerCount %= ESPNOW_MAX_PEERS;
+        }
+
+        //Send message directly to the received MAC (not unicast), then exit
+        espnowSendPairMessage(receivedMAC);
 
         wifiSetState(WIFI_ESPNOW_PAIRED);
         Serial.println("Pairing compete");
@@ -189,7 +199,6 @@ void espnowBeginPairing()
       }
     }
 
-    uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
 
     Serial.println("Scanning for other radio...");
@@ -243,6 +252,19 @@ esp_err_t espnowAddPeer(uint8_t *peerMac, bool encrypt)
   esp_err_t result = esp_now_add_peer(&peerInfo);
   if (result != ESP_OK)
     log_d("Failed to add peer");
+  return (result);
+#else
+  return (ESP_OK);
+#endif
+}
+
+//Remove a given MAC address from the peer list
+esp_err_t espnowRemovePeer(uint8_t *peerMac)
+{
+#ifdef COMPILE_WIFI
+  esp_err_t result = esp_now_del_peer(peerMac);
+  if (result != ESP_OK)
+    log_d("Failed to remove peer");
   return (result);
 #else
   return (ESP_OK);

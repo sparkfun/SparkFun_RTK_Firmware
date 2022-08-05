@@ -26,7 +26,7 @@ const int FIRMWARE_VERSION_MAJOR = 2;
 const int FIRMWARE_VERSION_MINOR = 4;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
-#define COMPILE_BT //Comment out to remove Bluetooth functionality
+//#define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_AP //Comment out to remove Access Point functionality
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
@@ -357,6 +357,7 @@ float lBandEBNO = 0.0; //Used on system status menu
 uint8_t espnowOutgoing[250]; //ESP NOW has max of 250 characters
 unsigned long espnowLastAdd; //Tracks how long since last byte was added to the outgoing buffer
 uint8_t espnowOutgoingSpot = 0;
+uint8_t receivedMAC[6]; //Holds the broadcast MAC during pairing
 
 int espnowRSSI = 0;
 int packetRSSI = 0;

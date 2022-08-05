@@ -28,7 +28,7 @@ void updateSystemState()
 
     if (settings.enablePrintState && ((millis() - lastStateTime) > 15000))
     {
-      changeState (systemState);
+      changeState(systemState);
       lastStateTime = millis();
     }
 
@@ -332,6 +332,12 @@ void updateSystemState()
               ntripServerStart();
             }
 
+            //TODO select either or WiFi or ESP NOW
+            if (settings.radioType == RADIO_ESPNOW)
+            {
+              espnowStart();
+            }
+
             rtcmPacketsSent = 0; //Reset any previous number
             changeState(STATE_BASE_TEMP_TRANSMITTING);
           }
@@ -357,7 +363,7 @@ void updateSystemState()
         }
         break;
 
-      //Leave base temp transmitting if user has enabled WiFi/NTRIP
+      //Leave base temp transmitting over external radio, or WiFi/NTRIP, or ESP NOW
       case (STATE_BASE_TEMP_TRANSMITTING):
         {
         }
@@ -390,6 +396,14 @@ void updateSystemState()
           {
             if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, HIGH); //Turn on base LED
+
+            //TODO shouldn't NtripServer be here?
+
+            //TODO select either or WiFi or ESP NOW
+            if (settings.radioType == RADIO_ESPNOW)
+            {
+              espnowStart();
+            }
 
             changeState(STATE_BASE_FIXED_TRANSMITTING);
           }
@@ -738,7 +752,7 @@ void updateSystemState()
           byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
-            wifiState = WIFI_CONNECTED;
+            wifiSetState(WIFI_CONNECTED);
 
             changeState(STATE_KEYS_WIFI_CONNECTED);
           }
@@ -848,7 +862,7 @@ void updateSystemState()
           byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
-            wifiState = WIFI_CONNECTED;
+            wifiSetState(WIFI_CONNECTED);
 
             changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
           }

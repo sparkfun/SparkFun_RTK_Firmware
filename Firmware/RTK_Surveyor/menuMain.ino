@@ -53,6 +53,8 @@ void menuMain()
 
     Serial.println("p) Configure Profiles");
 
+    Serial.println("r) Configure Radios");
+
     if (online.lband == true)
       Serial.println("P) Configure PointPerfect");
 
@@ -83,6 +85,8 @@ void menuMain()
       menuUserProfiles();
     else if (incoming == 'P' && online.lband == true)
       menuPointPerfect();
+    else if (incoming == 'r')
+      menuRadio();
     else if (incoming == 'f' && binCount > 0)
       menuFirmware();
     else if (incoming == 'x')
@@ -258,7 +262,7 @@ void factoryReset()
 {
   displaySytemReset(); //Display friendly message on OLED
 
-  Serial.println("Formatting settings file system...");
+  Serial.println("Formatting file system...");
   LittleFS.format();
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
@@ -285,4 +289,60 @@ void factoryReset()
   Serial.println("Settings erased successfully. Rebooting. Goodbye!");
   delay(2000);
   ESP.restart();
+}
+
+//Configure the internal radio, if available
+void menuRadio()
+{
+  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, ECEF coords, etc).
+
+  while (1)
+  {
+    Serial.println();
+    Serial.println("Menu: Radio Menu");
+
+    Serial.print("1) Select Radio Type: ");
+    if (settings.radioType == RADIO_EXTERNAL) Serial.println("External only");
+    else if (settings.radioType == RADIO_ESPNOW) Serial.println("Internal ESP NOW");
+
+    if (settings.radioType == RADIO_ESPNOW)
+    {
+      //Pretty print the MAC of paired radios
+      for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+      {
+        Serial.printf("\tPaired Radio %d: ", x);
+        for (int y = 0 ; y < 5 ; y++)
+          Serial.printf("%02X:", settings.espnowPeers[x][y]);
+        Serial.printf("%02X\n\r", settings.espnowPeers[x][5]);
+      }
+
+      Serial.println("2) Pair radios");
+    }
+
+    Serial.println("x) Exit");
+
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+
+    if (incoming == 1)
+    {
+      if (settings.radioType == RADIO_EXTERNAL) settings.radioType = RADIO_ESPNOW;
+      else if (settings.radioType == RADIO_ESPNOW) settings.radioType = RADIO_EXTERNAL;
+    }
+    else if (settings.radioType == RADIO_ESPNOW && incoming == 2)
+    {
+      Serial.println("Begin ESP NOW Pairing");
+      espnowBeginPairing();
+    }
+
+    else if (incoming == STATUS_PRESSED_X)
+      break;
+    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
+  }
+
+  beginRadio();
+  
+  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }

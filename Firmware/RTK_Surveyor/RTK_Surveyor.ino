@@ -8,7 +8,7 @@
 
   Compiled with Arduino v1.8.15 with ESP32 core v2.0.2.
 
-  For compilation instructions see https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#compiling-from-source
+  For compilation instructions see https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#compiling-source
 
   Special thanks to Avinab Malla for guidance on getting xTasks implemented.
 
@@ -23,12 +23,12 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 3;
+const int FIRMWARE_VERSION_MINOR = 4;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_AP //Comment out to remove Access Point functionality
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -130,6 +130,15 @@ const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 uint32_t sdCardSizeMB = 0;
 uint32_t sdFreeSpaceMB = 0;
 uint32_t sdUsedSpaceMB = 0;
+
+//Controls Logging Icon type
+typedef enum LoggingType {
+  LOGGING_UNKNOWN = 0,
+  LOGGING_STANDARD,
+  LOGGING_PPP,
+  LOGGING_CUSTOM
+} LoggingType;
+LoggingType loggingType = LOGGING_UNKNOWN;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster
@@ -336,6 +345,26 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
 float lBandEBNO = 0.0; //Used on system status menu
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//ESP NOW for multipoint wireless broadcasting over 2.4GHz
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#ifdef COMPILE_WIFI
+
+#include <esp_now.h>
+#include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
+
+#endif
+
+uint8_t espnowOutgoing[250]; //ESP NOW has max of 250 characters
+unsigned long espnowLastAdd; //Tracks how long since last byte was added to the outgoing buffer
+uint8_t espnowOutgoingSpot = 0;
+
+int espnowRSSI = 0;
+int packetRSSI = 0;
+unsigned long lastEspnowRssiUpdate = 0;
+
+const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
@@ -364,7 +393,8 @@ uint32_t lastPrintPosition = 0; //For periodic display of the position
 
 uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
-int loggingIconDisplayed = 0; //Increases every 500ms while logging
+uint8_t loggingIconDisplayed = 0; //Increases every 500ms while logging
+uint8_t espnowIconDisplayed = 0; //Increases every 500ms while transmitting
 
 uint64_t lastLogSize = 0;
 bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
@@ -425,7 +455,6 @@ uint32_t max_idle_count = MAX_IDLE_TIME_COUNT;
 
 uint64_t uptime;
 uint32_t previousMilliseconds;
-
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
                      +---------------------------------------+      +----------+
@@ -538,6 +567,8 @@ void setup()
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
+  beginRadio(); //Start internal radio if enabled
+
   updateRTC(); //The GNSS likely has time/date. Update ESP32 RTC to match. Needed for PointPerfect key expiration.
 
   Serial.flush(); //Complete any previous prints
@@ -576,6 +607,8 @@ void loop()
 
   updateLBand(); //Check if we've recently received PointPerfect corrections or not
 
+  updateRadio(); //Check if we need to finish sending any RTCM over link radio
+
   //Periodically print the position
   if (settings.enablePrintPosition && ((millis() - lastPrintPosition) > 15000))
   {
@@ -597,6 +630,8 @@ void updateLogs()
   if (online.logging == false && settings.enableLogging == true)
   {
     beginLogging();
+
+    setLoggingType(); //Determine if we are standard, PPP, or custom. Changes logging icon accordingly.
   }
   else if (online.logging == true && settings.enableLogging == false)
   {
@@ -791,7 +826,31 @@ void updateRTC()
   } //End online.rtc
 }
 
-void printElapsedTime(const char* title)
+//Called from main loop
+//Control incoming/outgoing RTCM data from:
+//External radio - this is normally a serial telemetry radio hung off the RADIO port
+//Internal ESP NOW radio - Use the ESP32 to directly transmit/receive RTCM over 2.4GHz (no WiFi needed)
+void updateRadio()
 {
-  Serial.printf("%s: %ld\n\r", title, millis() - startTime);
+  if (settings.radioType == RADIO_ESPNOW)
+  {
+    if (wifiState == WIFI_ESPNOW_PAIRED)
+    {
+      //If it's been longer than a few ms since we last added a byte to the buffer
+      //then we've reached the end of the RTCM stream. Send partial buffer.
+      if (espnowOutgoingSpot > 0 && (millis() - espnowLastAdd) > 50)
+      {
+#ifdef COMPILE_WIFI
+        esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
+        log_d("ESPNOW: Sending %d bytes", espnowOutgoingSpot);
+#endif
+        espnowOutgoingSpot = 0; //Reset
+      }
+
+      //If we don't receive an ESP NOW packet after some time, set RSSI to very negative
+      //This removes the ESPNOW icon from the display when the link goes down
+      if (millis() - lastEspnowRssiUpdate > 5000 && espnowRSSI > -255)
+        espnowRSSI = -255;
+    }
+  }
 }

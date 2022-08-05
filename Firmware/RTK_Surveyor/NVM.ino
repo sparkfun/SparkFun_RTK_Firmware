@@ -250,6 +250,22 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", "enablePrintNtripClientRtcm", settings.enablePrintNtripClientRtcm);
   settingsFile->printf("%s=%d\n\r", "enablePrintStates", settings.enablePrintStates);
   settingsFile->printf("%s=%d\n\r", "enablePrintDuplicateStates", settings.enablePrintDuplicateStates);
+  settingsFile->printf("%s=%d\n\r", "radioType", settings.radioType);
+  //Record peer MAC addresses
+  for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+  {
+    char tempString[50]; //espnowPeers.1=B4,C1,33,42,DE,01,
+    sprintf(tempString, "espnowPeers.%d=%02X,%02X,%02X,%02X,%02X,%02X,", x,
+            settings.espnowPeers[x][0],
+            settings.espnowPeers[x][1],
+            settings.espnowPeers[x][2],
+            settings.espnowPeers[x][3],
+            settings.espnowPeers[x][4],
+            settings.espnowPeers[x][5]
+           );
+    settingsFile->println(tempString);
+  }
+  settingsFile->printf("%s=%d\n\r", "espnowPeerCount", settings.espnowPeerCount);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -840,7 +856,12 @@ bool parseLine(char* str, Settings *settings)
     settings->enablePrintStates = d;
   else if (strcmp(settingName, "enablePrintDuplicateStates") == 0)
     settings->enablePrintDuplicateStates = d;
-  //Check for bulk settings (constellations and message rates)
+  else if (strcmp(settingName, "radioType") == 0)
+    settings->radioType = (radioType_e)d;
+  else if (strcmp(settingName, "espnowPeerCount") == 0)
+    settings->espnowPeerCount = d;
+
+  //Check for bulk settings (constellations, message rates, ESPNOW Peers)
   //Must be last on else list
   else
   {
@@ -882,6 +903,32 @@ bool parseLine(char* str, Settings *settings)
           {
             settings->ubxMessages[x].msgRate = d;
             settings->updateZEDSettings = true;
+          }
+
+          knownSetting = true;
+          break;
+        }
+      }
+    }
+
+    //Scan for ESPNOW peers
+    if (knownSetting == false)
+    {
+      for (int x = 0 ; x < ESPNOW_MAX_PEERS ; x++)
+      {
+        char tempString[50]; //espnowPeers.1=B4,C1,33,42,DE,01,
+        sprintf(tempString, "espnowPeers.%d", x);
+
+        if (strcmp(settingName, tempString) == 0)
+        {
+          uint8_t macAddress[6];
+          uint8_t macByte = 0;
+          
+          char* token = strtok(settingValue, ","); //Break string up on ,
+          while(token != NULL && macByte < sizeof(macAddress))
+          {
+            settings->espnowPeers[x][macByte++] = (uint8_t)strtol(token, NULL, 16);
+            token = strtok(NULL, ",");    
           }
 
           knownSetting = true;

@@ -834,3 +834,18 @@ void beginI2C()
   else
     Serial.println("Error: I2C Bus Not Responding");
 }
+
+//Depending on radio selection, begin hardware
+void beginRadio()
+{
+  if (settings.radioType == RADIO_EXTERNAL)
+  {
+    wifiStop();
+
+    //Nothing to start. UART2 of ZED is connected to external Radio port and is configured at configureUbloxModule()
+  }
+  else if (settings.radioType == RADIO_ESPNOW)
+  {
+    espnowStart();
+  }
+}

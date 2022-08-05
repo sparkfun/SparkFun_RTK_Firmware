@@ -228,4 +228,20 @@ bool startFixedBase()
 void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
   ntripServerProcessRTCM(incoming);
+
+  if (wifiState == WIFI_ESPNOW_PAIRED)
+  {
+    //Move this byte into ESP NOW to send buffer
+    espnowOutgoing[espnowOutgoingSpot++] = incoming;
+    espnowLastAdd = millis();
+
+    if (espnowOutgoingSpot == sizeof(espnowOutgoing))
+    {
+      espnowOutgoingSpot = 0; //Wrap
+#ifdef COMPILE_WIFI
+      esp_now_send(0, (uint8_t *) &espnowOutgoing, sizeof(espnowOutgoing)); //Send packet to all peers
+      log_d("ESPNOW: Sending %d bytes", sizeof(espnowOutgoing));
+#endif
+    }
+  }
 }

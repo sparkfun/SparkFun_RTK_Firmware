@@ -1,5 +1,5 @@
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-WiFi Status Values:
+  WiFi Status Values:
     WL_CONNECTED: assigned when connected to a WiFi network
     WL_CONNECTION_LOST: assigned when the connection is lost
     WL_CONNECT_FAILED: assigned when the connection fails for all the attempts
@@ -12,7 +12,7 @@ WiFi Status Values:
     WL_NO_SSID_AVAIL: assigned when no SSID are available
     WL_SCAN_COMPLETED: assigned when the scan networks is completed
 
-WiFi Station States:
+  WiFi Station States:
 
                                   WIFI_OFF (Using Bluetooth)
                                     |   ^
@@ -38,7 +38,7 @@ WiFi Station States:
                                     v   |
                                   WIFI_CONNECTED
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
 // Constants
@@ -128,7 +128,19 @@ void wifiSetState (byte newState)
     case WIFI_CONNECTED:
       Serial.println("WIFI_CONNECTED");
       break;
-    }
+    case WIFI_ESPNOW_ON:
+      Serial.println("WIFI_ESPNOW_ON");
+      break;
+    case WIFI_ESPNOW_PAIRING:
+      Serial.println("WIFI_ESPNOW_PAIRING");
+      break;
+    case WIFI_ESPNOW_MAC_RECEIVED:
+      Serial.println("WIFI_ESPNOW_MAC_RECEIVED");
+      break;
+    case WIFI_ESPNOW_PAIRED:
+      Serial.println("WIFI_ESPNOW_PAIRED");
+      break;
+  }
 }
 
 //----------------------------------------
@@ -145,6 +157,9 @@ void wifiStartAP()
 #define WIFI_PASSWORD "parachutes"
   WiFi.mode(WIFI_STA);
 
+  // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
+  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Wi-Fi connecting to");
   while (wifiGetStatus() != WL_CONNECTED)
@@ -157,6 +172,9 @@ void wifiStartAP()
 #else   //LOCAL_WIFI_TESTING
   //Start in AP mode
   WiFi.mode(WIFI_AP);
+
+  // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
+  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
 
   IPAddress local_IP(192, 168, 4, 1);
   IPAddress gateway(192, 168, 1, 1);
@@ -215,7 +233,15 @@ void wifiStop()
 
 #ifdef  COMPILE_WIFI
   stopWebServer();
-  if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
+
+  //If the WiFi is in a state where WiFi has been configured/on, turn it off
+  if (wifiState == WIFI_NOTCONNECTED
+      || wifiState == WIFI_CONNECTED
+      || wifiState == WIFI_ESPNOW_ON
+      || wifiState == WIFI_ESPNOW_PAIRING
+      || wifiState == WIFI_ESPNOW_MAC_RECEIVED
+      || wifiState == WIFI_ESPNOW_PAIRED
+     )
   {
     WiFi.mode(WIFI_OFF);
     wifiSetState(WIFI_OFF);

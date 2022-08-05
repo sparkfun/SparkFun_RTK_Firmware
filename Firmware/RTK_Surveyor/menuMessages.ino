@@ -635,8 +635,6 @@ void setLoggingType()
   loggingType = LOGGING_CUSTOM;
 
   int messageCount = getActiveMessageCount();
-  Serial.printf("message count %d\n\r", messageCount);
-
   if (messageCount == 5 || messageCount == 7)
   {
     if (getMessageRateByName("UBX_NMEA_GGA") > 0
@@ -647,13 +645,9 @@ void setLoggingType()
        )
     {
       loggingType = LOGGING_STANDARD;
-      Serial.println("Logging type standard");
 
       if (getMessageRateByName("UBX_RXM_RAWX") > 0 && getMessageRateByName("UBX_RXM_SFRBX") > 0)
-      {
         loggingType = LOGGING_PPP;
-        Serial.println("Logging type PPP");
-      }
     }
   }
 }

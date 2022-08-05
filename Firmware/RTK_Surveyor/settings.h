@@ -108,6 +108,10 @@ enum WiFiState
   WIFI_ON,
   WIFI_NOTCONNECTED,
   WIFI_CONNECTED,
+  WIFI_ESPNOW_ON,
+  WIFI_ESPNOW_PAIRING,
+  WIFI_ESPNOW_MAC_RECEIVED,
+  WIFI_ESPNOW_PAIRED,
 };
 volatile byte wifiState = WIFI_OFF;
 
@@ -148,6 +152,12 @@ enum RtcmTransportState
   RTCM_TRANSPORT_STATE_READ_CRC_3,
   RTCM_TRANSPORT_STATE_CHECK_CRC
 };
+
+typedef enum radioType_e
+{
+  RADIO_EXTERNAL = 0,
+  RADIO_ESPNOW,
+} radioType_e;
 
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
@@ -441,6 +451,9 @@ typedef struct {
   bool enablePrintNtripClientRtcm = false;
   bool enablePrintStates = true;
   bool enablePrintDuplicateStates = false;
+  radioType_e radioType = RADIO_EXTERNAL;
+  uint8_t espnowPeers[5][6]; //Max of 5 peers. Contains the MAC addresses (6 bytes) of paired units
+  uint8_t espnowPeerCount;
   bool enableNtripServerMessageParsing = false;
 } Settings;
 Settings settings;

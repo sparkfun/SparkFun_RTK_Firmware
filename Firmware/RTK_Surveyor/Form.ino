@@ -144,7 +144,7 @@ void startWebServer()
 #endif
 #endif
 
-  wifiState = WIFI_NOTCONNECTED;
+  wifiSetState(WIFI_NOTCONNECTED);
 }
 
 void stopWebServer()
@@ -262,11 +262,11 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     createSettingsString(settingsCSV);
     log_d("Sending command: %s\n\r", settingsCSV);
     client->text(settingsCSV);
-    wifiState = WIFI_CONNECTED;
+    wifiSetState(WIFI_CONNECTED);
   }
   else if (type == WS_EVT_DISCONNECT) {
     log_d("Websocket client disconnected");
-    wifiState = WIFI_NOTCONNECTED;
+    wifiSetState(WIFI_NOTCONNECTED);
   }
   else if (type == WS_EVT_DATA) {
     for (int i = 0; i < len; i++) {

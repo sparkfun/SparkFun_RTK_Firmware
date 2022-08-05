@@ -175,8 +175,16 @@ static esp_err_t _spp_queue_packet(uint8_t *data, size_t len){
 //At ~50kBps heap lowest point is ~78k and stable
 //Above 50kbps it becomes unstable
 
-//const uint16_t SPP_TX_MAX = 330; //Original 
-const uint16_t SPP_TX_MAX = 1024*4; //Should match the SERIAL_SIZE_RX buffer size in RTK_Surveyor.ino
+const uint16_t SPP_TX_MAX = 330; //Original 
+//const uint16_t SPP_TX_MAX = 400; //Original 
+//const uint16_t SPP_TX_MAX = 1024*4; //Should match the SERIAL_SIZE_RX buffer size in RTK_Surveyor.ino
+
+/*
+**Anything** other than 330 seems to cause the BT que to stop transmitting
+This started with the addition of the circular que. Resorting to original BT lib helps but the congestion
+is overwhelming.
+*/
+
 static uint8_t _spp_tx_buffer[SPP_TX_MAX];
 static uint16_t _spp_tx_buffer_len = 0;
 

@@ -368,6 +368,9 @@ void menuDebug()
     Serial.print("27) Print duplicate states: ");
     Serial.printf("%s\r\n", settings.enablePrintDuplicateStates ? "Enabled" : "Disabled");
 
+    Serial.print("28) NTRIP server message parser: ");
+    Serial.printf("%s\r\n", settings.enableNtripServerMessageParsing ? "Enabled" : "Disabled");
+
     Serial.println("t) Enter Test Screen");
 
     Serial.println("e) Erase LittleFS");
@@ -545,6 +548,10 @@ void menuDebug()
       else if (incoming == 27)
       {
         settings.enablePrintDuplicateStates ^= 1;
+      }
+      else if (incoming == 28)
+      {
+        settings.enableNtripServerMessageParsing ^= 1;
       }
       else
         printUnknown(incoming);

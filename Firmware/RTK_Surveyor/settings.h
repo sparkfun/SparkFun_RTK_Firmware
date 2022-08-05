@@ -454,6 +454,7 @@ typedef struct {
   radioType_e radioType = RADIO_EXTERNAL;
   uint8_t espnowPeers[5][6]; //Max of 5 peers. Contains the MAC addresses (6 bytes) of paired units
   uint8_t espnowPeerCount;
+  bool enableNtripServerMessageParsing = false;
 } Settings;
 Settings settings;
 

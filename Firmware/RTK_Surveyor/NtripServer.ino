@@ -249,7 +249,10 @@ bool ntripServerRtcmMessage(uint8_t data)
 
     //Display the RTCM message header
     if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
-      Serial.printf ("    Message %d, %2d bytes\r\n", message, 3 + 1 + length + 3);
+    {
+      printTimeStamp();
+      Serial.printf ("    Tx RTCM %d, %2d bytes\r\n", message, 3 + length + 3);
+    }
   }
 
   //Let the upper layer know if this message should be sent
@@ -338,21 +341,23 @@ void ntripServerProcessRTCM(uint8_t incoming)
     //Timestamp the RTCM messages
     currentMilliseconds = millis();
     if (settings.enablePrintNtripServerRtcm
+        && (!settings.enableNtripServerMessageParsing)
         && (!inMainMenu)
-        && ((currentMilliseconds - previousMilliseconds) > 1))
+        && ((currentMilliseconds - previousMilliseconds) > 5))
     {
+      printTimeStamp();
       //         1         2         3
       //123456789012345678901234567890
       //YYYY-mm-dd HH:MM:SS.xxxrn0
       struct tm timeinfo = rtc.getTimeStruct();
       char timestamp[30];
       strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
-      Serial.printf("RTCM: %s.%03ld\r\n", timestamp, rtc.getMillis());
+      Serial.printf("    Tx RTCM: %s.%03ld\r\n", timestamp, rtc.getMillis());
     }
     previousMilliseconds = currentMilliseconds;
 
     //Parse the RTCM message
-    if (ntripServerRtcmMessage(incoming))
+    if ((!settings.enableNtripServerMessageParsing) || ntripServerRtcmMessage(incoming))
     {
       ntripServer->write(incoming); //Send this byte to socket
       ntripServerBytesSent++;

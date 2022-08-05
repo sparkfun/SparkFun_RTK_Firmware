@@ -307,16 +307,34 @@ void menuRadio()
 
     if (settings.radioType == RADIO_ESPNOW)
     {
-      //Pretty print the MAC of paired radios
-      for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+      //Pretty print the MAC of all radios
+
+      //Get unit MAC address
+      uint8_t unitMACAddress[6];
+      esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
+
+      Serial.print("  Radio MAC: ");
+      for (int x = 0 ; x < 5 ; x++)
+        Serial.printf("%02X:", unitMACAddress[x]);
+      Serial.printf("%02X\n\r", unitMACAddress[5]);
+
+      if (settings.espnowPeerCount > 0)
       {
-        Serial.printf("\tPaired Radio %d: ", x);
-        for (int y = 0 ; y < 5 ; y++)
-          Serial.printf("%02X:", settings.espnowPeers[x][y]);
-        Serial.printf("%02X\n\r", settings.espnowPeers[x][5]);
+        Serial.println("  Paired Radios: ");
+        for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+        {
+          Serial.print("    ");
+          for (int y = 0 ; y < 5 ; y++)
+            Serial.printf("%02X:", settings.espnowPeers[x][y]);
+          Serial.printf("%02X\n\r", settings.espnowPeers[x][5]);
+        }
       }
+      else
+        Serial.println("  No Paired Radios");
+      
 
       Serial.println("2) Pair radios");
+      Serial.println("3) Forget all radios");
     }
 
     Serial.println("x) Exit");
@@ -333,6 +351,18 @@ void menuRadio()
       Serial.println("Begin ESP NOW Pairing");
       espnowBeginPairing();
     }
+    else if (settings.radioType == RADIO_ESPNOW && incoming == 3)
+    {
+      Serial.println("\r\nForgetting all paired radios. Press 'y' to confirm:");
+      byte bContinue = getByteChoice(menuTimeout);
+      if (bContinue == 'y')
+      {
+        for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+          espnowRemovePeer(settings.espnowPeers[x]);
+        settings.espnowPeerCount = 0;
+        Serial.println("Radios forgotten");
+      }
+    }
 
     else if (incoming == STATUS_PRESSED_X)
       break;
@@ -343,6 +373,6 @@ void menuRadio()
   }
 
   beginRadio();
-  
+
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 }

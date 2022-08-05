@@ -240,7 +240,8 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
       espnowOutgoingSpot = 0; //Wrap
 #ifdef COMPILE_WIFI
       esp_now_send(0, (uint8_t *) &espnowOutgoing, sizeof(espnowOutgoing)); //Send packet to all peers
-      log_d("ESPNOW: Sending %d bytes", sizeof(espnowOutgoing));
+      delay(10); //We need a small delay between sending multiple packets
+      //log_d("ESPNOW: Sending %d bytes", sizeof(espnowOutgoing));
 #endif
     }
   }

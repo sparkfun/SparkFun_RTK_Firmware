@@ -26,11 +26,11 @@ typedef struct PairMessage {
 #ifdef COMPILE_WIFI
 void espnowOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
-  //  Serial.print("Last Packet Send Status: ");
-  //  if (status == ESP_NOW_SEND_SUCCESS)
-  //    Serial.println("Delivery Success");
-  //  else
-  //    Serial.println("Delivery Fail");
+//  Serial.print("Last Packet Send Status: ");
+//  if (status == ESP_NOW_SEND_SUCCESS)
+//    Serial.println("Delivery Success");
+//  else
+//    Serial.println("Delivery Fail");
 }
 #endif
 
@@ -63,10 +63,10 @@ void espnowOnDataRecieved(const uint8_t *mac, const uint8_t *incomingData, int l
     espnowRSSI = packetRSSI; //Record this packets RSSI as an ESP NOW packet
 
     //Pass RTCM bytes (presumably) from ESP NOW out ESP32-UART2 to ZED-UART1
-    //serialGNSS.write(incomingData, len);
-    log_d("ESPNOW: Rececived %d bytes, RSSI: %d", len, espnowRSSI);
+    serialGNSS.write(incomingData, len);
+    log_d("ESPNOW: Received %d bytes, RSSI: %d", len, espnowRSSI);
 
-    //online.rxRtcmCorrectionData = true;
+    online.rxRtcmCorrectionData = true;
     lastEspnowRssiUpdate = millis();
   }
 #endif
@@ -109,7 +109,7 @@ void espnowStart()
   esp_wifi_set_promiscuous_rx_cb(&promiscuous_rx_cb);
 
   // Register send callbacks
-  esp_now_register_send_cb(espnowOnDataSent);
+  //esp_now_register_send_cb(espnowOnDataSent);
   esp_now_register_recv_cb(espnowOnDataRecieved);
 
   if (settings.espnowPeerCount == 0)
@@ -124,9 +124,14 @@ void espnowStart()
     log_d("Adding %d espnow peers", settings.espnowPeerCount);
     for (int x = 0 ; x < settings.espnowPeerCount ; x++)
     {
-      esp_err_t result = espnowAddPeer(settings.espnowPeers[x]); // Enable encryption to peers
-      if (result != ESP_OK)
-        log_d("Failed to add peer #%d\n\r", x);
+      if (esp_now_is_peer_exist(settings.espnowPeers[x]) == true)
+        log_d("Peer already exists");
+      else
+      {
+        esp_err_t result = espnowAddPeer(settings.espnowPeers[x]);
+        if (result != ESP_OK)
+          log_d("Failed to add peer #%d\n\r", x);
+      }
     }
   }
 

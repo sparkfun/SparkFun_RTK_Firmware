@@ -715,6 +715,8 @@ bool beginExternalTriggers()
 //Check if NEO-D9S is connected. Configure if available.
 void beginLBand()
 {
+  if(settings.enablePointPerfectCorrections == false) return; //If user has turned off PointPerfect, skip everything
+
   if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
   {
     log_d("L-Band not detected");

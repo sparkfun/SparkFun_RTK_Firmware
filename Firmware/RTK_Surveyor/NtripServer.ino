@@ -180,6 +180,23 @@ bool ntripServerRtcmMessage(uint8_t data)
 
   switch (ntripServerCrcState)
   {
+    //Read the upper two bits of the length
+    case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
+      if (!(data & 3))
+      {
+        length = data << 8;
+        crcState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
+        break;
+      }
+
+      //Wait for the preamble byte
+      crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+
+      //Fall through
+      //     |
+      //     |
+      //     V
+
     //Wait for the preamble byte (0xd3)
     case RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3:
       sendMessage = false;
@@ -188,12 +205,6 @@ bool ntripServerRtcmMessage(uint8_t data)
         ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_LENGTH_1;
         sendMessage = (ntripServerState == NTRIP_SERVER_CASTING);
       }
-      break;
-
-    //Read the upper two bits of the length
-    case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
-      length = data << 8;
-      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
       break;
 
     //Read the lower 8 bits of the length

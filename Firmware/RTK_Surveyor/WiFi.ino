@@ -192,11 +192,7 @@ bool wifiConnectionTimeout()
 
 void wifiStart(char* ssid, char* pw)
 {
-#ifdef  COMPILE_WIFI
-  if (wifiState == WIFI_OFF)
-    //Turn off Bluetooth
-    bluetoothStop();
-
+#ifdef COMPILE_WIFI
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {
     Serial.printf("Wi-Fi connecting to %s\r\n", ssid);
@@ -214,6 +210,9 @@ void wifiStart(char* ssid, char* pw)
 //See WiFiBluetoothSwitch sketch for more info
 void wifiStop()
 {
+  ntripClientStop(true);
+  ntripServerStop(true);
+
 #ifdef  COMPILE_WIFI
   stopWebServer();
   if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)

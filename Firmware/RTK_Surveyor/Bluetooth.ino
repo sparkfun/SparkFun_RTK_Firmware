@@ -105,9 +105,6 @@ bool bluetoothRxDataAvailable()
 //This allows multiple units to be on at same time
 void bluetoothStart()
 {
-  ntripClientStop(true);
-  ntripServerStop(true);
-  wifiStop();
 #ifdef COMPILE_BT
   if (bluetoothState == BT_OFF)
   {

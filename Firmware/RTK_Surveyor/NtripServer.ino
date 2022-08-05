@@ -154,11 +154,12 @@ void ntripServerResponse(char * response, size_t maxLength)
   *response = '\0';
 }
 
+static byte ntripServerCrcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+
 //Parse the RTCM transport data
 bool ntripServerRtcmMessage(uint8_t data)
 {
   static uint16_t bytesRemaining;
-  static byte crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
   static uint16_t length;
   static uint16_t message;
   static bool sendMessage = false;
@@ -177,14 +178,14 @@ bool ntripServerRtcmMessage(uint8_t data)
   //    |<-------------------------------- CRC -------------------------------->|
   //
 
-  switch (crcState)
+  switch (ntripServerCrcState)
   {
     //Wait for the preamble byte (0xd3)
     case RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3:
       sendMessage = false;
       if (data == 0xd3)
       {
-        crcState = RTCM_TRANSPORT_STATE_READ_LENGTH_1;
+        ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_LENGTH_1;
         sendMessage = (ntripServerState == NTRIP_SERVER_CASTING);
       }
       break;
@@ -192,57 +193,57 @@ bool ntripServerRtcmMessage(uint8_t data)
     //Read the upper two bits of the length
     case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
       length = data << 8;
-      crcState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
       break;
 
     //Read the lower 8 bits of the length
     case RTCM_TRANSPORT_STATE_READ_LENGTH_2:
       length |= data;
       bytesRemaining = length;
-      crcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_1;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_1;
       break;
 
     //Read the upper 8 bits of the message number
     case RTCM_TRANSPORT_STATE_READ_MESSAGE_1:
       message = data << 4;
       bytesRemaining -= 1;
-      crcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_2;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_2;
       break;
 
     //Read the lower 4 bits of the message number
     case RTCM_TRANSPORT_STATE_READ_MESSAGE_2:
       message |= data >> 4;
       bytesRemaining -= 1;
-      crcState = RTCM_TRANSPORT_STATE_READ_DATA;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_DATA;
       break;
 
     //Read the rest of the message
     case RTCM_TRANSPORT_STATE_READ_DATA:
       bytesRemaining -= 1;
       if (bytesRemaining <= 0)
-        crcState = RTCM_TRANSPORT_STATE_READ_CRC_1;
+        ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_CRC_1;
       break;
 
     //Read the upper 8 bits of the CRC
     case RTCM_TRANSPORT_STATE_READ_CRC_1:
-      crcState = RTCM_TRANSPORT_STATE_READ_CRC_2;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_CRC_2;
       break;
 
     //Read the middle 8 bits of the CRC
     case RTCM_TRANSPORT_STATE_READ_CRC_2:
-      crcState = RTCM_TRANSPORT_STATE_READ_CRC_3;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_CRC_3;
       break;
 
     //Read the lower 8 bits of the CRC
     case RTCM_TRANSPORT_STATE_READ_CRC_3:
-      crcState = RTCM_TRANSPORT_STATE_CHECK_CRC;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_CHECK_CRC;
       break;
   }
 
   //Check the CRC
-  if (crcState == RTCM_TRANSPORT_STATE_CHECK_CRC)
+  if (ntripServerCrcState == RTCM_TRANSPORT_STATE_CHECK_CRC)
   {
-    crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+    ntripServerCrcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
 
     //Account for this message
     rtcmPacketsSent++;
@@ -336,7 +337,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
   }
 
 #ifdef  COMPILE_WIFI
-  if (online.rtc)
+  if (online.rtc && (ntripServerState == NTRIP_SERVER_CASTING))
   {
     //Timestamp the RTCM messages
     currentMilliseconds = millis();
@@ -364,10 +365,13 @@ void ntripServerProcessRTCM(uint8_t incoming)
       ntripServerTimer = millis();
       online.txNtripDataCasting = true;
     }
+  }
 
-    //Indicate that the GNSS is providing correction data
-    else if (ntripServerState == NTRIP_SERVER_WAIT_GNSS_DATA)
-      ntripServerSetState(NTRIP_SERVER_CONNECTING);
+  //Indicate that the GNSS is providing correction data
+  else if (ntripServerState == NTRIP_SERVER_WAIT_GNSS_DATA)
+  {
+    ntripServerSetState(NTRIP_SERVER_CONNECTING);
+    ntripServerCrcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
   }
 #endif  //COMPILE_WIFI
 }

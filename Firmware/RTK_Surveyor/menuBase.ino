@@ -168,7 +168,11 @@ void menuBase()
     {
       Serial.print("Enter the number of meters for survey-in required position accuracy (1.0 to 5.0m): ");
       float observationPositionAccuracy = getDouble(menuTimeout); //Timeout after x seconds
+#ifdef ENABLE_DEVELOPER
+      if (observationPositionAccuracy < 1.0 || observationPositionAccuracy > 10.0) //Arbitrary 1m minimum
+#else
       if (observationPositionAccuracy < 1.0 || observationPositionAccuracy > 5.0) //Arbitrary 1m minimum
+#endif
       {
         Serial.println("Error: observation positional accuracy requirement out of range");
       }

@@ -33,7 +33,7 @@ void F9PSerialWriteTask(void *e)
 //Task for reading data from the GNSS receiver.
 void F9PSerialReadTask(void *e)
 {
-  static uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
+  static uint8_t rBuffer[1024 * 6]; //Buffer for reading from F9P to SPP
   static uint16_t dataHead = 0; //Head advances as data comes in from GNSS's UART
   static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
   static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
@@ -55,11 +55,11 @@ void F9PSerialReadTask(void *e)
       //----------------------------------------------------------------------
       //The ESP32<->ZED-F9P serial connection is default 460,800bps to facilitate
       //10Hz fix rate with PPP Logging Defaults (NMEAx5 + RXMx2) messages enabled.
-      //ESP32 UART2 is begun with SERIAL_SIZE_RX size buffer. The circular buffer 
-      //is SERIAL_SIZE_RX. At approximately 46.1K characters/second, a 6144 * 2 
-      //byte buffer should hold 267ms worth of serial data. Assuming SD writes are 
-      //250ms worst case, we should record incoming all data. Bluetooth congestion 
-      //or conflicts with the SD card semaphore should clear within this time.  
+      //ESP32 UART2 is begun with SERIAL_SIZE_RX size buffer. The circular buffer
+      //is 1024*6. At approximately 46.1K characters/second, a 6144 * 2
+      //byte buffer should hold 267ms worth of serial data. Assuming SD writes are
+      //250ms worst case, we should record incoming all data. Bluetooth congestion
+      //or conflicts with the SD card semaphore should clear within this time.
       //
       //Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
       //
@@ -125,7 +125,7 @@ void F9PSerialReadTask(void *e)
         availableBufferSpace -= 1;
 
       //Fill the buffer to the end and then start at the beginning
-      if ((dataHead + availableBufferSpace) > sizeof(rBuffer))
+      if ((dataHead + availableBufferSpace) >= sizeof(rBuffer))
         availableBufferSpace = sizeof(rBuffer) - dataHead;
 
       //If we have buffer space, read data from the GNSS into the buffer
@@ -164,29 +164,35 @@ void F9PSerialReadTask(void *e)
       {
         //Reduce bytes to send if we have more to send then the end of the buffer
         //We'll wrap next loop
-        if ((btTail + btBytesToSend) > sizeof(rBuffer))
+        if ((btTail + btBytesToSend) >= sizeof(rBuffer))
           btBytesToSend = sizeof(rBuffer) - btTail;
-
-        //Reduce bytes to send to match BT buffer size
-        if (btBytesToSend > settings.sppTxQueueSize)
-          btBytesToSend = settings.sppTxQueueSize;
 
         if ((bluetoothIsCongested() == false) || (settings.throttleDuringSPPCongestion == false))
         {
           //Push new data to BT SPP if not congested or not throttling
           btBytesToSend = bluetoothWriteBytes(&rBuffer[btTail], btBytesToSend);
-          online.txNtripDataCasting = true;
+          if (btBytesToSend > 0)
+            online.txNtripDataCasting = true;
+          else
+            log_w("WARNING - BT failed to send");
         }
         else
         {
           //Don't push data to BT SPP if there is congestion to prevent heap hits.
-          if (btBytesToSend < (sizeof(rBuffer) - 1))
-            btBytesToSend = 0;
+          if (btBytesToSend >= (sizeof(rBuffer) - 1))
+          {
+            //Error - no more room in the buffer, drop a buffer's worth of data
+            btTail = dataHead;
+            Serial.printf("ERROR - BT congestion dropped %d bytes: GNSS --> Bluetooth\r\n", btBytesToSend);
+          }
           else
-            Serial.printf("ERROR - Congestion, dropped %d bytes: GNSS --> Bluetooth\r\n", btBytesToSend);
+          {
+            log_w("WARNING - BT congestion delayed %d bytes, Tasks.ino line %d", btBytesToSend, __LINE__);
+            btBytesToSend = 0;
+          }
         }
 
-        //Account for the sent data or dropped
+        //Account for the sent or dropped data
         btTail += btBytesToSend;
         if (btTail >= sizeof(rBuffer))
           btTail -= sizeof(rBuffer);
@@ -211,7 +217,7 @@ void F9PSerialReadTask(void *e)
           {
             //Reduce bytes to send if we have more to send then the end of the buffer
             //We'll wrap next loop
-            if ((sdTail + sdBytesToRecord) > sizeof(rBuffer))
+            if ((sdTail + sdBytesToRecord) >= sizeof(rBuffer))
               sdBytesToRecord = sizeof(rBuffer) - sdTail;
 
             //Write the data to the file
@@ -226,7 +232,7 @@ void F9PSerialReadTask(void *e)
           else
           {
             //Retry the semaphore a little later if possible
-            if (sdBytesToRecord == (sizeof(rBuffer) - 1))
+            if (sdBytesToRecord >= (sizeof(rBuffer) - 1))
             {
               //Error - no more room in the buffer, drop a buffer's worth of data
               sdTail = dataHead;

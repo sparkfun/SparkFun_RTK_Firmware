@@ -395,13 +395,15 @@ void beginFS()
 {
   if (online.fs == false)
   {
-    if (!LittleFS.begin(true)) //Format LittleFS if begin fails
+    if (LittleFS.begin(true) == false) //Format LittleFS if begin fails
     {
-      log_d("Error: LittleFS not online");
-      return;
+      Serial.println("Error: LittleFS not online");
     }
-    Serial.println("LittleFS Started");
-    online.fs = true;
+    else
+    {
+      Serial.println("LittleFS Started");
+      online.fs = true;
+    }
   }
 }
 
@@ -713,6 +715,8 @@ bool beginExternalTriggers()
 //Check if NEO-D9S is connected. Configure if available.
 void beginLBand()
 {
+  if(settings.enablePointPerfectCorrections == false) return; //If user has turned off PointPerfect, skip everything
+
   if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
   {
     log_d("L-Band not detected");
@@ -831,4 +835,19 @@ void beginI2C()
     online.i2c = true;
   else
     Serial.println("Error: I2C Bus Not Responding");
+}
+
+//Depending on radio selection, begin hardware
+void beginRadio()
+{
+  if (settings.radioType == RADIO_EXTERNAL)
+  {
+    wifiStop();
+
+    //Nothing to start. UART2 of ZED is connected to external Radio port and is configured at configureUbloxModule()
+  }
+  else if (settings.radioType == RADIO_ESPNOW)
+  {
+    espnowStart();
+  }
 }

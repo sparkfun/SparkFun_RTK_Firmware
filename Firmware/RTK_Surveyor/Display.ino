@@ -2,37 +2,44 @@
 // Constants
 //----------------------------------------
 
+//A bitfield is used to flag which icon needs to be illuminated 
+//systemState will dictate most of the icons needed
+
 //Left top
-#define ICON_WIFI_SYMBOL_LEFT                1  //  0,  0
-#define ICON_DOWN_ARROW                      2  // 16,  0
-#define ICON_UP_ARROW                        4  // 16,  0
-#define ICON_BT_SYMBOL                       8  //  4,  0
-#define ICON_MAC_ADDRESS                  0x10  //  0,  3
+#define ICON_WIFI_SYMBOL_LEFT            (1<<0) //  0,  0
+#define ICON_DOWN_ARROW                  (1<<1) // 16,  0
+#define ICON_UP_ARROW                    (1<<2) // 16,  0
+#define ICON_BT_SYMBOL                   (1<<3) //  4,  0
+#define ICON_MAC_ADDRESS                 (1<<4) //  0,  3
+#define ICON_MAC_ADDRESS_2DIGIT          (1<<5) //  TODO 0,  3
+#define ICON_ESPNOW_SYMBOL               (1<<6) //  TODO 0,  3
+#define ICON_BT_SYMBOL_RIGHT             (1<<7) //  TODO 4,  0
 
 //Center top
-#define ICON_WIFI_SYMBOL_CENTER           0x20  // center, 0
-#define ICON_BASE_TEMPORARY               0x40  // 27,  0
-#define ICON_BASE_FIXED                   0x80  // 27,  0
-#define ICON_ROVER_FUSION                0x100  // 27,  2
-#define ICON_ROVER_FUSION_EMPTY          0x200  // 27,  2
-#define ICON_DYNAMIC_MODEL               0x400  // 27,  0
+#define ICON_WIFI_SYMBOL_CENTER          (1<<8) // center, 0
+#define ICON_BASE_TEMPORARY              (1<<9) // 27,  0
+#define ICON_BASE_FIXED                  (1<<10) // 27,  0
+#define ICON_ROVER_FUSION                (1<<11) // 27,  2
+#define ICON_ROVER_FUSION_EMPTY          (1<<12) // 27,  2
+#define ICON_DYNAMIC_MODEL               (1<<13) // 27,  0
 
 //Right top
-#define ICON_BATTERY                     0x800  // 45,  0
+#define ICON_BATTERY                     (1<<14) // 45,  0
 
 //Left center
-#define ICON_CROSS_HAIR                 0x1000  //  0, 18
-#define ICON_CROSS_HAIR_DUAL            0x2000  //  0, 18
+#define ICON_CROSS_HAIR                  (1<<15) //  0, 18
+#define ICON_CROSS_HAIR_DUAL             (1<<16) //  0, 18
 
 //Right center
-#define ICON_HORIZONTAL_ACCURACY        0x4000  // 16, 20
+#define ICON_HORIZONTAL_ACCURACY         (1<<17) // 16, 20
 
 //Left bottom
-#define ICON_SIV_ANTENNA                0x8000  //  2, 35
-#define ICON_SIV_ANTENNA_LBAND         0x10000  //  2, 35
+#define ICON_SIV_ANTENNA                 (1<<18) //  2, 35
+#define ICON_SIV_ANTENNA_LBAND           (1<<19) //  2, 35
 
 //Right bottom
-#define ICON_LOGGING                   0x20000  // right, bottom
+#define ICON_LOGGING                     (1<<20) // right, bottom
+
 
 //----------------------------------------
 // Locals
@@ -322,6 +329,7 @@ void updateDisplay()
       }
 
       //Top left corner
+      //This is not as if/else if. A variety of symbols may be mixed/matched
       if (icons & ICON_WIFI_SYMBOL_LEFT)
       {
         displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
@@ -333,7 +341,7 @@ void updateDisplay()
         else if (icons & ICON_UP_ARROW)
           displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
       }
-      else if (icons & ICON_BT_SYMBOL)
+      if (icons & ICON_BT_SYMBOL)
       {
         displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
         if (bluetoothGetState() == BT_CONNECTED)
@@ -347,7 +355,12 @@ void updateDisplay()
             displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
         }
       }
-      else if (icons & ICON_MAC_ADDRESS)
+      if (icons & ICON_BT_SYMBOL_RIGHT)
+      {
+        //Moved to right to give space for ESP NOW icon on far left
+        displayBitmap(10, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
+      }
+      if (icons & ICON_MAC_ADDRESS)
       {
         char macAddress[5];
 #ifdef COMPILE_BT
@@ -359,6 +372,21 @@ void updateDisplay()
         oled.setCursor(0, 3);
         oled.print(macAddress);
       }
+      if (icons & ICON_MAC_ADDRESS_2DIGIT)
+      {
+        char macAddress[5];
+        //Print only last two digits of MAC
+#ifdef COMPILE_BT
+        sprintf(macAddress, "%02X", unitMACAddress[5]);
+#else
+        sprintf(macAddress, "%02X", 0, 0); //If BT is not available, print zeroes
+#endif
+        oled.setFont(QW_FONT_5X7); //Set font to smallest
+        oled.setCursor(9, 3);
+        oled.print(macAddress);
+      }
+      if (icons & ICON_ESPNOW_SYMBOL)
+        paintESPNOW(); //Paint animated icon for tx, static icon for rx based on RSSI
 
       //Top center
       if (icons & ICON_WIFI_SYMBOL_CENTER)
@@ -571,7 +599,7 @@ void paintBatteryLevel()
    8|      *            **
 */
 
-//Display Bluetooth icon, Bluetooth MAC, or WiFi depending on connection state
+//Display Bluetooth icon, Bluetooth MAC, WiFi, or ESP NOW depending on connection state
 uint32_t paintWirelessIcon()
 {
   uint32_t icons;
@@ -581,7 +609,7 @@ uint32_t paintWirelessIcon()
   if (online.display == true)
   {
     //Bluetooth icon if paired, or Bluetooth MAC address if not paired
-    if (bluetoothGetState() == BT_CONNECTED)
+    if (bluetoothGetState() == BT_CONNECTED && wifiState == WIFI_OFF)
     {
       icons = ICON_BT_SYMBOL;
       if (systemState <= STATE_BASE_NOT_STARTED)
@@ -608,6 +636,39 @@ uint32_t paintWirelessIcon()
         icons |= ICON_DOWN_ARROW;
       else if (online.ntripServer == true)
         icons |= ICON_UP_ARROW;
+    }
+    else if (wifiState == WIFI_ESPNOW_PAIRED)
+    {
+      //If ESPNOW is on, and we are in base mode, show animated icon
+      if(systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+      {
+        //Display ESPNOW and BT (either MAC or symbol)
+        icons = ICON_ESPNOW_SYMBOL;
+        if (bluetoothGetState() == BT_CONNECTED)
+          icons |= ICON_BT_SYMBOL_RIGHT;
+        else
+          icons |= ICON_MAC_ADDRESS_2DIGIT;
+      }
+      
+      //If ESPNOW is on, and we've received a packet, move BT to make room
+      else if (espnowRSSI > -255)
+      {
+        //Display ESPNOW and BT (either MAC or symbol)
+        icons = ICON_ESPNOW_SYMBOL;
+        if (bluetoothGetState() == BT_CONNECTED)
+          icons |= ICON_BT_SYMBOL_RIGHT;
+        else
+          icons |= ICON_MAC_ADDRESS_2DIGIT; //Display 2 digit MAC
+      }
+
+      //No ESPNOW icon
+      else
+      {
+        if (bluetoothGetState() == BT_CONNECTED)
+          icons = ICON_BT_SYMBOL;
+        else
+          icons = ICON_MAC_ADDRESS; //Display full MAC
+      }
     }
     else
       icons = ICON_MAC_ADDRESS;
@@ -857,14 +918,39 @@ void paintLogging()
   loggingIconDisplayed %= 4; //Wrap
   if (online.logging == true && logIncreasing == true)
   {
-    if (loggingIconDisplayed == 0)
-      displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
-    else if (loggingIconDisplayed == 1)
-      displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1);
-    else if (loggingIconDisplayed == 2)
-      displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2);
-    else if (loggingIconDisplayed == 3)
-      displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3);
+    if (loggingType == LOGGING_STANDARD)
+    {
+      if (loggingIconDisplayed == 0)
+        displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+      else if (loggingIconDisplayed == 1)
+        displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1);
+      else if (loggingIconDisplayed == 2)
+        displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2);
+      else if (loggingIconDisplayed == 3)
+        displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3);
+    }
+    else if (loggingType == LOGGING_PPP)
+    {
+      if (loggingIconDisplayed == 0)
+        displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+      else if (loggingIconDisplayed == 1)
+        displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_PPP_1);
+      else if (loggingIconDisplayed == 2)
+        displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_PPP_2);
+      else if (loggingIconDisplayed == 3)
+        displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_PPP_3);
+    }
+    else if (loggingType == LOGGING_CUSTOM)
+    {
+      if (loggingIconDisplayed == 0)
+        displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+      else if (loggingIconDisplayed == 1)
+        displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_Custom_1);
+      else if (loggingIconDisplayed == 2)
+        displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_Custom_2);
+      else if (loggingIconDisplayed == 3)
+        displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_Custom_3);
+    }
   }
   else
   {
@@ -879,6 +965,43 @@ void paintLogging()
       oled.line(pulseX, pulseY, pulseX, pulseY - height);
       oled.line(pulseX - 1, pulseY, pulseX - 1, pulseY - height);
     }
+  }
+}
+
+//Animate the ESP NOW icon if we are actively transmitting
+//Otherwise, show static icon with level indicating RSSI
+void paintESPNOW()
+{
+  const uint8_t x = 0;
+
+  //Determine if we transitting or receiving
+  if (millis() - espnowLastAdd < 1000)
+  {
+    //We are actively sending out bytes, animate the icon
+    //Animate icon to show data is being transmitted
+    espnowIconDisplayed++; //Goto next icon
+    espnowIconDisplayed %= 4; //Wrap
+
+    if (espnowIconDisplayed == 0)
+      displayBitmap(x, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_0);
+    else if (espnowIconDisplayed == 1)
+      displayBitmap(x, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_1);
+    else if (espnowIconDisplayed == 2)
+      displayBitmap(x, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_2);
+    else if (espnowIconDisplayed == 3)
+      displayBitmap(x, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_3);
+  }
+  else
+  {
+    //We are receiving data, adjust icon according to RSSI
+    if (espnowRSSI >= -40)
+      displayBitmap(x, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_3);
+    else if (espnowRSSI >= -60)
+      displayBitmap(x, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_2);
+    else if (espnowRSSI >= -80)
+      displayBitmap(x, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_1);
+    else if (espnowRSSI > -255)
+      displayBitmap(x, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_0);
   }
 }
 

@@ -185,12 +185,12 @@ bool ntripServerRtcmMessage(uint8_t data)
       if (!(data & 3))
       {
         length = data << 8;
-        crcState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
+        ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
         break;
       }
 
       //Wait for the preamble byte
-      crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
 
       //Fall through
       //     |

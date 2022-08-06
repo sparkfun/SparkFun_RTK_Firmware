@@ -2,7 +2,7 @@
 // Constants
 //----------------------------------------
 
-//A bitfield is used to flag which icon needs to be illuminated 
+//A bitfield is used to flag which icon needs to be illuminated
 //systemState will dictate most of the icons needed
 
 //Left top
@@ -602,16 +602,26 @@ void paintBatteryLevel()
 //Display Bluetooth icon, Bluetooth MAC, WiFi, or ESP NOW depending on connection state
 uint32_t paintWirelessIcon()
 {
-  uint32_t icons;
+  uint32_t icons = 0;
 
   //TODO resolve if both BT and WiFi are on/connected
   icons = 0;
   if (online.display == true)
   {
+    //Deal with each icon individiually
+    //The ESPNOW_PAIRED is the only state where data is moving between units,
+    //and thus is the only state that affects icon placement
+    
     //Bluetooth icon if paired, or Bluetooth MAC address if not paired
-    if (bluetoothGetState() == BT_CONNECTED && wifiState == WIFI_OFF)
+    if (bluetoothGetState() == BT_CONNECTED)
     {
-      icons = ICON_BT_SYMBOL;
+      if (espnowState != ESPNOW_PAIRED)
+        icons |= ICON_BT_SYMBOL;
+      else
+        icons |= ICON_BT_SYMBOL_RIGHT;
+
+      //TODO deal with arrows when ESP Now paired
+
       if (systemState <= STATE_BASE_NOT_STARTED)
       {
         if (online.rxRtcmCorrectionData)
@@ -620,16 +630,39 @@ uint32_t paintWirelessIcon()
       else if (systemState <= STATE_BUBBLE_LEVEL)
         icons |= ICON_UP_ARROW;
     }
-    else if (wifiState == WIFI_NOTCONNECTED)
+    else
+    {
+      if (espnowState != ESPNOW_PAIRED)
+        icons |= ICON_MAC_ADDRESS;
+      else
+        icons |= ICON_MAC_ADDRESS_2DIGIT;
+    }
+
+    if (wifiState == WIFI_NOTCONNECTED)
     {
       //Blink WiFi icon
-      blinking_icons ^= ICON_WIFI_SYMBOL_LEFT;
-      if (blinking_icons & ICON_WIFI_SYMBOL_LEFT)
-        icons = ICON_WIFI_SYMBOL_LEFT;
+      if (espnowState != ESPNOW_PAIRED)
+      {
+        blinking_icons ^= ICON_WIFI_SYMBOL_LEFT;
+        if (blinking_icons & ICON_WIFI_SYMBOL_LEFT)
+          icons |= ICON_WIFI_SYMBOL_LEFT;
+      }
+      else
+      {
+        //Move to center
+        blinking_icons ^= ICON_WIFI_SYMBOL_CENTER;
+        if (blinking_icons & ICON_WIFI_SYMBOL_CENTER)
+          icons |= ICON_WIFI_SYMBOL_CENTER;
+      }
     }
     else if (wifiState == WIFI_CONNECTED)
     {
-      icons = ICON_WIFI_SYMBOL_LEFT;
+      if (espnowState != ESPNOW_PAIRED)
+        icons |= ICON_WIFI_SYMBOL_LEFT;
+      else
+        icons |= ICON_WIFI_SYMBOL_CENTER;
+
+      //TODO deal with arrows when ESP now paired
 
       //If we are connected to NTRIP Client, show download arrow
       if ((online.ntripClient == true) && online.rxRtcmCorrectionData)
@@ -637,41 +670,17 @@ uint32_t paintWirelessIcon()
       else if (online.ntripServer == true)
         icons |= ICON_UP_ARROW;
     }
-    else if (wifiState == WIFI_ESPNOW_PAIRED)
+
+    if (espnowState == ESPNOW_PAIRED)
     {
-      //If ESPNOW is on, and we are in base mode, show animated icon
-      if(systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
-      {
-        //Display ESPNOW and BT (either MAC or symbol)
-        icons = ICON_ESPNOW_SYMBOL;
-        if (bluetoothGetState() == BT_CONNECTED)
-          icons |= ICON_BT_SYMBOL_RIGHT;
-        else
-          icons |= ICON_MAC_ADDRESS_2DIGIT;
-      }
-      
+      //If ESPNOW is paired, and we are in base mode, show animated icon
+      if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+        icons |= ICON_ESPNOW_SYMBOL;
+
       //If ESPNOW is on, and we've received a packet, move BT to make room
       else if (espnowRSSI > -255)
-      {
-        //Display ESPNOW and BT (either MAC or symbol)
-        icons = ICON_ESPNOW_SYMBOL;
-        if (bluetoothGetState() == BT_CONNECTED)
-          icons |= ICON_BT_SYMBOL_RIGHT;
-        else
-          icons |= ICON_MAC_ADDRESS_2DIGIT; //Display 2 digit MAC
-      }
-
-      //No ESPNOW icon
-      else
-      {
-        if (bluetoothGetState() == BT_CONNECTED)
-          icons = ICON_BT_SYMBOL;
-        else
-          icons = ICON_MAC_ADDRESS; //Display full MAC
-      }
+        icons |= ICON_ESPNOW_SYMBOL;
     }
-    else
-      icons = ICON_MAC_ADDRESS;
   }
   return icons;
 }

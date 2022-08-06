@@ -128,18 +128,6 @@ void wifiSetState (byte newState)
     case WIFI_CONNECTED:
       Serial.println("WIFI_CONNECTED");
       break;
-    case WIFI_ESPNOW_ON:
-      Serial.println("WIFI_ESPNOW_ON");
-      break;
-    case WIFI_ESPNOW_PAIRING:
-      Serial.println("WIFI_ESPNOW_PAIRING");
-      break;
-    case WIFI_ESPNOW_MAC_RECEIVED:
-      Serial.println("WIFI_ESPNOW_MAC_RECEIVED");
-      break;
-    case WIFI_ESPNOW_PAIRED:
-      Serial.println("WIFI_ESPNOW_PAIRED");
-      break;
   }
 }
 
@@ -208,11 +196,20 @@ bool wifiConnectionTimeout()
   return true;
 }
 
+//If radio is off entirely, start WiFi
+//If ESP-Now is active, only add the LR protocol
 void wifiStart(char* ssid, char* pw)
 {
 #ifdef COMPILE_WIFI
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {
+    //If ESP-Now is active, reconfigure protocols
+    if (espnowState > ESPNOW_OFF)
+    {
+      //Enable WiFi + ESP-Now
+      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR);
+    }
+
     Serial.printf("Wi-Fi connecting to %s\r\n", ssid);
     WiFi.begin(ssid, pw);
     wifiTimer = millis();
@@ -226,30 +223,38 @@ void wifiStart(char* ssid, char* pw)
 
 //Stop WiFi and release all resources
 //See WiFiBluetoothSwitch sketch for more info
+//If ESP NOW is active, leave WiFi on enough for ESP NOW
 void wifiStop()
 {
-  ntripClientStop(true);
-  ntripServerStop(true);
-
 #ifdef  COMPILE_WIFI
   stopWebServer();
 
-  //If the WiFi is in a state where WiFi has been configured/on, turn it off
-  if (wifiState == WIFI_NOTCONNECTED
-      || wifiState == WIFI_CONNECTED
-      || wifiState == WIFI_ESPNOW_ON
-      || wifiState == WIFI_ESPNOW_PAIRING
-      || wifiState == WIFI_ESPNOW_MAC_RECEIVED
-      || wifiState == WIFI_ESPNOW_PAIRED
-     )
+  if (wifiState == WIFI_OFF)
+  {
+    //Do nothing
+  }
+  //If WiFi is on but ESP NOW is off, then turn off radio entirely
+  else if (espnowState == ESPNOW_OFF)
   {
     WiFi.mode(WIFI_OFF);
     wifiSetState(WIFI_OFF);
     Serial.println("Wi-Fi Stopped");
-
-    //Display the heap state
-    reportHeapNow();
   }
+  //If ESP-Now is active, change protocol to only Long Range
+  else if (espnowState > ESPNOW_OFF)
+  {
+    WiFi.mode(WIFI_STA);
+
+    // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
+
+    wifiSetState(WIFI_OFF);
+
+    Serial.println("Wi-Fi disabled, ESP-Now left in place");
+  }
+
+  //Display the heap state
+  reportHeapNow();
 #endif  //COMPILE_WIFI
 }
 

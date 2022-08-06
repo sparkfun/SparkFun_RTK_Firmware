@@ -26,7 +26,7 @@ const int FIRMWARE_VERSION_MAJOR = 2;
 const int FIRMWARE_VERSION_MINOR = 4;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
-#define COMPILE_BT //Comment out to remove Bluetooth functionality
+//#define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_AP //Comment out to remove Access Point functionality
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
@@ -835,7 +835,7 @@ void updateRadio()
 {
   if (settings.radioType == RADIO_ESPNOW)
   {
-    if (wifiState == WIFI_ESPNOW_PAIRED)
+    if (espnowState == ESPNOW_PAIRED)
     {
       //If it's been longer than a few ms since we last added a byte to the buffer
       //then we've reached the end of the RTCM stream. Send partial buffer.

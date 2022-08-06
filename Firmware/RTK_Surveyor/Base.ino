@@ -229,7 +229,7 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
   ntripServerProcessRTCM(incoming);
 
-  if (wifiState == WIFI_ESPNOW_PAIRED)
+  if (wifiState == ESPNOW_PAIRED)
   {
     //Move this byte into ESP NOW to send buffer
     espnowOutgoing[espnowOutgoingSpot++] = incoming;

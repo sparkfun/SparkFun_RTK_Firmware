@@ -842,7 +842,7 @@ void beginRadio()
 {
   if (settings.radioType == RADIO_EXTERNAL)
   {
-    wifiStop();
+    espnowStop();
 
     //Nothing to start. UART2 of ZED is connected to external Radio port and is configured at configureUbloxModule()
   }

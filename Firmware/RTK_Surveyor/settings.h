@@ -102,18 +102,27 @@ typedef enum
   ERROR_GPS_CONFIG_FAIL,
 } t_errorNumber;
 
+//Even though WiFi and ESP-Now operate on the same radio, we treat
+//then as different states so that we can leave the radio on if
+//either WiFi or ESP-Now are active
 enum WiFiState
 {
   WIFI_OFF = 0,
   WIFI_ON,
   WIFI_NOTCONNECTED,
   WIFI_CONNECTED,
-  WIFI_ESPNOW_ON,
-  WIFI_ESPNOW_PAIRING,
-  WIFI_ESPNOW_MAC_RECEIVED,
-  WIFI_ESPNOW_PAIRED,
 };
 volatile byte wifiState = WIFI_OFF;
+
+enum ESPNOWState
+{
+  ESPNOW_OFF,
+  ESPNOW_ON,
+  ESPNOW_PAIRING,
+  ESPNOW_MAC_RECEIVED,
+  ESPNOW_PAIRED,
+};
+volatile byte espnowState = ESPNOW_OFF;
 
 enum NTRIPClientState
 {

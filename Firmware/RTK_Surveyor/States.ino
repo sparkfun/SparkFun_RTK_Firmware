@@ -247,23 +247,9 @@ void updateSystemState()
             displayBaseSuccess(500); //Show 'Base Started'
 
             if (settings.fixedBase == false)
-            {
-              //Restart Bluetooth with 'Base' name
-              //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
-              if (settings.ntripServer_StartAtSurveyIn)
-                ntripServerStart();
-              else
-                bluetoothStart();
               changeState(STATE_BASE_TEMP_SETTLE);
-            }
             else if (settings.fixedBase == true)
-            {
-              if (settings.enableNtripServer)
-                ntripServerStart();
-              else
-                bluetoothStart();
               changeState(STATE_BASE_FIXED_NOT_STARTED);
-            }
           }
           else
           {
@@ -326,17 +312,12 @@ void updateSystemState()
               digitalWrite(pin_baseStatusLED, HIGH); //Indicate survey complete
 
             //Start the NTRIP server if requested
-            if ((settings.ntripServer_StartAtSurveyIn == false)
-                && (settings.enableNtripServer == true))
-            {
+            if (settings.enableNtripServer == true)
               ntripServerStart();
-            }
 
-            //TODO select either or WiFi or ESP NOW
+            //Start ESP-Now if requested
             if (settings.radioType == RADIO_ESPNOW)
-            {
               espnowStart();
-            }
 
             rtcmPacketsSent = 0; //Reset any previous number
             changeState(STATE_BASE_TEMP_TRANSMITTING);
@@ -397,13 +378,13 @@ void updateSystemState()
             if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, HIGH); //Turn on base LED
 
-            //TODO shouldn't NtripServer be here?
+            //Start the NTRIP server if requested
+            if (settings.enableNtripServer)
+              ntripServerStart();
 
-            //TODO select either or WiFi or ESP NOW
+            //Start ESP-Now if requested
             if (settings.radioType == RADIO_ESPNOW)
-            {
               espnowStart();
-            }
 
             changeState(STATE_BASE_FIXED_TRANSMITTING);
           }

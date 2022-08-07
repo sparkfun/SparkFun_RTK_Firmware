@@ -379,7 +379,7 @@ void updateDisplay()
 #ifdef COMPILE_BT
         sprintf(macAddress, "%02X", unitMACAddress[5]);
 #else
-        sprintf(macAddress, "%02X", 0, 0); //If BT is not available, print zeroes
+        sprintf(macAddress, "%02X", 0); //If BT is not available, print zeroes
 #endif
         oled.setFont(QW_FONT_5X7); //Set font to smallest
         oled.setCursor(9, 3);

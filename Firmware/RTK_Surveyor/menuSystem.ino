@@ -129,7 +129,7 @@ void menuSystem()
       uptimeSeconds += 1;
     }
     Serial.print("Uptime: ");
-    Serial.printf("%d %02d:%02d:%02d.%03ld\r\n",
+    Serial.printf("%d %02d:%02d:%02d.%03lld\r\n",
                   uptimeDays,
                   uptimeHours,
                   uptimeMinutes,
@@ -461,7 +461,7 @@ void menuDebug()
       else if (incoming == 9)
       {
         Serial.print("Enter GNSS Serial Timeout in milliseconds (0 to 1000): ");
-        uint16_t serialTimeoutGNSS = getNumber(menuTimeout); //Timeout after x seconds
+        int16_t serialTimeoutGNSS = getNumber(menuTimeout); //Timeout after x seconds
         if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
         {
           Serial.println("Error: Timeout is out of range");

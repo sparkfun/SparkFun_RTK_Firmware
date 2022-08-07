@@ -1,8 +1,6 @@
 //Once connected to the access point for WiFi Config, the ESP32 sends current setting values in one long string to websocket
 //After user clicks 'save', data is validated via main.js and a long string of values is returned.
 
-static uint8_t bootProfileNumber;
-
 //Start webserver in AP mode
 void startWebServer()
 {
@@ -288,7 +286,7 @@ void createSettingsString(char* settingsCSV)
   //System Info
   stringRecord(settingsCSV, "platformPrefix", platformPrefix);
 
-  char apRtkFirmwareVersion[50];
+  char apRtkFirmwareVersion[86];
   sprintf(apRtkFirmwareVersion, "RTK %s Firmware: v%d.%d-%s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
   stringRecord(settingsCSV, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
@@ -298,7 +296,7 @@ void createSettingsString(char* settingsCSV)
   else if (zedModuleType == PLATFORM_F9R)
     strcpy(apZedPlatform, "ZED-F9R");
 
-  char apZedFirmwareVersion[50];
+  char apZedFirmwareVersion[80];
   sprintf(apZedFirmwareVersion, "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
   stringRecord(settingsCSV, "zedFirmwareVersion", apZedFirmwareVersion);
 
@@ -418,8 +416,6 @@ void createSettingsString(char* settingsCSV)
     sprintf(nameText, "%d: %s", index + 1, profileNames[index]);
     stringRecord(settingsCSV, tagText, nameText);
   }
-  bootProfileNumber = profileNumber + 1;
-  stringRecord(settingsCSV, "bootProfileNumber", bootProfileNumber);
   stringRecord(settingsCSV, "activeProfiles", activeProfiles);
 
   //New settings not yet integrated
@@ -517,14 +513,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       recordProfileNumber(profileNumber);
     }
   }
-  else if (strcmp(settingName, "bootProfileNumber") == 0)
-  {
-    if ((sscanf(settingValueStr, "%d", &bootProfileNumber) != 1)
-        || (bootProfileNumber < 1)
-        || (bootProfileNumber > (MAX_PROFILE_COUNT + 1)))
-      bootProfileNumber = 1;
-    Serial.printf("bootProfileNumber: %d\r\n", bootProfileNumber);
-  }
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;
   else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
@@ -599,11 +587,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
     if (newAPSettings == true) recordSystemSettings(); //If we've recieved settings, record before restart
-
-    //Determine which profile to boot
-    bootProfileNumber -= 1;
-    if (bootProfileNumber != profileNumber)
-      recordProfileNumber(bootProfileNumber);
 
     //Reboot the machine
     ESP.restart();
@@ -726,7 +709,7 @@ void stringRecord(char* settingsCSV, const char *id, char* settingValue)
 void stringRecord(char* settingsCSV, const char *id, uint64_t settingValue)
 {
   char record[100];
-  sprintf(record, "%s,%ld,", id, settingValue);
+  sprintf(record, "%s,%lld,", id, settingValue);
   strcat(settingsCSV, record);
 }
 

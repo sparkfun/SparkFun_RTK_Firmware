@@ -581,9 +581,6 @@ void setup()
 
 void loop()
 {
-  uint32_t delayTime;
-  uint32_t currentMilliseconds;
-
   if (online.gnss == true)
   {
     i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM

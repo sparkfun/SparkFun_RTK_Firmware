@@ -294,8 +294,6 @@ void factoryReset()
 //Configure the internal radio, if available
 void menuRadio()
 {
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, ECEF coords, etc).
-
   while (1)
   {
     Serial.println();

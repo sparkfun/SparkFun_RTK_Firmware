@@ -594,7 +594,7 @@ bool getDate(uint8_t &dd, uint8_t &mm, uint16_t &yy)
 }
 
 //Given an epoch in ms, return the number of days from given and Epoch now
-uint8_t daysFromEpoch(long long endEpoch)
+int daysFromEpoch(long long endEpoch)
 {
   endEpoch /= 1000; //Convert PointPerfect ms Epoch to s
 
@@ -603,7 +603,7 @@ uint8_t daysFromEpoch(long long endEpoch)
   long delta = endEpoch - localEpoch; //number of s between dates
   delta /= (60 * 60); //hours
   delta /= 24; //days
-  return ((uint8_t)delta);
+  return ((int)delta);
 }
 
 //Given the key's starting epoch time, and the key's duration

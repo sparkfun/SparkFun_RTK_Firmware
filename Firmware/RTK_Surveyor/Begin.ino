@@ -828,7 +828,6 @@ void beginI2C()
   //SCL/GND shorted: 1000ms, response 5
   //SDA/VCC shorted: 1000ms, reponse 5
   //SDA/GND shorted: 14ms, response 5
-  unsigned long startTime = millis();
   Wire.beginTransmission(0x15); //Dummy address
   int endValue = Wire.endTransmission();
   if (endValue == 2)

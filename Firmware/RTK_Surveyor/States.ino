@@ -807,7 +807,7 @@ void updateSystemState()
 
           if (online.rtc == true)
           {
-            uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+            int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
 
             if (daysRemaining >= 0)
             {

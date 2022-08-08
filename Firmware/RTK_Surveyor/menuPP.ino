@@ -1,133 +1,30 @@
-//Set 'home' WiFi credentials
-//Provision device on ThingStream
-//Download keys
-void menuPointPerfect()
-{
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, caster credentials, etc).
+#ifdef  COMPILE_L_BAND
 
-  while (1)
-  {
-    Serial.println();
-    Serial.println("Menu: PointPerfect Corrections");
+//----------------------------------------
+// Locals - compiled out
+//----------------------------------------
 
-    char hardwareID[13];
-    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]); //Get ready for JSON
-    Serial.printf("Device ID: %s\n\r", hardwareID);
+static SFE_UBLOX_GNSS_ADD i2cLBand; // NEO-D9S
+static const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 
-    Serial.print("Days until keys expire: ");
-    if (strlen(settings.pointPerfectCurrentKey) > 0)
-    {
-      uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
-      Serial.println(daysRemaining);
-    }
-    else
-      Serial.println("No keys");
-
-    Serial.print("1) Use PointPerfect Corrections: ");
-    if (settings.enablePointPerfectCorrections == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
-
-    Serial.print("2) Set Home WiFi SSID: ");
-    Serial.println(settings.home_wifiSSID);
-
-    Serial.print("3) Set Home WiFi PW: ");
-    Serial.println(settings.home_wifiPW);
-
-    Serial.print("4) Toggle Auto Key Renewal: ");
-    if (settings.autoKeyRenewal == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
-
-    if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
-      Serial.println("5) Provision Device");
-    else
-      Serial.println("5) Update Keys");
-
-    Serial.println("k) Manual Key Entry");
-
-    Serial.println("x) Exit");
-
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
-
-    if (incoming == '1')
-    {
-      settings.enablePointPerfectCorrections ^= 1;
-    }
-    else if (incoming == '2')
-    {
-      Serial.print("Enter Home WiFi SSID: ");
-      readLine(settings.home_wifiSSID, sizeof(settings.home_wifiSSID), menuTimeoutExtended);
-    }
-    else if (incoming == '3')
-    {
-      Serial.printf("Enter password for Home WiFi network %s: ", settings.home_wifiSSID);
-      readLine(settings.home_wifiPW, sizeof(settings.home_wifiPW), menuTimeoutExtended);
-    }
-    else if (incoming == '4')
-    {
-      settings.autoKeyRenewal ^= 1;
-    }
-    else if (incoming == '5')
-    {
-#ifdef COMPILE_WIFI
-      wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
-
-      unsigned long startTime = millis();
-      while (wifiGetStatus() != WL_CONNECTED)
-      {
-        delay(500);
-        Serial.print(".");
-        if (millis() - startTime > 8000) break; //Give up after 8 seconds
-      }
-
-      if (wifiGetStatus() == WL_CONNECTED)
-      {
-
-        Serial.println();
-        Serial.print("WiFi connected: ");
-        Serial.println(wifiGetIpAddress());
-
-        //Check if we have certificates
-        char fileName[80];
-        sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
-        if (LittleFS.exists(fileName) == false)
-        {
-          provisionDevice(); //Connect to ThingStream API and get keys
-        }
-        else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
-        {
-          provisionDevice(); //Connect to ThingStream API and get keys
-        }
-        else
-          updatePointPerfectKeys();
-      }
-
-      bluetoothStart();
+//The PointPerfect token is provided at compile time via build flags
+#ifndef POINTPERFECT_TOKEN
+#define POINTPERFECT_TOKEN 0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03
 #endif
-    }
-    else if (incoming == '6')
-    {
-      LittleFS.format();
-      log_d("Formatted");
-    }
-    else if (incoming == 'k')
-    {
-      menuPointPerfectKeys();
-    }
-    else if (incoming == 'x')
-      break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
-      break;
-    else
-      printUnknown(incoming);
-  }
 
-  if (strlen(settings.pointPerfectClientID) > 0)
-  {
-    applyLBandKeys();
-  }
+static uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; //Token in HEX form
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
-}
+static const char* pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
+
+//----------------------------------------
+// Forward declarations - compiled out
+//----------------------------------------
+
+void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
+
+//----------------------------------------
+// L-Band Routines - compiled out
+//----------------------------------------
 
 void menuPointPerfectKeys()
 {
@@ -776,20 +673,6 @@ long gpsToMjd(long GpsCycle, long GpsWeek, long GpsSeconds)
   return dateToMjd(1980, 1, 6) + GpsDays;
 }
 
-//Process any new L-Band from I2C
-//If a certain amount of time has elapsed between last decryption, turn off L-Band icon
-void updateLBand()
-{
-  if (online.lbandCorrections == true)
-  {
-    i2cLBand.checkUblox(); // Check for the arrival of new PMP data and process it.
-    i2cLBand.checkCallbacks(); // Check if any L-Band callbacks are waiting to be processed.
-
-    if (lbandCorrectionsReceived == true && millis() - lastLBandDecryption > 5000)
-      lbandCorrectionsReceived = false;
-  }
-}
-
 //When new PMP message arrives from NEO-D9S push it back to ZED-F9P
 void pushRXMPMP(UBX_RXM_PMP_message_data_t *pmpData)
 {
@@ -878,4 +761,244 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
   {
     log_d("PMP decryption failed");
   }
+}
+
+#endif  //COMPILE_L_BAND
+
+//----------------------------------------
+// Global L-Band Routines
+//----------------------------------------
+
+//Check if NEO-D9S is connected. Configure if available.
+void beginLBand()
+{
+#ifdef  COMPILE_L_BAND
+  if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
+  {
+    log_d("L-Band not detected");
+    return;
+  }
+
+  //Check the firmware version of the NEO-D9S. Based on Example21_ModuleInfo.
+  if (i2cLBand.getModuleInfo(1100) == true) // Try to get the module info
+  {
+    //i2cLBand.minfo.extension[1] looks like 'FWVER=HPG 1.12'
+    strcpy(neoFirmwareVersion, i2cLBand.minfo.extension[1]);
+
+    //Remove 'FWVER='. It's extraneous and = causes settings file parsing issues
+    char *ptr = strstr(neoFirmwareVersion, "FWVER=");
+    if (ptr != NULL)
+      strcpy(neoFirmwareVersion, ptr + strlen("FWVER="));
+
+    printNEOInfo(); //Print module firmware version
+  }
+
+  if (online.gnss == true)
+  {
+    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+  }
+
+  //If we have a fix, check which frequency to use
+  if (fixType == 2 || fixType == 3 || fixType == 4 || fixType == 5) //2D, 3D, 3D+DR, or Time
+  {
+    if ( (longitude > -125 && longitude < -67) && (latitude > -90 && latitude < 90))
+    {
+      log_d("Setting L-Band to US");
+      settings.LBandFreq = 1556290000; //We are in US band
+    }
+    else if ( (longitude > -25 && longitude < 70) && (latitude > -90 && latitude < 90))
+    {
+      log_d("Setting L-Band to EU");
+      settings.LBandFreq = 1545260000; //We are in EU band
+    }
+    else
+    {
+      Serial.println("Unknown band area");
+      settings.LBandFreq = 1556290000; //Default to US
+    }
+    recordSystemSettings();
+  }
+  else
+    log_d("No fix available for L-Band frequency determination");
+
+  bool response = true;
+  response &= i2cLBand.setVal32(UBLOX_CFG_PMP_CENTER_FREQUENCY,   settings.LBandFreq); // Default 1539812500 Hz
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SEARCH_WINDOW,      2200);        // Default 2200 Hz
+  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_SERVICE_ID,      0);           // Default 1
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SERVICE_ID,         21845);       // Default 50821
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DATA_RATE,          2400);        // Default 2400 bps
+  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_DESCRAMBLER,     1);           // Default 1
+  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DESCRAMBLER_INIT,   26969);       // Default 23560
+  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_PRESCRAMBLING,   0);           // Default 0
+  response &= i2cLBand.setVal64(UBLOX_CFG_PMP_UNIQUE_WORD,        16238547128276412563ull);
+  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C,   1); // Ensure UBX-RXM-PMP is enabled on the I2C port
+  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 1); // Output UBX-RXM-PMP on UART1
+  response &= i2cLBand.setVal(UBLOX_CFG_UART2OUTPROT_UBX, 1);         // Enable UBX output on UART2
+  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); // Output UBX-RXM-PMP on UART2
+  response &= i2cLBand.setVal32(UBLOX_CFG_UART1_BAUDRATE,         38400); // match baudrate with ZED default
+  response &= i2cLBand.setVal32(UBLOX_CFG_UART2_BAUDRATE,         38400); // match baudrate with ZED default
+
+  if (response == false)
+    Serial.println("L-Band failed to configure");
+
+  i2cLBand.softwareResetGNSSOnly(); // Do a restart
+
+  i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
+
+  i2cGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Check if the PMP data is being decrypted successfully
+
+  log_d("L-Band online");
+
+  online.lband = true;
+#endif  //COMPILE_L_BAND
+}
+
+//Set 'home' WiFi credentials
+//Provision device on ThingStream
+//Download keys
+void menuPointPerfect()
+{
+#ifdef  COMPILE_L_BAND
+  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, caster credentials, etc).
+
+  while (1)
+  {
+    Serial.println();
+    Serial.println("Menu: PointPerfect Corrections");
+
+    char hardwareID[13];
+    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]); //Get ready for JSON
+    Serial.printf("Device ID: %s\n\r", hardwareID);
+
+    Serial.print("Days until keys expire: ");
+    if (strlen(settings.pointPerfectCurrentKey) > 0)
+    {
+      uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+      Serial.println(daysRemaining);
+    }
+    else
+      Serial.println("No keys");
+
+    Serial.print("1) Use PointPerfect Corrections: ");
+    if (settings.enablePointPerfectCorrections == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
+
+    Serial.print("2) Set Home WiFi SSID: ");
+    Serial.println(settings.home_wifiSSID);
+
+    Serial.print("3) Set Home WiFi PW: ");
+    Serial.println(settings.home_wifiPW);
+
+    Serial.print("4) Toggle Auto Key Renewal: ");
+    if (settings.autoKeyRenewal == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
+
+    if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
+      Serial.println("5) Provision Device");
+    else
+      Serial.println("5) Update Keys");
+
+    Serial.println("k) Manual Key Entry");
+
+    Serial.println("x) Exit");
+
+    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+
+    if (incoming == '1')
+    {
+      settings.enablePointPerfectCorrections ^= 1;
+    }
+    else if (incoming == '2')
+    {
+      Serial.print("Enter Home WiFi SSID: ");
+      readLine(settings.home_wifiSSID, sizeof(settings.home_wifiSSID), menuTimeoutExtended);
+    }
+    else if (incoming == '3')
+    {
+      Serial.printf("Enter password for Home WiFi network %s: ", settings.home_wifiSSID);
+      readLine(settings.home_wifiPW, sizeof(settings.home_wifiPW), menuTimeoutExtended);
+    }
+    else if (incoming == '4')
+    {
+      settings.autoKeyRenewal ^= 1;
+    }
+    else if (incoming == '5')
+    {
+#ifdef COMPILE_WIFI
+      wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
+
+      unsigned long startTime = millis();
+      while (wifiGetStatus() != WL_CONNECTED)
+      {
+        delay(500);
+        Serial.print(".");
+        if (millis() - startTime > 8000) break; //Give up after 8 seconds
+      }
+
+      if (wifiGetStatus() == WL_CONNECTED)
+      {
+
+        Serial.println();
+        Serial.print("WiFi connected: ");
+        Serial.println(wifiGetIpAddress());
+
+        //Check if we have certificates
+        char fileName[80];
+        sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
+        if (LittleFS.exists(fileName) == false)
+        {
+          provisionDevice(); //Connect to ThingStream API and get keys
+        }
+        else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
+        {
+          provisionDevice(); //Connect to ThingStream API and get keys
+        }
+        else
+          updatePointPerfectKeys();
+      }
+
+      bluetoothStart();
+#endif
+    }
+    else if (incoming == '6')
+    {
+      LittleFS.format();
+      log_d("Formatted");
+    }
+    else if (incoming == 'k')
+    {
+      menuPointPerfectKeys();
+    }
+    else if (incoming == 'x')
+      break;
+    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
+  }
+
+  if (strlen(settings.pointPerfectClientID) > 0)
+  {
+    applyLBandKeys();
+  }
+
+  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+#endif  //COMPILE_L_BAND
+}
+
+//Process any new L-Band from I2C
+//If a certain amount of time has elapsed between last decryption, turn off L-Band icon
+void updateLBand()
+{
+#ifdef  COMPILE_L_BAND
+  if (online.lbandCorrections == true)
+  {
+    i2cLBand.checkUblox(); // Check for the arrival of new PMP data and process it.
+    i2cLBand.checkCallbacks(); // Check if any L-Band callbacks are waiting to be processed.
+
+    if (lbandCorrectionsReceived == true && millis() - lastLBandDecryption > 5000)
+      lbandCorrectionsReceived = false;
+  }
+#endif  //COMPILE_L_BAND
 }

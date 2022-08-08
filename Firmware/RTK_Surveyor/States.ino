@@ -655,6 +655,7 @@ void updateSystemState()
         }
         break;
 
+#ifdef  COMPILE_L_BAND
       case (STATE_KEYS_STARTED):
         {
           if (rtcWaitTime == 0) rtcWaitTime = millis();
@@ -898,6 +899,7 @@ void updateSystemState()
           changeState(settings.lastState); //Go to either rover or base
         }
         break;
+#endif  //COMPILE_L_BAND
 
       case (STATE_SHUTDOWN):
         {
@@ -1002,6 +1004,7 @@ void changeState(SystemState newState)
       case (STATE_PROFILE):
         Serial.print("State: Profile");
         break;
+#ifdef  COMPILE_L_BAND
       case (STATE_KEYS_STARTED):
         Serial.print("State: Keys Started ");
         break;
@@ -1038,6 +1041,7 @@ void changeState(SystemState newState)
       case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
         Serial.print("State: Keys Provision - WiFi Timeout");
         break;
+#endif  //COMPILE_L_BAND
 
       case (STATE_SHUTDOWN):
         Serial.print("State: Shut Down");

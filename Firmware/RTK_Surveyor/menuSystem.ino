@@ -107,7 +107,7 @@ void menuSystem()
     Serial.println();
 
     //Display the uptime
-    uint64_t uptimeMilliseconds = uptime;
+    uint64_t uptimeMilliseconds = millis();
     uint32_t uptimeDays = 0;
     while (uptimeMilliseconds >= MILLISECONDS_IN_A_DAY) {
       uptimeMilliseconds -= MILLISECONDS_IN_A_DAY;
@@ -129,12 +129,13 @@ void menuSystem()
       uptimeSeconds += 1;
     }
     Serial.print("Uptime: ");
-    Serial.printf("%d %02d:%02d:%02d.%03lld\r\n",
+    Serial.printf("%d %02d:%02d:%02d.%03lld (Resets: %d)\r\n",
                   uptimeDays,
                   uptimeHours,
                   uptimeMinutes,
                   uptimeSeconds,
-                  uptimeMilliseconds);
+                  uptimeMilliseconds,
+                  settings.resetCount);
 
     if (settings.enableSD == true)
     {

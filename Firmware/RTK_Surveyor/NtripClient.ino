@@ -452,10 +452,10 @@ void ntripClientUpdate()
         }
       }
 
-      if (millis() - lastRSSIUpdate > 5000)
+      if (millis() - lastWifiRSSIUpdate > 5000)
       {
-        lastRSSIUpdate = millis();
-        Serial.printf("WiFi RSSI: %d\n\r", WiFi.RSSI());
+        lastWifiRSSIUpdate = millis();
+        Serial.printf("NTRIP WiFi RSSI: %d\n\r", WiFi.RSSI());
       }
 
       break;

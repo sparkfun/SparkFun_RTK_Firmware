@@ -1,5 +1,5 @@
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-NTRIP Server States:
+  NTRIP Server States:
     NTRIP_SERVER_OFF: Using Bluetooth or NTRIP server
     NTRIP_SERVER_ON: WIFI_ON state
     NTRIP_SERVER_WIFI_CONNECTING: Connecting to WiFi access point
@@ -44,7 +44,7 @@ NTRIP Server States:
                     |                  | Close Server connection
                     '------------------'
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
 // Constants - compiled out
@@ -99,7 +99,7 @@ bool ntripServerConnectCaster()
 
   //Note the connection to the NTRIP caster
   Serial.printf("Connected to %s:%d\n\r", settings.ntripServer_CasterHost,
-                                          settings.ntripServer_CasterPort);
+                settings.ntripServer_CasterPort);
 
   //Build the authorization credentials message
   //  * Mount point
@@ -192,10 +192,10 @@ bool ntripServerRtcmMessage(uint8_t data)
       //Wait for the preamble byte
       ntripServerCrcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
 
-      //Fall through
-      //     |
-      //     |
-      //     V
+    //Fall through
+    //     |
+    //     |
+    //     V
 
     //Wait for the preamble byte (0xd3)
     case RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3:
@@ -368,8 +368,16 @@ void ntripServerProcessRTCM(uint8_t incoming)
     }
     previousMilliseconds = currentMilliseconds;
 
-    //Parse the RTCM message
-    if ((!settings.enableNtripServerMessageParsing) || ntripServerRtcmMessage(incoming))
+    //Pass this message to the RTCM checker
+    bool passAlongIncomingByte = true;
+    
+    //Check this byte with RTCM checker if enabled
+    if (settings.enableNtripServerMessageParsing == true)
+      passAlongIncomingByte &= ntripServerRtcmMessage(incoming);
+    else
+      rtcmPacketsSent++; //If not checking RTCM CRC, count every byte
+
+    if (passAlongIncomingByte)
     {
       ntripServer->write(incoming); //Send this byte to socket
       ntripServerBytesSent++;
@@ -396,7 +404,7 @@ void ntripServerStart()
 
   //Start the NTRIP server if enabled
   if ((settings.ntripServer_StartAtSurveyIn == true)
-    || (settings.enableNtripServer == true))
+      || (settings.enableNtripServer == true))
   {
     //Display the heap state
     reportHeapNow();
@@ -487,7 +495,7 @@ void ntripServerUpdate()
         ntripServerSetState(NTRIP_SERVER_WIFI_CONNECTED);
 
         // Start the SD card server
-//        sdCardServerBegin(&server, true, true);
+        //        sdCardServerBegin(&server, true, true);
       }
       break;
 
@@ -510,27 +518,27 @@ void ntripServerUpdate()
 
     //Initiate the connection to the NTRIP caster
     case NTRIP_SERVER_CONNECTING:
-        //Attempt a connection to the NTRIP caster
-        if (!ntripServerConnectCaster())
-        {
-          log_d("NTRIP Server caster failed to connect. Trying again.");
+      //Attempt a connection to the NTRIP caster
+      if (!ntripServerConnectCaster())
+      {
+        log_d("NTRIP Server caster failed to connect. Trying again.");
 
-          //Assume service not available
-          if (ntripServerConnectLimitReached())
-            Serial.println("NTRIP Server failed to connect! Do you have your caster address and port correct?");
-        }
-        else
-        {
-          //Connection open to NTRIP caster, wait for the authorization response
-          ntripServerTimer = millis();
-          ntripServerSetState(NTRIP_SERVER_AUTHORIZATION);
-        }
+        //Assume service not available
+        if (ntripServerConnectLimitReached())
+          Serial.println("NTRIP Server failed to connect! Do you have your caster address and port correct?");
+      }
+      else
+      {
+        //Connection open to NTRIP caster, wait for the authorization response
+        ntripServerTimer = millis();
+        ntripServerSetState(NTRIP_SERVER_AUTHORIZATION);
+      }
       break;
 
     //Wait for authorization response
     case NTRIP_SERVER_AUTHORIZATION:
       //Check if caster service responded
-      if (ntripServer->available() == 0)
+      if (ntripServer->available() < strlen("ICY 200 OK")) //Wait until at least a few bytes have arrived
       {
         //Check for response timeout
         if (millis() - ntripServerTimer > 5000)
@@ -590,6 +598,12 @@ void ntripServerUpdate()
       }
       else
         cyclePositionLEDs();
+
+      if (millis() - lastWifiRSSIUpdate > 5000)
+      {
+        lastWifiRSSIUpdate = millis();
+        Serial.printf("NTRIP WiFi RSSI: %d\n\r", WiFi.RSSI());
+      }
       break;
   }
 #endif  //COMPILE_WIFI

@@ -454,7 +454,7 @@ unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to up
 TaskHandle_t idleTaskHandle[MAX_CPU_CORES];
 uint32_t max_idle_count = MAX_IDLE_TIME_COUNT;
 
-unsigned long lastRSSIUpdate = 0; //Print RSSI when connected every few seconds
+unsigned long lastWifiRSSIUpdate = 0; //Print RSSI when connected every few seconds
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*

@@ -174,7 +174,7 @@ void F9PSerialReadTask(void *e)
           if (btBytesToSend > 0)
             online.txNtripDataCasting = true;
           else
-            log_w("WARNING - BT failed to send");
+            log_w("BT failed to send");
         }
         else
         {
@@ -187,7 +187,7 @@ void F9PSerialReadTask(void *e)
           }
           else
           {
-            log_w("WARNING - BT congestion delayed %d bytes, Tasks.ino line %d", btBytesToSend, __LINE__);
+            log_w("BT congestion delayed %d bytes, Tasks.ino line %d", btBytesToSend, __LINE__);
             btBytesToSend = 0;
           }
         }
@@ -240,7 +240,7 @@ void F9PSerialReadTask(void *e)
               Serial.printf("ERROR - Dropped %d bytes: GNSS --> log file\r\n", sdBytesToRecord);
             }
             else
-              log_w("WARNING - sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
+              log_w("sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
           }
         } //End maxLogTime
       } //End logging

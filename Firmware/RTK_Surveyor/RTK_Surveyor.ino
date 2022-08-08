@@ -26,8 +26,9 @@ const int FIRMWARE_VERSION_MAJOR = 2;
 const int FIRMWARE_VERSION_MINOR = 4;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
-//#define COMPILE_BT //Comment out to remove Bluetooth functionality
+#define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_AP //Comment out to remove Access Point functionality
+//#define COMPILE_ESPNOW //Comment out to remove ESP-Now functionality
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
@@ -347,12 +348,10 @@ float lBandEBNO = 0.0; //Used on system status menu
 
 //ESP NOW for multipoint wireless broadcasting over 2.4GHz
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#ifdef COMPILE_WIFI
+#ifdef COMPILE_ESPNOW
 
 #include <esp_now.h>
 #include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
-
-#endif
 
 uint8_t espnowOutgoing[250]; //ESP NOW has max of 250 characters
 unsigned long espnowLastAdd; //Tracks how long since last byte was added to the outgoing buffer
@@ -364,6 +363,7 @@ int packetRSSI = 0;
 unsigned long lastEspnowRssiUpdate = 0;
 
 const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
+#endif
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Global variables
@@ -568,8 +568,6 @@ void setup()
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
-  beginRadio(); //Start internal radio if enabled
-
   updateRTC(); //The GNSS likely has time/date. Update ESP32 RTC to match. Needed for PointPerfect key expiration.
 
   Serial.flush(); //Complete any previous prints
@@ -669,7 +667,7 @@ void updateLogs()
       {
         //This is OK because in the interim more data will be written to the log
         //and the log file will eventually be synced by the next call in loop
-        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
+        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
       }
     }
 
@@ -697,7 +695,7 @@ void updateLogs()
         //While a retry does occur during the next loop, it is possible to loose
         //trigger events if they occur too rapidly or if the log file is closed
         //before the trigger event is written!
-        log_w("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
+        log_w("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
       }
     }
 
@@ -717,7 +715,7 @@ void updateLogs()
       {
         //This is OK because outputting this message is not critical to the RTK
         //operation and the message will be output by the next call in loop
-        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
+        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
       }
 
       if (fileSize > 0)
@@ -830,6 +828,7 @@ void updateRTC()
 //Internal ESP NOW radio - Use the ESP32 to directly transmit/receive RTCM over 2.4GHz (no WiFi needed)
 void updateRadio()
 {
+#ifdef COMPILE_ESPNOW
   if (settings.radioType == RADIO_ESPNOW)
   {
     if (espnowState == ESPNOW_PAIRED)
@@ -838,10 +837,8 @@ void updateRadio()
       //then we've reached the end of the RTCM stream. Send partial buffer.
       if (espnowOutgoingSpot > 0 && (millis() - espnowLastAdd) > 50)
       {
-#ifdef COMPILE_WIFI
         esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
         //log_d("ESPNOW: Sending %d bytes", espnowOutgoingSpot);
-#endif
         espnowOutgoingSpot = 0; //Reset
       }
 
@@ -851,4 +848,5 @@ void updateRadio()
         espnowRSSI = -255;
     }
   }
+#endif
 }

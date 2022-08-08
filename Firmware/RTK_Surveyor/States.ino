@@ -116,7 +116,10 @@ void updateSystemState()
 
           i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
 
+          wifiStop(); //Stop WiFi, ntripClient will start as needed.
           bluetoothStart(); //Turn on Bluetooth with 'Rover' name
+          radioStart(); //Start internal radio if enabled, otherwise disable
+
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
@@ -315,9 +318,7 @@ void updateSystemState()
             if (settings.enableNtripServer == true)
               ntripServerStart();
 
-            //Start ESP-Now if requested
-            if (settings.radioType == RADIO_ESPNOW)
-              espnowStart();
+            radioStart(); //Start internal radio if enabled, otherwise disable
 
             rtcmPacketsSent = 0; //Reset any previous number
             changeState(STATE_BASE_TEMP_TRANSMITTING);
@@ -382,9 +383,7 @@ void updateSystemState()
             if (settings.enableNtripServer)
               ntripServerStart();
 
-            //Start ESP-Now if requested
-            if (settings.radioType == RADIO_ESPNOW)
-              espnowStart();
+            radioStart(); //Start internal radio if enabled, otherwise disable
 
             changeState(STATE_BASE_FIXED_TRANSMITTING);
           }
@@ -595,6 +594,9 @@ void updateSystemState()
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 
           bluetoothStop();
+#ifdef COMPILE_ESPNOW
+          espnowStop();
+#endif
           stopUART2Tasks(); //Delete F9 serial tasks if running
           startWebServer(); //Start in AP mode and show config html page
 

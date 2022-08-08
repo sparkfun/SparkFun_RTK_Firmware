@@ -202,7 +202,7 @@ void beginSD()
     else if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) != pdPASS)
     {
       //This is OK since a retry will occur next loop
-      log_d("sdCardSemaphore failed to yield, Begin.ino line %d\r\n", __LINE__);
+      log_d("sdCardSemaphore failed to yield, Begin.ino line %d", __LINE__);
       break;
     }
     gotSemaphore = true;
@@ -837,8 +837,9 @@ void beginI2C()
 }
 
 //Depending on radio selection, begin hardware
-void beginRadio()
+void radioStart()
 {
+#ifdef COMPILE_ESPNOW
   if (settings.radioType == RADIO_EXTERNAL)
   {
     espnowStop();
@@ -849,4 +850,5 @@ void beginRadio()
   {
     espnowStart();
   }
+#endif
 }

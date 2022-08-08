@@ -85,8 +85,10 @@ void menuMain()
       menuUserProfiles();
     else if (incoming == 'P' && online.lband == true)
       menuPointPerfect();
+#ifdef COMPILE_ESPNOW
     else if (incoming == 'r')
       menuRadio();
+#endif
     else if (incoming == 'f' && binCount > 0)
       menuFirmware();
     else if (incoming == 'x')
@@ -294,6 +296,7 @@ void factoryReset()
 //Configure the internal radio, if available
 void menuRadio()
 {
+#ifdef COMPILE_ESPNOW
   while (1)
   {
     Serial.println();
@@ -370,7 +373,8 @@ void menuRadio()
       printUnknown(incoming);
   }
 
-  beginRadio();
+  radioStart();
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+#endif
 }

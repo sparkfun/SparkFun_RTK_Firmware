@@ -147,28 +147,16 @@ void beginBoard()
   unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
   //For all boards, check reset reason. If reset was due to wdt or panic, append last log
+  loadSettingsPartial(); //Get resetCount
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
     reuseLastLog = false; //Start new log
-
-    loadSettingsPartial();
-    if (settings.enableResetDisplay == true)
-    {
-      settings.resetCount = 0;
-      recordSystemSettings(); //Record to NVM
-    }
+    settings.resetCount = 0;
   }
   else
   {
     reuseLastLog = true; //Attempt to reuse previous log
-
-    loadSettingsPartial();
-    if (settings.enableResetDisplay == true)
-    {
-      settings.resetCount++;
-      Serial.printf("resetCount: %d\n\r", settings.resetCount);
-      recordSystemSettings(); //Record to NVM
-    }
+    settings.resetCount++;
 
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())
@@ -186,6 +174,8 @@ void beginBoard()
       default : Serial.println("Unknown");
     }
   }
+
+  recordSystemSettings(); //Record resetCount to NVM
 }
 
 void beginSD()
@@ -715,7 +705,7 @@ bool beginExternalTriggers()
 //Check if NEO-D9S is connected. Configure if available.
 void beginLBand()
 {
-  if(settings.enablePointPerfectCorrections == false) return; //If user has turned off PointPerfect, skip everything
+  if (settings.enablePointPerfectCorrections == false) return; //If user has turned off PointPerfect, skip everything
 
   if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
   {

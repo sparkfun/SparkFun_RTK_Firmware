@@ -145,8 +145,10 @@ void wifiStartAP()
 #define WIFI_PASSWORD "parachutes"
   WiFi.mode(WIFI_STA);
 
+#ifdef COMPILE_ESPNOW
   // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
   esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+#endif
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Wi-Fi connecting to");
@@ -161,8 +163,10 @@ void wifiStartAP()
   //Start in AP mode
   WiFi.mode(WIFI_AP);
 
+#ifdef COMPILE_ESPNOW
   // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
   esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+#endif
 
   IPAddress local_IP(192, 168, 4, 1);
   IPAddress gateway(192, 168, 1, 1);
@@ -203,12 +207,20 @@ void wifiStart(char* ssid, char* pw)
 #ifdef COMPILE_WIFI
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {
+#ifdef COMPILE_ESPNOW
     //If ESP-Now is active, reconfigure protocols
     if (espnowState > ESPNOW_OFF)
     {
+      Serial.println("Mixing WiFi into ESPNOW setup");
       //Enable WiFi + ESP-Now
       esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR);
     }
+    else
+    {
+      //Radio is off, turn it on
+      WiFi.mode(WIFI_STA);
+    }
+#endif
 
     Serial.printf("Wi-Fi connecting to %s\r\n", ssid);
     WiFi.begin(ssid, pw);
@@ -233,6 +245,8 @@ void wifiStop()
   {
     //Do nothing
   }
+
+#ifdef COMPILE_ESPNOW
   //If WiFi is on but ESP NOW is off, then turn off radio entirely
   else if (espnowState == ESPNOW_OFF)
   {
@@ -252,6 +266,12 @@ void wifiStop()
 
     Serial.println("Wi-Fi disabled, ESP-Now left in place");
   }
+#else
+  //Turn off radio
+  WiFi.mode(WIFI_OFF);
+  wifiSetState(WIFI_OFF);
+  Serial.println("Wi-Fi Stopped");
+#endif
 
   //Display the heap state
   reportHeapNow();

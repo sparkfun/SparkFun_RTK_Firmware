@@ -1,6 +1,6 @@
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   NTRIP Server States:
-    NTRIP_SERVER_OFF: Using Bluetooth or NTRIP server
+    NTRIP_SERVER_OFF: WiFi OFF or using NTRIP Client
     NTRIP_SERVER_ON: WIFI_ON state
     NTRIP_SERVER_WIFI_CONNECTING: Connecting to WiFi access point
     NTRIP_SERVER_WIFI_CONNECTED: WiFi connected to an access point
@@ -80,12 +80,6 @@ static uint32_t ntripServerTimer;
 // NTRIP Server Routines - compiled out
 //----------------------------------------
 
-//Determine if more connections are allowed
-void ntripServerAllowMoreConnections()
-{
-  ntripServerConnectionAttempts = 0;
-}
-
 //Initiate a connection to the NTRIP caster
 bool ntripServerConnectCaster()
 {
@@ -122,18 +116,20 @@ bool ntripServerConnectCaster()
 bool ntripServerConnectLimitReached()
 {
   //Shutdown the NTRIP server
-  ntripServerStop(false);
+  ntripServerStop(false); //Allocate new wifiClient
 
   //Retry the connection a few times
-  bool limitReached = (ntripServerConnectionAttempts++ >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS);
+  bool limitReached = false;
+  if (ntripServerConnectionAttempts++ >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS) limitReached = true;
+
   if (!limitReached)
     //Display the heap state
     reportHeapNow();
   else
   {
-    //No more connection attempts, switching to Bluetooth
+    //No more connection attempts
     Serial.println("NTRIP Server connection attempts exceeded!");
-    ntripServerSwitchToBluetooth();
+    ntripServerStop(true);  //Don't allocate new wifiClient
   }
   return limitReached;
 }
@@ -308,19 +304,6 @@ void ntripServerSetState(byte newState)
       break;
   }
 }
-
-//Switch to Bluetooth operation
-void ntripServerSwitchToBluetooth()
-{
-  Serial.println("NTRIP Server failure, switching to Bluetooth!");
-
-  //Stop WiFi operations
-  ntripServerStop(true);
-
-  //Turn on Bluetooth with 'Rover' name
-  bluetoothStart();
-}
-
 #endif  // COMPILE_WIFI
 
 //----------------------------------------
@@ -370,7 +353,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
 
     //Pass this message to the RTCM checker
     bool passAlongIncomingByte = true;
-    
+
     //Check this byte with RTCM checker if enabled
     if (settings.enableNtripServerMessageParsing == true)
       passAlongIncomingByte &= ntripServerRtcmMessage(incoming);
@@ -400,7 +383,7 @@ void ntripServerStart()
 {
 #ifdef  COMPILE_WIFI
   //Stop NTRIP server and WiFi
-  ntripServerStop(true);
+  ntripServerStop(true); //Don't allocate new wifiClient
 
   //Start the NTRIP server if enabled
   if ((settings.ntripServer_StartAtSurveyIn == true)
@@ -408,7 +391,6 @@ void ntripServerStart()
   {
     //Display the heap state
     reportHeapNow();
-    Serial.println("NTRIP Server start");
 
     //Allocate the ntripServer structure
     ntripServer = new WiFiClient();
@@ -418,14 +400,12 @@ void ntripServerStart()
       ntripServerSetState(NTRIP_SERVER_ON);
   }
 
-  //Only fallback to Bluetooth once, then try WiFi again.  This enables changes
-  //to the WiFi SSID and password to properly restart the WiFi.
-  ntripServerAllowMoreConnections();
+  ntripServerConnectionAttempts = 0;
 #endif  //COMPILE_WIFI
 }
 
 //Stop the NTRIP server
-void ntripServerStop(bool done)
+void ntripServerStop(bool wifiClientAllocated)
 {
 #ifdef  COMPILE_WIFI
   if (ntripServer)
@@ -439,7 +419,7 @@ void ntripServerStop(bool done)
     ntripServer = NULL;
 
     //Allocate the NTRIP server structure if not done
-    if (!done)
+    if (wifiClientAllocated == false)
       ntripServer = new WiFiClient();
   }
 
@@ -448,7 +428,7 @@ void ntripServerStop(bool done)
     wifiStop();
 
   //Determine the next NTRIP server state
-  ntripServerSetState((ntripServer && (!done)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
+  ntripServerSetState((ntripServer && (wifiClientAllocated == false)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
   online.ntripServer = false;
 #endif  //COMPILE_WIFI
 }
@@ -464,10 +444,13 @@ void ntripServerUpdate()
     ntripServerStateLastDisplayed = millis();
   }
 
+  //If user turns off NTRIP Server via settings, stop server
+  if (settings.enableNtripServer == false)
+    ntripServerStop(true);  //Don't allocate new wifiClient
+
   //Enable WiFi and the NTRIP server if requested
   switch (ntripServerState)
   {
-    //Bluetooth enabled
     case NTRIP_SERVER_OFF:
       break;
 
@@ -485,8 +468,10 @@ void ntripServerUpdate()
         {
           //Assume AP weak signal, the AP is unable to respond successfully
           if (ntripServerConnectLimitReached())
+          {
             //Display the WiFi failure
             paintNtripWiFiFail(4000, false);
+          }
         }
       }
       else
@@ -560,8 +545,7 @@ void ntripServerUpdate()
           //Look for '401 Unauthorized'
           Serial.printf("NTRIP Server caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
 
-          //Switch to Bluetooth operation
-          ntripServerSwitchToBluetooth();
+          ntripServerStop(true);  //Don't allocate new wifiClient
         }
         else
         {
@@ -575,7 +559,7 @@ void ntripServerUpdate()
 
           //We don't use a task because we use I2C hardware (and don't have a semphore).
           online.ntripServer = true;
-          ntripServerAllowMoreConnections();
+          ntripServerConnectionAttempts = 0;
           ntripServerSetState(NTRIP_SERVER_CASTING);
         }
       }
@@ -588,13 +572,13 @@ void ntripServerUpdate()
       {
         //Broken connection, retry the NTRIP server connection
         Serial.println("NTRIP Server connection dropped");
-        ntripServerStop(false);
+        ntripServerStop(false); //Allocate new wifiClient
       }
       else if ((millis() - ntripServerTimer) > 1000)
       {
         //GNSS stopped sending RTCM correction data
         Serial.println("NTRIP Server breaking caster connection due to lack of RTCM data!");
-        ntripServerStop(false);
+        ntripServerStop(false); //Allocate new wifiClient
       }
       else
         cyclePositionLEDs();

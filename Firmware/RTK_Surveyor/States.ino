@@ -236,9 +236,11 @@ void updateSystemState()
 
           displayBaseStart(0); //Show 'Base'
 
-          //Stop all WiFi and BT. Re-enable in each specific base start state.
-          wifiStop();
+          wifiStop(); //Stop WiFi. Re-enable in each specific base start state.
+
           bluetoothStop();
+          bluetoothStart(); //Restart Bluetooth with 'Base' identifier
+          
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           if (configureUbloxModuleBase() == true)

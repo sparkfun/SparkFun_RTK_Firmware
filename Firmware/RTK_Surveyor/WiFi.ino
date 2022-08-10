@@ -14,9 +14,9 @@
 
   WiFi Station States:
 
-                                  WIFI_OFF (Using Bluetooth)
+                                  WIFI_OFF
                                     |   ^
-                           Use WiFi |   | Use Bluetooth
+                           Use WiFi |   | 
                                     |   | WL_CONNECT_FAILED (Bad password)
                                     |   | WL_NO_SSID_AVAIL (Out of range)
                                     v   |

@@ -53,7 +53,9 @@ void menuMain()
 
     Serial.println("p) Configure Profiles");
 
+#ifdef COMPILE_ESPNOW
     Serial.println("r) Configure Radios");
+#endif
 
     if (online.lband == true)
       Serial.println("P) Configure PointPerfect");

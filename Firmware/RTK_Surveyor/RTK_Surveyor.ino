@@ -534,8 +534,6 @@ void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
 
-  beginIdleTasks(); //Enable processor load calculations
-
   beginI2C();
 
   beginDisplay(); //Start display first to be able to display any errors
@@ -553,6 +551,8 @@ void setup()
   beginSD(); //Test if SD is present
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
+
+  beginIdleTasks(); //Enable processor load calculations
 
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 

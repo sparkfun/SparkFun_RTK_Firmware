@@ -114,15 +114,15 @@ enum WiFiState
 };
 volatile byte wifiState = WIFI_OFF;
 
-enum ESPNOWState
+typedef enum ESPNOWState
 {
   ESPNOW_OFF,
   ESPNOW_ON,
   ESPNOW_PAIRING,
   ESPNOW_MAC_RECEIVED,
   ESPNOW_PAIRED,
-};
-volatile byte espnowState = ESPNOW_OFF;
+} ESPNOWState;
+volatile ESPNOWState espnowState = ESPNOW_OFF;
 
 enum NTRIPClientState
 {

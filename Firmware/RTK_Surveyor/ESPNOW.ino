@@ -102,7 +102,7 @@ void espnowStart()
   //If ESP-Now is active, WiFi is active, do nothing
   else
   {
-    Serial.println("Wi-Fi on, ESP-Now on");
+    Serial.println("Wi-Fi already on, ESP-Now already on");
   }
 
   // Init ESP-NOW
@@ -299,7 +299,7 @@ esp_err_t espnowRemovePeer(uint8_t *peerMac)
 }
 
 //Update the state of the ESP Now state machine
-void espnowSetState(byte newState)
+void espnowSetState(ESPNOWState newState)
 {
   if (espnowState == newState)
     Serial.print("*");

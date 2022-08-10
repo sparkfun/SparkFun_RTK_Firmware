@@ -534,7 +534,7 @@ void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
 
-  beginIdleTasks();
+  beginIdleTasks(); //Enable processor load calculations
 
   beginI2C();
 

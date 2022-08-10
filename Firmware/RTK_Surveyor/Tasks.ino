@@ -14,8 +14,10 @@ void F9PSerialWriteTask(void *e)
       {
         //Pass bytes to GNSS receiver
         int s = bluetoothReadBytes(wBuffer, sizeof(wBuffer));
+        
+        //TODO - control if this RTCM source should be listened to or not
         serialGNSS.write(wBuffer, s);
-        online.rxRtcmCorrectionData = true;
+        bluetoothIncomingRTCM = true;
 
         if (settings.enableTaskReports == true)
           Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
@@ -172,7 +174,11 @@ void F9PSerialReadTask(void *e)
           //Push new data to BT SPP if not congested or not throttling
           btBytesToSend = bluetoothWriteBytes(&rBuffer[btTail], btBytesToSend);
           if (btBytesToSend > 0)
-            online.txNtripDataCasting = true;
+          {
+            //If we are in base mode, assume part of the outgoing data is RTCM
+            if(systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+              bluetoothOutgoingRTCM = true;
+          }
           else
             log_w("BT failed to send");
         }

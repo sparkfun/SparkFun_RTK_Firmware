@@ -16,7 +16,7 @@
 
                                   WIFI_OFF
                                     |   ^
-                           Use WiFi |   | 
+                           Use WiFi |   |
                                     |   | WL_CONNECT_FAILED (Bad password)
                                     |   | WL_NO_SSID_AVAIL (Out of range)
                                     v   |
@@ -219,7 +219,11 @@ void wifiStart(char* ssid, char* pw)
     {
       //Radio is off, turn it on
       WiFi.mode(WIFI_STA);
+      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
     }
+#else
+    //Be sure the standard protocols are turned on. ESP Now have have previously turned them off.
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
 #endif
 
     Serial.printf("Wi-Fi connecting to %s\r\n", ssid);

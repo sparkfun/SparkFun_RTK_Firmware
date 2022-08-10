@@ -290,7 +290,7 @@ void ntripClientStop(bool done)
   //Determine the next NTRIP client state
   ntripClientSetState((ntripClient && (!done)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
   online.ntripClient = false;
-  online.rxRtcmCorrectionData = false;
+  wifiIncomingRTCM = false;
 #endif  //COMPILE_WIFI
 }
 
@@ -446,7 +446,7 @@ void ntripClientUpdate()
 
           //Push RTCM to GNSS module over I2C
           i2cGNSS.pushRawData(rtcmData, rtcmCount);
-          online.rxRtcmCorrectionData = true;
+          wifiIncomingRTCM = true;
 
           log_d("NTRIP Client pushed %d RTCM bytes to ZED", rtcmCount);
         }

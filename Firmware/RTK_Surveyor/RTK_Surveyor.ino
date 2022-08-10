@@ -28,7 +28,7 @@ const int FIRMWARE_VERSION_MINOR = 4;
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_AP //Comment out to remove Access Point functionality
-//#define COMPILE_ESPNOW //Comment out to remove ESP-Now functionality
+#define COMPILE_ESPNOW //Comment out to remove ESP-Now functionality
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
@@ -150,6 +150,8 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 #include <ArduinoJson.h> //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 #include <WiFiClientSecure.h> //Built-in.
 #include <PubSubClient.h> //Built-in. Used for MQTT obtaining of keys
+
+#include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
@@ -351,7 +353,6 @@ float lBandEBNO = 0.0; //Used on system status menu
 #ifdef COMPILE_ESPNOW
 
 #include <esp_now.h>
-#include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
 
 uint8_t espnowOutgoing[250]; //ESP NOW has max of 250 characters
 unsigned long espnowLastAdd; //Tracks how long since last byte was added to the outgoing buffer
@@ -456,6 +457,20 @@ uint32_t max_idle_count = MAX_IDLE_TIME_COUNT;
 
 unsigned long lastWifiRSSIUpdate = 0; //Print RSSI when connected every few seconds
 
+bool firstRadioSpotBlink = false; //Controls when the shared icon space is toggled
+unsigned long firstRadioSpotTimer = 0;
+bool secondRadioSpotBlink = false; //Controls when the shared icon space is toggled
+unsigned long secondRadioSpotTimer = 0;
+bool thirdRadioSpotBlink = false; //Controls when the shared icon space is toggled
+unsigned long thirdRadioSpotTimer = 0;
+
+bool bluetoothIncomingRTCM = false;
+bool bluetoothOutgoingRTCM = false;
+bool wifiIncomingRTCM = false;
+bool wifiOutgoingRTCM = false;
+bool espnowIncomingRTCM = false;
+bool espnowOutgoingRTCM = false;
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
                      +---------------------------------------+      +----------+
@@ -552,7 +567,7 @@ void setup()
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
 
-  beginIdleTasks(); //Enable processor load calculations
+  //beginIdleTasks(); //Enable processor load calculations
 
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 

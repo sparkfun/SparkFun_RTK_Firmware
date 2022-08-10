@@ -183,7 +183,7 @@ void bluetoothStop()
     reportHeapNow();
   }
 #endif  //COMPILE_BT
-  online.rxRtcmCorrectionData = false;
+  bluetoothIncomingRTCM = false;
 }
 
 //Write data to the Bluetooth device

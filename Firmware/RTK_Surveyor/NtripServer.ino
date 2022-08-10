@@ -365,7 +365,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
       ntripServer->write(incoming); //Send this byte to socket
       ntripServerBytesSent++;
       ntripServerTimer = millis();
-      online.txNtripDataCasting = true;
+      wifiOutgoingRTCM = true;
     }
   }
 
@@ -445,7 +445,7 @@ void ntripServerUpdate()
   }
 
   //If user turns off NTRIP Server via settings, stop server
-  if (settings.enableNtripServer == false)
+  if (settings.enableNtripServer == false && ntripServerState > NTRIP_SERVER_OFF)
     ntripServerStop(true);  //Don't allocate new wifiClient
 
   //Enable WiFi and the NTRIP server if requested

@@ -63,7 +63,7 @@ void espnowOnDataRecieved(const uint8_t *mac, const uint8_t *incomingData, int l
     serialGNSS.write(incomingData, len);
     log_d("ESPNOW: Received %d bytes, RSSI: %d", len, espnowRSSI);
 
-    online.rxRtcmCorrectionData = true;
+    espnowIncomingRTCM = true;
     lastEspnowRssiUpdate = millis();
   }
 }
@@ -324,6 +324,26 @@ void espnowSetState(ESPNOWState newState)
     default:
       Serial.printf("Unknown ESPNOW state: %d\r\n", newState);
       break;
+  }
+}
+
+void espnowProcessRTCM(byte incoming)
+{
+  if (espnowState == ESPNOW_PAIRED)
+  {
+    //Move this byte into ESP NOW to send buffer
+    espnowOutgoing[espnowOutgoingSpot++] = incoming;
+    espnowLastAdd = millis();
+
+    if (espnowOutgoingSpot == sizeof(espnowOutgoing))
+    {
+      espnowOutgoingSpot = 0; //Wrap
+      esp_now_send(0, (uint8_t *) &espnowOutgoing, sizeof(espnowOutgoing)); //Send packet to all peers
+      delay(10); //We need a small delay between sending multiple packets
+      log_d("ESPNOW: Sending %d bytes", sizeof(espnowOutgoing));
+
+      espnowOutgoingRTCM = true;
+    }
   }
 }
 

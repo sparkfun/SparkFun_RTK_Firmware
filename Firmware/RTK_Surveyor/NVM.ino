@@ -463,18 +463,19 @@ bool parseLine(char* str, Settings *settings)
     //If settingValue has a mix of letters and numbers, just convert to string
     sprintf(settingValue, "%s", str);
 
-    //Check if string is mixed
-    bool isNumber = false;
-    bool isLetter = false;
-    bool isOther = false;
+    //Check if string is mixed: 8a011EF, 192.168.1.1, -102.4, t6-h4$, etc.
+    bool hasSymbol = false;
+    int decimalCount = 0;
     for (int x = 0 ; x < strlen(settingValue) ; x++)
     {
-      if (isDigit(settingValue[x])) isNumber = true;
-      else if (isAlpha(settingValue[x])) isLetter = true;
-      else isOther = true;
+      if (settingValue[x] == '.') decimalCount++;
+      else if (x == 0 && settingValue[x] == '-') {;} //Do nothing
+      else if (isAlpha(settingValue[x])) hasSymbol = true;
+      else if(isDigit(settingValue[x]) == false) hasSymbol = true;
     }
 
-    if ( (isLetter && isNumber) || isOther) //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/274
+    //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/274
+    if (hasSymbol || decimalCount > 1)
     {
       //It's a mix. Skip strtod.
 

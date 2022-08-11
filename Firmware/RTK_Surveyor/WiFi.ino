@@ -207,20 +207,13 @@ void wifiStart(char* ssid, char* pw)
 #ifdef COMPILE_WIFI
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {
+    WiFi.mode(WIFI_STA);
+
 #ifdef COMPILE_ESPNOW
-    //If ESP-Now is active, reconfigure protocols
     if (espnowState > ESPNOW_OFF)
-    {
-      Serial.println("Mixing WiFi into ESPNOW setup");
-      //Enable WiFi + ESP-Now
-      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR);
-    }
+      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now
     else
-    {
-      //Radio is off, turn it on
-      WiFi.mode(WIFI_STA);
-      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
-    }
+      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols
 #else
     //Be sure the standard protocols are turned on. ESP Now have have previously turned them off.
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);

@@ -313,9 +313,6 @@ void ntripServerSetState(byte newState)
 //This function gets called as each RTCM byte comes in
 void ntripServerProcessRTCM(uint8_t incoming)
 {
-  uint32_t currentMilliseconds;
-  static uint32_t previousMilliseconds = 0;
-
   //Check for too many digits
   if (settings.enableResetDisplay == true)
   {
@@ -331,6 +328,9 @@ void ntripServerProcessRTCM(uint8_t incoming)
   }
 
 #ifdef  COMPILE_WIFI
+  uint32_t currentMilliseconds;
+  static uint32_t previousMilliseconds = 0;
+
   if (online.rtc && (ntripServerState == NTRIP_SERVER_CASTING))
   {
     //Timestamp the RTCM messages

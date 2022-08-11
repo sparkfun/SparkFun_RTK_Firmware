@@ -485,6 +485,7 @@ struct struct_online {
   bool i2c = false;
 } online;
 
+#ifdef COMPILE_WIFI
 //AWS certificate for PointPerfect API
 static const char *AWS_PUBLIC_CERT = R"=====(
 -----BEGIN CERTIFICATE-----
@@ -508,3 +509,4 @@ o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
 rqXRfboQnoZsG4q5WTP468SQvvG5
 -----END CERTIFICATE-----
 )=====";
+#endif

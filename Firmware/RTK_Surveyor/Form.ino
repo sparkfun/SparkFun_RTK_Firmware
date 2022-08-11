@@ -139,10 +139,11 @@ void startWebServer()
   log_d("Web Server Started");
   reportHeapNow();
 
-#endif
-#endif
+#endif //COMPILE_AP
 
   wifiSetState(WIFI_NOTCONNECTED);
+#endif //COMPILE_WIFI
+
 }
 
 void stopWebServer()

@@ -185,43 +185,43 @@ void updateDisplay()
 
         case (STATE_ROVER_NOT_STARTED):
           icons =   ICON_BATTERY        //Top right
-                  | ICON_CROSS_HAIR     //Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+                    | ICON_CROSS_HAIR     //Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_NO_FIX):
           icons =   ICON_BATTERY        //Top right
-                  | ICON_CROSS_HAIR     //Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+                    | ICON_CROSS_HAIR     //Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_FIX):
           icons =   ICON_BATTERY        //Top right
-                  | ICON_CROSS_HAIR     //Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+                    | ICON_CROSS_HAIR     //Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_RTK_FLOAT):
           blinking_icons ^= ICON_CROSS_HAIR_DUAL;
           icons =   ICON_BATTERY        //Top right
-                  | (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+                    | (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_RTK_FIX):
           icons =   ICON_BATTERY        //Top right
-                  | ICON_CROSS_HAIR_DUAL//Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+                    | ICON_CROSS_HAIR_DUAL//Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
           iconsRadio = setRadioIcons(); //Top left
           break;
 
@@ -235,21 +235,21 @@ void updateDisplay()
         case (STATE_BASE_TEMP_SETTLE):
           blinking_icons ^= ICON_CROSS_HAIR;
           icons =   ICON_BATTERY        //Top right
-                  | (blinking_icons & ICON_CROSS_HAIR)  //Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+                    | (blinking_icons & ICON_CROSS_HAIR)  //Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
           icons =   ICON_BATTERY        //Top right
-                  | ICON_LOGGING;       //Bottom right
+                    | ICON_LOGGING;       //Bottom right
           iconsRadio = setRadioIcons(); //Top left
           paintBaseTempSurveyStarted();
           break;
         case (STATE_BASE_TEMP_TRANSMITTING):
           icons =   ICON_BATTERY        //Top right
-                  | ICON_LOGGING;       //Bottom right
+                    | ICON_LOGGING;       //Bottom right
           iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
           break;
@@ -259,7 +259,7 @@ void updateDisplay()
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
           icons =   ICON_BATTERY        //Top right
-                  | ICON_LOGGING;       //Bottom right
+                    | ICON_LOGGING;       //Bottom right
           iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
           break;
@@ -884,7 +884,11 @@ uint32_t setWiFiIcon_TwoRadios()
 
     if (firstRadioSpotBlink == false)
     {
+#ifdef COMPILE_WIFI
       int wifiRSSI = WiFi.RSSI();
+#else
+      int wifiRSSI = -40; //Dummy
+#endif
       //Based on RSSI, select icon
       if (wifiRSSI >= -40)
         icons |= ICON_WIFI_SYMBOL_3_LEFT;
@@ -910,7 +914,11 @@ uint32_t setWiFiIcon_TwoRadios()
       }
       else
       {
+#ifdef COMPILE_WIFI
         int wifiRSSI = WiFi.RSSI();
+#else
+        int wifiRSSI = -40; //Dummy
+#endif
         //Based on RSSI, select icon
         if (wifiRSSI >= -40)
           icons |= ICON_WIFI_SYMBOL_3_LEFT;
@@ -963,7 +971,11 @@ uint32_t setWiFiIcon_ThreeRadios()
 
     if (thirdRadioSpotBlink == false)
     {
+#ifdef COMPILE_WIFI
       int wifiRSSI = WiFi.RSSI();
+#else
+      int wifiRSSI = -40; //Dummy
+#endif
       //Based on RSSI, select icon
       if (wifiRSSI >= -40)
         icons |= ICON_WIFI_SYMBOL_3_RIGHT;
@@ -989,7 +1001,11 @@ uint32_t setWiFiIcon_ThreeRadios()
       }
       else
       {
+#ifdef COMPILE_WIFI
         int wifiRSSI = WiFi.RSSI();
+#else
+        int wifiRSSI = -40; //Dummy
+#endif
         //Based on RSSI, select icon
         if (wifiRSSI >= -40)
           icons |= ICON_WIFI_SYMBOL_3_RIGHT;

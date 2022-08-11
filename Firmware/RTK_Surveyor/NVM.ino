@@ -469,9 +469,12 @@ bool parseLine(char* str, Settings *settings)
     for (int x = 0 ; x < strlen(settingValue) ; x++)
     {
       if (settingValue[x] == '.') decimalCount++;
-      else if (x == 0 && settingValue[x] == '-') {;} //Do nothing
+      else if (x == 0 && settingValue[x] == '-')
+      {
+        ; //Do nothing
+      }
       else if (isAlpha(settingValue[x])) hasSymbol = true;
-      else if(isDigit(settingValue[x]) == false) hasSymbol = true;
+      else if (isDigit(settingValue[x]) == false) hasSymbol = true;
     }
 
     //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/274

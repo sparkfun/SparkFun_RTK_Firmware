@@ -456,6 +456,9 @@ bool parseLine(char* str, Settings *settings)
   }
   else
   {
+    //if (strcmp(settingName, "ntripServer_CasterHost") == 0) //Debug
+    //  Serial.printf("Found problem spot raw: %s\n\r", str);
+
     //Assume the value is a string such as 8d8a48b. The leading number causes skipSpace to fail.
     //If settingValue has a mix of letters and numbers, just convert to string
     sprintf(settingValue, "%s", str);
@@ -463,15 +466,20 @@ bool parseLine(char* str, Settings *settings)
     //Check if string is mixed
     bool isNumber = false;
     bool isLetter = false;
+    bool isOther = false;
     for (int x = 0 ; x < strlen(settingValue) ; x++)
     {
-      if (isAlpha(settingValue[x])) isLetter = true;
       if (isDigit(settingValue[x])) isNumber = true;
+      else if (isAlpha(settingValue[x])) isLetter = true;
+      else isOther = true;
     }
 
-    if (isLetter && isNumber)
+    if ( (isLetter && isNumber) || isOther) //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/274
     {
       //It's a mix. Skip strtod.
+
+      //if (strcmp(settingName, "ntripServer_CasterHost") == 0) //Debug
+      //  Serial.printf("Skipping strtod - settingValue: %s\n\r", settingValue);
     }
     else
     {
@@ -927,12 +935,12 @@ bool parseLine(char* str, Settings *settings)
         {
           uint8_t macAddress[6];
           uint8_t macByte = 0;
-          
+
           char* token = strtok(settingValue, ","); //Break string up on ,
-          while(token != NULL && macByte < sizeof(macAddress))
+          while (token != NULL && macByte < sizeof(macAddress))
           {
             settings->espnowPeers[x][macByte++] = (uint8_t)strtol(token, NULL, 16);
-            token = strtok(NULL, ",");    
+            token = strtok(NULL, ",");
           }
 
           knownSetting = true;

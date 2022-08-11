@@ -544,6 +544,8 @@ void beginFuelGauge()
     return;
   }
 
+  online.battery = true;
+
   //Always use hibernate mode
   if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
   if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
@@ -553,7 +555,7 @@ void beginFuelGauge()
   checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
   //Check to see if we are dangerously low
-  if (battLevel < 5 && battChangeRate < 0) //5% and not charging
+  if (battLevel < 5 && battChangeRate < 0.5) //5% and not charging
   {
     Serial.println("Battery too low. Please charge. Shutting down...");
 
@@ -565,7 +567,6 @@ void beginFuelGauge()
     powerDown(false); //Don't display 'Shutting Down'
   }
 
-  online.battery = true;
 }
 
 //Begin accelerometer if available

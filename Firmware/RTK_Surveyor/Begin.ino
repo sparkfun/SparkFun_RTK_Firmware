@@ -147,28 +147,16 @@ void beginBoard()
   unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
   //For all boards, check reset reason. If reset was due to wdt or panic, append last log
+  loadSettingsPartial(); //Get resetCount
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
     reuseLastLog = false; //Start new log
-
-    loadSettingsPartial();
-    if (settings.enableResetDisplay == true)
-    {
-      settings.resetCount = 0;
-      recordSystemSettings(); //Record to NVM
-    }
+    settings.resetCount = 0;
   }
   else
   {
     reuseLastLog = true; //Attempt to reuse previous log
-
-    loadSettingsPartial();
-    if (settings.enableResetDisplay == true)
-    {
-      settings.resetCount++;
-      Serial.printf("resetCount: %d\n\r", settings.resetCount);
-      recordSystemSettings(); //Record to NVM
-    }
+    settings.resetCount++;
 
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())
@@ -186,6 +174,8 @@ void beginBoard()
       default : Serial.println("Unknown");
     }
   }
+
+  recordSystemSettings(); //Record resetCount to NVM
 }
 
 void beginSD()
@@ -202,7 +192,7 @@ void beginSD()
     else if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) != pdPASS)
     {
       //This is OK since a retry will occur next loop
-      log_d("sdCardSemaphore failed to yield, Begin.ino line %d\r\n", __LINE__);
+      log_d("sdCardSemaphore failed to yield, Begin.ino line %d", __LINE__);
       break;
     }
     gotSemaphore = true;
@@ -395,13 +385,15 @@ void beginFS()
 {
   if (online.fs == false)
   {
-    if (!LittleFS.begin(true)) //Format LittleFS if begin fails
+    if (LittleFS.begin(true) == false) //Format LittleFS if begin fails
     {
-      log_d("Error: LittleFS not online");
-      return;
+      Serial.println("Error: LittleFS not online");
     }
-    Serial.println("LittleFS Started");
-    online.fs = true;
+    else
+    {
+      Serial.println("LittleFS Started");
+      online.fs = true;
+    }
   }
 }
 
@@ -552,6 +544,8 @@ void beginFuelGauge()
     return;
   }
 
+  online.battery = true;
+
   //Always use hibernate mode
   if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
   if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
@@ -561,7 +555,7 @@ void beginFuelGauge()
   checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
   //Check to see if we are dangerously low
-  if (battLevel < 5 && battChangeRate < 0) //5% and not charging
+  if (battLevel < 5 && battChangeRate < 0.5) //5% and not charging
   {
     Serial.println("Battery too low. Please charge. Shutting down...");
 
@@ -573,7 +567,6 @@ void beginFuelGauge()
     powerDown(false); //Don't display 'Shutting Down'
   }
 
-  online.battery = true;
 }
 
 //Begin accelerometer if available
@@ -712,20 +705,23 @@ bool beginExternalTriggers()
 
 void beginIdleTasks()
 {
-  char taskName[32];
-
-  for (int index = 0; index < MAX_CPU_CORES; index++)
+  if (settings.enablePrintIdleTime == true)
   {
-    sprintf(taskName, "IdleTask%d", index);
-    if (idleTaskHandle[index] == NULL)
-      xTaskCreatePinnedToCore(
-        idleTask,
-        taskName, //Just for humans
-        2000, //Stack Size
-        NULL, //Task input parameter
-        0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
-        &idleTaskHandle[index], //Task handle
-        index); //Core where task should run, 0=core, 1=Arduino
+    char taskName[32];
+
+    for (int index = 0; index < MAX_CPU_CORES; index++)
+    {
+      sprintf(taskName, "IdleTask%d", index);
+      if (idleTaskHandle[index] == NULL)
+        xTaskCreatePinnedToCore(
+          idleTask,
+          taskName, //Just for humans
+          2000, //Stack Size
+          NULL, //Task input parameter
+          0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+          &idleTaskHandle[index], //Task handle
+          index); //Core where task should run, 0=core, 1=Arduino
+    }
   }
 }
 
@@ -741,11 +737,27 @@ void beginI2C()
   //SCL/GND shorted: 1000ms, response 5
   //SDA/VCC shorted: 1000ms, reponse 5
   //SDA/GND shorted: 14ms, response 5
-  unsigned long startTime = millis();
   Wire.beginTransmission(0x15); //Dummy address
   int endValue = Wire.endTransmission();
   if (endValue == 2)
     online.i2c = true;
   else
     Serial.println("Error: I2C Bus Not Responding");
+}
+
+//Depending on radio selection, begin hardware
+void radioStart()
+{
+#ifdef COMPILE_ESPNOW
+  if (settings.radioType == RADIO_EXTERNAL)
+  {
+    espnowStop();
+
+    //Nothing to start. UART2 of ZED is connected to external Radio port and is configured at configureUbloxModule()
+  }
+  else if (settings.radioType == RADIO_ESPNOW)
+  {
+    espnowStart();
+  }
+#endif
 }

@@ -33,6 +33,7 @@ typedef enum
   STATE_KEYS_PROVISION_WIFI_STARTED,
   STATE_KEYS_PROVISION_WIFI_CONNECTED,
   STATE_KEYS_PROVISION_WIFI_TIMEOUT,
+  STATE_ESPNOW_PAIR,
   STATE_SHUTDOWN,
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
@@ -102,6 +103,9 @@ typedef enum
   ERROR_GPS_CONFIG_FAIL,
 } t_errorNumber;
 
+//Even though WiFi and ESP-Now operate on the same radio, we treat
+//then as different states so that we can leave the radio on if
+//either WiFi or ESP-Now are active
 enum WiFiState
 {
   WIFI_OFF = 0,
@@ -110,6 +114,16 @@ enum WiFiState
   WIFI_CONNECTED,
 };
 volatile byte wifiState = WIFI_OFF;
+
+typedef enum ESPNOWState
+{
+  ESPNOW_OFF,
+  ESPNOW_ON,
+  ESPNOW_PAIRING,
+  ESPNOW_MAC_RECEIVED,
+  ESPNOW_PAIRED,
+} ESPNOWState;
+volatile ESPNOWState espnowState = ESPNOW_OFF;
 
 enum NTRIPClientState
 {
@@ -148,6 +162,12 @@ enum RtcmTransportState
   RTCM_TRANSPORT_STATE_READ_CRC_3,
   RTCM_TRANSPORT_STATE_CHECK_CRC
 };
+
+typedef enum radioType_e
+{
+  RADIO_EXTERNAL = 0,
+  RADIO_ESPNOW,
+} radioType_e;
 
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
@@ -441,6 +461,10 @@ typedef struct {
   bool enablePrintNtripClientRtcm = false;
   bool enablePrintStates = true;
   bool enablePrintDuplicateStates = false;
+  radioType_e radioType = RADIO_EXTERNAL;
+  uint8_t espnowPeers[5][6]; //Max of 5 peers. Contains the MAC addresses (6 bytes) of paired units
+  uint8_t espnowPeerCount;
+  bool enableNtripServerMessageParsing = false;
 } Settings;
 Settings settings;
 
@@ -456,14 +480,13 @@ struct struct_online {
   bool battery = false;
   bool accelerometer = false;
   bool ntripClient = false;
-  bool rxRtcmCorrectionData = false;
   bool ntripServer = false;
-  bool txNtripDataCasting = false;
   bool lband = false;
   bool lbandCorrections = false;
   bool i2c = false;
 } online;
 
+#ifdef COMPILE_WIFI
 //AWS certificate for PointPerfect API
 static const char *AWS_PUBLIC_CERT = R"=====(
 -----BEGIN CERTIFICATE-----
@@ -487,3 +510,4 @@ o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
 rqXRfboQnoZsG4q5WTP468SQvvG5
 -----END CERTIFICATE-----
 )=====";
+#endif

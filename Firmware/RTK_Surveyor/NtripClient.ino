@@ -1,6 +1,6 @@
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-NTRIP Client States:
-    NTRIP_CLIENT_OFF: Using Bluetooth or NTRIP server
+  NTRIP Client States:
+    NTRIP_CLIENT_OFF: WiFi off or or NTRIP server
     NTRIP_CLIENT_ON: WIFI_ON state
     NTRIP_CLIENT_WIFI_CONNECTING: Connecting to WiFi access point
     NTRIP_CLIENT_WIFI_CONNECTED: WiFi connected to an access point
@@ -29,7 +29,7 @@ NTRIP Client States:
                                        v                Fail  |
                             NTRIP_CLIENT_CONNECTED -----------'
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
 // Constants - compiled out
@@ -44,7 +44,7 @@ static const int CREDENTIALS_BUFFER_SIZE = 512;
 static const int MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS = 3;
 
 //NTRIP caster response timeout
-static const uint32_t NTRIP_CLIENT_RESPONSE_TIMEOUT = 5 * 1000; //Milliseconds
+static const uint32_t NTRIP_CLIENT_RESPONSE_TIMEOUT = 10 * 1000; //Milliseconds
 
 //NTRIP client receive data timeout
 static const uint32_t NTRIP_CLIENT_RECEIVE_DATA_TIMEOUT = 10 * 1000; //Milliseconds
@@ -73,6 +73,9 @@ static uint32_t ntripClientTimer;
 //Last time the NTRIP client state was displayed
 static uint32_t lastNtripClientState = 0;
 
+//Throttle GGA transmission to Caster to 1 report every 5 seconds
+unsigned long lastGGAPush = 0;
+
 //----------------------------------------
 // NTRIP Client Routines - compiled out
 //----------------------------------------
@@ -85,7 +88,7 @@ void ntripClientAllowMoreConnections()
 bool ntripClientConnect()
 {
   if ((!ntripClient)
-    || (!ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort)))
+      || (!ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort)))
     return false;
   Serial.printf("NTRIP Client connected to %s:%d\n\r", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
 
@@ -280,10 +283,14 @@ void ntripClientStop(bool done)
   if (ntripClientState > NTRIP_CLIENT_ON)
     wifiStop();
 
+  // Return the Main Talker ID to "GN".
+  i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GN);
+  i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Remove callback
+
   //Determine the next NTRIP client state
   ntripClientSetState((ntripClient && (!done)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
   online.ntripClient = false;
-  online.rxRtcmCorrectionData = false;
+  wifiIncomingRTCM = false;
 #endif  //COMPILE_WIFI
 }
 
@@ -320,6 +327,8 @@ void ntripClientUpdate()
           if (ntripClientConnectLimitReached())
             //Display the WiFi failure
             paintNtripWiFiFail(4000, true);
+
+          //TODO WiFi not available, give up, disable future attempts
         }
       }
       else
@@ -346,7 +355,7 @@ void ntripClientUpdate()
 
     case NTRIP_CLIENT_CONNECTING:
       //Check for no response from the caster service
-      if (ntripClientReceiveDataAvailable() == 0)
+      if (ntripClientReceiveDataAvailable() < strlen("ICY 200 OK")) //Wait until at least a few bytes have arrived
       {
         //Check for response timeout
         if (millis() - ntripClientTimer > NTRIP_CLIENT_RESPONSE_TIMEOUT)
@@ -361,6 +370,8 @@ void ntripClientUpdate()
         // Caster web service responsed
         char response[512];
         ntripClientResponse(&response[0], sizeof(response));
+
+        //Serial.printf("Response: %s\n\r", response);
 
         //Look for '200 OK'
         if (strstr(response, "200") == NULL)
@@ -377,6 +388,16 @@ void ntripClientUpdate()
 
           //Connection is now open, start the NTRIP receive data timer
           ntripClientTimer = millis();
+
+          // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
+          i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
+          i2cGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
+
+          float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+          if (measurementFrequency < 0.2) measurementFrequency = 0.2; //0.2Hz * 5 = 1 measurement every 5 seconds
+          i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency * 5); // Enable GGA over I2C. Tell the module to output GGA every 5 seconds
+
+          lastGGAPush = millis();
 
           //We don't use a task because we use I2C hardware (and don't have a semphore).
           online.ntripClient = true;
@@ -402,14 +423,13 @@ void ntripClientUpdate()
           if ((millis() - ntripClientTimer) > NTRIP_CLIENT_RECEIVE_DATA_TIMEOUT)
           {
             //Timeout receiving NTRIP data, retry the NTRIP client connection
-            Serial.println("NTRIP Client timeout");
+            Serial.println("NTRIP Client: No data received timeout");
             ntripClientStop(false);
           }
         }
         else
         {
-          //Received data from the NTRIP server
-          //5 RTCM messages take approximately ~300ms to arrive at 115200bps
+          //Receive data from the NTRIP Caster
           uint8_t rtcmData[RTCM_DATA_SIZE];
           size_t rtcmCount = 0;
 
@@ -426,12 +446,32 @@ void ntripClientUpdate()
 
           //Push RTCM to GNSS module over I2C
           i2cGNSS.pushRawData(rtcmData, rtcmCount);
-          online.rxRtcmCorrectionData = true;
+          wifiIncomingRTCM = true;
 
-          //log_d("NTRIP Client pushed %d RTCM bytes to ZED", rtcmCount);
+          log_d("NTRIP Client pushed %d RTCM bytes to ZED", rtcmCount);
         }
       }
+
       break;
   }
- #endif  //COMPILE_WIFI
+#endif  //COMPILE_WIFI
+}
+
+void pushGPGGA(NMEA_GGA_data_t *nmeaData)
+{
+#ifdef  COMPILE_WIFI
+  //Provide the caster with our current position as needed
+  if ((ntripClient->connected() == true) && (settings.ntripClient_TransmitGGA == true))
+  {
+    if (millis() - lastGGAPush > 5000)
+    {
+      lastGGAPush = millis();
+      //Serial.print(F("Pushing GGA to server: "));
+      //Serial.print((const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+
+      //Push our current GGA sentence to caster
+      ntripClient->print((const char *)nmeaData->nmea);
+    }
+  }
+#endif
 }

@@ -106,8 +106,13 @@ void menuSystem()
     }
     Serial.println();
 
+#ifdef COMPILE_WIFI
+    if (wifiState == WIFI_CONNECTED)
+      wifiDisplayIpAddress();
+#endif
+
     //Display the uptime
-    uint64_t uptimeMilliseconds = uptime;
+    uint64_t uptimeMilliseconds = millis();
     uint32_t uptimeDays = 0;
     while (uptimeMilliseconds >= MILLISECONDS_IN_A_DAY) {
       uptimeMilliseconds -= MILLISECONDS_IN_A_DAY;
@@ -129,12 +134,13 @@ void menuSystem()
       uptimeSeconds += 1;
     }
     Serial.print("Uptime: ");
-    Serial.printf("%d %02d:%02d:%02d.%03ld\r\n",
+    Serial.printf("%d %02d:%02d:%02d.%03lld (Resets: %d)\r\n",
                   uptimeDays,
                   uptimeHours,
                   uptimeMinutes,
                   uptimeSeconds,
-                  uptimeMilliseconds);
+                  uptimeMilliseconds,
+                  settings.resetCount);
 
     if (settings.enableSD == true)
     {
@@ -275,12 +281,14 @@ void menuSystem()
 //Toggle control of heap reports and I2C GNSS debug
 void menuDebug()
 {
+  int menuTimeoutExtended = 30; //Increase time needed as it's a large menu
+
   while (1)
   {
     Serial.println();
     Serial.println("Menu: Debug Menu");
 
-    Serial.print("1) I2C Debugging Output: ");
+    Serial.print("1) u-blox I2C Debugging Output: ");
     if (settings.enableI2Cdebug == true) Serial.println("Enabled");
     else Serial.println("Disabled");
 
@@ -366,6 +374,9 @@ void menuDebug()
     Serial.print("27) Print duplicate states: ");
     Serial.printf("%s\r\n", settings.enablePrintDuplicateStates ? "Enabled" : "Disabled");
 
+    Serial.print("28) NTRIP server message parser: ");
+    Serial.printf("%s\r\n", settings.enableNtripServerMessageParsing ? "Enabled" : "Disabled");
+
     Serial.println("t) Enter Test Screen");
 
     Serial.println("e) Erase LittleFS");
@@ -375,7 +386,7 @@ void menuDebug()
     Serial.println("x) Exit");
 
     int incoming;
-    int digits = getMenuChoice(&incoming, menuTimeout); //Timeout after x seconds
+    int digits = getMenuChoice(&incoming, menuTimeoutExtended); //Timeout after x seconds
 
     //Handle input timeout
     if (digits == GMCS_TIMEOUT)
@@ -456,7 +467,7 @@ void menuDebug()
       else if (incoming == 9)
       {
         Serial.print("Enter GNSS Serial Timeout in milliseconds (0 to 1000): ");
-        uint16_t serialTimeoutGNSS = getNumber(menuTimeout); //Timeout after x seconds
+        int16_t serialTimeoutGNSS = getNumber(menuTimeout); //Timeout after x seconds
         if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
         {
           Serial.println("Error: Timeout is out of range");
@@ -543,6 +554,10 @@ void menuDebug()
       else if (incoming == 27)
       {
         settings.enablePrintDuplicateStates ^= 1;
+      }
+      else if (incoming == 28)
+      {
+        settings.enableNtripServerMessageParsing ^= 1;
       }
       else
         printUnknown(incoming);

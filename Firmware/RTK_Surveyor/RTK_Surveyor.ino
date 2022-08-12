@@ -8,7 +8,7 @@
 
   Compiled with Arduino v1.8.15 with ESP32 core v2.0.2.
 
-  For compilation instructions see https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#compiling-from-source
+  For compilation instructions see https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#compiling-source
 
   Special thanks to Avinab Malla for guidance on getting xTasks implemented.
 
@@ -23,13 +23,14 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 3;
+const int FIRMWARE_VERSION_MINOR = 4;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_AP //Comment out to remove Access Point functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+#define COMPILE_ESPNOW //Comment out to remove ESP-Now functionality
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -131,6 +132,15 @@ const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 uint32_t sdCardSizeMB = 0;
 uint32_t sdFreeSpaceMB = 0;
 uint32_t sdUsedSpaceMB = 0;
+
+//Controls Logging Icon type
+typedef enum LoggingType {
+  LOGGING_UNKNOWN = 0,
+  LOGGING_STANDARD,
+  LOGGING_PPP,
+  LOGGING_CUSTOM
+} LoggingType;
+LoggingType loggingType = LOGGING_UNKNOWN;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster
@@ -141,6 +151,8 @@ uint32_t sdUsedSpaceMB = 0;
 #include <ArduinoJson.h> //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 #include <WiFiClientSecure.h> //Built-in.
 #include <PubSubClient.h> //Built-in. Used for MQTT obtaining of keys
+
+#include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
@@ -237,11 +249,11 @@ char platformPrefix[55] = "Surveyor"; //Sets the prefix for broadcast names
 
 HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
-#define SERIAL_SIZE_RX (1024 * 6) //Must be large enough to handle incoming ZED UART traffic. See F9PSerialReadTask().
+#define SERIAL_SIZE_RX (1024 * 4) //Must be large enough to handle incoming ZED UART traffic. See F9PSerialReadTask().
 TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
 
-#define SERIAL_SIZE_TX (1024 * 2)
+#define SERIAL_SIZE_TX (1024 * 1)
 uint8_t wBuffer[SERIAL_SIZE_TX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest
@@ -325,6 +337,25 @@ unsigned long timeSinceLastIncomingSetting = 0;
 float lBandEBNO = 0.0; //Used on system status menu
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//ESP NOW for multipoint wireless broadcasting over 2.4GHz
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#ifdef COMPILE_ESPNOW
+
+#include <esp_now.h>
+
+uint8_t espnowOutgoing[250]; //ESP NOW has max of 250 characters
+unsigned long espnowLastAdd; //Tracks how long since last byte was added to the outgoing buffer
+uint8_t espnowOutgoingSpot = 0;
+uint8_t receivedMAC[6]; //Holds the broadcast MAC during pairing
+
+int espnowRSSI = 0;
+int packetRSSI = 0;
+unsigned long lastEspnowRssiUpdate = 0;
+
+const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
+#endif
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
@@ -353,7 +384,8 @@ uint32_t lastPrintPosition = 0; //For periodic display of the position
 
 uint32_t lastBaseIconUpdate = 0;
 bool baseIconDisplayed = false; //Toggles as lastBaseIconUpdate goes above 1000ms
-int loggingIconDisplayed = 0; //Increases every 500ms while logging
+uint8_t loggingIconDisplayed = 0; //Increases every 500ms while logging
+uint8_t espnowIconDisplayed = 0; //Increases every 500ms while transmitting
 
 uint64_t lastLogSize = 0;
 bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
@@ -412,8 +444,19 @@ unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to up
 TaskHandle_t idleTaskHandle[MAX_CPU_CORES];
 uint32_t max_idle_count = MAX_IDLE_TIME_COUNT;
 
-uint64_t uptime;
-uint32_t previousMilliseconds;
+bool firstRadioSpotBlink = false; //Controls when the shared icon space is toggled
+unsigned long firstRadioSpotTimer = 0;
+bool secondRadioSpotBlink = false; //Controls when the shared icon space is toggled
+unsigned long secondRadioSpotTimer = 0;
+bool thirdRadioSpotBlink = false; //Controls when the shared icon space is toggled
+unsigned long thirdRadioSpotTimer = 0;
+
+bool bluetoothIncomingRTCM = false;
+bool bluetoothOutgoingRTCM = false;
+bool wifiIncomingRTCM = false;
+bool wifiOutgoingRTCM = false;
+bool espnowIncomingRTCM = false;
+bool espnowOutgoingRTCM = false;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
@@ -493,8 +536,6 @@ void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
 
-  beginIdleTasks();
-
   beginI2C();
 
   beginDisplay(); //Start display first to be able to display any errors
@@ -512,6 +553,8 @@ void setup()
   beginSD(); //Test if SD is present
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
+
+  //beginIdleTasks(); //Enable processor load calculations
 
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
@@ -538,9 +581,6 @@ void setup()
 
 void loop()
 {
-  uint32_t delayTime;
-  uint32_t currentMilliseconds;
-
   if (online.gnss == true)
   {
     i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
@@ -565,6 +605,8 @@ void loop()
 
   updateLBand(); //Check if we've recently received PointPerfect corrections or not
 
+  updateRadio(); //Check if we need to finish sending any RTCM over link radio
+
   //Periodically print the position
   if (settings.enablePrintPosition && ((millis() - lastPrintPosition) > 15000))
   {
@@ -586,6 +628,8 @@ void updateLogs()
   if (online.logging == false && settings.enableLogging == true)
   {
     beginLogging();
+
+    setLoggingType(); //Determine if we are standard, PPP, or custom. Changes logging icon accordingly.
   }
   else if (online.logging == true && settings.enableLogging == false)
   {
@@ -625,7 +669,7 @@ void updateLogs()
       {
         //This is OK because in the interim more data will be written to the log
         //and the log file will eventually be synced by the next call in loop
-        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
+        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
       }
     }
 
@@ -653,7 +697,7 @@ void updateLogs()
         //While a retry does occur during the next loop, it is possible to loose
         //trigger events if they occur too rapidly or if the log file is closed
         //before the trigger event is written!
-        log_w("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
+        log_w("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
       }
     }
 
@@ -673,7 +717,7 @@ void updateLogs()
       {
         //This is OK because outputting this message is not critical to the RTK
         //operation and the message will be output by the next call in loop
-        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d\r\n", __LINE__);
+        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
       }
 
       if (fileSize > 0)
@@ -780,7 +824,31 @@ void updateRTC()
   } //End online.rtc
 }
 
-void printElapsedTime(const char* title)
+//Called from main loop
+//Control incoming/outgoing RTCM data from:
+//External radio - this is normally a serial telemetry radio hung off the RADIO port
+//Internal ESP NOW radio - Use the ESP32 to directly transmit/receive RTCM over 2.4GHz (no WiFi needed)
+void updateRadio()
 {
-  Serial.printf("%s: %ld\n\r", title, millis() - startTime);
+#ifdef COMPILE_ESPNOW
+  if (settings.radioType == RADIO_ESPNOW)
+  {
+    if (espnowState == ESPNOW_PAIRED)
+    {
+      //If it's been longer than a few ms since we last added a byte to the buffer
+      //then we've reached the end of the RTCM stream. Send partial buffer.
+      if (espnowOutgoingSpot > 0 && (millis() - espnowLastAdd) > 50)
+      {
+        esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
+        //log_d("ESPNOW: Sending %d bytes", espnowOutgoingSpot);
+        espnowOutgoingSpot = 0; //Reset
+      }
+
+      //If we don't receive an ESP NOW packet after some time, set RSSI to very negative
+      //This removes the ESPNOW icon from the display when the link goes down
+      if (millis() - lastEspnowRssiUpdate > 5000 && espnowRSSI > -255)
+        espnowRSSI = -255;
+    }
+  }
+#endif
 }

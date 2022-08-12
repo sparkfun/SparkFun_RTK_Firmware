@@ -1,5 +1,5 @@
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-WiFi Status Values:
+  WiFi Status Values:
     WL_CONNECTED: assigned when connected to a WiFi network
     WL_CONNECTION_LOST: assigned when the connection is lost
     WL_CONNECT_FAILED: assigned when the connection fails for all the attempts
@@ -12,11 +12,11 @@ WiFi Status Values:
     WL_NO_SSID_AVAIL: assigned when no SSID are available
     WL_SCAN_COMPLETED: assigned when the scan networks is completed
 
-WiFi Station States:
+  WiFi Station States:
 
-                                  WIFI_OFF (Using Bluetooth)
+                                  WIFI_OFF
                                     |   ^
-                           Use WiFi |   | Use Bluetooth
+                           Use WiFi |   |
                                     |   | WL_CONNECT_FAILED (Bad password)
                                     |   | WL_NO_SSID_AVAIL (Out of range)
                                     v   |
@@ -38,7 +38,7 @@ WiFi Station States:
                                     v   |
                                   WIFI_CONNECTED
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
 // Constants
@@ -70,8 +70,10 @@ static uint32_t lastWifiState = 0;
 
 void wifiDisplayIpAddress()
 {
-  Serial.print("Wi-Fi IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.print("WiFi IP address: ");
+  Serial.print(WiFi.localIP());
+  Serial.printf(" RSSI: %d\n\r", WiFi.RSSI());
+
   wifiTimer = millis();
 }
 
@@ -128,7 +130,7 @@ void wifiSetState (byte newState)
     case WIFI_CONNECTED:
       Serial.println("WIFI_CONNECTED");
       break;
-    }
+  }
 }
 
 //----------------------------------------
@@ -145,6 +147,11 @@ void wifiStartAP()
 #define WIFI_PASSWORD "parachutes"
   WiFi.mode(WIFI_STA);
 
+#ifdef COMPILE_ESPNOW
+  // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
+  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+#endif
+
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Wi-Fi connecting to");
   while (wifiGetStatus() != WL_CONNECTED)
@@ -157,6 +164,11 @@ void wifiStartAP()
 #else   //LOCAL_WIFI_TESTING
   //Start in AP mode
   WiFi.mode(WIFI_AP);
+
+#ifdef COMPILE_ESPNOW
+  // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
+  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+#endif
 
   IPAddress local_IP(192, 168, 4, 1);
   IPAddress gateway(192, 168, 1, 1);
@@ -190,15 +202,25 @@ bool wifiConnectionTimeout()
   return true;
 }
 
+//If radio is off entirely, start WiFi
+//If ESP-Now is active, only add the LR protocol
 void wifiStart(char* ssid, char* pw)
 {
-#ifdef  COMPILE_WIFI
-  if (wifiState == WIFI_OFF)
-    //Turn off Bluetooth
-    bluetoothStop();
-
+#ifdef COMPILE_WIFI
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {
+    WiFi.mode(WIFI_STA);
+
+#ifdef COMPILE_ESPNOW
+    if (espnowState > ESPNOW_OFF)
+      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now
+    else
+      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols
+#else
+    //Be sure the standard protocols are turned on. ESP Now have have previously turned them off.
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+#endif
+
     Serial.printf("Wi-Fi connecting to %s\r\n", ssid);
     WiFi.begin(ssid, pw);
     wifiTimer = millis();
@@ -212,19 +234,46 @@ void wifiStart(char* ssid, char* pw)
 
 //Stop WiFi and release all resources
 //See WiFiBluetoothSwitch sketch for more info
+//If ESP NOW is active, leave WiFi on enough for ESP NOW
 void wifiStop()
 {
 #ifdef  COMPILE_WIFI
   stopWebServer();
-  if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
+
+  if (wifiState == WIFI_OFF)
+  {
+    //Do nothing
+  }
+
+#ifdef COMPILE_ESPNOW
+  //If WiFi is on but ESP NOW is off, then turn off radio entirely
+  else if (espnowState == ESPNOW_OFF)
   {
     WiFi.mode(WIFI_OFF);
     wifiSetState(WIFI_OFF);
     Serial.println("Wi-Fi Stopped");
-
-    //Display the heap state
-    reportHeapNow();
   }
+  //If ESP-Now is active, change protocol to only Long Range
+  else if (espnowState > ESPNOW_OFF)
+  {
+    WiFi.mode(WIFI_STA);
+
+    // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
+
+    wifiSetState(WIFI_OFF);
+
+    Serial.println("Wi-Fi disabled, ESP-Now left in place");
+  }
+#else
+  //Turn off radio
+  WiFi.mode(WIFI_OFF);
+  wifiSetState(WIFI_OFF);
+  Serial.println("Wi-Fi Stopped");
+#endif
+
+  //Display the heap state
+  reportHeapNow();
 #endif  //COMPILE_WIFI
 }
 

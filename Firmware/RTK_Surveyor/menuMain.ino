@@ -53,6 +53,10 @@ void menuMain()
 
     Serial.println("p) Configure Profiles");
 
+#ifdef COMPILE_ESPNOW
+    Serial.println("r) Configure Radios");
+#endif
+
     if (online.lband == true)
       Serial.println("P) Configure PointPerfect");
 
@@ -83,6 +87,10 @@ void menuMain()
       menuUserProfiles();
     else if (incoming == 'P' && online.lband == true)
       menuPointPerfect();
+#ifdef COMPILE_ESPNOW
+    else if (incoming == 'r')
+      menuRadio();
+#endif
     else if (incoming == 'f' && binCount > 0)
       menuFirmware();
     else if (incoming == 'x')
@@ -258,7 +266,7 @@ void factoryReset()
 {
   displaySytemReset(); //Display friendly message on OLED
 
-  Serial.println("Formatting settings file system...");
+  Serial.println("Formatting file system...");
   LittleFS.format();
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
@@ -285,4 +293,90 @@ void factoryReset()
   Serial.println("Settings erased successfully. Rebooting. Goodbye!");
   delay(2000);
   ESP.restart();
+}
+
+//Configure the internal radio, if available
+void menuRadio()
+{
+#ifdef COMPILE_ESPNOW
+  while (1)
+  {
+    Serial.println();
+    Serial.println("Menu: Radio Menu");
+
+    Serial.print("1) Select Radio Type: ");
+    if (settings.radioType == RADIO_EXTERNAL) Serial.println("External only");
+    else if (settings.radioType == RADIO_ESPNOW) Serial.println("Internal ESP NOW");
+
+    if (settings.radioType == RADIO_ESPNOW)
+    {
+      //Pretty print the MAC of all radios
+
+      //Get unit MAC address
+      uint8_t unitMACAddress[6];
+      esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
+
+      Serial.print("  Radio MAC: ");
+      for (int x = 0 ; x < 5 ; x++)
+        Serial.printf("%02X:", unitMACAddress[x]);
+      Serial.printf("%02X\n\r", unitMACAddress[5]);
+
+      if (settings.espnowPeerCount > 0)
+      {
+        Serial.println("  Paired Radios: ");
+        for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+        {
+          Serial.print("    ");
+          for (int y = 0 ; y < 5 ; y++)
+            Serial.printf("%02X:", settings.espnowPeers[x][y]);
+          Serial.printf("%02X\n\r", settings.espnowPeers[x][5]);
+        }
+      }
+      else
+        Serial.println("  No Paired Radios");
+      
+
+      Serial.println("2) Pair radios");
+      Serial.println("3) Forget all radios");
+    }
+
+    Serial.println("x) Exit");
+
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+
+    if (incoming == 1)
+    {
+      if (settings.radioType == RADIO_EXTERNAL) settings.radioType = RADIO_ESPNOW;
+      else if (settings.radioType == RADIO_ESPNOW) settings.radioType = RADIO_EXTERNAL;
+    }
+    else if (settings.radioType == RADIO_ESPNOW && incoming == 2)
+    {
+      Serial.println("Begin ESP NOW Pairing");
+      espnowBeginPairing();
+    }
+    else if (settings.radioType == RADIO_ESPNOW && incoming == 3)
+    {
+      Serial.println("\r\nForgetting all paired radios. Press 'y' to confirm:");
+      byte bContinue = getByteChoice(menuTimeout);
+      if (bContinue == 'y')
+      {
+        for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+          espnowRemovePeer(settings.espnowPeers[x]);
+        settings.espnowPeerCount = 0;
+        Serial.println("Radios forgotten");
+      }
+    }
+
+    else if (incoming == STATUS_PRESSED_X)
+      break;
+    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
+  }
+
+  radioStart();
+
+  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+#endif
 }

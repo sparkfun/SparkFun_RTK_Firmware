@@ -28,7 +28,7 @@ void updateSystemState()
 
     if (settings.enablePrintState && ((millis() - lastStateTime) > 15000))
     {
-      changeState (systemState);
+      changeState(systemState);
       lastStateTime = millis();
     }
 
@@ -116,7 +116,10 @@ void updateSystemState()
 
           i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
 
+          wifiStop(); //Stop WiFi, ntripClient will start as needed.
           bluetoothStart(); //Turn on Bluetooth with 'Rover' name
+          radioStart(); //Start internal radio if enabled, otherwise disable
+
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
@@ -233,9 +236,11 @@ void updateSystemState()
 
           displayBaseStart(0); //Show 'Base'
 
-          //Stop all WiFi and BT. Re-enable in each specific base start state.
-          wifiStop();
+          wifiStop(); //Stop WiFi. Re-enable in each specific base start state.
+
           bluetoothStop();
+          bluetoothStart(); //Restart Bluetooth with 'Base' identifier
+          
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           if (configureUbloxModuleBase() == true)
@@ -247,23 +252,9 @@ void updateSystemState()
             displayBaseSuccess(500); //Show 'Base Started'
 
             if (settings.fixedBase == false)
-            {
-              //Restart Bluetooth with 'Base' name
-              //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
-              if (settings.ntripServer_StartAtSurveyIn)
-                ntripServerStart();
-              else
-                bluetoothStart();
               changeState(STATE_BASE_TEMP_SETTLE);
-            }
             else if (settings.fixedBase == true)
-            {
-              if (settings.enableNtripServer)
-                ntripServerStart();
-              else
-                bluetoothStart();
               changeState(STATE_BASE_FIXED_NOT_STARTED);
-            }
           }
           else
           {
@@ -326,11 +317,10 @@ void updateSystemState()
               digitalWrite(pin_baseStatusLED, HIGH); //Indicate survey complete
 
             //Start the NTRIP server if requested
-            if ((settings.ntripServer_StartAtSurveyIn == false)
-                && (settings.enableNtripServer == true))
-            {
+            if (settings.enableNtripServer == true)
               ntripServerStart();
-            }
+
+            radioStart(); //Start internal radio if enabled, otherwise disable
 
             rtcmPacketsSent = 0; //Reset any previous number
             changeState(STATE_BASE_TEMP_TRANSMITTING);
@@ -357,7 +347,7 @@ void updateSystemState()
         }
         break;
 
-      //Leave base temp transmitting if user has enabled WiFi/NTRIP
+      //Leave base temp transmitting over external radio, or WiFi/NTRIP, or ESP NOW
       case (STATE_BASE_TEMP_TRANSMITTING):
         {
         }
@@ -390,6 +380,12 @@ void updateSystemState()
           {
             if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, HIGH); //Turn on base LED
+
+            //Start the NTRIP server if requested
+            if (settings.enableNtripServer)
+              ntripServerStart();
+
+            radioStart(); //Start internal radio if enabled, otherwise disable
 
             changeState(STATE_BASE_FIXED_TRANSMITTING);
           }
@@ -600,6 +596,9 @@ void updateSystemState()
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 
           bluetoothStop();
+#ifdef COMPILE_ESPNOW
+          espnowStop();
+#endif
           stopUART2Tasks(); //Delete F9 serial tasks if running
           startWebServer(); //Start in AP mode and show config html page
 
@@ -739,7 +738,7 @@ void updateSystemState()
           byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
-            wifiState = WIFI_CONNECTED;
+            wifiSetState(WIFI_CONNECTED);
 
             changeState(STATE_KEYS_WIFI_CONNECTED);
           }
@@ -813,7 +812,7 @@ void updateSystemState()
 
           if (online.rtc == true)
           {
-            uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+            int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
 
             if (daysRemaining >= 0)
             {
@@ -849,7 +848,7 @@ void updateSystemState()
           byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
-            wifiState = WIFI_CONNECTED;
+            wifiSetState(WIFI_CONNECTED);
 
             changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
           }
@@ -900,6 +899,17 @@ void updateSystemState()
         }
         break;
 #endif  //COMPILE_L_BAND
+
+      case (STATE_ESPNOW_PAIR):
+        {
+          if(espnowState == ESPNOW_OFF)
+          {
+            espnowBeginPairing();
+          }
+
+          //Display 'ESP-Now Pairing' while we wait
+        }
+        break;
 
       case (STATE_SHUTDOWN):
         {
@@ -1042,6 +1052,10 @@ void changeState(SystemState newState)
         Serial.print("State: Keys Provision - WiFi Timeout");
         break;
 #endif  //COMPILE_L_BAND
+
+      case (STATE_ESPNOW_PAIR):
+        Serial.print("State: ESP-Now Pair");
+        break;
 
       case (STATE_SHUTDOWN):
         Serial.print("State: Shut Down");

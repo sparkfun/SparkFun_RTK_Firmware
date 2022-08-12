@@ -1,6 +1,6 @@
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-NTRIP Server States:
-    NTRIP_SERVER_OFF: Using Bluetooth or NTRIP server
+  NTRIP Server States:
+    NTRIP_SERVER_OFF: WiFi OFF or using NTRIP Client
     NTRIP_SERVER_ON: WIFI_ON state
     NTRIP_SERVER_WIFI_CONNECTING: Connecting to WiFi access point
     NTRIP_SERVER_WIFI_CONNECTED: WiFi connected to an access point
@@ -44,7 +44,7 @@ NTRIP Server States:
                     |                  | Close Server connection
                     '------------------'
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
 // Constants - compiled out
@@ -76,15 +76,14 @@ static uint32_t ntripServerStateLastDisplayed = 0;
 //  * Receive RTCM correction data timeout
 static uint32_t ntripServerTimer;
 
+//Record last connection attempt
+//After 6 hours, reset the connectionAttempts to enable
+//multi week/month base installations
+static uint32_t lastConnectionAttempt = 0;
+
 //----------------------------------------
 // NTRIP Server Routines - compiled out
 //----------------------------------------
-
-//Determine if more connections are allowed
-void ntripServerAllowMoreConnections()
-{
-  ntripServerConnectionAttempts = 0;
-}
 
 //Initiate a connection to the NTRIP caster
 bool ntripServerConnectCaster()
@@ -99,7 +98,7 @@ bool ntripServerConnectCaster()
 
   //Note the connection to the NTRIP caster
   Serial.printf("Connected to %s:%d\n\r", settings.ntripServer_CasterHost,
-                                          settings.ntripServer_CasterPort);
+                settings.ntripServer_CasterPort);
 
   //Build the authorization credentials message
   //  * Mount point
@@ -122,18 +121,20 @@ bool ntripServerConnectCaster()
 bool ntripServerConnectLimitReached()
 {
   //Shutdown the NTRIP server
-  ntripServerStop(false);
+  ntripServerStop(false); //Allocate new wifiClient
 
   //Retry the connection a few times
-  bool limitReached = (ntripServerConnectionAttempts++ >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS);
+  bool limitReached = false;
+  if (ntripServerConnectionAttempts++ >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS) limitReached = true;
+
   if (!limitReached)
     //Display the heap state
     reportHeapNow();
   else
   {
-    //No more connection attempts, switching to Bluetooth
+    //No more connection attempts
     Serial.println("NTRIP Server connection attempts exceeded!");
-    ntripServerSwitchToBluetooth();
+    ntripServerStop(true);  //Don't allocate new wifiClient
   }
   return limitReached;
 }
@@ -154,11 +155,12 @@ void ntripServerResponse(char * response, size_t maxLength)
   *response = '\0';
 }
 
+static byte ntripServerCrcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+
 //Parse the RTCM transport data
 bool ntripServerRtcmMessage(uint8_t data)
 {
   static uint16_t bytesRemaining;
-  static byte crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
   static uint16_t length;
   static uint16_t message;
   static bool sendMessage = false;
@@ -177,79 +179,93 @@ bool ntripServerRtcmMessage(uint8_t data)
   //    |<-------------------------------- CRC -------------------------------->|
   //
 
-  switch (crcState)
+  switch (ntripServerCrcState)
   {
+    //Read the upper two bits of the length
+    case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
+      if (!(data & 3))
+      {
+        length = data << 8;
+        ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
+        break;
+      }
+
+      //Wait for the preamble byte
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+
+    //Fall through
+    //     |
+    //     |
+    //     V
+
     //Wait for the preamble byte (0xd3)
     case RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3:
       sendMessage = false;
       if (data == 0xd3)
       {
-        crcState = RTCM_TRANSPORT_STATE_READ_LENGTH_1;
+        ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_LENGTH_1;
         sendMessage = (ntripServerState == NTRIP_SERVER_CASTING);
       }
-      break;
-
-    //Read the upper two bits of the length
-    case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
-      length = data << 8;
-      crcState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
       break;
 
     //Read the lower 8 bits of the length
     case RTCM_TRANSPORT_STATE_READ_LENGTH_2:
       length |= data;
       bytesRemaining = length;
-      crcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_1;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_1;
       break;
 
     //Read the upper 8 bits of the message number
     case RTCM_TRANSPORT_STATE_READ_MESSAGE_1:
       message = data << 4;
       bytesRemaining -= 1;
-      crcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_2;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_MESSAGE_2;
       break;
 
     //Read the lower 4 bits of the message number
     case RTCM_TRANSPORT_STATE_READ_MESSAGE_2:
       message |= data >> 4;
       bytesRemaining -= 1;
-      crcState = RTCM_TRANSPORT_STATE_READ_DATA;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_DATA;
       break;
 
     //Read the rest of the message
     case RTCM_TRANSPORT_STATE_READ_DATA:
       bytesRemaining -= 1;
       if (bytesRemaining <= 0)
-        crcState = RTCM_TRANSPORT_STATE_READ_CRC_1;
+        ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_CRC_1;
       break;
 
     //Read the upper 8 bits of the CRC
     case RTCM_TRANSPORT_STATE_READ_CRC_1:
-      crcState = RTCM_TRANSPORT_STATE_READ_CRC_2;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_CRC_2;
       break;
 
     //Read the middle 8 bits of the CRC
     case RTCM_TRANSPORT_STATE_READ_CRC_2:
-      crcState = RTCM_TRANSPORT_STATE_READ_CRC_3;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_READ_CRC_3;
       break;
 
     //Read the lower 8 bits of the CRC
     case RTCM_TRANSPORT_STATE_READ_CRC_3:
-      crcState = RTCM_TRANSPORT_STATE_CHECK_CRC;
+      ntripServerCrcState = RTCM_TRANSPORT_STATE_CHECK_CRC;
       break;
   }
 
   //Check the CRC
-  if (crcState == RTCM_TRANSPORT_STATE_CHECK_CRC)
+  if (ntripServerCrcState == RTCM_TRANSPORT_STATE_CHECK_CRC)
   {
-    crcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+    ntripServerCrcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
 
     //Account for this message
     rtcmPacketsSent++;
 
     //Display the RTCM message header
     if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
-      Serial.printf ("    Message %d, %2d bytes\r\n", message, 3 + 1 + length + 3);
+    {
+      printTimeStamp();
+      Serial.printf ("    Tx RTCM %d, %2d bytes\r\n", message, 3 + length + 3);
+    }
   }
 
   //Let the upper layer know if this message should be sent
@@ -293,19 +309,6 @@ void ntripServerSetState(byte newState)
       break;
   }
 }
-
-//Switch to Bluetooth operation
-void ntripServerSwitchToBluetooth()
-{
-  Serial.println("NTRIP Server failure, switching to Bluetooth!");
-
-  //Stop WiFi operations
-  ntripServerStop(true);
-
-  //Turn on Bluetooth with 'Rover' name
-  bluetoothStart();
-}
-
 #endif  // COMPILE_WIFI
 
 //----------------------------------------
@@ -315,9 +318,6 @@ void ntripServerSwitchToBluetooth()
 //This function gets called as each RTCM byte comes in
 void ntripServerProcessRTCM(uint8_t incoming)
 {
-  uint32_t currentMilliseconds;
-  static uint32_t previousMilliseconds = 0;
-
   //Check for too many digits
   if (settings.enableResetDisplay == true)
   {
@@ -333,36 +333,52 @@ void ntripServerProcessRTCM(uint8_t incoming)
   }
 
 #ifdef  COMPILE_WIFI
-  if (online.rtc)
+  uint32_t currentMilliseconds;
+  static uint32_t previousMilliseconds = 0;
+
+  if (online.rtc && (ntripServerState == NTRIP_SERVER_CASTING))
   {
     //Timestamp the RTCM messages
     currentMilliseconds = millis();
     if (settings.enablePrintNtripServerRtcm
+        && (!settings.enableNtripServerMessageParsing)
         && (!inMainMenu)
-        && ((currentMilliseconds - previousMilliseconds) > 1))
+        && ((currentMilliseconds - previousMilliseconds) > 5))
     {
+      printTimeStamp();
       //         1         2         3
       //123456789012345678901234567890
       //YYYY-mm-dd HH:MM:SS.xxxrn0
       struct tm timeinfo = rtc.getTimeStruct();
       char timestamp[30];
       strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
-      Serial.printf("RTCM: %s.%03ld\r\n", timestamp, rtc.getMillis());
+      Serial.printf("    Tx RTCM: %s.%03ld\r\n", timestamp, rtc.getMillis());
     }
     previousMilliseconds = currentMilliseconds;
 
-    //Parse the RTCM message
-    if (ntripServerRtcmMessage(incoming))
+    //Pass this message to the RTCM checker
+    bool passAlongIncomingByte = true;
+
+    //Check this byte with RTCM checker if enabled
+    if (settings.enableNtripServerMessageParsing == true)
+      passAlongIncomingByte &= ntripServerRtcmMessage(incoming);
+    else
+      rtcmPacketsSent++; //If not checking RTCM CRC, count every byte
+
+    if (passAlongIncomingByte)
     {
       ntripServer->write(incoming); //Send this byte to socket
       ntripServerBytesSent++;
       ntripServerTimer = millis();
-      online.txNtripDataCasting = true;
+      wifiOutgoingRTCM = true;
     }
+  }
 
-    //Indicate that the GNSS is providing correction data
-    else if (ntripServerState == NTRIP_SERVER_WAIT_GNSS_DATA)
-      ntripServerSetState(NTRIP_SERVER_CONNECTING);
+  //Indicate that the GNSS is providing correction data
+  else if (ntripServerState == NTRIP_SERVER_WAIT_GNSS_DATA)
+  {
+    ntripServerSetState(NTRIP_SERVER_CONNECTING);
+    ntripServerCrcState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
   }
 #endif  //COMPILE_WIFI
 }
@@ -372,15 +388,14 @@ void ntripServerStart()
 {
 #ifdef  COMPILE_WIFI
   //Stop NTRIP server and WiFi
-  ntripServerStop(true);
+  ntripServerStop(true); //Don't allocate new wifiClient
 
   //Start the NTRIP server if enabled
   if ((settings.ntripServer_StartAtSurveyIn == true)
-    || (settings.enableNtripServer == true))
+      || (settings.enableNtripServer == true))
   {
     //Display the heap state
     reportHeapNow();
-    Serial.println("NTRIP Server start");
 
     //Allocate the ntripServer structure
     ntripServer = new WiFiClient();
@@ -390,14 +405,12 @@ void ntripServerStart()
       ntripServerSetState(NTRIP_SERVER_ON);
   }
 
-  //Only fallback to Bluetooth once, then try WiFi again.  This enables changes
-  //to the WiFi SSID and password to properly restart the WiFi.
-  ntripServerAllowMoreConnections();
+  ntripServerConnectionAttempts = 0;
 #endif  //COMPILE_WIFI
 }
 
 //Stop the NTRIP server
-void ntripServerStop(bool done)
+void ntripServerStop(bool wifiClientAllocated)
 {
 #ifdef  COMPILE_WIFI
   if (ntripServer)
@@ -411,7 +424,7 @@ void ntripServerStop(bool done)
     ntripServer = NULL;
 
     //Allocate the NTRIP server structure if not done
-    if (!done)
+    if (wifiClientAllocated == false)
       ntripServer = new WiFiClient();
   }
 
@@ -420,7 +433,7 @@ void ntripServerStop(bool done)
     wifiStop();
 
   //Determine the next NTRIP server state
-  ntripServerSetState((ntripServer && (!done)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
+  ntripServerSetState((ntripServer && (wifiClientAllocated == false)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
   online.ntripServer = false;
 #endif  //COMPILE_WIFI
 }
@@ -436,10 +449,13 @@ void ntripServerUpdate()
     ntripServerStateLastDisplayed = millis();
   }
 
+  //If user turns off NTRIP Server via settings, stop server
+  if (settings.enableNtripServer == false && ntripServerState > NTRIP_SERVER_OFF)
+    ntripServerStop(true);  //Don't allocate new wifiClient
+
   //Enable WiFi and the NTRIP server if requested
   switch (ntripServerState)
   {
-    //Bluetooth enabled
     case NTRIP_SERVER_OFF:
       break;
 
@@ -457,8 +473,10 @@ void ntripServerUpdate()
         {
           //Assume AP weak signal, the AP is unable to respond successfully
           if (ntripServerConnectLimitReached())
+          {
             //Display the WiFi failure
             paintNtripWiFiFail(4000, false);
+          }
         }
       }
       else
@@ -467,7 +485,7 @@ void ntripServerUpdate()
         ntripServerSetState(NTRIP_SERVER_WIFI_CONNECTED);
 
         // Start the SD card server
-//        sdCardServerBegin(&server, true, true);
+        //        sdCardServerBegin(&server, true, true);
       }
       break;
 
@@ -490,27 +508,29 @@ void ntripServerUpdate()
 
     //Initiate the connection to the NTRIP caster
     case NTRIP_SERVER_CONNECTING:
-        //Attempt a connection to the NTRIP caster
-        if (!ntripServerConnectCaster())
-        {
-          log_d("NTRIP Server caster failed to connect. Trying again.");
+      //Attempt a connection to the NTRIP caster
+      if (!ntripServerConnectCaster())
+      {
+        log_d("NTRIP Server caster failed to connect. Trying again.");
 
-          //Assume service not available
-          if (ntripServerConnectLimitReached())
-            Serial.println("NTRIP Server failed to connect! Do you have your caster address and port correct?");
-        }
-        else
-        {
-          //Connection open to NTRIP caster, wait for the authorization response
-          ntripServerTimer = millis();
-          ntripServerSetState(NTRIP_SERVER_AUTHORIZATION);
-        }
+        lastConnectionAttempt = millis();
+
+        //Assume service not available
+        if (ntripServerConnectLimitReached())
+          Serial.println("NTRIP Server failed to connect! Do you have your caster address and port correct?");
+      }
+      else
+      {
+        //Connection open to NTRIP caster, wait for the authorization response
+        ntripServerTimer = millis();
+        ntripServerSetState(NTRIP_SERVER_AUTHORIZATION);
+      }
       break;
 
     //Wait for authorization response
     case NTRIP_SERVER_AUTHORIZATION:
       //Check if caster service responded
-      if (ntripServer->available() == 0)
+      if (ntripServer->available() < strlen("ICY 200 OK")) //Wait until at least a few bytes have arrived
       {
         //Check for response timeout
         if (millis() - ntripServerTimer > 5000)
@@ -532,8 +552,7 @@ void ntripServerUpdate()
           //Look for '401 Unauthorized'
           Serial.printf("NTRIP Server caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
 
-          //Switch to Bluetooth operation
-          ntripServerSwitchToBluetooth();
+          ntripServerStop(true);  //Don't allocate new wifiClient
         }
         else
         {
@@ -547,7 +566,7 @@ void ntripServerUpdate()
 
           //We don't use a task because we use I2C hardware (and don't have a semphore).
           online.ntripServer = true;
-          ntripServerAllowMoreConnections();
+          ntripServerConnectionAttempts = 0;
           ntripServerSetState(NTRIP_SERVER_CASTING);
         }
       }
@@ -560,16 +579,28 @@ void ntripServerUpdate()
       {
         //Broken connection, retry the NTRIP server connection
         Serial.println("NTRIP Server connection dropped");
-        ntripServerStop(false);
+        ntripServerStop(false); //Allocate new wifiClient
       }
       else if ((millis() - ntripServerTimer) > 1000)
       {
         //GNSS stopped sending RTCM correction data
         Serial.println("NTRIP Server breaking caster connection due to lack of RTCM data!");
-        ntripServerStop(false);
+        ntripServerStop(false); //Allocate new wifiClient
       }
       else
+      {
+        //All is well
         cyclePositionLEDs();
+
+        //There may be intermintant disconnects over days or weeks
+        //Reset the reconnect attempts every 6 hours
+        if (ntripServerConnectionAttempts > 0 && (millis() - lastConnectionAttempt) > (1000L * 60 * 60 * 6))
+        {
+          ntripServerConnectionAttempts = 0;
+          log_d("Resetting connection attempts");
+        }
+      }
+
       break;
   }
 #endif  //COMPILE_WIFI

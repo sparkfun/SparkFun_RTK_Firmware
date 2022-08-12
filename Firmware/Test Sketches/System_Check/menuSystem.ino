@@ -143,6 +143,7 @@ void menuSystem()
     Serial.println(F("S) Verbose scan of I2C"));
     Serial.println(F("t) Toggle pin"));
     Serial.println(F("r) Reset"));
+    Serial.println(F("p) Power Down"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
@@ -258,6 +259,12 @@ void menuSystem()
         Serial.println("Done");
         ESP.restart();
       }
+    }
+    else if (incoming == 'p')
+    {
+      Serial.println("Power down");
+
+      powerDown(false); //No display
     }
     else if (incoming == STATUS_GETBYTE_TIMEOUT)
     {

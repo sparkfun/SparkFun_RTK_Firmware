@@ -2,37 +2,62 @@
 // Constants
 //----------------------------------------
 
-//Left top
-#define ICON_WIFI_SYMBOL_LEFT                1  //  0,  0
-#define ICON_DOWN_ARROW                      2  // 16,  0
-#define ICON_UP_ARROW                        4  // 16,  0
-#define ICON_BT_SYMBOL                       8  //  4,  0
-#define ICON_MAC_ADDRESS                  0x10  //  0,  3
+//A bitfield is used to flag which icon needs to be illuminated
+//systemState will dictate most of the icons needed
 
-//Center top
-#define ICON_WIFI_SYMBOL_CENTER           0x20  // center, 0
-#define ICON_BASE_TEMPORARY               0x40  // 27,  0
-#define ICON_BASE_FIXED                   0x80  // 27,  0
-#define ICON_ROVER_FUSION                0x100  // 27,  2
-#define ICON_ROVER_FUSION_EMPTY          0x200  // 27,  2
-#define ICON_DYNAMIC_MODEL               0x400  // 27,  0
+//The radio area (top left corner of display) has three spots for icons
+//Left/Center/Right
+//Left Radio spot
+#define ICON_WIFI_SYMBOL_0_LEFT          (1<<0) //  0,  0
+#define ICON_WIFI_SYMBOL_1_LEFT          (1<<1) //  0,  0
+#define ICON_WIFI_SYMBOL_2_LEFT          (1<<2) //  0,  0
+#define ICON_WIFI_SYMBOL_3_LEFT          (1<<3) //  0,  0
+#define ICON_BT_SYMBOL_LEFT              (1<<4) //  0,  0
+#define ICON_MAC_ADDRESS                 (1<<5) //  0,  3
+#define ICON_ESPNOW_SYMBOL_0_LEFT        (1<<6) //  0,  0
+#define ICON_ESPNOW_SYMBOL_1_LEFT        (1<<7) //  0,  0
+#define ICON_ESPNOW_SYMBOL_2_LEFT        (1<<8) //  0,  0
+#define ICON_ESPNOW_SYMBOL_3_LEFT        (1<<9) //  0,  0
+#define ICON_DOWN_ARROW_LEFT             (1<<10) //  0,  0
+#define ICON_UP_ARROW_LEFT               (1<<11) //  0,  0
+#define ICON_BLANK_LEFT                  (1<<12) //  0,  0
+
+//Center Radio spot
+#define ICON_MAC_ADDRESS_2DIGIT          (1<<13) //  13,  3
+#define ICON_BT_SYMBOL_CENTER            (1<<14) //  10,  0
+#define ICON_DOWN_ARROW_CENTER           (1<<15) //  0,  0
+#define ICON_UP_ARROW_CENTER             (1<<16) //  0,  0
+
+//Right Radio Spot
+#define ICON_WIFI_SYMBOL_0_RIGHT         (1<<17) // center, 0
+#define ICON_WIFI_SYMBOL_1_RIGHT         (1<<18) // center, 0
+#define ICON_WIFI_SYMBOL_2_RIGHT         (1<<19) // center, 0
+#define ICON_WIFI_SYMBOL_3_RIGHT         (1<<20) // center, 0
+#define ICON_BASE_TEMPORARY              (1<<21) // center,  0
+#define ICON_BASE_FIXED                  (1<<22) // center,  0
+#define ICON_ROVER_FUSION                (1<<23) // center,  2
+#define ICON_ROVER_FUSION_EMPTY          (1<<24) // center,  2
+#define ICON_DYNAMIC_MODEL               (1<<25) // 27,  0
+#define ICON_DOWN_ARROW_RIGHT            (1<<26) // center,  0
+#define ICON_UP_ARROW_RIGHT              (1<<27) // center,  0
+#define ICON_BLANK_RIGHT                 (1<<28) // center,  0
 
 //Right top
-#define ICON_BATTERY                     0x800  // 45,  0
+#define ICON_BATTERY                     (1<<0) // 45,  0
 
 //Left center
-#define ICON_CROSS_HAIR                 0x1000  //  0, 18
-#define ICON_CROSS_HAIR_DUAL            0x2000  //  0, 18
+#define ICON_CROSS_HAIR                  (1<<1) //  0, 18
+#define ICON_CROSS_HAIR_DUAL             (1<<2) //  0, 18
 
 //Right center
-#define ICON_HORIZONTAL_ACCURACY        0x4000  // 16, 20
+#define ICON_HORIZONTAL_ACCURACY         (1<<3) // 16, 20
 
 //Left bottom
-#define ICON_SIV_ANTENNA                0x8000  //  2, 35
-#define ICON_SIV_ANTENNA_LBAND         0x10000  //  2, 35
+#define ICON_SIV_ANTENNA                 (1<<4) //  2, 35
+#define ICON_SIV_ANTENNA_LBAND           (1<<5) //  2, 35
 
 //Right bottom
-#define ICON_LOGGING                   0x20000  // right, bottom
+#define ICON_LOGGING                     (1<<6) // right, bottom
 
 //----------------------------------------
 // Locals
@@ -41,6 +66,7 @@
 static QwiicMicroOLED oled;
 static uint32_t blinking_icons;
 static uint32_t icons;
+static uint32_t iconsRadio;
 
 // Fonts
 #include <res/qw_fnt_5x7.h>
@@ -100,6 +126,7 @@ void updateDisplay()
       oled.erase();
 
       icons = 0;
+      iconsRadio = 0;
       switch (systemState)
       {
 
@@ -158,49 +185,45 @@ void updateDisplay()
         */
 
         case (STATE_ROVER_NOT_STARTED):
-          icons = paintWirelessIcon() //Top left
-                  | ICON_BATTERY        //Top right
-                  | ICON_CROSS_HAIR     //Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+          icons =   ICON_BATTERY        //Top right
+                    | ICON_CROSS_HAIR     //Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
+          iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_NO_FIX):
-          icons = paintWirelessIcon() //Top left
-                  | ICON_DYNAMIC_MODEL  //Top center
-                  | ICON_BATTERY        //Top right
-                  | ICON_CROSS_HAIR     //Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+          icons =   ICON_BATTERY        //Top right
+                    | ICON_CROSS_HAIR     //Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
+          iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_FIX):
-          icons = paintWirelessIcon() //Top left
-                  | ICON_DYNAMIC_MODEL  //Top center
-                  | ICON_BATTERY        //Top right
-                  | ICON_CROSS_HAIR     //Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+          icons =   ICON_BATTERY        //Top right
+                    | ICON_CROSS_HAIR     //Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
+          iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_RTK_FLOAT):
           blinking_icons ^= ICON_CROSS_HAIR_DUAL;
-          icons = paintWirelessIcon() //Top left
-                  | ICON_DYNAMIC_MODEL  //Top center
-                  | ICON_BATTERY        //Top right
-                  | (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+          icons =   ICON_BATTERY        //Top right
+                    | (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
+          iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_RTK_FIX):
-          icons = paintWirelessIcon() //Top left
-                  | ICON_DYNAMIC_MODEL  //Top center
-                  | ICON_BATTERY        //Top right
-                  | ICON_CROSS_HAIR_DUAL//Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+          icons =   ICON_BATTERY        //Top right
+                    | ICON_CROSS_HAIR_DUAL//Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
+          iconsRadio = setRadioIcons(); //Top left
           break;
 
         case (STATE_BASE_NOT_STARTED):
@@ -211,39 +234,34 @@ void updateDisplay()
         //Screen is displayed while we are waiting for horz accuracy to drop to appropriate level
         //Blink crosshair icon until we have we have horz accuracy < user defined level
         case (STATE_BASE_TEMP_SETTLE):
-          blinking_icons ^= ICON_BASE_TEMPORARY | ICON_CROSS_HAIR;
-          icons = paintWirelessIcon() //Top left
-                  | (blinking_icons & ICON_BASE_TEMPORARY)  //Top center
-                  | ICON_BATTERY        //Top right
-                  | (blinking_icons & ICON_CROSS_HAIR)  //Center left
-                  | ICON_HORIZONTAL_ACCURACY //Center right
-                  | paintSIV()          //Bottom left
-                  | ICON_LOGGING;       //Bottom right
+          blinking_icons ^= ICON_CROSS_HAIR;
+          icons =   ICON_BATTERY        //Top right
+                    | (blinking_icons & ICON_CROSS_HAIR)  //Center left
+                    | ICON_HORIZONTAL_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
+          iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
-          blinking_icons ^= ICON_BASE_TEMPORARY;
-          icons = paintWirelessIcon() //Top left
-                  | (blinking_icons & ICON_BASE_TEMPORARY)  //Top center
-                  | ICON_BATTERY        //Top right
-                  | ICON_LOGGING;       //Bottom right
+          icons =   ICON_BATTERY        //Top right
+                    | ICON_LOGGING;       //Bottom right
+          iconsRadio = setRadioIcons(); //Top left
           paintBaseTempSurveyStarted();
           break;
         case (STATE_BASE_TEMP_TRANSMITTING):
-          icons = paintWirelessIcon() //Top left
-                  | ICON_BASE_TEMPORARY //Top center
-                  | ICON_BATTERY        //Top right
-                  | ICON_LOGGING;       //Bottom right
+          icons =   ICON_BATTERY        //Top right
+                    | ICON_LOGGING;       //Bottom right
+          iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
-          icons = paintWirelessIcon() //Top left
-                  | ICON_BATTERY;       //Top right
+          icons =   ICON_BATTERY;       //Top right
+          iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
-          icons = paintWirelessIcon() //Top left
-                  | ICON_BASE_FIXED     //Top center
-                  | ICON_BATTERY        //Top right
-                  | ICON_LOGGING;       //Bottom right
+          icons =   ICON_BATTERY        //Top right
+                    | ICON_LOGGING;       //Bottom right
+          iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
           break;
         case (STATE_BUBBLE_LEVEL):
@@ -262,6 +280,7 @@ void updateDisplay()
           displayWiFiConfigNotStarted(); //Display 'WiFi Config'
           break;
         case (STATE_WIFI_CONFIG):
+          //TODO Remove radio icons from displayWiFi config
           icons = displayWiFiConfig(); //Display SSID and IP
           break;
         case (STATE_TEST):
@@ -278,11 +297,11 @@ void updateDisplay()
           //Do nothing. Quick, fall through state.
           break;
         case (STATE_KEYS_WIFI_STARTED):
-          icons = paintWirelessIcon();  //Top left
+          iconsRadio = setRadioIcons();  //Top left
           paintGettingKeys();
           break;
         case (STATE_KEYS_WIFI_CONNECTED):
-          icons = paintWirelessIcon();  //Top left
+          iconsRadio = setRadioIcons();  //Top left
           paintGettingKeys();
           break;
         case (STATE_KEYS_WIFI_TIMEOUT):
@@ -301,15 +320,19 @@ void updateDisplay()
           //Do nothing. Quick, fall through state.
           break;
         case (STATE_KEYS_PROVISION_WIFI_STARTED):
-          icons = paintWirelessIcon();  //Top left
+          iconsRadio = setRadioIcons();  //Top left
           paintGettingKeys();
           break;
         case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
-          icons = paintWirelessIcon();  //Top left
+          iconsRadio = setRadioIcons();  //Top left
           paintGettingKeys();
           break;
         case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
           //Do nothing. Quick, fall through state.
+          break;
+
+        case (STATE_ESPNOW_PAIR):
+          paintEspNowPair();
           break;
 
         case (STATE_SHUTDOWN):
@@ -321,33 +344,16 @@ void updateDisplay()
           break;
       }
 
-      //Top left corner
-      if (icons & ICON_WIFI_SYMBOL_LEFT)
-      {
-        displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
-        if (icons & ICON_DOWN_ARROW)
-        {
-          displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
-          online.rxRtcmCorrectionData = false;
-        }
-        else if (icons & ICON_UP_ARROW)
-          displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
-      }
-      else if (icons & ICON_BT_SYMBOL)
-      {
-        displayBitmap(4, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
-        if (bluetoothGetState() == BT_CONNECTED)
-        {
-          if (icons & ICON_DOWN_ARROW)
-          {
-            displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
-            online.rxRtcmCorrectionData = false;
-          }
-          else if (icons & ICON_UP_ARROW)
-            displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
-        }
-      }
-      else if (icons & ICON_MAC_ADDRESS)
+      //Top left corner - Radio icon indicators take three spots (left/center/right)
+      //Allowed icon combinations:
+      //Bluetooth + Rover/Base
+      //WiFi + Bluetooth + Rover/Base
+      //ESP-Now + Bluetooth + Rover/Base
+      //ESP-Now + Bluetooth + WiFi
+      //See setRadioIcons() for the icon selection logic
+
+      //Left spot
+      if (iconsRadio & ICON_MAC_ADDRESS)
       {
         char macAddress[5];
 #ifdef COMPILE_BT
@@ -359,16 +365,80 @@ void updateDisplay()
         oled.setCursor(0, 3);
         oled.print(macAddress);
       }
+      else if (iconsRadio & ICON_BT_SYMBOL_LEFT)
+        displayBitmap(1, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
+      else if (iconsRadio & ICON_WIFI_SYMBOL_0_LEFT)
+        displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_0);
+      else if (iconsRadio & ICON_WIFI_SYMBOL_1_LEFT)
+        displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_1);
+      else if (iconsRadio & ICON_WIFI_SYMBOL_2_LEFT)
+        displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_2);
+      else if (iconsRadio & ICON_WIFI_SYMBOL_3_LEFT)
+        displayBitmap(0, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_3);
+      else if (iconsRadio & ICON_ESPNOW_SYMBOL_0_LEFT)
+        displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_0);
+      else if (iconsRadio & ICON_ESPNOW_SYMBOL_1_LEFT)
+        displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_1);
+      else if (iconsRadio & ICON_ESPNOW_SYMBOL_2_LEFT)
+        displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_2);
+      else if (iconsRadio & ICON_ESPNOW_SYMBOL_3_LEFT)
+        displayBitmap(0, 0, ESPNOW_Symbol_Width, ESPNOW_Symbol_Height, ESPNOW_Symbol_3);
+      else if (iconsRadio & ICON_DOWN_ARROW_LEFT)
+        displayBitmap(1, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+      else if (iconsRadio & ICON_UP_ARROW_LEFT)
+        displayBitmap(1, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
+      else if (iconsRadio & ICON_BLANK_LEFT)
+      {
+        ;
+      }
 
-      //Top center
-      if (icons & ICON_WIFI_SYMBOL_CENTER)
-        displayBitmap((oled.getWidth() / 2) - (WiFi_Symbol_Width / 2), 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol);
-      else if ((icons & ICON_DYNAMIC_MODEL) && (online.gnss == true))
+      //Center radio spots
+      if (iconsRadio & ICON_BT_SYMBOL_CENTER)
+      {
+        //Moved to center to give space for ESP NOW icon on far left
+        displayBitmap(16, 0, BT_Symbol_Width, BT_Symbol_Height, BT_Symbol);
+      }
+      else if (iconsRadio & ICON_MAC_ADDRESS_2DIGIT)
+      {
+        char macAddress[5];
+        //Print only last two digits of MAC
+#ifdef COMPILE_BT
+        sprintf(macAddress, "%02X", unitMACAddress[5]);
+#else
+        sprintf(macAddress, "%02X", 0); //If BT is not available, print zeroes
+#endif
+        oled.setFont(QW_FONT_5X7); //Set font to smallest
+        oled.setCursor(14, 3);
+        oled.print(macAddress);
+      }
+      else if (iconsRadio & ICON_DOWN_ARROW_CENTER)
+        displayBitmap(16, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+      else if (iconsRadio & ICON_UP_ARROW_CENTER)
+        displayBitmap(16, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
+
+      //Radio third spot
+      if (iconsRadio & ICON_WIFI_SYMBOL_0_RIGHT)
+        displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_0);
+      else if (iconsRadio & ICON_WIFI_SYMBOL_1_RIGHT)
+        displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_1);
+      else if (iconsRadio & ICON_WIFI_SYMBOL_2_RIGHT)
+        displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_2);
+      else if (iconsRadio & ICON_WIFI_SYMBOL_3_RIGHT)
+        displayBitmap(28, 0, WiFi_Symbol_Width, WiFi_Symbol_Height, WiFi_Symbol_3);
+      else if ((iconsRadio & ICON_DYNAMIC_MODEL) && (online.gnss == true))
         paintDynamicModel();
-      else if (icons & ICON_BASE_TEMPORARY)
-        displayBitmap(27, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary);
-      else if (icons & ICON_BASE_FIXED)
-        displayBitmap(27, 0, BaseFixed_Width, BaseFixed_Height, BaseFixed); //true - blend with other pixels
+      else if (iconsRadio & ICON_BASE_TEMPORARY)
+        displayBitmap(28, 0, BaseTemporary_Width, BaseTemporary_Height, BaseTemporary);
+      else if (iconsRadio & ICON_BASE_FIXED)
+        displayBitmap(28, 0, BaseFixed_Width, BaseFixed_Height, BaseFixed); //true - blend with other pixels
+      else if (iconsRadio & ICON_DOWN_ARROW_RIGHT)
+        displayBitmap(31, 0, DownloadArrow_Width, DownloadArrow_Height, DownloadArrow);
+      else if (iconsRadio & ICON_UP_ARROW_RIGHT)
+        displayBitmap(31, 0, UploadArrow_Width, UploadArrow_Height, UploadArrow);
+      else if (iconsRadio & ICON_BLANK_RIGHT)
+      {
+        ;
+      }
 
       //Top right corner
       if (icons & ICON_BATTERY)
@@ -571,48 +641,451 @@ void paintBatteryLevel()
    8|      *            **
 */
 
-//Display Bluetooth icon, Bluetooth MAC, or WiFi depending on connection state
-uint32_t paintWirelessIcon()
+//Set bits to turn on various icons in the Radio area
+//ie: Bluetooth, WiFi, ESP Now, Mode indicators, as well as sub states of each (MAC, Blinking, Arrows, etc), depending on connection state
+//This function has all the logic to determine how a shared icon spot should act. ie: if we need an up arrow, blink the ESP Now icon, etc.
+//This function merely sets the bits to what should be displayed. The main updateDisplay() function pushes bits to screen.
+uint32_t setRadioIcons()
 {
-  uint32_t icons;
+  uint32_t icons = 0;
 
-  //TODO resolve if both BT and WiFi are on/connected
-  icons = 0;
   if (online.display == true)
   {
-    //Bluetooth icon if paired, or Bluetooth MAC address if not paired
-    if (bluetoothGetState() == BT_CONNECTED)
-    {
-      icons = ICON_BT_SYMBOL;
-      if (systemState <= STATE_BASE_NOT_STARTED)
-      {
-        if (online.rxRtcmCorrectionData)
-          icons |= ICON_DOWN_ARROW;
-      }
-      else if (systemState <= STATE_BUBBLE_LEVEL)
-        icons |= ICON_UP_ARROW;
-    }
-    else if (wifiState == WIFI_NOTCONNECTED)
-    {
-      //Blink WiFi icon
-      blinking_icons ^= ICON_WIFI_SYMBOL_LEFT;
-      if (blinking_icons & ICON_WIFI_SYMBOL_LEFT)
-        icons = ICON_WIFI_SYMBOL_LEFT;
-    }
-    else if (wifiState == WIFI_CONNECTED)
-    {
-      icons = ICON_WIFI_SYMBOL_LEFT;
+    //There are three spots for icons in the Wireless area, left/center/right
+    //There are three radios that could be active: Bluetooth (always indicated), WiFi (if enabled), ESP-Now (if enabled)
+    //Because of lack of space we will indicate the Base/Rover if only two radios or less are active
 
-      //If we are connected to NTRIP Client, show download arrow
-      if ((online.ntripClient == true) && online.rxRtcmCorrectionData)
-        icons |= ICON_DOWN_ARROW;
-      else if (online.ntripServer == true)
-        icons |= ICON_UP_ARROW;
+    //Count the number of radios in use
+    uint8_t numberOfRadios = 1; //Bluetooth always indicated
+    if (wifiState > WIFI_OFF) numberOfRadios++;
+    if (espnowState > ESPNOW_OFF) numberOfRadios++;
+
+    //Bluetooth only
+    if (numberOfRadios == 1)
+    {
+      icons |= setBluetoothIcon_OneRadio();
+
+      icons |= setModeIcon(); //Turn on Rover/Base type icons
+    }
+
+    else if (numberOfRadios == 2)
+    {
+      icons |= setBluetoothIcon_TwoRadios();
+
+      //Do we have WiFi or ESP
+      if (wifiState > WIFI_OFF)
+        icons |= setWiFiIcon_TwoRadios();
+      else if (espnowState > ESPNOW_OFF)
+        icons |= setESPNowIcon_TwoRadios();
+
+      icons |= setModeIcon(); //Turn on Rover/Base type icons
+    }
+
+    else if (numberOfRadios == 3)
+    {
+      //Bluetooth is center
+      icons |= setBluetoothIcon_TwoRadios();
+
+      //ESP Now is left
+      icons |= setESPNowIcon_TwoRadios();
+
+      //WiFi is right
+      icons |= setWiFiIcon_ThreeRadios();
+
+      //No Rover/Base icons
+    }
+  }
+
+  return icons;
+}
+
+//Bluetooth is in left position
+//Set Bluetooth icons (MAC, Connected, arrows) in left position
+uint32_t setBluetoothIcon_OneRadio()
+{
+  uint32_t icons = 0;
+
+  if (bluetoothGetState() != BT_CONNECTED)
+    icons |= ICON_MAC_ADDRESS;
+  else if (bluetoothGetState() == BT_CONNECTED)
+  {
+    //Limit how often we update this spot
+    if (millis() - firstRadioSpotTimer > 2000)
+    {
+      firstRadioSpotTimer = millis();
+
+      if (bluetoothIncomingRTCM == true || bluetoothOutgoingRTCM == true)
+        firstRadioSpotBlink ^= 1; //Share the spot
+      else
+        firstRadioSpotBlink = false;
+    }
+
+    if (firstRadioSpotBlink == false)
+      icons |= ICON_BT_SYMBOL_LEFT;
+    else
+    {
+      //Share the spot. Determine if we need to indicate Up, or Down
+      if (bluetoothIncomingRTCM == true)
+      {
+        icons |= ICON_DOWN_ARROW_LEFT;
+        bluetoothIncomingRTCM = false; //Reset, set during UART RX task.
+      }
+      else if (bluetoothOutgoingRTCM == true)
+      {
+        icons |= ICON_UP_ARROW_LEFT;
+        bluetoothOutgoingRTCM = false; //Reset, set during UART BT send bytes task.
+      }
+      else
+        icons |= ICON_BT_SYMBOL_LEFT;
+    }
+  }
+
+  return icons;
+}
+
+//Bluetooth is in center position
+//Set Bluetooth icons (MAC, Connected, arrows) in left position
+uint32_t setBluetoothIcon_TwoRadios()
+{
+  uint32_t icons = 0;
+
+  if (bluetoothGetState() != BT_CONNECTED)
+    icons |= ICON_MAC_ADDRESS_2DIGIT;
+  else if (bluetoothGetState() == BT_CONNECTED)
+  {
+    //Limit how often we update this spot
+    if (millis() - secondRadioSpotTimer > 2000)
+    {
+      secondRadioSpotTimer = millis();
+
+      if (bluetoothIncomingRTCM == true || bluetoothOutgoingRTCM == true)
+        secondRadioSpotBlink ^= 1; //Share the spot
+      else
+        secondRadioSpotBlink = false;
+    }
+
+    if (secondRadioSpotBlink == false)
+      icons |= ICON_BT_SYMBOL_CENTER;
+    else
+    {
+      //Share the spot. Determine if we need to indicate Up, or Down
+      if (bluetoothIncomingRTCM == true)
+      {
+        icons |= ICON_DOWN_ARROW_CENTER;
+        bluetoothIncomingRTCM = false; //Reset, set during UART RX task.
+      }
+      else if (bluetoothOutgoingRTCM == true)
+      {
+        icons |= ICON_UP_ARROW_CENTER;
+        bluetoothOutgoingRTCM = false; //Reset, set during UART BT send bytes task.
+      }
+      else
+        icons |= ICON_BT_SYMBOL_CENTER;
+    }
+  }
+
+  return icons;
+}
+
+//Bluetooth is in center position
+//Set ESP Now icon (Solid, arrows, blinking) in left position
+uint32_t setESPNowIcon_TwoRadios()
+{
+  uint32_t icons = 0;
+
+#ifdef COMPILE_ESPNOW
+
+  if (espnowState == ESPNOW_PAIRED)
+  {
+    //Limit how often we update this spot
+    if (millis() - firstRadioSpotTimer > 2000)
+    {
+      firstRadioSpotTimer = millis();
+
+      if (espnowIncomingRTCM == true || espnowOutgoingRTCM == true)
+        firstRadioSpotBlink ^= 1; //Share the spot
+      else
+        firstRadioSpotBlink = false;
+    }
+
+    if (firstRadioSpotBlink == false)
+    {
+      if (espnowIncomingRTCM == true)
+      {
+        //Based on RSSI, select icon
+        if (espnowRSSI >= -40)
+          icons |= ICON_ESPNOW_SYMBOL_3_LEFT;
+        else if (espnowRSSI >= -60)
+          icons |= ICON_ESPNOW_SYMBOL_2_LEFT;
+        else if (espnowRSSI >= -80)
+          icons |= ICON_ESPNOW_SYMBOL_1_LEFT;
+        else if (espnowRSSI > -255)
+          icons |= ICON_ESPNOW_SYMBOL_0_LEFT;
+      }
+      else //ESP radio is active, but not receiving RTCM
+      {
+        icons |= ICON_ESPNOW_SYMBOL_3_LEFT; //Full symbol
+      }
     }
     else
-      icons = ICON_MAC_ADDRESS;
+    {
+      //Share the spot. Determine if we need to indicate Up, or Down
+      if (espnowIncomingRTCM == true)
+      {
+        icons |= ICON_DOWN_ARROW_LEFT;
+        espnowIncomingRTCM = false; //Reset, set during ESP Now data received call back
+      }
+      else if (espnowOutgoingRTCM == true)
+      {
+        icons |= ICON_UP_ARROW_LEFT;
+        espnowOutgoingRTCM = false; //Reset, set during espnowProcessRTCM()
+      }
+      else
+      {
+        icons |= ICON_ESPNOW_SYMBOL_3_LEFT; //Full symbol
+
+        //TODO catch RSSI here
+      }
+    }
   }
+
+  else //We are not paired, blink icon
+  {
+    //Limit how often we update this spot
+    if (millis() - firstRadioSpotTimer > 2000)
+    {
+      firstRadioSpotTimer = millis();
+      firstRadioSpotBlink ^= 1; //Share the spot
+    }
+
+    if (firstRadioSpotBlink == false)
+      icons |= ICON_ESPNOW_SYMBOL_3_LEFT; //Full symbol
+    else
+      icons |= ICON_BLANK_LEFT;
+  }
+#endif //ifdef COMPILE_ESPNOW
+
   return icons;
+}
+
+//Bluetooth is in center position
+//Set WiFi icon (Solid, arrows, blinking) in left position
+uint32_t setWiFiIcon_TwoRadios()
+{
+  uint32_t icons = 0;
+
+  if (wifiState == WIFI_CONNECTED)
+  {
+    //Limit how often we update this spot
+    if (millis() - firstRadioSpotTimer > 2000)
+    {
+      firstRadioSpotTimer = millis();
+
+      if (wifiIncomingRTCM == true || wifiOutgoingRTCM == true)
+        firstRadioSpotBlink ^= 1; //Share the spot
+      else
+        firstRadioSpotBlink = false;
+    }
+
+    if (firstRadioSpotBlink == false)
+    {
+#ifdef COMPILE_WIFI
+      int wifiRSSI = WiFi.RSSI();
+#else
+      int wifiRSSI = -40; //Dummy
+#endif
+      //Based on RSSI, select icon
+      if (wifiRSSI >= -40)
+        icons |= ICON_WIFI_SYMBOL_3_LEFT;
+      else if (wifiRSSI >= -60)
+        icons |= ICON_WIFI_SYMBOL_2_LEFT;
+      else if (wifiRSSI >= -80)
+        icons |= ICON_WIFI_SYMBOL_1_LEFT;
+      else
+        icons |= ICON_WIFI_SYMBOL_0_LEFT;
+    }
+    else
+    {
+      //Share the spot. Determine if we need to indicate Up, or Down
+      if (wifiIncomingRTCM == true)
+      {
+        icons |= ICON_DOWN_ARROW_LEFT;
+        wifiIncomingRTCM = false; //Reset, set during NTRIP Client
+      }
+      else if (wifiOutgoingRTCM == true)
+      {
+        icons |= ICON_UP_ARROW_LEFT;
+        wifiOutgoingRTCM = false; //Reset, set during NTRIP Server
+      }
+      else
+      {
+#ifdef COMPILE_WIFI
+        int wifiRSSI = WiFi.RSSI();
+#else
+        int wifiRSSI = -40; //Dummy
+#endif
+        //Based on RSSI, select icon
+        if (wifiRSSI >= -40)
+          icons |= ICON_WIFI_SYMBOL_3_LEFT;
+        else if (wifiRSSI >= -60)
+          icons |= ICON_WIFI_SYMBOL_2_LEFT;
+        else if (wifiRSSI >= -80)
+          icons |= ICON_WIFI_SYMBOL_1_LEFT;
+        else
+          icons |= ICON_WIFI_SYMBOL_0_LEFT;
+      }
+    }
+  }
+
+  else //We are not paired, blink icon
+  {
+    //Limit how often we update this spot
+    if (millis() - firstRadioSpotTimer > 2000)
+    {
+      firstRadioSpotTimer = millis();
+      firstRadioSpotBlink ^= 1; //Share the spot
+    }
+
+    if (firstRadioSpotBlink == false)
+      icons |= ICON_WIFI_SYMBOL_3_LEFT; //Full symbol
+    else
+      icons |= ICON_BLANK_LEFT;
+  }
+
+  return (icons);
+}
+
+//Bluetooth is in center position
+//Set WiFi icon (Solid, arrows, blinking) in right position
+uint32_t setWiFiIcon_ThreeRadios()
+{
+  uint32_t icons = 0;
+
+  if (wifiState == WIFI_CONNECTED)
+  {
+    //Limit how often we update this spot
+    if (millis() - thirdRadioSpotTimer > 2000)
+    {
+      thirdRadioSpotTimer = millis();
+
+      if (wifiIncomingRTCM == true || wifiOutgoingRTCM == true)
+        thirdRadioSpotBlink ^= 1; //Share the spot
+      else
+        thirdRadioSpotBlink = false;
+    }
+
+    if (thirdRadioSpotBlink == false)
+    {
+#ifdef COMPILE_WIFI
+      int wifiRSSI = WiFi.RSSI();
+#else
+      int wifiRSSI = -40; //Dummy
+#endif
+      //Based on RSSI, select icon
+      if (wifiRSSI >= -40)
+        icons |= ICON_WIFI_SYMBOL_3_RIGHT;
+      else if (wifiRSSI >= -60)
+        icons |= ICON_WIFI_SYMBOL_2_RIGHT;
+      else if (wifiRSSI >= -80)
+        icons |= ICON_WIFI_SYMBOL_1_RIGHT;
+      else
+        icons |= ICON_WIFI_SYMBOL_0_RIGHT;
+    }
+    else
+    {
+      //Share the spot. Determine if we need to indicate Up, or Down
+      if (wifiIncomingRTCM == true)
+      {
+        icons |= ICON_DOWN_ARROW_RIGHT;
+        wifiIncomingRTCM = false; //Reset, set during NTRIP Client
+      }
+      else if (wifiOutgoingRTCM == true)
+      {
+        icons |= ICON_UP_ARROW_RIGHT;
+        wifiOutgoingRTCM = false; //Reset, set during NTRIP Server
+      }
+      else
+      {
+#ifdef COMPILE_WIFI
+        int wifiRSSI = WiFi.RSSI();
+#else
+        int wifiRSSI = -40; //Dummy
+#endif
+        //Based on RSSI, select icon
+        if (wifiRSSI >= -40)
+          icons |= ICON_WIFI_SYMBOL_3_RIGHT;
+        else if (wifiRSSI >= -60)
+          icons |= ICON_WIFI_SYMBOL_2_RIGHT;
+        else if (wifiRSSI >= -80)
+          icons |= ICON_WIFI_SYMBOL_1_RIGHT;
+        else
+          icons |= ICON_WIFI_SYMBOL_0_RIGHT;
+      }
+    }
+  }
+
+  else //We are not paired, blink icon
+  {
+    //Limit how often we update this spot
+    if (millis() - thirdRadioSpotTimer > 2000)
+    {
+      thirdRadioSpotTimer = millis();
+      thirdRadioSpotBlink ^= 1; //Share the spot
+    }
+
+    if (thirdRadioSpotBlink == false)
+      icons |= ICON_WIFI_SYMBOL_3_RIGHT; //Full symbol
+    else
+      icons |= ICON_BLANK_RIGHT;
+  }
+
+  return (icons);
+}
+
+//Based on system state, turn on the various Rover, Base, Fixed Base icons
+uint32_t setModeIcon()
+{
+  uint32_t icons = 0;
+  switch (systemState)
+  {
+    case (STATE_ROVER_NOT_STARTED):
+      break;
+    case (STATE_ROVER_NO_FIX):
+      icons |= ICON_DYNAMIC_MODEL;
+      break;
+    case (STATE_ROVER_FIX):
+      icons |= ICON_DYNAMIC_MODEL;
+      break;
+    case (STATE_ROVER_RTK_FLOAT):
+      icons |= ICON_DYNAMIC_MODEL;
+      break;
+    case (STATE_ROVER_RTK_FIX):
+      icons |= ICON_DYNAMIC_MODEL;
+      break;
+
+    case (STATE_BASE_NOT_STARTED):
+      //Do nothing. Static display shown during state change.
+      break;
+
+    case (STATE_BASE_TEMP_SETTLE):
+      break;
+    case (STATE_BASE_TEMP_SURVEY_STARTED):
+      //TODO need blinking
+      icons |= ICON_BASE_TEMPORARY;
+      break;
+    case (STATE_BASE_TEMP_TRANSMITTING):
+      icons |= ICON_BASE_TEMPORARY;
+      break;
+    case (STATE_BASE_FIXED_NOT_STARTED):
+      break;
+    case (STATE_BASE_FIXED_TRANSMITTING):
+      icons |= ICON_BASE_FIXED;
+      break;
+
+    default:
+      break;
+  }
+  return (icons);
 }
 
 /*
@@ -693,19 +1166,19 @@ void paintDynamicModel()
   switch (settings.dynamicModel)
   {
     case (DYN_MODEL_PORTABLE):
-      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_1_Portable);
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_1_Portable);
       break;
     case (DYN_MODEL_STATIONARY):
-      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_2_Stationary);
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_2_Stationary);
       break;
     case (DYN_MODEL_PEDESTRIAN):
-      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_3_Pedestrian);
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_3_Pedestrian);
       break;
     case (DYN_MODEL_AUTOMOTIVE):
       //Normal rover for ZED-F9P, fusion rover for ZED-F9R
       if (zedModuleType == PLATFORM_F9P)
       {
-        displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_4_Automotive);
+        displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_4_Automotive);
       }
       else if (zedModuleType == PLATFORM_F9R)
       {
@@ -721,7 +1194,7 @@ void paintDynamicModel()
               baseIconDisplayed = true;
 
               //Draw the icon
-              displayBitmap(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion);
+              displayBitmap(28, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion);
             }
             else
               baseIconDisplayed = false;
@@ -730,32 +1203,32 @@ void paintDynamicModel()
         else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1) //Calibrated
         {
           //Solid fusion rover
-          displayBitmap(27, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion);
+          displayBitmap(28, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion);
         }
         else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2 || i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3) //Suspended or disabled
         {
           //Empty rover
-          displayBitmap(27, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty);
+          displayBitmap(28, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty);
         }
       }
       break;
     case (DYN_MODEL_SEA):
-      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_5_Sea);
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_5_Sea);
       break;
     case (DYN_MODEL_AIRBORNE1g):
-      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_6_Airborne1g);
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_6_Airborne1g);
       break;
     case (DYN_MODEL_AIRBORNE2g):
-      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_7_Airborne2g);
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_7_Airborne2g);
       break;
     case (DYN_MODEL_AIRBORNE4g):
-      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_8_Airborne4g);
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_8_Airborne4g);
       break;
     case (DYN_MODEL_WRIST):
-      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_9_Wrist);
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_9_Wrist);
       break;
     case (DYN_MODEL_BIKE):
-      displayBitmap(27, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_10_Bike);
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_10_Bike);
       break;
   }
 }
@@ -857,14 +1330,39 @@ void paintLogging()
   loggingIconDisplayed %= 4; //Wrap
   if (online.logging == true && logIncreasing == true)
   {
-    if (loggingIconDisplayed == 0)
-      displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
-    else if (loggingIconDisplayed == 1)
-      displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1);
-    else if (loggingIconDisplayed == 2)
-      displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2);
-    else if (loggingIconDisplayed == 3)
-      displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3);
+    if (loggingType == LOGGING_STANDARD)
+    {
+      if (loggingIconDisplayed == 0)
+        displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+      else if (loggingIconDisplayed == 1)
+        displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_1);
+      else if (loggingIconDisplayed == 2)
+        displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_2);
+      else if (loggingIconDisplayed == 3)
+        displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_3);
+    }
+    else if (loggingType == LOGGING_PPP)
+    {
+      if (loggingIconDisplayed == 0)
+        displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+      else if (loggingIconDisplayed == 1)
+        displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_PPP_1);
+      else if (loggingIconDisplayed == 2)
+        displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_PPP_2);
+      else if (loggingIconDisplayed == 3)
+        displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_PPP_3);
+    }
+    else if (loggingType == LOGGING_CUSTOM)
+    {
+      if (loggingIconDisplayed == 0)
+        displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+      else if (loggingIconDisplayed == 1)
+        displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_Custom_1);
+      else if (loggingIconDisplayed == 2)
+        displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_Custom_2);
+      else if (loggingIconDisplayed == 3)
+        displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_Custom_3);
+    }
   }
   else
   {
@@ -939,8 +1437,9 @@ void paintRTCM()
   }
 
   //Determine if correction data has been sent recently
-  if (online.txNtripDataCasting)
+  if (bluetoothOutgoingRTCM == true || wifiOutgoingRTCM == true || espnowOutgoingRTCM == true)
     lastCorrectionDataSeen = millis();
+
   if ((millis() - lastCorrectionDataSeen) >= 5000)
   {
     //No correction data seen
@@ -960,7 +1459,6 @@ void paintRTCM()
 
     oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
     oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
-    online.txNtripDataCasting = false;
   }
 
   paintResets();
@@ -1135,12 +1633,12 @@ uint32_t displayWiFiConfig()
   if (wifiState == WIFI_NOTCONNECTED)
   {
     //Blink WiFi icon
-    blinking_icons ^= ICON_WIFI_SYMBOL_LEFT;
-    if (blinking_icons & ICON_WIFI_SYMBOL_LEFT)
-      icons = ICON_WIFI_SYMBOL_CENTER;
+    blinking_icons ^= ICON_WIFI_SYMBOL_3_RIGHT;
+    if (blinking_icons & ICON_WIFI_SYMBOL_3_RIGHT)
+      icons = ICON_WIFI_SYMBOL_3_RIGHT;
   }
   else if (wifiState == WIFI_CONNECTED)
-    icons = ICON_WIFI_SYMBOL_CENTER;
+    icons = ICON_WIFI_SYMBOL_3_RIGHT;
 
   int yPos = WiFi_Symbol_Height + 2;
   int fontHeight = 8;
@@ -1653,6 +2151,13 @@ void paintDisplaySetup()
       printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
     }
+    else if (setupState == STATE_ESPNOW_PAIR)
+    {
+      printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Pair", 12 * 3, QW_FONT_8X16, 1, true);
+    }
     else if (setupState == STATE_PROFILE)
       paintDisplaySetupProfile("Base");
   } //end type F9P
@@ -1685,6 +2190,13 @@ void paintDisplaySetup()
       printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
       printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
+    }
+    else if (setupState == STATE_ESPNOW_PAIR)
+    {
+      printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Pair", 12 * 3, QW_FONT_8X16, 1, true);
     }
     else if (setupState == STATE_PROFILE)
       paintDisplaySetupProfile("Rover");
@@ -2006,4 +2518,10 @@ void paintKeyProvisionFail(uint16_t displayTime)
 
     delay(displayTime);
   }
+}
+
+//Show screen while ESP-Now is pairing
+void paintEspNowPair()
+{
+  displayMessage("ESP-Now Pairing", 0);
 }

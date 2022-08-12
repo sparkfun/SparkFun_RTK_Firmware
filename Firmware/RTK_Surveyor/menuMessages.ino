@@ -140,7 +140,7 @@ void menuMessages()
 
       //We want GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
       float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
-      if(measurementFrequency < 1.0) measurementFrequency = 1.0;
+      if (measurementFrequency < 1.0) measurementFrequency = 1.0;
       setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //One report per second
 
       setMessageRateByName("UBX_NMEA_RMC", 1);
@@ -152,10 +152,10 @@ void menuMessages()
       setMessageRateByName("UBX_NMEA_GGA", 1);
       setMessageRateByName("UBX_NMEA_GSA", 1);
       setMessageRateByName("UBX_NMEA_GST", 1);
-      
+
       //We want GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
       float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
-      if(measurementFrequency < 1.0) measurementFrequency = 1.0;
+      if (measurementFrequency < 1.0) measurementFrequency = 1.0;
       setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //One report per second
 
       setMessageRateByName("UBX_NMEA_RMC", 1);
@@ -200,6 +200,7 @@ void menuMessages()
     Serial.println("menuMessages: UART1 messages successfully enabled");
   }
 
+  setLoggingType(); //Update Standard, PPP, or custom for icon selection
 }
 
 //Given a sub type (ie "RTCM", "NMEA") present menu showing messages with this subtype
@@ -459,7 +460,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
     //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
     //Wait up to 1000ms
     if (gotSemaphore
-      || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
+        || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
     {
       if (sdPresent())
       {
@@ -484,7 +485,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
     {
       //This is OK because in the interim more data will be written to the log
       //and the log file will eventually be closed by the next call in loop
-      log_d("sdCardSemaphore failed to yield, menuMessages.ino line %d\r\n", __LINE__);
+      log_d("sdCardSemaphore failed to yield, menuMessages.ino line %d", __LINE__);
     }
   }
 }
@@ -609,4 +610,44 @@ bool setMessageRateByName(const char *msgName, uint8_t msgRate)
 
   Serial.printf("setMessageRateByName: %s not found\n\r", msgName);
   return (false);
+}
+
+//Given the name of a message, find it, and return the rate
+uint8_t getMessageRateByName(const char *msgName)
+{
+  for (int x = 0 ; x < MAX_UBX_MSG ; x++)
+  {
+    if (strcmp(settings.ubxMessages[x].msgTextName, msgName) == 0)
+      return (settings.ubxMessages[x].msgRate);
+  }
+
+  Serial.printf("getMessageRateByName: %s not found\n\r", msgName);
+  return (0);
+}
+
+//Determine logging type
+//If user is logging basic 5 sentences, this is 'S'tandard logging
+//If user is logging 7 PPP sentences, this is 'P'PP logging
+//If user has other setences turned on, it's custom logging
+//This controls the type of icon displayed
+void setLoggingType()
+{
+  loggingType = LOGGING_CUSTOM;
+
+  int messageCount = getActiveMessageCount();
+  if (messageCount == 5 || messageCount == 7)
+  {
+    if (getMessageRateByName("UBX_NMEA_GGA") > 0
+        && getMessageRateByName("UBX_NMEA_GSA") > 0
+        && getMessageRateByName("UBX_NMEA_GST") > 0
+        && getMessageRateByName("UBX_NMEA_GSV") > 0
+        && getMessageRateByName("UBX_NMEA_RMC") > 0
+       )
+    {
+      loggingType = LOGGING_STANDARD;
+
+      if (getMessageRateByName("UBX_RXM_RAWX") > 0 && getMessageRateByName("UBX_RXM_SFRBX") > 0)
+        loggingType = LOGGING_PPP;
+    }
+  }
 }

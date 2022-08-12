@@ -76,6 +76,11 @@ static uint32_t ntripServerStateLastDisplayed = 0;
 //  * Receive RTCM correction data timeout
 static uint32_t ntripServerTimer;
 
+//Record last connection attempt
+//After 6 hours, reset the connectionAttempts to enable
+//multi week/month base installations
+static uint32_t lastConnectionAttempt = 0;
+
 //----------------------------------------
 // NTRIP Server Routines - compiled out
 //----------------------------------------
@@ -508,6 +513,8 @@ void ntripServerUpdate()
       {
         log_d("NTRIP Server caster failed to connect. Trying again.");
 
+        lastConnectionAttempt = millis();
+
         //Assume service not available
         if (ntripServerConnectLimitReached())
           Serial.println("NTRIP Server failed to connect! Do you have your caster address and port correct?");
@@ -581,7 +588,18 @@ void ntripServerUpdate()
         ntripServerStop(false); //Allocate new wifiClient
       }
       else
+      {
+        //All is well
         cyclePositionLEDs();
+
+        //There may be intermintant disconnects over days or weeks
+        //Reset the reconnect attempts every 6 hours
+        if (ntripServerConnectionAttempts > 0 && (millis() - lastConnectionAttempt) > (1000L * 60 * 60 * 6))
+        {
+          ntripServerConnectionAttempts = 0;
+          log_d("Resetting connection attempts");
+        }
+      }
 
       break;
   }

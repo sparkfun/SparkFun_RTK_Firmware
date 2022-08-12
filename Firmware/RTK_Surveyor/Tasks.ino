@@ -618,6 +618,7 @@ void ButtonCheckTask(void *e)
   }
 }
 
+#ifdef  COMPILE_IDLE_TASKS
 void idleTask(void *e)
 {
   int cpu = xPortGetCoreID();
@@ -667,3 +668,5 @@ void idleTask(void *e)
     taskYIELD();
   }
 }
+#endif  //COMPILE_IDLE_TASKS
+

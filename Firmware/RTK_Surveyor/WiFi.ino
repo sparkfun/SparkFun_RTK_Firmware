@@ -70,8 +70,10 @@ static uint32_t lastWifiState = 0;
 
 void wifiDisplayIpAddress()
 {
-  Serial.print("Wi-Fi IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.print("WiFi IP address: ");
+  Serial.print(WiFi.localIP());
+  Serial.printf(" RSSI: %d\n\r", WiFi.RSSI());
+
   wifiTimer = millis();
 }
 

@@ -583,11 +583,6 @@ void ntripServerUpdate()
       else
         cyclePositionLEDs();
 
-      if (millis() - lastWifiRSSIUpdate > 5000)
-      {
-        lastWifiRSSIUpdate = millis();
-        Serial.printf("NTRIP WiFi RSSI: %d\n\r", WiFi.RSSI());
-      }
       break;
   }
 #endif  //COMPILE_WIFI

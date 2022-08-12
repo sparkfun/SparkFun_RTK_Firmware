@@ -106,6 +106,11 @@ void menuSystem()
     }
     Serial.println();
 
+#ifdef COMPILE_WIFI
+    if (wifiState == WIFI_CONNECTED)
+      wifiDisplayIpAddress();
+#endif
+
     //Display the uptime
     uint64_t uptimeMilliseconds = millis();
     uint32_t uptimeDays = 0;

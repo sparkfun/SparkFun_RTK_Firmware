@@ -455,8 +455,6 @@ unsigned long rtcWaitTime = 0; //At poweron, we give the RTC a few seconds to up
 TaskHandle_t idleTaskHandle[MAX_CPU_CORES];
 uint32_t max_idle_count = MAX_IDLE_TIME_COUNT;
 
-unsigned long lastWifiRSSIUpdate = 0; //Print RSSI when connected every few seconds
-
 bool firstRadioSpotBlink = false; //Controls when the shared icon space is toggled
 unsigned long firstRadioSpotTimer = 0;
 bool secondRadioSpotBlink = false; //Controls when the shared icon space is toggled

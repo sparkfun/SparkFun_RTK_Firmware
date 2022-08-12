@@ -149,7 +149,7 @@ void espnowStart()
 //If WiFi is off, stop the radio entirely
 void espnowStop()
 {
-  if(espnowState == ESPNOW_OFF) return;
+  if (espnowState == ESPNOW_OFF) return;
 
   if (wifiState == WIFI_OFF)
   {
@@ -184,7 +184,7 @@ void espnowStop()
   Serial.println("ESP NOW Off");
 }
 
-//Begin broadcasting our MAC and wait for remote unit to respond
+//Start ESP-Now if needed, put ESP-Now into broadcast state
 void espnowBeginPairing()
 {
   espnowStart();
@@ -194,55 +194,37 @@ void espnowBeginPairing()
   espnowAddPeer(broadcastMac, false); // Encryption is not supported for multicast addresses
 
   espnowSetState(ESPNOW_PAIRING);
+}
 
-  //Begin sending our MAC every 250ms until a remote device sends us there info
-  randomSeed(millis());
-
-  Serial.println("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
-  while (Serial.available()) Serial.read();
-
-  while (1)
+//Regularly call during pairing to see if we've received a Pairing message
+bool espnowIsPaired()
+{
+  if (espnowState == ESPNOW_MAC_RECEIVED)
   {
-    if (Serial.available()) break;
+    //Remove broadcast peer
+    espnowRemovePeer(broadcastMac);
 
-    int timeout = 1000 + random(0, 100); //Delay 1000 to 1100ms
-    for (int x = 0 ; x < timeout ; x++)
+    if (esp_now_is_peer_exist(receivedMAC) == true)
+      log_d("Peer already exists");
+    else
     {
-      delay(1);
+      //Add new peer to system
+      espnowAddPeer(receivedMAC);
 
-      if (espnowState == ESPNOW_MAC_RECEIVED)
-      {
-        //Remove broadcast peer
-        espnowRemovePeer(broadcastMac);
-
-        if (esp_now_is_peer_exist(receivedMAC) == true)
-          log_d("Peer already exists");
-        else
-        {
-          //Add new peer to system
-          espnowAddPeer(receivedMAC);
-
-          //Record this MAC to peer list
-          memcpy(settings.espnowPeers[settings.espnowPeerCount], receivedMAC, 6);
-          settings.espnowPeerCount++;
-          settings.espnowPeerCount %= ESPNOW_MAX_PEERS;
-        }
-
-        //Send message directly to the received MAC (not unicast), then exit
-        espnowSendPairMessage(receivedMAC);
-
-        espnowSetState(ESPNOW_PAIRED);
-        Serial.println("Pairing compete");
-        return;
-      }
+      //Record this MAC to peer list
+      memcpy(settings.espnowPeers[settings.espnowPeerCount], receivedMAC, 6);
+      settings.espnowPeerCount++;
+      settings.espnowPeerCount %= ESPNOW_MAX_PEERS;
     }
 
-    espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
+    //Send message directly to the received MAC (not unicast), then exit
+    espnowSendPairMessage(receivedMAC);
 
-    Serial.println("Scanning for other radio...");
+    espnowSetState(ESPNOW_PAIRED);
+    Serial.println("Pairing compete");
+    return(true);
   }
-
-  Serial.println("User pressed button. Pairing canceled.");
+  return(false);
 }
 
 //Create special pair packet to a given MAC

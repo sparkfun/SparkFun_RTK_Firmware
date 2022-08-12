@@ -334,7 +334,7 @@ void menuRadio()
       }
       else
         Serial.println("  No Paired Radios");
-      
+
 
       Serial.println("2) Pair radios");
       Serial.println("3) Forget all radios");
@@ -352,7 +352,33 @@ void menuRadio()
     else if (settings.radioType == RADIO_ESPNOW && incoming == 2)
     {
       Serial.println("Begin ESP NOW Pairing");
+
+      //Start ESP-Now if needed, put ESP-Now into broadcast state
       espnowBeginPairing();
+
+      //Begin sending our MAC every 250ms until a remote device sends us there info
+      randomSeed(millis());
+
+      Serial.println("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
+      while (Serial.available()) Serial.read();
+
+      while (1)
+      {
+        if (Serial.available()) break;
+
+        int timeout = 1000 + random(0, 100); //Delay 1000 to 1100ms
+        for (int x = 0 ; x < timeout ; x++)
+        {
+          delay(1);
+          if (espnowIsPaired()) break; //Check if we've received a pairing message
+        }
+
+        espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
+
+        Serial.println("Scanning for other radio...");
+      }
+
+      Serial.println("User pressed button. Pairing canceled.");
     }
     else if (settings.radioType == RADIO_ESPNOW && incoming == 3)
     {

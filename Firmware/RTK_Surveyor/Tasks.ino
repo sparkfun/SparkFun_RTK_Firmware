@@ -618,6 +618,11 @@ void ButtonCheckTask(void *e)
   }
 }
 
+TODO once a user has selected 'Pair', send this once
+  //Start ESP-Now if needed, put ESP-Now into broadcast state
+  espnowBeginPairing();
+
+
 void idleTask(void *e)
 {
   int cpu = xPortGetCoreID();

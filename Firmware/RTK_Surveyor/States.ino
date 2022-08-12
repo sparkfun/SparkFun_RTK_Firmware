@@ -902,10 +902,8 @@ void updateSystemState()
 
       case (STATE_ESPNOW_PAIR):
         {
-          if(espnowState == ESPNOW_OFF)
-          {
-            espnowBeginPairing();
-          }
+
+espnowIsPaired()
 
           //Display 'ESP-Now Pairing' while we wait
         }

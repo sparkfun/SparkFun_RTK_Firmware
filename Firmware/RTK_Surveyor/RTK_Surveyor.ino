@@ -28,6 +28,7 @@ const int FIRMWARE_VERSION_MINOR = 4;
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_AP //Comment out to remove Access Point functionality
+#define COMPILE_L_BAND //Comment out to remove L-Band functionality
 #define COMPILE_ESPNOW //Comment out to remove ESP-Now functionality
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
@@ -333,18 +334,6 @@ unsigned long timeSinceLastIncomingSetting = 0;
 
 //PointPerfect Corrections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-SFE_UBLOX_GNSS_ADD i2cLBand; // NEO-D9S
-const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
-
-//The PointPerfect token is provided at compile time via build flags
-#ifndef POINTPERFECT_TOKEN
-#define POINTPERFECT_TOKEN 0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03
-#endif
-
-uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; //Token in HEX form
-
-const char* pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
-void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
 float lBandEBNO = 0.0; //Used on system status menu
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

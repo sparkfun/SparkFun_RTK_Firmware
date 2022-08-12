@@ -126,6 +126,7 @@ void updateDisplay()
       oled.erase();
 
       icons = 0;
+      iconsRadio = 0;
       switch (systemState)
       {
 

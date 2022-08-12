@@ -30,6 +30,7 @@ const int FIRMWARE_VERSION_MINOR = 4;
 #define COMPILE_AP //Comment out to remove Access Point functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
 #define COMPILE_ESPNOW //Comment out to remove ESP-Now functionality
+#define COMPILE_IDLE_TASKS  //Comment out to remove idle tasks
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:

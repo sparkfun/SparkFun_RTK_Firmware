@@ -331,6 +331,10 @@ void updateDisplay()
           //Do nothing. Quick, fall through state.
           break;
 
+        case (STATE_ESPNOW_PAIR):
+          paintEspNowPair();
+          break;
+
         case (STATE_SHUTDOWN):
           displayShutdown();
           break;
@@ -2147,6 +2151,13 @@ void paintDisplaySetup()
       printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
     }
+    else if (setupState == STATE_ESPNOW_PAIR)
+    {
+      printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Pair", 12 * 3, QW_FONT_8X16, 1, true);
+    }
     else if (setupState == STATE_PROFILE)
       paintDisplaySetupProfile("Base");
   } //end type F9P
@@ -2179,6 +2190,13 @@ void paintDisplaySetup()
       printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
       printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
+    }
+    else if (setupState == STATE_ESPNOW_PAIR)
+    {
+      printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
+      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Pair", 12 * 3, QW_FONT_8X16, 1, true);
     }
     else if (setupState == STATE_PROFILE)
       paintDisplaySetupProfile("Rover");
@@ -2500,4 +2518,10 @@ void paintKeyProvisionFail(uint16_t displayTime)
 
     delay(displayTime);
   }
+}
+
+//Show screen while ESP-Now is pairing
+void paintEspNowPair()
+{
+  displayMessage("ESP-Now Pairing", 0);
 }

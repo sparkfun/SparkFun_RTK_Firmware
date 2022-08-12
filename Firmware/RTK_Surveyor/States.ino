@@ -898,6 +898,17 @@ void updateSystemState()
         }
         break;
 
+      case (STATE_ESPNOW_PAIR):
+        {
+          if(espnowState == ESPNOW_OFF)
+          {
+            espnowBeginPairing();
+          }
+
+          //Display 'ESP-Now Pairing' while we wait
+        }
+        break;
+
       case (STATE_SHUTDOWN):
         {
           forceDisplayUpdate = true;
@@ -1036,6 +1047,10 @@ void changeState(SystemState newState)
         break;
       case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
         Serial.print("State: Keys Provision - WiFi Timeout");
+        break;
+
+      case (STATE_ESPNOW_PAIR):
+        Serial.print("State: ESP-Now Pair");
         break;
 
       case (STATE_SHUTDOWN):

@@ -188,7 +188,6 @@ void espnowStop()
 void espnowBeginPairing()
 {
   espnowStart();
-  Serial.println("1");
 
   // To begin pairing, we must add the broadcast MAC to the peer list
   uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};

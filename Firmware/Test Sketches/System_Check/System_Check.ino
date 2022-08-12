@@ -147,6 +147,10 @@ float battChangeRate = 0.0;
 //External Display
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
+
+#include <res/qw_fnt_5x7.h>
+#include <res/qw_fnt_8x16.h>
+#include <res/qw_fnt_largenum.h>
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //microSD Interface
@@ -175,7 +179,6 @@ uint32_t sdFreeSpaceMB = 0;
 uint32_t sdUsedSpaceMB = 0;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 HardwareSerial serialGNSS(2); //TX on 17, RX on 16
@@ -190,8 +193,6 @@ unsigned long splashStart = 0; //Controls how long the splash is displayed for. 
 
 char platformPrefix[40] = "Surveyor"; //Sets the prefix for broadcast names
 bool zedUartPassed = false; //Goes true during testing if ESP can communicate with ZED over UART
-
-bool i2cBorked = false;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
@@ -244,7 +245,10 @@ void setup()
   Wire.beginTransmission(0x15); //Dummy address
   int endValue = Wire.endTransmission();
   Serial.printf("Response time: %d endValue: %d\n\r", millis() - startTime, endValue);
-  if(endValue == 2) online.i2c = true;
+  if(endValue == 2)
+    online.i2c = true;
+  else if (endValue == 5)
+    Serial.println("It appears something is shorting the I2C lines.");
 
   beginBoard(); //Determine what hardware platform we are running on and check on button
 
@@ -259,6 +263,9 @@ void setup()
 
   beginSD(); //Test if SD is present
 
+  beginDisplay(); //Start display first to be able to display any errors
+  displayHelloWorld(); //Display something, ignore I2C bus status
+  
   menuSystem();
 }
 

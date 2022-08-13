@@ -2287,9 +2287,9 @@ void paintResets()
 }
 
 //Wrapper to avoid needing to pass width/height data twice
-void displayBitmap(uint8_t x, uint8_t y, uint8_t imageWidth, uint8_t imageHeight, uint8_t *imageData)
+void displayBitmap(uint8_t x, uint8_t y, uint8_t imageWidth, uint8_t imageHeight, const uint8_t *imageData)
 {
-  oled.bitmap(x, y, x + imageWidth, y + imageHeight, imageData, imageWidth, imageHeight);
+  oled.bitmap(x, y, x + imageWidth, y + imageHeight, (uint8_t *)imageData, imageWidth, imageHeight);
 }
 
 void displayKeysUpdated()

@@ -596,9 +596,8 @@ void updateSystemState()
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 
           bluetoothStop();
-#ifdef COMPILE_ESPNOW
           espnowStop();
-#endif
+
           stopUART2Tasks(); //Delete F9 serial tasks if running
           startWebServer(); //Start in AP mode and show config html page
 

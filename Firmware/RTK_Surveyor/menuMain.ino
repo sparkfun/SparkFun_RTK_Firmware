@@ -334,7 +334,7 @@ void menuRadio()
       }
       else
         Serial.println("  No Paired Radios");
-      
+
 
       Serial.println("2) Pair radios");
       Serial.println("3) Forget all radios");
@@ -352,7 +352,44 @@ void menuRadio()
     else if (settings.radioType == RADIO_ESPNOW && incoming == 2)
     {
       Serial.println("Begin ESP NOW Pairing");
+
+      //Start ESP-Now if needed, put ESP-Now into broadcast state
       espnowBeginPairing();
+
+      //Begin sending our MAC every 250ms until a remote device sends us there info
+      randomSeed(millis());
+
+      Serial.println("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
+      while (Serial.available()) Serial.read();
+
+      uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+      bool exitPair = false;
+      while (exitPair == false)
+      {
+        if (Serial.available())
+        {
+          Serial.println("User pressed button. Pairing canceled.");
+          break;
+        }
+
+        int timeout = 1000 + random(0, 100); //Delay 1000 to 1100ms
+        for (int x = 0 ; x < timeout ; x++)
+        {
+          delay(1);
+
+          if (espnowIsPaired() == true) //Check if we've received a pairing message
+          {
+            Serial.println("Pairing compete");
+            exitPair = true;
+            break;
+          }
+        }
+
+        espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
+
+        Serial.println("Scanning for other radio...");
+      }
     }
     else if (settings.radioType == RADIO_ESPNOW && incoming == 3)
     {
@@ -360,8 +397,11 @@ void menuRadio()
       byte bContinue = getByteChoice(menuTimeout);
       if (bContinue == 'y')
       {
-        for (int x = 0 ; x < settings.espnowPeerCount ; x++)
-          espnowRemovePeer(settings.espnowPeers[x]);
+        if (espnowState > ESPNOW_OFF)
+        {
+          for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+            espnowRemovePeer(settings.espnowPeers[x]);
+        }
         settings.espnowPeerCount = 0;
         Serial.println("Radios forgotten");
       }

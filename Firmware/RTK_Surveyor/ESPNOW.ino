@@ -12,7 +12,6 @@
       We don't care if the ESP NOW packet is corrupt or not. RTCM has its own CRC. RTK needs valid RTCM once every
       few seconds so a single dropped frame is not critical.
 */
-#ifdef COMPILE_ESPNOW
 
 //Create a struct for ESP NOW pairing
 typedef struct PairMessage {
@@ -23,6 +22,7 @@ typedef struct PairMessage {
 } PairMessage;
 
 // Callback when data is sent
+#ifdef COMPILE_ESPNOW
 void espnowOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
   //  Serial.print("Last Packet Send Status: ");
@@ -31,10 +31,12 @@ void espnowOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
   //  else
   //    Serial.println("Delivery Fail");
 }
+#endif
 
 // Callback when data is received
 void espnowOnDataRecieved(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
+#ifdef COMPILE_ESPNOW
   if (espnowState == ESPNOW_PAIRING)
   {
     if (len == sizeof(PairMessage)) //First error check
@@ -66,10 +68,12 @@ void espnowOnDataRecieved(const uint8_t *mac, const uint8_t *incomingData, int l
     espnowIncomingRTCM = true;
     lastEspnowRssiUpdate = millis();
   }
+#endif
 }
 
 // Callback for all RX Packets
 // Get RSSI of all incoming management packets: https://esp32.com/viewtopic.php?t=13889
+#ifdef COMPILE_ESPNOW
 void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type)
 {
   // All espnow traffic uses action frames which are a subtype of the mgmnt frames so filter out everything else.
@@ -79,11 +83,13 @@ void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type)
   const wifi_promiscuous_pkt_t *ppkt = (wifi_promiscuous_pkt_t *)buf;
   packetRSSI = ppkt->rx_ctrl.rssi;
 }
+#endif
 
 //If WiFi is already enabled, simply add the LR protocol
 //If the radio is off entirely, start the radio, turn on only the LR protocol
 void espnowStart()
 {
+#ifdef COMPILE_ESPNOW
   if (wifiState == WIFI_OFF && espnowState == ESPNOW_OFF)
   {
     //Radio is off, turn it on
@@ -97,21 +103,19 @@ void espnowStart()
     //Enable WiFi + ESP-Now
     // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR);
-    Serial.println("Wi-Fi on, ESP-Now added to protocols");
+    Serial.println("WiFi on, ESP-Now added to protocols");
   }
   //If ESP-Now is active, WiFi is active, do nothing
   else
   {
-    Serial.println("Wi-Fi already on, ESP-Now already on");
+    Serial.println("WiFi already on, ESP-Now already on");
   }
 
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
-    Serial.println("Error initializing ESP-NOW");
+    Serial.println("Error starting ESP-Now");
     return;
   }
-  else
-    Serial.println("ESP-NOW Initialized");
 
   // Use promiscuous callback to capture RSSI of packet
   esp_wifi_set_promiscuous(true);
@@ -143,13 +147,17 @@ void espnowStart()
       }
     }
   }
+
+  Serial.println("ESP-Now Started");
+#endif
 }
 
 //If WiFi is already enabled, simply remove the LR protocol
 //If WiFi is off, stop the radio entirely
 void espnowStop()
 {
-  if(espnowState == ESPNOW_OFF) return;
+#ifdef COMPILE_ESPNOW
+  if (espnowState == ESPNOW_OFF) return;
 
   if (wifiState == WIFI_OFF)
   {
@@ -178,13 +186,11 @@ void espnowStop()
     Serial.println("Error deinitializing ESP-NOW");
     return;
   }
-
+#endif
   espnowSetState(ESPNOW_OFF);
-
-  Serial.println("ESP NOW Off");
 }
 
-//Begin broadcasting our MAC and wait for remote unit to respond
+//Start ESP-Now if needed, put ESP-Now into broadcast state
 void espnowBeginPairing()
 {
   espnowStart();
@@ -194,60 +200,45 @@ void espnowBeginPairing()
   espnowAddPeer(broadcastMac, false); // Encryption is not supported for multicast addresses
 
   espnowSetState(ESPNOW_PAIRING);
+}
 
-  //Begin sending our MAC every 250ms until a remote device sends us there info
-  randomSeed(millis());
-
-  Serial.println("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
-  while (Serial.available()) Serial.read();
-
-  while (1)
+//Regularly call during pairing to see if we've received a Pairing message
+bool espnowIsPaired()
+{
+#ifdef COMPILE_ESPNOW
+  if (espnowState == ESPNOW_MAC_RECEIVED)
   {
-    if (Serial.available()) break;
+    //Remove broadcast peer
+    uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    espnowRemovePeer(broadcastMac);
 
-    int timeout = 1000 + random(0, 100); //Delay 1000 to 1100ms
-    for (int x = 0 ; x < timeout ; x++)
+    if (esp_now_is_peer_exist(receivedMAC) == true)
+      log_d("Peer already exists");
+    else
     {
-      delay(1);
+      //Add new peer to system
+      espnowAddPeer(receivedMAC);
 
-      if (espnowState == ESPNOW_MAC_RECEIVED)
-      {
-        //Remove broadcast peer
-        espnowRemovePeer(broadcastMac);
-
-        if (esp_now_is_peer_exist(receivedMAC) == true)
-          log_d("Peer already exists");
-        else
-        {
-          //Add new peer to system
-          espnowAddPeer(receivedMAC);
-
-          //Record this MAC to peer list
-          memcpy(settings.espnowPeers[settings.espnowPeerCount], receivedMAC, 6);
-          settings.espnowPeerCount++;
-          settings.espnowPeerCount %= ESPNOW_MAX_PEERS;
-        }
-
-        //Send message directly to the received MAC (not unicast), then exit
-        espnowSendPairMessage(receivedMAC);
-
-        espnowSetState(ESPNOW_PAIRED);
-        Serial.println("Pairing compete");
-        return;
-      }
+      //Record this MAC to peer list
+      memcpy(settings.espnowPeers[settings.espnowPeerCount], receivedMAC, 6);
+      settings.espnowPeerCount++;
+      settings.espnowPeerCount %= ESPNOW_MAX_PEERS;
     }
 
-    espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
+    //Send message directly to the received MAC (not unicast), then exit
+    espnowSendPairMessage(receivedMAC);
 
-    Serial.println("Scanning for other radio...");
+    espnowSetState(ESPNOW_PAIRED);
+    return (true);
   }
-
-  Serial.println("User pressed button. Pairing canceled.");
+#endif
+  return (false);
 }
 
 //Create special pair packet to a given MAC
 esp_err_t espnowSendPairMessage(uint8_t *sendToMac)
 {
+#ifdef COMPILE_ESPNOW
   // Assemble message to send
   PairMessage pairMessage;
 
@@ -263,6 +254,9 @@ esp_err_t espnowSendPairMessage(uint8_t *sendToMac)
     pairMessage.crc += unitMACAddress[x];
 
   return (esp_now_send(sendToMac, (uint8_t *) &pairMessage, sizeof(pairMessage))); //Send packet to given MAC
+#else
+  return (ESP_OK);
+#endif
 }
 
 //Add a given MAC address to the peer list
@@ -273,6 +267,7 @@ esp_err_t espnowAddPeer(uint8_t *peerMac)
 
 esp_err_t espnowAddPeer(uint8_t *peerMac, bool encrypt)
 {
+#ifdef COMPILE_ESPNOW
   esp_now_peer_info_t peerInfo;
 
   memcpy(peerInfo.peer_addr, peerMac, 6);
@@ -286,15 +281,23 @@ esp_err_t espnowAddPeer(uint8_t *peerMac, bool encrypt)
   if (result != ESP_OK)
     log_d("Failed to add peer");
   return (result);
+#else
+  return (ESP_OK);
+#endif
 }
 
 //Remove a given MAC address from the peer list
 esp_err_t espnowRemovePeer(uint8_t *peerMac)
 {
+#ifdef COMPILE_ESPNOW
   esp_err_t result = esp_now_del_peer(peerMac);
   if (result != ESP_OK)
     log_d("Failed to remove peer");
   return (result);
+#else
+  return (ESP_OK);
+#endif
+
 }
 
 //Update the state of the ESP Now state machine
@@ -303,6 +306,8 @@ void espnowSetState(ESPNOWState newState)
   if (espnowState == newState)
     Serial.print("*");
   espnowState = newState;
+
+  Serial.print("espnowState: ");
   switch (newState)
   {
     case ESPNOW_OFF:
@@ -328,6 +333,7 @@ void espnowSetState(ESPNOWState newState)
 
 void espnowProcessRTCM(byte incoming)
 {
+#ifdef COMPILE_ESPNOW
   if (espnowState == ESPNOW_PAIRED)
   {
     //Move this byte into ESP NOW to send buffer
@@ -344,6 +350,5 @@ void espnowProcessRTCM(byte incoming)
       espnowOutgoingRTCM = true;
     }
   }
+#endif
 }
-
-#endif //ifdef COMPILE_ESPNOW

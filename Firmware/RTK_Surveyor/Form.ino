@@ -387,8 +387,10 @@ void createSettingsString(char* settingsCSV)
   char apDaysRemaining[20];
   if (strlen(settings.pointPerfectCurrentKey) > 0)
   {
+#ifdef COMPILE_L_BAND
     uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
     sprintf(apDaysRemaining, "%d", daysRemaining);
+#endif
   }
   else
     sprintf(apDaysRemaining, "No Keys");

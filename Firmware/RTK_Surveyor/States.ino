@@ -240,7 +240,7 @@ void updateSystemState()
 
           bluetoothStop();
           bluetoothStart(); //Restart Bluetooth with 'Base' identifier
-          
+
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           if (configureUbloxModuleBase() == true)
@@ -596,9 +596,8 @@ void updateSystemState()
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 
           bluetoothStop();
-#ifdef COMPILE_ESPNOW
           espnowStop();
-#endif
+
           stopUART2Tasks(); //Delete F9 serial tasks if running
           startWebServer(); //Start in AP mode and show config html page
 
@@ -900,14 +899,35 @@ void updateSystemState()
         break;
 #endif  //COMPILE_L_BAND
 
-      case (STATE_ESPNOW_PAIR):
+      case (STATE_ESPNOW_PAIRING_NOT_STARTED):
         {
-          if(espnowState == ESPNOW_OFF)
-          {
-            espnowBeginPairing();
-          }
+#ifdef COMPILE_ESPNOW
+          paintEspNowPairing();
 
-          //Display 'ESP-Now Pairing' while we wait
+          //Start ESP-Now if needed, put ESP-Now into broadcast state
+          espnowBeginPairing();
+
+          changeState(STATE_ESPNOW_PAIRING);
+#else
+          changeState(STATE_ROVER_NOT_STARTED);
+#endif
+        }
+        break;
+
+      case (STATE_ESPNOW_PAIRING):
+        {
+#ifdef COMPILE_ESPNOW
+          if (espnowIsPaired() == true)
+          {
+            paintEspNowPaired();
+            changeState(STATE_ROVER_NOT_STARTED);
+          }
+          else
+          {
+            uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+            espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
+          }
+#endif
         }
         break;
 
@@ -1053,8 +1073,11 @@ void changeState(SystemState newState)
         break;
 #endif  //COMPILE_L_BAND
 
-      case (STATE_ESPNOW_PAIR):
-        Serial.print("State: ESP-Now Pair");
+      case (STATE_ESPNOW_PAIRING_NOT_STARTED):
+        Serial.print("State: ESP-Now Pairing Not Started");
+        break;
+      case (STATE_ESPNOW_PAIRING):
+        Serial.print("State: ESP-Now Pairing");
         break;
 
       case (STATE_SHUTDOWN):

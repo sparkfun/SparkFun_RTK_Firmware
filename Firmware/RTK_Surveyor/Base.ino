@@ -229,7 +229,5 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
   ntripServerProcessRTCM(incoming);
 
-#ifdef COMPILE_ESPNOW
   espnowProcessRTCM(incoming);
-#endif
 }

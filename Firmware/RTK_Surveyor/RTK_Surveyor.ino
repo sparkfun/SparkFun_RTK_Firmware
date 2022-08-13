@@ -26,10 +26,10 @@ const int FIRMWARE_VERSION_MAJOR = 2;
 const int FIRMWARE_VERSION_MINOR = 4;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
+//#define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
+#define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
-#define COMPILE_AP //Comment out to remove Access Point functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
-#define COMPILE_ESPNOW //Comment out to remove ESP-Now functionality
 #define COMPILE_IDLE_TASKS  //Comment out to remove idle tasks
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
@@ -468,7 +468,7 @@ bool espnowOutgoingRTCM = false;
   |        RTCM |--->|-->|           |--------->|        |-->|----->|TXD, MISO |     |
   |             |    |   | Bluetooth |          | UART 2 |   |      | UART1    |     |
   | NMEA + RTCM |<---|<--|           |<-------+-|        |<--|<-----|RXD, MOSI |<----'
-  +-------------+    |   '-----------'        | '--------'   |28  42|          |
+  +-------------+    |   '-----------'        | '--------'   |28  43|          |
                      |                        |              |      |          |
       .---------+    |                        |              |      |          |
      / uSD Card |    |                        |              |      |          |

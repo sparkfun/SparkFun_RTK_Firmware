@@ -581,7 +581,7 @@ void ntripServerUpdate()
         Serial.println("NTRIP Server connection dropped");
         ntripServerStop(false); //Allocate new wifiClient
       }
-      else if ((millis() - ntripServerTimer) > 3000)
+      else if ((millis() - ntripServerTimer) > (3 * 1000))
       {
         //GNSS stopped sending RTCM correction data
         Serial.println("NTRIP Server breaking caster connection due to lack of RTCM data!");

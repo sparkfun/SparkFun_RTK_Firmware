@@ -2159,7 +2159,7 @@ void paintDisplaySetup()
       printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
       printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-      printTextCenter("Pair", 12 * 3, QW_FONT_8X16, 1, true);
+      printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
     }
     else if (setupState == STATE_PROFILE)
       paintDisplaySetupProfile("Base");
@@ -2199,7 +2199,7 @@ void paintDisplaySetup()
       printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
       printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-      printTextCenter("Pair", 12 * 3, QW_FONT_8X16, 1, true);
+      printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
     }
     else if (setupState == STATE_PROFILE)
       paintDisplaySetupProfile("Rover");

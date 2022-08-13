@@ -362,23 +362,34 @@ void menuRadio()
       Serial.println("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
       while (Serial.available()) Serial.read();
 
-      while (1)
+      uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+      bool exitPair = false;
+      while (exitPair == false)
       {
-        if (Serial.available()) break;
+        if (Serial.available())
+        {
+          Serial.println("User pressed button. Pairing canceled.");
+          break;
+        }
 
         int timeout = 1000 + random(0, 100); //Delay 1000 to 1100ms
         for (int x = 0 ; x < timeout ; x++)
         {
           delay(1);
-          if (espnowIsPaired()) break; //Check if we've received a pairing message
+
+          if (espnowIsPaired() == true) //Check if we've received a pairing message
+          {
+            Serial.println("Pairing compete");
+            exitPair = true;
+            break;
+          }
         }
 
         espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
 
         Serial.println("Scanning for other radio...");
       }
-
-      Serial.println("User pressed button. Pairing canceled.");
     }
     else if (settings.radioType == RADIO_ESPNOW && incoming == 3)
     {
@@ -386,8 +397,11 @@ void menuRadio()
       byte bContinue = getByteChoice(menuTimeout);
       if (bContinue == 'y')
       {
-        for (int x = 0 ; x < settings.espnowPeerCount ; x++)
-          espnowRemovePeer(settings.espnowPeers[x]);
+        if (espnowState > ESPNOW_OFF)
+        {
+          for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+            espnowRemovePeer(settings.espnowPeers[x]);
+        }
         settings.espnowPeerCount = 0;
         Serial.println("Radios forgotten");
       }

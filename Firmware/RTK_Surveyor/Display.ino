@@ -331,8 +331,11 @@ void updateDisplay()
           //Do nothing. Quick, fall through state.
           break;
 
-        case (STATE_ESPNOW_PAIR):
-          paintEspNowPair();
+        case (STATE_ESPNOW_PAIRING_NOT_STARTED):
+          paintEspNowPairing();
+          break;
+        case (STATE_ESPNOW_PAIRING):
+          paintEspNowPairing();
           break;
 
         case (STATE_SHUTDOWN):
@@ -2151,7 +2154,7 @@ void paintDisplaySetup()
       printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
     }
-    else if (setupState == STATE_ESPNOW_PAIR)
+    else if (setupState == STATE_ESPNOW_PAIRING_NOT_STARTED)
     {
       printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
       printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
@@ -2191,7 +2194,7 @@ void paintDisplaySetup()
       printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
       printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
     }
-    else if (setupState == STATE_ESPNOW_PAIR)
+    else if (setupState == STATE_ESPNOW_PAIRING_NOT_STARTED)
     {
       printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
       printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
@@ -2521,7 +2524,11 @@ void paintKeyProvisionFail(uint16_t displayTime)
 }
 
 //Show screen while ESP-Now is pairing
-void paintEspNowPair()
+void paintEspNowPairing()
 {
   displayMessage("ESP-Now Pairing", 0);
+}
+void paintEspNowPaired()
+{
+  displayMessage("ESP-Now Paired", 2000);
 }

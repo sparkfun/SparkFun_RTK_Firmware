@@ -412,7 +412,8 @@ void ButtonCheckTask(void *e)
           case STATE_BUBBLE_LEVEL:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
-          case STATE_ESPNOW_PAIR:
+          case STATE_ESPNOW_PAIRING_NOT_STARTED:
+          case STATE_ESPNOW_PAIRING:
             lastSystemState = systemState; //Remember this state to return after we mark an event
             requestChangeState(STATE_DISPLAY_SETUP);
             setupState = STATE_MARK_EVENT;
@@ -464,9 +465,9 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
-                setupState = STATE_ESPNOW_PAIR;
+                setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
                 break;
-              case STATE_ESPNOW_PAIR:
+              case STATE_ESPNOW_PAIRING_NOT_STARTED:
                 //If only one active profile do not show any profiles
                 index = getProfileNumberFromUnit(0);
                 displayProfile = getProfileNumberFromUnit(1);
@@ -531,7 +532,8 @@ void ButtonCheckTask(void *e)
           case STATE_BUBBLE_LEVEL:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
-          case STATE_ESPNOW_PAIR:
+          case STATE_ESPNOW_PAIRING_NOT_STARTED:
+          case STATE_ESPNOW_PAIRING:
             lastSystemState = systemState; //Remember this state to return after we mark an event
             requestChangeState(STATE_DISPLAY_SETUP);
             setupState = STATE_MARK_EVENT;
@@ -583,9 +585,9 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
-                setupState = STATE_ESPNOW_PAIR;
+                setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
                 break;
-              case STATE_ESPNOW_PAIR:
+              case STATE_ESPNOW_PAIRING_NOT_STARTED:
                 //If only one active profile do not show any profiles
                 index = getProfileNumberFromUnit(0);
                 displayProfile = getProfileNumberFromUnit(1);
@@ -617,11 +619,6 @@ void ButtonCheckTask(void *e)
     taskYIELD();
   }
 }
-
-TODO once a user has selected 'Pair', send this once
-  //Start ESP-Now if needed, put ESP-Now into broadcast state
-  espnowBeginPairing();
-
 
 void idleTask(void *e)
 {

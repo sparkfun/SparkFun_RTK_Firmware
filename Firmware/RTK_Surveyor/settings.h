@@ -33,7 +33,8 @@ typedef enum
   STATE_KEYS_PROVISION_WIFI_STARTED,
   STATE_KEYS_PROVISION_WIFI_CONNECTED,
   STATE_KEYS_PROVISION_WIFI_TIMEOUT,
-  STATE_ESPNOW_PAIR,
+  STATE_ESPNOW_PAIRING_NOT_STARTED,
+  STATE_ESPNOW_PAIRING,
   STATE_SHUTDOWN,
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
@@ -487,6 +488,7 @@ struct struct_online {
 } online;
 
 #ifdef COMPILE_WIFI
+#ifdef COMPILE_L_BAND
 //AWS certificate for PointPerfect API
 static const char *AWS_PUBLIC_CERT = R"=====(
 -----BEGIN CERTIFICATE-----
@@ -510,4 +512,5 @@ o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
 rqXRfboQnoZsG4q5WTP468SQvvG5
 -----END CERTIFICATE-----
 )=====";
+#endif
 #endif

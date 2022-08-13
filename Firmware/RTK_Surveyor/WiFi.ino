@@ -153,13 +153,13 @@ void wifiStartAP()
 #endif
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Wi-Fi connecting to");
+  Serial.print("WiFi connecting to");
   while (wifiGetStatus() != WL_CONNECTED)
   {
     Serial.print(".");
     delay(500);
   }
-  Serial.print("Wi-Fi connected with IP: ");
+  Serial.print("WiFi connected with IP: ");
   Serial.println(WiFi.localIP());
 #else   //LOCAL_WIFI_TESTING
   //Start in AP mode
@@ -177,10 +177,10 @@ void wifiStartAP()
   WiFi.softAPConfig(local_IP, gateway, subnet);
   if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
   {
-    Serial.println("Wi-Fi AP failed to start");
+    Serial.println("WiFi AP failed to start");
     return;
   }
-  Serial.print("Wi-Fi AP Started with IP: ");
+  Serial.print("WiFi AP Started with IP: ");
   Serial.println(WiFi.softAPIP());
 #endif  //LOCAL_WIFI_TESTING
 }
@@ -197,7 +197,7 @@ bool wifiConnectionTimeout()
 #ifdef  COMPILE_WIFI
   if ((millis() - wifiTimer) <= WIFI_CONNECTION_TIMEOUT)
     return false;
-  Serial.println("Wi-Fi connection timeout!");
+  Serial.println("WiFi connection timeout!");
 #endif  //COMPILE_WIFI
   return true;
 }
@@ -221,7 +221,7 @@ void wifiStart(char* ssid, char* pw)
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
 #endif
 
-    Serial.printf("Wi-Fi connecting to %s\r\n", ssid);
+    Serial.printf("WiFi connecting to %s\r\n", ssid);
     WiFi.begin(ssid, pw);
     wifiTimer = millis();
     wifiSetState(WIFI_NOTCONNECTED);
@@ -251,7 +251,7 @@ void wifiStop()
   {
     WiFi.mode(WIFI_OFF);
     wifiSetState(WIFI_OFF);
-    Serial.println("Wi-Fi Stopped");
+    Serial.println("WiFi Stopped");
   }
   //If ESP-Now is active, change protocol to only Long Range
   else if (espnowState > ESPNOW_OFF)
@@ -263,13 +263,13 @@ void wifiStop()
 
     wifiSetState(WIFI_OFF);
 
-    Serial.println("Wi-Fi disabled, ESP-Now left in place");
+    Serial.println("WiFi disabled, ESP-Now left in place");
   }
 #else
   //Turn off radio
   WiFi.mode(WIFI_OFF);
   wifiSetState(WIFI_OFF);
-  Serial.println("Wi-Fi Stopped");
+  Serial.println("WiFi Stopped");
 #endif
 
   //Display the heap state

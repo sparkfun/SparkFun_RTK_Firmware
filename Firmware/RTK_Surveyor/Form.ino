@@ -33,8 +33,10 @@ void startWebServer()
   ntripClientStop(true);
   wifiStartAP();
 
+  incomingSettings = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+
   //Clear any garbage from settings array
-  memset(incomingSettings, 0, sizeof(incomingSettings));
+  memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
 
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);

@@ -622,7 +622,7 @@ void updateSystemState()
 
               //Clear buffer
               incomingSettingsSpot = 0;
-              memset(incomingSettings, 0, sizeof(incomingSettings));
+              memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
             }
           }
         }

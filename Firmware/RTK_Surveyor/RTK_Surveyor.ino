@@ -26,7 +26,7 @@ const int FIRMWARE_VERSION_MAJOR = 2;
 const int FIRMWARE_VERSION_MINOR = 4;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
-//#define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
+#define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
 #define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
@@ -159,8 +159,8 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 
 #endif
 
-char certificateContents[2000]; //Holds the contents of the keys prior to MQTT connection
-char keyContents[2000];
+char *certificateContents; //Holds the contents of the keys prior to MQTT connection
+char *keyContents;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration
@@ -328,7 +328,7 @@ AsyncWebSocket ws("/ws");
 //Because the incoming string is longer than max len, there are multiple callbacks so we
 //use a global to combine the incoming
 #define AP_CONFIG_SETTING_SIZE 5000
-char incomingSettings[AP_CONFIG_SETTING_SIZE];
+char *incomingSettings;
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

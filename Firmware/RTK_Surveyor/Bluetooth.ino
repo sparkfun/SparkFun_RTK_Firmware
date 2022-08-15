@@ -119,9 +119,7 @@ void bluetoothStart()
     if (settings.enableBLE)
       bluetoothSerial = new BTLESerial();
     else
-    {
       bluetoothSerial = new BTClassicSerial();
-    }
 
     if (bluetoothSerial->begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
     {

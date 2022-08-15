@@ -152,6 +152,12 @@ void menuSystem()
     Serial.printf("m) Set time zone minutes: %d\r\n", settings.timeZoneMinutes);
     Serial.printf("s) Set time zone seconds: %d\r\n", settings.timeZoneSeconds);
 
+    Serial.print(F("b) Set Bluetooth Mode: "));
+    if (settings.enableBLE == true)
+      Serial.println(F("BLE"));
+    else
+      Serial.println(F("Classic"));
+
     Serial.println("r) Reset all settings to default");
 
     // Support mode switching
@@ -204,6 +210,17 @@ void menuSystem()
         online.rtc = false;
         updateRTC();
       }
+    }
+    else if (incoming == 'b')
+    {
+      // Restart Bluetooth
+      bluetoothStop();
+      if (settings.enableBLE == false)
+        settings.enableBLE = true;
+      else
+        settings.enableBLE = false;
+      bluetoothStart();
+
     }
     else if (incoming == 'r')
     {

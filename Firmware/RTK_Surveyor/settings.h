@@ -278,8 +278,6 @@ typedef struct {
   bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
   bool enableMarksFile = false; //Log marks to the marks file
 
-  bool enableBLE = false;
-
   ubxMsg ubxMessages[MAX_UBX_MSG] = //Report rates for all known messages
   {
     //NMEA
@@ -468,6 +466,7 @@ typedef struct {
   uint8_t espnowPeers[5][6]; //Max of 5 peers. Contains the MAC addresses (6 bytes) of paired units
   uint8_t espnowPeerCount;
   bool enableNtripServerMessageParsing = false;
+  bool enableBLE = false;
 } Settings;
 Settings settings;
 

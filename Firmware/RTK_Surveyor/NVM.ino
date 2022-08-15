@@ -267,6 +267,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   }
   settingsFile->printf("%s=%d\n\r", "espnowPeerCount", settings.espnowPeerCount);
   settingsFile->printf("%s=%d\n\r", "enableNtripServerMessageParsing", settings.enableNtripServerMessageParsing);
+  settingsFile->printf("%s=%d\n\r", "enableBLE", settings.enableBLE);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -875,6 +876,8 @@ bool parseLine(char* str, Settings *settings)
     settings->espnowPeerCount = d;
   else if (strcmp(settingName, "enableNtripServerMessageParsing") == 0)
     settings->enableNtripServerMessageParsing = d;
+  else if (strcmp(settingName, "enableBLE") == 0)
+    settings->enableBLE = d;
 
   //Check for bulk settings (constellations, message rates, ESPNOW Peers)
   //Must be last on else list

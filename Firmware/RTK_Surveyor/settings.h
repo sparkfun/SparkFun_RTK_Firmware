@@ -278,6 +278,8 @@ typedef struct {
   bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
   bool enableMarksFile = false; //Log marks to the marks file
 
+  bool enableBLE = false;
+
   ubxMsg ubxMessages[MAX_UBX_MSG] = //Report rates for all known messages
   {
     //NMEA

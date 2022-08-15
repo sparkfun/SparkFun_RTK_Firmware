@@ -338,7 +338,7 @@ void pinUART2Task( void *pvParameters )
   vTaskDelete( NULL ); //Delete task once it has run once
 }
 
-//Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT.available will cause reboot
+//Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT->available will cause reboot
 void startUART2Tasks()
 {
   //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P

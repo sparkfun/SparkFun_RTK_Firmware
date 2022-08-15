@@ -1,7 +1,7 @@
 #ifdef COMPILE_BT
 
 #include "src/BluetoothSerial/BluetoothSerial.h"
-#include "src/BleSerial/BleSerial.h"
+#include <BleSerial.h> // Click here to get the library: http://librarymanager/All#ESP32_BleSerial by Avinab Malla
 
 class BTSerialInterface
 {
@@ -158,4 +158,3 @@ class BTLESerial: public virtual BTSerialInterface, public BleSerial
 
 
 #endif
-

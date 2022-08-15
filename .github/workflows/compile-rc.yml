@@ -46,7 +46,8 @@ jobs:
           https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library.git 
           https://github.com/bblanchon/ArduinoJson.git 
           https://github.com/knolleary/pubsubclient.git
-
+          https://github.com/avinabmalla/ESP32_BleSerial.git
+          
       - name: Compile Sketch
         run: arduino-cli compile --fqbn esp32:esp32:esp32 ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
           --build-property build.partitions=partitions

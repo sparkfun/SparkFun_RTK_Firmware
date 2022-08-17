@@ -1,12 +1,12 @@
 #ifdef COMPILE_BT
 
-#include "src/BluetoothSerial/BluetoothSerial.h"
+#include "BluetoothSerial.h"
 #include <BleSerial.h> // Click here to get the library: http://librarymanager/All#ESP32_BleSerial by Avinab Malla
 
 class BTSerialInterface
 {
   public:
-    virtual bool begin(String deviceName, bool isMaster, uint16_t rxQueueSize, uint16_t txQueueSize) = 0;
+    virtual bool begin(String deviceName) = 0;
     virtual void disconnect() = 0;
     virtual void end() = 0;
     virtual esp_err_t register_callback(esp_spp_cb_t * callback) = 0;
@@ -15,7 +15,7 @@ class BTSerialInterface
     virtual int available() = 0;
     virtual size_t readBytes(uint8_t *buffer, size_t bufferSize) = 0;
 
-    virtual bool isCongested() = 0;
+    //virtual bool isCongested() = 0;
     virtual size_t write(const uint8_t *buffer, size_t size) = 0;
     virtual void flush() = 0;
 };
@@ -26,9 +26,9 @@ class BTClassicSerial : public virtual BTSerialInterface, public BluetoothSerial
     // Everything is already implemented in BluetoothSerial since the code was
     // originally written using that class
   public:
-    bool begin(String deviceName, bool isMaster, uint16_t rxQueueSize, uint16_t txQueueSize)
+    bool begin(String deviceName)
     {
-      return BluetoothSerial::begin(deviceName, isMaster, rxQueueSize, txQueueSize);
+      return BluetoothSerial::begin(deviceName);
     }
 
     void disconnect()
@@ -63,7 +63,10 @@ class BTClassicSerial : public virtual BTSerialInterface, public BluetoothSerial
 
     bool isCongested()
     {
-      return BluetoothSerial::isCongested();
+      // Removed congestion testing in v2.4 
+      // TODO Remove settings and checking
+      return(false);
+      //return BluetoothSerial::isCongested();
     }
 
     size_t write(const uint8_t *buffer, size_t size)
@@ -82,10 +85,8 @@ class BTLESerial: public virtual BTSerialInterface, public BleSerial
 {
   public:
     // Missing from BleSerial
-    bool begin(String deviceName, bool isMaster, uint16_t rxQueueSuze, uint16_t txQueueSize)
+    bool begin(String deviceName)
     {
-      // Curretnly ignoring rxQueueSize
-      // transmitBufferLength = txQueueSize;
       BleSerial::begin(deviceName.c_str());
       return true;
     }

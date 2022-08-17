@@ -73,7 +73,8 @@ byte bluetoothGetState()
 bool bluetoothIsCongested()
 {
 #ifdef COMPILE_BT
-  return bluetoothSerial->isCongested();
+  //return bluetoothSerial->isCongested();
+  return false;
 #else   //COMPILE_BT
   return false;
 #endif  //COMPILE_BT
@@ -121,7 +122,7 @@ void bluetoothStart()
     else
       bluetoothSerial = new BTClassicSerial();
 
-    if (bluetoothSerial->begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
+    if (bluetoothSerial->begin(deviceName) == false)
     {
       Serial.println("An error occurred initializing Bluetooth");
 

@@ -148,9 +148,8 @@ void menuSystem()
     }
 
     Serial.println("d) Configure Debug");
-    Serial.printf("h) Set time zone hours: %d\r\n", settings.timeZoneHours);
-    Serial.printf("m) Set time zone minutes: %d\r\n", settings.timeZoneMinutes);
-    Serial.printf("s) Set time zone seconds: %d\r\n", settings.timeZoneSeconds);
+
+    Serial.printf("z) Set time zone offset: %02d:%02d:%02d\r\n", settings.timeZoneHours, settings.timeZoneMinutes, settings.timeZoneSeconds);
 
     Serial.print(F("b) Set Bluetooth Mode: "));
     if (settings.enableBLE == true)
@@ -172,7 +171,7 @@ void menuSystem()
 
     if (incoming == 'd')
       menuDebug();
-    else if (incoming == 'h')
+    else if (incoming == 'z')
     {
       Serial.print("Enter time zone hour offset (-23 <= offset <= 23): ");
       int64_t value = getNumber(menuTimeout);
@@ -181,35 +180,27 @@ void menuSystem()
       else
       {
         settings.timeZoneHours = value;
-        online.rtc = false;
-        updateRTC();
-      }
-    }
-    else if (incoming == 'm')
-    {
-      Serial.print("Enter time zone minute offset (-59 <= offset <= 59): ");
-      int64_t value = getNumber(menuTimeout);
-      if (value < -59 || value > 59)
-        Serial.println("Error: -60 < minutes < 60");
-      else
-      {
-        settings.timeZoneMinutes = value;
-        online.rtc = false;
-        updateRTC();
-      }
-    }
-    else if (incoming == 's')
-    {
-      Serial.print("Enter time zone second offset (-59 <= offset <= 59): ");
-      int64_t value = getNumber(menuTimeout);
-      if (value < -59 || value > 59)
-        Serial.println("Error: -60 < seconds < 60");
-      else
-      {
-        settings.timeZoneSeconds = value;
-        online.rtc = false;
-        updateRTC();
-      }
+
+        Serial.print("Enter time zone minute offset (-59 <= offset <= 59): ");
+        int64_t value = getNumber(menuTimeout);
+        if (value < -59 || value > 59)
+          Serial.println("Error: -60 < minutes < 60");
+        else
+        {
+          settings.timeZoneMinutes = value;
+
+          Serial.print("Enter time zone second offset (-59 <= offset <= 59): ");
+          int64_t value = getNumber(menuTimeout);
+          if (value < -59 || value > 59)
+            Serial.println("Error: -60 < seconds < 60");
+          else
+          {
+            settings.timeZoneSeconds = value;
+            online.rtc = false;
+            updateRTC();
+          } //Succesful seconds
+        } //Succesful minute
+      } //Succesful hours
     }
     else if (incoming == 'b')
     {

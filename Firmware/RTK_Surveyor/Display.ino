@@ -280,8 +280,8 @@ void updateDisplay()
           displayWiFiConfigNotStarted(); //Display 'WiFi Config'
           break;
         case (STATE_WIFI_CONFIG):
-          //TODO Remove radio icons from displayWiFi config
-          icons = displayWiFiConfig(); //Display SSID and IP
+          iconsRadio = setWiFiIcon(); //Blink WiFi in center
+          displayWiFiConfig(); //Display SSID and IP
           break;
         case (STATE_TEST):
           paintSystemTest();
@@ -297,11 +297,11 @@ void updateDisplay()
           //Do nothing. Quick, fall through state.
           break;
         case (STATE_KEYS_WIFI_STARTED):
-          iconsRadio = setRadioIcons();  //Top left
+          iconsRadio = setWiFiIcon(); //Blink WiFi in center
           paintGettingKeys();
           break;
         case (STATE_KEYS_WIFI_CONNECTED):
-          iconsRadio = setRadioIcons();  //Top left
+          iconsRadio = setWiFiIcon(); //Blink WiFi in center
           paintGettingKeys();
           break;
         case (STATE_KEYS_WIFI_TIMEOUT):
@@ -320,11 +320,11 @@ void updateDisplay()
           //Do nothing. Quick, fall through state.
           break;
         case (STATE_KEYS_PROVISION_WIFI_STARTED):
-          iconsRadio = setRadioIcons();  //Top left
+          iconsRadio = setWiFiIcon(); //Blink WiFi in center
           paintGettingKeys();
           break;
         case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
-          iconsRadio = setRadioIcons();  //Top left
+          iconsRadio = setWiFiIcon(); //Blink WiFi in center
           paintGettingKeys();
           break;
         case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
@@ -1045,6 +1045,37 @@ uint32_t setWiFiIcon_ThreeRadios()
   return (icons);
 }
 
+//Bluetooth and ESP Now icons off. WiFi in middle.
+//Blink while no clients are connected
+uint32_t setWiFiIcon()
+{
+  uint32_t icons = 0;
+
+  if (online.display == true)
+  {
+    if (wifiState == WIFI_CONNECTED)
+    {
+      icons |= ICON_WIFI_SYMBOL_3_RIGHT;
+    }
+    else
+    {
+      //Limit how often we update this spot
+      if (millis() - thirdRadioSpotTimer > 1000)
+      {
+        thirdRadioSpotTimer = millis();
+        thirdRadioSpotBlink ^= 1; //Blink this icon
+      }
+
+      if (thirdRadioSpotBlink == false)
+        icons |= ICON_BLANK_RIGHT;
+      else
+        icons |= ICON_WIFI_SYMBOL_3_RIGHT;
+    }
+  }
+
+  return (icons);
+}
+
 //Based on system state, turn on the various Rover, Base, Fixed Base icons
 uint32_t setModeIcon()
 {
@@ -1627,21 +1658,9 @@ void displayWiFiConfigNotStarted()
   displayMessage("WiFi Config", 0);
 }
 
-uint32_t displayWiFiConfig()
+void displayWiFiConfig()
 {
   uint32_t icons;
-
-  //Draw the WiFi icon
-  icons = 0;
-  if (wifiState == WIFI_NOTCONNECTED)
-  {
-    //Blink WiFi icon
-    blinking_icons ^= ICON_WIFI_SYMBOL_3_RIGHT;
-    if (blinking_icons & ICON_WIFI_SYMBOL_3_RIGHT)
-      icons = ICON_WIFI_SYMBOL_3_RIGHT;
-  }
-  else if (wifiState == WIFI_CONNECTED)
-    icons = ICON_WIFI_SYMBOL_3_RIGHT;
 
   int yPos = WiFi_Symbol_Height + 2;
   int fontHeight = 8;
@@ -1656,7 +1675,6 @@ uint32_t displayWiFiConfig()
 
   yPos = yPos + fontHeight + 1;
   printTextCenter("192.168.4.1", yPos, QW_FONT_5X7, 1, false);
-  return icons;
 }
 
 //When user does a factory reset, let us know

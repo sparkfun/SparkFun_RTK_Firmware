@@ -53,7 +53,7 @@ jobs:
           --build-property build.partitions=partitions
           --build-property upload.maximum_size=3145728 
           --export-binaries
-          --build-property DebugLevel.debug.build.code_debug=4
+          --build-property DebugLevel=debug
           --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\""
 
       - name: Get current date

@@ -26,24 +26,20 @@ void beginDisplay()
   }
 }
 
-//Attempt to send to display regardless of its online status
-//The I2C bus may allow it even if bus is misbehaving
 void displayHelloWorld()
 {
-  //if (online.display == true)
-  //{
+  if (online.display == true)
+  {
     oled.erase();
 
     uint8_t fontHeight = 15;
     uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
-    printTextCenter("Accel", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter("Failed", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Hello", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("World", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
-
-//    delay(displayTime);
-  //}
+  }
 }
 
 //Given text, and location, print text center of the screen

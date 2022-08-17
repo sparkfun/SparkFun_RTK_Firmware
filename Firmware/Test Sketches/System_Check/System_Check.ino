@@ -245,7 +245,7 @@ void setup()
   Wire.beginTransmission(0x15); //Dummy address
   int endValue = Wire.endTransmission();
   Serial.printf("Response time: %d endValue: %d\n\r", millis() - startTime, endValue);
-  if(endValue == 2)
+  if (endValue == 2)
     online.i2c = true;
   else if (endValue == 5)
     Serial.println("It appears something is shorting the I2C lines.");
@@ -257,15 +257,13 @@ void setup()
     beginGNSS(); //Connect to GNSS to get module type
 
     beginDisplay(); //Start display first to be able to display any errors
+    displayHelloWorld(); //Display something
 
     beginFuelGauge(); //Configure battery fuel guage monitor
   }
 
   beginSD(); //Test if SD is present
 
-  beginDisplay(); //Start display first to be able to display any errors
-  displayHelloWorld(); //Display something, ignore I2C bus status
-  
   menuSystem();
 }
 

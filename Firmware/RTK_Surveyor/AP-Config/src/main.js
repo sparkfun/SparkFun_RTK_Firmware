@@ -232,7 +232,6 @@ function validateFields() {
         checkElementString("ntripClient_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
         checkElementValue("ntripClient_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseGNSSConfig");
         checkElementString("ntripClient_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
-        checkElementString("ntripClient_MountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
     }
     else {
         clearElement("ntripClient_wifiSSID", "TRex");

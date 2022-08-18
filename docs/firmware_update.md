@@ -246,10 +246,19 @@ The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To comp
     * [SparkFun MAX1704x Fuel Gauge Arduino Library](https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library)
     * [SparkFun Micro OLED Arduino Library](https://github.com/sparkfun/SparkFun_Micro_OLED_Arduino_Library) -  Note the Arduino Library manager lists this as 'SparkFun Micro OLED Breakout'
     * [SparkFun LIS2DH12 Accelerometer Arduino Library](https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library)
+    * [Arduino JSON](https://github.com/bblanchon/ArduinoJson)
+    * [PubSub Client for MQTT](https://github.com/knolleary/pubsubclient)
+    * [ESP32 BleSerial](https://github.com/avinabmalla/ESP32_BleSerial)
 
 Once compiled, firmware can be uploaded directly to a unit when the RTK unit is on and the correct COM port is selected under the Arduino IDE Tools->Port menu.
 
-Note: The COMPILE_WIFI and COMPILE_BT defines at the top of RTK_Surveyor.ino can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on WiFi or Bluetooth (serial menus, system configuration, logging, etc).
+If you are seeing the error:
+
+> text section exceeds available space ...
+
+You have not replaced the partition file correctly. See the 'Change Partition table' step inside the [Windows instructions](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#windows_1).
+
+**Note:** There are a variety of compile guards (COMPILE_WIFI, COMPILE_AP, etc) at the top of RTK_Surveyor.ino that can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on these features (serial menus, system configuration, logging, etc).
 
 ### Ubuntu 20.04
 

@@ -78,6 +78,7 @@ nav:
     - intro.md
     - connecting_bluetooth.md
     - gis_software.md
+    - firmware_update.md
     - displays.md
     - system_configuration.md
     - configure_with_wifi.md
@@ -91,6 +92,7 @@ nav:
     - configure_data_logging.md
     - configure_profiles.md
     - configure_pointperfect.md
+    - menu_radios.md
     - menu_system_status.md
     - menu_debug.md
     - system_status_report.md
@@ -99,5 +101,4 @@ nav:
     - permanent_base.md
     - accuracy_verification.md
     - embeddedsystem_connection.md
-    - firmware_update.md
     - contribute.md

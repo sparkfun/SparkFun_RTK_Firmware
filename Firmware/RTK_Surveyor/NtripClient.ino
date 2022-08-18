@@ -339,18 +339,30 @@ void ntripClientUpdate()
       break;
 
     case NTRIP_CLIENT_WIFI_CONNECTED:
-      //Open connection to caster service
-      if (!ntripClientConnect())
       {
-        log_d("NTRIP Client caster failed to connect. Trying again.");
+        //If GGA transmission is enabled, wait for GNSS lock before connecting to NTRIP Caster
+        //If GGA transmission is not enabled, start connecting to NTRIP Caster
+        if ( (settings.ntripClient_TransmitGGA == true && (fixType == 3 || fixType == 4 || fixType == 5))
+             || settings.ntripClient_TransmitGGA == false)
+        {
+          //Open connection to caster service
+          if (!ntripClientConnect())
+          {
+            log_d("NTRIP Client caster failed to connect. Trying again.");
 
-        //Assume service not available
-        if (ntripClientConnectLimitReached())
-          Serial.println("NTRIP Client caster failed to connect. Do you have your caster address and port correct?");
+            //Assume service not available
+            if (ntripClientConnectLimitReached())
+              Serial.println("NTRIP Client caster failed to connect. Do you have your caster address and port correct?");
+          }
+          else
+            //Socket opened to NTRIP system
+            ntripClientSetState(NTRIP_CLIENT_CONNECTING);
+        }
+        else
+        {
+          log_d("Waiting for Fix");
+        }
       }
-      else
-        //Socket opened to NTRIP system
-        ntripClientSetState(NTRIP_CLIENT_CONNECTING);
       break;
 
     case NTRIP_CLIENT_CONNECTING:

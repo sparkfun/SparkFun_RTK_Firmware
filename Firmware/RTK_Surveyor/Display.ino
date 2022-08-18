@@ -659,7 +659,7 @@ uint32_t setRadioIcons()
     //Because of lack of space we will indicate the Base/Rover if only two radios or less are active
 
     //Count the number of radios in use
-    uint8_t numberOfRadios = 1; //Bluetooth always indicated
+    uint8_t numberOfRadios = 1; //Bluetooth always indicated. TODO don't count if BT radio type is OFF.
     if (wifiState > WIFI_OFF) numberOfRadios++;
     if (espnowState > ESPNOW_OFF) numberOfRadios++;
 

@@ -152,10 +152,12 @@ void menuSystem()
     Serial.printf("z) Set time zone offset: %02d:%02d:%02d\r\n", settings.timeZoneHours, settings.timeZoneMinutes, settings.timeZoneSeconds);
 
     Serial.print(F("b) Set Bluetooth Mode: "));
-    if (settings.enableBLE == true)
+    if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
+      Serial.println(F("Classic"));
+    else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
       Serial.println(F("BLE"));
     else
-      Serial.println(F("Classic"));
+      Serial.println(F("Off"));
 
     Serial.println("r) Reset all settings to default");
 
@@ -206,12 +208,13 @@ void menuSystem()
     {
       // Restart Bluetooth
       bluetoothStop();
-      if (settings.enableBLE == false)
-        settings.enableBLE = true;
-      else
-        settings.enableBLE = false;
+      if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
+        settings.bluetoothRadioType = BLUETOOTH_RADIO_BLE;
+      else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+        settings.bluetoothRadioType = BLUETOOTH_RADIO_OFF;
+      else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
+        settings.bluetoothRadioType = BLUETOOTH_RADIO_SPP;
       bluetoothStart();
-
     }
     else if (incoming == 'r')
     {

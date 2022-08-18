@@ -116,11 +116,13 @@ void bluetoothStart()
 
     sprintf(deviceName, "%s %s%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]);
 
-    // BLE vs Bluetooth Classic
-    if (settings.enableBLE)
-      bluetoothSerial = new BTLESerial();
-    else
+    // Select Bluetooth setup
+    if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
+      return;
+    else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
       bluetoothSerial = new BTClassicSerial();
+    else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+      bluetoothSerial = new BTLESerial();
 
     if (bluetoothSerial->begin(deviceName) == false)
     {

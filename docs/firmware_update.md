@@ -108,6 +108,8 @@ esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --afte
 
 Where *COM6* is replaced with the COM port that the RTK product enumerated at and *RTK_Surveyor_Firmware_vxx.bin* is the firmware you would like to load.
 
+**Note:** Some users have reported the 921600bps baud rate does not work. Decrease this to 115200 as needed.
+
 Upon completion, your RTK device will reset and power down.
 
 ### macOS / Linux
@@ -119,6 +121,8 @@ If the COM port is not showing be sure the unit is turned **On**. If an unknown 
 py esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor_Partitions_16MB.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
 
 Where */dev/ttyUSB0* is replaced with the port that the RTK product enumerated at and *RTK_Surveyor_Firmware_vxx.bin* is the firmware you would like to load.
+
+**Note:** Some users have reported the 921600bps baud rate does not work. Decrease this to 115200 as needed.
 
 Upon completion, your RTK device will reset and power down.
 

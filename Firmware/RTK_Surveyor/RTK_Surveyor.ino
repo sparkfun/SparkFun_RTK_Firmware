@@ -151,7 +151,7 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 #include <HTTPClient.h> //Built-in. Needed for ThingStream API for ZTP
 #include <ArduinoJson.h> //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 #include <WiFiClientSecure.h> //Built-in.
-#include <PubSubClient.h> //Built-in. Used for MQTT obtaining of keys
+#include <PubSubClient.h> //http://librarymanager/All#PubSubClient_MQTT_Lightweight v2.8.0 Used for MQTT obtaining of keys
 
 #include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
 

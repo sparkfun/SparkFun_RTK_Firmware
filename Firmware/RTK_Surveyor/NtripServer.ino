@@ -74,6 +74,7 @@ static uint32_t ntripServerStateLastDisplayed = 0;
 //NTRIP server timer usage:
 //  * Measure the connection response time
 //  * Receive RTCM correction data timeout
+//  * Monitor last RTCM byte received for frame counting
 static uint32_t ntripServerTimer;
 
 //Record last connection attempt
@@ -363,7 +364,15 @@ void ntripServerProcessRTCM(uint8_t incoming)
     if (settings.enableNtripServerMessageParsing == true)
       passAlongIncomingByte &= ntripServerRtcmMessage(incoming);
     else
-      rtcmPacketsSent++; //If not checking RTCM CRC, count every byte
+    {
+      //If we have not gotten new RTCM bytes for a period of time, assume end of frame
+      if (millis() - ntripServerTimer > 100 && ntripServerBytesSent > 0)
+      {
+        log_d("NTRIP Server pushed %d RTCM bytes to Caster", ntripServerBytesSent);
+        ntripServerBytesSent = 0;
+        rtcmPacketsSent++; //If not checking RTCM CRC, count based on timeout
+      }
+    }
 
     if (passAlongIncomingByte)
     {

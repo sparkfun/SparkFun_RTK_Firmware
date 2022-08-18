@@ -345,7 +345,7 @@ void espnowProcessRTCM(byte incoming)
       espnowOutgoingSpot = 0; //Wrap
       esp_now_send(0, (uint8_t *) &espnowOutgoing, sizeof(espnowOutgoing)); //Send packet to all peers
       delay(10); //We need a small delay between sending multiple packets
-      log_d("ESPNOW: Sending %d bytes", sizeof(espnowOutgoing));
+      log_d("ESPNOW pushed %d RTCM bytes", sizeof(espnowOutgoing));
 
       espnowOutgoingRTCM = true;
     }

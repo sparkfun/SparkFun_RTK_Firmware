@@ -1,0 +1,72 @@
+name: Build Release
+on: 
+  workflow_dispatch:
+    branches: 
+      - main
+
+env:
+  FILENAME_PREFIX: RTK_Surveyor_Firmware_v2.4
+  POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
+
+jobs:
+  build:
+    
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Setup Arduino CLI
+        uses: arduino/setup-arduino-cli@v1
+
+      #We limit the ESP32 core to v2.0.2
+      - name: Install platform
+        run: arduino-cli core install esp32:esp32@2.0.2 
+          --additional-urls 'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json'
+
+      - name: Start config file
+        run: arduino-cli config init
+
+      - name: Enable external libs
+        run: arduino-cli config set library.enable_unsafe_install true
+
+      - name: Get Libraries
+        run: arduino-cli lib install --git-url 
+          https://github.com/fbiego/ESP32Time.git
+          https://github.com/me-no-dev/ESPAsyncWebServer.git 
+          https://github.com/me-no-dev/AsyncTCP.git 
+          https://github.com/JChristensen/JC_Button.git 
+          https://github.com/greiman/SdFat.git 
+          https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library.git 
+          https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.git 
+          https://github.com/sparkfun/SparkFun_Qwiic_OLED_Arduino_Library.git 
+          https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library.git 
+          https://github.com/bblanchon/ArduinoJson.git 
+          https://github.com/knolleary/pubsubclient.git
+          https://github.com/avinabmalla/ESP32_BleSerial.git
+          
+      - name: Compile Sketch
+        run: arduino-cli compile --fqbn esp32:esp32:esp32 ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
+          --build-property build.partitions=partitions
+          --build-property upload.maximum_size=3145728 
+          --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\""
+          --export-binaries
+
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%b_%d_%Y')"
+      
+      - name: Rename binary
+        run: |
+          cd Firmware/RTK_Surveyor
+          cd build
+          cd esp32.esp32.esp32
+          mv RTK_Surveyor.ino.bin ${{ env.FILENAME_PREFIX }}.bin
+
+      - name: Upload binary to action
+        uses: actions/upload-artifact@v3
+        with: 
+          name: ${{ env.FILENAME_PREFIX }}
+          path: ./Firmware/RTK_Surveyor/build/esp32.esp32.esp32/${{ env.FILENAME_PREFIX }}.bin       

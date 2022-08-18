@@ -329,13 +329,13 @@ void menuDebug()
     Serial.print("9) GNSS Serial Timeout: ");
     Serial.println(settings.serialTimeoutGNSS);
 
-    Serial.print("10) Periodically print Wifi IP Address: ");
+    Serial.print("10) Periodically print WiFi IP Address: ");
     Serial.printf("%s\r\n", settings.enablePrintWifiIpAddress ? "Enabled" : "Disabled");
 
     Serial.print("11) Periodically print state: ");
     Serial.printf("%s\r\n", settings.enablePrintState ? "Enabled" : "Disabled");
 
-    Serial.print("12) Periodically print Wifi state: ");
+    Serial.print("12) Periodically print WiFi state: ");
     Serial.printf("%s\r\n", settings.enablePrintWifiState ? "Enabled" : "Disabled");
 
     Serial.print("13) Periodically print NTRIP client state: ");

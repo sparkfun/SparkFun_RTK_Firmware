@@ -394,14 +394,14 @@ typedef struct {
 
   //NTRIP Server
   bool enableNtripServer = false;
-  bool ntripServer_StartAtSurveyIn = false; //true = Start Wifi instead of Bluetooth at Survey-In
+  bool ntripServer_StartAtSurveyIn = false; //true = Start WiFi instead of Bluetooth at Survey-In
   char ntripServer_CasterHost[50] = "rtk2go.com"; //It's free...
   uint16_t ntripServer_CasterPort = 2101;
   char ntripServer_CasterUser[50] = "test@test.com"; //Some free casters require auth. User must provide their own email address to use RTK2Go
   char ntripServer_CasterUserPW[50] = "";
   char ntripServer_MountPoint[50] = "bldr_dwntwn2"; //NTRIP Server
   char ntripServer_MountPointPW[50] = "WR5wRo4H";
-  char ntripServer_wifiSSID[50] = "TRex"; //NTRIP Server Wifi
+  char ntripServer_wifiSSID[50] = "TRex"; //NTRIP Server WiFi
   char ntripServer_wifiPW[50] = "parachutes";
 
   //NTRIP Client
@@ -412,7 +412,7 @@ typedef struct {
   char ntripClient_CasterUserPW[50] = "";
   char ntripClient_MountPoint[50] = "bldr_SparkFun1";
   char ntripClient_MountPointPW[50] = "";
-  char ntripClient_wifiSSID[50] = "TRex"; //NTRIP Server Wifi
+  char ntripClient_wifiSSID[50] = "TRex"; //NTRIP Server WiFi
   char ntripClient_wifiPW[50] = "parachutes";
   bool ntripClient_TransmitGGA = true;
 

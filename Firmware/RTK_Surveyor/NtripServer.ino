@@ -35,7 +35,7 @@
                     |                  v                Fail  |
                     |     NTRIP_SERVER_AUTHORIZATION -------->+
                     |                  |                      ^
-                    |                  | Discard Data   Wifi  |
+                    |                  | Discard Data   WiFi  |
                     |                  v                Fail  |
                     |         NTRIP_SERVER_CASTING -----------'
                     |                  |

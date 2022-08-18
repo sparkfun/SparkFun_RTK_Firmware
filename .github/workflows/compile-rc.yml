@@ -49,11 +49,11 @@ jobs:
           https://github.com/avinabmalla/ESP32_BleSerial.git
           
       - name: Compile Sketch
-        run: arduino-cli compile --fqbn esp32:esp32:esp32:DebugLevel=debug ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
+        run: arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=debug ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
           --build-property build.partitions=partitions
           --build-property upload.maximum_size=3145728 
-          --export-binaries
           --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\""
+          --export-binaries
 
       - name: Get current date
         id: date

@@ -306,7 +306,7 @@ void menuRadio()
 
     Serial.print("1) Select Radio Type: ");
     if (settings.radioType == RADIO_EXTERNAL) Serial.println("External only");
-    else if (settings.radioType == RADIO_ESPNOW) Serial.println("Internal ESP NOW");
+    else if (settings.radioType == RADIO_ESPNOW) Serial.println("Internal ESP-Now");
 
     if (settings.radioType == RADIO_ESPNOW)
     {

@@ -696,7 +696,7 @@ void updateSystemState()
             uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
             log_d("Days until keys expire: %d", daysRemaining);
 
-            if (daysRemaining >= 28)
+            if (daysRemaining >= 28 && daysRemaining <= 56)
               changeState(STATE_KEYS_LBAND_CONFIGURE);
             else
               changeState(STATE_KEYS_NEEDED);

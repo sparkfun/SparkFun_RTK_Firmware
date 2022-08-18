@@ -223,6 +223,9 @@ bool espnowIsPaired()
       memcpy(settings.espnowPeers[settings.espnowPeerCount], receivedMAC, 6);
       settings.espnowPeerCount++;
       settings.espnowPeerCount %= ESPNOW_MAX_PEERS;
+
+      //Enable radio. User may have arrived here from the setup menu rather than serial menu.
+      settings.radioType = RADIO_ESPNOW;
     }
 
     //Send message directly to the received MAC (not unicast), then exit

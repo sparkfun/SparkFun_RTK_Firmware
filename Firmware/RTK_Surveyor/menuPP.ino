@@ -278,15 +278,22 @@ bool provisionDevice()
 }
 
 //Subscribe to MQTT channel, grab keys, then stop
+
 bool updatePointPerfectKeys()
 {
 #ifdef COMPILE_WIFI
 
   WiFiClientSecure secureClient;
 
+#define CONTENT_SIZE 2000
+
+  certificateContents = (char*)malloc(CONTENT_SIZE);
+  memset(certificateContents, 0, CONTENT_SIZE);
   loadFile("certificate", certificateContents);
   secureClient.setCertificate(certificateContents);
 
+  keyContents = (char*)malloc(CONTENT_SIZE);
+  memset(keyContents, 0, CONTENT_SIZE);
   loadFile("privateKey", keyContents);
   secureClient.setPrivateKey(keyContents);
 
@@ -336,6 +343,8 @@ bool updatePointPerfectKeys()
     if (mqttClient.connected() == false)
     {
       log_d("Client disconnected");
+      free(certificateContents);
+      free(keyContents);
       return (false);
     }
 
@@ -345,12 +354,16 @@ bool updatePointPerfectKeys()
     {
       Serial.println();
       log_d("Channel failed to respond");
+      free(certificateContents);
+      free(keyContents);
       return (false);
     }
   }
 
   Serial.println();
-  Serial.println("Keys successfully update");
+  Serial.println("Keys successfully updated");
+  free(certificateContents);
+  free(keyContents);
   return (true);
 #else
   return (false);
@@ -957,8 +970,6 @@ void menuPointPerfect()
         else
           updatePointPerfectKeys();
       }
-
-      bluetoothStart();
 #endif
     }
     else if (incoming == '6')

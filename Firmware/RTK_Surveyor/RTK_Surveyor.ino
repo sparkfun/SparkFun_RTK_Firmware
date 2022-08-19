@@ -354,7 +354,8 @@ float lBandEBNO = 0.0; //Used on system status menu
 
 uint8_t espnowOutgoing[250]; //ESP NOW has max of 250 characters
 unsigned long espnowLastAdd; //Tracks how long since last byte was added to the outgoing buffer
-uint8_t espnowOutgoingSpot = 0;
+uint8_t espnowOutgoingSpot = 0; //ESP Now has max of 250 characters
+uint16_t espnowBytesSent = 0; //May be more than 255
 uint8_t receivedMAC[6]; //Holds the broadcast MAC during pairing
 
 int espnowRSSI = 0;
@@ -848,8 +849,12 @@ void updateRadio()
       //then we've reached the end of the RTCM stream. Send partial buffer.
       if (espnowOutgoingSpot > 0 && (millis() - espnowLastAdd) > 50)
       {
+        rtcmPacketsSent++; //Assume this is the end of the RTCM frame
+
         esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
-        //log_d("ESPNOW: Sending %d bytes", espnowOutgoingSpot);
+        
+        log_d("ESPNOW transmitted %d RTCM bytes", espnowBytesSent + espnowOutgoingSpot);
+        espnowBytesSent = 0;
         espnowOutgoingSpot = 0; //Reset
       }
 

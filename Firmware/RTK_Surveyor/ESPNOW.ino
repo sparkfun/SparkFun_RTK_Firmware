@@ -63,7 +63,7 @@ void espnowOnDataRecieved(const uint8_t *mac, const uint8_t *incomingData, int l
 
     //Pass RTCM bytes (presumably) from ESP NOW out ESP32-UART2 to ZED-UART1
     serialGNSS.write(incomingData, len);
-    log_d("ESPNOW: Received %d bytes, RSSI: %d", len, espnowRSSI);
+    log_d("ESPNOW received %d RTCM bytes, pushed to ZED, RSSI: %d", len, espnowRSSI);
 
     espnowIncomingRTCM = true;
     lastEspnowRssiUpdate = millis();
@@ -348,7 +348,8 @@ void espnowProcessRTCM(byte incoming)
       espnowOutgoingSpot = 0; //Wrap
       esp_now_send(0, (uint8_t *) &espnowOutgoing, sizeof(espnowOutgoing)); //Send packet to all peers
       delay(10); //We need a small delay between sending multiple packets
-      log_d("ESPNOW pushed %d RTCM bytes", sizeof(espnowOutgoing));
+      
+      espnowBytesSent += sizeof(espnowOutgoing);
 
       espnowOutgoingRTCM = true;
     }

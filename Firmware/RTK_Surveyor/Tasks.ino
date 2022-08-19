@@ -18,6 +18,7 @@ void F9PSerialWriteTask(void *e)
         //TODO - control if this RTCM source should be listened to or not
         serialGNSS.write(wBuffer, s);
         bluetoothIncomingRTCM = true;
+        log_d("Bluetooth received %d RTCM bytes, sent to ZED", s);
 
         if (settings.enableTaskReports == true)
           Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
@@ -671,4 +672,3 @@ void idleTask(void *e)
   }
 }
 #endif  //COMPILE_IDLE_TASKS
-

@@ -460,7 +460,7 @@ void ntripClientUpdate()
           i2cGNSS.pushRawData(rtcmData, rtcmCount);
           wifiIncomingRTCM = true;
 
-          log_d("NTRIP Client pushed %d RTCM bytes to ZED", rtcmCount);
+          log_d("NTRIP Client received %d RTCM bytes, pushed to ZED", rtcmCount);
         }
       }
 

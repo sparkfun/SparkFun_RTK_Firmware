@@ -126,6 +126,12 @@ void menuSystem()
     else
       Serial.println(F("Off"));
 
+    Serial.print(F("n) Enable/disable WiFi NMEA server: "));
+    if (settings.enableNmeaServer == true)
+      Serial.println(F("Enabled"));
+    else
+      Serial.println(F("Disabled"));
+
     Serial.println("r) Reset all settings to default");
 
     // Support mode switching
@@ -182,6 +188,11 @@ void menuSystem()
       else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
         settings.bluetoothRadioType = BLUETOOTH_RADIO_SPP;
       bluetoothStart();
+    }
+    else if (incoming == 'n')
+    {
+      //Toggle WiFi NEMA server
+      settings.enableNmeaServer ^= 1;
     }
     else if (incoming == 'r')
     {
@@ -355,6 +366,9 @@ void menuDebug()
     Serial.printf("%s\r\n", settings.runLogTest ? "Enabled" : "Disabled");
 
     Serial.println("30) Run Bluetooth Test");
+
+    Serial.print("31) Print NMEA TCP status: ");
+    Serial.printf("%s\r\n", settings.enablePrintNmeaTcpStatus ? "Enabled" : "Disabled");
 
     Serial.println("t) Enter Test Screen");
 
@@ -545,6 +559,10 @@ void menuDebug()
       }
       else if (incoming == 30)
         bluetoothTest(true);
+      else if (incoming == 31)
+      {
+        settings.enablePrintNmeaTcpStatus ^= 1;
+      }
       else
         printUnknown(incoming);
     }

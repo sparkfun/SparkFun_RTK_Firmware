@@ -267,6 +267,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", "espnowPeerCount", settings.espnowPeerCount);
   settingsFile->printf("%s=%d\n\r", "enableRtcmMessageChecking", settings.enableRtcmMessageChecking);
   settingsFile->printf("%s=%d\n\r", "bluetoothRadioType", settings.bluetoothRadioType);
+  settingsFile->printf("%s=%d\n\r", "enableNmeaServer", settings.enableNmeaServer);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -877,6 +878,8 @@ bool parseLine(char* str, Settings *settings)
     settings->radioType = (RadioType_e)d;
   else if (strcmp(settingName, "bluetoothRadioType") == 0)
     settings->bluetoothRadioType = (BluetoothRadioType_e)d;
+  else if (strcmp(settingName, "enableNmeaServer") == 0)
+    settings->enableNmeaServer = d;
 
   //Check for bulk settings (constellations, message rates, ESPNOW Peers)
   //Must be last on else list

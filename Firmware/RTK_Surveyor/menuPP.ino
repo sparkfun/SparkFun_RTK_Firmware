@@ -278,7 +278,6 @@ bool provisionDevice()
 }
 
 //Subscribe to MQTT channel, grab keys, then stop
-
 bool updatePointPerfectKeys()
 {
 #ifdef COMPILE_WIFI
@@ -323,6 +322,8 @@ bool updatePointPerfectKeys()
       if (tries++ == maxTries)
       {
         log_d("MQTT failed to connect");
+        free(certificateContents);
+        free(keyContents);
         return (false);
       }
 
@@ -969,6 +970,8 @@ void menuPointPerfect()
         }
         else
           updatePointPerfectKeys();
+
+        wifiStop();
       }
 #endif
     }

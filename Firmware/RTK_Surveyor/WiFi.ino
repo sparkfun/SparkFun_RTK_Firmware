@@ -50,6 +50,9 @@ static const int WIFI_CONNECTION_TIMEOUT = 10 * 1000;  //Milliseconds
 //Interval to use when displaying the IP address
 static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
 
+#define WIFI_MAX_NMEA_CLIENTS         4
+#define WIFI_NMEA_TCP_PORT            1958
+
 //----------------------------------------
 // Locals - compiled out
 //----------------------------------------
@@ -63,6 +66,10 @@ static unsigned long wifiTimer = 0;
 
 //Last time the WiFi state was displayed
 static uint32_t lastWifiState = 0;
+
+//NMEA TCP server
+static WiFiServer wifiNmeaServer(WIFI_NMEA_TCP_PORT);
+static WiFiClient wifiNmeaClient[WIFI_MAX_NMEA_CLIENTS];
 
 //----------------------------------------
 // WiFi Routines - compiled out
@@ -204,6 +211,83 @@ bool wifiConnectionTimeout()
   return true;
 }
 
+//Send NMEA data to the NMEA clients
+void wifiNmeaData(uint8_t * data, uint16_t length)
+{
+#ifdef  COMPILE_WIFI
+  static IPAddress ipAddress[WIFI_MAX_NMEA_CLIENTS];
+  int index;
+
+  if (online.nmeaServer)
+  {
+    //Check for another client
+    for (index = 0; index < WIFI_MAX_NMEA_CLIENTS; index++)
+      if (!(wifiNmeaConnected & (1 << index)))
+      {
+        if ((!wifiNmeaClient[index]) || (!wifiNmeaClient[index].connected()))
+        {
+          wifiNmeaClient[index] = wifiNmeaServer.available();
+          if (!wifiNmeaClient[index])
+            break;
+          ipAddress[index] = wifiNmeaClient[index].remoteIP();
+          Serial.printf("Connected NMEA client %d to ", index);
+          Serial.println(ipAddress[index]);
+          wifiNmeaConnected |= 1 << index;
+        }
+      }
+  }
+
+  //Walk the list of NMEA TCP clients
+  for (index = 0; index < WIFI_MAX_NMEA_CLIENTS; index++)
+  {
+    if (wifiNmeaConnected & (1 << index))
+    {
+      //Check for a broken connection
+      if ((!wifiNmeaClient[index]) || (!wifiNmeaClient[index].connected()))
+        Serial.printf("Disconnected NMEA client %d from ", index);
+
+      //Send the NMEA data to the connected clients
+      else if ((settings.enableNmeaServer && online.nmeaServer)
+        && ((!length) || (wifiNmeaClient[index].write(data, length) == length)))
+      {
+        if (settings.enablePrintNmeaTcpStatus && length)
+          Serial.printf("NMEA %d bytes written\r\n", length);
+        continue;
+      }
+
+      //Failed to write the data
+      else
+        Serial.printf("Breaking NMEA client %d connection to ", index);
+
+      //Done with this client connection
+      Serial.println(ipAddress[index]);
+      wifiNmeaClient[index].stop();
+      wifiNmeaConnected &= ~(1 << index);
+
+      //Shutdown the NMEA server if necessary
+      if (settings.enableNmeaServer || online.nmeaServer)
+        wifiNmeaTcpServerActive();
+    }
+  }
+#endif  //COMPILE_WIFI
+}
+
+//Check for NMEA TCP server active
+bool wifiNmeaTcpServerActive()
+{
+#ifdef COMPILE_WIFI
+  if ((settings.enableNmeaServer && online.nmeaServer) || wifiNmeaConnected)
+    return true;
+
+  //Shutdown the NMEA server
+  online.nmeaServer = false;
+
+  //Stop the NMEA server
+  wifiNmeaServer.stop();
+#endif  //COMPILE_WIFI
+  return false;
+}
+
 //If radio is off entirely, start WiFi
 //If ESP-Now is active, only add the LR protocol
 void wifiStart(char* ssid, char* pw)
@@ -241,7 +325,16 @@ void wifiStart(char* ssid, char* pw)
     if (restartESPNow == true)
       espnowStart();
 #endif
-    
+
+    //Verify WIFI_MAX_NMEA_CLIENTS
+    if ((sizeof(wifiNmeaConnected) * 8) < WIFI_MAX_NMEA_CLIENTS)
+    {
+      Serial.printf("Please set WIFI_MAX_NMEA_CLIENTS <= %d or increase size of wifiNmeaConnected\r\n", sizeof(wifiNmeaConnected) * 8);
+      while (true)
+      {
+      }
+    }
+
     //Display the heap state
     reportHeapNow();
   }
@@ -259,6 +352,18 @@ void wifiStop()
   if (wifiState == WIFI_OFF)
   {
     //Do nothing
+  }
+
+  //Shutdown the NMEA server connection
+  if (online.nmeaServer)
+  {
+    //Tell the UART2 tasks that the NMEA server is shutting down
+    online.nmeaServer = false;
+
+    //Wait for the UART2 tasks to close the NMEA client connections
+    while (wifiNmeaTcpServerActive())
+      delay(5);
+    Serial.println("NMEA Server offline");
   }
 
 #ifdef COMPILE_ESPNOW
@@ -305,6 +410,16 @@ void wifiUpdate()
 
   //Periodically display the IP address
   wifiPeriodicallyDisplayIpAddress();
+
+  //Start the NMEA server if enabled
+  if ((!wifiNmeaServer) && settings.enableNmeaServer
+    && (wifiState == WIFI_CONNECTED))
+  {
+    wifiNmeaServer.begin();
+    online.nmeaServer = true;
+    Serial.print("NMEA Server online, IP Address ");
+    Serial.println(WiFi.localIP());
+  }
 
   //Support NTRIP client during Rover operation
   if (systemState < STATE_BASE_NOT_STARTED)

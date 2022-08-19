@@ -193,6 +193,16 @@ void menuSystem()
     {
       //Toggle WiFi NEMA server
       settings.enableNmeaServer ^= 1;
+      if ((!settings.enableNmeaServer) && online.nmeaServer)
+      {
+        //Tell the UART2 tasks that the NMEA server is shutting down
+        online.nmeaServer = false;
+
+        //Wait for the UART2 tasks to close the NMEA client connections
+        while (wifiNmeaTcpServerActive())
+          delay(5);
+        Serial.println("NMEA Server offline");
+      }
     }
     else if (incoming == 'r')
     {

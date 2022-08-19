@@ -159,6 +159,7 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 
 #endif
 
+volatile uint8_t wifiNmeaConnected;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration

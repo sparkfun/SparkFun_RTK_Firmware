@@ -1660,8 +1660,6 @@ void displayWiFiConfigNotStarted()
 
 void displayWiFiConfig()
 {
-  uint32_t icons;
-
   int yPos = WiFi_Symbol_Height + 2;
   int fontHeight = 8;
 

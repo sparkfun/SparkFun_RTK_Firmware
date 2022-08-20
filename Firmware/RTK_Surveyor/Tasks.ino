@@ -415,7 +415,7 @@ void ButtonCheckTask(void *e)
           case STATE_WIFI_CONFIG:
           case STATE_ESPNOW_PAIRING_NOT_STARTED:
           case STATE_ESPNOW_PAIRING:
-            lastSystemState = systemState; //Remember this state to return after we mark an event
+            lastSystemState = systemState; //Remember this state to return after we mark an event or ESP-Now pair
             requestChangeState(STATE_DISPLAY_SETUP);
             setupState = STATE_MARK_EVENT;
             lastSetupMenuChange = millis();
@@ -535,7 +535,7 @@ void ButtonCheckTask(void *e)
           case STATE_WIFI_CONFIG:
           case STATE_ESPNOW_PAIRING_NOT_STARTED:
           case STATE_ESPNOW_PAIRING:
-            lastSystemState = systemState; //Remember this state to return after we mark an event
+            lastSystemState = systemState; //Remember this state to return after we mark an event or ESP-Now pair
             requestChangeState(STATE_DISPLAY_SETUP);
             setupState = STATE_MARK_EVENT;
             lastSetupMenuChange = millis();

@@ -920,7 +920,9 @@ void updateSystemState()
           if (espnowIsPaired() == true)
           {
             paintEspNowPaired();
-            changeState(STATE_ROVER_NOT_STARTED);
+            
+            // Return to the previous state
+            changeState(lastSystemState);
           }
           else
           {

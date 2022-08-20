@@ -230,7 +230,8 @@ bool espnowIsPaired()
 
     //Enable radio. User may have arrived here from the setup menu rather than serial menu.
     settings.radioType = RADIO_ESPNOW;
-    recordSystemSettings();
+    
+    recordSystemSettings(); //Record radioType and espnowPeerCount to NVM
 
     espnowSetState(ESPNOW_PAIRED);
     return (true);

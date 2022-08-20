@@ -1455,45 +1455,23 @@ void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8
 //Show transmission of RTCM correction data packets to NTRIP caster
 void paintRTCM()
 {
-  static uint32_t lastCorrectionDataSeen;
-  int textY = 17;
-  int textKerning = 8;
-  oled.setFont(QW_FONT_8X16);
+  int yPos = 17;
   if (bluetoothGetState() != BT_OFF)
-  {
-    int textX = 1;
-    printTextwithKerning("Xmitting", textX, textY, textKerning);  //via Bluetooth
-  }
+    printTextCenter("Xmitting", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
   else
-  {
-    int textX = 4;
-    printTextwithKerning("Casting", textX, textY, textKerning);   //via WiFi
-  }
+    printTextCenter("Casting", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
-  //Determine if correction data has been sent recently
-  if (bluetoothOutgoingRTCM == true || wifiOutgoingRTCM == true || espnowOutgoingRTCM == true)
-    lastCorrectionDataSeen = millis();
+  oled.setCursor(0, 39); //x, y
+  oled.setFont(QW_FONT_5X7);
+  oled.print("RTCM:");
 
-  if ((millis() - lastCorrectionDataSeen) >= 5000)
-  {
-    //No correction data seen
-    oled.setCursor(0, 33); //x, y
-    oled.print("Off");
-  }
+  if (rtcmPacketsSent < 100)
+    oled.setCursor(30, 36); //x, y - Give space for two digits
   else
-  {
-    oled.setCursor(0, 39); //x, y
-    oled.setFont(QW_FONT_5X7);
-    oled.print("RTCM:");
+    oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
 
-    if (rtcmPacketsSent < 100)
-      oled.setCursor(30, 36); //x, y - Give space for two digits
-    else
-      oled.setCursor(28, 36); //x, y - Push towards colon to make room for log icon
-
-    oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
-    oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
-  }
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.print(rtcmPacketsSent); //rtcmPacketsSent is controlled in processRTCM()
 
   paintResets();
 }
@@ -1501,15 +1479,12 @@ void paintRTCM()
 //Show connecting to NTRIP caster service
 void paintConnectingToNtripCaster()
 {
-  int textX = 11;
-  int textY = 18;
-  int textKerning = 8;
+  int yPos = 18;
+  printTextCenter("Caster", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
-  printTextwithKerning("Caster", textX, textY, textKerning);
-
-  textX = 3;
-  textY = 33;
-  textKerning = 6;
+  int textX = 3;
+  int textY = 33;
+  int textKerning = 6;
   oled.setFont(QW_FONT_8X16);
 
   printTextwithKerning("Connecting", textX, textY, textKerning);

@@ -853,7 +853,7 @@ void updateRadio()
 
         esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
         
-        log_d("ESPNOW transmitted %d RTCM bytes", espnowBytesSent + espnowOutgoingSpot);
+        if(!inMainMenu) log_d("ESPNOW transmitted %d RTCM bytes", espnowBytesSent + espnowOutgoingSpot);
         espnowBytesSent = 0;
         espnowOutgoingSpot = 0; //Reset
       }

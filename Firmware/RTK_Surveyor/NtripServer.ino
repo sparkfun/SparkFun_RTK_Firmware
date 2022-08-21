@@ -368,7 +368,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
       //If we have not gotten new RTCM bytes for a period of time, assume end of frame
       if (millis() - ntripServerTimer > 100 && ntripServerBytesSent > 0)
       {
-        log_d("NTRIP Server transmitted %d RTCM bytes to Caster", ntripServerBytesSent);
+        if(!inMainMenu) log_d("NTRIP Server transmitted %d RTCM bytes to Caster", ntripServerBytesSent);
         ntripServerBytesSent = 0;
         rtcmPacketsSent++; //If not checking RTCM CRC, count based on timeout
       }

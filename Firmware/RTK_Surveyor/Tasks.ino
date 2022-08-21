@@ -18,7 +18,7 @@ void F9PSerialWriteTask(void *e)
         //TODO - control if this RTCM source should be listened to or not
         serialGNSS.write(wBuffer, s);
         bluetoothIncomingRTCM = true;
-        log_d("Bluetooth received %d RTCM bytes, sent to ZED", s);
+        if(!inMainMenu) log_d("Bluetooth received %d RTCM bytes, sent to ZED", s);
 
         if (settings.enableTaskReports == true)
           Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
@@ -177,7 +177,7 @@ void F9PSerialReadTask(void *e)
           if (btBytesToSend > 0)
           {
             //If we are in base mode, assume part of the outgoing data is RTCM
-            if(systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+            if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
               bluetoothOutgoingRTCM = true;
           }
           else

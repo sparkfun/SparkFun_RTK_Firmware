@@ -63,7 +63,7 @@ void espnowOnDataReceived(const uint8_t *mac, const uint8_t *incomingData, int l
 
     //Pass RTCM bytes (presumably) from ESP NOW out ESP32-UART2 to ZED-UART1
     serialGNSS.write(incomingData, len);
-    log_d("ESPNOW received %d RTCM bytes, pushed to ZED, RSSI: %d", len, espnowRSSI);
+    if(!inMainMenu) log_d("ESPNOW received %d RTCM bytes, pushed to ZED, RSSI: %d", len, espnowRSSI);
 
     espnowIncomingRTCM = true;
     lastEspnowRssiUpdate = millis();

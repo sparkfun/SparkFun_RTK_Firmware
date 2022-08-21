@@ -34,7 +34,7 @@ void espnowOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 #endif
 
 // Callback when data is received
-void espnowOnDataRecieved(const uint8_t *mac, const uint8_t *incomingData, int len)
+void espnowOnDataReceived(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
 #ifdef COMPILE_ESPNOW
   if (espnowState == ESPNOW_PAIRING)
@@ -123,7 +123,7 @@ void espnowStart()
 
   // Register callbacks
   //esp_now_register_send_cb(espnowOnDataSent);
-  esp_now_register_recv_cb(espnowOnDataRecieved);
+  esp_now_register_recv_cb(espnowOnDataReceived);
 
   if (settings.espnowPeerCount == 0)
   {

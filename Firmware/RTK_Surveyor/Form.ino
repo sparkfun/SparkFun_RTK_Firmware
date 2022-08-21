@@ -591,7 +591,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     factoryReset();
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
-    if (newAPSettings == true) recordSystemSettings(); //If we've recieved settings, record before restart
+    if (newAPSettings == true) recordSystemSettings(); //If we've received settings, record before restart
 
     //Reboot the machine
     ESP.restart();

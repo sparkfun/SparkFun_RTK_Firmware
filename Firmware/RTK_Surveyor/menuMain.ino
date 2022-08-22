@@ -311,15 +311,10 @@ void menuRadio()
     if (settings.radioType == RADIO_ESPNOW)
     {
       //Pretty print the MAC of all radios
-
-      //Get unit MAC address
-      uint8_t unitMACAddress[6];
-      esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
-
       Serial.print("  Radio MAC: ");
       for (int x = 0 ; x < 5 ; x++)
-        Serial.printf("%02X:", unitMACAddress[x]);
-      Serial.printf("%02X\n\r", unitMACAddress[5]);
+        Serial.printf("%02X:", wifiMACAddress[x]);
+      Serial.printf("%02X\n\r", wifiMACAddress[5]);
 
       if (settings.espnowPeerCount > 0)
       {

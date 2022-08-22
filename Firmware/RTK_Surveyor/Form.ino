@@ -383,7 +383,7 @@ void createSettingsString(char* settingsCSV)
 
   //L-Band
   char hardwareID[13];
-  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]); //Get ready for JSON
+  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
   stringRecord(settingsCSV, "hardwareID", hardwareID);
 
   char apDaysRemaining[20];

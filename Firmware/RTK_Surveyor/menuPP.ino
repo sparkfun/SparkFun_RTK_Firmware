@@ -170,7 +170,7 @@ bool provisionDevice()
   client.setCACert(AWS_PUBLIC_CERT);
 
   char hardwareID[13];
-  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]); //Get ready for JSON
+  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
 
 #ifdef WHITELISTED_ID
   //Override ID with testing ID
@@ -882,7 +882,7 @@ void menuPointPerfect()
     Serial.println("Menu: PointPerfect Corrections");
 
     char hardwareID[13];
-    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]); //Get ready for JSON
+    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
     Serial.printf("Device ID: %s\n\r", hardwareID);
 
     Serial.print("Days until keys expire: ");

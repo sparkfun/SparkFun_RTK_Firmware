@@ -367,7 +367,9 @@ const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-uint8_t unitMACAddress[6]; //Use MAC address in BT broadcast and display
+#define lbandMACAddress         btMACAddress
+uint8_t wifiMACAddress[6]; //Display this address in the system menu
+uint8_t btMACAddress[6];   //Display this address when Bluetooth is enabled, otherwise display wifiMACAddress
 char deviceName[70]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes

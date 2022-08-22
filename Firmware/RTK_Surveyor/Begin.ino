@@ -143,8 +143,9 @@ void beginBoard()
   Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
   //Get unit MAC address
-  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
-  unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
+  esp_read_mac(wifiMACAddress, ESP_MAC_WIFI_STA);
+  memcpy(btMACAddress, wifiMACAddress, sizeof(wifiMACAddress));
+  btMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
   //For all boards, check reset reason. If reset was due to wdt or panic, append last log
   loadSettingsPartial(); //Get resetCount

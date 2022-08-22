@@ -177,6 +177,22 @@ typedef enum BluetoothRadioType_e
   BLUETOOTH_RADIO_OFF,
 } BluetoothRadioType_e;
 
+enum LogTestState
+{
+  LOGTEST_START = 0,
+  LOGTEST_4HZ_5MSG_10MS,
+  LOGTEST_4HZ_7MSG_10MS,
+  LOGTEST_10HZ_5MSG_10MS,
+  LOGTEST_10HZ_7MSG_10MS,
+  LOGTEST_4HZ_5MSG_50MS,
+  LOGTEST_4HZ_7MSG_50MS,
+  LOGTEST_10HZ_5MSG_50MS,
+  LOGTEST_10HZ_7MSG_50MS,
+
+  LOGTEST_END,
+} ;
+uint8_t logTestState = LOGTEST_END;
+
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
 {
@@ -474,6 +490,7 @@ typedef struct {
   uint8_t espnowPeerCount;
   bool enableNtripServerMessageParsing = false;
   BluetoothRadioType_e bluetoothRadioType = BLUETOOTH_RADIO_SPP;
+  bool runLogTest = false; //When set to true, device will create a series of test logs
 } Settings;
 Settings settings;
 

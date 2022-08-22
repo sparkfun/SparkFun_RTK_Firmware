@@ -126,7 +126,7 @@ int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file
 //System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
 SemaphoreHandle_t sdCardSemaphore;
-const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
+TickType_t fatSemaphore_shortWait_ms = 50 / portTICK_PERIOD_MS;
 const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 
 //Display used/free space in menu and config page
@@ -648,8 +648,10 @@ void updateLogs()
   }
   else if (online.logging == true && settings.enableLogging == true && (systemTime_minutes - startCurrentLogTime_minutes) >= settings.maxLogLength_minutes)
   {
-    //Close down file. A new one will be created at the next calling of updateLogs().
-    endSD(false, true);
+    if (settings.runLogTest == false)
+      endSD(false, true); //Close down file. A new one will be created at the next calling of updateLogs().
+    else if (settings.runLogTest == true)
+      updateLogTest();
   }
 
   if (online.logging == true)
@@ -852,8 +854,8 @@ void updateRadio()
         rtcmPacketsSent++; //Assume this is the end of the RTCM frame
 
         esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
-        
-        if(!inMainMenu) log_d("ESPNOW transmitted %d RTCM bytes", espnowBytesSent + espnowOutgoingSpot);
+
+        if (!inMainMenu) log_d("ESPNOW transmitted %d RTCM bytes", espnowBytesSent + espnowOutgoingSpot);
         espnowBytesSent = 0;
         espnowOutgoingSpot = 0; //Reset
       }

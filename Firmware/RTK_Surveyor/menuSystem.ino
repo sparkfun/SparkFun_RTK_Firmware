@@ -66,45 +66,8 @@ void menuSystem()
       printNEOInfo();
     }
 
-    //Display Bluetooth MAC address
-    char macAddress[5];
-    sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
-    Serial.print("Bluetooth (");
-    Serial.print(macAddress);
-    Serial.print("): ");
-
-    //Verify the ESP UART2 can communicate TX/RX to ZED UART1
-    if (online.gnss == true)
-    {
-      if (zedUartPassed == false)
-      {
-        stopUART2Tasks(); //Stop absoring ZED serial via task
-
-        i2cGNSS.setSerialRate(460800, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
-        serialGNSS.begin(460800); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-
-        SFE_UBLOX_GNSS myGNSS;
-        if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
-        {
-          zedUartPassed = true;
-          Serial.print("Online");
-        }
-        else
-          Serial.print("Offline");
-
-        i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
-        serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-
-        startUART2Tasks(); //Return to normal operation
-      }
-      else
-        Serial.print("Online");
-    }
-    else
-    {
-      Serial.print("GNSS Offline");
-    }
-    Serial.println();
+    //Display the Bluetooth status
+    bluetoothTest(false);
 
 #ifdef COMPILE_WIFI
     Serial.print("WiFi MAC Address: ");
@@ -391,6 +354,8 @@ void menuDebug()
     Serial.print("29) Run Logging Test: ");
     Serial.printf("%s\r\n", settings.runLogTest ? "Enabled" : "Disabled");
 
+    Serial.println("30) Run Bluetooth Test");
+
     Serial.println("t) Enter Test Screen");
 
     Serial.println("e) Erase LittleFS");
@@ -578,6 +543,8 @@ void menuDebug()
         //Mark current log file as complete to force test start
         startCurrentLogTime_minutes = systemTime_minutes - settings.maxLogLength_minutes;
       }
+      else if (incoming == 30)
+        bluetoothTest(true);
       else
         printUnknown(incoming);
     }

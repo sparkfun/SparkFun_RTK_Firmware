@@ -209,6 +209,7 @@ void wifiStart(char* ssid, char* pw)
 #ifdef COMPILE_WIFI
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {
+    WiFi.useStaticBuffers(true); //Fix for one to many ESP-Now bug, prior to ESP32 core v2.0.4: https://github.com/espressif/esp-idf/issues/8992
     WiFi.mode(WIFI_STA);
 
 #ifdef COMPILE_ESPNOW
@@ -256,6 +257,7 @@ void wifiStop()
   //If ESP-Now is active, change protocol to only Long Range
   else if (espnowState > ESPNOW_OFF)
   {
+    WiFi.useStaticBuffers(true); //Fix for one to many ESP-Now bug, prior to ESP32 core v2.0.4: https://github.com/espressif/esp-idf/issues/8992
     WiFi.mode(WIFI_STA);
 
     // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps

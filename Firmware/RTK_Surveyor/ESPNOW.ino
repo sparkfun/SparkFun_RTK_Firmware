@@ -63,7 +63,7 @@ void espnowOnDataReceived(const uint8_t *mac, const uint8_t *incomingData, int l
 
     //Pass RTCM bytes (presumably) from ESP NOW out ESP32-UART2 to ZED-UART1
     serialGNSS.write(incomingData, len);
-    if(!inMainMenu) log_d("ESPNOW received %d RTCM bytes, pushed to ZED, RSSI: %d", len, espnowRSSI);
+    if (!inMainMenu) log_d("ESPNOW received %d RTCM bytes, pushed to ZED, RSSI: %d", len, espnowRSSI);
 
     espnowIncomingRTCM = true;
     lastEspnowRssiUpdate = millis();
@@ -93,7 +93,9 @@ void espnowStart()
   if (wifiState == WIFI_OFF && espnowState == ESPNOW_OFF)
   {
     //Radio is off, turn it on
+    WiFi.useStaticBuffers(true); //Fix for one to many ESP-Now bug, prior to ESP32 core v2.0.4: https://github.com/espressif/esp-idf/issues/8992
     WiFi.mode(WIFI_STA);
+
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
     Serial.println("WiFi off, ESP-Now added to protocols");
   }
@@ -230,7 +232,7 @@ bool espnowIsPaired()
 
     //Enable radio. User may have arrived here from the setup menu rather than serial menu.
     settings.radioType = RADIO_ESPNOW;
-    
+
     recordSystemSettings(); //Record radioType and espnowPeerCount to NVM
 
     espnowSetState(ESPNOW_PAIRED);
@@ -350,7 +352,7 @@ void espnowProcessRTCM(byte incoming)
       espnowOutgoingSpot = 0; //Wrap
       esp_now_send(0, (uint8_t *) &espnowOutgoing, sizeof(espnowOutgoing)); //Send packet to all peers
       delay(10); //We need a small delay between sending multiple packets
-      
+
       espnowBytesSent += sizeof(espnowOutgoing);
 
       espnowOutgoingRTCM = true;

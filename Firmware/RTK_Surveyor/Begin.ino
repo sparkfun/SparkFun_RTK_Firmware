@@ -705,7 +705,6 @@ bool beginExternalTriggers()
 
 void beginIdleTasks()
 {
-#ifdef  COMPILE_IDLE_TASKS
   if (settings.enablePrintIdleTime == true)
   {
     char taskName[32];
@@ -724,7 +723,6 @@ void beginIdleTasks()
           index); //Core where task should run, 0=core, 1=Arduino
     }
   }
-#endif  //COMPILE_IDLE_TASKS
 }
 
 void beginI2C()

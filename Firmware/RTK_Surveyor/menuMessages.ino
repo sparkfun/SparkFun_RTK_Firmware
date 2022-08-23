@@ -804,7 +804,7 @@ void updateLogTest()
       //Reduce rate
       rate = 4;
       messages = 5;
-      semaphoreWait = 50;
+      semaphoreWait = 10;
       setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 and USB ports
       log_d("Log Test Complete");
       break;
@@ -823,6 +823,22 @@ void updateLogTest()
 
     startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 
-    log_d("Running log test: %dHz, %dMsg, %dMS", rate, messages, semaphoreWait);
+    char logMessage[100];
+    sprintf(logMessage, "Start log test: %dHz, %dMsg, %dMS", rate, messages, semaphoreWait);
+    
+    char nmeaMessage[100]; //Max NMEA sentence length is 82
+    createNMEASentence(CUSTOM_NMEA_TYPE_LOGTEST_STATUS, nmeaMessage, logMessage); //textID, buffer, text
+
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      ubxFile->println(nmeaMessage);
+      xSemaphoreGive(sdCardSemaphore);
+    }
+    else
+    {
+      log_w("sdCardSemaphore failed to yield, menuMessages.ino line %d", __LINE__);
+    }
+
+    log_d("%s", logMessage);
   }
 }

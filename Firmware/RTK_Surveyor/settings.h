@@ -95,6 +95,7 @@ typedef enum
   CUSTOM_NMEA_TYPE_SYSTEM_VERSION,
   CUSTOM_NMEA_TYPE_ZED_VERSION,
   CUSTOM_NMEA_TYPE_STATUS,
+  CUSTOM_NMEA_TYPE_LOGTEST_STATUS,
 } customNmeaType_e;
 
 //Freeze and blink LEDs if we hit a bad error

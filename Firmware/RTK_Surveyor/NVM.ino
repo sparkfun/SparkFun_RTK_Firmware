@@ -266,7 +266,7 @@ void recordSystemSettingsToFile(File * settingsFile)
     settingsFile->println(tempString);
   }
   settingsFile->printf("%s=%d\n\r", "espnowPeerCount", settings.espnowPeerCount);
-  settingsFile->printf("%s=%d\n\r", "enableNtripServerMessageParsing", settings.enableNtripServerMessageParsing);
+  settingsFile->printf("%s=%d\n\r", "enableRtcmMessageChecking", settings.enableRtcmMessageChecking);
   settingsFile->printf("%s=%d\n\r", "bluetoothRadioType", settings.bluetoothRadioType);
 
   //Record constellation settings
@@ -874,8 +874,8 @@ bool parseLine(char* str, Settings *settings)
     settings->radioType = (RadioType_e)d;
   else if (strcmp(settingName, "espnowPeerCount") == 0)
     settings->espnowPeerCount = d;
-  else if (strcmp(settingName, "enableNtripServerMessageParsing") == 0)
-    settings->enableNtripServerMessageParsing = d;
+  else if (strcmp(settingName, "enableRtcmMessageChecking") == 0)
+    settings->enableRtcmMessageChecking = d;
   else if (strcmp(settingName, "radioType") == 0)
     settings->radioType = (RadioType_e)d;
   else if (strcmp(settingName, "bluetoothRadioType") == 0)

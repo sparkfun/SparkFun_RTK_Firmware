@@ -385,8 +385,8 @@ void menuDebug()
     Serial.print("27) Print duplicate states: ");
     Serial.printf("%s\r\n", settings.enablePrintDuplicateStates ? "Enabled" : "Disabled");
 
-    Serial.print("28) NTRIP server message parser: ");
-    Serial.printf("%s\r\n", settings.enableNtripServerMessageParsing ? "Enabled" : "Disabled");
+    Serial.print("28) RTCM message checking: ");
+    Serial.printf("%s\r\n", settings.enableRtcmMessageChecking ? "Enabled" : "Disabled");
 
     Serial.println("t) Enter Test Screen");
 
@@ -568,7 +568,7 @@ void menuDebug()
       }
       else if (incoming == 28)
       {
-        settings.enableNtripServerMessageParsing ^= 1;
+        settings.enableRtcmMessageChecking ^= 1;
       }
       else
         printUnknown(incoming);

@@ -472,7 +472,7 @@ typedef struct {
   RadioType_e radioType = RADIO_EXTERNAL;
   uint8_t espnowPeers[5][6]; //Max of 5 peers. Contains the MAC addresses (6 bytes) of paired units
   uint8_t espnowPeerCount;
-  bool enableNtripServerMessageParsing = false;
+  bool enableRtcmMessageChecking = false;
   BluetoothRadioType_e bluetoothRadioType = BLUETOOTH_RADIO_SPP;
 } Settings;
 Settings settings;

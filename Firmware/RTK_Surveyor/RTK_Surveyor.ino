@@ -401,7 +401,9 @@ uint64_t lastLogSize = 0;
 bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
 bool reuseLastLog = false; //Goes true if we have a reset due to software (rather than POR)
 
-uint32_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM()
+uint16_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM()
+uint32_t rtcmBytesSent = 0;
+uint32_t rtcmLastReceived = 0;
 
 uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
@@ -467,6 +469,8 @@ bool wifiIncomingRTCM = false;
 bool wifiOutgoingRTCM = false;
 bool espnowIncomingRTCM = false;
 bool espnowOutgoingRTCM = false;
+
+static byte rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
@@ -840,6 +844,13 @@ void updateRTC()
 //Internal ESP NOW radio - Use the ESP32 to directly transmit/receive RTCM over 2.4GHz (no WiFi needed)
 void updateRadio()
 {
+  //If we have not gotten new RTCM bytes for a period of time, assume end of frame
+  if (millis() - rtcmLastReceived > 50 && rtcmBytesSent > 0)
+  {
+    rtcmBytesSent = 0;
+    rtcmPacketsSent++; //If not checking RTCM CRC, count based on timeout
+  }
+
 #ifdef COMPILE_ESPNOW
   if (settings.radioType == RADIO_ESPNOW)
   {
@@ -849,11 +860,9 @@ void updateRadio()
       //then we've reached the end of the RTCM stream. Send partial buffer.
       if (espnowOutgoingSpot > 0 && (millis() - espnowLastAdd) > 50)
       {
-        rtcmPacketsSent++; //Assume this is the end of the RTCM frame
-
         esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
-        
-        if(!inMainMenu) log_d("ESPNOW transmitted %d RTCM bytes", espnowBytesSent + espnowOutgoingSpot);
+
+        if (!inMainMenu) log_d("ESPNOW transmitted %d RTCM bytes", espnowBytesSent + espnowOutgoingSpot);
         espnowBytesSent = 0;
         espnowOutgoingSpot = 0; //Reset
       }

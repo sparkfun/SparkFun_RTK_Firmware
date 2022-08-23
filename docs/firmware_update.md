@@ -341,9 +341,9 @@ Insert the following text into the file:
     #      1: ttyUSBn
     #      2: Firmware file
     #
-    sudo python3 ~/.arduino15/packages/esp32/tools/esptool_py/*/esptool.py --chip esp32 --port /dev/$1 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect \
+    sudo python3 ~/.arduino15/packages/esp32/tools/esptool_py/*/esptool.py --chip esp32 --port /dev/$1 --baud 230400 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect \
     0x1000   ~/SparkFun/RTK/Binaries/bin/RTK_Surveyor.ino.bootloader.bin \
-    0x8000   ~/SparkFun/RTK/Binaries/bin/RTK_Surveyor.ino.partitions.bin \
+    0x8000   ~/SparkFun/RTK/Binaries/bin/RTK_Surveyor_Partitions_16MB.bin \
     0xe000   ~/SparkFun/RTK/Binaries/bin/boot_app0.bin \
     0x10000  $2
 
@@ -366,7 +366,7 @@ Install the Arduino IDE
 
 Add the ESP32 support
 
-24. Arduino
+24. arduino
     1. Click on File in the menu bar
     2. Click on Preferences
     3. Go down to the Additional Boards Manager URLs text box
@@ -394,7 +394,7 @@ Connect the Config ESP32 port of the RTK to a USB port on the computer
 
 Enable the libraries in the Arduino IDE
 
-34. Arduino
+34. arduino
     1. From the menu, click on File
     2. Click on Open...
     3. Select the ~/SparkFun/RTK/Firmware/RTK_Surveyor/RTK_Surveyor.ino file
@@ -406,12 +406,13 @@ Enable the libraries in the Arduino IDE
     6. Click on Board
     7. Click on Board Manager…
     8. Click on esp32
-    9. Click on the Install button in the lower right
-    10. Close the Board Manager...
-    11. From the menu, click on Tools
-    12. Click on Board
-    13. Click on ESP32 Arduino
-    14. Click on ESP32 Dev Module
+    9. Select version 2.0.2
+    10. Click on the Install button in the lower right
+    11. Close the Board Manager...
+    12. From the menu, click on Tools
+    13. Click on Board
+    14. Click on ESP32 Arduino
+    15. Click on ESP32 Dev Module
 
     Load the required libraries
 
@@ -426,6 +427,7 @@ Enable the libraries in the Arduino IDE
 
         * ArduinoJson
         * ESP32Time
+        * ESP32_BleSerial
         * JC_Button
         * MAX17048 - Used for “Test Sketch/Batt_Monitor”
         * PubSubClient
@@ -442,17 +444,19 @@ Enable the libraries in the Arduino IDE
     19. From the menu, click on Tools
     20. Click on Port, Select the port that was displayed in step 38 above
     21. Select /dev/ttyUSB0
+    22. Click on Upload Speed
+    23. Select 230400
 
     Setup the partitions for the 16 MB flash
 
-    22. From the menu, click on Tools
-    23. Click on Flash Size
-    24. Select 16MB
-    25. From the menu, click on Tools
-    26. Click on Partition Scheme
-    27. Click on 16M Flash (3MB APP/9MB FATFS)
-    28. From the menu click on File
-    29. Click on Quit
+    24. From the menu, click on Tools
+    25. Click on Flash Size
+    26. Select 16MB
+    27. From the menu, click on Tools
+    28. Click on Partition Scheme
+    29. Click on 16M Flash (3MB APP/9MB FATFS)
+    30. From the menu click on File
+    31. Click on Quit
 
 35. cd ~/SparkFun/RTK/
-36. cp  Firmware/app3M_fat9M_16MB.csv  ~/.arduino15/packages/esp32/hardware/esp32/2.0.3/tools/partitions/app3M_fat9M_16MB.csv
+36. cp  Firmware/app3M_fat9M_16MB.csv  ~/.arduino15/packages/esp32/hardware/esp32/2.0.2/tools/partitions/app3M_fat9M_16MB.csv

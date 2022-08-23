@@ -209,16 +209,25 @@ void wifiStart(char* ssid, char* pw)
 #ifdef COMPILE_WIFI
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {
-    WiFi.useStaticBuffers(true); //Fix for one to many ESP-Now bug, prior to ESP32 core v2.0.4: https://github.com/espressif/esp-idf/issues/8992
-    WiFi.mode(WIFI_STA);
 
 #ifdef COMPILE_ESPNOW
     if (espnowState > ESPNOW_OFF)
+    {
+      WiFi.mode(WIFI_MODE_NULL); //We must go Null before setting static buffers
+      WiFi.useStaticBuffers(true); //Fix for one to many ESP-Now bug, prior to ESP32 core v2.0.4: https://github.com/espressif/esp-idf/issues/8992
+      WiFi.mode(WIFI_STA);
+
       esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now
+    }
     else
+    {
+      WiFi.mode(WIFI_STA);
+
       esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols
+    }
 #else
     //Be sure the standard protocols are turned on. ESP Now have have previously turned them off.
+    WiFi.mode(WIFI_STA);
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
 #endif
 
@@ -257,6 +266,7 @@ void wifiStop()
   //If ESP-Now is active, change protocol to only Long Range
   else if (espnowState > ESPNOW_OFF)
   {
+    WiFi.mode(WIFI_MODE_NULL); //We must go Null before setting static buffers
     WiFi.useStaticBuffers(true); //Fix for one to many ESP-Now bug, prior to ESP32 core v2.0.4: https://github.com/espressif/esp-idf/issues/8992
     WiFi.mode(WIFI_STA);
 

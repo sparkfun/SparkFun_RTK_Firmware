@@ -1080,6 +1080,7 @@ uint32_t setWiFiIcon()
 uint32_t setModeIcon()
 {
   uint32_t icons = 0;
+
   switch (systemState)
   {
     case (STATE_ROVER_NOT_STARTED):
@@ -1100,17 +1101,17 @@ uint32_t setModeIcon()
     case (STATE_BASE_NOT_STARTED):
       //Do nothing. Static display shown during state change.
       break;
-
     case (STATE_BASE_TEMP_SETTLE):
+      icons |= blinkBaseIcon(ICON_BASE_TEMPORARY);
       break;
     case (STATE_BASE_TEMP_SURVEY_STARTED):
-      //TODO need blinking
-      icons |= ICON_BASE_TEMPORARY;
+      icons |= blinkBaseIcon(ICON_BASE_TEMPORARY);
       break;
     case (STATE_BASE_TEMP_TRANSMITTING):
       icons |= ICON_BASE_TEMPORARY;
       break;
     case (STATE_BASE_FIXED_NOT_STARTED):
+      //Do nothing. Static display shown during state change.
       break;
     case (STATE_BASE_FIXED_TRANSMITTING):
       icons |= ICON_BASE_FIXED;
@@ -1120,6 +1121,25 @@ uint32_t setModeIcon()
       break;
   }
   return (icons);
+}
+
+uint32_t blinkBaseIcon(uint32_t iconType)
+{
+  uint32_t icons = 0;
+
+  //Limit how often we update this spot
+  if (millis() - thirdRadioSpotTimer > 1000)
+  {
+    thirdRadioSpotTimer = millis();
+    thirdRadioSpotBlink ^= 1; //Share the spot
+  }
+
+  if (thirdRadioSpotBlink == false)
+    icons |= iconType;
+  else
+    icons |= ICON_BLANK_RIGHT;
+
+  return icons;
 }
 
 /*

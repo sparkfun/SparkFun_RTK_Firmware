@@ -181,7 +181,6 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", "sppTxQueueSize", settings.sppTxQueueSize);
   settingsFile->printf("%s=%d\n\r", "dynamicModel", settings.dynamicModel);
   settingsFile->printf("%s=%d\n\r", "lastState", settings.lastState);
-  settingsFile->printf("%s=%d\n\r", "throttleDuringSPPCongestion", settings.throttleDuringSPPCongestion);
   settingsFile->printf("%s=%d\n\r", "enableSensorFusion", settings.enableSensorFusion);
   settingsFile->printf("%s=%d\n\r", "autoIMUmountAlignment", settings.autoIMUmountAlignment);
   settingsFile->printf("%s=%d\n\r", "enableResetDisplay", settings.enableResetDisplay);
@@ -688,8 +687,6 @@ bool parseLine(char* str, Settings *settings)
       settings->updateZEDSettings = true;
     }
   }
-  else if (strcmp(settingName, "throttleDuringSPPCongestion") == 0)
-    settings->throttleDuringSPPCongestion = d;
   else if (strcmp(settingName, "enableSensorFusion") == 0)
   {
     if (settings->enableSensorFusion != d)

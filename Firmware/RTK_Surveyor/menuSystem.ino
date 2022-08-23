@@ -321,10 +321,6 @@ void menuDebug()
     Serial.print("6) Set SPP TX Buffer Size: ");
     Serial.println(settings.sppTxQueueSize);
 
-    Serial.print("7) Throttle BT Transmissions During SPP Congestion: ");
-    if (settings.throttleDuringSPPCongestion == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
-
     Serial.printf("8) Display Reset Counter: %d - ", settings.resetCount);
     if (settings.enableResetDisplay == true) Serial.println("Enabled");
     else Serial.println("Disabled");
@@ -464,10 +460,6 @@ void menuDebug()
         {
           settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
         }
-      }
-      else if (incoming == 7)
-      {
-        settings.throttleDuringSPPCongestion ^= 1;
       }
       else if (incoming == 8)
       {

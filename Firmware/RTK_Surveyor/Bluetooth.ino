@@ -69,17 +69,6 @@ byte bluetoothGetState()
 #endif  //COMPILE_BT
 }
 
-//Determine if the Bluetooth link is congested
-bool bluetoothIsCongested()
-{
-#ifdef COMPILE_BT
-  //return bluetoothSerial->isCongested();
-  return false;
-#else   //COMPILE_BT
-  return false;
-#endif  //COMPILE_BT
-}
-
 //Read data from the Bluetooth device
 int bluetoothReadBytes(uint8_t * buffer, int length)
 {

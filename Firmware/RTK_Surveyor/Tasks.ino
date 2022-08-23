@@ -14,11 +14,11 @@ void F9PSerialWriteTask(void *e)
       {
         //Pass bytes to GNSS receiver
         int s = bluetoothReadBytes(wBuffer, sizeof(wBuffer));
-        
+
         //TODO - control if this RTCM source should be listened to or not
         serialGNSS.write(wBuffer, s);
         bluetoothIncomingRTCM = true;
-        if(!inMainMenu) log_d("Bluetooth received %d RTCM bytes, sent to ZED", s);
+        if (!inMainMenu) log_d("Bluetooth received %d RTCM bytes, sent to ZED", s);
 
         if (settings.enableTaskReports == true)
           Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
@@ -170,34 +170,17 @@ void F9PSerialReadTask(void *e)
         if ((btTail + btBytesToSend) >= sizeof(rBuffer))
           btBytesToSend = sizeof(rBuffer) - btTail;
 
-        if ((bluetoothIsCongested() == false) || (settings.throttleDuringSPPCongestion == false))
+        //Push new data to BT SPP if not congested or not throttling
+        btBytesToSend = bluetoothWriteBytes(&rBuffer[btTail], btBytesToSend);
+        if (btBytesToSend > 0)
         {
-          //Push new data to BT SPP if not congested or not throttling
-          btBytesToSend = bluetoothWriteBytes(&rBuffer[btTail], btBytesToSend);
-          if (btBytesToSend > 0)
-          {
-            //If we are in base mode, assume part of the outgoing data is RTCM
-            if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
-              bluetoothOutgoingRTCM = true;
-          }
-          else
-            log_w("BT failed to send");
+          //If we are in base mode, assume part of the outgoing data is RTCM
+          if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+            bluetoothOutgoingRTCM = true;
         }
         else
-        {
-          //Don't push data to BT SPP if there is congestion to prevent heap hits.
-          if (btBytesToSend >= (sizeof(rBuffer) - 1))
-          {
-            //Error - no more room in the buffer, drop a buffer's worth of data
-            btTail = dataHead;
-            Serial.printf("ERROR - BT congestion dropped %d bytes: GNSS --> Bluetooth\r\n", btBytesToSend);
-          }
-          else
-          {
-            log_w("BT congestion delayed %d bytes, Tasks.ino line %d", btBytesToSend, __LINE__);
-            btBytesToSend = 0;
-          }
-        }
+          log_w("BT failed to send");
+
 
         //Account for the sent or dropped data
         btTail += btBytesToSend;

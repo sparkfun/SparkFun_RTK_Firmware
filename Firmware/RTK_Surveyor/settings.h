@@ -294,7 +294,6 @@ typedef struct {
   uint16_t sppTxQueueSize = 512;
   uint8_t dynamicModel = DYN_MODEL_PORTABLE;
   SystemState lastState = STATE_ROVER_NOT_STARTED; //For Express, start unit in last known state
-  bool throttleDuringSPPCongestion = true;
   bool enableSensorFusion = false; //If IMU is available, avoid using it unless user specifically selects automotive
   bool autoIMUmountAlignment = true; //Allows unit to automatically establish device orientation in vehicle
   bool enableResetDisplay = false;

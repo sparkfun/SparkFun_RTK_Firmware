@@ -61,14 +61,6 @@ class BTClassicSerial : public virtual BTSerialInterface, public BluetoothSerial
       return BluetoothSerial::readBytes(buffer, bufferSize);
     }
 
-    bool isCongested()
-    {
-      // Removed congestion testing in v2.4 
-      // TODO Remove settings and checking
-      return(false);
-      //return BluetoothSerial::isCongested();
-    }
-
     size_t write(const uint8_t *buffer, size_t size)
     {
       return BluetoothSerial::write(buffer, size);
@@ -120,12 +112,6 @@ class BTLESerial: public virtual BTSerialInterface, public BleSerial
     size_t readBytes(uint8_t *buffer, size_t bufferSize)
     {
       return BleSerial::readBytes(buffer, bufferSize);
-    }
-
-    bool isCongested()
-    {
-      // not currently supported in this implementation
-      return false;
     }
 
     size_t write(const uint8_t *buffer, size_t size)

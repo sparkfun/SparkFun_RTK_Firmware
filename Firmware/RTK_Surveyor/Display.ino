@@ -2275,7 +2275,7 @@ void paintResets()
   if (settings.enableResetDisplay == true)
   {
     oled.setFont(QW_FONT_5X7); //Small font
-    oled.setCursor(16 + (8 * 3) + 6, 38); //x, y
+    oled.setCursor(16 + (8 * 3) + 7, 38); //x, y
     oled.print(settings.resetCount);
   }
 }

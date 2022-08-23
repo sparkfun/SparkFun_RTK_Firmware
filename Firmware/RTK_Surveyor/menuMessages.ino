@@ -340,27 +340,43 @@ uint8_t getMessageRate(uint8_t msgClass, uint8_t msgID, uint8_t portID)
 //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
 void beginLogging()
 {
+  beginLogging("");
+}
+
+void beginLogging(const char *customFileName)
+{
+  if (online.microSD == false)
+    beginSD();
+
   if (online.logging == false)
   {
     if (online.microSD == true && settings.enableLogging == true && online.rtc == true) //We can't create a file until we have date/time
     {
       char fileName[66 + 6 + 40] = "";
 
-      if (reuseLastLog == true) //attempt to use previous log
+      if (strlen(customFileName) == 0)
       {
-        if (findLastLog(fileName) == false)
-          log_d("Failed to find last log. Making new one.");
-        else
-          log_d("Using last log file.");
-      }
+        //Generate a standard log file name
+        if (reuseLastLog == true) //attempt to use previous log
+        {
+          if (findLastLog(fileName) == false)
+            log_d("Failed to find last log. Making new one.");
+          else
+            log_d("Using last log file.");
+        }
 
-      if (strlen(fileName) == 0)
+        if (strlen(fileName) == 0)
+        {
+          sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+                  platformFilePrefix,
+                  rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
+                  rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
+                 );
+        }
+      }
+      else
       {
-        sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
-                platformFilePrefix,
-                rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
-                rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
-               );
+        strcpy(fileName, customFileName);
       }
 
       //Allocate the ubxFile
@@ -649,5 +665,142 @@ void setLoggingType()
       if (getMessageRateByName("UBX_RXM_RAWX") > 0 && getMessageRateByName("UBX_RXM_SFRBX") > 0)
         loggingType = LOGGING_PPP;
     }
+  }
+}
+
+//During the logging test, we have to modify the messages and rate of the device
+void setLogTestFrequencyMessages(int rate, int messages)
+{
+  //Set measurement frequency
+  setMeasurementRates(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate and settings.navigationRate
+
+  //Set messages
+  setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
+  if (messages == 5)
+  {
+    setMessageRateByName("UBX_NMEA_GGA", 1);
+    setMessageRateByName("UBX_NMEA_GSA", 1);
+    setMessageRateByName("UBX_NMEA_GST", 1);
+    setMessageRateByName("UBX_NMEA_GSV", rate); //One report per second
+    setMessageRateByName("UBX_NMEA_RMC", 1);
+
+    log_d("Messages: Surveying Defaults (NMEAx5)");
+  }
+  else if (messages == 7)
+  {
+    setMessageRateByName("UBX_NMEA_GGA", 1);
+    setMessageRateByName("UBX_NMEA_GSA", 1);
+    setMessageRateByName("UBX_NMEA_GST", 1);
+    setMessageRateByName("UBX_NMEA_GSV", rate); //One report per second
+    setMessageRateByName("UBX_NMEA_RMC", 1);
+    setMessageRateByName("UBX_RXM_RAWX", 1);
+    setMessageRateByName("UBX_RXM_SFRBX", 1);
+
+    log_d("Messages: PPP NMEAx5+RXMx2");
+  }
+  else
+    log_d("Unknown message amount");
+
+
+  //Apply these message rates to both UART1 and USB
+  configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages);
+  configureGNSSMessageRates(COM_PORT_USB, settings.ubxMessages);
+}
+
+//The log test allows us to record a series of different system configurations into
+//one file. At the same time, we log the output of the ZED via the USB connection.
+//Once complete, the SD log is compared against the USB log to verify both are identical.
+//Be sure to set maxLogLength_minutes before running test. maxLogLength_minutes will
+//set the length of each test.
+void updateLogTest()
+{
+  //Log is complete, run next text
+  int rate = 4;
+  int messages = 5;
+  int semaphoreWait = 10;
+
+  logTestState++; //Advance to next state
+
+  switch (logTestState)
+  {
+    case (LOGTEST_4HZ_5MSG_10MS):
+      //During the first test, create the log file
+      reuseLastLog = false;
+      char fileName[100];
+      sprintf(fileName, "%s_LogTest_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+              platformFilePrefix,
+              rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
+              rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
+             );
+      endSD(false, true); //End previous log
+
+      beginLogging(fileName);
+
+      i2cGNSS.setPortOutput(COM_PORT_USB, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Duplicate UART1
+
+      rate = 4;
+      messages = 5;
+      semaphoreWait = 10;
+      break;
+    case (LOGTEST_4HZ_7MSG_10MS):
+      rate = 4;
+      messages = 7;
+      semaphoreWait = 10;
+      break;
+    case (LOGTEST_10HZ_5MSG_10MS):
+      rate = 10;
+      messages = 5;
+      semaphoreWait = 10;
+      break;
+    case (LOGTEST_10HZ_7MSG_10MS):
+      rate = 10;
+      messages = 7;
+      semaphoreWait = 10;
+      break;
+    case (LOGTEST_4HZ_5MSG_50MS):
+      rate = 4;
+      messages = 5;
+      semaphoreWait = 50;
+      break;
+    case (LOGTEST_4HZ_7MSG_50MS):
+      rate = 4;
+      messages = 7;
+      semaphoreWait = 50;
+      break;
+    case (LOGTEST_10HZ_5MSG_50MS):
+      rate = 10;
+      messages = 5;
+      semaphoreWait = 50;
+      break;
+    case (LOGTEST_10HZ_7MSG_50MS):
+      rate = 10;
+      messages = 7;
+      semaphoreWait = 50;
+      break;
+
+    case (LOGTEST_END):
+      //Reduce rate
+      rate = 4;
+      messages = 5;
+      semaphoreWait = 50;
+      setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 and USB ports
+      log_d("Log Test Complete");
+      break;
+
+    default:
+      logTestState = LOGTEST_END;
+      settings.runLogTest = false;
+      break;
+  }
+
+  if (settings.runLogTest == true)
+  {
+    setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 and USB ports
+
+    fatSemaphore_shortWait_ms = semaphoreWait / portTICK_PERIOD_MS; //Update variable
+
+    startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
+
+    log_d("Running log test: %dHz, %dMsg, %dMS", rate, messages, semaphoreWait);
   }
 }

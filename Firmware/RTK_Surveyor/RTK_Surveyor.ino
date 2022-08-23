@@ -30,7 +30,6 @@ const int FIRMWARE_VERSION_MINOR = 4;
 #define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
-#define COMPILE_IDLE_TASKS  //Comment out to remove idle tasks
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
@@ -126,7 +125,7 @@ int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file
 //System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
 SemaphoreHandle_t sdCardSemaphore;
-const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
+TickType_t fatSemaphore_shortWait_ms = 50 / portTICK_PERIOD_MS;
 const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 
 //Display used/free space in menu and config page
@@ -652,8 +651,10 @@ void updateLogs()
   }
   else if (online.logging == true && settings.enableLogging == true && (systemTime_minutes - startCurrentLogTime_minutes) >= settings.maxLogLength_minutes)
   {
-    //Close down file. A new one will be created at the next calling of updateLogs().
-    endSD(false, true);
+    if (settings.runLogTest == false)
+      endSD(false, true); //Close down file. A new one will be created at the next calling of updateLogs().
+    else if (settings.runLogTest == true)
+      updateLogTest();
   }
 
   if (online.logging == true)

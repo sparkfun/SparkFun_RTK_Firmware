@@ -388,6 +388,9 @@ void menuDebug()
     Serial.print("28) RTCM message checking: ");
     Serial.printf("%s\r\n", settings.enableRtcmMessageChecking ? "Enabled" : "Disabled");
 
+    Serial.print("29) Run Logging Test: ");
+    Serial.printf("%s\r\n", settings.runLogTest ? "Enabled" : "Disabled");
+
     Serial.println("t) Enter Test Screen");
 
     Serial.println("e) Erase LittleFS");
@@ -569,6 +572,15 @@ void menuDebug()
       else if (incoming == 28)
       {
         settings.enableRtcmMessageChecking ^= 1;
+      }
+      else if (incoming == 29)
+      {
+        settings.runLogTest ^= 1;
+
+        logTestState = LOGTEST_START; //Start test
+
+        //Mark current log file as complete to force test start
+        startCurrentLogTime_minutes = systemTime_minutes - settings.maxLogLength_minutes;
       }
       else
         printUnknown(incoming);

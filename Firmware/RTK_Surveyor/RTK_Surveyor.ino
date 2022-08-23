@@ -372,7 +372,6 @@ char deviceName[70]; //The serial string that is broadcast. Ex: 'Surveyor Base-B
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
-uint8_t debounceDelay = 20; //ms to delay between button reads
 bool inMainMenu = false; //Set true when in the serial config menu system.
 
 uint32_t lastBattUpdate = 0;
@@ -408,8 +407,6 @@ uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
 uint32_t totalWriteTime = 0; //Used to calculate overall write speed using SdFat library
 
-bool setupByPowerButton = false; //We can change setup via tapping power button
-
 uint16_t svinObservationTime = 0; //Use globals so we don't have to request these values multiple times (slow response)
 float svinMeanAccuracy = 0;
 
@@ -422,17 +419,6 @@ bool newEventToRecord = false; //Goes true when INT pin goes high
 uint32_t triggerCount = 0; //Global copy - TM2 event counter
 uint32_t towMsR = 0; //Global copy - Time Of Week of rising edge (ms)
 uint32_t towSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
-
-int timeBetweenGGAUpdate_ms = 10000; //GGA is required for Rev2 NTRIP casters. Don't transmit but once every 10 seconds
-long lastTransmittedGGA_ms = 0;
-
-//Used for GGA sentence parsing from incoming NMEA
-bool ggaSentenceStarted = false;
-bool ggaSentenceComplete = false;
-bool ggaTransmitComplete = false; //Goes true once we transmit GGA to the caster
-char ggaSentence[128] = {0};
-byte ggaSentenceSpot = 0;
-int ggaSentenceEndSpot = 0;
 
 bool newAPSettings = false; //Goes true when new setting is received via AP config. Allows us to record settings when combined with a reset.
 

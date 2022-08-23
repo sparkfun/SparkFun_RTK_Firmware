@@ -93,7 +93,6 @@ void espnowStart()
   if (wifiState == WIFI_OFF && espnowState == ESPNOW_OFF)
   {
     //Radio is off, turn it on
-    WiFi.useStaticBuffers(true); //Fix for one to many ESP-Now bug, prior to ESP32 core v2.0.4: https://github.com/espressif/esp-idf/issues/8992
     WiFi.mode(WIFI_STA);
 
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);

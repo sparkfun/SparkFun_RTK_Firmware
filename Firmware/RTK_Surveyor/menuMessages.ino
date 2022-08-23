@@ -757,6 +757,28 @@ void updateLogTest()
       messages = 7;
       semaphoreWait = 10;
       break;
+
+    case (LOGTEST_4HZ_5MSG_0MS):
+      rate = 4;
+      messages = 5;
+      semaphoreWait = 0;
+      break;
+    case (LOGTEST_4HZ_7MSG_0MS):
+      rate = 4;
+      messages = 7;
+      semaphoreWait = 0;
+      break;
+    case (LOGTEST_10HZ_5MSG_0MS):
+      rate = 10;
+      messages = 5;
+      semaphoreWait = 0;
+      break;
+    case (LOGTEST_10HZ_7MSG_0MS):
+      rate = 10;
+      messages = 7;
+      semaphoreWait = 0;
+      break;
+
     case (LOGTEST_4HZ_5MSG_50MS):
       rate = 4;
       messages = 5;

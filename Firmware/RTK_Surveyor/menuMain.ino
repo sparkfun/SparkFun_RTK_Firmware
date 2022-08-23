@@ -413,7 +413,6 @@ void menuRadio()
 #ifdef ENABLE_DEVELOPER
     else if (settings.radioType == RADIO_ESPNOW && incoming == 4)
     {
-      //TODO remove
       uint8_t peer1[] = {0xB8, 0xD6, 0x1A, 0x0D, 0x8F, 0x9C}; //Facet
       if (esp_now_is_peer_exist(peer1) == true)
         log_d("Peer already exists");
@@ -433,7 +432,6 @@ void menuRadio()
     }
     else if (settings.radioType == RADIO_ESPNOW && incoming == 5)
     {
-      //TODO remove
       uint8_t espnowData[] = "This is the long string to test how quickly we can send one string to the other unit. I am going to need a much longer sentence if I want to get a long amount of data into one transmission. This is nearing 200 characters but needs to be near 250.";
       esp_now_send(0, (uint8_t *) &espnowData, sizeof(espnowData)); //Send packet to all peers
     }

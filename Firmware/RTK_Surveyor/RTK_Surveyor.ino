@@ -125,7 +125,8 @@ int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file
 //System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
 SemaphoreHandle_t sdCardSemaphore;
-TickType_t fatSemaphore_shortWait_ms = 50 / portTICK_PERIOD_MS;
+TickType_t loggingSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
+const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
 const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 
 //Display used/free space in menu and config page

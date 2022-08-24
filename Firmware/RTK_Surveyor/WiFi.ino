@@ -145,12 +145,13 @@ void wifiStartAP()
   //Connect to local router
 #define WIFI_SSID "TRex"
 #define WIFI_PASSWORD "parachutes"
-  WiFi.mode(WIFI_STA);
 
 #ifdef COMPILE_ESPNOW
   // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station
 #endif
+
+  WiFi.mode(WIFI_STA);
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("WiFi connecting to");
@@ -161,14 +162,15 @@ void wifiStartAP()
   }
   Serial.print("WiFi connected with IP: ");
   Serial.println(WiFi.localIP());
-#else   //LOCAL_WIFI_TESTING
+#else   //End LOCAL_WIFI_TESTING
   //Start in AP mode
-  WiFi.mode(WIFI_AP);
 
 #ifdef COMPILE_ESPNOW
   // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-  esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+  esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi AP.
 #endif
+
+  WiFi.mode(WIFI_AP);
 
   IPAddress local_IP(192, 168, 4, 1);
   IPAddress gateway(192, 168, 1, 1);
@@ -182,7 +184,7 @@ void wifiStartAP()
   }
   Serial.print("WiFi AP Started with IP: ");
   Serial.println(WiFi.softAPIP());
-#endif  //LOCAL_WIFI_TESTING
+#endif  //End AP Testing
 }
 
 #endif  //COMPILE_WIFI
@@ -209,27 +211,23 @@ void wifiStart(char* ssid, char* pw)
 #ifdef COMPILE_WIFI
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {
-      WiFi.mode(WIFI_STA);
+    wifiSetState(WIFI_NOTCONNECTED);
 
 #ifdef COMPILE_ESPNOW
     if (espnowState > ESPNOW_OFF)
-    {
-      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now
-    }
+      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now. Stops WiFi Station.
     else
-    {
-      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols
-    }
+      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
 #else
     //Be sure the standard protocols are turned on. ESP Now have have previously turned them off.
-    WiFi.mode(WIFI_STA);
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
 #endif
+
+    WiFi.mode(WIFI_STA);
 
     Serial.printf("WiFi connecting to %s\r\n", ssid);
     WiFi.begin(ssid, pw);
     wifiTimer = millis();
-    wifiSetState(WIFI_NOTCONNECTED);
 
     //Display the heap state
     reportHeapNow();
@@ -254,26 +252,26 @@ void wifiStop()
   //If WiFi is on but ESP NOW is off, then turn off radio entirely
   else if (espnowState == ESPNOW_OFF)
   {
-    WiFi.mode(WIFI_OFF);
     wifiSetState(WIFI_OFF);
+    WiFi.mode(WIFI_OFF);
     Serial.println("WiFi Stopped");
   }
   //If ESP-Now is active, change protocol to only Long Range
   else if (espnowState > ESPNOW_OFF)
   {
-    WiFi.mode(WIFI_STA);
+    wifiSetState(WIFI_OFF);
 
     // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
 
-    wifiSetState(WIFI_OFF);
+    WiFi.mode(WIFI_STA);
 
     Serial.println("WiFi disabled, ESP-Now left in place");
   }
 #else
   //Turn off radio
-  WiFi.mode(WIFI_OFF);
   wifiSetState(WIFI_OFF);
+  WiFi.mode(WIFI_OFF);
   Serial.println("WiFi Stopped");
 #endif
 

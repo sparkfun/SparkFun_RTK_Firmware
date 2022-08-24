@@ -93,23 +93,28 @@ void espnowStart()
   if (wifiState == WIFI_OFF && espnowState == ESPNOW_OFF)
   {
     //Radio is off, turn it on
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
+
     WiFi.mode(WIFI_STA);
 
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
-    Serial.println("WiFi off, ESP-Now added to protocols");
+    log_d("WiFi off, ESP-Now added to protocols");
   }
   //If WiFi is on but ESP NOW is off, then enable LR protocol
   else if (wifiState > WIFI_OFF && espnowState == ESPNOW_OFF)
   {
     //Enable WiFi + ESP-Now
     // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR);
-    Serial.println("WiFi on, ESP-Now added to protocols");
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Stops WiFi Station.
+
+    WiFi.mode(WIFI_STA);
+
+    log_d("WiFi on, ESP-Now added to protocols");
   }
-  //If ESP-Now is active, WiFi is active, do nothing
+
+  //If ESP-Now is already active, do nothing
   else
   {
-    Serial.println("WiFi already on, ESP-Now already on");
+    log_d("ESP-Now already on");
   }
 
   // Init ESP-NOW
@@ -164,14 +169,20 @@ void espnowStop()
   {
     //ESP Now is the only thing using the radio, turn it off entirely
     WiFi.mode(WIFI_OFF);
-    Serial.println("WiFi Radio off entirely");
+
+    log_d("WiFi Radio off entirely");
   }
   //If WiFi is on, then disable LR protocol
   else if (wifiState > WIFI_OFF)
   {
+    wifiSetState(WIFI_NOT_CONNECTED);
+
     // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
-    Serial.println("WiFi protocols on, LR protocol off");
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station.
+
+    WiFi.mode(WIFI_STA);
+    
+    log_d("WiFi protocols on, LR protocol off");
   }
 
   // Turn off promiscuous WiFi mode

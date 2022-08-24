@@ -30,7 +30,7 @@ void startWebServer()
     Serial.println(sdUsedSpaceMB);
   }
 
-  ntripClientStop(true);
+  ntripClientStop(true); //Do not allocate new wifiClient
   wifiStartAP();
 
   incomingSettings = (char*)malloc(AP_CONFIG_SETTING_SIZE);

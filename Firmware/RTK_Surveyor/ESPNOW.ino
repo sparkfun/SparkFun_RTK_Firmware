@@ -165,26 +165,6 @@ void espnowStop()
 #ifdef COMPILE_ESPNOW
   if (espnowState == ESPNOW_OFF) return;
 
-  if (wifiState == WIFI_OFF)
-  {
-    //ESP Now is the only thing using the radio, turn it off entirely
-    WiFi.mode(WIFI_OFF);
-
-    log_d("WiFi Radio off entirely");
-  }
-  //If WiFi is on, then disable LR protocol
-  else if (wifiState > WIFI_OFF)
-  {
-    wifiSetState(WIFI_NOT_CONNECTED);
-
-    // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station.
-
-    WiFi.mode(WIFI_STA);
-    
-    log_d("WiFi protocols on, LR protocol off");
-  }
-
   // Turn off promiscuous WiFi mode
   esp_wifi_set_promiscuous(false);
   esp_wifi_set_promiscuous_rx_cb(NULL);
@@ -199,6 +179,29 @@ void espnowStop()
     return;
   }
 #endif
+
+  if (wifiState == WIFI_OFF)
+  {
+    //ESP Now is the only thing using the radio, turn it off entirely
+    WiFi.mode(WIFI_OFF);
+
+    log_d("WiFi Radio off entirely");
+  }
+  //If WiFi is on, then disable LR protocol
+  else if (wifiState > WIFI_OFF)
+  {
+#ifdef COMPILE_WIFI
+    wifiSetState(WIFI_NOTCONNECTED);
+#endif
+
+    // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station.
+
+    WiFi.mode(WIFI_STA);
+    
+    log_d("WiFi protocols on, LR protocol off");
+  }
+    
   espnowSetState(ESPNOW_OFF);
 }
 

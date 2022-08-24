@@ -178,7 +178,6 @@ void espnowStop()
     Serial.println("Error deinitializing ESP-NOW");
     return;
   }
-#endif
 
   if (wifiState == WIFI_OFF)
   {
@@ -190,18 +189,18 @@ void espnowStop()
   //If WiFi is on, then disable LR protocol
   else if (wifiState > WIFI_OFF)
   {
-#ifdef COMPILE_WIFI
     wifiSetState(WIFI_NOTCONNECTED);
-#endif
 
     // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station.
 
     WiFi.mode(WIFI_STA);
-    
+
     log_d("WiFi protocols on, LR protocol off");
   }
-    
+
+#endif
+
   espnowSetState(ESPNOW_OFF);
 }
 

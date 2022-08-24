@@ -554,7 +554,7 @@ void setup()
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
 
-  //beginIdleTasks(); //Enable processor load calculations
+  beginIdleTasks(); //Enable processor load calculations
 
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 

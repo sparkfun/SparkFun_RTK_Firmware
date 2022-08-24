@@ -156,7 +156,9 @@ bool ntripClientConnectLimitReached()
   {
     //No more connection attempts, switching to Bluetooth
     Serial.println("NTRIP Client connection attempts exceeded!");
-    ntripClientSwitchToBluetooth();
+
+    //Stop WiFi operations
+    ntripClientStop(true);
   }
   return limitReached;
 }
@@ -181,18 +183,6 @@ void ntripClientResponse(char * response, size_t maxLength)
 
   // Zero terminate the response
   *response = '\0';
-}
-
-//Switch to Bluetooth operation
-void ntripClientSwitchToBluetooth()
-{
-  Serial.println("NTRIP Client failure, switching to Bluetooth!");
-
-  //Stop WiFi operations
-  ntripClientStop(true);
-
-  //Turn on Bluetooth with 'Rover' name
-  bluetoothStart();
 }
 
 //Update the state of the NTRIP client state machine
@@ -391,8 +381,8 @@ void ntripClientUpdate()
           //Look for '401 Unauthorized'
           Serial.printf("NTRIP Client caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
 
-          //Switch to Bluetooth operation
-          ntripClientSwitchToBluetooth();
+          //Stop WiFi operations
+          ntripClientStop(true);
         }
         else
         {
@@ -460,7 +450,7 @@ void ntripClientUpdate()
           i2cGNSS.pushRawData(rtcmData, rtcmCount);
           wifiIncomingRTCM = true;
 
-          if(!inMainMenu) log_d("NTRIP Client received %d RTCM bytes, pushed to ZED", rtcmCount);
+          if (!inMainMenu) log_d("NTRIP Client received %d RTCM bytes, pushed to ZED", rtcmCount);
         }
       }
 

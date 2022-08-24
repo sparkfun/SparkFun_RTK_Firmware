@@ -240,7 +240,8 @@ void F9PSerialReadTask(void *e)
     //Let other tasks run, prevent watch dog timer (WDT) resets
     //----------------------------------------------------------------------
 
-    delay(10);
+    delay(1);
+    taskYIELD();
   }
 }
 

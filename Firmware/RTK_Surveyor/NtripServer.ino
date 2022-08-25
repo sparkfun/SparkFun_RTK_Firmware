@@ -309,7 +309,7 @@ void ntripServerStop(bool wifiClientAllocated)
     wifiStop();
 
     ntripServerLastConnectionAttempt = millis(); //Mark the Server stop so that we don't immediately attempt re-connect to Caster
-    ntripServerConnectionAttemptTimeout = 5 * 1000L; //Wait 5s between stopping and the first re-connection attempt
+    ntripServerConnectionAttemptTimeout = 15 * 1000L; //Wait 15s between stopping and the first re-connection attempt. 5 is too short for Emlid.
   }
 
   //Determine the next NTRIP server state

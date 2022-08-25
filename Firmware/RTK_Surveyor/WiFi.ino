@@ -254,7 +254,7 @@ void wifiStop()
   {
     wifiSetState(WIFI_OFF);
     WiFi.mode(WIFI_OFF);
-    Serial.println("WiFi Stopped");
+    log_d("WiFi Stopped");
   }
   //If ESP-Now is active, change protocol to only Long Range
   else if (espnowState > ESPNOW_OFF)
@@ -266,13 +266,13 @@ void wifiStop()
 
     WiFi.mode(WIFI_STA);
 
-    Serial.println("WiFi disabled, ESP-Now left in place");
+    log_d("WiFi disabled, ESP-Now left in place");
   }
 #else
   //Turn off radio
   wifiSetState(WIFI_OFF);
   WiFi.mode(WIFI_OFF);
-  Serial.println("WiFi Stopped");
+  log_d("WiFi Stopped");
 #endif
 
   //Display the heap state

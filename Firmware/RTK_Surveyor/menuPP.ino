@@ -286,13 +286,13 @@ bool updatePointPerfectKeys()
 
 #define CONTENT_SIZE 2000
 
-  certificateContents = (char*)malloc(CONTENT_SIZE);
-  memset(certificateContents, 0, CONTENT_SIZE);
+  //certificateContents = (char*)malloc(CONTENT_SIZE);
+  //memset(certificateContents, 0, CONTENT_SIZE);
   loadFile("certificate", certificateContents);
   secureClient.setCertificate(certificateContents);
 
-  keyContents = (char*)malloc(CONTENT_SIZE);
-  memset(keyContents, 0, CONTENT_SIZE);
+  //keyContents = (char*)malloc(CONTENT_SIZE);
+  //memset(keyContents, 0, CONTENT_SIZE);
   loadFile("privateKey", keyContents);
   secureClient.setPrivateKey(keyContents);
 

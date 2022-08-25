@@ -159,8 +159,10 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 
 #endif
 
-char *certificateContents; //Holds the contents of the keys prior to MQTT connection
-char *keyContents;
+//char *certificateContents; //Holds the contents of the keys prior to MQTT connection
+//char *keyContents;
+char certificateContents[2000]; //Holds the contents of the keys prior to MQTT connection
+char keyContents[2000];
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration

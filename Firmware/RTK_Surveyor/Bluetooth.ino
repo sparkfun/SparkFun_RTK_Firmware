@@ -183,6 +183,52 @@ void bluetoothStop()
   bluetoothIncomingRTCM = false;
 }
 
+//Test the bidirectional communication through UART2
+void bluetoothTest(bool runTest)
+{
+  //Verify the ESP UART2 can communicate TX/RX to ZED UART1
+  const char * bluetoothStatusText;
+  if (online.gnss == true)
+  {
+    if (runTest && (zedUartPassed == false))
+    {
+      stopUART2Tasks(); //Stop absoring ZED serial via task
+
+      i2cGNSS.setSerialRate(460800, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
+      serialGNSS.begin(460800); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+
+      SFE_UBLOX_GNSS myGNSS;
+      if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
+      {
+        zedUartPassed = true;
+        bluetoothStatusText = (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF) ? "Off" : "Online";
+      }
+      else
+        bluetoothStatusText = "Offline";
+
+      i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
+      serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+
+      startUART2Tasks(); //Return to normal operation
+    }
+    else
+      bluetoothStatusText = (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF) ? "Off" : "Online";
+  }
+  else
+    bluetoothStatusText = "GNSS Offline";
+
+  //Display Bluetooth MAC address and test results
+  char macAddress[5];
+  sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
+  Serial.print("Bluetooth ");
+  if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+    Serial.print("Low Energy ");
+  Serial.print("(");
+  Serial.print(macAddress);
+  Serial.print("): ");
+  Serial.println(bluetoothStatusText);
+}
+
 //Write data to the Bluetooth device
 int bluetoothWriteBytes(const uint8_t * buffer, int length)
 {

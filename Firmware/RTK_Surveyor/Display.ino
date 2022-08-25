@@ -359,11 +359,10 @@ void updateDisplay()
       if (iconsRadio & ICON_MAC_ADDRESS)
       {
         char macAddress[5];
-#ifdef COMPILE_BT
-        sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-#else
-        sprintf(macAddress, "%02X%02X", 0, 0); //If BT is not available, print zeroes
-#endif
+        const uint8_t * rtkMacAddress = getMacAddress();
+
+        //Print only last two digits of MAC
+        sprintf(macAddress, "%02X%02X", rtkMacAddress[4], rtkMacAddress[5]);
         oled.setFont(QW_FONT_5X7); //Set font to smallest
         oled.setCursor(0, 3);
         oled.print(macAddress);
@@ -404,12 +403,10 @@ void updateDisplay()
       else if (iconsRadio & ICON_MAC_ADDRESS_2DIGIT)
       {
         char macAddress[5];
+        const uint8_t * rtkMacAddress = getMacAddress();
+
         //Print only last two digits of MAC
-#ifdef COMPILE_BT
-        sprintf(macAddress, "%02X", unitMACAddress[5]);
-#else
-        sprintf(macAddress, "%02X", 0); //If BT is not available, print zeroes
-#endif
+        sprintf(macAddress, "%02X%02X", rtkMacAddress[4], rtkMacAddress[5]);
         oled.setFont(QW_FONT_5X7); //Set font to smallest
         oled.setCursor(14, 3);
         oled.print(macAddress);
@@ -1845,9 +1842,6 @@ void paintSystemTest()
 
       int charHeight = 7;
 
-      char macAddress[5];
-      sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-
       drawFrame(); //Outside edge
 
       //Test SD, accel, batt, GNSS, mux
@@ -1922,6 +1916,11 @@ void paintSystemTest()
         else
           oled.print("FAIL");
       }
+
+      //Get the last two digits of MAC
+      char macAddress[5];
+      const uint8_t * rtkMacAddress = getMacAddress();
+      sprintf(macAddress, "%02X%02X", rtkMacAddress[4], rtkMacAddress[5]);
 
       //Display MAC address
       oled.setCursor(xOffset, yOffset + (5 * charHeight) ); //x, y
@@ -2512,7 +2511,8 @@ void paintKeyProvisionFail(uint16_t displayTime)
 
     //The MAC address is characters long so we have to split it onto two lines
     char hardwareID[13];
-    sprintf(hardwareID, "%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2]);
+    const uint8_t * rtkMacAddress = getMacAddress();
+    sprintf(hardwareID, "%02X%02X%02X", rtkMacAddress[0], rtkMacAddress[1], rtkMacAddress[2]);
     String macAddress = String(hardwareID);
 
     y += fontHeight;
@@ -2520,7 +2520,7 @@ void paintKeyProvisionFail(uint16_t displayTime)
     oled.setCursor(textX, y);
     oled.print(hardwareID);
 
-    sprintf(hardwareID, "%02X%02X%02X", unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]);
+    sprintf(hardwareID, "%02X%02X%02X", rtkMacAddress[3], rtkMacAddress[4], rtkMacAddress[5]);
     macAddress = String(hardwareID);
 
     y += fontHeight;
@@ -2542,4 +2542,15 @@ void paintEspNowPairing()
 void paintEspNowPaired()
 {
   displayMessage("ESP-Now Paired", 2000);
+}
+
+const uint8_t * getMacAddress ()
+{
+  static const uint8_t zero[6] = {0, 0, 0, 0, 0, 0};
+
+  if (bluetoothState != BT_OFF)
+    return btMACAddress;
+  else if (wifiState != WIFI_OFF)
+    return wifiMACAddress;
+  return zero;
 }

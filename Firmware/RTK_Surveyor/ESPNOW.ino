@@ -262,15 +262,13 @@ esp_err_t espnowSendPairMessage(uint8_t *sendToMac)
   PairMessage pairMessage;
 
   //Get unit MAC address
-  uint8_t unitMACAddress[6];
-  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
-  memcpy(pairMessage.macAddress, unitMACAddress, 6);
+  memcpy(pairMessage.macAddress, wifiMACAddress, 6);
   pairMessage.encrypt = false;
   pairMessage.channel = 0;
 
   pairMessage.crc = 0; //Calculate CRC
   for (int x = 0 ; x < 6 ; x++)
-    pairMessage.crc += unitMACAddress[x];
+    pairMessage.crc += wifiMACAddress[x];
 
   return (esp_now_send(sendToMac, (uint8_t *) &pairMessage, sizeof(pairMessage))); //Send packet to given MAC
 #else

@@ -66,9 +66,9 @@ void menuSystem()
       printNEOInfo();
     }
 
-    //Display MAC address
+    //Display Bluetooth MAC address
     char macAddress[5];
-    sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
+    sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
     Serial.print("Bluetooth (");
     Serial.print(macAddress);
     Serial.print("): ");
@@ -107,6 +107,10 @@ void menuSystem()
     Serial.println();
 
 #ifdef COMPILE_WIFI
+    Serial.print("WiFi MAC Address: ");
+    Serial.printf("%02X-%02X-%02X-%02X-%02X-%02X\r\n", wifiMACAddress[0],
+            wifiMACAddress[1], wifiMACAddress[2], wifiMACAddress[3],
+            wifiMACAddress[4], wifiMACAddress[5]);
     if (wifiState == WIFI_CONNECTED)
       wifiDisplayIpAddress();
 #endif

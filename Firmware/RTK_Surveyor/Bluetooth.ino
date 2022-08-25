@@ -103,7 +103,7 @@ void bluetoothStart()
     else if(systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
       strcpy(stateName, "Base-");
 
-    sprintf(deviceName, "%s %s%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]);
+    sprintf(deviceName, "%s %s%02X%02X", platformPrefix, stateName, btMACAddress[4], btMACAddress[5]);
 
     // Select Bluetooth setup
     if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)

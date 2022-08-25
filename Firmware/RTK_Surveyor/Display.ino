@@ -361,8 +361,8 @@ void updateDisplay()
         char macAddress[5];
         const uint8_t * rtkMacAddress = getMacAddress();
 
-        //Print only last two digits of MAC
-        sprintf(macAddress, "%02X", rtkMacAddress[5]);
+        //Print four characters of MAC
+        sprintf(macAddress, "%02%02X", rtkMacAddress[4], rtkMacAddress[5]);
         oled.setFont(QW_FONT_5X7); //Set font to smallest
         oled.setCursor(0, 3);
         oled.print(macAddress);

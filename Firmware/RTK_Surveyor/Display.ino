@@ -2544,13 +2544,17 @@ void paintEspNowPaired()
   displayMessage("ESP-Now Paired", 2000);
 }
 
-const uint8_t * getMacAddress ()
+const uint8_t * getMacAddress()
 {
   static const uint8_t zero[6] = {0, 0, 0, 0, 0, 0};
 
+#ifdef  COMPILE_BT
   if (bluetoothState != BT_OFF)
     return btMACAddress;
+#ifdef COMPILE_WIFI
   else if (wifiState != WIFI_OFF)
     return wifiMACAddress;
+#endif
+#endif
   return zero;
 }

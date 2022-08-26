@@ -940,39 +940,51 @@ void menuPointPerfect()
     else if (incoming == '5')
     {
 #ifdef COMPILE_WIFI
-      wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
-
-      unsigned long startTime = millis();
-      while (wifiGetStatus() != WL_CONNECTED)
+      if (strlen(settings.home_wifiSSID) == 0)
       {
-        delay(500);
-        Serial.print(".");
-        if (millis() - startTime > 8000) break; //Give up after 8 seconds
+        Serial.println("Error: Please enter SSID before getting keys");
       }
-
-      if (wifiGetStatus() == WL_CONNECTED)
+      else
       {
+        wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
 
-        Serial.println();
-        Serial.print("WiFi connected: ");
-        Serial.println(wifiGetIpAddress());
-
-        //Check if we have certificates
-        char fileName[80];
-        sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
-        if (LittleFS.exists(fileName) == false)
+        unsigned long startTime = millis();
+        while (wifiGetStatus() != WL_CONNECTED)
         {
-          provisionDevice(); //Connect to ThingStream API and get keys
+          delay(500);
+          Serial.print(".");
+          if (millis() - startTime > 15000) 
+          {
+            Serial.println("Error: No WiFi available");
+            break;
+          }
         }
-        else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
-        {
-          provisionDevice(); //Connect to ThingStream API and get keys
-        }
-        else
-          updatePointPerfectKeys();
 
+        if (wifiGetStatus() == WL_CONNECTED)
+        {
+
+          Serial.println();
+          Serial.print("WiFi connected: ");
+          Serial.println(wifiGetIpAddress());
+
+          //Check if we have certificates
+          char fileName[80];
+          sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
+          if (LittleFS.exists(fileName) == false)
+          {
+            provisionDevice(); //Connect to ThingStream API and get keys
+          }
+          else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
+          {
+            provisionDevice(); //Connect to ThingStream API and get keys
+          }
+          else
+            updatePointPerfectKeys();
+
+        }
+        
         wifiStop();
-      }
+      } //End strlen SSID check
 #endif
     }
     else if (incoming == '6')

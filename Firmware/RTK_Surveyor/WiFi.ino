@@ -209,15 +209,23 @@ bool wifiConnectionTimeout()
 void wifiStart(char* ssid, char* pw)
 {
 #ifdef COMPILE_WIFI
+  bool restartESPNow = false;
+
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {
     wifiSetState(WIFI_NOTCONNECTED);
 
 #ifdef COMPILE_ESPNOW
     if (espnowState > ESPNOW_OFF)
+    {
+      restartESPNow = true;
+      espnowStop();
       esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now. Stops WiFi Station.
+    }
     else
+    {
       esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
+    }
 #else
     //Be sure the standard protocols are turned on. ESP Now have have previously turned them off.
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
@@ -229,6 +237,11 @@ void wifiStart(char* ssid, char* pw)
     WiFi.begin(ssid, pw);
     wifiTimer = millis();
 
+#ifdef COMPILE_ESPNOW
+    if (restartESPNow == true)
+      espnowStart();
+#endif
+    
     //Display the heap state
     reportHeapNow();
   }

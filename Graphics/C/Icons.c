@@ -47,7 +47,7 @@ terminate_end_of_line (
         text++;
 
     // Skip over the end of line
-    while ((text < text_end) && (*text == '\r') || (*text == '\n'))
+    while ((text < text_end) && ((*text == '\r') || (*text == '\n')))
         *text++ = 0;
 
     // Return the start of the next line
@@ -151,7 +151,7 @@ read_icon_data (
     ICON_ENTRY * icon_entry;
     int index;
     char * number;
-    int value;
+    unsigned int value;
     int x;
     int y;
 
@@ -410,8 +410,8 @@ display_icon (
     }
     for (y = 0; y < icon->height; y++) {
         printf ("%s", indent);
-    if (DRAW_OUTLINE)
-        printf ("0x%02x|", 1 << (y & 7));
+        if (DRAW_OUTLINE)
+            printf ("0x%02x|", 1 << (y & 7));
         for (x = 0; x < icon->width; x++) {
             bit = icon->data[((y >> 3) * icon->bytes_wide) + x];
             bit >>= y & 7;

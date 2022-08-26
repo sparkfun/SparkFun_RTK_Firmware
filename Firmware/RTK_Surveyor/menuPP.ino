@@ -322,8 +322,8 @@ bool updatePointPerfectKeys()
       if (tries++ == maxTries)
       {
         log_d("MQTT failed to connect");
-        free(certificateContents);
-        free(keyContents);
+        //free(certificateContents);
+        //free(keyContents);
         return (false);
       }
 
@@ -344,8 +344,8 @@ bool updatePointPerfectKeys()
     if (mqttClient.connected() == false)
     {
       log_d("Client disconnected");
-      free(certificateContents);
-      free(keyContents);
+      //free(certificateContents);
+      //free(keyContents);
       return (false);
     }
 
@@ -355,16 +355,16 @@ bool updatePointPerfectKeys()
     {
       Serial.println();
       log_d("Channel failed to respond");
-      free(certificateContents);
-      free(keyContents);
+      //free(certificateContents);
+      //free(keyContents);
       return (false);
     }
   }
 
   Serial.println();
   Serial.println("Keys successfully updated");
-  free(certificateContents);
-  free(keyContents);
+  //free(certificateContents);
+  //free(keyContents);
   return (true);
 #else
   return (false);

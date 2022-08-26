@@ -73,6 +73,7 @@ static int ntripServerConnectionAttempts;
 //Throttle the time between connection attempts
 static int ntripServerConnectionAttemptTimeout = 0;
 static uint32_t ntripServerLastConnectionAttempt = 0;
+static uint32_t ntripServerTimeoutPrint = 0;
 
 //Last time the NTRIP server state was displayed
 static uint32_t ntripServerStateLastDisplayed = 0;
@@ -351,10 +352,10 @@ void ntripServerUpdate()
       }
       else
       {
-        if (millis() - startTime > 1000)
+        if (millis() - ntripServerTimeoutPrint > 1000)
         {
-          startTime = millis();
-          log_d("NTRIP Server connection timeout wait: %d of %d \n\r",
+          ntripServerTimeoutPrint = millis();
+          Serial.printf("NTRIP Server connection timeout wait: %d of %d seconds \n\r",
                         (millis() - ntripServerLastConnectionAttempt) / 1000,
                         ntripServerConnectionAttemptTimeout / 1000
                        );
@@ -479,7 +480,7 @@ void ntripServerUpdate()
       if (!ntripServer->connected())
       {
         //Broken connection, retry the NTRIP server connection
-        Serial.println("NTRIP Server connection dropped");
+        Serial.println("Connection to NTRIP Server was closed");
         ntripServerStop(false); //Allocate new wifiClient
       }
       else if ((millis() - ntripServerTimer) > (3 * 1000))

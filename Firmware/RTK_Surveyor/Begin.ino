@@ -143,32 +143,21 @@ void beginBoard()
   Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
   //Get unit MAC address
-  esp_read_mac(unitMACAddress, ESP_MAC_WIFI_STA);
-  unitMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
+  esp_read_mac(wifiMACAddress, ESP_MAC_WIFI_STA);
+  memcpy(btMACAddress, wifiMACAddress, sizeof(wifiMACAddress));
+  btMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
   //For all boards, check reset reason. If reset was due to wdt or panic, append last log
+  loadSettingsPartial(); //Get resetCount
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
     reuseLastLog = false; //Start new log
-
-    loadSettingsPartial();
-    if (settings.enableResetDisplay == true)
-    {
-      settings.resetCount = 0;
-      recordSystemSettings(); //Record to NVM
-    }
+    settings.resetCount = 0;
   }
   else
   {
     reuseLastLog = true; //Attempt to reuse previous log
-
-    loadSettingsPartial();
-    if (settings.enableResetDisplay == true)
-    {
-      settings.resetCount++;
-      Serial.printf("resetCount: %d\n\r", settings.resetCount);
-      recordSystemSettings(); //Record to NVM
-    }
+    settings.resetCount++;
 
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())
@@ -186,6 +175,8 @@ void beginBoard()
       default : Serial.println("Unknown");
     }
   }
+
+  recordSystemSettings(); //Record resetCount to NVM
 }
 
 void beginSD()
@@ -202,7 +193,7 @@ void beginSD()
     else if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) != pdPASS)
     {
       //This is OK since a retry will occur next loop
-      log_d("sdCardSemaphore failed to yield, Begin.ino line %d\r\n", __LINE__);
+      log_d("sdCardSemaphore failed to yield, Begin.ino line %d", __LINE__);
       break;
     }
     gotSemaphore = true;
@@ -348,7 +339,7 @@ void pinUART2Task( void *pvParameters )
   vTaskDelete( NULL ); //Delete task once it has run once
 }
 
-//Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT.available will cause reboot
+//Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT->available will cause reboot
 void startUART2Tasks()
 {
   //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
@@ -395,13 +386,15 @@ void beginFS()
 {
   if (online.fs == false)
   {
-    if (!LittleFS.begin(true)) //Format LittleFS if begin fails
+    if (LittleFS.begin(true) == false) //Format LittleFS if begin fails
     {
-      log_d("Error: LittleFS not online");
-      return;
+      Serial.println("Error: LittleFS not online");
     }
-    Serial.println("LittleFS Started");
-    online.fs = true;
+    else
+    {
+      Serial.println("LittleFS Started");
+      online.fs = true;
+    }
   }
 }
 
@@ -552,6 +545,8 @@ void beginFuelGauge()
     return;
   }
 
+  online.battery = true;
+
   //Always use hibernate mode
   if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
   if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
@@ -561,7 +556,7 @@ void beginFuelGauge()
   checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
   //Check to see if we are dangerously low
-  if (battLevel < 5 && battChangeRate < 0) //5% and not charging
+  if (battLevel < 5 && battChangeRate < 0.5) //5% and not charging
   {
     Serial.println("Battery too low. Please charge. Shutting down...");
 
@@ -573,7 +568,6 @@ void beginFuelGauge()
     powerDown(false); //Don't display 'Shutting Down'
   }
 
-  online.battery = true;
 }
 
 //Begin accelerometer if available
@@ -710,105 +704,25 @@ bool beginExternalTriggers()
   return (response);
 }
 
-//Check if NEO-D9S is connected. Configure if available.
-void beginLBand()
-{
-  if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
-  {
-    log_d("L-Band not detected");
-    return;
-  }
-
-  //Check the firmware version of the NEO-D9S. Based on Example21_ModuleInfo.
-  if (i2cLBand.getModuleInfo(1100) == true) // Try to get the module info
-  {
-    //i2cLBand.minfo.extension[1] looks like 'FWVER=HPG 1.12'
-    strcpy(neoFirmwareVersion, i2cLBand.minfo.extension[1]);
-
-    //Remove 'FWVER='. It's extraneous and = causes settings file parsing issues
-    char *ptr = strstr(neoFirmwareVersion, "FWVER=");
-    if (ptr != NULL)
-      strcpy(neoFirmwareVersion, ptr + strlen("FWVER="));
-
-    printNEOInfo(); //Print module firmware version
-  }
-
-  if (online.gnss == true)
-  {
-    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
-  }
-
-  //If we have a fix, check which frequency to use
-  if (fixType == 2 || fixType == 3 || fixType == 4 || fixType == 5) //2D, 3D, 3D+DR, or Time
-  {
-    if ( (longitude > -125 && longitude < -67) && (latitude > -90 && latitude < 90))
-    {
-      log_d("Setting L-Band to US");
-      settings.LBandFreq = 1556290000; //We are in US band
-    }
-    else if ( (longitude > -25 && longitude < 70) && (latitude > -90 && latitude < 90))
-    {
-      log_d("Setting L-Band to EU");
-      settings.LBandFreq = 1545260000; //We are in EU band
-    }
-    else
-    {
-      Serial.println("Unknown band area");
-      settings.LBandFreq = 1556290000; //Default to US
-    }
-    recordSystemSettings();
-  }
-  else
-    log_d("No fix available for L-Band frequency determination");
-
-  bool response = true;
-  response &= i2cLBand.setVal32(UBLOX_CFG_PMP_CENTER_FREQUENCY,   settings.LBandFreq); // Default 1539812500 Hz
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SEARCH_WINDOW,      2200);        // Default 2200 Hz
-  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_SERVICE_ID,      0);           // Default 1
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SERVICE_ID,         21845);       // Default 50821
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DATA_RATE,          2400);        // Default 2400 bps
-  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_DESCRAMBLER,     1);           // Default 1
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DESCRAMBLER_INIT,   26969);       // Default 23560
-  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_PRESCRAMBLING,   0);           // Default 0
-  response &= i2cLBand.setVal64(UBLOX_CFG_PMP_UNIQUE_WORD,        16238547128276412563ull);
-  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C,   1); // Ensure UBX-RXM-PMP is enabled on the I2C port
-  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 1); // Output UBX-RXM-PMP on UART1
-  response &= i2cLBand.setVal(UBLOX_CFG_UART2OUTPROT_UBX, 1);         // Enable UBX output on UART2
-  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); // Output UBX-RXM-PMP on UART2
-  response &= i2cLBand.setVal32(UBLOX_CFG_UART1_BAUDRATE,         38400); // match baudrate with ZED default
-  response &= i2cLBand.setVal32(UBLOX_CFG_UART2_BAUDRATE,         38400); // match baudrate with ZED default
-
-  if (response == false)
-    Serial.println("L-Band failed to configure");
-
-  i2cLBand.softwareResetGNSSOnly(); // Do a restart
-
-  i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
-
-  i2cGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Check if the PMP data is being decrypted successfully
-
-  log_d("L-Band online");
-
-  online.lband = true;
-}
-
 void beginIdleTasks()
 {
-  char taskName[32];
-
-  for (int index = 0; index < MAX_CPU_CORES; index++)
+  if (settings.enablePrintIdleTime == true)
   {
-    sprintf(taskName, "IdleTask%d", index);
-    if (idleTaskHandle[index] == NULL)
-      xTaskCreatePinnedToCore(
-        idleTask,
-        taskName, //Just for humans
-        2000, //Stack Size
-        NULL, //Task input parameter
-        0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
-        &idleTaskHandle[index], //Task handle
-        index); //Core where task should run, 0=core, 1=Arduino
+    char taskName[32];
+
+    for (int index = 0; index < MAX_CPU_CORES; index++)
+    {
+      sprintf(taskName, "IdleTask%d", index);
+      if (idleTaskHandle[index] == NULL)
+        xTaskCreatePinnedToCore(
+          idleTask,
+          taskName, //Just for humans
+          2000, //Stack Size
+          NULL, //Task input parameter
+          0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+          &idleTaskHandle[index], //Task handle
+          index); //Core where task should run, 0=core, 1=Arduino
+    }
   }
 }
 
@@ -824,11 +738,27 @@ void beginI2C()
   //SCL/GND shorted: 1000ms, response 5
   //SDA/VCC shorted: 1000ms, reponse 5
   //SDA/GND shorted: 14ms, response 5
-  unsigned long startTime = millis();
   Wire.beginTransmission(0x15); //Dummy address
   int endValue = Wire.endTransmission();
   if (endValue == 2)
     online.i2c = true;
   else
     Serial.println("Error: I2C Bus Not Responding");
+}
+
+//Depending on radio selection, begin hardware
+void radioStart()
+{
+#ifdef COMPILE_ESPNOW
+  if (settings.radioType == RADIO_EXTERNAL)
+  {
+    espnowStop();
+
+    //Nothing to start. UART2 of ZED is connected to external Radio port and is configured at configureUbloxModule()
+  }
+  else if (settings.radioType == RADIO_ESPNOW)
+  {
+    espnowStart();
+  }
+#endif
 }

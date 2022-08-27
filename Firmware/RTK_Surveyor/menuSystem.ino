@@ -66,48 +66,20 @@ void menuSystem()
       printNEOInfo();
     }
 
-    //Display MAC address
-    char macAddress[5];
-    sprintf(macAddress, "%02X%02X", unitMACAddress[4], unitMACAddress[5]);
-    Serial.print("Bluetooth (");
-    Serial.print(macAddress);
-    Serial.print("): ");
+    //Display the Bluetooth status
+    bluetoothTest(false);
 
-    //Verify the ESP UART2 can communicate TX/RX to ZED UART1
-    if (online.gnss == true)
-    {
-      if (zedUartPassed == false)
-      {
-        stopUART2Tasks(); //Stop absoring ZED serial via task
-
-        i2cGNSS.setSerialRate(460800, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
-        serialGNSS.begin(460800); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-
-        SFE_UBLOX_GNSS myGNSS;
-        if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
-        {
-          zedUartPassed = true;
-          Serial.print("Online");
-        }
-        else
-          Serial.print("Offline");
-
-        i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
-        serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-
-        startUART2Tasks(); //Return to normal operation
-      }
-      else
-        Serial.print("Online");
-    }
-    else
-    {
-      Serial.print("GNSS Offline");
-    }
-    Serial.println();
+#ifdef COMPILE_WIFI
+    Serial.print("WiFi MAC Address: ");
+    Serial.printf("%02X-%02X-%02X-%02X-%02X-%02X\r\n", wifiMACAddress[0],
+            wifiMACAddress[1], wifiMACAddress[2], wifiMACAddress[3],
+            wifiMACAddress[4], wifiMACAddress[5]);
+    if (wifiState == WIFI_CONNECTED)
+      wifiDisplayIpAddress();
+#endif
 
     //Display the uptime
-    uint64_t uptimeMilliseconds = uptime;
+    uint64_t uptimeMilliseconds = millis();
     uint32_t uptimeDays = 0;
     while (uptimeMilliseconds >= MILLISECONDS_IN_A_DAY) {
       uptimeMilliseconds -= MILLISECONDS_IN_A_DAY;
@@ -129,12 +101,13 @@ void menuSystem()
       uptimeSeconds += 1;
     }
     Serial.print("Uptime: ");
-    Serial.printf("%d %02d:%02d:%02d.%03ld\r\n",
+    Serial.printf("%d %02d:%02d:%02d.%03lld (Resets: %d)\r\n",
                   uptimeDays,
                   uptimeHours,
                   uptimeMinutes,
                   uptimeSeconds,
-                  uptimeMilliseconds);
+                  uptimeMilliseconds,
+                  settings.resetCount);
 
     if (settings.enableSD == true)
     {
@@ -142,9 +115,16 @@ void menuSystem()
     }
 
     Serial.println("d) Configure Debug");
-    Serial.printf("h) Set time zone hours: %d\r\n", settings.timeZoneHours);
-    Serial.printf("m) Set time zone minutes: %d\r\n", settings.timeZoneMinutes);
-    Serial.printf("s) Set time zone seconds: %d\r\n", settings.timeZoneSeconds);
+
+    Serial.printf("z) Set time zone offset: %02d:%02d:%02d\r\n", settings.timeZoneHours, settings.timeZoneMinutes, settings.timeZoneSeconds);
+
+    Serial.print(F("b) Set Bluetooth Mode: "));
+    if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
+      Serial.println(F("Classic"));
+    else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+      Serial.println(F("BLE"));
+    else
+      Serial.println(F("Off"));
 
     Serial.println("r) Reset all settings to default");
 
@@ -160,7 +140,7 @@ void menuSystem()
 
     if (incoming == 'd')
       menuDebug();
-    else if (incoming == 'h')
+    else if (incoming == 'z')
     {
       Serial.print("Enter time zone hour offset (-23 <= offset <= 23): ");
       int64_t value = getNumber(menuTimeout);
@@ -169,35 +149,39 @@ void menuSystem()
       else
       {
         settings.timeZoneHours = value;
-        online.rtc = false;
-        updateRTC();
-      }
+
+        Serial.print("Enter time zone minute offset (-59 <= offset <= 59): ");
+        int64_t value = getNumber(menuTimeout);
+        if (value < -59 || value > 59)
+          Serial.println("Error: -60 < minutes < 60");
+        else
+        {
+          settings.timeZoneMinutes = value;
+
+          Serial.print("Enter time zone second offset (-59 <= offset <= 59): ");
+          int64_t value = getNumber(menuTimeout);
+          if (value < -59 || value > 59)
+            Serial.println("Error: -60 < seconds < 60");
+          else
+          {
+            settings.timeZoneSeconds = value;
+            online.rtc = false;
+            updateRTC();
+          } //Succesful seconds
+        } //Succesful minute
+      } //Succesful hours
     }
-    else if (incoming == 'm')
+    else if (incoming == 'b')
     {
-      Serial.print("Enter time zone minute offset (-59 <= offset <= 59): ");
-      int64_t value = getNumber(menuTimeout);
-      if (value < -59 || value > 59)
-        Serial.println("Error: -60 < minutes < 60");
-      else
-      {
-        settings.timeZoneMinutes = value;
-        online.rtc = false;
-        updateRTC();
-      }
-    }
-    else if (incoming == 's')
-    {
-      Serial.print("Enter time zone second offset (-59 <= offset <= 59): ");
-      int64_t value = getNumber(menuTimeout);
-      if (value < -59 || value > 59)
-        Serial.println("Error: -60 < seconds < 60");
-      else
-      {
-        settings.timeZoneSeconds = value;
-        online.rtc = false;
-        updateRTC();
-      }
+      // Restart Bluetooth
+      bluetoothStop();
+      if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
+        settings.bluetoothRadioType = BLUETOOTH_RADIO_BLE;
+      else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+        settings.bluetoothRadioType = BLUETOOTH_RADIO_OFF;
+      else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
+        settings.bluetoothRadioType = BLUETOOTH_RADIO_SPP;
+      bluetoothStart();
     }
     else if (incoming == 'r')
     {
@@ -275,12 +259,14 @@ void menuSystem()
 //Toggle control of heap reports and I2C GNSS debug
 void menuDebug()
 {
+  int menuTimeoutExtended = 30; //Increase time needed as it's a large menu
+
   while (1)
   {
     Serial.println();
     Serial.println("Menu: Debug Menu");
 
-    Serial.print("1) I2C Debugging Output: ");
+    Serial.print("1) u-blox I2C Debugging Output: ");
     if (settings.enableI2Cdebug == true) Serial.println("Enabled");
     else Serial.println("Disabled");
 
@@ -302,10 +288,6 @@ void menuDebug()
     Serial.print("6) Set SPP TX Buffer Size: ");
     Serial.println(settings.sppTxQueueSize);
 
-    Serial.print("7) Throttle BT Transmissions During SPP Congestion: ");
-    if (settings.throttleDuringSPPCongestion == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
-
     Serial.printf("8) Display Reset Counter: %d - ", settings.resetCount);
     if (settings.enableResetDisplay == true) Serial.println("Enabled");
     else Serial.println("Disabled");
@@ -313,13 +295,13 @@ void menuDebug()
     Serial.print("9) GNSS Serial Timeout: ");
     Serial.println(settings.serialTimeoutGNSS);
 
-    Serial.print("10) Periodically print Wifi IP Address: ");
+    Serial.print("10) Periodically print WiFi IP Address: ");
     Serial.printf("%s\r\n", settings.enablePrintWifiIpAddress ? "Enabled" : "Disabled");
 
     Serial.print("11) Periodically print state: ");
     Serial.printf("%s\r\n", settings.enablePrintState ? "Enabled" : "Disabled");
 
-    Serial.print("12) Periodically print Wifi state: ");
+    Serial.print("12) Periodically print WiFi state: ");
     Serial.printf("%s\r\n", settings.enablePrintWifiState ? "Enabled" : "Disabled");
 
     Serial.print("13) Periodically print NTRIP client state: ");
@@ -328,16 +310,51 @@ void menuDebug()
     Serial.print("14) Periodically print NTRIP server state: ");
     Serial.printf("%s\r\n", settings.enablePrintNtripServerState ? "Enabled" : "Disabled");
 
-    Serial.print("15) Print GNSS --> NTRIP caster messages: ");
-    Serial.printf("%s\r\n", settings.enablePrintNtripServerRtcm ? "Enabled" : "Disabled");
-
-    Serial.print("16) Periodically print position: ");
+    Serial.print("15) Periodically print position: ");
     Serial.printf("%s\r\n", settings.enablePrintPosition ? "Enabled" : "Disabled");
 
-    Serial.print("17) Periodically print CPU idle time: ");
+    Serial.print("16) Periodically print CPU idle time: ");
     Serial.printf("%s\r\n", settings.enablePrintIdleTime ? "Enabled" : "Disabled");
 
-    Serial.println("18) Mirror ZED-F9x's UART1 settings to USB");
+    Serial.println("17) Mirror ZED-F9x's UART1 settings to USB");
+
+    Serial.print("18) Print battery status messages: ");
+    Serial.printf("%s\r\n", settings.enablePrintBatteryMessages ? "Enabled" : "Disabled");
+
+    Serial.print("19) Print Rover accuracy messages: ");
+    Serial.printf("%s\r\n", settings.enablePrintRoverAccuracy ? "Enabled" : "Disabled");
+
+    Serial.print("20) Print messages with bad checksums or CRCs: ");
+    Serial.printf("%s\r\n", settings.enablePrintBadMessages ? "Enabled" : "Disabled");
+
+    Serial.print("21) Print log file messages: ");
+    Serial.printf("%s\r\n", settings.enablePrintLogFileMessages ? "Enabled" : "Disabled");
+
+    Serial.print("22) Print log file status: ");
+    Serial.printf("%s\r\n", settings.enablePrintLogFileStatus ? "Enabled" : "Disabled");
+
+    Serial.print("23) Print ring buffer offsets: ");
+    Serial.printf("%s\r\n", settings.enablePrintRingBufferOffsets ? "Enabled" : "Disabled");
+
+    Serial.print("24) Print GNSS --> NTRIP caster messages: ");
+    Serial.printf("%s\r\n", settings.enablePrintNtripServerRtcm ? "Enabled" : "Disabled");
+
+    Serial.print("25) Print NTRIP caster --> GNSS messages: ");
+    Serial.printf("%s\r\n", settings.enablePrintNtripClientRtcm ? "Enabled" : "Disabled");
+
+    Serial.print("26) Print states: ");
+    Serial.printf("%s\r\n", settings.enablePrintStates ? "Enabled" : "Disabled");
+
+    Serial.print("27) Print duplicate states: ");
+    Serial.printf("%s\r\n", settings.enablePrintDuplicateStates ? "Enabled" : "Disabled");
+
+    Serial.print("28) RTCM message checking: ");
+    Serial.printf("%s\r\n", settings.enableRtcmMessageChecking ? "Enabled" : "Disabled");
+
+    Serial.print("29) Run Logging Test: ");
+    Serial.printf("%s\r\n", settings.runLogTest ? "Enabled" : "Disabled");
+
+    Serial.println("30) Run Bluetooth Test");
 
     Serial.println("t) Enter Test Screen");
 
@@ -348,7 +365,7 @@ void menuDebug()
     Serial.println("x) Exit");
 
     int incoming;
-    int digits = getMenuChoice(&incoming, menuTimeout); //Timeout after x seconds
+    int digits = getMenuChoice(&incoming, menuTimeoutExtended); //Timeout after x seconds
 
     //Handle input timeout
     if (digits == GMCS_TIMEOUT)
@@ -413,10 +430,6 @@ void menuDebug()
           settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
         }
       }
-      else if (incoming == 7)
-      {
-        settings.throttleDuringSPPCongestion ^= 1;
-      }
       else if (incoming == 8)
       {
         settings.enableResetDisplay ^= 1;
@@ -429,7 +442,7 @@ void menuDebug()
       else if (incoming == 9)
       {
         Serial.print("Enter GNSS Serial Timeout in milliseconds (0 to 1000): ");
-        uint16_t serialTimeoutGNSS = getNumber(menuTimeout); //Timeout after x seconds
+        int16_t serialTimeoutGNSS = getNumber(menuTimeout); //Timeout after x seconds
         if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
         {
           Serial.println("Error: Timeout is out of range");
@@ -461,17 +474,13 @@ void menuDebug()
       }
       else if (incoming == 15)
       {
-        settings.enablePrintNtripServerRtcm ^= 1;
+        settings.enablePrintPosition ^= 1;
       }
       else if (incoming == 16)
       {
-        settings.enablePrintPosition ^= 1;
-      }
-      else if (incoming == 17)
-      {
         settings.enablePrintIdleTime ^= 1;
       }
-      else if (incoming == 18)
+      else if (incoming == 17)
       {
         bool response = configureGNSSMessageRates(COM_PORT_USB, settings.ubxMessages); //Make sure the appropriate messages are enabled
         response &= i2cGNSS.setPortOutput(COM_PORT_USB, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Duplicate UART1
@@ -481,6 +490,61 @@ void menuDebug()
         else
           Serial.println(F("USB messages successfully enabled"));
       }
+      else if (incoming == 18)
+      {
+        settings.enablePrintBatteryMessages ^= 1;
+      }
+      else if (incoming == 19)
+      {
+        settings.enablePrintRoverAccuracy ^= 1;
+      }
+      else if (incoming == 20)
+      {
+        settings.enablePrintBadMessages ^= 1;
+      }
+      else if (incoming == 21)
+      {
+        settings.enablePrintLogFileMessages ^= 1;
+      }
+      else if (incoming == 22)
+      {
+        settings.enablePrintLogFileStatus ^= 1;
+      }
+      else if (incoming == 23)
+      {
+        settings.enablePrintRingBufferOffsets ^= 1;
+      }
+      else if (incoming == 24)
+      {
+        settings.enablePrintNtripServerRtcm ^= 1;
+      }
+      else if (incoming == 25)
+      {
+        settings.enablePrintNtripClientRtcm ^= 1;
+      }
+      else if (incoming == 26)
+      {
+        settings.enablePrintStates ^= 1;
+      }
+      else if (incoming == 27)
+      {
+        settings.enablePrintDuplicateStates ^= 1;
+      }
+      else if (incoming == 28)
+      {
+        settings.enableRtcmMessageChecking ^= 1;
+      }
+      else if (incoming == 29)
+      {
+        settings.runLogTest ^= 1;
+
+        logTestState = LOGTEST_START; //Start test
+
+        //Mark current log file as complete to force test start
+        startCurrentLogTime_minutes = systemTime_minutes - settings.maxLogLength_minutes;
+      }
+      else if (incoming == 30)
+        bluetoothTest(true);
       else
         printUnknown(incoming);
     }

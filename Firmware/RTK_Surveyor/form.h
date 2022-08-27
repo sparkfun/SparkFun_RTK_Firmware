@@ -255,7 +255,6 @@ function validateFields() {
         checkElementString("ntripClient_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
         checkElementValue("ntripClient_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseGNSSConfig");
         checkElementString("ntripClient_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
-        checkElementString("ntripClient_MountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
     }
     else {
         clearElement("ntripClient_wifiSSID", "TRex");
@@ -715,19 +714,10 @@ function firmwareUploadComplete() {
 
 document.addEventListener("DOMContentLoaded", (event) => {
 
-    //https://stackoverflow.com/questions/23835150/how-can-i-add-an-event-listener-for-multiple-buttons-with-same-class-name
     var radios = document.querySelectorAll('input[name=profileRadio]');
     for(var i = 0, max = radios.length; i < max; i++) {
         radios[i].onclick = function() {
-            
-            console.log("Profile number: " + this.value);
-            
-            //Validate. If fail, reset radio button value to original
             changeConfig();
-
-            //Record previous settings to unit
-
-            //Request unit for new settings
         }
     }
 

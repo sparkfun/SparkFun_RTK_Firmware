@@ -181,7 +181,6 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", "sppTxQueueSize", settings.sppTxQueueSize);
   settingsFile->printf("%s=%d\n\r", "dynamicModel", settings.dynamicModel);
   settingsFile->printf("%s=%d\n\r", "lastState", settings.lastState);
-  settingsFile->printf("%s=%d\n\r", "throttleDuringSPPCongestion", settings.throttleDuringSPPCongestion);
   settingsFile->printf("%s=%d\n\r", "enableSensorFusion", settings.enableSensorFusion);
   settingsFile->printf("%s=%d\n\r", "autoIMUmountAlignment", settings.autoIMUmountAlignment);
   settingsFile->printf("%s=%d\n\r", "enableResetDisplay", settings.enableResetDisplay);
@@ -238,9 +237,36 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", "enablePrintWifiState", settings.enablePrintWifiState);
   settingsFile->printf("%s=%d\n\r", "enablePrintNtripClientState", settings.enablePrintNtripClientState);
   settingsFile->printf("%s=%d\n\r", "enablePrintNtripServerState", settings.enablePrintNtripServerState);
-  settingsFile->printf("%s=%d\n\r", "enablePrintNtripServerRtcm", settings.enablePrintNtripServerRtcm);
   settingsFile->printf("%s=%d\n\r", "enablePrintPosition", settings.enablePrintPosition);
   settingsFile->printf("%s=%d\n\r", "enableMarksFile", settings.enableMarksFile);
+  settingsFile->printf("%s=%d\n\r", "enablePrintBatteryMessages", settings.enablePrintBatteryMessages);
+  settingsFile->printf("%s=%d\n\r", "enablePrintRoverAccuracy", settings.enablePrintRoverAccuracy);
+  settingsFile->printf("%s=%d\n\r", "enablePrintBadMessages", settings.enablePrintBadMessages);
+  settingsFile->printf("%s=%d\n\r", "enablePrintLogFileMessages", settings.enablePrintLogFileMessages);
+  settingsFile->printf("%s=%d\n\r", "enablePrintLogFileStatus", settings.enablePrintLogFileStatus);
+  settingsFile->printf("%s=%d\n\r", "enablePrintRingBufferOffsets", settings.enablePrintRingBufferOffsets);
+  settingsFile->printf("%s=%d\n\r", "enablePrintNtripServerRtcm", settings.enablePrintNtripServerRtcm);
+  settingsFile->printf("%s=%d\n\r", "enablePrintNtripClientRtcm", settings.enablePrintNtripClientRtcm);
+  settingsFile->printf("%s=%d\n\r", "enablePrintStates", settings.enablePrintStates);
+  settingsFile->printf("%s=%d\n\r", "enablePrintDuplicateStates", settings.enablePrintDuplicateStates);
+  settingsFile->printf("%s=%d\n\r", "radioType", settings.radioType);
+  //Record peer MAC addresses
+  for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+  {
+    char tempString[50]; //espnowPeers.1=B4,C1,33,42,DE,01,
+    sprintf(tempString, "espnowPeers.%d=%02X,%02X,%02X,%02X,%02X,%02X,", x,
+            settings.espnowPeers[x][0],
+            settings.espnowPeers[x][1],
+            settings.espnowPeers[x][2],
+            settings.espnowPeers[x][3],
+            settings.espnowPeers[x][4],
+            settings.espnowPeers[x][5]
+           );
+    settingsFile->println(tempString);
+  }
+  settingsFile->printf("%s=%d\n\r", "espnowPeerCount", settings.espnowPeerCount);
+  settingsFile->printf("%s=%d\n\r", "enableRtcmMessageChecking", settings.enableRtcmMessageChecking);
+  settingsFile->printf("%s=%d\n\r", "bluetoothRadioType", settings.bluetoothRadioType);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -430,22 +456,34 @@ bool parseLine(char* str, Settings *settings)
   }
   else
   {
+    //if (strcmp(settingName, "ntripServer_CasterHost") == 0) //Debug
+    //  Serial.printf("Found problem spot raw: %s\n\r", str);
+
     //Assume the value is a string such as 8d8a48b. The leading number causes skipSpace to fail.
     //If settingValue has a mix of letters and numbers, just convert to string
     sprintf(settingValue, "%s", str);
 
-    //Check if string is mixed
-    bool isNumber = false;
-    bool isLetter = false;
+    //Check if string is mixed: 8a011EF, 192.168.1.1, -102.4, t6-h4$, etc.
+    bool hasSymbol = false;
+    int decimalCount = 0;
     for (int x = 0 ; x < strlen(settingValue) ; x++)
     {
-      if (isAlpha(settingValue[x])) isLetter = true;
-      if (isDigit(settingValue[x])) isNumber = true;
+      if (settingValue[x] == '.') decimalCount++;
+      else if (x == 0 && settingValue[x] == '-')
+      {
+        ; //Do nothing
+      }
+      else if (isAlpha(settingValue[x])) hasSymbol = true;
+      else if (isDigit(settingValue[x]) == false) hasSymbol = true;
     }
 
-    if (isLetter && isNumber)
+    //See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/274
+    if (hasSymbol || decimalCount > 1)
     {
       //It's a mix. Skip strtod.
+
+      //if (strcmp(settingName, "ntripServer_CasterHost") == 0) //Debug
+      //  Serial.printf("Skipping strtod - settingValue: %s\n\r", settingValue);
     }
     else
     {
@@ -649,8 +687,6 @@ bool parseLine(char* str, Settings *settings)
       settings->updateZEDSettings = true;
     }
   }
-  else if (strcmp(settingName, "throttleDuringSPPCongestion") == 0)
-    settings->throttleDuringSPPCongestion = d;
   else if (strcmp(settingName, "enableSensorFusion") == 0)
   {
     if (settings->enableSensorFusion != d)
@@ -809,12 +845,40 @@ bool parseLine(char* str, Settings *settings)
     settings->enablePrintNtripClientState = d;
   else if (strcmp(settingName, "enablePrintNtripServerState") == 0)
     settings->enablePrintNtripServerState = d;
-  else if (strcmp(settingName, "enablePrintNtripServerRtcm") == 0)
-    settings->enablePrintNtripServerRtcm = d;
   else if (strcmp(settingName, "enablePrintPosition") == 0)
     settings->enablePrintPosition = d;
+  else if (strcmp(settingName, "enablePrintBatteryMessages") == 0)
+    settings->enablePrintBatteryMessages = d;
+  else if (strcmp(settingName, "enablePrintRoverAccuracy") == 0)
+    settings->enablePrintRoverAccuracy = d;
+  else if (strcmp(settingName, "enablePrintBadMessages") == 0)
+    settings->enablePrintBadMessages = d;
+  else if (strcmp(settingName, "enablePrintLogFileMessages") == 0)
+    settings->enablePrintLogFileMessages = d;
+  else if (strcmp(settingName, "enablePrintLogFileStatus") == 0)
+    settings->enablePrintLogFileStatus = d;
+  else if (strcmp(settingName, "enablePrintRingBufferOffsets") == 0)
+    settings->enablePrintRingBufferOffsets = d;
+  else if (strcmp(settingName, "enablePrintNtripServerRtcm") == 0)
+    settings->enablePrintNtripServerRtcm = d;
+  else if (strcmp(settingName, "enablePrintNtripClientRtcm") == 0)
+    settings->enablePrintNtripClientRtcm = d;
+  else if (strcmp(settingName, "enablePrintStates") == 0)
+    settings->enablePrintStates = d;
+  else if (strcmp(settingName, "enablePrintDuplicateStates") == 0)
+    settings->enablePrintDuplicateStates = d;
+  else if (strcmp(settingName, "radioType") == 0)
+    settings->radioType = (RadioType_e)d;
+  else if (strcmp(settingName, "espnowPeerCount") == 0)
+    settings->espnowPeerCount = d;
+  else if (strcmp(settingName, "enableRtcmMessageChecking") == 0)
+    settings->enableRtcmMessageChecking = d;
+  else if (strcmp(settingName, "radioType") == 0)
+    settings->radioType = (RadioType_e)d;
+  else if (strcmp(settingName, "bluetoothRadioType") == 0)
+    settings->bluetoothRadioType = (BluetoothRadioType_e)d;
 
-  //Check for bulk settings (constellations and message rates)
+  //Check for bulk settings (constellations, message rates, ESPNOW Peers)
   //Must be last on else list
   else
   {
@@ -863,6 +927,34 @@ bool parseLine(char* str, Settings *settings)
         }
       }
     }
+
+    //Scan for ESPNOW peers
+#ifdef COMPILE_ESPNOW
+    if (knownSetting == false)
+    {
+      for (int x = 0 ; x < ESPNOW_MAX_PEERS ; x++)
+      {
+        char tempString[50]; //espnowPeers.1=B4,C1,33,42,DE,01,
+        sprintf(tempString, "espnowPeers.%d", x);
+
+        if (strcmp(settingName, tempString) == 0)
+        {
+          uint8_t macAddress[6];
+          uint8_t macByte = 0;
+
+          char* token = strtok(settingValue, ","); //Break string up on ,
+          while (token != NULL && macByte < sizeof(macAddress))
+          {
+            settings->espnowPeers[x][macByte++] = (uint8_t)strtol(token, NULL, 16);
+            token = strtok(NULL, ",");
+          }
+
+          knownSetting = true;
+          break;
+        }
+      }
+    }
+#endif //ifdef COMPILE_ESPNOW
 
     //Last catch
     if (knownSetting == false)

@@ -140,7 +140,7 @@ void menuMessages()
 
       //We want GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
       float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
-      if(measurementFrequency < 1.0) measurementFrequency = 1.0;
+      if (measurementFrequency < 1.0) measurementFrequency = 1.0;
       setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //One report per second
 
       setMessageRateByName("UBX_NMEA_RMC", 1);
@@ -152,10 +152,10 @@ void menuMessages()
       setMessageRateByName("UBX_NMEA_GGA", 1);
       setMessageRateByName("UBX_NMEA_GSA", 1);
       setMessageRateByName("UBX_NMEA_GST", 1);
-      
+
       //We want GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
       float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
-      if(measurementFrequency < 1.0) measurementFrequency = 1.0;
+      if (measurementFrequency < 1.0) measurementFrequency = 1.0;
       setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //One report per second
 
       setMessageRateByName("UBX_NMEA_RMC", 1);
@@ -200,6 +200,7 @@ void menuMessages()
     Serial.println("menuMessages: UART1 messages successfully enabled");
   }
 
+  setLoggingType(); //Update Standard, PPP, or custom for icon selection
 }
 
 //Given a sub type (ie "RTCM", "NMEA") present menu showing messages with this subtype
@@ -339,27 +340,43 @@ uint8_t getMessageRate(uint8_t msgClass, uint8_t msgID, uint8_t portID)
 //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
 void beginLogging()
 {
+  beginLogging("");
+}
+
+void beginLogging(const char *customFileName)
+{
+  if (online.microSD == false)
+    beginSD();
+
   if (online.logging == false)
   {
     if (online.microSD == true && settings.enableLogging == true && online.rtc == true) //We can't create a file until we have date/time
     {
       char fileName[66 + 6 + 40] = "";
 
-      if (reuseLastLog == true) //attempt to use previous log
+      if (strlen(customFileName) == 0)
       {
-        if (findLastLog(fileName) == false)
-          log_d("Failed to find last log. Making new one.");
-        else
-          log_d("Using last log file.");
-      }
+        //Generate a standard log file name
+        if (reuseLastLog == true) //attempt to use previous log
+        {
+          if (findLastLog(fileName) == false)
+            log_d("Failed to find last log. Making new one.");
+          else
+            log_d("Using last log file.");
+        }
 
-      if (strlen(fileName) == 0)
+        if (strlen(fileName) == 0)
+        {
+          sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+                  platformFilePrefix,
+                  rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
+                  rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
+                 );
+        }
+      }
+      else
       {
-        sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
-                platformFilePrefix,
-                rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
-                rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
-               );
+        strcpy(fileName, customFileName);
       }
 
       //Allocate the ubxFile
@@ -459,7 +476,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
     //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
     //Wait up to 1000ms
     if (gotSemaphore
-      || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
+        || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
     {
       if (sdPresent())
       {
@@ -484,7 +501,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
     {
       //This is OK because in the interim more data will be written to the log
       //and the log file will eventually be closed by the next call in loop
-      log_d("sdCardSemaphore failed to yield, menuMessages.ino line %d\r\n", __LINE__);
+      log_d("sdCardSemaphore failed to yield, menuMessages.ino line %d", __LINE__);
     }
   }
 }
@@ -609,4 +626,219 @@ bool setMessageRateByName(const char *msgName, uint8_t msgRate)
 
   Serial.printf("setMessageRateByName: %s not found\n\r", msgName);
   return (false);
+}
+
+//Given the name of a message, find it, and return the rate
+uint8_t getMessageRateByName(const char *msgName)
+{
+  for (int x = 0 ; x < MAX_UBX_MSG ; x++)
+  {
+    if (strcmp(settings.ubxMessages[x].msgTextName, msgName) == 0)
+      return (settings.ubxMessages[x].msgRate);
+  }
+
+  Serial.printf("getMessageRateByName: %s not found\n\r", msgName);
+  return (0);
+}
+
+//Determine logging type
+//If user is logging basic 5 sentences, this is 'S'tandard logging
+//If user is logging 7 PPP sentences, this is 'P'PP logging
+//If user has other setences turned on, it's custom logging
+//This controls the type of icon displayed
+void setLoggingType()
+{
+  loggingType = LOGGING_CUSTOM;
+
+  int messageCount = getActiveMessageCount();
+  if (messageCount == 5 || messageCount == 7)
+  {
+    if (getMessageRateByName("UBX_NMEA_GGA") > 0
+        && getMessageRateByName("UBX_NMEA_GSA") > 0
+        && getMessageRateByName("UBX_NMEA_GST") > 0
+        && getMessageRateByName("UBX_NMEA_GSV") > 0
+        && getMessageRateByName("UBX_NMEA_RMC") > 0
+       )
+    {
+      loggingType = LOGGING_STANDARD;
+
+      if (getMessageRateByName("UBX_RXM_RAWX") > 0 && getMessageRateByName("UBX_RXM_SFRBX") > 0)
+        loggingType = LOGGING_PPP;
+    }
+  }
+}
+
+//During the logging test, we have to modify the messages and rate of the device
+void setLogTestFrequencyMessages(int rate, int messages)
+{
+  //Set measurement frequency
+  setMeasurementRates(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate and settings.navigationRate
+
+  //Set messages
+  setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
+  if (messages == 5)
+  {
+    setMessageRateByName("UBX_NMEA_GGA", 1);
+    setMessageRateByName("UBX_NMEA_GSA", 1);
+    setMessageRateByName("UBX_NMEA_GST", 1);
+    setMessageRateByName("UBX_NMEA_GSV", rate); //One report per second
+    setMessageRateByName("UBX_NMEA_RMC", 1);
+
+    log_d("Messages: Surveying Defaults (NMEAx5)");
+  }
+  else if (messages == 7)
+  {
+    setMessageRateByName("UBX_NMEA_GGA", 1);
+    setMessageRateByName("UBX_NMEA_GSA", 1);
+    setMessageRateByName("UBX_NMEA_GST", 1);
+    setMessageRateByName("UBX_NMEA_GSV", rate); //One report per second
+    setMessageRateByName("UBX_NMEA_RMC", 1);
+    setMessageRateByName("UBX_RXM_RAWX", 1);
+    setMessageRateByName("UBX_RXM_SFRBX", 1);
+
+    log_d("Messages: PPP NMEAx5+RXMx2");
+  }
+  else
+    log_d("Unknown message amount");
+
+
+  //Apply these message rates to both UART1 and USB
+  configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages);
+  configureGNSSMessageRates(COM_PORT_USB, settings.ubxMessages);
+}
+
+//The log test allows us to record a series of different system configurations into
+//one file. At the same time, we log the output of the ZED via the USB connection.
+//Once complete, the SD log is compared against the USB log to verify both are identical.
+//Be sure to set maxLogLength_minutes before running test. maxLogLength_minutes will
+//set the length of each test.
+void updateLogTest()
+{
+  //Log is complete, run next text
+  int rate = 4;
+  int messages = 5;
+  int semaphoreWait = 10;
+
+  logTestState++; //Advance to next state
+
+  switch (logTestState)
+  {
+    case (LOGTEST_4HZ_5MSG_10MS):
+      //During the first test, create the log file
+      reuseLastLog = false;
+      char fileName[100];
+      sprintf(fileName, "%s_LogTest_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+              platformFilePrefix,
+              rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
+              rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
+             );
+      endSD(false, true); //End previous log
+
+      beginLogging(fileName);
+
+      i2cGNSS.setPortOutput(COM_PORT_USB, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Duplicate UART1
+
+      rate = 4;
+      messages = 5;
+      semaphoreWait = 10;
+      break;
+    case (LOGTEST_4HZ_7MSG_10MS):
+      rate = 4;
+      messages = 7;
+      semaphoreWait = 10;
+      break;
+    case (LOGTEST_10HZ_5MSG_10MS):
+      rate = 10;
+      messages = 5;
+      semaphoreWait = 10;
+      break;
+    case (LOGTEST_10HZ_7MSG_10MS):
+      rate = 10;
+      messages = 7;
+      semaphoreWait = 10;
+      break;
+
+    case (LOGTEST_4HZ_5MSG_0MS):
+      rate = 4;
+      messages = 5;
+      semaphoreWait = 0;
+      break;
+    case (LOGTEST_4HZ_7MSG_0MS):
+      rate = 4;
+      messages = 7;
+      semaphoreWait = 0;
+      break;
+    case (LOGTEST_10HZ_5MSG_0MS):
+      rate = 10;
+      messages = 5;
+      semaphoreWait = 0;
+      break;
+    case (LOGTEST_10HZ_7MSG_0MS):
+      rate = 10;
+      messages = 7;
+      semaphoreWait = 0;
+      break;
+
+    case (LOGTEST_4HZ_5MSG_50MS):
+      rate = 4;
+      messages = 5;
+      semaphoreWait = 50;
+      break;
+    case (LOGTEST_4HZ_7MSG_50MS):
+      rate = 4;
+      messages = 7;
+      semaphoreWait = 50;
+      break;
+    case (LOGTEST_10HZ_5MSG_50MS):
+      rate = 10;
+      messages = 5;
+      semaphoreWait = 50;
+      break;
+    case (LOGTEST_10HZ_7MSG_50MS):
+      rate = 10;
+      messages = 7;
+      semaphoreWait = 50;
+      break;
+
+    case (LOGTEST_END):
+      //Reduce rate
+      rate = 4;
+      messages = 5;
+      semaphoreWait = 10;
+      setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 and USB ports
+      log_d("Log Test Complete");
+      break;
+
+    default:
+      logTestState = LOGTEST_END;
+      settings.runLogTest = false;
+      break;
+  }
+
+  if (settings.runLogTest == true)
+  {
+    setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 and USB ports
+
+    loggingSemaphore_shortWait_ms = semaphoreWait / portTICK_PERIOD_MS; //Update variable
+
+    startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
+
+    char logMessage[100];
+    sprintf(logMessage, "Start log test: %dHz, %dMsg, %dMS", rate, messages, semaphoreWait);
+    
+    char nmeaMessage[100]; //Max NMEA sentence length is 82
+    createNMEASentence(CUSTOM_NMEA_TYPE_LOGTEST_STATUS, nmeaMessage, logMessage); //textID, buffer, text
+
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      ubxFile->println(nmeaMessage);
+      xSemaphoreGive(sdCardSemaphore);
+    }
+    else
+    {
+      log_w("sdCardSemaphore failed to yield, menuMessages.ino line %d", __LINE__);
+    }
+
+    log_d("%s", logMessage);
+  }
 }

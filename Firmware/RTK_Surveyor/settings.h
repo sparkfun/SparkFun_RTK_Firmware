@@ -33,6 +33,8 @@ typedef enum
   STATE_KEYS_PROVISION_WIFI_STARTED,
   STATE_KEYS_PROVISION_WIFI_CONNECTED,
   STATE_KEYS_PROVISION_WIFI_TIMEOUT,
+  STATE_ESPNOW_PAIRING_NOT_STARTED,
+  STATE_ESPNOW_PAIRING,
   STATE_SHUTDOWN,
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
@@ -93,6 +95,7 @@ typedef enum
   CUSTOM_NMEA_TYPE_SYSTEM_VERSION,
   CUSTOM_NMEA_TYPE_ZED_VERSION,
   CUSTOM_NMEA_TYPE_STATUS,
+  CUSTOM_NMEA_TYPE_LOGTEST_STATUS,
 } customNmeaType_e;
 
 //Freeze and blink LEDs if we hit a bad error
@@ -102,6 +105,9 @@ typedef enum
   ERROR_GPS_CONFIG_FAIL,
 } t_errorNumber;
 
+//Even though WiFi and ESP-Now operate on the same radio, we treat
+//then as different states so that we can leave the radio on if
+//either WiFi or ESP-Now are active
 enum WiFiState
 {
   WIFI_OFF = 0,
@@ -110,6 +116,16 @@ enum WiFiState
   WIFI_CONNECTED,
 };
 volatile byte wifiState = WIFI_OFF;
+
+typedef enum ESPNOWState
+{
+  ESPNOW_OFF,
+  ESPNOW_ON,
+  ESPNOW_PAIRING,
+  ESPNOW_MAC_RECEIVED,
+  ESPNOW_PAIRED,
+} ESPNOWState;
+volatile ESPNOWState espnowState = ESPNOW_OFF;
 
 enum NTRIPClientState
 {
@@ -148,6 +164,39 @@ enum RtcmTransportState
   RTCM_TRANSPORT_STATE_READ_CRC_3,
   RTCM_TRANSPORT_STATE_CHECK_CRC
 };
+
+typedef enum RadioType_e
+{
+  RADIO_EXTERNAL = 0,
+  RADIO_ESPNOW,
+} RadioType_e;
+
+typedef enum BluetoothRadioType_e
+{
+  BLUETOOTH_RADIO_SPP = 0,
+  BLUETOOTH_RADIO_BLE,
+  BLUETOOTH_RADIO_OFF,
+} BluetoothRadioType_e;
+
+enum LogTestState
+{
+  LOGTEST_START = 0,
+  LOGTEST_4HZ_5MSG_10MS,
+  LOGTEST_4HZ_7MSG_10MS,
+  LOGTEST_10HZ_5MSG_10MS,
+  LOGTEST_10HZ_7MSG_10MS,
+  LOGTEST_4HZ_5MSG_0MS,
+  LOGTEST_4HZ_7MSG_0MS,
+  LOGTEST_10HZ_5MSG_0MS,
+  LOGTEST_10HZ_7MSG_0MS,
+  LOGTEST_4HZ_5MSG_50MS,
+  LOGTEST_4HZ_7MSG_50MS,
+  LOGTEST_10HZ_5MSG_50MS,
+  LOGTEST_10HZ_7MSG_50MS,
+
+  LOGTEST_END,
+} ;
+uint8_t logTestState = LOGTEST_END;
 
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
@@ -245,7 +294,6 @@ typedef struct {
   uint16_t sppTxQueueSize = 512;
   uint8_t dynamicModel = DYN_MODEL_PORTABLE;
   SystemState lastState = STATE_ROVER_NOT_STARTED; //For Express, start unit in last known state
-  bool throttleDuringSPPCongestion = true;
   bool enableSensorFusion = false; //If IMU is available, avoid using it unless user specifically selects automotive
   bool autoIMUmountAlignment = true; //Allows unit to automatically establish device orientation in vehicle
   bool enableResetDisplay = false;
@@ -373,14 +421,14 @@ typedef struct {
 
   //NTRIP Server
   bool enableNtripServer = false;
-  bool ntripServer_StartAtSurveyIn = false; //true = Start Wifi instead of Bluetooth at Survey-In
+  bool ntripServer_StartAtSurveyIn = false; //true = Start WiFi instead of Bluetooth at Survey-In
   char ntripServer_CasterHost[50] = "rtk2go.com"; //It's free...
   uint16_t ntripServer_CasterPort = 2101;
   char ntripServer_CasterUser[50] = "test@test.com"; //Some free casters require auth. User must provide their own email address to use RTK2Go
   char ntripServer_CasterUserPW[50] = "";
   char ntripServer_MountPoint[50] = "bldr_dwntwn2"; //NTRIP Server
   char ntripServer_MountPointPW[50] = "WR5wRo4H";
-  char ntripServer_wifiSSID[50] = "TRex"; //NTRIP Server Wifi
+  char ntripServer_wifiSSID[50] = "TRex"; //NTRIP Server WiFi
   char ntripServer_wifiPW[50] = "parachutes";
 
   //NTRIP Client
@@ -391,7 +439,7 @@ typedef struct {
   char ntripClient_CasterUserPW[50] = "";
   char ntripClient_MountPoint[50] = "bldr_SparkFun1";
   char ntripClient_MountPointPW[50] = "";
-  char ntripClient_wifiSSID[50] = "TRex"; //NTRIP Server Wifi
+  char ntripClient_wifiSSID[50] = "TRex"; //NTRIP Server WiFi
   char ntripClient_wifiPW[50] = "parachutes";
   bool ntripClient_TransmitGGA = true;
 
@@ -424,14 +472,29 @@ typedef struct {
   int8_t timeZoneSeconds = 0;
 
   //Debug settings
-  bool enablePrintWifiIpAddress = false;
+  bool enablePrintWifiIpAddress = true;
   bool enablePrintState = false;
   bool enablePrintWifiState = false;
   bool enablePrintNtripClientState = false;
   bool enablePrintNtripServerState = false;
-  bool enablePrintNtripServerRtcm = false;
   bool enablePrintPosition = false;
   bool enablePrintIdleTime = false;
+  bool enablePrintBatteryMessages = true;
+  bool enablePrintRoverAccuracy = true;
+  bool enablePrintBadMessages = false;
+  bool enablePrintLogFileMessages = false;
+  bool enablePrintLogFileStatus = true;
+  bool enablePrintRingBufferOffsets = false;
+  bool enablePrintNtripServerRtcm = false;
+  bool enablePrintNtripClientRtcm = false;
+  bool enablePrintStates = true;
+  bool enablePrintDuplicateStates = false;
+  RadioType_e radioType = RADIO_EXTERNAL;
+  uint8_t espnowPeers[5][6]; //Max of 5 peers. Contains the MAC addresses (6 bytes) of paired units
+  uint8_t espnowPeerCount;
+  bool enableRtcmMessageChecking = false;
+  BluetoothRadioType_e bluetoothRadioType = BLUETOOTH_RADIO_SPP;
+  bool runLogTest = false; //When set to true, device will create a series of test logs
 } Settings;
 Settings settings;
 
@@ -447,10 +510,36 @@ struct struct_online {
   bool battery = false;
   bool accelerometer = false;
   bool ntripClient = false;
-  bool rxRtcmCorrectionData = false;
   bool ntripServer = false;
-  bool txNtripDataCasting = false;
   bool lband = false;
   bool lbandCorrections = false;
   bool i2c = false;
 } online;
+
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_L_BAND
+//AWS certificate for PointPerfect API
+static const char *AWS_PUBLIC_CERT = R"=====(
+-----BEGIN CERTIFICATE-----
+MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF
+ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6
+b24gUm9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTEL
+MAkGA1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJv
+b3QgQ0EgMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALJ4gHHKeNXj
+ca9HgFB0fW7Y14h29Jlo91ghYPl0hAEvrAIthtOgQ3pOsqTQNroBvo3bSMgHFzZM
+9O6II8c+6zf1tRn4SWiw3te5djgdYZ6k/oI2peVKVuRF4fn9tBb6dNqcmzU5L/qw
+IFAGbHrQgLKm+a/sRxmPUDgH3KKHOVj4utWp+UhnMJbulHheb4mjUcAwhmahRWa6
+VOujw5H5SNz/0egwLX0tdHA114gk957EWW67c4cX8jJGKLhD+rcdqsq08p8kDi1L
+93FcXmn/6pUCyziKrlA4b9v7LWIbxcceVOF34GfID5yHI9Y/QCB/IIDEgEw+OyQm
+jgSubJrIqg0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMC
+AYYwHQYDVR0OBBYEFIQYzIU07LwMlJQuCFmcx7IQTgoIMA0GCSqGSIb3DQEBCwUA
+A4IBAQCY8jdaQZChGsV2USggNiMOruYou6r4lK5IpDB/G/wkjUu0yKGX9rbxenDI
+U5PMCCjjmCXPI6T53iHTfIUJrU6adTrCC2qJeHZERxhlbI1Bjjt/msv0tadQ1wUs
+N+gDS63pYaACbvXy8MWy7Vu33PqUXHeeE6V/Uq2V8viTO96LXFvKWlJbYK8U90vv
+o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
+5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpy
+rqXRfboQnoZsG4q5WTP468SQvvG5
+-----END CERTIFICATE-----
+)=====";
+#endif
+#endif

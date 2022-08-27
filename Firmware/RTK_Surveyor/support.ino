@@ -1,3 +1,8 @@
+void printElapsedTime(const char* title)
+{
+  Serial.printf("%s: %ld\n\r", title, millis() - startTime);
+}
+
 void printDebug(String thingToPrint)
 {
   if (settings.printDebugMessages == true)
@@ -60,8 +65,8 @@ int getMenuChoice(int * value, int numberOfSeconds)
 
       //Handle single character input
       if ((!digits)
-        && (((incoming >= 'a') && (incoming <= 'z'))
-        || ((incoming >= 'A') && (incoming <= 'Z'))))
+          && (((incoming >= 'a') && (incoming <= 'z'))
+              || ((incoming >= 'A') && (incoming <= 'Z'))))
       {
         //Echo the incoming character
         Serial.printf("%c\r\n", incoming);
@@ -404,4 +409,140 @@ byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
   }
 
   return readLength;
+}
+
+#define TIMESTAMP_INTERVAL              1000    //Milliseconds
+
+//Print the timestamp
+void printTimeStamp()
+{
+  uint32_t currentMilliseconds;
+  static uint32_t previousMilliseconds;
+
+  //Timestamp the messages
+  currentMilliseconds = millis();
+  if ((currentMilliseconds - previousMilliseconds) >= TIMESTAMP_INTERVAL)
+  {
+    //         1         2         3
+    //123456789012345678901234567890
+    //YYYY-mm-dd HH:MM:SS.xxxrn0
+    struct tm timeinfo = rtc.getTimeStruct();
+    char timestamp[30];
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
+    Serial.printf("%s.%03ld\r\n", timestamp, rtc.getMillis());
+
+    //Select the next time to display the timestamp
+    previousMilliseconds = currentMilliseconds;
+  }
+}
+
+//Parse the RTCM transport data
+bool checkRtcmMessage(uint8_t data)
+{
+  static uint16_t bytesRemaining;
+  static uint16_t length;
+  static uint16_t message;
+  static bool sendMessage = false;
+
+  //    RTCM Standard 10403.2 - Chapter 4, Transport Layer
+  //
+  //    |<------------- 3 bytes ------------>|<----- length ----->|<- 3 bytes ->|
+  //    |                                    |                    |             |
+  //    +----------+--------+----------------+---------+----------+-------------+
+  //    | Preamble |  Fill  | Message Length | Message |   Fill   |   CRC-24Q   |
+  //    |  8 bits  | 6 bits |    10 bits     |  n-bits | 0-7 bits |   24 bits   |
+  //    |   0xd3   | 000000 |   (in bytes)   |         |   zeros  |             |
+  //    +----------+--------+----------------+---------+----------+-------------+
+  //    |                                                                       |
+  //    |<-------------------------------- CRC -------------------------------->|
+  //
+
+  switch (rtcmParsingState)
+  {
+    //Read the upper two bits of the length
+    case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
+      if (!(data & 3))
+      {
+        length = data << 8;
+        rtcmParsingState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
+        break;
+      }
+
+      //Wait for the preamble byte
+      rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+
+    //Fall through
+    //     |
+    //     |
+    //     V
+
+    //Wait for the preamble byte (0xd3)
+    case RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3:
+      sendMessage = false;
+      if (data == 0xd3)
+      {
+        rtcmParsingState = RTCM_TRANSPORT_STATE_READ_LENGTH_1;
+        sendMessage = true;
+      }
+      break;
+
+    //Read the lower 8 bits of the length
+    case RTCM_TRANSPORT_STATE_READ_LENGTH_2:
+      length |= data;
+      bytesRemaining = length;
+      rtcmParsingState = RTCM_TRANSPORT_STATE_READ_MESSAGE_1;
+      break;
+
+    //Read the upper 8 bits of the message number
+    case RTCM_TRANSPORT_STATE_READ_MESSAGE_1:
+      message = data << 4;
+      bytesRemaining -= 1;
+      rtcmParsingState = RTCM_TRANSPORT_STATE_READ_MESSAGE_2;
+      break;
+
+    //Read the lower 4 bits of the message number
+    case RTCM_TRANSPORT_STATE_READ_MESSAGE_2:
+      message |= data >> 4;
+      bytesRemaining -= 1;
+      rtcmParsingState = RTCM_TRANSPORT_STATE_READ_DATA;
+      break;
+
+    //Read the rest of the message
+    case RTCM_TRANSPORT_STATE_READ_DATA:
+      bytesRemaining -= 1;
+      if (bytesRemaining <= 0)
+        rtcmParsingState = RTCM_TRANSPORT_STATE_READ_CRC_1;
+      break;
+
+    //Read the upper 8 bits of the CRC
+    case RTCM_TRANSPORT_STATE_READ_CRC_1:
+      rtcmParsingState = RTCM_TRANSPORT_STATE_READ_CRC_2;
+      break;
+
+    //Read the middle 8 bits of the CRC
+    case RTCM_TRANSPORT_STATE_READ_CRC_2:
+      rtcmParsingState = RTCM_TRANSPORT_STATE_READ_CRC_3;
+      break;
+
+    //Read the lower 8 bits of the CRC
+    case RTCM_TRANSPORT_STATE_READ_CRC_3:
+      rtcmParsingState = RTCM_TRANSPORT_STATE_CHECK_CRC;
+      break;
+  }
+
+  //Check the CRC
+  if (rtcmParsingState == RTCM_TRANSPORT_STATE_CHECK_CRC)
+  {
+    rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+
+    //Display the RTCM message header
+    if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
+    {
+      printTimeStamp();
+      Serial.printf ("    Tx RTCM %d, %2d bytes\r\n", message, 3 + length + 3);
+    }
+  }
+
+  //Let the upper layer know if this message should be sent
+  return sendMessage;
 }

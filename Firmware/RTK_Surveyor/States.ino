@@ -28,7 +28,7 @@ void updateSystemState()
 
     if (settings.enablePrintState && ((millis() - lastStateTime) > 15000))
     {
-      changeState (systemState);
+      changeState(systemState);
       lastStateTime = millis();
     }
 
@@ -116,7 +116,10 @@ void updateSystemState()
 
           i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
 
+          wifiStop(); //Stop WiFi, ntripClient will start as needed.
           bluetoothStart(); //Turn on Bluetooth with 'Rover' name
+          radioStart(); //Start internal radio if enabled, otherwise disable
+
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
@@ -233,9 +236,11 @@ void updateSystemState()
 
           displayBaseStart(0); //Show 'Base'
 
-          //Stop all WiFi and BT. Re-enable in each specific base start state.
-          wifiStop();
+          wifiStop(); //Stop WiFi. Re-enable in each specific base start state.
+
           bluetoothStop();
+          bluetoothStart(); //Restart Bluetooth with 'Base' identifier
+
           startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           if (configureUbloxModuleBase() == true)
@@ -247,23 +252,9 @@ void updateSystemState()
             displayBaseSuccess(500); //Show 'Base Started'
 
             if (settings.fixedBase == false)
-            {
-              //Restart Bluetooth with 'Base' name
-              //We start BT regardless of Ntrip Server in case user wants to transmit survey-in stats over BT
-              if (settings.ntripServer_StartAtSurveyIn)
-                ntripServerStart();
-              else
-                bluetoothStart();
               changeState(STATE_BASE_TEMP_SETTLE);
-            }
             else if (settings.fixedBase == true)
-            {
-              if (settings.enableNtripServer)
-                ntripServerStart();
-              else
-                bluetoothStart();
               changeState(STATE_BASE_FIXED_NOT_STARTED);
-            }
           }
           else
           {
@@ -326,11 +317,10 @@ void updateSystemState()
               digitalWrite(pin_baseStatusLED, HIGH); //Indicate survey complete
 
             //Start the NTRIP server if requested
-            if ((settings.ntripServer_StartAtSurveyIn == false)
-                && (settings.enableNtripServer == true))
-            {
+            if (settings.enableNtripServer == true)
               ntripServerStart();
-            }
+
+            radioStart(); //Start internal radio if enabled, otherwise disable
 
             rtcmPacketsSent = 0; //Reset any previous number
             changeState(STATE_BASE_TEMP_TRANSMITTING);
@@ -357,7 +347,7 @@ void updateSystemState()
         }
         break;
 
-      //Leave base temp transmitting if user has enabled WiFi/NTRIP
+      //Leave base temp transmitting over external radio, or WiFi/NTRIP, or ESP NOW
       case (STATE_BASE_TEMP_TRANSMITTING):
         {
         }
@@ -390,6 +380,12 @@ void updateSystemState()
           {
             if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, HIGH); //Turn on base LED
+
+            //Start the NTRIP server if requested
+            if (settings.enableNtripServer)
+              ntripServerStart();
+
+            radioStart(); //Start internal radio if enabled, otherwise disable
 
             changeState(STATE_BASE_FIXED_TRANSMITTING);
           }
@@ -600,6 +596,8 @@ void updateSystemState()
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 
           bluetoothStop();
+          espnowStop();
+
           stopUART2Tasks(); //Delete F9 serial tasks if running
           startWebServer(); //Start in AP mode and show config html page
 
@@ -624,7 +622,7 @@ void updateSystemState()
 
               //Clear buffer
               incomingSettingsSpot = 0;
-              memset(incomingSettings, 0, sizeof(incomingSettings));
+              memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
             }
           }
         }
@@ -655,6 +653,7 @@ void updateSystemState()
         }
         break;
 
+#ifdef  COMPILE_L_BAND
       case (STATE_KEYS_STARTED):
         {
           if (rtcWaitTime == 0) rtcWaitTime = millis();
@@ -697,7 +696,7 @@ void updateSystemState()
             uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
             log_d("Days until keys expire: %d", daysRemaining);
 
-            if (daysRemaining >= 28)
+            if (daysRemaining >= 28 && daysRemaining <= 56)
               changeState(STATE_KEYS_LBAND_CONFIGURE);
             else
               changeState(STATE_KEYS_NEEDED);
@@ -738,7 +737,7 @@ void updateSystemState()
           byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
-            wifiState = WIFI_CONNECTED;
+            wifiSetState(WIFI_CONNECTED);
 
             changeState(STATE_KEYS_WIFI_CONNECTED);
           }
@@ -812,7 +811,7 @@ void updateSystemState()
 
           if (online.rtc == true)
           {
-            uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+            int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
 
             if (daysRemaining >= 0)
             {
@@ -848,7 +847,7 @@ void updateSystemState()
           byte wifiStatus = wifiGetStatus();
           if (wifiStatus == WL_CONNECTED)
           {
-            wifiState = WIFI_CONNECTED;
+            wifiSetState(WIFI_CONNECTED);
 
             changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
           }
@@ -898,6 +897,41 @@ void updateSystemState()
           changeState(settings.lastState); //Go to either rover or base
         }
         break;
+#endif  //COMPILE_L_BAND
+
+      case (STATE_ESPNOW_PAIRING_NOT_STARTED):
+        {
+#ifdef COMPILE_ESPNOW
+          paintEspNowPairing();
+
+          //Start ESP-Now if needed, put ESP-Now into broadcast state
+          espnowBeginPairing();
+
+          changeState(STATE_ESPNOW_PAIRING);
+#else
+          changeState(STATE_ROVER_NOT_STARTED);
+#endif
+        }
+        break;
+
+      case (STATE_ESPNOW_PAIRING):
+        {
+#ifdef COMPILE_ESPNOW
+          if (espnowIsPaired() == true)
+          {
+            paintEspNowPaired();
+            
+            // Return to the previous state
+            changeState(lastSystemState);
+          }
+          else
+          {
+            uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+            espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
+          }
+#endif
+        }
+        break;
 
       case (STATE_SHUTDOWN):
         {
@@ -931,125 +965,141 @@ void changeState(SystemState newState)
   //Log the heap size at the state change
   reportHeapNow();
 
+  //Debug print of new state, add leading asterisk for repeated states
+  if ((!settings.enablePrintDuplicateStates) && (newState == systemState))
+    return;
+
+  if (settings.enablePrintStates && (newState == systemState))
+    Serial.print("*");
+
   //Set the new state
   systemState = newState;
 
-  //Debug print of new state, add leading asterisk for repeated states
-  if (newState == systemState)
-    Serial.print("*");
-  switch (systemState)
+  if (settings.enablePrintStates)
   {
-    case (STATE_ROVER_NOT_STARTED):
-      Serial.print("State: Rover - Not Started");
-      break;
-    case (STATE_ROVER_NO_FIX):
-      Serial.print("State: Rover - No Fix");
-      break;
-    case (STATE_ROVER_FIX):
-      Serial.print("State: Rover - Fix");
-      break;
-    case (STATE_ROVER_RTK_FLOAT):
-      Serial.print("State: Rover - RTK Float");
-      break;
-    case (STATE_ROVER_RTK_FIX):
-      Serial.print("State: Rover - RTK Fix");
-      break;
-    case (STATE_BASE_NOT_STARTED):
-      Serial.print("State: Base - Not Started");
-      break;
-    case (STATE_BASE_TEMP_SETTLE):
-      Serial.print("State: Base-Temp - Settle");
-      break;
-    case (STATE_BASE_TEMP_SURVEY_STARTED):
-      Serial.print("State: Base-Temp - Survey Started");
-      break;
-    case (STATE_BASE_TEMP_TRANSMITTING):
-      Serial.print("State: Base-Temp - Transmitting");
-      break;
-    case (STATE_BASE_FIXED_NOT_STARTED):
-      Serial.print("State: Base-Fixed - Not Started");
-      break;
-    case (STATE_BASE_FIXED_TRANSMITTING):
-      Serial.print("State: Base-Fixed - Transmitting");
-      break;
-    case (STATE_BUBBLE_LEVEL):
-      Serial.print("State: Bubble level");
-      break;
-    case (STATE_MARK_EVENT):
-      Serial.print("State: Mark Event");
-      break;
-    case (STATE_DISPLAY_SETUP):
-      Serial.print("State: Display Setup");
-      break;
-    case (STATE_WIFI_CONFIG_NOT_STARTED):
-      Serial.print("State: WiFi Config Not Started");
-      break;
-    case (STATE_WIFI_CONFIG):
-      Serial.print("State: WiFi Config");
-      break;
-    case (STATE_TEST):
-      Serial.print("State: System Test Setup");
-      break;
-    case (STATE_TESTING):
-      Serial.print("State: System Testing");
-      break;
-    case (STATE_PROFILE):
-      Serial.print("State: Profile");
-      break;
-    case (STATE_KEYS_STARTED):
-      Serial.print("State: Keys Started ");
-      break;
-    case (STATE_KEYS_NEEDED):
-      Serial.print("State: Keys Needed");
-      break;
-    case (STATE_KEYS_WIFI_STARTED):
-      Serial.print("State: Keys WiFi Started");
-      break;
-    case (STATE_KEYS_WIFI_CONNECTED):
-      Serial.print("State: Keys WiFi Connected");
-      break;
-    case (STATE_KEYS_WIFI_TIMEOUT):
-      Serial.print("State: Keys WiFi Timeout");
-      break;
-    case (STATE_KEYS_EXPIRED):
-      Serial.print("State: Keys Expired");
-      break;
-    case (STATE_KEYS_DAYS_REMAINING):
-      Serial.print("State: Keys Days Remaining");
-      break;
-    case (STATE_KEYS_LBAND_CONFIGURE):
-      Serial.print("State: Keys L-Band Configure");
-      break;
-    case (STATE_KEYS_LBAND_ENCRYPTED):
-      Serial.print("State: Keys L-Band Encrypted");
-      break;
-    case (STATE_KEYS_PROVISION_WIFI_STARTED):
-      Serial.print("State: Keys Provision - WiFi Started");
-      break;
-    case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
-      Serial.print("State: Keys Provision - WiFi Connected");
-      break;
-    case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
-      Serial.print("State: Keys Provision - WiFi Timeout");
-      break;
+    switch (systemState)
+    {
+      case (STATE_ROVER_NOT_STARTED):
+        Serial.print("State: Rover - Not Started");
+        break;
+      case (STATE_ROVER_NO_FIX):
+        Serial.print("State: Rover - No Fix");
+        break;
+      case (STATE_ROVER_FIX):
+        Serial.print("State: Rover - Fix");
+        break;
+      case (STATE_ROVER_RTK_FLOAT):
+        Serial.print("State: Rover - RTK Float");
+        break;
+      case (STATE_ROVER_RTK_FIX):
+        Serial.print("State: Rover - RTK Fix");
+        break;
+      case (STATE_BASE_NOT_STARTED):
+        Serial.print("State: Base - Not Started");
+        break;
+      case (STATE_BASE_TEMP_SETTLE):
+        Serial.print("State: Base-Temp - Settle");
+        break;
+      case (STATE_BASE_TEMP_SURVEY_STARTED):
+        Serial.print("State: Base-Temp - Survey Started");
+        break;
+      case (STATE_BASE_TEMP_TRANSMITTING):
+        Serial.print("State: Base-Temp - Transmitting");
+        break;
+      case (STATE_BASE_FIXED_NOT_STARTED):
+        Serial.print("State: Base-Fixed - Not Started");
+        break;
+      case (STATE_BASE_FIXED_TRANSMITTING):
+        Serial.print("State: Base-Fixed - Transmitting");
+        break;
+      case (STATE_BUBBLE_LEVEL):
+        Serial.print("State: Bubble level");
+        break;
+      case (STATE_MARK_EVENT):
+        Serial.print("State: Mark Event");
+        break;
+      case (STATE_DISPLAY_SETUP):
+        Serial.print("State: Display Setup");
+        break;
+      case (STATE_WIFI_CONFIG_NOT_STARTED):
+        Serial.print("State: WiFi Config Not Started");
+        break;
+      case (STATE_WIFI_CONFIG):
+        Serial.print("State: WiFi Config");
+        break;
+      case (STATE_TEST):
+        Serial.print("State: System Test Setup");
+        break;
+      case (STATE_TESTING):
+        Serial.print("State: System Testing");
+        break;
+      case (STATE_PROFILE):
+        Serial.print("State: Profile");
+        break;
+#ifdef  COMPILE_L_BAND
+      case (STATE_KEYS_STARTED):
+        Serial.print("State: Keys Started ");
+        break;
+      case (STATE_KEYS_NEEDED):
+        Serial.print("State: Keys Needed");
+        break;
+      case (STATE_KEYS_WIFI_STARTED):
+        Serial.print("State: Keys WiFi Started");
+        break;
+      case (STATE_KEYS_WIFI_CONNECTED):
+        Serial.print("State: Keys WiFi Connected");
+        break;
+      case (STATE_KEYS_WIFI_TIMEOUT):
+        Serial.print("State: Keys WiFi Timeout");
+        break;
+      case (STATE_KEYS_EXPIRED):
+        Serial.print("State: Keys Expired");
+        break;
+      case (STATE_KEYS_DAYS_REMAINING):
+        Serial.print("State: Keys Days Remaining");
+        break;
+      case (STATE_KEYS_LBAND_CONFIGURE):
+        Serial.print("State: Keys L-Band Configure");
+        break;
+      case (STATE_KEYS_LBAND_ENCRYPTED):
+        Serial.print("State: Keys L-Band Encrypted");
+        break;
+      case (STATE_KEYS_PROVISION_WIFI_STARTED):
+        Serial.print("State: Keys Provision - WiFi Started");
+        break;
+      case (STATE_KEYS_PROVISION_WIFI_CONNECTED):
+        Serial.print("State: Keys Provision - WiFi Connected");
+        break;
+      case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
+        Serial.print("State: Keys Provision - WiFi Timeout");
+        break;
+#endif  //COMPILE_L_BAND
 
-    case (STATE_SHUTDOWN):
-      Serial.print("State: Shut Down");
-      break;
-    default:
-      Serial.printf("Change State Unknown: %d", systemState);
-      break;
-  }
+      case (STATE_ESPNOW_PAIRING_NOT_STARTED):
+        Serial.print("State: ESP-Now Pairing Not Started");
+        break;
+      case (STATE_ESPNOW_PAIRING):
+        Serial.print("State: ESP-Now Pairing");
+        break;
 
-  if (online.rtc)
-  {
-    //Timestamp the state change
-    //         1         2
-    //12345678901234567890123456
-    //YYYY-mm-dd HH:MM:SS.xxxrn0
-    struct tm timeinfo = rtc.getTimeStruct();
-    char s[30];
-    strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", &timeinfo);
-    Serial.printf(", %s.%03ld\r\n", s, rtc.getMillis());
+      case (STATE_SHUTDOWN):
+        Serial.print("State: Shut Down");
+        break;
+      default:
+        Serial.printf("Change State Unknown: %d", systemState);
+        break;
+    }
+
+    if (online.rtc)
+    {
+      //Timestamp the state change
+      //         1         2
+      //12345678901234567890123456
+      //YYYY-mm-dd HH:MM:SS.xxxrn0
+      struct tm timeinfo = rtc.getTimeStruct();
+      char s[30];
+      strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", &timeinfo);
+      Serial.printf(", %s.%03ld\r\n", s, rtc.getMillis());
+    }
   }
 }

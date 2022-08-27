@@ -269,9 +269,12 @@ void updateAccuracyLEDs()
     {
       if (horizontalAccuracy > 0)
       {
-        Serial.print("Rover Accuracy (m): ");
-        Serial.print(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
-        Serial.println();
+        if (settings.enablePrintRoverAccuracy)
+        {
+          Serial.print("Rover Accuracy (m): ");
+          Serial.print(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
+          Serial.println();
+        }
 
         if (productVariant == RTK_SURVEYOR)
         {
@@ -301,7 +304,7 @@ void updateAccuracyLEDs()
           }
         }
       }
-      else
+      else if (settings.enablePrintRoverAccuracy)
       {
         Serial.print("Rover Accuracy: ");
         Serial.print(horizontalAccuracy);

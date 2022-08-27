@@ -14,8 +14,11 @@ void F9PSerialWriteTask(void *e)
       {
         //Pass bytes to GNSS receiver
         int s = bluetoothReadBytes(wBuffer, sizeof(wBuffer));
+
+        //TODO - control if this RTCM source should be listened to or not
         serialGNSS.write(wBuffer, s);
-        online.rxRtcmCorrectionData = true;
+        bluetoothIncomingRTCM = true;
+        if (!inMainMenu) log_d("Bluetooth received %d RTCM bytes, sent to ZED", s);
 
         if (settings.enableTaskReports == true)
           Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
@@ -33,7 +36,7 @@ void F9PSerialWriteTask(void *e)
 //Task for reading data from the GNSS receiver.
 void F9PSerialReadTask(void *e)
 {
-  static uint8_t rBuffer[SERIAL_SIZE_RX]; //Buffer for reading from F9P to SPP
+  static uint8_t rBuffer[1024 * 6]; //Buffer for reading from F9P to SPP
   static uint16_t dataHead = 0; //Head advances as data comes in from GNSS's UART
   static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
   static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
@@ -55,11 +58,11 @@ void F9PSerialReadTask(void *e)
       //----------------------------------------------------------------------
       //The ESP32<->ZED-F9P serial connection is default 460,800bps to facilitate
       //10Hz fix rate with PPP Logging Defaults (NMEAx5 + RXMx2) messages enabled.
-      //ESP32 UART2 is begun with SERIAL_SIZE_RX size buffer. The circular buffer 
-      //is SERIAL_SIZE_RX. At approximately 46.1K characters/second, a 6144 * 2 
-      //byte buffer should hold 267ms worth of serial data. Assuming SD writes are 
-      //250ms worst case, we should record incoming all data. Bluetooth congestion 
-      //or conflicts with the SD card semaphore should clear within this time.  
+      //ESP32 UART2 is begun with SERIAL_SIZE_RX size buffer. The circular buffer
+      //is 1024*6. At approximately 46.1K characters/second, a 6144 * 2
+      //byte buffer should hold 267ms worth of serial data. Assuming SD writes are
+      //250ms worst case, we should record incoming all data. Bluetooth congestion
+      //or conflicts with the SD card semaphore should clear within this time.
       //
       //Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
       //
@@ -125,7 +128,7 @@ void F9PSerialReadTask(void *e)
         availableBufferSpace -= 1;
 
       //Fill the buffer to the end and then start at the beginning
-      if ((dataHead + availableBufferSpace) > sizeof(rBuffer))
+      if ((dataHead + availableBufferSpace) >= sizeof(rBuffer))
         availableBufferSpace = sizeof(rBuffer) - dataHead;
 
       //If we have buffer space, read data from the GNSS into the buffer
@@ -164,29 +167,22 @@ void F9PSerialReadTask(void *e)
       {
         //Reduce bytes to send if we have more to send then the end of the buffer
         //We'll wrap next loop
-        if ((btTail + btBytesToSend) > sizeof(rBuffer))
+        if ((btTail + btBytesToSend) >= sizeof(rBuffer))
           btBytesToSend = sizeof(rBuffer) - btTail;
 
-        //Reduce bytes to send to match BT buffer size
-        if (btBytesToSend > settings.sppTxQueueSize)
-          btBytesToSend = settings.sppTxQueueSize;
-
-        if ((bluetoothIsCongested() == false) || (settings.throttleDuringSPPCongestion == false))
+        //Push new data to BT SPP if not congested or not throttling
+        btBytesToSend = bluetoothWriteBytes(&rBuffer[btTail], btBytesToSend);
+        if (btBytesToSend > 0)
         {
-          //Push new data to BT SPP if not congested or not throttling
-          btBytesToSend = bluetoothWriteBytes(&rBuffer[btTail], btBytesToSend);
-          online.txNtripDataCasting = true;
+          //If we are in base mode, assume part of the outgoing data is RTCM
+          if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+            bluetoothOutgoingRTCM = true;
         }
         else
-        {
-          //Don't push data to BT SPP if there is congestion to prevent heap hits.
-          if (btBytesToSend < (sizeof(rBuffer) - 1))
-            btBytesToSend = 0;
-          else
-            Serial.printf("ERROR - Congestion, dropped %d bytes: GNSS --> Bluetooth\r\n", btBytesToSend);
-        }
+          log_w("BT failed to send");
 
-        //Account for the sent data or dropped
+
+        //Account for the sent or dropped data
         btTail += btBytesToSend;
         if (btTail >= sizeof(rBuffer))
           btTail -= sizeof(rBuffer);
@@ -207,11 +203,11 @@ void F9PSerialReadTask(void *e)
         {
           //Attempt to gain access to the SD card, avoids collisions with file
           //writing from other functions like recordSystemSettingsToFile()
-          if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+          if (xSemaphoreTake(sdCardSemaphore, loggingSemaphore_shortWait_ms) == pdPASS)
           {
             //Reduce bytes to send if we have more to send then the end of the buffer
             //We'll wrap next loop
-            if ((sdTail + sdBytesToRecord) > sizeof(rBuffer))
+            if ((sdTail + sdBytesToRecord) >= sizeof(rBuffer))
               sdBytesToRecord = sizeof(rBuffer) - sdTail;
 
             //Write the data to the file
@@ -226,7 +222,7 @@ void F9PSerialReadTask(void *e)
           else
           {
             //Retry the semaphore a little later if possible
-            if (sdBytesToRecord == (sizeof(rBuffer) - 1))
+            if (sdBytesToRecord >= (sizeof(rBuffer) - 1))
             {
               //Error - no more room in the buffer, drop a buffer's worth of data
               sdTail = dataHead;
@@ -234,7 +230,7 @@ void F9PSerialReadTask(void *e)
               Serial.printf("ERROR - Dropped %d bytes: GNSS --> log file\r\n", sdBytesToRecord);
             }
             else
-              log_w("WARNING - sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
+              log_w("sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
           }
         } //End maxLogTime
       } //End logging
@@ -244,7 +240,8 @@ void F9PSerialReadTask(void *e)
     //Let other tasks run, prevent watch dog timer (WDT) resets
     //----------------------------------------------------------------------
 
-    delay(10);
+    delay(1);
+    taskYIELD();
   }
 }
 
@@ -400,7 +397,9 @@ void ButtonCheckTask(void *e)
           case STATE_BUBBLE_LEVEL:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
-            lastSystemState = systemState; //Remember this state to return after we mark an event
+          case STATE_ESPNOW_PAIRING_NOT_STARTED:
+          case STATE_ESPNOW_PAIRING:
+            lastSystemState = systemState; //Remember this state to return after we mark an event or ESP-Now pair
             requestChangeState(STATE_DISPLAY_SETUP);
             setupState = STATE_MARK_EVENT;
             lastSetupMenuChange = millis();
@@ -451,6 +450,9 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
+                setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
+                break;
+              case STATE_ESPNOW_PAIRING_NOT_STARTED:
                 //If only one active profile do not show any profiles
                 index = getProfileNumberFromUnit(0);
                 displayProfile = getProfileNumberFromUnit(1);
@@ -515,7 +517,9 @@ void ButtonCheckTask(void *e)
           case STATE_BUBBLE_LEVEL:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
-            lastSystemState = systemState; //Remember this state to return after we mark an event
+          case STATE_ESPNOW_PAIRING_NOT_STARTED:
+          case STATE_ESPNOW_PAIRING:
+            lastSystemState = systemState; //Remember this state to return after we mark an event or ESP-Now pair
             requestChangeState(STATE_DISPLAY_SETUP);
             setupState = STATE_MARK_EVENT;
             lastSetupMenuChange = millis();
@@ -566,6 +570,9 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
+                setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
+                break;
+              case STATE_ESPNOW_PAIRING_NOT_STARTED:
                 //If only one active profile do not show any profiles
                 index = getProfileNumberFromUnit(0);
                 displayProfile = getProfileNumberFromUnit(1);

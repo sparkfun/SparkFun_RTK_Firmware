@@ -53,6 +53,10 @@ void menuMain()
 
     Serial.println("p) Configure Profiles");
 
+#ifdef COMPILE_ESPNOW
+    Serial.println("r) Configure Radios");
+#endif
+
     if (online.lband == true)
       Serial.println("P) Configure PointPerfect");
 
@@ -83,6 +87,10 @@ void menuMain()
       menuUserProfiles();
     else if (incoming == 'P' && online.lband == true)
       menuPointPerfect();
+#ifdef COMPILE_ESPNOW
+    else if (incoming == 'r')
+      menuRadio();
+#endif
     else if (incoming == 'f' && binCount > 0)
       menuFirmware();
     else if (incoming == 'x')
@@ -258,7 +266,7 @@ void factoryReset()
 {
   displaySytemReset(); //Display friendly message on OLED
 
-  Serial.println("Formatting settings file system...");
+  Serial.println("Formatting file system...");
   LittleFS.format();
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
@@ -285,4 +293,155 @@ void factoryReset()
   Serial.println("Settings erased successfully. Rebooting. Goodbye!");
   delay(2000);
   ESP.restart();
+}
+
+//Configure the internal radio, if available
+void menuRadio()
+{
+#ifdef COMPILE_ESPNOW
+  while (1)
+  {
+    Serial.println();
+    Serial.println("Menu: Radio Menu");
+
+    Serial.print("1) Select Radio Type: ");
+    if (settings.radioType == RADIO_EXTERNAL) Serial.println("External only");
+    else if (settings.radioType == RADIO_ESPNOW) Serial.println("Internal ESP-Now");
+
+    if (settings.radioType == RADIO_ESPNOW)
+    {
+      //Pretty print the MAC of all radios
+      Serial.print("  Radio MAC: ");
+      for (int x = 0 ; x < 5 ; x++)
+        Serial.printf("%02X:", wifiMACAddress[x]);
+      Serial.printf("%02X\n\r", wifiMACAddress[5]);
+
+      if (settings.espnowPeerCount > 0)
+      {
+        Serial.println("  Paired Radios: ");
+        for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+        {
+          Serial.print("    ");
+          for (int y = 0 ; y < 5 ; y++)
+            Serial.printf("%02X:", settings.espnowPeers[x][y]);
+          Serial.printf("%02X\n\r", settings.espnowPeers[x][5]);
+        }
+      }
+      else
+        Serial.println("  No Paired Radios");
+
+
+      Serial.println("2) Pair radios");
+      Serial.println("3) Forget all radios");
+#ifdef ENABLE_DEVELOPER
+      Serial.println("4) Add dummy radio");
+      Serial.println("5) Send dummy data");
+#endif
+    }
+
+    Serial.println("x) Exit");
+
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+
+    if (incoming == 1)
+    {
+      if (settings.radioType == RADIO_EXTERNAL) settings.radioType = RADIO_ESPNOW;
+      else if (settings.radioType == RADIO_ESPNOW) settings.radioType = RADIO_EXTERNAL;
+    }
+    else if (settings.radioType == RADIO_ESPNOW && incoming == 2)
+    {
+      Serial.println("Begin ESP NOW Pairing");
+
+      //Start ESP-Now if needed, put ESP-Now into broadcast state
+      espnowBeginPairing();
+
+      //Begin sending our MAC every 250ms until a remote device sends us there info
+      randomSeed(millis());
+
+      Serial.println("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
+      while (Serial.available()) Serial.read();
+
+      uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+      bool exitPair = false;
+      while (exitPair == false)
+      {
+        if (Serial.available())
+        {
+          Serial.println("User pressed button. Pairing canceled.");
+          break;
+        }
+
+        int timeout = 1000 + random(0, 100); //Delay 1000 to 1100ms
+        for (int x = 0 ; x < timeout ; x++)
+        {
+          delay(1);
+
+          if (espnowIsPaired() == true) //Check if we've received a pairing message
+          {
+            Serial.println("Pairing compete");
+            exitPair = true;
+            break;
+          }
+        }
+
+        espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
+
+        Serial.println("Scanning for other radio...");
+      }
+    }
+    else if (settings.radioType == RADIO_ESPNOW && incoming == 3)
+    {
+      Serial.println("\r\nForgetting all paired radios. Press 'y' to confirm:");
+      byte bContinue = getByteChoice(menuTimeout);
+      if (bContinue == 'y')
+      {
+        if (espnowState > ESPNOW_OFF)
+        {
+          for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+            espnowRemovePeer(settings.espnowPeers[x]);
+        }
+        settings.espnowPeerCount = 0;
+        Serial.println("Radios forgotten");
+      }
+    }
+#ifdef ENABLE_DEVELOPER
+    else if (settings.radioType == RADIO_ESPNOW && incoming == 4)
+    {
+      uint8_t peer1[] = {0xB8, 0xD6, 0x1A, 0x0D, 0x8F, 0x9C}; //Facet
+      if (esp_now_is_peer_exist(peer1) == true)
+        log_d("Peer already exists");
+      else
+      {
+        //Add new peer to system
+        espnowAddPeer(peer1);
+
+        //Record this MAC to peer list
+        memcpy(settings.espnowPeers[settings.espnowPeerCount], peer1, 6);
+        settings.espnowPeerCount++;
+        settings.espnowPeerCount %= ESPNOW_MAX_PEERS;
+        recordSystemSettings();
+      }
+
+      espnowSetState(ESPNOW_PAIRED);
+    }
+    else if (settings.radioType == RADIO_ESPNOW && incoming == 5)
+    {
+      uint8_t espnowData[] = "This is the long string to test how quickly we can send one string to the other unit. I am going to need a much longer sentence if I want to get a long amount of data into one transmission. This is nearing 200 characters but needs to be near 250.";
+      esp_now_send(0, (uint8_t *) &espnowData, sizeof(espnowData)); //Send packet to all peers
+    }
+#endif
+
+    else if (incoming == STATUS_PRESSED_X)
+      break;
+    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
+  }
+
+  radioStart();
+
+  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+#endif
 }

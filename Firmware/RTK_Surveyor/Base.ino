@@ -18,30 +18,22 @@ bool configureUbloxModuleBase()
 
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
-  if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
-    response &= i2cGNSS.setNavigationFrequency(1, maxWait);
-  //    response &= i2cGNSS.setNavigationFrequency(4, maxWait);
+  const int baseNavigationFrequency = 1;
+
+  //In Base mode we force 1Hz
+  if (i2cGNSS.getNavigationFrequency(maxWait) != baseNavigationFrequency)
+    response &= i2cGNSS.setNavigationFrequency(baseNavigationFrequency, maxWait);
   if (response == false)
-    Serial.println("Set rate failed");
+    Serial.println("setNavigationFrequency failed");
 
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Disable GPGGA call back that may have been set during Rover Client mode
-  i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C); // Disable NMEA message
+  i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Disable GPGGA call back that may have been set during Rover NTRIP Client mode
+  i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C); // Disable NMEA message that may have been set during Rover NTRIP Client mode
 
   response = i2cGNSS.setSurveyMode(0, 0, 0); //Disable Survey-In or Fixed Mode
   if (response == false)
     Serial.println("Disable TMODE3 failed");
-
-  //In base mode we force 1Hz
-  if (i2cGNSS.getNavigationFrequency(maxWait) != 1)
-    response &= i2cGNSS.setNavigationFrequency(1, maxWait);
-  if (response == false)
-  {
-    Serial.println("configureUbloxModuleBase: Set rate failed");
-    return (false);
-  }
 
   // Set dynamic model
   if (i2cGNSS.getDynamicModel(maxWait) != DYN_MODEL_STATIONARY)
@@ -61,17 +53,23 @@ bool configureUbloxModuleBase()
   getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
   if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3))
     response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //Set the I2C port to output UBX (config), and RTCM3 (casting)
-  //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3); //Not a valid state. Goes to UBX+NMEA+RTCM3 -
+  //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3); //Not a valid state. Goes to UBX+NMEA+RTCM3
 
-  //In base mode the Surveyor should output RTCM over UART2 and I2C ports:
+  //In base mode the Surveyor should output RTCM over all ports:
   //(Primary) UART2 in case the Surveyor is connected via radio to rover
-  //(Optional) I2C in case user wants base to connect to WiFi and NTRIP Serve to Caster
-  //(Seconday) USB in case the Surveyor is used as an NTRIP caster
-  //(Tertiary) UART1 in case Surveyor is sending RTCM to phone that is then NTRIP caster
+  //(Optional) I2C in case user wants base to connect to WiFi and NTRIP Caster
+  //(Seconday) USB in case the Surveyor is used as an NTRIP caster connected to SBC or other
+  //(Tertiary) UART1 in case Surveyor is sending RTCM to phone that is then NTRIP Caster
   response &= enableRTCMSentences(COM_PORT_UART2);
   response &= enableRTCMSentences(COM_PORT_UART1);
   response &= enableRTCMSentences(COM_PORT_USB);
-  response &= enableRTCMSentences(COM_PORT_I2C); //Enable for plain radio so we can count RTCM packets for display (State: Base-Temp - Transmitting)
+  response &= enableRTCMSentences(COM_PORT_I2C); //Enable for plain radio so we can count RTCM packets for display
+
+  //If enabled, adjust GSV NMEA to be reported at 1Hz
+  if (settings.ubxMessages[8].msgRate > baseNavigationFrequency)
+    setMessageRateByName("UBX_NMEA_GSV", baseNavigationFrequency); //Update GSV setting in file
+  
+  response &= configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //In the interest of logging, make sure the appropriate messages are enabled
 
   if (response == false)
   {
@@ -227,5 +225,34 @@ bool startFixedBase()
 //Useful for passing the RTCM correction data to a radio, Ntrip broadcaster, etc.
 void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
-  ntripServerProcessRTCM(incoming);
+  //Check for too many digits
+  if (settings.enableResetDisplay == true)
+  {
+    if (rtcmPacketsSent > 99) rtcmPacketsSent = 1; //Trim to two digits to avoid overlap
+  }
+  else if (logIncreasing == true)
+  {
+    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon
+  }
+  else
+  {
+    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
+  }
+
+  //Determine if we should check this byte with the RTCM checker or simply pass it along
+  bool passAlongIncomingByte = true;
+
+  if (settings.enableRtcmMessageChecking == true)
+    passAlongIncomingByte &= checkRtcmMessage(incoming);
+
+  //Give this byte to the various possible transmission methods
+  if (passAlongIncomingByte)
+  {
+    rtcmLastReceived = millis();
+    rtcmBytesSent++;
+    
+    ntripServerProcessRTCM(incoming);
+
+    espnowProcessRTCM(incoming);
+  }
 }

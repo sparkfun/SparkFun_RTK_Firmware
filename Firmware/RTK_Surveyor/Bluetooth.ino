@@ -28,8 +28,7 @@ Bluetooth States:
 //----------------------------------------
 
 #ifdef  COMPILE_BT
-
-static BluetoothSerial bluetoothSerial;
+BTSerialInterface *bluetoothSerial;
 static volatile byte bluetoothState = BT_OFF;
 
 //----------------------------------------
@@ -40,14 +39,14 @@ static volatile byte bluetoothState = BT_OFF;
 //Used for updating the bluetoothState state machine
 void bluetoothCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
-    Serial.println("Client Connected");
+    Serial.println("BT client Connected");
     bluetoothState = BT_CONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, HIGH);
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
-    Serial.println("Client disconnected");
+    Serial.println("BT client disconnected");
     bluetoothState = BT_NOTCONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, LOW);
@@ -70,21 +69,11 @@ byte bluetoothGetState()
 #endif  //COMPILE_BT
 }
 
-//Determine if the Bluetooth link is congested
-bool bluetoothIsCongested()
-{
-#ifdef COMPILE_BT
-  return bluetoothSerial.isCongested();
-#else   //COMPILE_BT
-  return false;
-#endif  //COMPILE_BT
-}
-
 //Read data from the Bluetooth device
 int bluetoothReadBytes(uint8_t * buffer, int length)
 {
 #ifdef COMPILE_BT
-  return bluetoothSerial.readBytes(buffer, length);
+  return bluetoothSerial->readBytes(buffer, length);
 #else   //COMPILE_BT
   return 0;
 #endif  //COMPILE_BT
@@ -94,7 +83,7 @@ int bluetoothReadBytes(uint8_t * buffer, int length)
 bool bluetoothRxDataAvailable()
 {
 #ifdef COMPILE_BT
-  return bluetoothSerial.available();
+  return bluetoothSerial->available();
 #else   //COMPILE_BT
   return false;
 #endif  //COMPILE_BT
@@ -105,9 +94,6 @@ bool bluetoothRxDataAvailable()
 //This allows multiple units to be on at same time
 void bluetoothStart()
 {
-  ntripClientStop(true);
-  ntripServerStop(true);
-  wifiStop();
 #ifdef COMPILE_BT
   if (bluetoothState == BT_OFF)
   {
@@ -117,9 +103,17 @@ void bluetoothStart()
     else if(systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
       strcpy(stateName, "Base-");
 
-    sprintf(deviceName, "%s %s%02X%02X", platformPrefix, stateName, unitMACAddress[4], unitMACAddress[5]);
+    sprintf(deviceName, "%s %s%02X%02X", platformPrefix, stateName, btMACAddress[4], btMACAddress[5]);
 
-    if (bluetoothSerial.begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) == false) //localName, isMaster, rxBufferSize, txBufferSize
+    // Select Bluetooth setup
+    if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
+      return;
+    else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
+      bluetoothSerial = new BTClassicSerial();
+    else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+      bluetoothSerial = new BTLESerial();
+
+    if (bluetoothSerial->begin(deviceName) == false)
     {
       Serial.println("An error occurred initializing Bluetooth");
 
@@ -148,8 +142,8 @@ void bluetoothStart()
     esp_bt_gap_set_pin(pin_type, 4, pin_code);
     //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-    bluetoothSerial.register_callback(bluetoothCallback); //Controls BT Status LED on Surveyor
-    bluetoothSerial.setTimeout(250);
+    bluetoothSerial->register_callback(bluetoothCallback); //Controls BT Status LED on Surveyor
+    bluetoothSerial->setTimeout(250);
 
     Serial.print("Bluetooth broadcasting as: ");
     Serial.println(deviceName);
@@ -175,10 +169,10 @@ void bluetoothStop()
 #ifdef COMPILE_BT
   if (bluetoothState == BT_NOTCONNECTED || bluetoothState == BT_CONNECTED)
   {
-    bluetoothSerial.register_callback(NULL);
-    bluetoothSerial.flush(); //Complete any transfers
-    bluetoothSerial.disconnect(); //Drop any clients
-    bluetoothSerial.end(); //bluetoothSerial.end() will release significant RAM (~100k!) but a bluetoothSerial.start will crash.
+    bluetoothSerial->register_callback(NULL);
+    bluetoothSerial->flush(); //Complete any transfers
+    bluetoothSerial->disconnect(); //Drop any clients
+    bluetoothSerial->end(); //bluetoothSerial->end() will release significant RAM (~100k!) but a bluetoothSerial->start will crash.
 
     log_d("Bluetooth turned off");
 
@@ -186,7 +180,53 @@ void bluetoothStop()
     reportHeapNow();
   }
 #endif  //COMPILE_BT
-  online.rxRtcmCorrectionData = false;
+  bluetoothIncomingRTCM = false;
+}
+
+//Test the bidirectional communication through UART2
+void bluetoothTest(bool runTest)
+{
+  //Verify the ESP UART2 can communicate TX/RX to ZED UART1
+  const char * bluetoothStatusText;
+  if (online.gnss == true)
+  {
+    if (runTest && (zedUartPassed == false))
+    {
+      stopUART2Tasks(); //Stop absoring ZED serial via task
+
+      i2cGNSS.setSerialRate(460800, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
+      serialGNSS.begin(460800); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+
+      SFE_UBLOX_GNSS myGNSS;
+      if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
+      {
+        zedUartPassed = true;
+        bluetoothStatusText = (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF) ? "Off" : "Online";
+      }
+      else
+        bluetoothStatusText = "Offline";
+
+      i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
+      serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+
+      startUART2Tasks(); //Return to normal operation
+    }
+    else
+      bluetoothStatusText = (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF) ? "Off" : "Online";
+  }
+  else
+    bluetoothStatusText = "GNSS Offline";
+
+  //Display Bluetooth MAC address and test results
+  char macAddress[5];
+  sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
+  Serial.print("Bluetooth ");
+  if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+    Serial.print("Low Energy ");
+  Serial.print("(");
+  Serial.print(macAddress);
+  Serial.print("): ");
+  Serial.println(bluetoothStatusText);
 }
 
 //Write data to the Bluetooth device
@@ -194,7 +234,7 @@ int bluetoothWriteBytes(const uint8_t * buffer, int length)
 {
 #ifdef COMPILE_BT
   //Push new data to BT SPP
-  return bluetoothSerial.write(buffer, length);
+  return bluetoothSerial->write(buffer, length);
 #else   //COMPILE_BT
   return 0;
 #endif  //COMPILE_BT

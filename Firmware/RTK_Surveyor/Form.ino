@@ -1,8 +1,6 @@
 //Once connected to the access point for WiFi Config, the ESP32 sends current setting values in one long string to websocket
 //After user clicks 'save', data is validated via main.js and a long string of values is returned.
 
-static uint8_t bootProfileNumber;
-
 //Start webserver in AP mode
 void startWebServer()
 {
@@ -32,11 +30,13 @@ void startWebServer()
     Serial.println(sdUsedSpaceMB);
   }
 
-  ntripClientStop(true);
+  ntripClientStop(true); //Do not allocate new wifiClient
   wifiStartAP();
 
+  incomingSettings = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+
   //Clear any garbage from settings array
-  memset(incomingSettings, 0, sizeof(incomingSettings));
+  memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
 
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
@@ -141,10 +141,11 @@ void startWebServer()
   log_d("Web Server Started");
   reportHeapNow();
 
-#endif
-#endif
+#endif //COMPILE_AP
 
-  wifiState = WIFI_NOTCONNECTED;
+  wifiSetState(WIFI_NOTCONNECTED);
+#endif //COMPILE_WIFI
+
 }
 
 void stopWebServer()
@@ -262,11 +263,11 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     createSettingsString(settingsCSV);
     log_d("Sending command: %s\n\r", settingsCSV);
     client->text(settingsCSV);
-    wifiState = WIFI_CONNECTED;
+    wifiSetState(WIFI_CONNECTED);
   }
   else if (type == WS_EVT_DISCONNECT) {
     log_d("Websocket client disconnected");
-    wifiState = WIFI_NOTCONNECTED;
+    wifiSetState(WIFI_NOTCONNECTED);
   }
   else if (type == WS_EVT_DATA) {
     for (int i = 0; i < len; i++) {
@@ -288,7 +289,7 @@ void createSettingsString(char* settingsCSV)
   //System Info
   stringRecord(settingsCSV, "platformPrefix", platformPrefix);
 
-  char apRtkFirmwareVersion[50];
+  char apRtkFirmwareVersion[86];
   sprintf(apRtkFirmwareVersion, "RTK %s Firmware: v%d.%d-%s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
   stringRecord(settingsCSV, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
@@ -298,7 +299,7 @@ void createSettingsString(char* settingsCSV)
   else if (zedModuleType == PLATFORM_F9R)
     strcpy(apZedPlatform, "ZED-F9R");
 
-  char apZedFirmwareVersion[50];
+  char apZedFirmwareVersion[80];
   sprintf(apZedFirmwareVersion, "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
   stringRecord(settingsCSV, "zedFirmwareVersion", apZedFirmwareVersion);
 
@@ -382,14 +383,16 @@ void createSettingsString(char* settingsCSV)
 
   //L-Band
   char hardwareID[13];
-  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", unitMACAddress[0], unitMACAddress[1], unitMACAddress[2], unitMACAddress[3], unitMACAddress[4], unitMACAddress[5]); //Get ready for JSON
+  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
   stringRecord(settingsCSV, "hardwareID", hardwareID);
 
   char apDaysRemaining[20];
   if (strlen(settings.pointPerfectCurrentKey) > 0)
   {
+#ifdef COMPILE_L_BAND
     uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
     sprintf(apDaysRemaining, "%d", daysRemaining);
+#endif
   }
   else
     sprintf(apDaysRemaining, "No Keys");
@@ -418,8 +421,6 @@ void createSettingsString(char* settingsCSV)
     sprintf(nameText, "%d: %s", index + 1, profileNames[index]);
     stringRecord(settingsCSV, tagText, nameText);
   }
-  bootProfileNumber = profileNumber + 1;
-  stringRecord(settingsCSV, "bootProfileNumber", bootProfileNumber);
   stringRecord(settingsCSV, "activeProfiles", activeProfiles);
 
   //New settings not yet integrated
@@ -517,14 +518,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       recordProfileNumber(profileNumber);
     }
   }
-  else if (strcmp(settingName, "bootProfileNumber") == 0)
-  {
-    if ((sscanf(settingValueStr, "%d", &bootProfileNumber) != 1)
-        || (bootProfileNumber < 1)
-        || (bootProfileNumber > (MAX_PROFILE_COUNT + 1)))
-      bootProfileNumber = 1;
-    Serial.printf("bootProfileNumber: %d\r\n", bootProfileNumber);
-  }
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;
   else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
@@ -598,12 +591,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     factoryReset();
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
-    if (newAPSettings == true) recordSystemSettings(); //If we've recieved settings, record before restart
-
-    //Determine which profile to boot
-    bootProfileNumber -= 1;
-    if (bootProfileNumber != profileNumber)
-      recordProfileNumber(bootProfileNumber);
+    if (newAPSettings == true) recordSystemSettings(); //If we've received settings, record before restart
 
     //Reboot the machine
     ESP.restart();
@@ -726,7 +714,7 @@ void stringRecord(char* settingsCSV, const char *id, char* settingValue)
 void stringRecord(char* settingsCSV, const char *id, uint64_t settingValue)
 {
   char record[100];
-  sprintf(record, "%s,%ld,", id, settingValue);
+  sprintf(record, "%s,%lld,", id, settingValue);
   strcat(settingsCSV, record);
 }
 

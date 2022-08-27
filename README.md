@@ -17,13 +17,6 @@ SparkFun RTK Firmware
     <td><a href="https://www.sparkfun.com/products/18443">SparkFun RTK Surveyor (GPS-18443)</a></td>
   </tr>
   <tr align="center">
-    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_facet/">Hardware Overview</a></td>
-    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_facet/">Hardware Overview</a></td>
-    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_express_plus/">Hardware Overview</a></td>
-    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_express/">Hardware Overview</a></td>
-    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_surveyor/">Hardware Overview</a></td>
-  </tr>
-  <tr align="center">
     <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-l-band-hookup-guide">Hookup Guide</a></td>
     <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide">Hookup Guide</a></td>
     <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-express-hookup-guide">Hookup Guide</a></td>
@@ -32,15 +25,17 @@ SparkFun RTK Firmware
   </tr>
 </table>
 
-The [SparkFun RTK Surveyor](https://www.sparkfun.com/products/18443), [SparkFun RTK Express](https://www.sparkfun.com/products/18442), [SparkFun RTK Express Plus](https://www.sparkfun.com/products/18590), [SparkFun RTK Facet](https://www.sparkfun.com/products/19029), and [SparkFun RTK Facet L-Band](https://www.sparkfun.com/products/20000) are centimeter-level GNSS receivers. With RTK enabled, these devices can output your location with 14mm horizontal and vertical [*accuracy*](https://sparkfun.github.io/SparkFun_RTK_Firmware/accuracy_verification/) at up to 20Hz!
+The [SparkFun RTK Surveyor](https://www.sparkfun.com/products/18443), [SparkFun RTK Express](https://www.sparkfun.com/products/18442), [SparkFun RTK Express Plus](https://www.sparkfun.com/products/18590), [SparkFun RTK Facet](https://www.sparkfun.com/products/19029), and [SparkFun RTK Facet L-Band](https://www.sparkfun.com/products/20000) are centimeter-level GNSS receivers. With RTK enabled, these devices can output your location with 14mm horizontal and vertical [*accuracy*](https://docs.sparkfun.com/SparkFun_RTK_Firmware/accuracy_verification/) at up to 20Hz!
 
-This repo houses the [RTK Product Manual](https://sparkfun.github.io/SparkFun_RTK_Firmware/intro/) and the firmware that runs on the SparkFun RTK product line including:
+This repo houses the [RTK Product Manual](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/) and the firmware that runs on the SparkFun RTK product line including:
 
 * [SparkFun RTK Facet L-Band](https://www.sparkfun.com/products/20000)
 * [SparkFun RTK Facet](https://www.sparkfun.com/products/19029)
 * [SparkFun RTK Express Plus](https://www.sparkfun.com/products/18590)
 * [SparkFun RTK Express](https://www.sparkfun.com/products/18442)
 * [SparkFun RTK Surveyor](https://www.sparkfun.com/products/18443)
+
+For compiled binaries of the firmware, please see [SparkFun RTK Firmware Binaries](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries).
 
 If you're interested in the PCB, enclosure, or overlay on each product please see the hardware repos:
 
@@ -57,7 +52,7 @@ Thanks:
 Documentation
 --------------
 
-* **[RTK Product Manual](https://sparkfun.github.io/SparkFun_RTK_Firmware/intro/)** - A detail guide describing all the various software features of the RTK product line.   Essentially it is a manual for the firmware in this repository.
+* **[RTK Product Manual](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/)** - A detail guide describing all the various software features of the RTK product line.   Essentially it is a manual for the firmware in this repository.
 * **[RTK Facet L-Band Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-l-band-hookup-guide)** - Hookup guide for the SparkFun RTK Facet L-Band.
 * **[RTK Facet Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide)** - Hookup guide for the SparkFun RTK Facet.
 * **[RTK Express Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-express-hookup-guide)** - Hookup guide for the SparkFun RTK Express and Express Plus.
@@ -66,12 +61,9 @@ Documentation
 Repository Contents
 -------------------
 
-* **/Binaries** - Pre-compiled binaries of SparkFun RTK firmware, suitable for loading (see manual).  Also copies of u-blox firmware and command-line scripts (Windows only) to install them.
 * **/Firmware** - Source code for SparkFun RTK firmware as well as various feature unit tests
 * **/Graphics** - Original bitmap icons for the display
-* **/Uploader_GUI** - A python and Windows executable GUI for updating the firmware on RTK units. See [Updating Firmware From GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-gui).
-* **/u-blox_Update_GUI** - A python and Windows executable GUI for updating the firmware on the u-blox modules within the RTK device (ZED-F9x and NEO-D9S primarily but all u-blox GNSS products are supported). See [Updating u-blox Firmware](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#zed-f9x-firmware).
-* **/docs** - Markdown pages for the [RTK Product Manual](https://sparkfun.github.io/SparkFun_RTK_Firmware/intro/)
+* **/docs** - Markdown pages for the [RTK Product Manual](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/)
 
 Repository Branch Structure
 ---------------------------
@@ -96,7 +88,7 @@ Building from Source
 
 For building the firmware, see the [Firmware README](Firmware/readme.md).
 
-For the documention, see [mkdocs.yml](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/mkdocs.yml) and [/workflows/mkdocs.yml](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/mkdocs.yml).
+For the documentation, see [mkdocs.yml](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/mkdocs.yml) and [/workflows/mkdocs.yml](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/mkdocs.yml).
 
 For building the Uploader_GUI see the header comments of [RTK_Firkware_Uploader_GUI.py](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/Uploader_GUI/RTK_Firmware_Uploader_GUI.py)
 
@@ -105,7 +97,7 @@ For building the u-blox_Update_GUI see the header comments of [RTK_u-blox_Update
 License Information
 -------------------
 
-This product is _**open source**_!  Please feel free to [contribute](https://sparkfun.github.io/SparkFun_RTK_Firmware/contribute/) to both the firmware and documentation.
+This product is _**open source**_!  Please feel free to [contribute](https://docs.sparkfun.com/SparkFun_RTK_Firmware/contribute/) to both the firmware and documentation.
 
 Various bits of the code have different licenses applied. Anything SparkFun wrote is beerware; if you see me (or any other SparkFun employee) at the local, and you've found our code helpful, please buy us a round!
 

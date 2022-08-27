@@ -45,7 +45,7 @@
 //----------------------------------------
 
 //If we cannot connect to local wifi, give up/go to Rover
-static const int WIFI_CONNECTION_TIMEOUT = 8 * 1000;  //Milliseconds
+static const int WIFI_CONNECTION_TIMEOUT = 10 * 1000;  //Milliseconds
 
 //Interval to use when displaying the IP address
 static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
@@ -215,6 +215,8 @@ void wifiStart(char* ssid, char* pw)
   {
     wifiSetState(WIFI_NOTCONNECTED);
 
+    WiFi.mode(WIFI_STA);
+
 #ifdef COMPILE_ESPNOW
     if (espnowState > ESPNOW_OFF)
     {
@@ -230,8 +232,6 @@ void wifiStart(char* ssid, char* pw)
     //Be sure the standard protocols are turned on. ESP Now have have previously turned them off.
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
 #endif
-
-    WiFi.mode(WIFI_STA);
 
     Serial.printf("WiFi connecting to %s\r\n", ssid);
     WiFi.begin(ssid, pw);

@@ -47,7 +47,7 @@ static const int MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS = 3;
 static const uint32_t NTRIP_CLIENT_RESPONSE_TIMEOUT = 10 * 1000; //Milliseconds
 
 //NTRIP client receive data timeout
-static const uint32_t NTRIP_CLIENT_RECEIVE_DATA_TIMEOUT = 10 * 1000; //Milliseconds
+static const uint32_t NTRIP_CLIENT_RECEIVE_DATA_TIMEOUT = 30 * 1000; //Milliseconds
 
 //Most incoming data is around 500 bytes but may be larger
 static const int RTCM_DATA_SIZE = 512 * 4;
@@ -317,8 +317,6 @@ void ntripClientUpdate()
           if (ntripClientConnectLimitReached())
             //Display the WiFi failure
             paintNtripWiFiFail(4000, true);
-
-          //TODO WiFi not available, give up, disable future attempts
         }
       }
       else

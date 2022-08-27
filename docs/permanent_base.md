@@ -1,6 +1,6 @@
 # Creating a Permanent Base
 
-Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Not Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/RedDot.png) / Facet: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png)
+Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Not Supported](img/RedDot.png) / Facet: ![Feature Partially Supported](img/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](img/YellowDot.png)
 
 This section goes into depth on how to gather the data using an RTK product to create a permanent fixed base.
 
@@ -133,7 +133,7 @@ Once the RTK product is configured, power it up with microSD inserted, and leave
 
 Before leaving the unit for 6 to 24 hours, it is recommended that you capture a few minutes of RAWX log data, with the antenna located with a clear view of the sky, and then inspect the log to confirm everything is working correctly. 
 
-![Getting UBX file from SD card](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet SD RAWX Log Files.png)
+![Getting UBX file from SD card](img/SparkFun%20RTK%20Facet%20SD%20RAWX%20Log%20Files.png)
 
 *Getting UBX file from SD card*
 
@@ -141,7 +141,7 @@ Remove the microSD from the RTK unit and open it on a computer. The latest log f
 
 The quickest method to verify RAWX logging is to open the UBX file with a text editor.
 
-![Viewing a RAWX log in a text editor](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet Text Editor RAWX packets.png)
+![Viewing a RAWX log in a text editor](img/SparkFun%20RTK%20Facet%20Text%20Editor%20RAWX%20packets.png)
 
 *NMEA and UBX binary data viewed in Visual Studio Code*
 
@@ -149,13 +149,13 @@ Your editor may render the binary UBX RAWX data in unknown ways. If you see NMEA
 
 If you have u-center installed, you can more easily inspect for successful logging. Double click on a UBX file to open them in u-center.
 
-![Viewing a RAWX log in u-center](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet u-center view of Log Files.png)
+![Viewing a RAWX log in u-center](img/SparkFun%20RTK%20Facet%20u-center%20view%20of%20Log%20Files.png)
 
 *Viewing a RAWX log in u-center*
 
 Press the play button (shown above) and you should see satellites quickly come in and out of view as u-center 'plays' back the log file.
 
-![RAWX packet within the Packet Console](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Facet u-center RAWX packets.png)
+![RAWX packet within the Packet Console](img/SparkFun%20RTK%20Facet%20u-center%20RAWX%20packets.png)
 
 *RAWX packet within the Packet Console*
 
@@ -297,7 +297,7 @@ The differences between Server and Client are small. The Server needs to know th
 
 > It is now REQUIRED that all data consumers (Rover devices) provide a valid email address in the NTRIP Client user account name field when accessing the Caster.
 
-![The SparkFun Mount Point bldr_SparkFun1](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK RTK2Go SparkFun Mount Point.png)
+![The SparkFun Mount Point bldr_SparkFun1](img/SparkFun%20RTK%20RTK2Go%20SparkFun%20Mount%20Point.png)
 
 *The SparkFun Mount Point 'bldr_SparkFun1'*
 
@@ -307,7 +307,7 @@ To verify that your RTK product is correctly broadcasting RTCM data, you can acc
 
 [Emlid Caster](caster.emlid.com) is also very easy to set up and has a bit more user-friendly-looking website. Creating an account is very straightforward.
 
-![Emlid Mount Points](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Emlid Mount Points.png)
+![Emlid Mount Points](img/SparkFun%20RTK%20Emlid%20Mount%20Points.png)
 
 *Emlid Mount Points with PWs removed*
 
@@ -333,7 +333,7 @@ Once your account is created, you'll be presented with Mount Points and Rovers.
 * Mount Point: Required. Shown in your rover dashboard.
 * Mount Point PW: Not Needed
 
-![Emlid Mount Points](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/SparkFun RTK Emlid Mount Points.png)
+![Emlid Mount Points](img/SparkFun%20RTK%20Emlid%20Mount%20Points.png)
 
 *'Online' Badge Illuminated*
 

@@ -84,7 +84,7 @@ Once complete, the device will reset and power down.
 
 ## Updating Firmware From CLI
 
-The command-line interface is also available. You’ll need to download the repo and navigate to the [`/Binaries/`](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/bin) folder. This contains the binaries but also various supporting tools including esptool.exe and the three binaries required along with the firmware (bootloader, partitions, and app0). 
+The command-line interface is also available. You’ll need to download the repo and navigate to the [`/Binaries/`](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Binaries/bin) folder. This contains the binaries but also various supporting tools including esptool.exe and the three binaries required along with the firmware (bootloader, partitions, and app0).
 
 ### Windows
 
@@ -104,9 +104,11 @@ Once the correct COM is identified, run 'batch_program.bat' along with the binar
 
 The batch file runs the following commands:
 
-esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor.ino.partitions.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
+esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor_Partitions_16MB.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
 
 Where *COM6* is replaced with the COM port that the RTK product enumerated at and *RTK_Surveyor_Firmware_vxx.bin* is the firmware you would like to load.
+
+**Note:** Some users have reported the 921600bps baud rate does not work. Decrease this to 115200 as needed.
 
 Upon completion, your RTK device will reset and power down.
 
@@ -116,9 +118,11 @@ Get [esptool.py](https://github.com/espressif/esptool). Connect a USB A to C cab
 
 If the COM port is not showing be sure the unit is turned **On**. If an unknown device is appearing, you’ll need to [install drivers for the CH340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Once you know the COM port, run the following command:
 
-py esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor.ino.partitions.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
+py esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor_Partitions_16MB.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
 
 Where */dev/ttyUSB0* is replaced with the port that the RTK product enumerated at and *RTK_Surveyor_Firmware_vxx.bin* is the firmware you would like to load.
+
+**Note:** Some users have reported the 921600bps baud rate does not work. Decrease this to 115200 as needed.
 
 Upon completion, your RTK device will reset and power down.
 
@@ -129,6 +133,10 @@ RTK Surveyors sold before September 2021 may have an ESP32 WROOM module with 4MB
 * There is not enough flash space for OTA. Upgrading the firmware must be done via [CLI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli) or [GUI](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui). WiFi or SD update paths are not possible.
 
 The GUI (as of v1.3) will autodetect the ESP32's flash size and load the appropriate partition file. No user interaction is required.
+
+If you are using the CLI method, be sure to point at the [4MB partition file](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/Binaries/bin/RTK_Surveyor_Partitions_4MB.bin). For example:
+
+esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/**RTK_Surveyor_Partitions_4MB**.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
 
 ### Determining Size of Flash
 
@@ -229,10 +237,14 @@ The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To comp
 
 1. Install [Arduino](https://www.arduino.cc/en/software). 
 2. Install ESP32 for Arduino. [Here](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide#installing-via-arduino-ide-boards-manager) are some good instructions for installing it via the Arduino Boards Manager. **Note**: Use v2.0.2 of the core. **Note:** We use the 'ESP32 Dev Module' for pin numbering. Select the correct board under Tools->Board->ESP32 Arduino->ESP32 Dev Module.
-3. Change the Partition table. Replace 'C:\Users\\[user name]\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.2\tools\partitions\min_spiffs.csv' with the min_spiff.csv file found in this folder. This will increase the program partition from a maximum of 1.9MB to 3MB.
-4. Set the core settings: The 'Partition Scheme' must be set to 'Minimal SPIFFS (1.9MB APP with OTA/190KB SPIFFS). This will use the 'min_spiffs.csv' updated partition table.
-5. Set the 'Flash Size' to 16MB (128mbit)
-6. Obtain all the required libraries. **Note:** You should click on the link next to each of the #includes at the top of RTK_Surveyor.ino within the Arduino IDE to open the library manager and download them. Getting them directly from Github also works but may not be 'official' releases:
+3. Change the Partition table. Replace 'C:\Users\\[user name]\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.2\tools\partitions\app3M_fat9M_16MB.csv' with the app3M_fat9M_16MB.csv [file](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/Firmware/app3M_fat9M_16MB.csv) found in the [Firmware folder](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Firmware). This will increase the program partition from a maximum of 1.9MB to 3MB.
+4. From the Arduino IDE, set the core settings from the **Tools** menu: 
+    
+    A. Set the 'Partition Scheme' to *16M Flash (3MB APP/9MB FATFS)*. This will use the 'app3M_fat9M_16MB.csv' updated partition table.
+    
+    B. Set the 'Flash Size' to 16MB (128mbit)
+
+5. Obtain all the required libraries. **Note:** You should click on the link next to each of the #includes at the top of RTK_Surveyor.ino within the Arduino IDE to open the library manager and download them. Getting them directly from Github also works but may not be 'official' releases:
     * [ESP32Time](https://github.com/fbiego/ESP32Time)
     * [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) (not available via library manager)
     * [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) (not available via library manager)
@@ -242,10 +254,19 @@ The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To comp
     * [SparkFun MAX1704x Fuel Gauge Arduino Library](https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library)
     * [SparkFun Micro OLED Arduino Library](https://github.com/sparkfun/SparkFun_Micro_OLED_Arduino_Library) -  Note the Arduino Library manager lists this as 'SparkFun Micro OLED Breakout'
     * [SparkFun LIS2DH12 Accelerometer Arduino Library](https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library)
+    * [Arduino JSON](https://github.com/bblanchon/ArduinoJson)
+    * [PubSub Client for MQTT](https://github.com/knolleary/pubsubclient)
+    * [ESP32 BleSerial](https://github.com/avinabmalla/ESP32_BleSerial)
 
 Once compiled, firmware can be uploaded directly to a unit when the RTK unit is on and the correct COM port is selected under the Arduino IDE Tools->Port menu.
 
-Note: The COMPILE_WIFI and COMPILE_BT defines at the top of RTK_Surveyor.ino can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on WiFi or Bluetooth (serial menus, system configuration, logging, etc).
+If you are seeing the error:
+
+> text section exceeds available space ...
+
+You have not replaced the partition file correctly. See the 'Change Partition table' step inside the [Windows instructions](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#windows_1).
+
+**Note:** There are a variety of compile guards (COMPILE_WIFI, COMPILE_AP, etc) at the top of RTK_Surveyor.ino that can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on these features (serial menus, system configuration, logging, etc).
 
 ### Ubuntu 20.04
 

@@ -1,6 +1,6 @@
 # Configuring with u-center
 
-Surveyor: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Express: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Express Plus: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Facet: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/YellowDot.png)
+Surveyor: ![Feature Partially Supported](img/YellowDot.png) / Express: ![Feature Partially Supported](img/YellowDot.png) / Express Plus: ![Feature Partially Supported](img/YellowDot.png) / Facet: ![Feature Partially Supported](img/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](img/YellowDot.png)
 
 The ZED-F9P module can be configured independently using the u-center software from u-blox by connecting a USB cable to the *Config u-blox* USB connector. Settings can be saved to the module between power cycles. For more information please see SparkFun’s [Getting Started with u-center by u-blox](https://learn.sparkfun.com/tutorials/getting-started-with-u-center-for-u-blox/all).
 

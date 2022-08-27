@@ -1,6 +1,6 @@
 # Configure with Serial
 
-Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Express Plus: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png) / Facet L-Band: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware/main/docs/img/GreenDot.png)
+Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
 
 To configure an RTK device using serial attach a [USB C cable](https://www.sparkfun.com/products/15425) to the device. The device can be on or off.
 
@@ -36,7 +36,9 @@ Configuring the ZED-F9P is done over the *USB Serial Device* port using [u-cente
 
 ## Terminal Window
 
-Open a terminal window at 115200bps; you should see various status messages every second. Press any key to open the configuration menu. Not sure how to use a terminal? Check out our [Serial](https://learn.sparkfun.com/tutorials/terminal-basics) Terminal Basics](https://learn.sparkfun.com/tutorials/terminal-basics) tutorial.
+Open a terminal window at 115200bps; you should see various status messages every second. Press any key to open the configuration menu. Not sure how to use a terminal? Check out our [Serial](https://learn.sparkfun.com/tutorials/terminal-basics) Terminal Basics](https://learn.sparkfun.com/tutorials/terminal-basics) tutorial. 
+Note that some Windows terminal programs (e.g. Tera Term) may reboot the Facet when the terminal connection is closed. You can disconnect the USB cable first to prevent this from happening.
+
 
 [![Terminal showing menu](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_MainMenu.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_ExpressPlus_MainMenu.jpg)
 

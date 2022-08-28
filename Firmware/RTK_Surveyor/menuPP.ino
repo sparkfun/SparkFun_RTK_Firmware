@@ -283,13 +283,22 @@ bool provisionDevice()
 bool updatePointPerfectKeys()
 {
 #ifdef COMPILE_WIFI
-  static char certificateContents[CONTENT_SIZE]; //Holds the contents of the keys prior to MQTT connection
-  static char keyContents[CONTENT_SIZE];
+  char * certificateContents = NULL; //Holds the contents of the keys prior to MQTT connection
+  char * keyContents = NULL;
   WiFiClientSecure secureClient;
   bool gotKeys = false;
 
   do
   {
+    //Allocate the buffers
+    certificateContents = (char*)malloc(CONTENT_SIZE);
+    keyContents = (char*)malloc(CONTENT_SIZE);
+    if ((!certificateContents) || (!keyContents))
+    {
+      Serial.println("Failed to allocate content buffers!");
+      break;
+    }
+
     //Get the certificate
     memset(certificateContents, 0, CONTENT_SIZE);
     loadFile("certificate", certificateContents);
@@ -378,6 +387,12 @@ bool updatePointPerfectKeys()
     //Done with the MQTT client
     mqttClient.disconnect();
   } while (0);
+
+  //Free the content buffers
+  if (keyContents)
+    free(keyContents);
+  if (certificateContents)
+    free(certificateContents);
 
   //Return the key status
   return (gotKeys);

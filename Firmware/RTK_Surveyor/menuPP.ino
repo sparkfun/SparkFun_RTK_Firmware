@@ -828,7 +828,7 @@ void beginLBand()
     }
     else
     {
-      Serial.println("Unknown band area");
+      Serial.println("Defaulting L-Band to US");
       settings.LBandFreq = 1556290000; //Default to US
     }
     recordSystemSettings();

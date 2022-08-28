@@ -267,6 +267,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", "espnowPeerCount", settings.espnowPeerCount);
   settingsFile->printf("%s=%d\n\r", "enableRtcmMessageChecking", settings.enableRtcmMessageChecking);
   settingsFile->printf("%s=%d\n\r", "bluetoothRadioType", settings.bluetoothRadioType);
+  settingsFile->printf("%s=%d\n\r", "enableNmeaClient", settings.enableNmeaClient);
   settingsFile->printf("%s=%d\n\r", "enableNmeaServer", settings.enableNmeaServer);
 
   //Record constellation settings
@@ -878,6 +879,8 @@ bool parseLine(char* str, Settings *settings)
     settings->radioType = (RadioType_e)d;
   else if (strcmp(settingName, "bluetoothRadioType") == 0)
     settings->bluetoothRadioType = (BluetoothRadioType_e)d;
+  else if (strcmp(settingName, "enableNmeaClient") == 0)
+    settings->enableNmeaClient = d;
   else if (strcmp(settingName, "enableNmeaServer") == 0)
     settings->enableNmeaServer = d;
 

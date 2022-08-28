@@ -110,7 +110,7 @@ void F9PSerialReadTask(void *e)
 
     //Determine the amount of NMEA TCP data in the buffer
     nmeaBytesToSend = 0;
-    if (settings.enableNmeaServer)
+    if (settings.enableNmeaServer || settings.enableNmeaClient)
     {
       nmeaBytesToSend = dataHead - nmeaTail;
       if (nmeaBytesToSend < 0)
@@ -161,7 +161,7 @@ void F9PSerialReadTask(void *e)
         btBytesToSend += newBytesToRecord;
       if (online.logging)
         sdBytesToRecord += newBytesToRecord;
-      if (online.nmeaServer && wifiNmeaConnected)
+      if ((online.nmeaServer || online.nmeaClient) && wifiNmeaConnected)
         nmeaBytesToSend += newBytesToRecord;
     } //End Serial.available()
 
@@ -201,7 +201,7 @@ void F9PSerialReadTask(void *e)
     //Send data to the NMEA clients
     //----------------------------------------------------------------------
 
-    if (!settings.enableNmeaServer && (!wifiNmeaConnected))
+    if ((!settings.enableNmeaServer) && (!settings.enableNmeaClient) && (!wifiNmeaConnected))
       nmeaTail = dataHead;
     else
     {

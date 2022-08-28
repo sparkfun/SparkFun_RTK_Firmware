@@ -217,6 +217,36 @@ void wifiNmeaData(uint8_t * data, uint16_t length)
 #ifdef  COMPILE_WIFI
   static IPAddress ipAddress[WIFI_MAX_NMEA_CLIENTS];
   int index;
+  static uint32_t lastNmeaConnectAttempt;
+
+  if (online.nmeaClient)
+  {
+    //Start the NMEA client if enabled
+    if (((!wifiNmeaClient[0]) || (!wifiNmeaClient[0].connected()))
+      && ((millis() - lastNmeaConnectAttempt) >= 1000))
+    {
+      lastNmeaConnectAttempt = millis();
+      ipAddress[0] = WiFi.gatewayIP();
+      if (settings.enablePrintNmeaTcpStatus)
+      {
+        Serial.print("Trying to connect NMEA client to ");
+        Serial.println(ipAddress[0]);
+      }
+      if (wifiNmeaClient[0].connect(ipAddress[0], WIFI_NMEA_TCP_PORT))
+      {
+        online.nmeaClient;
+        Serial.print("NMEA client connected to ");
+        Serial.println(ipAddress[0]);
+        wifiNmeaConnected |= 1 << index;
+      }
+      else
+      {
+        //Release any allocated resources
+        //if (wifiNmeaClient[0])
+          wifiNmeaClient[0].stop();
+      }
+    }
+  }
 
   if (online.nmeaServer)
   {
@@ -247,7 +277,8 @@ void wifiNmeaData(uint8_t * data, uint16_t length)
         Serial.printf("Disconnected NMEA client %d from ", index);
 
       //Send the NMEA data to the connected clients
-      else if ((settings.enableNmeaServer && online.nmeaServer)
+      else if (((settings.enableNmeaServer && online.nmeaServer)
+        || (settings.enableNmeaClient && online.nmeaClient))
         && ((!length) || (wifiNmeaClient[index].write(data, length) == length)))
       {
         if (settings.enablePrintNmeaTcpStatus && length)
@@ -354,6 +385,15 @@ void wifiStop()
     //Do nothing
   }
 
+  //Shutdown the NMEA client
+  if (online.nmeaClient)
+  {
+    //Tell the UART2 tasks that the NMEA client is shutting down
+    online.nmeaClient = false;
+    delay(5);
+    Serial.println("NMEA TCP client offline");
+  }
+
   //Shutdown the NMEA server connection
   if (online.nmeaServer)
   {
@@ -411,8 +451,19 @@ void wifiUpdate()
   //Periodically display the IP address
   wifiPeriodicallyDisplayIpAddress();
 
+  //Start the NMEA client if enabled
+  if (settings.enableNmeaClient && (!online.nmeaClient) && (!settings.enableNmeaServer)
+    && (wifiState == WIFI_CONNECTED))
+  {
+    online.nmeaClient = true;
+    Serial.print("NMEA TCP client online, local IP ");
+    Serial.print(WiFi.localIP());
+    Serial.print(", gateway IP ");
+    Serial.println(WiFi.gatewayIP());
+  }
+
   //Start the NMEA server if enabled
-  if ((!wifiNmeaServer) && settings.enableNmeaServer
+  if ((!wifiNmeaServer) && (!settings.enableNmeaClient) && settings.enableNmeaServer
     && (wifiState == WIFI_CONNECTED))
   {
     wifiNmeaServer.begin();

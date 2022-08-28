@@ -495,6 +495,7 @@ typedef struct {
   bool enableRtcmMessageChecking = false;
   BluetoothRadioType_e bluetoothRadioType = BLUETOOTH_RADIO_SPP;
   bool runLogTest = false; //When set to true, device will create a series of test logs
+  bool enableNmeaClient = false;
   bool enableNmeaServer = false;
   bool enablePrintNmeaTcpStatus = false;
 } Settings;
@@ -516,6 +517,7 @@ struct struct_online {
   bool lband = false;
   bool lbandCorrections = false;
   bool i2c = false;
+  bool nmeaClient = false;
   bool nmeaServer = false;
 } online;
 

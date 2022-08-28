@@ -159,10 +159,6 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 
 #endif
 
-//char *certificateContents; //Holds the contents of the keys prior to MQTT connection
-//char *keyContents;
-char certificateContents[2000]; //Holds the contents of the keys prior to MQTT connection
-char keyContents[2000];
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration
@@ -437,7 +433,7 @@ bool restartRover = false; //If user modifies any NTRIP Client settings, we need
 unsigned long startTime = 0; //Used for checking longest running functions
 bool lbandCorrectionsReceived = false; //Used to display L-Band SIV icon when corrections are successfully decrypted
 unsigned long lastLBandDecryption = 0; //Timestamp of last successfully decrypted PMP message
-bool mqttMessageReceived = false; //Goes true when the subscribed MQTT channel reports back
+volatile bool mqttMessageReceived = false; //Goes true when the subscribed MQTT channel reports back
 uint8_t leapSeconds = 0; //Gets set if GNSS is online
 unsigned long systemTestDisplayTime = 0; //Timestamp for swapping the graphic during testing
 uint8_t systemTestDisplayNumber = 0; //Tracks which test screen we're looking at

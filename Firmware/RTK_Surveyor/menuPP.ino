@@ -4,6 +4,8 @@
 // Locals - compiled out
 //----------------------------------------
 
+#define CONTENT_SIZE 2000
+
 static SFE_UBLOX_GNSS_ADD i2cLBand; // NEO-D9S
 static const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 
@@ -281,10 +283,12 @@ bool provisionDevice()
 bool updatePointPerfectKeys()
 {
 #ifdef COMPILE_WIFI
-
+//char *certificateContents; //Holds the contents of the keys prior to MQTT connection
+//char *keyContents;
+  static char certificateContents[CONTENT_SIZE]; //Holds the contents of the keys prior to MQTT connection
+  static char keyContents[CONTENT_SIZE];
   WiFiClientSecure secureClient;
 
-#define CONTENT_SIZE 2000
 
   //certificateContents = (char*)malloc(CONTENT_SIZE);
   //memset(certificateContents, 0, CONTENT_SIZE);
@@ -953,7 +957,7 @@ void menuPointPerfect()
         {
           delay(500);
           Serial.print(".");
-          if (millis() - startTime > 15000) 
+          if (millis() - startTime > 15000)
           {
             Serial.println("Error: No WiFi available");
             break;
@@ -982,7 +986,7 @@ void menuPointPerfect()
             updatePointPerfectKeys();
 
         }
-        
+
         wifiStop();
       } //End strlen SSID check
 #endif

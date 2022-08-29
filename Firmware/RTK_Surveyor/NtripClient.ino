@@ -145,7 +145,7 @@ bool ntripClientConnect()
 bool ntripClientConnectLimitReached()
 {
   //Shutdown the NTRIP client
-  ntripClientStop(false);
+  ntripClientStop(false); //Allocate new wifiClient
 
   //Retry the connection a few times
   bool limitReached = (ntripClientConnectionAttempts++ >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
@@ -158,7 +158,7 @@ bool ntripClientConnectLimitReached()
     Serial.println("NTRIP Client connection attempts exceeded!");
 
     //Stop WiFi operations
-    ntripClientStop(true);
+    ntripClientStop(true); //Do not allocate new wifiClient
   }
   return limitReached;
 }
@@ -227,7 +227,7 @@ void ntripClientStart()
 {
 #ifdef  COMPILE_WIFI
   //Stop NTRIP client and WiFi
-  ntripClientStop(true);
+  ntripClientStop(true); //Do not allocate new wifiClient
 
   //Start the NTRIP client if enabled
   if (settings.enableNtripClient == true)
@@ -311,11 +311,21 @@ void ntripClientUpdate()
     case NTRIP_CLIENT_WIFI_CONNECTING:
       if (!wifiIsConnected())
       {
-        if (wifiConnectionTimeout())
+        //Stop if SSID is not detected
+        if (wifiGetStatus() == WL_NO_SSID_AVAIL)
+        {
+          Serial.printf("WiFi network '%s' not found\n\r", settings.ntripClient_wifiSSID);
+
+          wifiStop();
+
+          paintNtripWiFiFail(4000, true); //True = 'Client', False = 'Server'
+          
+          ntripClientStop(true); //Do not allocate new wifiClient
+        }
+        else if (wifiConnectionTimeout())
         {
           //Assume AP weak signal, the AP is unable to respond successfully
           if (ntripClientConnectLimitReached())
-            //Display the WiFi failure
             paintNtripWiFiFail(4000, true);
         }
       }
@@ -380,7 +390,7 @@ void ntripClientUpdate()
           Serial.printf("NTRIP Client caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
 
           //Stop WiFi operations
-          ntripClientStop(true);
+          ntripClientStop(true); //Do not allocate new wifiClient
         }
         else
         {
@@ -413,7 +423,7 @@ void ntripClientUpdate()
       {
         //Broken connection, retry the NTRIP client connection
         Serial.println("NTRIP Client connection dropped");
-        ntripClientStop(false);
+        ntripClientStop(false); //Allocate new wifiClient
       }
       else
       {
@@ -424,7 +434,7 @@ void ntripClientUpdate()
           {
             //Timeout receiving NTRIP data, retry the NTRIP client connection
             Serial.println("NTRIP Client: No data received timeout");
-            ntripClientStop(false);
+            ntripClientStop(false); //Allocate new wifiClient
           }
         }
         else

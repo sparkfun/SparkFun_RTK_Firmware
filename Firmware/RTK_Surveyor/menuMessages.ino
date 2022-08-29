@@ -819,7 +819,7 @@ void updateLogTest()
   {
     setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 and USB ports
 
-    loggingSemaphore_shortWait_ms = semaphoreWait / portTICK_PERIOD_MS; //Update variable
+    loggingSemaphoreWait_ms = semaphoreWait / portTICK_PERIOD_MS; //Update variable
 
     startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 

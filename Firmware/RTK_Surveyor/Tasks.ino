@@ -203,7 +203,7 @@ void F9PSerialReadTask(void *e)
         {
           //Attempt to gain access to the SD card, avoids collisions with file
           //writing from other functions like recordSystemSettingsToFile()
-          if (xSemaphoreTake(sdCardSemaphore, loggingSemaphore_shortWait_ms) == pdPASS)
+          if (xSemaphoreTake(sdCardSemaphore, loggingSemaphoreWait_ms) == pdPASS)
           {
             //Reduce bytes to send if we have more to send then the end of the buffer
             //We'll wrap next loop

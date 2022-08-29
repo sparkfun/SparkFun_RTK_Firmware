@@ -2384,30 +2384,19 @@ void paintKeyWiFiFail(uint16_t displayTime)
 
     oled.setFont(QW_FONT_8X16);
 
-    int x = (oled.getWidth() / 2); //Center point for x coord
     int y = 0;
     int fontHeight = 13;
-    int textX;
 
-    textX = x - (oled.getStringWidth("PP") / 2); //Starting point of text
-    oled.setCursor(textX, y);
-    oled.print("PP");
+    printTextCenter("PP", y, QW_FONT_8X16, 1, false); //text, y, font type, kerning, inverted
 
     y += fontHeight;
-    textX = x - (oled.getStringWidth("Update") / 2);
-    oled.setCursor(textX, y);
-    oled.print("Update");
+    printTextCenter("Update", y, QW_FONT_8X16, 1, false); //text, y, font type, kerning, inverted
 
     y += fontHeight;
-    textX = x - (oled.getStringWidth("Failed") / 2);
-    oled.setCursor(textX, y);
-    oled.print("Failed");
+    printTextCenter("Failed", y, QW_FONT_8X16, 1, false); //text, y, font type, kerning, inverted
 
-    oled.setFont(QW_FONT_5X7);
     y += fontHeight + 1;
-    textX = x - (oled.getStringWidth("No WiFi") / 2);
-    oled.setCursor(textX, y);
-    oled.print("No WiFi");
+    printTextCenter("No WiFi", y, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -2426,33 +2415,21 @@ void paintNtripWiFiFail(uint16_t displayTime, bool Client)
   {
     oled.erase();
 
-    oled.setFont(QW_FONT_8X16);
-
-    int x = (oled.getWidth() / 2); //Center point for x coord
     int y = 0;
     int fontHeight = 13;
-    int textX;
+
     const char * string = Client ? "Client" : "Server";
 
-    textX = x - (oled.getStringWidth("NTRIP") / 2); //Starting point of text
-    oled.setCursor(textX, y);
-    oled.print("NTRIP");
+    printTextCenter("NTRIP", y, QW_FONT_8X16, 1, false); //text, y, font type, kerning, inverted
 
     y += fontHeight;
-    textX = x - (oled.getStringWidth(string) / 2);
-    oled.setCursor(textX, y);
-    oled.print(string);
+    printTextCenter(string, y, QW_FONT_8X16, 1, false); //text, y, font type, kerning, inverted
 
     y += fontHeight;
-    textX = x - (oled.getStringWidth("Failed") / 2);
-    oled.setCursor(textX, y);
-    oled.print("Failed");
+    printTextCenter("Failed", y, QW_FONT_8X16, 1, false); //text, y, font type, kerning, inverted
 
-    oled.setFont(QW_FONT_5X7);
     y += fontHeight + 1;
-    textX = x - (oled.getStringWidth("No WiFi") / 2);
-    oled.setCursor(textX, y);
-    oled.print("No WiFi");
+    printTextCenter("No WiFi", y, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -2490,43 +2467,28 @@ void paintKeyProvisionFail(uint16_t displayTime)
 
     oled.setFont(QW_FONT_5X7);
 
-    int x = (oled.getWidth() / 2); //Center point for x coord
     int y = 0;
     int fontHeight = 8;
-    int textX;
 
-    textX = x - (oled.getStringWidth("ZTP") / 2); //Starting point of text
-    oled.setCursor(textX, y);
-    oled.print("ZTP");
+    printTextCenter("ZTP", y, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
     y += fontHeight;
-    textX = x - (oled.getStringWidth("Failed") / 2);
-    oled.setCursor(textX, y);
-    oled.print("Failed");
+    printTextCenter("Failed", y, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
     y += fontHeight;
-    textX = x - (oled.getStringWidth("ID:") / 2);
-    oled.setCursor(textX, y);
-    oled.print("ID:");
+    printTextCenter("ID:", y, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
-    //The MAC address is characters long so we have to split it onto two lines
+    //The MAC address is 12 characters long so we have to split it onto two lines
     char hardwareID[13];
     const uint8_t * rtkMacAddress = getMacAddress();
-    sprintf(hardwareID, "%02X%02X%02X", rtkMacAddress[0], rtkMacAddress[1], rtkMacAddress[2]);
-    String macAddress = String(hardwareID);
 
+    sprintf(hardwareID, "%02X%02X%02X", rtkMacAddress[0], rtkMacAddress[1], rtkMacAddress[2]);
     y += fontHeight;
-    textX = x - (oled.getStringWidth(macAddress) / 2);
-    oled.setCursor(textX, y);
-    oled.print(hardwareID);
+    printTextCenter(hardwareID, y, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
     sprintf(hardwareID, "%02X%02X%02X", rtkMacAddress[3], rtkMacAddress[4], rtkMacAddress[5]);
-    macAddress = String(hardwareID);
-
     y += fontHeight;
-    textX = x - (oled.getStringWidth(macAddress) / 2);
-    oled.setCursor(textX, y);
-    oled.print(hardwareID);
+    printTextCenter(hardwareID, y, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
     oled.display();
 

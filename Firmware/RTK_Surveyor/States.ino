@@ -760,7 +760,7 @@ void updateSystemState()
 
       case (STATE_KEYS_WIFI_CONNECTED):
         {
-          if (updatePointPerfectKeys() == true) //Connect to ThingStream MQTT and get PointPerfect key UBX packet
+          if (pointperfectUpdateKeys() == true) //Connect to ThingStream MQTT and get PointPerfect key UBX packet
           {
             displayKeysUpdated();
           }
@@ -794,7 +794,7 @@ void updateSystemState()
           //Be sure we ignore any external RTCM sources
           i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_UBX); //Set the UART2 to input UBX (no RTCM)
 
-          applyLBandKeys(); //Send current keys, if available, to ZED-F9P
+          pointperfectApplyKeys(); //Send current keys, if available, to ZED-F9P
 
           forceSystemStateUpdate = true; //Imediately go to this new state
           changeState(settings.lastState); //Go to either rover or base
@@ -872,7 +872,7 @@ void updateSystemState()
         {
           forceSystemStateUpdate = true; //Imediately go to this new state
 
-          if (provisionDevice() == true)
+          if (pointperfectProvisionDevice() == true)
           {
             displayKeysUpdated();
             changeState(STATE_KEYS_DAYS_REMAINING);

@@ -164,7 +164,7 @@ void menuPointPerfectKeys()
 }
 
 //Connect to 'home' WiFi and then ThingStream API. This will attach this unique device to the ThingStream network.
-bool provisionDevice()
+bool pointperfectProvisionDevice()
 {
 #ifdef COMPILE_WIFI
 
@@ -280,7 +280,7 @@ bool provisionDevice()
 }
 
 //Subscribe to MQTT channel, grab keys, then stop
-bool updatePointPerfectKeys()
+bool pointperfectUpdateKeys()
 {
 #ifdef COMPILE_WIFI
   char * certificateContents = NULL; //Holds the contents of the keys prior to MQTT connection
@@ -728,7 +728,7 @@ void pushRXMPMP(UBX_RXM_PMP_message_data_t *pmpData)
 }
 
 //If we have decryption keys, and L-Band is online, configure module
-void applyLBandKeys()
+void pointperfectApplyKeys()
 {
   if (online.lband == true)
   {
@@ -816,7 +816,7 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 //Check if NEO-D9S is connected. Configure if available.
 void beginLBand()
 {
-#ifdef  COMPILE_L_BAND
+#ifdef COMPILE_L_BAND
   if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
   {
     log_d("L-Band not detected");
@@ -895,7 +895,7 @@ void beginLBand()
   log_d("L-Band online");
 
   online.lband = true;
-#endif  //COMPILE_L_BAND
+#endif //COMPILE_L_BAND
 }
 
 //Set 'home' WiFi credentials
@@ -1002,14 +1002,14 @@ void menuPointPerfect()
           sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
           if (LittleFS.exists(fileName) == false)
           {
-            provisionDevice(); //Connect to ThingStream API and get keys
+            pointperfectProvisionDevice(); //Connect to ThingStream API and get keys
           }
           else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
           {
-            provisionDevice(); //Connect to ThingStream API and get keys
+            pointperfectProvisionDevice(); //Connect to ThingStream API and get keys
           }
           else
-            updatePointPerfectKeys();
+            pointperfectUpdateKeys();
 
         }
 
@@ -1036,7 +1036,7 @@ void menuPointPerfect()
 
   if (strlen(settings.pointPerfectClientID) > 0)
   {
-    applyLBandKeys();
+    pointperfectApplyKeys();
   }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars

@@ -4,6 +4,8 @@
 // Locals - compiled out
 //----------------------------------------
 
+#define CONTENT_SIZE 2000
+
 static SFE_UBLOX_GNSS_ADD i2cLBand; // NEO-D9S
 static const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 
@@ -281,91 +283,119 @@ bool provisionDevice()
 bool updatePointPerfectKeys()
 {
 #ifdef COMPILE_WIFI
-
+  char * certificateContents = NULL; //Holds the contents of the keys prior to MQTT connection
+  char * keyContents = NULL;
   WiFiClientSecure secureClient;
+  bool gotKeys = false;
 
-#define CONTENT_SIZE 2000
-
-  //certificateContents = (char*)malloc(CONTENT_SIZE);
-  //memset(certificateContents, 0, CONTENT_SIZE);
-  loadFile("certificate", certificateContents);
-  secureClient.setCertificate(certificateContents);
-
-  //keyContents = (char*)malloc(CONTENT_SIZE);
-  //memset(keyContents, 0, CONTENT_SIZE);
-  loadFile("privateKey", keyContents);
-  secureClient.setPrivateKey(keyContents);
-
-  secureClient.setCACert(AWS_PUBLIC_CERT);
-
-  PubSubClient mqttClient(secureClient);
-  mqttClient.setCallback(mqttCallback);
-  mqttClient.setServer(settings.pointPerfectBrokerHost, 8883);
-
-  log_d("Connecting to MQTT broker: %s", settings.pointPerfectBrokerHost);
-
-  // Loop until we're reconnected
-  int maxTries = 2;
-  int tries = 0;
-  while (mqttClient.connected() == false)
+  do
   {
-    Serial.print("MQTT connecting...");
-
-    if (mqttClient.connect(settings.pointPerfectClientID))
+    //Allocate the buffers
+    certificateContents = (char*)malloc(CONTENT_SIZE);
+    keyContents = (char*)malloc(CONTENT_SIZE);
+    if ((!certificateContents) || (!keyContents))
     {
-      Serial.println("connected");
-      //mqttClient.subscribe(settings.pointPerfectLBandTopic); //The /pp/key/Lb channel fails to respond with keys
-      mqttClient.subscribe("/pp/ubx/0236/Lb"); //Alternate channel for L-Band keys
+      Serial.println("Failed to allocate content buffers!");
+      break;
     }
-    else
+
+    //Get the certificate
+    memset(certificateContents, 0, CONTENT_SIZE);
+    loadFile("certificate", certificateContents);
+    secureClient.setCertificate(certificateContents);
+
+    //Get the private key
+    memset(keyContents, 0, CONTENT_SIZE);
+    loadFile("privateKey", keyContents);
+    secureClient.setPrivateKey(keyContents);
+
+    secureClient.setCACert(AWS_PUBLIC_CERT);
+
+    PubSubClient mqttClient(secureClient);
+    mqttClient.setCallback(mqttCallback);
+    mqttClient.setServer(settings.pointPerfectBrokerHost, 8883);
+
+    log_d("Connecting to MQTT broker: %s", settings.pointPerfectBrokerHost);
+
+    //Loop until we're connected or until the maximum retries are exceeded
+    mqttMessageReceived = false;
+    int maxTries = 3;
+    do
     {
-      if (tries++ == maxTries)
+      Serial.print("MQTT connecting...");
+
+      //Attempt to the key broker
+      if (mqttClient.connect(settings.pointPerfectClientID))
       {
-        log_d("MQTT failed to connect");
-        //free(certificateContents);
-        //free(keyContents);
-        return (false);
+        //Successful connection
+        Serial.println("connected");
+        //mqttClient.subscribe(settings.pointPerfectLBandTopic); //The /pp/key/Lb channel fails to respond with keys
+        mqttClient.subscribe("/pp/ubx/0236/Lb"); //Alternate channel for L-Band keys
+        break;
       }
 
-      log_d("failed, status code: %d try again in 1 second", mqttClient.state());
-      delay(1000);
-    }
-  }
+      //Retry the connection attempt
+      if (--maxTries)
+      {
+        Serial.print(".");
+        log_d("failed, status code: %d try again in 1 second", mqttClient.state());
+        delay(1000);
+      }
+    } while (maxTries);
 
-  Serial.print("Waiting for keys");
-
-  mqttMessageReceived = false;
-
-  //Wait for callback
-  startTime = millis();
-  while (mqttMessageReceived == false)
-  {
-    mqttClient.loop();
+    //Check for connection failure
     if (mqttClient.connected() == false)
     {
-      log_d("Client disconnected");
-      //free(certificateContents);
-      //free(keyContents);
-      return (false);
+      Serial.println("failed!");
+      log_d("MQTT failed to connect");
+      break;
     }
 
-    delay(100);
-    Serial.print(".");
-    if (millis() - startTime > 8000)
+    Serial.print("Waiting for keys");
+
+    //Wait for callback
+    startTime = millis();
+    while (1)
     {
-      Serial.println();
-      log_d("Channel failed to respond");
-      //free(certificateContents);
-      //free(keyContents);
-      return (false);
-    }
-  }
+      mqttClient.loop();
+      if (mqttMessageReceived == true)
+        break;
+      if (mqttClient.connected() == false)
+      {
+        log_d("Client disconnected");
+        break;
+      }
+      if (millis() - startTime > 8000)
+      {
+        log_d("Channel failed to respond");
+        break;
+      }
 
-  Serial.println();
-  Serial.println("Keys successfully updated");
-  //free(certificateContents);
-  //free(keyContents);
-  return (true);
+      //Continue waiting for the keys
+      delay(100);
+      Serial.print(".");
+    }
+    Serial.println();
+
+    //Determine if the keys were updated
+    if (mqttMessageReceived)
+    {
+      Serial.println("Keys successfully updated");
+      gotKeys = true;
+    }
+
+    //Done with the MQTT client
+    mqttClient.disconnect();
+  } while (0);
+
+  //Free the content buffers
+  if (keyContents)
+    free(keyContents);
+  if (certificateContents)
+    free(certificateContents);
+
+  //Return the key status
+  return (gotKeys);
 #else
   return (false);
 #endif
@@ -953,7 +983,7 @@ void menuPointPerfect()
         {
           delay(500);
           Serial.print(".");
-          if (millis() - startTime > 15000) 
+          if (millis() - startTime > 15000)
           {
             Serial.println("Error: No WiFi available");
             break;
@@ -982,7 +1012,7 @@ void menuPointPerfect()
             updatePointPerfectKeys();
 
         }
-        
+
         wifiStop();
       } //End strlen SSID check
 #endif

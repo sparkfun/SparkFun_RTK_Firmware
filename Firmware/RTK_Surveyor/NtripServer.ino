@@ -244,10 +244,13 @@ void ntripServerProcessRTCM(uint8_t incoming)
       ntripServerBytesSent = 0;
     }
 
-    ntripServer->write(incoming); //Send this byte to socket
-    ntripServerBytesSent++;
-    ntripServerTimer = millis();
-    wifiOutgoingRTCM = true;
+    if (ntripServer->connected())
+    {
+      ntripServer->write(incoming); //Send this byte to socket
+      ntripServerBytesSent++;
+      ntripServerTimer = millis();
+      wifiOutgoingRTCM = true;
+    }
   }
 
   //Indicate that the GNSS is providing correction data
@@ -375,7 +378,7 @@ void ntripServerUpdate()
           wifiStop();
 
           paintNtripWiFiFail(4000, false); //True = 'Client', False = 'Server'
-          
+
           ntripServerStop(true); //Do not allocate new wifiClient
         }
         else if (wifiConnectionTimeout())
@@ -444,9 +447,10 @@ void ntripServerUpdate()
       if (ntripServer->available() < strlen("ICY 200 OK")) //Wait until at least a few bytes have arrived
       {
         //Check for response timeout
-        if (millis() - ntripServerTimer > 5000)
+        if (millis() - ntripServerTimer > 10000)
         {
-          //NTRIP web service did not respone
+          Serial.println("Caster failed to respond in time.");
+
           if (ntripServerConnectLimitReached())
           {
             Serial.println("Caster failed to respond. Do you have your caster address and port correct?");
@@ -463,7 +467,7 @@ void ntripServerUpdate()
         if (strstr(response, "200") == NULL)
         {
           //Look for '401 Unauthorized'
-          Serial.printf("NTRIP Server caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
+          Serial.printf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
 
           ntripServerStop(true); //Don't allocate new wifiClient
         }
@@ -490,14 +494,14 @@ void ntripServerUpdate()
       //Check for a broken connection
       if (!ntripServer->connected())
       {
-        //Broken connection, retry the NTRIP server connection
-        Serial.println("Connection to NTRIP Server was closed");
+        //Broken connection, retry the NTRIP connection
+        Serial.println("Connection to NTRIP Caster was lost");
         ntripServerStop(false); //Allocate new wifiClient
       }
       else if ((millis() - ntripServerTimer) > (3 * 1000))
       {
         //GNSS stopped sending RTCM correction data
-        Serial.println("NTRIP Server breaking caster connection due to lack of RTCM data!");
+        Serial.println("NTRIP Server breaking connection to caster due to lack of RTCM data!");
         ntripServerStop(false); //Allocate new wifiClient
       }
       else

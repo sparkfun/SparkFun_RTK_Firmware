@@ -89,24 +89,25 @@ void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type)
 //If the radio is off entirely, start the radio, turn on only the LR protocol
 void espnowStart()
 {
+  
 #ifdef COMPILE_ESPNOW
   if (wifiState == WIFI_OFF && espnowState == ESPNOW_OFF)
   {
+    WiFi.mode(WIFI_STA);
+
     //Radio is off, turn it on
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
-
-    WiFi.mode(WIFI_STA);
 
     log_d("WiFi off, ESP-Now added to protocols");
   }
   //If WiFi is on but ESP NOW is off, then enable LR protocol
   else if (wifiState > WIFI_OFF && espnowState == ESPNOW_OFF)
   {
+    WiFi.mode(WIFI_STA);
+
     //Enable WiFi + ESP-Now
     // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Stops WiFi Station.
-
-    WiFi.mode(WIFI_STA);
 
     log_d("WiFi on, ESP-Now added to protocols");
   }

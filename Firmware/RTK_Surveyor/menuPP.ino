@@ -167,113 +167,136 @@ void menuPointPerfectKeys()
 bool pointperfectProvisionDevice()
 {
 #ifdef COMPILE_WIFI
+  DynamicJsonDocument * jsonZtp = NULL;
+  char * tempHolder = NULL;
+  bool retVal = false;
 
-  WiFiClientSecure client;
-  client.setCACert(AWS_PUBLIC_CERT);
+  do
+  {
+    WiFiClientSecure client;
+    client.setCACert(AWS_PUBLIC_CERT);
 
-  char hardwareID[13];
-  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
+    char hardwareID[13];
+    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
 
 #ifdef WHITELISTED_ID
-  //Override ID with testing ID
-  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1], whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
+    //Override ID with testing ID
+    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1], whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
 #endif
 
-  char givenName[100];
-  sprintf(givenName, "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, hardwareID); //Get ready for JSON
+    char givenName[100];
+    sprintf(givenName, "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, hardwareID); //Get ready for JSON
 
-  StaticJsonDocument<256> pointPerfectAPIPost;
+    StaticJsonDocument<256> pointPerfectAPIPost;
 
-  //Determine if we use the SparkFun token or custom token
-  char tokenString[37] = "\0";
-  if (strlen(settings.pointPerfectDeviceProfileToken) == 0)
-  {
-    //Convert uint8_t array into string with dashes in spots
-    //We must assume u-blox will not change the position of their dashes or length of their token
-    for (int x = 0 ; x < sizeof(pointPerfectTokenArray) ; x++)
+    //Determine if we use the SparkFun token or custom token
+    char tokenString[37] = "\0";
+    if (strlen(settings.pointPerfectDeviceProfileToken) == 0)
     {
-      char temp[3];
-      sprintf(temp, "%02x", pointPerfectTokenArray[x]);
-      strcat(tokenString, temp);
-      if (x == 3 || x == 5 || x == 7 || x == 9) strcat(tokenString, "-");
-    }
-  }
-  else
-  {
-    //Use the user's custom token
-    strcpy(tokenString, settings.pointPerfectDeviceProfileToken);
-    Serial.printf("Using custom token: %s\n\r", tokenString);
-  }
-
-  pointPerfectAPIPost["token"] = tokenString;
-  pointPerfectAPIPost["givenName"] = givenName;
-  pointPerfectAPIPost["hardwareId"] = hardwareID;
-  //pointPerfectAPIPost["tags"] = "mac";
-
-  String json;
-  serializeJson(pointPerfectAPIPost, json);
-
-  Serial.printf("Connecting to: %s\n\r", pointPerfectAPI);
-
-  HTTPClient http;
-  http.begin(client, pointPerfectAPI);
-  http.addHeader("Content-Type", "application/json");
-
-  int httpResponseCode = http.POST(json);
-
-  String response = http.getString();
-
-  http.end();
-
-  if (httpResponseCode != 200)
-  {
-    Serial.printf("HTTP response error %d: ", httpResponseCode);
-    Serial.println(response);
-    return (false);
-  }
-  else
-  {
-    //Device is now active with ThingStream
-    //Pull pertinent values from response
-    DynamicJsonDocument jsonZtp(4096);
-    DeserializationError error = deserializeJson(jsonZtp, response);
-    if (DeserializationError::Ok != error)
-    {
-      Serial.println("JSON error");
-      return (false);
+      //Convert uint8_t array into string with dashes in spots
+      //We must assume u-blox will not change the position of their dashes or length of their token
+      for (int x = 0 ; x < sizeof(pointPerfectTokenArray) ; x++)
+      {
+        char temp[3];
+        sprintf(temp, "%02x", pointPerfectTokenArray[x]);
+        strcat(tokenString, temp);
+        if (x == 3 || x == 5 || x == 7 || x == 9) strcat(tokenString, "-");
+      }
     }
     else
     {
-      char tempHolder[2000];
-      strcpy(tempHolder, (const char*)jsonZtp["certificate"]);
-      //      Serial.printf("len of PrivateCert: %d\n\r", strlen(tempHolder));
-      //      Serial.printf("privateCert: %s\n\r", tempHolder);
-      recordFile("certificate", tempHolder, strlen(tempHolder));
-
-      strcpy(tempHolder, (const char*)jsonZtp["privateKey"]);
-      //      Serial.printf("len of privateKey: %d\n\r", strlen(tempHolder));
-      //      Serial.printf("privateKey: %s\n\r", tempHolder);
-      recordFile("privateKey", tempHolder, strlen(tempHolder));
-
-      strcpy(settings.pointPerfectClientID, (const char*)jsonZtp["clientId"]);
-      strcpy(settings.pointPerfectBrokerHost, (const char*)jsonZtp["brokerHost"]);
-      strcpy(settings.pointPerfectLBandTopic, (const char*)jsonZtp["subscriptions"][0]["path"]);
-
-      strcpy(settings.pointPerfectNextKey, (const char*)jsonZtp["dynamickeys"]["next"]["value"]);
-      settings.pointPerfectNextKeyDuration = jsonZtp["dynamickeys"]["next"]["duration"];
-      settings.pointPerfectNextKeyStart = jsonZtp["dynamickeys"]["next"]["start"];
-
-      strcpy(settings.pointPerfectCurrentKey, (const char*)jsonZtp["dynamickeys"]["current"]["value"]);
-      settings.pointPerfectCurrentKeyDuration = jsonZtp["dynamickeys"]["current"]["duration"];
-      settings.pointPerfectCurrentKeyStart = jsonZtp["dynamickeys"]["current"]["start"];
+      //Use the user's custom token
+      strcpy(tokenString, settings.pointPerfectDeviceProfileToken);
+      Serial.printf("Using custom token: %s\n\r", tokenString);
     }
-  } //HTTP Response was 200
 
-  Serial.println("Device successfully provisioned. Keys obtained.");
+    pointPerfectAPIPost["token"] = tokenString;
+    pointPerfectAPIPost["givenName"] = givenName;
+    pointPerfectAPIPost["hardwareId"] = hardwareID;
+    //pointPerfectAPIPost["tags"] = "mac";
 
-  recordSystemSettings();
+    String json;
+    serializeJson(pointPerfectAPIPost, json);
 
-  return (true);
+    Serial.printf("Connecting to: %s\n\r", pointPerfectAPI);
+
+    HTTPClient http;
+    http.begin(client, pointPerfectAPI);
+    http.addHeader("Content-Type", "application/json");
+
+    int httpResponseCode = http.POST(json);
+
+    String response = http.getString();
+
+    http.end();
+
+    if (httpResponseCode != 200)
+    {
+      Serial.printf("HTTP response error %d: ", httpResponseCode);
+      Serial.println(response);
+      break;
+    }
+    else
+    {
+      //Device is now active with ThingStream
+      //Pull pertinent values from response
+      jsonZtp = new DynamicJsonDocument(4096);
+      if (!jsonZtp)
+      {
+        Serial.println("ERROR - Failed to allocate jsonZtp!\r\n");
+        break;
+      }
+      DeserializationError error = deserializeJson(*jsonZtp, response);
+      if (DeserializationError::Ok != error)
+      {
+        Serial.println("JSON error");
+        break;
+      }
+      else
+      {
+        tempHolder = (char *)malloc(2000);
+        if (!tempHolder)
+        {
+          Serial.println("ERROR - Failed to allocate tempHolder buffer!\r\n");
+          break;
+        }
+        strcpy(tempHolder, (const char*)((*jsonZtp)["certificate"]));
+        //      Serial.printf("len of PrivateCert: %d\n\r", strlen(tempHolder));
+        //      Serial.printf("privateCert: %s\n\r", tempHolder);
+        recordFile("certificate", tempHolder, strlen(tempHolder));
+
+        strcpy(tempHolder, (const char*)((*jsonZtp)["privateKey"]));
+        //      Serial.printf("len of privateKey: %d\n\r", strlen(tempHolder));
+        //      Serial.printf("privateKey: %s\n\r", tempHolder);
+        recordFile("privateKey", tempHolder, strlen(tempHolder));
+
+        strcpy(settings.pointPerfectClientID, (const char*)((*jsonZtp)["clientId"]));
+        strcpy(settings.pointPerfectBrokerHost, (const char*)((*jsonZtp)["brokerHost"]));
+        strcpy(settings.pointPerfectLBandTopic, (const char*)((*jsonZtp)["subscriptions"][0]["path"]));
+
+        strcpy(settings.pointPerfectNextKey, (const char*)((*jsonZtp)["dynamickeys"]["next"]["value"]));
+        settings.pointPerfectNextKeyDuration = (*jsonZtp)["dynamickeys"]["next"]["duration"];
+        settings.pointPerfectNextKeyStart = (*jsonZtp)["dynamickeys"]["next"]["start"];
+
+        strcpy(settings.pointPerfectCurrentKey, (const char*)((*jsonZtp)["dynamickeys"]["current"]["value"]));
+        settings.pointPerfectCurrentKeyDuration = (*jsonZtp)["dynamickeys"]["current"]["duration"];
+        settings.pointPerfectCurrentKeyStart = (*jsonZtp)["dynamickeys"]["current"]["start"];
+      }
+    } //HTTP Response was 200
+
+    Serial.println("Device successfully provisioned. Keys obtained.");
+
+    recordSystemSettings();
+    retVal = true;
+  } while (0);
+
+  //Free the allocated buffers
+  if (tempHolder)
+    free (tempHolder);
+  if (jsonZtp)
+    delete jsonZtp;
+
+  return (retVal);
 #else
   return (false);
 #endif

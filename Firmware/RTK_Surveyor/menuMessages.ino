@@ -839,6 +839,6 @@ void updateLogTest()
       log_w("sdCardSemaphore failed to yield, menuMessages.ino line %d", __LINE__);
     }
 
-    log_d("%s", logMessage);
+    Serial.printf("%s\n\r", logMessage);
   }
 }

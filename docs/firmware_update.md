@@ -268,7 +268,7 @@ You have not replaced the partition file correctly. See the 'Change Partition ta
 
 ### Ubuntu 20.04
 
-#### Virtual Machine - Ubuntu 20.04
+#### Virtual Machine
 
 Execute the following commands to create the Linux virtual machine:
 

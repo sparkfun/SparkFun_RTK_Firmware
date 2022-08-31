@@ -45,6 +45,12 @@ void menuLog()
     if (incoming == '1')
     {
       settings.enableLogging ^= 1;
+
+      //Reset the maximum logging time when logging is disabled to ensure that
+      //the next time logging is enabled that the maximum amount of data can be
+      //captured.
+      if (settings.enableLogging == false)
+        startLogTime_minutes = 0;
     }
     else if (incoming == '2' && settings.enableLogging == true)
     {

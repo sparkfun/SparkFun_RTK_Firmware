@@ -26,7 +26,11 @@ void menuMain()
   while (1)
   {
     Serial.println();
+#ifdef ENABLE_DEVELOPER
+    Serial.printf("SparkFun RTK %s v%d.%d-RC-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+#else
     Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+#endif
 
 #ifdef COMPILE_BT
     Serial.print("** Bluetooth broadcasting as: ");
@@ -136,6 +140,8 @@ void menuUserProfiles()
   int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, ECEF coords, etc).
   uint8_t originalProfileNumber = profileNumber;
 
+  bool forceReset = false; //If we reset a profile to default, the profile number has not changed, but we still need to reset
+
   while (1)
   {
     Serial.println();
@@ -156,7 +162,9 @@ void menuUserProfiles()
 
     Serial.printf("%d) Edit profile name: %s\n\r", MAX_PROFILE_COUNT + 1, profileNames[profileNumber]);
 
-    Serial.printf("%d) Delete profile '%s'\n\r", MAX_PROFILE_COUNT + 2, profileNames[profileNumber]);
+    Serial.printf("%d) Set profile '%s' to factory defaults\n\r", MAX_PROFILE_COUNT + 2, profileNames[profileNumber]);
+
+    Serial.printf("%d) Delete profile '%s'\n\r", MAX_PROFILE_COUNT + 3, profileNames[profileNumber]);
 
     Serial.println("x) Exit");
 
@@ -174,6 +182,26 @@ void menuUserProfiles()
       setProfileName(profileNumber);
     }
     else if (incoming == MAX_PROFILE_COUNT + 2)
+    {
+      Serial.printf("\r\nReset profile '%s' to factory defaults. Press 'y' to confirm:", profileNames[profileNumber]);
+      byte bContinue = getByteChoice(menuTimeout);
+      if (bContinue == 'y')
+      {
+        //Overwrite our current settings with defaults
+        Settings tempSettings;
+        settings = tempSettings;
+
+        recordSystemSettings(); //Overwrite profile file and NVM with these settings
+
+        //Get bitmask of active profiles
+        activeProfiles = loadProfileNames();
+
+        forceReset = true; //Upon exit of menu, reset the device
+      }
+      else
+        Serial.println("Reset aborted");
+    }
+    else if (incoming == MAX_PROFILE_COUNT + 3)
     {
       Serial.printf("\r\nDelete profile '%s'. Press 'y' to confirm:", profileNames[profileNumber]);
       byte bContinue = getByteChoice(menuTimeout);
@@ -221,9 +249,9 @@ void menuUserProfiles()
       printUnknown(incoming);
   }
 
-  if (originalProfileNumber != profileNumber)
+  if (originalProfileNumber != profileNumber || forceReset == true)
   {
-    Serial.println("Changing profiles. Rebooting. Goodbye!");
+    Serial.println("Rebooting to apply new profile settings. Goodbye!");
     delay(2000);
     ESP.restart();
   }

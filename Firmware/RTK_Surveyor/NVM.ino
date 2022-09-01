@@ -20,7 +20,12 @@ void loadSettings()
 {
   //If we have a profile in both LFS and SD, the SD settings will overwrite LFS
   loadSystemSettingsFromFileLFS(settingsFileName, &settings);
+  
+  //Temp store any variables from LFS that should override SD
+  int resetCount = settings.resetCount;
+
   loadSystemSettingsFromFileSD(settingsFileName, &settings);
+  settings.resetCount = resetCount;
 
   //Change empty profile name to 'Profile1' etc
   if (strlen(settings.profileName) == 0)
@@ -81,7 +86,10 @@ void recordSystemSettingsToFileSD(char *fileName)
     {
       gotSemaphore = true;
       if (sd->exists(fileName))
+      {
+        log_d("Removing from SD: %s", fileName);
         sd->remove(fileName);
+      }
 
       SdFile settingsFile; //FAT32
       if (settingsFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
@@ -123,7 +131,10 @@ void recordSystemSettingsToFileLFS(char *fileName)
   if (online.fs == true)
   {
     if (LittleFS.exists(fileName))
+    {
       LittleFS.remove(fileName);
+      log_d("Removing LittleFS: %s", fileName);
+    }
 
     File settingsFile = LittleFS.open(fileName, FILE_WRITE);
     if (!settingsFile)
@@ -458,6 +469,7 @@ bool parseLine(char* str, Settings *settings)
   else
   {
     //if (strcmp(settingName, "ntripServer_CasterHost") == 0) //Debug
+    //if (strcmp(settingName, "profileName") == 0) //Debug
     //  Serial.printf("Found problem spot raw: %s\n\r", str);
 
     //Assume the value is a string such as 8d8a48b. The leading number causes skipSpace to fail.
@@ -1153,7 +1165,10 @@ void recordFile(const char* fileID, char* fileContents, uint32_t fileSize)
   sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
 
   if (LittleFS.exists(fileName))
+  {
     LittleFS.remove(fileName);
+    log_d("Removing LittleFS: %s", fileName);
+  }
 
   File fileToWrite = LittleFS.open(fileName, FILE_WRITE);
   if (!fileToWrite)

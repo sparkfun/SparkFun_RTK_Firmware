@@ -356,6 +356,9 @@ void menuDebug()
 
     Serial.println("30) Run Bluetooth Test");
 
+    Serial.print("31) ESP-Now Broadcast Override: ");
+    Serial.printf("%s\r\n", settings.espnowBroadcast ? "Enabled" : "Disabled");
+
     Serial.println("t) Enter Test Screen");
 
     Serial.println("e) Erase LittleFS");
@@ -544,7 +547,13 @@ void menuDebug()
         startCurrentLogTime_minutes = systemTime_minutes - settings.maxLogLength_minutes;
       }
       else if (incoming == 30)
+      {
         bluetoothTest(true);
+      }
+      else if (incoming == 31)
+      {
+        settings.espnowBroadcast ^= 1;
+      }
       else
         printUnknown(incoming);
     }

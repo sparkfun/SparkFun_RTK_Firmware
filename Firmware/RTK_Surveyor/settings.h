@@ -495,6 +495,7 @@ typedef struct {
   bool enableRtcmMessageChecking = false;
   BluetoothRadioType_e bluetoothRadioType = BLUETOOTH_RADIO_SPP;
   bool runLogTest = false; //When set to true, device will create a series of test logs
+  bool espnowBroadcast = true; //When true, overrides peers and sends all data via broadcast
 } Settings;
 Settings settings;
 

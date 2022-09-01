@@ -93,6 +93,8 @@ void scanForFirmware()
 
   dir.open("/"); //Open root
 
+  binCount = 0; //Reset count in case scanForFirmware is called again
+
   while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
   {
     if (tempFile.isFile())
@@ -140,9 +142,9 @@ void updateFromSD(const char *firmwareFileName)
   if (appPartitions < 2)
   {
     Serial.println("SD firmware updates are not available on 4MB devices. Please use the GUI or CLI update methods.");
-    return;    
+    return;
   }
-  
+
   //Turn off any tasks so that we are not disrupted
   wifiStop();
   bluetoothStop();

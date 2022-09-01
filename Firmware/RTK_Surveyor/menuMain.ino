@@ -437,7 +437,7 @@ void menuRadio()
 #ifdef ENABLE_DEVELOPER
     else if (settings.radioType == RADIO_ESPNOW && incoming == 4)
     {
-      uint8_t peer1[] = {0xB8, 0xD6, 0x1A, 0x0D, 0x8F, 0x9C}; //Facet
+      uint8_t peer1[] = {0xB8, 0xD6, 0x1A, 0x0D, 0x8F, 0x9C}; //Random MAC
       if (esp_now_is_peer_exist(peer1) == true)
         log_d("Peer already exists");
       else

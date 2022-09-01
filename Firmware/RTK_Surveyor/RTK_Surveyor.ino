@@ -85,6 +85,8 @@ int pin_radio_rts;
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+#include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
+
 //I2C for GNSS, battery gauge, display, accelerometer
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <Wire.h>

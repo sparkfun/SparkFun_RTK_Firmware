@@ -55,6 +55,8 @@ static const int RTCM_DATA_SIZE = 512 * 4;
 //NTRIP client server request buffer size
 static const int SERVER_BUFFER_SIZE = CREDENTIALS_BUFFER_SIZE + 3;
 
+static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; //5s between transmission of GGA messages, if enabled
+
 //----------------------------------------
 // Locals - compiled out
 //----------------------------------------
@@ -319,7 +321,7 @@ void ntripClientUpdate()
           wifiStop();
 
           paintNtripWiFiFail(4000, true); //True = 'Client', False = 'Server'
-          
+
           ntripClientStop(true); //Do not allocate new wifiClient
         }
         else if (wifiConnectionTimeout())
@@ -381,10 +383,10 @@ void ntripClientUpdate()
         char response[512];
         ntripClientResponse(&response[0], sizeof(response));
 
-        //Serial.printf("Response: %s\n\r", response);
+        log_d("Caster Response: %s\n\r", response);
 
-        //Look for '200 OK'
-        if (strstr(response, "200") == NULL)
+        //Look for various responses
+        if (strstr(response, "401") != NULL)
         {
           //Look for '401 Unauthorized'
           Serial.printf("NTRIP Client caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
@@ -392,22 +394,37 @@ void ntripClientUpdate()
           //Stop WiFi operations
           ntripClientStop(true); //Do not allocate new wifiClient
         }
-        else
+        else if (strstr(response, "banned") != NULL)
+        {
+          //Look for 'HTTP/1.1 200 OK' and banned IP information
+          Serial.printf("NTRIP Client connected to caster but caster reponded with problem: %s", response);
+
+          //Stop WiFi operations
+          ntripClientStop(true); //Do not allocate new wifiClient
+        }
+        else if (strstr(response, "200") != NULL)
         {
           log_d("NTRIP Client connected to caster");
 
           //Connection is now open, start the NTRIP receive data timer
           ntripClientTimer = millis();
 
-          // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
-          i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
-          i2cGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
+          if (settings.ntripClient_TransmitGGA == true)
+          {
+            // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
+            i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
+            i2cGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
 
-          float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
-          if (measurementFrequency < 0.2) measurementFrequency = 0.2; //0.2Hz * 5 = 1 measurement every 5 seconds
-          i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency * 5); // Enable GGA over I2C. Tell the module to output GGA every 5 seconds
+            float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+            if (measurementFrequency < 0.2) measurementFrequency = 0.2; //0.2Hz * 5 = 1 measurement every 5 seconds
+            i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency * 5); // Enable GGA over I2C. Tell the module to output GGA every 5 seconds
 
-          lastGGAPush = millis();
+            log_d("Adjusting GGA setting to %f", measurementFrequency);
+
+            i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency); // Enable GGA over I2C. Tell the module to output GGA every second
+
+            lastGGAPush = millis() - NTRIPCLIENT_MS_BETWEEN_GGA; //Force immediate transmission of GGA message
+          }
 
           //We don't use a task because we use I2C hardware (and don't have a semphore).
           online.ntripClient = true;
@@ -471,13 +488,13 @@ void pushGPGGA(NMEA_GGA_data_t *nmeaData)
 {
 #ifdef  COMPILE_WIFI
   //Provide the caster with our current position as needed
-  if ((ntripClient->connected() == true) && (settings.ntripClient_TransmitGGA == true))
+  if (ntripClient->connected() == true && settings.ntripClient_TransmitGGA == true)
   {
-    if (millis() - lastGGAPush > 5000)
+    if (millis() - lastGGAPush > NTRIPCLIENT_MS_BETWEEN_GGA)
     {
       lastGGAPush = millis();
-      //Serial.print(F("Pushing GGA to server: "));
-      //Serial.print((const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+
+      log_d("Pushing GGA to server: ", (const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
 
       //Push our current GGA sentence to caster
       ntripClient->print((const char *)nmeaData->nmea);

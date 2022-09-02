@@ -496,6 +496,8 @@ typedef struct {
   BluetoothRadioType_e bluetoothRadioType = BLUETOOTH_RADIO_SPP;
   bool runLogTest = false; //When set to true, device will create a series of test logs
   bool espnowBroadcast = true; //When true, overrides peers and sends all data via broadcast
+  uint16_t antennaHeight = 0; //in mm
+  float antennaReferencePoint = 0.0; //in mm
 } Settings;
 Settings settings;
 

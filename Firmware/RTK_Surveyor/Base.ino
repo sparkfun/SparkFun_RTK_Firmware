@@ -188,14 +188,19 @@ bool startFixedBase()
   }
   else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
   {
+    //Add height of instrument (HI) to fixed altitude
+    //https://www.e-education.psu.edu/geog862/node/1853
+    //For example, if HAE is at 100.0m, + 2m stick + 73mm ARP = 102.073
+    float totalFixedAltitude = settings.fixedAltitude + (settings.antennaHeight / 1000.0) + (settings.antennaReferencePoint / 1000.0);
+    
     //Break coordinates into main and high precision parts
     //The type casting should not effect rounding of original double cast coordinate
     int64_t majorLat = settings.fixedLat * 10000000;
     int64_t minorLat = ((settings.fixedLat * 10000000) - majorLat) * 100;
     int64_t majorLong = settings.fixedLong * 10000000;
     int64_t minorLong = ((settings.fixedLong * 10000000) - majorLong) * 100;
-    int32_t majorAlt = settings.fixedAltitude * 100;
-    int32_t minorAlt = ((settings.fixedAltitude * 100) - majorAlt) * 100;
+    int32_t majorAlt = totalFixedAltitude * 100;
+    int32_t minorAlt = ((totalFixedAltitude * 100) - majorAlt) * 100;
 
     //    Serial.printf("fixedLong (should be -105.184774720): %0.09f\n\r", settings.fixedLong);
     //    Serial.printf("major (should be -1051847747): %lld\n\r", majorLat);

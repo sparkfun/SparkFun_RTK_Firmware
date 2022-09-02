@@ -59,7 +59,7 @@ void menuGNSS()
     }
     Serial.println();
 
-    Serial.println("4) Set Constellations ");
+    Serial.println("4) Set Constellations");
 
     Serial.print("5) Toggle NTRIP Client: ");
     if (settings.enableNtripClient == true) Serial.println("Enabled");

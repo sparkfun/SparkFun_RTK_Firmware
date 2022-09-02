@@ -89,10 +89,28 @@ void ntripClientAllowMoreConnections()
 
 bool ntripClientConnect()
 {
-  if ((!ntripClient)
-      || (!ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort)))
+  if (!ntripClient)
     return false;
-  Serial.printf("NTRIP Client connected to %s:%d\n\r", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
+
+  //Remove any http:// or https:// prefix from host name
+  char hostname[50];
+  strncpy(hostname, settings.ntripClient_CasterHost, 50); //strtok modifies string to be parsed so we create a copy
+  char *token = strtok(hostname, "//");
+  if (token != NULL)
+  {
+    token = strtok(NULL, "//"); //Advance to data after //
+    if(token != NULL)
+      strcpy(settings.ntripClient_CasterHost, token);
+  }
+
+  Serial.printf("NTRIP Client connecting to %s:%d\n\r", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
+
+  int connectResponse = ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
+
+  if (connectResponse < 1)
+    return false;
+
+  Serial.println("NTRIP Client connected");
 
   // Set up the server request (GET)
   char serverRequest[SERVER_BUFFER_SIZE];

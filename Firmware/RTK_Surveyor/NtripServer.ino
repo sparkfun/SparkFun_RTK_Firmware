@@ -94,14 +94,26 @@ bool ntripServerConnectCaster()
   const int SERVER_BUFFER_SIZE = 512;
   char serverBuffer[SERVER_BUFFER_SIZE];
 
+  //Remove any http:// or https:// prefix from host name
+  char hostname[50];
+  strncpy(hostname, settings.ntripServer_CasterHost, 50); //strtok modifies string to be parsed so we create a copy
+  char *token = strtok(hostname, "//");
+  if (token != NULL)
+  {
+    token = strtok(NULL, "//"); //Advance to data after //
+    if(token != NULL)
+      strcpy(settings.ntripServer_CasterHost, token);
+  }
+
+  Serial.printf("NTRIP Server connecting to %s:%d\n\r", settings.ntripServer_CasterHost,
+                settings.ntripServer_CasterPort);
+
   //Attempt a connection to the NTRIP caster
   if (!ntripServer->connect(settings.ntripServer_CasterHost,
                             settings.ntripServer_CasterPort))
     return false;
 
-  //Note the connection to the NTRIP caster
-  Serial.printf("Connected to %s:%d\n\r", settings.ntripServer_CasterHost,
-                settings.ntripServer_CasterPort);
+  Serial.println("NTRIP Server connected");
 
   //Build the authorization credentials message
   //  * Mount point

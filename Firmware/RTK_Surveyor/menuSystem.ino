@@ -72,8 +72,8 @@ void menuSystem()
 #ifdef COMPILE_WIFI
     Serial.print("WiFi MAC Address: ");
     Serial.printf("%02X-%02X-%02X-%02X-%02X-%02X\r\n", wifiMACAddress[0],
-            wifiMACAddress[1], wifiMACAddress[2], wifiMACAddress[3],
-            wifiMACAddress[4], wifiMACAddress[5]);
+                  wifiMACAddress[1], wifiMACAddress[2], wifiMACAddress[3],
+                  wifiMACAddress[4], wifiMACAddress[5]);
     if (wifiState == WIFI_CONNECTED)
       wifiDisplayIpAddress();
 #endif
@@ -390,7 +390,7 @@ void menuDebug()
 
     Serial.print("31) Print NMEA TCP status: ");
     Serial.printf("%s\r\n", settings.enablePrintNmeaTcpStatus ? "Enabled" : "Disabled");
- 
+
     Serial.print("32) ESP-Now Broadcast Override: ");
     Serial.printf("%s\r\n", settings.espnowBroadcast ? "Enabled" : "Disabled");
 
@@ -584,6 +584,7 @@ void menuDebug()
       else if (incoming == 30)
       {
         bluetoothTest(true);
+      }
       else if (incoming == 31)
       {
         settings.enablePrintNmeaTcpStatus ^= 1;

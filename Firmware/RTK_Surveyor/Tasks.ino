@@ -177,7 +177,7 @@ void F9PSerialReadTask(void *e)
     {
       //Reduce bytes to send if we have more to send then the end of the buffer
       //We'll wrap next loop
-      if ((btTail + btBytesToSend) >= sizeof(rBuffer))
+      if ((btTail + btBytesToSend) > sizeof(rBuffer))
         btBytesToSend = sizeof(rBuffer) - btTail;
 
       //Push new data to BT SPP if not congested or not throttling
@@ -238,7 +238,7 @@ void F9PSerialReadTask(void *e)
         {
           //Reduce bytes to send if we have more to send then the end of the buffer
           //We'll wrap next loop
-          if ((sdTail + sdBytesToRecord) >= sizeof(rBuffer))
+          if ((sdTail + sdBytesToRecord) > sizeof(rBuffer))
             sdBytesToRecord = sizeof(rBuffer) - sdTail;
 
           //Write the data to the file

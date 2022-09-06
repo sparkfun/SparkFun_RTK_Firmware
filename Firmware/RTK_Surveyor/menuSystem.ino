@@ -379,6 +379,9 @@ void menuDebug()
 
     Serial.print("31) Print NMEA TCP status: ");
     Serial.printf("%s\r\n", settings.enablePrintNmeaTcpStatus ? "Enabled" : "Disabled");
+ 
+    Serial.print("32) ESP-Now Broadcast Override: ");
+    Serial.printf("%s\r\n", settings.espnowBroadcast ? "Enabled" : "Disabled");
 
     Serial.println("t) Enter Test Screen");
 
@@ -568,10 +571,15 @@ void menuDebug()
         startCurrentLogTime_minutes = systemTime_minutes - settings.maxLogLength_minutes;
       }
       else if (incoming == 30)
+      {
         bluetoothTest(true);
       else if (incoming == 31)
       {
         settings.enablePrintNmeaTcpStatus ^= 1;
+      }
+      else if (incoming == 32)
+      {
+        settings.espnowBroadcast ^= 1;
       }
       else
         printUnknown(incoming);

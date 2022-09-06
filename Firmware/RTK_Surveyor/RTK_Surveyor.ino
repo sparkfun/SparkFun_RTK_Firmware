@@ -85,6 +85,8 @@ int pin_radio_rts;
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+#include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
+
 //I2C for GNSS, battery gauge, display, accelerometer
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <Wire.h>
@@ -849,7 +851,14 @@ void updateRadio()
       //then we've reached the end of the RTCM stream. Send partial buffer.
       if (espnowOutgoingSpot > 0 && (millis() - espnowLastAdd) > 50)
       {
-        esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
+
+        if (settings.espnowBroadcast == false)
+          esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
+        else
+        {
+          uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+          esp_now_send(broadcastMac, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send packet via broadcast
+        }
 
         if (!inMainMenu) log_d("ESPNOW transmitted %d RTCM bytes", espnowBytesSent + espnowOutgoingSpot);
         espnowBytesSent = 0;

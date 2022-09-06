@@ -93,6 +93,8 @@ void scanForFirmware()
 
   dir.open("/"); //Open root
 
+  binCount = 0; //Reset count in case scanForFirmware is called again
+
   while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
   {
     if (tempFile.isFile())
@@ -127,6 +129,22 @@ void scanForFirmware()
 //Called from mountSDThenUpdate with microSD card mounted and sdCardsemaphore held
 void updateFromSD(const char *firmwareFileName)
 {
+  //Count app partitions
+  int appPartitions = 0;
+  esp_partition_iterator_t it = esp_partition_find(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, nullptr);
+  while (it != nullptr)
+  {
+    appPartitions++;
+    it = esp_partition_next(it);
+  }
+
+  //We cannot do OTA if there is only one partition
+  if (appPartitions < 2)
+  {
+    Serial.println("SD firmware updates are not available on 4MB devices. Please use the GUI or CLI update methods.");
+    return;
+  }
+
   //Turn off any tasks so that we are not disrupted
   wifiStop();
   bluetoothStop();

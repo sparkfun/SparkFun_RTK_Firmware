@@ -89,24 +89,25 @@ void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type)
 //If the radio is off entirely, start the radio, turn on only the LR protocol
 void espnowStart()
 {
+
 #ifdef COMPILE_ESPNOW
   if (wifiState == WIFI_OFF && espnowState == ESPNOW_OFF)
   {
+    WiFi.mode(WIFI_STA);
+
     //Radio is off, turn it on
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
-
-    WiFi.mode(WIFI_STA);
 
     log_d("WiFi off, ESP-Now added to protocols");
   }
   //If WiFi is on but ESP NOW is off, then enable LR protocol
   else if (wifiState > WIFI_OFF && espnowState == ESPNOW_OFF)
   {
+    WiFi.mode(WIFI_STA);
+
     //Enable WiFi + ESP-Now
     // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Stops WiFi Station.
-
-    WiFi.mode(WIFI_STA);
 
     log_d("WiFi on, ESP-Now added to protocols");
   }
@@ -151,6 +152,22 @@ void espnowStart()
         if (result != ESP_OK)
           log_d("Failed to add peer #%d\n\r", x);
       }
+    }
+  }
+
+
+  if (settings.espnowBroadcast == true)
+  {
+    //Add broadcast peer if override is turned on
+    uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+    if (esp_now_is_peer_exist(broadcastMac) == true)
+      log_d("Broadcast peer already exists");
+    else
+    {
+      esp_err_t result = espnowAddPeer(broadcastMac, false); //Encryption not support for broadcast MAC
+      if (result != ESP_OK)
+        log_d("Failed to add broadcast peer\n\r");
     }
   }
 
@@ -222,9 +239,13 @@ bool espnowIsPaired()
 #ifdef COMPILE_ESPNOW
   if (espnowState == ESPNOW_MAC_RECEIVED)
   {
-    //Remove broadcast peer
-    uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    espnowRemovePeer(broadcastMac);
+
+    if (settings.espnowBroadcast == false)
+    {
+      //Remove broadcast peer
+      uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+      espnowRemovePeer(broadcastMac);
+    }
 
     if (esp_now_is_peer_exist(receivedMAC) == true)
       log_d("Peer already exists");
@@ -291,7 +312,7 @@ esp_err_t espnowAddPeer(uint8_t *peerMac, bool encrypt)
   peerInfo.channel = 0;
   peerInfo.ifidx = WIFI_IF_STA;
   //memcpy(peerInfo.lmk, "RTKProductsLMK56", 16);
-  //peerInfo.encrypt = true;
+  //peerInfo.encrypt = encrypt;
   peerInfo.encrypt = false;
 
   esp_err_t result = esp_now_add_peer(&peerInfo);
@@ -360,7 +381,15 @@ void espnowProcessRTCM(byte incoming)
     if (espnowOutgoingSpot == sizeof(espnowOutgoing))
     {
       espnowOutgoingSpot = 0; //Wrap
-      esp_now_send(0, (uint8_t *) &espnowOutgoing, sizeof(espnowOutgoing)); //Send packet to all peers
+
+      if (settings.espnowBroadcast == false)
+        esp_now_send(0, (uint8_t *) &espnowOutgoing, sizeof(espnowOutgoing)); //Send packet to all peers
+      else
+      {
+        uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+        esp_now_send(broadcastMac, (uint8_t *) &espnowOutgoing, sizeof(espnowOutgoing)); //Send packet via broadcast
+      }
+
       delay(10); //We need a small delay between sending multiple packets
 
       espnowBytesSent += sizeof(espnowOutgoing);

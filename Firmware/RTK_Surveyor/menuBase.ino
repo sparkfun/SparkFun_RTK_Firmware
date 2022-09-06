@@ -38,6 +38,10 @@ void menuBase()
         Serial.print("°, ");
         Serial.print(settings.fixedAltitude, 4);
         Serial.println("m");
+
+        Serial.printf("4) Set Antenna Height: %dmm\n\r", settings.antennaHeight);
+
+        Serial.printf("5) Set Antenna Reference Point: %0.1fmm\n\r", settings.antennaReferencePoint);
       }
     }
     else
@@ -55,33 +59,33 @@ void menuBase()
       Serial.println(" meters");
     }
 
-    Serial.print("5) Toggle NTRIP Server: ");
+    Serial.print("6) Toggle NTRIP Server: ");
     if (settings.enableNtripServer == true) Serial.println("Enabled");
     else Serial.println("Disabled");
 
     if (settings.enableNtripServer == true)
     {
-      Serial.print("6) Set WiFi SSID: ");
+      Serial.print("7) Set WiFi SSID: ");
       Serial.println(settings.ntripServer_wifiSSID);
 
-      Serial.print("7) Set WiFi PW: ");
+      Serial.print("8) Set WiFi PW: ");
       Serial.println(settings.ntripServer_wifiPW);
 
-      Serial.print("8) Set Caster Address: ");
+      Serial.print("9) Set Caster Address: ");
       Serial.println(settings.ntripServer_CasterHost);
 
-      Serial.print("9) Set Caster Port: ");
+      Serial.print("10) Set Caster Port: ");
       Serial.println(settings.ntripServer_CasterPort);
 
-      Serial.print("10) Set Mountpoint: ");
+      Serial.print("11) Set Mountpoint: ");
       Serial.println(settings.ntripServer_MountPoint);
 
-      Serial.print("11) Set Mountpoint PW: ");
+      Serial.print("12) Set Mountpoint PW: ");
       Serial.println(settings.ntripServer_MountPointPW);
     }
 
     if (!settings.fixedBase) {
-      Serial.print("12) Select survey-in radio: ");
+      Serial.print("13) Select survey-in radio: ");
       Serial.printf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
     }
 
@@ -98,6 +102,7 @@ void menuBase()
     {
       settings.fixedBaseCoordinateType ^= 1;
     }
+
     else if (settings.fixedBase == true && incoming == 3)
     {
       if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
@@ -151,6 +156,25 @@ void menuBase()
         }
       }
     }
+    else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 4)
+    {
+      Serial.print("Enter the antenna height (a.k.a. pole length) in millimeters (0 to 15000mm): ");
+      int antennaHeight = getDouble(menuTimeout); //Timeout after x seconds
+      if (antennaHeight < 0 || antennaHeight > 15000) //Arbitrary 15m max
+        Serial.println("Error: Antenna Height out of range");
+      else
+        settings.antennaHeight = antennaHeight; //Recorded to NVM and file at main menu exit
+    }
+    else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 5)
+    {
+      Serial.print("Enter the antenna reference point (a.k.a. ARP) in millimeters (0.0 to 200.0mm): ");
+      int antennaReferencePoint = getDouble(menuTimeout); //Timeout after x seconds
+      if (antennaReferencePoint < 0 || antennaReferencePoint > 200) //Arbitrary 200mm max
+        Serial.println("Error: Antenna Reference Point out of range");
+      else
+        settings.antennaReferencePoint = antennaReferencePoint; //Recorded to NVM and file at main menu exit
+    }
+
     else if (settings.fixedBase == false && incoming == 2)
     {
       Serial.print("Enter the number of seconds for survey-in obseration time (60 to 600s): ");
@@ -194,30 +218,31 @@ void menuBase()
         settings.surveyInStartingAccuracy = surveyInStartingAccuracy; //Recorded to NVM and file at main menu exit
       }
     }
-    else if (incoming == 5)
+
+    else if (incoming == 6)
     {
       settings.enableNtripServer ^= 1;
       restartBase = true;
     }
-    else if (incoming == 6 && settings.enableNtripServer == true)
+    else if (incoming == 7 && settings.enableNtripServer == true)
     {
       Serial.print("Enter local WiFi SSID: ");
       readLine(settings.ntripServer_wifiSSID, sizeof(settings.ntripServer_wifiSSID), menuTimeoutExtended);
       restartBase = true;
     }
-    else if (incoming == 7 && settings.enableNtripServer == true)
+    else if (incoming == 8 && settings.enableNtripServer == true)
     {
       Serial.printf("Enter password for WiFi network %s: ", settings.ntripServer_wifiSSID);
       readLine(settings.ntripServer_wifiPW, sizeof(settings.ntripServer_wifiPW), menuTimeoutExtended);
       restartBase = true;
     }
-    else if (incoming == 8 && settings.enableNtripServer == true)
+    else if (incoming == 9 && settings.enableNtripServer == true)
     {
       Serial.print("Enter new Caster Address: ");
       readLine(settings.ntripServer_CasterHost, sizeof(settings.ntripServer_CasterHost), menuTimeoutExtended);
       restartBase = true;
     }
-    else if (incoming == 9 && settings.enableNtripServer == true)
+    else if (incoming == 10 && settings.enableNtripServer == true)
     {
       Serial.print("Enter new Caster Port: ");
 
@@ -228,19 +253,19 @@ void menuBase()
         settings.ntripServer_CasterPort = ntripServer_CasterPort; //Recorded to NVM and file at main menu exit
       restartBase = true;
     }
-    else if (incoming == 10 && settings.enableNtripServer == true)
+    else if (incoming == 11 && settings.enableNtripServer == true)
     {
       Serial.print("Enter new Mount Point: ");
       readLine(settings.ntripServer_MountPoint, sizeof(settings.ntripServer_MountPoint), menuTimeoutExtended);
       restartBase = true;
     }
-    else if (incoming == 11 && settings.enableNtripServer == true)
+    else if (incoming == 12 && settings.enableNtripServer == true)
     {
       Serial.printf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
       readLine(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW), menuTimeoutExtended);
       restartBase = true;
     }
-    else if ((!settings.fixedBase) && (incoming == 12))
+    else if ((!settings.fixedBase) && (incoming == 13))
     {
       settings.ntripServer_StartAtSurveyIn ^= 1;
       restartBase = true;

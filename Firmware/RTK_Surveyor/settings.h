@@ -491,12 +491,15 @@ typedef struct {
   bool enablePrintDuplicateStates = false;
   RadioType_e radioType = RADIO_EXTERNAL;
   uint8_t espnowPeers[5][6]; //Max of 5 peers. Contains the MAC addresses (6 bytes) of paired units
-  uint8_t espnowPeerCount;
+  uint8_t espnowPeerCount = 0;
   bool enableRtcmMessageChecking = false;
   BluetoothRadioType_e bluetoothRadioType = BLUETOOTH_RADIO_SPP;
   bool runLogTest = false; //When set to true, device will create a series of test logs
   bool enableNmeaServer = false;
   bool enablePrintNmeaTcpStatus = false;
+  bool espnowBroadcast = true; //When true, overrides peers and sends all data via broadcast
+  uint16_t antennaHeight = 0; //in mm
+  float antennaReferencePoint = 0.0; //in mm
 } Settings;
 Settings settings;
 

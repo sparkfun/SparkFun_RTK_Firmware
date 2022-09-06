@@ -400,6 +400,7 @@ void wifiStop()
 
 void wifiUpdate()
 {
+
 #ifdef  COMPILE_WIFI
   //Periodically display the WiFi state
   if (settings.enablePrintWifiState && ((millis() - lastWifiState) > 15000))

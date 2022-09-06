@@ -278,6 +278,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", "espnowPeerCount", settings.espnowPeerCount);
   settingsFile->printf("%s=%d\n\r", "enableRtcmMessageChecking", settings.enableRtcmMessageChecking);
   settingsFile->printf("%s=%d\n\r", "bluetoothRadioType", settings.bluetoothRadioType);
+  settingsFile->printf("%s=%d\n\r", "enableNmeaServer", settings.enableNmeaServer);
   settingsFile->printf("%s=%d\n\r", "espnowBroadcast", settings.espnowBroadcast);
   settingsFile->printf("%s=%d\n\r", "antennaHeight", settings.antennaHeight);
   settingsFile->printf("%s=%d\n\r", "antennaReferencePoint", settings.antennaReferencePoint);
@@ -892,6 +893,8 @@ bool parseLine(char* str, Settings *settings)
     settings->radioType = (RadioType_e)d;
   else if (strcmp(settingName, "bluetoothRadioType") == 0)
     settings->bluetoothRadioType = (BluetoothRadioType_e)d;
+  else if (strcmp(settingName, "enableNmeaServer") == 0)
+    settings->enableNmeaServer = d;
   else if (strcmp(settingName, "espnowBroadcast") == 0)
     settings->espnowBroadcast = d;
   else if (strcmp(settingName, "antennaHeight") == 0)

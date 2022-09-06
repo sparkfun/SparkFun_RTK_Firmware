@@ -39,9 +39,11 @@ void F9PSerialReadTask(void *e)
   static uint8_t rBuffer[1024 * 6]; //Buffer for reading from F9P to SPP
   static uint16_t dataHead = 0; //Head advances as data comes in from GNSS's UART
   static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
+  static uint16_t nmeaTail = 0; //NMEA TCP client tail
   static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
 
   int btBytesToSend; //Amount of buffered Bluetooth data
+  int nmeaBytesToSend; //Amount of buffered NMEA TCP data
   int sdBytesToRecord; //Amount of buffered microSD card logging data
   int availableBufferSpace; //Distance between head and furthest away tail
 
@@ -106,6 +108,15 @@ void F9PSerialReadTask(void *e)
         btBytesToSend += sizeof(rBuffer);
     }
 
+    //Determine the amount of NMEA TCP data in the buffer
+    nmeaBytesToSend = 0;
+    if (settings.enableNmeaServer)
+    {
+      nmeaBytesToSend = dataHead - nmeaTail;
+      if (nmeaBytesToSend < 0)
+        nmeaBytesToSend += sizeof(rBuffer);
+    }
+
     //Determine the amount of microSD card logging data in the buffer
     sdBytesToRecord = 0;
     if (online.logging)
@@ -150,6 +161,8 @@ void F9PSerialReadTask(void *e)
         btBytesToSend += newBytesToRecord;
       if (online.logging)
         sdBytesToRecord += newBytesToRecord;
+      if (online.nmeaServer && wifiNmeaConnected)
+        nmeaBytesToSend += newBytesToRecord;
     } //End Serial.available()
 
     //----------------------------------------------------------------------
@@ -164,7 +177,7 @@ void F9PSerialReadTask(void *e)
     {
       //Reduce bytes to send if we have more to send then the end of the buffer
       //We'll wrap next loop
-      if ((btTail + btBytesToSend) >= sizeof(rBuffer))
+      if ((btTail + btBytesToSend) > sizeof(rBuffer))
         btBytesToSend = sizeof(rBuffer) - btTail;
 
       //Push new data to BT SPP if not congested or not throttling
@@ -182,6 +195,28 @@ void F9PSerialReadTask(void *e)
       }
       else
         log_w("BT failed to send");
+    }
+
+    //----------------------------------------------------------------------
+    //Send data to the NMEA clients
+    //----------------------------------------------------------------------
+
+    if (!settings.enableNmeaServer && (!wifiNmeaConnected))
+      nmeaTail = dataHead;
+    else
+    {
+      //Reduce bytes to send if we have more to send then the end of the buffer
+      //We'll wrap next loop
+      if ((nmeaTail + nmeaBytesToSend) > sizeof(rBuffer))
+        nmeaBytesToSend = sizeof(rBuffer) - nmeaTail;
+
+      //Send the data to the NMEA TCP clients
+      wifiNmeaData (&rBuffer[nmeaTail], nmeaBytesToSend);
+
+      //Assume all data was sent, wrap the buffer pointer
+      nmeaTail += nmeaBytesToSend;
+      if (nmeaTail >= sizeof(rBuffer))
+        nmeaTail -= sizeof(rBuffer);
     }
 
     //----------------------------------------------------------------------
@@ -203,7 +238,7 @@ void F9PSerialReadTask(void *e)
         {
           //Reduce bytes to send if we have more to send then the end of the buffer
           //We'll wrap next loop
-          if ((sdTail + sdBytesToRecord) >= sizeof(rBuffer))
+          if ((sdTail + sdBytesToRecord) > sizeof(rBuffer))
             sdBytesToRecord = sizeof(rBuffer) - sdTail;
 
           //Write the data to the file

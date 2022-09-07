@@ -173,15 +173,16 @@ void F9PSerialReadTask(void *e)
     if (!btConnected)
       //Discard the data
       btTail = dataHead;
-    else
+    else if (btBytesToSend > 0)
     {
       //Reduce bytes to send if we have more to send then the end of the buffer
       //We'll wrap next loop
       if ((btTail + btBytesToSend) > sizeof(rBuffer))
         btBytesToSend = sizeof(rBuffer) - btTail;
 
-      //Push new data to BT SPP if not congested or not throttling
+      //Push new data to BT SPP
       btBytesToSend = bluetoothWriteBytes(&rBuffer[btTail], btBytesToSend);
+
       if (btBytesToSend > 0)
       {
         //If we are in base mode, assume part of the outgoing data is RTCM
@@ -203,7 +204,7 @@ void F9PSerialReadTask(void *e)
 
     if ((!settings.enableNmeaServer) && (!settings.enableNmeaClient) && (!wifiNmeaConnected))
       nmeaTail = dataHead;
-    else
+    else if (nmeaBytesToSend > 0)
     {
       //Reduce bytes to send if we have more to send then the end of the buffer
       //We'll wrap next loop
@@ -227,7 +228,7 @@ void F9PSerialReadTask(void *e)
     if (!online.logging)
       //Discard the data
       sdTail = dataHead;
-    else
+    else if (sdBytesToRecord > 0)
     {
       //Check if we are inside the max time window for logging
       if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)

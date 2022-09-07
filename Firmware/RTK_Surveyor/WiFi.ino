@@ -172,12 +172,12 @@ void wifiStartAP()
 #else   //End LOCAL_WIFI_TESTING
   //Start in AP mode
 
+  WiFi.mode(WIFI_AP);
+
 #ifdef COMPILE_ESPNOW
   // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
   esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi AP.
 #endif
-
-  WiFi.mode(WIFI_AP);
 
   IPAddress local_IP(192, 168, 4, 1);
   IPAddress gateway(192, 168, 1, 1);

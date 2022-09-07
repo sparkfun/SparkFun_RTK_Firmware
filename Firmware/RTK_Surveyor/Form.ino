@@ -421,7 +421,61 @@ void createSettingsString(char* settingsCSV)
     sprintf(nameText, "%d: %s", index + 1, profileNames[index]);
     stringRecord(settingsCSV, tagText, nameText);
   }
-  stringRecord(settingsCSV, "activeProfiles", activeProfiles);
+  //stringRecord(settingsCSV, "activeProfiles", activeProfiles);
+
+  //Bluetooth radio type
+  stringRecord(settingsCSV, "bluetoothRadioType", settings.bluetoothRadioType);
+
+  //Current coordinates
+  double geodeticLat = i2cGNSS.getLatitude() / 10000000.0;
+  double geodeticLon = i2cGNSS.getLongitude() / 10000000.0;
+  double geodeticAlt = i2cGNSS.getAltitude() / 1000.0;
+
+  stringRecord(settingsCSV, "geodeticLat", geodeticLat, 8);
+  stringRecord(settingsCSV, "geodeticLon", geodeticLon, 8);
+  stringRecord(settingsCSV, "geodeticAlt", geodeticAlt, 3);
+
+  double ecefX = 0;
+  double ecefY = 0;
+  double ecefZ = 0;
+
+  geodeticToEcef(geodeticLat, geodeticLon, geodeticAlt, &ecefX, &ecefY, &ecefZ);
+
+  stringRecord(settingsCSV, "ecefX", ecefX, 3);
+  stringRecord(settingsCSV, "ecefY", ecefY, 3);
+  stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
+
+  //Antenna height and ARP
+  stringRecord(settingsCSV, "antennaHeight", settings.antennaHeight);
+  stringRecord(settingsCSV, "antennaReferencePoint", settings.antennaReferencePoint, 1);
+
+  //Radio / ESP-Now settings
+  char radioMAC[15];   //Send radio MAC
+  sprintf(radioMAC, "%02X:%02X:%02X:%02X:%02X:%02X",
+          wifiMACAddress[0],
+          wifiMACAddress[1],
+          wifiMACAddress[2],
+          wifiMACAddress[3],
+          wifiMACAddress[4],
+          wifiMACAddress[5]
+         );
+  stringRecord(settingsCSV, "radioMAC", radioMAC);
+  stringRecord(settingsCSV, "radioType", settings.radioType);
+  stringRecord(settingsCSV, "espnowPeerCount", settings.espnowPeerCount);
+  for (int index = 0; index < settings.espnowPeerCount; index++)
+  {
+    sprintf(tagText, "peerMAC%d", index);
+    sprintf(nameText, "%02X:%02X:%02X:%02X:%02X:%02X",
+            settings.espnowPeers[index][0],
+            settings.espnowPeers[index][1],
+            settings.espnowPeers[index][2],
+            settings.espnowPeers[index][3],
+            settings.espnowPeers[index][4],
+            settings.espnowPeers[index][5]
+           );
+    stringRecord(settingsCSV, tagText, nameText);
+  }
+  stringRecord(settingsCSV, "espnowBroadcast", settings.espnowBroadcast);
 
   //New settings not yet integrated
   //...
@@ -569,6 +623,14 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.home_wifiPW, settingValueStr);
   else if (strcmp(settingName, "autoKeyRenewal") == 0)
     settings.autoKeyRenewal = settingValueBool;
+  else if (strcmp(settingName, "antennaHeight") == 0)
+    settings.antennaHeight = settingValue;
+  else if (strcmp(settingName, "antennaReferencePoint") == 0)
+    settings.antennaReferencePoint = settingValue;
+  else if (strcmp(settingName, "btType") == 0)
+    settings.fixedBaseCoordinateType = (BluetoothRadioType_e)settingValue; //0 = SPP, 1 = BLE, 2 = Off
+  else if (strcmp(settingName, "espnowBroadcast") == 0)
+    settings.espnowBroadcast = settingValueBool;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}
@@ -610,6 +672,13 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     createSettingsString(settingsCSV);
     log_d("Sending command: %s\n\r", settingsCSV);
     ws.textAll(String(settingsCSV));
+  }
+  else if (strcmp(settingName, "forgetEspNowPeers") == 0)
+  {
+    //Forget all ESP-Now Peers
+    for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+      espnowRemovePeer(settings.espnowPeers[x]);
+    settings.espnowPeerCount = 0;
   }
 
   //Check for bulk settings (constellations and message rates)

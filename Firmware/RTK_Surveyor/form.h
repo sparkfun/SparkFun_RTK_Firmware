@@ -33,6 +33,12 @@ function ge(e) {
 }
 
 var platformPrefix = "Surveyor";
+var geodeticLat = 40.01;
+var geodeticLon = -105.19;
+var geodeticAlt = 1500.1;
+var ecefX = 100;
+var ecefY = -100;
+var ecefZ = -200;
 
 function parseIncoming(msg) {
     //console.log("incoming message: " + msg);
@@ -115,6 +121,12 @@ function parseIncoming(msg) {
             || id.includes("profile5Name")
             || id.includes("profile6Name")
             || id.includes("profile7Name")
+            || id.includes("radioMAC")
+            // || id.includes("peerMAC0")
+            // || id.includes("peerMAC1")
+            // || id.includes("peerMAC2")
+            // || id.includes("peerMAC3")
+            // || id.includes("peerMAC4")
         ) {
             ge(id).innerHTML = val;
         }
@@ -127,6 +139,41 @@ function parseIncoming(msg) {
         }
         else if (id.includes("firmwareUploadStatus")) {
             firmwareUploadStatus(val);
+        }
+        else if (id.includes("geodeticLat")) {
+            geodeticLat = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("geodeticLon")) {
+            geodeticLon = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("geodeticAlt")) {
+            geodeticAlt = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("ecefX")) {
+            ecefX = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("ecefY")) {
+            ecefY = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("ecefZ")) {
+            ecefZ = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("bluetoothRadioType")) {
+            currentBtNumber = val;
+            $("input[name=bluetoothRadioType][value=" + currentBtNumber + "]").prop('checked', true);
+        }
+        else if (id.includes("espnowPeerCount")) {
+            if(val > 0)
+            ge("peerMACs").innerHTML = "";
+        }
+        else if (id.includes("peerMAC")) {
+            ge("peerMACs").innerHTML += val + "<br>";
         }
 
         //Check boxes / radio buttons
@@ -170,6 +217,7 @@ function parseIncoming(msg) {
     ge("dataPortChannel").dispatchEvent(new CustomEvent('change'));
     ge("enableExternalPulse").dispatchEvent(new CustomEvent('change'));
     ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
+    ge("radioType").dispatchEvent(new CustomEvent('change'));
 }
 
 function hide(id) {
@@ -238,6 +286,7 @@ function validateFields() {
     collapseSection("collapseSensorConfig", "sensorCaret");
     collapseSection("collapsePPConfig", "pointPerfectCaret");
     collapseSection("collapsePortsConfig", "portsCaret");
+    collapseSection("collapseRadioConfig", "radioCaret");
     collapseSection("collapseSystemConfig", "systemCaret");
 
     errorCount = 0;
@@ -373,6 +422,8 @@ function validateFields() {
             clearElement("fixedLat", 40.09029479);
             clearElement("fixedLong", -105.18505761);
             clearElement("fixedAltitude", 1560.089);
+            clearElement("antennaHeight", 0);
+            clearElement("antennaReferencePoint", 0);
         }
         else {
             clearElement("observationSeconds", 60);
@@ -395,6 +446,9 @@ function validateFields() {
                 checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
                 checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
                 checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
+
+                checkElementValue("antennaHeight", 0, 15000, "Must be 0 to 15000", "collapseBaseConfig");
+                checkElementValue("antennaReferencePoint", 0.0, 200.0, "Must be 0.0 to 200.0", "collapseBaseConfig");
             }
         }
 
@@ -576,8 +630,14 @@ function clearElement(id, value) {
 }
 
 function resetToFactoryDefaults() {
-    ge("factoryDefaultsMsg").innerHTML = "Defaults Applied. Please wait for device reset..."
+    ge("factoryDefaultsMsg").innerHTML = "Defaults Applied. Please wait for device reset...";
     ws.send("factoryDefaultReset,1,");
+}
+
+function forgetPairedRadios() {
+    ge("btnForgetRadios").innerHTML = "All radios forgotten.";
+    ge("peerMACs").innerHTML = "None";
+    ws.send("forgetEspNowPeers,1,");
 }
 
 function zeroElement(id) {
@@ -691,6 +751,16 @@ function resetToLoggingDefaults() {
     ge("UBX_NMEA_RMC").value = 1;
     ge("UBX_RXM_RAWX").value = 1;
     ge("UBX_RXM_SFRBX").value = 1;
+}
+function useECEFCoordinates() {
+    ge("fixedEcefX").value = ecefX;
+    ge("fixedEcefY").value = ecefY;
+    ge("fixedEcefZ").value = ecefZ;
+}
+function useGeodeticCoordinates() {
+    ge("fixedLat").value = geodeticLat;
+    ge("fixedLong").value = geodeticLon;
+    ge("fixedAltitude").value = geodeticAlt;
 }
 
 function exitConfig() {
@@ -835,6 +905,24 @@ document.addEventListener("DOMContentLoaded", (event) => {
         }
     });
 
+    ge("radioType").addEventListener("change", function () {
+        if (ge("radioType").value == 0) {
+            hide("radioDetails");
+        }
+        else if (ge("radioType").value == 1){
+            show("radioDetails");
+        }
+    });
+
+    ge("enableForgetRadios").addEventListener("change", function () {
+        if (ge("enableForgetRadios").checked) {
+            ge("btnForgetRadios").disabled = false;
+        }
+        else {
+            ge("btnForgetRadios").disabled = true;
+        }
+    });
+
     ge("enableLogging").addEventListener("change", function () {
         if (ge("enableLogging").checked) {
             show("enableLoggingDetails");
@@ -843,7 +931,6 @@ document.addEventListener("DOMContentLoaded", (event) => {
             hide("enableLoggingDetails");
         }
     });
-
 })
 
 )====="; //End main.js
@@ -938,6 +1025,16 @@ static const char *index_html = R"=====(
             <div align="center" class="small">
                 <span id="rtkFirmwareVersion" style="display:inline;">RTK Firmware: v0.0</span> <br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
+                <span id="coordinatesLLH" style="display:inline;">LLH: 
+                    <span id="geodeticLat" style="display:inline;">40.09029479</span>, 
+                    <span id="geodeticLon" style="display:inline;">-105.18505761</span>, 
+                    <span id="geodeticAlt" style="display:inline;">1560.089</span>
+                </span><br>
+                <span id="coordinatesECEF" style="display:inline;">ECEF: 
+                    <span id="ecefX" style="display:inline;">-1280206.568</span>, 
+                    <span id="ecefY" style="display:inline;">-4716804.403</span>, 
+                    <span id="ecefZ" style="display:inline;">4086665.484</span>
+                </span><br>
             </div>
         </div>
 
@@ -1030,18 +1127,19 @@ static const char *index_html = R"=====(
                     GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-up"></i>
                 </button>
             </div>
-            <div class="collapse show" id="collapseGNSSConfig">
-                <div class="card card-body pt-1">
+            <div class="collapse show" id="collapseGNSSConfig"> 
+                    <div class="card card-body pt-1">
                     <div id="measurementRateInput">
                         Measurement Rate:
                         <div class="row">
                             <div class="col-sm-2 col-12 ms-3 form-group">
                                 <label for="measurementRateHz" class="col-form-label">In
-                                    Hz:</label>
+                                    Hz:
                                 <span class="tt" data-bs-placement="right"
                                     title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Default: 4Hz. Limit: 0.000122 to 10Hz.">
                                     <span class="icon-info-circle text-primary ms-2"></span>
                                 </span>
+                            </label>
                             </div>
                             <div class="col-sm-4 col-5 ms-3 form-group">
                                 <input type="number" class="form-control mb-2" id="measurementRateHz">
@@ -1051,11 +1149,12 @@ static const char *index_html = R"=====(
                             <p class="small ms-3 mt-0 mb-0"><em>or</em></p>
 
                             <div class="col-sm-2 col-12 ms-3 form-group">
-                                <label for="measurementRateSec">Seconds between measurements:</label>
-                                <span class="tt" data-bs-placement="right"
-                                    title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when taking a measurement every few seconds across a long survey (24+ hours). Limit: 0.1 to 8196 seconds."><span
-                                        class="icon-info-circle text-primary ms-2"></span>
-                                </span>
+                                <label for="measurementRateSec">Seconds between measurements:
+                                    <span class="tt" data-bs-placement="right"
+                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when taking a measurement every few seconds across a long survey (24+ hours). Limit: 0.1 to 8196 seconds."><span
+                                            class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
                             </div>
                             <div class="col-sm-4 col-5 ms-3 form-group">
                                 <input type="number" class="form-control mb-2" id="measurementRateSec">
@@ -1814,7 +1913,7 @@ static const char *index_html = R"=====(
 
                     <div id="fixedRadio">
                         <input type="radio" id="baseTypeFixed" name="baseType" value="1" class="form-radio">
-                        <label for="baseTypeFixed">Fixed<span class="small">(Choose ECEF or
+                        <label for="baseTypeFixed">Fixed<span class="small"> (Choose ECEF or
                                 Geodetic)</span></label>
                         <span class="tt" data-bs-placement="right"
                             title="If the location of the base is known it can be entered in either ECEF or Geodetic coordinates. In this mode the receiver will immediately begin outputting RTCM correction data. A fixed position is best obtained with PPP (please see our tutorial) or with post processing against a reference station. Default: SparkFun's location in Boulder, Colorado.">
@@ -1859,6 +1958,14 @@ static const char *index_html = R"=====(
                                     <p id="fixedEcefZError" class="inlineError"></p>
                                 </div>
                             </div>
+
+                            <div class="form-group row">
+                                <div class="box-margin40 col-5">
+                                    <button type="button" id="useECEFCoordinates" class="btn btn-primary"
+                                        onClick="useECEFCoordinates()">Use Current Coordinates</button>
+                                </div>
+                            </div>
+
                         </div>
 
                         <div class="mt-3">
@@ -1891,7 +1998,44 @@ static const char *index_html = R"=====(
                                     <input type="number" class="form-control" id="fixedAltitude">
                                     <p id="fixedAltitudeError" class="inlineError"></p>
                                 </div>
+                            </div><br>
+
+                            <div class="form-group row">
+                                <label for="antennaHeight"
+                                    class="box-margin40 col-sm-3 col-5 col-form-label">Antenna Height(mm):
+                                    <span class="tt" data-bs-placement="right"
+                                    title="Distance from the base of the antenna to the mark on the ground. This is usually the total length of the prism pole and any extensions.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+
+                                <div class="col-sm-4 col-5">
+                                    <input type="number" class="form-control" id="antennaHeight">
+                                    <p id="antennaHeightError" class="inlineError"></p>
+                                </div>
                             </div>
+
+                            <div class="form-group row">
+                                <label for="antennaReferencePoint"
+                                    class="box-margin40 col-sm-3 col-5 col-form-label">Antenna Reference Point(mm):
+                                    <span class="tt" data-bs-placement="right"
+                                    title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                                    <div class="col-sm-4 col-5">
+                                    <input type="number" class="form-control" id="antennaReferencePoint">
+                                    <p id="antennaReferencePointError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="box-margin40 col-5">
+                                    <button type="button" id="useGeodeticCoordinates" class="btn btn-primary"
+                                        onClick="useGeodeticCoordinates()">Use Current Coordinates</button>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
@@ -2036,15 +2180,16 @@ static const char *index_html = R"=====(
                     <div id="ppSettingsConfig">
                         <div class="form-group row">
                             <label for="home_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">Home WiFi
-                                SSID:</label>
+                                SSID:
+                                <span class="tt" data-bs-placement="right"
+                                title="The RTK Facet L-Band needs to obtain PointPerfect keys once every 28 days. This WiFi network will be connected to when necessary to obtain new keys.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                            </label>
                             <div class="col-sm-8 col-7">
                                 <input type="text" class="form-control" id="home_wifiSSID">
                                 <p id="home_wifiSSIDError" class="inlineError"></p>
                             </div>
-                            <span class="tt" data-bs-placement="right"
-                                title="The RTK Facet L-Band needs to obtain PointPerfect keys once every 28 days. This WiFi network will be connected to when necessary to obtain new keys.">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
                         </div>
 
                         <div class="form-group row">
@@ -2066,15 +2211,16 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="pointPerfectDeviceProfileToken" class="box-margin20 col-sm-3 col-4 col-form-label">Device Profile Token:</label>
+                            <label for="pointPerfectDeviceProfileToken" class="box-margin20 col-sm-3 col-4 col-form-label">Device Profile Token:
+                                <span class="tt" data-bs-placement="right"
+                                title="If your organization has a corporate ThingStream and PointPerfect account, this is where you put your custom device profile token. Default: Empty - Use the SparkFun Token">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                            </label>
                             <div class="col-sm-8 col-7">
                                 <input type="text" class="form-control" id="pointPerfectDeviceProfileToken">
                                 <p id="pointPerfectDeviceProfileTokenError" class="inlineError"></p>
                             </div>
-                            <span class="tt" data-bs-placement="right"
-                                title="If your organization has a corporate ThingStream and PointPerfect account, this is where you put your custom device profile token. Default: Empty - Use the SparkFun Token">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
                         </div>
                     </div>
                 </div>
@@ -2195,8 +2341,82 @@ static const char *index_html = R"=====(
                 </div>
             </div>
 
-            <!-- --------- System Config --------- -->
+            <!-- --------- Radio Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
+                    data-target="#collapseRadioConfig" aria-expanded="false" aria-controls="collapseRadioConfig">
+                    Radio Configuration<i id="radioCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="collapseRadioConfig">
+                <div class="card card-body">
 
+                    <div id="radioTypeDropdown" class="mb-2">
+                        <label for="radioType">Radio: </label>
+                        <select name="radioType" id="radioType" class="form-dropdown">
+                            <option value="0">Off</option>
+                            <option value="1">ESP-Now</option>
+                        </select>
+                        <span class="tt" data-bs-placement="right"
+                            title="The internal ESP32 can be used as a point-to-point, or point-to-multipoint radio for RTCM transmission. However, Bluetooth SPP cannot be used at the same time; use Bluetooth BLE. Default: Radio Off">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div id="radioDetails" class="collapse mb-2">
+                        <div class="form-check">
+                            Radio MAC: <p id="radioMAC" style="display:inline;">AA:BB:CC:DD:EE:FF</p>
+                        </div>
+                        <div class="form-check">
+                            Paired Radios:
+                            <div class="form-check">
+                                <p id="peerMACs" style="display:inline;" >None</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div style="margin-bottom:5px;">
+                                <button type="button" id="btnPairRadio" class="btn btn-primary box-margin20 col-sm-3"
+                                    onClick="pairRadio()">Pair Radio</button>
+                                <span class="tt" data-bs-placement="right"
+                                    title="To connect two devices, place both into pair mode. Units will swap MAC addresses and begin communicating at next power on.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="form-check">
+                            <div class="form-check mt-3">
+                                <label class="form-check-label" for="forgetRadios">Enable Forget All Radios</label>
+                                <input class="form-check-input" type="checkbox" value="" id="enableForgetRadios" unchecked>
+                                <span class="tt" data-bs-placement="right"
+                                    title="To prevent accidental deletion of paired radios the checkbox must first be checked before the button is pressed.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </div>
+                            <div class="form-check">
+                                <button type="button" id="btnForgetRadios" class="btn btn-primary"
+                                    onClick="forgetPairedRadios()" disabled>Forget All Radios</button>
+                                <p id="btnForgetRadios" class="inlineSuccess"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-check">
+                            <div class="form-check mt-3">
+                                <label class="form-check-label" for="espnowBroadcast">Broadcast Override</label>
+                                <input class="form-check-input" type="checkbox" value="" id="espnowBroadcast" unchecked>
+                                <span class="tt" data-bs-placement="right"
+                                    title="When true, overrides peers and sends all data via broadcast to all ESP32s in range that have ESP-Now enabled. Default: Disabled">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            
+            <!-- --------- System Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapseSystemConfig" aria-expanded="false" aria-controls="collapseSystemConfig">
@@ -2219,10 +2439,11 @@ static const char *index_html = R"=====(
                         <div id="maxLogTime Input" class="row">
                             <div class="col-sm-4 col-9 form-group">
                                 <label for="maxLogTime_minutes" class="form-group box-margin20">Max Log
-                                    Time (min):</label><span class="tt" data-bs-placement="right"
+                                    Time (min):<span class="tt" data-bs-placement="right"
                                     title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
                                     <span class="icon-info-circle text-primary ms-2"></span>
                                 </span>
+                            </label>
                             </div>
 
                             <div class="col-sm-4 col-5 ms-3 form-group">
@@ -2234,10 +2455,11 @@ static const char *index_html = R"=====(
                         <div id="maxLogLength Input" class="row">
                             <div class="col-sm-4 col-9 form-group">
                                 <label for="maxLogLength_minutes" class="form-group box-margin20">Max Log
-                                    Length (min):</label><span class="tt" data-bs-placement="right"
+                                    Length (min):<span class="tt" data-bs-placement="right"
                                     title="Once this length of time is achieved, a new log will be created. This is useful for creating multiple logs over a long survey. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
                                     <span class="icon-info-circle text-primary ms-2"></span>
                                 </span>
+                            </label>
                             </div>
 
                             <div class="col-sm-4 col-5 ms-3 form-group">
@@ -2245,6 +2467,25 @@ static const char *index_html = R"=====(
                                 <p id="maxLogLength_minutesError" class="inlineError"></p>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="col-sm-7 col-12 mt-2" id="bluetoothOptions">
+                        Bluetooth<span class="tt" data-bs-placement="right"
+                            title="Communicate using Classic Bluetooth Serial Port Profile (SPP), Bluetooth Low-Energy (BLE), or turn Bluetooth off. Default: SPP as nearly all GIS applications use SPP.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span><br>
+
+                        <input type="radio" id="btSPP" name="bluetoothRadioType" value="0"
+                            class="form-radio box-margin20" checked>
+                        <label for="btSPP">SPP</label><br>
+
+                        <input type="radio" id="btBLE" name="bluetoothRadioType" value="1"
+                            class="form-radio box-margin20">
+                        <label for="btBLE">BLE</label><br>
+
+                        <input type="radio" id="btOff" name="bluetoothRadioType" value="2"
+                            class="form-radio box-margin20">
+                        <label for="btOff">Off</label><br>
                     </div>
 
                     <div class="form-check mt-3">

@@ -283,6 +283,8 @@ bool pointperfectProvisionDevice()
 bool pointperfectUpdateKeys()
 {
 #ifdef COMPILE_WIFI
+  bluetoothStop(); //Release available heap to allow room for TLS 
+
   char * certificateContents = NULL; //Holds the contents of the keys prior to MQTT connection
   char * keyContents = NULL;
   WiFiClientSecure secureClient;
@@ -393,6 +395,8 @@ bool pointperfectUpdateKeys()
     free(keyContents);
   if (certificateContents)
     free(certificateContents);
+
+  bluetoothStart();
 
   //Return the key status
   return (gotKeys);

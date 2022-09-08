@@ -1099,7 +1099,9 @@ void changeState(SystemState newState)
       struct tm timeinfo = rtc.getTimeStruct();
       char s[30];
       strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", &timeinfo);
-      Serial.printf(", %s.%03ld\r\n", s, rtc.getMillis());
+      Serial.printf(", %s.%03ld", s, rtc.getMillis());
     }
+
+    Serial.println();
   }
 }

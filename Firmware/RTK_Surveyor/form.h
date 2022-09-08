@@ -1025,10 +1025,10 @@ static const char *index_html = R"=====(
             <div align="center" class="small">
                 <span id="rtkFirmwareVersion" style="display:inline;">RTK Firmware: v0.0</span> <br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
-                <span id="coordinatesLLH" style="display:inline;">LLH: 
+                <span id="coordinatesLLH" style="display:inline;">LLh: 
                     <span id="geodeticLat" style="display:inline;">40.09029479</span>, 
                     <span id="geodeticLon" style="display:inline;">-105.18505761</span>, 
-                    <span id="geodeticAlt" style="display:inline;">1560.089</span>
+                    <span id="geodeticAlt" style="display:inline;">1560.089</span> (APC)
                 </span><br>
                 <span id="coordinatesECEF" style="display:inline;">ECEF: 
                     <span id="ecefX" style="display:inline;">-1280206.568</span>, 
@@ -1972,12 +1972,15 @@ static const char *index_html = R"=====(
                             </div>
 
                             <div class="form-group row">
-                                <div class="box-margin40 col-5">
-                                    <button type="button" id="useECEFCoordinates" class="btn btn-primary"
+                                <div style="margin-bottom:5px;">
+                                    <button type="button" id="useECEFCoordinates" class="btn btn-primary box-margin20"
                                         onClick="useECEFCoordinates()">Use Current Coordinates</button>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Copies the current ECEF corrdinates into the fixed X/Y/Z boxes.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
                                 </div>
                             </div>
-
                         </div>
 
                         <div class="mt-3">
@@ -2029,7 +2032,7 @@ static const char *index_html = R"=====(
 
                             <div class="form-group row">
                                 <label for="antennaReferencePoint"
-                                    class="box-margin40 col-sm-3 col-5 col-form-label">Antenna Reference Point(mm):
+                                    class="box-margin40 col-5 col-form-label">Antenna Reference Point(mm):
                                     <span class="tt" data-bs-placement="right"
                                     title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
@@ -2042,9 +2045,13 @@ static const char *index_html = R"=====(
                             </div>
 
                             <div class="form-group row">
-                                <div class="box-margin40 col-5">
-                                    <button type="button" id="useGeodeticCoordinates" class="btn btn-primary"
+                                <div style="margin-bottom:5px;">
+                                    <button type="button" id="useGeodeticCoordinates" class="btn btn-primary box-margin20"
                                         onClick="useGeodeticCoordinates()">Use Current Coordinates</button>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Copies the current LLh into the fixed LLh boxes.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
                                 </div>
                             </div>
 

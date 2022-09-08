@@ -344,6 +344,10 @@ unsigned long timeSinceLastIncomingSetting = 0;
 
 //PointPerfect Corrections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#if __has_include("tokens.h")
+# include "tokens.h"
+#endif
+
 float lBandEBNO = 0.0; //Used on system status menu
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

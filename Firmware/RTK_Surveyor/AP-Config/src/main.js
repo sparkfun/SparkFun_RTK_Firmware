@@ -99,11 +99,6 @@ function parseIncoming(msg) {
             || id.includes("profile6Name")
             || id.includes("profile7Name")
             || id.includes("radioMAC")
-            // || id.includes("peerMAC0")
-            // || id.includes("peerMAC1")
-            // || id.includes("peerMAC2")
-            // || id.includes("peerMAC3")
-            // || id.includes("peerMAC4")
         ) {
             ge(id).innerHTML = val;
         }
@@ -147,7 +142,7 @@ function parseIncoming(msg) {
         }
         else if (id.includes("espnowPeerCount")) {
             if(val > 0)
-            ge("peerMACs").innerHTML = "";
+                ge("peerMACs").innerHTML = "";
         }
         else if (id.includes("peerMAC")) {
             ge("peerMACs").innerHTML += val + "<br>";
@@ -611,12 +606,6 @@ function resetToFactoryDefaults() {
     ws.send("factoryDefaultReset,1,");
 }
 
-function forgetPairedRadios() {
-    ge("btnForgetRadiosMsg").innerHTML = "All radios forgotten.";
-    ge("peerMACs").innerHTML = "None";
-    ws.send("forgetEspNowPeers,1,");
-}
-
 function zeroElement(id) {
     ge(id).value = 0;
 }
@@ -757,6 +746,17 @@ function firmwareUploadStatus(val) {
 function firmwareUploadComplete() {
     show("firmwareUploadComplete");
     hide("mainPage");
+}
+
+function forgetPairedRadios() {
+    ge("btnForgetRadiosMsg").innerHTML = "All radios forgotten.";
+    ge("peerMACs").innerHTML = "None";
+    ws.send("forgetEspNowPeers,1,");
+}
+
+function btnResetProfile() {
+    ge("resetProfileMsg").innerHTML = "Resetting profile.";
+    ws.send("resetProfile,1,");
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {

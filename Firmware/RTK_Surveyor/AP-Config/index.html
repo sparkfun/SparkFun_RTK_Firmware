@@ -179,6 +179,18 @@
                         <p id="profileChangeMessage" class="inlineSuccess"></p>
                     </div>
 
+                    <div class="form-group row">
+                        <div style="margin-bottom:5px;">
+                            <button type="button" id="btnResetProfile" class="btn btn-primary box-margin20 col-sm-3"
+                                onClick="btnResetProfile()">Reset Profile</button>
+                            <span class="tt" data-bs-placement="right"
+                                title="Reset selected profile to factory defaults.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
+                        <p id="resetProfileMsg" class="inlineSuccess"></p>
+                    </div>
+
                 </div>
             </div>
 
@@ -1438,10 +1450,10 @@
 
                         <div class="form-group row">
                             <div style="margin-bottom:5px;">
-                                <button type="button" id="btnPairRadio" class="btn btn-primary box-margin20 col-sm-3"
-                                    onClick="pairRadio()">Pair Radio</button>
+                                <button type="button" id="btnPairRadios" class="btn btn-primary box-margin20 col-sm-3"
+                                    onClick="pairRadios()" disabled="true">Pair Radios</button>
                                 <span class="tt" data-bs-placement="right"
-                                    title="To connect two devices, place both into pair mode. Units will swap MAC addresses and begin communicating at next power on.">
+                                    title="To connect two devices, exit AP Config mode, and press setup button until 'Pair' is seen. Units will swap MAC addresses and begin communicating at next power on.">
                                     <span class="icon-info-circle text-primary ms-2"></span>
                                 </span>
                             </div>

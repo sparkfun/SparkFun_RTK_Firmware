@@ -673,6 +673,24 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     log_d("Sending command: %s\n\r", settingsCSV);
     ws.textAll(String(settingsCSV));
   }
+  else if (strcmp(settingName, "resetProfile") == 0)
+  {
+    //Overwrite our current settings with defaults
+    Settings tempSettings;
+    settings = tempSettings;
+
+    recordSystemSettings(); //Overwrite profile file and NVM with these settings
+
+    //Get bitmask of active profiles
+    activeProfiles = loadProfileNames();
+
+    //Send settings to browser
+    char settingsCSV[AP_CONFIG_SETTING_SIZE];
+    memset(settingsCSV, 0, sizeof(settingsCSV));
+    createSettingsString(settingsCSV);
+    log_d("Sending command: %s\n\r", settingsCSV);
+    ws.textAll(String(settingsCSV));
+  }
   else if (strcmp(settingName, "forgetEspNowPeers") == 0)
   {
     //Forget all ESP-Now Peers

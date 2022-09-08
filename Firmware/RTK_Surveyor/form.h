@@ -122,11 +122,6 @@ function parseIncoming(msg) {
             || id.includes("profile6Name")
             || id.includes("profile7Name")
             || id.includes("radioMAC")
-            // || id.includes("peerMAC0")
-            // || id.includes("peerMAC1")
-            // || id.includes("peerMAC2")
-            // || id.includes("peerMAC3")
-            // || id.includes("peerMAC4")
         ) {
             ge(id).innerHTML = val;
         }
@@ -170,7 +165,7 @@ function parseIncoming(msg) {
         }
         else if (id.includes("espnowPeerCount")) {
             if(val > 0)
-            ge("peerMACs").innerHTML = "";
+                ge("peerMACs").innerHTML = "";
         }
         else if (id.includes("peerMAC")) {
             ge("peerMACs").innerHTML += val + "<br>";
@@ -634,12 +629,6 @@ function resetToFactoryDefaults() {
     ws.send("factoryDefaultReset,1,");
 }
 
-function forgetPairedRadios() {
-    ge("btnForgetRadios").innerHTML = "All radios forgotten.";
-    ge("peerMACs").innerHTML = "None";
-    ws.send("forgetEspNowPeers,1,");
-}
-
 function zeroElement(id) {
     ge(id).value = 0;
 }
@@ -780,6 +769,17 @@ function firmwareUploadStatus(val) {
 function firmwareUploadComplete() {
     show("firmwareUploadComplete");
     hide("mainPage");
+}
+
+function forgetPairedRadios() {
+    ge("btnForgetRadiosMsg").innerHTML = "All radios forgotten.";
+    ge("peerMACs").innerHTML = "None";
+    ws.send("forgetEspNowPeers,1,");
+}
+
+function btnResetProfile() {
+    ge("resetProfileMsg").innerHTML = "Resetting profile.";
+    ws.send("resetProfile,1,");
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -1115,6 +1115,18 @@ static const char *index_html = R"=====(
                             <p id="profileNameError" class="inlineError"></p>
                         </div>
                         <p id="profileChangeMessage" class="inlineSuccess"></p>
+                    </div>
+
+                    <div class="form-group row">
+                        <div style="margin-bottom:5px;">
+                            <button type="button" id="btnResetProfile" class="btn btn-primary box-margin20 col-sm-3"
+                                onClick="btnResetProfile()">Reset Profile</button>
+                            <span class="tt" data-bs-placement="right"
+                                title="Reset selected profile to factory defaults.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
+                        <p id="resetProfileMsg" class="inlineSuccess"></p>
                     </div>
 
                 </div>
@@ -2376,10 +2388,10 @@ static const char *index_html = R"=====(
 
                         <div class="form-group row">
                             <div style="margin-bottom:5px;">
-                                <button type="button" id="btnPairRadio" class="btn btn-primary box-margin20 col-sm-3"
-                                    onClick="pairRadio()">Pair Radio</button>
+                                <button type="button" id="btnPairRadios" class="btn btn-primary box-margin20 col-sm-3"
+                                    onClick="pairRadios()" disabled="true">Pair Radios</button>
                                 <span class="tt" data-bs-placement="right"
-                                    title="To connect two devices, place both into pair mode. Units will swap MAC addresses and begin communicating at next power on.">
+                                    title="To connect two devices, exit AP Config mode, and press setup button until 'Pair' is seen. Units will swap MAC addresses and begin communicating at next power on.">
                                     <span class="icon-info-circle text-primary ms-2"></span>
                                 </span>
                             </div>
@@ -2397,7 +2409,7 @@ static const char *index_html = R"=====(
                             <div class="form-check">
                                 <button type="button" id="btnForgetRadios" class="btn btn-primary"
                                     onClick="forgetPairedRadios()" disabled>Forget All Radios</button>
-                                <p id="btnForgetRadios" class="inlineSuccess"></p>
+                                <p id="btnForgetRadiosMsg" class="inlineSuccess"></p>
                             </div>
                         </div>
 

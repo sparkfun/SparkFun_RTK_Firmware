@@ -167,6 +167,8 @@ void menuPointPerfectKeys()
 bool pointperfectProvisionDevice()
 {
 #ifdef COMPILE_WIFI
+  bluetoothStop(); //Free heap before starting secure client (requires ~70KB)
+
   DynamicJsonDocument * jsonZtp = NULL;
   char * tempHolder = NULL;
   bool retVal = false;
@@ -296,6 +298,8 @@ bool pointperfectProvisionDevice()
   if (jsonZtp)
     delete jsonZtp;
 
+  bluetoothStart();
+  
   return (retVal);
 #else
   return (false);

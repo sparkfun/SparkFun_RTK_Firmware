@@ -522,7 +522,7 @@ void pushGPGGA(NMEA_GGA_data_t *nmeaData)
     {
       lastGGAPush = millis();
 
-      log_d("Pushing GGA to server: ", (const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+      log_d("Pushing GGA to server: %s", (const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
 
       //Push our current GGA sentence to caster
       ntripClient->print((const char *)nmeaData->nmea);

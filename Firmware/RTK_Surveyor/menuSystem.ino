@@ -71,7 +71,7 @@ void menuSystem()
 
 #ifdef COMPILE_WIFI
     Serial.print("WiFi MAC Address: ");
-    Serial.printf("%02X-%02X-%02X-%02X-%02X-%02X\r\n", wifiMACAddress[0],
+    Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X\r\n", wifiMACAddress[0],
                   wifiMACAddress[1], wifiMACAddress[2], wifiMACAddress[3],
                   wifiMACAddress[4], wifiMACAddress[5]);
     if (wifiState == WIFI_CONNECTED)
@@ -81,26 +81,23 @@ void menuSystem()
     //Display the uptime
     uint64_t uptimeMilliseconds = millis();
     uint32_t uptimeDays = 0;
-    while (uptimeMilliseconds >= MILLISECONDS_IN_A_DAY) {
-      uptimeMilliseconds -= MILLISECONDS_IN_A_DAY;
-      uptimeDays += 1;
-    }
     byte uptimeHours = 0;
-    while (uptimeMilliseconds >= MILLISECONDS_IN_AN_HOUR) {
-      uptimeMilliseconds -= MILLISECONDS_IN_AN_HOUR;
-      uptimeHours += 1;
-    }
     byte uptimeMinutes = 0;
-    while (uptimeMilliseconds >= MILLISECONDS_IN_A_MINUTE) {
-      uptimeMilliseconds -= MILLISECONDS_IN_A_MINUTE;
-      uptimeMinutes += 1;
-    }
     byte uptimeSeconds = 0;
-    while (uptimeMilliseconds >= MILLISECONDS_IN_A_SECOND) {
-      uptimeMilliseconds -= MILLISECONDS_IN_A_SECOND;
-      uptimeSeconds += 1;
-    }
-    Serial.print("Uptime: ");
+
+    uptimeDays = uptimeMilliseconds / MILLISECONDS_IN_A_DAY;
+    uptimeMilliseconds %= MILLISECONDS_IN_A_DAY;
+
+    uptimeHours = uptimeMilliseconds / MILLISECONDS_IN_AN_HOUR;
+    uptimeMilliseconds %= MILLISECONDS_IN_AN_HOUR;
+
+    uptimeMinutes = uptimeMilliseconds / MILLISECONDS_IN_A_MINUTE;
+    uptimeMilliseconds %= MILLISECONDS_IN_A_MINUTE;
+
+    uptimeSeconds = uptimeMilliseconds / MILLISECONDS_IN_A_SECOND;
+    uptimeMilliseconds %= MILLISECONDS_IN_A_SECOND;
+
+    Serial.print("System Uptime: ");
     Serial.printf("%d %02d:%02d:%02d.%03lld (Resets: %d)\r\n",
                   uptimeDays,
                   uptimeHours,
@@ -108,6 +105,104 @@ void menuSystem()
                   uptimeSeconds,
                   uptimeMilliseconds,
                   settings.resetCount);
+
+    //Display NTRIP Client status and uptime
+    if (settings.enableNtripClient == true && (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX))
+    {
+      Serial.print("NTRIP Client ");
+      switch (ntripClientState)
+      {
+        case NTRIP_CLIENT_OFF:
+          Serial.print("Disconnected");
+          break;
+        case NTRIP_CLIENT_ON:
+        case NTRIP_CLIENT_WIFI_CONNECTING:
+        case NTRIP_CLIENT_WIFI_CONNECTED:
+        case NTRIP_CLIENT_CONNECTING:
+          Serial.print("Connecting");
+          break;
+        case NTRIP_CLIENT_CONNECTED:
+          Serial.print("Connected");
+          break;
+        default:
+          Serial.printf("Unknown: %d", ntripClientState);
+          break;
+      }
+      Serial.printf(" - %s/%s:%d", settings.ntripClient_CasterHost, settings.ntripClient_MountPoint, settings.ntripClient_CasterPort);
+
+      uptimeMilliseconds = ntripClientTimer - ntripClientStartTime;
+
+      uptimeDays = uptimeMilliseconds / MILLISECONDS_IN_A_DAY;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_DAY;
+
+      uptimeHours = uptimeMilliseconds / MILLISECONDS_IN_AN_HOUR;
+      uptimeMilliseconds %= MILLISECONDS_IN_AN_HOUR;
+
+      uptimeMinutes = uptimeMilliseconds / MILLISECONDS_IN_A_MINUTE;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_MINUTE;
+
+      uptimeSeconds = uptimeMilliseconds / MILLISECONDS_IN_A_SECOND;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_SECOND;
+
+      Serial.print(" Uptime: ");
+      Serial.printf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n",
+                    uptimeDays,
+                    uptimeHours,
+                    uptimeMinutes,
+                    uptimeSeconds,
+                    uptimeMilliseconds,
+                    ntripClientConnectionAttempts);
+    }
+
+    //Display NTRIP Server status and uptime
+    if (settings.enableNtripServer == true && (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING))
+    {
+      Serial.print("NTRIP Server ");
+      switch (ntripServerState)
+      {
+        case NTRIP_SERVER_OFF:
+          Serial.print("Disconnected");
+          break;
+        case NTRIP_SERVER_ON:
+        case NTRIP_SERVER_WIFI_CONNECTING:
+        case NTRIP_SERVER_WIFI_CONNECTED:
+        case NTRIP_SERVER_WAIT_GNSS_DATA:
+        case NTRIP_SERVER_CONNECTING:
+        case NTRIP_SERVER_AUTHORIZATION:
+          Serial.print("Connecting");
+          break;
+        case NTRIP_SERVER_CASTING:
+          Serial.print("Connected");
+          break;
+        default:
+          Serial.printf("Unknown: %d", ntripServerState);
+          break;
+      }
+      Serial.printf(" - %s/%s:%d", settings.ntripServer_CasterHost, settings.ntripServer_MountPoint, settings.ntripServer_CasterPort);
+
+      uptimeMilliseconds = ntripServerTimer - ntripServerStartTime;
+
+      uptimeDays = uptimeMilliseconds / MILLISECONDS_IN_A_DAY;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_DAY;
+
+      uptimeHours = uptimeMilliseconds / MILLISECONDS_IN_AN_HOUR;
+      uptimeMilliseconds %= MILLISECONDS_IN_AN_HOUR;
+
+      uptimeMinutes = uptimeMilliseconds / MILLISECONDS_IN_A_MINUTE;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_MINUTE;
+
+      uptimeSeconds = uptimeMilliseconds / MILLISECONDS_IN_A_SECOND;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_SECOND;
+
+      Serial.print(" Uptime: ");
+      Serial.printf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n",
+                    uptimeDays,
+                    uptimeHours,
+                    uptimeMinutes,
+                    uptimeSeconds,
+                    uptimeMilliseconds,
+                    ntripServerConnectionAttempts);
+    }
 
     if (settings.enableSD == true)
     {

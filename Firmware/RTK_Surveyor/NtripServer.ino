@@ -84,6 +84,8 @@ static uint32_t ntripServerStateLastDisplayed = 0;
 //  * Monitor last RTCM byte received for frame counting
 static uint32_t ntripServerTimer;
 
+static uint32_t ntripServerStartTime;
+
 //----------------------------------------
 // NTRIP Server Routines - compiled out
 //----------------------------------------
@@ -416,6 +418,7 @@ void ntripServerUpdate()
       else
       {
         //WiFi connection established
+        ntripServerStartTime = millis();
         ntripServerSetState(NTRIP_SERVER_WIFI_CONNECTED);
 
         // Start the SD card server

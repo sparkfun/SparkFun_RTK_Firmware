@@ -27,8 +27,8 @@ const int FIRMWARE_VERSION_MINOR = 5;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
-//#define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
-//#define COMPILE_BT //Comment out to remove Bluetooth functionality
+#define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
+#define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
@@ -377,7 +377,7 @@ const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 uint8_t wifiMACAddress[6]; //Display this address in the system menu
 uint8_t btMACAddress[6];   //Display this address when Bluetooth is enabled, otherwise display wifiMACAddress
 char deviceName[70]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
-const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
+const uint16_t menuTimeout = 60 * 10; //Menus will exit/timeout after this number of seconds
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
 bool inMainMenu = false; //Set true when in the serial config menu system.

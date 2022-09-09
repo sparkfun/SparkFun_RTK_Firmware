@@ -30,8 +30,6 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
 
 void menuPointPerfectKeys()
 {
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, caster credentials, etc).
-
   while (1)
   {
     Serial.println();
@@ -100,12 +98,12 @@ void menuPointPerfectKeys()
     if (incoming == 1)
     {
       Serial.print("Enter Device Profile Token: ");
-      readLine(settings.pointPerfectDeviceProfileToken, sizeof(settings.pointPerfectDeviceProfileToken), menuTimeoutExtended);
+      readLine(settings.pointPerfectDeviceProfileToken, sizeof(settings.pointPerfectDeviceProfileToken), menuTimeout);
     }
     else if (incoming == 2)
     {
       Serial.print("Enter Current Key: ");
-      readLine(settings.pointPerfectCurrentKey, sizeof(settings.pointPerfectCurrentKey), menuTimeoutExtended);
+      readLine(settings.pointPerfectCurrentKey, sizeof(settings.pointPerfectCurrentKey), menuTimeout);
     }
     else if (incoming == 3)
     {
@@ -135,7 +133,7 @@ void menuPointPerfectKeys()
     else if (incoming == 4)
     {
       Serial.print("Enter Next Key: ");
-      readLine(settings.pointPerfectNextKey, sizeof(settings.pointPerfectNextKey), menuTimeoutExtended);
+      readLine(settings.pointPerfectNextKey, sizeof(settings.pointPerfectNextKey), menuTimeout);
     }
     else if (incoming == 5)
     {
@@ -517,20 +515,18 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
 //https://www.includehelp.com/c-programs/validate-date.aspx
 bool getDate(uint8_t &dd, uint8_t &mm, uint16_t &yy)
 {
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, caster credentials, etc).
-
   char temp[10];
 
   Serial.print("Enter Day: ");
-  readLine(temp, sizeof(temp), menuTimeoutExtended);
+  readLine(temp, sizeof(temp), menuTimeout);
   dd = atoi(temp);
 
   Serial.print("Enter Month: ");
-  readLine(temp, sizeof(temp), menuTimeoutExtended);
+  readLine(temp, sizeof(temp), menuTimeout);
   mm = atoi(temp);
 
   Serial.print("Enter Year (YYYY): ");
-  readLine(temp, sizeof(temp), menuTimeoutExtended);
+  readLine(temp, sizeof(temp), menuTimeout);
   yy = atoi(temp);
 
   //check year
@@ -935,8 +931,6 @@ void beginLBand()
 void menuPointPerfect()
 {
 #ifdef COMPILE_L_BAND
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, caster credentials, etc).
-
   while (1)
   {
     Serial.println();
@@ -987,12 +981,12 @@ void menuPointPerfect()
     else if (incoming == '2')
     {
       Serial.print("Enter Home WiFi SSID: ");
-      readLine(settings.home_wifiSSID, sizeof(settings.home_wifiSSID), menuTimeoutExtended);
+      readLine(settings.home_wifiSSID, sizeof(settings.home_wifiSSID), menuTimeout);
     }
     else if (incoming == '3')
     {
       Serial.printf("Enter password for Home WiFi network %s: ", settings.home_wifiSSID);
-      readLine(settings.home_wifiPW, sizeof(settings.home_wifiPW), menuTimeoutExtended);
+      readLine(settings.home_wifiPW, sizeof(settings.home_wifiPW), menuTimeout);
     }
     else if (incoming == '4')
     {

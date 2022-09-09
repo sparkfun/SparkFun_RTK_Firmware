@@ -137,7 +137,6 @@ void menuMain()
 //Factory reset - updatesZEDSettings = true by default
 void menuUserProfiles()
 {
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, ECEF coords, etc).
   uint8_t originalProfileNumber = profileNumber;
 
   bool forceReset = false; //If we reset a profile to default, the profile number has not changed, but we still need to reset
@@ -177,7 +176,7 @@ void menuUserProfiles()
     else if (incoming == MAX_PROFILE_COUNT + 1)
     {
       Serial.print("Enter new profile name: ");
-      readLine(settings.profileName, sizeof(settings.profileName), menuTimeoutExtended);
+      readLine(settings.profileName, sizeof(settings.profileName), menuTimeout);
       recordSystemSettings(); //We need to update this immediately in case user lists the available profiles again
       setProfileName(profileNumber);
     }

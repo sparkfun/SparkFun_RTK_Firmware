@@ -71,6 +71,7 @@ static int ntripClientConnectionAttempts;
 //  * Measure the connection response time
 //  * Receive NTRIP data timeout
 static uint32_t ntripClientTimer;
+static uint32_t ntripClientStartTime; //For calculating uptime
 
 //Last time the NTRIP client state was displayed
 static uint32_t lastNtripClientState = 0;
@@ -99,7 +100,7 @@ bool ntripClientConnect()
   if (token != NULL)
   {
     token = strtok(NULL, "//"); //Advance to data after //
-    if(token != NULL)
+    if (token != NULL)
       strcpy(settings.ntripClient_CasterHost, token);
   }
 
@@ -324,8 +325,16 @@ void ntripClientUpdate()
 
     //Start WiFi
     case NTRIP_CLIENT_ON:
-      wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
-      ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTING);
+      if (strlen(settings.ntripClient_wifiSSID) == 0)
+      {
+        Serial.println("Error: Please enter SSID before starting NTRIP Client");
+        ntripClientSetState(NTRIP_CLIENT_OFF);
+      }
+      else
+      {
+        wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
+        ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTING);
+      }
       break;
 
     case NTRIP_CLIENT_WIFI_CONNECTING:
@@ -446,6 +455,7 @@ void ntripClientUpdate()
 
           //We don't use a task because we use I2C hardware (and don't have a semphore).
           online.ntripClient = true;
+          ntripClientStartTime = millis();
           ntripClientAllowMoreConnections();
           ntripClientSetState(NTRIP_CLIENT_CONNECTED);
         }

@@ -101,7 +101,7 @@ bool ntripServerConnectCaster()
   if (token != NULL)
   {
     token = strtok(NULL, "//"); //Advance to data after //
-    if(token != NULL)
+    if (token != NULL)
       strcpy(settings.ntripServer_CasterHost, token);
   }
 
@@ -358,22 +358,30 @@ void ntripServerUpdate()
 
     //Start WiFi
     case NTRIP_SERVER_ON:
-      //Pause until connection timeout has passed
-      if (millis() - ntripServerLastConnectionAttempt > ntripServerConnectionAttemptTimeout)
+      if (strlen(settings.ntripServer_wifiSSID) == 0)
       {
-        ntripServerLastConnectionAttempt = millis();
-        wifiStart(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
-        ntripServerSetState(NTRIP_SERVER_WIFI_CONNECTING);
+        Serial.println("Error: Please enter SSID before starting NTRIP Server");
+        ntripClientSetState(NTRIP_SERVER_OFF);
       }
       else
       {
-        if (millis() - ntripServerTimeoutPrint > 1000)
+        //Pause until connection timeout has passed
+        if (millis() - ntripServerLastConnectionAttempt > ntripServerConnectionAttemptTimeout)
         {
-          ntripServerTimeoutPrint = millis();
-          Serial.printf("NTRIP Server connection timeout wait: %d of %d seconds \n\r",
-                        (millis() - ntripServerLastConnectionAttempt) / 1000,
-                        ntripServerConnectionAttemptTimeout / 1000
-                       );
+          ntripServerLastConnectionAttempt = millis();
+          wifiStart(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
+          ntripServerSetState(NTRIP_SERVER_WIFI_CONNECTING);
+        }
+        else
+        {
+          if (millis() - ntripServerTimeoutPrint > 1000)
+          {
+            ntripServerTimeoutPrint = millis();
+            Serial.printf("NTRIP Server connection timeout wait: %d of %d seconds \n\r",
+                          (millis() - ntripServerLastConnectionAttempt) / 1000,
+                          ntripServerConnectionAttemptTimeout / 1000
+                         );
+          }
         }
       }
       break;

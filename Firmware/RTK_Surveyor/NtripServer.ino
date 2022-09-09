@@ -50,7 +50,7 @@
 // Constants - compiled out
 //----------------------------------------
 
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
 
 //Give up connecting after this number of attempts
 //Connection attempts are throttled to increase the time between attempts
@@ -221,7 +221,7 @@ void ntripServerSetState(byte newState)
 //This function gets called as each RTCM byte comes in
 void ntripServerProcessRTCM(uint8_t incoming)
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
 
   if (ntripServerState == NTRIP_SERVER_CASTING)
   {
@@ -277,7 +277,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
 //Start the NTRIP server
 void ntripServerStart()
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   //Stop NTRIP server and WiFi
   ntripServerStop(true); //Don't allocate new wifiClient
 
@@ -303,7 +303,7 @@ void ntripServerStart()
 //Stop the NTRIP server
 void ntripServerStop(bool wifiClientAllocated)
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   if (ntripServer)
   {
     //Break the NTRIP server connection if necessary
@@ -338,7 +338,7 @@ void ntripServerStop(bool wifiClientAllocated)
 //Update the NTRIP server state machine
 void ntripServerUpdate()
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   //Periodically display the NTRIP server state
   if (settings.enablePrintNtripServerState && ((millis() - ntripServerStateLastDisplayed) > 15000))
   {

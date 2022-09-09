@@ -35,7 +35,7 @@
 // Constants - compiled out
 //----------------------------------------
 
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
 
 //Size of the credentials buffer in bytes
 static const int CREDENTIALS_BUFFER_SIZE = 512;
@@ -246,7 +246,7 @@ void ntripClientSetState(byte newState)
 
 void ntripClientStart()
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   //Stop NTRIP client and WiFi
   ntripClientStop(true); //Do not allocate new wifiClient
 
@@ -274,7 +274,7 @@ void ntripClientStart()
 //Stop the NTRIP client
 void ntripClientStop(bool done)
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   if (ntripClient)
   {
     //Break the NTRIP client connection if necessary
@@ -309,7 +309,7 @@ void ntripClientStop(bool done)
 //Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
 void ntripClientUpdate()
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   //Periodically display the NTRIP client state
   if (settings.enablePrintNtripClientState && ((millis() - lastNtripClientState) > 15000))
   {
@@ -514,7 +514,7 @@ void ntripClientUpdate()
 
 void pushGPGGA(NMEA_GGA_data_t *nmeaData)
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   //Provide the caster with our current position as needed
   if (ntripClient->connected() == true && settings.ntripClient_TransmitGGA == true)
   {

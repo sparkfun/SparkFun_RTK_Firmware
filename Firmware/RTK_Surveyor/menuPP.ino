@@ -1,4 +1,4 @@
-#ifdef  COMPILE_L_BAND
+#ifdef COMPILE_L_BAND
 
 //----------------------------------------
 // Locals - compiled out
@@ -934,7 +934,7 @@ void beginLBand()
 //Download keys
 void menuPointPerfect()
 {
-#ifdef  COMPILE_L_BAND
+#ifdef COMPILE_L_BAND
   int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, caster credentials, etc).
 
   while (1)
@@ -1078,7 +1078,7 @@ void menuPointPerfect()
 //If a certain amount of time has elapsed between last decryption, turn off L-Band icon
 void updateLBand()
 {
-#ifdef  COMPILE_L_BAND
+#ifdef COMPILE_L_BAND
   if (online.lbandCorrections == true)
   {
     i2cLBand.checkUblox(); // Check for the arrival of new PMP data and process it.

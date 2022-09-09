@@ -653,7 +653,7 @@ void updateSystemState()
         }
         break;
 
-#ifdef  COMPILE_L_BAND
+#ifdef COMPILE_L_BAND
       case (STATE_KEYS_STARTED):
         {
           if (rtcWaitTime == 0) rtcWaitTime = millis();
@@ -1036,7 +1036,7 @@ void changeState(SystemState newState)
       case (STATE_PROFILE):
         Serial.print("State: Profile");
         break;
-#ifdef  COMPILE_L_BAND
+#ifdef COMPILE_L_BAND
       case (STATE_KEYS_STARTED):
         Serial.print("State: Keys Started ");
         break;

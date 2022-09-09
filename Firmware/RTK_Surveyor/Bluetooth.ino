@@ -27,7 +27,7 @@ Bluetooth States:
 // Locals - compiled out
 //----------------------------------------
 
-#ifdef  COMPILE_BT
+#ifdef COMPILE_BT
 BTSerialInterface *bluetoothSerial;
 static volatile byte bluetoothState = BT_OFF;
 

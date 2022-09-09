@@ -57,7 +57,7 @@ static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
 // Locals - compiled out
 //----------------------------------------
 
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
 
 //WiFi Timer usage:
 //  * Measure connection time to access point
@@ -148,7 +148,7 @@ void wifiStartAP()
 {
   //When testing, operate on local WiFi instead of AP
   //#define LOCAL_WIFI_TESTING 1
-#ifdef  LOCAL_WIFI_TESTING
+#ifdef LOCAL_WIFI_TESTING
   //Connect to local router
 #define WIFI_SSID "TRex"
 #define WIFI_PASSWORD "parachutes"
@@ -203,7 +203,7 @@ void wifiStartAP()
 //Determine if the WiFi connection has timed out
 bool wifiConnectionTimeout()
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   if ((millis() - wifiTimer) <= WIFI_CONNECTION_TIMEOUT)
     return false;
   Serial.println("WiFi connection timeout!");
@@ -214,7 +214,7 @@ bool wifiConnectionTimeout()
 //Send NMEA data to the NMEA clients
 void wifiNmeaData(uint8_t * data, uint16_t length)
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   static IPAddress ipAddress[WIFI_MAX_NMEA_CLIENTS];
   int index;
   static uint32_t lastNmeaConnectAttempt;
@@ -377,7 +377,7 @@ void wifiStart(char* ssid, char* pw)
 //If ESP NOW is active, leave WiFi on enough for ESP NOW
 void wifiStop()
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   stopWebServer();
 
   if (wifiState == WIFI_OFF)
@@ -441,7 +441,7 @@ void wifiStop()
 void wifiUpdate()
 {
 
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   //Periodically display the WiFi state
   if (settings.enablePrintWifiState && ((millis() - lastWifiState) > 15000))
   {

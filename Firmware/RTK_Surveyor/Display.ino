@@ -2510,7 +2510,7 @@ const uint8_t * getMacAddress()
 {
   static const uint8_t zero[6] = {0, 0, 0, 0, 0, 0};
 
-#ifdef  COMPILE_BT
+#ifdef COMPILE_BT
   if (bluetoothState != BT_OFF)
     return btMACAddress;
 #ifdef COMPILE_WIFI

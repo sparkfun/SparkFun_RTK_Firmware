@@ -108,7 +108,7 @@ void menuGNSS()
       }
       else
       {
-        setMeasurementRates(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate and settings.navigationRate
+        setMeasurementRates(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
         //Settings recorded to NVM and file at main menu exit
       }
     }
@@ -122,7 +122,7 @@ void menuGNSS()
       }
       else
       {
-        setMeasurementRates(rate); //This will set settings.measurementRate and settings.navigationRate
+        setMeasurementRates(rate); //This will set settings.measurementRate, settings.navigationRate, and GSV message
         //Settings recorded to NVM and file at main menu exit
       }
     }
@@ -291,7 +291,7 @@ void menuConstellations()
 //measurementRate > 25 & <= 65535
 //navigationRate >= 1 && <= 127
 //We give preference to limiting a measurementRate to 30s or below due to reported problems with measRates above 30.
-void setMeasurementRates(float secondsBetweenSolutions)
+bool setMeasurementRates(float secondsBetweenSolutions)
 {
   uint16_t measRate = 0; //Calculate these locally and then attempt to apply them to ZED at completion
   uint16_t navRate = 0;
@@ -340,8 +340,11 @@ void setMeasurementRates(float secondsBetweenSolutions)
   }
   else
   {
-    Serial.println("menuGNSS: Failed to set measurement and navigation rates");
+    Serial.println("Failed to set measurement and navigation rates");
+    return(false);
   }
+
+  return(true);
 }
 
 //We need to know our overall measurement frequency for things like setting the GSV NMEA sentence rate.

@@ -80,16 +80,12 @@ bool configureUbloxModuleRover()
 
   //The last thing we do is set output rate.
   response = true; //Reset
-  if (i2cGNSS.getMeasurementRate() != settings.measurementRate)
+
+  if (i2cGNSS.getMeasurementRate() != settings.measurementRate || i2cGNSS.getNavigationRate() != settings.navigationRate)
   {
-    response &= i2cGNSS.setMeasurementRate(settings.measurementRate);
+    float secondsBetweenSolutions = (settings.measurementRate * settings.navigationRate) / 1000.0;
+    setMeasurementRates(secondsBetweenSolutions); //This will set settings.measurementRate, settings.navigationRate, and GSV message
   }
-  if (i2cGNSS.getNavigationRate() != settings.navigationRate)
-  {
-    response &= i2cGNSS.setNavigationRate(settings.navigationRate);
-  }
-  if (response == false)
-    Serial.println("Set Nav Rate failed");
 
   response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
   if (response == false)

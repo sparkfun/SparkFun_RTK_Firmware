@@ -255,15 +255,19 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
 //Events triggered by web sockets
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
+char *settingsCSV; //Push large array onto heap
+
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
   if (type == WS_EVT_CONNECT) {
-    char settingsCSV[AP_CONFIG_SETTING_SIZE];
-    memset(settingsCSV, 0, sizeof(settingsCSV));
+    settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+    memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
+
     createSettingsString(settingsCSV);
     log_d("Sending command: %s\n\r", settingsCSV);
     client->text(settingsCSV);
     wifiSetState(WIFI_CONNECTED);
+    free(settingsCSV);
   }
   else if (type == WS_EVT_DISCONNECT) {
     log_d("Websocket client disconnected");
@@ -272,6 +276,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   else if (type == WS_EVT_DATA) {
     for (int i = 0; i < len; i++) {
       incomingSettings[incomingSettingsSpot++] = data[i];
+      incomingSettingsSpot %= AP_CONFIG_SETTING_SIZE;
     }
     timeSinceLastIncomingSetting = millis();
   }
@@ -675,9 +680,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   }
   else if (strcmp(settingName, "resetProfile") == 0)
   {
-    //Overwrite our current settings with defaults
-    Settings tempSettings;
-    settings = tempSettings;
+    settingsToDefaults(); //Overwrite our current settings with defaults
 
     recordSystemSettings(); //Overwrite profile file and NVM with these settings
 

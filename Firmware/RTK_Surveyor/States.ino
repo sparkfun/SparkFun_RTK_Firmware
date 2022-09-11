@@ -606,6 +606,7 @@ void updateSystemState()
         break;
       case (STATE_WIFI_CONFIG):
         {
+
           if (incomingSettingsSpot > 0)
           {
             //Allow for 750ms before we parse buffer for all data to arrive

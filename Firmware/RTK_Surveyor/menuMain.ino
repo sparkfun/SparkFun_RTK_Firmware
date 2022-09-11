@@ -186,9 +186,7 @@ void menuUserProfiles()
       byte bContinue = getByteChoice(menuTimeout);
       if (bContinue == 'y')
       {
-        //Overwrite our current settings with defaults
-        Settings tempSettings;
-        settings = tempSettings;
+        settingsToDefaults(); //Overwrite our current settings with defaults
 
         recordSystemSettings(); //Overwrite profile file and NVM with these settings
 
@@ -229,8 +227,7 @@ void menuUserProfiles()
         //If this is an empty/new profile slot, overwrite our current settings with defaults
         if (responseLFS == false && responseSD == false)
         {
-          Settings tempSettings;
-          settings = tempSettings;
+          settingsToDefaults();
         }
 
         //Get bitmask of active profiles
@@ -281,10 +278,7 @@ void changeProfileNumber(byte newProfileNumber)
   if (responseLFS == false && responseSD == false)
   {
     Serial.println("Default the settings");
-    //Create a temporary settings struc on the heap (not the stack because it is ~4500 bytes)
-    Settings *tempSettings = new Settings;
-    settings = *tempSettings;
-    delete tempSettings;
+    settingsToDefaults();
   }
 }
 

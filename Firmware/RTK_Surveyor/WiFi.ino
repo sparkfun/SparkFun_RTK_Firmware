@@ -115,7 +115,7 @@ void wifiPeriodicallyDisplayIpAddress()
 }
 
 //Update the state of the WiFi state machine
-void wifiSetState (byte newState)
+void wifiSetState(byte newState)
 {
   if (wifiState == newState)
     Serial.print("*");

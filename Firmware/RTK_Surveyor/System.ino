@@ -590,3 +590,9 @@ void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, char *textMe
 
   sprintf(nmeaMessage, "%s%02X", nmeaTxt, CRC);
 }
+
+//Reset settings struct to default initializers 
+void settingsToDefaults()
+{
+  settings = Settings(); //https://stackoverflow.com/questions/15183429/c-completely-erase-or-reset-all-values-of-a-struct
+}

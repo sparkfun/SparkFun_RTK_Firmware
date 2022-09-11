@@ -67,9 +67,6 @@ static WiFiClient * ntripServer;
 //Count of bytes sent by the NTRIP server to the NTRIP caster
 uint32_t ntripServerBytesSent = 0;
 
-//Count the number of connection attempts
-static int ntripServerConnectionAttempts;
-
 //Throttle the time between connection attempts
 static int ntripServerConnectionAttemptTimeout = 0;
 static uint32_t ntripServerLastConnectionAttempt = 0;
@@ -77,14 +74,6 @@ static uint32_t ntripServerTimeoutPrint = 0;
 
 //Last time the NTRIP server state was displayed
 static uint32_t ntripServerStateLastDisplayed = 0;
-
-//NTRIP server timer usage:
-//  * Measure the connection response time
-//  * Receive RTCM correction data timeout
-//  * Monitor last RTCM byte received for frame counting
-static uint32_t ntripServerTimer;
-
-static uint32_t ntripServerStartTime;
 
 //----------------------------------------
 // NTRIP Server Routines - compiled out

@@ -162,6 +162,22 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 #endif
 
 volatile uint8_t wifiNmeaConnected;
+
+//NTRIP client timer usage:
+//  * Measure the connection response time
+//  * Receive NTRIP data timeout
+static uint32_t ntripClientTimer;
+static uint32_t ntripClientStartTime; //For calculating uptime
+static int ntripClientConnectionAttempts; //Count the number of connection attempts
+
+//NTRIP server timer usage:
+//  * Measure the connection response time
+//  * Receive RTCM correction data timeout
+//  * Monitor last RTCM byte received for frame counting
+static uint32_t ntripServerTimer;
+static uint32_t ntripServerStartTime;
+static int ntripServerConnectionAttempts; //Count the number of connection attempts
+
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration

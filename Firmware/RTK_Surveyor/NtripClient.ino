@@ -64,15 +64,6 @@ static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; //5s between transmission of
 //The WiFi connection to the NTRIP caster to obtain RTCM data.
 static WiFiClient * ntripClient;
 
-//Count the number of connection attempts
-static int ntripClientConnectionAttempts;
-
-//NTRIP client timer usage:
-//  * Measure the connection response time
-//  * Receive NTRIP data timeout
-static uint32_t ntripClientTimer;
-static uint32_t ntripClientStartTime; //For calculating uptime
-
 //Last time the NTRIP client state was displayed
 static uint32_t lastNtripClientState = 0;
 

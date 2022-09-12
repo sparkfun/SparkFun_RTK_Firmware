@@ -381,20 +381,12 @@ void ntripServerUpdate()
     case NTRIP_SERVER_WIFI_CONNECTING:
       if (!wifiIsConnected())
       {
-        //Stop if SSID is not detected
-        if (wifiGetStatus() == WL_NO_SSID_AVAIL)
+        //Throttle if SSID is not detected
+        if (wifiConnectionTimeout() || wifiGetStatus() == WL_NO_SSID_AVAIL)
         {
-          Serial.printf("WiFi network '%s' not found\n\r", settings.ntripServer_wifiSSID);
+          if (wifiGetStatus() == WL_NO_SSID_AVAIL)
+            Serial.printf("WiFi network '%s' not found\n\r", settings.ntripServer_wifiSSID);
 
-          wifiStop();
-
-          paintNtripWiFiFail(4000, false); //True = 'Client', False = 'Server'
-
-          ntripServerStop(true); //Do not allocate new wifiClient
-        }
-        else if (wifiConnectionTimeout())
-        {
-          //Assume AP weak signal, the AP is unable to respond successfully
           if (ntripServerConnectLimitReached())
           {
             Serial.println("NTRIP Server failed to get WiFi. Are your WiFi credentials correct?");

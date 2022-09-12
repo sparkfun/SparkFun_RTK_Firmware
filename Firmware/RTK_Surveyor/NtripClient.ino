@@ -41,7 +41,9 @@
 static const int CREDENTIALS_BUFFER_SIZE = 512;
 
 //Give up connecting after this number of attempts
-static const int MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS = 3;
+//Connection attempts are throttled to increase the time between attempts
+//30 attempts with 5 minute increases will take over 38 hours
+static const int MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS = 30;
 
 //NTRIP caster response timeout
 static const uint32_t NTRIP_CLIENT_RESPONSE_TIMEOUT = 10 * 1000; //Milliseconds
@@ -63,6 +65,11 @@ static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; //5s between transmission of
 
 //The WiFi connection to the NTRIP caster to obtain RTCM data.
 static WiFiClient * ntripClient;
+
+//Throttle the time between connection attempts
+static int ntripClientConnectionAttemptTimeout = 0;
+static uint32_t ntripClientLastConnectionAttempt = 0;
+static uint32_t ntripClientTimeoutPrint = 0;
 
 //Last time the NTRIP client state was displayed
 static uint32_t lastNtripClientState = 0;
@@ -160,10 +167,17 @@ bool ntripClientConnectLimitReached()
   ntripClientStop(false); //Allocate new wifiClient
 
   //Retry the connection a few times
-  bool limitReached = (ntripClientConnectionAttempts++ >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
-  if (!limitReached)
-    //Display the heap state
+  bool limitReached = false;
+  if (ntripClientConnectionAttempts++ >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
+
+  if (limitReached == false)
+  {
+    ntripClientConnectionAttemptTimeout = ntripClientConnectionAttempts * 5 * 60 * 1000L; //Wait 5, 10, 15, etc minutes between attempts
+
+    log_d("ntripClientConnectionAttemptTimeout increased to %d minutes", ntripClientConnectionAttemptTimeout / (60 * 1000L));
+
     reportHeapNow();
+  }
   else
   {
     //No more connection attempts, switching to Bluetooth
@@ -263,7 +277,7 @@ void ntripClientStart()
 }
 
 //Stop the NTRIP client
-void ntripClientStop(bool done)
+void ntripClientStop(bool wifiClientAllocated)
 {
 #ifdef COMPILE_WIFI
   if (ntripClient)
@@ -277,20 +291,25 @@ void ntripClientStop(bool done)
     ntripClient = NULL;
 
     //Allocate the NTRIP client structure if not done
-    if (!done)
+    if (wifiClientAllocated == false)
       ntripClient = new WiFiClient();
   }
 
   //Stop WiFi if in use
   if (ntripClientState > NTRIP_CLIENT_ON)
+  {
     wifiStop();
+
+    ntripClientLastConnectionAttempt = millis(); //Mark the Client stop so that we don't immediately attempt re-connect to Caster
+    ntripClientConnectionAttemptTimeout = 15 * 1000L; //Wait 15s between stopping and the first re-connection attempt.
+  }
 
   // Return the Main Talker ID to "GN".
   i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GN);
   i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Remove callback
 
   //Determine the next NTRIP client state
-  ntripClientSetState((ntripClient && (!done)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
+  ntripClientSetState((ntripClient && (wifiClientAllocated == false)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
   online.ntripClient = false;
   wifiIncomingRTCM = false;
 #endif  //COMPILE_WIFI
@@ -323,29 +342,38 @@ void ntripClientUpdate()
       }
       else
       {
-        wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
-        ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTING);
+        //Pause until connection timeout has passed
+        if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)
+        {
+          ntripClientLastConnectionAttempt = millis();
+          wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
+          ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTING);
+        }
+        else
+        {
+          if (millis() - ntripClientTimeoutPrint > 1000)
+          {
+            ntripClientTimeoutPrint = millis();
+            Serial.printf("NTRIP Client connection timeout wait: %d of %d seconds \n\r",
+                          (millis() - ntripClientLastConnectionAttempt) / 1000,
+                          ntripClientConnectionAttemptTimeout / 1000
+                         );
+          }
+        }
+
       }
       break;
 
     case NTRIP_CLIENT_WIFI_CONNECTING:
       if (!wifiIsConnected())
       {
-        //Stop if SSID is not detected
-        if (wifiGetStatus() == WL_NO_SSID_AVAIL)
+        //Throttle if SSID is not detected
+        if (wifiConnectionTimeout() || wifiGetStatus() == WL_NO_SSID_AVAIL)
         {
-          Serial.printf("WiFi network '%s' not found\n\r", settings.ntripClient_wifiSSID);
+          if (wifiGetStatus() == WL_NO_SSID_AVAIL)
+            Serial.printf("WiFi network '%s' not found\n\r", settings.ntripClient_wifiSSID);
 
-          wifiStop();
-
-          paintNtripWiFiFail(4000, true); //True = 'Client', False = 'Server'
-
-          ntripClientStop(true); //Do not allocate new wifiClient
-        }
-        else if (wifiConnectionTimeout())
-        {
-          //Assume AP weak signal, the AP is unable to respond successfully
-          if (ntripClientConnectLimitReached())
+          if (ntripClientConnectLimitReached()) //Stop WiFi, give up
             paintNtripWiFiFail(4000, true);
         }
       }

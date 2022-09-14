@@ -1468,7 +1468,7 @@
 
                         <div class="form-check">
                             <div class="form-check mt-3">
-                                <label class="form-check-label" for="forgetRadios">Enable Forget All Radios</label>
+                                <label class="form-check-label" for="enableForgetRadios">Enable Forget All Radios</label>
                                 <input class="form-check-input" type="checkbox" value="" id="enableForgetRadios" unchecked>
                                 <span class="tt" data-bs-placement="right"
                                     title="To prevent accidental deletion of paired radios the checkbox must first be checked before the button is pressed.">
@@ -1550,24 +1550,20 @@
                         </div>
                     </div>
 
-                    <div class="col-sm-7 col-12 mt-2" id="bluetoothOptions">
-                        Bluetooth<span class="tt" data-bs-placement="right"
+                    <br>
+                    <div id="bluetoothRadioTypeDropdown" class="mb-2">
+                        <label for="bluetoothRadioType">Bluetooth Protocol: </label>
+                        <select name="bluetoothRadioType" id="bluetoothRadioType" class="form-dropdown">
+                            <option value="0">SPP</option>
+                            <option value="1">BLE</option>
+                            <option value="2">Off</option>
+                        </select>
+                        <span class="tt" data-bs-placement="right"
                             title="Communicate using Classic Bluetooth Serial Port Profile (SPP), Bluetooth Low-Energy (BLE), or turn Bluetooth off. Default: SPP as nearly all GIS applications use SPP.">
                             <span class="icon-info-circle text-primary ms-2"></span>
-                        </span><br>
-
-                        <input type="radio" id="btSPP" name="bluetoothRadioType" value="0"
-                            class="form-radio box-margin20" checked>
-                        <label for="btSPP">SPP</label><br>
-
-                        <input type="radio" id="btBLE" name="bluetoothRadioType" value="1"
-                            class="form-radio box-margin20">
-                        <label for="btBLE">BLE</label><br>
-
-                        <input type="radio" id="btOff" name="bluetoothRadioType" value="2"
-                            class="form-radio box-margin20">
-                        <label for="btOff">Off</label><br>
+                        </span>
                     </div>
+
 
                     <div class="form-check mt-3">
                         <label class="form-check-label" for="enableFactoryDefaults">Enable Factory Defaults</label>

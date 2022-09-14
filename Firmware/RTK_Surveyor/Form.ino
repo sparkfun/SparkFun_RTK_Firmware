@@ -632,10 +632,12 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.antennaHeight = settingValue;
   else if (strcmp(settingName, "antennaReferencePoint") == 0)
     settings.antennaReferencePoint = settingValue;
-  else if (strcmp(settingName, "btType") == 0)
-    settings.fixedBaseCoordinateType = (BluetoothRadioType_e)settingValue; //0 = SPP, 1 = BLE, 2 = Off
+  else if (strcmp(settingName, "bluetoothRadioType") == 0)
+    settings.bluetoothRadioType = (BluetoothRadioType_e)settingValue; //0 = SPP, 1 = BLE, 2 = Off
   else if (strcmp(settingName, "espnowBroadcast") == 0)
     settings.espnowBroadcast = settingValueBool;
+  else if (strcmp(settingName, "radioType") == 0)
+    settings.radioType = (RadioType_e)settingValue; //0 = Radio off, 1 = ESP-Now
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}
@@ -644,6 +646,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "saveToArduino") == 0) {}
   else if (strcmp(settingName, "enableFactoryDefaults") == 0) {}
   else if (strcmp(settingName, "enableFirmwareUpdate") == 0) {}
+  else if (strcmp(settingName, "enableForgetRadios") == 0) {}
 
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)

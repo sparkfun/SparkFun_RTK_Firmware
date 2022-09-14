@@ -419,8 +419,8 @@ function validateFields() {
                 checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
                 checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
 
-                checkElementValue("antennaHeight", 0, 15000, "Must be 0 to 15000", "collapseBaseConfig");
-                checkElementValue("antennaReferencePoint", 0.0, 200.0, "Must be 0.0 to 200.0", "collapseBaseConfig");
+                checkElementValue("antennaHeight", -15000, 15000, "Must be -15000 to 15000", "collapseBaseConfig");
+                checkElementValue("antennaReferencePoint", -200.0, 200.0, "Must be -200.0 to 200.0", "collapseBaseConfig");
             }
         }
 

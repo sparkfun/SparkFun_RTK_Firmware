@@ -442,8 +442,8 @@ function validateFields() {
                 checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
                 checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
 
-                checkElementValue("antennaHeight", 0, 15000, "Must be 0 to 15000", "collapseBaseConfig");
-                checkElementValue("antennaReferencePoint", 0.0, 200.0, "Must be 0.0 to 200.0", "collapseBaseConfig");
+                checkElementValue("antennaHeight", -15000, 15000, "Must be -15000 to 15000", "collapseBaseConfig");
+                checkElementValue("antennaReferencePoint", -200.0, 200.0, "Must be -200.0 to 200.0", "collapseBaseConfig");
             }
         }
 
@@ -2019,7 +2019,7 @@ static const char *index_html = R"=====(
                                 <label for="antennaHeight"
                                     class="box-margin40 col-sm-3 col-5 col-form-label">Antenna Height(mm):
                                     <span class="tt" data-bs-placement="right"
-                                    title="Distance from the base of the antenna to the mark on the ground. This is usually the total length of the prism pole and any extensions.">
+                                    title="Distance from the base of the antenna to the mark on the ground. This is usually the total length of the prism pole and any extensions. Amount is subtracted from HAE before starting fixed base.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -2034,7 +2034,7 @@ static const char *index_html = R"=====(
                                 <label for="antennaReferencePoint"
                                     class="box-margin40 col-5 col-form-label">Antenna Reference Point(mm):
                                     <span class="tt" data-bs-placement="right"
-                                    title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration.">
+                                    title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration. Amount is subtracted from HAE before starting fixed base.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>

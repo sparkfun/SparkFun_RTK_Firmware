@@ -156,18 +156,18 @@ void menuBase()
     }
     else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 4)
     {
-      Serial.print("Enter the antenna height (a.k.a. pole length) in millimeters (0 to 15000mm): ");
+      Serial.print("Enter the antenna height (a.k.a. pole length) in millimeters (-15000 to 15000mm): ");
       int antennaHeight = getDouble(menuTimeout); //Timeout after x seconds
-      if (antennaHeight < 0 || antennaHeight > 15000) //Arbitrary 15m max
+      if (antennaHeight < -15000 || antennaHeight > 15000) //Arbitrary 15m max
         Serial.println("Error: Antenna Height out of range");
       else
         settings.antennaHeight = antennaHeight; //Recorded to NVM and file at main menu exit
     }
     else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 5)
     {
-      Serial.print("Enter the antenna reference point (a.k.a. ARP) in millimeters (0.0 to 200.0mm): ");
+      Serial.print("Enter the antenna reference point (a.k.a. ARP) in millimeters (-200.0 to 200.0mm): ");
       int antennaReferencePoint = getDouble(menuTimeout); //Timeout after x seconds
-      if (antennaReferencePoint < 0 || antennaReferencePoint > 200) //Arbitrary 200mm max
+      if (antennaReferencePoint < -200 || antennaReferencePoint > 200) //Arbitrary 200mm max
         Serial.println("Error: Antenna Reference Point out of range");
       else
         settings.antennaReferencePoint = antennaReferencePoint; //Recorded to NVM and file at main menu exit

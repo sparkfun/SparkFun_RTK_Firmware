@@ -282,7 +282,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", "enableNmeaServer", settings.enableNmeaServer);
   settingsFile->printf("%s=%d\n\r", "espnowBroadcast", settings.espnowBroadcast);
   settingsFile->printf("%s=%d\n\r", "antennaHeight", settings.antennaHeight);
-  settingsFile->printf("%s=%d\n\r", "antennaReferencePoint", settings.antennaReferencePoint);
+  settingsFile->printf("%s=%0.2f\n\r", "antennaReferencePoint", settings.antennaReferencePoint);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)

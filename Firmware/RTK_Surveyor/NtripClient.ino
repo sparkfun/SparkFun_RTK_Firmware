@@ -168,7 +168,7 @@ bool ntripClientConnectLimitReached()
 
   //Retry the connection a few times
   bool limitReached = false;
-  if (ntripClientConnectionAttempts++ >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
+  if (ntripClientConnectionAttempts++ >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS) limitReached = true;
 
   if (limitReached == false)
   {
@@ -354,7 +354,7 @@ void ntripClientUpdate()
           if (millis() - ntripClientTimeoutPrint > 1000)
           {
             ntripClientTimeoutPrint = millis();
-            Serial.printf("NTRIP Client connection timeout wait: %d of %d seconds \n\r",
+            Serial.printf("NTRIP Client connection timeout wait: %ld of %d seconds \n\r",
                           (millis() - ntripClientLastConnectionAttempt) / 1000,
                           ntripClientConnectionAttemptTimeout / 1000
                          );

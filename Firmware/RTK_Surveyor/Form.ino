@@ -455,7 +455,7 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "antennaReferencePoint", settings.antennaReferencePoint, 1);
 
   //Radio / ESP-Now settings
-  char radioMAC[15];   //Send radio MAC
+  char radioMAC[18];   //Send radio MAC
   sprintf(radioMAC, "%02X:%02X:%02X:%02X:%02X:%02X",
           wifiMACAddress[0],
           wifiMACAddress[1],

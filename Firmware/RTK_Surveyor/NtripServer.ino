@@ -368,7 +368,7 @@ void ntripServerUpdate()
           if (millis() - ntripServerTimeoutPrint > 1000)
           {
             ntripServerTimeoutPrint = millis();
-            Serial.printf("NTRIP Server connection timeout wait: %d of %d seconds \n\r",
+            Serial.printf("NTRIP Server connection timeout wait: %ld of %d seconds \n\r",
                           (millis() - ntripServerLastConnectionAttempt) / 1000,
                           ntripServerConnectionAttemptTimeout / 1000
                          );

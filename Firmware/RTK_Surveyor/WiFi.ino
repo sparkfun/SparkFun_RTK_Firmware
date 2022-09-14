@@ -216,7 +216,7 @@ void wifiNmeaData(uint8_t * data, uint16_t length)
 {
 #ifdef COMPILE_WIFI
   static IPAddress ipAddress[WIFI_MAX_NMEA_CLIENTS];
-  int index;
+  int index = 0;
   static uint32_t lastNmeaConnectAttempt;
 
   if (online.nmeaClient)
@@ -234,7 +234,7 @@ void wifiNmeaData(uint8_t * data, uint16_t length)
       }
       if (wifiNmeaClient[0].connect(ipAddress[0], WIFI_NMEA_TCP_PORT))
       {
-        online.nmeaClient;
+        online.nmeaClient = true;
         Serial.print("NMEA client connected to ");
         Serial.println(ipAddress[0]);
         wifiNmeaConnected |= 1 << index;
@@ -324,7 +324,6 @@ bool wifiNmeaTcpServerActive()
 void wifiStart(char* ssid, char* pw)
 {
 #ifdef COMPILE_WIFI
-  bool restartESPNow = false;
 
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {

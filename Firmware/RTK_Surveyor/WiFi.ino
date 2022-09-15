@@ -223,7 +223,7 @@ void wifiNmeaData(uint8_t * data, uint16_t length)
   {
     //Start the NMEA client if enabled
     if (((!wifiNmeaClient[0]) || (!wifiNmeaClient[0].connected()))
-      && ((millis() - lastNmeaConnectAttempt) >= 1000))
+        && ((millis() - lastNmeaConnectAttempt) >= 1000))
     {
       lastNmeaConnectAttempt = millis();
       ipAddress[0] = WiFi.gatewayIP();
@@ -243,7 +243,7 @@ void wifiNmeaData(uint8_t * data, uint16_t length)
       {
         //Release any allocated resources
         //if (wifiNmeaClient[0])
-          wifiNmeaClient[0].stop();
+        wifiNmeaClient[0].stop();
       }
     }
   }
@@ -278,8 +278,8 @@ void wifiNmeaData(uint8_t * data, uint16_t length)
 
       //Send the NMEA data to the connected clients
       else if (((settings.enableNmeaServer && online.nmeaServer)
-        || (settings.enableNmeaClient && online.nmeaClient))
-        && ((!length) || (wifiNmeaClient[index].write(data, length) == length)))
+                || (settings.enableNmeaClient && online.nmeaClient))
+               && ((!length) || (wifiNmeaClient[index].write(data, length) == length)))
       {
         if (settings.enablePrintNmeaTcpStatus && length)
           Serial.printf("NMEA %d bytes written\r\n", length);
@@ -324,6 +324,9 @@ bool wifiNmeaTcpServerActive()
 void wifiStart(char* ssid, char* pw)
 {
 #ifdef COMPILE_WIFI
+#ifdef COMPILE_ESPNOW
+  bool restartESPNow = false;
+#endif
 
   if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
   {
@@ -453,7 +456,7 @@ void wifiUpdate()
 
   //Start the NMEA client if enabled
   if (settings.enableNmeaClient && (!online.nmeaClient) && (!settings.enableNmeaServer)
-    && (wifiState == WIFI_CONNECTED))
+      && (wifiState == WIFI_CONNECTED))
   {
     online.nmeaClient = true;
     Serial.print("NMEA TCP client online, local IP ");
@@ -464,7 +467,7 @@ void wifiUpdate()
 
   //Start the NMEA server if enabled
   if ((!wifiNmeaServer) && (!settings.enableNmeaClient) && settings.enableNmeaServer
-    && (wifiState == WIFI_CONNECTED))
+      && (wifiState == WIFI_CONNECTED))
   {
     wifiNmeaServer.begin();
     online.nmeaServer = true;

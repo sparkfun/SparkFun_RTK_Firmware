@@ -5,7 +5,7 @@ on:
       - main
 
 env:
-  FILENAME_PREFIX: RTK_Surveyor_Firmware_v2.4
+  FILENAME_PREFIX: RTK_Surveyor_Firmware_v2_5
   POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
 
 jobs:
@@ -21,9 +21,9 @@ jobs:
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1
 
-      #We limit the ESP32 core to v2.0.2
+      #We limit the ESP32 core to v2.0.4
       - name: Install platform
-        run: arduino-cli core install esp32:esp32@2.0.2 
+        run: arduino-cli core install esp32:esp32@2.0.4 
           --additional-urls 'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json'
 
       - name: Start config file
@@ -47,6 +47,12 @@ jobs:
           https://github.com/knolleary/pubsubclient.git
           https://github.com/avinabmalla/ESP32_BleSerial.git
           
+      #Incorporate ESP-Now patch into core: https://github.com/espressif/arduino-esp32/pull/7044/files
+      - name: Patch ESP32 Core
+        run: |
+          cd Firmware/RTK_Surveyor/Patch/
+          cp WiFiGeneric.cpp /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.4/libraries/WiFi/src/WiFiGeneric.cpp
+
       - name: Compile Sketch
         run: arduino-cli compile --fqbn esp32:esp32:esp32 ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
           --build-property build.partitions=partitions

@@ -199,6 +199,7 @@ function parseIncoming(msg) {
     //console.log("Settings loaded");
 
     ge("profileChangeMessage").innerHTML = '';
+    ge("resetProfileMsg").innerHTML = '';
 
     //Force element updates
     ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));

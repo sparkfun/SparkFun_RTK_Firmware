@@ -503,6 +503,7 @@ typedef struct {
   float antennaReferencePoint = 0.0; //in mm
 } Settings;
 Settings settings;
+const Settings defaultSettings = Settings();
 
 //Monitor which devices on the device are on or offline.
 struct struct_online {

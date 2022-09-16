@@ -431,20 +431,16 @@ void createSettingsString(char* settingsCSV)
   //Bluetooth radio type
   stringRecord(settingsCSV, "bluetoothRadioType", settings.bluetoothRadioType);
 
-  //Current coordinates
-  double geodeticLat = i2cGNSS.getLatitude() / 10000000.0;
-  double geodeticLon = i2cGNSS.getLongitude() / 10000000.0;
-  double geodeticAlt = i2cGNSS.getAltitude() / 1000.0;
-
-  stringRecord(settingsCSV, "geodeticLat", geodeticLat, 8);
-  stringRecord(settingsCSV, "geodeticLon", geodeticLon, 8);
-  stringRecord(settingsCSV, "geodeticAlt", geodeticAlt, 3);
+  //Current coordinates come from HPPOSLLH call back
+  stringRecord(settingsCSV, "geodeticLat", latitude, 8);
+  stringRecord(settingsCSV, "geodeticLon", longitude, 8);
+  stringRecord(settingsCSV, "geodeticAlt", altitude, 3);
 
   double ecefX = 0;
   double ecefY = 0;
   double ecefZ = 0;
 
-  geodeticToEcef(geodeticLat, geodeticLon, geodeticAlt, &ecefX, &ecefY, &ecefZ);
+  geodeticToEcef(latitude, longitude, altitude, &ecefX, &ecefY, &ecefZ);
 
   stringRecord(settingsCSV, "ecefX", ecefX, 3);
   stringRecord(settingsCSV, "ecefY", ecefY, 3);

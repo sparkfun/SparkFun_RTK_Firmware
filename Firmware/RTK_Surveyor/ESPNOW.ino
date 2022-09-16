@@ -155,7 +155,6 @@ void espnowStart()
     }
   }
 
-
   if (settings.espnowBroadcast == true)
   {
     //Add broadcast peer if override is turned on

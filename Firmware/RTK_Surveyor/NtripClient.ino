@@ -42,7 +42,7 @@ static const int CREDENTIALS_BUFFER_SIZE = 512;
 
 //Give up connecting after this number of attempts
 //Connection attempts are throttled to increase the time between attempts
-//30 attempts with 5 minute increases will take over 38 hours
+//30 attempts with 15 second increases will take almost two hours
 static const int MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS = 30;
 
 //NTRIP caster response timeout
@@ -172,7 +172,7 @@ bool ntripClientConnectLimitReached()
 
   if (limitReached == false)
   {
-    ntripClientConnectionAttemptTimeout = ntripClientConnectionAttempts * 5 * 60 * 1000L; //Wait 5, 10, 15, etc minutes between attempts
+    ntripClientConnectionAttemptTimeout = ntripClientConnectionAttempts * 15 * 1000L; //Wait 15, 30, 45, etc seconds between attempts
 
     log_d("ntripClientConnectionAttemptTimeout increased to %d minutes", ntripClientConnectionAttemptTimeout / (60 * 1000L));
 

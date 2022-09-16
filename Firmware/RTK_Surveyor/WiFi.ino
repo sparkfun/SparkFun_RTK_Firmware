@@ -153,12 +153,12 @@ void wifiStartAP()
 #define WIFI_SSID "TRex"
 #define WIFI_PASSWORD "parachutes"
 
+  WiFi.mode(WIFI_STA);
+
 #ifdef COMPILE_ESPNOW
   // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
   esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station
 #endif
-
-  WiFi.mode(WIFI_STA);
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("WiFi connecting to");
@@ -382,11 +382,6 @@ void wifiStop()
 #ifdef COMPILE_WIFI
   stopWebServer();
 
-  if (wifiState == WIFI_OFF)
-  {
-    //Do nothing
-  }
-
   //Shutdown the NMEA client
   if (online.nmeaClient)
   {
@@ -406,6 +401,11 @@ void wifiStop()
     while (wifiNmeaTcpServerActive())
       delay(5);
     Serial.println("NMEA Server offline");
+  }
+  
+  if (wifiState == WIFI_OFF)
+  {
+    //Do nothing
   }
 
 #ifdef COMPILE_ESPNOW

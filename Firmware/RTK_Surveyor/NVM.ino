@@ -20,7 +20,7 @@ void loadSettings()
 {
   //If we have a profile in both LFS and SD, the SD settings will overwrite LFS
   loadSystemSettingsFromFileLFS(settingsFileName, &settings);
-  
+
   //Temp store any variables from LFS that should override SD
   int resetCount = settings.resetCount;
 
@@ -261,6 +261,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\n\r", "enablePrintStates", settings.enablePrintStates);
   settingsFile->printf("%s=%d\n\r", "enablePrintDuplicateStates", settings.enablePrintDuplicateStates);
   settingsFile->printf("%s=%d\n\r", "radioType", settings.radioType);
+
   //Record peer MAC addresses
   for (int x = 0 ; x < settings.espnowPeerCount ; x++)
   {

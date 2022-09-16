@@ -349,6 +349,9 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
+
+char *settingsCSV; //Push large array onto heap
+
 #endif
 #endif
 
@@ -445,8 +448,6 @@ bool newEventToRecord = false; //Goes true when INT pin goes high
 uint32_t triggerCount = 0; //Global copy - TM2 event counter
 uint32_t towMsR = 0; //Global copy - Time Of Week of rising edge (ms)
 uint32_t towSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
-
-bool newAPSettings = false; //Goes true when new setting is received via AP config. Allows us to record settings when combined with a reset.
 
 unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update via AP config.
 int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes

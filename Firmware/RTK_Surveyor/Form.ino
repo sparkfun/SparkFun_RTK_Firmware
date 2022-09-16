@@ -255,7 +255,6 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
 //Events triggered by web sockets
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
-char *settingsCSV; //Push large array onto heap
 
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
@@ -492,18 +491,13 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 {
 #ifdef COMPILE_AP
   char* ptr;
-  int newProfileNumber;
   double settingValue = strtod(settingValueStr, &ptr);
 
   bool settingValueBool = false;
   if (strcmp(settingValueStr, "true") == 0) settingValueBool = true;
 
   if (strcmp(settingName, "maxLogTime_minutes") == 0)
-  {
-    newAPSettings = true; //Mark settings as new to force record before reset
     settings.maxLogTime_minutes = settingValue;
-  }
-
   else if (strcmp(settingName, "maxLogLength_minutes") == 0)
     settings.maxLogLength_minutes = settingValue;
   else if (strcmp(settingName, "measurementRateHz") == 0)
@@ -559,19 +553,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   {
     strcpy(settings.profileName, settingValueStr);
     setProfileName(profileNumber);
-  }
-  else if (strcmp(settingName, "profileNumber") == 0)
-  {
-    if ((sscanf(settingValueStr, "%d", &newProfileNumber) == 1)
-        && (newProfileNumber >= 1) && (newProfileNumber <= MAX_PROFILE_COUNT)
-        && (profileNumber != newProfileNumber))
-    {
-      profileNumber = newProfileNumber - 1;
-
-      //Switch to a new profile
-      setSettingsFileName();
-      recordProfileNumber(profileNumber);
-    }
   }
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;
@@ -657,11 +638,12 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     factoryReset();
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
-    if (newAPSettings == true) recordSystemSettings(); //If we've received settings, record before restart
+    Serial.println("Reset after AP Config");
 
-    //Reboot the machine
     ESP.restart();
   }
+
+
   else if (strcmp(settingName, "setProfile") == 0)
   {
     //Change to new profile
@@ -670,12 +652,13 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     //Load new profile into system
     loadSettings();
 
-    //Send settings to browser
-    char settingsCSV[AP_CONFIG_SETTING_SIZE];
-    memset(settingsCSV, 0, sizeof(settingsCSV));
+    //Send new settings to browser. Re-use settingsCSV to avoid stack.
+    settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+    memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
     createSettingsString(settingsCSV);
     log_d("Sending command: %s\n\r", settingsCSV);
     ws.textAll(String(settingsCSV));
+    free(settingsCSV);
   }
   else if (strcmp(settingName, "resetProfile") == 0)
   {
@@ -686,12 +669,13 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     //Get bitmask of active profiles
     activeProfiles = loadProfileNames();
 
-    //Send settings to browser
-    char settingsCSV[AP_CONFIG_SETTING_SIZE];
-    memset(settingsCSV, 0, sizeof(settingsCSV));
+    //Send new settings to browser. Re-use settingsCSV to avoid stack.
+    settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+    memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
     createSettingsString(settingsCSV);
     log_d("Sending command: %s\n\r", settingsCSV);
     ws.textAll(String(settingsCSV));
+    free(settingsCSV);
   }
   else if (strcmp(settingName, "forgetEspNowPeers") == 0)
   {

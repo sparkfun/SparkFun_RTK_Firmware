@@ -732,9 +732,9 @@ void printCurrentConditions()
     Serial.print(horizontalAccuracy, 3);
 
     Serial.print(", Lat: ");
-    Serial.print(latitude, 9);
+    Serial.print(latitude, haeNumberOfDecimals);
     Serial.print(", Lon: ");
-    Serial.print(longitude, 9);
+    Serial.print(longitude, haeNumberOfDecimals);
 
     Serial.print(", Altitude (m): ");
     Serial.print(altitude, 1);

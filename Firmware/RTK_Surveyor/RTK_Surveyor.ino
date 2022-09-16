@@ -234,6 +234,8 @@ uint16_t mseconds;
 uint8_t numSV;
 uint8_t fixType;
 uint8_t carrSoln;
+
+const byte haeNumberOfDecimals = 8; //Used for printing and transitting lat/lon
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs

@@ -921,7 +921,7 @@ void updateSystemState()
           if (espnowIsPaired() == true)
           {
             paintEspNowPaired();
-            
+
             // Return to the previous state
             changeState(lastSystemState);
           }

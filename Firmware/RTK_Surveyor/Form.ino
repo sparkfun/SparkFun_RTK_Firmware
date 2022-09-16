@@ -339,8 +339,8 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "fixedEcefX", settings.fixedEcefX, 3);
   stringRecord(settingsCSV, "fixedEcefY", settings.fixedEcefY, 3);
   stringRecord(settingsCSV, "fixedEcefZ", settings.fixedEcefZ, 3);
-  stringRecord(settingsCSV, "fixedLat", settings.fixedLat, 9);
-  stringRecord(settingsCSV, "fixedLong", settings.fixedLong, 9);
+  stringRecord(settingsCSV, "fixedLat", settings.fixedLat, haeNumberOfDecimals);
+  stringRecord(settingsCSV, "fixedLong", settings.fixedLong, haeNumberOfDecimals);
   stringRecord(settingsCSV, "fixedAltitude", settings.fixedAltitude, 4);
 
   stringRecord(settingsCSV, "enableNtripServer", settings.enableNtripServer);
@@ -432,8 +432,8 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "bluetoothRadioType", settings.bluetoothRadioType);
 
   //Current coordinates come from HPPOSLLH call back
-  stringRecord(settingsCSV, "geodeticLat", latitude, 8);
-  stringRecord(settingsCSV, "geodeticLon", longitude, 8);
+  stringRecord(settingsCSV, "geodeticLat", latitude, haeNumberOfDecimals);
+  stringRecord(settingsCSV, "geodeticLon", longitude, haeNumberOfDecimals);
   stringRecord(settingsCSV, "geodeticAlt", altitude, 3);
 
   double ecefX = 0;

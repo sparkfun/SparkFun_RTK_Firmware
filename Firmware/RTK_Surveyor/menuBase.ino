@@ -30,9 +30,9 @@ void menuBase()
       else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
       {
         Serial.print("3) Set Lat/Long/Altitude coordinates: ");
-        Serial.print(settings.fixedLat, 9);
+        Serial.print(settings.fixedLat, haeNumberOfDecimals);
         Serial.print("°, ");
-        Serial.print(settings.fixedLong, 9);
+        Serial.print(settings.fixedLong, haeNumberOfDecimals);
         Serial.print("°, ");
         Serial.print(settings.fixedAltitude, 4);
         Serial.println("m");

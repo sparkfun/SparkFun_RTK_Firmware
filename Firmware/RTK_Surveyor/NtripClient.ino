@@ -435,7 +435,7 @@ void ntripClientUpdate()
         if (strstr(response, "401") != NULL)
         {
           //Look for '401 Unauthorized'
-          Serial.printf("NTRIP Client caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
+          Serial.printf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
 
           //Stop WiFi operations
           ntripClientStop(true); //Do not allocate new wifiClient

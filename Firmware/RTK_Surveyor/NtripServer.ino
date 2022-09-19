@@ -352,7 +352,7 @@ void ntripServerUpdate()
       if (strlen(settings.ntripServer_wifiSSID) == 0)
       {
         Serial.println("Error: Please enter SSID before starting NTRIP Server");
-        ntripClientSetState(NTRIP_SERVER_OFF);
+        ntripServerSetState(NTRIP_SERVER_OFF);
       }
       else
       {
@@ -467,15 +467,36 @@ void ntripServerUpdate()
         char response[512];
         ntripServerResponse(response, sizeof(response));
 
-        //Look for '200 OK'
-        if (strstr(response, "200") == NULL)
+        //Look for various responses
+        if (strstr(response, "401") != NULL)
         {
           //Look for '401 Unauthorized'
           Serial.printf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
 
-          ntripServerStop(true); //Don't allocate new wifiClient
+          //Stop WiFi operations
+          ntripServerStop(true); //Do not allocate new wifiClient
         }
-        else
+        else if (strstr(response, "banned") != NULL) //'Banned' found
+        {
+          //Look for 'HTTP/1.1 200 OK' and banned IP information
+          Serial.printf("NTRIP Server connected to caster but caster reponded with problem: %s", response);
+
+          //Stop WiFi operations
+          ntripServerStop(true); //Do not allocate new wifiClient
+        }
+        else if (strstr(response, "200") == NULL) //'200' not found
+        {
+          //Look for 'ERROR - Mountpoint taken' from Emlid.
+          Serial.printf("NTRIP Server connected but caster reponded with problem: %s", response);
+
+          //Attempt to reconnect after throttle controlled timeout
+          if (ntripServerConnectLimitReached())
+          {
+            Serial.println("Caster failed to respond. Do you have your caster address and port correct?");
+          }
+        }        
+        else if (strstr(response, "200") != NULL) //'200' found
+
         {
           Serial.printf("NTRIP Server connected to %s:%d %s\r\n",
                         settings.ntripServer_CasterHost,

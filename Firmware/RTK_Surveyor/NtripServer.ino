@@ -473,7 +473,7 @@ void ntripServerUpdate()
           //Look for '401 Unauthorized'
           Serial.printf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
 
-          //Stop WiFi operations
+          //Give up - Stop WiFi operations
           ntripServerStop(true); //Do not allocate new wifiClient
         }
         else if (strstr(response, "banned") != NULL) //'Banned' found
@@ -481,7 +481,7 @@ void ntripServerUpdate()
           //Look for 'HTTP/1.1 200 OK' and banned IP information
           Serial.printf("NTRIP Server connected to caster but caster reponded with problem: %s", response);
 
-          //Stop WiFi operations
+          //Give up - Stop WiFi operations
           ntripServerStop(true); //Do not allocate new wifiClient
         }
         else if (strstr(response, "200") == NULL) //'200' not found

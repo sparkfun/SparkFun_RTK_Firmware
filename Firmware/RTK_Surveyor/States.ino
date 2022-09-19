@@ -698,7 +698,7 @@ void updateSystemState()
             log_d("Days until keys expire: %d", daysRemaining);
 
             if (daysRemaining >= 28 && daysRemaining <= 56)
-              changeState(STATE_KEYS_LBAND_CONFIGURE);
+              changeState(STATE_KEYS_DAYS_REMAINING);
             else
               changeState(STATE_KEYS_NEEDED);
           }
@@ -727,7 +727,7 @@ void updateSystemState()
           else
           {
             log_d("Already tried to obtain keys for today");
-            changeState(STATE_KEYS_LBAND_CONFIGURE); //We have valid keys, we've already tried today. No need to try again.
+            changeState(STATE_KEYS_DAYS_REMAINING); //We have valid keys, we've already tried today. No need to try again.
           }
         }
         break;
@@ -784,6 +784,7 @@ void updateSystemState()
               paintKeyDaysRemaining(daysRemaining, 2000);
             }
           }
+          paintLBandConfigure();
 
           forceSystemStateUpdate = true; //Imediately go to this new state
           changeState(STATE_KEYS_LBAND_CONFIGURE);

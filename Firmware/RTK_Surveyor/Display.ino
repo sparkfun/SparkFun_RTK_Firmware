@@ -291,7 +291,7 @@ void updateDisplay()
           break;
 
         case (STATE_KEYS_STARTED):
-          //Do nothing. Quick, fall through state.
+          paintRTCWait();
           break;
         case (STATE_KEYS_NEEDED):
           //Do nothing. Quick, fall through state.
@@ -2450,6 +2450,13 @@ void paintLBandConfigure()
 void paintGettingKeys()
 {
   displayMessage("Getting Keys", 0);
+}
+
+//If an L-Band is indoors without reception, we have a ~2s wait for the RTC to come online
+//Display something while we wait
+void paintRTCWait()
+{
+  displayMessage("RTC Wait", 0);
 }
 
 void paintKeyProvisionFail(uint16_t displayTime)

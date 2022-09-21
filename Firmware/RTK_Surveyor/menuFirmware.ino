@@ -146,6 +146,7 @@ void updateFromSD(const char *firmwareFileName)
   }
 
   //Turn off any tasks so that we are not disrupted
+  espnowStop();
   wifiStop();
   bluetoothStop();
 

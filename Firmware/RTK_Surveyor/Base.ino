@@ -235,13 +235,9 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
   {
     if (rtcmPacketsSent > 99) rtcmPacketsSent = 1; //Trim to two digits to avoid overlap
   }
-  else if (logIncreasing == true)
-  {
-    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon
-  }
   else
   {
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
+    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon and increasing bar
   }
 
   //Determine if we should check this byte with the RTCM checker or simply pass it along

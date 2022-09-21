@@ -1,6 +1,6 @@
 void printElapsedTime(const char* title)
 {
-  Serial.printf("%s: %ld\n\r", title, millis() - startTime);
+  Serial.printf("%s: %ld\r\n", title, millis() - startTime);
 }
 
 void printDebug(String thingToPrint)
@@ -545,4 +545,81 @@ bool checkRtcmMessage(uint8_t data)
 
   //Let the upper layer know if this message should be sent
   return sendMessage;
+}
+
+const double WGS84_A = 6378137; //https://geographiclib.sourceforge.io/html/Constants_8hpp_source.html
+const double WGS84_E = 0.081819190842622; //http://docs.ros.org/en/hydro/api/gps_common/html/namespacegps__common.html and https://gist.github.com/uhho/63750c4b54c7f90f37f958cc8af0c718
+
+//From: https://stackoverflow.com/questions/19478200/convert-latitude-and-longitude-to-ecef-coordinates-system
+void geodeticToEcef(double lat, double lon, double alt, double *x, double *y, double *z)
+{
+  double clat = cos(lat * DEG_TO_RAD);
+  double slat = sin(lat * DEG_TO_RAD);
+  double clon = cos(lon * DEG_TO_RAD);
+  double slon = sin(lon * DEG_TO_RAD);
+
+  double N = WGS84_A / sqrt(1.0 - WGS84_E * WGS84_E * slat * slat);
+
+  *x = (N + alt) * clat * clon;
+  *y = (N + alt) * clat * slon;
+  *z = (N * (1.0 - WGS84_E * WGS84_E) + alt) * slat;
+}
+
+//From: https://danceswithcode.net/engineeringnotes/geodetic_to_ecef/geodetic_to_ecef.html
+void ecefToGeodetic(double x, double y, double z, double *lat, double *lon, double *alt)
+{
+  double  a = 6378137.0;              //WGS-84 semi-major axis
+  double e2 = 6.6943799901377997e-3;  //WGS-84 first eccentricity squared
+  double a1 = 4.2697672707157535e+4;  //a1 = a*e2
+  double a2 = 1.8230912546075455e+9;  //a2 = a1*a1
+  double a3 = 1.4291722289812413e+2;  //a3 = a1*e2/2
+  double a4 = 4.5577281365188637e+9;  //a4 = 2.5*a2
+  double a5 = 4.2840589930055659e+4;  //a5 = a1+a3
+  double a6 = 9.9330562000986220e-1;  //a6 = 1-e2
+
+  double zp, w2, w, r2, r, s2, c2, s, c, ss;
+  double g, rg, rf, u, v, m, f, p;
+
+  zp = abs(z);
+  w2 = x * x + y * y;
+  w = sqrt(w2);
+  r2 = w2 + z * z;
+  r = sqrt(r2);
+  *lon = atan2(y, x);       //Lon (final)
+
+  s2 = z * z / r2;
+  c2 = w2 / r2;
+  u = a2 / r;
+  v = a3 - a4 / r;
+  if (c2 > 0.3)
+  {
+    s = (zp / r) * (1.0 + c2 * (a1 + u + s2 * v) / r);
+    *lat = asin(s);      //Lat
+    ss = s * s;
+    c = sqrt(1.0 - ss);
+  }
+  else
+  {
+    c = ( w / r ) * ( 1.0 - s2 * ( a5 - u - c2 * v ) / r );
+    *lat = acos( c );      //Lat
+    ss = 1.0 - c * c;
+    s = sqrt( ss );
+  }
+
+  g = 1.0 - e2 * ss;
+  rg = a / sqrt( g );
+  rf = a6 * rg;
+  u = w - rg * c;
+  v = zp - rf * s;
+  f = c * u + s * v;
+  m = c * v - s * u;
+  p = m / ( rf / g + f );
+  *lat = *lat + p;      //Lat
+  *alt = f + m * p / 2.0; //Altitude
+  if ( z < 0.0 ) {
+    *lat *= -1.0;     //Lat
+  }
+
+  *lat *= RAD_TO_DEG; //Convert to degrees
+  *lon *= RAD_TO_DEG;
 }

@@ -193,13 +193,13 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
       }
       else
       {
-        Serial.printf("Unknown: %s\n\r", fname);
+        Serial.printf("Unknown: %s\r\n", fname);
         return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
       }
     }
     else
     {
-      Serial.printf("Unknown: %s\n\r", fname);
+      Serial.printf("Unknown: %s\r\n", fname);
       return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
     }
   }
@@ -221,12 +221,12 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
         char bytesSentMsg[100];
         sprintf(bytesSentMsg, "%'d bytes sent", binBytesSent);
 
-        Serial.printf("bytesSentMsg: %s\n\r", bytesSentMsg);
+        Serial.printf("bytesSentMsg: %s\r\n", bytesSentMsg);
 
         char statusMsg[200] = {'\0'};
         stringRecord(statusMsg, "firmwareUploadStatus", bytesSentMsg); //Convert to "firmwareUploadMsg,11214 bytes sent,"
 
-        Serial.printf("msg: %s\n\r", statusMsg);
+        Serial.printf("msg: %s\r\n", statusMsg);
         ws.textAll(statusMsg);
       }
 
@@ -255,15 +255,18 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
 //Events triggered by web sockets
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
+
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
   if (type == WS_EVT_CONNECT) {
-    char settingsCSV[AP_CONFIG_SETTING_SIZE];
-    memset(settingsCSV, 0, sizeof(settingsCSV));
+    settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+    memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
+
     createSettingsString(settingsCSV);
-    log_d("Sending command: %s\n\r", settingsCSV);
+    log_d("Sending command: %s", settingsCSV);
     client->text(settingsCSV);
     wifiSetState(WIFI_CONNECTED);
+    free(settingsCSV);
   }
   else if (type == WS_EVT_DISCONNECT) {
     log_d("Websocket client disconnected");
@@ -272,6 +275,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   else if (type == WS_EVT_DATA) {
     for (int i = 0; i < len; i++) {
       incomingSettings[incomingSettingsSpot++] = data[i];
+      incomingSettingsSpot %= AP_CONFIG_SETTING_SIZE;
     }
     timeSinceLastIncomingSetting = millis();
   }
@@ -334,8 +338,8 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "fixedEcefX", settings.fixedEcefX, 3);
   stringRecord(settingsCSV, "fixedEcefY", settings.fixedEcefY, 3);
   stringRecord(settingsCSV, "fixedEcefZ", settings.fixedEcefZ, 3);
-  stringRecord(settingsCSV, "fixedLat", settings.fixedLat, 9);
-  stringRecord(settingsCSV, "fixedLong", settings.fixedLong, 9);
+  stringRecord(settingsCSV, "fixedLat", settings.fixedLat, haeNumberOfDecimals);
+  stringRecord(settingsCSV, "fixedLong", settings.fixedLong, haeNumberOfDecimals);
   stringRecord(settingsCSV, "fixedAltitude", settings.fixedAltitude, 4);
 
   stringRecord(settingsCSV, "enableNtripServer", settings.enableNtripServer);
@@ -421,14 +425,64 @@ void createSettingsString(char* settingsCSV)
     sprintf(nameText, "%d: %s", index + 1, profileNames[index]);
     stringRecord(settingsCSV, tagText, nameText);
   }
-  stringRecord(settingsCSV, "activeProfiles", activeProfiles);
+  //stringRecord(settingsCSV, "activeProfiles", activeProfiles);
+
+  //Bluetooth radio type
+  stringRecord(settingsCSV, "bluetoothRadioType", settings.bluetoothRadioType);
+
+  //Current coordinates come from HPPOSLLH call back
+  stringRecord(settingsCSV, "geodeticLat", latitude, haeNumberOfDecimals);
+  stringRecord(settingsCSV, "geodeticLon", longitude, haeNumberOfDecimals);
+  stringRecord(settingsCSV, "geodeticAlt", altitude, 3);
+
+  double ecefX = 0;
+  double ecefY = 0;
+  double ecefZ = 0;
+
+  geodeticToEcef(latitude, longitude, altitude, &ecefX, &ecefY, &ecefZ);
+
+  stringRecord(settingsCSV, "ecefX", ecefX, 3);
+  stringRecord(settingsCSV, "ecefY", ecefY, 3);
+  stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
+
+  //Antenna height and ARP
+  stringRecord(settingsCSV, "antennaHeight", settings.antennaHeight);
+  stringRecord(settingsCSV, "antennaReferencePoint", settings.antennaReferencePoint, 1);
+
+  //Radio / ESP-Now settings
+  char radioMAC[18];   //Send radio MAC
+  sprintf(radioMAC, "%02X:%02X:%02X:%02X:%02X:%02X",
+          wifiMACAddress[0],
+          wifiMACAddress[1],
+          wifiMACAddress[2],
+          wifiMACAddress[3],
+          wifiMACAddress[4],
+          wifiMACAddress[5]
+         );
+  stringRecord(settingsCSV, "radioMAC", radioMAC);
+  stringRecord(settingsCSV, "radioType", settings.radioType);
+  stringRecord(settingsCSV, "espnowPeerCount", settings.espnowPeerCount);
+  for (int index = 0; index < settings.espnowPeerCount; index++)
+  {
+    sprintf(tagText, "peerMAC%d", index);
+    sprintf(nameText, "%02X:%02X:%02X:%02X:%02X:%02X",
+            settings.espnowPeers[index][0],
+            settings.espnowPeers[index][1],
+            settings.espnowPeers[index][2],
+            settings.espnowPeers[index][3],
+            settings.espnowPeers[index][4],
+            settings.espnowPeers[index][5]
+           );
+    stringRecord(settingsCSV, tagText, nameText);
+  }
+  stringRecord(settingsCSV, "espnowBroadcast", settings.espnowBroadcast);
 
   //New settings not yet integrated
   //...
 
   strcat(settingsCSV, "\0");
-  Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
-  Serial.printf("settingsCSV: %s\n\r", settingsCSV);
+  Serial.printf("settingsCSV len: %d\r\n", strlen(settingsCSV));
+  Serial.printf("settingsCSV: %s\r\n", settingsCSV);
 #endif
 }
 
@@ -437,18 +491,13 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 {
 #ifdef COMPILE_AP
   char* ptr;
-  int newProfileNumber;
   double settingValue = strtod(settingValueStr, &ptr);
 
   bool settingValueBool = false;
   if (strcmp(settingValueStr, "true") == 0) settingValueBool = true;
 
   if (strcmp(settingName, "maxLogTime_minutes") == 0)
-  {
-    newAPSettings = true; //Mark settings as new to force record before reset
     settings.maxLogTime_minutes = settingValue;
-  }
-
   else if (strcmp(settingName, "maxLogLength_minutes") == 0)
     settings.maxLogLength_minutes = settingValue;
   else if (strcmp(settingName, "measurementRateHz") == 0)
@@ -505,19 +554,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.profileName, settingValueStr);
     setProfileName(profileNumber);
   }
-  else if (strcmp(settingName, "profileNumber") == 0)
-  {
-    if ((sscanf(settingValueStr, "%d", &newProfileNumber) == 1)
-        && (newProfileNumber >= 1) && (newProfileNumber <= MAX_PROFILE_COUNT)
-        && (profileNumber != newProfileNumber))
-    {
-      profileNumber = newProfileNumber - 1;
-
-      //Switch to a new profile
-      setSettingsFileName();
-      recordProfileNumber(profileNumber);
-    }
-  }
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;
   else if (strcmp(settingName, "ntripServer_CasterHost") == 0)
@@ -569,6 +605,16 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.home_wifiPW, settingValueStr);
   else if (strcmp(settingName, "autoKeyRenewal") == 0)
     settings.autoKeyRenewal = settingValueBool;
+  else if (strcmp(settingName, "antennaHeight") == 0)
+    settings.antennaHeight = settingValue;
+  else if (strcmp(settingName, "antennaReferencePoint") == 0)
+    settings.antennaReferencePoint = settingValue;
+  else if (strcmp(settingName, "bluetoothRadioType") == 0)
+    settings.bluetoothRadioType = (BluetoothRadioType_e)settingValue; //0 = SPP, 1 = BLE, 2 = Off
+  else if (strcmp(settingName, "espnowBroadcast") == 0)
+    settings.espnowBroadcast = settingValueBool;
+  else if (strcmp(settingName, "radioType") == 0)
+    settings.radioType = (RadioType_e)settingValue; //0 = Radio off, 1 = ESP-Now
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}
@@ -577,6 +623,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "saveToArduino") == 0) {}
   else if (strcmp(settingName, "enableFactoryDefaults") == 0) {}
   else if (strcmp(settingName, "enableFirmwareUpdate") == 0) {}
+  else if (strcmp(settingName, "enableForgetRadios") == 0) {}
 
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
@@ -591,11 +638,12 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     factoryReset();
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
-    if (newAPSettings == true) recordSystemSettings(); //If we've received settings, record before restart
+    Serial.println("Reset after AP Config");
 
-    //Reboot the machine
     ESP.restart();
   }
+
+
   else if (strcmp(settingName, "setProfile") == 0)
   {
     //Change to new profile
@@ -604,12 +652,37 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     //Load new profile into system
     loadSettings();
 
-    //Send settings to browser
-    char settingsCSV[AP_CONFIG_SETTING_SIZE];
-    memset(settingsCSV, 0, sizeof(settingsCSV));
+    //Send new settings to browser. Re-use settingsCSV to avoid stack.
+    settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+    memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
     createSettingsString(settingsCSV);
-    log_d("Sending command: %s\n\r", settingsCSV);
+    log_d("Sending command: %s", settingsCSV);
     ws.textAll(String(settingsCSV));
+    free(settingsCSV);
+  }
+  else if (strcmp(settingName, "resetProfile") == 0)
+  {
+    settingsToDefaults(); //Overwrite our current settings with defaults
+
+    recordSystemSettings(); //Overwrite profile file and NVM with these settings
+
+    //Get bitmask of active profiles
+    activeProfiles = loadProfileNames();
+
+    //Send new settings to browser. Re-use settingsCSV to avoid stack.
+    settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+    memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
+    createSettingsString(settingsCSV);
+    log_d("Sending command: %s", settingsCSV);
+    ws.textAll(String(settingsCSV));
+    free(settingsCSV);
+  }
+  else if (strcmp(settingName, "forgetEspNowPeers") == 0)
+  {
+    //Forget all ESP-Now Peers
+    for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+      espnowRemovePeer(settings.espnowPeers[x]);
+    settings.espnowPeerCount = 0;
   }
 
   //Check for bulk settings (constellations and message rates)
@@ -652,7 +725,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     //Last catch
     if (knownSetting == false)
     {
-      Serial.printf("Unknown '%s': %0.3lf\n\r", settingName, settingValue);
+      Serial.printf("Unknown '%s': %0.3lf\r\n", settingName, settingValue);
     }
   } //End last strcpy catch
 #endif

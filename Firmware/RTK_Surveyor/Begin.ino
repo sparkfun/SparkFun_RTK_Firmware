@@ -148,17 +148,29 @@ void beginBoard()
   btMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
 
   //For all boards, check reset reason. If reset was due to wdt or panic, append last log
-  loadSettingsPartial(); //Get resetCount
+  loadSettingsPartial(); //Loads settings from LFS
   if (esp_reset_reason() == ESP_RST_POWERON)
   {
     reuseLastLog = false; //Start new log
+
+    if (settings.enableResetDisplay == true)
+    {
+      settings.resetCount = 0;
+      recordSystemSettingsToFileLFS(settingsFileName); //Avoid overwriting LittleFS settings onto SD
+    }
     settings.resetCount = 0;
   }
   else
   {
     reuseLastLog = true; //Attempt to reuse previous log
-    settings.resetCount++;
 
+    if (settings.enableResetDisplay == true)
+    {
+      settings.resetCount++;
+      Serial.printf("resetCount: %d\r\n", settings.resetCount);
+      recordSystemSettingsToFileLFS(settingsFileName); //Avoid overwriting LittleFS settings onto SD
+    }
+    
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())
     {
@@ -175,8 +187,6 @@ void beginBoard()
       default : Serial.println("Unknown");
     }
   }
-
-  recordSystemSettings(); //Record resetCount to NVM
 }
 
 void beginSD()
@@ -445,7 +455,7 @@ void beginGNSS()
       zedFirmwareVersionInt = 132;
     else
     {
-      Serial.printf("Unknown firmware version: %s\n\r", zedFirmwareVersion);
+      Serial.printf("Unknown firmware version: %s\r\n", zedFirmwareVersion);
       zedFirmwareVersionInt = 99; //0.99 invalid firmware version
     }
 
@@ -456,7 +466,7 @@ void beginGNSS()
       zedModuleType = PLATFORM_F9R;
     else
     {
-      Serial.printf("Unknown ZED module: %s\n\r", i2cGNSS.minfo.extension[3]);
+      Serial.printf("Unknown ZED module: %s\r\n", i2cGNSS.minfo.extension[3]);
       zedModuleType = PLATFORM_F9P;
     }
 

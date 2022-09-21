@@ -6,9 +6,10 @@ bool configureUbloxModule()
   if (online.gnss == false) return (false);
 
   boolean response = true;
-  int maxWait = 2000;
 
   //Wait for initial report from module
+  int maxWait = 2000;
+  startTime = millis();
   while (pvtUpdated == false)
   {
     i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
@@ -376,7 +377,7 @@ void checkBatteryLevels()
     else
       sprintf(tempStr, "No batt");
 
-    Serial.printf("%s\n\r", tempStr);
+    Serial.printf("%s\r\n", tempStr);
   }
 
   if (productVariant == RTK_SURVEYOR)
@@ -436,7 +437,7 @@ void reportHeapNow()
   if (settings.enableHeapReport == true)
   {
     lastHeapReport = millis();
-    Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\n\r", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+    Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\r\n", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
   }
 }
 
@@ -588,4 +589,10 @@ void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, char *textMe
     CRC = CRC ^ nmeaTxt[x];
 
   sprintf(nmeaMessage, "%s%02X", nmeaTxt, CRC);
+}
+
+//Reset settings struct to default initializers
+void settingsToDefaults()
+{
+  settings = defaultSettings;
 }

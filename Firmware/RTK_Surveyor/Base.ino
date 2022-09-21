@@ -113,7 +113,7 @@ bool beginSurveyIn()
     return (false);
   }
 
-  Serial.printf("Survey started. This will run until %d seconds have passed and less than %0.03f meter accuracy is achieved.\n\r",
+  Serial.printf("Survey started. This will run until %d seconds have passed and less than %0.03f meter accuracy is achieved.\r\n",
                 settings.observationSeconds,
                 settings.observationPositionAccuracy
                );
@@ -173,9 +173,9 @@ bool startFixedBase()
     long majorEcefZ = floor((settings.fixedEcefZ * 100) + 0.5);
     long minorEcefZ = floor((((settings.fixedEcefZ * 100.0) - majorEcefZ) * 100.0) + 0.5);
 
-    //    Serial.printf("fixedEcefY (should be -4716808.5807): %0.04f\n\r", settings.fixedEcefY);
-    //    Serial.printf("major (should be -471680858): %ld\n\r", majorEcefY);
-    //    Serial.printf("minor (should be -7): %ld\n\r", minorEcefY);
+    //    Serial.printf("fixedEcefY (should be -4716808.5807): %0.04f\r\n", settings.fixedEcefY);
+    //    Serial.printf("major (should be -471680858): %ld\r\n", majorEcefY);
+    //    Serial.printf("minor (should be -7): %ld\r\n", minorEcefY);
 
     //Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
     //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
@@ -188,26 +188,31 @@ bool startFixedBase()
   }
   else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
   {
+    //Add height of instrument (HI) to fixed altitude
+    //https://www.e-education.psu.edu/geog862/node/1853
+    //For example, if HAE is at 100.0m, + 2m stick + 73mm ARP = 102.073
+    float totalFixedAltitude = settings.fixedAltitude + (settings.antennaHeight / 1000.0) + (settings.antennaReferencePoint / 1000.0);
+    
     //Break coordinates into main and high precision parts
     //The type casting should not effect rounding of original double cast coordinate
     int64_t majorLat = settings.fixedLat * 10000000;
     int64_t minorLat = ((settings.fixedLat * 10000000) - majorLat) * 100;
     int64_t majorLong = settings.fixedLong * 10000000;
     int64_t minorLong = ((settings.fixedLong * 10000000) - majorLong) * 100;
-    int32_t majorAlt = settings.fixedAltitude * 100;
-    int32_t minorAlt = ((settings.fixedAltitude * 100) - majorAlt) * 100;
+    int32_t majorAlt = totalFixedAltitude * 100;
+    int32_t minorAlt = ((totalFixedAltitude * 100) - majorAlt) * 100;
 
-    //    Serial.printf("fixedLong (should be -105.184774720): %0.09f\n\r", settings.fixedLong);
-    //    Serial.printf("major (should be -1051847747): %lld\n\r", majorLat);
-    //    Serial.printf("minor (should be -20): %lld\n\r", minorLat);
+    //    Serial.printf("fixedLong (should be -105.184774720): %0.09f\r\n", settings.fixedLong);
+    //    Serial.printf("major (should be -1051847747): %lld\r\n", majorLat);
+    //    Serial.printf("minor (should be -20): %lld\r\n", minorLat);
     //
-    //    Serial.printf("fixedLat (should be 40.090335429): %0.09f\n\r", settings.fixedLat);
-    //    Serial.printf("major (should be 400903354): %lld\n\r", majorLong);
-    //    Serial.printf("minor (should be 29): %lld\n\r", minorLong);
+    //    Serial.printf("fixedLat (should be 40.090335429): %0.09f\r\n", settings.fixedLat);
+    //    Serial.printf("major (should be 400903354): %lld\r\n", majorLong);
+    //    Serial.printf("minor (should be 29): %lld\r\n", minorLong);
     //
-    //    Serial.printf("fixedAlt (should be 1560.2284): %0.04f\n\r", settings.fixedAltitude);
-    //    Serial.printf("major (should be 156022): %ld\n\r", majorAlt);
-    //    Serial.printf("minor (should be 84): %ld\n\r", minorAlt);
+    //    Serial.printf("fixedAlt (should be 1560.2284): %0.04f\r\n", settings.fixedAltitude);
+    //    Serial.printf("major (should be 156022): %ld\r\n", majorAlt);
+    //    Serial.printf("minor (should be 84): %ld\r\n", minorAlt);
 
     response = i2cGNSS.setStaticPosition(
                  majorLat, minorLat,
@@ -230,13 +235,9 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
   {
     if (rtcmPacketsSent > 99) rtcmPacketsSent = 1; //Trim to two digits to avoid overlap
   }
-  else if (logIncreasing == true)
-  {
-    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon
-  }
   else
   {
-    if (rtcmPacketsSent > 9999) rtcmPacketsSent = 1;
+    if (rtcmPacketsSent > 999) rtcmPacketsSent = 1; //Trim to three digits to avoid log icon and increasing bar
   }
 
   //Determine if we should check this byte with the RTCM checker or simply pass it along

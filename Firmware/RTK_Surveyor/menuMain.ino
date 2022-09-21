@@ -26,7 +26,11 @@ void menuMain()
   while (1)
   {
     Serial.println();
+#ifdef ENABLE_DEVELOPER
+    Serial.printf("SparkFun RTK %s v%d.%d-RC-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+#else
     Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+#endif
 
 #ifdef COMPILE_BT
     Serial.print("** Bluetooth broadcasting as: ");
@@ -133,8 +137,9 @@ void menuMain()
 //Factory reset - updatesZEDSettings = true by default
 void menuUserProfiles()
 {
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, ECEF coords, etc).
   uint8_t originalProfileNumber = profileNumber;
+
+  bool forceReset = false; //If we reset a profile to default, the profile number has not changed, but we still need to reset
 
   while (1)
   {
@@ -154,9 +159,11 @@ void menuUserProfiles()
       Serial.println();
     }
 
-    Serial.printf("%d) Edit profile name: %s\n\r", MAX_PROFILE_COUNT + 1, profileNames[profileNumber]);
+    Serial.printf("%d) Edit profile name: %s\r\n", MAX_PROFILE_COUNT + 1, profileNames[profileNumber]);
 
-    Serial.printf("%d) Delete profile '%s'\n\r", MAX_PROFILE_COUNT + 2, profileNames[profileNumber]);
+    Serial.printf("%d) Set profile '%s' to factory defaults\r\n", MAX_PROFILE_COUNT + 2, profileNames[profileNumber]);
+
+    Serial.printf("%d) Delete profile '%s'\r\n", MAX_PROFILE_COUNT + 3, profileNames[profileNumber]);
 
     Serial.println("x) Exit");
 
@@ -169,11 +176,29 @@ void menuUserProfiles()
     else if (incoming == MAX_PROFILE_COUNT + 1)
     {
       Serial.print("Enter new profile name: ");
-      readLine(settings.profileName, sizeof(settings.profileName), menuTimeoutExtended);
+      readLine(settings.profileName, sizeof(settings.profileName), menuTimeout);
       recordSystemSettings(); //We need to update this immediately in case user lists the available profiles again
       setProfileName(profileNumber);
     }
     else if (incoming == MAX_PROFILE_COUNT + 2)
+    {
+      Serial.printf("\r\nReset profile '%s' to factory defaults. Press 'y' to confirm:", profileNames[profileNumber]);
+      byte bContinue = getByteChoice(menuTimeout);
+      if (bContinue == 'y')
+      {
+        settingsToDefaults(); //Overwrite our current settings with defaults
+
+        recordSystemSettings(); //Overwrite profile file and NVM with these settings
+
+        //Get bitmask of active profiles
+        activeProfiles = loadProfileNames();
+
+        forceReset = true; //Upon exit of menu, reset the device
+      }
+      else
+        Serial.println("Reset aborted");
+    }
+    else if (incoming == MAX_PROFILE_COUNT + 3)
     {
       Serial.printf("\r\nDelete profile '%s'. Press 'y' to confirm:", profileNames[profileNumber]);
       byte bContinue = getByteChoice(menuTimeout);
@@ -202,8 +227,7 @@ void menuUserProfiles()
         //If this is an empty/new profile slot, overwrite our current settings with defaults
         if (responseLFS == false && responseSD == false)
         {
-          Settings tempSettings;
-          settings = tempSettings;
+          settingsToDefaults();
         }
 
         //Get bitmask of active profiles
@@ -221,9 +245,9 @@ void menuUserProfiles()
       printUnknown(incoming);
   }
 
-  if (originalProfileNumber != profileNumber)
+  if (originalProfileNumber != profileNumber || forceReset == true)
   {
-    Serial.println("Changing profiles. Rebooting. Goodbye!");
+    Serial.println("Rebooting to apply new profile settings. Goodbye!");
     delay(2000);
     ESP.restart();
   }
@@ -254,10 +278,7 @@ void changeProfileNumber(byte newProfileNumber)
   if (responseLFS == false && responseSD == false)
   {
     Serial.println("Default the settings");
-    //Create a temporary settings struc on the heap (not the stack because it is ~4500 bytes)
-    Settings *tempSettings = new Settings;
-    settings = *tempSettings;
-    delete tempSettings;
+    settingsToDefaults();
   }
 }
 
@@ -314,7 +335,7 @@ void menuRadio()
       Serial.print("  Radio MAC: ");
       for (int x = 0 ; x < 5 ; x++)
         Serial.printf("%02X:", wifiMACAddress[x]);
-      Serial.printf("%02X\n\r", wifiMACAddress[5]);
+      Serial.printf("%02X\r\n", wifiMACAddress[5]);
 
       if (settings.espnowPeerCount > 0)
       {
@@ -324,7 +345,7 @@ void menuRadio()
           Serial.print("    ");
           for (int y = 0 ; y < 5 ; y++)
             Serial.printf("%02X:", settings.espnowPeers[x][y]);
-          Serial.printf("%02X\n\r", settings.espnowPeers[x][5]);
+          Serial.printf("%02X\r\n", settings.espnowPeers[x][5]);
         }
       }
       else
@@ -336,6 +357,7 @@ void menuRadio()
 #ifdef ENABLE_DEVELOPER
       Serial.println("4) Add dummy radio");
       Serial.println("5) Send dummy data");
+      Serial.println("6) Broadcast dummy data");
 #endif
     }
 
@@ -350,45 +372,7 @@ void menuRadio()
     }
     else if (settings.radioType == RADIO_ESPNOW && incoming == 2)
     {
-      Serial.println("Begin ESP NOW Pairing");
-
-      //Start ESP-Now if needed, put ESP-Now into broadcast state
-      espnowBeginPairing();
-
-      //Begin sending our MAC every 250ms until a remote device sends us there info
-      randomSeed(millis());
-
-      Serial.println("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
-      while (Serial.available()) Serial.read();
-
-      uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
-      bool exitPair = false;
-      while (exitPair == false)
-      {
-        if (Serial.available())
-        {
-          Serial.println("User pressed button. Pairing canceled.");
-          break;
-        }
-
-        int timeout = 1000 + random(0, 100); //Delay 1000 to 1100ms
-        for (int x = 0 ; x < timeout ; x++)
-        {
-          delay(1);
-
-          if (espnowIsPaired() == true) //Check if we've received a pairing message
-          {
-            Serial.println("Pairing compete");
-            exitPair = true;
-            break;
-          }
-        }
-
-        espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
-
-        Serial.println("Scanning for other radio...");
-      }
+      espnowStaticPairing();
     }
     else if (settings.radioType == RADIO_ESPNOW && incoming == 3)
     {
@@ -408,7 +392,7 @@ void menuRadio()
 #ifdef ENABLE_DEVELOPER
     else if (settings.radioType == RADIO_ESPNOW && incoming == 4)
     {
-      uint8_t peer1[] = {0xB8, 0xD6, 0x1A, 0x0D, 0x8F, 0x9C}; //Facet
+      uint8_t peer1[] = {0xB8, 0xD6, 0x1A, 0x0D, 0x8F, 0x9C}; //Random MAC
       if (esp_now_is_peer_exist(peer1) == true)
         log_d("Peer already exists");
       else
@@ -429,6 +413,12 @@ void menuRadio()
     {
       uint8_t espnowData[] = "This is the long string to test how quickly we can send one string to the other unit. I am going to need a much longer sentence if I want to get a long amount of data into one transmission. This is nearing 200 characters but needs to be near 250.";
       esp_now_send(0, (uint8_t *) &espnowData, sizeof(espnowData)); //Send packet to all peers
+    }
+    else if (settings.radioType == RADIO_ESPNOW && incoming == 6)
+    {
+      uint8_t espnowData[] = "This is the long string to test how quickly we can send one string to the other unit. I am going to need a much longer sentence if I want to get a long amount of data into one transmission. This is nearing 200 characters but needs to be near 250.";
+      uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+      esp_now_send(broadcastMac, (uint8_t *) &espnowData, sizeof(espnowData)); //Send packet to all peers
     }
 #endif
 

@@ -50,7 +50,7 @@
 // Constants - compiled out
 //----------------------------------------
 
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
 
 //Give up connecting after this number of attempts
 //Connection attempts are throttled to increase the time between attempts
@@ -67,9 +67,6 @@ static WiFiClient * ntripServer;
 //Count of bytes sent by the NTRIP server to the NTRIP caster
 uint32_t ntripServerBytesSent = 0;
 
-//Count the number of connection attempts
-static int ntripServerConnectionAttempts;
-
 //Throttle the time between connection attempts
 static int ntripServerConnectionAttemptTimeout = 0;
 static uint32_t ntripServerLastConnectionAttempt = 0;
@@ -77,12 +74,6 @@ static uint32_t ntripServerTimeoutPrint = 0;
 
 //Last time the NTRIP server state was displayed
 static uint32_t ntripServerStateLastDisplayed = 0;
-
-//NTRIP server timer usage:
-//  * Measure the connection response time
-//  * Receive RTCM correction data timeout
-//  * Monitor last RTCM byte received for frame counting
-static uint32_t ntripServerTimer;
 
 //----------------------------------------
 // NTRIP Server Routines - compiled out
@@ -94,14 +85,26 @@ bool ntripServerConnectCaster()
   const int SERVER_BUFFER_SIZE = 512;
   char serverBuffer[SERVER_BUFFER_SIZE];
 
+  //Remove any http:// or https:// prefix from host name
+  char hostname[50];
+  strncpy(hostname, settings.ntripServer_CasterHost, 50); //strtok modifies string to be parsed so we create a copy
+  char *token = strtok(hostname, "//");
+  if (token != NULL)
+  {
+    token = strtok(NULL, "//"); //Advance to data after //
+    if (token != NULL)
+      strcpy(settings.ntripServer_CasterHost, token);
+  }
+
+  Serial.printf("NTRIP Server connecting to %s:%d\r\n", settings.ntripServer_CasterHost,
+                settings.ntripServer_CasterPort);
+
   //Attempt a connection to the NTRIP caster
   if (!ntripServer->connect(settings.ntripServer_CasterHost,
                             settings.ntripServer_CasterPort))
     return false;
 
-  //Note the connection to the NTRIP caster
-  Serial.printf("Connected to %s:%d\n\r", settings.ntripServer_CasterHost,
-                settings.ntripServer_CasterPort);
+  Serial.println("NTRIP Server connected");
 
   //Build the authorization credentials message
   //  * Mount point
@@ -129,6 +132,8 @@ bool ntripServerConnectLimitReached()
   //Retry the connection a few times
   bool limitReached = false;
   if (ntripServerConnectionAttempts++ >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS) limitReached = true;
+
+  ntripServerConnectionAttemptsTotal++;
 
   if (limitReached == false)
   {
@@ -209,7 +214,7 @@ void ntripServerSetState(byte newState)
 //This function gets called as each RTCM byte comes in
 void ntripServerProcessRTCM(uint8_t incoming)
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
 
   if (ntripServerState == NTRIP_SERVER_CASTING)
   {
@@ -244,10 +249,13 @@ void ntripServerProcessRTCM(uint8_t incoming)
       ntripServerBytesSent = 0;
     }
 
-    ntripServer->write(incoming); //Send this byte to socket
-    ntripServerBytesSent++;
-    ntripServerTimer = millis();
-    wifiOutgoingRTCM = true;
+    if (ntripServer->connected())
+    {
+      ntripServer->write(incoming); //Send this byte to socket
+      ntripServerBytesSent++;
+      ntripServerTimer = millis();
+      wifiOutgoingRTCM = true;
+    }
   }
 
   //Indicate that the GNSS is providing correction data
@@ -262,7 +270,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
 //Start the NTRIP server
 void ntripServerStart()
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   //Stop NTRIP server and WiFi
   ntripServerStop(true); //Don't allocate new wifiClient
 
@@ -288,7 +296,7 @@ void ntripServerStart()
 //Stop the NTRIP server
 void ntripServerStop(bool wifiClientAllocated)
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   if (ntripServer)
   {
     //Break the NTRIP server connection if necessary
@@ -323,7 +331,7 @@ void ntripServerStop(bool wifiClientAllocated)
 //Update the NTRIP server state machine
 void ntripServerUpdate()
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   //Periodically display the NTRIP server state
   if (settings.enablePrintNtripServerState && ((millis() - ntripServerStateLastDisplayed) > 15000))
   {
@@ -343,22 +351,30 @@ void ntripServerUpdate()
 
     //Start WiFi
     case NTRIP_SERVER_ON:
-      //Pause until connection timeout has passed
-      if (millis() - ntripServerLastConnectionAttempt > ntripServerConnectionAttemptTimeout)
+      if (strlen(settings.ntripServer_wifiSSID) == 0)
       {
-        ntripServerLastConnectionAttempt = millis();
-        wifiStart(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
-        ntripServerSetState(NTRIP_SERVER_WIFI_CONNECTING);
+        Serial.println("Error: Please enter SSID before starting NTRIP Server");
+        ntripServerSetState(NTRIP_SERVER_OFF);
       }
       else
       {
-        if (millis() - ntripServerTimeoutPrint > 1000)
+        //Pause until connection timeout has passed
+        if (millis() - ntripServerLastConnectionAttempt > ntripServerConnectionAttemptTimeout)
         {
-          ntripServerTimeoutPrint = millis();
-          Serial.printf("NTRIP Server connection timeout wait: %d of %d seconds \n\r",
-                        (millis() - ntripServerLastConnectionAttempt) / 1000,
-                        ntripServerConnectionAttemptTimeout / 1000
-                       );
+          ntripServerLastConnectionAttempt = millis();
+          wifiStart(settings.ntripServer_wifiSSID, settings.ntripServer_wifiPW);
+          ntripServerSetState(NTRIP_SERVER_WIFI_CONNECTING);
+        }
+        else
+        {
+          if (millis() - ntripServerTimeoutPrint > 1000)
+          {
+            ntripServerTimeoutPrint = millis();
+            Serial.printf("NTRIP Server connection timeout wait: %ld of %d seconds \r\n",
+                          (millis() - ntripServerLastConnectionAttempt) / 1000,
+                          ntripServerConnectionAttemptTimeout / 1000
+                         );
+          }
         }
       }
       break;
@@ -367,9 +383,12 @@ void ntripServerUpdate()
     case NTRIP_SERVER_WIFI_CONNECTING:
       if (!wifiIsConnected())
       {
-        if (wifiConnectionTimeout())
+        //Throttle if SSID is not detected
+        if (wifiConnectionTimeout() || wifiGetStatus() == WL_NO_SSID_AVAIL)
         {
-          //Assume AP weak signal, the AP is unable to respond successfully
+          if (wifiGetStatus() == WL_NO_SSID_AVAIL)
+            Serial.printf("WiFi network '%s' not found\r\n", settings.ntripServer_wifiSSID);
+
           if (ntripServerConnectLimitReached())
           {
             Serial.println("NTRIP Server failed to get WiFi. Are your WiFi credentials correct?");
@@ -382,6 +401,7 @@ void ntripServerUpdate()
       else
       {
         //WiFi connection established
+        ntripServerStartTime = millis();
         ntripServerSetState(NTRIP_SERVER_WIFI_CONNECTED);
 
         // Start the SD card server
@@ -433,9 +453,10 @@ void ntripServerUpdate()
       if (ntripServer->available() < strlen("ICY 200 OK")) //Wait until at least a few bytes have arrived
       {
         //Check for response timeout
-        if (millis() - ntripServerTimer > 5000)
+        if (millis() - ntripServerTimer > 10000)
         {
-          //NTRIP web service did not respone
+          Serial.println("Caster failed to respond in time.");
+
           if (ntripServerConnectLimitReached())
           {
             Serial.println("Caster failed to respond. Do you have your caster address and port correct?");
@@ -448,15 +469,36 @@ void ntripServerUpdate()
         char response[512];
         ntripServerResponse(response, sizeof(response));
 
-        //Look for '200 OK'
-        if (strstr(response, "200") == NULL)
+        //Look for various responses
+        if (strstr(response, "401") != NULL)
         {
           //Look for '401 Unauthorized'
-          Serial.printf("NTRIP Server caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
+          Serial.printf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n", response);
 
-          ntripServerStop(true); //Don't allocate new wifiClient
+          //Give up - Stop WiFi operations
+          ntripServerStop(true); //Do not allocate new wifiClient
         }
-        else
+        else if (strstr(response, "banned") != NULL) //'Banned' found
+        {
+          //Look for 'HTTP/1.1 200 OK' and banned IP information
+          Serial.printf("NTRIP Server connected to caster but caster reponded with problem: %s", response);
+
+          //Give up - Stop WiFi operations
+          ntripServerStop(true); //Do not allocate new wifiClient
+        }
+        else if (strstr(response, "200") == NULL) //'200' not found
+        {
+          //Look for 'ERROR - Mountpoint taken' from Emlid.
+          Serial.printf("NTRIP Server connected but caster reponded with problem: %s", response);
+
+          //Attempt to reconnect after throttle controlled timeout
+          if (ntripServerConnectLimitReached())
+          {
+            Serial.println("Caster failed to respond. Do you have your caster address and port correct?");
+          }
+        }        
+        else if (strstr(response, "200") != NULL) //'200' found
+
         {
           Serial.printf("NTRIP Server connected to %s:%d %s\r\n",
                         settings.ntripServer_CasterHost,
@@ -479,14 +521,14 @@ void ntripServerUpdate()
       //Check for a broken connection
       if (!ntripServer->connected())
       {
-        //Broken connection, retry the NTRIP server connection
-        Serial.println("Connection to NTRIP Server was closed");
+        //Broken connection, retry the NTRIP connection
+        Serial.println("Connection to NTRIP Caster was lost");
         ntripServerStop(false); //Allocate new wifiClient
       }
       else if ((millis() - ntripServerTimer) > (3 * 1000))
       {
         //GNSS stopped sending RTCM correction data
-        Serial.println("NTRIP Server breaking caster connection due to lack of RTCM data!");
+        Serial.println("NTRIP Server breaking connection to caster due to lack of RTCM data!");
         ntripServerStop(false); //Allocate new wifiClient
       }
       else

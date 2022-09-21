@@ -20,7 +20,7 @@ void menuFirmware()
 
     for (int x = 0 ; x < binCount ; x++)
     {
-      Serial.printf("%d) Load %s\n\r", x + 1, binFileNames[x]);
+      Serial.printf("%d) Load %s\r\n", x + 1, binFileNames[x]);
     }
 
     Serial.println("x) Exit");
@@ -38,7 +38,7 @@ void menuFirmware()
     else if (incoming == STATUS_GETNUMBER_TIMEOUT)
       break;
     else
-      Serial.printf("Bad value: %d\n\r", incoming);
+      Serial.printf("Bad value: %d\r\n", incoming);
   }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
@@ -93,6 +93,8 @@ void scanForFirmware()
 
   dir.open("/"); //Open root
 
+  binCount = 0; //Reset count in case scanForFirmware is called again
+
   while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
   {
     if (tempFile.isFile())
@@ -115,7 +117,7 @@ void scanForFirmware()
           strcpy(binFileNames[binCount++], fname); //Add this to the array
         }
         else
-          Serial.printf("Unknown: %s\n\r", fname);
+          Serial.printf("Unknown: %s\r\n", fname);
       }
     }
     tempFile.close();
@@ -127,14 +129,31 @@ void scanForFirmware()
 //Called from mountSDThenUpdate with microSD card mounted and sdCardsemaphore held
 void updateFromSD(const char *firmwareFileName)
 {
+  //Count app partitions
+  int appPartitions = 0;
+  esp_partition_iterator_t it = esp_partition_find(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, nullptr);
+  while (it != nullptr)
+  {
+    appPartitions++;
+    it = esp_partition_next(it);
+  }
+
+  //We cannot do OTA if there is only one partition
+  if (appPartitions < 2)
+  {
+    Serial.println("SD firmware updates are not available on 4MB devices. Please use the GUI or CLI update methods.");
+    return;
+  }
+
   //Turn off any tasks so that we are not disrupted
+  espnowStop();
   wifiStop();
   bluetoothStop();
 
   //Delete tasks if running
   stopUART2Tasks();
 
-  Serial.printf("Loading %s\n\r", firmwareFileName);
+  Serial.printf("Loading %s\r\n", firmwareFileName);
   if (sd->exists(firmwareFileName))
   {
     SdFile firmwareFile;

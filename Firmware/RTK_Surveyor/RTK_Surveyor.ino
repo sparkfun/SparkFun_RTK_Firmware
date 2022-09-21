@@ -23,7 +23,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 4;
+const int FIRMWARE_VERSION_MINOR = 5;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
@@ -85,6 +85,8 @@ int pin_radio_rts;
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+#include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
+
 //I2C for GNSS, battery gauge, display, accelerometer
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <Wire.h>
@@ -125,7 +127,7 @@ int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file
 //System crashes if two tasks access a file at the same time
 //So we use a semaphore to see if file system is available
 SemaphoreHandle_t sdCardSemaphore;
-TickType_t loggingSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
+TickType_t loggingSemaphoreWait_ms = 10 / portTICK_PERIOD_MS;
 const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
 const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 
@@ -159,10 +161,25 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 
 #endif
 
-//char *certificateContents; //Holds the contents of the keys prior to MQTT connection
-//char *keyContents;
-char certificateContents[2000]; //Holds the contents of the keys prior to MQTT connection
-char keyContents[2000];
+volatile uint8_t wifiNmeaConnected;
+
+//NTRIP client timer usage:
+//  * Measure the connection response time
+//  * Receive NTRIP data timeout
+static uint32_t ntripClientTimer;
+static uint32_t ntripClientStartTime; //For calculating uptime
+static int ntripClientConnectionAttempts; //Count the number of connection attempts between restarts
+static int ntripClientConnectionAttemptsTotal; //Count the number of connection attempts absolutely
+
+//NTRIP server timer usage:
+//  * Measure the connection response time
+//  * Receive RTCM correction data timeout
+//  * Monitor last RTCM byte received for frame counting
+static uint32_t ntripServerTimer;
+static uint32_t ntripServerStartTime;
+static int ntripServerConnectionAttempts; //Count the number of connection attempts between restarts
+static int ntripServerConnectionAttemptsTotal; //Count the number of connection attempts absolutely
+
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration
@@ -219,6 +236,8 @@ uint16_t mseconds;
 uint8_t numSV;
 uint8_t fixType;
 uint8_t carrSoln;
+
+const byte haeNumberOfDecimals = 8; //Used for printing and transitting lat/lon
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -332,6 +351,9 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
+
+char *settingsCSV; //Push large array onto heap
+
 #endif
 #endif
 
@@ -345,6 +367,10 @@ unsigned long timeSinceLastIncomingSetting = 0;
 
 //PointPerfect Corrections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#if __has_include("tokens.h")
+#include "tokens.h"
+#endif
+
 float lBandEBNO = 0.0; //Used on system status menu
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -374,7 +400,7 @@ const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 uint8_t wifiMACAddress[6]; //Display this address in the system menu
 uint8_t btMACAddress[6];   //Display this address when Bluetooth is enabled, otherwise display wifiMACAddress
 char deviceName[70]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
-const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
+const uint16_t menuTimeout = 60 * 10; //Menus will exit/timeout after this number of seconds
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
 bool inMainMenu = false; //Set true when in the serial config menu system.
@@ -425,8 +451,6 @@ uint32_t triggerCount = 0; //Global copy - TM2 event counter
 uint32_t towMsR = 0; //Global copy - Time Of Week of rising edge (ms)
 uint32_t towSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
 
-bool newAPSettings = false; //Goes true when new setting is received via AP config. Allows us to record settings when combined with a reset.
-
 unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update via AP config.
 int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
@@ -437,7 +461,7 @@ bool restartRover = false; //If user modifies any NTRIP Client settings, we need
 unsigned long startTime = 0; //Used for checking longest running functions
 bool lbandCorrectionsReceived = false; //Used to display L-Band SIV icon when corrections are successfully decrypted
 unsigned long lastLBandDecryption = 0; //Timestamp of last successfully decrypted PMP message
-bool mqttMessageReceived = false; //Goes true when the subscribed MQTT channel reports back
+volatile bool mqttMessageReceived = false; //Goes true when the subscribed MQTT channel reports back
 uint8_t leapSeconds = 0; //Gets set if GNSS is online
 unsigned long systemTestDisplayTime = 0; //Timestamp for swapping the graphic during testing
 uint8_t systemTestDisplayNumber = 0; //Tracks which test screen we're looking at
@@ -852,7 +876,14 @@ void updateRadio()
       //then we've reached the end of the RTCM stream. Send partial buffer.
       if (espnowOutgoingSpot > 0 && (millis() - espnowLastAdd) > 50)
       {
-        esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
+
+        if (settings.espnowBroadcast == false)
+          esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
+        else
+        {
+          uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+          esp_now_send(broadcastMac, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send packet via broadcast
+        }
 
         if (!inMainMenu) log_d("ESPNOW transmitted %d RTCM bytes", espnowBytesSent + espnowOutgoingSpot);
         espnowBytesSent = 0;

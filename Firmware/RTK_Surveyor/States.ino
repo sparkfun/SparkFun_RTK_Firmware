@@ -276,7 +276,7 @@ void updateSystemState()
           }
 
           //Check for <1m horz accuracy before starting surveyIn
-          Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\n\r", settings.surveyInStartingAccuracy, horizontalAccuracy);
+          Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\r\n", settings.surveyInStartingAccuracy, horizontalAccuracy);
 
           if (horizontalAccuracy > 0.0 && horizontalAccuracy < settings.surveyInStartingAccuracy)
           {
@@ -310,7 +310,7 @@ void updateSystemState()
 
           if (i2cGNSS.getSurveyInValid(50) == true) //Survey in complete
           {
-            Serial.printf("Observation Time: %d\n\r", svinObservationTime);
+            Serial.printf("Observation Time: %d\r\n", svinObservationTime);
             Serial.println("Base survey complete! RTCM now broadcasting.");
 
             if (productVariant == RTK_SURVEYOR)
@@ -337,7 +337,7 @@ void updateSystemState()
 
             if (svinObservationTime > maxSurveyInWait_s)
             {
-              Serial.printf("Survey-In took more than %d minutes. Returning to rover mode.\n\r", maxSurveyInWait_s / 60);
+              Serial.printf("Survey-In took more than %d minutes. Returning to rover mode.\r\n", maxSurveyInWait_s / 60);
 
               resetSurvey();
 
@@ -564,7 +564,7 @@ void updateSystemState()
           else
           {
             //Enable retry by not changing states
-            log_d("sdCardSemaphore failed to yield in STATE_MARK_EVENT\r\n");
+            log_d("sdCardSemaphore failed to yield in STATE_MARK_EVENT");
           }
         }
         break;
@@ -606,6 +606,7 @@ void updateSystemState()
         break;
       case (STATE_WIFI_CONFIG):
         {
+
           if (incomingSettingsSpot > 0)
           {
             //Allow for 750ms before we parse buffer for all data to arrive
@@ -653,7 +654,7 @@ void updateSystemState()
         }
         break;
 
-#ifdef  COMPILE_L_BAND
+#ifdef COMPILE_L_BAND
       case (STATE_KEYS_STARTED):
         {
           if (rtcWaitTime == 0) rtcWaitTime = millis();
@@ -697,7 +698,7 @@ void updateSystemState()
             log_d("Days until keys expire: %d", daysRemaining);
 
             if (daysRemaining >= 28 && daysRemaining <= 56)
-              changeState(STATE_KEYS_LBAND_CONFIGURE);
+              changeState(STATE_KEYS_DAYS_REMAINING);
             else
               changeState(STATE_KEYS_NEEDED);
           }
@@ -726,7 +727,7 @@ void updateSystemState()
           else
           {
             log_d("Already tried to obtain keys for today");
-            changeState(STATE_KEYS_LBAND_CONFIGURE); //We have valid keys, we've already tried today. No need to try again.
+            changeState(STATE_KEYS_DAYS_REMAINING); //We have valid keys, we've already tried today. No need to try again.
           }
         }
         break;
@@ -760,7 +761,7 @@ void updateSystemState()
 
       case (STATE_KEYS_WIFI_CONNECTED):
         {
-          if (updatePointPerfectKeys() == true) //Connect to ThingStream MQTT and get PointPerfect key UBX packet
+          if (pointperfectUpdateKeys() == true) //Connect to ThingStream MQTT and get PointPerfect key UBX packet
           {
             displayKeysUpdated();
           }
@@ -779,10 +780,11 @@ void updateSystemState()
             if (settings.pointPerfectNextKeyStart > 0)
             {
               uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
-              Serial.printf("Days until PointPerfect keys expire: %d\n\r", daysRemaining);
+              Serial.printf("Days until PointPerfect keys expire: %d\r\n", daysRemaining);
               paintKeyDaysRemaining(daysRemaining, 2000);
             }
           }
+          paintLBandConfigure();
 
           forceSystemStateUpdate = true; //Imediately go to this new state
           changeState(STATE_KEYS_LBAND_CONFIGURE);
@@ -794,7 +796,7 @@ void updateSystemState()
           //Be sure we ignore any external RTCM sources
           i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_UBX); //Set the UART2 to input UBX (no RTCM)
 
-          applyLBandKeys(); //Send current keys, if available, to ZED-F9P
+          pointperfectApplyKeys(); //Send current keys, if available, to ZED-F9P
 
           forceSystemStateUpdate = true; //Imediately go to this new state
           changeState(settings.lastState); //Go to either rover or base
@@ -872,7 +874,7 @@ void updateSystemState()
         {
           forceSystemStateUpdate = true; //Imediately go to this new state
 
-          if (provisionDevice() == true)
+          if (pointperfectProvisionDevice() == true)
           {
             displayKeysUpdated();
             changeState(STATE_KEYS_DAYS_REMAINING);
@@ -920,7 +922,7 @@ void updateSystemState()
           if (espnowIsPaired() == true)
           {
             paintEspNowPaired();
-            
+
             // Return to the previous state
             changeState(lastSystemState);
           }
@@ -942,7 +944,7 @@ void updateSystemState()
 
       default:
         {
-          Serial.printf("Unknown state: %d\n\r", systemState);
+          Serial.printf("Unknown state: %d\r\n", systemState);
         }
         break;
     }
@@ -1036,7 +1038,7 @@ void changeState(SystemState newState)
       case (STATE_PROFILE):
         Serial.print("State: Profile");
         break;
-#ifdef  COMPILE_L_BAND
+#ifdef COMPILE_L_BAND
       case (STATE_KEYS_STARTED):
         Serial.print("State: Keys Started ");
         break;
@@ -1099,7 +1101,9 @@ void changeState(SystemState newState)
       struct tm timeinfo = rtc.getTimeStruct();
       char s[30];
       strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", &timeinfo);
-      Serial.printf(", %s.%03ld\r\n", s, rtc.getMillis());
+      Serial.printf(", %s.%03ld", s, rtc.getMillis());
     }
+
+    Serial.println();
   }
 }

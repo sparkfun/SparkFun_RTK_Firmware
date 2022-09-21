@@ -182,8 +182,6 @@ void menuPortsMultiplexed()
 //Most often used for logging events (inputs) and when external triggers (outputs) occur
 void menuPortHardwareTriggers()
 {
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, ECEF coords, etc).
-
   while (1)
   {
     Serial.println();
@@ -223,7 +221,7 @@ void menuPortHardwareTriggers()
     else if (incoming == '2' && settings.enableExternalPulse == true)
     {
       Serial.print("Time between pulses in milliseconds: ");
-      double pulseTime = getDouble(menuTimeoutExtended); //Timeout after x seconds
+      double pulseTime = getDouble(menuTimeout); //Timeout after x seconds
 
       if (pulseTime != STATUS_GETNUMBER_TIMEOUT && pulseTime != STATUS_PRESSED_X)
       {
@@ -233,7 +231,7 @@ void menuPortHardwareTriggers()
     else if (incoming == '3' && settings.enableExternalPulse == true)
     {
       Serial.print("Pulse length in milliseconds: ");
-      double pulseLength = getDouble(menuTimeoutExtended); //Timeout after x seconds
+      double pulseLength = getDouble(menuTimeout); //Timeout after x seconds
 
       if (pulseLength != STATUS_GETNUMBER_TIMEOUT && pulseLength != STATUS_PRESSED_X)
       {

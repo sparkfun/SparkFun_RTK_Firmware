@@ -1,8 +1,10 @@
-#ifdef  COMPILE_L_BAND
+#ifdef COMPILE_L_BAND
 
 //----------------------------------------
 // Locals - compiled out
 //----------------------------------------
+
+#define CONTENT_SIZE 2000
 
 static SFE_UBLOX_GNSS_ADD i2cLBand; // NEO-D9S
 static const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
@@ -28,8 +30,6 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
 
 void menuPointPerfectKeys()
 {
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, caster credentials, etc).
-
   while (1)
   {
     Serial.println();
@@ -61,7 +61,7 @@ void menuPointPerfectKeys()
       long expYear;
       gpsWeekToWToDate(keyGPSWeek, keyGPSToW, &expDay, &expMonth, &expYear);
 
-      Serial.printf("%02ld/%02ld/%ld\n\r", expDay, expMonth, expYear);
+      Serial.printf("%02ld/%02ld/%ld\r\n", expDay, expMonth, expYear);
     }
     else
       Serial.println("N/A");
@@ -86,7 +86,7 @@ void menuPointPerfectKeys()
       long expYear;
       gpsWeekToWToDate(keyGPSWeek, keyGPSToW, &expDay, &expMonth, &expYear);
 
-      Serial.printf("%02ld/%02ld/%ld\n\r", expDay, expMonth, expYear);
+      Serial.printf("%02ld/%02ld/%ld\r\n", expDay, expMonth, expYear);
     }
     else
       Serial.println("N/A");
@@ -98,12 +98,12 @@ void menuPointPerfectKeys()
     if (incoming == 1)
     {
       Serial.print("Enter Device Profile Token: ");
-      readLine(settings.pointPerfectDeviceProfileToken, sizeof(settings.pointPerfectDeviceProfileToken), menuTimeoutExtended);
+      readLine(settings.pointPerfectDeviceProfileToken, sizeof(settings.pointPerfectDeviceProfileToken), menuTimeout);
     }
     else if (incoming == 2)
     {
       Serial.print("Enter Current Key: ");
-      readLine(settings.pointPerfectCurrentKey, sizeof(settings.pointPerfectCurrentKey), menuTimeoutExtended);
+      readLine(settings.pointPerfectCurrentKey, sizeof(settings.pointPerfectCurrentKey), menuTimeout);
     }
     else if (incoming == 3)
     {
@@ -126,14 +126,14 @@ void menuPointPerfectKeys()
         settings.pointPerfectNextKeyStart = settings.pointPerfectCurrentKeyStart + settings.pointPerfectCurrentKeyDuration + 1; //Next key starts after current key
         settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration;
 
-        Serial.printf("  settings.pointPerfectNextKeyStart: %lld\n\r", settings.pointPerfectNextKeyStart);
-        Serial.printf("  settings.pointPerfectNextKeyDuration: %lld\n\r", settings.pointPerfectNextKeyDuration);
+        Serial.printf("  settings.pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
+        Serial.printf("  settings.pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
       }
     }
     else if (incoming == 4)
     {
       Serial.print("Enter Next Key: ");
-      readLine(settings.pointPerfectNextKey, sizeof(settings.pointPerfectNextKey), menuTimeoutExtended);
+      readLine(settings.pointPerfectNextKey, sizeof(settings.pointPerfectNextKey), menuTimeout);
     }
     else if (incoming == 5)
     {
@@ -162,210 +162,269 @@ void menuPointPerfectKeys()
 }
 
 //Connect to 'home' WiFi and then ThingStream API. This will attach this unique device to the ThingStream network.
-bool provisionDevice()
+bool pointperfectProvisionDevice()
 {
 #ifdef COMPILE_WIFI
+  bluetoothStop(); //Free heap before starting secure client (requires ~70KB)
 
-  WiFiClientSecure client;
-  client.setCACert(AWS_PUBLIC_CERT);
+  DynamicJsonDocument * jsonZtp = NULL;
+  char * tempHolder = NULL;
+  bool retVal = false;
 
-  char hardwareID[13];
-  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
+  do
+  {
+    WiFiClientSecure client;
+    client.setCACert(AWS_PUBLIC_CERT);
+
+    char hardwareID[13];
+    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
 
 #ifdef WHITELISTED_ID
-  //Override ID with testing ID
-  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1], whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
+    //Override ID with testing ID
+    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1], whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
 #endif
 
-  char givenName[100];
-  sprintf(givenName, "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, hardwareID); //Get ready for JSON
+    char givenName[100];
+    sprintf(givenName, "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, hardwareID); //Get ready for JSON
 
-  StaticJsonDocument<256> pointPerfectAPIPost;
+    StaticJsonDocument<256> pointPerfectAPIPost;
 
-  //Determine if we use the SparkFun token or custom token
-  char tokenString[37] = "\0";
-  if (strlen(settings.pointPerfectDeviceProfileToken) == 0)
-  {
-    //Convert uint8_t array into string with dashes in spots
-    //We must assume u-blox will not change the position of their dashes or length of their token
-    for (int x = 0 ; x < sizeof(pointPerfectTokenArray) ; x++)
+    //Determine if we use the SparkFun token or custom token
+    char tokenString[37] = "\0";
+    if (strlen(settings.pointPerfectDeviceProfileToken) == 0)
     {
-      char temp[3];
-      sprintf(temp, "%02x", pointPerfectTokenArray[x]);
-      strcat(tokenString, temp);
-      if (x == 3 || x == 5 || x == 7 || x == 9) strcat(tokenString, "-");
-    }
-  }
-  else
-  {
-    //Use the user's custom token
-    strcpy(tokenString, settings.pointPerfectDeviceProfileToken);
-    Serial.printf("Using custom token: %s\n\r", tokenString);
-  }
-
-  pointPerfectAPIPost["token"] = tokenString;
-  pointPerfectAPIPost["givenName"] = givenName;
-  pointPerfectAPIPost["hardwareId"] = hardwareID;
-  //pointPerfectAPIPost["tags"] = "mac";
-
-  String json;
-  serializeJson(pointPerfectAPIPost, json);
-
-  Serial.printf("Connecting to: %s\n\r", pointPerfectAPI);
-
-  HTTPClient http;
-  http.begin(client, pointPerfectAPI);
-  http.addHeader("Content-Type", "application/json");
-
-  int httpResponseCode = http.POST(json);
-
-  String response = http.getString();
-
-  http.end();
-
-  if (httpResponseCode != 200)
-  {
-    Serial.printf("HTTP response error %d: ", httpResponseCode);
-    Serial.println(response);
-    return (false);
-  }
-  else
-  {
-    //Device is now active with ThingStream
-    //Pull pertinent values from response
-    DynamicJsonDocument jsonZtp(4096);
-    DeserializationError error = deserializeJson(jsonZtp, response);
-    if (DeserializationError::Ok != error)
-    {
-      Serial.println("JSON error");
-      return (false);
+      //Convert uint8_t array into string with dashes in spots
+      //We must assume u-blox will not change the position of their dashes or length of their token
+      for (int x = 0 ; x < sizeof(pointPerfectTokenArray) ; x++)
+      {
+        char temp[3];
+        sprintf(temp, "%02x", pointPerfectTokenArray[x]);
+        strcat(tokenString, temp);
+        if (x == 3 || x == 5 || x == 7 || x == 9) strcat(tokenString, "-");
+      }
     }
     else
     {
-      char tempHolder[2000];
-      strcpy(tempHolder, (const char*)jsonZtp["certificate"]);
-      //      Serial.printf("len of PrivateCert: %d\n\r", strlen(tempHolder));
-      //      Serial.printf("privateCert: %s\n\r", tempHolder);
-      recordFile("certificate", tempHolder, strlen(tempHolder));
-
-      strcpy(tempHolder, (const char*)jsonZtp["privateKey"]);
-      //      Serial.printf("len of privateKey: %d\n\r", strlen(tempHolder));
-      //      Serial.printf("privateKey: %s\n\r", tempHolder);
-      recordFile("privateKey", tempHolder, strlen(tempHolder));
-
-      strcpy(settings.pointPerfectClientID, (const char*)jsonZtp["clientId"]);
-      strcpy(settings.pointPerfectBrokerHost, (const char*)jsonZtp["brokerHost"]);
-      strcpy(settings.pointPerfectLBandTopic, (const char*)jsonZtp["subscriptions"][0]["path"]);
-
-      strcpy(settings.pointPerfectNextKey, (const char*)jsonZtp["dynamickeys"]["next"]["value"]);
-      settings.pointPerfectNextKeyDuration = jsonZtp["dynamickeys"]["next"]["duration"];
-      settings.pointPerfectNextKeyStart = jsonZtp["dynamickeys"]["next"]["start"];
-
-      strcpy(settings.pointPerfectCurrentKey, (const char*)jsonZtp["dynamickeys"]["current"]["value"]);
-      settings.pointPerfectCurrentKeyDuration = jsonZtp["dynamickeys"]["current"]["duration"];
-      settings.pointPerfectCurrentKeyStart = jsonZtp["dynamickeys"]["current"]["start"];
+      //Use the user's custom token
+      strcpy(tokenString, settings.pointPerfectDeviceProfileToken);
+      Serial.printf("Using custom token: %s\r\n", tokenString);
     }
-  } //HTTP Response was 200
 
-  Serial.println("Device successfully provisioned. Keys obtained.");
+    pointPerfectAPIPost["token"] = tokenString;
+    pointPerfectAPIPost["givenName"] = givenName;
+    pointPerfectAPIPost["hardwareId"] = hardwareID;
+    //pointPerfectAPIPost["tags"] = "mac";
 
-  recordSystemSettings();
+    String json;
+    serializeJson(pointPerfectAPIPost, json);
 
-  return (true);
+    Serial.printf("Connecting to: %s\r\n", pointPerfectAPI);
+
+    HTTPClient http;
+    http.begin(client, pointPerfectAPI);
+    http.addHeader("Content-Type", "application/json");
+
+    int httpResponseCode = http.POST(json);
+
+    String response = http.getString();
+
+    http.end();
+
+    if (httpResponseCode != 200)
+    {
+      Serial.printf("HTTP response error %d: ", httpResponseCode);
+      Serial.println(response);
+      break;
+    }
+    else
+    {
+      //Device is now active with ThingStream
+      //Pull pertinent values from response
+      jsonZtp = new DynamicJsonDocument(4096);
+      if (!jsonZtp)
+      {
+        Serial.println("ERROR - Failed to allocate jsonZtp!\r\n");
+        break;
+      }
+      DeserializationError error = deserializeJson(*jsonZtp, response);
+      if (DeserializationError::Ok != error)
+      {
+        Serial.println("JSON error");
+        break;
+      }
+      else
+      {
+        tempHolder = (char *)malloc(2000);
+        if (!tempHolder)
+        {
+          Serial.println("ERROR - Failed to allocate tempHolder buffer!\r\n");
+          break;
+        }
+        strcpy(tempHolder, (const char*)((*jsonZtp)["certificate"]));
+        //      Serial.printf("len of PrivateCert: %d\r\n", strlen(tempHolder));
+        //      Serial.printf("privateCert: %s\r\n", tempHolder);
+        recordFile("certificate", tempHolder, strlen(tempHolder));
+
+        strcpy(tempHolder, (const char*)((*jsonZtp)["privateKey"]));
+        //      Serial.printf("len of privateKey: %d\r\n", strlen(tempHolder));
+        //      Serial.printf("privateKey: %s\r\n", tempHolder);
+        recordFile("privateKey", tempHolder, strlen(tempHolder));
+
+        strcpy(settings.pointPerfectClientID, (const char*)((*jsonZtp)["clientId"]));
+        strcpy(settings.pointPerfectBrokerHost, (const char*)((*jsonZtp)["brokerHost"]));
+        strcpy(settings.pointPerfectLBandTopic, (const char*)((*jsonZtp)["subscriptions"][0]["path"]));
+
+        strcpy(settings.pointPerfectNextKey, (const char*)((*jsonZtp)["dynamickeys"]["next"]["value"]));
+        settings.pointPerfectNextKeyDuration = (*jsonZtp)["dynamickeys"]["next"]["duration"];
+        settings.pointPerfectNextKeyStart = (*jsonZtp)["dynamickeys"]["next"]["start"];
+
+        strcpy(settings.pointPerfectCurrentKey, (const char*)((*jsonZtp)["dynamickeys"]["current"]["value"]));
+        settings.pointPerfectCurrentKeyDuration = (*jsonZtp)["dynamickeys"]["current"]["duration"];
+        settings.pointPerfectCurrentKeyStart = (*jsonZtp)["dynamickeys"]["current"]["start"];
+      }
+    } //HTTP Response was 200
+
+    Serial.println("Device successfully provisioned. Keys obtained.");
+
+    recordSystemSettings();
+    retVal = true;
+  } while (0);
+
+  //Free the allocated buffers
+  if (tempHolder)
+    free (tempHolder);
+  if (jsonZtp)
+    delete jsonZtp;
+
+  bluetoothStart();
+  
+  return (retVal);
 #else
   return (false);
 #endif
 }
 
 //Subscribe to MQTT channel, grab keys, then stop
-bool updatePointPerfectKeys()
+bool pointperfectUpdateKeys()
 {
 #ifdef COMPILE_WIFI
+  bluetoothStop(); //Release available heap to allow room for TLS 
 
+  char * certificateContents = NULL; //Holds the contents of the keys prior to MQTT connection
+  char * keyContents = NULL;
   WiFiClientSecure secureClient;
+  bool gotKeys = false;
 
-#define CONTENT_SIZE 2000
-
-  //certificateContents = (char*)malloc(CONTENT_SIZE);
-  //memset(certificateContents, 0, CONTENT_SIZE);
-  loadFile("certificate", certificateContents);
-  secureClient.setCertificate(certificateContents);
-
-  //keyContents = (char*)malloc(CONTENT_SIZE);
-  //memset(keyContents, 0, CONTENT_SIZE);
-  loadFile("privateKey", keyContents);
-  secureClient.setPrivateKey(keyContents);
-
-  secureClient.setCACert(AWS_PUBLIC_CERT);
-
-  PubSubClient mqttClient(secureClient);
-  mqttClient.setCallback(mqttCallback);
-  mqttClient.setServer(settings.pointPerfectBrokerHost, 8883);
-
-  log_d("Connecting to MQTT broker: %s", settings.pointPerfectBrokerHost);
-
-  // Loop until we're reconnected
-  int maxTries = 2;
-  int tries = 0;
-  while (mqttClient.connected() == false)
+  do
   {
-    Serial.print("MQTT connecting...");
-
-    if (mqttClient.connect(settings.pointPerfectClientID))
+    //Allocate the buffers
+    certificateContents = (char*)malloc(CONTENT_SIZE);
+    keyContents = (char*)malloc(CONTENT_SIZE);
+    if ((!certificateContents) || (!keyContents))
     {
-      Serial.println("connected");
-      //mqttClient.subscribe(settings.pointPerfectLBandTopic); //The /pp/key/Lb channel fails to respond with keys
-      mqttClient.subscribe("/pp/ubx/0236/Lb"); //Alternate channel for L-Band keys
+      Serial.println("Failed to allocate content buffers!");
+      break;
     }
-    else
+
+    //Get the certificate
+    memset(certificateContents, 0, CONTENT_SIZE);
+    loadFile("certificate", certificateContents);
+    secureClient.setCertificate(certificateContents);
+
+    //Get the private key
+    memset(keyContents, 0, CONTENT_SIZE);
+    loadFile("privateKey", keyContents);
+    secureClient.setPrivateKey(keyContents);
+
+    secureClient.setCACert(AWS_PUBLIC_CERT);
+
+    PubSubClient mqttClient(secureClient);
+    mqttClient.setCallback(mqttCallback);
+    mqttClient.setServer(settings.pointPerfectBrokerHost, 8883);
+
+    log_d("Connecting to MQTT broker: %s", settings.pointPerfectBrokerHost);
+
+    //Loop until we're connected or until the maximum retries are exceeded
+    mqttMessageReceived = false;
+    int maxTries = 3;
+    do
     {
-      if (tries++ == maxTries)
+      Serial.print("MQTT connecting...");
+
+      //Attempt to the key broker
+      if (mqttClient.connect(settings.pointPerfectClientID))
       {
-        log_d("MQTT failed to connect");
-        //free(certificateContents);
-        //free(keyContents);
-        return (false);
+        //Successful connection
+        Serial.println("connected");
+        //mqttClient.subscribe(settings.pointPerfectLBandTopic); //The /pp/key/Lb channel fails to respond with keys
+        mqttClient.subscribe("/pp/ubx/0236/Lb"); //Alternate channel for L-Band keys
+        break;
       }
 
-      log_d("failed, status code: %d try again in 1 second", mqttClient.state());
-      delay(1000);
-    }
-  }
+      //Retry the connection attempt
+      if (--maxTries)
+      {
+        Serial.print(".");
+        log_d("failed, status code: %d try again in 1 second", mqttClient.state());
+        delay(1000);
+      }
+    } while (maxTries);
 
-  Serial.print("Waiting for keys");
-
-  mqttMessageReceived = false;
-
-  //Wait for callback
-  startTime = millis();
-  while (mqttMessageReceived == false)
-  {
-    mqttClient.loop();
+    //Check for connection failure
     if (mqttClient.connected() == false)
     {
-      log_d("Client disconnected");
-      //free(certificateContents);
-      //free(keyContents);
-      return (false);
+      Serial.println("failed!");
+      log_d("MQTT failed to connect");
+      break;
     }
 
-    delay(100);
-    Serial.print(".");
-    if (millis() - startTime > 8000)
+    Serial.print("Waiting for keys");
+
+    //Wait for callback
+    startTime = millis();
+    while (1)
     {
-      Serial.println();
-      log_d("Channel failed to respond");
-      //free(certificateContents);
-      //free(keyContents);
-      return (false);
-    }
-  }
+      mqttClient.loop();
+      if (mqttMessageReceived == true)
+        break;
+      if (mqttClient.connected() == false)
+      {
+        log_d("Client disconnected");
+        break;
+      }
+      if (millis() - startTime > 8000)
+      {
+        log_d("Channel failed to respond");
+        break;
+      }
 
-  Serial.println();
-  Serial.println("Keys successfully updated");
-  //free(certificateContents);
-  //free(keyContents);
-  return (true);
+      //Continue waiting for the keys
+      delay(100);
+      Serial.print(".");
+    }
+    Serial.println();
+
+    //Determine if the keys were updated
+    if (mqttMessageReceived)
+    {
+      Serial.println("Keys successfully updated");
+      gotKeys = true;
+    }
+
+    //Done with the MQTT client
+    mqttClient.disconnect();
+  } while (0);
+
+  //Free the content buffers
+  if (keyContents)
+    free(keyContents);
+  if (certificateContents)
+    free(certificateContents);
+
+  bluetoothStart();
+
+  //Return the key status
+  return (gotKeys);
 #else
   return (false);
 #endif
@@ -414,18 +473,18 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
 
     //    Serial.println();
 
-    //    Serial.printf("pointPerfectCurrentKeyStart: %lld\n\r", settings.pointPerfectCurrentKeyStart);
-    //    Serial.printf("pointPerfectCurrentKeyDuration: %lld\n\r", settings.pointPerfectCurrentKeyDuration);
-    //    Serial.printf("pointPerfectNextKeyStart: %lld\n\r", settings.pointPerfectNextKeyStart);
-    //    Serial.printf("pointPerfectNextKeyDuration: %lld\n\r", settings.pointPerfectNextKeyDuration);
+    //    Serial.printf("pointPerfectCurrentKeyStart: %lld\r\n", settings.pointPerfectCurrentKeyStart);
+    //    Serial.printf("pointPerfectCurrentKeyDuration: %lld\r\n", settings.pointPerfectCurrentKeyDuration);
+    //    Serial.printf("pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
+    //    Serial.printf("pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
     //
-    //    Serial.printf("currentWeek: %d\n\r", currentWeek);
-    //    Serial.printf("currentToW: %d\n\r", currentToW);
+    //    Serial.printf("currentWeek: %d\r\n", currentWeek);
+    //    Serial.printf("currentToW: %d\r\n", currentToW);
     //    Serial.print("Current key: ");
     //    Serial.println(settings.pointPerfectCurrentKey);
     //
-    //    Serial.printf("nextWeek: %d\n\r", nextWeek);
-    //    Serial.printf("nextToW: %d\n\r", nextToW);
+    //    Serial.printf("nextWeek: %d\r\n", nextWeek);
+    //    Serial.printf("nextToW: %d\r\n", nextToW);
     //    Serial.print("nextKey key: ");
     //    Serial.println(settings.pointPerfectNextKey);
 
@@ -442,10 +501,10 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
     settings.pointPerfectCurrentKeyDuration = settings.pointPerfectNextKeyStart - settings.pointPerfectCurrentKeyStart - 1;
     settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration; //We assume next key duration is the same as current key duration because we have to
 
-    //    Serial.printf("pointPerfectCurrentKeyStart: %lld\n\r", settings.pointPerfectCurrentKeyStart);
-    //    Serial.printf("pointPerfectCurrentKeyDuration: %lld\n\r", settings.pointPerfectCurrentKeyDuration);
-    //    Serial.printf("pointPerfectNextKeyStart: %lld\n\r", settings.pointPerfectNextKeyStart);
-    //    Serial.printf("pointPerfectNextKeyDuration: %lld\n\r", settings.pointPerfectNextKeyDuration);
+    //    Serial.printf("pointPerfectCurrentKeyStart: %lld\r\n", settings.pointPerfectCurrentKeyStart);
+    //    Serial.printf("pointPerfectCurrentKeyDuration: %lld\r\n", settings.pointPerfectCurrentKeyDuration);
+    //    Serial.printf("pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
+    //    Serial.printf("pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
   }
 
   mqttMessageReceived = true;
@@ -456,20 +515,18 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
 //https://www.includehelp.com/c-programs/validate-date.aspx
 bool getDate(uint8_t &dd, uint8_t &mm, uint16_t &yy)
 {
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, caster credentials, etc).
-
   char temp[10];
 
   Serial.print("Enter Day: ");
-  readLine(temp, sizeof(temp), menuTimeoutExtended);
+  readLine(temp, sizeof(temp), menuTimeout);
   dd = atoi(temp);
 
   Serial.print("Enter Month: ");
-  readLine(temp, sizeof(temp), menuTimeoutExtended);
+  readLine(temp, sizeof(temp), menuTimeout);
   mm = atoi(temp);
 
   Serial.print("Enter Year (YYYY): ");
-  readLine(temp, sizeof(temp), menuTimeoutExtended);
+  readLine(temp, sizeof(temp), menuTimeout);
   yy = atoi(temp);
 
   //check year
@@ -621,16 +678,16 @@ void dateToKeyStartDuration(uint8_t expDay, uint8_t expMonth, uint16_t expYear, 
   *settingsKeyStart = startUnixEpoch * 1000L; //Convert to ms
   *settingsKeyDuration = (28 * 24 * 60 * 60 * 1000LL) - 1; //We assume keys last for 28 days (minus one ms to be before midnight)
 
-  Serial.printf("  KeyStart: %lld\n\r", *settingsKeyStart);
-  Serial.printf("  KeyDuration: %lld\n\r", *settingsKeyDuration);
+  Serial.printf("  KeyStart: %lld\r\n", *settingsKeyStart);
+  Serial.printf("  KeyDuration: %lld\r\n", *settingsKeyDuration);
 
   //Print ToW and Week for debugging
   uint16_t keyGPSWeek;
   uint32_t keyGPSToW;
   long long unixEpoch = thingstreamEpochToGPSEpoch(*settingsKeyStart, *settingsKeyDuration);
   unixEpochToWeekToW(unixEpoch, &keyGPSWeek, &keyGPSToW);
-  Serial.printf("  keyGPSWeek: %d\n\r", keyGPSWeek);
-  Serial.printf("  keyGPSToW: %d\n\r", keyGPSToW);
+  Serial.printf("  keyGPSWeek: %d\r\n", keyGPSWeek);
+  Serial.printf("  keyGPSToW: %d\r\n", keyGPSToW);
 }
 
 /*
@@ -698,7 +755,7 @@ void pushRXMPMP(UBX_RXM_PMP_message_data_t *pmpData)
 }
 
 //If we have decryption keys, and L-Band is online, configure module
-void applyLBandKeys()
+void pointperfectApplyKeys()
 {
   if (online.lband == true)
   {
@@ -786,7 +843,7 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 //Check if NEO-D9S is connected. Configure if available.
 void beginLBand()
 {
-#ifdef  COMPILE_L_BAND
+#ifdef COMPILE_L_BAND
   if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
   {
     log_d("L-Band not detected");
@@ -828,7 +885,7 @@ void beginLBand()
     }
     else
     {
-      Serial.println("Unknown band area");
+      Serial.println("Error: Unknown band area. Defaulting to US band.");
       settings.LBandFreq = 1556290000; //Default to US
     }
     recordSystemSettings();
@@ -865,7 +922,7 @@ void beginLBand()
   log_d("L-Band online");
 
   online.lband = true;
-#endif  //COMPILE_L_BAND
+#endif //COMPILE_L_BAND
 }
 
 //Set 'home' WiFi credentials
@@ -873,9 +930,7 @@ void beginLBand()
 //Download keys
 void menuPointPerfect()
 {
-#ifdef  COMPILE_L_BAND
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, caster credentials, etc).
-
+#ifdef COMPILE_L_BAND
   while (1)
   {
     Serial.println();
@@ -883,7 +938,7 @@ void menuPointPerfect()
 
     char hardwareID[13];
     sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
-    Serial.printf("Device ID: %s\n\r", hardwareID);
+    Serial.printf("Device ID: %s\r\n", hardwareID);
 
     Serial.print("Days until keys expire: ");
     if (strlen(settings.pointPerfectCurrentKey) > 0)
@@ -926,12 +981,12 @@ void menuPointPerfect()
     else if (incoming == '2')
     {
       Serial.print("Enter Home WiFi SSID: ");
-      readLine(settings.home_wifiSSID, sizeof(settings.home_wifiSSID), menuTimeoutExtended);
+      readLine(settings.home_wifiSSID, sizeof(settings.home_wifiSSID), menuTimeout);
     }
     else if (incoming == '3')
     {
       Serial.printf("Enter password for Home WiFi network %s: ", settings.home_wifiSSID);
-      readLine(settings.home_wifiPW, sizeof(settings.home_wifiPW), menuTimeoutExtended);
+      readLine(settings.home_wifiPW, sizeof(settings.home_wifiPW), menuTimeout);
     }
     else if (incoming == '4')
     {
@@ -953,7 +1008,7 @@ void menuPointPerfect()
         {
           delay(500);
           Serial.print(".");
-          if (millis() - startTime > 15000) 
+          if (millis() - startTime > 15000)
           {
             Serial.println("Error: No WiFi available");
             break;
@@ -972,17 +1027,17 @@ void menuPointPerfect()
           sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
           if (LittleFS.exists(fileName) == false)
           {
-            provisionDevice(); //Connect to ThingStream API and get keys
+            pointperfectProvisionDevice(); //Connect to ThingStream API and get keys
           }
           else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
           {
-            provisionDevice(); //Connect to ThingStream API and get keys
+            pointperfectProvisionDevice(); //Connect to ThingStream API and get keys
           }
           else
-            updatePointPerfectKeys();
+            pointperfectUpdateKeys();
 
         }
-        
+
         wifiStop();
       } //End strlen SSID check
 #endif
@@ -1006,7 +1061,7 @@ void menuPointPerfect()
 
   if (strlen(settings.pointPerfectClientID) > 0)
   {
-    applyLBandKeys();
+    pointperfectApplyKeys();
   }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
@@ -1017,7 +1072,7 @@ void menuPointPerfect()
 //If a certain amount of time has elapsed between last decryption, turn off L-Band icon
 void updateLBand()
 {
-#ifdef  COMPILE_L_BAND
+#ifdef COMPILE_L_BAND
   if (online.lbandCorrections == true)
   {
     i2cLBand.checkUblox(); // Check for the arrival of new PMP data and process it.

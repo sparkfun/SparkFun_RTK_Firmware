@@ -2,8 +2,6 @@
 //Update rate, constellations, etc
 void menuGNSS()
 {
-  int menuTimeoutExtended = 30; //Increase time needed for complex data entry (mount point ID, caster credentials, etc).
-
   restartRover = false; //If user modifies any NTRIP settings, we need to restart the rover
 
   while (1)
@@ -59,7 +57,7 @@ void menuGNSS()
     }
     Serial.println();
 
-    Serial.println("4) Set Constellations ");
+    Serial.println("4) Set Constellations");
 
     Serial.print("5) Toggle NTRIP Client: ");
     if (settings.enableNtripClient == true) Serial.println("Enabled");
@@ -110,7 +108,7 @@ void menuGNSS()
       }
       else
       {
-        setMeasurementRates(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate and settings.navigationRate
+        setMeasurementRates(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
         //Settings recorded to NVM and file at main menu exit
       }
     }
@@ -124,7 +122,7 @@ void menuGNSS()
       }
       else
       {
-        setMeasurementRates(rate); //This will set settings.measurementRate and settings.navigationRate
+        setMeasurementRates(rate); //This will set settings.measurementRate, settings.navigationRate, and GSV message
         //Settings recorded to NVM and file at main menu exit
       }
     }
@@ -165,26 +163,26 @@ void menuGNSS()
     else if (incoming == 6 && settings.enableNtripClient == true)
     {
       Serial.print("Enter local WiFi SSID: ");
-      readLine(settings.ntripClient_wifiSSID, sizeof(settings.ntripClient_wifiSSID), menuTimeoutExtended);
+      readLine(settings.ntripClient_wifiSSID, sizeof(settings.ntripClient_wifiSSID), menuTimeout);
       restartRover = true;
     }
     else if (incoming == 7 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter password for WiFi network %s: ", settings.ntripClient_wifiSSID);
-      readLine(settings.ntripClient_wifiPW, sizeof(settings.ntripClient_wifiPW), menuTimeoutExtended);
+      readLine(settings.ntripClient_wifiPW, sizeof(settings.ntripClient_wifiPW), menuTimeout);
       restartRover = true;
     }
     else if (incoming == 8 && settings.enableNtripClient == true)
     {
       Serial.print("Enter new Caster Address: ");
-      readLine(settings.ntripClient_CasterHost, sizeof(settings.ntripClient_CasterHost), menuTimeoutExtended);
+      readLine(settings.ntripClient_CasterHost, sizeof(settings.ntripClient_CasterHost), menuTimeout);
       restartRover = true;
     }
     else if (incoming == 9 && settings.enableNtripClient == true)
     {
       Serial.print("Enter new Caster Port: ");
 
-      int ntripClient_CasterPort = getNumber(menuTimeoutExtended); //Timeout after x seconds
+      int ntripClient_CasterPort = getNumber(menuTimeout); //Timeout after x seconds
       if (ntripClient_CasterPort < 1 || ntripClient_CasterPort > 99999) //Arbitrary 99k max port #
         Serial.println("Error: Caster Port out of range");
       else
@@ -194,25 +192,25 @@ void menuGNSS()
     else if (incoming == 10 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter user name for %s: ", settings.ntripClient_CasterHost);
-      readLine(settings.ntripClient_CasterUser, sizeof(settings.ntripClient_CasterUser), menuTimeoutExtended);
+      readLine(settings.ntripClient_CasterUser, sizeof(settings.ntripClient_CasterUser), menuTimeout);
       restartRover = true;
     }
     else if (incoming == 11 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter user password for %s: ", settings.ntripClient_CasterHost);
-      readLine(settings.ntripClient_CasterUserPW, sizeof(settings.ntripClient_CasterUserPW), menuTimeoutExtended);
+      readLine(settings.ntripClient_CasterUserPW, sizeof(settings.ntripClient_CasterUserPW), menuTimeout);
       restartRover = true;
     }
     else if (incoming == 12 && settings.enableNtripClient == true)
     {
       Serial.print("Enter new Mount Point: ");
-      readLine(settings.ntripClient_MountPoint, sizeof(settings.ntripClient_MountPoint), menuTimeoutExtended);
+      readLine(settings.ntripClient_MountPoint, sizeof(settings.ntripClient_MountPoint), menuTimeout);
       restartRover = true;
     }
     else if (incoming == 13 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter password for Mount Point %s: ", settings.ntripClient_MountPoint);
-      readLine(settings.ntripClient_MountPointPW, sizeof(settings.ntripClient_MountPointPW), menuTimeoutExtended);
+      readLine(settings.ntripClient_MountPointPW, sizeof(settings.ntripClient_MountPointPW), menuTimeout);
       restartRover = true;
     }
     else if (incoming == 14 && settings.enableNtripClient == true)
@@ -293,7 +291,7 @@ void menuConstellations()
 //measurementRate > 25 & <= 65535
 //navigationRate >= 1 && <= 127
 //We give preference to limiting a measurementRate to 30s or below due to reported problems with measRates above 30.
-void setMeasurementRates(float secondsBetweenSolutions)
+bool setMeasurementRates(float secondsBetweenSolutions)
 {
   uint16_t measRate = 0; //Calculate these locally and then attempt to apply them to ZED at completion
   uint16_t navRate = 0;
@@ -320,7 +318,7 @@ void setMeasurementRates(float secondsBetweenSolutions)
   navRate = secondsBetweenSolutions * 1000.0 / measRate; //Set navRate to nearest int value
   measRate = secondsBetweenSolutions * 1000.0 / navRate; //Adjust measurement rate to match actual navRate
 
-  //Serial.printf("measurementRate / navRate: %d / %d\n\r", measRate, navRate);
+  //Serial.printf("measurementRate / navRate: %d / %d\r\n", measRate, navRate);
 
   //If we successfully set rates, only then record to settings
   if (i2cGNSS.setMeasurementRate(measRate) == true && i2cGNSS.setNavigationRate(navRate) == true)
@@ -342,8 +340,11 @@ void setMeasurementRates(float secondsBetweenSolutions)
   }
   else
   {
-    Serial.println("menuGNSS: Failed to set measurement and navigation rates");
+    Serial.println("Failed to set measurement and navigation rates");
+    return(false);
   }
+
+  return(true);
 }
 
 //We need to know our overall measurement frequency for things like setting the GSV NMEA sentence rate.
@@ -357,7 +358,7 @@ float getMeasurementFrequency()
   //The ZED-F9P will report an incorrect nav rate if we have rececently changed it.
   //Reading a second time insures a correct read.
 
-  //Serial.printf("currentMeasurementRate / currentNavigationRate: %d / %d\n\r", currentMeasurementRate, currentNavigationRate);
+  //Serial.printf("currentMeasurementRate / currentNavigationRate: %d / %d\r\n", currentMeasurementRate, currentNavigationRate);
 
   float measurementFrequency = (1000.0 / currentMeasurementRate) / currentNavigationRate;
   return (measurementFrequency);
@@ -400,7 +401,7 @@ bool configureConstellations()
   }
   //long stopTime = millis();
 
-  //Serial.printf("setConstellation time delta: %ld ms\n\r", stopTime - startTime);
+  //Serial.printf("setConstellation time delta: %ld ms\r\n", stopTime - startTime);
 
   return (response);
 }
@@ -409,11 +410,11 @@ bool configureConstellations()
 void printZEDInfo()
 {
   if (zedModuleType == PLATFORM_F9P)
-    Serial.printf("ZED-F9P firmware: %s\n\r", zedFirmwareVersion);
+    Serial.printf("ZED-F9P firmware: %s\r\n", zedFirmwareVersion);
   else if (zedModuleType == PLATFORM_F9R)
-    Serial.printf("ZED-F9R firmware: %s\n\r", zedFirmwareVersion);
+    Serial.printf("ZED-F9R firmware: %s\r\n", zedFirmwareVersion);
   else
-    Serial.printf("Unknown module with firmware: %s\n\r", zedFirmwareVersion);
+    Serial.printf("Unknown module with firmware: %s\r\n", zedFirmwareVersion);
 }
 
 
@@ -421,5 +422,5 @@ void printZEDInfo()
 void printNEOInfo()
 {
   if (productVariant == RTK_FACET_LBAND)
-    Serial.printf("NEO-D9S firmware: %s\n\r", neoFirmwareVersion);
+    Serial.printf("NEO-D9S firmware: %s\r\n", neoFirmwareVersion);
 }

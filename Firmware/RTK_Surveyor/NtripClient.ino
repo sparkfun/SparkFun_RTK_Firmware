@@ -35,13 +35,15 @@
 // Constants - compiled out
 //----------------------------------------
 
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
 
 //Size of the credentials buffer in bytes
 static const int CREDENTIALS_BUFFER_SIZE = 512;
 
 //Give up connecting after this number of attempts
-static const int MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS = 3;
+//Connection attempts are throttled to increase the time between attempts
+//30 attempts with 15 second increases will take almost two hours
+static const int MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS = 30;
 
 //NTRIP caster response timeout
 static const uint32_t NTRIP_CLIENT_RESPONSE_TIMEOUT = 10 * 1000; //Milliseconds
@@ -55,6 +57,8 @@ static const int RTCM_DATA_SIZE = 512 * 4;
 //NTRIP client server request buffer size
 static const int SERVER_BUFFER_SIZE = CREDENTIALS_BUFFER_SIZE + 3;
 
+static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; //5s between transmission of GGA messages, if enabled
+
 //----------------------------------------
 // Locals - compiled out
 //----------------------------------------
@@ -62,13 +66,10 @@ static const int SERVER_BUFFER_SIZE = CREDENTIALS_BUFFER_SIZE + 3;
 //The WiFi connection to the NTRIP caster to obtain RTCM data.
 static WiFiClient * ntripClient;
 
-//Count the number of connection attempts
-static int ntripClientConnectionAttempts;
-
-//NTRIP client timer usage:
-//  * Measure the connection response time
-//  * Receive NTRIP data timeout
-static uint32_t ntripClientTimer;
+//Throttle the time between connection attempts
+static int ntripClientConnectionAttemptTimeout = 0;
+static uint32_t ntripClientLastConnectionAttempt = 0;
+static uint32_t ntripClientTimeoutPrint = 0;
 
 //Last time the NTRIP client state was displayed
 static uint32_t lastNtripClientState = 0;
@@ -80,17 +81,30 @@ unsigned long lastGGAPush = 0;
 // NTRIP Client Routines - compiled out
 //----------------------------------------
 
-void ntripClientAllowMoreConnections()
-{
-  ntripClientConnectionAttempts = 0;
-}
-
 bool ntripClientConnect()
 {
-  if ((!ntripClient)
-      || (!ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort)))
+  if (!ntripClient)
     return false;
-  Serial.printf("NTRIP Client connected to %s:%d\n\r", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
+
+  //Remove any http:// or https:// prefix from host name
+  char hostname[50];
+  strncpy(hostname, settings.ntripClient_CasterHost, 50); //strtok modifies string to be parsed so we create a copy
+  char *token = strtok(hostname, "//");
+  if (token != NULL)
+  {
+    token = strtok(NULL, "//"); //Advance to data after //
+    if (token != NULL)
+      strcpy(settings.ntripClient_CasterHost, token);
+  }
+
+  Serial.printf("NTRIP Client connecting to %s:%d\r\n", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
+
+  int connectResponse = ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
+
+  if (connectResponse < 1)
+    return false;
+
+  Serial.println("NTRIP Client connected");
 
   // Set up the server request (GET)
   char serverRequest[SERVER_BUFFER_SIZE];
@@ -145,20 +159,29 @@ bool ntripClientConnect()
 bool ntripClientConnectLimitReached()
 {
   //Shutdown the NTRIP client
-  ntripClientStop(false);
+  ntripClientStop(false); //Allocate new wifiClient
 
   //Retry the connection a few times
-  bool limitReached = (ntripClientConnectionAttempts++ >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
-  if (!limitReached)
-    //Display the heap state
+  bool limitReached = false;
+  if (ntripClientConnectionAttempts++ >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS) limitReached = true;
+
+  ntripClientConnectionAttemptsTotal++;
+
+  if (limitReached == false)
+  {
+    ntripClientConnectionAttemptTimeout = ntripClientConnectionAttempts * 15 * 1000L; //Wait 15, 30, 45, etc seconds between attempts
+
+    log_d("ntripClientConnectionAttemptTimeout increased to %d minutes", ntripClientConnectionAttemptTimeout / (60 * 1000L));
+
     reportHeapNow();
+  }
   else
   {
     //No more connection attempts, switching to Bluetooth
     Serial.println("NTRIP Client connection attempts exceeded!");
 
     //Stop WiFi operations
-    ntripClientStop(true);
+    ntripClientStop(true); //Do not allocate new wifiClient
   }
   return limitReached;
 }
@@ -225,9 +248,9 @@ void ntripClientSetState(byte newState)
 
 void ntripClientStart()
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   //Stop NTRIP client and WiFi
-  ntripClientStop(true);
+  ntripClientStop(true); //Do not allocate new wifiClient
 
   //Start the NTRIP client if enabled
   if (settings.enableNtripClient == true)
@@ -244,16 +267,14 @@ void ntripClientStart()
       ntripClientSetState(NTRIP_CLIENT_ON);
   }
 
-  //Only fallback to Bluetooth once, then try WiFi again.  This enables changes
-  //to the WiFi SSID and password to properly restart the WiFi.
-  ntripClientAllowMoreConnections();
+  ntripClientConnectionAttempts = 0;
 #endif  //COMPILE_WIFI
 }
 
 //Stop the NTRIP client
-void ntripClientStop(bool done)
+void ntripClientStop(bool wifiClientAllocated)
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   if (ntripClient)
   {
     //Break the NTRIP client connection if necessary
@@ -265,20 +286,25 @@ void ntripClientStop(bool done)
     ntripClient = NULL;
 
     //Allocate the NTRIP client structure if not done
-    if (!done)
+    if (wifiClientAllocated == false)
       ntripClient = new WiFiClient();
   }
 
   //Stop WiFi if in use
   if (ntripClientState > NTRIP_CLIENT_ON)
+  {
     wifiStop();
+
+    ntripClientLastConnectionAttempt = millis(); //Mark the Client stop so that we don't immediately attempt re-connect to Caster
+    ntripClientConnectionAttemptTimeout = 15 * 1000L; //Wait 15s between stopping and the first re-connection attempt.
+  }
 
   // Return the Main Talker ID to "GN".
   i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GN);
   i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Remove callback
 
   //Determine the next NTRIP client state
-  ntripClientSetState((ntripClient && (!done)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
+  ntripClientSetState((ntripClient && (wifiClientAllocated == false)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
   online.ntripClient = false;
   wifiIncomingRTCM = false;
 #endif  //COMPILE_WIFI
@@ -288,7 +314,7 @@ void ntripClientStop(bool done)
 //Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
 void ntripClientUpdate()
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   //Periodically display the NTRIP client state
   if (settings.enablePrintNtripClientState && ((millis() - lastNtripClientState) > 15000))
   {
@@ -304,18 +330,45 @@ void ntripClientUpdate()
 
     //Start WiFi
     case NTRIP_CLIENT_ON:
-      wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
-      ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTING);
+      if (strlen(settings.ntripClient_wifiSSID) == 0)
+      {
+        Serial.println("Error: Please enter SSID before starting NTRIP Client");
+        ntripClientSetState(NTRIP_CLIENT_OFF);
+      }
+      else
+      {
+        //Pause until connection timeout has passed
+        if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)
+        {
+          ntripClientLastConnectionAttempt = millis();
+          wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
+          ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTING);
+        }
+        else
+        {
+          if (millis() - ntripClientTimeoutPrint > 1000)
+          {
+            ntripClientTimeoutPrint = millis();
+            Serial.printf("NTRIP Client connection timeout wait: %ld of %d seconds \r\n",
+                          (millis() - ntripClientLastConnectionAttempt) / 1000,
+                          ntripClientConnectionAttemptTimeout / 1000
+                         );
+          }
+        }
+
+      }
       break;
 
     case NTRIP_CLIENT_WIFI_CONNECTING:
       if (!wifiIsConnected())
       {
-        if (wifiConnectionTimeout())
+        //Throttle if SSID is not detected
+        if (wifiConnectionTimeout() || wifiGetStatus() == WL_NO_SSID_AVAIL)
         {
-          //Assume AP weak signal, the AP is unable to respond successfully
-          if (ntripClientConnectLimitReached())
-            //Display the WiFi failure
+          if (wifiGetStatus() == WL_NO_SSID_AVAIL)
+            Serial.printf("WiFi network '%s' not found\r\n", settings.ntripClient_wifiSSID);
+
+          if (ntripClientConnectLimitReached()) //Stop WiFi, give up
             paintNtripWiFiFail(4000, true);
         }
       }
@@ -371,37 +424,53 @@ void ntripClientUpdate()
         char response[512];
         ntripClientResponse(&response[0], sizeof(response));
 
-        //Serial.printf("Response: %s\n\r", response);
+        log_d("Caster Response: %s", response);
 
-        //Look for '200 OK'
-        if (strstr(response, "200") == NULL)
+        //Look for various responses
+        if (strstr(response, "401") != NULL)
         {
           //Look for '401 Unauthorized'
-          Serial.printf("NTRIP Client caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
+          Serial.printf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n", response);
 
           //Stop WiFi operations
-          ntripClientStop(true);
+          ntripClientStop(true); //Do not allocate new wifiClient
         }
-        else
+        else if (strstr(response, "banned") != NULL)
+        {
+          //Look for 'HTTP/1.1 200 OK' and banned IP information
+          Serial.printf("NTRIP Client connected to caster but caster reponded with problem: %s", response);
+
+          //Stop WiFi operations
+          ntripClientStop(true); //Do not allocate new wifiClient
+        }
+        else if (strstr(response, "200") != NULL)
         {
           log_d("NTRIP Client connected to caster");
 
           //Connection is now open, start the NTRIP receive data timer
           ntripClientTimer = millis();
 
-          // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
-          i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
-          i2cGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
+          if (settings.ntripClient_TransmitGGA == true)
+          {
+            // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
+            i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
+            i2cGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
 
-          float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
-          if (measurementFrequency < 0.2) measurementFrequency = 0.2; //0.2Hz * 5 = 1 measurement every 5 seconds
-          i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency * 5); // Enable GGA over I2C. Tell the module to output GGA every 5 seconds
+            float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+            if (measurementFrequency < 0.2) measurementFrequency = 0.2; //0.2Hz * 5 = 1 measurement every 5 seconds
+            i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency * 5); // Enable GGA over I2C. Tell the module to output GGA every 5 seconds
 
-          lastGGAPush = millis();
+            log_d("Adjusting GGA setting to %f", measurementFrequency);
+
+            i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency); // Enable GGA over I2C. Tell the module to output GGA every second
+
+            lastGGAPush = millis() - NTRIPCLIENT_MS_BETWEEN_GGA; //Force immediate transmission of GGA message
+          }
 
           //We don't use a task because we use I2C hardware (and don't have a semphore).
           online.ntripClient = true;
-          ntripClientAllowMoreConnections();
+          ntripClientStartTime = millis();
+          ntripClientConnectionAttempts = 0;
           ntripClientSetState(NTRIP_CLIENT_CONNECTED);
         }
       }
@@ -413,7 +482,7 @@ void ntripClientUpdate()
       {
         //Broken connection, retry the NTRIP client connection
         Serial.println("NTRIP Client connection dropped");
-        ntripClientStop(false);
+        ntripClientStop(false); //Allocate new wifiClient
       }
       else
       {
@@ -424,7 +493,7 @@ void ntripClientUpdate()
           {
             //Timeout receiving NTRIP data, retry the NTRIP client connection
             Serial.println("NTRIP Client: No data received timeout");
-            ntripClientStop(false);
+            ntripClientStop(false); //Allocate new wifiClient
           }
         }
         else
@@ -459,15 +528,15 @@ void ntripClientUpdate()
 
 void pushGPGGA(NMEA_GGA_data_t *nmeaData)
 {
-#ifdef  COMPILE_WIFI
+#ifdef COMPILE_WIFI
   //Provide the caster with our current position as needed
-  if ((ntripClient->connected() == true) && (settings.ntripClient_TransmitGGA == true))
+  if (ntripClient->connected() == true && settings.ntripClient_TransmitGGA == true)
   {
-    if (millis() - lastGGAPush > 5000)
+    if (millis() - lastGGAPush > NTRIPCLIENT_MS_BETWEEN_GGA)
     {
       lastGGAPush = millis();
-      //Serial.print(F("Pushing GGA to server: "));
-      //Serial.print((const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+
+      log_d("Pushing GGA to server: %s", (const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
 
       //Push our current GGA sentence to caster
       ntripClient->print((const char *)nmeaData->nmea);

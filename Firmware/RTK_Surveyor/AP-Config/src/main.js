@@ -10,6 +10,12 @@ function ge(e) {
 }
 
 var platformPrefix = "Surveyor";
+var geodeticLat = 40.01;
+var geodeticLon = -105.19;
+var geodeticAlt = 1500.1;
+var ecefX = 100;
+var ecefY = -100;
+var ecefZ = -200;
 
 function parseIncoming(msg) {
     //console.log("incoming message: " + msg);
@@ -92,6 +98,7 @@ function parseIncoming(msg) {
             || id.includes("profile5Name")
             || id.includes("profile6Name")
             || id.includes("profile7Name")
+            || id.includes("radioMAC")
         ) {
             ge(id).innerHTML = val;
         }
@@ -104,6 +111,41 @@ function parseIncoming(msg) {
         }
         else if (id.includes("firmwareUploadStatus")) {
             firmwareUploadStatus(val);
+        }
+        else if (id.includes("geodeticLat")) {
+            geodeticLat = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("geodeticLon")) {
+            geodeticLon = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("geodeticAlt")) {
+            geodeticAlt = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("ecefX")) {
+            ecefX = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("ecefY")) {
+            ecefY = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("ecefZ")) {
+            ecefZ = val;
+            ge(id).innerHTML = val;
+        }
+        else if (id.includes("bluetoothRadioType")) {
+            currentBtNumber = val;
+            $("input[name=bluetoothRadioType][value=" + currentBtNumber + "]").prop('checked', true);
+        }
+        else if (id.includes("espnowPeerCount")) {
+            if(val > 0)
+                ge("peerMACs").innerHTML = "";
+        }
+        else if (id.includes("peerMAC")) {
+            ge("peerMACs").innerHTML += val + "<br>";
         }
 
         //Check boxes / radio buttons
@@ -134,6 +176,7 @@ function parseIncoming(msg) {
     //console.log("Settings loaded");
 
     ge("profileChangeMessage").innerHTML = '';
+    ge("resetProfileMsg").innerHTML = '';
 
     //Force element updates
     ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
@@ -147,6 +190,7 @@ function parseIncoming(msg) {
     ge("dataPortChannel").dispatchEvent(new CustomEvent('change'));
     ge("enableExternalPulse").dispatchEvent(new CustomEvent('change'));
     ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
+    ge("radioType").dispatchEvent(new CustomEvent('change'));
 }
 
 function hide(id) {
@@ -215,6 +259,7 @@ function validateFields() {
     collapseSection("collapseSensorConfig", "sensorCaret");
     collapseSection("collapsePPConfig", "pointPerfectCaret");
     collapseSection("collapsePortsConfig", "portsCaret");
+    collapseSection("collapseRadioConfig", "radioCaret");
     collapseSection("collapseSystemConfig", "systemCaret");
 
     errorCount = 0;
@@ -350,6 +395,8 @@ function validateFields() {
             clearElement("fixedLat", 40.09029479);
             clearElement("fixedLong", -105.18505761);
             clearElement("fixedAltitude", 1560.089);
+            clearElement("antennaHeight", 0);
+            clearElement("antennaReferencePoint", 0);
         }
         else {
             clearElement("observationSeconds", 60);
@@ -372,6 +419,9 @@ function validateFields() {
                 checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
                 checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
                 checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
+
+                checkElementValue("antennaHeight", -15000, 15000, "Must be -15000 to 15000", "collapseBaseConfig");
+                checkElementValue("antennaReferencePoint", -200.0, 200.0, "Must be -200.0 to 200.0", "collapseBaseConfig");
             }
         }
 
@@ -553,7 +603,7 @@ function clearElement(id, value) {
 }
 
 function resetToFactoryDefaults() {
-    ge("factoryDefaultsMsg").innerHTML = "Defaults Applied. Please wait for device reset..."
+    ge("factoryDefaultsMsg").innerHTML = "Defaults Applied. Please wait for device reset...";
     ws.send("factoryDefaultReset,1,");
 }
 
@@ -669,6 +719,16 @@ function resetToLoggingDefaults() {
     ge("UBX_RXM_RAWX").value = 1;
     ge("UBX_RXM_SFRBX").value = 1;
 }
+function useECEFCoordinates() {
+    ge("fixedEcefX").value = ecefX;
+    ge("fixedEcefY").value = ecefY;
+    ge("fixedEcefZ").value = ecefZ;
+}
+function useGeodeticCoordinates() {
+    ge("fixedLat").value = geodeticLat;
+    ge("fixedLong").value = geodeticLon;
+    ge("fixedAltitude").value = geodeticAlt;
+}
 
 function exitConfig() {
     show("exitPage");
@@ -687,6 +747,17 @@ function firmwareUploadStatus(val) {
 function firmwareUploadComplete() {
     show("firmwareUploadComplete");
     hide("mainPage");
+}
+
+function forgetPairedRadios() {
+    ge("btnForgetRadiosMsg").innerHTML = "All radios forgotten.";
+    ge("peerMACs").innerHTML = "None";
+    ws.send("forgetEspNowPeers,1,");
+}
+
+function btnResetProfile() {
+    ge("resetProfileMsg").innerHTML = "Resetting profile.";
+    ws.send("resetProfile,1,");
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -812,6 +883,24 @@ document.addEventListener("DOMContentLoaded", (event) => {
         }
     });
 
+    ge("radioType").addEventListener("change", function () {
+        if (ge("radioType").value == 0) {
+            hide("radioDetails");
+        }
+        else if (ge("radioType").value == 1){
+            show("radioDetails");
+        }
+    });
+
+    ge("enableForgetRadios").addEventListener("change", function () {
+        if (ge("enableForgetRadios").checked) {
+            ge("btnForgetRadios").disabled = false;
+        }
+        else {
+            ge("btnForgetRadios").disabled = true;
+        }
+    });
+
     ge("enableLogging").addEventListener("change", function () {
         if (ge("enableLogging").checked) {
             show("enableLoggingDetails");
@@ -820,5 +909,4 @@ document.addEventListener("DOMContentLoaded", (event) => {
             hide("enableLoggingDetails");
         }
     });
-
 })

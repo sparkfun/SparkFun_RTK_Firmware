@@ -71,9 +71,9 @@ void menuSystem()
 
 #ifdef COMPILE_WIFI
     Serial.print("WiFi MAC Address: ");
-    Serial.printf("%02X-%02X-%02X-%02X-%02X-%02X\r\n", wifiMACAddress[0],
-            wifiMACAddress[1], wifiMACAddress[2], wifiMACAddress[3],
-            wifiMACAddress[4], wifiMACAddress[5]);
+    Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X\r\n", wifiMACAddress[0],
+                  wifiMACAddress[1], wifiMACAddress[2], wifiMACAddress[3],
+                  wifiMACAddress[4], wifiMACAddress[5]);
     if (wifiState == WIFI_CONNECTED)
       wifiDisplayIpAddress();
 #endif
@@ -81,26 +81,23 @@ void menuSystem()
     //Display the uptime
     uint64_t uptimeMilliseconds = millis();
     uint32_t uptimeDays = 0;
-    while (uptimeMilliseconds >= MILLISECONDS_IN_A_DAY) {
-      uptimeMilliseconds -= MILLISECONDS_IN_A_DAY;
-      uptimeDays += 1;
-    }
     byte uptimeHours = 0;
-    while (uptimeMilliseconds >= MILLISECONDS_IN_AN_HOUR) {
-      uptimeMilliseconds -= MILLISECONDS_IN_AN_HOUR;
-      uptimeHours += 1;
-    }
     byte uptimeMinutes = 0;
-    while (uptimeMilliseconds >= MILLISECONDS_IN_A_MINUTE) {
-      uptimeMilliseconds -= MILLISECONDS_IN_A_MINUTE;
-      uptimeMinutes += 1;
-    }
     byte uptimeSeconds = 0;
-    while (uptimeMilliseconds >= MILLISECONDS_IN_A_SECOND) {
-      uptimeMilliseconds -= MILLISECONDS_IN_A_SECOND;
-      uptimeSeconds += 1;
-    }
-    Serial.print("Uptime: ");
+
+    uptimeDays = uptimeMilliseconds / MILLISECONDS_IN_A_DAY;
+    uptimeMilliseconds %= MILLISECONDS_IN_A_DAY;
+
+    uptimeHours = uptimeMilliseconds / MILLISECONDS_IN_AN_HOUR;
+    uptimeMilliseconds %= MILLISECONDS_IN_AN_HOUR;
+
+    uptimeMinutes = uptimeMilliseconds / MILLISECONDS_IN_A_MINUTE;
+    uptimeMilliseconds %= MILLISECONDS_IN_A_MINUTE;
+
+    uptimeSeconds = uptimeMilliseconds / MILLISECONDS_IN_A_SECOND;
+    uptimeMilliseconds %= MILLISECONDS_IN_A_SECOND;
+
+    Serial.print("System Uptime: ");
     Serial.printf("%d %02d:%02d:%02d.%03lld (Resets: %d)\r\n",
                   uptimeDays,
                   uptimeHours,
@@ -108,6 +105,104 @@ void menuSystem()
                   uptimeSeconds,
                   uptimeMilliseconds,
                   settings.resetCount);
+
+    //Display NTRIP Client status and uptime
+    if (settings.enableNtripClient == true && (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX))
+    {
+      Serial.print("NTRIP Client ");
+      switch (ntripClientState)
+      {
+        case NTRIP_CLIENT_OFF:
+          Serial.print("Disconnected");
+          break;
+        case NTRIP_CLIENT_ON:
+        case NTRIP_CLIENT_WIFI_CONNECTING:
+        case NTRIP_CLIENT_WIFI_CONNECTED:
+        case NTRIP_CLIENT_CONNECTING:
+          Serial.print("Connecting");
+          break;
+        case NTRIP_CLIENT_CONNECTED:
+          Serial.print("Connected");
+          break;
+        default:
+          Serial.printf("Unknown: %d", ntripClientState);
+          break;
+      }
+      Serial.printf(" - %s/%s:%d", settings.ntripClient_CasterHost, settings.ntripClient_MountPoint, settings.ntripClient_CasterPort);
+
+      uptimeMilliseconds = ntripClientTimer - ntripClientStartTime;
+
+      uptimeDays = uptimeMilliseconds / MILLISECONDS_IN_A_DAY;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_DAY;
+
+      uptimeHours = uptimeMilliseconds / MILLISECONDS_IN_AN_HOUR;
+      uptimeMilliseconds %= MILLISECONDS_IN_AN_HOUR;
+
+      uptimeMinutes = uptimeMilliseconds / MILLISECONDS_IN_A_MINUTE;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_MINUTE;
+
+      uptimeSeconds = uptimeMilliseconds / MILLISECONDS_IN_A_SECOND;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_SECOND;
+
+      Serial.print(" Uptime: ");
+      Serial.printf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n",
+                    uptimeDays,
+                    uptimeHours,
+                    uptimeMinutes,
+                    uptimeSeconds,
+                    uptimeMilliseconds,
+                    ntripClientConnectionAttemptsTotal);
+    }
+
+    //Display NTRIP Server status and uptime
+    if (settings.enableNtripServer == true && (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING))
+    {
+      Serial.print("NTRIP Server ");
+      switch (ntripServerState)
+      {
+        case NTRIP_SERVER_OFF:
+          Serial.print("Disconnected");
+          break;
+        case NTRIP_SERVER_ON:
+        case NTRIP_SERVER_WIFI_CONNECTING:
+        case NTRIP_SERVER_WIFI_CONNECTED:
+        case NTRIP_SERVER_WAIT_GNSS_DATA:
+        case NTRIP_SERVER_CONNECTING:
+        case NTRIP_SERVER_AUTHORIZATION:
+          Serial.print("Connecting");
+          break;
+        case NTRIP_SERVER_CASTING:
+          Serial.print("Connected");
+          break;
+        default:
+          Serial.printf("Unknown: %d", ntripServerState);
+          break;
+      }
+      Serial.printf(" - %s/%s:%d", settings.ntripServer_CasterHost, settings.ntripServer_MountPoint, settings.ntripServer_CasterPort);
+
+      uptimeMilliseconds = ntripServerTimer - ntripServerStartTime;
+
+      uptimeDays = uptimeMilliseconds / MILLISECONDS_IN_A_DAY;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_DAY;
+
+      uptimeHours = uptimeMilliseconds / MILLISECONDS_IN_AN_HOUR;
+      uptimeMilliseconds %= MILLISECONDS_IN_AN_HOUR;
+
+      uptimeMinutes = uptimeMilliseconds / MILLISECONDS_IN_A_MINUTE;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_MINUTE;
+
+      uptimeSeconds = uptimeMilliseconds / MILLISECONDS_IN_A_SECOND;
+      uptimeMilliseconds %= MILLISECONDS_IN_A_SECOND;
+
+      Serial.print(" Uptime: ");
+      Serial.printf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n",
+                    uptimeDays,
+                    uptimeHours,
+                    uptimeMinutes,
+                    uptimeSeconds,
+                    uptimeMilliseconds,
+                    ntripServerConnectionAttemptsTotal);
+    }
 
     if (settings.enableSD == true)
     {
@@ -125,6 +220,18 @@ void menuSystem()
       Serial.println(F("BLE"));
     else
       Serial.println(F("Off"));
+
+    Serial.print(F("c) Enable/disable WiFi NMEA client (connect to phone): "));
+    if (settings.enableNmeaClient == true)
+      Serial.println(F("Enabled"));
+    else
+      Serial.println(F("Disabled"));
+
+    Serial.print(F("n) Enable/disable WiFi NMEA server: "));
+    if (settings.enableNmeaServer == true)
+      Serial.println(F("Enabled"));
+    else
+      Serial.println(F("Disabled"));
 
     Serial.println("r) Reset all settings to default");
 
@@ -183,6 +290,26 @@ void menuSystem()
         settings.bluetoothRadioType = BLUETOOTH_RADIO_SPP;
       bluetoothStart();
     }
+    else if (incoming == 'c')
+    {
+      //Toggle WiFi NEMA client (connect to phone)
+      settings.enableNmeaClient ^= 1;
+    }
+    else if (incoming == 'n')
+    {
+      //Toggle WiFi NEMA server
+      settings.enableNmeaServer ^= 1;
+      if ((!settings.enableNmeaServer) && online.nmeaServer)
+      {
+        //Tell the UART2 tasks that the NMEA server is shutting down
+        online.nmeaServer = false;
+
+        //Wait for the UART2 tasks to close the NMEA client connections
+        while (wifiNmeaTcpServerActive())
+          delay(5);
+        Serial.println("NMEA Server offline");
+      }
+    }
     else if (incoming == 'r')
     {
       Serial.println("\r\nResetting to factory defaults. Press 'y' to confirm:");
@@ -208,7 +335,7 @@ void menuSystem()
         //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
         if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
         {
-          Serial.println("Files found (date time size name):\n\r");
+          Serial.println("Files found (date time size name):\r\n");
           sd->ls(LS_R | LS_DATE | LS_SIZE);
         }
         else
@@ -259,8 +386,6 @@ void menuSystem()
 //Toggle control of heap reports and I2C GNSS debug
 void menuDebug()
 {
-  int menuTimeoutExtended = 30; //Increase time needed as it's a large menu
-
   while (1)
   {
     Serial.println();
@@ -356,6 +481,12 @@ void menuDebug()
 
     Serial.println("30) Run Bluetooth Test");
 
+    Serial.print("31) Print NMEA TCP status: ");
+    Serial.printf("%s\r\n", settings.enablePrintNmeaTcpStatus ? "Enabled" : "Disabled");
+
+    Serial.print("32) ESP-Now Broadcast Override: ");
+    Serial.printf("%s\r\n", settings.espnowBroadcast ? "Enabled" : "Disabled");
+
     Serial.println("t) Enter Test Screen");
 
     Serial.println("e) Erase LittleFS");
@@ -365,7 +496,7 @@ void menuDebug()
     Serial.println("x) Exit");
 
     int incoming;
-    int digits = getMenuChoice(&incoming, menuTimeoutExtended); //Timeout after x seconds
+    int digits = getMenuChoice(&incoming, menuTimeout); //Timeout after x seconds
 
     //Handle input timeout
     if (digits == GMCS_TIMEOUT)
@@ -544,7 +675,17 @@ void menuDebug()
         startCurrentLogTime_minutes = systemTime_minutes - settings.maxLogLength_minutes;
       }
       else if (incoming == 30)
+      {
         bluetoothTest(true);
+      }
+      else if (incoming == 31)
+      {
+        settings.enablePrintNmeaTcpStatus ^= 1;
+      }
+      else if (incoming == 32)
+      {
+        settings.espnowBroadcast ^= 1;
+      }
       else
         printUnknown(incoming);
     }
@@ -591,9 +732,9 @@ void printCurrentConditions()
     Serial.print(horizontalAccuracy, 3);
 
     Serial.print(", Lat: ");
-    Serial.print(latitude, 9);
+    Serial.print(latitude, haeNumberOfDecimals);
     Serial.print(", Lon: ");
-    Serial.print(longitude, 9);
+    Serial.print(longitude, haeNumberOfDecimals);
 
     Serial.print(", Altitude (m): ");
     Serial.print(altitude, 1);

@@ -5,7 +5,7 @@ on:
       - main
 
 env:
-  FILENAME_PREFIX: RTK_Surveyor_Firmware_v2_5
+  FILENAME_PREFIX: RTK_Surveyor_Firmware_v2_6
   POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
 
 jobs:

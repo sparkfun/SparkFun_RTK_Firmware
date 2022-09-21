@@ -133,6 +133,8 @@ bool ntripServerConnectLimitReached()
   bool limitReached = false;
   if (ntripServerConnectionAttempts++ >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS) limitReached = true;
 
+  ntripServerConnectionAttemptsTotal++;
+
   if (limitReached == false)
   {
     ntripServerConnectionAttemptTimeout = ntripServerConnectionAttempts * 5 * 60 * 1000L; //Wait 5, 10, 15, etc minutes between attempts

@@ -151,7 +151,7 @@ void menuSystem()
                     uptimeMinutes,
                     uptimeSeconds,
                     uptimeMilliseconds,
-                    ntripClientConnectionAttempts);
+                    ntripClientConnectionAttemptsTotal);
     }
 
     //Display NTRIP Server status and uptime
@@ -201,7 +201,7 @@ void menuSystem()
                     uptimeMinutes,
                     uptimeSeconds,
                     uptimeMilliseconds,
-                    ntripServerConnectionAttempts);
+                    ntripServerConnectionAttemptsTotal);
     }
 
     if (settings.enableSD == true)

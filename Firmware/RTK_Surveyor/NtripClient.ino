@@ -81,11 +81,6 @@ unsigned long lastGGAPush = 0;
 // NTRIP Client Routines - compiled out
 //----------------------------------------
 
-void ntripClientAllowMoreConnections()
-{
-  ntripClientConnectionAttempts = 0;
-}
-
 bool ntripClientConnect()
 {
   if (!ntripClient)
@@ -169,6 +164,8 @@ bool ntripClientConnectLimitReached()
   //Retry the connection a few times
   bool limitReached = false;
   if (ntripClientConnectionAttempts++ >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS) limitReached = true;
+
+  ntripClientConnectionAttemptsTotal++;
 
   if (limitReached == false)
   {
@@ -270,9 +267,7 @@ void ntripClientStart()
       ntripClientSetState(NTRIP_CLIENT_ON);
   }
 
-  //Only fallback to Bluetooth once, then try WiFi again.  This enables changes
-  //to the WiFi SSID and password to properly restart the WiFi.
-  ntripClientAllowMoreConnections();
+  ntripClientConnectionAttempts = 0;
 #endif  //COMPILE_WIFI
 }
 
@@ -475,7 +470,7 @@ void ntripClientUpdate()
           //We don't use a task because we use I2C hardware (and don't have a semphore).
           online.ntripClient = true;
           ntripClientStartTime = millis();
-          ntripClientAllowMoreConnections();
+          ntripClientConnectionAttempts = 0;
           ntripClientSetState(NTRIP_CLIENT_CONNECTED);
         }
       }

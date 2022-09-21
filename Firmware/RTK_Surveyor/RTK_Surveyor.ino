@@ -168,7 +168,8 @@ volatile uint8_t wifiNmeaConnected;
 //  * Receive NTRIP data timeout
 static uint32_t ntripClientTimer;
 static uint32_t ntripClientStartTime; //For calculating uptime
-static int ntripClientConnectionAttempts; //Count the number of connection attempts
+static int ntripClientConnectionAttempts; //Count the number of connection attempts between restarts
+static int ntripClientConnectionAttemptsTotal; //Count the number of connection attempts absolutely
 
 //NTRIP server timer usage:
 //  * Measure the connection response time
@@ -176,7 +177,8 @@ static int ntripClientConnectionAttempts; //Count the number of connection attem
 //  * Monitor last RTCM byte received for frame counting
 static uint32_t ntripServerTimer;
 static uint32_t ntripServerStartTime;
-static int ntripServerConnectionAttempts; //Count the number of connection attempts
+static int ntripServerConnectionAttempts; //Count the number of connection attempts between restarts
+static int ntripServerConnectionAttemptsTotal; //Count the number of connection attempts absolutely
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

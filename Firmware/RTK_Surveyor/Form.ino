@@ -193,13 +193,13 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
       }
       else
       {
-        Serial.printf("Unknown: %s\n\r", fname);
+        Serial.printf("Unknown: %s\r\n", fname);
         return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
       }
     }
     else
     {
-      Serial.printf("Unknown: %s\n\r", fname);
+      Serial.printf("Unknown: %s\r\n", fname);
       return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
     }
   }
@@ -221,12 +221,12 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
         char bytesSentMsg[100];
         sprintf(bytesSentMsg, "%'d bytes sent", binBytesSent);
 
-        Serial.printf("bytesSentMsg: %s\n\r", bytesSentMsg);
+        Serial.printf("bytesSentMsg: %s\r\n", bytesSentMsg);
 
         char statusMsg[200] = {'\0'};
         stringRecord(statusMsg, "firmwareUploadStatus", bytesSentMsg); //Convert to "firmwareUploadMsg,11214 bytes sent,"
 
-        Serial.printf("msg: %s\n\r", statusMsg);
+        Serial.printf("msg: %s\r\n", statusMsg);
         ws.textAll(statusMsg);
       }
 
@@ -263,7 +263,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
 
     createSettingsString(settingsCSV);
-    log_d("Sending command: %s\n\r", settingsCSV);
+    log_d("Sending command: %s", settingsCSV);
     client->text(settingsCSV);
     wifiSetState(WIFI_CONNECTED);
     free(settingsCSV);
@@ -481,8 +481,8 @@ void createSettingsString(char* settingsCSV)
   //...
 
   strcat(settingsCSV, "\0");
-  Serial.printf("settingsCSV len: %d\n\r", strlen(settingsCSV));
-  Serial.printf("settingsCSV: %s\n\r", settingsCSV);
+  Serial.printf("settingsCSV len: %d\r\n", strlen(settingsCSV));
+  Serial.printf("settingsCSV: %s\r\n", settingsCSV);
 #endif
 }
 
@@ -656,7 +656,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
     createSettingsString(settingsCSV);
-    log_d("Sending command: %s\n\r", settingsCSV);
+    log_d("Sending command: %s", settingsCSV);
     ws.textAll(String(settingsCSV));
     free(settingsCSV);
   }
@@ -673,7 +673,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
     createSettingsString(settingsCSV);
-    log_d("Sending command: %s\n\r", settingsCSV);
+    log_d("Sending command: %s", settingsCSV);
     ws.textAll(String(settingsCSV));
     free(settingsCSV);
   }
@@ -725,7 +725,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     //Last catch
     if (knownSetting == false)
     {
-      Serial.printf("Unknown '%s': %0.3lf\n\r", settingName, settingValue);
+      Serial.printf("Unknown '%s': %0.3lf\r\n", settingName, settingValue);
     }
   } //End last strcpy catch
 #endif

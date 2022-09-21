@@ -37,9 +37,9 @@ void menuBase()
         Serial.print(settings.fixedAltitude, 4);
         Serial.println("m");
 
-        Serial.printf("4) Set Antenna Height: %dmm\n\r", settings.antennaHeight);
+        Serial.printf("4) Set Antenna Height: %dmm\r\n", settings.antennaHeight);
 
-        Serial.printf("5) Set Antenna Reference Point: %0.1fmm\n\r", settings.antennaReferencePoint);
+        Serial.printf("5) Set Antenna Reference Point: %0.1fmm\r\n", settings.antennaReferencePoint);
       }
     }
     else

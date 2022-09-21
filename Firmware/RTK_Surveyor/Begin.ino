@@ -167,7 +167,7 @@ void beginBoard()
     if (settings.enableResetDisplay == true)
     {
       settings.resetCount++;
-      Serial.printf("resetCount: %d\n\r", settings.resetCount);
+      Serial.printf("resetCount: %d\r\n", settings.resetCount);
       recordSystemSettingsToFileLFS(settingsFileName); //Avoid overwriting LittleFS settings onto SD
     }
     
@@ -455,7 +455,7 @@ void beginGNSS()
       zedFirmwareVersionInt = 132;
     else
     {
-      Serial.printf("Unknown firmware version: %s\n\r", zedFirmwareVersion);
+      Serial.printf("Unknown firmware version: %s\r\n", zedFirmwareVersion);
       zedFirmwareVersionInt = 99; //0.99 invalid firmware version
     }
 
@@ -466,7 +466,7 @@ void beginGNSS()
       zedModuleType = PLATFORM_F9R;
     else
     {
-      Serial.printf("Unknown ZED module: %s\n\r", i2cGNSS.minfo.extension[3]);
+      Serial.printf("Unknown ZED module: %s\r\n", i2cGNSS.minfo.extension[3]);
       zedModuleType = PLATFORM_F9P;
     }
 

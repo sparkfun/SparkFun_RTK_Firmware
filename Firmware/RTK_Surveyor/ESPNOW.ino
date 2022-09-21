@@ -150,7 +150,7 @@ void espnowStart()
       {
         esp_err_t result = espnowAddPeer(settings.espnowPeers[x]);
         if (result != ESP_OK)
-          log_d("Failed to add peer #%d\n\r", x);
+          log_d("Failed to add peer #%d", x);
       }
     }
   }
@@ -166,7 +166,7 @@ void espnowStart()
     {
       esp_err_t result = espnowAddPeer(broadcastMac, false); //Encryption not support for broadcast MAC
       if (result != ESP_OK)
-        log_d("Failed to add broadcast peer\n\r");
+        log_d("Failed to add broadcast peer");
     }
   }
 

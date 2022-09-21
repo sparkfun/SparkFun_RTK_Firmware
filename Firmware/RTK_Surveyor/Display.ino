@@ -342,7 +342,7 @@ void updateDisplay()
           displayShutdown();
           break;
         default:
-          Serial.printf("Unknown display: %d\n\r", systemState);
+          Serial.printf("Unknown display: %d\r\n", systemState);
           displayError("Display");
           break;
       }

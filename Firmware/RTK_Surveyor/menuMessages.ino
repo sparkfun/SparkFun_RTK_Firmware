@@ -103,7 +103,7 @@ void menuMessages()
     Serial.println();
     Serial.println("Menu: Messages Menu");
 
-    Serial.printf("Active messages: %d\n\r", getActiveMessageCount());
+    Serial.printf("Active messages: %d\r\n", getActiveMessageCount());
 
     Serial.println("1) Set NMEA Messages");
     if (zedModuleType == PLATFORM_F9P)
@@ -216,7 +216,7 @@ void menuMessagesSubtype(const char* messageType)
   while (1)
   {
     Serial.println();
-    Serial.printf("Menu: Message %s Menu\n\r", messageType);
+    Serial.printf("Menu: Message %s Menu\r\n", messageType);
 
     int startOfBlock = 0;
     int endOfBlock = 0;
@@ -333,7 +333,7 @@ uint8_t getMessageRate(uint8_t msgClass, uint8_t msgID, uint8_t portID)
   // Read the current setting. The results will be loaded into customCfg.
   if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
   {
-    Serial.printf("getMessageSetting failed: Class-0x%02X ID-0x%02X\n\r", msgClass, msgID);
+    Serial.printf("getMessageSetting failed: Class-0x%02X ID-0x%02X\r\n", msgClass, msgID);
     return (false);
   }
 
@@ -405,7 +405,7 @@ void beginLogging(const char *customFileName)
         // O_WRITE - open for write
         if (ubxFile->open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
         {
-          Serial.printf("Failed to create GNSS UBX data file: %s\n\r", fileName);
+          Serial.printf("Failed to create GNSS UBX data file: %s\r\n", fileName);
           online.logging = false;
           xSemaphoreGive(sdCardSemaphore);
           return;
@@ -468,7 +468,7 @@ void beginLogging(const char *customFileName)
         return;
       }
 
-      Serial.printf("Log file created: %s\n\r", fileName);
+      Serial.printf("Log file created: %s\r\n", fileName);
       online.logging = true;
     } //online.sd, enable.logging, online.rtc
   } //online.logging
@@ -630,7 +630,7 @@ bool setMessageRateByName(const char *msgName, uint8_t msgRate)
     }
   }
 
-  Serial.printf("setMessageRateByName: %s not found\n\r", msgName);
+  Serial.printf("setMessageRateByName: %s not found\r\n", msgName);
   return (false);
 }
 
@@ -643,7 +643,7 @@ uint8_t getMessageRateByName(const char *msgName)
       return (settings.ubxMessages[x].msgRate);
   }
 
-  Serial.printf("getMessageRateByName: %s not found\n\r", msgName);
+  Serial.printf("getMessageRateByName: %s not found\r\n", msgName);
   return (0);
 }
 
@@ -845,6 +845,6 @@ void updateLogTest()
       log_w("sdCardSemaphore failed to yield, menuMessages.ino line %d", __LINE__);
     }
 
-    Serial.printf("%s\n\r", logMessage);
+    Serial.printf("%s\r\n", logMessage);
   }
 }

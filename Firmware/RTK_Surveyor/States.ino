@@ -276,7 +276,7 @@ void updateSystemState()
           }
 
           //Check for <1m horz accuracy before starting surveyIn
-          Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\n\r", settings.surveyInStartingAccuracy, horizontalAccuracy);
+          Serial.printf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\r\n", settings.surveyInStartingAccuracy, horizontalAccuracy);
 
           if (horizontalAccuracy > 0.0 && horizontalAccuracy < settings.surveyInStartingAccuracy)
           {
@@ -310,7 +310,7 @@ void updateSystemState()
 
           if (i2cGNSS.getSurveyInValid(50) == true) //Survey in complete
           {
-            Serial.printf("Observation Time: %d\n\r", svinObservationTime);
+            Serial.printf("Observation Time: %d\r\n", svinObservationTime);
             Serial.println("Base survey complete! RTCM now broadcasting.");
 
             if (productVariant == RTK_SURVEYOR)
@@ -337,7 +337,7 @@ void updateSystemState()
 
             if (svinObservationTime > maxSurveyInWait_s)
             {
-              Serial.printf("Survey-In took more than %d minutes. Returning to rover mode.\n\r", maxSurveyInWait_s / 60);
+              Serial.printf("Survey-In took more than %d minutes. Returning to rover mode.\r\n", maxSurveyInWait_s / 60);
 
               resetSurvey();
 
@@ -564,7 +564,7 @@ void updateSystemState()
           else
           {
             //Enable retry by not changing states
-            log_d("sdCardSemaphore failed to yield in STATE_MARK_EVENT\r\n");
+            log_d("sdCardSemaphore failed to yield in STATE_MARK_EVENT");
           }
         }
         break;
@@ -780,7 +780,7 @@ void updateSystemState()
             if (settings.pointPerfectNextKeyStart > 0)
             {
               uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
-              Serial.printf("Days until PointPerfect keys expire: %d\n\r", daysRemaining);
+              Serial.printf("Days until PointPerfect keys expire: %d\r\n", daysRemaining);
               paintKeyDaysRemaining(daysRemaining, 2000);
             }
           }
@@ -944,7 +944,7 @@ void updateSystemState()
 
       default:
         {
-          Serial.printf("Unknown state: %d\n\r", systemState);
+          Serial.printf("Unknown state: %d\r\n", systemState);
         }
         break;
     }

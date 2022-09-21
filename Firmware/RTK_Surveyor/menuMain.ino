@@ -159,11 +159,11 @@ void menuUserProfiles()
       Serial.println();
     }
 
-    Serial.printf("%d) Edit profile name: %s\n\r", MAX_PROFILE_COUNT + 1, profileNames[profileNumber]);
+    Serial.printf("%d) Edit profile name: %s\r\n", MAX_PROFILE_COUNT + 1, profileNames[profileNumber]);
 
-    Serial.printf("%d) Set profile '%s' to factory defaults\n\r", MAX_PROFILE_COUNT + 2, profileNames[profileNumber]);
+    Serial.printf("%d) Set profile '%s' to factory defaults\r\n", MAX_PROFILE_COUNT + 2, profileNames[profileNumber]);
 
-    Serial.printf("%d) Delete profile '%s'\n\r", MAX_PROFILE_COUNT + 3, profileNames[profileNumber]);
+    Serial.printf("%d) Delete profile '%s'\r\n", MAX_PROFILE_COUNT + 3, profileNames[profileNumber]);
 
     Serial.println("x) Exit");
 
@@ -335,7 +335,7 @@ void menuRadio()
       Serial.print("  Radio MAC: ");
       for (int x = 0 ; x < 5 ; x++)
         Serial.printf("%02X:", wifiMACAddress[x]);
-      Serial.printf("%02X\n\r", wifiMACAddress[5]);
+      Serial.printf("%02X\r\n", wifiMACAddress[5]);
 
       if (settings.espnowPeerCount > 0)
       {
@@ -345,7 +345,7 @@ void menuRadio()
           Serial.print("    ");
           for (int y = 0 ; y < 5 ; y++)
             Serial.printf("%02X:", settings.espnowPeers[x][y]);
-          Serial.printf("%02X\n\r", settings.espnowPeers[x][5]);
+          Serial.printf("%02X\r\n", settings.espnowPeers[x][5]);
         }
       }
       else

@@ -79,7 +79,7 @@ void wifiDisplayIpAddress()
 {
   Serial.print("WiFi IP address: ");
   Serial.print(WiFi.localIP());
-  Serial.printf(" RSSI: %d\n\r", WiFi.RSSI());
+  Serial.printf(" RSSI: %d\r\n", WiFi.RSSI());
 
   wifiTimer = millis();
 }

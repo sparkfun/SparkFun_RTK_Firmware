@@ -102,7 +102,7 @@ bool ntripClientConnect()
       strcpy(settings.ntripClient_CasterHost, token);
   }
 
-  Serial.printf("NTRIP Client connecting to %s:%d\n\r", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
+  Serial.printf("NTRIP Client connecting to %s:%d\r\n", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
 
   int connectResponse = ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
 
@@ -354,7 +354,7 @@ void ntripClientUpdate()
           if (millis() - ntripClientTimeoutPrint > 1000)
           {
             ntripClientTimeoutPrint = millis();
-            Serial.printf("NTRIP Client connection timeout wait: %ld of %d seconds \n\r",
+            Serial.printf("NTRIP Client connection timeout wait: %ld of %d seconds \r\n",
                           (millis() - ntripClientLastConnectionAttempt) / 1000,
                           ntripClientConnectionAttemptTimeout / 1000
                          );
@@ -371,7 +371,7 @@ void ntripClientUpdate()
         if (wifiConnectionTimeout() || wifiGetStatus() == WL_NO_SSID_AVAIL)
         {
           if (wifiGetStatus() == WL_NO_SSID_AVAIL)
-            Serial.printf("WiFi network '%s' not found\n\r", settings.ntripClient_wifiSSID);
+            Serial.printf("WiFi network '%s' not found\r\n", settings.ntripClient_wifiSSID);
 
           if (ntripClientConnectLimitReached()) //Stop WiFi, give up
             paintNtripWiFiFail(4000, true);
@@ -429,13 +429,13 @@ void ntripClientUpdate()
         char response[512];
         ntripClientResponse(&response[0], sizeof(response));
 
-        log_d("Caster Response: %s\n\r", response);
+        log_d("Caster Response: %s", response);
 
         //Look for various responses
         if (strstr(response, "401") != NULL)
         {
           //Look for '401 Unauthorized'
-          Serial.printf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
+          Serial.printf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n", response);
 
           //Stop WiFi operations
           ntripClientStop(true); //Do not allocate new wifiClient

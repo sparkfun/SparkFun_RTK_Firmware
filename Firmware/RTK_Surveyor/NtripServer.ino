@@ -96,7 +96,7 @@ bool ntripServerConnectCaster()
       strcpy(settings.ntripServer_CasterHost, token);
   }
 
-  Serial.printf("NTRIP Server connecting to %s:%d\n\r", settings.ntripServer_CasterHost,
+  Serial.printf("NTRIP Server connecting to %s:%d\r\n", settings.ntripServer_CasterHost,
                 settings.ntripServer_CasterPort);
 
   //Attempt a connection to the NTRIP caster
@@ -368,7 +368,7 @@ void ntripServerUpdate()
           if (millis() - ntripServerTimeoutPrint > 1000)
           {
             ntripServerTimeoutPrint = millis();
-            Serial.printf("NTRIP Server connection timeout wait: %ld of %d seconds \n\r",
+            Serial.printf("NTRIP Server connection timeout wait: %ld of %d seconds \r\n",
                           (millis() - ntripServerLastConnectionAttempt) / 1000,
                           ntripServerConnectionAttemptTimeout / 1000
                          );
@@ -385,7 +385,7 @@ void ntripServerUpdate()
         if (wifiConnectionTimeout() || wifiGetStatus() == WL_NO_SSID_AVAIL)
         {
           if (wifiGetStatus() == WL_NO_SSID_AVAIL)
-            Serial.printf("WiFi network '%s' not found\n\r", settings.ntripServer_wifiSSID);
+            Serial.printf("WiFi network '%s' not found\r\n", settings.ntripServer_wifiSSID);
 
           if (ntripServerConnectLimitReached())
           {
@@ -471,7 +471,7 @@ void ntripServerUpdate()
         if (strstr(response, "401") != NULL)
         {
           //Look for '401 Unauthorized'
-          Serial.printf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\n\r", response);
+          Serial.printf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n", response);
 
           //Give up - Stop WiFi operations
           ntripServerStop(true); //Do not allocate new wifiClient

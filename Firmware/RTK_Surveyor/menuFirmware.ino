@@ -20,7 +20,7 @@ void menuFirmware()
 
     for (int x = 0 ; x < binCount ; x++)
     {
-      Serial.printf("%d) Load %s\n\r", x + 1, binFileNames[x]);
+      Serial.printf("%d) Load %s\r\n", x + 1, binFileNames[x]);
     }
 
     Serial.println("x) Exit");
@@ -38,7 +38,7 @@ void menuFirmware()
     else if (incoming == STATUS_GETNUMBER_TIMEOUT)
       break;
     else
-      Serial.printf("Bad value: %d\n\r", incoming);
+      Serial.printf("Bad value: %d\r\n", incoming);
   }
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
@@ -117,7 +117,7 @@ void scanForFirmware()
           strcpy(binFileNames[binCount++], fname); //Add this to the array
         }
         else
-          Serial.printf("Unknown: %s\n\r", fname);
+          Serial.printf("Unknown: %s\r\n", fname);
       }
     }
     tempFile.close();
@@ -152,7 +152,7 @@ void updateFromSD(const char *firmwareFileName)
   //Delete tasks if running
   stopUART2Tasks();
 
-  Serial.printf("Loading %s\n\r", firmwareFileName);
+  Serial.printf("Loading %s\r\n", firmwareFileName);
   if (sd->exists(firmwareFileName))
   {
     SdFile firmwareFile;

@@ -335,7 +335,7 @@ void menuSystem()
         //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
         if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
         {
-          Serial.println("Files found (date time size name):\n\r");
+          Serial.println("Files found (date time size name):\r\n");
           sd->ls(LS_R | LS_DATE | LS_SIZE);
         }
         else

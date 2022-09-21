@@ -61,7 +61,7 @@ void menuPointPerfectKeys()
       long expYear;
       gpsWeekToWToDate(keyGPSWeek, keyGPSToW, &expDay, &expMonth, &expYear);
 
-      Serial.printf("%02ld/%02ld/%ld\n\r", expDay, expMonth, expYear);
+      Serial.printf("%02ld/%02ld/%ld\r\n", expDay, expMonth, expYear);
     }
     else
       Serial.println("N/A");
@@ -86,7 +86,7 @@ void menuPointPerfectKeys()
       long expYear;
       gpsWeekToWToDate(keyGPSWeek, keyGPSToW, &expDay, &expMonth, &expYear);
 
-      Serial.printf("%02ld/%02ld/%ld\n\r", expDay, expMonth, expYear);
+      Serial.printf("%02ld/%02ld/%ld\r\n", expDay, expMonth, expYear);
     }
     else
       Serial.println("N/A");
@@ -126,8 +126,8 @@ void menuPointPerfectKeys()
         settings.pointPerfectNextKeyStart = settings.pointPerfectCurrentKeyStart + settings.pointPerfectCurrentKeyDuration + 1; //Next key starts after current key
         settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration;
 
-        Serial.printf("  settings.pointPerfectNextKeyStart: %lld\n\r", settings.pointPerfectNextKeyStart);
-        Serial.printf("  settings.pointPerfectNextKeyDuration: %lld\n\r", settings.pointPerfectNextKeyDuration);
+        Serial.printf("  settings.pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
+        Serial.printf("  settings.pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
       }
     }
     else if (incoming == 4)
@@ -207,7 +207,7 @@ bool pointperfectProvisionDevice()
     {
       //Use the user's custom token
       strcpy(tokenString, settings.pointPerfectDeviceProfileToken);
-      Serial.printf("Using custom token: %s\n\r", tokenString);
+      Serial.printf("Using custom token: %s\r\n", tokenString);
     }
 
     pointPerfectAPIPost["token"] = tokenString;
@@ -218,7 +218,7 @@ bool pointperfectProvisionDevice()
     String json;
     serializeJson(pointPerfectAPIPost, json);
 
-    Serial.printf("Connecting to: %s\n\r", pointPerfectAPI);
+    Serial.printf("Connecting to: %s\r\n", pointPerfectAPI);
 
     HTTPClient http;
     http.begin(client, pointPerfectAPI);
@@ -261,13 +261,13 @@ bool pointperfectProvisionDevice()
           break;
         }
         strcpy(tempHolder, (const char*)((*jsonZtp)["certificate"]));
-        //      Serial.printf("len of PrivateCert: %d\n\r", strlen(tempHolder));
-        //      Serial.printf("privateCert: %s\n\r", tempHolder);
+        //      Serial.printf("len of PrivateCert: %d\r\n", strlen(tempHolder));
+        //      Serial.printf("privateCert: %s\r\n", tempHolder);
         recordFile("certificate", tempHolder, strlen(tempHolder));
 
         strcpy(tempHolder, (const char*)((*jsonZtp)["privateKey"]));
-        //      Serial.printf("len of privateKey: %d\n\r", strlen(tempHolder));
-        //      Serial.printf("privateKey: %s\n\r", tempHolder);
+        //      Serial.printf("len of privateKey: %d\r\n", strlen(tempHolder));
+        //      Serial.printf("privateKey: %s\r\n", tempHolder);
         recordFile("privateKey", tempHolder, strlen(tempHolder));
 
         strcpy(settings.pointPerfectClientID, (const char*)((*jsonZtp)["clientId"]));
@@ -473,18 +473,18 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
 
     //    Serial.println();
 
-    //    Serial.printf("pointPerfectCurrentKeyStart: %lld\n\r", settings.pointPerfectCurrentKeyStart);
-    //    Serial.printf("pointPerfectCurrentKeyDuration: %lld\n\r", settings.pointPerfectCurrentKeyDuration);
-    //    Serial.printf("pointPerfectNextKeyStart: %lld\n\r", settings.pointPerfectNextKeyStart);
-    //    Serial.printf("pointPerfectNextKeyDuration: %lld\n\r", settings.pointPerfectNextKeyDuration);
+    //    Serial.printf("pointPerfectCurrentKeyStart: %lld\r\n", settings.pointPerfectCurrentKeyStart);
+    //    Serial.printf("pointPerfectCurrentKeyDuration: %lld\r\n", settings.pointPerfectCurrentKeyDuration);
+    //    Serial.printf("pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
+    //    Serial.printf("pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
     //
-    //    Serial.printf("currentWeek: %d\n\r", currentWeek);
-    //    Serial.printf("currentToW: %d\n\r", currentToW);
+    //    Serial.printf("currentWeek: %d\r\n", currentWeek);
+    //    Serial.printf("currentToW: %d\r\n", currentToW);
     //    Serial.print("Current key: ");
     //    Serial.println(settings.pointPerfectCurrentKey);
     //
-    //    Serial.printf("nextWeek: %d\n\r", nextWeek);
-    //    Serial.printf("nextToW: %d\n\r", nextToW);
+    //    Serial.printf("nextWeek: %d\r\n", nextWeek);
+    //    Serial.printf("nextToW: %d\r\n", nextToW);
     //    Serial.print("nextKey key: ");
     //    Serial.println(settings.pointPerfectNextKey);
 
@@ -501,10 +501,10 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
     settings.pointPerfectCurrentKeyDuration = settings.pointPerfectNextKeyStart - settings.pointPerfectCurrentKeyStart - 1;
     settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration; //We assume next key duration is the same as current key duration because we have to
 
-    //    Serial.printf("pointPerfectCurrentKeyStart: %lld\n\r", settings.pointPerfectCurrentKeyStart);
-    //    Serial.printf("pointPerfectCurrentKeyDuration: %lld\n\r", settings.pointPerfectCurrentKeyDuration);
-    //    Serial.printf("pointPerfectNextKeyStart: %lld\n\r", settings.pointPerfectNextKeyStart);
-    //    Serial.printf("pointPerfectNextKeyDuration: %lld\n\r", settings.pointPerfectNextKeyDuration);
+    //    Serial.printf("pointPerfectCurrentKeyStart: %lld\r\n", settings.pointPerfectCurrentKeyStart);
+    //    Serial.printf("pointPerfectCurrentKeyDuration: %lld\r\n", settings.pointPerfectCurrentKeyDuration);
+    //    Serial.printf("pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
+    //    Serial.printf("pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
   }
 
   mqttMessageReceived = true;
@@ -678,16 +678,16 @@ void dateToKeyStartDuration(uint8_t expDay, uint8_t expMonth, uint16_t expYear, 
   *settingsKeyStart = startUnixEpoch * 1000L; //Convert to ms
   *settingsKeyDuration = (28 * 24 * 60 * 60 * 1000LL) - 1; //We assume keys last for 28 days (minus one ms to be before midnight)
 
-  Serial.printf("  KeyStart: %lld\n\r", *settingsKeyStart);
-  Serial.printf("  KeyDuration: %lld\n\r", *settingsKeyDuration);
+  Serial.printf("  KeyStart: %lld\r\n", *settingsKeyStart);
+  Serial.printf("  KeyDuration: %lld\r\n", *settingsKeyDuration);
 
   //Print ToW and Week for debugging
   uint16_t keyGPSWeek;
   uint32_t keyGPSToW;
   long long unixEpoch = thingstreamEpochToGPSEpoch(*settingsKeyStart, *settingsKeyDuration);
   unixEpochToWeekToW(unixEpoch, &keyGPSWeek, &keyGPSToW);
-  Serial.printf("  keyGPSWeek: %d\n\r", keyGPSWeek);
-  Serial.printf("  keyGPSToW: %d\n\r", keyGPSToW);
+  Serial.printf("  keyGPSWeek: %d\r\n", keyGPSWeek);
+  Serial.printf("  keyGPSToW: %d\r\n", keyGPSToW);
 }
 
 /*
@@ -938,7 +938,7 @@ void menuPointPerfect()
 
     char hardwareID[13];
     sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
-    Serial.printf("Device ID: %s\n\r", hardwareID);
+    Serial.printf("Device ID: %s\r\n", hardwareID);
 
     Serial.print("Days until keys expire: ");
     if (strlen(settings.pointPerfectCurrentKey) > 0)

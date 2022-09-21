@@ -21,7 +21,7 @@ void F9PSerialWriteTask(void *e)
         if (!inMainMenu) log_d("Bluetooth received %d RTCM bytes, sent to ZED", s);
 
         if (settings.enableTaskReports == true)
-          Serial.printf("SerialWriteTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+          Serial.printf("SerialWriteTask High watermark: %d\r\n",  uxTaskGetStackHighWaterMark(NULL));
       }
       delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
       taskYIELD();
@@ -53,7 +53,7 @@ void F9PSerialReadTask(void *e)
   while (true)
   {
     if (settings.enableTaskReports == true)
-      Serial.printf("SerialReadTask High watermark: %d\n\r",  uxTaskGetStackHighWaterMark(NULL));
+      Serial.printf("SerialReadTask High watermark: %d\r\n",  uxTaskGetStackHighWaterMark(NULL));
 
     //----------------------------------------------------------------------
     //The ESP32<->ZED-F9P serial connection is default 460,800bps to facilitate
@@ -500,14 +500,14 @@ void ButtonCheckTask(void *e)
                   setupState = STATE_MARK_EVENT;
                 break;
               default:
-                Serial.printf("ButtonCheckTask unknown setup state: %d\n\r", setupState);
+                Serial.printf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
                 setupState = STATE_MARK_EVENT;
                 break;
             }
             break;
 
           default:
-            Serial.printf("ButtonCheckTask unknown system state: %d\n\r", systemState);
+            Serial.printf("ButtonCheckTask unknown system state: %d\r\n", systemState);
             requestChangeState(STATE_ROVER_NOT_STARTED);
             break;
         }
@@ -620,14 +620,14 @@ void ButtonCheckTask(void *e)
                   setupState = STATE_MARK_EVENT;
                 break;
               default:
-                Serial.printf("ButtonCheckTask unknown setup state: %d\n\r", setupState);
+                Serial.printf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
                 setupState = STATE_MARK_EVENT;
                 break;
             }
             break;
 
           default:
-            Serial.printf("ButtonCheckTask unknown system state: %d\n\r", systemState);
+            Serial.printf("ButtonCheckTask unknown system state: %d\r\n", systemState);
             requestChangeState(STATE_ROVER_NOT_STARTED);
             break;
         }
@@ -680,7 +680,7 @@ void idleTask(void *e)
         && ((millis() - lastStackPrintTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000)))
     {
       lastStackPrintTime = millis();
-      Serial.printf("idleTask %d High watermark: %d\n\r",
+      Serial.printf("idleTask %d High watermark: %d\r\n",
                     xPortGetCoreID(), uxTaskGetStackHighWaterMark(NULL));
     }
 

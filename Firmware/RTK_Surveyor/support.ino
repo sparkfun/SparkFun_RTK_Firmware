@@ -1,6 +1,6 @@
 void printElapsedTime(const char* title)
 {
-  Serial.printf("%s: %ld\n\r", title, millis() - startTime);
+  Serial.printf("%s: %ld\r\n", title, millis() - startTime);
 }
 
 void printDebug(String thingToPrint)

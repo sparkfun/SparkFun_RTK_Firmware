@@ -377,7 +377,7 @@ void checkBatteryLevels()
     else
       sprintf(tempStr, "No batt");
 
-    Serial.printf("%s\n\r", tempStr);
+    Serial.printf("%s\r\n", tempStr);
   }
 
   if (productVariant == RTK_SURVEYOR)
@@ -437,7 +437,7 @@ void reportHeapNow()
   if (settings.enableHeapReport == true)
   {
     lastHeapReport = millis();
-    Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\n\r", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+    Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\r\n", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
   }
 }
 

@@ -318,7 +318,7 @@ bool setMeasurementRates(float secondsBetweenSolutions)
   navRate = secondsBetweenSolutions * 1000.0 / measRate; //Set navRate to nearest int value
   measRate = secondsBetweenSolutions * 1000.0 / navRate; //Adjust measurement rate to match actual navRate
 
-  //Serial.printf("measurementRate / navRate: %d / %d\n\r", measRate, navRate);
+  //Serial.printf("measurementRate / navRate: %d / %d\r\n", measRate, navRate);
 
   //If we successfully set rates, only then record to settings
   if (i2cGNSS.setMeasurementRate(measRate) == true && i2cGNSS.setNavigationRate(navRate) == true)
@@ -358,7 +358,7 @@ float getMeasurementFrequency()
   //The ZED-F9P will report an incorrect nav rate if we have rececently changed it.
   //Reading a second time insures a correct read.
 
-  //Serial.printf("currentMeasurementRate / currentNavigationRate: %d / %d\n\r", currentMeasurementRate, currentNavigationRate);
+  //Serial.printf("currentMeasurementRate / currentNavigationRate: %d / %d\r\n", currentMeasurementRate, currentNavigationRate);
 
   float measurementFrequency = (1000.0 / currentMeasurementRate) / currentNavigationRate;
   return (measurementFrequency);
@@ -401,7 +401,7 @@ bool configureConstellations()
   }
   //long stopTime = millis();
 
-  //Serial.printf("setConstellation time delta: %ld ms\n\r", stopTime - startTime);
+  //Serial.printf("setConstellation time delta: %ld ms\r\n", stopTime - startTime);
 
   return (response);
 }
@@ -410,11 +410,11 @@ bool configureConstellations()
 void printZEDInfo()
 {
   if (zedModuleType == PLATFORM_F9P)
-    Serial.printf("ZED-F9P firmware: %s\n\r", zedFirmwareVersion);
+    Serial.printf("ZED-F9P firmware: %s\r\n", zedFirmwareVersion);
   else if (zedModuleType == PLATFORM_F9R)
-    Serial.printf("ZED-F9R firmware: %s\n\r", zedFirmwareVersion);
+    Serial.printf("ZED-F9R firmware: %s\r\n", zedFirmwareVersion);
   else
-    Serial.printf("Unknown module with firmware: %s\n\r", zedFirmwareVersion);
+    Serial.printf("Unknown module with firmware: %s\r\n", zedFirmwareVersion);
 }
 
 
@@ -422,5 +422,5 @@ void printZEDInfo()
 void printNEOInfo()
 {
   if (productVariant == RTK_FACET_LBAND)
-    Serial.printf("NEO-D9S firmware: %s\n\r", neoFirmwareVersion);
+    Serial.printf("NEO-D9S firmware: %s\r\n", neoFirmwareVersion);
 }

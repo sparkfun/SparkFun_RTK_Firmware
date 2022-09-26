@@ -263,7 +263,7 @@ function clearSuccess(id) {
 var errorCount = 0;
 
 function checkMessageValue(id) {
-    checkElementValue(id, 0, 20, "Must be between 0 and 20", "collapseGNSSConfigMsg");
+    checkElementValue(id, 0, 255, "Must be between 0 and 255", "collapseGNSSConfigMsg");
 }
 
 function collapseSection(section, caret) {

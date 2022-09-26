@@ -261,7 +261,7 @@ void inputMessageRate(ubxMsg &localMessage)
   Serial.printf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
   int64_t rate = getNumber(menuTimeout); //Timeout after x seconds
 
-  while (rate < 0 || rate > 60) //Arbitrary 60 fixes per report limit
+  while (rate < 0 || rate > 255) //8 bit limit
   {
     Serial.println("Error: message rate out of range");
     Serial.printf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);

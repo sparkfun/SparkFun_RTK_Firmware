@@ -5,7 +5,7 @@ on:
       - main
 
 env:
-  FILENAME_PREFIX: RTK_Surveyor_Firmware_v2_5
+  FILENAME_PREFIX: RTK_Surveyor_Firmware_v2_6
   POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
 
 jobs:
@@ -21,9 +21,9 @@ jobs:
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1
 
-      #We limit the ESP32 core to v2.0.4
+      #We limit the ESP32 core to v2.0.2. See: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/334
       - name: Install platform
-        run: arduino-cli core install esp32:esp32@2.0.4 
+        run: arduino-cli core install esp32:esp32@2.0.2
           --additional-urls 'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json'
 
       - name: Start config file

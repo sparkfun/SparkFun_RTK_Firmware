@@ -7,7 +7,7 @@ void menuGNSS()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: GNSS Menu");
+    Serial.println("Menu: GNSS Receiver");
 
     //Because we may be in base mode (always 1Hz), do not get freq from module, use settings instead
     float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
@@ -244,7 +244,7 @@ void menuConstellations()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Constellations Menu");
+    Serial.println("Menu: Constellations");
 
     for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
     {

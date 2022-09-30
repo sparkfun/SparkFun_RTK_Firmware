@@ -16,7 +16,7 @@ void menuFirmware()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Update Firmware Menu");
+    Serial.println("Menu: Update Firmware");
 
     for (int x = 0 ; x < binCount ; x++)
     {

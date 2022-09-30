@@ -5,7 +5,7 @@ void menuBase()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Base Menu");
+    Serial.println("Menu: Base");
 
     Serial.print("1) Toggle Base Mode: ");
     if (settings.fixedBase == true) Serial.println("Fixed/Static Position");
@@ -285,7 +285,7 @@ void menuSensorFusion()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Sensor Fusion Menu");
+    Serial.println("Menu: Sensor Fusion");
 
     Serial.print("Fusion Mode: ");
     Serial.print(i2cGNSS.packetUBXESFSTATUS->data.fusionMode);

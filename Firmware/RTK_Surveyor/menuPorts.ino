@@ -12,7 +12,7 @@ void menuPortsSurveyor()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Port Menu");
+    Serial.println("Menu: Ports");
 
     Serial.print("1) Set serial baud rate for Radio Port: ");
     Serial.print(getSerialRate(COM_PORT_UART2));
@@ -74,7 +74,7 @@ void menuPortsMultiplexed()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Port Menu");
+    Serial.println("Menu: Ports");
 
     Serial.print("1) Set Radio port serial baud rate: ");
     Serial.print(getSerialRate(COM_PORT_UART2));
@@ -185,7 +185,7 @@ void menuPortHardwareTriggers()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Port Hardware Trigger Menu");
+    Serial.println("Menu: Port Hardware Trigger");
 
     Serial.print("1) Enable External Pulse: ");
     if (settings.enableExternalPulse == true) Serial.println("Enabled");

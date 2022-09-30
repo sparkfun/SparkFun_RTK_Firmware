@@ -40,7 +40,7 @@ void menuMain()
     Serial.println("** Bluetooth Not Compiled **");
 #endif
 
-    Serial.println("Menu: Main Menu");
+    Serial.println("Menu: Main");
 
     Serial.println("1) Configure GNSS Receiver");
 
@@ -55,7 +55,7 @@ void menuMain()
 
     Serial.println("5) Configure Logging");
 
-    Serial.println("p) Configure Profiles");
+    Serial.println("p) Configure User Profiles");
 
 #ifdef COMPILE_ESPNOW
     Serial.println("r) Configure Radios");
@@ -144,7 +144,7 @@ void menuUserProfiles()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: User Profiles Menu");
+    Serial.println("Menu: User Profiles");
 
     //List available profiles
     for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
@@ -323,7 +323,7 @@ void menuRadio()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Radio Menu");
+    Serial.println("Menu: Radios");
 
     Serial.print("1) Select Radio Type: ");
     if (settings.radioType == RADIO_EXTERNAL) Serial.println("External only");

@@ -6,7 +6,7 @@ void menuLog()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Logging Menu");
+    Serial.println("Menu: Logging");
 
     if (settings.enableSD && online.microSD)
       Serial.println("microSD card is online");
@@ -101,7 +101,7 @@ void menuMessages()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Messages Menu");
+    Serial.println("Menu: GNSS Messages");
 
     Serial.printf("Active messages: %d\r\n", getActiveMessageCount());
 
@@ -216,7 +216,7 @@ void menuMessagesSubtype(const char* messageType)
   while (1)
   {
     Serial.println();
-    Serial.printf("Menu: Message %s Menu\r\n", messageType);
+    Serial.printf("Menu: Message %s\r\n", messageType);
 
     int startOfBlock = 0;
     int endOfBlock = 0;

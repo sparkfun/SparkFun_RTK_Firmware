@@ -6,7 +6,7 @@ void menuSystem()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: System Menu");
+    Serial.println("Menu: System");
 
     beginI2C();
     if (online.i2c == false)
@@ -389,7 +389,7 @@ void menuDebug()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Debug Menu");
+    Serial.println("Menu: Debug");
 
     Serial.print("1) u-blox I2C Debugging Output: ");
     if (settings.enableI2Cdebug == true) Serial.println("Enabled");

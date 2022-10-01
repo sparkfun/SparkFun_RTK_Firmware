@@ -204,7 +204,7 @@ void menuSystem()
                     ntripServerConnectionAttemptsTotal);
     }
 
-    if (settings.enableSD == true)
+    if (settings.enableSD == true && online.microSD == true)
     {
       Serial.println("f) Display microSD Files");
     }
@@ -321,7 +321,7 @@ void menuSystem()
       else
         Serial.println("Reset aborted");
     }
-    else if ((incoming == 'f') && (settings.enableSD == true))
+    else if ((incoming == 'f') && (settings.enableSD == true) &&  (online.microSD == true))
     {
       sdCardAlreadyMounted = online.microSD;
       if (!online.microSD)

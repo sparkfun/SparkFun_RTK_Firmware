@@ -96,7 +96,7 @@ void menuGNSS()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
     {
@@ -104,7 +104,7 @@ void menuGNSS()
       double rate = getDouble();
       if (rate < 0.00012 || rate > 20.0) //20Hz limit with all constellations enabled
       {
-        Serial.println("Error: measurement rate out of range");
+        Serial.println("Error: Measurement rate out of range");
       }
       else
       {
@@ -118,7 +118,7 @@ void menuGNSS()
       float rate = getDouble();
       if (rate < 0.0 || rate > 8255.0) //Limit of 127 (navRate) * 65000ms (measRate) = 137 minute limit.
       {
-        Serial.println("Error: measurement rate out of range");
+        Serial.println("Error: Measurement rate out of range");
       }
       else
       {
@@ -140,15 +140,18 @@ void menuGNSS()
       Serial.println("9) Wrist");
       Serial.println("10) Bike");
 
-      int dynamicModel = getNumber();
-      if (dynamicModel < 1 || dynamicModel > DYN_MODEL_BIKE)
-        Serial.println("Error: Dynamic model out of range");
-      else
+      int dynamicModel = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((dynamicModel != INPUT_RESPONSE_GETNUMBER_EXIT) && (dynamicModel != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (dynamicModel == 1)
-          settings.dynamicModel = DYN_MODEL_PORTABLE; //The enum starts at 0 and skips 1.
+        if (dynamicModel < 1 || dynamicModel > DYN_MODEL_BIKE)
+          Serial.println("Error: Dynamic model out of range");
         else
-          settings.dynamicModel = dynamicModel; //Recorded to NVM and file at main menu exit
+        {
+          if (dynamicModel == 1)
+            settings.dynamicModel = DYN_MODEL_PORTABLE; //The enum starts at 0 and skips 1.
+          else
+            settings.dynamicModel = dynamicModel; //Recorded to NVM and file at main menu exit
+        }
       }
     }
     else if (incoming == 4)
@@ -182,12 +185,15 @@ void menuGNSS()
     {
       Serial.print("Enter new Caster Port: ");
 
-      int ntripClient_CasterPort = getNumber();
-      if (ntripClient_CasterPort < 1 || ntripClient_CasterPort > 99999) //Arbitrary 99k max port #
-        Serial.println("Error: Caster Port out of range");
-      else
-        settings.ntripClient_CasterPort = ntripClient_CasterPort; //Recorded to NVM and file at main menu exit
-      restartRover = true;
+      int ntripClient_CasterPort = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((ntripClient_CasterPort != INPUT_RESPONSE_GETNUMBER_EXIT) && (ntripClient_CasterPort != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (ntripClient_CasterPort < 1 || ntripClient_CasterPort > 99999) //Arbitrary 99k max port #
+          Serial.println("Error: Caster port out of range");
+        else
+          settings.ntripClient_CasterPort = ntripClient_CasterPort; //Recorded to NVM and file at main menu exit
+        restartRover = true;
+      }
     }
     else if (incoming == 10 && settings.enableNtripClient == true)
     {
@@ -258,7 +264,7 @@ void menuConstellations()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming >= 1 && incoming <= MAX_CONSTELLATIONS)
     {
@@ -341,10 +347,10 @@ bool setMeasurementRates(float secondsBetweenSolutions)
   else
   {
     Serial.println("Failed to set measurement and navigation rates");
-    return(false);
+    return (false);
   }
 
-  return(true);
+  return (true);
 }
 
 //We need to know our overall measurement frequency for things like setting the GSV NMEA sentence rate.

@@ -91,7 +91,7 @@ void menuBase()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
     {
@@ -159,11 +159,14 @@ void menuBase()
     else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 4)
     {
       Serial.print("Enter the antenna height (a.k.a. pole length) in millimeters (-15000 to 15000mm): ");
-      int antennaHeight = getDouble();
-      if (antennaHeight < -15000 || antennaHeight > 15000) //Arbitrary 15m max
-        Serial.println("Error: Antenna Height out of range");
-      else
-        settings.antennaHeight = antennaHeight; //Recorded to NVM and file at main menu exit
+      int antennaHeight = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((antennaHeight != INPUT_RESPONSE_GETNUMBER_EXIT) && (antennaHeight != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (antennaHeight < -15000 || antennaHeight > 15000) //Arbitrary 15m max
+          Serial.println("Error: Antenna Height out of range");
+        else
+          settings.antennaHeight = antennaHeight; //Recorded to NVM and file at main menu exit
+      }
     }
     else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 5)
     {
@@ -178,14 +181,13 @@ void menuBase()
     else if (settings.fixedBase == false && incoming == 2)
     {
       Serial.print("Enter the number of seconds for survey-in obseration time (60 to 600s): ");
-      int observationSeconds = getNumber();
-      if (observationSeconds < 60 || observationSeconds > 60 * 10) //Arbitrary 10 minute limit
+      int observationSeconds = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((observationSeconds != INPUT_RESPONSE_GETNUMBER_EXIT) && (observationSeconds != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: observation seconds out of range");
-      }
-      else
-      {
-        settings.observationSeconds = observationSeconds; //Recorded to NVM and file at main menu exit
+        if (observationSeconds < 60 || observationSeconds > 60 * 10) //Arbitrary 10 minute limit
+          Serial.println("Error: Observation seconds out of range");
+        else
+          settings.observationSeconds = observationSeconds; //Recorded to NVM and file at main menu exit
       }
     }
     else if (settings.fixedBase == false && incoming == 3)
@@ -197,26 +199,18 @@ void menuBase()
 #else
       if (observationPositionAccuracy < 1.0 || observationPositionAccuracy > 5.0) //Arbitrary 1m minimum
 #endif
-      {
-        Serial.println("Error: observation positional accuracy requirement out of range");
-      }
+        Serial.println("Error: Observation positional accuracy requirement out of range");
       else
-      {
         settings.observationPositionAccuracy = observationPositionAccuracy; //Recorded to NVM and file at main menu exit
-      }
     }
     else if (settings.fixedBase == false && incoming == 4)
     {
       Serial.print("Enter the positional accuracy required before Survey-In begins (0.1 to 5.0m): ");
       float surveyInStartingAccuracy = getDouble();
       if (surveyInStartingAccuracy < 0.1 || surveyInStartingAccuracy > 5.0) //Arbitrary 0.1m minimum
-      {
         Serial.println("Error: Starting accuracy out of range");
-      }
       else
-      {
         settings.surveyInStartingAccuracy = surveyInStartingAccuracy; //Recorded to NVM and file at main menu exit
-      }
     }
 
     else if (incoming == 6)
@@ -246,12 +240,15 @@ void menuBase()
     {
       Serial.print("Enter new Caster Port: ");
 
-      int ntripServer_CasterPort = getNumber();
-      if (ntripServer_CasterPort < 1 || ntripServer_CasterPort > 99999) //Arbitrary 99k max port #
-        Serial.println("Error: Caster Port out of range");
-      else
-        settings.ntripServer_CasterPort = ntripServer_CasterPort; //Recorded to NVM and file at main menu exit
-      restartBase = true;
+      int ntripServer_CasterPort = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((ntripServer_CasterPort != INPUT_RESPONSE_GETNUMBER_EXIT) && (ntripServer_CasterPort != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (ntripServer_CasterPort < 1 || ntripServer_CasterPort > 99999) //Arbitrary 99k max port #
+          Serial.println("Error: Caster port out of range");
+        else
+          settings.ntripServer_CasterPort = ntripServer_CasterPort; //Recorded to NVM and file at main menu exit
+        restartBase = true;
+      }
     }
     else if (incoming == 11 && settings.enableNtripServer == true)
     {
@@ -314,7 +311,7 @@ void menuSensorFusion()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
     {

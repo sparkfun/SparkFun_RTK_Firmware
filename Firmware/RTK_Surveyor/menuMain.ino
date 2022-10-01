@@ -99,6 +99,8 @@ void menuMain()
       menuFirmware();
     else if (incoming == 'x')
       break;
+    else if (incoming == INPUT_RESPONSE_EMPTY)
+      break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
     else
@@ -167,7 +169,7 @@ void menuUserProfiles()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming >= 1 && incoming <= MAX_PROFILE_COUNT)
     {
@@ -363,7 +365,7 @@ void menuRadio()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
     {

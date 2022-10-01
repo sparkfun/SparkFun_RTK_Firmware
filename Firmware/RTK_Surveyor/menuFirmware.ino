@@ -25,7 +25,7 @@ void menuFirmware()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming > 0 && incoming < (binCount + 1))
     {

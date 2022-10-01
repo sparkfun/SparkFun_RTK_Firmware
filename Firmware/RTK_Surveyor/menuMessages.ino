@@ -40,7 +40,7 @@ void menuLog()
 
     Serial.println("x) Exit");
 
-    byte incoming = getCharacterNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
     {
@@ -55,27 +55,25 @@ void menuLog()
     else if (incoming == 2 && settings.enableLogging == true)
     {
       Serial.print("Enter max minutes before logging stops: ");
-      int maxMinutes = getNumber();
-      if (maxMinutes < 0 || maxMinutes > (60 * 24 * 365 * 2)) //Arbitrary 2 year limit. See https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/86
+      int maxMinutes = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((maxMinutes != INPUT_RESPONSE_GETNUMBER_EXIT) && (maxMinutes != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: max minutes out of range");
-      }
-      else
-      {
-        settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
+        if (maxMinutes < 0 || maxMinutes > (60 * 24 * 365 * 2)) //Arbitrary 2 year limit. See https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/86
+          Serial.println("Error: Max minutes out of range");
+        else
+          settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 3 && settings.enableLogging == true)
     {
       Serial.print("Enter max minutes of logging before new log is created: ");
-      int maxLogMinutes = getNumber();
-      if (maxLogMinutes < 0 || maxLogMinutes > 60 * 48) //Arbitrary 48 hour limit
+      int maxLogMinutes = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((maxLogMinutes != INPUT_RESPONSE_GETNUMBER_EXIT) && (maxLogMinutes != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: max minutes out of range");
-      }
-      else
-      {
-        settings.maxLogLength_minutes = maxLogMinutes; //Recorded to NVM and file at main menu exit
+        if (maxLogMinutes < 0 || maxLogMinutes > 60 * 48) //Arbitrary 48 hour limit
+          Serial.println("Error: Max minutes out of range");
+        else
+          settings.maxLogLength_minutes = maxLogMinutes; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 4)
@@ -84,10 +82,10 @@ void menuLog()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
-    {
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    }
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
+      break;
     else
       printUnknown(incoming);
   }
@@ -121,7 +119,7 @@ void menuMessages()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
       menuMessagesSubtype("NMEA");
@@ -233,7 +231,7 @@ void menuMessagesSubtype(const char* messageType)
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming >= 1 && incoming <= (endOfBlock - startOfBlock))
     {
@@ -259,20 +257,20 @@ void menuMessagesSubtype(const char* messageType)
 void inputMessageRate(ubxMsg &localMessage)
 {
   Serial.printf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
-  int64_t rate = getNumber();
+  int rate = getNumber(); //Returns EXIT, TIMEOUT, or long
+
+  if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
+    return;
 
   while (rate < 0 || rate > 255) //8 bit limit
   {
-    Serial.println("Error: message rate out of range");
+    Serial.println("Error: Message rate out of range");
     Serial.printf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
-    rate = getNumber();
+    rate = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
       return; //Give up
   }
-
-  if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
-    return;
 
   localMessage.msgRate = rate;
 }
@@ -831,7 +829,7 @@ void updateLogTest()
 
     char logMessage[100];
     sprintf(logMessage, "Start log test: %dHz, %dMsg, %dMS", rate, messages, semaphoreWait);
-    
+
     char nmeaMessage[100]; //Max NMEA sentence length is 82
     createNMEASentence(CUSTOM_NMEA_TYPE_LOGTEST_STATUS, nmeaMessage, logMessage); //textID, buffer, text
 

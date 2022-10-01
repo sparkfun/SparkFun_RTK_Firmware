@@ -24,7 +24,7 @@ void menuPortsSurveyor()
 
     Serial.println("x) Exit");
 
-    byte incoming = getCharacterNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
     {
@@ -83,7 +83,9 @@ void menuPortsSurveyor()
 
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
@@ -133,7 +135,7 @@ void menuPortsMultiplexed()
 
     Serial.println("x) Exit");
 
-    byte incoming = getCharacterNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
     {
@@ -173,7 +175,7 @@ void menuPortsMultiplexed()
         Serial.println("3) Wheel Tick/Direction");
       Serial.println("4) ESP32 DAC Out/ADC In");
 
-      int muxPort = getNumber();
+      int muxPort = getNumber(); //Returns EXIT, TIMEOUT, or long
       if (muxPort < 1 || muxPort > 4)
       {
         Serial.println("Error: Pin connection out of range");
@@ -217,7 +219,9 @@ void menuPortsMultiplexed()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
@@ -260,7 +264,7 @@ void menuPortHardwareTriggers()
 
     Serial.println("x) Exit");
 
-    byte incoming = getCharacterNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
     {
@@ -269,22 +273,18 @@ void menuPortHardwareTriggers()
     else if (incoming == 2 && settings.enableExternalPulse == true)
     {
       Serial.print("Time between pulses in milliseconds: ");
-      long pulseTime = getNumber();
+      long pulseTime = getNumber(); //Returns EXIT, TIMEOUT, or long
 
       if (pulseTime != INPUT_RESPONSE_GETNUMBER_TIMEOUT && pulseTime != INPUT_RESPONSE_GETNUMBER_EXIT)
-      {
         settings.externalPulseTimeBetweenPulse_us = pulseTime * 1000;
-      }
     }
     else if (incoming == 3 && settings.enableExternalPulse == true)
     {
       Serial.print("Pulse length in milliseconds: ");
-      double pulseLength = getNumber();
+      long pulseLength = getNumber(); //Returns EXIT, TIMEOUT, or long
 
       if (pulseLength != INPUT_RESPONSE_GETNUMBER_TIMEOUT && pulseLength != INPUT_RESPONSE_GETNUMBER_EXIT)
-      {
         settings.externalPulseLength_us = pulseLength * 1000;
-      }
     }
     else if (incoming == 4 && settings.enableExternalPulse == true)
     {
@@ -299,7 +299,9 @@ void menuPortHardwareTriggers()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);

@@ -250,33 +250,42 @@ void menuSystem()
     else if (incoming == 'z')
     {
       Serial.print("Enter time zone hour offset (-23 <= offset <= 23): ");
-      int value = getNumber();
-      if (value < -23 || value > 23)
-        Serial.println("Error: -24 < hours < 24");
-      else
+      int value = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        settings.timeZoneHours = value;
-
-        Serial.print("Enter time zone minute offset (-59 <= offset <= 59): ");
-        int value = getNumber();
-        if (value < -59 || value > 59)
-          Serial.println("Error: -60 < minutes < 60");
+        if (value < -23 || value > 23)
+          Serial.println("Error: -24 < hours < 24");
         else
         {
-          settings.timeZoneMinutes = value;
+          settings.timeZoneHours = value;
 
-          Serial.print("Enter time zone second offset (-59 <= offset <= 59): ");
-          int value = getNumber();
-          if (value < -59 || value > 59)
-            Serial.println("Error: -60 < seconds < 60");
-          else
+          Serial.print("Enter time zone minute offset (-59 <= offset <= 59): ");
+          int value = getNumber(); //Returns EXIT, TIMEOUT, or long
+          if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
           {
-            settings.timeZoneSeconds = value;
-            online.rtc = false;
-            updateRTC();
-          } //Succesful seconds
-        } //Succesful minute
-      } //Succesful hours
+            if (value < -59 || value > 59)
+              Serial.println("Error: -60 < minutes < 60");
+            else
+            {
+              settings.timeZoneMinutes = value;
+
+              Serial.print("Enter time zone second offset (-59 <= offset <= 59): ");
+              int value = getNumber(); //Returns EXIT, TIMEOUT, or long
+              if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+              {
+                if (value < -59 || value > 59)
+                  Serial.println("Error: -60 < seconds < 60");
+                else
+                {
+                  settings.timeZoneSeconds = value;
+                  online.rtc = false;
+                  updateRTC();
+                } //Succesful seconds
+              }
+            } //Succesful minute
+          }
+        } //Succesful hours
+      }
     }
     else if (incoming == 'b')
     {
@@ -371,6 +380,8 @@ void menuSystem()
     }
     else if (incoming == 'x')
       break;
+    else if (incoming == INPUT_RESPONSE_EMPTY)
+      break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
     else
@@ -378,7 +389,6 @@ void menuSystem()
   }
 
   clearBuffer(); //Empty buffer of any newline chars
-
 }
 
 //Toggle control of heap reports and I2C GNSS debug
@@ -515,40 +525,37 @@ void menuDebug()
     else if (incoming == 4)
     {
       Serial.print("Enter SPI frequency in MHz (1 to 16): ");
-      int freq = getNumber();
-      if (freq < 1 || freq > 16) //Arbitrary 16MHz limit
+      int freq = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((freq != INPUT_RESPONSE_GETNUMBER_EXIT) && (freq != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: SPI frequency out of range");
-      }
-      else
-      {
-        settings.spiFrequency = freq; //Recorded to NVM and file at main menu exit
+        if (freq < 1 || freq > 16) //Arbitrary 16MHz limit
+          Serial.println("Error: SPI frequency out of range");
+        else
+          settings.spiFrequency = freq; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 5)
     {
       Serial.print("Enter SPP RX Queue Size in Bytes (32 to 16384): ");
-      uint16_t queSize = getNumber();
-      if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: Queue size out of range");
-      }
-      else
-      {
-        settings.sppRxQueueSize = queSize; //Recorded to NVM and file at main menu exit
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+          Serial.println("Error: Queue size out of range");
+        else
+          settings.sppRxQueueSize = queSize; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 6)
     {
       Serial.print("Enter SPP TX Queue Size in Bytes (32 to 16384): ");
-      uint16_t queSize = getNumber();
-      if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: Queue size out of range");
-      }
-      else
-      {
-        settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+          Serial.println("Error: Queue size out of range");
+        else
+          settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 8)
@@ -563,14 +570,13 @@ void menuDebug()
     else if (incoming == 9)
     {
       Serial.print("Enter GNSS Serial Timeout in milliseconds (0 to 1000): ");
-      int serialTimeoutGNSS = getNumber();
-      if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
+      int serialTimeoutGNSS = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((serialTimeoutGNSS != INPUT_RESPONSE_GETNUMBER_EXIT) && (serialTimeoutGNSS != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: Timeout is out of range");
-      }
-      else
-      {
-        settings.serialTimeoutGNSS = serialTimeoutGNSS; //Recorded to NVM and file at main menu exit
+        if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
+          Serial.println("Error: Timeout is out of range");
+        else
+          settings.serialTimeoutGNSS = serialTimeoutGNSS; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 10)
@@ -694,8 +700,12 @@ void menuDebug()
     }
     else if (incoming == 'x')
       break;
+    else if (incoming == INPUT_RESPONSE_EMPTY)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+      break;
     else
-      printUnknown(((uint8_t)incoming));
+      printUnknown(incoming);
   }
 
   clearBuffer(); //Empty buffer of any newline chars

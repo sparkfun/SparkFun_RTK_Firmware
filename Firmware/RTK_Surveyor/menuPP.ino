@@ -93,7 +93,7 @@ void menuPointPerfectKeys()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber();
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
     {
@@ -516,13 +516,13 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
 bool getDate(uint8_t &dd, uint8_t &mm, uint16_t &yy)
 {
   Serial.print("Enter Day: ");
-  dd = getNumber();
+  dd = getNumber(); //Returns EXIT, TIMEOUT, or long
 
   Serial.print("Enter Month: ");
-  mm = getNumber();
+  mm = getNumber(); //Returns EXIT, TIMEOUT, or long
 
   Serial.print("Enter Year (YYYY): ");
-  yy = getNumber();
+  yy = getNumber(); //Returns EXIT, TIMEOUT, or long
 
   //check year
   if (yy >= 2022 && yy <= 9999)
@@ -1037,16 +1037,13 @@ void menuPointPerfect()
       } //End strlen SSID check
 #endif
     }
-    else if (incoming == 6)
-    {
-      LittleFS.format();
-      log_d("Formatted");
-    }
     else if (incoming == 'k')
     {
       menuPointPerfectKeys();
     }
     else if (incoming == 'x')
+      break;
+    else if (incoming == INPUT_RESPONSE_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;

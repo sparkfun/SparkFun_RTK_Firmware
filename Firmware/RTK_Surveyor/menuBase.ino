@@ -31,9 +31,11 @@ void menuBase()
       {
         Serial.print("3) Set Lat/Long/Altitude coordinates: ");
         Serial.print(settings.fixedLat, haeNumberOfDecimals);
-        Serial.print("°, ");
+        Serial.write(167); //°
+        Serial.print(", ");
         Serial.print(settings.fixedLong, haeNumberOfDecimals);
-        Serial.print("°, ");
+        Serial.write(167); //°
+        Serial.print(", ");
         Serial.print(settings.fixedAltitude, 4);
         Serial.println("m");
 

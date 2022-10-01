@@ -29,31 +29,55 @@ void menuPortsSurveyor()
     if (incoming == 1)
     {
       Serial.print("Enter baud rate (4800 to 921600) for Radio Port: ");
-      int newBaud = getNumber();
-      if (newBaud < 4800 || newBaud > 921600)
+      int newBaud = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((newBaud != INPUT_RESPONSE_GETNUMBER_EXIT) && (newBaud != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: baud rate out of range");
-      }
-      else
-      {
-        settings.radioPortBaud = newBaud;
-        if (online.gnss == true)
-          i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
+        if (newBaud == 4800
+            || newBaud == 9600
+            || newBaud == 19200
+            || newBaud == 38400
+            || newBaud == 57600
+            || newBaud == 115200
+            || newBaud == 230400
+            || newBaud == 460800
+            || newBaud == 921600
+           )
+        {
+          settings.radioPortBaud = newBaud;
+          if (online.gnss == true)
+            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
+        }
+        else
+        {
+          Serial.println("Error: Baud rate out of range");
+        }
       }
     }
     else if (incoming == 2)
     {
       Serial.print("Enter baud rate (4800 to 921600) for Data Port: ");
-      int newBaud = getNumber();
-      if (newBaud < 4800 || newBaud > 921600)
+      int newBaud = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((newBaud != INPUT_RESPONSE_GETNUMBER_EXIT) && (newBaud != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: baud rate out of range");
-      }
-      else
-      {
-        settings.dataPortBaud = newBaud;
-        if (online.gnss == true)
-          i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
+        if (newBaud == 4800
+            || newBaud == 9600
+            || newBaud == 19200
+            || newBaud == 38400
+            || newBaud == 57600
+            || newBaud == 115200
+            || newBaud == 230400
+            || newBaud == 460800
+            || newBaud == 921600
+           )
+        {
+          settings.dataPortBaud = newBaud;
+          if (online.gnss == true)
+            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
+        }
+        else
+        {
+          Serial.println("Error: Baud rate out of range");
+        }
       }
     }
 
@@ -114,16 +138,28 @@ void menuPortsMultiplexed()
     if (incoming == 1)
     {
       Serial.print("Enter baud rate (4800 to 921600) for Radio Port: ");
-      int newBaud = getNumber();
-      if (newBaud < 4800 || newBaud > 921600)
+      int newBaud = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((newBaud != INPUT_RESPONSE_GETNUMBER_EXIT) && (newBaud != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: baud rate out of range");
-      }
-      else
-      {
-        settings.radioPortBaud = newBaud;
-        if (online.gnss == true)
-          i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
+        if (newBaud == 4800
+            || newBaud == 9600
+            || newBaud == 19200
+            || newBaud == 38400
+            || newBaud == 57600
+            || newBaud == 115200
+            || newBaud == 230400
+            || newBaud == 460800
+            || newBaud == 921600
+           )
+        {
+          settings.radioPortBaud = newBaud;
+          if (online.gnss == true)
+            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
+        }
+        else
+        {
+          Serial.println("Error: Baud rate out of range");
+        }
       }
     }
     else if (incoming == 2)
@@ -151,16 +187,28 @@ void menuPortsMultiplexed()
     else if (incoming == 3 && settings.dataPortChannel == MUX_UBLOX_NMEA)
     {
       Serial.print("Enter baud rate (4800 to 921600) for Data Port: ");
-      int newBaud = getNumber();
-      if (newBaud < 4800 || newBaud > 921600)
+      int newBaud = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((newBaud != INPUT_RESPONSE_GETNUMBER_EXIT) && (newBaud != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: baud rate out of range");
-      }
-      else
-      {
-        settings.dataPortBaud = newBaud;
-        if (online.gnss == true)
-          i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
+        if (newBaud == 4800
+            || newBaud == 9600
+            || newBaud == 19200
+            || newBaud == 38400
+            || newBaud == 57600
+            || newBaud == 115200
+            || newBaud == 230400
+            || newBaud == 460800
+            || newBaud == 921600
+           )
+        {
+          settings.dataPortBaud = newBaud;
+          if (online.gnss == true)
+            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
+        }
+        else
+        {
+          Serial.println("Error: Baud rate out of range");
+        }
       }
     }
     else if (incoming == 3 && settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)

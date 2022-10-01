@@ -1,3 +1,150 @@
+//Gathers raw characters from user until \n or \r is received
+//Handles backspace
+//Used for raw mixed entry (SSID, pws, etc)
+//Used by other menu input methods that use sscanf
+//Returns INPUT_RESPONSE_TIMEOUT, INPUT_RESPONSE_OVERFLOW, INPUT_RESPONSE_EMPTY, or INPUT_RESPONSE_VALID
+InputResponse getString(char *userString, uint8_t stringSize)
+{
+  clearBuffer();
+
+  long startTime = millis();
+  uint8_t spot = 0;
+
+  while ((millis() - startTime) / 1000 <= menuTimeout)
+  {
+    delay(1); //Yield to processor
+
+    //Regularly poll to get latest data
+    //    if (online.gnss == true)
+    //      i2cGNSS.checkUblox();
+
+    //Get the next input character
+    while (Serial.available() > 0)
+    {
+      byte incoming = Serial.read();
+
+      if ((incoming == '\r') || (incoming == '\n'))
+      {
+        if (settings.echoUserInput) Serial.println(); //Echo if needed
+        userString[spot] = '\0'; //Null terminate
+        return INPUT_RESPONSE_VALID;
+      }
+      //Handle backspace
+      else if (incoming == '\b')
+      {
+        if (spot > 0)
+        {
+          Serial.write('\b'); //Move back one space
+          Serial.print(" "); //Put a blank there to erase the letter from the terminal
+          Serial.print('\b'); //Move back again
+          spot--;
+        }
+      }
+      else
+      {
+        if (settings.echoUserInput) Serial.write(incoming); //Echo if needed
+
+        userString[spot++] = incoming;
+        if (spot == (stringSize - 1)) //Leave room for termination
+          return INPUT_RESPONSE_OVERFLOW;
+      }
+    }
+  }
+
+  return INPUT_RESPONSE_TIMEOUT;
+}
+
+//Gets a single character or number (0-32) from the user. Negative numbers become the positive equivalent.
+//Numbers larger than 32 are allowed but will be confused with characters: ie, 74 = 'J'.
+//Returns 255 if timeout
+//Returns 0 if no data, only carriage return or newline
+byte getCharacterNumber()
+{
+  char userEntry[50]; //Allow user to enter more than one char. sscanf will remove extra.
+  byte userByte = 0;
+
+  InputResponse response = getString(userEntry, sizeof(userEntry));
+  if (response == INPUT_RESPONSE_VALID)
+  {
+    int filled = sscanf(userEntry, "%d", &userByte);
+    if (filled == 0) //Not a number
+      sscanf(userEntry, "%c", &userByte);
+    else
+    {
+      if (userByte == 255)
+        userByte = 0; //Not allowed
+      else if (userByte > 128)
+        userByte *= -1; //Drop negative sign
+    }
+  }
+  else if (response == INPUT_RESPONSE_TIMEOUT)
+  {
+    Serial.println("No user response - Do you have line endings turned on?");
+    userByte = 255; //Timeout
+  }
+  else if (response == INPUT_RESPONSE_EMPTY)
+  {
+    Serial.println("No user response - empty.");
+    userByte = 0; //Empty
+  }
+
+  return userByte;
+}
+
+//Get a long int from user, uses sscanf to obtain 64-bit int
+//Returns INPUT_RESPONSE_GETNUMBER_EXIT if user presses 'x' or doesn't enter data
+//Returns INPUT_RESPONSE_GETNUMBER_TIMEOUT if input times out
+long getNumber()
+{
+  char userEntry[50]; //Allow user to enter more than one char. sscanf will remove extra.
+  long userNumber = 0;
+
+  InputResponse response = getString(userEntry, sizeof(userEntry));
+  if (response == INPUT_RESPONSE_VALID)
+  {
+    if (strcmp(userEntry, "x") == 0 || strcmp(userEntry, "X") == 0)
+      userNumber = INPUT_RESPONSE_GETNUMBER_EXIT;
+    else
+      sscanf(userEntry, "%ld", &userNumber);
+  }
+  else if (response == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
+  {
+    Serial.println("No user response - Do you have line endings turned on?");
+    userNumber = INPUT_RESPONSE_GETNUMBER_TIMEOUT; //Timeout
+  }
+  else if (response == INPUT_RESPONSE_EMPTY)
+  {
+    Serial.println("No user response - empty.");
+    userNumber = INPUT_RESPONSE_GETNUMBER_EXIT; //Empty
+  }
+
+  return userNumber;
+}
+
+//Gets a double (float) from the user
+//Returns 0 for timeout and empty response
+double getDouble()
+{
+  char userEntry[50];
+  double userFloat = 0.0;
+
+  InputResponse response = getString(userEntry, sizeof(userEntry));
+  if (response == INPUT_RESPONSE_VALID)
+    sscanf(userEntry, "%lf", &userFloat);
+  else if (response == INPUT_RESPONSE_TIMEOUT)
+  {
+    Serial.println("No user response - Do you have line endings turned on?");
+    userFloat = 0.0;
+  }
+  else if (response == INPUT_RESPONSE_EMPTY)
+  {
+    Serial.println("No user response - empty.");
+    userFloat = 0.0;
+  }
+
+  return userFloat;
+}
+
 void printElapsedTime(const char* title)
 {
   Serial.printf("%s: %ld\r\n", title, millis() - startTime);
@@ -30,385 +177,6 @@ void clearBuffer()
   Serial.flush();
   delay(20);//Wait for any incoming chars to hit buffer
   while (Serial.available() > 0) Serial.read(); //Clear buffer
-}
-
-//Waits for and returns the menu choice that the user provides
-//Returns GMCS_TIMEOUT, GMCS_OVERFLOW, GMCS_CHARACTER or number of digits
-int getMenuChoice(int * value, int numberOfSeconds)
-{
-  int digits;
-  byte incoming;
-  bool makingChoice;
-  int previous_value;
-
-  clearBuffer();
-
-  long startTime = millis();
-
-  //Assume character value
-  *value = 0;
-  previous_value = 0;
-  digits = 0;
-  makingChoice = true;
-  while (makingChoice)
-  {
-    delay(10); //Yield to processor
-
-    //Regularly poll to get latest data
-    if (online.gnss == true)
-      i2cGNSS.checkUblox();
-
-    //Get the next input character
-    while (Serial.available() > 0)
-    {
-      incoming = Serial.read();
-
-      //Handle single character input
-      if ((!digits)
-          && (((incoming >= 'a') && (incoming <= 'z'))
-              || ((incoming >= 'A') && (incoming <= 'Z'))))
-      {
-        //Echo the incoming character
-        Serial.printf("%c\r\n", incoming);
-
-        //Return the character value
-        *value = incoming;
-        makingChoice = false;
-        break;
-      }
-
-      //Handle numeric input
-      else if ((incoming >= '0') && (incoming <= '9'))
-      {
-        //Echo the incoming character
-        Serial.write(incoming);
-
-        //Switch to numeric mode
-        *value = (*value * 10) + incoming - '0';
-        digits += 1;
-
-        //Check for overflow
-        if (*value < previous_value)
-        {
-          Serial.println("Error - number overflow!");
-          return GMCS_OVERFLOW;
-        }
-        previous_value = *value;
-
-        //Handle backspace
-        if (digits && (incoming == 8))
-        {
-          Serial.print((char)0x08); //Move back one space
-          Serial.print(" "); //Put a blank there to erase the letter from the terminal
-          Serial.print((char)0x08); //Move back again
-
-          //Switch to numeric mode
-          *value /= 10;
-          previous_value = *value;
-          digits -= 1;
-        }
-      }
-
-      //Handle end of number
-      else if (digits && ((incoming == '\r') || (incoming == '\n')))
-      {
-        //Echo the incoming character
-        Serial.print("\r\n");
-        makingChoice = false;
-        break;
-      }
-    }
-
-    //Exit the routine when a timeout occurs
-    if (makingChoice && (millis() - startTime) / 1000 >= numberOfSeconds)
-    {
-      Serial.println("No user input received.");
-      return GMCS_TIMEOUT;
-    }
-  }
-  return (digits);
-}
-
-//Get single byte from user
-//Waits for and returns the character that the user provides
-//Returns STATUS_GETNUMBER_TIMEOUT if input times out
-//Returns 'x' if user presses 'x'
-uint8_t getByteChoice(int numberOfSeconds)
-{
-  clearBuffer();
-
-  long startTime = millis();
-  byte incoming;
-  while (1)
-  {
-    delay(10); //Yield to processor
-    if (online.gnss == true)
-      i2cGNSS.checkUblox(); //Regularly poll to get latest data
-
-    if (Serial.available() > 0)
-    {
-      incoming = Serial.read();
-      if (incoming >= 'a' && incoming <= 'z') break;
-      if (incoming >= 'A' && incoming <= 'Z') break;
-      if (incoming >= '0' && incoming <= '9') break;
-    }
-
-    if ( (millis() - startTime) / 1000 >= numberOfSeconds)
-    {
-      Serial.println("No user input received.");
-      return (STATUS_GETBYTE_TIMEOUT); //Timeout. No user input.
-    }
-  }
-
-  return (incoming);
-}
-
-//Get a string/value from user, remove all non-numeric values
-//Returns STATUS_GETNUMBER_TIMEOUT if input times out
-//Returns STATUS_PRESSED_X if user presses 'x'
-int64_t getNumber(int numberOfSeconds)
-{
-  clearBuffer();
-
-  //Get input from user
-  char cleansed[20]; //Good for very large numbers: 123,456,789,012,345,678\0
-
-  long startTime = millis();
-  int spot = 0;
-  while (spot < 20 - 1) //Leave room for terminating \0
-  {
-    while (Serial.available() == 0) //Wait for user input
-    {
-      delay(10); //Yield to processor
-      if (online.gnss == true)
-        i2cGNSS.checkUblox(); //Regularly poll to get latest data
-
-      if ( (millis() - startTime) / 1000 >= numberOfSeconds)
-      {
-        if (spot == 0)
-        {
-          Serial.println("No user input received. Do you have line endings turned on?");
-          return (STATUS_GETNUMBER_TIMEOUT); //Timeout. No user input.
-        }
-        else if (spot > 0)
-        {
-          break; //Timeout, but we have data
-        }
-      }
-    }
-
-    //See if we timed out waiting for a line ending
-    if (spot > 0 && (millis() - startTime) / 1000 >= numberOfSeconds)
-    {
-      Serial.println("Do you have line endings turned on?");
-      break; //Timeout, but we have data
-    }
-
-    byte incoming = Serial.read();
-    if (incoming == '\n' || incoming == '\r')
-    {
-      Serial.println();
-      break;
-    }
-
-    if ((isDigit(incoming) == true) || ((incoming == '-') && (spot == 0))) // Check for digits and a minus sign
-    {
-      Serial.write(incoming); //Echo user's typing
-      cleansed[spot++] = (char)incoming;
-    }
-
-    if (incoming == 'x')
-    {
-      return (STATUS_PRESSED_X);
-    }
-  }
-
-  cleansed[spot] = '\0';
-
-  int64_t largeNumber = 0;
-  int x = 0;
-  if (cleansed[0] == '-') // If our number is negative
-  {
-    x = 1; // Skip the minus
-  }
-  for ( ; x < spot ; x++)
-  {
-    largeNumber *= 10;
-    largeNumber += (cleansed[x] - '0');
-  }
-  if (cleansed[0] == '-') // If our number is negative
-  {
-    largeNumber = 0 - largeNumber; // Make it negative
-  }
-  return (largeNumber);
-}
-
-//Get a string/value from user, remove all non-numeric values
-//Returns STATUS_GETNUMBER_TIMEOUT if input times out
-//Returns STATUS_PRESSED_X if user presses 'x'
-double getDouble(int numberOfSeconds)
-{
-  clearBuffer();
-
-  //Get input from user
-  char cleansed[20]; //Good for very large numbers: 123,456,789,012,345,678\0
-
-  long startTime = millis();
-  int spot = 0;
-  bool dpSeen = false;
-  while (spot < 20 - 1) //Leave room for terminating \0
-  {
-    while (Serial.available() == 0) //Wait for user input
-    {
-      delay(10); //Yield to processor
-      if (online.gnss == true)
-        i2cGNSS.checkUblox(); //Regularly poll to get latest data
-
-      if ( (millis() - startTime) / 1000 >= numberOfSeconds)
-      {
-        if (spot == 0)
-        {
-          Serial.println("No user input received. Do you have line endings turned on?");
-          return (STATUS_GETNUMBER_TIMEOUT); //Timeout. No user input.
-        }
-        else if (spot > 0)
-        {
-          break; //Timeout, but we have data
-        }
-      }
-    }
-
-    //See if we timed out waiting for a line ending
-    if (spot > 0 && (millis() - startTime) / 1000 >= numberOfSeconds)
-    {
-      Serial.println("Do you have line endings turned on?");
-      break; //Timeout, but we have data
-    }
-
-    byte incoming = Serial.read();
-    if (incoming == '\n' || incoming == '\r')
-    {
-      Serial.println();
-      break;
-    }
-
-    if ((isDigit(incoming) == true) || ((incoming == '-') && (spot == 0)) || ((incoming == '.') && (dpSeen == false))) // Check for digits/minus/dp
-    {
-      Serial.write(incoming); //Echo user's typing
-      cleansed[spot++] = (char)incoming;
-    }
-
-    if (incoming == '.')
-      dpSeen = true;
-
-    if (incoming == 'x')
-    {
-      return (STATUS_PRESSED_X);
-    }
-  }
-
-  cleansed[spot] = '\0';
-
-  double largeNumber = 0;
-  int x = 0;
-  if (cleansed[0] == '-') // If our number is negative
-  {
-    x = 1; // Skip the minus
-  }
-  for ( ; x < spot ; x++)
-  {
-    if (cleansed[x] == '.')
-      break;
-    largeNumber *= 10;
-    largeNumber += (cleansed[x] - '0');
-  }
-  if (x < spot) // Check if we found a '.'
-  {
-    x++;
-    double divider = 0.1;
-    for ( ; x < spot ; x++)
-    {
-      largeNumber += (cleansed[x] - '0') * divider;
-      divider /= 10;
-    }
-  }
-  if (cleansed[0] == '-') // If our number is negative
-  {
-    largeNumber = 0 - largeNumber; // Make it negative
-  }
-  return (largeNumber);
-}
-
-//Reads a line until the \n enter character is found
-//Returns STATUS_GETBYTE_TIMEOUT if input times out
-byte readLine(char* buffer, byte bufferLength, int numberOfSeconds)
-{
-  clearBuffer();
-
-  byte readLength = 0;
-  long startTime = millis();
-  while (readLength < bufferLength - 1)
-  {
-    //See if we timed out waiting for a line ending
-    if (readLength > 0 && (millis() - startTime) / 1000 >= numberOfSeconds)
-    {
-      Serial.println("Do you have line endings turned on?");
-      break; //Timeout, but we have data
-    }
-
-    while (Serial.available() == 0) //Wait for user input
-    {
-      delay(10); //Yield to processor
-      if (online.gnss == true)
-        i2cGNSS.checkUblox(); //Regularly poll to get latest data
-
-      if ( (millis() - startTime) / 1000 >= numberOfSeconds)
-      {
-        if (readLength == 0)
-        {
-          Serial.println("No user input received. Do you have line endings turned on?");
-          return (STATUS_GETBYTE_TIMEOUT); //Timeout. No user input.
-        }
-        else if (readLength > 0)
-        {
-          break; //Timeout, but we have data
-        }
-      }
-    }
-
-    byte incoming = Serial.read();
-
-    if (incoming == 0x08 || incoming == 0x7F) //Support backspace characters
-    {
-      if (readLength < 1)
-        continue;
-
-      readLength--;
-      buffer[readLength] = '\0'; //Put a terminator on the string in case we are finished
-
-      Serial.print((char)0x08); //Move back one space
-      Serial.print(" "); //Put a blank there to erase the letter from the terminal
-      Serial.print((char)0x08); //Move back again
-
-      continue;
-    }
-
-    Serial.write(incoming); //Echo
-
-    if (incoming == '\r' || incoming == '\n')
-    {
-      Serial.println();
-      buffer[readLength] = '\0';
-      break;
-    }
-    else
-    {
-      buffer[readLength] = incoming;
-      readLength++;
-    }
-  }
-
-  return readLength;
 }
 
 #define TIMESTAMP_INTERVAL              1000    //Milliseconds

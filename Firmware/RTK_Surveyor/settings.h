@@ -206,20 +206,17 @@ enum BTState
   BT_CONNECTED,
 };
 
-//Return values for getByteChoice()
-enum returnStatus {
-  STATUS_GETBYTE_TIMEOUT = 255,
-  STATUS_GETNUMBER_TIMEOUT = -123455555,
-  STATUS_PRESSED_X = 254,
-};
-
-//Return values for getMenuChoice()
-enum getMenuChoiceStatus
+//Return values for getString()
+typedef enum
 {
-  GMCS_TIMEOUT = -2,
-  GMCS_OVERFLOW = -1,
-  GMCS_CHARACTER = 0
-};
+  INPUT_RESPONSE_GETNUMBER_EXIT = -2^31 + 1, //User may be prompted for number but wants to exit without entering data
+  INPUT_RESPONSE_GETNUMBER_TIMEOUT = -2^31 + 2,
+  INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT = 255,
+  INPUT_RESPONSE_TIMEOUT = -2,
+  INPUT_RESPONSE_OVERFLOW = -1,
+  INPUT_RESPONSE_EMPTY = 0,
+  INPUT_RESPONSE_VALID = 1,
+} InputResponse;
 
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
@@ -501,6 +498,7 @@ typedef struct {
   bool espnowBroadcast = true; //When true, overrides peers and sends all data via broadcast
   uint16_t antennaHeight = 0; //in mm
   float antennaReferencePoint = 0.0; //in mm
+  bool echoUserInput = true;
 } Settings;
 Settings settings;
 const Settings defaultSettings = Settings();

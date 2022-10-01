@@ -412,7 +412,7 @@ void espnowStaticPairing()
   randomSeed(millis());
 
   Serial.println("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
-  while (Serial.available()) Serial.read();
+  clearBuffer();
 
   uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 

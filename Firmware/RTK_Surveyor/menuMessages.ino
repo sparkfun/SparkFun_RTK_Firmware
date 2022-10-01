@@ -40,9 +40,9 @@ void menuLog()
 
     Serial.println("x) Exit");
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    byte incoming = getCharacterNumber();
 
-    if (incoming == '1')
+    if (incoming == 1)
     {
       settings.enableLogging ^= 1;
 
@@ -52,10 +52,10 @@ void menuLog()
       if (settings.enableLogging == false)
         startLogTime_minutes = 0;
     }
-    else if (incoming == '2' && settings.enableLogging == true)
+    else if (incoming == 2 && settings.enableLogging == true)
     {
       Serial.print("Enter max minutes before logging stops: ");
-      int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds
+      int maxMinutes = getNumber();
       if (maxMinutes < 0 || maxMinutes > (60 * 24 * 365 * 2)) //Arbitrary 2 year limit. See https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/86
       {
         Serial.println("Error: max minutes out of range");
@@ -65,10 +65,10 @@ void menuLog()
         settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
       }
     }
-    else if (incoming == '3' && settings.enableLogging == true)
+    else if (incoming == 3 && settings.enableLogging == true)
     {
       Serial.print("Enter max minutes of logging before new log is created: ");
-      int maxLogMinutes = getNumber(menuTimeout); //Timeout after x seconds
+      int maxLogMinutes = getNumber();
       if (maxLogMinutes < 0 || maxLogMinutes > 60 * 48) //Arbitrary 48 hour limit
       {
         Serial.println("Error: max minutes out of range");
@@ -78,13 +78,13 @@ void menuLog()
         settings.maxLogLength_minutes = maxLogMinutes; //Recorded to NVM and file at main menu exit
       }
     }
-    else if (incoming == '4')
+    else if (incoming == 4)
     {
       settings.enableMarksFile ^= 1;
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
     {
       break;
     }
@@ -92,7 +92,7 @@ void menuLog()
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Control the messages that get broadcast over Bluetooth and logged (if enabled)
@@ -121,7 +121,7 @@ void menuMessages()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber();
 
     if (incoming == 1)
       menuMessagesSubtype("NMEA");
@@ -180,15 +180,15 @@ void menuMessages()
       setGNSSMessageRates(settings.ubxMessages, 1); //Turn on all messages to report once per fix
       Serial.println("All messages enabled");
     }
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 
   bool response = configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //Make sure the appropriate messages are enabled
   if (response == false)
@@ -233,7 +233,7 @@ void menuMessagesSubtype(const char* messageType)
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber();
 
     if (incoming >= 1 && incoming <= (endOfBlock - startOfBlock))
     {
@@ -243,15 +243,15 @@ void menuMessagesSubtype(const char* messageType)
       else
         printUnknown(incoming);
     }
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Prompt the user to enter the message rate for a given ID
@@ -259,19 +259,19 @@ void menuMessagesSubtype(const char* messageType)
 void inputMessageRate(ubxMsg &localMessage)
 {
   Serial.printf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
-  int64_t rate = getNumber(menuTimeout); //Timeout after x seconds
+  int64_t rate = getNumber();
 
   while (rate < 0 || rate > 255) //8 bit limit
   {
     Serial.println("Error: message rate out of range");
     Serial.printf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
-    rate = getNumber(menuTimeout); //Timeout after x seconds
+    rate = getNumber();
 
-    if (rate == STATUS_GETNUMBER_TIMEOUT || rate == STATUS_PRESSED_X)
+    if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
       return; //Give up
   }
 
-  if (rate == STATUS_GETNUMBER_TIMEOUT || rate == STATUS_PRESSED_X)
+  if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
     return;
 
   localMessage.msgRate = rate;

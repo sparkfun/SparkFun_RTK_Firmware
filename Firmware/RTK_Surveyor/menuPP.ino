@@ -93,21 +93,21 @@ void menuPointPerfectKeys()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber();
 
     if (incoming == 1)
     {
       Serial.print("Enter Device Profile Token: ");
-      readLine(settings.pointPerfectDeviceProfileToken, sizeof(settings.pointPerfectDeviceProfileToken), menuTimeout);
+      getString(settings.pointPerfectDeviceProfileToken, sizeof(settings.pointPerfectDeviceProfileToken));
     }
     else if (incoming == 2)
     {
       Serial.print("Enter Current Key: ");
-      readLine(settings.pointPerfectCurrentKey, sizeof(settings.pointPerfectCurrentKey), menuTimeout);
+      getString(settings.pointPerfectCurrentKey, sizeof(settings.pointPerfectCurrentKey));
     }
     else if (incoming == 3)
     {
-      while (Serial.available()) Serial.read();
+      clearBuffer();
 
       Serial.println("Enter Current Key Expiration Date: ");
       uint8_t expDay;
@@ -133,11 +133,11 @@ void menuPointPerfectKeys()
     else if (incoming == 4)
     {
       Serial.print("Enter Next Key: ");
-      readLine(settings.pointPerfectNextKey, sizeof(settings.pointPerfectNextKey), menuTimeout);
+      getString(settings.pointPerfectNextKey, sizeof(settings.pointPerfectNextKey));
     }
     else if (incoming == 5)
     {
-      while (Serial.available()) Serial.read();
+      clearBuffer();
 
       Serial.println("Enter Next Key Expiration Date: ");
       uint8_t expDay;
@@ -150,15 +150,15 @@ void menuPointPerfectKeys()
 
       dateToKeyStartDuration(expDay, expMonth, expYear, &settings.pointPerfectNextKeyStart, &settings.pointPerfectNextKeyDuration);
     }
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Connect to 'home' WiFi and then ThingStream API. This will attach this unique device to the ThingStream network.
@@ -515,19 +515,14 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
 //https://www.includehelp.com/c-programs/validate-date.aspx
 bool getDate(uint8_t &dd, uint8_t &mm, uint16_t &yy)
 {
-  char temp[10];
-
   Serial.print("Enter Day: ");
-  readLine(temp, sizeof(temp), menuTimeout);
-  dd = atoi(temp);
+  dd = getNumber();
 
   Serial.print("Enter Month: ");
-  readLine(temp, sizeof(temp), menuTimeout);
-  mm = atoi(temp);
+  mm = getNumber();
 
   Serial.print("Enter Year (YYYY): ");
-  readLine(temp, sizeof(temp), menuTimeout);
-  yy = atoi(temp);
+  yy = getNumber();
 
   //check year
   if (yy >= 2022 && yy <= 9999)
@@ -972,27 +967,27 @@ void menuPointPerfect()
 
     Serial.println("x) Exit");
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    byte incoming = getCharacterNumber();
 
-    if (incoming == '1')
+    if (incoming == 1)
     {
       settings.enablePointPerfectCorrections ^= 1;
     }
-    else if (incoming == '2')
+    else if (incoming == 2)
     {
       Serial.print("Enter Home WiFi SSID: ");
-      readLine(settings.home_wifiSSID, sizeof(settings.home_wifiSSID), menuTimeout);
+      getString(settings.home_wifiSSID, sizeof(settings.home_wifiSSID));
     }
-    else if (incoming == '3')
+    else if (incoming == 3)
     {
       Serial.printf("Enter password for Home WiFi network %s: ", settings.home_wifiSSID);
-      readLine(settings.home_wifiPW, sizeof(settings.home_wifiPW), menuTimeout);
+      getString(settings.home_wifiPW, sizeof(settings.home_wifiPW));
     }
-    else if (incoming == '4')
+    else if (incoming == 4)
     {
       settings.autoKeyRenewal ^= 1;
     }
-    else if (incoming == '5')
+    else if (incoming == 5)
     {
 #ifdef COMPILE_WIFI
       if (strlen(settings.home_wifiSSID) == 0)
@@ -1042,7 +1037,7 @@ void menuPointPerfect()
       } //End strlen SSID check
 #endif
     }
-    else if (incoming == '6')
+    else if (incoming == 6)
     {
       LittleFS.format();
       log_d("Formatted");
@@ -1053,7 +1048,7 @@ void menuPointPerfect()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
@@ -1064,7 +1059,7 @@ void menuPointPerfect()
     pointperfectApplyKeys();
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 #endif  //COMPILE_L_BAND
 }
 

@@ -96,12 +96,12 @@ void menuGNSS()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber();
 
     if (incoming == 1)
     {
       Serial.print("Enter GNSS measurement rate in Hz: ");
-      double rate = getDouble(menuTimeout); //Timeout after x seconds
+      float rate = getDouble();
       if (rate < 0.0 || rate > 20.0) //20Hz limit with all constellations enabled.
       {
         Serial.println("Error: measurement rate out of range");
@@ -115,7 +115,7 @@ void menuGNSS()
     else if (incoming == 2)
     {
       Serial.print("Enter GNSS measurement rate in seconds between measurements: ");
-      double rate = getDouble(menuTimeout); //Timeout after x seconds
+      float rate = getDouble();
       if (rate < 0.0 || rate > 8255.0) //Limit of 127 (navRate) * 65000ms (measRate) = 137 minute limit.
       {
         Serial.println("Error: measurement rate out of range");
@@ -140,7 +140,7 @@ void menuGNSS()
       Serial.println("9) Wrist");
       Serial.println("10) Bike");
 
-      int dynamicModel = getNumber(menuTimeout); //Timeout after x seconds
+      int dynamicModel = getNumber();
       if (dynamicModel < 1 || dynamicModel > DYN_MODEL_BIKE)
         Serial.println("Error: Dynamic model out of range");
       else
@@ -163,26 +163,26 @@ void menuGNSS()
     else if (incoming == 6 && settings.enableNtripClient == true)
     {
       Serial.print("Enter local WiFi SSID: ");
-      readLine(settings.ntripClient_wifiSSID, sizeof(settings.ntripClient_wifiSSID), menuTimeout);
+      getString(settings.ntripClient_wifiSSID, sizeof(settings.ntripClient_wifiSSID));
       restartRover = true;
     }
     else if (incoming == 7 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter password for WiFi network %s: ", settings.ntripClient_wifiSSID);
-      readLine(settings.ntripClient_wifiPW, sizeof(settings.ntripClient_wifiPW), menuTimeout);
+      getString(settings.ntripClient_wifiPW, sizeof(settings.ntripClient_wifiPW));
       restartRover = true;
     }
     else if (incoming == 8 && settings.enableNtripClient == true)
     {
       Serial.print("Enter new Caster Address: ");
-      readLine(settings.ntripClient_CasterHost, sizeof(settings.ntripClient_CasterHost), menuTimeout);
+      getString(settings.ntripClient_CasterHost, sizeof(settings.ntripClient_CasterHost));
       restartRover = true;
     }
     else if (incoming == 9 && settings.enableNtripClient == true)
     {
       Serial.print("Enter new Caster Port: ");
 
-      int ntripClient_CasterPort = getNumber(menuTimeout); //Timeout after x seconds
+      int ntripClient_CasterPort = getNumber();
       if (ntripClient_CasterPort < 1 || ntripClient_CasterPort > 99999) //Arbitrary 99k max port #
         Serial.println("Error: Caster Port out of range");
       else
@@ -192,25 +192,25 @@ void menuGNSS()
     else if (incoming == 10 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter user name for %s: ", settings.ntripClient_CasterHost);
-      readLine(settings.ntripClient_CasterUser, sizeof(settings.ntripClient_CasterUser), menuTimeout);
+      getString(settings.ntripClient_CasterUser, sizeof(settings.ntripClient_CasterUser));
       restartRover = true;
     }
     else if (incoming == 11 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter user password for %s: ", settings.ntripClient_CasterHost);
-      readLine(settings.ntripClient_CasterUserPW, sizeof(settings.ntripClient_CasterUserPW), menuTimeout);
+      getString(settings.ntripClient_CasterUserPW, sizeof(settings.ntripClient_CasterUserPW));
       restartRover = true;
     }
     else if (incoming == 12 && settings.enableNtripClient == true)
     {
       Serial.print("Enter new Mount Point: ");
-      readLine(settings.ntripClient_MountPoint, sizeof(settings.ntripClient_MountPoint), menuTimeout);
+      getString(settings.ntripClient_MountPoint, sizeof(settings.ntripClient_MountPoint));
       restartRover = true;
     }
     else if (incoming == 13 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter password for Mount Point %s: ", settings.ntripClient_MountPoint);
-      readLine(settings.ntripClient_MountPointPW, sizeof(settings.ntripClient_MountPointPW), menuTimeout);
+      getString(settings.ntripClient_MountPointPW, sizeof(settings.ntripClient_MountPointPW));
       restartRover = true;
     }
     else if (incoming == 14 && settings.enableNtripClient == true)
@@ -218,9 +218,9 @@ void menuGNSS()
       settings.ntripClient_TransmitGGA ^= 1;
       restartRover = true;
     }
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
@@ -235,7 +235,7 @@ void menuGNSS()
       Serial.println("menuGNSS: setDynamicModel failed");
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Controls the constellations that are used to generate a fix and logged
@@ -258,7 +258,7 @@ void menuConstellations()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber();
 
     if (incoming >= 1 && incoming <= MAX_CONSTELLATIONS)
     {
@@ -273,9 +273,9 @@ void menuConstellations()
         settings.ubxConstellations[4].enabled = settings.ubxConstellations[incoming].enabled; //QZSS ID is 5 but array location is 4
       }
     }
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
@@ -284,7 +284,7 @@ void menuConstellations()
   //Apply current settings to module
   configureConstellations();
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Given the number of seconds between desired solution reports, determine measurementRate and navigationRate

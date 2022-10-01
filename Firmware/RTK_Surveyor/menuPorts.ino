@@ -24,12 +24,12 @@ void menuPortsSurveyor()
 
     Serial.println("x) Exit");
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    byte incoming = getCharacterNumber();
 
-    if (incoming == '1')
+    if (incoming == 1)
     {
       Serial.print("Enter baud rate (4800 to 921600) for Radio Port: ");
-      int newBaud = getNumber(menuTimeout); //Timeout after x seconds
+      int newBaud = getNumber();
       if (newBaud < 4800 || newBaud > 921600)
       {
         Serial.println("Error: baud rate out of range");
@@ -41,10 +41,10 @@ void menuPortsSurveyor()
           i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
       }
     }
-    else if (incoming == '2')
+    else if (incoming == 2)
     {
       Serial.print("Enter baud rate (4800 to 921600) for Data Port: ");
-      int newBaud = getNumber(menuTimeout); //Timeout after x seconds
+      int newBaud = getNumber();
       if (newBaud < 4800 || newBaud > 921600)
       {
         Serial.println("Error: baud rate out of range");
@@ -59,13 +59,13 @@ void menuPortsSurveyor()
 
     else if (incoming == 'x')
       break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Set the baud rates for the radio and data ports
@@ -109,12 +109,12 @@ void menuPortsMultiplexed()
 
     Serial.println("x) Exit");
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    byte incoming = getCharacterNumber();
 
-    if (incoming == '1')
+    if (incoming == 1)
     {
       Serial.print("Enter baud rate (4800 to 921600) for Radio Port: ");
-      int newBaud = getNumber(menuTimeout); //Timeout after x seconds
+      int newBaud = getNumber();
       if (newBaud < 4800 || newBaud > 921600)
       {
         Serial.println("Error: baud rate out of range");
@@ -126,7 +126,7 @@ void menuPortsMultiplexed()
           i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
       }
     }
-    else if (incoming == '2')
+    else if (incoming == 2)
     {
       Serial.println("\n\rEnter the pin connection to use (1 to 4) for Data Port: ");
       Serial.println("1) NMEA TX Out/RX In");
@@ -137,7 +137,7 @@ void menuPortsMultiplexed()
         Serial.println("3) Wheel Tick/Direction");
       Serial.println("4) ESP32 DAC Out/ADC In");
 
-      int muxPort = getNumber(menuTimeout); //Timeout after x seconds
+      int muxPort = getNumber();
       if (muxPort < 1 || muxPort > 4)
       {
         Serial.println("Error: Pin connection out of range");
@@ -148,10 +148,10 @@ void menuPortsMultiplexed()
         setMuxport(settings.dataPortChannel);
       }
     }
-    else if (incoming == '3' && settings.dataPortChannel == MUX_UBLOX_NMEA)
+    else if (incoming == 3 && settings.dataPortChannel == MUX_UBLOX_NMEA)
     {
       Serial.print("Enter baud rate (4800 to 921600) for Data Port: ");
-      int newBaud = getNumber(menuTimeout); //Timeout after x seconds
+      int newBaud = getNumber();
       if (newBaud < 4800 || newBaud > 921600)
       {
         Serial.println("Error: baud rate out of range");
@@ -163,19 +163,19 @@ void menuPortsMultiplexed()
           i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
       }
     }
-    else if (incoming == '3' && settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)
+    else if (incoming == 3 && settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)
     {
       menuPortHardwareTriggers();
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Configure the behavior of the PPS and INT pins on the ZED-F9P
@@ -212,52 +212,52 @@ void menuPortHardwareTriggers()
 
     Serial.println("x) Exit");
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    byte incoming = getCharacterNumber();
 
-    if (incoming == '1')
+    if (incoming == 1)
     {
       settings.enableExternalPulse ^= 1;
     }
-    else if (incoming == '2' && settings.enableExternalPulse == true)
+    else if (incoming == 2 && settings.enableExternalPulse == true)
     {
       Serial.print("Time between pulses in milliseconds: ");
-      double pulseTime = getDouble(menuTimeout); //Timeout after x seconds
+      long pulseTime = getNumber();
 
-      if (pulseTime != STATUS_GETNUMBER_TIMEOUT && pulseTime != STATUS_PRESSED_X)
+      if (pulseTime != INPUT_RESPONSE_GETNUMBER_TIMEOUT && pulseTime != INPUT_RESPONSE_GETNUMBER_EXIT)
       {
         settings.externalPulseTimeBetweenPulse_us = pulseTime * 1000;
       }
     }
-    else if (incoming == '3' && settings.enableExternalPulse == true)
+    else if (incoming == 3 && settings.enableExternalPulse == true)
     {
       Serial.print("Pulse length in milliseconds: ");
-      double pulseLength = getDouble(menuTimeout); //Timeout after x seconds
+      double pulseLength = getNumber();
 
-      if (pulseLength != STATUS_GETNUMBER_TIMEOUT && pulseLength != STATUS_PRESSED_X)
+      if (pulseLength != INPUT_RESPONSE_GETNUMBER_TIMEOUT && pulseLength != INPUT_RESPONSE_GETNUMBER_EXIT)
       {
         settings.externalPulseLength_us = pulseLength * 1000;
       }
     }
-    else if (incoming == '4' && settings.enableExternalPulse == true)
+    else if (incoming == 4 && settings.enableExternalPulse == true)
     {
       if (settings.externalPulsePolarity == PULSE_RISING_EDGE)
         settings.externalPulsePolarity = PULSE_FALLING_EDGE;
       else
         settings.externalPulsePolarity = PULSE_RISING_EDGE;
     }
-    else if (incoming == '5')
+    else if (incoming == 5)
     {
       settings.enableExternalHardwareEventLogging ^= 1;
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 
   beginExternalTriggers(); //Update with new settings
 }

@@ -71,19 +71,19 @@ void menuMain()
 
     Serial.println("x) Exit");
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    byte incoming = getCharacterNumber();
 
-    if (incoming == '1')
+    if (incoming == 1)
       menuGNSS();
-    else if (incoming == '2')
+    else if (incoming == 2)
       menuMessages();
-    else if (incoming == '3' && zedModuleType == PLATFORM_F9P)
+    else if (incoming == 3 && zedModuleType == PLATFORM_F9P)
       menuBase();
-    else if (incoming == '3' && zedModuleType == PLATFORM_F9R)
+    else if (incoming == 3 && zedModuleType == PLATFORM_F9R)
       menuSensorFusion();
-    else if (incoming == '4')
+    else if (incoming == 4)
       menuPorts();
-    else if (incoming == '5')
+    else if (incoming == 5)
       menuLog();
     else if (incoming == 's')
       menuSystem();
@@ -99,7 +99,7 @@ void menuMain()
       menuFirmware();
     else if (incoming == 'x')
       break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
@@ -123,7 +123,7 @@ void menuMain()
     requestChangeState(STATE_ROVER_NOT_STARTED); //Restart rover upon exit for latest changes to take effect
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
   inMainMenu = false;
 }
 
@@ -167,7 +167,7 @@ void menuUserProfiles()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber();
 
     if (incoming >= 1 && incoming <= MAX_PROFILE_COUNT)
     {
@@ -176,14 +176,14 @@ void menuUserProfiles()
     else if (incoming == MAX_PROFILE_COUNT + 1)
     {
       Serial.print("Enter new profile name: ");
-      readLine(settings.profileName, sizeof(settings.profileName), menuTimeout);
+      getString(settings.profileName, sizeof(settings.profileName));
       recordSystemSettings(); //We need to update this immediately in case user lists the available profiles again
       setProfileName(profileNumber);
     }
     else if (incoming == MAX_PROFILE_COUNT + 2)
     {
       Serial.printf("\r\nReset profile '%s' to factory defaults. Press 'y' to confirm:", profileNames[profileNumber]);
-      byte bContinue = getByteChoice(menuTimeout);
+      byte bContinue = getCharacterNumber();
       if (bContinue == 'y')
       {
         settingsToDefaults(); //Overwrite our current settings with defaults
@@ -201,7 +201,7 @@ void menuUserProfiles()
     else if (incoming == MAX_PROFILE_COUNT + 3)
     {
       Serial.printf("\r\nDelete profile '%s'. Press 'y' to confirm:", profileNames[profileNumber]);
-      byte bContinue = getByteChoice(menuTimeout);
+      byte bContinue = getCharacterNumber();
       if (bContinue == 'y')
       {
         //Remove profile from LittleFS
@@ -237,9 +237,9 @@ void menuUserProfiles()
         Serial.println("Delete aborted");
     }
 
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
@@ -257,7 +257,7 @@ void menuUserProfiles()
   //Get bitmask of active profiles
   activeProfiles = loadProfileNames();
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Change the active profile number, without unit reset
@@ -363,7 +363,7 @@ void menuRadio()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber();
 
     if (incoming == 1)
     {
@@ -377,7 +377,7 @@ void menuRadio()
     else if (settings.radioType == RADIO_ESPNOW && incoming == 3)
     {
       Serial.println("\r\nForgetting all paired radios. Press 'y' to confirm:");
-      byte bContinue = getByteChoice(menuTimeout);
+      byte bContinue = getCharacterNumber();
       if (bContinue == 'y')
       {
         if (espnowState > ESPNOW_OFF)
@@ -422,9 +422,9 @@ void menuRadio()
     }
 #endif
 
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
@@ -432,6 +432,6 @@ void menuRadio()
 
   radioStart();
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 #endif
 }

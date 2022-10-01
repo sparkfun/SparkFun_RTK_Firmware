@@ -89,7 +89,7 @@ void menuBase()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber();
 
     if (incoming == 1)
     {
@@ -107,23 +107,23 @@ void menuBase()
       {
         Serial.println("Enter the fixed ECEF coordinates that will be used in Base mode:");
 
-        Serial.print("ECEF X in meters (ex: -1280182.920): ");
-        double fixedEcefX = getDouble(menuTimeout); //Timeout after x seconds
+        Serial.print("ECEF X in meters (ex: -1280182.9200): ");
+        double fixedEcefX = getDouble();
 
         //Progress with additional prompts only if the user enters valid data
-        if (fixedEcefX != STATUS_GETNUMBER_TIMEOUT && fixedEcefX != STATUS_PRESSED_X)
+        if (fixedEcefX != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedEcefX != INPUT_RESPONSE_GETNUMBER_EXIT)
         {
           settings.fixedEcefX = fixedEcefX;
 
           Serial.print("\nECEF Y in meters (ex: -4716808.5807): ");
-          double fixedEcefY = getDouble(menuTimeout);
-          if (fixedEcefY != STATUS_GETNUMBER_TIMEOUT && fixedEcefY != STATUS_PRESSED_X)
+          double fixedEcefY = getDouble();
+          if (fixedEcefY != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedEcefY != INPUT_RESPONSE_GETNUMBER_EXIT)
           {
             settings.fixedEcefY = fixedEcefY;
 
             Serial.print("\nECEF Z in meters (ex: 4086669.6393): ");
-            double fixedEcefZ = getDouble(menuTimeout);
-            if (fixedEcefZ != STATUS_GETNUMBER_TIMEOUT && fixedEcefZ != STATUS_PRESSED_X)
+            double fixedEcefZ = getDouble();
+            if (fixedEcefZ != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedEcefZ != INPUT_RESPONSE_GETNUMBER_EXIT)
               settings.fixedEcefZ = fixedEcefZ;
           }
         }
@@ -133,22 +133,22 @@ void menuBase()
         Serial.println("Enter the fixed Lat/Long/Altitude coordinates that will be used in Base mode:");
 
         Serial.print("Lat in degrees (ex: 40.090335429): ");
-        double fixedLat = getDouble(menuTimeout); //Timeout after x seconds
+        double fixedLat = getDouble();
 
         //Progress with additional prompts only if the user enters valid data
-        if (fixedLat != STATUS_GETNUMBER_TIMEOUT && fixedLat != STATUS_PRESSED_X)
+        if (fixedLat != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedLat != INPUT_RESPONSE_GETNUMBER_EXIT)
         {
           settings.fixedLat = fixedLat;
 
           Serial.print("\nLong in degrees (ex: -105.184774720): ");
-          double fixedLong = getDouble(menuTimeout);
-          if (fixedLong != STATUS_GETNUMBER_TIMEOUT && fixedLong != STATUS_PRESSED_X)
+          double fixedLong = getDouble();
+          if (fixedLong != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedLong != INPUT_RESPONSE_GETNUMBER_EXIT)
           {
             settings.fixedLong = fixedLong;
 
             Serial.print("\nAltitude in meters (ex: 1560.2284): ");
-            double fixedAltitude = getDouble(menuTimeout);
-            if (fixedAltitude != STATUS_GETNUMBER_TIMEOUT && fixedAltitude != STATUS_PRESSED_X)
+            double fixedAltitude = getDouble();
+            if (fixedAltitude != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedAltitude != INPUT_RESPONSE_GETNUMBER_EXIT)
               settings.fixedAltitude = fixedAltitude;
           }
         }
@@ -157,7 +157,7 @@ void menuBase()
     else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 4)
     {
       Serial.print("Enter the antenna height (a.k.a. pole length) in millimeters (-15000 to 15000mm): ");
-      int antennaHeight = getDouble(menuTimeout); //Timeout after x seconds
+      int antennaHeight = getDouble();
       if (antennaHeight < -15000 || antennaHeight > 15000) //Arbitrary 15m max
         Serial.println("Error: Antenna Height out of range");
       else
@@ -166,8 +166,8 @@ void menuBase()
     else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 5)
     {
       Serial.print("Enter the antenna reference point (a.k.a. ARP) in millimeters (-200.0 to 200.0mm): ");
-      int antennaReferencePoint = getDouble(menuTimeout); //Timeout after x seconds
-      if (antennaReferencePoint < -200 || antennaReferencePoint > 200) //Arbitrary 200mm max
+      float antennaReferencePoint = getDouble();
+      if (antennaReferencePoint < -200.0 || antennaReferencePoint > 200.0) //Arbitrary 200mm max
         Serial.println("Error: Antenna Reference Point out of range");
       else
         settings.antennaReferencePoint = antennaReferencePoint; //Recorded to NVM and file at main menu exit
@@ -176,7 +176,7 @@ void menuBase()
     else if (settings.fixedBase == false && incoming == 2)
     {
       Serial.print("Enter the number of seconds for survey-in obseration time (60 to 600s): ");
-      int observationSeconds = getNumber(menuTimeout); //Timeout after x seconds
+      int observationSeconds = getNumber();
       if (observationSeconds < 60 || observationSeconds > 60 * 10) //Arbitrary 10 minute limit
       {
         Serial.println("Error: observation seconds out of range");
@@ -189,7 +189,7 @@ void menuBase()
     else if (settings.fixedBase == false && incoming == 3)
     {
       Serial.print("Enter the number of meters for survey-in required position accuracy (1.0 to 5.0m): ");
-      float observationPositionAccuracy = getDouble(menuTimeout); //Timeout after x seconds
+      float observationPositionAccuracy = getDouble();
 #ifdef ENABLE_DEVELOPER
       if (observationPositionAccuracy < 1.0 || observationPositionAccuracy > 10.0) //Arbitrary 1m minimum
 #else
@@ -206,7 +206,7 @@ void menuBase()
     else if (settings.fixedBase == false && incoming == 4)
     {
       Serial.print("Enter the positional accuracy required before Survey-In begins (0.1 to 5.0m): ");
-      float surveyInStartingAccuracy = getDouble(menuTimeout); //Timeout after x seconds
+      float surveyInStartingAccuracy = getDouble();
       if (surveyInStartingAccuracy < 0.1 || surveyInStartingAccuracy > 5.0) //Arbitrary 0.1m minimum
       {
         Serial.println("Error: Starting accuracy out of range");
@@ -225,26 +225,26 @@ void menuBase()
     else if (incoming == 7 && settings.enableNtripServer == true)
     {
       Serial.print("Enter local WiFi SSID: ");
-      readLine(settings.ntripServer_wifiSSID, sizeof(settings.ntripServer_wifiSSID), menuTimeout);
+      getString(settings.ntripServer_wifiSSID, sizeof(settings.ntripServer_wifiSSID));
       restartBase = true;
     }
     else if (incoming == 8 && settings.enableNtripServer == true)
     {
       Serial.printf("Enter password for WiFi network %s: ", settings.ntripServer_wifiSSID);
-      readLine(settings.ntripServer_wifiPW, sizeof(settings.ntripServer_wifiPW), menuTimeout);
+      getString(settings.ntripServer_wifiPW, sizeof(settings.ntripServer_wifiPW));
       restartBase = true;
     }
     else if (incoming == 9 && settings.enableNtripServer == true)
     {
       Serial.print("Enter new Caster Address: ");
-      readLine(settings.ntripServer_CasterHost, sizeof(settings.ntripServer_CasterHost), menuTimeout);
+      getString(settings.ntripServer_CasterHost, sizeof(settings.ntripServer_CasterHost));
       restartBase = true;
     }
     else if (incoming == 10 && settings.enableNtripServer == true)
     {
       Serial.print("Enter new Caster Port: ");
 
-      int ntripServer_CasterPort = getNumber(menuTimeout); //Timeout after x seconds
+      int ntripServer_CasterPort = getNumber();
       if (ntripServer_CasterPort < 1 || ntripServer_CasterPort > 99999) //Arbitrary 99k max port #
         Serial.println("Error: Caster Port out of range");
       else
@@ -254,13 +254,13 @@ void menuBase()
     else if (incoming == 11 && settings.enableNtripServer == true)
     {
       Serial.print("Enter new Mount Point: ");
-      readLine(settings.ntripServer_MountPoint, sizeof(settings.ntripServer_MountPoint), menuTimeout);
+      getString(settings.ntripServer_MountPoint, sizeof(settings.ntripServer_MountPoint));
       restartBase = true;
     }
     else if (incoming == 12 && settings.enableNtripServer == true)
     {
       Serial.printf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
-      readLine(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW), menuTimeout);
+      getString(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW));
       restartBase = true;
     }
     else if ((!settings.fixedBase) && (incoming == 13))
@@ -268,15 +268,15 @@ void menuBase()
       settings.ntripServer_StartAtSurveyIn ^= 1;
       restartBase = true;
     }
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Configure ESF settings
@@ -312,7 +312,7 @@ void menuSensorFusion()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber();
 
     if (incoming == 1)
     {
@@ -324,9 +324,9 @@ void menuSensorFusion()
       settings.autoIMUmountAlignment ^= 1;
     }
 
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
@@ -334,7 +334,7 @@ void menuSensorFusion()
 
   i2cGNSS.setESFAutoAlignment(settings.autoIMUmountAlignment); //Configure UBX-CFG-ESFALG Automatic IMU-mount Alignment
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Enable or disable sensor fusion using keys

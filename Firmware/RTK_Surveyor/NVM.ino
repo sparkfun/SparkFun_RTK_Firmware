@@ -284,6 +284,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "espnowBroadcast", settings.espnowBroadcast);
   settingsFile->printf("%s=%d\r\n", "antennaHeight", settings.antennaHeight);
   settingsFile->printf("%s=%0.2f\r\n", "antennaReferencePoint", settings.antennaReferencePoint);
+  settingsFile->printf("%s=%d\r\n", "echoUserInput", settings.echoUserInput);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -905,6 +906,8 @@ bool parseLine(char* str, Settings *settings)
     settings->antennaHeight = d;
   else if (strcmp(settingName, "antennaReferencePoint") == 0)
     settings->antennaReferencePoint = d;
+  else if (strcmp(settingName, "echoUserInput") == 0)
+    settings->echoUserInput = d;
 
   //Check for bulk settings (constellations, message rates, ESPNOW Peers)
   //Must be last on else list

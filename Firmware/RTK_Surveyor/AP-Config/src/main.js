@@ -479,8 +479,8 @@ function validateFields() {
     if(platformPrefix != "Surveyor")
     {
         if(ge("enableExternalPulse").checked) {
-            checkElementValue("externalPulseTimeBetweenPulse_us", 1, 65000000, "Must be 1 to 65,000,000", "collapsePortsConfig");
-            checkElementValue("externalPulseLength_us", 1, 65000000, "Must be 1 to 65,000,000", "collapsePortsConfig");
+            checkElementValue("externalPulseTimeBetweenPulse_us", 1, 60000000, "Must be 1 to 60,000,000", "collapsePortsConfig");
+            checkElementValue("externalPulseLength_us", 1, 60000000, "Must be 1 to 60,000,000", "collapsePortsConfig");
         }
         else {
             clearElement("externalPulseTimeBetweenPulse_us", 100000);

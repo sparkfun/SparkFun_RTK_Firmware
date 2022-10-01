@@ -246,11 +246,11 @@ void menuPortHardwareTriggers()
     if (settings.enableExternalPulse == true)
     {
       Serial.print("2) Set time between pulses: ");
-      Serial.print(settings.externalPulseTimeBetweenPulse_us / 1000.0);
+      Serial.print(settings.externalPulseTimeBetweenPulse_us / 1000.0, 0);
       Serial.println("ms");
 
       Serial.print("3) Set pulse length: ");
-      Serial.print(settings.externalPulseLength_us / 1000.0);
+      Serial.print(settings.externalPulseLength_us / 1000.0, 0);
       Serial.println("ms");
 
       Serial.print("4) Set pulse polarity: ");
@@ -276,7 +276,18 @@ void menuPortHardwareTriggers()
       long pulseTime = getNumber(); //Returns EXIT, TIMEOUT, or long
 
       if (pulseTime != INPUT_RESPONSE_GETNUMBER_TIMEOUT && pulseTime != INPUT_RESPONSE_GETNUMBER_EXIT)
-        settings.externalPulseTimeBetweenPulse_us = pulseTime * 1000;
+      {
+        if (pulseTime < 1 || pulseTime > 60000) //60s max
+          Serial.println("Error: Time between pulses out of range");
+        else
+        {
+          settings.externalPulseTimeBetweenPulse_us = pulseTime * 1000;
+
+          if (pulseTime < (settings.externalPulseLength_us / 1000)) //pulseTime must be longer than pulseLength
+            settings.externalPulseLength_us = settings.externalPulseTimeBetweenPulse_us / 2; //Force pulse length to be 1/2 time between pulses
+        }
+      }
+
     }
     else if (incoming == 3 && settings.enableExternalPulse == true)
     {
@@ -284,7 +295,12 @@ void menuPortHardwareTriggers()
       long pulseLength = getNumber(); //Returns EXIT, TIMEOUT, or long
 
       if (pulseLength != INPUT_RESPONSE_GETNUMBER_TIMEOUT && pulseLength != INPUT_RESPONSE_GETNUMBER_EXIT)
-        settings.externalPulseLength_us = pulseLength * 1000;
+      {
+        if (pulseLength > (settings.externalPulseTimeBetweenPulse_us / 1000)) //pulseLength must be shorter than pulseTime
+          Serial.println("Error: Pulse length must be shorter than time between pulses");
+        else
+          settings.externalPulseLength_us = pulseLength * 1000;
+      }
     }
     else if (incoming == 4 && settings.enableExternalPulse == true)
     {

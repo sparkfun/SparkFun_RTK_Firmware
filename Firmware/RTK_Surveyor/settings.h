@@ -209,8 +209,8 @@ enum BTState
 //Return values for getString()
 typedef enum
 {
-  INPUT_RESPONSE_GETNUMBER_EXIT = -2^31 + 1, //User may be prompted for number but wants to exit without entering data
-  INPUT_RESPONSE_GETNUMBER_TIMEOUT = -2^31 + 2,
+  INPUT_RESPONSE_GETNUMBER_EXIT = -9999999, //Less than min ECEF. User may be prompted for number but wants to exit without entering data
+  INPUT_RESPONSE_GETNUMBER_TIMEOUT = -9999998,
   INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT = 255,
   INPUT_RESPONSE_TIMEOUT = -2,
   INPUT_RESPONSE_OVERFLOW = -1,
@@ -296,8 +296,8 @@ typedef struct {
   bool enableResetDisplay = false;
   uint8_t resetCount = 0;
   bool enableExternalPulse = true; //Send pulse once lock is achieved
-  uint32_t externalPulseTimeBetweenPulse_us = 900000; //us between pulses, max of 65s
-  uint32_t externalPulseLength_us = 100000; //us length of pulse
+  uint64_t externalPulseTimeBetweenPulse_us = 900000; //us between pulses, max of 65s = 65 * 1000 * 1000
+  uint64_t externalPulseLength_us = 100000; //us length of pulse
   pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; //Pulse rises for pulse length, then falls
   bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
   bool enableMarksFile = false; //Log marks to the marks file

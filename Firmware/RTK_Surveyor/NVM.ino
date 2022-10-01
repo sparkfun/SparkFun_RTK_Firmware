@@ -196,8 +196,8 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "autoIMUmountAlignment", settings.autoIMUmountAlignment);
   settingsFile->printf("%s=%d\r\n", "enableResetDisplay", settings.enableResetDisplay);
   settingsFile->printf("%s=%d\r\n", "enableExternalPulse", settings.enableExternalPulse);
-  settingsFile->printf("%s=%d\r\n", "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
-  settingsFile->printf("%s=%d\r\n", "externalPulseLength_us", settings.externalPulseLength_us);
+  settingsFile->printf("%s=%llu\r\n", "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
+  settingsFile->printf("%s=%llu\r\n", "externalPulseLength_us", settings.externalPulseLength_us);
   settingsFile->printf("%s=%d\r\n", "externalPulsePolarity", settings.externalPulsePolarity);
   settingsFile->printf("%s=%d\r\n", "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
   settingsFile->printf("%s=%s\r\n", "profileName", settings.profileName);

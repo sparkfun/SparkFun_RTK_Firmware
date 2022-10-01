@@ -15,8 +15,8 @@ InputResponse getString(char *userString, uint8_t stringSize)
     delay(1); //Yield to processor
 
     //Regularly poll to get latest data
-    //    if (online.gnss == true)
-    //      i2cGNSS.checkUblox();
+    if (online.gnss == true)
+      i2cGNSS.checkUblox();
 
     //Get the next input character
     while (Serial.available() > 0)
@@ -27,12 +27,15 @@ InputResponse getString(char *userString, uint8_t stringSize)
       {
         if (settings.echoUserInput) Serial.println(); //Echo if needed
         userString[spot] = '\0'; //Null terminate
+
+        if (spot == 0) return INPUT_RESPONSE_EMPTY;
+
         return INPUT_RESPONSE_VALID;
       }
       //Handle backspace
       else if (incoming == '\b')
       {
-        if (spot > 0)
+        if (settings.echoUserInput == true && spot > 0)
         {
           Serial.write('\b'); //Move back one space
           Serial.print(" "); //Put a blank there to erase the letter from the terminal
@@ -79,12 +82,11 @@ byte getCharacterNumber()
   }
   else if (response == INPUT_RESPONSE_TIMEOUT)
   {
-    Serial.println("No user response - Do you have line endings turned on?");
+    Serial.println("\n\rNo user response - Do you have line endings turned on?");
     userByte = 255; //Timeout
   }
   else if (response == INPUT_RESPONSE_EMPTY)
   {
-    Serial.println("No user response - empty.");
     userByte = 0; //Empty
   }
 
@@ -109,12 +111,11 @@ long getNumber()
   }
   else if (response == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
   {
-    Serial.println("No user response - Do you have line endings turned on?");
+    Serial.println("\n\rNo user response - Do you have line endings turned on?");
     userNumber = INPUT_RESPONSE_GETNUMBER_TIMEOUT; //Timeout
   }
   else if (response == INPUT_RESPONSE_EMPTY)
   {
-    Serial.println("No user response - empty.");
     userNumber = INPUT_RESPONSE_GETNUMBER_EXIT; //Empty
   }
 
@@ -138,7 +139,6 @@ double getDouble()
   }
   else if (response == INPUT_RESPONSE_EMPTY)
   {
-    Serial.println("No user response - empty.");
     userFloat = 0.0;
   }
 

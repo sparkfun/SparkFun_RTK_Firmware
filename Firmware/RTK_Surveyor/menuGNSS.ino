@@ -101,8 +101,8 @@ void menuGNSS()
     if (incoming == 1)
     {
       Serial.print("Enter GNSS measurement rate in Hz: ");
-      float rate = getDouble();
-      if (rate < 0.0 || rate > 20.0) //20Hz limit with all constellations enabled.
+      double rate = getDouble();
+      if (rate < 0.00012 || rate > 20.0) //20Hz limit with all constellations enabled
       {
         Serial.println("Error: measurement rate out of range");
       }

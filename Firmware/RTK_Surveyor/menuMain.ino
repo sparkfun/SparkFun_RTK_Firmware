@@ -64,7 +64,7 @@ void menuMain()
     if (online.lband == true)
       Serial.println("P) Configure PointPerfect");
 
-    Serial.println("s) System Status");
+    Serial.println("s) Configure System");
 
     if (binCount > 0)
       Serial.println("f) Firmware upgrade");

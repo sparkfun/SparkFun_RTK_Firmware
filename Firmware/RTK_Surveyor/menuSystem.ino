@@ -209,29 +209,33 @@ void menuSystem()
       Serial.println("f) Display microSD Files");
     }
 
+    Serial.print("e) Echo User Input: ");
+    if (settings.echoUserInput == true) Serial.println("On");
+    else Serial.println("Off");
+
     Serial.println("d) Configure Debug");
 
     Serial.printf("z) Set time zone offset: %02d:%02d:%02d\r\n", settings.timeZoneHours, settings.timeZoneMinutes, settings.timeZoneSeconds);
 
-    Serial.print(F("b) Set Bluetooth Mode: "));
+    Serial.print("b) Set Bluetooth Mode: ");
     if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
-      Serial.println(F("Classic"));
+      Serial.println("Classic");
     else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
-      Serial.println(F("BLE"));
+      Serial.println("BLE");
     else
-      Serial.println(F("Off"));
+      Serial.println("Off");
 
-    Serial.print(F("c) Enable/disable WiFi NMEA client (connect to phone): "));
+    Serial.print("c) Enable/disable WiFi NMEA client (connect to phone): ");
     if (settings.enableNmeaClient == true)
-      Serial.println(F("Enabled"));
+      Serial.println("Enabled");
     else
-      Serial.println(F("Disabled"));
+      Serial.println("Disabled");
 
-    Serial.print(F("n) Enable/disable WiFi NMEA server: "));
+    Serial.print("n) Enable/disable WiFi NMEA server: ");
     if (settings.enableNmeaServer == true)
-      Serial.println(F("Enabled"));
+      Serial.println("Enabled");
     else
-      Serial.println(F("Disabled"));
+      Serial.println("Disabled");
 
     Serial.println("r) Reset all settings to default");
 
@@ -286,6 +290,10 @@ void menuSystem()
           }
         } //Succesful hours
       }
+    }
+    else if (incoming == 'e')
+    {
+      settings.echoUserInput ^= 1;
     }
     else if (incoming == 'b')
     {

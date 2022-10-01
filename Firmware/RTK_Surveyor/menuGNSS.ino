@@ -13,10 +13,10 @@ void menuGNSS()
     float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
 
     Serial.print("1) Set measurement rate in Hz: ");
-    Serial.println(measurementFrequency, 4);
+    Serial.println(measurementFrequency, 5);
 
     Serial.print("2) Set measurement rate in seconds between measurements: ");
-    Serial.println(1 / measurementFrequency, 2);
+    Serial.println(1 / measurementFrequency, 5);
 
     Serial.print("3) Set dynamic model: ");
     switch (settings.dynamicModel)
@@ -297,7 +297,7 @@ void menuConstellations()
 //measurementRate > 25 & <= 65535
 //navigationRate >= 1 && <= 127
 //We give preference to limiting a measurementRate to 30s or below due to reported problems with measRates above 30.
-bool setMeasurementRates(float secondsBetweenSolutions)
+bool setMeasurementRates(double secondsBetweenSolutions)
 {
   uint16_t measRate = 0; //Calculate these locally and then attempt to apply them to ZED at completion
   uint16_t navRate = 0;

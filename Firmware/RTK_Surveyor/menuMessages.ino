@@ -32,9 +32,11 @@ void menuLog()
       Serial.print("3) Set max log length: ");
       Serial.print(settings.maxLogLength_minutes);
       Serial.println(" minutes");
+
+      if (online.logging == true) Serial.println("4) Start new log");
     }
 
-    Serial.print("4) Write Marks_date.csv file to microSD: ");
+    Serial.print("5) Write Marks_date.csv file to microSD: ");
     if (settings.enableMarksFile == true) Serial.println("Enabled");
     else Serial.println("Disabled");
 
@@ -76,7 +78,13 @@ void menuLog()
           settings.maxLogLength_minutes = maxLogMinutes; //Recorded to NVM and file at main menu exit
       }
     }
-    else if (incoming == 4)
+    else if (incoming == 4 && settings.enableLogging == true && online.logging == true)
+    {
+      endSD(false, true); //Close down file. A new one will be created at the next calling of updateLogs().
+      beginLogging();
+      setLoggingType(); //Determine if we are standard, PPP, or custom. Changes logging icon accordingly.
+    }
+    else if (incoming == 5)
     {
       settings.enableMarksFile ^= 1;
     }
@@ -449,6 +457,12 @@ void beginLogging(const char *customFileName)
 
         //ZED-F9P firmware: HPG 1.30
         createNMEASentence(CUSTOM_NMEA_TYPE_ZED_VERSION, nmeaMessage, zedFirmwareVersion); //textID, buffer, text
+        ubxFile->println(nmeaMessage);
+
+        //Device BT MAC. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/346
+        char macAddress[5];
+        sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
+        createNMEASentence(CUSTOM_NMEA_TYPE_DEVICE_BT_ID, nmeaMessage, macAddress); //textID, buffer, text
         ubxFile->println(nmeaMessage);
 
         if (reuseLastLog == true)

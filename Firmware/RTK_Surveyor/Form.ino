@@ -307,6 +307,10 @@ void createSettingsString(char* settingsCSV)
   sprintf(apZedFirmwareVersion, "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
   stringRecord(settingsCSV, "zedFirmwareVersion", apZedFirmwareVersion);
 
+  char apDeviceBTID[30];
+  sprintf(apDeviceBTID, "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);
+  stringRecord(settingsCSV, "deviceBTID", apDeviceBTID);
+
   //GNSS Config
   stringRecord(settingsCSV, "measurementRateHz", 1000.0 / settings.measurementRate, 2); //2 = decimals to print
   stringRecord(settingsCSV, "dynamicModel", settings.dynamicModel);
@@ -683,6 +687,11 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     for (int x = 0 ; x < settings.espnowPeerCount ; x++)
       espnowRemovePeer(settings.espnowPeers[x]);
     settings.espnowPeerCount = 0;
+  }
+  else if (strcmp(settingName, "startNewLog") == 0)
+  {
+    if (settings.enableLogging == true && online.logging == true)
+      endSD(false, true); //Close down file. A new one will be created at the next calling of updateLogs().
   }
 
   //Check for bulk settings (constellations and message rates)

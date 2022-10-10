@@ -122,6 +122,7 @@ function parseIncoming(msg) {
             || id.includes("profile6Name")
             || id.includes("profile7Name")
             || id.includes("radioMAC")
+            || id.includes("deviceBTID")
         ) {
             ge(id).innerHTML = val;
         }
@@ -753,6 +754,10 @@ function useGeodeticCoordinates() {
     ge("fixedAltitude").value = geodeticAlt;
 }
 
+function startNewLog() {
+    ws.send("startNewLog,1,");
+}
+
 function exitConfig() {
     show("exitPage");
     hide("mainPage");
@@ -1026,6 +1031,7 @@ static const char *index_html = R"=====(
             <div align="center" class="small">
                 <span id="rtkFirmwareVersion" style="display:inline;">RTK Firmware: v0.0</span> <br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
+                <span id="deviceBTID" style="display:inline;">Device Bluetooth ID: 0000</span> <br>
                 <span id="coordinatesLLH" style="display:inline;">LLh: 
                     <span id="geodeticLat" style="display:inline;">40.09029479</span>, 
                     <span id="geodeticLon" style="display:inline;">-105.18505761</span>, 
@@ -2487,6 +2493,18 @@ static const char *index_html = R"=====(
                                 <p id="maxLogLength_minutesError" class="inlineError"></p>
                             </div>
                         </div>
+
+                        <div class="form-group row">
+                            <div style="margin-bottom:5px;">
+                                <button type="button" id="startNewLog" class="btn btn-primary box-margin20"
+                                    onClick="startNewLog()">Start New Log</button>
+                                <span class="tt" data-bs-placement="right"
+                                    title="Closes the current log and starts a new one.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </div>
+                        </div>
+    
                     </div>
 
                     <br>

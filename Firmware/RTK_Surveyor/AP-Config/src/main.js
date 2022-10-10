@@ -99,6 +99,7 @@ function parseIncoming(msg) {
             || id.includes("profile6Name")
             || id.includes("profile7Name")
             || id.includes("radioMAC")
+            || id.includes("deviceBTID")
         ) {
             ge(id).innerHTML = val;
         }
@@ -728,6 +729,10 @@ function useGeodeticCoordinates() {
     ge("fixedLat").value = geodeticLat;
     ge("fixedLong").value = geodeticLon;
     ge("fixedAltitude").value = geodeticAlt;
+}
+
+function startNewLog() {
+    ws.send("startNewLog,1,");
 }
 
 function exitConfig() {

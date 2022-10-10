@@ -431,6 +431,11 @@ void createSettingsString(char* settingsCSV)
   }
   //stringRecord(settingsCSV, "activeProfiles", activeProfiles);
 
+  //System state at power on. Convert various system states to either Rover or Base.
+  int lastState = 0; //0 = Rover, 1 = Base
+  if (settings.lastState >= STATE_BASE_NOT_STARTED && settings.lastState <= STATE_BASE_FIXED_TRANSMITTING) lastState = 1;
+  stringRecord(settingsCSV, "baseRoverSetup", lastState);
+
   //Bluetooth radio type
   stringRecord(settingsCSV, "bluetoothRadioType", settings.bluetoothRadioType);
 
@@ -619,6 +624,11 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.espnowBroadcast = settingValueBool;
   else if (strcmp(settingName, "radioType") == 0)
     settings.radioType = (RadioType_e)settingValue; //0 = Radio off, 1 = ESP-Now
+  else if (strcmp(settingName, "baseRoverSetup") == 0)
+  {
+    settings.lastState = STATE_ROVER_NOT_STARTED; //Default
+    if(settingValue == 1) settings.lastState = STATE_BASE_NOT_STARTED;
+  }
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

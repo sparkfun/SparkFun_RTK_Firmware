@@ -160,10 +160,6 @@ function parseIncoming(msg) {
             ecefZ = val;
             ge(id).innerHTML = val;
         }
-        else if (id.includes("bluetoothRadioType")) {
-            currentBtNumber = val;
-            $("input[name=bluetoothRadioType][value=" + currentBtNumber + "]").prop('checked', true);
-        }
         else if (id.includes("espnowPeerCount")) {
             if(val > 0)
                 ge("peerMACs").innerHTML = "";
@@ -2452,7 +2448,19 @@ static const char *index_html = R"=====(
             <div class="collapse" id="collapseSystemConfig">
                 <div class="card card-body">
 
-                    <div class="form-check">
+                    <div id="baseRoverSetupDropdown" class="mb-2">
+                        <label for="baseRoverSetup">System Initial State: </label>
+                        <select name="baseRoverSetup" id="baseRoverSetup" class="form-dropdown">
+                            <option value="0">Rover</option>
+                            <option value="1">Base</option>
+                        </select>
+                        <span class="tt" data-bs-placement="right"
+                            title="Put the system into rover or base mode at next Power On or Reset.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="form-check mt-3">
                         <label class="form-check-label" for="enableLogging">Log to SD Card</label>
                         <input class="form-check-input" type="checkbox" value="" id="enableLogging">
                         <span class="tt" data-bs-placement="right"
@@ -2507,8 +2515,7 @@ static const char *index_html = R"=====(
     
                     </div>
 
-                    <br>
-                    <div id="bluetoothRadioTypeDropdown" class="mb-2">
+                    <div id="bluetoothRadioTypeDropdown" class="mb-2 mt-3">
                         <label for="bluetoothRadioType">Bluetooth Protocol: </label>
                         <select name="bluetoothRadioType" id="bluetoothRadioType" class="form-dropdown">
                             <option value="0">SPP</option>
@@ -2520,7 +2527,6 @@ static const char *index_html = R"=====(
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
-
 
                     <div class="form-check mt-3">
                         <label class="form-check-label" for="enableFactoryDefaults">Enable Factory Defaults</label>

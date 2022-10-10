@@ -137,10 +137,6 @@ function parseIncoming(msg) {
             ecefZ = val;
             ge(id).innerHTML = val;
         }
-        else if (id.includes("bluetoothRadioType")) {
-            currentBtNumber = val;
-            $("input[name=bluetoothRadioType][value=" + currentBtNumber + "]").prop('checked', true);
-        }
         else if (id.includes("espnowPeerCount")) {
             if(val > 0)
                 ge("peerMACs").innerHTML = "";

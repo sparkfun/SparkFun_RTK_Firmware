@@ -138,7 +138,7 @@ function parseIncoming(msg) {
             ge(id).innerHTML = val;
         }
         else if (id.includes("espnowPeerCount")) {
-            if(val > 0)
+            if (val > 0)
                 ge("peerMACs").innerHTML = "";
         }
         else if (id.includes("peerMAC")) {
@@ -370,8 +370,7 @@ function validateFields() {
     checkMessageValue("UBX_RTCM_4072_0");
     checkMessageValue("UBX_RTCM_4072_1");
 
-    if(platformPrefix == "Express Plus")
-    {
+    if (platformPrefix == "Express Plus") {
         checkMessageValue("UBX_ESF_MEAS");
         checkMessageValue("UBX_ESF_RAW");
         checkMessageValue("UBX_ESF_STATUS");
@@ -380,8 +379,7 @@ function validateFields() {
     }
 
     //Base Config
-    if(platformPrefix != "Express Plus")
-    {
+    if (platformPrefix != "Express Plus") {
         if (ge("baseTypeSurveyIn").checked) {
             checkElementValue("observationSeconds", 60, 600, "Must be between 60 to 600", "collapseBaseConfig");
             checkElementValue("observationPositionAccuracy", 1, 5.1, "Must be between 1.0 to 5.0", "collapseBaseConfig");
@@ -408,7 +406,7 @@ function validateFields() {
                 checkElementValue("fixedEcefY", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
                 checkElementValue("fixedEcefZ", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
             }
-            else{
+            else {
                 clearElement("fixedEcefX", -1280206.568);
                 clearElement("fixedEcefY", -4716804.403);
                 clearElement("fixedEcefZ", 4086665.484);
@@ -422,7 +420,7 @@ function validateFields() {
             }
         }
 
-        if(ge("enableNtripServer").checked == true) {
+        if (ge("enableNtripServer").checked == true) {
             checkElementString("ntripServer_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
             checkElementString("ntripServer_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
             checkElementString("ntripServer_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
@@ -443,9 +441,8 @@ function validateFields() {
     }
 
     //L-Band Config
-    if(platformPrefix == "Facet L-Band")
-    {
-        if(ge("enablePointPerfectCorrections").checked == true) {
+    if (platformPrefix == "Facet L-Band") {
+        if (ge("enablePointPerfectCorrections").checked == true) {
             checkElementString("home_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapsePPConfig");
             checkElementString("home_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapsePPConfig");
 
@@ -463,7 +460,7 @@ function validateFields() {
     }
 
     //System Config
-    if(ge("enableLogging").checked){
+    if (ge("enableLogging").checked) {
         checkElementValue("maxLogTime_minutes", 1, 1051200, "Must be 1 to 1,051,200", "collapseSystemConfig");
         checkElementValue("maxLogLength_minutes", 1, 1051200, "Must be 1 to 1,051,200", "collapseSystemConfig");
     }
@@ -473,9 +470,8 @@ function validateFields() {
     }
 
     //Port Config
-    if(platformPrefix != "Surveyor")
-    {
-        if(ge("enableExternalPulse").checked) {
+    if (platformPrefix != "Surveyor") {
+        if (ge("enableExternalPulse").checked) {
             checkElementValue("externalPulseTimeBetweenPulse_us", 1, 60000000, "Must be 1 to 60,000,000", "collapsePortsConfig");
             checkElementValue("externalPulseLength_us", 1, 60000000, "Must be 1 to 60,000,000", "collapsePortsConfig");
         }
@@ -764,8 +760,8 @@ function btnResetProfile() {
 document.addEventListener("DOMContentLoaded", (event) => {
 
     var radios = document.querySelectorAll('input[name=profileRadio]');
-    for(var i = 0, max = radios.length; i < max; i++) {
-        radios[i].onclick = function() {
+    for (var i = 0, max = radios.length; i < max; i++) {
+        radios[i].onclick = function () {
             changeConfig();
         }
     }
@@ -838,7 +834,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             show("dataPortBaudDropdown");
             hide("externalPulseConfig");
         }
-        else if (ge("dataPortChannel").value == 1){
+        else if (ge("dataPortChannel").value == 1) {
             hide("dataPortBaudDropdown");
             show("externalPulseConfig");
         }
@@ -888,7 +884,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
         if (ge("radioType").value == 0) {
             hide("radioDetails");
         }
-        else if (ge("radioType").value == 1){
+        else if (ge("radioType").value == 1) {
             show("radioDetails");
         }
     });

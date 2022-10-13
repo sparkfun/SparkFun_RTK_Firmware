@@ -13,9 +13,9 @@ var platformPrefix = "Surveyor";
 var geodeticLat = 40.01;
 var geodeticLon = -105.19;
 var geodeticAlt = 1500.1;
-var ecefX = 100;
-var ecefY = -100;
-var ecefZ = -200;
+var ecefX = -1280206.568;
+var ecefY = -4716804.403;
+var ecefZ = 4086665.484;
 
 function parseIncoming(msg) {
     //console.log("incoming message: " + msg);
@@ -144,6 +144,12 @@ function parseIncoming(msg) {
         else if (id.includes("peerMAC")) {
             ge("peerMACs").innerHTML += val + "<br>";
         }
+        else if (id.includes("stationECEF")) {
+            recordsECEF.push(val);
+        }
+        else if (id.includes("stationGeodetic")) {
+            recordsGeodetic.push(val);
+        }
 
         //Check boxes / radio buttons
         else if (val == "true") {
@@ -188,6 +194,8 @@ function parseIncoming(msg) {
     ge("enableExternalPulse").dispatchEvent(new CustomEvent('change'));
     ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
     ge("radioType").dispatchEvent(new CustomEvent('change'));
+    updateECEFList();
+    updateGeodeticList();
 }
 
 function hide(id) {
@@ -212,6 +220,14 @@ function sendData() {
     clsElements = document.querySelectorAll(".form-check-input, .form-radio");
     for (let x = 0; x < clsElements.length; x++) {
         settingCSV += clsElements[x].id + "," + clsElements[x].checked + ",";
+    }
+    
+    for (let x = 0; x < recordsECEF.length; x++) {
+        settingCSV += "stationECEF" + x + ',' + recordsECEF[x] + ",";
+    }
+
+    for (let x = 0; x < recordsGeodetic.length; x++) {
+        settingCSV += "stationGeodetic" + x + ',' + recordsGeodetic[x] + ",";
     }
 
     console.log("Sending: " + settingCSV);
@@ -569,7 +585,7 @@ function checkBitMapValue(id, min, max, bitMap, errorText, collapseID) {
 
 function checkElementValue(id, min, max, errorText, collapseID) {
     value = ge(id).value;
-    if (value < min || value > max) {
+    if (value < min || value > max || value == "") {
         ge(id + 'Error').innerHTML = 'Error: ' + errorText;
         ge(collapseID).classList.add('show');
         if (collapseID == "collapseGNSSConfigMsg") ge("collapseGNSSConfig").classList.add('show');
@@ -907,3 +923,178 @@ document.addEventListener("DOMContentLoaded", (event) => {
         }
     });
 })
+
+var recordsECEF = [];
+var recordsGeodetic = [];
+
+var bLen0 = 0;
+var bLen1 = 0;
+var bLen2 = 0;
+
+function addECEF() {
+    errorCount = 0;
+
+    nicknameECEF.value = removeBadChars(nicknameECEF.value);
+
+    checkElementString("nicknameECEF", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+    checkElementValue("fixedEcefX", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefY", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefZ", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
+
+    if (errorCount == 0) {
+        //Check name against the list
+        var index = 0;
+        for (; index < recordsECEF.length; ++index) {
+            var parts = recordsECEF[index].split(' ');
+            if (ge("nicknameECEF").value == parts[0]) {
+                recordsECEF[index] = nicknameECEF.value + ' ' + fixedEcefX.value + ' ' + fixedEcefY.value + ' ' + fixedEcefZ.value;
+                break;
+            }
+        }
+        if (index == recordsECEF.length)
+            recordsECEF.push(nicknameECEF.value + ' ' + fixedEcefX.value + ' ' + fixedEcefY.value + ' ' + fixedEcefZ.value);
+    }
+
+    updateECEFList();
+}
+
+function deleteECEF() {
+    var val = ge("StationCoordinatesECEF").value;
+    if (val > "")
+        recordsECEF.splice(val, 1);
+    updateECEFList();
+}
+
+function loadECEF() {
+    var val = ge("StationCoordinatesECEF").value;
+    if (val > "") {
+        var parts = recordsECEF[val].split(' ');
+        ge("fixedEcefX").value = parts[1];
+        ge("fixedEcefY").value = parts[2];
+        ge("fixedEcefZ").value = parts[3];
+        ge("nicknameECEF").value = parts[0];
+        clearError("fixedEcefX");
+        clearError("fixedEcefY");
+        clearError("fixedEcefZ");
+        clearError("nicknameECEF");
+    }
+}
+
+//Based on recordsECEF array, update and monospace HTML list
+function updateECEFList() {
+    ge("StationCoordinatesECEF").length = 0;
+
+    if(recordsECEF.length == 0)
+    {
+        hide("StationCoordinatesECEF");
+        nicknameECEFText.innerHTML = "No coordinates stored";
+    }
+    else
+    {
+        show("StationCoordinatesECEF");
+        nicknameECEFText.innerHTML = "Nickname: X/Y/Z";
+        if(recordsECEF.length < 5)
+            ge("StationCoordinatesECEF").size = recordsECEF.length;
+    }
+
+    for (let index = 0; index < recordsECEF.length; ++index) {
+        var option = document.createElement('option');
+        option.text = recordsECEF[index];
+        option.value = index;
+        ge("StationCoordinatesECEF").add(option);
+    }
+
+    $("#StationCoordinatesECEF option").each(function () {
+        var parts = $(this).text().split(' ');
+        var nickname = parts[0].substring(0, 15);
+        $(this).text(nickname + ': ' + parts[1] + ' ' + parts[2] + ' ' + parts[3]).text;
+    });
+}
+
+function addGeodetic() {
+    errorCount = 0;
+
+    nicknameGeodetic.value = removeBadChars(nicknameGeodetic.value);
+
+    checkElementString("nicknameGeodetic", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+    checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
+    checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
+    checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
+
+    if (errorCount == 0) {
+        //Check name against the list
+        var index = 0;
+        for (; index < recordsGeodetic.length; ++index) {
+            var parts = recordsGeodetic[index].split(' ');
+            if (ge("nicknameGeodetic").value == parts[0]) {
+                recordsGeodetic[index] = nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLong.value + ' ' + fixedAltitude.value;
+                break;
+            }
+        }
+        if (index == recordsGeodetic.length)
+            recordsGeodetic.push(nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLong.value + ' ' + fixedAltitude.value);
+    }
+
+    updateGeodeticList();
+}
+
+function deleteGeodetic() {
+    var val = ge("StationCoordinatesGeodetic").value;
+    if (val > "")
+        recordsGeodetic.splice(val, 1);
+    updateGeodeticList();
+}
+
+function loadGeodetic() {
+    var val = ge("StationCoordinatesGeodetic").value;
+    if (val > "") {
+        var parts = recordsGeodetic[val].split(' ');
+        ge("fixedLat").value = parts[1];
+        ge("fixedLong").value = parts[2];
+        ge("fixedAltitude").value = parts[3];
+        ge("nicknameGeodetic").value = parts[0];
+        clearError("fixedLat");
+        clearError("fixedLong");
+        clearError("fixedAltitude");
+        clearError("nicknameGeodetic");
+    }
+}
+
+//Based on recordsGeodetic array, update and monospace HTML list
+function updateGeodeticList() {
+    ge("StationCoordinatesGeodetic").length = 0;
+
+    if(recordsGeodetic.length == 0)
+    {
+        hide("StationCoordinatesGeodetic");
+        nicknameGeodeticText.innerHTML = "No coordinates stored";
+    }
+    else
+    {
+        show("StationCoordinatesGeodetic");
+        nicknameGeodeticText.innerHTML = "Nickname: Lat/Long/Alt";
+        if(recordsGeodetic.length < 5)
+            ge("StationCoordinatesGeodetic").size = recordsGeodetic.length;
+    }
+
+    for (let index = 0; index < recordsGeodetic.length; ++index) {
+
+        var option = document.createElement('option');
+        option.text = recordsGeodetic[index];
+        option.value = index;
+        ge("StationCoordinatesGeodetic").add(option);
+    }
+
+    $("#StationCoordinatesGeodetic option").each(function () {
+        var parts = $(this).text().split(' ');
+        var nickname = parts[0].substring(0, 15);
+        $(this).text(nickname + ': ' + parts[1] + ' ' + parts[2] + ' ' + parts[3]).text;
+    });
+}
+
+function removeBadChars(val) {
+    val = val.split(' ').join('');
+    val = val.split(',').join('');
+    val = val.split('\\').join('');
+    return(val);
+}

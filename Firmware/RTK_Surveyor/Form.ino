@@ -138,6 +138,11 @@ void startWebServer()
 
   server.begin();
 
+  //Pre-load settings CSV
+  settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+  memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
+  createSettingsString(settingsCSV);
+
   log_d("Web Server Started");
   reportHeapNow();
 
@@ -152,6 +157,8 @@ void stopWebServer()
 {
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
+
+  free(settingsCSV);
 
   //server.reset();
   server.end();
@@ -259,14 +266,8 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
   if (type == WS_EVT_CONNECT) {
-    settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
-    memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
-
-    createSettingsString(settingsCSV);
-    log_d("Sending command: %s", settingsCSV);
     client->text(settingsCSV);
     wifiSetState(WIFI_CONNECTED);
-    free(settingsCSV);
   }
   else if (type == WS_EVT_DISCONNECT) {
     log_d("Websocket client disconnected");
@@ -486,6 +487,66 @@ void createSettingsString(char* settingsCSV)
   }
   stringRecord(settingsCSV, "espnowBroadcast", settings.espnowBroadcast);
 
+  //Add ECEF and Geodetic station data
+  for (int index = 0; index < MAX_STATIONS ; index++) //Arbitrary 50 station limit
+  {
+    //stationInfo example: LocationA,-1280206.568,-4716804.403,4086665.484
+    char stationInfo[100];
+
+    //Try SD, then LFS
+    if (getFileLineSD(stationCoordinateECEFFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
+    {
+      trim(stationInfo); //Remove trailing whitespace
+      //log_d("ECEF SD station %d - found: %s", index, stationInfo);
+      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
+      sprintf(tagText, "stationECEF%d", index);
+      stringRecord(settingsCSV, tagText, stationInfo);
+    }
+    else if (getFileLineLFS(stationCoordinateECEFFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
+    {
+      trim(stationInfo); //Remove trailing whitespace
+      //log_d("ECEF LFS station %d - found: %s", index, stationInfo);
+      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
+      sprintf(tagText, "stationECEF%d", index);
+      stringRecord(settingsCSV, tagText, stationInfo);
+    }
+    else
+    {
+      //We could not find this line
+      break;
+    }
+  }
+
+  for (int index = 0; index < MAX_STATIONS ; index++) //Arbitrary 50 station limit
+  {
+    //stationInfo example: LocationA,40.09029479,-105.18505761,1560.089
+    char stationInfo[100];
+
+    //Try SD, then LFS
+    if (getFileLineSD(stationCoordinateGeodeticFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
+    {
+      trim(stationInfo); //Remove trailing whitespace
+      //log_d("Geo SD station %d - found: %s", index, stationInfo);
+      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
+      sprintf(tagText, "stationGeodetic%d", index);
+      stringRecord(settingsCSV, tagText, stationInfo);
+    }
+    else if (getFileLineLFS(stationCoordinateGeodeticFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
+    {
+      trim(stationInfo); //Remove trailing whitespace
+      //log_d("Geo LFS station %d - found: %s", index, stationInfo);
+      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
+      sprintf(tagText, "stationGeodetic%d", index);
+      stringRecord(settingsCSV, tagText, stationInfo);
+    }
+    else
+    {
+      //We could not find this line
+      break;
+    }
+  }
+
+
   //New settings not yet integrated
   //...
 
@@ -510,7 +571,14 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "maxLogLength_minutes") == 0)
     settings.maxLogLength_minutes = settingValue;
   else if (strcmp(settingName, "measurementRateHz") == 0)
+  {
     settings.measurementRate = (int)(1000.0 / settingValue);
+
+    //This is one of the first settings to be received. If seen, remove the station files.
+    removeFile(stationCoordinateECEFFileName);
+    removeFile(stationCoordinateGeodeticFileName);
+    log_d("Station coordinate files removed");
+  }
   else if (strcmp(settingName, "dynamicModel") == 0)
     settings.dynamicModel = settingValue;
   else if (strcmp(settingName, "baseTypeFixed") == 0)
@@ -627,7 +695,21 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "baseRoverSetup") == 0)
   {
     settings.lastState = STATE_ROVER_NOT_STARTED; //Default
-    if(settingValue == 1) settings.lastState = STATE_BASE_NOT_STARTED;
+    if (settingValue == 1) settings.lastState = STATE_BASE_NOT_STARTED;
+  }
+  else if (strstr(settingName, "stationECEF") != NULL)
+  {
+    replaceCharacter((char *)settingValueStr, ' ', ','); //Replace all ' ' with ',' before recording to file
+    recordLineToSD(stationCoordinateECEFFileName, settingValueStr);
+    recordLineToLFS(stationCoordinateECEFFileName, settingValueStr);
+    log_d("%s recorded", settingValueStr);
+  }
+  else if (strstr(settingName, "stationGeodetic") != NULL)
+  {
+    replaceCharacter((char *)settingValueStr, ' ', ','); //Replace all ' ' with ',' before recording to file
+    recordLineToSD(stationCoordinateGeodeticFileName, settingValueStr);
+    recordLineToLFS(stationCoordinateGeodeticFileName, settingValueStr);
+    log_d("%s recorded", settingValueStr);
   }
 
   //Unused variables - read to avoid errors
@@ -638,6 +720,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "enableFactoryDefaults") == 0) {}
   else if (strcmp(settingName, "enableFirmwareUpdate") == 0) {}
   else if (strcmp(settingName, "enableForgetRadios") == 0) {}
+  else if (strcmp(settingName, "nicknameECEF") == 0) {}
+  else if (strcmp(settingName, "nicknameGeodetic") == 0) {}
 
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
@@ -814,8 +898,8 @@ void stringRecord(char* settingsCSV, const char *id, uint64_t settingValue)
 //Can't use strtok because we may have two commas next to each other, ie measurementRateHz,4.00,measurementRateSec,,dynamicModel,0,
 bool parseIncomingSettings()
 {
-  char settingName[50] = {'\0'};
-  char valueStr[50] = {'\0'}; //firmwareFileName,RTK_Surveyor_Firmware_v14.bin,
+  char settingName[100] = {'\0'};
+  char valueStr[150] = {'\0'}; //stationGeodetic1,ANameThatIsTooLongToBeDisplayed 40.09029479 -105.18505761 1560.089
 
   char* commaPtr = incomingSettings;
   char* headPtr = incomingSettings;

@@ -36,9 +36,9 @@ var platformPrefix = "Surveyor";
 var geodeticLat = 40.01;
 var geodeticLon = -105.19;
 var geodeticAlt = 1500.1;
-var ecefX = 100;
-var ecefY = -100;
-var ecefZ = -200;
+var ecefX = -1280206.568;
+var ecefY = -4716804.403;
+var ecefZ = 4086665.484;
 
 function parseIncoming(msg) {
     //console.log("incoming message: " + msg);
@@ -161,11 +161,17 @@ function parseIncoming(msg) {
             ge(id).innerHTML = val;
         }
         else if (id.includes("espnowPeerCount")) {
-            if(val > 0)
+            if (val > 0)
                 ge("peerMACs").innerHTML = "";
         }
         else if (id.includes("peerMAC")) {
             ge("peerMACs").innerHTML += val + "<br>";
+        }
+        else if (id.includes("stationECEF")) {
+            recordsECEF.push(val);
+        }
+        else if (id.includes("stationGeodetic")) {
+            recordsGeodetic.push(val);
         }
 
         //Check boxes / radio buttons
@@ -211,6 +217,8 @@ function parseIncoming(msg) {
     ge("enableExternalPulse").dispatchEvent(new CustomEvent('change'));
     ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
     ge("radioType").dispatchEvent(new CustomEvent('change'));
+    updateECEFList();
+    updateGeodeticList();
 }
 
 function hide(id) {
@@ -235,6 +243,14 @@ function sendData() {
     clsElements = document.querySelectorAll(".form-check-input, .form-radio");
     for (let x = 0; x < clsElements.length; x++) {
         settingCSV += clsElements[x].id + "," + clsElements[x].checked + ",";
+    }
+    
+    for (let x = 0; x < recordsECEF.length; x++) {
+        settingCSV += "stationECEF" + x + ',' + recordsECEF[x] + ",";
+    }
+
+    for (let x = 0; x < recordsGeodetic.length; x++) {
+        settingCSV += "stationGeodetic" + x + ',' + recordsGeodetic[x] + ",";
     }
 
     console.log("Sending: " + settingCSV);
@@ -393,8 +409,7 @@ function validateFields() {
     checkMessageValue("UBX_RTCM_4072_0");
     checkMessageValue("UBX_RTCM_4072_1");
 
-    if(platformPrefix == "Express Plus")
-    {
+    if (platformPrefix == "Express Plus") {
         checkMessageValue("UBX_ESF_MEAS");
         checkMessageValue("UBX_ESF_RAW");
         checkMessageValue("UBX_ESF_STATUS");
@@ -403,8 +418,7 @@ function validateFields() {
     }
 
     //Base Config
-    if(platformPrefix != "Express Plus")
-    {
+    if (platformPrefix != "Express Plus") {
         if (ge("baseTypeSurveyIn").checked) {
             checkElementValue("observationSeconds", 60, 600, "Must be between 60 to 600", "collapseBaseConfig");
             checkElementValue("observationPositionAccuracy", 1, 5.1, "Must be between 1.0 to 5.0", "collapseBaseConfig");
@@ -431,7 +445,7 @@ function validateFields() {
                 checkElementValue("fixedEcefY", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
                 checkElementValue("fixedEcefZ", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
             }
-            else{
+            else {
                 clearElement("fixedEcefX", -1280206.568);
                 clearElement("fixedEcefY", -4716804.403);
                 clearElement("fixedEcefZ", 4086665.484);
@@ -445,7 +459,7 @@ function validateFields() {
             }
         }
 
-        if(ge("enableNtripServer").checked == true) {
+        if (ge("enableNtripServer").checked == true) {
             checkElementString("ntripServer_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
             checkElementString("ntripServer_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
             checkElementString("ntripServer_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
@@ -466,9 +480,8 @@ function validateFields() {
     }
 
     //L-Band Config
-    if(platformPrefix == "Facet L-Band")
-    {
-        if(ge("enablePointPerfectCorrections").checked == true) {
+    if (platformPrefix == "Facet L-Band") {
+        if (ge("enablePointPerfectCorrections").checked == true) {
             checkElementString("home_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapsePPConfig");
             checkElementString("home_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapsePPConfig");
 
@@ -486,7 +499,7 @@ function validateFields() {
     }
 
     //System Config
-    if(ge("enableLogging").checked){
+    if (ge("enableLogging").checked) {
         checkElementValue("maxLogTime_minutes", 1, 1051200, "Must be 1 to 1,051,200", "collapseSystemConfig");
         checkElementValue("maxLogLength_minutes", 1, 1051200, "Must be 1 to 1,051,200", "collapseSystemConfig");
     }
@@ -496,9 +509,8 @@ function validateFields() {
     }
 
     //Port Config
-    if(platformPrefix != "Surveyor")
-    {
-        if(ge("enableExternalPulse").checked) {
+    if (platformPrefix != "Surveyor") {
+        if (ge("enableExternalPulse").checked) {
             checkElementValue("externalPulseTimeBetweenPulse_us", 1, 60000000, "Must be 1 to 60,000,000", "collapsePortsConfig");
             checkElementValue("externalPulseLength_us", 1, 60000000, "Must be 1 to 60,000,000", "collapsePortsConfig");
         }
@@ -596,7 +608,7 @@ function checkBitMapValue(id, min, max, bitMap, errorText, collapseID) {
 
 function checkElementValue(id, min, max, errorText, collapseID) {
     value = ge(id).value;
-    if (value < min || value > max) {
+    if (value < min || value > max || value == "") {
         ge(id + 'Error').innerHTML = 'Error: ' + errorText;
         ge(collapseID).classList.add('show');
         if (collapseID == "collapseGNSSConfigMsg") ge("collapseGNSSConfig").classList.add('show');
@@ -787,8 +799,8 @@ function btnResetProfile() {
 document.addEventListener("DOMContentLoaded", (event) => {
 
     var radios = document.querySelectorAll('input[name=profileRadio]');
-    for(var i = 0, max = radios.length; i < max; i++) {
-        radios[i].onclick = function() {
+    for (var i = 0, max = radios.length; i < max; i++) {
+        radios[i].onclick = function () {
             changeConfig();
         }
     }
@@ -861,7 +873,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             show("dataPortBaudDropdown");
             hide("externalPulseConfig");
         }
-        else if (ge("dataPortChannel").value == 1){
+        else if (ge("dataPortChannel").value == 1) {
             hide("dataPortBaudDropdown");
             show("externalPulseConfig");
         }
@@ -911,7 +923,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
         if (ge("radioType").value == 0) {
             hide("radioDetails");
         }
-        else if (ge("radioType").value == 1){
+        else if (ge("radioType").value == 1) {
             show("radioDetails");
         }
     });
@@ -935,6 +947,181 @@ document.addEventListener("DOMContentLoaded", (event) => {
     });
 })
 
+var recordsECEF = [];
+var recordsGeodetic = [];
+
+var bLen0 = 0;
+var bLen1 = 0;
+var bLen2 = 0;
+
+function addECEF() {
+    errorCount = 0;
+
+    nicknameECEF.value = removeBadChars(nicknameECEF.value);
+
+    checkElementString("nicknameECEF", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+    checkElementValue("fixedEcefX", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefY", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
+    checkElementValue("fixedEcefZ", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
+
+    if (errorCount == 0) {
+        //Check name against the list
+        var index = 0;
+        for (; index < recordsECEF.length; ++index) {
+            var parts = recordsECEF[index].split(' ');
+            if (ge("nicknameECEF").value == parts[0]) {
+                recordsECEF[index] = nicknameECEF.value + ' ' + fixedEcefX.value + ' ' + fixedEcefY.value + ' ' + fixedEcefZ.value;
+                break;
+            }
+        }
+        if (index == recordsECEF.length)
+            recordsECEF.push(nicknameECEF.value + ' ' + fixedEcefX.value + ' ' + fixedEcefY.value + ' ' + fixedEcefZ.value);
+    }
+
+    updateECEFList();
+}
+
+function deleteECEF() {
+    var val = ge("StationCoordinatesECEF").value;
+    if (val > "")
+        recordsECEF.splice(val, 1);
+    updateECEFList();
+}
+
+function loadECEF() {
+    var val = ge("StationCoordinatesECEF").value;
+    if (val > "") {
+        var parts = recordsECEF[val].split(' ');
+        ge("fixedEcefX").value = parts[1];
+        ge("fixedEcefY").value = parts[2];
+        ge("fixedEcefZ").value = parts[3];
+        ge("nicknameECEF").value = parts[0];
+        clearError("fixedEcefX");
+        clearError("fixedEcefY");
+        clearError("fixedEcefZ");
+        clearError("nicknameECEF");
+    }
+}
+
+//Based on recordsECEF array, update and monospace HTML list
+function updateECEFList() {
+    ge("StationCoordinatesECEF").length = 0;
+
+    if(recordsECEF.length == 0)
+    {
+        hide("StationCoordinatesECEF");
+        nicknameECEFText.innerHTML = "No coordinates stored";
+    }
+    else
+    {
+        show("StationCoordinatesECEF");
+        nicknameECEFText.innerHTML = "Nickname: X/Y/Z";
+        if(recordsECEF.length < 5)
+            ge("StationCoordinatesECEF").size = recordsECEF.length;
+    }
+
+    for (let index = 0; index < recordsECEF.length; ++index) {
+        var option = document.createElement('option');
+        option.text = recordsECEF[index];
+        option.value = index;
+        ge("StationCoordinatesECEF").add(option);
+    }
+
+    $("#StationCoordinatesECEF option").each(function () {
+        var parts = $(this).text().split(' ');
+        var nickname = parts[0].substring(0, 15);
+        $(this).text(nickname + ': ' + parts[1] + ' ' + parts[2] + ' ' + parts[3]).text;
+    });
+}
+
+function addGeodetic() {
+    errorCount = 0;
+
+    nicknameGeodetic.value = removeBadChars(nicknameGeodetic.value);
+
+    checkElementString("nicknameGeodetic", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
+    checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
+    checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
+    checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
+
+    if (errorCount == 0) {
+        //Check name against the list
+        var index = 0;
+        for (; index < recordsGeodetic.length; ++index) {
+            var parts = recordsGeodetic[index].split(' ');
+            if (ge("nicknameGeodetic").value == parts[0]) {
+                recordsGeodetic[index] = nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLong.value + ' ' + fixedAltitude.value;
+                break;
+            }
+        }
+        if (index == recordsGeodetic.length)
+            recordsGeodetic.push(nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLong.value + ' ' + fixedAltitude.value);
+    }
+
+    updateGeodeticList();
+}
+
+function deleteGeodetic() {
+    var val = ge("StationCoordinatesGeodetic").value;
+    if (val > "")
+        recordsGeodetic.splice(val, 1);
+    updateGeodeticList();
+}
+
+function loadGeodetic() {
+    var val = ge("StationCoordinatesGeodetic").value;
+    if (val > "") {
+        var parts = recordsGeodetic[val].split(' ');
+        ge("fixedLat").value = parts[1];
+        ge("fixedLong").value = parts[2];
+        ge("fixedAltitude").value = parts[3];
+        ge("nicknameGeodetic").value = parts[0];
+        clearError("fixedLat");
+        clearError("fixedLong");
+        clearError("fixedAltitude");
+        clearError("nicknameGeodetic");
+    }
+}
+
+//Based on recordsGeodetic array, update and monospace HTML list
+function updateGeodeticList() {
+    ge("StationCoordinatesGeodetic").length = 0;
+
+    if(recordsGeodetic.length == 0)
+    {
+        hide("StationCoordinatesGeodetic");
+        nicknameGeodeticText.innerHTML = "No coordinates stored";
+    }
+    else
+    {
+        show("StationCoordinatesGeodetic");
+        nicknameGeodeticText.innerHTML = "Nickname: Lat/Long/Alt";
+        if(recordsGeodetic.length < 5)
+            ge("StationCoordinatesGeodetic").size = recordsGeodetic.length;
+    }
+
+    for (let index = 0; index < recordsGeodetic.length; ++index) {
+
+        var option = document.createElement('option');
+        option.text = recordsGeodetic[index];
+        option.value = index;
+        ge("StationCoordinatesGeodetic").add(option);
+    }
+
+    $("#StationCoordinatesGeodetic option").each(function () {
+        var parts = $(this).text().split(' ');
+        var nickname = parts[0].substring(0, 15);
+        $(this).text(nickname + ': ' + parts[1] + ' ' + parts[2] + ' ' + parts[3]).text;
+    });
+}
+
+function removeBadChars(val) {
+    val = val.split(' ').join('');
+    val = val.split(',').join('');
+    val = val.split('\\').join('');
+    return(val);
+}
+ 
 )====="; //End main.js
 
 static const char *index_html = R"=====(
@@ -1142,7 +1329,7 @@ static const char *index_html = R"=====(
                     GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-up"></i>
                 </button>
             </div>
-            <div class="collapse show" id="collapseGNSSConfig"> 
+            <div class="collapse" id="collapseGNSSConfig"> 
                     <div class="card card-body pt-1">
                     <div id="measurementRateInput">
                         Measurement Rate:
@@ -1943,8 +2130,20 @@ static const char *index_html = R"=====(
                             <label for="fixedBaseCoordinateTypeECEF">ECEF Coordinates</label><br>
                         </div>
 
-                        <div id="ecefConfig" class="collapse mb-2">
-                                <div class="form-group row">
+                          <div id="ecefConfig" class="collapse mb-2">
+
+                            <div class="form-group row">
+                                <div class="box-margin40 col-sm-8 col-8 col-form-label">
+                                        <button type="button" id="useECEFCoordinates" class="btn btn-primary box-margin20"
+                                        onClick="useECEFCoordinates()">Paste Current XYZ</button>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Puts the current ECEF coordinates into the fixed X/Y/Z boxes.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
                                 <div class="col-sm-2 col-3">
                                     <label for="fixedEcefX" class="box-margin40 col-form-label">X:</label>
                                 </div>
@@ -1975,12 +2174,43 @@ static const char *index_html = R"=====(
                             </div>
 
                             <div class="form-group row">
-                                <div style="margin-bottom:5px;">
-                                    <button type="button" id="useECEFCoordinates" class="btn btn-primary box-margin20"
-                                        onClick="useECEFCoordinates()">Use Current Coordinates</button>
+                                <div class="col-sm-2 col-3">
+                                    <label for="nicknameECEF" class="box-margin40 col-form-label">Name:</label>
+                                </div>
+                                <div class="col-sm-4 col-8">
+                                    <input type="text" class="form-control" id="nicknameECEF">
+                                    <p id="nicknameECEFError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <label>Commonly Used Coordinates
                                     <span class="tt" data-bs-placement="right"
-                                        title="Copies the current ECEF coordinates into the fixed X/Y/Z boxes.">
+                                    title="This list of coordinates can be used to quickly copy/paste known coordinates into X/Y/Z boxes.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="form-group row">
+                                <div>
+                                    <span id="nicknameECEFText" style="display:inline;">Nickname: X/Y/Z</span> <br>
+                                    <select name="StationCoordinatesECEF" id="StationCoordinatesECEF" size="5" style="max-width:350px;" >
+                                        <option value="1">LocationA -1280206.568 -4716804.403 4086665.484</option>
+                                        <option value="2">LocationB -1280206.568 -4716804.403 4086665.484</option>
+                                        <option value="3">LocC -1280206.568 -4716804.403 4086665.484</option>
+                                        <option value="4">ANameThatIsTooLongToBeDisplayed -1280206.568 -4716804.403 4086665.484</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="box-margin20 col-form-label">
+                                    <button type="button" id="addECEF" class="btn btn-primary box-margin20" onClick="addECEF()">Add</button>
+                                    <button type="button" id="loadECEF" class="btn btn-primary box-margin20" onClick="loadECEF()">Load</button>
+                                    <button type="button" id="deleteECEF" class="btn btn-primary box-margin20" onClick="deleteECEF()">Delete</button>
+                                    <span class="tt" data-bs-placement="right" title="Add to, or load from, the selected record into X/Y/Z, or delete it.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </div>
                             </div>
@@ -1993,6 +2223,17 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div id="geodeticConfig" class="collapse mb-2">
+                            <div class="form-group row">
+                                <div class="box-margin40 col-sm-8 col-8 col-form-label">
+                                    <button type="button" id="useGeodeticCoordinates" class="btn btn-primary box-margin20"
+                                        onClick="useGeodeticCoordinates()">Paste Current LLh</button>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Puts the current LLh into the fixed LLh boxes.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </div>
+                            </div>
+
                             <div class="form-group row">
                                 <label for="fixedLat" class="box-margin40 col-sm-3 col-4 col-form-label">Latitude:</label>
                                 <div class="col-sm-4 col-6">
@@ -2048,12 +2289,46 @@ static const char *index_html = R"=====(
                             </div>
 
                             <div class="form-group row">
-                                <div style="margin-bottom:5px;">
-                                    <button type="button" id="useGeodeticCoordinates" class="btn btn-primary box-margin20"
-                                        onClick="useGeodeticCoordinates()">Use Current Coordinates</button>
+                                <label for="nicknameGeodetic" class="box-margin40 col-sm-3 col-4 col-form-label">Name:
                                     <span class="tt" data-bs-placement="right"
-                                        title="Copies the current LLh into the fixed LLh boxes.">
+                                    title="Give this point a nickname before adding it to the commonly used coordinates list.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                                <div class="col-sm-4 col-6">
+                                    <input type="text" class="form-control" id="nicknameGeodetic">
+                                    <p id="nicknameGeodeticError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <label>Commonly Used Coordinates
+                                    <span class="tt" data-bs-placement="right"
+                                    title="This list of coordinates can be used to quickly copy/paste known coordinates into Lat/Long/Alt boxes.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="form-group row">
+                                <div>
+                                    <span id="nicknameGeodeticText" style="display:inline;">Nickname: Lat/Long/Alt</span> <br>
+                                    <select name="StationCoordinatesGeodetic" id="StationCoordinatesGeodetic" size="5" style="max-width:350px;">
+                                        <option value="1">LocationA 40.09029479 -105.18505761 1560.089</option>
+                                        <option value="2">LocationB 40.09029479 -105.18505761 1560.089</option>
+                                        <option value="3">LocC 40.09029479 -105.18505761 1560.089</option>
+                                        <option value="4">ANameThatIsTooLongToBeDisplayed 40.09029479 -105.18505761 1560.089</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="box-margin20 col-form-label">
+                                    <button type="button" id="addGeodetic" class="btn btn-primary box-margin20" onClick="addGeodetic()">Add</button>
+                                    <button type="button" id="loadGeodetic" class="btn btn-primary box-margin20" onClick="loadGeodetic()">Load</button>
+                                    <button type="button" id="deleteGeodetic" class="btn btn-primary box-margin20" onClick="deleteGeodetic()">Delete</button>
+                                    <span class="tt" data-bs-placement="right" title="Add to, or load from, the selected record into Lat/Long/Alt, or delete it.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </div>
                             </div>

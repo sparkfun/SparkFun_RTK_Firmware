@@ -299,6 +299,10 @@ void factoryReset()
     {
       //Remove this specific settings file. Don't remove the other profiles.
       sd->remove(settingsFileName);
+
+      sd->remove(stationCoordinateECEFFileName); //Remove station files
+      sd->remove(stationCoordinateGeodeticFileName);
+      
       xSemaphoreGive(sdCardSemaphore);
     } //End sdCardSemaphore
     else

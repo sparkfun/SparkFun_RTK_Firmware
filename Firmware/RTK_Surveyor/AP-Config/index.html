@@ -202,7 +202,7 @@
                     GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-up"></i>
                 </button>
             </div>
-            <div class="collapse show" id="collapseGNSSConfig"> 
+            <div class="collapse" id="collapseGNSSConfig"> 
                     <div class="card card-body pt-1">
                     <div id="measurementRateInput">
                         Measurement Rate:
@@ -1003,8 +1003,20 @@
                             <label for="fixedBaseCoordinateTypeECEF">ECEF Coordinates</label><br>
                         </div>
 
-                        <div id="ecefConfig" class="collapse mb-2">
-                                <div class="form-group row">
+                          <div id="ecefConfig" class="collapse mb-2">
+
+                            <div class="form-group row">
+                                <div class="box-margin40 col-sm-8 col-8 col-form-label">
+                                        <button type="button" id="useECEFCoordinates" class="btn btn-primary box-margin20"
+                                        onClick="useECEFCoordinates()">Paste Current XYZ</button>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Puts the current ECEF coordinates into the fixed X/Y/Z boxes.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
                                 <div class="col-sm-2 col-3">
                                     <label for="fixedEcefX" class="box-margin40 col-form-label">X:</label>
                                 </div>
@@ -1035,12 +1047,43 @@
                             </div>
 
                             <div class="form-group row">
-                                <div style="margin-bottom:5px;">
-                                    <button type="button" id="useECEFCoordinates" class="btn btn-primary box-margin20"
-                                        onClick="useECEFCoordinates()">Use Current Coordinates</button>
+                                <div class="col-sm-2 col-3">
+                                    <label for="nicknameECEF" class="box-margin40 col-form-label">Name:</label>
+                                </div>
+                                <div class="col-sm-4 col-8">
+                                    <input type="text" class="form-control" id="nicknameECEF">
+                                    <p id="nicknameECEFError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <label>Commonly Used Coordinates
                                     <span class="tt" data-bs-placement="right"
-                                        title="Copies the current ECEF coordinates into the fixed X/Y/Z boxes.">
+                                    title="This list of coordinates can be used to quickly copy/paste known coordinates into X/Y/Z boxes.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="form-group row">
+                                <div>
+                                    <span id="nicknameECEFText" style="display:inline;">Nickname: X/Y/Z</span> <br>
+                                    <select name="StationCoordinatesECEF" id="StationCoordinatesECEF" size="5" style="max-width:350px;" >
+                                        <option value="1">LocationA -1280206.568 -4716804.403 4086665.484</option>
+                                        <option value="2">LocationB -1280206.568 -4716804.403 4086665.484</option>
+                                        <option value="3">LocC -1280206.568 -4716804.403 4086665.484</option>
+                                        <option value="4">ANameThatIsTooLongToBeDisplayed -1280206.568 -4716804.403 4086665.484</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="box-margin20 col-form-label">
+                                    <button type="button" id="addECEF" class="btn btn-primary box-margin20" onClick="addECEF()">Add</button>
+                                    <button type="button" id="loadECEF" class="btn btn-primary box-margin20" onClick="loadECEF()">Load</button>
+                                    <button type="button" id="deleteECEF" class="btn btn-primary box-margin20" onClick="deleteECEF()">Delete</button>
+                                    <span class="tt" data-bs-placement="right" title="Add to, or load from, the selected record into X/Y/Z, or delete it.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </div>
                             </div>
@@ -1053,6 +1096,17 @@
                         </div>
 
                         <div id="geodeticConfig" class="collapse mb-2">
+                            <div class="form-group row">
+                                <div class="box-margin40 col-sm-8 col-8 col-form-label">
+                                    <button type="button" id="useGeodeticCoordinates" class="btn btn-primary box-margin20"
+                                        onClick="useGeodeticCoordinates()">Paste Current LLh</button>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Puts the current LLh into the fixed LLh boxes.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </div>
+                            </div>
+
                             <div class="form-group row">
                                 <label for="fixedLat" class="box-margin40 col-sm-3 col-4 col-form-label">Latitude:</label>
                                 <div class="col-sm-4 col-6">
@@ -1108,12 +1162,46 @@
                             </div>
 
                             <div class="form-group row">
-                                <div style="margin-bottom:5px;">
-                                    <button type="button" id="useGeodeticCoordinates" class="btn btn-primary box-margin20"
-                                        onClick="useGeodeticCoordinates()">Use Current Coordinates</button>
+                                <label for="nicknameGeodetic" class="box-margin40 col-sm-3 col-4 col-form-label">Name:
                                     <span class="tt" data-bs-placement="right"
-                                        title="Copies the current LLh into the fixed LLh boxes.">
+                                    title="Give this point a nickname before adding it to the commonly used coordinates list.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                                <div class="col-sm-4 col-6">
+                                    <input type="text" class="form-control" id="nicknameGeodetic">
+                                    <p id="nicknameGeodeticError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <label>Commonly Used Coordinates
+                                    <span class="tt" data-bs-placement="right"
+                                    title="This list of coordinates can be used to quickly copy/paste known coordinates into Lat/Long/Alt boxes.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="form-group row">
+                                <div>
+                                    <span id="nicknameGeodeticText" style="display:inline;">Nickname: Lat/Long/Alt</span> <br>
+                                    <select name="StationCoordinatesGeodetic" id="StationCoordinatesGeodetic" size="5" style="max-width:350px;">
+                                        <option value="1">LocationA 40.09029479 -105.18505761 1560.089</option>
+                                        <option value="2">LocationB 40.09029479 -105.18505761 1560.089</option>
+                                        <option value="3">LocC 40.09029479 -105.18505761 1560.089</option>
+                                        <option value="4">ANameThatIsTooLongToBeDisplayed 40.09029479 -105.18505761 1560.089</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="box-margin20 col-form-label">
+                                    <button type="button" id="addGeodetic" class="btn btn-primary box-margin20" onClick="addGeodetic()">Add</button>
+                                    <button type="button" id="loadGeodetic" class="btn btn-primary box-margin20" onClick="loadGeodetic()">Load</button>
+                                    <button type="button" id="deleteGeodetic" class="btn btn-primary box-margin20" onClick="deleteGeodetic()">Delete</button>
+                                    <span class="tt" data-bs-placement="right" title="Add to, or load from, the selected record into Lat/Long/Alt, or delete it.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </div>
                             </div>

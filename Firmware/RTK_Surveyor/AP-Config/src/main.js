@@ -221,7 +221,7 @@ function sendData() {
     for (let x = 0; x < clsElements.length; x++) {
         settingCSV += clsElements[x].id + "," + clsElements[x].checked + ",";
     }
-    
+
     for (let x = 0; x < recordsECEF.length; x++) {
         settingCSV += "stationECEF" + x + ',' + recordsECEF[x] + ",";
     }
@@ -984,16 +984,14 @@ function loadECEF() {
 function updateECEFList() {
     ge("StationCoordinatesECEF").length = 0;
 
-    if(recordsECEF.length == 0)
-    {
+    if (recordsECEF.length == 0) {
         hide("StationCoordinatesECEF");
         nicknameECEFText.innerHTML = "No coordinates stored";
     }
-    else
-    {
+    else {
         show("StationCoordinatesECEF");
         nicknameECEFText.innerHTML = "Nickname: X/Y/Z";
-        if(recordsECEF.length < 5)
+        if (recordsECEF.length < 5)
             ge("StationCoordinatesECEF").size = recordsECEF.length;
     }
 
@@ -1064,16 +1062,14 @@ function loadGeodetic() {
 function updateGeodeticList() {
     ge("StationCoordinatesGeodetic").length = 0;
 
-    if(recordsGeodetic.length == 0)
-    {
+    if (recordsGeodetic.length == 0) {
         hide("StationCoordinatesGeodetic");
         nicknameGeodeticText.innerHTML = "No coordinates stored";
     }
-    else
-    {
+    else {
         show("StationCoordinatesGeodetic");
         nicknameGeodeticText.innerHTML = "Nickname: Lat/Long/Alt";
-        if(recordsGeodetic.length < 5)
+        if (recordsGeodetic.length < 5)
             ge("StationCoordinatesGeodetic").size = recordsGeodetic.length;
     }
 
@@ -1096,5 +1092,5 @@ function removeBadChars(val) {
     val = val.split(' ').join('');
     val = val.split(',').join('');
     val = val.split('\\').join('');
-    return(val);
+    return (val);
 }

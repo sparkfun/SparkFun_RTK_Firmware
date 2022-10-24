@@ -670,8 +670,8 @@ void updateLogs()
 
   if (online.logging == true)
   {
-    //Force file sync every 5000ms
-    if (millis() - lastUBXLogSyncTime > 5000)
+    //Force file sync every 60s
+    if (millis() - lastUBXLogSyncTime > 60000)
     {
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
@@ -680,10 +680,7 @@ void updateLogs()
         if (productVariant == RTK_SURVEYOR)
           digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
-        long startWriteTime = micros();
         ubxFile->sync();
-        long stopWriteTime = micros();
-        totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
 
         if (productVariant == RTK_SURVEYOR)
           digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
@@ -740,22 +737,6 @@ void updateLogs()
     //Report file sizes to show recording is working
     if ((millis() - lastFileReport) > 5000)
     {
-      long fileSize = 0;
-
-      //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
-      {
-        fileSize = ubxFile->fileSize();
-
-        xSemaphoreGive(sdCardSemaphore);
-      }
-      else
-      {
-        //This is OK because outputting this message is not critical to the RTK
-        //operation and the message will be output by the next call in loop
-        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
-      }
-
       if (fileSize > 0)
       {
         lastFileReport = millis();
@@ -768,11 +749,6 @@ void updateLogs()
             //Calculate generation and write speeds every 5 seconds
             uint32_t fileSizeDelta = fileSize - lastLogSize;
             Serial.printf(" - Generation rate: %0.1fkB/s", fileSizeDelta / 5.0 / 1000.0);
-
-            if (totalWriteTime > 0)
-              Serial.printf(" - Write speed: %0.1fkB/s", fileSizeDelta / (totalWriteTime / 1000000.0) / 1000.0);
-            else
-              Serial.printf(" - Write speed: 0.0kB/s");
           }
           else
           {

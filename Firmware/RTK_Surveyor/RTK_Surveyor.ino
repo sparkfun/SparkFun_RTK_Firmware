@@ -275,21 +275,26 @@ char platformPrefix[55] = "Surveyor"; //Sets the prefix for broadcast names
 
 HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
-#define SERIAL_SIZE_RX (1024 * 4) //Must be large enough to handle incoming ZED UART traffic. See F9PSerialReadTask().
-TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
-const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
-
-#define SERIAL_SIZE_TX (1024 * 1)
+#define SERIAL_SIZE_TX 512
 uint8_t wBuffer[SERIAL_SIZE_TX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest
+const int writeTaskStackSize = 2000;
+
+uint8_t * rBuffer; //Buffer for reading from F9P. At 230400bps, 23040 bytes/s. If SD blocks for 250ms, we need 23040 * 0.25 = 5760 bytes worst case.
+TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
+const int readTaskStackSize = 2000;
+
+TaskHandle_t handleGNSSDataTaskHandle = NULL;
+const uint8_t handleGNSSDataTaskPriority = 1; //3 being the highest, and 0 being the lowest
+const int handleGNSSDataTaskStackSize = 2000;
 
 TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
 volatile bool uart2pinned = false; //This variable is touched by core 0 but checked by core 1. Must be volatile.
 
-//Reduced stack size from 10,000 to 2,000 to make room for WiFi/NTRIP server capabilities
-const int readTaskStackSize = 2500;
-const int writeTaskStackSize = 2000;
+volatile static int combinedSpaceRemaining = 0; //Overrun indicator
+volatile static long fileSize = 0; //Updated with each write
 
 bool zedUartPassed = false; //Goes true during testing if ESP can communicate with ZED over UART
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

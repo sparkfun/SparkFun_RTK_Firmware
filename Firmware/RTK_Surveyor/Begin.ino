@@ -325,6 +325,8 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
 //See issue: https://github.com/espressif/arduino-esp32/issues/3386
 void beginUART2()
 {
+  rBuffer = (uint8_t*)malloc(settings.gnssHandlerBufferSize);
+
   if (pinUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
       pinUART2Task,
       "UARTStart", //Just for humans
@@ -341,7 +343,7 @@ void beginUART2()
 //Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
 void pinUART2Task( void *pvParameters )
 {
-  serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
+  serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize);
   serialGNSS.setTimeout(settings.serialTimeoutGNSS);
   serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
@@ -353,19 +355,30 @@ void pinUART2Task( void *pvParameters )
 //Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT->available will cause reboot
 void startUART2Tasks()
 {
-  //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
+  //Reads data from ZED and stores data into circular buffer
   if (F9PSerialReadTaskHandle == NULL)
     xTaskCreate(
-      F9PSerialReadTask,
+      F9PSerialReadTask, //Function to call
       "F9Read", //Just for humans
       readTaskStackSize, //Stack Size
       NULL, //Task input parameter
       F9PSerialReadTaskPriority, //Priority
       &F9PSerialReadTaskHandle); //Task handle
 
+  //Reads data from circular buffer and sends data to SD, SPP, or TCP
+  if (handleGNSSDataTaskHandle == NULL)
+    xTaskCreate(
+      handleGNSSDataTask, //Function to call
+      "handleGNSSData", //Just for humans
+      handleGNSSDataTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      handleGNSSDataTaskPriority, //Priority
+      &handleGNSSDataTaskHandle); //Task handle
+
+  //Reads data from BT and sends to ZED
   if (F9PSerialWriteTaskHandle == NULL)
     xTaskCreate(
-      F9PSerialWriteTask,
+      F9PSerialWriteTask, //Function to call
       "F9Write", //Just for humans
       writeTaskStackSize, //Stack Size
       NULL, //Task input parameter
@@ -381,6 +394,11 @@ void stopUART2Tasks()
   {
     vTaskDelete(F9PSerialReadTaskHandle);
     F9PSerialReadTaskHandle = NULL;
+  }
+  if (handleGNSSDataTaskHandle != NULL)
+  {
+    vTaskDelete(handleGNSSDataTaskHandle);
+    handleGNSSDataTaskHandle = NULL;
   }
   if (F9PSerialWriteTaskHandle != NULL)
   {

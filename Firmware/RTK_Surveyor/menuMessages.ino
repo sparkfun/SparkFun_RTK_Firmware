@@ -423,6 +423,8 @@ void beginLogging(const char *customFileName)
 
         lastLogSize = 0; //Reset counter - used for displaying active logging icon
 
+        bufferOverruns = 0; //Reset counter
+
         updateDataFileCreate(ubxFile); // Update the file to create time & date
 
         startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging

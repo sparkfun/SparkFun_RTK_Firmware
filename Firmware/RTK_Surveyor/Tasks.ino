@@ -1,6 +1,11 @@
 //High frequency tasks made by xTaskCreate()
 //And any low frequency tasks that are called by Ticker
 
+volatile static uint16_t dataHead = 0; //Head advances as data comes in from GNSS's UART
+int bufferOverruns = 0; //Running count of possible data losses since power-on
+
+volatile int availableHandlerSpace = 0; //settings.gnssHandlerBufferSize - usedSpace
+
 //If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
 //Task for writing to the GNSS receiver
 void F9PSerialWriteTask(void *e)
@@ -32,138 +37,178 @@ void F9PSerialWriteTask(void *e)
   }
 }
 
-//If the ZED has any new NMEA data, pass it out over Bluetooth
-//Task for reading data from the GNSS receiver.
+//----------------------------------------------------------------------
+//The ESP32<->ZED-F9P serial connection is default 460,800bps to facilitate
+//10Hz fix rate with PPP Logging Defaults (NMEAx5 + RXMx2) messages enabled.
+//ESP32 UART2 is begun with settings.uartReceiveBufferSize size buffer. The circular buffer
+//is 1024*6. At approximately 46.1K characters/second, a 6144 * 2
+//byte buffer should hold 267ms worth of serial data. Assuming SD writes are
+//250ms worst case, we should record incoming all data. Bluetooth congestion
+//or conflicts with the SD card semaphore should clear within this time.
+//
+//Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
+//
+//        +---------+
+//        |         |
+//        |         |
+//        |         |
+//        |         |
+//        +---------+ <-- dataHead, btTail, sdTail
+//
+//Ring buffer contains data when (dataHead != btTail) or (dataHead != sdTail)
+//
+//        +---------+
+//        |         |
+//        |         |
+//        | yyyyyyy | <-- dataHead
+//        | xxxxxxx | <-- btTail (1 byte in buffer)
+//        +---------+ <-- sdTail (2 bytes in buffer)
+//
+//        +---------+
+//        | yyyyyyy | <-- btTail (1 byte in buffer)
+//        | xxxxxxx | <-- sdTail (2 bytes in buffer)
+//        |         |
+//        |         |
+//        +---------+ <-- dataHead
+//
+//Maximum ring buffer fill is settings.gnssHandlerBufferSize - 1
+//----------------------------------------------------------------------
+
+//Read bytes from UART2 into circular buffer
+//If data is coming in at 230,400bps = 23,040 bytes/s = one byte every 0.043ms
+//If SD blocks for 150ms (not extraordinary) that is 3,488 bytes that must be buffered
+//The ESP32 Arduino FIFO is ~120 bytes. We use this task to harvest from FIFO into circular buffer
+//during SD write blocking time.
 void F9PSerialReadTask(void *e)
 {
-  static uint8_t rBuffer[1024 * 6]; //Buffer for reading from F9P to SPP
-  static uint16_t dataHead = 0; //Head advances as data comes in from GNSS's UART
-  static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
-  static uint16_t nmeaTail = 0; //NMEA TCP client tail
-  static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
-
-  int btBytesToSend; //Amount of buffered Bluetooth data
-  int nmeaBytesToSend; //Amount of buffered NMEA TCP data
-  int sdBytesToRecord; //Amount of buffered microSD card logging data
-  int availableBufferSpace; //Distance between head and furthest away tail
-
-  int btConnected; //Is the RTK in a state to send Bluetooth data?
-  int newBytesToRecord; //Size of data from GNSS
+  bool newDataLost = false; //Goes true at the first instance of 0 bytes available
 
   while (true)
   {
     if (settings.enableTaskReports == true)
       Serial.printf("SerialReadTask High watermark: %d\r\n",  uxTaskGetStackHighWaterMark(NULL));
 
-    //----------------------------------------------------------------------
-    //The ESP32<->ZED-F9P serial connection is default 460,800bps to facilitate
-    //10Hz fix rate with PPP Logging Defaults (NMEAx5 + RXMx2) messages enabled.
-    //ESP32 UART2 is begun with SERIAL_SIZE_RX size buffer. The circular buffer
-    //is 1024*6. At approximately 46.1K characters/second, a 6144 * 2
-    //byte buffer should hold 267ms worth of serial data. Assuming SD writes are
-    //250ms worst case, we should record incoming all data. Bluetooth congestion
-    //or conflicts with the SD card semaphore should clear within this time.
-    //
-    //Ring buffer empty when (dataHead == btTail) and (dataHead == sdTail)
-    //
-    //        +---------+
-    //        |         |
-    //        |         |
-    //        |         |
-    //        |         |
-    //        +---------+ <-- dataHead, btTail, sdTail
-    //
-    //Ring buffer contains data when (dataHead != btTail) or (dataHead != sdTail)
-    //
-    //        +---------+
-    //        |         |
-    //        |         |
-    //        | yyyyyyy | <-- dataHead
-    //        | xxxxxxx | <-- btTail (1 byte in buffer)
-    //        +---------+ <-- sdTail (2 bytes in buffer)
-    //
-    //        +---------+
-    //        | yyyyyyy | <-- btTail (1 byte in buffer)
-    //        | xxxxxxx | <-- sdTail (2 bytes in buffer)
-    //        |         |
-    //        |         |
-    //        +---------+ <-- dataHead
-    //
-    //Maximum ring buffer fill is sizeof(rBuffer) - 1
-    //----------------------------------------------------------------------
+    int serialBytesAvailable = serialGNSS.available();
+    if (serialBytesAvailable)
+    {
+      //Check for buffer overruns
+      int availableUARTSpace = settings.uartReceiveBufferSize - serialBytesAvailable;
+      combinedSpaceRemaining = availableHandlerSpace + availableUARTSpace;
+      if (combinedSpaceRemaining <= 0)
+      {
+        if (settings.enablePrintBufferOverrun)
+          Serial.printf("Data loss likely! Incoming Serial: %d\tToRead: %d\tMovedToBuffer: %d\tavailableUARTSpace: %d\tavailableHandlerSpace: %d\tToRecord: %d\tRecorded: %d\tBO: %d\n\r", serialBytesAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, 0, 0, bufferOverruns);
+
+        if (newDataLost == false)
+        {
+          newDataLost = true;
+          bufferOverruns++;
+        }
+      }
+      else if (combinedSpaceRemaining < ( (settings.gnssHandlerBufferSize + settings.uartReceiveBufferSize) / 16))
+      {
+        if (settings.enablePrintBufferOverrun)
+          Serial.printf("Low space: Incoming Serial: %d\tToRead: %d\tMovedToBuffer: %d\tavailableUARTSpace: %d\tavailableHandlerSpace: %d\tToRecord: %d\tRecorded: %d\tBO: %d\n\r", serialBytesAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, 0, 0, bufferOverruns);
+      }
+      else
+      {
+        newDataLost = false; //Reset
+
+        if (settings.enablePrintSDBuffers && !inMainMenu)
+          Serial.printf("UT  Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\n\r", serialBytesAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, 0, 0, bufferOverruns);
+      }
+
+      //While there is free buffer space and UART2 has at least one RX byte
+      while (availableHandlerSpace && serialGNSS.available())
+      {
+        //Fill the buffer to the end
+        int uartToRead = availableHandlerSpace;
+        if ((dataHead + uartToRead) > settings.gnssHandlerBufferSize)
+          uartToRead = settings.gnssHandlerBufferSize - dataHead;
+
+        //Add new data into circular buffer in front of the head
+        //uartToRead is already reduced to avoid buffer overflow
+        int movedToBuffer = serialGNSS.read(&rBuffer[dataHead], uartToRead);
+
+        //Check for negative (error or no bytes remaining)
+        if (movedToBuffer <= 0)
+          break;
+
+        //Account for the bytes read
+        availableHandlerSpace -= movedToBuffer;
+
+        if (settings.enablePrintSDBuffers && !inMainMenu)
+        {
+          serialBytesAvailable = serialGNSS.available();
+          int availableUARTSpace = settings.uartReceiveBufferSize - serialBytesAvailable;
+          Serial.printf("UT2 Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\n\r", serialBytesAvailable, uartToRead, movedToBuffer, availableUARTSpace, availableHandlerSpace, 0, 0, bufferOverruns);
+        }
+
+        dataHead += movedToBuffer;
+        if (dataHead >= settings.gnssHandlerBufferSize)
+          dataHead -= settings.gnssHandlerBufferSize;
+
+        taskYIELD();
+      }
+    } //End Serial.available()
+  }
+
+  taskYIELD();
+}
+
+//If new data is in the buffer, dole it out to appropriate interface
+//Send data out Bluetooth, record to SD, or send over TCP
+void handleGNSSDataTask(void *e)
+{
+  volatile static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
+  volatile static uint16_t nmeaTail = 0; //NMEA TCP client tail
+  volatile static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
+
+  int btBytesToSend; //Amount of buffered Bluetooth data
+  int nmeaBytesToSend; //Amount of buffered NMEA TCP data
+  int sdBytesToRecord; //Amount of buffered microSD card logging data
+
+  int btConnected; //Is the device in a state to send Bluetooth data?
+
+  while (true)
+  {
+    if (settings.enableTaskReports == true)
+      Serial.printf("SerialReadTask High watermark: %d\r\n",  uxTaskGetStackHighWaterMark(NULL));
+
+    volatile int lastDataHead = dataHead; //dataHead may change during this task by the harvesting task. Use a snapshot.
+
+    //Determine the amount of Bluetooth data in the buffer
+    btBytesToSend = 0;
 
     //Determine BT connection state
     btConnected = (bluetoothGetState() == BT_CONNECTED)
                   && (systemState != STATE_BASE_TEMP_SETTLE)
                   && (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
 
-    availableBufferSpace = sizeof(rBuffer);
-
-    //Determine the amount of Bluetooth data in the buffer
-    btBytesToSend = 0;
     if (btConnected)
     {
-      btBytesToSend = dataHead - btTail;
+      btBytesToSend = lastDataHead - btTail;
       if (btBytesToSend < 0)
-        btBytesToSend += sizeof(rBuffer);
+        btBytesToSend += settings.gnssHandlerBufferSize;
     }
 
     //Determine the amount of NMEA TCP data in the buffer
     nmeaBytesToSend = 0;
     if (settings.enableNmeaServer || settings.enableNmeaClient)
     {
-      nmeaBytesToSend = dataHead - nmeaTail;
+      nmeaBytesToSend = lastDataHead - nmeaTail;
       if (nmeaBytesToSend < 0)
-        nmeaBytesToSend += sizeof(rBuffer);
+        nmeaBytesToSend += settings.gnssHandlerBufferSize;
     }
 
     //Determine the amount of microSD card logging data in the buffer
     sdBytesToRecord = 0;
     if (online.logging)
     {
-      sdBytesToRecord = dataHead - sdTail;
+      sdBytesToRecord = lastDataHead - sdTail;
       if (sdBytesToRecord < 0)
-        sdBytesToRecord += sizeof(rBuffer);
+        sdBytesToRecord += settings.gnssHandlerBufferSize;
     }
-
-    //Determine the free bytes in the buffer
-    if (btBytesToSend >= sdBytesToRecord)
-      availableBufferSpace = sizeof(rBuffer) - btBytesToSend;
-    else
-      availableBufferSpace = sizeof(rBuffer) - sdBytesToRecord;
-
-    //Don't fill the last byte to prevent buffer overflow
-    if (availableBufferSpace)
-      availableBufferSpace -= 1;
-
-    //While there is free buffer space and UART2 has at least one RX byte
-    while (availableBufferSpace && serialGNSS.available())
-    {
-      //Fill the buffer to the end and then start at the beginning
-      if ((dataHead + availableBufferSpace) >= sizeof(rBuffer))
-        availableBufferSpace = sizeof(rBuffer) - dataHead;
-
-      //Add new data into circular buffer in front of the head
-      //availableBufferSpace is already reduced to avoid buffer overflow
-      newBytesToRecord = serialGNSS.readBytes(&rBuffer[dataHead], availableBufferSpace);
-
-      //Account for the bytes read
-      if (newBytesToRecord <= 0)
-        break;
-
-      //Set the next fill offset
-      dataHead += newBytesToRecord;
-      if (dataHead >= sizeof(rBuffer))
-        dataHead -= sizeof(rBuffer);
-
-      //Account for the new data
-      if (btConnected)
-        btBytesToSend += newBytesToRecord;
-      if (online.logging)
-        sdBytesToRecord += newBytesToRecord;
-      if ((online.nmeaServer || online.nmeaClient) && wifiNmeaConnected)
-        nmeaBytesToSend += newBytesToRecord;
-    } //End Serial.available()
 
     //----------------------------------------------------------------------
     //Send data over Bluetooth
@@ -172,13 +217,13 @@ void F9PSerialReadTask(void *e)
     //If we are actively survey-in then do not pass NMEA data from ZED to phone
     if (!btConnected)
       //Discard the data
-      btTail = dataHead;
+      btTail = lastDataHead;
     else if (btBytesToSend > 0)
     {
       //Reduce bytes to send if we have more to send then the end of the buffer
       //We'll wrap next loop
-      if ((btTail + btBytesToSend) > sizeof(rBuffer))
-        btBytesToSend = sizeof(rBuffer) - btTail;
+      if ((btTail + btBytesToSend) > settings.gnssHandlerBufferSize)
+        btBytesToSend = settings.gnssHandlerBufferSize - btTail;
 
       //Push new data to BT SPP
       btBytesToSend = bluetoothWriteBytes(&rBuffer[btTail], btBytesToSend);
@@ -191,8 +236,8 @@ void F9PSerialReadTask(void *e)
 
         //Account for the sent or dropped data
         btTail += btBytesToSend;
-        if (btTail >= sizeof(rBuffer))
-          btTail -= sizeof(rBuffer);
+        if (btTail >= settings.gnssHandlerBufferSize)
+          btTail -= settings.gnssHandlerBufferSize;
       }
       else
         log_w("BT failed to send");
@@ -203,21 +248,21 @@ void F9PSerialReadTask(void *e)
     //----------------------------------------------------------------------
 
     if ((!settings.enableNmeaServer) && (!settings.enableNmeaClient) && (!wifiNmeaConnected))
-      nmeaTail = dataHead;
+      nmeaTail = lastDataHead;
     else if (nmeaBytesToSend > 0)
     {
       //Reduce bytes to send if we have more to send then the end of the buffer
       //We'll wrap next loop
-      if ((nmeaTail + nmeaBytesToSend) > sizeof(rBuffer))
-        nmeaBytesToSend = sizeof(rBuffer) - nmeaTail;
+      if ((nmeaTail + nmeaBytesToSend) > settings.gnssHandlerBufferSize)
+        nmeaBytesToSend = settings.gnssHandlerBufferSize - nmeaTail;
 
       //Send the data to the NMEA TCP clients
       wifiNmeaData (&rBuffer[nmeaTail], nmeaBytesToSend);
 
       //Assume all data was sent, wrap the buffer pointer
       nmeaTail += nmeaBytesToSend;
-      if (nmeaTail >= sizeof(rBuffer))
-        nmeaTail -= sizeof(rBuffer);
+      if (nmeaTail >= settings.gnssHandlerBufferSize)
+        nmeaTail -= settings.gnssHandlerBufferSize;
     }
 
     //----------------------------------------------------------------------
@@ -227,7 +272,7 @@ void F9PSerialReadTask(void *e)
     //If user wants to log, record to SD
     if (!online.logging)
       //Discard the data
-      sdTail = dataHead;
+      sdTail = lastDataHead;
     else if (sdBytesToRecord > 0)
     {
       //Check if we are inside the max time window for logging
@@ -237,38 +282,76 @@ void F9PSerialReadTask(void *e)
         //writing from other functions like recordSystemSettingsToFile()
         if (xSemaphoreTake(sdCardSemaphore, loggingSemaphoreWait_ms) == pdPASS)
         {
-          //Reduce bytes to send if we have more to send then the end of the buffer
-          //We'll wrap next loop
-          if ((sdTail + sdBytesToRecord) > sizeof(rBuffer))
-            sdBytesToRecord = sizeof(rBuffer) - sdTail;
+          markSemaphore(FUNCTION_WRITESD);
+
+          //Reduce bytes to record if we have more then the end of the buffer
+          int sliceToRecord = sdBytesToRecord;
+          if ((sdTail + sliceToRecord) > settings.gnssHandlerBufferSize)
+            sliceToRecord = settings.gnssHandlerBufferSize - sdTail;
+
+          if (settings.enablePrintSDBuffers && !inMainMenu)
+          {
+            int availableUARTSpace = settings.uartReceiveBufferSize - serialGNSS.available();
+            Serial.printf("SD  Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\n\r", serialGNSS.available(), 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
+          }
 
           //Write the data to the file
-          sdBytesToRecord = ubxFile->write(&rBuffer[sdTail], sdBytesToRecord);
+          long startTime = millis();
+          sdBytesToRecord = ubxFile->write(&rBuffer[sdTail], sliceToRecord);
+          long endTime = millis();
+
+          fileSize = ubxFile->fileSize(); //Get updated filed size
+
+          if (settings.enablePrintBufferOverrun)
+          {
+            if (endTime - startTime > 150)
+              Serial.printf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\n\r", endTime - startTime, fileSize, sdBytesToRecord, combinedSpaceRemaining);
+          }
+
           xSemaphoreGive(sdCardSemaphore);
 
           //Account for the sent data or dropped
           sdTail += sdBytesToRecord;
-          if (sdTail >= sizeof(rBuffer))
-            sdTail -= sizeof(rBuffer);
+          if (sdTail >= settings.gnssHandlerBufferSize)
+            sdTail -= settings.gnssHandlerBufferSize;
         } //End sdCardSemaphore
         else
         {
-          //Retry the semaphore a little later if possible
-          if (sdBytesToRecord >= (sizeof(rBuffer) - 1))
-          {
-            //Error - no more room in the buffer, drop a buffer's worth of data
-            sdTail = dataHead;
-            log_e("ERROR - sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
-            Serial.printf("ERROR - Dropped %d bytes: GNSS --> log file\r\n", sdBytesToRecord);
-          }
-
-          //Only complain when over half the buffer needs to be written
-          //to the microSD card
-          else if (sdBytesToRecord > (sizeof(rBuffer) / 2))
-            log_w("sdCardSemaphore failed to yield, Tasks.ino line %d", __LINE__);
+          char semaphoreHolder[50];
+          getSemaphoreFunction(semaphoreHolder);
+          log_w("sdCardSemaphore failed to yield for SD write, held by %s, Tasks.ino line %d", semaphoreHolder, __LINE__);
         }
       } //End maxLogTime
     } //End logging
+
+    //Update space available for use in UART task
+//    btBytesToSend = lastDataHead - btTail;
+//    if (btBytesToSend < 0)
+//      btBytesToSend += settings.gnssHandlerBufferSize;
+//
+//    nmeaBytesToSend = lastDataHead - nmeaTail;
+//    if (nmeaBytesToSend < 0)
+//      nmeaBytesToSend += settings.gnssHandlerBufferSize;
+
+    sdBytesToRecord = lastDataHead - sdTail;
+    if (sdBytesToRecord < 0)
+      sdBytesToRecord += settings.gnssHandlerBufferSize;
+
+    //Determine the inteface that is most behind: SD writing, SPP transmission, or TCP transmission
+//    int usedSpace = 0;
+//    if (sdBytesToRecord >= btBytesToSend && sdBytesToRecord >= nmeaBytesToSend)
+//      usedSpace = sdBytesToRecord;
+//    else if (btBytesToSend >= sdBytesToRecord && btBytesToSend >= nmeaBytesToSend)
+//      usedSpace = btBytesToSend;
+//    else
+//      usedSpace = nmeaBytesToSend;
+
+//    availableHandlerSpace = settings.gnssHandlerBufferSize - usedSpace;
+    availableHandlerSpace = settings.gnssHandlerBufferSize - sdBytesToRecord;
+
+    //Don't fill the last byte to prevent buffer overflow
+    if (availableHandlerSpace)
+      availableHandlerSpace -= 1;
 
     //----------------------------------------------------------------------
     //Let other tasks run, prevent watch dog timer (WDT) resets

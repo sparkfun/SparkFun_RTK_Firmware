@@ -25,7 +25,7 @@ jobs:
       #We limit the ESP32 core to v2.0.2. See: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/334
       - name: Install platform
         run: arduino-cli core install esp32:esp32@2.0.2
-          --additional-urls 'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json'
+          --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
 
       - name: Start config file
         run: arduino-cli config init

@@ -84,6 +84,8 @@ void recordSystemSettingsToFileSD(char *fileName)
     //Attempt to write to file system. This avoids collisions with file writing from other functions like updateLogs()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
+      markSemaphore(FUNCTION_RECORDSETTINGS);
+
       gotSemaphore = true;
       if (sd->exists(fileName))
       {
@@ -110,9 +112,12 @@ void recordSystemSettingsToFileSD(char *fileName)
     }
     else
     {
+      char semaphoreHolder[50];
+      getSemaphoreFunction(semaphoreHolder);
+
       //This is an error because the current settings no longer match the settings
       //on the microSD card, and will not be restored to the expected settings!
-      Serial.printf("sdCardSemaphore failed to yield, NVM.ino line %d\r\n", __LINE__);
+      Serial.printf("sdCardSemaphore failed to yield, held by %s, NVM.ino line %d\r\n", semaphoreHolder, __LINE__);
     }
     break;
   }
@@ -322,6 +327,8 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
     //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
+      markSemaphore(FUNCTION_LOADSETTINGS);
+
       gotSemaphore = true;
       if (sd->exists(fileName))
       {

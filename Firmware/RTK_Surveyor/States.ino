@@ -425,6 +425,8 @@ void updateSystemState()
           //Gain access to the SPI controller for the microSD card
           if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
           {
+            markSemaphore(FUNCTION_MARKEVENT);
+            
             //Record this event to the log
             if (online.logging == true)
             {

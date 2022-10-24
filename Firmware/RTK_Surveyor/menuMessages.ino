@@ -406,6 +406,8 @@ void beginLogging(const char *customFileName)
       //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {
+        markSemaphore(FUNCTION_CREATEFILE);
+        
         // O_CREAT - create the file if it does not exist
         // O_APPEND - seek to the end of the file prior to each write
         // O_WRITE - open for write
@@ -480,7 +482,7 @@ void beginLogging(const char *customFileName)
         return;
       }
 
-      Serial.printf("Log file created: %s\r\n", fileName);
+      Serial.printf("Log file name: %s\r\n", fileName);
       online.logging = true;
     } //online.sd, enable.logging, online.rtc
   } //online.logging
@@ -493,18 +495,16 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
     //Wait up to 1000ms
-    if (gotSemaphore
-        || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
+    if (gotSemaphore || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
     {
-      if (sdPresent())
-      {
-        //Close down file system
-        ubxFile->sync();
-        ubxFile->close();
-        Serial.println("Log file closed");
-      }
-      else
-        Serial.println("Log file - SD card not present, failed to close file");
+      markSemaphore(FUNCTION_ENDLOGGING);
+      
+      //Do not check if SD isPresent() as this will interfere with file closing
+      stopUART2Tasks();
+
+      //Close down file system
+      ubxFile->close();
+      Serial.println("Log file closed");
 
       //Done with the log file
       delete ubxFile;
@@ -554,6 +554,8 @@ bool findLastLog(char *lastLogName)
     //Wait up to 5s, this is important
     if (xSemaphoreTake(sdCardSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
     {
+      markSemaphore(FUNCTION_FINDLOG);
+      
       //Count available binaries
       SdFile tempFile;
       SdFile dir;
@@ -849,6 +851,8 @@ void updateLogTest()
 
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
+      markSemaphore(FUNCTION_LOGTEST);
+      
       ubxFile->println(nmeaMessage);
       xSemaphoreGive(sdCardSemaphore);
     }

@@ -418,6 +418,8 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
     //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
+      markSemaphore(FUNCTION_GETLINE);
+      
       gotSemaphore = true;
 
       SdFile file; //FAT32
@@ -499,6 +501,8 @@ bool removeFileSD(const char* fileName)
     //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
+      markSemaphore(FUNCTION_REMOVEFILE);
+      
       gotSemaphore = true;
       if (sd->exists(fileName))
       {
@@ -566,6 +570,8 @@ void recordLineToSD(const char* fileName, const char* lineData)
     //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
+      markSemaphore(FUNCTION_RECORDLINE);
+      
       gotSemaphore = true;
 
       SdFile file; //FAT32

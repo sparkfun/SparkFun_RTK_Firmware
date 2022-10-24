@@ -170,7 +170,7 @@ void beginBoard()
       Serial.printf("resetCount: %d\r\n", settings.resetCount);
       recordSystemSettingsToFileLFS(settingsFileName); //Avoid overwriting LittleFS settings onto SD
     }
-    
+
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())
     {
@@ -207,6 +207,7 @@ void beginSD()
       break;
     }
     gotSemaphore = true;
+    markSemaphore(FUNCTION_BEGINSD);
 
     pinMode(pin_microSD_CS, OUTPUT);
     digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected

@@ -219,6 +219,29 @@ typedef enum
   INPUT_RESPONSE_VALID = 1,
 } InputResponse;
 
+
+typedef enum
+{
+  FUNCTION_NOT_SET = 0,
+  FUNCTION_SYNC,
+  FUNCTION_WRITESD,
+  FUNCTION_FILESIZE,
+  FUNCTION_EVENT,
+  FUNCTION_BEGINSD,
+  FUNCTION_RECORDSETTINGS,
+  FUNCTION_LOADSETTINGS,
+  FUNCTION_MARKEVENT,
+  FUNCTION_GETLINE,
+  FUNCTION_REMOVEFILE,
+  FUNCTION_RECORDLINE,
+  FUNCTION_CREATEFILE,
+  FUNCTION_ENDLOGGING,
+  FUNCTION_FINDLOG,
+  FUNCTION_LOGTEST,
+  FUNCTION_FILELIST,
+
+} SemaphoreFunction;
+
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
 //Each constellation will have its config key, enable, and a visible name

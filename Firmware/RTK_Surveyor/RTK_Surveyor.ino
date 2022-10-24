@@ -684,6 +684,8 @@ void updateLogs()
     {
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
+        markSemaphore(FUNCTION_SYNC);
+
         if (productVariant == RTK_SURVEYOR)
           digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
@@ -702,9 +704,12 @@ void updateLogs()
       } //End sdCardSemaphore
       else
       {
+        char semaphoreHolder[50];
+        getSemaphoreFunction(semaphoreHolder);
+
         //This is OK because in the interim more data will be written to the log
         //and the log file will eventually be synced by the next call in loop
-        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
+        log_d("sdCardSemaphore failed to yield for sync, held by %s, RTK_Surveyor.ino line %d", semaphoreHolder, __LINE__);
       }
     }
 
@@ -722,6 +727,8 @@ void updateLogs()
 
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
+        markSemaphore(FUNCTION_EVENT);
+
         ubxFile->println(nmeaMessage);
 
         xSemaphoreGive(sdCardSemaphore);
@@ -729,10 +736,13 @@ void updateLogs()
       }
       else
       {
+        char semaphoreHolder[50];
+        getSemaphoreFunction(semaphoreHolder);
+
         //While a retry does occur during the next loop, it is possible to loose
         //trigger events if they occur too rapidly or if the log file is closed
         //before the trigger event is written!
-        log_w("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
+        log_w("sdCardSemaphore failed to yield, held by %s, RTK_Surveyor.ino line %d", semaphoreHolder, __LINE__);
       }
     }
 
@@ -902,4 +912,73 @@ void updateRadio()
     }
   }
 #endif
+}
+
+
+//Record who is holding the semaphore
+volatile SemaphoreFunction semaphoreFunction = FUNCTION_NOT_SET;
+
+void markSemaphore(SemaphoreFunction functionNumber)
+{
+  semaphoreFunction = functionNumber;
+}
+
+//Resolves the holder to a printable string
+void getSemaphoreFunction(char* functionName)
+{
+  switch (semaphoreFunction)
+  {
+    default:
+      strcpy(functionName, "Unknown");
+      break;
+
+    case FUNCTION_SYNC:
+      strcpy(functionName, "Sync");
+      break;
+    case FUNCTION_WRITESD:
+      strcpy(functionName, "Write");
+      break;
+    case FUNCTION_FILESIZE:
+      strcpy(functionName, "FileSize");
+      break;
+    case FUNCTION_EVENT:
+      strcpy(functionName, "Event");
+      break;
+    case FUNCTION_BEGINSD:
+      strcpy(functionName, "BeginSD");
+      break;
+    case FUNCTION_RECORDSETTINGS:
+      strcpy(functionName, "Record Settings");
+      break;
+    case FUNCTION_LOADSETTINGS:
+      strcpy(functionName, "Load Settings");
+      break;
+    case FUNCTION_MARKEVENT:
+      strcpy(functionName, "Mark Event");
+      break;
+    case FUNCTION_GETLINE:
+      strcpy(functionName, "Get line");
+      break;
+    case FUNCTION_REMOVEFILE:
+      strcpy(functionName, "Remove file");
+      break;
+    case FUNCTION_RECORDLINE:
+      strcpy(functionName, "Record Line");
+      break;
+    case FUNCTION_CREATEFILE:
+      strcpy(functionName, "Create File");
+      break;
+    case FUNCTION_ENDLOGGING:
+      strcpy(functionName, "End Logging");
+      break;
+    case FUNCTION_FINDLOG:
+      strcpy(functionName, "Find Log");
+      break;
+    case FUNCTION_LOGTEST:
+      strcpy(functionName, "Log Test");
+      break;
+    case FUNCTION_FILELIST:
+      strcpy(functionName, "File List");
+      break;
+  }
 }

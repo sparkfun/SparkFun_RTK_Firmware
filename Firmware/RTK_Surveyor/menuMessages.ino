@@ -19,6 +19,8 @@ void menuLog()
         Serial.println("No microSD card is detected");
     }
 
+    Serial.printf("Buffer overruns: %d\n\r", bufferOverruns);
+
     Serial.print("1) Log to microSD: ");
     if (settings.enableLogging == true) Serial.println("Enabled");
     else Serial.println("Disabled");

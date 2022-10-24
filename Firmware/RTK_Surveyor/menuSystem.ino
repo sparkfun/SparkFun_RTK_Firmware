@@ -505,6 +505,18 @@ void menuDebug()
     Serial.print("32) ESP-Now Broadcast Override: ");
     Serial.printf("%s\r\n", settings.espnowBroadcast ? "Enabled" : "Disabled");
 
+    Serial.print("33) Print buffer overruns: ");
+    Serial.printf("%s\r\n", settings.enablePrintBufferOverrun ? "Enabled" : "Disabled");
+
+    Serial.print("34) Set UART Receive Buffer Size: ");
+    Serial.println(settings.uartReceiveBufferSize);
+
+    Serial.print("35) Set GNSS Handler Buffer Size: ");
+    Serial.println(settings.gnssHandlerBufferSize);
+
+    Serial.print("36) Print SD and UART buffer sizes: ");
+    Serial.printf("%s\r\n", settings.enablePrintSDBuffers ? "Enabled" : "Disabled");
+
     Serial.println("t) Enter Test Screen");
 
     Serial.println("e) Erase LittleFS");
@@ -691,6 +703,38 @@ void menuDebug()
     else if (incoming == 32)
     {
       settings.espnowBroadcast ^= 1;
+    }
+    else if (incoming == 33)
+    {
+      settings.enablePrintBufferOverrun ^= 1;
+    }
+    else if (incoming == 34)
+    {
+      Serial.print("Enter UART Receive Buffer Size in Bytes (32 to 16384): ");
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+          Serial.println("Error: Queue size out of range");
+        else
+          settings.uartReceiveBufferSize = queSize; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 35)
+    {
+      Serial.print("Enter GNSS Handler Buffer Size in Bytes (32 to 16384): ");
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+          Serial.println("Error: Queue size out of range");
+        else
+          settings.gnssHandlerBufferSize = queSize; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 36)
+    {
+      settings.enablePrintSDBuffers ^= 1;
     }
     else if (incoming == 'e')
     {

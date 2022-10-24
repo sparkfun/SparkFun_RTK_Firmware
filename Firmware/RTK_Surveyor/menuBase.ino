@@ -557,7 +557,6 @@ bool removeFile(const char* fileName)
 void recordLineToSD(const char* fileName, const char* lineData)
 {
   bool gotSemaphore = false;
-  bool lineFound = false;
   bool wasSdCardOnline;
 
   //Try to gain access the SD card

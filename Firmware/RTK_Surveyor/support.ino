@@ -64,14 +64,14 @@ InputResponse getString(char *userString, uint8_t stringSize)
 byte getCharacterNumber()
 {
   char userEntry[50]; //Allow user to enter more than one char. sscanf will remove extra.
-  byte userByte = 0;
+  int userByte = 0;
 
   InputResponse response = getString(userEntry, sizeof(userEntry));
   if (response == INPUT_RESPONSE_VALID)
   {
     int filled = sscanf(userEntry, "%d", &userByte);
     if (filled == 0) //Not a number
-      sscanf(userEntry, "%c", &userByte);
+      sscanf(userEntry, "%c", (byte *)&userByte);
     else
     {
       if (userByte == 255)

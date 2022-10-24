@@ -163,6 +163,9 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
+static int ntripClientConnectionAttempts; //Count the number of connection attempts between restarts
+static int ntripServerConnectionAttempts; //Count the number of connection attempts between restarts
+
 #endif
 
 volatile uint8_t wifiNmeaConnected;
@@ -172,7 +175,6 @@ volatile uint8_t wifiNmeaConnected;
 //  * Receive NTRIP data timeout
 static uint32_t ntripClientTimer;
 static uint32_t ntripClientStartTime; //For calculating uptime
-static int ntripClientConnectionAttempts; //Count the number of connection attempts between restarts
 static int ntripClientConnectionAttemptsTotal; //Count the number of connection attempts absolutely
 
 //NTRIP server timer usage:
@@ -181,10 +183,7 @@ static int ntripClientConnectionAttemptsTotal; //Count the number of connection 
 //  * Monitor last RTCM byte received for frame counting
 static uint32_t ntripServerTimer;
 static uint32_t ntripServerStartTime;
-static int ntripServerConnectionAttempts; //Count the number of connection attempts between restarts
 static int ntripServerConnectionAttemptsTotal; //Count the number of connection attempts absolutely
-
-
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration
@@ -270,14 +269,6 @@ float battChangeRate = 0.0;
 #ifdef COMPILE_BT
 // See bluetoothSelect.h for implemenation
 #include "bluetoothSelect.h"
-
-//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/23
-// #include "src/BluetoothSerial/BluetoothSerial.h"
-// BluetoothSerial SerialBT;
-
-// BLE Support originally from https://github.com/avinabmalla/ESP32_BleSerial/tree/bad5ff841800853a61e431ea751f8ea9d7a1df21
-// #include "src/BleSerial/BleSerial.h"
-// BleSerial SerialBLE;
 #endif
 
 char platformPrefix[55] = "Surveyor"; //Sets the prefix for broadcast names

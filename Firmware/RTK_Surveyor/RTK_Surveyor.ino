@@ -273,6 +273,7 @@ float battChangeRate = 0.0;
 
 char platformPrefix[55] = "Surveyor"; //Sets the prefix for broadcast names
 
+#include <driver/uart.h> //Required for uart_set_rx_full_threshold() on cores <v2.0.5
 HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
 #define SERIAL_SIZE_TX 512
@@ -295,6 +296,7 @@ volatile bool uart2pinned = false; //This variable is touched by core 0 but chec
 
 volatile static int combinedSpaceRemaining = 0; //Overrun indicator
 volatile static long fileSize = 0; //Updated with each write
+int bufferOverruns = 0; //Running count of possible data losses since power-on
 
 bool zedUartPassed = false; //Goes true during testing if ESP can communicate with ZED over UART
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -437,7 +439,6 @@ uint32_t rtcmLastReceived = 0;
 
 uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
-uint32_t totalWriteTime = 0; //Used to calculate overall write speed using SdFat library
 
 uint16_t svinObservationTime = 0; //Use globals so we don't have to request these values multiple times (slow response)
 float svinMeanAccuracy = 0;
@@ -675,37 +676,6 @@ void updateLogs()
 
   if (online.logging == true)
   {
-    //Force file sync every 60s
-    if (millis() - lastUBXLogSyncTime > 60000)
-    {
-      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
-      {
-        markSemaphore(FUNCTION_SYNC);
-
-        if (productVariant == RTK_SURVEYOR)
-          digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
-
-        ubxFile->sync();
-
-        if (productVariant == RTK_SURVEYOR)
-          digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
-
-        updateDataFileAccess(ubxFile); // Update the file access time & date
-
-        lastUBXLogSyncTime = millis();
-        xSemaphoreGive(sdCardSemaphore);
-      } //End sdCardSemaphore
-      else
-      {
-        char semaphoreHolder[50];
-        getSemaphoreFunction(semaphoreHolder);
-
-        //This is OK because in the interim more data will be written to the log
-        //and the log file will eventually be synced by the next call in loop
-        log_d("sdCardSemaphore failed to yield for sync, held by %s, RTK_Surveyor.ino line %d", semaphoreHolder, __LINE__);
-      }
-    }
-
     //Record any pending trigger events
     if (newEventToRecord == true)
     {
@@ -762,8 +732,6 @@ void updateLogs()
 
           Serial.println();
         }
-
-        totalWriteTime = 0; //Reset write time every 5s
 
         if (fileSize > lastLogSize)
         {

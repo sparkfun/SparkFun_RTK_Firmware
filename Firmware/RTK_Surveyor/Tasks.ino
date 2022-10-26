@@ -2,8 +2,6 @@
 //And any low frequency tasks that are called by Ticker
 
 volatile static uint16_t dataHead = 0; //Head advances as data comes in from GNSS's UART
-int bufferOverruns = 0; //Running count of possible data losses since power-on
-
 volatile int availableHandlerSpace = 0; //settings.gnssHandlerBufferSize - usedSpace
 
 //If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
@@ -298,7 +296,6 @@ void handleGNSSDataTask(void *e)
           //Write the data to the file
           long startTime = millis();
           sdBytesToRecord = ubxFile->write(&rBuffer[sdTail], sliceToRecord);
-          long endTime = millis();
 
           fileSize = ubxFile->fileSize(); //Get updated filed size
 
@@ -344,28 +341,28 @@ void handleGNSSDataTask(void *e)
     } //End logging
 
     //Update space available for use in UART task
-//    btBytesToSend = lastDataHead - btTail;
-//    if (btBytesToSend < 0)
-//      btBytesToSend += settings.gnssHandlerBufferSize;
-//
-//    nmeaBytesToSend = lastDataHead - nmeaTail;
-//    if (nmeaBytesToSend < 0)
-//      nmeaBytesToSend += settings.gnssHandlerBufferSize;
+    //    btBytesToSend = lastDataHead - btTail;
+    //    if (btBytesToSend < 0)
+    //      btBytesToSend += settings.gnssHandlerBufferSize;
+    //
+    //    nmeaBytesToSend = lastDataHead - nmeaTail;
+    //    if (nmeaBytesToSend < 0)
+    //      nmeaBytesToSend += settings.gnssHandlerBufferSize;
 
     sdBytesToRecord = lastDataHead - sdTail;
     if (sdBytesToRecord < 0)
       sdBytesToRecord += settings.gnssHandlerBufferSize;
 
     //Determine the inteface that is most behind: SD writing, SPP transmission, or TCP transmission
-//    int usedSpace = 0;
-//    if (sdBytesToRecord >= btBytesToSend && sdBytesToRecord >= nmeaBytesToSend)
-//      usedSpace = sdBytesToRecord;
-//    else if (btBytesToSend >= sdBytesToRecord && btBytesToSend >= nmeaBytesToSend)
-//      usedSpace = btBytesToSend;
-//    else
-//      usedSpace = nmeaBytesToSend;
+    //    int usedSpace = 0;
+    //    if (sdBytesToRecord >= btBytesToSend && sdBytesToRecord >= nmeaBytesToSend)
+    //      usedSpace = sdBytesToRecord;
+    //    else if (btBytesToSend >= sdBytesToRecord && btBytesToSend >= nmeaBytesToSend)
+    //      usedSpace = btBytesToSend;
+    //    else
+    //      usedSpace = nmeaBytesToSend;
 
-//    availableHandlerSpace = settings.gnssHandlerBufferSize - usedSpace;
+    //    availableHandlerSpace = settings.gnssHandlerBufferSize - usedSpace;
     availableHandlerSpace = settings.gnssHandlerBufferSize - sdBytesToRecord;
 
     //Don't fill the last byte to prevent buffer overflow

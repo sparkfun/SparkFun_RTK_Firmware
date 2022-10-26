@@ -62,6 +62,8 @@ int pin_microSD_CS = 25;
 File ubxFile;
 
 char fileName[] = "/myTest.txt";
+long fileSize = 0;
+unsigned long lastFileReport = 0;
 
 unsigned long lastUBXLogSyncTime = 0;
 
@@ -165,6 +167,13 @@ void loop()
 
       Serial.println("Recording to log...");
     }
+  }
+
+  //Report file sizes to show recording is working
+  if ((millis() - lastFileReport) > 5000)
+  {
+    lastFileReport = millis();
+    Serial.printf("UBX file size: %ld\n\r", fileSize);
   }
 
   delay(1); //Yield to other tasks

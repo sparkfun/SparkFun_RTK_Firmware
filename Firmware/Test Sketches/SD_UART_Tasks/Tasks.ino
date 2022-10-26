@@ -114,8 +114,9 @@ void SDWriteTask(void *e)
         int recordedBytes = ubxFile.write(&rBuffer[sdTail], sdBytesToRecord);
         long endTime = millis();
 
-        //if (endTime - startTime > 100) log_d("Long Write! Delta time: %d / Recorded %d bytes", endTime - startTime, recordedBytes);
-        if (endTime - startTime > 20) log_d("Long Write! Delta time: %d / Recorded %d bytes", endTime - startTime, recordedBytes);
+        if (endTime - startTime > 150) log_d("Long Write! Delta time: %d / Recorded %d bytes", endTime - startTime, recordedBytes);
+
+        fileSize = ubxFile.fileSize(); //Get updated filed size
 
         //Account for the sent data or dropped
         if (recordedBytes > 0)
@@ -125,19 +126,12 @@ void SDWriteTask(void *e)
             sdTail -= gnssHandlerBufferSize;
         }
 
-        //Force file sync every 5000ms
-        if (millis() - lastUBXLogSyncTime > 5000)
+        //Force file sync every 60s
+        if (millis() - lastUBXLogSyncTime > 60000)
         {
-          ubxFile.flush();
-          //#ifdef USE_SDFAT
-          //          log_d("fileSize: %ld", ubxFile.fileSize());
-          //#else
-          //          log_d("fileSize: %d", ubxFile.size());
-          //#endif
-
+          ubxFile.sync();
           lastUBXLogSyncTime = millis();
         } //End sdCardSemaphore
-
 
       } //End logging
     }

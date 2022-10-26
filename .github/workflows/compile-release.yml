@@ -20,16 +20,16 @@ jobs:
 
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1
-        with:
-          version: "0.27.0"
-
-      #We limit the ESP32 core to v2.0.2. See: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/334
-      - name: Install platform
-        run: arduino-cli core install esp32:esp32@2.0.2
-          --additional-urls 'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json'
 
       - name: Start config file
-        run: arduino-cli config init
+        run: arduino-cli config init --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
+
+      - name: Update index
+        run: arduino-cli core update-index
+
+      #We limit the ESP32 core to v2.0.2
+      - name: Install platform
+        run: arduino-cli core install esp32:esp32@2.0.2
 
       - name: Enable external libs
         run: arduino-cli config set library.enable_unsafe_install true
@@ -64,7 +64,7 @@ jobs:
 
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%b_%d_%Y')"
+        run: echo "date=$(date +'%b_%d_%Y')" >> $GITHUB_OUTPUT
       
       - name: Rename binary
         run: |

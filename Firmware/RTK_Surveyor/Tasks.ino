@@ -302,6 +302,22 @@ void handleGNSSDataTask(void *e)
 
           fileSize = ubxFile->fileSize(); //Get updated filed size
 
+          //Force file sync every 60s
+          if (millis() - lastUBXLogSyncTime > 60000)
+          {
+            if (productVariant == RTK_SURVEYOR)
+              digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
+
+            ubxFile->sync();
+            updateDataFileAccess(ubxFile); // Update the file access time & date
+            if (productVariant == RTK_SURVEYOR)
+              digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
+
+            lastUBXLogSyncTime = millis();
+          }
+          
+          long endTime = millis();
+
           if (settings.enablePrintBufferOverrun)
           {
             if (endTime - startTime > 150)
@@ -311,9 +327,12 @@ void handleGNSSDataTask(void *e)
           xSemaphoreGive(sdCardSemaphore);
 
           //Account for the sent data or dropped
-          sdTail += sdBytesToRecord;
-          if (sdTail >= settings.gnssHandlerBufferSize)
-            sdTail -= settings.gnssHandlerBufferSize;
+          if (sdBytesToRecord > 0)
+          {
+            sdTail += sdBytesToRecord;
+            if (sdTail >= settings.gnssHandlerBufferSize)
+              sdTail -= settings.gnssHandlerBufferSize;
+          }
         } //End sdCardSemaphore
         else
         {

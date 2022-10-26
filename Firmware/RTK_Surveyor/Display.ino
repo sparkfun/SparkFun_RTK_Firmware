@@ -2295,7 +2295,11 @@ void paintResets()
   {
     oled.setFont(QW_FONT_5X7); //Small font
     oled.setCursor(16 + (8 * 3) + 7, 38); //x, y
-    oled.print(settings.resetCount);
+    
+    if(settings.enablePrintBufferOverrun == false)
+      oled.print(settings.resetCount);
+    else
+      oled.print(settings.resetCount + bufferOverruns);
   }
 }
 

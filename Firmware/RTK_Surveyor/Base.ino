@@ -21,10 +21,9 @@ bool configureUbloxModuleBase()
   const int baseNavigationFrequency = 1;
 
   //In Base mode we force 1Hz
-  if (i2cGNSS.getNavigationFrequency(maxWait) != baseNavigationFrequency)
-    response &= i2cGNSS.setNavigationFrequency(baseNavigationFrequency, maxWait);
+  response &= setRate(1);
   if (response == false)
-    Serial.println("setNavigationFrequency failed");
+    Serial.println("Set rate failed");
 
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 

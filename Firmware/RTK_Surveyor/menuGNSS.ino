@@ -108,7 +108,7 @@ void menuGNSS()
       }
       else
       {
-        setMeasurementRates(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
+        setRate(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
         //Settings recorded to NVM and file at main menu exit
       }
     }
@@ -122,7 +122,7 @@ void menuGNSS()
       }
       else
       {
-        setMeasurementRates(rate); //This will set settings.measurementRate, settings.navigationRate, and GSV message
+        setRate(rate); //This will set settings.measurementRate, settings.navigationRate, and GSV message
         //Settings recorded to NVM and file at main menu exit
       }
     }
@@ -288,7 +288,12 @@ void menuConstellations()
   }
 
   //Apply current settings to module
-  configureConstellations();
+  i2cGNSS.newCfgValset8(settings.ubxConstellations[0].configKey, settings.ubxConstellations[0].enabled);
+  i2cGNSS.addCfgValset8(settings.ubxConstellations[1].configKey, settings.ubxConstellations[1].enabled);
+  i2cGNSS.addCfgValset8(settings.ubxConstellations[2].configKey, settings.ubxConstellations[2].enabled);
+  i2cGNSS.addCfgValset8(settings.ubxConstellations[3].configKey, settings.ubxConstellations[3].enabled);
+  i2cGNSS.addCfgValset8(settings.ubxConstellations[4].configKey, settings.ubxConstellations[4].enabled);
+  i2cGNSS.sendCfgValset8(settings.ubxConstellations[5].configKey, settings.ubxConstellations[5].enabled);
 
   clearBuffer(); //Empty buffer of any newline chars
 }
@@ -297,7 +302,12 @@ void menuConstellations()
 //measurementRate > 25 & <= 65535
 //navigationRate >= 1 && <= 127
 //We give preference to limiting a measurementRate to 30s or below due to reported problems with measRates above 30.
-bool setMeasurementRates(double secondsBetweenSolutions)
+bool setRate(double secondsBetweenSolutions)
+{
+  return (setRate(secondsBetweenSolutions, true)); //true = Record to settings struct
+}
+
+bool setRate(double secondsBetweenSolutions, bool recordToSettingsStruct)
 {
   uint16_t measRate = 0; //Calculate these locally and then attempt to apply them to ZED at completion
   uint16_t navRate = 0;
@@ -326,11 +336,27 @@ bool setMeasurementRates(double secondsBetweenSolutions)
 
   //Serial.printf("measurementRate / navRate: %d / %d\r\n", measRate, navRate);
 
+  int currentMeasurementRate = i2cGNSS.getVal16(UBLOX_CFG_RATE_MEAS); //ms between GNSS measurements
+  int currentNavigationRate = i2cGNSS.getVal16(UBLOX_CFG_RATE_NAV); //Ratio of number of measurements to number of navigation solutions
+
+  bool response = true;
+  if (currentMeasurementRate != measRate)
+    response &= i2cGNSS.setVal16(UBLOX_CFG_RATE_MEAS, measRate);
+
+  if (currentNavigationRate != navRate)
+    response &= i2cGNSS.setVal16(UBLOX_CFG_RATE_NAV, navRate);
+
+  currentMeasurementRate = i2cGNSS.getVal16(UBLOX_CFG_RATE_MEAS); //ms between GNSS measurements
+  currentNavigationRate = i2cGNSS.getVal16(UBLOX_CFG_RATE_NAV); //Ratio of number of measurements to number of navigation solutions
+
   //If we successfully set rates, only then record to settings
-  if (i2cGNSS.setMeasurementRate(measRate) == true && i2cGNSS.setNavigationRate(navRate) == true)
+  if (response == true)
   {
-    settings.measurementRate = measRate;
-    settings.navigationRate = navRate;
+    if (recordToSettingsStruct)
+    {
+      settings.measurementRate = measRate;
+      settings.navigationRate = navRate;
+    }
 
     //If enabled, adjust GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
     if (settings.ubxMessages[8].msgRate > 0)
@@ -383,31 +409,32 @@ bool configureConstellations()
     factoryReset();
   }
 
-  //long startTime = millis();
+  long startTime = millis();
+  //v1.12 ZED firmware does not allow for SBAS control
+  //Also, if we can't identify the version (0), skip SBAS enable
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
   {
-    //v1.12 ZED firmware does not allow for SBAS control
-    //Also, if we can't identify the version (0), skip SBAS enable
     if (zedModuleType == PLATFORM_F9P && (zedFirmwareVersionInt == 112 || zedFirmwareVersionInt == 0) && x == 1) //SBAS
     {
       //Do nothing
     }
     else
     {
-      //Standard UBX protocol method takes ~533-783ms
+      //Standard UBX protocol method takes ~51ms
       uint8_t currentlyEnabled = getConstellation(settings.ubxConstellations[x].gnssID); //Qeury the module for the current setting
       if (currentlyEnabled != settings.ubxConstellations[x].enabled)
         response &= setConstellation(settings.ubxConstellations[x].gnssID, settings.ubxConstellations[x].enabled);
+
+      //Get/set val method takes ~642ms but does not work because we don't send additional sigCfg keys at same time
+      //    uint8_t currentlyEnabled = i2cGNSS.getVal8(settings.ubxConstellations[x].configKey, VAL_LAYER_RAM, 1200);
+      //    if (currentlyEnabled != settings.ubxConstellations[x].enabled)
+      //      response &= i2cGNSS.setVal(settings.ubxConstellations[x].configKey, settings.ubxConstellations[x].enabled);
+
     }
-
-    //Get/set val method takes ~642ms but does not work because we don't send additional sigCfg keys at same time
-    //    uint8_t currentlyEnabled = i2cGNSS.getVal8(settings.ubxConstellations[x].configKey, VAL_LAYER_RAM, 1200);
-    //    if (currentlyEnabled != settings.ubxConstellations[x].enabled)
-    //      response &= i2cGNSS.setVal(settings.ubxConstellations[x].configKey, settings.ubxConstellations[x].enabled);
   }
-  //long stopTime = millis();
+  long stopTime = millis();
 
-  //Serial.printf("setConstellation time delta: %ld ms\r\n", stopTime - startTime);
+  Serial.printf("setConstellation time delta: %ld ms\r\n", stopTime - startTime);
 
   return (response);
 }

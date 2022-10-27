@@ -696,7 +696,7 @@ void setLoggingType()
 void setLogTestFrequencyMessages(int rate, int messages)
 {
   //Set measurement frequency
-  setMeasurementRates(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
+  setRate(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
 
   //Set messages
   setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages

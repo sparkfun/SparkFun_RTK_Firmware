@@ -101,6 +101,7 @@ void menuBase()
     else if (settings.fixedBase == true && incoming == 2)
     {
       settings.fixedBaseCoordinateType ^= 1;
+      restartBase = true;
     }
 
     else if (settings.fixedBase == true && incoming == 3)
@@ -331,7 +332,8 @@ void menuSensorFusion()
       printUnknown(incoming);
   }
 
-  i2cGNSS.setESFAutoAlignment(settings.autoIMUmountAlignment); //Configure UBX-CFG-ESFALG Automatic IMU-mount Alignment
+  i2cGNSS.setVal8(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
+  i2cGNSS.setVal8(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
 
   clearBuffer(); //Empty buffer of any newline chars
 }
@@ -379,7 +381,7 @@ bool getFileLineLFS(const char* fileName, int lineToFind, char* lineData, int li
       //Sometimes a line has multiple terminators
       while (file.peek() == '\r' || file.peek() == '\n')
         file.read(); //Dump it to prevent next line read corruption
-      
+
       lineNumber++; //Advance
       x = 0; //Reset
     }
@@ -419,7 +421,7 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_GETLINE);
-      
+
       gotSemaphore = true;
 
       SdFile file; //FAT32
@@ -450,7 +452,7 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
           }
         }
 
-        if(strlen(lineData) > 0) //Ignore single \n or \r
+        if (strlen(lineData) > 0) //Ignore single \n or \r
           lineNumber++;
       }
 
@@ -502,7 +504,7 @@ bool removeFileSD(const char* fileName)
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_REMOVEFILE);
-      
+
       gotSemaphore = true;
       if (sd->exists(fileName))
       {
@@ -570,7 +572,7 @@ void recordLineToSD(const char* fileName, const char* lineData)
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_RECORDLINE);
-      
+
       gotSemaphore = true;
 
       SdFile file; //FAT32
@@ -616,10 +618,10 @@ void recordLineToLFS(const char* fileName, const char* lineData)
 void trim(char *str)
 {
   int x = 0;
-  for( ; str[x] != '\0' ; x++)
+  for ( ; str[x] != '\0' ; x++)
     ;
-  if(x > 0) x--;
+  if (x > 0) x--;
 
-  for( ; isspace(str[x]) ; x--)
+  for ( ; isspace(str[x]) ; x--)
     str[x] = '\0';
 }

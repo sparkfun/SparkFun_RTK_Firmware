@@ -114,13 +114,11 @@ void updateSystemState()
 
           setMuxport(settings.dataPortChannel); //Return mux to original channel
 
-          i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 0); //Disable RTCM sentences
-
           wifiStop(); //Stop WiFi, ntripClient will start as needed.
           bluetoothStart(); //Turn on Bluetooth with 'Rover' name
           radioStart(); //Start internal radio if enabled, otherwise disable
 
-          startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+          tasksStartUART2(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
           settings.lastState = STATE_ROVER_NOT_STARTED;
@@ -195,7 +193,7 @@ void updateSystemState()
         STATE_BASE_FIXED_NOT_STARTED      | horizontalAccuracy > 0.0
         (next diagram)                    | && horizontalAccuracy
                                           |  < settings.surveyInStartingAccuracy
-                                          | && beginSurveyIn() == true
+                                          | && surveyInStart() == true
                                           V
                         .-----------------------------------.
                         |   STATE_BASE_TEMP_SURVEY_STARTED  | svinObservationTime >
@@ -241,7 +239,7 @@ void updateSystemState()
           bluetoothStop();
           bluetoothStart(); //Restart Bluetooth with 'Base' identifier
 
-          startUART2Tasks(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+          tasksStartUART2(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           if (configureUbloxModuleBase() == true)
           {
@@ -282,7 +280,7 @@ void updateSystemState()
           {
             displaySurveyStart(0); //Show 'Survey'
 
-            if (beginSurveyIn() == true) //Begin survey
+            if (surveyInStart() == true) //Begin survey
             {
               displaySurveyStarted(500); //Show 'Survey Started'
 
@@ -339,7 +337,7 @@ void updateSystemState()
             {
               Serial.printf("Survey-In took more than %d minutes. Returning to rover mode.\r\n", maxSurveyInWait_s / 60);
 
-              resetSurvey();
+              surveyInReset();
 
               changeState(STATE_ROVER_NOT_STARTED);
             }
@@ -600,7 +598,7 @@ void updateSystemState()
           bluetoothStop();
           espnowStop();
 
-          stopUART2Tasks(); //Delete F9 serial tasks if running
+          tasksStopUART2(); //Delete F9 serial tasks if running
           startWebServer(); //Start in AP mode and show config html page
 
           changeState(STATE_WIFI_CONFIG);
@@ -637,7 +635,7 @@ void updateSystemState()
           //Debounce entry into test menu
           if (millis() - lastTestMenuChange > 500)
           {
-            stopUART2Tasks(); //Stop absoring ZED serial via task
+            tasksStopUART2(); //Stop absoring ZED serial via task
             zedUartPassed = false;
 
             //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted

@@ -3,9 +3,6 @@ bool configureUbloxModuleRover()
 {
   if (online.gnss == false) return (false);
 
-  bool response = true;
-  int maxWait = 2000;
-
   //If our settings haven't changed, and this is first config since power on, trust ZED's settings
   if (settings.updateZEDSettings == false && firstPowerOn == true)
   {
@@ -18,219 +15,59 @@ bool configureUbloxModuleRover()
 
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
-  response &= setRate(1, false); //Don't record to settings, this is just a temporary rate change
-  if (response == false)
-    Serial.println("Set rate failed");
+  bool response = true;
+
+  //Set output rate
+  response &= i2cGNSS.newCfgValset16(UBLOX_CFG_RATE_MEAS, settings.measurementRate);
+  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_NAV, settings.navigationRate);
 
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
-  {
-    response = i2cGNSS.setSurveyMode(0, 0, 0); //Disable Survey-In or Fixed Mode
-    if (response == false)
-      Serial.println("Disable TMODE3 failed");
-  }
-
-  // Set dynamic model
-  if (i2cGNSS.getDynamicModel(maxWait) != settings.dynamicModel)
-  {
-    response = i2cGNSS.setDynamicModel((dynModel)settings.dynamicModel, maxWait);
-    if (response == false)
-      Serial.println("setDynamicModel failed");
-  }
-
-#define OUTPUT_SETTING 14
-
-  getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX))
-    //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX); //Turn off all traffic except UBX to reduce I2C bus errors and ESP32 resets as much as possible
-    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //We need NMEA GGA output for NTRIP Client.
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
+  
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
 
   //RTCM is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {
-    //Disable RTCM sentences on I2C, USB, and UART2
-    response = true; //Reset
-    response &= disableRTCMSentences(COM_PORT_I2C);
-    response &= disableRTCMSentences(COM_PORT_UART2);
-    response &= disableRTCMSentences(COM_PORT_USB);
+    //Disable RTCM sentences from being generated on I2C, USB, and UART2
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_I2C, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_I2C, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_I2C, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_I2C, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_I2C, 0);
+
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_USB, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_USB, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_USB, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_USB, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_USB, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_USB, 0);
+
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_UART2, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_UART2, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_UART2, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_UART2, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART2, 0);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 0);
   }
 
-  //Re-enable any RTCM msgs on UART1 the user has set within settings
-  response &= configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //Make sure the appropriate messages are enabled
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
 
-  if (response == false)
-    Serial.println("Disable RTCM failed");
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_NMEA_HIGHPREC, 1); //Enable high precision NMEA
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_NMEA_SVNUMBERING, 1); //Enable extended satellite numbering
 
-  response = i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GN); //Turn GNGGA back on after NTRIP Client
-  if (response == false)
-    Serial.println("setMainTalkerID failed");
-
-  response = setNMEASettings(); //Enable high precision NMEA and extended sentences
-  if (response == false)
-    Serial.println("setNMEASettings failed");
-
-  response = true; //Reset
   if (zedModuleType == PLATFORM_F9R)
   {
-    setSensorFusion(settings.enableSensorFusion); //Enable/disable sensor fusion
-    i2cGNSS.setESFAutoAlignment(settings.autoIMUmountAlignment); //Configure UBX-CFG-ESFALG Automatic IMU-mount Alignment
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
   }
 
-  //The last thing we do is set output rate.
-  response = true; //Reset
-
-  float secondsBetweenSolutions = (settings.measurementRate * settings.navigationRate) / 1000.0;
-  setRate(secondsBetweenSolutions); //This will set settings.measurementRate, settings.navigationRate, and GSV message
-
-  response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
-  if (response == false)
-    Serial.println("Module failed to save.");
+  response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0); //Dummy closing value - 27 pairs
+  if (response == false) Serial.println("Rover config failed");
 
   return (response);
-}
-
-//The u-blox library doesn't directly support NMEA configuration so let's do it manually
-bool setNMEASettings()
-{
-  uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
-  ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
-
-  customCfg.cls = UBX_CLASS_CFG; // This is the message Class
-  customCfg.id = UBX_CFG_NMEA; // This is the message ID
-  customCfg.len = 0; // Setting the len (length) to zero let's us poll the current settings
-  customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
-
-  uint16_t maxWait = 1250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
-
-  // Read the current setting. The results will be loaded into customCfg.
-  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-  {
-    Serial.println("NMEA setting failed");
-    return (false);
-  }
-
-  customPayload[3] |= (1 << 3); //Set the highPrec flag
-
-  customPayload[8] = 1; //Enable extended satellite numbering
-
-  // Now we write the custom packet back again to change the setting
-  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
-  {
-    Serial.println("NMEA setting failed");
-    return (false);
-  }
-  return (true);
-}
-
-//Returns true if constellation is enabled
-bool getConstellation(uint8_t constellationID)
-{
-  uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
-  ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
-
-  customCfg.cls = UBX_CLASS_CFG; // This is the message Class
-  customCfg.id = UBX_CFG_GNSS; // This is the message ID
-  customCfg.len = 0; // Setting the len (length) to zero lets us poll the current settings
-  customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
-
-  uint16_t maxWait = 1250; // Wait for up to 1250ms (Serial may need a lot longer e.g. 1100)
-
-  // Read the current setting. The results will be loaded into customCfg.
-  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-  {
-    Serial.println("Get Constellation failed");
-    return (false);
-  }
-
-  if (customPayload[locateGNSSID(customPayload, constellationID) + 4] & (1 << 0)) return true; //Check if enable bit is set
-  return false;
-}
-
-//The u-blox library doesn't directly support constellation control so let's do it manually
-//Also allows the enable/disable of any constellation (BeiDou, Galileo, etc)
-bool setConstellation(uint8_t constellation, bool enable)
-{
-  uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
-  ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
-
-  customCfg.cls = UBX_CLASS_CFG; // This is the message Class
-  customCfg.id = UBX_CFG_GNSS; // This is the message ID
-  customCfg.len = 0; // Setting the len (length) to zero lets us poll the current settings
-  customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
-
-  uint16_t maxWait = 1250; // Wait for up to 250ms (Serial may need a lot longer e.g. 1100)
-
-  // Read the current setting. The results will be loaded into customCfg.
-  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-  {
-    Serial.println("Set Constellation failed");
-    return (false);
-  }
-
-  if (enable)
-  {
-    if (constellation == SFE_UBLOX_GNSS_ID_GPS || constellation == SFE_UBLOX_GNSS_ID_QZSS)
-    {
-      //QZSS must follow GPS
-      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_GPS) + 4] |= (1 << 0); //Set the enable bit
-      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_QZSS) + 4] |= (1 << 0); //Set the enable bit
-    }
-    else
-    {
-      customPayload[locateGNSSID(customPayload, constellation) + 4] |= (1 << 0); //Set the enable bit
-    }
-
-    //Set sigCfgMask as well
-    if (constellation == SFE_UBLOX_GNSS_ID_GPS || constellation == SFE_UBLOX_GNSS_ID_QZSS)
-    {
-      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_GPS) + 6] |= 0x11; //Enable GPS L1C/A, and L2C
-
-      //QZSS must follow GPS
-      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_QZSS) + 6] = 0x11; //Enable QZSS L1C/A, and L2C - Follow u-center
-      //customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_QZSS) + 6] = 0x15; //Enable QZSS L1C/A, L1S, and L2C
-    }
-    else if (constellation == SFE_UBLOX_GNSS_ID_SBAS)
-    {
-      customPayload[locateGNSSID(customPayload, constellation) + 6] |= 0x01; //Enable SBAS L1C/A
-    }
-    else if (constellation == SFE_UBLOX_GNSS_ID_GALILEO)
-    {
-      customPayload[locateGNSSID(customPayload, constellation) + 6] |= 0x21; //Enable Galileo E1/E5b
-    }
-    else if (constellation == SFE_UBLOX_GNSS_ID_BEIDOU)
-    {
-      customPayload[locateGNSSID(customPayload, constellation) + 6] |= 0x11; //Enable BeiDou B1I/B2I
-    }
-    else if (constellation == SFE_UBLOX_GNSS_ID_GLONASS)
-    {
-      customPayload[locateGNSSID(customPayload, constellation) + 6] |= 0x11; //Enable GLONASS L1 and L2
-    }
-  }
-  else //Disable
-  {
-    //QZSS must follow GPS
-    if (constellation == SFE_UBLOX_GNSS_ID_GPS || constellation == SFE_UBLOX_GNSS_ID_QZSS)
-    {
-      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_GPS) + 4] &= ~(1 << 0); //Clear the enable bit
-
-      customPayload[locateGNSSID(customPayload, SFE_UBLOX_GNSS_ID_QZSS) + 4] &= ~(1 << 0); //Clear the enable bit
-    }
-    else
-    {
-      customPayload[locateGNSSID(customPayload, constellation) + 4] &= ~(1 << 0); //Clear the enable bit
-    }
-
-  }
-
-  // Now we write the custom packet back again to change the setting
-  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_SENT) // This time we are only expecting an ACK
-  {
-    Serial.println("Constellation setting failed");
-    return (false);
-  }
-
-  return (true);
 }
 
 //Given a payload, return the location of a given constellation

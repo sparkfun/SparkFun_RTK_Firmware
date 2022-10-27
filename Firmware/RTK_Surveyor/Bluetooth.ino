@@ -1,10 +1,10 @@
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Bluetooth State Values:
+  Bluetooth State Values:
   BT_OFF = 0,
   BT_NOTCONNECTED,
   BT_CONNECTED,
 
-Bluetooth States:
+  Bluetooth States:
 
                                   BT_OFF (Using WiFi)
                                     |   ^
@@ -17,7 +17,7 @@ Bluetooth States:
                                     v   |
                                 BT_CONNECTED
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
 // Constants
@@ -100,7 +100,7 @@ void bluetoothStart()
     char stateName[10];
     if (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX)
       strcpy(stateName, "Rover-");
-    else if(systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+    else if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
       strcpy(stateName, "Base-");
 
     sprintf(deviceName, "%s %s%02X%02X", platformPrefix, stateName, btMACAddress[4], btMACAddress[5]);
@@ -192,10 +192,10 @@ void bluetoothTest(bool runTest)
   {
     if (runTest && (zedUartPassed == false))
     {
-      stopUART2Tasks(); //Stop absoring ZED serial via task
+      tasksStopUART2(); //Stop absoring ZED serial via task
 
-      i2cGNSS.setSerialRate(460800, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
-      serialGNSS.begin(460800); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+      i2cGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, (115200 * 2)); //Defaults to 230400 to maximize message output support
+      serialGNSS.begin((115200 * 2)); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
       SFE_UBLOX_GNSS myGNSS;
       if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
@@ -206,10 +206,10 @@ void bluetoothTest(bool runTest)
       else
         bluetoothStatusText = "Offline";
 
-      i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
+      i2cGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud); //Defaults to 230400 to maximize message output support
       serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
-      startUART2Tasks(); //Return to normal operation
+      tasksStartUART2(); //Return to normal operation
     }
     else
       bluetoothStatusText = (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF) ? "Off" : "Online";

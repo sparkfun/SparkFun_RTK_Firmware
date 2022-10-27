@@ -15,11 +15,11 @@ void menuPortsSurveyor()
     Serial.println("Menu: Ports");
 
     Serial.print("1) Set serial baud rate for Radio Port: ");
-    Serial.print(getSerialRate(COM_PORT_UART2));
+    Serial.print(i2cGNSS.getVal32(UBLOX_CFG_UART2_BAUDRATE));
     Serial.println(" bps");
 
     Serial.print("2) Set serial baud rate for Data Port: ");
-    Serial.print(getSerialRate(COM_PORT_UART1));
+    Serial.print(i2cGNSS.getVal32(UBLOX_CFG_UART1_BAUDRATE));
     Serial.println(" bps");
 
     Serial.println("x) Exit");
@@ -45,7 +45,7 @@ void menuPortsSurveyor()
         {
           settings.radioPortBaud = newBaud;
           if (online.gnss == true)
-            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
+            i2cGNSS.setVal32(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud);
         }
         else
         {
@@ -72,7 +72,7 @@ void menuPortsSurveyor()
         {
           settings.dataPortBaud = newBaud;
           if (online.gnss == true)
-            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
+            i2cGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud);
         }
         else
         {
@@ -103,7 +103,7 @@ void menuPortsMultiplexed()
     Serial.println("Menu: Ports");
 
     Serial.print("1) Set Radio port serial baud rate: ");
-    Serial.print(getSerialRate(COM_PORT_UART2));
+    Serial.print(i2cGNSS.getVal32(UBLOX_CFG_UART2_BAUDRATE));
     Serial.println(" bps");
 
     Serial.print("2) Set Data port connections: ");
@@ -125,7 +125,7 @@ void menuPortsMultiplexed()
     if (settings.dataPortChannel == MUX_UBLOX_NMEA)
     {
       Serial.print("3) Set Data port serial baud rate: ");
-      Serial.print(getSerialRate(COM_PORT_UART1));
+      Serial.print(i2cGNSS.getVal32(UBLOX_CFG_UART1_BAUDRATE));
       Serial.println(" bps");
     }
     else if (settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)
@@ -156,7 +156,7 @@ void menuPortsMultiplexed()
         {
           settings.radioPortBaud = newBaud;
           if (online.gnss == true)
-            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
+            i2cGNSS.setVal32(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud);
         }
         else
         {
@@ -205,7 +205,7 @@ void menuPortsMultiplexed()
         {
           settings.dataPortBaud = newBaud;
           if (online.gnss == true)
-            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
+            i2cGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud);
         }
         else
         {

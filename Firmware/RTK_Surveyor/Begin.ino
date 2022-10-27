@@ -336,7 +336,7 @@ void beginUART2()
   //Allows more time between when the UART interrupt occurs and when the FIFO buffer overruns
   //serialGNSS.setRxFIFOFull(50); //Available in >v2.0.5
   uart_set_rx_full_threshold(2, 50); //uart_num, threshold
-  
+
   //  if (pinUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
   //      pinUART2Task,
   //      "UARTStart", //Just for humans
@@ -365,65 +365,6 @@ void pinUART2Task( void *pvParameters )
   uart2pinned = true;
 
   vTaskDelete( NULL ); //Delete task once it has run once
-}
-
-//Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT->available will cause reboot
-void startUART2Tasks()
-{
-  //Reads data from ZED and stores data into circular buffer
-  if (F9PSerialReadTaskHandle == NULL)
-    xTaskCreate(
-      F9PSerialReadTask, //Function to call
-      "F9Read", //Just for humans
-      readTaskStackSize, //Stack Size
-      NULL, //Task input parameter
-      F9PSerialReadTaskPriority, //Priority
-      &F9PSerialReadTaskHandle); //Task handle
-
-  //Reads data from circular buffer and sends data to SD, SPP, or TCP
-  if (handleGNSSDataTaskHandle == NULL)
-    xTaskCreate(
-      handleGNSSDataTask, //Function to call
-      "handleGNSSData", //Just for humans
-      handleGNSSDataTaskStackSize, //Stack Size
-      NULL, //Task input parameter
-      handleGNSSDataTaskPriority, //Priority
-      &handleGNSSDataTaskHandle); //Task handle
-
-  //Reads data from BT and sends to ZED
-  if (F9PSerialWriteTaskHandle == NULL)
-    xTaskCreate(
-      F9PSerialWriteTask, //Function to call
-      "F9Write", //Just for humans
-      writeTaskStackSize, //Stack Size
-      NULL, //Task input parameter
-      F9PSerialWriteTaskPriority, //Priority
-      &F9PSerialWriteTaskHandle); //Task handle
-}
-
-//Stop tasks - useful when running firmware update or WiFi AP is running
-void stopUART2Tasks()
-{
-  //Delete tasks if running
-  if (F9PSerialReadTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialReadTaskHandle);
-    F9PSerialReadTaskHandle = NULL;
-  }
-  if (handleGNSSDataTaskHandle != NULL)
-  {
-    vTaskDelete(handleGNSSDataTaskHandle);
-    handleGNSSDataTaskHandle = NULL;
-  }
-  if (F9PSerialWriteTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialWriteTaskHandle);
-    F9PSerialWriteTaskHandle = NULL;
-  }
-
-  //Give the other CPU time to finish
-  //Eliminates CPU bus hang condition
-  delay(100);
 }
 
 void beginFS()
@@ -711,6 +652,9 @@ bool beginExternalTriggers()
     log_d("Skipping ZED Trigger configuration");
     return (true);
   }
+
+  if (settings.dataPortChannel != MUX_PPS_EVENTTRIGGER)
+    return(true); //No need to configure PPS if port is not selected
 
   UBX_CFG_TP5_data_t timePulseParameters;
 

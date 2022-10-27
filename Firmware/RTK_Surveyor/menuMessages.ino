@@ -198,12 +198,14 @@ void menuMessages()
 
   clearBuffer(); //Empty buffer of any newline chars
 
-  bool response = configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //Make sure the appropriate messages are enabled
+  //Make sure the appropriate messages are enabled
+  bool response = enableMessages(); //Does a complete open/closed val set
   if (response == false)
   {
     Serial.println("menuMessages: Failed to enable UART1 messages - Try 1");
-    //Try again
-    response = configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //Make sure the appropriate messages are enabled
+
+    response = enableMessages(); //Does a complete open/closed val set
+    
     if (response == false)
       Serial.println("menuMessages: Failed to enable UART1 messages - Try 2");
     else
@@ -285,23 +287,6 @@ void inputMessageRate(ubxMsg &localMessage)
   localMessage.msgRate = rate;
 }
 
-//Updates the message rates on the ZED-F9x for all supported messages
-//Any port and messages by reference can be passed in. This allows us to modify the USB
-//port settings a separate (not NVM backed) message struct for testing
-bool configureGNSSMessageRates(uint8_t portType, ubxMsg *localMessage)
-{
-  bool response = true;
-
-  for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-  {
-    //Check to see if this ZED platform supports this message
-    if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= configureMessageRate(portType, localMessage[x]);
-  }
-
-  return (response);
-}
-
 //Set all GNSS message report rates to one value
 //Useful for turning on or off all messages for resetting and testing
 //We pass in the message array by reference so that we can modify a temp struct
@@ -310,44 +295,6 @@ void setGNSSMessageRates(ubxMsg *localMessage, uint8_t msgRate)
 {
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
     localMessage[x].msgRate = msgRate;
-}
-
-//Given a message, set the message rate on the ZED-F9P
-bool configureMessageRate(uint8_t portID, ubxMsg localMessage)
-{
-  uint8_t currentSendRate = getMessageRate(localMessage.msgClass, localMessage.msgID, portID); //Qeury the module for the current setting
-
-  bool response = true;
-  if (currentSendRate != localMessage.msgRate)
-    response &= i2cGNSS.configureMessage(localMessage.msgClass, localMessage.msgID, portID, localMessage.msgRate); //Update setting
-  return response;
-}
-
-//Lookup the send rate for a given message+port
-uint8_t getMessageRate(uint8_t msgClass, uint8_t msgID, uint8_t portID)
-{
-  ubxPacket customCfg = {0, 0, 0, 0, 0, settingPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
-
-  customCfg.cls = UBX_CLASS_CFG; // This is the message Class
-  customCfg.id = UBX_CFG_MSG; // This is the message ID
-  customCfg.len = 2;
-  customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
-
-  uint16_t maxWait = 1250; // Wait for up to 1250ms (Serial may need a lot longer e.g. 1100)
-
-  settingPayload[0] = msgClass;
-  settingPayload[1] = msgID;
-
-  // Read the current setting. The results will be loaded into customCfg.
-  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-  {
-    Serial.printf("getMessageSetting failed: Class-0x%02X ID-0x%02X\r\n", msgClass, msgID);
-    return (false);
-  }
-
-  uint8_t sendRate = settingPayload[2 + portID];
-
-  return (sendRate);
 }
 
 //Creates a log if logging is enabled, and SD is detected
@@ -504,7 +451,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
       markSemaphore(FUNCTION_ENDLOGGING);
       
       //Do not check if SD isPresent() as this will interfere with file closing
-      stopUART2Tasks();
+      tasksStopUART2();
 
       //Close down file system
       ubxFile->close();
@@ -727,8 +674,8 @@ void setLogTestFrequencyMessages(int rate, int messages)
 
 
   //Apply these message rates to both UART1 and USB
-  configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages);
-  configureGNSSMessageRates(COM_PORT_USB, settings.ubxMessages);
+  enableMessages(); //Does a complete open/closed val set
+  enableMessagesUSB();
 }
 
 //The log test allows us to record a series of different system configurations into

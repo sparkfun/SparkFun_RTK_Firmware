@@ -504,6 +504,8 @@ void ButtonCheckTask(void *e)
       {
         forceSystemStateUpdate = true;
         requestChangeState(STATE_SHUTDOWN);
+
+        if(inMainMenu) powerDown(true); //State machine is not updated while in menu system so go straight to power down as needed
       }
       else if ((setupBtn != NULL && setupBtn->pressedFor(500)) &&
                (powerBtn != NULL && powerBtn->pressedFor(500)))
@@ -625,6 +627,8 @@ void ButtonCheckTask(void *e)
       {
         forceSystemStateUpdate = true;
         requestChangeState(STATE_SHUTDOWN);
+
+        if(inMainMenu) powerDown(true); //State machine is not updated while in menu system so go straight to power down as needed
       }
       else if (powerBtn != NULL && systemState == STATE_ROVER_NOT_STARTED && firstRoverStart == true && powerBtn->pressedFor(500))
       {

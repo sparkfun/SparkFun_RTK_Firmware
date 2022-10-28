@@ -289,7 +289,7 @@ void factoryReset()
 {
   displaySytemReset(); //Display friendly message on OLED
 
-  stopUART2Tasks();
+  tasksStopUART2();
 
   endSD(false, false); //Disable SD card use
 

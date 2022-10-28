@@ -327,27 +327,17 @@ void beginUART2()
 {
   rBuffer = (uint8_t*)malloc(settings.gnssHandlerBufferSize);
 
-  //TODO - For testing, pin to core 1
-  serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize);
-  serialGNSS.setTimeout(settings.serialTimeoutGNSS);
-  serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+  if (pinUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
+      pinUART2Task,
+      "UARTStart", //Just for humans
+      2000, //Stack Size
+      NULL, //Task input parameter
+      0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+      &pinUART2TaskHandle, //Task handle
+      0); //Core where task should run, 0=core, 1=Arduino
 
-  //Reduce threshold value above which RX FIFO full interrupt is generated
-  //Allows more time between when the UART interrupt occurs and when the FIFO buffer overruns
-  //serialGNSS.setRxFIFOFull(50); //Available in >v2.0.5
-  uart_set_rx_full_threshold(2, 50); //uart_num, threshold
-
-  //  if (pinUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
-  //      pinUART2Task,
-  //      "UARTStart", //Just for humans
-  //      2000, //Stack Size
-  //      NULL, //Task input parameter
-  //      0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
-  //      &pinUART2TaskHandle, //Task handle
-  //      0); //Core where task should run, 0=core, 1=Arduino
-  //
-  //  while (uart2pinned == false) //Wait for task to run once
-  //    delay(1);
+  while (uart2pinned == false) //Wait for task to run once
+    delay(1);
 }
 
 //Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386

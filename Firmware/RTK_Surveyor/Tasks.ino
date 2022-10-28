@@ -343,29 +343,28 @@ void handleGNSSDataTask(void *e)
     } //End logging
 
     //Update space available for use in UART task
-    //    btBytesToSend = lastDataHead - btTail;
-    //    if (btBytesToSend < 0)
-    //      btBytesToSend += settings.gnssHandlerBufferSize;
-    //
-    //    nmeaBytesToSend = lastDataHead - nmeaTail;
-    //    if (nmeaBytesToSend < 0)
-    //      nmeaBytesToSend += settings.gnssHandlerBufferSize;
+    btBytesToSend = lastDataHead - btTail;
+    if (btBytesToSend < 0)
+      btBytesToSend += settings.gnssHandlerBufferSize;
+
+    nmeaBytesToSend = lastDataHead - nmeaTail;
+    if (nmeaBytesToSend < 0)
+      nmeaBytesToSend += settings.gnssHandlerBufferSize;
 
     sdBytesToRecord = lastDataHead - sdTail;
     if (sdBytesToRecord < 0)
       sdBytesToRecord += settings.gnssHandlerBufferSize;
 
     //Determine the inteface that is most behind: SD writing, SPP transmission, or TCP transmission
-    //    int usedSpace = 0;
-    //    if (sdBytesToRecord >= btBytesToSend && sdBytesToRecord >= nmeaBytesToSend)
-    //      usedSpace = sdBytesToRecord;
-    //    else if (btBytesToSend >= sdBytesToRecord && btBytesToSend >= nmeaBytesToSend)
-    //      usedSpace = btBytesToSend;
-    //    else
-    //      usedSpace = nmeaBytesToSend;
+    int usedSpace = 0;
+    if (nmeaBytesToSend >= btBytesToSend && nmeaBytesToSend >= sdBytesToRecord)
+      usedSpace = nmeaBytesToSend;
+    else if (btBytesToSend >= sdBytesToRecord && btBytesToSend >= nmeaBytesToSend)
+      usedSpace = btBytesToSend;
+    else
+      usedSpace = sdBytesToRecord;
 
-    //    availableHandlerSpace = settings.gnssHandlerBufferSize - usedSpace;
-    availableHandlerSpace = settings.gnssHandlerBufferSize - sdBytesToRecord;
+    availableHandlerSpace = settings.gnssHandlerBufferSize - usedSpace;
 
     //Don't fill the last byte to prevent buffer overflow
     if (availableHandlerSpace)

@@ -523,8 +523,8 @@ typedef struct {
   uint16_t antennaHeight = 0; //in mm
   float antennaReferencePoint = 0.0; //in mm
   bool echoUserInput = true;
-  int uartReceiveBufferSize = 1024 * 5; //This buffer is filled automatically as the UART receives characters.
-  int gnssHandlerBufferSize = 1024 * 5; //This buffer is filled from the UART receive buffer, and is then written to SD
+  int uartReceiveBufferSize = 1024 * 2; //This buffer is filled automatically as the UART receives characters.
+  int gnssHandlerBufferSize = 1024 * 4; //This buffer is filled from the UART receive buffer, and is then written to SD
   bool enablePrintBufferOverrun = false;
   bool enablePrintSDBuffers = false;
 } Settings;

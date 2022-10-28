@@ -291,8 +291,28 @@ void factoryReset()
 
   tasksStopUART2();
 
-  endSD(false, false); //Disable SD card use
+  //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
+  if (settings.enableSD && online.microSD)
+  {
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      //Remove this specific settings file. Don't remove the other profiles.
+      sd->remove(settingsFileName);
 
+      sd->remove(stationCoordinateECEFFileName); //Remove station files
+      sd->remove(stationCoordinateGeodeticFileName);
+      
+      xSemaphoreGive(sdCardSemaphore);
+    } //End sdCardSemaphore
+    else
+    {
+      //An error occurs when a settings file is on the microSD card and it is not
+      //deleted, as such the settings on the microSD card will be loaded when the
+      //RTK reboots, resulting in failure to achieve the factory reset condition
+      Serial.printf("sdCardSemaphore failed to yield, menuMain.ino line %d\r\n", __LINE__);
+    }
+  }
+  
   Serial.println("Formatting file system...");
   LittleFS.format();
 

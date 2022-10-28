@@ -791,7 +791,7 @@ void pointperfectApplyKeys()
 
       i2cGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_I2C, 1); // Enable UBX-RXM-COR messages on I2C
 
-      i2cGNSS.setDGNSSConfiguration(SFE_UBLOX_DGNSS_MODE_FIXED); // Set the differential mode - ambiguities are fixed whenever possible
+      i2cGNSS.setVal8(UBLOX_CFG_NAVHPG_DGSNSSMODE, 3); // Set the differential mode - ambiguities are fixed whenever possible
 
       bool response = i2cGNSS.setDynamicSPARTNKeys(
                         currentKeyLengthBytes, currentKeyGPSWeek, currentKeyGPSToW, settings.pointPerfectCurrentKey,

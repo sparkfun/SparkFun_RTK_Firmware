@@ -25,11 +25,11 @@
 const int FIRMWARE_VERSION_MAJOR = 2;
 const int FIRMWARE_VERSION_MINOR = 6;
 
-#define COMPILE_WIFI //Comment out to remove WiFi functionality
-#define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
-#define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
-#define COMPILE_BT //Comment out to remove Bluetooth functionality
-#define COMPILE_L_BAND //Comment out to remove L-Band functionality
+//#define COMPILE_WIFI //Comment out to remove WiFi functionality
+//#define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
+//#define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
+//#define COMPILE_BT //Comment out to remove Bluetooth functionality
+//#define COMPILE_L_BAND //Comment out to remove L-Band functionality
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
@@ -211,14 +211,6 @@ class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
 };
 
 SFE_UBLOX_GNSS_ADD i2cGNSS;
-
-//Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings
-//This array holds the payload data bytes. Global so that we can use between config functions.
-#ifdef MAX_PAYLOAD_SIZE
-#undef MAX_PAYLOAD_SIZE
-#define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
-#endif
-uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 
 //These globals are updated regularly via the storePVTdata callback
 bool pvtUpdated = false;

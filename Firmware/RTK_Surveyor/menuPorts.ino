@@ -15,11 +15,11 @@ void menuPortsSurveyor()
     Serial.println("Menu: Ports");
 
     Serial.print("1) Set serial baud rate for Radio Port: ");
-    Serial.print(getSerialRate(COM_PORT_UART2));
+    Serial.print(i2cGNSS.getVal32(UBLOX_CFG_UART2_BAUDRATE));
     Serial.println(" bps");
 
     Serial.print("2) Set serial baud rate for Data Port: ");
-    Serial.print(getSerialRate(COM_PORT_UART1));
+    Serial.print(i2cGNSS.getVal32(UBLOX_CFG_UART1_BAUDRATE));
     Serial.println(" bps");
 
     Serial.println("x) Exit");
@@ -45,7 +45,7 @@ void menuPortsSurveyor()
         {
           settings.radioPortBaud = newBaud;
           if (online.gnss == true)
-            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
+            i2cGNSS.setVal32(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud);
         }
         else
         {
@@ -72,7 +72,7 @@ void menuPortsSurveyor()
         {
           settings.dataPortBaud = newBaud;
           if (online.gnss == true)
-            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
+            i2cGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud);
         }
         else
         {
@@ -103,7 +103,7 @@ void menuPortsMultiplexed()
     Serial.println("Menu: Ports");
 
     Serial.print("1) Set Radio port serial baud rate: ");
-    Serial.print(getSerialRate(COM_PORT_UART2));
+    Serial.print(i2cGNSS.getVal32(UBLOX_CFG_UART2_BAUDRATE));
     Serial.println(" bps");
 
     Serial.print("2) Set Data port connections: ");
@@ -125,7 +125,7 @@ void menuPortsMultiplexed()
     if (settings.dataPortChannel == MUX_UBLOX_NMEA)
     {
       Serial.print("3) Set Data port serial baud rate: ");
-      Serial.print(getSerialRate(COM_PORT_UART1));
+      Serial.print(i2cGNSS.getVal32(UBLOX_CFG_UART1_BAUDRATE));
       Serial.println(" bps");
     }
     else if (settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)
@@ -156,7 +156,7 @@ void menuPortsMultiplexed()
         {
           settings.radioPortBaud = newBaud;
           if (online.gnss == true)
-            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART2); //Set Radio Port
+            i2cGNSS.setVal32(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud);
         }
         else
         {
@@ -205,7 +205,7 @@ void menuPortsMultiplexed()
         {
           settings.dataPortBaud = newBaud;
           if (online.gnss == true)
-            i2cGNSS.setSerialRate(newBaud, COM_PORT_UART1); //Set Data Port
+            i2cGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud);
         }
         else
         {
@@ -234,6 +234,7 @@ void menuPortsMultiplexed()
 //Most often used for logging events (inputs) and when external triggers (outputs) occur
 void menuPortHardwareTriggers()
 {
+  bool updateSettings = false;
   while (1)
   {
     Serial.println();
@@ -269,6 +270,7 @@ void menuPortHardwareTriggers()
     if (incoming == 1)
     {
       settings.enableExternalPulse ^= 1;
+      updateSettings = true;
     }
     else if (incoming == 2 && settings.enableExternalPulse == true)
     {
@@ -285,6 +287,8 @@ void menuPortHardwareTriggers()
 
           if (pulseTime < (settings.externalPulseLength_us / 1000)) //pulseTime must be longer than pulseLength
             settings.externalPulseLength_us = settings.externalPulseTimeBetweenPulse_us / 2; //Force pulse length to be 1/2 time between pulses
+
+          updateSettings = true;
         }
       }
 
@@ -299,7 +303,10 @@ void menuPortHardwareTriggers()
         if (pulseLength > (settings.externalPulseTimeBetweenPulse_us / 1000)) //pulseLength must be shorter than pulseTime
           Serial.println("Error: Pulse length must be shorter than time between pulses");
         else
+        {
           settings.externalPulseLength_us = pulseLength * 1000;
+          updateSettings = true;
+        }
       }
     }
     else if (incoming == 4 && settings.enableExternalPulse == true)
@@ -308,10 +315,12 @@ void menuPortHardwareTriggers()
         settings.externalPulsePolarity = PULSE_FALLING_EDGE;
       else
         settings.externalPulsePolarity = PULSE_RISING_EDGE;
+      updateSettings = true;
     }
     else if (incoming == 5)
     {
       settings.enableExternalHardwareEventLogging ^= 1;
+      updateSettings = true;
     }
     else if (incoming == 'x')
       break;
@@ -325,7 +334,11 @@ void menuPortHardwareTriggers()
 
   clearBuffer(); //Empty buffer of any newline chars
 
-  beginExternalTriggers(); //Update with new settings
+  if (updateSettings)
+  {
+    settings.updateZEDSettings = true; //Force update
+    beginExternalTriggers(); //Update with new settings
+  }
 }
 
 void eventTriggerReceived(UBX_TIM_TM2_data_t ubxDataStruct)

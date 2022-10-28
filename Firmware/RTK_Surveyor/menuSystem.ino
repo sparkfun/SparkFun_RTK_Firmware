@@ -631,8 +631,7 @@ void menuDebug()
     }
     else if (incoming == 17)
     {
-      bool response = configureGNSSMessageRates(COM_PORT_USB, settings.ubxMessages); //Make sure the appropriate messages are enabled
-      response &= i2cGNSS.setPortOutput(COM_PORT_USB, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Duplicate UART1
+      bool response = enableMessagesUSB();
 
       if (response == false)
         Serial.println(F("Failed to enable USB messages"));

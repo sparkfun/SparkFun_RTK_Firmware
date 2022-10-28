@@ -146,11 +146,13 @@ void F9PSerialReadTask(void *e)
         if (dataHead >= settings.gnssHandlerBufferSize)
           dataHead -= settings.gnssHandlerBufferSize;
 
+        delay(1);
         taskYIELD();
       }
     } //End Serial.available()
   }
 
+  delay(1);
   taskYIELD();
 }
 
@@ -312,7 +314,7 @@ void handleGNSSDataTask(void *e)
 
             lastUBXLogSyncTime = millis();
           }
-          
+
           long endTime = millis();
 
           if (settings.enablePrintBufferOverrun)
@@ -786,4 +788,63 @@ void idleTask(void *e)
     //Let other same priority tasks run
     taskYIELD();
   }
+}
+
+//Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT->available will cause reboot
+void tasksStartUART2()
+{
+  //Reads data from ZED and stores data into circular buffer
+  if (F9PSerialReadTaskHandle == NULL)
+    xTaskCreate(
+      F9PSerialReadTask, //Function to call
+      "F9Read", //Just for humans
+      readTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      F9PSerialReadTaskPriority, //Priority
+      &F9PSerialReadTaskHandle); //Task handle
+
+  //Reads data from circular buffer and sends data to SD, SPP, or TCP
+  if (handleGNSSDataTaskHandle == NULL)
+    xTaskCreate(
+      handleGNSSDataTask, //Function to call
+      "handleGNSSData", //Just for humans
+      handleGNSSDataTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      handleGNSSDataTaskPriority, //Priority
+      &handleGNSSDataTaskHandle); //Task handle
+
+  //Reads data from BT and sends to ZED
+  if (F9PSerialWriteTaskHandle == NULL)
+    xTaskCreate(
+      F9PSerialWriteTask, //Function to call
+      "F9Write", //Just for humans
+      writeTaskStackSize, //Stack Size
+      NULL, //Task input parameter
+      F9PSerialWriteTaskPriority, //Priority
+      &F9PSerialWriteTaskHandle); //Task handle
+}
+
+//Stop tasks - useful when running firmware update or WiFi AP is running
+void tasksStopUART2()
+{
+  //Delete tasks if running
+  if (F9PSerialReadTaskHandle != NULL)
+  {
+    vTaskDelete(F9PSerialReadTaskHandle);
+    F9PSerialReadTaskHandle = NULL;
+  }
+  if (handleGNSSDataTaskHandle != NULL)
+  {
+    vTaskDelete(handleGNSSDataTaskHandle);
+    handleGNSSDataTaskHandle = NULL;
+  }
+  if (F9PSerialWriteTaskHandle != NULL)
+  {
+    vTaskDelete(F9PSerialWriteTaskHandle);
+    F9PSerialWriteTaskHandle = NULL;
+  }
+
+  //Give the other CPU time to finish
+  //Eliminates CPU bus hang condition
+  delay(100);
 }

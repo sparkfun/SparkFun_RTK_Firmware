@@ -151,7 +151,7 @@ void updateFromSD(const char *firmwareFileName)
   bluetoothStop();
 
   //Delete tasks if running
-  stopUART2Tasks();
+  tasksStopUART2();
 
   Serial.printf("Loading %s\r\n", firmwareFileName);
   if (sd->exists(firmwareFileName))

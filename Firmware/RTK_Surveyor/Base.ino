@@ -129,8 +129,6 @@ bool surveyInStart()
 //Slightly modified method for restarting survey-in from: https://portal.u-blox.com/s/question/0D52p00009IsVoMCAV/restarting-surveyin-on-an-f9p
 bool surveyInReset()
 {
-  int maxWait = 2000;
-
   bool response = true;
 
   //Disable survey-in mode
@@ -165,7 +163,6 @@ bool surveyInReset()
 bool startFixedBase()
 {
   bool response = true;
-  int maxWait = 2000;
 
   if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
   {

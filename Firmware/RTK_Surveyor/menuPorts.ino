@@ -234,6 +234,7 @@ void menuPortsMultiplexed()
 //Most often used for logging events (inputs) and when external triggers (outputs) occur
 void menuPortHardwareTriggers()
 {
+  bool updateSettings = false;
   while (1)
   {
     Serial.println();
@@ -269,6 +270,7 @@ void menuPortHardwareTriggers()
     if (incoming == 1)
     {
       settings.enableExternalPulse ^= 1;
+      updateSettings = true;
     }
     else if (incoming == 2 && settings.enableExternalPulse == true)
     {
@@ -285,6 +287,8 @@ void menuPortHardwareTriggers()
 
           if (pulseTime < (settings.externalPulseLength_us / 1000)) //pulseTime must be longer than pulseLength
             settings.externalPulseLength_us = settings.externalPulseTimeBetweenPulse_us / 2; //Force pulse length to be 1/2 time between pulses
+
+          updateSettings = true;
         }
       }
 
@@ -299,7 +303,10 @@ void menuPortHardwareTriggers()
         if (pulseLength > (settings.externalPulseTimeBetweenPulse_us / 1000)) //pulseLength must be shorter than pulseTime
           Serial.println("Error: Pulse length must be shorter than time between pulses");
         else
+        {
           settings.externalPulseLength_us = pulseLength * 1000;
+          updateSettings = true;
+        }
       }
     }
     else if (incoming == 4 && settings.enableExternalPulse == true)
@@ -308,10 +315,12 @@ void menuPortHardwareTriggers()
         settings.externalPulsePolarity = PULSE_FALLING_EDGE;
       else
         settings.externalPulsePolarity = PULSE_RISING_EDGE;
+      updateSettings = true;
     }
     else if (incoming == 5)
     {
       settings.enableExternalHardwareEventLogging ^= 1;
+      updateSettings = true;
     }
     else if (incoming == 'x')
       break;
@@ -325,7 +334,11 @@ void menuPortHardwareTriggers()
 
   clearBuffer(); //Empty buffer of any newline chars
 
-  beginExternalTriggers(); //Update with new settings
+  if (updateSettings)
+  {
+    settings.updateZEDSettings = true; //Force update
+    beginExternalTriggers(); //Update with new settings
+  }
 }
 
 void eventTriggerReceived(UBX_TIM_TM2_data_t ubxDataStruct)

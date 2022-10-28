@@ -707,8 +707,6 @@ void updateLogTest()
 
       beginLogging(fileName);
 
-      i2cGNSS.setPortOutput(COM_PORT_USB, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Duplicate UART1
-
       rate = 4;
       messages = 5;
       semaphoreWait = 10;

@@ -232,8 +232,6 @@ void menuGNSS()
       printUnknown(incoming);
   }
 
-  int maxWait = 2000;
-
   // Set dynamic model
   i2cGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
 
@@ -352,23 +350,6 @@ bool setRate(double secondsBetweenSolutions)
   }
 
   return (true);
-}
-
-//We need to know our overall measurement frequency for things like setting the GSV NMEA sentence rate.
-//This returns a float of the rate based on settings that is the readings per second (Hz).
-float getMeasurementFrequency()
-{
-  uint16_t currentMeasurementRate = i2cGNSS.getMeasurementRate();
-  uint16_t currentNavigationRate = i2cGNSS.getNavigationRate();
-
-  currentNavigationRate = i2cGNSS.getNavigationRate();
-  //The ZED-F9P will report an incorrect nav rate if we have rececently changed it.
-  //Reading a second time insures a correct read.
-
-  //Serial.printf("currentMeasurementRate / currentNavigationRate: %d / %d\r\n", currentMeasurementRate, currentNavigationRate);
-
-  float measurementFrequency = (1000.0 / currentMeasurementRate) / currentNavigationRate;
-  return (measurementFrequency);
 }
 
 //Print the module type and firmware version

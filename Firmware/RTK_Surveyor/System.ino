@@ -481,12 +481,28 @@ bool setMessages()
 }
 
 //Enable all the valid messages for this platform over the USB port
+//Add 2 to every UART1 key. This is brittle and non-perfect, but works.
 bool setMessagesUSB()
 {
   bool response = true;
 
-  //TODO
+  response &= i2cGNSS.newCfgValset();
+  for (int x = 0 ; x < 36 ; x++)
+  {
+    if (settings.ubxMessages[x].supported & zedModuleType)
+      response &= i2cGNSS.addCfgValset8(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
+  }
+  response &= i2cGNSS.sendCfgValset();
 
+  //Final messages
+  response &= i2cGNSS.newCfgValset();
+  for (int x = 36 ; x < MAX_UBX_MSG ; x++)
+  {
+    if (settings.ubxMessages[x].supported & zedModuleType)
+      response &= i2cGNSS.addCfgValset8(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
+  }
+  response &= i2cGNSS.sendCfgValset();
+  
   return (response);
 }
 

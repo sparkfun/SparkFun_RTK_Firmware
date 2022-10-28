@@ -321,7 +321,8 @@ bool setRate(double secondsBetweenSolutions)
   //Serial.printf("measurementRate / navRate: %d / %d\r\n", measRate, navRate);
 
   bool response = true;
-  response &= i2cGNSS.newCfgValset16(UBLOX_CFG_RATE_MEAS, measRate);
+  response &= i2cGNSS.newCfgValset();
+  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_MEAS, measRate);
   response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_NAV, navRate);
 
   //If enabled, adjust GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
@@ -335,7 +336,7 @@ bool setRate(double secondsBetweenSolutions)
     setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //Update GSV setting in file
     response &= i2cGNSS.addCfgValset8(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module
   }
-  response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0); //Dummy closing value - max 4 pairs
+  response &= i2cGNSS.sendCfgValset(); //Closing value - max 4 pairs
 
   //If we successfully set rates, only then record to settings
   if (response == true)

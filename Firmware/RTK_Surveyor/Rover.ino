@@ -18,7 +18,8 @@ bool configureUbloxModuleRover()
   bool response = true;
 
   //Set output rate
-  response &= i2cGNSS.newCfgValset16(UBLOX_CFG_RATE_MEAS, settings.measurementRate);
+  response &= i2cGNSS.newCfgValset();
+  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_MEAS, settings.measurementRate);
   response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_NAV, settings.navigationRate);
 
   //Survey mode is only available on ZED-F9P modules
@@ -64,7 +65,8 @@ bool configureUbloxModuleRover()
     response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
   }
 
-  response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0); //Dummy closing value - 27 pairs
+  response &= i2cGNSS.sendCfgValset(); //Closing - 27 keys
+  
   if (response == false) Serial.println("Rover config failed");
 
   return (response);

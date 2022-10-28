@@ -631,7 +631,7 @@ void menuDebug()
     }
     else if (incoming == 17)
     {
-      bool response = enableMessagesUSB();
+      bool response = setMessagesUSB();
 
       if (response == false)
         Serial.println(F("Failed to enable USB messages"));

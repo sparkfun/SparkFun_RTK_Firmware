@@ -199,12 +199,12 @@ void menuMessages()
   clearBuffer(); //Empty buffer of any newline chars
 
   //Make sure the appropriate messages are enabled
-  bool response = enableMessages(); //Does a complete open/closed val set
+  bool response = setMessages(); //Does a complete open/closed val set
   if (response == false)
   {
     Serial.println("menuMessages: Failed to enable UART1 messages - Try 1");
 
-    response = enableMessages(); //Does a complete open/closed val set
+    response = setMessages(); //Does a complete open/closed val set
     
     if (response == false)
       Serial.println("menuMessages: Failed to enable UART1 messages - Try 2");
@@ -674,8 +674,8 @@ void setLogTestFrequencyMessages(int rate, int messages)
 
 
   //Apply these message rates to both UART1 and USB
-  enableMessages(); //Does a complete open/closed val set
-  enableMessagesUSB();
+  setMessages(); //Does a complete open/closed val set
+  setMessagesUSB();
 }
 
 //The log test allows us to record a series of different system configurations into

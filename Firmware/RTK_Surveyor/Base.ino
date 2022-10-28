@@ -20,7 +20,8 @@ bool configureUbloxModuleBase()
   bool response = true;
 
   //In Base mode we force 1Hz
-  response &= i2cGNSS.newCfgValset16(UBLOX_CFG_RATE_MEAS, 1000);
+  response &= i2cGNSS.newCfgValset();
+  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_MEAS, 1000);
   response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_NAV, 1);
 
   //Since we are at 1Hz, allow GSV NMEA to be reported at whatever the user has chosen
@@ -67,7 +68,7 @@ bool configureUbloxModuleBase()
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART2, 1);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 1);
 
-  response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0); //Dummy closing value - #31
+  response &= i2cGNSS.sendCfgValset(); //Closing value - #31
 
   if (response == false)
     Serial.println("Base config fail");

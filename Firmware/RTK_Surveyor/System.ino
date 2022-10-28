@@ -23,7 +23,8 @@ bool configureUbloxModule()
   }
 
   //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
-  response &= i2cGNSS.newCfgValset16(UBLOX_CFG_RATE_MEAS, 1000);
+  response &= i2cGNSS.newCfgValset();
+  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_MEAS, 1000);
   response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_NAV, 1);
 
   //Survey mode is only available on ZED-F9P modules
@@ -41,7 +42,7 @@ bool configureUbloxModule()
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1INPROT_NMEA, 1);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1INPROT_RTCM3X, 1);
 
-  response &= i2cGNSS.addCfgValset32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud); //Defaults to 460800 to maximize message output support
+  response &= i2cGNSS.addCfgValset32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud); //Defaults to 230400 to maximize message output support
   response &= i2cGNSS.addCfgValset32(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud); //Defaults to 57600 to match SiK telemetry radio firmware default
 
   //Disable SPI port - This is just to remove some overhead by ZED
@@ -79,21 +80,25 @@ bool configureUbloxModule()
     response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBOUTPROT_RTCM3X, 1);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_UBX, 1);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_NMEA, 1);
-  response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_USBINPROT_RTCM3X, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_RTCM3X, 1); //35
+
+  response &= i2cGNSS.sendCfgValset();
 
   //Enable the constellations the user has set
-  response &= setConstellations(false); //Do not apply newCfg or sendCfg to value set
-
+  response &= setConstellations(true); //19 messages. Send newCfg or sendCfg with value set
   if (response == false)
     Serial.println("Module failed config block 1");
+  response = true; //Reset
 
   //Make sure the appropriate messages are enabled
-  response &= enableMessages(); //Does a complete open/closed val set
+  response &= setMessages(); //73 messages. Does a complete open/closed val set
   if (response == false)
     Serial.println("Module failed config block 2");
+  response = true; //Reset
 
   //Disable NMEA messages on all but UART1
-  response &= i2cGNSS.newCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0);
+  response &= i2cGNSS.newCfgValset();
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_I2C, 0);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_I2C, 0);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_I2C, 0);
@@ -116,6 +121,7 @@ bool configureUbloxModule()
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GST_SPI, 0);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_SPI, 0);
   response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0);
+  response &= i2cGNSS.sendCfgValset();
 
   if (response == false)
     Serial.println("Module failed config block 3");
@@ -450,32 +456,32 @@ void settingsToDefaults()
 //Enable all the valid messages for this platform
 //There are 73 messages so split in two batches, limited to 64 a batch
 //Uses dummy newCfg and sendCfg values to be sure we open/close a complete set
-bool enableMessages()
+bool setMessages()
 {
   bool response = true;
 
-  response &= i2cGNSS.newCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_SPI, 0); //Dummy opening value - #1
-  for (int x = 0 ; x < 62 ; x++)
+  response &= i2cGNSS.newCfgValset();
+  for (int x = 0 ; x < 36 ; x++)
   {
     if (settings.ubxMessages[x].supported & zedModuleType)
       response &= i2cGNSS.addCfgValset8(settings.ubxMessages[x].msgConfigKey, settings.ubxMessages[x].msgRate);
   }
-  response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0); //Dummy closing value - #64
+  response &= i2cGNSS.sendCfgValset();
 
-  //Final 11 messages
-  response &= i2cGNSS.newCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_SPI, 0); //Dummy opening value - #1
-  for (int x = 62 ; x < MAX_UBX_MSG ; x++)
+  //Final messages
+  response &= i2cGNSS.newCfgValset();
+  for (int x = 36 ; x < MAX_UBX_MSG ; x++)
   {
     if (settings.ubxMessages[x].supported & zedModuleType)
       response &= i2cGNSS.addCfgValset8(settings.ubxMessages[x].msgConfigKey, settings.ubxMessages[x].msgRate);
   }
-  response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0); //Dummy closing value - #13
+  response &= i2cGNSS.sendCfgValset();
 
   return (response);
 }
 
 //Enable all the valid messages for this platform over the USB port
-bool enableMessagesUSB()
+bool setMessagesUSB()
 {
   bool response = true;
 
@@ -487,12 +493,13 @@ bool enableMessagesUSB()
 //Enable all the valid constellations and bands for this platform
 //Band support varies between platforms and firmware versions
 //We open/close a complete set if sendCompleteBatch = true
+//19 messages
 bool setConstellations(bool sendCompleteBatch)
 {
   bool response = true;
 
   if (sendCompleteBatch)
-    response &= i2cGNSS.newCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_SPI, 0); //Dummy opening value
+    response &= i2cGNSS.newCfgValset();
 
   response &= i2cGNSS.addCfgValset8(settings.ubxConstellations[0].configKey, settings.ubxConstellations[0].enabled); //GPS
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_GPS_L1CA_ENA, settings.ubxConstellations[0].enabled);
@@ -531,10 +538,10 @@ bool setConstellations(bool sendCompleteBatch)
 
   response &= i2cGNSS.addCfgValset8(settings.ubxConstellations[5].configKey, settings.ubxConstellations[5].enabled); //GLO
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_GLO_L1_ENA, settings.ubxConstellations[5].enabled);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_GLO_L2_ENA, settings.ubxConstellations[5].enabled); //53 keys
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_GLO_L2_ENA, settings.ubxConstellations[5].enabled);
 
   if (sendCompleteBatch)
-    response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0); //Dummy closing value
+    response &= i2cGNSS.sendCfgValset();
 
   return (response);
 }

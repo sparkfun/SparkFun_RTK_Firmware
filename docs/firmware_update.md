@@ -24,17 +24,17 @@ The GUI method is generally recommended. For more information see [here](https:/
 
 Remember, all SparkFun RTK devices are open source hardware meaning you have total access to the [firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and [hardware](https://github.com/sparkfun/SparkFun_RTK_Facet). Be sure to check out each repo for the latest firmware and hardware information.
 
-## Updating Firmware Using Windows GUI
+## Updating Firmware Using The Uploader GUI
 
-![RTK Firmware GUI](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/blob/main/u-blox_Update_GUI/SparkFun_RTK_u-blox_Update_GUI.jpg?raw=true)
+![RTK Firmware GUI](./img/RTK_Uploader_Windows.png)
 
 *RTK Firmware GUI*
 
-This GUI makes it easy to point and click your way through a firmware update.
+This GUI makes it easy to point and click your way through a firmware update. There are versions for Windows, Linux, MacOS and a Python installer.
 
-Download the GUI [here](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/raw/main/Uploader_GUI/Windows_exe/RTK_Firmware_Uploader_GUI.exe). 
+The GUI can be downloaded from its own [dedicated repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader). 
 
-Download the latest binary file located on the [releases page](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [binaries repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries).
+Download the latest RTK binary file located on the [releases page](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [binaries repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries).
 
 **To Use**
 
@@ -47,12 +47,14 @@ Download the latest binary file located on the [releases page](https://github.co
 *Device Manager showing 'USB-Serial CH340' port on COM27*
 
 * Get the latest binary file located on the [releases page](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [binaries repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries).
-* Run *[RTK_Firmware_Uploader_GUI.exe](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/raw/main/Uploader_GUI/Windows_exe/RTK_Firmware_Uploader_GUI.exe)* (it takes a few seconds to start)
+* Run *RTK_Firmware_Uploader_GUI.exe* (it takes a few seconds to start)
 * Click *Browse* and select the binary file to upload
 * Select the COM port previously seen in the Device Manager
 * Click *Upload Firmware*
 
 Once complete, the device will reset and power down.
+
+If your RTK 'freezes' after the update, press ```Reset ESP32``` to get it going again.
 
 ## Updating Firmware From the SD Card
 

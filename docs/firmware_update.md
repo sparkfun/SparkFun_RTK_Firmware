@@ -15,7 +15,7 @@ You can check your firmware by opening the main menu by pressing a key at any ti
 
 From time to time SparkFun will release new firmware for the RTK product line to add and improve functionality. For most users, firmware can be upgraded by loading the appropriate binary file located on the [releases page](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [binaries repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries). Once the firmware is downloaded, loading the firmware onto an RTK product can be achieved by using one of the following methods:
 
-* [GUI Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui): Use the [Windows GUI](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/raw/main/Uploader_GUI/Windows_exe/RTK_Firmware_Uploader_GUI.exe) and a USB cable. (This method is python based which can also be used on Linux, Mac OS, and Raspberry Pi)
+* [GUI Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui): Use the [Windows, Linux, MacOS or Python GUI](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader) and a USB cable. (The Python package has been tested on Raspberry Pi)
 * [SD Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-the-sd-card): Load the firmware on an SD card, then use a serial terminal with the *Firmware Upgrade* menu
 * [WiFi Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-wifi): Load the firmware over WiFi when the device is in WiFi AP Config Mode
 * [CLI Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli): Use the command line *batch_program.bat*
@@ -30,24 +30,24 @@ Remember, all SparkFun RTK devices are open source hardware meaning you have tot
 
 *RTK Firmware GUI*
 
-This GUI makes it easy to point and click your way through a firmware update. There are versions for Windows, Linux, MacOS and a Python installer.
+This GUI makes it easy to point and click your way through a firmware update. There are versions for Windows, Linux, MacOS and a Python package installer.
 
-The GUI can be downloaded from its own [dedicated repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader). 
+The GUI can be downloaded from its own [**dedicated repo**](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader). 
 
-Download the latest RTK binary file located on the [releases page](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [binaries repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries).
+Download the latest RTK firmware binary file located on the [**releases page**](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [**binaries repo**](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries).
 
 **To Use**
 
 * Attach the RTK device to your computer using a USB cable. 
 * Turn the RTK device on.
-* Open Windows Device Manager to confirm which COM port the device is operating on.
+* On Windows, open the Device Manager to confirm which COM port the device is operating on. On other platforms, check ```/dev```.
 
 ![Device Manager showing USB-Serial CH340 port on COM27](img/SparkFun%20RTK%20Firmware%20Uploader%20COM%20Port.jpg)
 
 *Device Manager showing 'USB-Serial CH340' port on COM27*
 
 * Get the latest binary file located on the [releases page](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [binaries repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries).
-* Run *RTK_Firmware_Uploader_GUI.exe* (it takes a few seconds to start)
+* Run *RTKUploader.exe* (it takes a few seconds to start)
 * Click *Browse* and select the binary file to upload
 * Select the COM port previously seen in the Device Manager
 * Click *Upload Firmware*
@@ -104,7 +104,9 @@ Once the correct COM is identified, run 'batch_program.bat' along with the binar
 
 The batch file runs the following commands:
 
+```
 esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/RTK_Surveyor_Partitions_16MB.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
+```
 
 Where *COM6* is replaced with the COM port that the RTK product enumerated at and *RTK_Surveyor_Firmware_vxx.bin* is the firmware you would like to load.
 
@@ -136,7 +138,9 @@ The GUI (as of v1.3) will autodetect the ESP32's flash size and load the appropr
 
 If you are using the CLI method, be sure to point at the [4MB partition file](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/blob/main/bin/RTK_Surveyor_Partitions_4MB.bin?raw=true). For example:
 
+```
 esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/**RTK_Surveyor_Partitions_4MB**.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
+```
 
 ### Determining Size of Flash
 
@@ -161,7 +165,7 @@ The firmware loaded onto the ZED-F9P, ZED-F9R, and NEO-D9S receivers is written 
 
 Not sure what firmware is loaded onto your RTK product? Open the [System Status Menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system_status/) to display the module's current firmware version.
 
-The firmware on u-blox devices can be updated using a [Windows-based GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-using-windows-gui) or [u-center](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-using-u-center). A CLI method is also possible using the ubxfwupdate.exe tool provided with u-center. Additionally, u-blox offers the source for the ubxfwupdate tool that is written in C. It is currently released only under an NDA so contact your local u-blox Field Applications Engineer if you need a different method.
+The firmware on u-blox devices can be updated using a [Windows-based GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-using-windows-gui) or [u-center](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-using-u-center). A CLI method is also possible using the `ubxfwupdate.exe` tool provided with u-center. Additionally, u-blox offers the source for the ubxfwupdate tool that is written in C. It is currently released only under an NDA so contact your local u-blox Field Applications Engineer if you need a different method.
 
 ## Updating Using Windows GUI
 
@@ -171,7 +175,7 @@ The firmware on u-blox devices can be updated using a [Windows-based GUI](https:
 
 The [SparkFun RTK u-blox Firmware Update Tool](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/tree/main/u-blox_Update_GUI) is a simple Windows GUI and python script that runs the ubxfwupdate.exe tool. This allows users to directly update module firmware without the need for u-center. Additionally, this tool queries the module to verify that the firmware type matches the module. Because the RTK Facet L-Band contains two u-blox modules that both appear as identical serial ports, it can be difficult and perilous to know which port to load firmware. This tool prevents ZED-F9P firmware from being accidentally loaded onto a NEO-D9S receiver and vice versa.
 
-The SparkFun RTK u-blox Firmware Update Tool will only run on Windows as it relies upon u-blox's ubxfwupdate.exe. The full, integrated executable for Windows is available [here](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/raw/main/u-blox_Update_GUI/Windows_exe/RTK_u-blox_Update_GUI.exe).
+The SparkFun RTK u-blox Firmware Update Tool will only run on Windows as it relies upon u-blox's `ubxfwupdate.exe`. The full, integrated executable for Windows is available [here](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/raw/main/u-blox_Update_GUI/Windows_exe/RTK_u-blox_Update_GUI.exe).
 
 * Attach the RTK device's USB port to your computer using a USB cable
 * Turn the RTK device on

@@ -32,13 +32,13 @@ Remember, all SparkFun RTK devices are open source hardware meaning you have tot
 
 This GUI makes it easy to point and click your way through a firmware update. There are versions for Windows, Linux, MacOS and a Python package installer.
 
-The GUI can be downloaded from its own [**dedicated repo**](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader). 
+The GUI can be downloaded from its own [**dedicated repo**](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader).
 
 Download the latest RTK firmware binary file located on the [**releases page**](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [**binaries repo**](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries).
 
 **To Use**
 
-* Attach the RTK device to your computer using a USB cable. 
+* Attach the RTK device to your computer using a USB cable.
 * Turn the RTK device on.
 * On Windows, open the Device Manager to confirm which COM port the device is operating on. On other platforms, check ```/dev```.
 
@@ -116,7 +116,7 @@ Upon completion, your RTK device will reset and power down.
 
 ### macOS / Linux
 
-Get [esptool.py](https://github.com/espressif/esptool). Connect a USB A to C cable from your computer to the ESP32 port on the RTK device. Turn the unit on. Now identify the COM port the RTK enumerated at. 
+Get [esptool.py](https://github.com/espressif/esptool). Connect a USB A to C cable from your computer to the ESP32 port on the RTK device. Turn the unit on. Now identify the COM port the RTK enumerated at.
 
 If the COM port is not showing be sure the unit is turned **On**. If an unknown device is appearing, you’ll need to [install drivers for the CH340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Once you know the COM port, run the following command:
 
@@ -239,13 +239,13 @@ As of writing, no additional releases of the NEO-D9S firmware have been made.
 
 The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To compile:
 
-1. Install [Arduino](https://www.arduino.cc/en/software). 
+1. Install [Arduino](https://www.arduino.cc/en/software).
 2. Install ESP32 for Arduino. [Here](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide#installing-via-arduino-ide-boards-manager) are some good instructions for installing it via the Arduino Boards Manager. **Note**: Use v2.0.2 of the core. **Note:** We use the 'ESP32 Dev Module' for pin numbering. Select the correct board under Tools->Board->ESP32 Arduino->ESP32 Dev Module.
 3. Change the Partition table. Replace 'C:\Users\\[user name]\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.2\tools\partitions\app3M_fat9M_16MB.csv' with the app3M_fat9M_16MB.csv [file](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/Firmware/app3M_fat9M_16MB.csv?raw=true) found in the [Firmware folder](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Firmware). This will increase the program partition from a maximum of 1.9MB to 3MB.
-4. From the Arduino IDE, set the core settings from the **Tools** menu: 
-    
+4. From the Arduino IDE, set the core settings from the **Tools** menu:
+
     A. Set the 'Partition Scheme' to *16M Flash (3MB APP/9MB FATFS)*. This will use the 'app3M_fat9M_16MB.csv' updated partition table.
-    
+
     B. Set the 'Flash Size' to 16MB (128mbit)
 
 5. Obtain all the required libraries. **Note:** You should click on the link next to each of the #includes at the top of RTK_Surveyor.ino within the Arduino IDE to open the library manager and download them. Getting them directly from Github also works but may not be 'official' releases:
@@ -366,32 +366,58 @@ Insert the following text into the file:
     #      1: ttyUSBn
     #      2: Firmware file
     #
-    sudo python3 ~/.arduino15/packages/esp32/tools/esptool_py/*/esptool.py --chip esp32 --port /dev/$1 --baud 230400 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect \
-    0x1000   ~/SparkFun/RTK/Binaries/bin/RTK_Surveyor.ino.bootloader.bin \
-    0x8000   ~/SparkFun/RTK/Binaries/bin/RTK_Surveyor_Partitions_16MB.bin \
-    0xe000   ~/SparkFun/RTK/Binaries/bin/boot_app0.bin \
+    sudo python3 ~/SparkFun/RTK_Binaries/Uploader_GUI/esptool.py --chip esp32 --port /dev/$1 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect \
+    0x1000   ~/SparkFun/RTK_Binaries/bin/RTK_Surveyor.ino.bootloader.bin \
+    0x8000   ~/SparkFun/RTK_Binaries/bin/RTK_Surveyor_Partitions_16MB.bin \
+    0xe000   ~/SparkFun/RTK_Binaries/bin/boot_app0.bin \
     0x10000  $2
 
 14. chmod +x new-firmware.sh
+15. nano new-firmware-4mb.sh
+
+Insert the following text into the file:
+
+    #!/bin/bash
+    #   new-firmware-4mb.sh
+    #
+    #   Shell script to load firmware into the 4MB RTK Express via the ESP32 port
+    #
+    #   Parameters:
+    #      1: ttyUSBn
+    #      2: Firmware file
+    #
+    sudo python3 ~/SparkFun/RTK_Binaries/Uploader_GUI/esptool.py --chip esp32 --port /dev/$1 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect \
+    0x1000   ~/SparkFun/RTK_Binaries/bin/RTK_Surveyor.ino.bootloader.bin \
+    0x8000   ~/SparkFun/RTK_Binaries/bin/RTK_Surveyor_Partitions_4MB.bin \
+    0xe000   ~/SparkFun/RTK_Binaries/bin/boot_app0.bin \
+    0x10000  $2
+
+16. chmod +x new-firmware-4mb.sh
 
 Get the SparkFun RTK Firmware sources
 
-15. mkdir ~/SparkFun/RTK
-16. cd ~/SparkFun/RTK
-17. git clone https://github.com/sparkfun/SparkFun_RTK_Firmware .
+17. mkdir ~/SparkFun/RTK
+18. cd ~/SparkFun/RTK
+19. git clone https://github.com/sparkfun/SparkFun_RTK_Firmware .
+
+Get the SparkFun RTK binaries
+
+20. mkdir ~/SparkFun/RTK_Binaries
+21. cd ~/SparkFun/RTK_Binaries
+22. git clone https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries.git .
 
 Install the Arduino IDE
 
-18. mkdir ~/SparkFun/arduino
-19. cd ~/SparkFun/arduino
-20. wget https://downloads.arduino.cc/arduino-1.8.15-linux64.tar.xz
-21. tar -xvf ./arduino-1.8.15-linux64.tar.xz
-22. cd arduino-1.8.15/
-23. sudo ./install.sh
+23. mkdir ~/SparkFun/arduino
+24. cd ~/SparkFun/arduino
+25. wget https://downloads.arduino.cc/arduino-1.8.15-linux64.tar.xz
+26. tar -xvf ./arduino-1.8.15-linux64.tar.xz
+27. cd arduino-1.8.15/
+28. sudo ./install.sh
 
 Add the ESP32 support
 
-24. arduino
+29. arduino
     1. Click on File in the menu bar
     2. Click on Preferences
     3. Go down to the Additional Boards Manager URLs text box
@@ -404,22 +430,22 @@ Add the ESP32 support
 
 Get the required external libraries, then add to the Sketchbook location from above
 
-25. cd   ~/Arduino/libraries
-26. mkdir AsyncTCP
-27. cd AsyncTCP/
-28. git clone https://github.com/me-no-dev/AsyncTCP.git .
-29. cd ..
-30. mkdir ESPAsyncWebServer
-31. cd ESPAsyncWebServer
-32. git clone https://github.com/me-no-dev/ESPAsyncWebServer .
+30. cd   ~/Arduino/libraries
+31. mkdir AsyncTCP
+32. cd AsyncTCP/
+33. git clone https://github.com/me-no-dev/AsyncTCP.git .
+34. cd ..
+35. mkdir ESPAsyncWebServer
+36. cd ESPAsyncWebServer
+37. git clone https://github.com/me-no-dev/ESPAsyncWebServer .
 
 Connect the Config ESP32 port of the RTK to a USB port on the computer
 
-33. ls /dev/ttyUSB*
+38. ls /dev/ttyUSB*
 
 Enable the libraries in the Arduino IDE
 
-34. arduino
+39. arduino
     1. From the menu, click on File
     2. Click on Open...
     3. Select the ~/SparkFun/RTK/Firmware/RTK_Surveyor/RTK_Surveyor.ino file
@@ -483,8 +509,8 @@ Enable the libraries in the Arduino IDE
     30. From the menu click on File
     31. Click on Quit
 
-35. cd ~/SparkFun/RTK/
-36. cp  Firmware/app3M_fat9M_16MB.csv  ~/.arduino15/packages/esp32/hardware/esp32/2.0.2/tools/partitions/app3M_fat9M_16MB.csv
+40. cd ~/SparkFun/RTK/
+41. cp  Firmware/app3M_fat9M_16MB.csv  ~/.arduino15/packages/esp32/hardware/esp32/2.0.2/tools/partitions/app3M_fat9M_16MB.csv
 
 ### Arduino CLI
 

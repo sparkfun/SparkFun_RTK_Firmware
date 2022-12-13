@@ -20,13 +20,6 @@ The line of RTK products offered by SparkFun all run identical firmware. The [RT
     <td><a href="https://www.sparkfun.com/products/18443">SparkFun RTK Surveyor (GPS-18443)</a></td>
   </tr>
   <tr align="center">
-    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_facet/">Hardware Overview</a></td>
-    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_facet/">Hardware Overview</a></td>
-    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_express_plus/">Hardware Overview</a></td>
-    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_express/">Hardware Overview</a></td>
-    <td><a href="https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_surveyor/">Hardware Overview</a></td>
-  </tr>
-  <tr align="center">
     <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-l-band-hookup-guide">Hookup Guide</a></td>
     <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-facet-hookup-guide">Hookup Guide</a></td>
     <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-express-hookup-guide">Hookup Guide</a></td>

@@ -13,9 +13,9 @@ Tools Needed:
 
 ## Opening Facet
 
-![Remove the protective silicon sock](img/Repair/SparkFun-RTK-Repair-1.jpg)
+![Remove the protective silicone boot](img/Repair/SparkFun-RTK-Repair-1.jpg)
 
-Starting from the back of the unit, remove the protective silicon sock. If your sock has gotten particularly dirty from field use, rinse it with warm water and soap to clean up.
+Starting from the back of the unit, remove the protective silicone boot. If your boot has gotten particularly dirty from field use, rinse it with warm water and soap to clean it up.
 
 ![Remove four Philips head screws](img/Repair/SparkFun-RTK-Repair-2.jpg)
 
@@ -183,6 +183,6 @@ Plate the dome over the antenna with the front 'tooth' aligning over the display
 
 Secure the dome in place using four *small* screws.
 
-Replace the silicon boot around the device.
+Replace the silicone boot around the device.
 
 Power on the RTK Facet and take outside to confirm SIV reaches above ~20 satellites and HPA is below ~1.0m.

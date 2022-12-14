@@ -6,8 +6,8 @@ The RTK product line is fully open-source hardware. This allows users to view sc
 
 Tools Needed:
 
-* [Small Philips head screwdriver](https://www.sparkfun.com/products/9146)
-* [Curved tweezers](https://www.sparkfun.com/products/10602)
+* [Small Philips Head Screwdriver](https://www.sparkfun.com/products/9146)
+* [Curved Tweezers](https://www.sparkfun.com/products/10602)
 * [U.FL Puller](https://www.sparkfun.com/products/20687) - *Recommended*
 * [Wire Cutters](https://www.sparkfun.com/products/10447) - *Recommended*
 
@@ -23,9 +23,9 @@ Remove the four Philips head screws. They may not come all the way out of the lo
 
 ![Lid removed](img/Repair/SparkFun-RTK-Repair-3.jpg)
 
-The top lid should then come off. Note the display overlay is adhesive and may adhere slightly to the 'tooth' on the lid. You will not damage anything by gently prying it loose.
+The top lid should then come off. The front overlay is adhesive and may adhere slightly to the 'tooth' on the lid. You will not damage anything by gently prying it loose from the lid as you lift the lid.
 
-**Note:** The lid makes a great screw bin.
+**Tip:** The lid makes a great screw bin.
 
 ![Remove the antenna](img/Repair/SparkFun-RTK-Repair-4.jpg)
 
@@ -101,7 +101,7 @@ Gently peel off the adhesive overlay from the front face. This cannot be saved.
 
 ![New display board in place](img/Repair/SparkFun-RTK-Repair-17.jpg)
 
-Slide the old display board out. Remove the brown FPC and move over to the new display board. Insert the new display board into the slot.
+Slide the old display board out. Remove the brown FPC from the old display board and move over to the new display board. Insert the new display board into the slot.
 
 ![Remove film](img/Repair/SparkFun-RTK-Repair-18.jpg)
 
@@ -109,7 +109,7 @@ With the new display board in place, remove the protective film from the display
 
 ![Apply new overlay](img/Repair/SparkFun-RTK-Repair-19.jpg)
 
-Remove the backing from the new overlay. Stick the overlay on top of the display.
+Remove the backing from the new overlay. Stick the overlay into the center of the front face area.
 
 ![Insert tab into connector](img/Repair/SparkFun-RTK-Repair-20.jpg)
 
@@ -141,7 +141,7 @@ Reconnect the display board to the main board. Be sure to close the arm on the m
 
 ![Internal Power Button](img/Repair/SparkFun-RTK-Repair-24.jpg)
 
-The RTK Facet has two power buttons: the external button on the overlay and an internal button on the back of the display board. Pressing and holding the internal button will verify the connection between the display board and main board.
+The RTK Facet has two power buttons: the external button on the overlay and an internal button on the back of the display board (shown above). Pressing and holding the internal button will verify the connection between the display board and the main board.
 
 If the internal button is not working, remove and reinsert the FPC connecting the display board to the main board.
 

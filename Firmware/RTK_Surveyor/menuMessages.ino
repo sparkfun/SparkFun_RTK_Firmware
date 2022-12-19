@@ -42,6 +42,10 @@ void menuLog()
     if (settings.enableMarksFile == true) Serial.println("Enabled");
     else Serial.println("Disabled");
 
+    Serial.print("6) Reset system if the SD card is detected but fails to initialize: ");
+    if (settings.forceResetOnSDFail == true) Serial.println("Enabled");
+    else Serial.println("Disabled");
+
     Serial.println("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
@@ -89,6 +93,10 @@ void menuLog()
     else if (incoming == 5)
     {
       settings.enableMarksFile ^= 1;
+    }
+    else if (incoming == 6)
+    {
+      settings.forceResetOnSDFail ^= 1;
     }
     else if (incoming == 'x')
       break;
@@ -205,7 +213,7 @@ void menuMessages()
     Serial.println("menuMessages: Failed to enable UART1 messages - Try 1");
 
     response = setMessages(); //Does a complete open/closed val set
-    
+
     if (response == false)
       Serial.println("menuMessages: Failed to enable UART1 messages - Try 2");
     else
@@ -356,7 +364,7 @@ void beginLogging(const char *customFileName)
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {
         markSemaphore(FUNCTION_CREATEFILE);
-        
+
         // O_CREAT - create the file if it does not exist
         // O_APPEND - seek to the end of the file prior to each write
         // O_WRITE - open for write
@@ -445,12 +453,10 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
   if (online.logging == true)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
-    //Wait up to 1000ms
-    if (gotSemaphore || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
+    //Wait up to 1000ms to allow hanging SD writes to time out
+    if (gotSemaphore || (xSemaphoreTake(sdCardSemaphore, 4000 / portTICK_PERIOD_MS) == pdPASS))
     {
       markSemaphore(FUNCTION_ENDLOGGING);
-      
-      //Do not check if SD isPresent() as this will interfere with file closing
 
       online.logging = false;
 
@@ -468,9 +474,12 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
     } //End sdCardSemaphore
     else
     {
+      char semaphoreHolder[50];
+      getSemaphoreFunction(semaphoreHolder);
+
       //This is OK because in the interim more data will be written to the log
       //and the log file will eventually be closed by the next call in loop
-      log_d("sdCardSemaphore failed to yield, menuMessages.ino line %d", __LINE__);
+      log_d("sdCardSemaphore failed to yield, held by %s, menuMessages.ino line %d\r\n", semaphoreHolder, __LINE__);
     }
   }
 }
@@ -506,7 +515,7 @@ bool findLastLog(char *lastLogName)
     if (xSemaphoreTake(sdCardSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
     {
       markSemaphore(FUNCTION_FINDLOG);
-      
+
       //Count available binaries
       SdFile tempFile;
       SdFile dir;
@@ -801,7 +810,7 @@ void updateLogTest()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_LOGTEST);
-      
+
       ubxFile->println(nmeaMessage);
       xSemaphoreGive(sdCardSemaphore);
     }

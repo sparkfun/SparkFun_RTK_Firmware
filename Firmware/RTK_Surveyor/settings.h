@@ -527,6 +527,7 @@ typedef struct {
   int gnssHandlerBufferSize = 1024 * 4; //This buffer is filled from the UART receive buffer, and is then written to SD
   bool enablePrintBufferOverrun = false;
   bool enablePrintSDBuffers = false;
+  bool forceResetOnSDFail = false; //Set to true to reset system if SD is detected but fails to start.
 } Settings;
 Settings settings;
 const Settings defaultSettings = Settings();

@@ -238,7 +238,7 @@ void beginSD()
       delay(10);
       tries++;
     }
-    if (tries == maxTries) break;
+    if (tries == maxTries) break; //Give up loop
 
     //If an SD card is present, allow SdFat to take over
     log_d("SD card detected");
@@ -265,8 +265,11 @@ void beginSD()
 
       if (tries == maxTries)
       {
-        Serial.println("SD init failed. Is card present? Formatted?");
+        Serial.println("SD init failed. Is card formatted?");
         digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+
+        if(settings.forceResetOnSDFail == true)
+          ESP.restart();
         break;
       }
     }

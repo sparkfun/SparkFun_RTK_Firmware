@@ -269,13 +269,14 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     client->text(settingsCSV);
     wifiSetState(WIFI_CONNECTED);
 
-    apConfigPageConnected = true; //This forces the initial settings to be received first, before sending coordinate updates
     lastCoordinateUpdate = millis();
   }
   else if (type == WS_EVT_DISCONNECT) {
-    apConfigPageConnected = false;
     log_d("Websocket client disconnected");
     wifiSetState(WIFI_NOTCONNECTED);
+
+    //User has either refreshed the page or disconnected. Recompile the current settings.
+    createSettingsString(settingsCSV);
   }
   else if (type == WS_EVT_DATA) {
     for (int i = 0; i < len; i++) {
@@ -582,8 +583,6 @@ void createCoordinateString(char* settingsCSV)
   stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
 
   strcat(settingsCSV, "\0");
-  Serial.printf("settingsCSV len: %d\r\n", strlen(settingsCSV));
-  Serial.printf("settingsCSV: %s\r\n", settingsCSV);
 #endif
 }
 
@@ -767,6 +766,11 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     factoryReset();
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
+    //Confirm receipt
+    log_d("Sending reset confirmation");
+    ws.textAll("confirmReset,1,");
+    delay(500); //Allow for delivery
+
     Serial.println("Reset after AP Config");
 
     ESP.restart();
@@ -955,6 +959,10 @@ bool parseIncomingSettings()
 
     updateSettingWithValue(settingName, valueStr);
   }
+
+  //Confirm receipt
+  log_d("Sending save confirmation");
+  ws.textAll("confirmSave,1,");
 
   return (true);
 }

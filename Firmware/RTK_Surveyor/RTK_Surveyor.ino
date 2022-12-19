@@ -359,7 +359,6 @@ char *incomingSettings;
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 unsigned long lastCoordinateUpdate = 0;
-bool apConfigPageConnected = false;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //PointPerfect Corrections

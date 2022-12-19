@@ -1,7 +1,10 @@
-//var ws = new WebSocket("ws://192.168.1.105/ws"); //WiFi mode
-var ws = new WebSocket("ws://192.168.4.1/ws"); //AP Mode
+//var gateway = 'ws://192.168.1.105/ws'; //WiFi mode
+var gateway = 'ws://192.168.4.1/ws'; //AP mode
+var websocket = new WebSocket(gateway);
+var resetTimeout = 0;
+var saveTimeout = 0;
 
-ws.onmessage = function (msg) {
+websocket.onmessage = function (msg) {
     parseIncoming(msg.data);
 };
 
@@ -103,6 +106,14 @@ function parseIncoming(msg) {
         ) {
             ge(id).innerHTML = val;
         }
+
+        else if (id.includes("confirmReset")) {
+            resetComplete();
+        }
+        else if (id.includes("confirmSave")) {
+            saveComplete();
+        }
+
         else if (id.includes("profileNumber")) {
             currentProfileNumber = val;
             $("input[name=profileRadio][value=" + currentProfileNumber + "]").prop('checked', true);
@@ -231,7 +242,9 @@ function sendData() {
     }
 
     console.log("Sending: " + settingCSV);
-    ws.send(settingCSV);
+    websocket.send(settingCSV);
+
+    saveTimeout = setTimeout(sendData, 2000);
 }
 
 function showError(id, errorText) {
@@ -522,9 +535,9 @@ function changeConfig() {
 
         sendData();
         clearError('saveBtn');
-        showSuccess('saveBtn', "All saved!");
+        showSuccess('saveBtn', "Saving...");
 
-        ws.send("setProfile," + currentProfileNumber + ",");
+        websocket.send("setProfile," + currentProfileNumber + ",");
 
         ge("collapseProfileConfig").classList.add('show');
         ge("collapseGNSSConfig").classList.add('show');
@@ -549,10 +562,9 @@ function saveConfig() {
         clearSuccess('saveBtn');
     }
     else {
-        //Tell Arduino we're ready to save
         sendData();
         clearError('saveBtn');
-        showSuccess('saveBtn', "All saved!");
+        showSuccess('saveBtn', "Saving...");
     }
 
 }
@@ -622,7 +634,7 @@ function clearElement(id, value) {
 
 function resetToFactoryDefaults() {
     ge("factoryDefaultsMsg").innerHTML = "Defaults Applied. Please wait for device reset...";
-    ws.send("factoryDefaultReset,1,");
+    websocket.send("factoryDefaultReset,1,");
 }
 
 function zeroElement(id) {
@@ -749,13 +761,27 @@ function useGeodeticCoordinates() {
 }
 
 function startNewLog() {
-    ws.send("startNewLog,1,");
+    websocket.send("startNewLog,1,");
 }
 
 function exitConfig() {
-    show("exitPage");
+    show("resetInProcess");
     hide("mainPage");
-    ws.send("exitAndReset,1,");
+
+    console.log("Sending reset");
+    websocket.send("exitAndReset,1,");
+    resetTimeout = setTimeout(exitConfig, 2000);
+}
+
+function resetComplete() {
+    clearTimeout(resetTimeout);
+    show("resetComplete");
+    hide("resetInProcess");
+}
+
+function saveComplete() {
+    clearTimeout(saveTimeout);
+    showSuccess('saveBtn', "All Saved!");
 }
 
 function firmwareUploadWait() {
@@ -774,12 +800,12 @@ function firmwareUploadComplete() {
 function forgetPairedRadios() {
     ge("btnForgetRadiosMsg").innerHTML = "All radios forgotten.";
     ge("peerMACs").innerHTML = "None";
-    ws.send("forgetEspNowPeers,1,");
+    websocket.send("forgetEspNowPeers,1,");
 }
 
 function btnResetProfile() {
     ge("resetProfileMsg").innerHTML = "Resetting profile.";
-    ws.send("resetProfile,1,");
+    websocket.send("resetProfile,1,");
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {

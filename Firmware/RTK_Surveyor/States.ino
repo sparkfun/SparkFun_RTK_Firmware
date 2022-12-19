@@ -626,23 +626,23 @@ void updateSystemState()
             }
           }
 
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
           //Dynamically update the coordinates on the AP page
-          if (apConfigPageConnected)
+          if (wifiState == WIFI_CONNECTED)
           {
             if (millis() - lastCoordinateUpdate > 1000)
             {
               lastCoordinateUpdate = millis();
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
               createCoordinateString(settingsCSV);
 
-              log_d("Sending coordinates: %s", settingsCSV);
+              //log_d("Sending coordinates: %s", settingsCSV);
               ws.textAll(String(settingsCSV));
-#endif
-#endif
             }
           }
         }
+#endif
+#endif
         break;
 
       //Setup device for testing

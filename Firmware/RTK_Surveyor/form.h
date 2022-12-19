@@ -21,10 +21,13 @@
 //Convert file to hex at http://tomeko.net/online_tools/file_to_hex.php?lang=en
 
 static const char *main_js = R"=====(
-//var ws = new WebSocket("ws://192.168.1.105/ws"); //WiFi mode
-var ws = new WebSocket("ws://192.168.4.1/ws"); //AP Mode
+//var gateway = 'ws://192.168.1.105/ws'; //WiFi mode
+var gateway = 'ws://192.168.4.1/ws'; //AP mode
+var websocket = new WebSocket(gateway);
+var resetTimeout = 0;
+var saveTimeout = 0;
 
-ws.onmessage = function (msg) {
+websocket.onmessage = function (msg) {
     parseIncoming(msg.data);
 };
 
@@ -126,6 +129,14 @@ function parseIncoming(msg) {
         ) {
             ge(id).innerHTML = val;
         }
+
+        else if (id.includes("confirmReset")) {
+            resetComplete();
+        }
+        else if (id.includes("confirmSave")) {
+            saveComplete();
+        }
+
         else if (id.includes("profileNumber")) {
             currentProfileNumber = val;
             $("input[name=profileRadio][value=" + currentProfileNumber + "]").prop('checked', true);
@@ -244,7 +255,7 @@ function sendData() {
     for (let x = 0; x < clsElements.length; x++) {
         settingCSV += clsElements[x].id + "," + clsElements[x].checked + ",";
     }
-    
+
     for (let x = 0; x < recordsECEF.length; x++) {
         settingCSV += "stationECEF" + x + ',' + recordsECEF[x] + ",";
     }
@@ -254,7 +265,9 @@ function sendData() {
     }
 
     console.log("Sending: " + settingCSV);
-    ws.send(settingCSV);
+    websocket.send(settingCSV);
+
+    saveTimeout = setTimeout(sendData, 2000);
 }
 
 function showError(id, errorText) {
@@ -313,6 +326,7 @@ function validateFields() {
         checkElementString("ntripClient_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
         checkElementValue("ntripClient_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseGNSSConfig");
         checkElementString("ntripClient_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
+        checkElementCasterUser("ntripClient_CasterUser", "rtk2go.com", "User must use their email address", "collapseGNSSConfig");
     }
     else {
         clearElement("ntripClient_wifiSSID", "TRex");
@@ -321,7 +335,7 @@ function validateFields() {
         clearElement("ntripClient_CasterPort", 2101);
         clearElement("ntripClient_MountPoint", "bldr_SparkFun1");
         clearElement("ntripClient_MountPointPW");
-        clearElement("ntripClient_CasterUser", "");
+        clearElement("ntripClient_CasterUser", "test@test.com");
         clearElement("ntripClient_CasterUserPW", "");
         ge("ntripClient_TransmitGGA").checked = true;
     }
@@ -544,9 +558,9 @@ function changeConfig() {
 
         sendData();
         clearError('saveBtn');
-        showSuccess('saveBtn', "All saved!");
+        showSuccess('saveBtn', "Saving...");
 
-        ws.send("setProfile," + currentProfileNumber + ",");
+        websocket.send("setProfile," + currentProfileNumber + ",");
 
         ge("collapseProfileConfig").classList.add('show');
         ge("collapseGNSSConfig").classList.add('show');
@@ -571,10 +585,9 @@ function saveConfig() {
         clearSuccess('saveBtn');
     }
     else {
-        //Tell Arduino we're ready to save
         sendData();
         clearError('saveBtn');
-        showSuccess('saveBtn', "All saved!");
+        showSuccess('saveBtn', "Saving...");
     }
 
 }
@@ -629,6 +642,14 @@ function checkElementString(id, min, max, errorText, collapseID) {
         clearError(id);
 }
 
+function checkElementCasterUser(id, badUserName, errorText, collapseID) {
+    if (ge("ntripClient_CasterHost").value.toLowerCase() == "rtk2go.com") {
+        checkElementString(id, 1, 50, errorText, collapseID);
+    }
+    else
+        clearError(id);
+}
+
 function clearElement(id, value) {
     ge(id).value = value;
     clearError(id);
@@ -636,7 +657,7 @@ function clearElement(id, value) {
 
 function resetToFactoryDefaults() {
     ge("factoryDefaultsMsg").innerHTML = "Defaults Applied. Please wait for device reset...";
-    ws.send("factoryDefaultReset,1,");
+    websocket.send("factoryDefaultReset,1,");
 }
 
 function zeroElement(id) {
@@ -763,13 +784,27 @@ function useGeodeticCoordinates() {
 }
 
 function startNewLog() {
-    ws.send("startNewLog,1,");
+    websocket.send("startNewLog,1,");
 }
 
 function exitConfig() {
-    show("exitPage");
+    show("resetInProcess");
     hide("mainPage");
-    ws.send("exitAndReset,1,");
+
+    console.log("Sending reset");
+    websocket.send("exitAndReset,1,");
+    resetTimeout = setTimeout(exitConfig, 2000);
+}
+
+function resetComplete() {
+    clearTimeout(resetTimeout);
+    show("resetComplete");
+    hide("resetInProcess");
+}
+
+function saveComplete() {
+    clearTimeout(saveTimeout);
+    showSuccess('saveBtn', "All Saved!");
 }
 
 function firmwareUploadWait() {
@@ -788,12 +823,12 @@ function firmwareUploadComplete() {
 function forgetPairedRadios() {
     ge("btnForgetRadiosMsg").innerHTML = "All radios forgotten.";
     ge("peerMACs").innerHTML = "None";
-    ws.send("forgetEspNowPeers,1,");
+    websocket.send("forgetEspNowPeers,1,");
 }
 
 function btnResetProfile() {
     ge("resetProfileMsg").innerHTML = "Resetting profile.";
-    ws.send("resetProfile,1,");
+    websocket.send("resetProfile,1,");
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -1007,16 +1042,14 @@ function loadECEF() {
 function updateECEFList() {
     ge("StationCoordinatesECEF").length = 0;
 
-    if(recordsECEF.length == 0)
-    {
+    if (recordsECEF.length == 0) {
         hide("StationCoordinatesECEF");
         nicknameECEFText.innerHTML = "No coordinates stored";
     }
-    else
-    {
+    else {
         show("StationCoordinatesECEF");
         nicknameECEFText.innerHTML = "Nickname: X/Y/Z";
-        if(recordsECEF.length < 5)
+        if (recordsECEF.length < 5)
             ge("StationCoordinatesECEF").size = recordsECEF.length;
     }
 
@@ -1087,16 +1120,14 @@ function loadGeodetic() {
 function updateGeodeticList() {
     ge("StationCoordinatesGeodetic").length = 0;
 
-    if(recordsGeodetic.length == 0)
-    {
+    if (recordsGeodetic.length == 0) {
         hide("StationCoordinatesGeodetic");
         nicknameGeodeticText.innerHTML = "No coordinates stored";
     }
-    else
-    {
+    else {
         show("StationCoordinatesGeodetic");
         nicknameGeodeticText.innerHTML = "Nickname: Lat/Long/Alt";
-        if(recordsGeodetic.length < 5)
+        if (recordsGeodetic.length < 5)
             ge("StationCoordinatesGeodetic").size = recordsGeodetic.length;
     }
 
@@ -1119,9 +1150,9 @@ function removeBadChars(val) {
     val = val.split(' ').join('');
     val = val.split(',').join('');
     val = val.split('\\').join('');
-    return(val);
+    return (val);
 }
- 
+
 )====="; //End main.js
 
 static const char *index_html = R"=====(
@@ -1197,9 +1228,13 @@ static const char *index_html = R"=====(
 
 <body>
 
-    <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="exitPage">
-        <b>Done</b><br><br>RTK device is now rebooting.
+    <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="resetInProcess">
+        <b>Resetting</b><br><br>RTK device is rebooting. Please wait...
     </div>
+
+    <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="resetComplete">
+        <b>Reset Done</b><br><br>RTK device has now reset.
+    </div>    
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="firmwareUploadComplete">
         <b>Done</b><br><br>Firmware update complete. RTK device is now rebooting.
@@ -1215,14 +1250,14 @@ static const char *index_html = R"=====(
                 <span id="rtkFirmwareVersion" style="display:inline;">RTK Firmware: v0.0</span> <br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
                 <span id="deviceBTID" style="display:inline;">Device Bluetooth ID: 0000</span> <br>
-                <span id="coordinatesLLH" style="display:inline;">LLh: 
-                    <span id="geodeticLat" style="display:inline;">40.09029479</span>, 
-                    <span id="geodeticLon" style="display:inline;">-105.18505761</span>, 
+                <span id="coordinatesLLH" style="display:inline;">LLh:
+                    <span id="geodeticLat" style="display:inline;">40.09029479</span>,
+                    <span id="geodeticLon" style="display:inline;">-105.18505761</span>,
                     <span id="geodeticAlt" style="display:inline;">1560.089</span> (APC)
                 </span><br>
-                <span id="coordinatesECEF" style="display:inline;">ECEF: 
-                    <span id="ecefX" style="display:inline;">-1280206.568</span>, 
-                    <span id="ecefY" style="display:inline;">-4716804.403</span>, 
+                <span id="coordinatesECEF" style="display:inline;">ECEF:
+                    <span id="ecefX" style="display:inline;">-1280206.568</span>,
+                    <span id="ecefY" style="display:inline;">-4716804.403</span>,
                     <span id="ecefZ" style="display:inline;">4086665.484</span>
                 </span><br>
             </div>
@@ -1299,7 +1334,8 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div class="form-group row">
-                        <label for="profileName" class="box-margin20 col-sm-3 col-4 col-form-label">Profile Name:</label>
+                        <label for="profileName" class="box-margin20 col-sm-3 col-4 col-form-label">Profile
+                            Name:</label>
                         <div class="col-sm-8 col-7">
                             <input type="text" class="form-control" id="profileName">
                             <p id="profileNameError" class="inlineError"></p>
@@ -1329,19 +1365,19 @@ static const char *index_html = R"=====(
                     GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-up"></i>
                 </button>
             </div>
-            <div class="collapse" id="collapseGNSSConfig"> 
-                    <div class="card card-body pt-1">
+            <div class="collapse" id="collapseGNSSConfig">
+                <div class="card card-body pt-1">
                     <div id="measurementRateInput">
                         Measurement Rate:
                         <div class="row">
                             <div class="col-sm-2 col-12 ms-3 form-group">
                                 <label for="measurementRateHz" class="col-form-label">In
                                     Hz:
-                                <span class="tt" data-bs-placement="right"
-                                    title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Default: 4Hz. Limit: 0.000122 to 10Hz.">
-                                    <span class="icon-info-circle text-primary ms-2"></span>
-                                </span>
-                            </label>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Default: 4Hz. Limit: 0.000122 to 10Hz.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
                             </div>
                             <div class="col-sm-4 col-5 ms-3 form-group">
                                 <input type="number" class="form-control mb-2" id="measurementRateHz">
@@ -1444,7 +1480,8 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="ntripClient_CasterHost" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                            <label for="ntripClient_CasterHost"
+                                class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                                 Host:</label>
                             <div class="col-sm-8 col-6">
                                 <input type="text" class="form-control" id="ntripClient_CasterHost">
@@ -1453,7 +1490,8 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="ntripClient_CasterPort" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                            <label for="ntripClient_CasterPort"
+                                class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                                 Port:</label>
                             <div class="col-sm-8 col-6">
                                 <input type="number" class="form-control" id="ntripClient_CasterPort">
@@ -1462,7 +1500,8 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="ntripClient_CasterUser" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                            <label for="ntripClient_CasterUser"
+                                class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                                 User:</label>
                             <div class="col-sm-8 col-6">
                                 <input type="text" class="form-control" id="ntripClient_CasterUser">
@@ -1471,7 +1510,8 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="ntripClient_CasterUserPW" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                            <label for="ntripClient_CasterUserPW"
+                                class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                                 User PW:</label>
                             <div class="col-sm-8 col-6">
                                 <input type="text" class="form-control" id="ntripClient_CasterUserPW">
@@ -1489,7 +1529,8 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="ntripClient_MountPointPW" class="box-margin20 col-sm-4 col-6 col-form-label">Mount
+                            <label for="ntripClient_MountPointPW"
+                                class="box-margin20 col-sm-4 col-6 col-form-label">Mount
                                 Point
                                 PW:</label>
                             <div class="col-sm-7 col-5">
@@ -1500,7 +1541,8 @@ static const char *index_html = R"=====(
 
                         <div class="form-check mt-1 box-margin20">
                             <label class="form-check-label" for="ntripClient_TransmitGGA">Transmit GGA to Caster</label>
-                            <input class="form-check-input" type="checkbox" value="" id="ntripClient_TransmitGGA" unchecked>
+                            <input class="form-check-input" type="checkbox" value="" id="ntripClient_TransmitGGA"
+                                unchecked>
                             <span class="tt" data-bs-placement="right"
                                 title="Some casters require a regular position update from the rover (GGA message) so that the caster can automatically select the nearest available correction data. Default: Disabled">
                                 <span class="icon-info-circle text-primary ms-2"></span>
@@ -2103,7 +2145,8 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="observationPositionAccuracy" class="box-margin20 col-sm-12 col-form-label">Required
+                            <label for="observationPositionAccuracy"
+                                class="box-margin20 col-sm-12 col-form-label">Required
                                 Mean 3D Standard Deviation
                                 (m):</label>
                             <div class="col-sm-4 ms-3 col-5 mb-3">
@@ -2130,11 +2173,11 @@ static const char *index_html = R"=====(
                             <label for="fixedBaseCoordinateTypeECEF">ECEF Coordinates</label><br>
                         </div>
 
-                          <div id="ecefConfig" class="collapse mb-2">
+                        <div id="ecefConfig" class="collapse mb-2">
 
                             <div class="form-group row">
                                 <div class="box-margin40 col-sm-8 col-8 col-form-label">
-                                        <button type="button" id="useECEFCoordinates" class="btn btn-primary box-margin20"
+                                    <button type="button" id="useECEFCoordinates" class="btn btn-primary box-margin20"
                                         onClick="useECEFCoordinates()">Paste Current XYZ</button>
                                     <span class="tt" data-bs-placement="right"
                                         title="Puts the current ECEF coordinates into the fixed X/Y/Z boxes.">
@@ -2186,7 +2229,7 @@ static const char *index_html = R"=====(
                             <div class="form-group row">
                                 <label>Commonly Used Coordinates
                                     <span class="tt" data-bs-placement="right"
-                                    title="This list of coordinates can be used to quickly copy/paste known coordinates into X/Y/Z boxes.">
+                                        title="This list of coordinates can be used to quickly copy/paste known coordinates into X/Y/Z boxes.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -2195,22 +2238,28 @@ static const char *index_html = R"=====(
                             <div class="form-group row">
                                 <div>
                                     <span id="nicknameECEFText" style="display:inline;">Nickname: X/Y/Z</span> <br>
-                                    <select name="StationCoordinatesECEF" id="StationCoordinatesECEF" size="5" style="max-width:350px;" >
+                                    <select name="StationCoordinatesECEF" id="StationCoordinatesECEF" size="5"
+                                        style="max-width:350px;">
                                         <option value="1">LocationA -1280206.568 -4716804.403 4086665.484</option>
                                         <option value="2">LocationB -1280206.568 -4716804.403 4086665.484</option>
                                         <option value="3">LocC -1280206.568 -4716804.403 4086665.484</option>
-                                        <option value="4">ANameThatIsTooLongToBeDisplayed -1280206.568 -4716804.403 4086665.484</option>
+                                        <option value="4">ANameThatIsTooLongToBeDisplayed -1280206.568 -4716804.403
+                                            4086665.484</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div class="form-group row">
                                 <div class="box-margin20 col-form-label">
-                                    <button type="button" id="addECEF" class="btn btn-primary box-margin20" onClick="addECEF()">Add</button>
-                                    <button type="button" id="loadECEF" class="btn btn-primary box-margin20" onClick="loadECEF()">Load</button>
-                                    <button type="button" id="deleteECEF" class="btn btn-primary box-margin20" onClick="deleteECEF()">Delete</button>
-                                    <span class="tt" data-bs-placement="right" title="Add to, or load from, the selected record into X/Y/Z, or delete it.">
-                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                    <button type="button" id="addECEF" class="btn btn-primary box-margin20"
+                                        onClick="addECEF()">Add</button>
+                                    <button type="button" id="loadECEF" class="btn btn-primary box-margin20"
+                                        onClick="loadECEF()">Load</button>
+                                    <button type="button" id="deleteECEF" class="btn btn-primary box-margin20"
+                                        onClick="deleteECEF()">Delete</button>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Add to, or load from, the selected record into X/Y/Z, or delete it.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </div>
                             </div>
@@ -2225,8 +2274,9 @@ static const char *index_html = R"=====(
                         <div id="geodeticConfig" class="collapse mb-2">
                             <div class="form-group row">
                                 <div class="box-margin40 col-sm-8 col-8 col-form-label">
-                                    <button type="button" id="useGeodeticCoordinates" class="btn btn-primary box-margin20"
-                                        onClick="useGeodeticCoordinates()">Paste Current LLh</button>
+                                    <button type="button" id="useGeodeticCoordinates"
+                                        class="btn btn-primary box-margin20" onClick="useGeodeticCoordinates()">Paste
+                                        Current LLh</button>
                                     <span class="tt" data-bs-placement="right"
                                         title="Puts the current LLh into the fixed LLh boxes.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
@@ -2235,7 +2285,8 @@ static const char *index_html = R"=====(
                             </div>
 
                             <div class="form-group row">
-                                <label for="fixedLat" class="box-margin40 col-sm-3 col-4 col-form-label">Latitude:</label>
+                                <label for="fixedLat"
+                                    class="box-margin40 col-sm-3 col-4 col-form-label">Latitude:</label>
                                 <div class="col-sm-4 col-6">
                                     <input type="number" class="form-control" id="fixedLat">
                                     <p id="fixedLatError" class="inlineError"></p>
@@ -2243,7 +2294,8 @@ static const char *index_html = R"=====(
                             </div>
 
                             <div class="form-group row">
-                                <label for="fixedLong" class="box-margin40 col-sm-3 col-4 col-form-label">Longitude:</label>
+                                <label for="fixedLong"
+                                    class="box-margin40 col-sm-3 col-4 col-form-label">Longitude:</label>
                                 <div class="col-sm-4 col-6">
                                     <input type="number" class="form-control" id="fixedLong">
                                     <p id="fixedLongError" class="inlineError"></p>
@@ -2260,10 +2312,10 @@ static const char *index_html = R"=====(
                             </div><br>
 
                             <div class="form-group row">
-                                <label for="antennaHeight"
-                                    class="box-margin40 col-sm-3 col-5 col-form-label">Antenna Height(mm):
+                                <label for="antennaHeight" class="box-margin40 col-sm-3 col-5 col-form-label">Antenna
+                                    Height(mm):
                                     <span class="tt" data-bs-placement="right"
-                                    title="Distance from the base of the antenna to the mark on the ground. This is usually the total length of the prism pole and any extensions. Amount is added to HAE before starting fixed base.">
+                                        title="Distance from the base of the antenna to the mark on the ground. This is usually the total length of the prism pole and any extensions. Amount is added to HAE before starting fixed base.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -2275,14 +2327,14 @@ static const char *index_html = R"=====(
                             </div>
 
                             <div class="form-group row">
-                                <label for="antennaReferencePoint"
-                                    class="box-margin40 col-5 col-form-label">Antenna Reference Point(mm):
+                                <label for="antennaReferencePoint" class="box-margin40 col-5 col-form-label">Antenna
+                                    Reference Point(mm):
                                     <span class="tt" data-bs-placement="right"
-                                    title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration. Amount is added to HAE before starting fixed base.">
+                                        title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration. Amount is added to HAE before starting fixed base.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
-                                    <div class="col-sm-4 col-5">
+                                <div class="col-sm-4 col-5">
                                     <input type="number" class="form-control" id="antennaReferencePoint">
                                     <p id="antennaReferencePointError" class="inlineError"></p>
                                 </div>
@@ -2291,7 +2343,7 @@ static const char *index_html = R"=====(
                             <div class="form-group row">
                                 <label for="nicknameGeodetic" class="box-margin40 col-sm-3 col-4 col-form-label">Name:
                                     <span class="tt" data-bs-placement="right"
-                                    title="Give this point a nickname before adding it to the commonly used coordinates list.">
+                                        title="Give this point a nickname before adding it to the commonly used coordinates list.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -2304,7 +2356,7 @@ static const char *index_html = R"=====(
                             <div class="form-group row">
                                 <label>Commonly Used Coordinates
                                     <span class="tt" data-bs-placement="right"
-                                    title="This list of coordinates can be used to quickly copy/paste known coordinates into Lat/Long/Alt boxes.">
+                                        title="This list of coordinates can be used to quickly copy/paste known coordinates into Lat/Long/Alt boxes.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -2312,23 +2364,30 @@ static const char *index_html = R"=====(
 
                             <div class="form-group row">
                                 <div>
-                                    <span id="nicknameGeodeticText" style="display:inline;">Nickname: Lat/Long/Alt</span> <br>
-                                    <select name="StationCoordinatesGeodetic" id="StationCoordinatesGeodetic" size="5" style="max-width:350px;">
+                                    <span id="nicknameGeodeticText" style="display:inline;">Nickname:
+                                        Lat/Long/Alt</span> <br>
+                                    <select name="StationCoordinatesGeodetic" id="StationCoordinatesGeodetic" size="5"
+                                        style="max-width:350px;">
                                         <option value="1">LocationA 40.09029479 -105.18505761 1560.089</option>
                                         <option value="2">LocationB 40.09029479 -105.18505761 1560.089</option>
                                         <option value="3">LocC 40.09029479 -105.18505761 1560.089</option>
-                                        <option value="4">ANameThatIsTooLongToBeDisplayed 40.09029479 -105.18505761 1560.089</option>
+                                        <option value="4">ANameThatIsTooLongToBeDisplayed 40.09029479 -105.18505761
+                                            1560.089</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div class="form-group row">
                                 <div class="box-margin20 col-form-label">
-                                    <button type="button" id="addGeodetic" class="btn btn-primary box-margin20" onClick="addGeodetic()">Add</button>
-                                    <button type="button" id="loadGeodetic" class="btn btn-primary box-margin20" onClick="loadGeodetic()">Load</button>
-                                    <button type="button" id="deleteGeodetic" class="btn btn-primary box-margin20" onClick="deleteGeodetic()">Delete</button>
-                                    <span class="tt" data-bs-placement="right" title="Add to, or load from, the selected record into Lat/Long/Alt, or delete it.">
-                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                    <button type="button" id="addGeodetic" class="btn btn-primary box-margin20"
+                                        onClick="addGeodetic()">Add</button>
+                                    <button type="button" id="loadGeodetic" class="btn btn-primary box-margin20"
+                                        onClick="loadGeodetic()">Load</button>
+                                    <button type="button" id="deleteGeodetic" class="btn btn-primary box-margin20"
+                                        onClick="deleteGeodetic()">Delete</button>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Add to, or load from, the selected record into Lat/Long/Alt, or delete it.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </div>
                             </div>
@@ -2365,7 +2424,8 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="ntripServer_CasterHost" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                            <label for="ntripServer_CasterHost"
+                                class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                                 Host:</label>
                             <div class="col-sm-8 col-6">
                                 <input type="text" class="form-control" id="ntripServer_CasterHost">
@@ -2374,7 +2434,8 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="ntripServer_CasterPort" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                            <label for="ntripServer_CasterPort"
+                                class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                                 Port:</label>
                             <div class="col-sm-8 col-6">
                                 <input type="number" class="form-control" id="ntripServer_CasterPort">
@@ -2383,7 +2444,8 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="ntripServer_CasterUser" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                            <label for="ntripServer_CasterUser"
+                                class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                                 User:</label>
                             <div class="col-sm-8 col-6">
                                 <input type="text" class="form-control" id="ntripServer_CasterUser">
@@ -2392,7 +2454,8 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="ntripServer_CasterUserPW" class="box-margin20 col-sm-3 col-5 col-form-label">Caster
+                            <label for="ntripServer_CasterUserPW"
+                                class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                                 User PW:</label>
                             <div class="col-sm-8 col-6">
                                 <input type="text" class="form-control" id="ntripServer_CasterUserPW">
@@ -2410,7 +2473,8 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="ntripServer_MountPointPW" class="box-margin20 col-sm-4 col-6 col-form-label">Mount
+                            <label for="ntripServer_MountPointPW"
+                                class="box-margin20 col-sm-4 col-6 col-form-label">Mount
                                 Point
                                 PW:</label>
                             <div class="col-sm-7 col-5">
@@ -2466,7 +2530,8 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div class="form-check mt-3">
-                        <label class="form-check-label" for="enablePointPerfectCorrections">Enable PointPerfect Corrections</label>
+                        <label class="form-check-label" for="enablePointPerfectCorrections">Enable PointPerfect
+                            Corrections</label>
                         <input class="form-check-input" type="checkbox" value="" id="enablePointPerfectCorrections">
                         <span class="tt" data-bs-placement="right"
                             title="Use L-Band PointPerfect corrections when available. Default: Enabled">
@@ -2479,9 +2544,9 @@ static const char *index_html = R"=====(
                             <label for="home_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">Home WiFi
                                 SSID:
                                 <span class="tt" data-bs-placement="right"
-                                title="The RTK Facet L-Band needs to obtain PointPerfect keys once every 28 days. This WiFi network will be connected to when necessary to obtain new keys.">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
+                                    title="The RTK Facet L-Band needs to obtain PointPerfect keys once every 28 days. This WiFi network will be connected to when necessary to obtain new keys.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
                             </label>
                             <div class="col-sm-8 col-7">
                                 <input type="text" class="form-control" id="home_wifiSSID">
@@ -2508,11 +2573,12 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-group row">
-                            <label for="pointPerfectDeviceProfileToken" class="box-margin20 col-sm-3 col-4 col-form-label">Device Profile Token:
+                            <label for="pointPerfectDeviceProfileToken"
+                                class="box-margin20 col-sm-3 col-4 col-form-label">Device Profile Token:
                                 <span class="tt" data-bs-placement="right"
-                                title="If your organization has a corporate ThingStream and PointPerfect account, this is where you put your custom device profile token. Default: Empty - Use the SparkFun Token">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
+                                    title="If your organization has a corporate ThingStream and PointPerfect account, this is where you put your custom device profile token. Default: Empty - Use the SparkFun Token">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
                             </label>
                             <div class="col-sm-8 col-7">
                                 <input type="text" class="form-control" id="pointPerfectDeviceProfileToken">
@@ -2598,7 +2664,9 @@ static const char *index_html = R"=====(
 
                         <div id="externalPulseConfigDetails" class="collapse mb-2">
                             <div class="form-group row">
-                                <label for="externalPulseTimeBetweenPulse_us" class="box-margin20 col-sm-3 col-4 col-form-label">Time between pulses (µs): </label>
+                                <label for="externalPulseTimeBetweenPulse_us"
+                                    class="box-margin20 col-sm-3 col-4 col-form-label">Time between pulses (µs):
+                                </label>
                                 <div class="col-sm-8 col-7">
                                     <input type="number" class="form-control" id="externalPulseTimeBetweenPulse_us">
                                     <p id="externalPulseTimeBetweenPulse_usError" class="inlineError"></p>
@@ -2606,7 +2674,8 @@ static const char *index_html = R"=====(
                             </div>
 
                             <div class="form-group row">
-                                <label for="externalPulseLength_us" class="box-margin20 col-sm-3 col-4 col-form-label">Pulse length (µs):</label>
+                                <label for="externalPulseLength_us"
+                                    class="box-margin20 col-sm-3 col-4 col-form-label">Pulse length (µs):</label>
                                 <div class="col-sm-8 col-7">
                                     <input type="number" class="form-control" id="externalPulseLength_us">
                                     <p id="externalPulseLength_usError" class="inlineError"></p>
@@ -2614,7 +2683,8 @@ static const char *index_html = R"=====(
                             </div>
 
                             <div id="pulseEdgeDropdown" class="mb-2">
-                                <label for="externalPulsePolarity" class="box-margin20 col-sm-3 col-4 col-form-label">Pulse Polarity: </label>
+                                <label for="externalPulsePolarity"
+                                    class="box-margin20 col-sm-3 col-4 col-form-label">Pulse Polarity: </label>
                                 <select name="externalPulsePolarity" id="externalPulsePolarity" class="form-dropdown">
                                     <option value="0">Rising Edge</option>
                                     <option value="1">Falling Edge</option>
@@ -2627,8 +2697,10 @@ static const char *index_html = R"=====(
                         </div>
 
                         <div class="form-check mt-3">
-                            <label class="form-check-label" for="enableExternalHardwareEventLogging">Enable External Event Logging</label>
-                            <input class="form-check-input" type="checkbox" value="" id="enableExternalHardwareEventLogging">
+                            <label class="form-check-label" for="enableExternalHardwareEventLogging">Enable External
+                                Event Logging</label>
+                            <input class="form-check-input" type="checkbox" value=""
+                                id="enableExternalHardwareEventLogging">
                             <span class="tt" data-bs-placement="right"
                                 title="Log external pulses (events) with 30ns accuracy RMS. Useful for things like audio triangulation. See the Timemark section of the ZED-F9P Integration Manual for more information. Requires GNSS reception. Default: Disabled">
                                 <span class="icon-info-circle text-primary ms-2"></span>
@@ -2667,7 +2739,7 @@ static const char *index_html = R"=====(
                         <div class="form-check">
                             Paired Radios:
                             <div class="form-check">
-                                <p id="peerMACs" style="display:inline;" >None</p>
+                                <p id="peerMACs" style="display:inline;">None</p>
                             </div>
                         </div>
 
@@ -2684,8 +2756,10 @@ static const char *index_html = R"=====(
 
                         <div class="form-check">
                             <div class="form-check mt-3">
-                                <label class="form-check-label" for="enableForgetRadios">Enable Forget All Radios</label>
-                                <input class="form-check-input" type="checkbox" value="" id="enableForgetRadios" unchecked>
+                                <label class="form-check-label" for="enableForgetRadios">Enable Forget All
+                                    Radios</label>
+                                <input class="form-check-input" type="checkbox" value="" id="enableForgetRadios"
+                                    unchecked>
                                 <span class="tt" data-bs-placement="right"
                                     title="To prevent accidental deletion of paired radios the checkbox must first be checked before the button is pressed.">
                                     <span class="icon-info-circle text-primary ms-2"></span>
@@ -2712,7 +2786,7 @@ static const char *index_html = R"=====(
                     </div>
                 </div>
             </div>
-            
+
             <!-- --------- System Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
@@ -2749,10 +2823,10 @@ static const char *index_html = R"=====(
                             <div class="col-sm-4 col-9 form-group">
                                 <label for="maxLogTime_minutes" class="form-group box-margin20">Max Log
                                     Time (min):<span class="tt" data-bs-placement="right"
-                                    title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
-                                    <span class="icon-info-circle text-primary ms-2"></span>
-                                </span>
-                            </label>
+                                        title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
                             </div>
 
                             <div class="col-sm-4 col-5 ms-3 form-group">
@@ -2765,10 +2839,10 @@ static const char *index_html = R"=====(
                             <div class="col-sm-4 col-9 form-group">
                                 <label for="maxLogLength_minutes" class="form-group box-margin20">Max Log
                                     Length (min):<span class="tt" data-bs-placement="right"
-                                    title="Once this length of time is achieved, a new log will be created. This is useful for creating multiple logs over a long survey. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
-                                    <span class="icon-info-circle text-primary ms-2"></span>
-                                </span>
-                            </label>
+                                        title="Once this length of time is achieved, a new log will be created. This is useful for creating multiple logs over a long survey. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
                             </div>
 
                             <div class="col-sm-4 col-5 ms-3 form-group">
@@ -2787,7 +2861,7 @@ static const char *index_html = R"=====(
                                 </span>
                             </div>
                         </div>
-    
+
                     </div>
 
                     <div id="bluetoothRadioTypeDropdown" class="mb-2 mt-3">

@@ -268,8 +268,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   if (type == WS_EVT_CONNECT) {
     client->text(settingsCSV);
     wifiSetState(WIFI_CONNECTED);
+
+    apConfigPageConnected = true; //This forces the initial settings to be received first, before sending coordinate updates
+    lastCoordinateUpdate = millis();
   }
   else if (type == WS_EVT_DISCONNECT) {
+    apConfigPageConnected = false;
     log_d("Websocket client disconnected");
     wifiSetState(WIFI_NOTCONNECTED);
   }
@@ -549,6 +553,33 @@ void createSettingsString(char* settingsCSV)
 
   //New settings not yet integrated
   //...
+
+  strcat(settingsCSV, "\0");
+  Serial.printf("settingsCSV len: %d\r\n", strlen(settingsCSV));
+  Serial.printf("settingsCSV: %s\r\n", settingsCSV);
+#endif
+}
+
+//Create a csv string with the current coordinates
+void createCoordinateString(char* settingsCSV)
+{
+#ifdef COMPILE_AP
+  settingsCSV[0] = '\0'; //Erase current settings string
+
+  //Current coordinates come from HPPOSLLH call back
+  stringRecord(settingsCSV, "geodeticLat", latitude, haeNumberOfDecimals);
+  stringRecord(settingsCSV, "geodeticLon", longitude, haeNumberOfDecimals);
+  stringRecord(settingsCSV, "geodeticAlt", altitude, 3);
+
+  double ecefX = 0;
+  double ecefY = 0;
+  double ecefZ = 0;
+
+  geodeticToEcef(latitude, longitude, altitude, &ecefX, &ecefY, &ecefZ);
+
+  stringRecord(settingsCSV, "ecefX", ecefX, 3);
+  stringRecord(settingsCSV, "ecefY", ecefY, 3);
+  stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
 
   strcat(settingsCSV, "\0");
   Serial.printf("settingsCSV len: %d\r\n", strlen(settingsCSV));

@@ -424,7 +424,7 @@ void updateSystemState()
           if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
           {
             markSemaphore(FUNCTION_MARKEVENT);
-            
+
             //Record this event to the log
             if (online.logging == true)
             {
@@ -606,7 +606,6 @@ void updateSystemState()
         break;
       case (STATE_WIFI_CONFIG):
         {
-
           if (incomingSettingsSpot > 0)
           {
             //Allow for 750ms before we parse buffer for all data to arrive
@@ -624,6 +623,23 @@ void updateSystemState()
               //Clear buffer
               incomingSettingsSpot = 0;
               memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
+            }
+          }
+
+          //Dynamically update the coordinates on the AP page
+          if (apConfigPageConnected)
+          {
+            if (millis() - lastCoordinateUpdate > 1000)
+            {
+              lastCoordinateUpdate = millis();
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
+              createCoordinateString(settingsCSV);
+
+              log_d("Sending coordinates: %s", settingsCSV);
+              ws.textAll(String(settingsCSV));
+#endif
+#endif
             }
           }
         }

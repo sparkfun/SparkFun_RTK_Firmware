@@ -67,7 +67,7 @@ bool configureUbloxModuleRover()
 
   response &= i2cGNSS.sendCfgValset(); //Closing - 27 keys
   
-  if (response == false) Serial.println("Rover config failed");
+  if (response == false) log_d("Rover config failed");
 
   return (response);
 }

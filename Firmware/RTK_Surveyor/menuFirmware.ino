@@ -16,7 +16,7 @@ void menuFirmware()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Update Firmware Menu");
+    Serial.println("Menu: Update Firmware");
 
     for (int x = 0 ; x < binCount ; x++)
     {
@@ -25,7 +25,7 @@ void menuFirmware()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming > 0 && incoming < (binCount + 1))
     {
@@ -33,15 +33,15 @@ void menuFirmware()
       incoming--;
       updateFromSD(binFileNames[incoming]);
     }
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       Serial.printf("Bad value: %d\r\n", incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 void mountSDThenUpdate(const char * firmwareFileName)
@@ -151,7 +151,7 @@ void updateFromSD(const char *firmwareFileName)
   bluetoothStop();
 
   //Delete tasks if running
-  stopUART2Tasks();
+  tasksStopUART2();
 
   Serial.printf("Loading %s\r\n", firmwareFileName);
   if (sd->exists(firmwareFileName))

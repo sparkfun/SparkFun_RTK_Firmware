@@ -6,7 +6,7 @@ void menuSystem()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: System Menu");
+    Serial.println("Menu: System");
 
     beginI2C();
     if (online.i2c == false)
@@ -204,34 +204,38 @@ void menuSystem()
                     ntripServerConnectionAttemptsTotal);
     }
 
-    if (settings.enableSD == true)
+    if (settings.enableSD == true && online.microSD == true)
     {
       Serial.println("f) Display microSD Files");
     }
+
+    Serial.print("e) Echo User Input: ");
+    if (settings.echoUserInput == true) Serial.println("On");
+    else Serial.println("Off");
 
     Serial.println("d) Configure Debug");
 
     Serial.printf("z) Set time zone offset: %02d:%02d:%02d\r\n", settings.timeZoneHours, settings.timeZoneMinutes, settings.timeZoneSeconds);
 
-    Serial.print(F("b) Set Bluetooth Mode: "));
+    Serial.print("b) Set Bluetooth Mode: ");
     if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
-      Serial.println(F("Classic"));
+      Serial.println("Classic");
     else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
-      Serial.println(F("BLE"));
+      Serial.println("BLE");
     else
-      Serial.println(F("Off"));
+      Serial.println("Off");
 
-    Serial.print(F("c) Enable/disable WiFi NMEA client (connect to phone): "));
+    Serial.print("c) Enable/disable WiFi NMEA client (connect to phone): ");
     if (settings.enableNmeaClient == true)
-      Serial.println(F("Enabled"));
+      Serial.println("Enabled");
     else
-      Serial.println(F("Disabled"));
+      Serial.println("Disabled");
 
-    Serial.print(F("n) Enable/disable WiFi NMEA server: "));
+    Serial.print("n) Enable/disable WiFi NMEA server: ");
     if (settings.enableNmeaServer == true)
-      Serial.println(F("Enabled"));
+      Serial.println("Enabled");
     else
-      Serial.println(F("Disabled"));
+      Serial.println("Disabled");
 
     Serial.println("r) Reset all settings to default");
 
@@ -243,40 +247,53 @@ void menuSystem()
 
     Serial.println("x) Exit");
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    byte incoming = getCharacterNumber();
 
     if (incoming == 'd')
       menuDebug();
     else if (incoming == 'z')
     {
       Serial.print("Enter time zone hour offset (-23 <= offset <= 23): ");
-      int64_t value = getNumber(menuTimeout);
-      if (value < -23 || value > 23)
-        Serial.println("Error: -24 < hours < 24");
-      else
+      int value = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        settings.timeZoneHours = value;
-
-        Serial.print("Enter time zone minute offset (-59 <= offset <= 59): ");
-        int64_t value = getNumber(menuTimeout);
-        if (value < -59 || value > 59)
-          Serial.println("Error: -60 < minutes < 60");
+        if (value < -23 || value > 23)
+          Serial.println("Error: -24 < hours < 24");
         else
         {
-          settings.timeZoneMinutes = value;
+          settings.timeZoneHours = value;
 
-          Serial.print("Enter time zone second offset (-59 <= offset <= 59): ");
-          int64_t value = getNumber(menuTimeout);
-          if (value < -59 || value > 59)
-            Serial.println("Error: -60 < seconds < 60");
-          else
+          Serial.print("Enter time zone minute offset (-59 <= offset <= 59): ");
+          int value = getNumber(); //Returns EXIT, TIMEOUT, or long
+          if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
           {
-            settings.timeZoneSeconds = value;
-            online.rtc = false;
-            updateRTC();
-          } //Succesful seconds
-        } //Succesful minute
-      } //Succesful hours
+            if (value < -59 || value > 59)
+              Serial.println("Error: -60 < minutes < 60");
+            else
+            {
+              settings.timeZoneMinutes = value;
+
+              Serial.print("Enter time zone second offset (-59 <= offset <= 59): ");
+              int value = getNumber(); //Returns EXIT, TIMEOUT, or long
+              if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+              {
+                if (value < -59 || value > 59)
+                  Serial.println("Error: -60 < seconds < 60");
+                else
+                {
+                  settings.timeZoneSeconds = value;
+                  online.rtc = false;
+                  updateRTC();
+                } //Succesful seconds
+              }
+            } //Succesful minute
+          }
+        } //Succesful hours
+      }
+    }
+    else if (incoming == 'e')
+    {
+      settings.echoUserInput ^= 1;
     }
     else if (incoming == 'b')
     {
@@ -313,7 +330,7 @@ void menuSystem()
     else if (incoming == 'r')
     {
       Serial.println("\r\nResetting to factory defaults. Press 'y' to confirm:");
-      byte bContinue = getByteChoice(menuTimeout);
+      byte bContinue = getCharacterNumber();
       if (bContinue == 'y')
       {
         factoryReset();
@@ -321,7 +338,7 @@ void menuSystem()
       else
         Serial.println("Reset aborted");
     }
-    else if ((incoming == 'f') && (settings.enableSD == true))
+    else if ((incoming == 'f') && (settings.enableSD == true) &&  (online.microSD == true))
     {
       sdCardAlreadyMounted = online.microSD;
       if (!online.microSD)
@@ -335,6 +352,8 @@ void menuSystem()
         //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
         if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
         {
+          markSemaphore(FUNCTION_FILELIST);
+          
           Serial.println("Files found (date time size name):\r\n");
           sd->ls(LS_R | LS_DATE | LS_SIZE);
         }
@@ -371,16 +390,15 @@ void menuSystem()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
-    {
+    else if (incoming == INPUT_RESPONSE_EMPTY)
       break;
-    }
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+      break;
     else
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
-
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Toggle control of heap reports and I2C GNSS debug
@@ -389,7 +407,7 @@ void menuDebug()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Debug Menu");
+    Serial.println("Menu: Debug");
 
     Serial.print("1) u-blox I2C Debugging Output: ");
     if (settings.enableI2Cdebug == true) Serial.println("Enabled");
@@ -487,6 +505,18 @@ void menuDebug()
     Serial.print("32) ESP-Now Broadcast Override: ");
     Serial.printf("%s\r\n", settings.espnowBroadcast ? "Enabled" : "Disabled");
 
+    Serial.print("33) Print buffer overruns: ");
+    Serial.printf("%s\r\n", settings.enablePrintBufferOverrun ? "Enabled" : "Disabled");
+
+    Serial.print("34) Set UART Receive Buffer Size: ");
+    Serial.println(settings.uartReceiveBufferSize);
+
+    Serial.print("35) Set GNSS Handler Buffer Size: ");
+    Serial.println(settings.gnssHandlerBufferSize);
+
+    Serial.print("36) Print SD and UART buffer sizes: ");
+    Serial.printf("%s\r\n", settings.enablePrintSDBuffers ? "Enabled" : "Disabled");
+
     Serial.println("t) Enter Test Screen");
 
     Serial.println("e) Erase LittleFS");
@@ -495,228 +525,243 @@ void menuDebug()
 
     Serial.println("x) Exit");
 
-    int incoming;
-    int digits = getMenuChoice(&incoming, menuTimeout); //Timeout after x seconds
+    byte incoming = getCharacterNumber();
 
-    //Handle input timeout
-    if (digits == GMCS_TIMEOUT)
-      break;
-
-    //Handle numeric input
-    if (digits > 0)
+    if (incoming == 1)
     {
-      if (incoming == 1)
-      {
-        settings.enableI2Cdebug ^= 1;
+      settings.enableI2Cdebug ^= 1;
 
-        if (settings.enableI2Cdebug)
-          i2cGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
-        else
-          i2cGNSS.disableDebugging();
-      }
-      else if (incoming == 2)
+      if (settings.enableI2Cdebug)
+        i2cGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
+      else
+        i2cGNSS.disableDebugging();
+    }
+    else if (incoming == 2)
+    {
+      settings.enableHeapReport ^= 1;
+    }
+    else if (incoming == 3)
+    {
+      settings.enableTaskReports ^= 1;
+    }
+    else if (incoming == 4)
+    {
+      Serial.print("Enter SPI frequency in MHz (1 to 16): ");
+      int freq = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((freq != INPUT_RESPONSE_GETNUMBER_EXIT) && (freq != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        settings.enableHeapReport ^= 1;
-      }
-      else if (incoming == 3)
-      {
-        settings.enableTaskReports ^= 1;
-      }
-      else if (incoming == 4)
-      {
-        Serial.print("Enter SPI frequency in MHz (1 to 16): ");
-        int freq = getNumber(menuTimeout); //Timeout after x seconds
         if (freq < 1 || freq > 16) //Arbitrary 16MHz limit
-        {
           Serial.println("Error: SPI frequency out of range");
-        }
         else
-        {
           settings.spiFrequency = freq; //Recorded to NVM and file at main menu exit
-        }
       }
-      else if (incoming == 5)
-      {
-        Serial.print("Enter SPP RX Queue Size in Bytes (32 to 16384): ");
-        uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
-        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
-        {
-          Serial.println("Error: Queue size out of range");
-        }
-        else
-        {
-          settings.sppRxQueueSize = queSize; //Recorded to NVM and file at main menu exit
-        }
-      }
-      else if (incoming == 6)
-      {
-        Serial.print("Enter SPP TX Queue Size in Bytes (32 to 16384): ");
-        uint16_t queSize = getNumber(menuTimeout); //Timeout after x seconds
-        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
-        {
-          Serial.println("Error: Queue size out of range");
-        }
-        else
-        {
-          settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
-        }
-      }
-      else if (incoming == 8)
-      {
-        settings.enableResetDisplay ^= 1;
-        if (settings.enableResetDisplay == true)
-        {
-          settings.resetCount = 0;
-          recordSystemSettings(); //Record to NVM
-        }
-      }
-      else if (incoming == 9)
-      {
-        Serial.print("Enter GNSS Serial Timeout in milliseconds (0 to 1000): ");
-        int16_t serialTimeoutGNSS = getNumber(menuTimeout); //Timeout after x seconds
-        if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
-        {
-          Serial.println("Error: Timeout is out of range");
-        }
-        else
-        {
-          settings.serialTimeoutGNSS = serialTimeoutGNSS; //Recorded to NVM and file at main menu exit
-        }
-      }
-      else if (incoming == 10)
-      {
-        settings.enablePrintWifiIpAddress ^= 1;
-      }
-      else if (incoming == 11)
-      {
-        settings.enablePrintState ^= 1;
-      }
-      else if (incoming == 12)
-      {
-        settings.enablePrintWifiState ^= 1;
-      }
-      else if (incoming == 13)
-      {
-        settings.enablePrintNtripClientState ^= 1;
-      }
-      else if (incoming == 14)
-      {
-        settings.enablePrintNtripServerState ^= 1;
-      }
-      else if (incoming == 15)
-      {
-        settings.enablePrintPosition ^= 1;
-      }
-      else if (incoming == 16)
-      {
-        settings.enablePrintIdleTime ^= 1;
-      }
-      else if (incoming == 17)
-      {
-        bool response = configureGNSSMessageRates(COM_PORT_USB, settings.ubxMessages); //Make sure the appropriate messages are enabled
-        response &= i2cGNSS.setPortOutput(COM_PORT_USB, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Duplicate UART1
-
-        if (response == false)
-          Serial.println(F("Failed to enable USB messages"));
-        else
-          Serial.println(F("USB messages successfully enabled"));
-      }
-      else if (incoming == 18)
-      {
-        settings.enablePrintBatteryMessages ^= 1;
-      }
-      else if (incoming == 19)
-      {
-        settings.enablePrintRoverAccuracy ^= 1;
-      }
-      else if (incoming == 20)
-      {
-        settings.enablePrintBadMessages ^= 1;
-      }
-      else if (incoming == 21)
-      {
-        settings.enablePrintLogFileMessages ^= 1;
-      }
-      else if (incoming == 22)
-      {
-        settings.enablePrintLogFileStatus ^= 1;
-      }
-      else if (incoming == 23)
-      {
-        settings.enablePrintRingBufferOffsets ^= 1;
-      }
-      else if (incoming == 24)
-      {
-        settings.enablePrintNtripServerRtcm ^= 1;
-      }
-      else if (incoming == 25)
-      {
-        settings.enablePrintNtripClientRtcm ^= 1;
-      }
-      else if (incoming == 26)
-      {
-        settings.enablePrintStates ^= 1;
-      }
-      else if (incoming == 27)
-      {
-        settings.enablePrintDuplicateStates ^= 1;
-      }
-      else if (incoming == 28)
-      {
-        settings.enableRtcmMessageChecking ^= 1;
-      }
-      else if (incoming == 29)
-      {
-        settings.runLogTest ^= 1;
-
-        logTestState = LOGTEST_START; //Start test
-
-        //Mark current log file as complete to force test start
-        startCurrentLogTime_minutes = systemTime_minutes - settings.maxLogLength_minutes;
-      }
-      else if (incoming == 30)
-      {
-        bluetoothTest(true);
-      }
-      else if (incoming == 31)
-      {
-        settings.enablePrintNmeaTcpStatus ^= 1;
-      }
-      else if (incoming == 32)
-      {
-        settings.espnowBroadcast ^= 1;
-      }
-      else
-        printUnknown(incoming);
     }
-
-    //Handle character input
-    else if (digits == GMCS_CHARACTER)
+    else if (incoming == 5)
     {
-      if (incoming == 'e')
+      Serial.print("Enter SPP RX Queue Size in Bytes (32 to 16384): ");
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Erasing LittleFS and resetting");
-        LittleFS.format();
-        ESP.restart();
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+          Serial.println("Error: Queue size out of range");
+        else
+          settings.sppRxQueueSize = queSize; //Recorded to NVM and file at main menu exit
       }
-      else if (incoming == 'r')
-      {
-        recordSystemSettings();
-
-        ESP.restart();
-      }
-      else if (incoming == 't')
-      {
-        requestChangeState(STATE_TEST); //We'll enter test mode once exiting all serial menus
-      }
-      else if (incoming == 'x')
-        break;
-      else
-        printUnknown(((uint8_t)incoming));
     }
+    else if (incoming == 6)
+    {
+      Serial.print("Enter SPP TX Queue Size in Bytes (32 to 16384): ");
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+          Serial.println("Error: Queue size out of range");
+        else
+          settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 8)
+    {
+      settings.enableResetDisplay ^= 1;
+      if (settings.enableResetDisplay == true)
+      {
+        settings.resetCount = 0;
+        recordSystemSettings(); //Record to NVM
+      }
+    }
+    else if (incoming == 9)
+    {
+      Serial.print("Enter GNSS Serial Timeout in milliseconds (0 to 1000): ");
+      int serialTimeoutGNSS = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((serialTimeoutGNSS != INPUT_RESPONSE_GETNUMBER_EXIT) && (serialTimeoutGNSS != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
+          Serial.println("Error: Timeout is out of range");
+        else
+          settings.serialTimeoutGNSS = serialTimeoutGNSS; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 10)
+    {
+      settings.enablePrintWifiIpAddress ^= 1;
+    }
+    else if (incoming == 11)
+    {
+      settings.enablePrintState ^= 1;
+    }
+    else if (incoming == 12)
+    {
+      settings.enablePrintWifiState ^= 1;
+    }
+    else if (incoming == 13)
+    {
+      settings.enablePrintNtripClientState ^= 1;
+    }
+    else if (incoming == 14)
+    {
+      settings.enablePrintNtripServerState ^= 1;
+    }
+    else if (incoming == 15)
+    {
+      settings.enablePrintPosition ^= 1;
+    }
+    else if (incoming == 16)
+    {
+      settings.enablePrintIdleTime ^= 1;
+    }
+    else if (incoming == 17)
+    {
+      bool response = setMessagesUSB();
+
+      if (response == false)
+        Serial.println(F("Failed to enable USB messages"));
+      else
+        Serial.println(F("USB messages successfully enabled"));
+    }
+    else if (incoming == 18)
+    {
+      settings.enablePrintBatteryMessages ^= 1;
+    }
+    else if (incoming == 19)
+    {
+      settings.enablePrintRoverAccuracy ^= 1;
+    }
+    else if (incoming == 20)
+    {
+      settings.enablePrintBadMessages ^= 1;
+    }
+    else if (incoming == 21)
+    {
+      settings.enablePrintLogFileMessages ^= 1;
+    }
+    else if (incoming == 22)
+    {
+      settings.enablePrintLogFileStatus ^= 1;
+    }
+    else if (incoming == 23)
+    {
+      settings.enablePrintRingBufferOffsets ^= 1;
+    }
+    else if (incoming == 24)
+    {
+      settings.enablePrintNtripServerRtcm ^= 1;
+    }
+    else if (incoming == 25)
+    {
+      settings.enablePrintNtripClientRtcm ^= 1;
+    }
+    else if (incoming == 26)
+    {
+      settings.enablePrintStates ^= 1;
+    }
+    else if (incoming == 27)
+    {
+      settings.enablePrintDuplicateStates ^= 1;
+    }
+    else if (incoming == 28)
+    {
+      settings.enableRtcmMessageChecking ^= 1;
+    }
+    else if (incoming == 29)
+    {
+      settings.runLogTest ^= 1;
+
+      logTestState = LOGTEST_START; //Start test
+
+      //Mark current log file as complete to force test start
+      startCurrentLogTime_minutes = systemTime_minutes - settings.maxLogLength_minutes;
+    }
+    else if (incoming == 30)
+    {
+      bluetoothTest(true);
+    }
+    else if (incoming == 31)
+    {
+      settings.enablePrintNmeaTcpStatus ^= 1;
+    }
+    else if (incoming == 32)
+    {
+      settings.espnowBroadcast ^= 1;
+    }
+    else if (incoming == 33)
+    {
+      settings.enablePrintBufferOverrun ^= 1;
+    }
+    else if (incoming == 34)
+    {
+      Serial.print("Enter UART Receive Buffer Size in Bytes (32 to 16384): ");
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+          Serial.println("Error: Queue size out of range");
+        else
+          settings.uartReceiveBufferSize = queSize; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 35)
+    {
+      Serial.print("Enter GNSS Handler Buffer Size in Bytes (32 to 16384): ");
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+          Serial.println("Error: Queue size out of range");
+        else
+          settings.gnssHandlerBufferSize = queSize; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 36)
+    {
+      settings.enablePrintSDBuffers ^= 1;
+    }
+    else if (incoming == 'e')
+    {
+      Serial.println("Erasing LittleFS and resetting");
+      LittleFS.format();
+      ESP.restart();
+    }
+    else if (incoming == 'r')
+    {
+      recordSystemSettings();
+
+      ESP.restart();
+    }
+    else if (incoming == 't')
+    {
+      requestChangeState(STATE_TEST); //We'll enter test mode once exiting all serial menus
+    }
+    else if (incoming == 'x')
+      break;
+    else if (incoming == INPUT_RESPONSE_EMPTY)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Print the current long/lat/alt/HPA/SIV

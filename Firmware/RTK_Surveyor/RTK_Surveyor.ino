@@ -23,7 +23,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 5;
+const int FIRMWARE_VERSION_MINOR = 6;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
@@ -102,6 +102,10 @@ uint8_t displayProfile; //Range: 0 - (MAX_PROFILE_COUNT - 1)
 uint8_t profileNumber = MAX_PROFILE_COUNT; //profileNumber gets set once at boot to save loading time
 char profileNames[MAX_PROFILE_COUNT][50]; //Populated based on names found in LittleFS and SD
 char settingsFileName[60]; //Contains the %s_Settings_%d.txt with current profile number set
+
+const char stationCoordinateECEFFileName[] = "/StationCoordinates-ECEF.csv";
+const char stationCoordinateGeodeticFileName[] = "/StationCoordinates-Geodetic.csv";
+const int MAX_STATIONS = 50; //Record upto 50 ECEF and Geodetic commonly used stations
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time
@@ -159,6 +163,9 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
+static int ntripClientConnectionAttempts; //Count the number of connection attempts between restarts
+static int ntripServerConnectionAttempts; //Count the number of connection attempts between restarts
+
 #endif
 
 volatile uint8_t wifiNmeaConnected;
@@ -168,7 +175,6 @@ volatile uint8_t wifiNmeaConnected;
 //  * Receive NTRIP data timeout
 static uint32_t ntripClientTimer;
 static uint32_t ntripClientStartTime; //For calculating uptime
-static int ntripClientConnectionAttempts; //Count the number of connection attempts between restarts
 static int ntripClientConnectionAttemptsTotal; //Count the number of connection attempts absolutely
 
 //NTRIP server timer usage:
@@ -177,9 +183,7 @@ static int ntripClientConnectionAttemptsTotal; //Count the number of connection 
 //  * Monitor last RTCM byte received for frame counting
 static uint32_t ntripServerTimer;
 static uint32_t ntripServerStartTime;
-static int ntripServerConnectionAttempts; //Count the number of connection attempts between restarts
 static int ntripServerConnectionAttemptsTotal; //Count the number of connection attempts absolutely
-
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration
@@ -207,14 +211,6 @@ class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
 };
 
 SFE_UBLOX_GNSS_ADD i2cGNSS;
-
-//Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings
-//This array holds the payload data bytes. Global so that we can use between config functions.
-#ifdef MAX_PAYLOAD_SIZE
-#undef MAX_PAYLOAD_SIZE
-#define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
-#endif
-uint8_t settingPayload[MAX_PAYLOAD_SIZE];
 
 //These globals are updated regularly via the storePVTdata callback
 bool pvtUpdated = false;
@@ -265,35 +261,34 @@ float battChangeRate = 0.0;
 #ifdef COMPILE_BT
 // See bluetoothSelect.h for implemenation
 #include "bluetoothSelect.h"
-
-//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/23
-// #include "src/BluetoothSerial/BluetoothSerial.h"
-// BluetoothSerial SerialBT;
-
-// BLE Support originally from https://github.com/avinabmalla/ESP32_BleSerial/tree/bad5ff841800853a61e431ea751f8ea9d7a1df21
-// #include "src/BleSerial/BleSerial.h"
-// BleSerial SerialBLE;
 #endif
 
 char platformPrefix[55] = "Surveyor"; //Sets the prefix for broadcast names
 
+#include <driver/uart.h> //Required for uart_set_rx_full_threshold() on cores <v2.0.5
 HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
-#define SERIAL_SIZE_RX (1024 * 4) //Must be large enough to handle incoming ZED UART traffic. See F9PSerialReadTask().
-TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
-const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
-
-#define SERIAL_SIZE_TX (1024 * 1)
+#define SERIAL_SIZE_TX 512
 uint8_t wBuffer[SERIAL_SIZE_TX]; //Buffer for writing from incoming SPP to F9P
 TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest
+const int writeTaskStackSize = 2000;
+
+uint8_t * rBuffer; //Buffer for reading from F9P. At 230400bps, 23040 bytes/s. If SD blocks for 250ms, we need 23040 * 0.25 = 5760 bytes worst case.
+TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
+const int readTaskStackSize = 2000;
+
+TaskHandle_t handleGNSSDataTaskHandle = NULL;
+const uint8_t handleGNSSDataTaskPriority = 1; //3 being the highest, and 0 being the lowest
+const int handleGNSSDataTaskStackSize = 2000;
 
 TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
 volatile bool uart2pinned = false; //This variable is touched by core 0 but checked by core 1. Must be volatile.
 
-//Reduced stack size from 10,000 to 2,000 to make room for WiFi/NTRIP server capabilities
-const int readTaskStackSize = 2500;
-const int writeTaskStackSize = 2000;
+volatile static int combinedSpaceRemaining = 0; //Overrun indicator
+volatile static long fileSize = 0; //Updated with each write
+int bufferOverruns = 0; //Running count of possible data losses since power-on
 
 bool zedUartPassed = false; //Goes true during testing if ESP can communicate with ZED over UART
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -436,7 +431,6 @@ uint32_t rtcmLastReceived = 0;
 
 uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
-uint32_t totalWriteTime = 0; //Used to calculate overall write speed using SdFat library
 
 uint16_t svinObservationTime = 0; //Use globals so we don't have to request these values multiple times (slow response)
 float svinMeanAccuracy = 0;
@@ -674,35 +668,6 @@ void updateLogs()
 
   if (online.logging == true)
   {
-    //Force file sync every 5000ms
-    if (millis() - lastUBXLogSyncTime > 5000)
-    {
-      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
-      {
-        if (productVariant == RTK_SURVEYOR)
-          digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
-
-        long startWriteTime = micros();
-        ubxFile->sync();
-        long stopWriteTime = micros();
-        totalWriteTime += stopWriteTime - startWriteTime; //Used to calculate overall write speed
-
-        if (productVariant == RTK_SURVEYOR)
-          digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
-
-        updateDataFileAccess(ubxFile); // Update the file access time & date
-
-        lastUBXLogSyncTime = millis();
-        xSemaphoreGive(sdCardSemaphore);
-      } //End sdCardSemaphore
-      else
-      {
-        //This is OK because in the interim more data will be written to the log
-        //and the log file will eventually be synced by the next call in loop
-        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
-      }
-    }
-
     //Record any pending trigger events
     if (newEventToRecord == true)
     {
@@ -717,6 +682,8 @@ void updateLogs()
 
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
+        markSemaphore(FUNCTION_EVENT);
+
         ubxFile->println(nmeaMessage);
 
         xSemaphoreGive(sdCardSemaphore);
@@ -724,32 +691,19 @@ void updateLogs()
       }
       else
       {
+        char semaphoreHolder[50];
+        getSemaphoreFunction(semaphoreHolder);
+
         //While a retry does occur during the next loop, it is possible to loose
         //trigger events if they occur too rapidly or if the log file is closed
         //before the trigger event is written!
-        log_w("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
+        log_w("sdCardSemaphore failed to yield, held by %s, RTK_Surveyor.ino line %d", semaphoreHolder, __LINE__);
       }
     }
 
     //Report file sizes to show recording is working
     if ((millis() - lastFileReport) > 5000)
     {
-      long fileSize = 0;
-
-      //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
-      {
-        fileSize = ubxFile->fileSize();
-
-        xSemaphoreGive(sdCardSemaphore);
-      }
-      else
-      {
-        //This is OK because outputting this message is not critical to the RTK
-        //operation and the message will be output by the next call in loop
-        log_d("sdCardSemaphore failed to yield, RTK_Surveyor.ino line %d", __LINE__);
-      }
-
       if (fileSize > 0)
       {
         lastFileReport = millis();
@@ -762,11 +716,6 @@ void updateLogs()
             //Calculate generation and write speeds every 5 seconds
             uint32_t fileSizeDelta = fileSize - lastLogSize;
             Serial.printf(" - Generation rate: %0.1fkB/s", fileSizeDelta / 5.0 / 1000.0);
-
-            if (totalWriteTime > 0)
-              Serial.printf(" - Write speed: %0.1fkB/s", fileSizeDelta / (totalWriteTime / 1000000.0) / 1000.0);
-            else
-              Serial.printf(" - Write speed: 0.0kB/s");
           }
           else
           {
@@ -775,8 +724,6 @@ void updateLogs()
 
           Serial.println();
         }
-
-        totalWriteTime = 0; //Reset write time every 5s
 
         if (fileSize > lastLogSize)
         {
@@ -897,4 +844,73 @@ void updateRadio()
     }
   }
 #endif
+}
+
+
+//Record who is holding the semaphore
+volatile SemaphoreFunction semaphoreFunction = FUNCTION_NOT_SET;
+
+void markSemaphore(SemaphoreFunction functionNumber)
+{
+  semaphoreFunction = functionNumber;
+}
+
+//Resolves the holder to a printable string
+void getSemaphoreFunction(char* functionName)
+{
+  switch (semaphoreFunction)
+  {
+    default:
+      strcpy(functionName, "Unknown");
+      break;
+
+    case FUNCTION_SYNC:
+      strcpy(functionName, "Sync");
+      break;
+    case FUNCTION_WRITESD:
+      strcpy(functionName, "Write");
+      break;
+    case FUNCTION_FILESIZE:
+      strcpy(functionName, "FileSize");
+      break;
+    case FUNCTION_EVENT:
+      strcpy(functionName, "Event");
+      break;
+    case FUNCTION_BEGINSD:
+      strcpy(functionName, "BeginSD");
+      break;
+    case FUNCTION_RECORDSETTINGS:
+      strcpy(functionName, "Record Settings");
+      break;
+    case FUNCTION_LOADSETTINGS:
+      strcpy(functionName, "Load Settings");
+      break;
+    case FUNCTION_MARKEVENT:
+      strcpy(functionName, "Mark Event");
+      break;
+    case FUNCTION_GETLINE:
+      strcpy(functionName, "Get line");
+      break;
+    case FUNCTION_REMOVEFILE:
+      strcpy(functionName, "Remove file");
+      break;
+    case FUNCTION_RECORDLINE:
+      strcpy(functionName, "Record Line");
+      break;
+    case FUNCTION_CREATEFILE:
+      strcpy(functionName, "Create File");
+      break;
+    case FUNCTION_ENDLOGGING:
+      strcpy(functionName, "End Logging");
+      break;
+    case FUNCTION_FINDLOG:
+      strcpy(functionName, "Find Log");
+      break;
+    case FUNCTION_LOGTEST:
+      strcpy(functionName, "Log Test");
+      break;
+    case FUNCTION_FILELIST:
+      strcpy(functionName, "File List");
+      break;
+  }
 }

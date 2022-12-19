@@ -84,6 +84,8 @@ void recordSystemSettingsToFileSD(char *fileName)
     //Attempt to write to file system. This avoids collisions with file writing from other functions like updateLogs()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
+      markSemaphore(FUNCTION_RECORDSETTINGS);
+
       gotSemaphore = true;
       if (sd->exists(fileName))
       {
@@ -110,9 +112,12 @@ void recordSystemSettingsToFileSD(char *fileName)
     }
     else
     {
+      char semaphoreHolder[50];
+      getSemaphoreFunction(semaphoreHolder);
+
       //This is an error because the current settings no longer match the settings
       //on the microSD card, and will not be restored to the expected settings!
-      Serial.printf("sdCardSemaphore failed to yield, NVM.ino line %d\r\n", __LINE__);
+      Serial.printf("sdCardSemaphore failed to yield, held by %s, NVM.ino line %d\r\n", semaphoreHolder, __LINE__);
     }
     break;
   }
@@ -196,8 +201,8 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "autoIMUmountAlignment", settings.autoIMUmountAlignment);
   settingsFile->printf("%s=%d\r\n", "enableResetDisplay", settings.enableResetDisplay);
   settingsFile->printf("%s=%d\r\n", "enableExternalPulse", settings.enableExternalPulse);
-  settingsFile->printf("%s=%d\r\n", "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
-  settingsFile->printf("%s=%d\r\n", "externalPulseLength_us", settings.externalPulseLength_us);
+  settingsFile->printf("%s=%llu\r\n", "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
+  settingsFile->printf("%s=%llu\r\n", "externalPulseLength_us", settings.externalPulseLength_us);
   settingsFile->printf("%s=%d\r\n", "externalPulsePolarity", settings.externalPulsePolarity);
   settingsFile->printf("%s=%d\r\n", "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
   settingsFile->printf("%s=%s\r\n", "profileName", settings.profileName);
@@ -284,6 +289,10 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "espnowBroadcast", settings.espnowBroadcast);
   settingsFile->printf("%s=%d\r\n", "antennaHeight", settings.antennaHeight);
   settingsFile->printf("%s=%0.2f\r\n", "antennaReferencePoint", settings.antennaReferencePoint);
+  settingsFile->printf("%s=%d\r\n", "echoUserInput", settings.echoUserInput);
+  settingsFile->printf("%s=%d\r\n", "uartReceiveBufferSize", settings.uartReceiveBufferSize);
+  settingsFile->printf("%s=%d\r\n", "gnssHandlerBufferSize", settings.gnssHandlerBufferSize);
+  settingsFile->printf("%s=%d\r\n", "enablePrintBufferOverrun", settings.enablePrintBufferOverrun);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -321,6 +330,8 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
     //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
+      markSemaphore(FUNCTION_LOADSETTINGS);
+
       gotSemaphore = true;
       if (sd->exists(fileName))
       {
@@ -905,6 +916,14 @@ bool parseLine(char* str, Settings *settings)
     settings->antennaHeight = d;
   else if (strcmp(settingName, "antennaReferencePoint") == 0)
     settings->antennaReferencePoint = d;
+  else if (strcmp(settingName, "echoUserInput") == 0)
+    settings->echoUserInput = d;
+  else if (strcmp(settingName, "uartReceiveBufferSize") == 0)
+    settings->uartReceiveBufferSize = d;
+  else if (strcmp(settingName, "gnssHandlerBufferSize") == 0)
+    settings->gnssHandlerBufferSize = d;
+  else if (strcmp(settingName, "enablePrintBufferOverrun") == 0)
+    settings->enablePrintBufferOverrun = d;
 
   //Check for bulk settings (constellations, message rates, ESPNOW Peers)
   //Must be last on else list

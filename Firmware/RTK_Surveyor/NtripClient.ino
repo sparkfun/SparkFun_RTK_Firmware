@@ -300,7 +300,7 @@ void ntripClientStop(bool wifiClientAllocated)
   }
 
   // Return the Main Talker ID to "GN".
-  i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GN);
+  i2cGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
   i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Remove callback
 
   //Determine the next NTRIP client state
@@ -453,16 +453,13 @@ void ntripClientUpdate()
           if (settings.ntripClient_TransmitGGA == true)
           {
             // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
-            i2cGNSS.setMainTalkerID(SFE_UBLOX_MAIN_TALKER_ID_GP);
+            i2cGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 1);
             i2cGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
 
             float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
             if (measurementFrequency < 0.2) measurementFrequency = 0.2; //0.2Hz * 5 = 1 measurement every 5 seconds
-            i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency * 5); // Enable GGA over I2C. Tell the module to output GGA every 5 seconds
-
             log_d("Adjusting GGA setting to %f", measurementFrequency);
-
-            i2cGNSS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, measurementFrequency); // Enable GGA over I2C. Tell the module to output GGA every second
+            i2cGNSS.setVal8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, measurementFrequency);  // Enable GGA over I2C. Tell the module to output GGA every second
 
             lastGGAPush = millis() - NTRIPCLIENT_MS_BETWEEN_GGA; //Force immediate transmission of GGA message
           }

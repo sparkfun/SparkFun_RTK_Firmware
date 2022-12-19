@@ -170,7 +170,7 @@ void beginBoard()
       Serial.printf("resetCount: %d\r\n", settings.resetCount);
       recordSystemSettingsToFileLFS(settingsFileName); //Avoid overwriting LittleFS settings onto SD
     }
-    
+
     Serial.print("Reset reason: ");
     switch (esp_reset_reason())
     {
@@ -207,6 +207,7 @@ void beginSD()
       break;
     }
     gotSemaphore = true;
+    markSemaphore(FUNCTION_BEGINSD);
 
     pinMode(pin_microSD_CS, OUTPUT);
     digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
@@ -324,6 +325,8 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
 //See issue: https://github.com/espressif/arduino-esp32/issues/3386
 void beginUART2()
 {
+  rBuffer = (uint8_t*)malloc(settings.gnssHandlerBufferSize);
+
   if (pinUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
       pinUART2Task,
       "UARTStart", //Just for humans
@@ -340,56 +343,18 @@ void beginUART2()
 //Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
 void pinUART2Task( void *pvParameters )
 {
-  serialGNSS.setRxBufferSize(SERIAL_SIZE_RX);
+  serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize);
   serialGNSS.setTimeout(settings.serialTimeoutGNSS);
   serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+
+  //Reduce threshold value above which RX FIFO full interrupt is generated
+  //Allows more time between when the UART interrupt occurs and when the FIFO buffer overruns
+  //serialGNSS.setRxFIFOFull(50); //Available in >v2.0.5
+  uart_set_rx_full_threshold(2, 50); //uart_num, threshold
 
   uart2pinned = true;
 
   vTaskDelete( NULL ); //Delete task once it has run once
-}
-
-//Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT->available will cause reboot
-void startUART2Tasks()
-{
-  //Start the tasks for handling incoming and outgoing BT bytes to/from ZED-F9P
-  if (F9PSerialReadTaskHandle == NULL)
-    xTaskCreate(
-      F9PSerialReadTask,
-      "F9Read", //Just for humans
-      readTaskStackSize, //Stack Size
-      NULL, //Task input parameter
-      F9PSerialReadTaskPriority, //Priority
-      &F9PSerialReadTaskHandle); //Task handle
-
-  if (F9PSerialWriteTaskHandle == NULL)
-    xTaskCreate(
-      F9PSerialWriteTask,
-      "F9Write", //Just for humans
-      writeTaskStackSize, //Stack Size
-      NULL, //Task input parameter
-      F9PSerialWriteTaskPriority, //Priority
-      &F9PSerialWriteTaskHandle); //Task handle
-}
-
-//Stop tasks - useful when running firmware update or WiFi AP is running
-void stopUART2Tasks()
-{
-  //Delete tasks if running
-  if (F9PSerialReadTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialReadTaskHandle);
-    F9PSerialReadTaskHandle = NULL;
-  }
-  if (F9PSerialWriteTaskHandle != NULL)
-  {
-    vTaskDelete(F9PSerialWriteTaskHandle);
-    F9PSerialWriteTaskHandle = NULL;
-  }
-
-  //Give the other CPU time to finish
-  //Eliminates CPU bus hang condition
-  delay(100);
 }
 
 void beginFS()
@@ -678,38 +643,32 @@ bool beginExternalTriggers()
     return (true);
   }
 
-  UBX_CFG_TP5_data_t timePulseParameters;
+  if (settings.dataPortChannel != MUX_PPS_EVENTTRIGGER)
+    return (true); //No need to configure PPS if port is not selected
 
-  if (i2cGNSS.getTimePulseParameters(&timePulseParameters) == false)
-    log_e("getTimePulseParameters failed!");
+  bool response = true;
 
-  timePulseParameters.tpIdx = 0; // Select the TIMEPULSE pin
+  response &= i2cGNSS.newCfgValset8(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TP_TP1_ENA, settings.enableExternalPulse); //Enable/disable timepulse
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TP_PULSE_DEF, 0); //Time pulse definition is a period (in us)
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = raising edge
 
   // While the module is _locking_ to GNSS time, turn off pulse
-  timePulseParameters.freqPeriod = 1000000; //Set the period between pulses in us
-  timePulseParameters.pulseLenRatio = 0; //Set the pulse length in us
+  response &= i2cGNSS.addCfgValset32(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
+  response &= i2cGNSS.addCfgValset32(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
 
   // When the module is _locked_ to GNSS time, make it generate 1kHz
-  timePulseParameters.freqPeriodLock = settings.externalPulseTimeBetweenPulse_us; //Set the period between pulses is us
-  timePulseParameters.pulseLenRatioLock = settings.externalPulseLength_us; //Set the pulse length in us
+  response &= i2cGNSS.addCfgValset32(UBLOX_CFG_TP_PERIOD_LOCK_TP1, settings.externalPulseTimeBetweenPulse_us); //Set the period between pulses is us
+  response &= i2cGNSS.sendCfgValset32(UBLOX_CFG_TP_LEN_LOCK_TP1, settings.externalPulseLength_us); //Set the pulse length in us
 
-  timePulseParameters.flags.bits.active = settings.enableExternalPulse; //Make sure the active flag is set to enable the time pulse. (Set to 0 to disable.)
-  timePulseParameters.flags.bits.lockedOtherSet = 1; //Tell the module to use freqPeriod while locking and freqPeriodLock when locked to GNSS time
-  timePulseParameters.flags.bits.isFreq = 0; //Tell the module that we want to set the period
-  timePulseParameters.flags.bits.isLength = 1; //Tell the module that pulseLenRatio is a length (in us)
-  timePulseParameters.flags.bits.polarity = (uint8_t)settings.externalPulsePolarity; //Rising or failling edge type pulse
-
-  if (i2cGNSS.setTimePulseParameters(&timePulseParameters, 1000) == false)
-    log_e("setTimePulseParameters failed!");
+  if (response == false)
+    Serial.println("beginExternalTriggers config failed");
 
   if (settings.enableExternalHardwareEventLogging == true)
     i2cGNSS.setAutoTIMTM2callback(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
   else
     i2cGNSS.setAutoTIMTM2callback(NULL);
-
-  bool response = i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
-  if (response == false)
-    Serial.println("Module failed to save.");
 
   return (response);
 }

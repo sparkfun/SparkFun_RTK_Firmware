@@ -3,9 +3,6 @@ bool configureUbloxModuleBase()
 {
   if (online.gnss == false) return (false);
 
-  bool response = true;
-  int maxWait = 2000;
-
   //If our settings haven't changed, and this is first config since power on, trust ZED's settings
   if (settings.updateZEDSettings == false && firstPowerOn == true)
   {
@@ -18,76 +15,74 @@ bool configureUbloxModuleBase()
 
   i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  const int baseNavigationFrequency = 1;
+  i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Disable GPGGA call back that may have been set during Rover NTRIP Client mode
+
+  bool response = true;
 
   //In Base mode we force 1Hz
-  if (i2cGNSS.getNavigationFrequency(maxWait) != baseNavigationFrequency)
-    response &= i2cGNSS.setNavigationFrequency(baseNavigationFrequency, maxWait);
-  if (response == false)
-    Serial.println("setNavigationFrequency failed");
+  response &= i2cGNSS.newCfgValset();
+  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_MEAS, 1000);
+  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_NAV, 1);
 
-  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  //Since we are at 1Hz, allow GSV NMEA to be reported at whatever the user has chosen
+  response &= i2cGNSS.addCfgValset8(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module
 
-  i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Disable GPGGA call back that may have been set during Rover NTRIP Client mode
-  i2cGNSS.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C); // Disable NMEA message that may have been set during Rover NTRIP Client mode
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); // Disable NMEA message that may have been set during Rover NTRIP Client mode
 
-  response = i2cGNSS.setSurveyMode(0, 0, 0); //Disable Survey-In or Fixed Mode
-  if (response == false)
-    Serial.println("Disable TMODE3 failed");
+  //Survey mode is only available on ZED-F9P modules
+  if (zedModuleType == PLATFORM_F9P)
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
 
-  // Set dynamic model
-  if (i2cGNSS.getDynamicModel(maxWait) != DYN_MODEL_STATIONARY)
-  {
-    response &= i2cGNSS.setDynamicModel(DYN_MODEL_STATIONARY, maxWait);
-    if (response == false)
-    {
-      Serial.println("setDynamicModel failed");
-      return (false);
-    }
-  }
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
 
-#define OUTPUT_SETTING 14
-
-  //Turn on RTCM so that we can harvest RTCM over I2C and send out over WiFi
-  //This is easier than parsing over UART because the library handles the frame detection
-  getPortSettings(COM_PORT_I2C); //Load the settingPayload with this port's settings
-  if (settingPayload[OUTPUT_SETTING] != (COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3))
-    response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //Set the I2C port to output UBX (config), and RTCM3 (casting)
-  //response &= i2cGNSS.setPortOutput(COM_PORT_I2C, COM_TYPE_UBX | COM_TYPE_RTCM3); //Not a valid state. Goes to UBX+NMEA+RTCM3
-
-  //In base mode the Surveyor should output RTCM over all ports:
+  //In base mode the RTK device should output RTCM over all ports:
   //(Primary) UART2 in case the Surveyor is connected via radio to rover
   //(Optional) I2C in case user wants base to connect to WiFi and NTRIP Caster
   //(Seconday) USB in case the Surveyor is used as an NTRIP caster connected to SBC or other
   //(Tertiary) UART1 in case Surveyor is sending RTCM to phone that is then NTRIP Caster
-  response &= enableRTCMSentences(COM_PORT_UART2);
-  response &= enableRTCMSentences(COM_PORT_UART1);
-  response &= enableRTCMSentences(COM_PORT_USB);
-  response &= enableRTCMSentences(COM_PORT_I2C); //Enable for plain radio so we can count RTCM packets for display
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_I2C, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_I2C, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_I2C, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_I2C, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_I2C, 1);
 
-  //If enabled, adjust GSV NMEA to be reported at 1Hz
-  if (settings.ubxMessages[8].msgRate > baseNavigationFrequency)
-    setMessageRateByName("UBX_NMEA_GSV", baseNavigationFrequency); //Update GSV setting in file
-  
-  response &= configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //In the interest of logging, make sure the appropriate messages are enabled
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_USB, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_USB, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_USB, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_USB, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_USB, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_USB, 1);
+
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_UART1, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_UART1, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_UART1, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_UART1, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART1, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART1, 1);
+
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_UART2, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_UART2, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_UART2, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_UART2, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART2, 1);
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 1);
+
+  response &= i2cGNSS.sendCfgValset(); //Closing value - #31
 
   if (response == false)
-  {
-    Serial.println("RTCM settings failed to enable");
-    return (false);
-  }
-
-  response &= i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR
-  if (response == false)
-    Serial.println("Module failed to save.");
+    Serial.println("Base config fail");
 
   return (response);
 }
 
 //Start survey
 //The ZED-F9P is slightly different than the NEO-M8P. See the Integration manual 3.5.8 for more info.
-bool beginSurveyIn()
+bool surveyInStart()
 {
+  i2cGNSS.setVal8(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
+  delay(100);
+
   bool needSurveyReset = false;
   if (i2cGNSS.getSurveyInActive(100) == true) needSurveyReset = true;
   if (i2cGNSS.getSurveyInValid(100) == true) needSurveyReset = true;
@@ -96,17 +91,19 @@ bool beginSurveyIn()
   {
     Serial.println("Resetting survey");
 
-    if (resetSurvey() == false)
+    if (surveyInReset() == false)
     {
       Serial.println("Survey reset failed");
-      if (resetSurvey() == false)
-      {
+      if (surveyInReset() == false)
         Serial.println("Survey reset failed - 2nd attempt");
-      }
     }
   }
 
-  bool response = i2cGNSS.enableSurveyMode(settings.observationSeconds, settings.observationPositionAccuracy, 5000); //Enable Survey in, with user parameters. Wait up to 5s.
+  bool response = true;
+  response &= i2cGNSS.setVal8(UBLOX_CFG_TMODE_MODE, 1); //Survey-in enable
+  response &= i2cGNSS.setVal32(UBLOX_CFG_TMODE_SVIN_ACC_LIMIT, settings.observationPositionAccuracy * 10000);
+  response &= i2cGNSS.setVal32(UBLOX_CFG_TMODE_SVIN_MIN_DUR, settings.observationSeconds);
+
   if (response == false)
   {
     Serial.println("Survey start failed");
@@ -130,16 +127,23 @@ bool beginSurveyIn()
   return (true);
 }
 
-bool resetSurvey()
+//Slightly modified method for restarting survey-in from: https://portal.u-blox.com/s/question/0D52p00009IsVoMCAV/restarting-surveyin-on-an-f9p
+bool surveyInReset()
 {
-  int maxWait = 2000;
+  bool response = true;
 
-  //Slightly modified method for restarting survey-in from: https://portal.u-blox.com/s/question/0D52p00009IsVoMCAV/restarting-surveyin-on-an-f9p
-  bool response = i2cGNSS.setSurveyMode(maxWait, 0, 0); //Disable Survey-In or Fixed Mode
+  //Disable survey-in mode
+  response &= i2cGNSS.setVal8(UBLOX_CFG_TMODE_MODE, 0);
   delay(1000);
-  response &= i2cGNSS.enableSurveyMode(1000, 400.000, maxWait); //Enable Survey in with bogus values
+
+  //Enable Survey in with bogus values
+  response &= i2cGNSS.newCfgValset8(UBLOX_CFG_TMODE_MODE, 1); //Survey-in enable
+  response &= i2cGNSS.addCfgValset32(UBLOX_CFG_TMODE_SVIN_ACC_LIMIT, 40 * 10000); //40.0m
+  response &= i2cGNSS.sendCfgValset32(UBLOX_CFG_TMODE_SVIN_MIN_DUR, 1000); //1000s
   delay(1000);
-  response &= i2cGNSS.setSurveyMode(maxWait, 0, 0); //Disable Survey-In or Fixed Mode
+
+  //Disable survey-in mode
+  response &= i2cGNSS.setVal8(UBLOX_CFG_TMODE_MODE, 0);
 
   if (response == false)
     return (response);
@@ -159,8 +163,7 @@ bool resetSurvey()
 //Start the base using fixed coordinates
 bool startFixedBase()
 {
-  bool response = false;
-  int maxWait = 2000;
+  bool response = true;
 
   if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
   {
@@ -179,12 +182,15 @@ bool startFixedBase()
 
     //Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
     //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
-    response = i2cGNSS.setStaticPosition(majorEcefX, minorEcefX,
-                                         majorEcefY, minorEcefY,
-                                         majorEcefZ, minorEcefZ,
-                                         false,
-                                         maxWait
-                                        ); //With high precision 0.1mm parts
+
+    response &= i2cGNSS.newCfgValset8(UBLOX_CFG_TMODE_MODE, 2); //Fixed
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TMODE_POS_TYPE, 0); //Position in ECEF
+    response &= i2cGNSS.addCfgValset32(UBLOX_CFG_TMODE_ECEF_X, majorEcefX);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TMODE_ECEF_X_HP, minorEcefX);
+    response &= i2cGNSS.addCfgValset32(UBLOX_CFG_TMODE_ECEF_Y, majorEcefY);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TMODE_ECEF_Y_HP, minorEcefY);
+    response &= i2cGNSS.addCfgValset32(UBLOX_CFG_TMODE_ECEF_Z, majorEcefZ);
+    response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_TMODE_ECEF_Z_HP, minorEcefZ);
   }
   else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
   {
@@ -192,7 +198,7 @@ bool startFixedBase()
     //https://www.e-education.psu.edu/geog862/node/1853
     //For example, if HAE is at 100.0m, + 2m stick + 73mm ARP = 102.073
     float totalFixedAltitude = settings.fixedAltitude + (settings.antennaHeight / 1000.0) + (settings.antennaReferencePoint / 1000.0);
-    
+
     //Break coordinates into main and high precision parts
     //The type casting should not effect rounding of original double cast coordinate
     int64_t majorLat = settings.fixedLat * 10000000;
@@ -214,12 +220,14 @@ bool startFixedBase()
     //    Serial.printf("major (should be 156022): %ld\r\n", majorAlt);
     //    Serial.printf("minor (should be 84): %ld\r\n", minorAlt);
 
-    response = i2cGNSS.setStaticPosition(
-                 majorLat, minorLat,
-                 majorLong, minorLong,
-                 majorAlt, minorAlt,
-                 true, //Use lat/long as input
-                 maxWait);
+    response &= i2cGNSS.newCfgValset8(UBLOX_CFG_TMODE_MODE, 2); //Fixed
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TMODE_POS_TYPE, 1); //Position in LLH
+    response &= i2cGNSS.addCfgValset32(UBLOX_CFG_TMODE_LAT, majorLat);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TMODE_LAT_HP, minorLat);
+    response &= i2cGNSS.addCfgValset32(UBLOX_CFG_TMODE_LON, majorLong);
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TMODE_LON_HP, minorLong);
+    response &= i2cGNSS.addCfgValset32(UBLOX_CFG_TMODE_HEIGHT, majorAlt);
+    response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_TMODE_HEIGHT_HP, minorAlt);
   }
 
   return (response);
@@ -251,7 +259,7 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
   {
     rtcmLastReceived = millis();
     rtcmBytesSent++;
-    
+
     ntripServerProcessRTCM(incoming);
 
     espnowProcessRTCM(incoming);

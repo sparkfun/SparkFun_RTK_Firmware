@@ -96,6 +96,7 @@ typedef enum
   CUSTOM_NMEA_TYPE_ZED_VERSION,
   CUSTOM_NMEA_TYPE_STATUS,
   CUSTOM_NMEA_TYPE_LOGTEST_STATUS,
+  CUSTOM_NMEA_TYPE_DEVICE_BT_ID,
 } customNmeaType_e;
 
 //Freeze and blink LEDs if we hit a bad error
@@ -206,20 +207,40 @@ enum BTState
   BT_CONNECTED,
 };
 
-//Return values for getByteChoice()
-enum returnStatus {
-  STATUS_GETBYTE_TIMEOUT = 255,
-  STATUS_GETNUMBER_TIMEOUT = -123455555,
-  STATUS_PRESSED_X = 254,
-};
-
-//Return values for getMenuChoice()
-enum getMenuChoiceStatus
+//Return values for getString()
+typedef enum
 {
-  GMCS_TIMEOUT = -2,
-  GMCS_OVERFLOW = -1,
-  GMCS_CHARACTER = 0
-};
+  INPUT_RESPONSE_GETNUMBER_EXIT = -9999999, //Less than min ECEF. User may be prompted for number but wants to exit without entering data
+  INPUT_RESPONSE_GETNUMBER_TIMEOUT = -9999998,
+  INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT = 255,
+  INPUT_RESPONSE_TIMEOUT = -2,
+  INPUT_RESPONSE_OVERFLOW = -1,
+  INPUT_RESPONSE_EMPTY = 0,
+  INPUT_RESPONSE_VALID = 1,
+} InputResponse;
+
+
+typedef enum
+{
+  FUNCTION_NOT_SET = 0,
+  FUNCTION_SYNC,
+  FUNCTION_WRITESD,
+  FUNCTION_FILESIZE,
+  FUNCTION_EVENT,
+  FUNCTION_BEGINSD,
+  FUNCTION_RECORDSETTINGS,
+  FUNCTION_LOADSETTINGS,
+  FUNCTION_MARKEVENT,
+  FUNCTION_GETLINE,
+  FUNCTION_REMOVEFILE,
+  FUNCTION_RECORDLINE,
+  FUNCTION_CREATEFILE,
+  FUNCTION_ENDLOGGING,
+  FUNCTION_FINDLOG,
+  FUNCTION_LOGTEST,
+  FUNCTION_FILELIST,
+
+} SemaphoreFunction;
 
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
 
@@ -279,8 +300,8 @@ typedef struct {
   double fixedLat = 40.09029479;
   double fixedLong = -105.18505761;
   double fixedAltitude = 1560.089;
-  uint32_t dataPortBaud = 460800; //Default to 460800bps to support >10Hz update rates
-  uint32_t radioPortBaud = 57600; //Default to 57600bps to support connection to SiK1000 radios
+  uint32_t dataPortBaud = (115200 * 2); //Default to 230400bps. This limits GNSS fixes at 4Hz but allows SD buffer to be reduced to 6k.
+  uint32_t radioPortBaud = 57600; //Default to 57600bps to support connection to SiK1000 type telemetry radios
   float surveyInStartingAccuracy = 1.0; //Wait for 1m horizontal positional accuracy before starting survey in
   uint16_t measurementRate = 250; //Elapsed ms between GNSS measurements. 25ms to 65535ms. Default 4Hz.
   uint16_t navigationRate = 1; //Ratio between number of measurements and navigation solutions. Default 1 for 4Hz (with measurementRate).
@@ -299,8 +320,8 @@ typedef struct {
   bool enableResetDisplay = false;
   uint8_t resetCount = 0;
   bool enableExternalPulse = true; //Send pulse once lock is achieved
-  uint32_t externalPulseTimeBetweenPulse_us = 900000; //us between pulses, max of 65s
-  uint32_t externalPulseLength_us = 100000; //us length of pulse
+  uint64_t externalPulseTimeBetweenPulse_us = 900000; //us between pulses, max of 60s = 60 * 1000 * 1000
+  uint64_t externalPulseLength_us = 100000; //us length of pulse, max of 60s = 60 * 1000 * 1000
   pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; //Pulse rises for pulse length, then falls
   bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
   bool enableMarksFile = false; //Log marks to the marks file
@@ -501,6 +522,11 @@ typedef struct {
   bool espnowBroadcast = true; //When true, overrides peers and sends all data via broadcast
   uint16_t antennaHeight = 0; //in mm
   float antennaReferencePoint = 0.0; //in mm
+  bool echoUserInput = true;
+  int uartReceiveBufferSize = 1024 * 2; //This buffer is filled automatically as the UART receives characters.
+  int gnssHandlerBufferSize = 1024 * 4; //This buffer is filled from the UART receive buffer, and is then written to SD
+  bool enablePrintBufferOverrun = false;
+  bool enablePrintSDBuffers = false;
 } Settings;
 Settings settings;
 const Settings defaultSettings = Settings();

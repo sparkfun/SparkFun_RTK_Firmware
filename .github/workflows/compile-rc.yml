@@ -22,13 +22,15 @@ jobs:
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1
 
-      #We limit the ESP32 core to v2.0.2. See: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/334
+      - name: Start config file
+        run: arduino-cli config init --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
+
+      - name: Update index
+        run: arduino-cli core update-index
+
+      #We limit the ESP32 core to v2.0.2
       - name: Install platform
         run: arduino-cli core install esp32:esp32@2.0.2
-          --additional-urls 'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json'
-
-      - name: Start config file
-        run: arduino-cli config init
 
       - name: Enable external libs
         run: arduino-cli config set library.enable_unsafe_install true
@@ -48,11 +50,11 @@ jobs:
           https://github.com/knolleary/pubsubclient.git
           https://github.com/avinabmalla/ESP32_BleSerial.git
           
-      #Incorporate ESP-Now patch into core: https://github.com/espressif/arduino-esp32/pull/7044/files
-      - name: Patch ESP32 Core
-        run: |
-          cd Firmware/RTK_Surveyor/Patch/
-          cp WiFiGeneric.cpp /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.4/libraries/WiFi/src/WiFiGeneric.cpp
+      #Incorporate ESP-Now patch into v2.0.4 core: https://github.com/espressif/arduino-esp32/pull/7044/files
+      # - name: Patch ESP32 Core
+      #   run: |
+      #     cd Firmware/RTK_Surveyor/Patch/
+      #     cp WiFiGeneric.cpp /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.4/libraries/WiFi/src/WiFiGeneric.cpp
 
       - name: Compile Sketch
         run: arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=debug ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
@@ -63,7 +65,7 @@ jobs:
 
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%b_%d_%Y')"
+        run: echo "date=$(date +'%b_%d_%Y')" >> $GITHUB_OUTPUT
       
       - name: Rename binary
         run: |

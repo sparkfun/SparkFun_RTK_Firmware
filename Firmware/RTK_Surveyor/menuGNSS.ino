@@ -7,16 +7,16 @@ void menuGNSS()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: GNSS Menu");
+    Serial.println("Menu: GNSS Receiver");
 
     //Because we may be in base mode (always 1Hz), do not get freq from module, use settings instead
     float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
 
     Serial.print("1) Set measurement rate in Hz: ");
-    Serial.println(measurementFrequency, 4);
+    Serial.println(measurementFrequency, 5);
 
     Serial.print("2) Set measurement rate in seconds between measurements: ");
-    Serial.println(1 / measurementFrequency, 2);
+    Serial.println(1 / measurementFrequency, 5);
 
     Serial.print("3) Set dynamic model: ");
     switch (settings.dynamicModel)
@@ -96,33 +96,33 @@ void menuGNSS()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
     {
       Serial.print("Enter GNSS measurement rate in Hz: ");
-      double rate = getDouble(menuTimeout); //Timeout after x seconds
-      if (rate < 0.0 || rate > 20.0) //20Hz limit with all constellations enabled.
+      double rate = getDouble();
+      if (rate < 0.00012 || rate > 20.0) //20Hz limit with all constellations enabled
       {
-        Serial.println("Error: measurement rate out of range");
+        Serial.println("Error: Measurement rate out of range");
       }
       else
       {
-        setMeasurementRates(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
+        setRate(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
         //Settings recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 2)
     {
       Serial.print("Enter GNSS measurement rate in seconds between measurements: ");
-      double rate = getDouble(menuTimeout); //Timeout after x seconds
+      float rate = getDouble();
       if (rate < 0.0 || rate > 8255.0) //Limit of 127 (navRate) * 65000ms (measRate) = 137 minute limit.
       {
-        Serial.println("Error: measurement rate out of range");
+        Serial.println("Error: Measurement rate out of range");
       }
       else
       {
-        setMeasurementRates(rate); //This will set settings.measurementRate, settings.navigationRate, and GSV message
+        setRate(rate); //This will set settings.measurementRate, settings.navigationRate, and GSV message
         //Settings recorded to NVM and file at main menu exit
       }
     }
@@ -140,15 +140,18 @@ void menuGNSS()
       Serial.println("9) Wrist");
       Serial.println("10) Bike");
 
-      int dynamicModel = getNumber(menuTimeout); //Timeout after x seconds
-      if (dynamicModel < 1 || dynamicModel > DYN_MODEL_BIKE)
-        Serial.println("Error: Dynamic model out of range");
-      else
+      int dynamicModel = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((dynamicModel != INPUT_RESPONSE_GETNUMBER_EXIT) && (dynamicModel != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (dynamicModel == 1)
-          settings.dynamicModel = DYN_MODEL_PORTABLE; //The enum starts at 0 and skips 1.
+        if (dynamicModel < 1 || dynamicModel > DYN_MODEL_BIKE)
+          Serial.println("Error: Dynamic model out of range");
         else
-          settings.dynamicModel = dynamicModel; //Recorded to NVM and file at main menu exit
+        {
+          if (dynamicModel == 1)
+            settings.dynamicModel = DYN_MODEL_PORTABLE; //The enum starts at 0 and skips 1.
+          else
+            settings.dynamicModel = dynamicModel; //Recorded to NVM and file at main menu exit
+        }
       }
     }
     else if (incoming == 4)
@@ -163,54 +166,57 @@ void menuGNSS()
     else if (incoming == 6 && settings.enableNtripClient == true)
     {
       Serial.print("Enter local WiFi SSID: ");
-      readLine(settings.ntripClient_wifiSSID, sizeof(settings.ntripClient_wifiSSID), menuTimeout);
+      getString(settings.ntripClient_wifiSSID, sizeof(settings.ntripClient_wifiSSID));
       restartRover = true;
     }
     else if (incoming == 7 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter password for WiFi network %s: ", settings.ntripClient_wifiSSID);
-      readLine(settings.ntripClient_wifiPW, sizeof(settings.ntripClient_wifiPW), menuTimeout);
+      getString(settings.ntripClient_wifiPW, sizeof(settings.ntripClient_wifiPW));
       restartRover = true;
     }
     else if (incoming == 8 && settings.enableNtripClient == true)
     {
       Serial.print("Enter new Caster Address: ");
-      readLine(settings.ntripClient_CasterHost, sizeof(settings.ntripClient_CasterHost), menuTimeout);
+      getString(settings.ntripClient_CasterHost, sizeof(settings.ntripClient_CasterHost));
       restartRover = true;
     }
     else if (incoming == 9 && settings.enableNtripClient == true)
     {
       Serial.print("Enter new Caster Port: ");
 
-      int ntripClient_CasterPort = getNumber(menuTimeout); //Timeout after x seconds
-      if (ntripClient_CasterPort < 1 || ntripClient_CasterPort > 99999) //Arbitrary 99k max port #
-        Serial.println("Error: Caster Port out of range");
-      else
-        settings.ntripClient_CasterPort = ntripClient_CasterPort; //Recorded to NVM and file at main menu exit
-      restartRover = true;
+      int ntripClient_CasterPort = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((ntripClient_CasterPort != INPUT_RESPONSE_GETNUMBER_EXIT) && (ntripClient_CasterPort != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (ntripClient_CasterPort < 1 || ntripClient_CasterPort > 99999) //Arbitrary 99k max port #
+          Serial.println("Error: Caster port out of range");
+        else
+          settings.ntripClient_CasterPort = ntripClient_CasterPort; //Recorded to NVM and file at main menu exit
+        restartRover = true;
+      }
     }
     else if (incoming == 10 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter user name for %s: ", settings.ntripClient_CasterHost);
-      readLine(settings.ntripClient_CasterUser, sizeof(settings.ntripClient_CasterUser), menuTimeout);
+      getString(settings.ntripClient_CasterUser, sizeof(settings.ntripClient_CasterUser));
       restartRover = true;
     }
     else if (incoming == 11 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter user password for %s: ", settings.ntripClient_CasterHost);
-      readLine(settings.ntripClient_CasterUserPW, sizeof(settings.ntripClient_CasterUserPW), menuTimeout);
+      getString(settings.ntripClient_CasterUserPW, sizeof(settings.ntripClient_CasterUserPW));
       restartRover = true;
     }
     else if (incoming == 12 && settings.enableNtripClient == true)
     {
       Serial.print("Enter new Mount Point: ");
-      readLine(settings.ntripClient_MountPoint, sizeof(settings.ntripClient_MountPoint), menuTimeout);
+      getString(settings.ntripClient_MountPoint, sizeof(settings.ntripClient_MountPoint));
       restartRover = true;
     }
     else if (incoming == 13 && settings.enableNtripClient == true)
     {
       Serial.printf("Enter password for Mount Point %s: ", settings.ntripClient_MountPoint);
-      readLine(settings.ntripClient_MountPointPW, sizeof(settings.ntripClient_MountPointPW), menuTimeout);
+      getString(settings.ntripClient_MountPointPW, sizeof(settings.ntripClient_MountPointPW));
       restartRover = true;
     }
     else if (incoming == 14 && settings.enableNtripClient == true)
@@ -218,24 +224,18 @@ void menuGNSS()
       settings.ntripClient_TransmitGGA ^= 1;
       restartRover = true;
     }
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
   }
 
-  int maxWait = 2000;
-
   // Set dynamic model
-  if (i2cGNSS.getDynamicModel(maxWait) != settings.dynamicModel)
-  {
-    if (i2cGNSS.setDynamicModel((dynModel)settings.dynamicModel, maxWait) == false)
-      Serial.println("menuGNSS: setDynamicModel failed");
-  }
+  i2cGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Controls the constellations that are used to generate a fix and logged
@@ -244,7 +244,7 @@ void menuConstellations()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Constellations Menu");
+    Serial.println("Menu: Constellations");
 
     for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
     {
@@ -258,7 +258,7 @@ void menuConstellations()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming >= 1 && incoming <= MAX_CONSTELLATIONS)
     {
@@ -273,25 +273,25 @@ void menuConstellations()
         settings.ubxConstellations[4].enabled = settings.ubxConstellations[incoming].enabled; //QZSS ID is 5 but array location is 4
       }
     }
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
   }
 
   //Apply current settings to module
-  configureConstellations();
+  setConstellations(true); //Apply newCfg and sendCfg values to batch
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Given the number of seconds between desired solution reports, determine measurementRate and navigationRate
 //measurementRate > 25 & <= 65535
 //navigationRate >= 1 && <= 127
 //We give preference to limiting a measurementRate to 30s or below due to reported problems with measRates above 30.
-bool setMeasurementRates(float secondsBetweenSolutions)
+bool setRate(double secondsBetweenSolutions)
 {
   uint16_t measRate = 0; //Calculate these locally and then attempt to apply them to ZED at completion
   uint16_t navRate = 0;
@@ -320,90 +320,37 @@ bool setMeasurementRates(float secondsBetweenSolutions)
 
   //Serial.printf("measurementRate / navRate: %d / %d\r\n", measRate, navRate);
 
+  bool response = true;
+  response &= i2cGNSS.newCfgValset();
+  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_MEAS, measRate);
+  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_NAV, navRate);
+
+  //If enabled, adjust GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
+  if (settings.ubxMessages[8].msgRate > 0)
+  {
+    float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+    if (measurementFrequency < 1.0) measurementFrequency = 1.0;
+
+    log_d("Adjusting GSV setting to %f", measurementFrequency);
+
+    setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //Update GSV setting in file
+    response &= i2cGNSS.addCfgValset8(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module
+  }
+  response &= i2cGNSS.sendCfgValset(); //Closing value - max 4 pairs
+
   //If we successfully set rates, only then record to settings
-  if (i2cGNSS.setMeasurementRate(measRate) == true && i2cGNSS.setNavigationRate(navRate) == true)
+  if (response == true)
   {
     settings.measurementRate = measRate;
     settings.navigationRate = navRate;
-
-    //If enabled, adjust GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
-    if (settings.ubxMessages[8].msgRate > 0)
-    {
-      float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
-      if (measurementFrequency < 1.0) measurementFrequency = 1.0;
-
-      log_d("Adjusting GSV setting to %f", measurementFrequency);
-
-      setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //Update GSV setting in file
-      configureMessageRate(COM_PORT_UART1, settings.ubxMessages[8]); //Update rate on module
-    }
   }
   else
   {
     Serial.println("Failed to set measurement and navigation rates");
-    return(false);
+    return (false);
   }
 
-  return(true);
-}
-
-//We need to know our overall measurement frequency for things like setting the GSV NMEA sentence rate.
-//This returns a float of the rate based on settings that is the readings per second (Hz).
-float getMeasurementFrequency()
-{
-  uint16_t currentMeasurementRate = i2cGNSS.getMeasurementRate();
-  uint16_t currentNavigationRate = i2cGNSS.getNavigationRate();
-
-  currentNavigationRate = i2cGNSS.getNavigationRate();
-  //The ZED-F9P will report an incorrect nav rate if we have rececently changed it.
-  //Reading a second time insures a correct read.
-
-  //Serial.printf("currentMeasurementRate / currentNavigationRate: %d / %d\r\n", currentMeasurementRate, currentNavigationRate);
-
-  float measurementFrequency = (1000.0 / currentMeasurementRate) / currentNavigationRate;
-  return (measurementFrequency);
-}
-
-//Updates the enabled constellations
-bool configureConstellations()
-{
-  bool response = true;
-
-  //If we have a corrupt constellation ID it can cause GNSS config to fail.
-  //Reset to factory defaults.
-  if (settings.ubxConstellations[0].gnssID == 255)
-  {
-    log_d("Constellation ID corrupt");
-    factoryReset();
-  }
-
-  //long startTime = millis();
-  for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
-  {
-    //v1.12 ZED firmware does not allow for SBAS control
-    //Also, if we can't identify the version (0), skip SBAS enable
-    if (zedModuleType == PLATFORM_F9P && (zedFirmwareVersionInt == 112 || zedFirmwareVersionInt == 0) && x == 1) //SBAS
-    {
-      //Do nothing
-    }
-    else
-    {
-      //Standard UBX protocol method takes ~533-783ms
-      uint8_t currentlyEnabled = getConstellation(settings.ubxConstellations[x].gnssID); //Qeury the module for the current setting
-      if (currentlyEnabled != settings.ubxConstellations[x].enabled)
-        response &= setConstellation(settings.ubxConstellations[x].gnssID, settings.ubxConstellations[x].enabled);
-    }
-
-    //Get/set val method takes ~642ms but does not work because we don't send additional sigCfg keys at same time
-    //    uint8_t currentlyEnabled = i2cGNSS.getVal8(settings.ubxConstellations[x].configKey, VAL_LAYER_RAM, 1200);
-    //    if (currentlyEnabled != settings.ubxConstellations[x].enabled)
-    //      response &= i2cGNSS.setVal(settings.ubxConstellations[x].configKey, settings.ubxConstellations[x].enabled);
-  }
-  //long stopTime = millis();
-
-  //Serial.printf("setConstellation time delta: %ld ms\r\n", stopTime - startTime);
-
-  return (response);
+  return (true);
 }
 
 //Print the module type and firmware version

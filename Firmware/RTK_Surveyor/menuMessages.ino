@@ -6,7 +6,7 @@ void menuLog()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Logging Menu");
+    Serial.println("Menu: Logging");
 
     if (settings.enableSD && online.microSD)
       Serial.println("microSD card is online");
@@ -18,6 +18,8 @@ void menuLog()
       else
         Serial.println("No microSD card is detected");
     }
+
+    Serial.printf("Buffer overruns: %d\n\r", bufferOverruns);
 
     Serial.print("1) Log to microSD: ");
     if (settings.enableLogging == true) Serial.println("Enabled");
@@ -32,17 +34,19 @@ void menuLog()
       Serial.print("3) Set max log length: ");
       Serial.print(settings.maxLogLength_minutes);
       Serial.println(" minutes");
+
+      if (online.logging == true) Serial.println("4) Start new log");
     }
 
-    Serial.print("4) Write Marks_date.csv file to microSD: ");
+    Serial.print("5) Write Marks_date.csv file to microSD: ");
     if (settings.enableMarksFile == true) Serial.println("Enabled");
     else Serial.println("Disabled");
 
     Serial.println("x) Exit");
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
-    if (incoming == '1')
+    if (incoming == 1)
     {
       settings.enableLogging ^= 1;
 
@@ -52,47 +56,51 @@ void menuLog()
       if (settings.enableLogging == false)
         startLogTime_minutes = 0;
     }
-    else if (incoming == '2' && settings.enableLogging == true)
+    else if (incoming == 2 && settings.enableLogging == true)
     {
       Serial.print("Enter max minutes before logging stops: ");
-      int maxMinutes = getNumber(menuTimeout); //Timeout after x seconds
-      if (maxMinutes < 0 || maxMinutes > (60 * 24 * 365 * 2)) //Arbitrary 2 year limit. See https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/86
+      int maxMinutes = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((maxMinutes != INPUT_RESPONSE_GETNUMBER_EXIT) && (maxMinutes != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: max minutes out of range");
-      }
-      else
-      {
-        settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
+        if (maxMinutes < 0 || maxMinutes > (60 * 24 * 365 * 2)) //Arbitrary 2 year limit. See https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/86
+          Serial.println("Error: Max minutes out of range");
+        else
+          settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
       }
     }
-    else if (incoming == '3' && settings.enableLogging == true)
+    else if (incoming == 3 && settings.enableLogging == true)
     {
       Serial.print("Enter max minutes of logging before new log is created: ");
-      int maxLogMinutes = getNumber(menuTimeout); //Timeout after x seconds
-      if (maxLogMinutes < 0 || maxLogMinutes > 60 * 48) //Arbitrary 48 hour limit
+      int maxLogMinutes = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((maxLogMinutes != INPUT_RESPONSE_GETNUMBER_EXIT) && (maxLogMinutes != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        Serial.println("Error: max minutes out of range");
-      }
-      else
-      {
-        settings.maxLogLength_minutes = maxLogMinutes; //Recorded to NVM and file at main menu exit
+        if (maxLogMinutes < 0 || maxLogMinutes > 60 * 48) //Arbitrary 48 hour limit
+          Serial.println("Error: Max minutes out of range");
+        else
+          settings.maxLogLength_minutes = maxLogMinutes; //Recorded to NVM and file at main menu exit
       }
     }
-    else if (incoming == '4')
+    else if (incoming == 4 && settings.enableLogging == true && online.logging == true)
+    {
+      endSD(false, true); //Close down file. A new one will be created at the next calling of updateLogs().
+      beginLogging();
+      setLoggingType(); //Determine if we are standard, PPP, or custom. Changes logging icon accordingly.
+    }
+    else if (incoming == 5)
     {
       settings.enableMarksFile ^= 1;
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
-    {
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    }
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
+      break;
     else
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Control the messages that get broadcast over Bluetooth and logged (if enabled)
@@ -101,7 +109,7 @@ void menuMessages()
   while (1)
   {
     Serial.println();
-    Serial.println("Menu: Messages Menu");
+    Serial.println("Menu: GNSS Messages");
 
     Serial.printf("Active messages: %d\r\n", getActiveMessageCount());
 
@@ -121,7 +129,7 @@ void menuMessages()
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
       menuMessagesSubtype("NMEA");
@@ -180,22 +188,24 @@ void menuMessages()
       setGNSSMessageRates(settings.ubxMessages, 1); //Turn on all messages to report once per fix
       Serial.println("All messages enabled");
     }
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 
-  bool response = configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //Make sure the appropriate messages are enabled
+  //Make sure the appropriate messages are enabled
+  bool response = setMessages(); //Does a complete open/closed val set
   if (response == false)
   {
     Serial.println("menuMessages: Failed to enable UART1 messages - Try 1");
-    //Try again
-    response = configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages); //Make sure the appropriate messages are enabled
+
+    response = setMessages(); //Does a complete open/closed val set
+    
     if (response == false)
       Serial.println("menuMessages: Failed to enable UART1 messages - Try 2");
     else
@@ -216,7 +226,7 @@ void menuMessagesSubtype(const char* messageType)
   while (1)
   {
     Serial.println();
-    Serial.printf("Menu: Message %s Menu\r\n", messageType);
+    Serial.printf("Menu: Message %s\r\n", messageType);
 
     int startOfBlock = 0;
     int endOfBlock = 0;
@@ -233,7 +243,7 @@ void menuMessagesSubtype(const char* messageType)
 
     Serial.println("x) Exit");
 
-    int incoming = getNumber(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming >= 1 && incoming <= (endOfBlock - startOfBlock))
     {
@@ -243,15 +253,15 @@ void menuMessagesSubtype(const char* messageType)
       else
         printUnknown(incoming);
     }
-    else if (incoming == STATUS_PRESSED_X)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
-    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
       break;
     else
       printUnknown(incoming);
   }
 
-  while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
 //Prompt the user to enter the message rate for a given ID
@@ -259,39 +269,22 @@ void menuMessagesSubtype(const char* messageType)
 void inputMessageRate(ubxMsg &localMessage)
 {
   Serial.printf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
-  int64_t rate = getNumber(menuTimeout); //Timeout after x seconds
+  int rate = getNumber(); //Returns EXIT, TIMEOUT, or long
 
-  while (rate < 0 || rate > 60) //Arbitrary 60 fixes per report limit
+  if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
+    return;
+
+  while (rate < 0 || rate > 255) //8 bit limit
   {
-    Serial.println("Error: message rate out of range");
+    Serial.println("Error: Message rate out of range");
     Serial.printf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
-    rate = getNumber(menuTimeout); //Timeout after x seconds
+    rate = getNumber(); //Returns EXIT, TIMEOUT, or long
 
-    if (rate == STATUS_GETNUMBER_TIMEOUT || rate == STATUS_PRESSED_X)
+    if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
       return; //Give up
   }
 
-  if (rate == STATUS_GETNUMBER_TIMEOUT || rate == STATUS_PRESSED_X)
-    return;
-
   localMessage.msgRate = rate;
-}
-
-//Updates the message rates on the ZED-F9x for all supported messages
-//Any port and messages by reference can be passed in. This allows us to modify the USB
-//port settings a separate (not NVM backed) message struct for testing
-bool configureGNSSMessageRates(uint8_t portType, ubxMsg *localMessage)
-{
-  bool response = true;
-
-  for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-  {
-    //Check to see if this ZED platform supports this message
-    if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= configureMessageRate(portType, localMessage[x]);
-  }
-
-  return (response);
 }
 
 //Set all GNSS message report rates to one value
@@ -302,44 +295,6 @@ void setGNSSMessageRates(ubxMsg *localMessage, uint8_t msgRate)
 {
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
     localMessage[x].msgRate = msgRate;
-}
-
-//Given a message, set the message rate on the ZED-F9P
-bool configureMessageRate(uint8_t portID, ubxMsg localMessage)
-{
-  uint8_t currentSendRate = getMessageRate(localMessage.msgClass, localMessage.msgID, portID); //Qeury the module for the current setting
-
-  bool response = true;
-  if (currentSendRate != localMessage.msgRate)
-    response &= i2cGNSS.configureMessage(localMessage.msgClass, localMessage.msgID, portID, localMessage.msgRate); //Update setting
-  return response;
-}
-
-//Lookup the send rate for a given message+port
-uint8_t getMessageRate(uint8_t msgClass, uint8_t msgID, uint8_t portID)
-{
-  ubxPacket customCfg = {0, 0, 0, 0, 0, settingPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
-
-  customCfg.cls = UBX_CLASS_CFG; // This is the message Class
-  customCfg.id = UBX_CFG_MSG; // This is the message ID
-  customCfg.len = 2;
-  customCfg.startingSpot = 0; // Always set the startingSpot to zero (unless you really know what you are doing)
-
-  uint16_t maxWait = 1250; // Wait for up to 1250ms (Serial may need a lot longer e.g. 1100)
-
-  settingPayload[0] = msgClass;
-  settingPayload[1] = msgID;
-
-  // Read the current setting. The results will be loaded into customCfg.
-  if (i2cGNSS.sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED) // We are expecting data and an ACK
-  {
-    Serial.printf("getMessageSetting failed: Class-0x%02X ID-0x%02X\r\n", msgClass, msgID);
-    return (false);
-  }
-
-  uint8_t sendRate = settingPayload[2 + portID];
-
-  return (sendRate);
 }
 
 //Creates a log if logging is enabled, and SD is detected
@@ -400,6 +355,8 @@ void beginLogging(const char *customFileName)
       //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {
+        markSemaphore(FUNCTION_CREATEFILE);
+        
         // O_CREAT - create the file if it does not exist
         // O_APPEND - seek to the end of the file prior to each write
         // O_WRITE - open for write
@@ -412,6 +369,8 @@ void beginLogging(const char *customFileName)
         }
 
         lastLogSize = 0; //Reset counter - used for displaying active logging icon
+
+        bufferOverruns = 0; //Reset counter
 
         updateDataFileCreate(ubxFile); // Update the file to create time & date
 
@@ -453,6 +412,12 @@ void beginLogging(const char *customFileName)
         createNMEASentence(CUSTOM_NMEA_TYPE_ZED_VERSION, nmeaMessage, zedFirmwareVersion); //textID, buffer, text
         ubxFile->println(nmeaMessage);
 
+        //Device BT MAC. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/346
+        char macAddress[5];
+        sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
+        createNMEASentence(CUSTOM_NMEA_TYPE_DEVICE_BT_ID, nmeaMessage, macAddress); //textID, buffer, text
+        ubxFile->println(nmeaMessage);
+
         if (reuseLastLog == true)
         {
           Serial.println("Appending last available log");
@@ -468,7 +433,7 @@ void beginLogging(const char *customFileName)
         return;
       }
 
-      Serial.printf("Log file created: %s\r\n", fileName);
+      Serial.printf("Log file name: %s\r\n", fileName);
       online.logging = true;
     } //online.sd, enable.logging, online.rtc
   } //online.logging
@@ -481,18 +446,16 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
     //Wait up to 1000ms
-    if (gotSemaphore
-        || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
+    if (gotSemaphore || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
     {
-      if (sdPresent())
-      {
-        //Close down file system
-        ubxFile->sync();
-        ubxFile->close();
-        Serial.println("Log file closed");
-      }
-      else
-        Serial.println("Log file - SD card not present, failed to close file");
+      markSemaphore(FUNCTION_ENDLOGGING);
+      
+      //Do not check if SD isPresent() as this will interfere with file closing
+      tasksStopUART2();
+
+      //Close down file system
+      ubxFile->close();
+      Serial.println("Log file closed");
 
       //Done with the log file
       delete ubxFile;
@@ -542,6 +505,8 @@ bool findLastLog(char *lastLogName)
     //Wait up to 5s, this is important
     if (xSemaphoreTake(sdCardSemaphore, 5000 / portTICK_PERIOD_MS) == pdPASS)
     {
+      markSemaphore(FUNCTION_FINDLOG);
+      
       //Count available binaries
       SdFile tempFile;
       SdFile dir;
@@ -678,7 +643,7 @@ void setLoggingType()
 void setLogTestFrequencyMessages(int rate, int messages)
 {
   //Set measurement frequency
-  setMeasurementRates(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
+  setRate(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
 
   //Set messages
   setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
@@ -709,8 +674,8 @@ void setLogTestFrequencyMessages(int rate, int messages)
 
 
   //Apply these message rates to both UART1 and USB
-  configureGNSSMessageRates(COM_PORT_UART1, settings.ubxMessages);
-  configureGNSSMessageRates(COM_PORT_USB, settings.ubxMessages);
+  setMessages(); //Does a complete open/closed val set
+  setMessagesUSB();
 }
 
 //The log test allows us to record a series of different system configurations into
@@ -741,8 +706,6 @@ void updateLogTest()
       endSD(false, true); //End previous log
 
       beginLogging(fileName);
-
-      i2cGNSS.setPortOutput(COM_PORT_USB, COM_TYPE_NMEA | COM_TYPE_UBX | COM_TYPE_RTCM3); //Duplicate UART1
 
       rate = 4;
       messages = 5;
@@ -831,12 +794,14 @@ void updateLogTest()
 
     char logMessage[100];
     sprintf(logMessage, "Start log test: %dHz, %dMsg, %dMS", rate, messages, semaphoreWait);
-    
+
     char nmeaMessage[100]; //Max NMEA sentence length is 82
     createNMEASentence(CUSTOM_NMEA_TYPE_LOGTEST_STATUS, nmeaMessage, logMessage); //textID, buffer, text
 
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
+      markSemaphore(FUNCTION_LOGTEST);
+      
       ubxFile->println(nmeaMessage);
       xSemaphoreGive(sdCardSemaphore);
     }

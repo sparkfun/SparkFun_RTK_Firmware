@@ -735,6 +735,8 @@ void updateLogs()
         {
           log_d("No increase in file size");
           logIncreasing = false;
+
+          endSD(false, true); //alreadyHaveSemaphore, releaseSemaphore
         }
       }
     }

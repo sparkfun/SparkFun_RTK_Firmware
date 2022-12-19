@@ -640,9 +640,9 @@ void updateSystemState()
               ws.textAll(String(settingsCSV));
             }
           }
+#endif
+#endif
         }
-#endif
-#endif
         break;
 
       //Setup device for testing

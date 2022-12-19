@@ -961,8 +961,10 @@ bool parseIncomingSettings()
   }
 
   //Confirm receipt
+#ifdef COMPILE_AP
   log_d("Sending save confirmation");
   ws.textAll("confirmSave,1,");
+#endif
 
   return (true);
 }

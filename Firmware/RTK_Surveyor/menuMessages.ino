@@ -451,7 +451,8 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
       markSemaphore(FUNCTION_ENDLOGGING);
       
       //Do not check if SD isPresent() as this will interfere with file closing
-      tasksStopUART2();
+
+      online.logging = false;
 
       //Close down file system
       ubxFile->close();
@@ -460,7 +461,6 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
       //Done with the log file
       delete ubxFile;
       ubxFile = NULL;
-      online.logging = false;
 
       //Release the semaphore if requested
       if (releaseSemaphore)

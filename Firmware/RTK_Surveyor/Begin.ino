@@ -223,6 +223,8 @@ void beginSD()
       }
     }
 
+    resetSPI(); //Re-initialize the SPI/SD interface
+
     //Do a quick test to see if a card is present
     int tries = 0;
     int maxTries = 5;
@@ -246,6 +248,8 @@ void beginSD()
       Serial.println("Error: SPI Frequency out of range. Default to 16MHz");
       settings.spiFrequency = 16;
     }
+
+    resetSPI(); //Re-initialize the SPI/SD interface
 
     if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
@@ -314,9 +318,39 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
     sd = NULL;
   }
 
+  lastLogSize = 0;
+
   //Release the semaphore
   if (releaseSemaphore)
     xSemaphoreGive(sdCardSemaphore);
+}
+
+//Attempt to de-init the SD card
+//https://github.com/greiman/SdFat/issues/351
+void resetSPI()
+{
+  pinMode(pin_microSD_CS, OUTPUT);
+  digitalWrite(pin_microSD_CS, HIGH); //De-select SD card
+
+  //Flush SPI interface
+  SPI.begin();
+  SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
+  for (int x = 0 ; x < 10 ; x++)
+    SPI.transfer(0XFF);
+  SPI.endTransaction();
+  SPI.end();
+
+  digitalWrite(pin_microSD_CS, LOW); //Select SD card
+
+  //Flush SD interface
+  SPI.begin();
+  SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
+  for (int x = 0 ; x < 10 ; x++)
+    SPI.transfer(0XFF);
+  SPI.endTransaction();
+  SPI.end();
+
+  digitalWrite(pin_microSD_CS, HIGH); //Deselet SD card
 }
 
 //We want the UART2 interrupts to be pinned to core 0 to avoid competing with I2C interrupts

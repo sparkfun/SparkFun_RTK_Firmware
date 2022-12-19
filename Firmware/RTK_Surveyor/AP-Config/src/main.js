@@ -304,6 +304,7 @@ function validateFields() {
         checkElementValue("ntripClient_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseGNSSConfig");
         checkElementString("ntripClient_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
         checkElementCasterUser("ntripClient_CasterUser", "rtk2go.com", "User must use their email address", "collapseGNSSConfig");
+        checkElementCasterUser("ntripClient_CasterUser", "www.rtk2go.com", "User must use their email address", "collapseGNSSConfig");
     }
     else {
         clearElement("ntripClient_wifiSSID", "TRex");

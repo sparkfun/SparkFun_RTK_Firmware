@@ -290,6 +290,7 @@ function validateFields() {
         checkElementString("ntripClient_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
         checkElementValue("ntripClient_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseGNSSConfig");
         checkElementString("ntripClient_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
+        checkElementCasterUser("ntripClient_CasterUser", "rtk2go.com", "User must use their email address", "collapseGNSSConfig");
     }
     else {
         clearElement("ntripClient_wifiSSID", "TRex");
@@ -298,7 +299,7 @@ function validateFields() {
         clearElement("ntripClient_CasterPort", 2101);
         clearElement("ntripClient_MountPoint", "bldr_SparkFun1");
         clearElement("ntripClient_MountPointPW");
-        clearElement("ntripClient_CasterUser", "");
+        clearElement("ntripClient_CasterUser", "test@test.com");
         clearElement("ntripClient_CasterUserPW", "");
         ge("ntripClient_TransmitGGA").checked = true;
     }
@@ -601,6 +602,14 @@ function checkElementString(id, min, max, errorText, collapseID) {
         ge(id + 'Error').innerHTML = 'Error: ' + errorText;
         ge(collapseID).classList.add('show');
         errorCount++;
+    }
+    else
+        clearError(id);
+}
+
+function checkElementCasterUser(id, badUserName, errorText, collapseID) {
+    if (ge("ntripClient_CasterHost").value.toLowerCase() == "rtk2go.com") {
+        checkElementString(id, 1, 50, errorText, collapseID);
     }
     else
         clearError(id);

@@ -232,6 +232,29 @@ void menuGNSS()
       printUnknown(incoming);
   }
 
+  //Error check for RTK2Go without email in user name
+  //First force tolower the host name
+  char lowerHost[50];
+  strcpy(lowerHost, settings.ntripClient_CasterHost);
+  for (int x = 0 ; x < 50 ; x++)
+  {
+    if (lowerHost[x] == '\0') break;
+    if (lowerHost[x] >= 'A' && lowerHost[x] <= 'Z')
+      lowerHost[x] = lowerHost[x] - 'A' + 'a';
+  }
+
+  if (strncmp(lowerHost, "rtk2go.com", strlen("rtk2go.com")) == 0
+      || strncmp(lowerHost, "www.rtk2go.com", strlen("www.rtk2go.com")) == 0
+     )
+  {
+    //Rudamentary user name length check
+    if (strlen(settings.ntripClient_CasterUser) == 0)
+    {
+      Serial.println("WARNING: RTK2Go requires that you use your email address as the mountpoint user name");
+      delay(2000);
+    }
+  }
+
   // Set dynamic model
   i2cGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
 

@@ -805,6 +805,13 @@ function saveComplete() {
 }
 
 function firmwareUploadWait() {
+    var file = ge("submitFirmwareFile").files[0];
+    var formdata = new FormData();
+    formdata.append("submitFirmwareFile", file);
+    var ajax = new XMLHttpRequest();
+    ajax.open("POST", "/upload");
+    ajax.send(formdata);
+
     ge("firmwareUploadMsg").innerHTML = "<br>Uploading, please wait...";
 }
 

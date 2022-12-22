@@ -309,6 +309,8 @@ int binCount = 0;
 const int maxBinFiles = 10;
 char binFileNames[maxBinFiles][50];
 const char* forceFirmwareFileName = "RTK_Surveyor_Firmware_Force.bin"; //File that will be loaded at startup regardless of user input
+unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update via AP config.
+int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Low frequency tasks
@@ -450,8 +452,6 @@ uint32_t triggerCount = 0; //Global copy - TM2 event counter
 uint32_t towMsR = 0; //Global copy - Time Of Week of rising edge (ms)
 uint32_t towSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
 
-unsigned int binBytesSent = 0; //Tracks firmware bytes sent over WiFi OTA update via AP config.
-int binBytesLastUpdate = 0; //Allows websocket notification to be sent every 100k bytes
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
 bool restartBase = false; //If user modifies any NTRIP Server settings, we need to restart the base

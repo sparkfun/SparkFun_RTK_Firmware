@@ -812,7 +812,6 @@ function exitConfig() {
     show("resetInProcess");
     hide("mainPage");
 
-    console.log("Sending reset");
     websocket.send("exitAndReset,1,");
     resetTimeout = setTimeout(exitConfig, 2000);
 }
@@ -829,6 +828,13 @@ function saveComplete() {
 }
 
 function firmwareUploadWait() {
+    var file = ge("submitFirmwareFile").files[0];
+    var formdata = new FormData();
+    formdata.append("submitFirmwareFile", file);
+    var ajax = new XMLHttpRequest();
+    ajax.open("POST", "/upload");
+    ajax.send(formdata);
+
     ge("firmwareUploadMsg").innerHTML = "<br>Uploading, please wait...";
 }
 
@@ -1177,7 +1183,6 @@ function removeBadChars(val) {
 function getFileList() {
     if (showingFileList == false) {
         showingFileList = true;
-        console.log("Gen list");
 
         //If the tab was just opened, create table from scratch
         ge("fileManagerTable").innerHTML = "<table><tr align='left'><th>Name</th><th>Size</th></tr></tr></table>";
@@ -1263,6 +1268,7 @@ function errorHandler(event) {
 function abortHandler(event) {
     ge("uploadStatus").innerHTML = "Upload Aborted";
 }
+
 
 )====="; //End main.js
 
@@ -3021,12 +3027,6 @@ static const char *index_html = R"=====(
                             <span class="tt" data-bs-placement="right" title="Update the unit's firmware over WiFi.">
                                 <span class="icon-info-circle text-primary ms-2"></span>
                             </span>
-                            <!-- <form id="uploadNewFirmware" enctype="multipart/form-data" method="post" action="/upload">
-                                <input id="fileupload" name="binfile" type="file" />
-                                <input type="submit" value="Upload" id="submitFirmwareFile" class="btn btn-primary"
-                                    style="margin-top:5px;" onclick="firmwareUploadWait()" />
-                                <p id="firmwareUploadMsg" class="inlineSuccess"></p>
-                            </form> -->
 
                             <div class="form-check">
                                 <label class="btn btn-primary">

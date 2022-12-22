@@ -25,6 +25,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+input[type="file"] {
+  display: none;
+}
+
 .icon-close:before {
   content: "\f00d";
 }

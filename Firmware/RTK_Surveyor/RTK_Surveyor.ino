@@ -148,6 +148,10 @@ typedef enum LoggingType {
   LOGGING_CUSTOM
 } LoggingType;
 LoggingType loggingType = LOGGING_UNKNOWN;
+
+SdFile managerTempFile; //File used for uploading or downloading in file manager section of AP config
+bool managerFileOpen = false;
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster
@@ -648,6 +652,10 @@ void loop()
 //Push new data to log as needed
 void updateLogs()
 {
+  //If we are in AP config, don't touch the SD card
+  if(systemState == STATE_WIFI_CONFIG_NOT_STARTED || systemState == STATE_WIFI_CONFIG)
+    return;
+  
   if (online.logging == false && settings.enableLogging == true)
   {
     beginLogging();
@@ -914,6 +922,27 @@ void getSemaphoreFunction(char* functionName)
       break;
     case FUNCTION_FILELIST:
       strcpy(functionName, "File List");
+      break;
+    case FUNCTION_FILEMANAGER_OPEN1:
+      strcpy(functionName, "FileManager Open1");
+      break;
+    case FUNCTION_FILEMANAGER_OPEN2:
+      strcpy(functionName, "FileManager Open2");
+      break;
+    case FUNCTION_FILEMANAGER_OPEN3:
+      strcpy(functionName, "FileManager Open3");
+      break;
+    case FUNCTION_FILEMANAGER_UPLOAD1:
+      strcpy(functionName, "FileManager Upload1");
+      break;
+    case FUNCTION_FILEMANAGER_UPLOAD2:
+      strcpy(functionName, "FileManager Upload2");
+      break;
+    case FUNCTION_FILEMANAGER_UPLOAD3:
+      strcpy(functionName, "FileManager Upload3");
+      break;
+    case FUNCTION_WEBSERVER:
+      strcpy(functionName, "Webserver");
       break;
   }
 }

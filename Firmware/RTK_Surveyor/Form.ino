@@ -10,24 +10,41 @@ void startWebServer()
   //Check SD Size
   if (online.microSD)
   {
-    csd_t csd;
-    sd->card()->readCSD(&csd); //Card Specific Data
-    sdCardSizeMB = 0.000512 * sd->card()->sectorCount();
-    sd->volumeBegin();
+    //Attempt to gain access to the SD card
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      markSemaphore(FUNCTION_WEBSERVER);
 
-    //Find available cluster/space
-    sdFreeSpaceMB = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
-    sdFreeSpaceMB *= sd->vol()->sectorsPerCluster() / 2;
-    sdFreeSpaceMB /= 1024;
+      csd_t csd;
+      sd->card()->readCSD(&csd); //Card Specific Data
+      sdCardSizeMB = 0.000512 * sd->card()->sectorCount();
+      sd->volumeBegin();
 
-    sdUsedSpaceMB = sdCardSizeMB - sdFreeSpaceMB; //Don't think of it as used, think of it as unusable
+      //Find available cluster/space
+      sdFreeSpaceMB = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
+      sdFreeSpaceMB *= sd->vol()->sectorsPerCluster() / 2;
+      sdFreeSpaceMB /= 1024;
 
-    //  Serial.print("Card Size(MB): ");
-    //  Serial.println(sdCardSizeMB);
-    Serial.print("Free space(MB): ");
-    Serial.println(sdFreeSpaceMB);
-    Serial.print("Used space(MB): ");
-    Serial.println(sdUsedSpaceMB);
+      sdUsedSpaceMB = sdCardSizeMB - sdFreeSpaceMB; //Don't think of it as used, think of it as unusable
+
+      //Serial.print("Card Size(MB): ");
+      //Serial.println(sdCardSizeMB);
+      //Serial.print("Free space(MB): ");
+      //Serial.println(sdFreeSpaceMB);
+      //Serial.print("Used space(MB): ");
+      //Serial.println(sdUsedSpaceMB);
+
+      xSemaphoreGive(sdCardSemaphore);
+    }
+    else
+    {
+      char semaphoreHolder[50];
+      getSemaphoreFunction(semaphoreHolder);
+
+      //This is an error because the current settings no longer match the settings
+      //on the microSD card, and will not be restored to the expected settings!
+      Serial.printf("sdCardSemaphore failed to yield, held by %s, Form.ino line %d\r\n", semaphoreHolder, __LINE__);
+    }
   }
 
   ntripClientStop(true); //Do not allocate new wifiClient
@@ -37,6 +54,8 @@ void startWebServer()
 
   //Clear any garbage from settings array
   memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
+
+  //server = new AsyncWebServer(80);
 
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
@@ -56,6 +75,13 @@ void startWebServer()
   // * /src/fonts/icomoon.svg
   // * /src/fonts/icomoon.ttf
   // * /src/fonts/icomoon.woof
+
+  // * /listfiles responds with a CSV of files and sizes in root
+  // * /file allows the download or deletion of a file
+
+  server.onNotFound(notFound);
+
+  server.onFileUpload(handleUpload); // Run handleUpload function when any file is uploaded. Must be before server.on() calls.
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", index_html);
@@ -136,11 +162,110 @@ void startWebServer()
     request->send(200);
   }, handleFirmwareFileUpload);
 
+  //Handlers for file manager
+  server.on("/listfiles", HTTP_GET, [](AsyncWebServerRequest * request)
+  {
+    String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+    Serial.println(logmessage);
+    request->send(200, "text/plain", getFileList());
+  });
+
+  server.on("/file", HTTP_GET, [](AsyncWebServerRequest * request)
+  {
+    //This section does not tolerate semaphore transactions
+
+    String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+
+    if (request->hasParam("name") && request->hasParam("action"))
+    {
+      const char *fileName = request->getParam("name")->value().c_str();
+      const char *fileAction = request->getParam("action")->value().c_str();
+
+      logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
+
+      if (sd->exists(fileName) == false)
+      {
+        Serial.println(logmessage + " ERROR: file does not exist");
+        request->send(400, "text/plain", "ERROR: file does not exist");
+      }
+      else
+      {
+        Serial.println(logmessage + " file exists");
+
+        if (strcmp(fileAction, "download") == 0)
+        {
+          logmessage += " downloaded";
+
+          if (managerFileOpen == false)
+          {
+            if (managerTempFile.open(fileName, O_READ) == true)
+              managerFileOpen = true;
+            else
+              Serial.println("Error: File Manager failed to open file");
+          }
+          else
+          {
+            //File is already in use. Wait your turn.
+            request->send(202, "text/plain", "ERROR: File already downloading");
+            //return (0);
+          }
+
+          int dataAvailable = managerTempFile.size() - managerTempFile.position();
+
+          AsyncWebServerResponse *response = request->beginResponse("text/plain", dataAvailable,
+                                             [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t
+          {
+            uint32_t bytes = 0;
+            uint32_t availableBytes = managerTempFile.available();
+
+            if (availableBytes > maxLen)
+            {
+              bytes = managerTempFile.read(buffer, maxLen);
+            }
+            else
+            {
+              bytes = managerTempFile.read(buffer, availableBytes);
+              managerFileOpen = false;
+              managerTempFile.close();
+
+              //xSemaphoreGive(sdCardSemaphore);
+
+              //Serial.println("Send me more");
+              ws.textAll("fmNext,1,"); //Tell browser to send next file if needed
+            }
+
+            return bytes;
+          });
+
+          response->addHeader("Cache-Control", "no-cache");
+          response->addHeader("Content-Disposition", "attachment; filename=" + String(fileName));
+          response->addHeader("Access-Control-Allow-Origin", "*");
+          request->send(response);
+        }
+        else if (strcmp(fileAction, "delete") == 0)
+        {
+          logmessage += " deleted";
+          sd->remove(fileName);
+          request->send(200, "text/plain", "Deleted File: " + String(fileName));
+        }
+        else
+        {
+          logmessage += " ERROR: invalid action param supplied";
+          request->send(400, "text/plain", "ERROR: invalid action param supplied");
+        }
+        Serial.println(logmessage);
+      }
+    }
+    else
+    {
+      request->send(400, "text/plain", "ERROR: name and action params required");
+    }
+  });
+
   server.begin();
 
   //Pre-load settings CSV
   settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
-  memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
   createSettingsString(settingsCSV);
 
   log_d("Web Server Started");
@@ -162,6 +287,7 @@ void stopWebServer()
 
   //server.reset();
   server.end();
+  //free(server);
 
   log_d("Web Server Stopped");
   reportHeapNow();
@@ -170,10 +296,16 @@ void stopWebServer()
 #endif
 }
 
+void notFound(AsyncWebServerRequest *request) {
+  String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+  Serial.println(logmessage);
+  request->send(404, "text/plain", "Not found");
+}
+
 //Handler for firmware file upload
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
-static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
+static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
   if (!index)
   {
@@ -295,6 +427,8 @@ void createSettingsString(char* settingsCSV)
 #ifdef COMPILE_AP
   char tagText[32];
   char nameText[64];
+
+  settingsCSV[0] = '\0'; //Erase current settings string
 
   //System Info
   stringRecord(settingsCSV, "platformPrefix", platformPrefix);
@@ -968,3 +1102,124 @@ bool parseIncomingSettings()
 
   return (true);
 }
+
+//When called, responds with the root folder list of files on SD card
+//Name and size are formatted in CSV, formatted to html by JS
+String getFileList()
+{
+  //settingsCSV[0] = '\'0; //Clear array
+  String returnText = "";
+  char fileName[50]; //Handle long file names
+
+  //Attempt to gain access to the SD card
+  if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+  {
+    markSemaphore(FUNCTION_FILEMANAGER_UPLOAD1);
+
+    SdFile dir;
+    dir.open("/"); //Open root
+    uint16_t fileCount = 0;
+
+    while (managerTempFile.openNext(&dir, O_READ))
+    {
+      if (managerTempFile.isFile())
+      {
+        fileCount++;
+
+        managerTempFile.getName(fileName, sizeof(fileName));
+
+        returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(managerTempFile.fileSize()) + ",";
+      }
+    }
+
+    dir.close();
+    managerTempFile.close();
+
+    xSemaphoreGive(sdCardSemaphore);
+  }
+  else
+  {
+    char semaphoreHolder[50];
+    getSemaphoreFunction(semaphoreHolder);
+
+    //This is an error because the current settings no longer match the settings
+    //on the microSD card, and will not be restored to the expected settings!
+    Serial.printf("sdCardSemaphore failed to yield, held by %s, Form.ino line %d\r\n", semaphoreHolder, __LINE__);
+  }
+
+  Serial.print("string size: ");
+  Serial.println(returnText.length());
+
+  Serial.print("returnText: ");
+  Serial.println(returnText);
+
+  return returnText;
+}
+
+// Make size of files human readable
+// source: https://github.com/CelliesProjects/minimalUploadAuthESP32
+String stringHumanReadableSize(const size_t bytes) {
+  if (bytes < 1024) return String(bytes) + " B";
+  else if (bytes < (1024 * 1024)) return String(bytes / 1024) + " KB";
+  else if (bytes < (1024 * 1024 * 1024)) return String(bytes / 1024 / 1024) + " MB";
+  else return String(bytes / 1024 / 1024 / 1024) + " GB";
+}
+
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
+
+// Handles uploading of user files to SD
+void handleUpload(AsyncWebServerRequest * request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+  String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+  Serial.println(logmessage);
+
+  if (!index)
+  {
+    logmessage = "Upload Start: " + String(filename);
+
+    char tempFileName[50];
+    filename.toCharArray(tempFileName, sizeof(tempFileName));
+
+    //Attempt to gain access to the SD card
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      markSemaphore(FUNCTION_FILEMANAGER_UPLOAD1);
+      managerTempFile.open(tempFileName, O_CREAT | O_APPEND | O_WRITE);
+      xSemaphoreGive(sdCardSemaphore);
+    }
+
+    Serial.println(logmessage);
+  }
+
+  if (len)
+  {
+    //Attempt to gain access to the SD card
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      markSemaphore(FUNCTION_FILEMANAGER_UPLOAD2);
+      managerTempFile.write(data, len); // stream the incoming chunk to the opened file
+      xSemaphoreGive(sdCardSemaphore);
+    }
+  }
+
+  if (final) {
+    logmessage = "Upload Complete: " + String(filename) + ",size: " + String(index + len);
+
+    //Attempt to gain access to the SD card
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      markSemaphore(FUNCTION_FILEMANAGER_UPLOAD3);
+      updateDataFileCreate(&managerTempFile); // Update the file create time & date
+
+      managerTempFile.close();
+      xSemaphoreGive(sdCardSemaphore);
+    }
+
+    Serial.println(logmessage);
+    request->redirect("/");
+  }
+}
+
+#endif
+#endif

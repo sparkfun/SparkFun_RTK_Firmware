@@ -454,7 +454,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
   {
     //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
     //Wait up to 1000ms to allow hanging SD writes to time out
-    if (gotSemaphore || (xSemaphoreTake(sdCardSemaphore, 4000 / portTICK_PERIOD_MS) == pdPASS))
+    if (gotSemaphore || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
     {
       markSemaphore(FUNCTION_ENDLOGGING);
 

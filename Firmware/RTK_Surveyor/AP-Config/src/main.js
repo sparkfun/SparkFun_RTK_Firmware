@@ -1,4 +1,4 @@
-//var gateway = 'ws://192.168.1.105/ws'; //WiFi mode
+//var gateway = 'ws://192.168.0.140/ws'; //WiFi mode
 var gateway = 'ws://192.168.4.1/ws'; //AP mode
 var websocket = new WebSocket(gateway);
 var resetTimeout = 0;
@@ -19,6 +19,11 @@ var geodeticAlt = 1500.1;
 var ecefX = -1280206.568;
 var ecefY = -4716804.403;
 var ecefZ = 4086665.484;
+var lastFileName = "";
+var fileNumber = 0;
+var selectedFiles = "";
+var showingFileList = false;
+var fileTableText = "";
 
 function parseIncoming(msg) {
     //console.log("incoming message: " + msg);
@@ -34,9 +39,11 @@ function parseIncoming(msg) {
             //Turn on/off SD area
             if (val == "false") {
                 hide("sdMounted");
+                hide("fileManager");
             }
             else if (val == "true") {
                 show("sdMounted");
+                show("fileManager");
             }
         }
         else if (id == "platformPrefix") {
@@ -160,6 +167,19 @@ function parseIncoming(msg) {
         }
         else if (id.includes("stationGeodetic")) {
             recordsGeodetic.push(val);
+        }
+        else if (id.includes("fmName")) {
+            lastFileName = val;
+        }
+        else if (id.includes("fmSize")) {
+            fileTableText += "<tr align='left'>";
+            fileTableText += "<td>" + lastFileName + "</td>";
+            fileTableText += "<td>" + val + "</td>";
+            fileTableText += "<td><input type='checkbox' id='" + lastFileName + "' name='fileID' class='form-check-input'></td>";
+            fileTableText += "</tr>";
+        }
+        else if (id.includes("fmNext")) {
+            sendFile();
         }
 
         //Check boxes / radio buttons
@@ -769,7 +789,6 @@ function exitConfig() {
     show("resetInProcess");
     hide("mainPage");
 
-    console.log("Sending reset");
     websocket.send("exitAndReset,1,");
     resetTimeout = setTimeout(exitConfig, 2000);
 }
@@ -1129,4 +1148,93 @@ function removeBadChars(val) {
     val = val.split(',').join('');
     val = val.split('\\').join('');
     return (val);
+}
+
+function getFileList() {
+    if (showingFileList == false) {
+        showingFileList = true;
+
+        //If the tab was just opened, create table from scratch
+        ge("fileManagerTable").innerHTML = "<table><tr align='left'><th>Name</th><th>Size</th></tr></tr></table>";
+        fileTableText = "";
+
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.open("GET", "/listfiles", false);
+        xmlhttp.send();
+
+        parseIncoming(xmlhttp.responseText); //Process CSV data into HTML
+
+        ge("fileManagerTable").innerHTML = fileTableText;
+    }
+    else {
+        showingFileList = false;
+    }
+}
+
+function fileManagerDownload() {
+    selectedFiles = document.querySelectorAll('input[name=fileID]:checked');
+    fileNumber = 0;
+    sendFile(); //Start first send
+}
+
+function sendFile() {
+    var urltocall = "/file?name=" + selectedFiles[fileNumber].id + "&action=download";
+    console.log(urltocall);
+    xmlhttp = new XMLHttpRequest();
+    window.open(urltocall, "_blank");
+
+    fileNumber++;
+}
+
+function fileManagerDelete() {
+    selectedFiles = document.querySelectorAll('input[name=fileID]:checked');
+
+    for (let x = 0; x < selectedFiles.length; x++) {
+        var urltocall = "/file?name=" + selectedFiles[x].id + "&action=delete";
+        xmlhttp = new XMLHttpRequest();
+
+        xmlhttp.open("GET", urltocall, false);
+        xmlhttp.send();
+    }
+
+    //Refresh file list
+    showingFileList = false;
+    getFileList();
+}
+
+function uploadFile() {
+    var file = ge("file1").files[0];
+    var formdata = new FormData();
+    formdata.append("file1", file);
+    var ajax = new XMLHttpRequest();
+    ajax.upload.addEventListener("progress", progressHandler, false);
+    ajax.addEventListener("load", completeHandler, false);
+    ajax.addEventListener("error", errorHandler, false);
+    ajax.addEventListener("abort", abortHandler, false);
+    ajax.open("POST", "/");
+    ajax.send(formdata);
+}
+function progressHandler(event) {
+    var percent = (event.loaded / event.total) * 100;
+    ge("progressBar").value = Math.round(percent);
+    ge("uploadStatus").innerHTML = Math.round(percent) + "% uploaded...";
+    if (percent >= 100) {
+        ge("uploadStatus").innerHTML = "Please wait, writing file to filesystem";
+    }
+}
+function completeHandler(event) {
+    ge("uploadStatus").innerHTML = "Upload Complete";
+    ge("progressBar").value = 0;
+
+    //Refresh file list
+    showingFileList = false;
+    getFileList();
+
+    document.getElementById("uploadStatus").innerHTML = "Upload Complete";
+}
+function errorHandler(event) {
+    ge("uploadStatus").innerHTML = "Upload Failed";
+}
+function abortHandler(event) {
+    ge("uploadStatus").innerHTML = "Upload Aborted";
 }

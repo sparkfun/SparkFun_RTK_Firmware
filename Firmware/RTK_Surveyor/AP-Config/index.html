@@ -76,7 +76,7 @@
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="resetComplete">
         <b>Reset Done</b><br><br>RTK device has now reset.
-    </div>    
+    </div>
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="firmwareUploadComplete">
         <b>Done</b><br><br>Firmware update complete. RTK device is now rebooting.
@@ -107,7 +107,6 @@
 
         <hr class="mt-0">
         <div style="margin-top:20px;">
-
             <!-- --------- Profile Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary toggle-btn" id="profileConfig" type="button" data-toggle="collapse"
@@ -115,6 +114,7 @@
                     Profile Configuration <i id="profileCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
+            <!-- <div class="collapse show mb-2" id="collapseProfileConfig"> -->
             <div class="collapse mb-2" id="collapseProfileConfig">
                 <div class="card card-body">
 
@@ -1556,7 +1556,7 @@
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapseRadioConfig" aria-expanded="false" aria-controls="collapseRadioConfig">
-                    Radio Configuration<i id="radioCaret" class="caret-icon bi icon-caret-down"></i>
+                    Radio Configuration <i id="radioCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseRadioConfig">
@@ -1752,12 +1752,21 @@
                             <span class="tt" data-bs-placement="right" title="Update the unit's firmware over WiFi.">
                                 <span class="icon-info-circle text-primary ms-2"></span>
                             </span>
-                            <form id="uploadNewFirmware" enctype="multipart/form-data" method="post" action="/upload">
+                            <!-- <form id="uploadNewFirmware" enctype="multipart/form-data" method="post" action="/upload">
                                 <input id="fileupload" name="binfile" type="file" />
                                 <input type="submit" value="Upload" id="submitFirmwareFile" class="btn btn-primary"
                                     style="margin-top:5px;" onclick="firmwareUploadWait()" />
                                 <p id="firmwareUploadMsg" class="inlineSuccess"></p>
-                            </form>
+                            </form> -->
+
+                            <div class="form-check">
+                                <label class="btn btn-primary">
+                                    <input type="file" name="binfile" id="submitFirmwareFile"
+                                        onchange="firmwareUploadWait()" />
+                                    Upload BIN
+                                </label>
+                                <p id="firmwareUploadMsg" class="inlineSuccess"></p>
+                            </div>
                         </div>
                     </div>
 
@@ -1772,6 +1781,67 @@
                     </div>
                 </div>
             </div>
+
+            <!-- --------- File Manager --------- -->
+            <div class="d-grid gap-2">
+                <button onclick="getFileList()"" id="fileManager" class="btn btn-primary mt-3 toggle-btn" type="button"
+                    data-toggle="collapse" data-target="#collapseFileManager" aria-expanded="false"
+                    aria-controls="collapseFileManager">
+                    File Manager <i id="fileManagerCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="collapseFileManager">
+                <div class="card card-body">
+                    <table id="fileManagerTable">
+                        <tr align='left'>
+                            <th>Name</th>
+                            <th>Size</th>
+                        </tr>
+                        <tr align='left'>
+                            <td>SFE_Express_Settings_0.txt</td>
+                            <td>5 MB</td>
+                            <td><input type="checkbox" name="fileID" id="SFE_Express_Settings_0.txt"
+                                    class="form-check-input">
+                            </td>
+                        </tr>
+                        <tr align='left'>
+                            <td>SFE_Express_221031_020106.ubx</td>
+                            <td>221 KB</td>
+                            <td><input type="checkbox" name="fileID" id="SFE_Express_221031_020106.ubx"
+                                    class="form-check-input">
+                            </td>
+                        </tr>
+                        <tr align='left'>
+                            <td>SFE_Express_221031_020209.ubx</td>
+                            <td>408 KB</td>
+                            <td><input type="checkbox" name="fileID" id="SFE_Express_221031_020209.ubx"
+                                    class="form-check-input">
+                            </td>
+                        </tr>
+                    </table>
+                    <table>
+                        <tr align='center'>
+                            <td><button class="btn btn-primary" onclick="fileManagerDelete()">Delete</button>
+                            </td>
+                            <td></td>
+                            <td></td>
+                            <td><button class="btn btn-primary" onclick="fileManagerDownload()">Download</button>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <br>
+                    <label class="btn btn-primary">
+                        <input type="file" name="file1" id="file1" onchange="uploadFile()" />
+                        Upload
+                    </label>
+                    <center><progress id="progressBar" value="0" max="100" style="width:300px;"></progress></center>
+                    <p id="uploadStatus"></p>
+
+                </div>
+            </div>
+
+            <!-- --------- End --------- -->
 
             <hr>
             <div class="row">

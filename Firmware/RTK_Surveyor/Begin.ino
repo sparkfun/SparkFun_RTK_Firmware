@@ -366,7 +366,7 @@ void resetSPI()
 //See issue: https://github.com/espressif/arduino-esp32/issues/3386
 void beginUART2()
 {
-  rBuffer = (uint8_t*)malloc(settings.gnssHandlerBufferSize);
+  ringBuffer = (uint8_t*)malloc(settings.gnssHandlerBufferSize);
 
   if (pinUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
       pinUART2Task,
@@ -425,6 +425,7 @@ void beginGNSS()
     delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
     if (i2cGNSS.begin() == false)
     {
+      log_d("GNSS offline");
       displayGNSSFail(1000);
       return;
     }

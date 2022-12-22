@@ -350,8 +350,8 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 #include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer
 #include "form.h"
 
-AsyncWebServer server(80);
-AsyncWebSocket ws("/ws");
+AsyncWebServer *webserver = NULL;
+AsyncWebSocket *websocket = NULL;
 
 char *settingsCSV; //Push large array onto heap
 

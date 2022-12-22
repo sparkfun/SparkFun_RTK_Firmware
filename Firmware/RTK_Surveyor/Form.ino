@@ -55,10 +55,11 @@ void startWebServer()
   //Clear any garbage from settings array
   memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
 
-  //server = new AsyncWebServer(80);
+  webserver = new AsyncWebServer(80);
+  websocket = new AsyncWebSocket("/ws");
 
-  ws.onEvent(onWsEvent);
-  server.addHandler(&ws);
+  websocket->onEvent(onWsEvent);
+  webserver->addHandler(websocket);
 
   // * index.html (not gz'd)
   // * favicon.ico
@@ -79,98 +80,98 @@ void startWebServer()
   // * /listfiles responds with a CSV of files and sizes in root
   // * /file allows the download or deletion of a file
 
-  server.onNotFound(notFound);
+  webserver->onNotFound(notFound);
 
-  server.onFileUpload(handleUpload); // Run handleUpload function when any file is uploaded. Must be before server.on() calls.
+  webserver->onFileUpload(handleUpload); // Run handleUpload function when any file is uploaded. Must be before server.on() calls.
 
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", index_html);
   });
 
-  server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", favicon_ico, sizeof(favicon_ico));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", bootstrap_bundle_min_js, sizeof(bootstrap_bundle_min_js));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", bootstrap_min_css, sizeof(bootstrap_min_css));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", bootstrap_min_js, sizeof(bootstrap_min_js));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/jquery-3.6.0.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/jquery-3.6.0.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", jquery_js, sizeof(jquery_js));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/javascript", main_js);
   });
 
-  server.on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", style_css, sizeof(style_css));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/fonts/icomoon.eot", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/fonts/icomoon.eot", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_eot, sizeof(icomoon_eot));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/fonts/icomoon.svg", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/fonts/icomoon.svg", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_svg, sizeof(icomoon_svg));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/fonts/icomoon.ttf", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/fonts/icomoon.ttf", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_ttf, sizeof(icomoon_ttf));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/fonts/icomoon.woof", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/fonts/icomoon.woof", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_woof, sizeof(icomoon_woof));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
   //Handler for the /upload form POST
-  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest * request) {
+  webserver->on("/upload", HTTP_POST, [](AsyncWebServerRequest * request) {
     request->send(200);
   }, handleFirmwareFileUpload);
 
   //Handlers for file manager
-  server.on("/listfiles", HTTP_GET, [](AsyncWebServerRequest * request)
+  webserver->on("/listfiles", HTTP_GET, [](AsyncWebServerRequest * request)
   {
     String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
     Serial.println(logmessage);
     request->send(200, "text/plain", getFileList());
   });
 
-  server.on("/file", HTTP_GET, [](AsyncWebServerRequest * request)
+  webserver->on("/file", HTTP_GET, [](AsyncWebServerRequest * request)
   {
     //This section does not tolerate semaphore transactions
 
@@ -231,7 +232,7 @@ void startWebServer()
               //xSemaphoreGive(sdCardSemaphore);
 
               //Serial.println("Send me more");
-              ws.textAll("fmNext,1,"); //Tell browser to send next file if needed
+              websocket->textAll("fmNext,1,"); //Tell browser to send next file if needed
             }
 
             return bytes;
@@ -262,7 +263,7 @@ void startWebServer()
     }
   });
 
-  server.begin();
+  webserver->begin();
 
   //Pre-load settings CSV
   settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
@@ -283,11 +284,16 @@ void stopWebServer()
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-  free(settingsCSV);
+  if (webserver != NULL)
+  {
+    webserver->end();
 
-  //server.reset();
-  server.end();
-  //free(server);
+    free(settingsCSV);
+    free(websocket);
+    free(webserver);
+
+    webserver = NULL;
+  }
 
   log_d("Web Server Stopped");
   reportHeapNow();
@@ -296,11 +302,15 @@ void stopWebServer()
 #endif
 }
 
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
 void notFound(AsyncWebServerRequest *request) {
   String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
   Serial.println(logmessage);
   request->send(404, "text/plain", "Not found");
 }
+#endif
+#endif
 
 //Handler for firmware file upload
 #ifdef COMPILE_WIFI
@@ -366,7 +376,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
         stringRecord(statusMsg, "firmwareUploadStatus", bytesSentMsg); //Convert to "firmwareUploadMsg,11214 bytes sent,"
 
         Serial.printf("msg: %s\r\n", statusMsg);
-        ws.textAll(statusMsg);
+        websocket->textAll(statusMsg);
       }
 
     }
@@ -381,7 +391,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
     }
     else
     {
-      ws.textAll("firmwareUploadComplete,1,");
+      websocket->textAll("firmwareUploadComplete,1,");
       Serial.println("Firmware update complete. Restarting");
       delay(500);
       ESP.restart();
@@ -902,7 +912,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   {
     //Confirm receipt
     log_d("Sending reset confirmation");
-    ws.textAll("confirmReset,1,");
+    websocket->textAll("confirmReset,1,");
     delay(500); //Allow for delivery
 
     Serial.println("Reset after AP Config");
@@ -924,7 +934,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
     createSettingsString(settingsCSV);
     log_d("Sending command: %s", settingsCSV);
-    ws.textAll(String(settingsCSV));
+    websocket->textAll(String(settingsCSV));
     free(settingsCSV);
   }
   else if (strcmp(settingName, "resetProfile") == 0)
@@ -941,7 +951,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
     createSettingsString(settingsCSV);
     log_d("Sending command: %s", settingsCSV);
-    ws.textAll(String(settingsCSV));
+    websocket->textAll(String(settingsCSV));
     free(settingsCSV);
   }
   else if (strcmp(settingName, "forgetEspNowPeers") == 0)
@@ -1097,7 +1107,7 @@ bool parseIncomingSettings()
   //Confirm receipt
 #ifdef COMPILE_AP
   log_d("Sending save confirmation");
-  ws.textAll("confirmSave,1,");
+  websocket->textAll("confirmSave,1,");
 #endif
 
   return (true);

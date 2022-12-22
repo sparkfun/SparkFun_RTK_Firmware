@@ -268,8 +268,12 @@ void beginSD()
         Serial.println("SD init failed. Is card formatted?");
         digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
 
-        if(settings.forceResetOnSDFail == true)
-          ESP.restart();
+        //Check reset count and prevent rolling reboot
+        if (settings.resetCount < 5)
+        {
+          if (settings.forceResetOnSDFail == true)
+            ESP.restart();
+        }
         break;
       }
     }

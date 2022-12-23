@@ -173,7 +173,7 @@ static int ntripServerConnectionAttempts; //Count the number of connection attem
 
 #endif
 
-volatile uint8_t wifiNmeaConnected;
+volatile uint8_t wifiTcpConnected;
 
 //NTRIP client timer usage:
 //  * Measure the connection response time

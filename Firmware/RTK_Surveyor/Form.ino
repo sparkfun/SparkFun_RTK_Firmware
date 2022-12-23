@@ -1181,9 +1181,6 @@ String stringHumanReadableSize(const size_t bytes) {
 // Handles uploading of user files to SD
 void handleUpload(AsyncWebServerRequest * request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
-  String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
-  Serial.println(logmessage);
-
   if (!index)
   {
     logmessage = "Upload Start: " + String(filename);

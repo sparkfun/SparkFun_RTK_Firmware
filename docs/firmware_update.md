@@ -76,7 +76,7 @@ In the rare event that a unit is not staying on long enough for new firmware to 
 
 **Note:** Firmware versions 1.1 to 1.9 have an issue that severely limits firmware upload over WiFi and is not recommended; use the 'Updating Firmware From Windows GUI' method instead. Firmware versions v1.10 and beyond support direct firmware updates via WiFi.
 
-[![Advanced system settings](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_WiFi_Config_Firmware_Update_Button.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_WiFi_Config_Firmware_Update_Button.jpg)
+![Advanced system settings](img/SparkFun%20RTK%20System%20and%20Data%20Logging%20Configuration.png)
 
 *Advanced system settings*
 

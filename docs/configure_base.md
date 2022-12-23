@@ -23,14 +23,14 @@ Please see the following tutorials for more information:
     <td><a href="https://learn.sparkfun.com/tutorials/what-is-gps-rtk">What is GPS RTK?</a></td>
     <td><a href="https://learn.sparkfun.com/tutorials/getting-started-with-u-center-for-u-blox">Getting Started with u-center for u-blox</a></td>
     <td><a href="https://learn.sparkfun.com/tutorials/setting-up-a-rover-base-rtk-system">Setting up a Rover Base RTK System</a></td>
-    <td><a href="https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station">SparkFun RTK Facet (GPS-19029)</a></td>
+    <td><a href="https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station">How to build a DIY GNSS reference station</a></td>
   </tr>
 </table>
 
 
 The Base Menu allows the user to select between Survey-In or Fixed Base setups.
 
-[![Base type and location configuration](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Base_Config1.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Base_Config1.jpg)
+![Base type and location configuration](img/SparkFun%20RTK%20Base%20Survey%20In.png)
 
 *Controlling the type of Base from WiFi AP Config*
 
@@ -42,7 +42,13 @@ The Base Menu allows the user to select between Survey-In or Fixed Base setups.
 
 In **Survey-In** mode, the minimum observation time and Mean 3D Standard Deviation can be set. The defaults are 60 seconds and 5 meters as directed by u-blox. The device will wait for the position accuracy to be better than 1 meter before a Survey-In is started. Don't be fooled; setting the observation time to 4 hours or an initial positional accuracy of 0.3m is not going to significantly improve the accuracy of the survey - use [PPP](https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station#gather-raw-gnss-data) instead.
 
-In **Fixed** mode, the coordinates of the antenna need to be sent. These can be entered in ECEF or Geographic coordinates. Whenever a user enters Base mode by pressing the SETUP button the GNSS receiver will immediately go into Base mode with these coordinates and immediately begin outputting RTCM correction data.
+![Fixed Base Coordinate input](img/SparkFun%20RTK%20Base%20Configure%20-%20Commonly%20Used%20Points%20Menu.png)
+
+*Fixed base coordinate input*
+
+In **Fixed** mode, the coordinates of the antenna need to be set. These can be entered in ECEF or Geographic coordinates. Whenever a user enters Base mode by pressing the SETUP button the GNSS receiver will immediately go into Base mode with these coordinates and immediately begin outputting RTCM correction data.
+
+**Note:** The 'Paste Current XYZ' button will copy the current base coordinates and paste them into the X/Y/Z boxes. This shortcut allows the user to skip writing down coordinates just to re-enter them. However, taking a snap-shot of the unit's position in time is a very inaccurate way to assign the unit's base position.
 
 [![RTK Facet in Survey-In Mode](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Survey-In.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Survey-In.jpg)
 
@@ -97,6 +103,14 @@ Once WiFi connects the device will attempt to connect to the NTRIP mount point. 
 Every second a few hundred bytes, up to ~2k, will be transmitted to your mount point.
 
 Note: During NTRIP transmission WiFi is turned on and Bluetooth is turned off. You should not need to know the location information of the base so Bluetooth should not be needed. If necessary, USB can be connected to view detailed location information using the [System Report](https://sparkfun.github.io/SparkFun_RTK_Firmware/system_status_report/) command.
+
+## Commonly Use Coordinates
+
+![List of common coordinates](img/SparkFun%20RTK%20Base%20Configure%20-%20Commonly%20Used%20Points%20Menu.png)
+
+*A list of common coordinates*
+
+For users who return to the same base position or monument, the coordinates can be saved to a 'Commonly Used Coordinates' list. A nickname and the X/Y/Z positions are saved to the list. Any record on the list can be loaded from the list into the X/Y/Z fields allowing quick switching without the need to hand record or re-enter coordinates from day-to-day repositioning of the base.
 
 ## Assisted Base
 

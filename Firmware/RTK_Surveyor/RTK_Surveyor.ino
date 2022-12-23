@@ -490,6 +490,9 @@ bool espnowIncomingRTCM = false;
 bool espnowOutgoingRTCM = false;
 
 static byte rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+uint16_t failedParserMessages_UBX = 0;
+uint16_t failedParserMessages_RTCM = 0;
+uint16_t failedParserMessages_NMEA = 0;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*

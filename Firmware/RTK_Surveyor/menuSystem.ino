@@ -409,6 +409,11 @@ void menuDebug()
     Serial.println();
     Serial.println("Menu: Debug");
 
+    Serial.printf("Parser rejections: %d NMEA / %d RTCM / %d UBX\n\r",
+                  failedParserMessages_NMEA,
+                  failedParserMessages_RTCM,
+                  failedParserMessages_UBX);
+
     Serial.print("1) u-blox I2C Debugging Output: ");
     if (settings.enableI2Cdebug == true) Serial.println("Enabled");
     else Serial.println("Disabled");

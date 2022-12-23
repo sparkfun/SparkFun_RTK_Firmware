@@ -425,7 +425,7 @@ void updateSystemState()
           {
             markSemaphore(FUNCTION_MARKEVENT);
 
-            //Record this event to the log
+            //Record this user event to the log
             if (online.logging == true)
             {
               char nmeaMessage[82]; //Max NMEA sentence length is 82

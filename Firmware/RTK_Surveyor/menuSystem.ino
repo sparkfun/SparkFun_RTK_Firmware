@@ -409,7 +409,7 @@ void menuDebug()
     Serial.println();
     Serial.println("Menu: Debug");
 
-    Serial.printf("Parser rejections: %d NMEA / %d RTCM / %d UBX\n\r",
+    Serial.printf("Filtered by parser: %d NMEA / %d RTCM / %d UBX\n\r",
                   failedParserMessages_NMEA,
                   failedParserMessages_RTCM,
                   failedParserMessages_UBX);

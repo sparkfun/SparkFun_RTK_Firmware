@@ -727,7 +727,7 @@ void updateLogs()
         lastFileReport = millis();
         if (settings.enablePrintLogFileStatus)
         {
-          Serial.printf("UBX file size: %ld", fileSize);
+          Serial.printf("Log file size: %ld", fileSize);
 
           if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
           {

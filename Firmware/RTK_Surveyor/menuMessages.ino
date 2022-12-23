@@ -404,6 +404,7 @@ void beginLogging(const char *customFileName)
           default : strcpy(rstReason, "Unknown");
         }
 
+        //Mark top of log with system information
         char nmeaMessage[82]; //Max NMEA sentence length is 82
         createNMEASentence(CUSTOM_NMEA_TYPE_RESET_REASON, nmeaMessage, rstReason); //textID, buffer, text
         ubxFile->println(nmeaMessage);
@@ -820,5 +821,26 @@ void updateLogTest()
     }
 
     Serial.printf("%s\r\n", logMessage);
+  }
+}
+
+//At power down, add any metrics to log file
+void markLogClosure()
+{
+  if (online.microSD)
+  {
+    //Record the number of NMEA/RTCM/UBX messages that were filtered out
+    char parserStats[50];
+
+    sprintf(parserStats, "%d,%d,%d,",
+            failedParserMessages_NMEA,
+            failedParserMessages_RTCM,
+            failedParserMessages_UBX);
+
+    char nmeaMessage[82]; //Max NMEA sentence length is 82
+    createNMEASentence(CUSTOM_NMEA_TYPE_PARSER_STATS, nmeaMessage, parserStats); //textID, buffer, text
+
+    ubxFile->println(nmeaMessage);
+    ubxFile->sync();
   }
 }

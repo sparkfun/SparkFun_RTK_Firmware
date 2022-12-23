@@ -455,9 +455,10 @@ bool firstRoverStart = false; //Used to detect if user is toggling power button 
 
 bool newEventToRecord = false; //Goes true when INT pin goes high
 uint32_t triggerCount = 0; //Global copy - TM2 event counter
-uint32_t towMsR = 0; //Global copy - Time Of Week of rising edge (ms)
-uint32_t towSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
-
+uint32_t triggerTowMsR = 0; //Global copy - Time Of Week of rising edge (ms)
+uint32_t triggerTowSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
+uint32_t triggerAccEst = 0; //Global copy - Accuracy estimate in nanoseconds
+ 
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
 bool restartBase = false; //If user modifies any NTRIP Server settings, we need to restart the base
@@ -691,9 +692,9 @@ void updateLogs()
     {
       Serial.println("Recording event");
 
-      //Record trigger count with Time Of Week of rising edge (ms) and Millisecond fraction of Time Of Week of rising edge (ns)
+      //Record trigger count with Time Of Week of rising edge (ms), Millisecond fraction of Time Of Week of rising edge (ns), and accuracy estimate (ns)
       char eventData[82]; //Max NMEA sentence length is 82
-      snprintf(eventData, sizeof(eventData), "%d,%d,%d", triggerCount, towMsR, towSubMsR);
+      snprintf(eventData, sizeof(eventData), "%d,%d,%d,%d", triggerCount, triggerTowMsR, triggerTowSubMsR, triggerAccEst);
 
       char nmeaMessage[82]; //Max NMEA sentence length is 82
       createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, eventData); //textID, buffer, text

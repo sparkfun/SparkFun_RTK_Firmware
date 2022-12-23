@@ -350,8 +350,9 @@ void eventTriggerReceived(UBX_TIM_TM2_data_t ubxDataStruct)
     Serial.println("Rising Edge Event");
 
     triggerCount = ubxDataStruct.count;
-    towMsR = ubxDataStruct.towMsR; // Time Of Week of rising edge (ms)
-    towSubMsR = ubxDataStruct.towSubMsR; // Millisecond fraction of Time Of Week of rising edge in nanoseconds
+    triggerTowMsR = ubxDataStruct.towMsR; // Time Of Week of rising edge (ms)
+    triggerTowSubMsR = ubxDataStruct.towSubMsR; // Millisecond fraction of Time Of Week of rising edge in nanoseconds
+    triggerAccEst = ubxDataStruct.accEst; // Nanosecond accuracy estimate
 
     newEventToRecord = true;
   }

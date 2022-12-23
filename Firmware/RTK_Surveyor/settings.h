@@ -556,9 +556,9 @@ typedef struct {
   bool enableRtcmMessageChecking = false;
   BluetoothRadioType_e bluetoothRadioType = BLUETOOTH_RADIO_SPP;
   bool runLogTest = false; //When set to true, device will create a series of test logs
-  bool enableNmeaClient = false;
-  bool enableNmeaServer = false;
-  bool enablePrintNmeaTcpStatus = false;
+  bool enableTcpClient = false;
+  bool enableTcpServer = false;
+  bool enablePrintTcpStatus = false;
   bool espnowBroadcast = true; //When true, overrides peers and sends all data via broadcast
   uint16_t antennaHeight = 0; //in mm
   float antennaReferencePoint = 0.0; //in mm
@@ -589,8 +589,8 @@ struct struct_online {
   bool lband = false;
   bool lbandCorrections = false;
   bool i2c = false;
-  bool nmeaClient = false;
-  bool nmeaServer = false;
+  bool tcpClient = false;
+  bool tcpServer = false;
 } online;
 
 #ifdef COMPILE_WIFI

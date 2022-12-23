@@ -225,14 +225,14 @@ void menuSystem()
     else
       Serial.println("Off");
 
-    Serial.print("c) Enable/disable WiFi NMEA client (connect to phone): ");
-    if (settings.enableNmeaClient == true)
+    Serial.print("c) Enable/disable WiFi TCP client (connect to phone): ");
+    if (settings.enableTcpClient == true)
       Serial.println("Enabled");
     else
       Serial.println("Disabled");
 
-    Serial.print("n) Enable/disable WiFi NMEA server: ");
-    if (settings.enableNmeaServer == true)
+    Serial.print("n) Enable/disable WiFi TCP server: ");
+    if (settings.enableTcpServer == true)
       Serial.println("Enabled");
     else
       Serial.println("Disabled");
@@ -310,21 +310,21 @@ void menuSystem()
     else if (incoming == 'c')
     {
       //Toggle WiFi NEMA client (connect to phone)
-      settings.enableNmeaClient ^= 1;
+      settings.enableTcpClient ^= 1;
     }
     else if (incoming == 'n')
     {
       //Toggle WiFi NEMA server
-      settings.enableNmeaServer ^= 1;
-      if ((!settings.enableNmeaServer) && online.nmeaServer)
+      settings.enableTcpServer ^= 1;
+      if ((!settings.enableTcpServer) && online.tcpServer)
       {
-        //Tell the UART2 tasks that the NMEA server is shutting down
-        online.nmeaServer = false;
+        //Tell the UART2 tasks that the TCP server is shutting down
+        online.tcpServer = false;
 
-        //Wait for the UART2 tasks to close the NMEA client connections
-        while (wifiNmeaTcpServerActive())
+        //Wait for the UART2 tasks to close the TCP client connections
+        while (wifiTcpServerActive())
           delay(5);
-        Serial.println("NMEA Server offline");
+        Serial.println("TCP Server offline");
       }
     }
     else if (incoming == 'r')
@@ -353,7 +353,7 @@ void menuSystem()
         if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
         {
           markSemaphore(FUNCTION_FILELIST);
-          
+
           Serial.println("Files found (date time size name):\r\n");
           sd->ls(LS_R | LS_DATE | LS_SIZE);
         }
@@ -504,8 +504,8 @@ void menuDebug()
 
     Serial.println("30) Run Bluetooth Test");
 
-    Serial.print("31) Print NMEA TCP status: ");
-    Serial.printf("%s\r\n", settings.enablePrintNmeaTcpStatus ? "Enabled" : "Disabled");
+    Serial.print("31) Print TCP status: ");
+    Serial.printf("%s\r\n", settings.enablePrintTcpStatus ? "Enabled" : "Disabled");
 
     Serial.print("32) ESP-Now Broadcast Override: ");
     Serial.printf("%s\r\n", settings.espnowBroadcast ? "Enabled" : "Disabled");
@@ -702,7 +702,7 @@ void menuDebug()
     }
     else if (incoming == 31)
     {
-      settings.enablePrintNmeaTcpStatus ^= 1;
+      settings.enablePrintTcpStatus ^= 1;
     }
     else if (incoming == 32)
     {

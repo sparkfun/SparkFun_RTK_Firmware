@@ -199,11 +199,11 @@ void processUart1Message(PARSE_STATE * parse, uint8_t type)
 void handleGNSSDataTask(void *e)
 {
   volatile static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
-  volatile static uint16_t nmeaTail = 0; //NMEA TCP client tail
+  volatile static uint16_t tcpTail = 0; //TCP client tail
   volatile static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
 
   int btBytesToSend; //Amount of buffered Bluetooth data
-  int nmeaBytesToSend; //Amount of buffered NMEA TCP data
+  int tcpBytesToSend; //Amount of buffered TCP data
   int sdBytesToRecord; //Amount of buffered microSD card logging data
 
   int btConnected; //Is the device in a state to send Bluetooth data?
@@ -225,13 +225,13 @@ void handleGNSSDataTask(void *e)
         btBytesToSend += settings.gnssHandlerBufferSize;
     }
 
-    //Determine the amount of NMEA TCP data in the buffer
-    nmeaBytesToSend = 0;
-    if (settings.enableNmeaServer || settings.enableNmeaClient)
+    //Determine the amount of TCP data in the buffer
+    tcpBytesToSend = 0;
+    if (settings.enableTcpServer || settings.enableTcpClient)
     {
-      nmeaBytesToSend = dataHead - nmeaTail;
-      if (nmeaBytesToSend < 0)
-        nmeaBytesToSend += settings.gnssHandlerBufferSize;
+      tcpBytesToSend = dataHead - tcpTail;
+      if (tcpBytesToSend < 0)
+        tcpBytesToSend += settings.gnssHandlerBufferSize;
     }
 
     //Determine the amount of microSD card logging data in the buffer
@@ -277,25 +277,25 @@ void handleGNSSDataTask(void *e)
     }
 
     //----------------------------------------------------------------------
-    //Send data to the NMEA clients
+    //Send data to the TCP clients
     //----------------------------------------------------------------------
 
-    if ((!settings.enableNmeaServer) && (!settings.enableNmeaClient) && (!wifiNmeaConnected))
-      nmeaTail = dataHead;
-    else if (nmeaBytesToSend > 0)
+    if ((!settings.enableTcpServer) && (!settings.enableTcpClient) && (!wifiTcpConnected))
+      tcpTail = dataHead;
+    else if (tcpBytesToSend > 0)
     {
       //Reduce bytes to send if we have more to send then the end of the buffer
       //We'll wrap next loop
-      if ((nmeaTail + nmeaBytesToSend) > settings.gnssHandlerBufferSize)
-        nmeaBytesToSend = settings.gnssHandlerBufferSize - nmeaTail;
+      if ((tcpTail + tcpBytesToSend) > settings.gnssHandlerBufferSize)
+        tcpBytesToSend = settings.gnssHandlerBufferSize - tcpTail;
 
-      //Send the data to the NMEA TCP clients
-      wifiNmeaData (&ringBuffer[nmeaTail], nmeaBytesToSend);
+      //Send the data to the TCP clients
+      wifiSendTcpData(&ringBuffer[tcpTail], tcpBytesToSend);
 
       //Assume all data was sent, wrap the buffer pointer
-      nmeaTail += nmeaBytesToSend;
-      if (nmeaTail >= settings.gnssHandlerBufferSize)
-        nmeaTail -= settings.gnssHandlerBufferSize;
+      tcpTail += tcpBytesToSend;
+      if (tcpTail >= settings.gnssHandlerBufferSize)
+        tcpTail -= settings.gnssHandlerBufferSize;
     }
 
     //----------------------------------------------------------------------
@@ -380,9 +380,9 @@ void handleGNSSDataTask(void *e)
     if (btBytesToSend < 0)
       btBytesToSend += settings.gnssHandlerBufferSize;
 
-    nmeaBytesToSend = dataHead - nmeaTail;
-    if (nmeaBytesToSend < 0)
-      nmeaBytesToSend += settings.gnssHandlerBufferSize;
+    tcpBytesToSend = dataHead - tcpTail;
+    if (tcpBytesToSend < 0)
+      tcpBytesToSend += settings.gnssHandlerBufferSize;
 
     sdBytesToRecord = dataHead - sdTail;
     if (sdBytesToRecord < 0)
@@ -390,9 +390,9 @@ void handleGNSSDataTask(void *e)
 
     //Determine the inteface that is most behind: SD writing, SPP transmission, or TCP transmission
     int usedSpace = 0;
-    if (nmeaBytesToSend >= btBytesToSend && nmeaBytesToSend >= sdBytesToRecord)
-      usedSpace = nmeaBytesToSend;
-    else if (btBytesToSend >= sdBytesToRecord && btBytesToSend >= nmeaBytesToSend)
+    if (tcpBytesToSend >= btBytesToSend && tcpBytesToSend >= sdBytesToRecord)
+      usedSpace = tcpBytesToSend;
+    else if (btBytesToSend >= sdBytesToRecord && btBytesToSend >= tcpBytesToSend)
       usedSpace = btBytesToSend;
     else
       usedSpace = sdBytesToRecord;

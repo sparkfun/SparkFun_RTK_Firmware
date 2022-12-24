@@ -954,5 +954,8 @@ void getSemaphoreFunction(char* functionName)
     case FUNCTION_WEBSERVER:
       strcpy(functionName, "Webserver");
       break;
+    case FUNCTION_LOG_CLOSURE:
+      strcpy(functionName, "Log Closure");
+      break;
   }
 }

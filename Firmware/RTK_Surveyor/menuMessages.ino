@@ -827,8 +827,9 @@ void updateLogTest()
 //At power down, add any metrics to log file
 void markLogClosure()
 {
-  if (online.microSD)
+  if(online.logging)
   {
+  
     //Record the number of NMEA/RTCM/UBX messages that were filtered out
     char parserStats[50];
 
@@ -840,7 +841,17 @@ void markLogClosure()
     char nmeaMessage[82]; //Max NMEA sentence length is 82
     createNMEASentence(CUSTOM_NMEA_TYPE_PARSER_STATS, nmeaMessage, parserStats); //textID, buffer, text
 
-    ubxFile->println(nmeaMessage);
-    ubxFile->sync();
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      markSemaphore(FUNCTION_LOG_CLOSURE);
+
+      ubxFile->println(nmeaMessage);
+      ubxFile->sync();
+      xSemaphoreGive(sdCardSemaphore);
+    }
+    else
+    {
+      log_w("sdCardSemaphore failed to yield, menuMessages.ino line %d", __LINE__);
+    }
   }
 }

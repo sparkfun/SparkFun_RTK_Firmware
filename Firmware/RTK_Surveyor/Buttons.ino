@@ -19,13 +19,13 @@ void powerOnCheck()
 //then don't display a shutdown screen
 void powerDown(bool displayInfo)
 {
-  //Prevent other tasks from logging, even if access to the microSD card was denied
-  online.logging = false;
-
   markLogClosure(); //Close log with final metrics
 
   //Disable SD card use
   endSD(false, false);
+
+  //Prevent other tasks from logging, even if access to the microSD card was denied
+  online.logging = false;
 
   if (displayInfo == true)
   {

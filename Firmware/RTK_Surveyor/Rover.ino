@@ -72,22 +72,6 @@ bool configureUbloxModuleRover()
   return (response);
 }
 
-//Given a payload, return the location of a given constellation
-//This is needed because IMES is not currently returned in the query packet
-//so QZSS and GLONAS are offset by -8 bytes.
-uint8_t locateGNSSID(uint8_t *customPayload, uint8_t constellation)
-{
-  for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
-  {
-    if (customPayload[4 + 8 * x] == constellation) //Test gnssid
-      return (4 + x * 8);
-  }
-
-  Serial.print("locateGNSSID failed: ");
-  Serial.println(constellation);
-  return (0);
-}
-
 //Turn on the three accuracy LEDs depending on our current HPA (horizontal positional accuracy)
 void updateAccuracyLEDs()
 {

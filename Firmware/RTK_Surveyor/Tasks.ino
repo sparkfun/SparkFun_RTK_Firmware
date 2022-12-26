@@ -99,7 +99,7 @@ void F9PSerialReadTask(void *e)
 
       //For testing: Inject bad data once in awhile
       //if(random(0,10000) == 1) //0.01% failure rate
-      //  incomingData = 0xAA; //Bogus data        
+      //  incomingData = 0xAA; //Bogus data
 
       //Save the data byte
       parse.buffer[parse.length++] = incomingData;
@@ -332,7 +332,8 @@ void handleGNSSDataTask(void *e)
           long startTime = millis();
           sdBytesToRecord = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
 
-          fileSize = ubxFile->fileSize(); //Get updated filed size
+          fileSize = ubxFile->fileSize(); //Update file size
+          sdFreeSpace -= sliceToRecord; //Update remaining space on SD
 
           //Force file sync every 60s
           if (millis() - lastUBXLogSyncTime > 60000)
@@ -883,4 +884,63 @@ void tasksStopUART2()
   //Give the other CPU time to finish
   //Eliminates CPU bus hang condition
   delay(100);
+}
+
+//Checking the number of available clusters on the SD card can take multiple seconds
+//Rather than blocking the system, we run a background task
+//Once the size check is complete, the task is removed
+void sdSizeCheckTask(void *e)
+{
+  while (true)
+  {
+    if (online.microSD && sdCardSize == 0)
+    {
+      //Attempt to gain access to the SD card
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+      {
+        markSemaphore(FUNCTION_SDSIZECHECK);
+
+        csd_t csd;
+        sd->card()->readCSD(&csd); //Card Specific Data
+        sdCardSize = (uint64_t)512 * sd->card()->sectorCount();
+
+        sd->volumeBegin();
+
+        //Find available cluster/space
+        sdFreeSpace = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
+        sdFreeSpace *= sd->vol()->sectorsPerCluster();
+        sdFreeSpace *= 512L; //Bytes per sector
+
+        xSemaphoreGive(sdCardSemaphore);
+
+        uint64_t sdUsedSpace = sdCardSize - sdFreeSpace; //Don't think of it as used, think of it as unusable
+
+//        Serial.print("Card Size: ");
+//        Serial.print(stringHumanReadableSize(sdCardSize));
+//        Serial.print(" ");
+//        Serial.println(sdCardSize);
+//        Serial.print("Free space: ");
+//        Serial.print(stringHumanReadableSize(sdFreeSpace));
+//        Serial.print(" ");
+//        Serial.println(sdFreeSpace);
+//        Serial.print("Used space: ");
+//        Serial.print(stringHumanReadableSize(sdUsedSpace));
+//        Serial.print(" ");
+//        Serial.println(sdUsedSpace);
+
+        outOfSDSpace = false;
+
+        sdSizeCheckTaskComplete = true;
+      }
+      else
+      {
+        char semaphoreHolder[50];
+        getSemaphoreFunction(semaphoreHolder);
+        log_d("sdCardSemaphore failed to yield, held by %s, Tasks.ino line %d\r\n", semaphoreHolder, __LINE__);
+      }
+    }
+    
+    delay(1);
+    taskYIELD(); //Let other tasks run
+  }
 }

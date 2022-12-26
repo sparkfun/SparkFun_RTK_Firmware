@@ -3016,9 +3016,9 @@ static const char *index_html = R"=====(
                         </span>
 
                         <div class="form-check">
-                            Free: <p id="sdFreeSpaceMB" style="display:inline;">0</p>MB
+                            Free: <p id="sdFreeSpace" style="display:inline;">0 MB</p>
                             <br>
-                            Used: <p id="sdUsedSpaceMB" style="display:inline;">0</p>MB
+                            Used: <p id="sdUsedSpace" style="display:inline;">0 MB</p>
                         </div>
                     </div>
                     <div class="col-sm-7 col-6 mt-2">

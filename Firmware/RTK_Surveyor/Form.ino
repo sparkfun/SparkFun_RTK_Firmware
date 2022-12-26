@@ -7,46 +7,6 @@ void startWebServer()
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-  //Check SD Size
-  if (online.microSD)
-  {
-    //Attempt to gain access to the SD card
-    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-    {
-      markSemaphore(FUNCTION_WEBSERVER);
-
-      csd_t csd;
-      sd->card()->readCSD(&csd); //Card Specific Data
-      sdCardSizeMB = 0.000512 * sd->card()->sectorCount();
-      sd->volumeBegin();
-
-      //Find available cluster/space
-      sdFreeSpaceMB = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
-      sdFreeSpaceMB *= sd->vol()->sectorsPerCluster() / 2;
-      sdFreeSpaceMB /= 1024;
-
-      sdUsedSpaceMB = sdCardSizeMB - sdFreeSpaceMB; //Don't think of it as used, think of it as unusable
-
-      //Serial.print("Card Size(MB): ");
-      //Serial.println(sdCardSizeMB);
-      //Serial.print("Free space(MB): ");
-      //Serial.println(sdFreeSpaceMB);
-      //Serial.print("Used space(MB): ");
-      //Serial.println(sdUsedSpaceMB);
-
-      xSemaphoreGive(sdCardSemaphore);
-    }
-    else
-    {
-      char semaphoreHolder[50];
-      getSemaphoreFunction(semaphoreHolder);
-
-      //This is an error because the current settings no longer match the settings
-      //on the microSD card, and will not be restored to the expected settings!
-      Serial.printf("sdCardSemaphore failed to yield, held by %s, Form.ino line %d\r\n", semaphoreHolder, __LINE__);
-    }
-  }
-
   ntripClientStop(true); //Do not allocate new wifiClient
   wifiStartAP();
 
@@ -526,8 +486,8 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "maxLogTime_minutes", settings.maxLogTime_minutes);
   stringRecord(settingsCSV, "maxLogLength_minutes", settings.maxLogLength_minutes);
 
-  stringRecord(settingsCSV, "sdFreeSpaceMB", sdFreeSpaceMB);
-  stringRecord(settingsCSV, "sdUsedSpaceMB", sdUsedSpaceMB);
+  stringRecord(settingsCSV, "sdFreeSpace", stringHumanReadableSize(sdFreeSpace));
+  stringRecord(settingsCSV, "sdUsedSpace", stringHumanReadableSize(sdCardSize - sdFreeSpace));
 
   stringRecord(settingsCSV, "enableResetDisplay", settings.enableResetDisplay);
 
@@ -1167,12 +1127,23 @@ String getFileList()
 }
 
 // Make size of files human readable
-// source: https://github.com/CelliesProjects/minimalUploadAuthESP32
-String stringHumanReadableSize(const size_t bytes) {
-  if (bytes < 1024) return String(bytes) + " B";
-  else if (bytes < (1024 * 1024)) return String(bytes / 1024) + " KB";
-  else if (bytes < (1024 * 1024 * 1024)) return String(bytes / 1024 / 1024) + " MB";
-  else return String(bytes / 1024 / 1024 / 1024) + " GB";
+String stringHumanReadableSize(uint64_t bytes) {
+
+  char suffix[5] = {'\0'};
+  char readableSize[50] = {'\0'};
+
+  if (bytes < 1024) strcpy(suffix, "B");
+  else if (bytes < (1024 * 1024)) strcpy(suffix, "KB");
+  else if (bytes < (1024 * 1024 * 1024)) strcpy(suffix, "MB");
+  else strcpy(suffix, "GB");
+
+  if (bytes < (1024 * 1024)) bytes = bytes / 1024.0; //KB
+  else if (bytes < (1024 * 1024 * 1024)) bytes = bytes / 1024.0 / 1024.0; //MB
+  else bytes = bytes / 1024.0 / 1024.0 / 1024.0; //GB
+
+  sprintf(readableSize, "%lld %s", bytes, suffix); //Don't print decimal portion of bytes
+
+  return String(readableSize);
 }
 
 #ifdef COMPILE_WIFI
@@ -1182,7 +1153,7 @@ String stringHumanReadableSize(const size_t bytes) {
 void handleUpload(AsyncWebServerRequest * request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
   String logmessage = "";
-  
+
   if (!index)
   {
     logmessage = "Upload Start: " + String(filename);

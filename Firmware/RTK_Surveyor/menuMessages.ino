@@ -9,15 +9,27 @@ void menuLog()
     Serial.println("Menu: Logging");
 
     if (settings.enableSD && online.microSD)
-      Serial.println("microSD card is online");
-    else
     {
-      beginSD(); //Test if SD is present
-      if (online.microSD == true)
-        Serial.println("microSD card online");
-      else
-        Serial.println("No microSD card is detected");
+      char myString[200];
+      snprintf(myString, sizeof(myString),
+               "Card size: %s (%lld bytes) / Free space: %s (%lld bytes)",
+               stringHumanReadableSize(sdCardSize),
+               sdCardSize,
+               stringHumanReadableSize(sdFreeSpace),
+               sdFreeSpace
+              );
+      Serial.println(myString);
+
+      //      Serial.print("Card Size: ");
+      //      Serial.print(stringHumanReadableSize(sdCardSize));
+      //      Serial.print(" (" + sdCardSize + " bytes)");
+      //      Serial.print(" / Free space: ");
+      //      Serial.print(stringHumanReadableSize(sdFreeSpace));
+      //      Serial.print(" (" + sdFreeSpace + " bytes)");
+      //      Serial.println();
     }
+    else
+      Serial.println("No microSD card is detected");
 
     Serial.printf("Buffer overruns: %d\n\r", bufferOverruns);
 
@@ -376,6 +388,7 @@ void beginLogging(const char *customFileName)
           return;
         }
 
+        fileSize = 0;
         lastLogSize = 0; //Reset counter - used for displaying active logging icon
 
         bufferOverruns = 0; //Reset counter
@@ -827,9 +840,9 @@ void updateLogTest()
 //At power down, add any metrics to log file
 void markLogClosure()
 {
-  if(online.logging)
+  if (online.logging)
   {
-  
+
     //Record the number of NMEA/RTCM/UBX messages that were filtered out
     char parserStats[50];
 

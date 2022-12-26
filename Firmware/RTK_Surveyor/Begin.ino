@@ -212,17 +212,6 @@ void beginSD()
     pinMode(pin_microSD_CS, OUTPUT);
     digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
 
-    //Allocate the data structure that manages the microSD card
-    if (!sd)
-    {
-      sd = new SdFat();
-      if (!sd)
-      {
-        log_d("Failed to allocate the SdFat structure!");
-        break;
-      }
-    }
-
     resetSPI(); //Re-initialize the SPI/SD interface
 
     //Do a quick test to see if a card is present
@@ -242,6 +231,17 @@ void beginSD()
 
     //If an SD card is present, allow SdFat to take over
     log_d("SD card detected");
+
+    //Allocate the data structure that manages the microSD card
+    if (!sd)
+    {
+      sd = new SdFat();
+      if (!sd)
+      {
+        log_d("Failed to allocate the SdFat structure!");
+        break;
+      }
+    }
 
     if (settings.spiFrequency > 16)
     {
@@ -295,6 +295,10 @@ void beginSD()
     //Load firmware file from the microSD card if it is present
     scanForFirmware();
 
+    //Mark card not yet usable for logging
+    sdCardSize = 0;
+    outOfSDSpace = true;
+
     Serial.println("microSD: Online");
     online.microSD = true;
     break;
@@ -324,8 +328,6 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
     delete sd;
     sd = NULL;
   }
-
-  lastLogSize = 0;
 
   //Release the semaphore
   if (releaseSemaphore)
@@ -772,4 +774,33 @@ void radioStart()
     espnowStart();
   }
 #endif
+}
+
+//Start task to determine SD card size
+void beginSDSizeCheckTask()
+{
+  if (sdSizeCheckTaskHandle == NULL)
+  {
+    xTaskCreate(
+      sdSizeCheckTask, //Function to call
+      "SDSizeCheck", //Just for humans
+      sdSizeCheckStackSize, //Stack Size
+      NULL, //Task input parameter
+      sdSizeCheckTaskPriority, //Priority
+      &sdSizeCheckTaskHandle); //Task handle
+
+    log_d("sdSizeCheck Task started");
+  }
+}
+
+void deleteSDSizeCheckTask()
+{
+  //Delete task once it's complete
+  if (sdSizeCheckTaskHandle != NULL)
+  {
+    vTaskDelete(sdSizeCheckTaskHandle);
+    sdSizeCheckTaskHandle = NULL;
+    sdSizeCheckTaskComplete = false;
+    log_d("sdSizeCheck Task deleted");
+  }
 }

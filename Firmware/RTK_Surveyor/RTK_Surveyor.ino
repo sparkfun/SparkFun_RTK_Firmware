@@ -137,9 +137,10 @@ const TickType_t fatSemaphore_shortWait_ms = 10 / portTICK_PERIOD_MS;
 const TickType_t fatSemaphore_longWait_ms = 200 / portTICK_PERIOD_MS;
 
 //Display used/free space in menu and config page
-uint32_t sdCardSizeMB = 0;
-uint32_t sdFreeSpaceMB = 0;
-uint32_t sdUsedSpaceMB = 0;
+uint64_t sdCardSize = 0;
+uint64_t sdFreeSpace = 0;
+bool outOfSDSpace = false;
+const uint32_t sdMinAvailableSpace = 10000000; //Minimum available bytes before SD is marked as out of space
 
 //Controls Logging Icon type
 typedef enum LoggingType {
@@ -152,6 +153,11 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 
 SdFile managerTempFile; //File used for uploading or downloading in file manager section of AP config
 bool managerFileOpen = false;
+
+TaskHandle_t sdSizeCheckTaskHandle = NULL; //Store handles so that we can kill the task once size is found
+const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being the lowest
+const int sdSizeCheckStackSize = 2000;
+bool sdSizeCheckTaskComplete = false;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -458,7 +464,7 @@ uint32_t triggerCount = 0; //Global copy - TM2 event counter
 uint32_t triggerTowMsR = 0; //Global copy - Time Of Week of rising edge (ms)
 uint32_t triggerTowSubMsR = 0; //Global copy - Millisecond fraction of Time Of Week of rising edge in nanoseconds
 uint32_t triggerAccEst = 0; //Global copy - Accuracy estimate in nanoseconds
- 
+
 bool firstPowerOn = true; //After boot, apply new settings to ZED if user switches between base or rover
 unsigned long splashStart = 0; //Controls how long the splash is displayed for. Currently min of 2s.
 bool restartBase = false; //If user modifies any NTRIP Server settings, we need to restart the base
@@ -632,6 +638,8 @@ void loop()
 
   updateRTC(); //Set system time to GNSS once we have fix
 
+  updateSD(); //Check if SD needs to be started or is at max capacity
+
   updateLogs(); //Record any new data. Create or close files as needed.
 
   reportHeap(); //If debug enabled, report free heap
@@ -658,14 +666,55 @@ void loop()
   delay(10);
 }
 
+//Monitor if SD card is online or not
+//Attempt to remount SD card if card is offline but present
+//Capture card size when mounted
+void updateSD()
+{
+  if (online.microSD == false)
+  {
+    //Are we offline because we are out of space?
+    if (outOfSDSpace == true)
+    {
+      if (sdPresent() == false) //Poll card to see if user has removed card
+        outOfSDSpace = false;
+    }
+    else if (sdPresent() == true) //Poll card to see if a card is inserted
+    {
+      Serial.println("SD inserted");
+      beginSD(); //Attempt to start SD
+    }
+  }
+
+  if (online.logging == true && sdCardSize > 0 && sdFreeSpace < sdMinAvailableSpace) //Stop logging if we are below the min
+  {
+    log_d("Logging stopped. SD full.");
+    outOfSDSpace = true;
+    endSD(false, true); //(alreadyHaveSemaphore, releaseSemaphore) Close down file.
+    return;
+  }
+
+  if (online.microSD && sdCardSize == 0)
+    beginSDSizeCheckTask(); //Start task to determine SD card size
+
+  if (sdSizeCheckTaskComplete == true)
+    deleteSDSizeCheckTask();
+}
+
 //Create or close files as needed (startup or as user changes settings)
 //Push new data to log as needed
 void updateLogs()
 {
   //If we are in AP config, don't touch the SD card
-  if(systemState == STATE_WIFI_CONFIG_NOT_STARTED || systemState == STATE_WIFI_CONFIG)
+  if (systemState == STATE_WIFI_CONFIG_NOT_STARTED || systemState == STATE_WIFI_CONFIG)
     return;
-  
+
+  if (online.microSD == false)
+    return; //We can't log if there is no SD
+
+  if (outOfSDSpace == true)
+    return; //We can't log if we are out of SD space
+
   if (online.logging == false && settings.enableLogging == true)
   {
     beginLogging();
@@ -951,8 +1000,8 @@ void getSemaphoreFunction(char* functionName)
     case FUNCTION_FILEMANAGER_UPLOAD3:
       strcpy(functionName, "FileManager Upload3");
       break;
-    case FUNCTION_WEBSERVER:
-      strcpy(functionName, "Webserver");
+    case FUNCTION_SDSIZECHECK:
+      strcpy(functionName, "SD Size Check");
       break;
     case FUNCTION_LOG_CLOSURE:
       strcpy(functionName, "Log Closure");

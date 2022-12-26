@@ -19,8 +19,6 @@ void powerOnCheck()
 //then don't display a shutdown screen
 void powerDown(bool displayInfo)
 {
-  markLogClosure(); //Close log with final metrics
-
   //Disable SD card use
   endSD(false, false);
 

@@ -466,13 +466,26 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
 {
   if (online.logging == true)
   {
-    //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile()
     //Wait up to 1000ms to allow hanging SD writes to time out
     if (gotSemaphore || (xSemaphoreTake(sdCardSemaphore, 1000 / portTICK_PERIOD_MS) == pdPASS))
     {
       markSemaphore(FUNCTION_ENDLOGGING);
 
       online.logging = false;
+
+      //Record the number of NMEA/RTCM/UBX messages that were filtered out
+      char parserStats[50];
+
+      sprintf(parserStats, "%d,%d,%d,",
+              failedParserMessages_NMEA,
+              failedParserMessages_RTCM,
+              failedParserMessages_UBX);
+
+      char nmeaMessage[82]; //Max NMEA sentence length is 82
+      createNMEASentence(CUSTOM_NMEA_TYPE_PARSER_STATS, nmeaMessage, parserStats); //textID, buffer, text
+      ubxFile->println(nmeaMessage);
+      ubxFile->sync();
+
 
       //Close down file system
       ubxFile->close();
@@ -834,37 +847,5 @@ void updateLogTest()
     }
 
     Serial.printf("%s\r\n", logMessage);
-  }
-}
-
-//At power down, add any metrics to log file
-void markLogClosure()
-{
-  if (online.logging)
-  {
-
-    //Record the number of NMEA/RTCM/UBX messages that were filtered out
-    char parserStats[50];
-
-    sprintf(parserStats, "%d,%d,%d,",
-            failedParserMessages_NMEA,
-            failedParserMessages_RTCM,
-            failedParserMessages_UBX);
-
-    char nmeaMessage[82]; //Max NMEA sentence length is 82
-    createNMEASentence(CUSTOM_NMEA_TYPE_PARSER_STATS, nmeaMessage, parserStats); //textID, buffer, text
-
-    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-    {
-      markSemaphore(FUNCTION_LOG_CLOSURE);
-
-      ubxFile->println(nmeaMessage);
-      ubxFile->sync();
-      xSemaphoreGive(sdCardSemaphore);
-    }
-    else
-    {
-      log_w("sdCardSemaphore failed to yield, menuMessages.ino line %d", __LINE__);
-    }
   }
 }

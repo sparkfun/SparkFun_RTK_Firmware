@@ -77,9 +77,9 @@ static WiFiClient wifiTcpClient[WIFI_MAX_TCP_CLIENTS];
 
 void wifiDisplayIpAddress()
 {
-  Serial.print("WiFi IP address: ");
-  Serial.print(WiFi.localIP());
-  Serial.printf(" RSSI: %d\r\n", WiFi.RSSI());
+  systemPrint("WiFi IP address: ");
+  systemPrint(WiFi.localIP());
+  systemPrintf(" RSSI: %d\r\n", WiFi.RSSI());
 
   wifiTimer = millis();
 }
@@ -118,24 +118,24 @@ void wifiPeriodicallyDisplayIpAddress()
 void wifiSetState(byte newState)
 {
   if (wifiState == newState)
-    Serial.print("*");
+    systemPrint("*");
   wifiState = newState;
   switch (newState)
   {
     default:
-      Serial.printf("Unknown WiFi state: %d\r\n", newState);
+      systemPrintf("Unknown WiFi state: %d\r\n", newState);
       break;
     case WIFI_OFF:
-      Serial.println("WIFI_OFF");
+      systemPrintln("WIFI_OFF");
       break;
     case WIFI_ON:
-      Serial.println("WIFI_ON");
+      systemPrintln("WIFI_ON");
       break;
     case WIFI_NOTCONNECTED:
-      Serial.println("WIFI_NOTCONNECTED");
+      systemPrintln("WIFI_NOTCONNECTED");
       break;
     case WIFI_CONNECTED:
-      Serial.println("WIFI_CONNECTED");
+      systemPrintln("WIFI_CONNECTED");
       break;
   }
 }
@@ -161,14 +161,14 @@ void wifiStartAP()
 #endif
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("WiFi connecting to");
+  systemPrint("WiFi connecting to");
   while (wifiGetStatus() != WL_CONNECTED)
   {
-    Serial.print(".");
+    systemPrint(".");
     delay(500);
   }
-  Serial.print("WiFi connected with IP: ");
-  Serial.println(WiFi.localIP());
+  systemPrint("WiFi connected with IP: ");
+  systemPrintln(WiFi.localIP());
 #else   //End LOCAL_WIFI_TESTING
   //Start in AP mode
 
@@ -186,11 +186,11 @@ void wifiStartAP()
   WiFi.softAPConfig(local_IP, gateway, subnet);
   if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
   {
-    Serial.println("WiFi AP failed to start");
+    systemPrintln("WiFi AP failed to start");
     return;
   }
-  Serial.print("WiFi AP Started with IP: ");
-  Serial.println(WiFi.softAPIP());
+  systemPrint("WiFi AP Started with IP: ");
+  systemPrintln(WiFi.softAPIP());
 #endif  //End AP Testing
 }
 
@@ -206,7 +206,7 @@ bool wifiConnectionTimeout()
 #ifdef COMPILE_WIFI
   if ((millis() - wifiTimer) <= WIFI_CONNECTION_TIMEOUT)
     return false;
-  Serial.println("WiFi connection timeout!");
+  systemPrintln("WiFi connection timeout!");
 #endif  //COMPILE_WIFI
   return true;
 }
@@ -229,14 +229,14 @@ void wifiSendTcpData(uint8_t * data, uint16_t length)
       ipAddress[0] = WiFi.gatewayIP();
       if (settings.enablePrintTcpStatus)
       {
-        Serial.print("Trying to connect TCP client to ");
-        Serial.println(ipAddress[0]);
+        systemPrint("Trying to connect TCP client to ");
+        systemPrintln(ipAddress[0]);
       }
       if (wifiTcpClient[0].connect(ipAddress[0], WIFI_TCP_PORT))
       {
         online.tcpClient = true;
-        Serial.print("TCP client connected to ");
-        Serial.println(ipAddress[0]);
+        systemPrint("TCP client connected to ");
+        systemPrintln(ipAddress[0]);
         wifiTcpConnected |= 1 << index;
       }
       else
@@ -260,8 +260,8 @@ void wifiSendTcpData(uint8_t * data, uint16_t length)
           if (!wifiTcpClient[index])
             break;
           ipAddress[index] = wifiTcpClient[index].remoteIP();
-          Serial.printf("Connected TCP client %d to ", index);
-          Serial.println(ipAddress[index]);
+          systemPrintf("Connected TCP client %d to ", index);
+          systemPrintln(ipAddress[index]);
           wifiTcpConnected |= 1 << index;
         }
       }
@@ -274,7 +274,7 @@ void wifiSendTcpData(uint8_t * data, uint16_t length)
     {
       //Check for a broken connection
       if ((!wifiTcpClient[index]) || (!wifiTcpClient[index].connected()))
-        Serial.printf("Disconnected TCP client %d from ", index);
+        systemPrintf("Disconnected TCP client %d from ", index);
 
       //Send the data to the connected clients
       else if (((settings.enableTcpServer && online.tcpServer)
@@ -282,16 +282,16 @@ void wifiSendTcpData(uint8_t * data, uint16_t length)
                && ((!length) || (wifiTcpClient[index].write(data, length) == length)))
       {
         if (settings.enablePrintTcpStatus && length)
-          Serial.printf("%d bytes written over TCP\r\n", length);
+          systemPrintf("%d bytes written over TCP\r\n", length);
         continue;
       }
 
       //Failed to write the data
       else
-        Serial.printf("Breaking TCP client %d connection to ", index);
+        systemPrintf("Breaking TCP client %d connection to ", index);
 
       //Done with this client connection
-      Serial.println(ipAddress[index]);
+      systemPrintln(ipAddress[index]);
       wifiTcpClient[index].stop();
       wifiTcpConnected &= ~(1 << index);
 
@@ -350,7 +350,7 @@ void wifiStart(char* ssid, char* pw)
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
 #endif
 
-    Serial.printf("WiFi connecting to %s\r\n", ssid);
+    systemPrintf("WiFi connecting to %s\r\n", ssid);
     WiFi.begin(ssid, pw);
     wifiTimer = millis();
 
@@ -362,7 +362,7 @@ void wifiStart(char* ssid, char* pw)
     //Verify WIFI_MAX_TCP_CLIENTS
     if ((sizeof(wifiTcpConnected) * 8) < WIFI_MAX_TCP_CLIENTS)
     {
-      Serial.printf("Please set WIFI_MAX_TCP_CLIENTS <= %d or increase size of wifiTcpConnected\r\n", sizeof(wifiTcpConnected) * 8);
+      systemPrintf("Please set WIFI_MAX_TCP_CLIENTS <= %d or increase size of wifiTcpConnected\r\n", sizeof(wifiTcpConnected) * 8);
       while (true)
       {
       }
@@ -388,7 +388,7 @@ void wifiStop()
     //Tell the UART2 tasks that the TCP client is shutting down
     online.tcpClient = false;
     delay(5);
-    Serial.println("TCP client offline");
+    systemPrintln("TCP client offline");
   }
 
   //Shutdown the TCP server connection
@@ -400,7 +400,7 @@ void wifiStop()
     //Wait for the UART2 tasks to close the TCP client connections
     while (wifiTcpServerActive())
       delay(5);
-    Serial.println("TCP Server offline");
+    systemPrintln("TCP Server offline");
   }
   
   if (wifiState == WIFI_OFF)
@@ -459,10 +459,10 @@ void wifiUpdate()
       && (wifiState == WIFI_CONNECTED))
   {
     online.tcpClient = true;
-    Serial.print("TCP client online, local IP ");
-    Serial.print(WiFi.localIP());
-    Serial.print(", gateway IP ");
-    Serial.println(WiFi.gatewayIP());
+    systemPrint("TCP client online, local IP ");
+    systemPrint(WiFi.localIP());
+    systemPrint(", gateway IP ");
+    systemPrintln(WiFi.gatewayIP());
   }
 
   //Start the TCP server if enabled
@@ -471,8 +471,8 @@ void wifiUpdate()
   {
     wifiTcpServer.begin();
     online.tcpServer = true;
-    Serial.print("TCP Server online, IP Address ");
-    Serial.println(WiFi.localIP());
+    systemPrint("TCP Server online, IP Address ");
+    systemPrintln(WiFi.localIP());
   }
 
   //Support NTRIP client during Rover operation

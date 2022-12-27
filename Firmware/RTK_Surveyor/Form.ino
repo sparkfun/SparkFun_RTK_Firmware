@@ -127,7 +127,7 @@ void startWebServer()
   webserver->on("/listfiles", HTTP_GET, [](AsyncWebServerRequest * request)
   {
     String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
-    Serial.println(logmessage);
+    systemPrintln(logmessage);
     request->send(200, "text/plain", getFileList());
   });
 
@@ -146,12 +146,12 @@ void startWebServer()
 
       if (sd->exists(fileName) == false)
       {
-        Serial.println(logmessage + " ERROR: file does not exist");
+        systemPrintln(logmessage + " ERROR: file does not exist");
         request->send(400, "text/plain", "ERROR: file does not exist");
       }
       else
       {
-        Serial.println(logmessage + " file exists");
+        systemPrintln(logmessage + " file exists");
 
         if (strcmp(fileAction, "download") == 0)
         {
@@ -162,7 +162,7 @@ void startWebServer()
             if (managerTempFile.open(fileName, O_READ) == true)
               managerFileOpen = true;
             else
-              Serial.println("Error: File Manager failed to open file");
+              systemPrintln("Error: File Manager failed to open file");
           }
           else
           {
@@ -191,7 +191,7 @@ void startWebServer()
 
               //xSemaphoreGive(sdCardSemaphore);
 
-              //Serial.println("Send me more");
+              //systemPrintln("Send me more");
               websocket->textAll("fmNext,1,"); //Tell browser to send next file if needed
             }
 
@@ -214,7 +214,7 @@ void startWebServer()
           logmessage += " ERROR: invalid action param supplied";
           request->send(400, "text/plain", "ERROR: invalid action param supplied");
         }
-        Serial.println(logmessage);
+        systemPrintln(logmessage);
       }
     }
     else
@@ -266,7 +266,7 @@ void stopWebServer()
 #ifdef COMPILE_AP
 void notFound(AsyncWebServerRequest *request) {
   String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
-  Serial.println(logmessage);
+  systemPrintln(logmessage);
   request->send(404, "text/plain", "Not found");
 }
 #endif
@@ -302,13 +302,13 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
       }
       else
       {
-        Serial.printf("Unknown: %s\r\n", fname);
+        systemPrintf("Unknown: %s\r\n", fname);
         return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
       }
     }
     else
     {
-      Serial.printf("Unknown: %s\r\n", fname);
+      systemPrintf("Unknown: %s\r\n", fname);
       return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
     }
   }
@@ -330,12 +330,12 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
         char bytesSentMsg[100];
         sprintf(bytesSentMsg, "%'d bytes sent", binBytesSent);
 
-        Serial.printf("bytesSentMsg: %s\r\n", bytesSentMsg);
+        systemPrintf("bytesSentMsg: %s\r\n", bytesSentMsg);
 
         char statusMsg[200] = {'\0'};
         stringRecord(statusMsg, "firmwareUploadStatus", bytesSentMsg); //Convert to "firmwareUploadMsg,11214 bytes sent,"
 
-        Serial.printf("msg: %s\r\n", statusMsg);
+        systemPrintf("msg: %s\r\n", statusMsg);
         websocket->textAll(statusMsg);
       }
 
@@ -352,7 +352,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
     else
     {
       websocket->textAll("firmwareUploadComplete,1,");
-      Serial.println("Firmware update complete. Restarting");
+      systemPrintln("Firmware update complete. Restarting");
       delay(500);
       ESP.restart();
     }
@@ -660,8 +660,8 @@ void createSettingsString(char* settingsCSV)
   //...
 
   strcat(settingsCSV, "\0");
-  Serial.printf("settingsCSV len: %d\r\n", strlen(settingsCSV));
-  Serial.printf("settingsCSV: %s\r\n", settingsCSV);
+  systemPrintf("settingsCSV len: %d\r\n", strlen(settingsCSV));
+  systemPrintf("settingsCSV: %s\r\n", settingsCSV);
 #endif
 }
 
@@ -875,7 +875,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     websocket->textAll("confirmReset,1,");
     delay(500); //Allow for delivery
 
-    Serial.println("Reset after AP Config");
+    systemPrintln("Reset after AP Config");
 
     ESP.restart();
   }
@@ -967,7 +967,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     //Last catch
     if (knownSetting == false)
     {
-      Serial.printf("Unknown '%s': %0.3lf\r\n", settingName, settingValue);
+      systemPrintf("Unknown '%s': %0.3lf\r\n", settingName, settingValue);
     }
   } //End last strcpy catch
 #endif
@@ -1114,14 +1114,14 @@ String getFileList()
 
     //This is an error because the current settings no longer match the settings
     //on the microSD card, and will not be restored to the expected settings!
-    Serial.printf("sdCardSemaphore failed to yield, held by %s, Form.ino line %d\r\n", semaphoreHolder, __LINE__);
+    systemPrintf("sdCardSemaphore failed to yield, held by %s, Form.ino line %d\r\n", semaphoreHolder, __LINE__);
   }
 
-  Serial.print("string size: ");
-  Serial.println(returnText.length());
+  //systemPrint("string size: ");
+  //systemPrintln(returnText.length());
 
-  Serial.print("returnText: ");
-  Serial.println(returnText);
+  //systemPrint("returnText: ");
+  //systemPrintln(returnText);
 
   return returnText;
 }
@@ -1169,7 +1169,7 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
       xSemaphoreGive(sdCardSemaphore);
     }
 
-    Serial.println(logmessage);
+    systemPrintln(logmessage);
   }
 
   if (len)
@@ -1196,7 +1196,7 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
       xSemaphoreGive(sdCardSemaphore);
     }
 
-    Serial.println(logmessage);
+    systemPrintln(logmessage);
     request->redirect("/");
   }
 }

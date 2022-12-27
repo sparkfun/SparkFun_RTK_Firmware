@@ -101,19 +101,19 @@ bool configureUbloxModule()
   response &= i2cGNSS.sendCfgValset();
 
   if (response == false)
-    Serial.println("Module failed config block 0");
+    systemPrintln("Module failed config block 0");
   response = true; //Reset
 
   //Enable the constellations the user has set
   response &= setConstellations(true); //19 messages. Send newCfg or sendCfg with value set
   if (response == false)
-    Serial.println("Module failed config block 1");
+    systemPrintln("Module failed config block 1");
   response = true; //Reset
 
   //Make sure the appropriate messages are enabled
   response &= setMessages(); //73 messages. Does a complete open/closed val set
   if (response == false)
-    Serial.println("Module failed config block 2");
+    systemPrintln("Module failed config block 2");
   response = true; //Reset
 
   //Disable NMEA messages on all but UART1
@@ -144,7 +144,7 @@ bool configureUbloxModule()
   response &= i2cGNSS.sendCfgValset();
 
   if (response == false)
-    Serial.println("Module failed config block 3");
+    systemPrintln("Module failed config block 3");
 
   if (zedModuleType == PLATFORM_F9R)
     response &= i2cGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
@@ -235,14 +235,14 @@ void checkBatteryLevels()
 
   if (settings.enablePrintBatteryMessages)
   {
-    Serial.printf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
+    systemPrintf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
 
     char tempStr[25];
     if (battChangeRate > 0)
       sprintf(tempStr, "C");
     else
       sprintf(tempStr, "Disc");
-    Serial.printf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
+    systemPrintf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
     if (battLevel < 10)
       sprintf(tempStr, "Red");
@@ -253,7 +253,7 @@ void checkBatteryLevels()
     else
       sprintf(tempStr, "No batt");
 
-    Serial.printf("%s\r\n", tempStr);
+    systemPrintf("%s\r\n", tempStr);
   }
 
   if (productVariant == RTK_SURVEYOR)
@@ -313,7 +313,7 @@ void reportHeapNow()
   if (settings.enableHeapReport == true)
   {
     lastHeapReport = millis();
-    Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\r\n", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+    systemPrintf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\r\n", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
   }
 }
 

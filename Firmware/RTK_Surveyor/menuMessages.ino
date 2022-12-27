@@ -5,8 +5,8 @@ void menuLog()
 {
   while (1)
   {
-    Serial.println();
-    Serial.println("Menu: Logging");
+    systemPrintln();
+    systemPrintln("Menu: Logging");
 
     if (settings.enableSD && online.microSD)
     {
@@ -18,47 +18,39 @@ void menuLog()
                stringHumanReadableSize(sdFreeSpace),
                sdFreeSpace
               );
-      Serial.println(myString);
-
-      //      Serial.print("Card Size: ");
-      //      Serial.print(stringHumanReadableSize(sdCardSize));
-      //      Serial.print(" (" + sdCardSize + " bytes)");
-      //      Serial.print(" / Free space: ");
-      //      Serial.print(stringHumanReadableSize(sdFreeSpace));
-      //      Serial.print(" (" + sdFreeSpace + " bytes)");
-      //      Serial.println();
+      systemPrintln(myString);
     }
     else
-      Serial.println("No microSD card is detected");
+      systemPrintln("No microSD card is detected");
 
-    Serial.printf("Buffer overruns: %d\n\r", bufferOverruns);
+    systemPrintf("Buffer overruns: %d\n\r", bufferOverruns);
 
-    Serial.print("1) Log to microSD: ");
-    if (settings.enableLogging == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
+    systemPrint("1) Log to microSD: ");
+    if (settings.enableLogging == true) systemPrintln("Enabled");
+    else systemPrintln("Disabled");
 
     if (settings.enableLogging == true)
     {
-      Serial.print("2) Set max logging time: ");
-      Serial.print(settings.maxLogTime_minutes);
-      Serial.println(" minutes");
+      systemPrint("2) Set max logging time: ");
+      systemPrint(settings.maxLogTime_minutes);
+      systemPrintln(" minutes");
 
-      Serial.print("3) Set max log length: ");
-      Serial.print(settings.maxLogLength_minutes);
-      Serial.println(" minutes");
+      systemPrint("3) Set max log length: ");
+      systemPrint(settings.maxLogLength_minutes);
+      systemPrintln(" minutes");
 
-      if (online.logging == true) Serial.println("4) Start new log");
+      if (online.logging == true) systemPrintln("4) Start new log");
     }
 
-    Serial.print("5) Write Marks_date.csv file to microSD: ");
-    if (settings.enableMarksFile == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
+    systemPrint("5) Write Marks_date.csv file to microSD: ");
+    if (settings.enableMarksFile == true) systemPrintln("Enabled");
+    else systemPrintln("Disabled");
 
-    Serial.print("6) Reset system if the SD card is detected but fails to initialize: ");
-    if (settings.forceResetOnSDFail == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
+    systemPrint("6) Reset system if the SD card is detected but fails to initialize: ");
+    if (settings.forceResetOnSDFail == true) systemPrintln("Enabled");
+    else systemPrintln("Disabled");
 
-    Serial.println("x) Exit");
+    systemPrintln("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
@@ -74,24 +66,24 @@ void menuLog()
     }
     else if (incoming == 2 && settings.enableLogging == true)
     {
-      Serial.print("Enter max minutes before logging stops: ");
+      systemPrint("Enter max minutes before logging stops: ");
       int maxMinutes = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((maxMinutes != INPUT_RESPONSE_GETNUMBER_EXIT) && (maxMinutes != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
         if (maxMinutes < 0 || maxMinutes > (60 * 24 * 365 * 2)) //Arbitrary 2 year limit. See https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/86
-          Serial.println("Error: Max minutes out of range");
+          systemPrintln("Error: Max minutes out of range");
         else
           settings.maxLogTime_minutes = maxMinutes; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 3 && settings.enableLogging == true)
     {
-      Serial.print("Enter max minutes of logging before new log is created: ");
+      systemPrint("Enter max minutes of logging before new log is created: ");
       int maxLogMinutes = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((maxLogMinutes != INPUT_RESPONSE_GETNUMBER_EXIT) && (maxLogMinutes != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
         if (maxLogMinutes < 0 || maxLogMinutes > 60 * 48) //Arbitrary 48 hour limit
-          Serial.println("Error: Max minutes out of range");
+          systemPrintln("Error: Max minutes out of range");
         else
           settings.maxLogLength_minutes = maxLogMinutes; //Recorded to NVM and file at main menu exit
       }
@@ -128,26 +120,26 @@ void menuMessages()
 {
   while (1)
   {
-    Serial.println();
-    Serial.println("Menu: GNSS Messages");
+    systemPrintln();
+    systemPrintln("Menu: GNSS Messages");
 
-    Serial.printf("Active messages: %d\r\n", getActiveMessageCount());
+    systemPrintf("Active messages: %d\r\n", getActiveMessageCount());
 
-    Serial.println("1) Set NMEA Messages");
+    systemPrintln("1) Set NMEA Messages");
     if (zedModuleType == PLATFORM_F9P)
-      Serial.println("2) Set RTCM Messages");
+      systemPrintln("2) Set RTCM Messages");
     else if (zedModuleType == PLATFORM_F9R)
-      Serial.println("2) Set ESF Messages");
-    Serial.println("3) Set RXM Messages");
-    Serial.println("4) Set NAV Messages");
-    Serial.println("5) Set MON Messages");
-    Serial.println("6) Set TIM Messages");
-    Serial.println("7) Reset to Surveying Defaults (NMEAx5)");
-    Serial.println("8) Reset to PPP Logging Defaults (NMEAx5 + RXMx2)");
-    Serial.println("9) Turn off all messages");
-    Serial.println("10) Turn on all messages");
+      systemPrintln("2) Set ESF Messages");
+    systemPrintln("3) Set RXM Messages");
+    systemPrintln("4) Set NAV Messages");
+    systemPrintln("5) Set MON Messages");
+    systemPrintln("6) Set TIM Messages");
+    systemPrintln("7) Reset to Surveying Defaults (NMEAx5)");
+    systemPrintln("8) Reset to PPP Logging Defaults (NMEAx5 + RXMx2)");
+    systemPrintln("9) Turn off all messages");
+    systemPrintln("10) Turn on all messages");
 
-    Serial.println("x) Exit");
+    systemPrintln("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
@@ -178,7 +170,7 @@ void menuMessages()
       setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //One report per second
 
       setMessageRateByName("UBX_NMEA_RMC", 1);
-      Serial.println("Reset to Surveying Defaults (NMEAx5)");
+      systemPrintln("Reset to Surveying Defaults (NMEAx5)");
     }
     else if (incoming == 8)
     {
@@ -196,17 +188,17 @@ void menuMessages()
 
       setMessageRateByName("UBX_RXM_RAWX", 1);
       setMessageRateByName("UBX_RXM_SFRBX", 1);
-      Serial.println("Reset to PPP Logging Defaults (NMEAx5 + RXMx2)");
+      systemPrintln("Reset to PPP Logging Defaults (NMEAx5 + RXMx2)");
     }
     else if (incoming == 9)
     {
       setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
-      Serial.println("All messages disabled");
+      systemPrintln("All messages disabled");
     }
     else if (incoming == 10)
     {
       setGNSSMessageRates(settings.ubxMessages, 1); //Turn on all messages to report once per fix
-      Serial.println("All messages enabled");
+      systemPrintln("All messages enabled");
     }
     else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
@@ -222,18 +214,18 @@ void menuMessages()
   bool response = setMessages(); //Does a complete open/closed val set
   if (response == false)
   {
-    Serial.println("menuMessages: Failed to enable UART1 messages - Try 1");
+    systemPrintln("menuMessages: Failed to enable UART1 messages - Try 1");
 
     response = setMessages(); //Does a complete open/closed val set
 
     if (response == false)
-      Serial.println("menuMessages: Failed to enable UART1 messages - Try 2");
+      systemPrintln("menuMessages: Failed to enable UART1 messages - Try 2");
     else
-      Serial.println("menuMessages: UART1 messages successfully enabled");
+      systemPrintln("menuMessages: UART1 messages successfully enabled");
   }
   else
   {
-    Serial.println("menuMessages: UART1 messages successfully enabled");
+    systemPrintln("menuMessages: UART1 messages successfully enabled");
   }
 
   setLoggingType(); //Update Standard, PPP, or custom for icon selection
@@ -245,8 +237,8 @@ void menuMessagesSubtype(const char* messageType)
 {
   while (1)
   {
-    Serial.println();
-    Serial.printf("Menu: Message %s\r\n", messageType);
+    systemPrintln();
+    systemPrintf("Menu: Message %s\r\n", messageType);
 
     int startOfBlock = 0;
     int endOfBlock = 0;
@@ -256,12 +248,12 @@ void menuMessagesSubtype(const char* messageType)
       //Check to see if this ZED platform supports this message
       if (settings.ubxMessages[x + startOfBlock].supported & zedModuleType)
       {
-        Serial.printf("%d) Message %s: ", x + 1, settings.ubxMessages[x + startOfBlock].msgTextName);
-        Serial.println(settings.ubxMessages[x + startOfBlock].msgRate);
+        systemPrintf("%d) Message %s: ", x + 1, settings.ubxMessages[x + startOfBlock].msgTextName);
+        systemPrintln(settings.ubxMessages[x + startOfBlock].msgRate);
       }
     }
 
-    Serial.println("x) Exit");
+    systemPrintln("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
@@ -288,7 +280,7 @@ void menuMessagesSubtype(const char* messageType)
 //Assign the given value to the message
 void inputMessageRate(ubxMsg &localMessage)
 {
-  Serial.printf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
+  systemPrintf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
   int rate = getNumber(); //Returns EXIT, TIMEOUT, or long
 
   if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
@@ -296,8 +288,8 @@ void inputMessageRate(ubxMsg &localMessage)
 
   while (rate < 0 || rate > 255) //8 bit limit
   {
-    Serial.println("Error: Message rate out of range");
-    Serial.printf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
+    systemPrintln("Error: Message rate out of range");
+    systemPrintf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
     rate = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
@@ -366,7 +358,7 @@ void beginLogging(const char *customFileName)
         ubxFile = new SdFile();
         if (!ubxFile)
         {
-          Serial.println("Failed to allocate ubxFile!");
+          systemPrintln("Failed to allocate ubxFile!");
           online.logging = false;
           return;
         }
@@ -382,7 +374,7 @@ void beginLogging(const char *customFileName)
         // O_WRITE - open for write
         if (ubxFile->open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
         {
-          Serial.printf("Failed to create GNSS UBX data file: %s\r\n", fileName);
+          systemPrintf("Failed to create GNSS UBX data file: %s\r\n", fileName);
           online.logging = false;
           xSemaphoreGive(sdCardSemaphore);
           return;
@@ -442,7 +434,7 @@ void beginLogging(const char *customFileName)
 
         if (reuseLastLog == true)
         {
-          Serial.println("Appending last available log");
+          systemPrintln("Appending last available log");
         }
 
         xSemaphoreGive(sdCardSemaphore);
@@ -455,7 +447,7 @@ void beginLogging(const char *customFileName)
         return;
       }
 
-      Serial.printf("Log file name: %s\r\n", fileName);
+      systemPrintf("Log file name: %s\r\n", fileName);
       online.logging = true;
     } //online.sd, enable.logging, online.rtc
   } //online.logging
@@ -489,7 +481,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
 
       //Close down file system
       ubxFile->close();
-      Serial.println("Log file closed");
+      systemPrintln("Log file closed");
 
       //Done with the log file
       delete ubxFile;
@@ -577,7 +569,7 @@ bool findLastLog(char *lastLogName)
     {
       //Error when a log file exists on the microSD card, data should be appended
       //to the existing log file
-      Serial.printf("sdCardSemaphore failed to yield, menuMessages.ino line %d\r\n", __LINE__);
+      systemPrintf("sdCardSemaphore failed to yield, menuMessages.ino line %d\r\n", __LINE__);
     }
   }
 
@@ -631,7 +623,7 @@ bool setMessageRateByName(const char *msgName, uint8_t msgRate)
     }
   }
 
-  Serial.printf("setMessageRateByName: %s not found\r\n", msgName);
+  systemPrintf("setMessageRateByName: %s not found\r\n", msgName);
   return (false);
 }
 
@@ -644,7 +636,7 @@ uint8_t getMessageRateByName(const char *msgName)
       return (settings.ubxMessages[x].msgRate);
   }
 
-  Serial.printf("getMessageRateByName: %s not found\r\n", msgName);
+  systemPrintf("getMessageRateByName: %s not found\r\n", msgName);
   return (0);
 }
 
@@ -846,6 +838,6 @@ void updateLogTest()
       log_w("sdCardSemaphore failed to yield, menuMessages.ino line %d", __LINE__);
     }
 
-    Serial.printf("%s\r\n", logMessage);
+    systemPrintf("%s\r\n", logMessage);
   }
 }

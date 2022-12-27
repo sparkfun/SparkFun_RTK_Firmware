@@ -94,7 +94,7 @@ void beginDisplay()
     {
       online.display = true;
 
-      Serial.println("Display started");
+      systemPrintln("Display started");
 
       //Display the SparkFun LOGO
       oled.erase();
@@ -107,7 +107,7 @@ void beginDisplay()
     delay(50); //Give display time to startup before attempting again
   }
 
-  Serial.println("Display not detected");
+  systemPrintln("Display not detected");
 }
 
 //Given the system state, display the appropriate information
@@ -342,7 +342,7 @@ void updateDisplay()
           displayShutdown();
           break;
         default:
-          Serial.printf("Unknown display: %d\r\n", systemState);
+          systemPrintf("Unknown display: %d\r\n", systemState);
           displayError("Display");
           break;
       }
@@ -1930,7 +1930,7 @@ void paintSystemTest()
       //Verify the ESP UART2 can communicate TX/RX to ZED UART1
       if (zedUartPassed == false)
       {
-        Serial.println("GNSS test");
+        systemPrintln("GNSS test");
 
         setMuxport(MUX_UBLOX_NMEA); //Set mux to UART so we can debug over data port
         delay(20);

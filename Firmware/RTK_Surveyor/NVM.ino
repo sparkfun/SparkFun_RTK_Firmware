@@ -37,7 +37,7 @@ void loadSettings()
   //Get bitmask of active profiles
   activeProfiles = loadProfileNames();
 
-  Serial.printf("Profile '%s' loaded\r\n", profileNames[profileNumber]);
+  systemPrintf("Profile '%s' loaded\r\n", profileNames[profileNumber]);
 }
 
 //Set the settingsFileName used many places
@@ -96,7 +96,7 @@ void recordSystemSettingsToFileSD(char *fileName)
       SdFile settingsFile; //FAT32
       if (settingsFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
-        Serial.println("Failed to create settings file");
+        systemPrintln("Failed to create settings file");
         break;
       }
 
@@ -117,7 +117,7 @@ void recordSystemSettingsToFileSD(char *fileName)
 
       //This is an error because the current settings no longer match the settings
       //on the microSD card, and will not be restored to the expected settings!
-      Serial.printf("sdCardSemaphore failed to yield, held by %s, NVM.ino line %d\r\n", semaphoreHolder, __LINE__);
+      systemPrintf("sdCardSemaphore failed to yield, held by %s, NVM.ino line %d\r\n", semaphoreHolder, __LINE__);
     }
     break;
   }
@@ -339,7 +339,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
         SdFile settingsFile; //FAT32
         if (settingsFile.open(fileName, O_READ) == false)
         {
-          Serial.println("Failed to open settings file");
+          systemPrintln("Failed to open settings file");
           break;
         }
 
@@ -352,23 +352,23 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
           //int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
           int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
           if (n <= 0) {
-            Serial.printf("Failed to read line %d from settings file\r\n", lineNumber);
+            systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
           }
           else if (line[n - 1] != '\n' && n == (sizeof(line) - 1)) {
-            Serial.printf("Settings line %d too long\r\n", lineNumber);
+            systemPrintf("Settings line %d too long\r\n", lineNumber);
             if (lineNumber == 0)
             {
               //If we can't read the first line of the settings file, give up
-              Serial.println("Giving up on settings file");
+              systemPrintln("Giving up on settings file");
               break;
             }
           }
           else if (parseLine(line, settings) == false) {
-            Serial.printf("Failed to parse line %d: %s\r\n", lineNumber, line);
+            systemPrintf("Failed to parse line %d: %s\r\n", lineNumber, line);
             if (lineNumber == 0)
             {
               //If we can't read the first line of the settings file, give up
-              Serial.println("Giving up on settings file");
+              systemPrintln("Giving up on settings file");
               break;
             }
           }
@@ -376,7 +376,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
           lineNumber++;
         }
 
-        //Serial.println("Config file read complete");
+        //systemPrintln("Config file read complete");
         settingsFile.close();
         status = true;
         break;
@@ -391,7 +391,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
     {
       //This is an error because if the settings exist on the microSD card that
       //those settings are not overriding the current settings as documented!
-      Serial.printf("sdCardSemaphore failed to yield, NVM.ino line %d\r\n", __LINE__);
+      systemPrintf("sdCardSemaphore failed to yield, NVM.ino line %d\r\n", __LINE__);
     }
     break;
   } //End SD online
@@ -426,23 +426,23 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
     int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
     //int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
     if (n <= 0) {
-      Serial.printf("Failed to read line %d from settings file\r\n", lineNumber);
+      systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
     }
     else if (line[n - 1] != '\n' && n == (sizeof(line) - 1)) {
-      Serial.printf("Settings line %d too long\r\n", lineNumber);
+      systemPrintf("Settings line %d too long\r\n", lineNumber);
       if (lineNumber == 0)
       {
         //If we can't read the first line of the settings file, give up
-        Serial.println("Giving up on settings file");
+        systemPrintln("Giving up on settings file");
         return (false);
       }
     }
     else if (parseLine(line, settings) == false) {
-      Serial.printf("Failed to parse line %d: %s\r\n", lineNumber, line);
+      systemPrintf("Failed to parse line %d: %s\r\n", lineNumber, line);
       if (lineNumber == 0)
       {
         //If we can't read the first line of the settings file, give up
-        Serial.println("Giving up on settings file");
+        systemPrintln("Giving up on settings file");
         return (false);
       }
     }
@@ -487,7 +487,7 @@ bool parseLine(char* str, Settings *settings)
   {
     //if (strcmp(settingName, "ntripServer_CasterHost") == 0) //Debug
     //if (strcmp(settingName, "profileName") == 0) //Debug
-    //  Serial.printf("Found problem spot raw: %s\r\n", str);
+    //  systemPrintf("Found problem spot raw: %s\r\n", str);
 
     //Assume the value is a string such as 8d8a48b. The leading number causes skipSpace to fail.
     //If settingValue has a mix of letters and numbers, just convert to string
@@ -513,7 +513,7 @@ bool parseLine(char* str, Settings *settings)
       //It's a mix. Skip strtod.
 
       //if (strcmp(settingName, "ntripServer_CasterHost") == 0) //Debug
-      //  Serial.printf("Skipping strtod - settingValue: %s\r\n", settingValue);
+      //  systemPrintf("Skipping strtod - settingValue: %s\r\n", settingValue);
     }
     else
     {
@@ -548,7 +548,7 @@ bool parseLine(char* str, Settings *settings)
 
     //Check to see if this setting file is compatible with this version of RTK Surveyor
     if (d != sizeof(Settings))
-      Serial.printf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\r\n", (int)d, sizeof(Settings));
+      systemPrintf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\r\n", (int)d, sizeof(Settings));
 
   }
   else if (strcmp(settingName, "rtkIdentifier") == 0)
@@ -1009,7 +1009,7 @@ bool parseLine(char* str, Settings *settings)
     //Last catch
     if (knownSetting == false)
     {
-      Serial.printf("Unknown setting %s\r\n", settingName);
+      systemPrintf("Unknown setting %s\r\n", settingName);
     }
   }
 
@@ -1055,7 +1055,7 @@ void loadProfileNumber()
   File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_READ);
   if (!fileProfileNumber)
   {
-    Serial.println("profileNumber.txt not found");
+    systemPrintln("profileNumber.txt not found");
     settings.updateZEDSettings = true; //Force module update
     recordProfileNumber(0); //Record profile
   }
@@ -1068,7 +1068,7 @@ void loadProfileNumber()
   //We have arbitrary limit of user profiles
   if (profileNumber >= MAX_PROFILE_COUNT)
   {
-    Serial.println("ProfileNumber invalid. Going to zero.");
+    systemPrintln("ProfileNumber invalid. Going to zero.");
     settings.updateZEDSettings = true; //Force module update
     recordProfileNumber(0); //Record profile
   }

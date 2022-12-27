@@ -307,6 +307,9 @@ volatile static long fileSize = 0; //Updated with each write
 int bufferOverruns = 0; //Running count of possible data losses since power-on
 
 bool zedUartPassed = false; //Goes true during testing if ESP can communicate with ZED over UART
+const uint8_t btEscapeCharacter = '+';
+const uint8_t btMaxEscapeCharacters = 3; //Number of characters needed to enter command mode over B
+
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //External Display
@@ -418,6 +421,7 @@ const uint16_t menuTimeout = 60 * 10; //Menus will exit/timeout after this numbe
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
 bool inMainMenu = false; //Set true when in the serial config menu system.
+bool btPrintEcho = false; //Set true when in the serial config menu system via Bluetooth.
 
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;
@@ -500,6 +504,10 @@ static byte rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
 uint16_t failedParserMessages_UBX = 0;
 uint16_t failedParserMessages_RTCM = 0;
 uint16_t failedParserMessages_NMEA = 0;
+
+unsigned long btLastByteReceived = 0; //Track when last BT transmission was received.
+const long btMinEscapeTime = 2000; //Bluetooth serial traffic must stop this amount before an escape char is recognized
+uint8_t btEscapeCharsReceived = 0; //Used to enter command mode
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
@@ -681,7 +689,7 @@ void updateSD()
     }
     else if (sdPresent() == true) //Poll card to see if a card is inserted
     {
-      Serial.println("SD inserted");
+      systemPrintln("SD inserted");
       beginSD(); //Attempt to start SD
     }
   }
@@ -739,7 +747,7 @@ void updateLogs()
     //Record any pending trigger events
     if (newEventToRecord == true)
     {
-      Serial.println("Recording event");
+      systemPrintln("Recording event");
 
       //Record trigger count with Time Of Week of rising edge (ms), Millisecond fraction of Time Of Week of rising edge (ns), and accuracy estimate (ns)
       char eventData[82]; //Max NMEA sentence length is 82
@@ -777,20 +785,20 @@ void updateLogs()
         lastFileReport = millis();
         if (settings.enablePrintLogFileStatus)
         {
-          Serial.printf("Log file size: %ld", fileSize);
+          systemPrintf("Log file size: %ld", fileSize);
 
           if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
           {
             //Calculate generation and write speeds every 5 seconds
             uint32_t fileSizeDelta = fileSize - lastLogSize;
-            Serial.printf(" - Generation rate: %0.1fkB/s", fileSizeDelta / 5.0 / 1000.0);
+            systemPrintf(" - Generation rate: %0.1fkB/s", fileSizeDelta / 5.0 / 1000.0);
           }
           else
           {
-            Serial.printf(" reached max log time %d", settings.maxLogTime_minutes);
+            systemPrintf(" reached max log time %d", settings.maxLogTime_minutes);
           }
 
-          Serial.println();
+          systemPrintln();
         }
 
         if (fileSize > lastLogSize)
@@ -857,14 +865,14 @@ void updateRTC()
 
           online.rtc = true;
 
-          Serial.print("System time set to: ");
-          Serial.println(rtc.getDateTime(true));
+          systemPrint("System time set to: ");
+          systemPrintln(rtc.getDateTime(true));
 
           recordSystemSettingsToFileSD(settingsFileName); //This will re-record the setting file with current date/time.
         }
         else
         {
-          Serial.println("No GNSS date/time available for system RTC.");
+          systemPrintln("No GNSS date/time available for system RTC.");
         } //End timeValid
       } //End lastRTCAttempt
     } //End online.gnss

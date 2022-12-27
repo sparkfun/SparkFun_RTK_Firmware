@@ -86,9 +86,9 @@ void updateAccuracyLEDs()
       {
         if (settings.enablePrintRoverAccuracy)
         {
-          Serial.print("Rover Accuracy (m): ");
-          Serial.print(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
-          Serial.println();
+          systemPrint("Rover Accuracy (m): ");
+          systemPrint(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
+          systemPrintln();
         }
 
         if (productVariant == RTK_SURVEYOR)
@@ -121,12 +121,12 @@ void updateAccuracyLEDs()
       }
       else if (settings.enablePrintRoverAccuracy)
       {
-        Serial.print("Rover Accuracy: ");
-        Serial.print(horizontalAccuracy);
-        Serial.print(" ");
-        Serial.print("No lock. SIV: ");
-        Serial.print(numSV);
-        Serial.println();
+        systemPrint("Rover Accuracy: ");
+        systemPrint(horizontalAccuracy);
+        systemPrint(" ");
+        systemPrint("No lock. SIV: ");
+        systemPrint(numSV);
+        systemPrintln();
       }
     } //End GNSS online checking
   } //Check every 2000ms

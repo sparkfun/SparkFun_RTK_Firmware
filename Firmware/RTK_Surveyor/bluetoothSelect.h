@@ -14,9 +14,11 @@ class BTSerialInterface
 
     virtual int available() = 0;
     virtual size_t readBytes(uint8_t *buffer, size_t bufferSize) = 0;
+    virtual int read() = 0;
 
     //virtual bool isCongested() = 0;
     virtual size_t write(const uint8_t *buffer, size_t size) = 0;
+    virtual size_t write(uint8_t value) = 0;
     virtual void flush() = 0;
 };
 
@@ -61,15 +63,26 @@ class BTClassicSerial : public virtual BTSerialInterface, public BluetoothSerial
       return BluetoothSerial::readBytes(buffer, bufferSize);
     }
 
+    int read()
+    {
+      return BluetoothSerial::read();
+    }
+
     size_t write(const uint8_t *buffer, size_t size)
     {
       return BluetoothSerial::write(buffer, size);
+    }
+
+    size_t write(uint8_t value)
+    {
+      return BluetoothSerial::write(value);
     }
 
     void flush()
     {
       BluetoothSerial::flush();
     }
+
 };
 
 
@@ -114,9 +127,19 @@ class BTLESerial: public virtual BTSerialInterface, public BleSerial
       return BleSerial::readBytes(buffer, bufferSize);
     }
 
+    int read()
+    {
+      return BleSerial::read();
+    }
+
     size_t write(const uint8_t *buffer, size_t size)
     {
       return BleSerial::write(buffer, size);
+    }
+
+    size_t write(uint8_t value)
+    {
+      return BleSerial::write(value);
     }
 
     void flush()
@@ -142,6 +165,5 @@ class BTLESerial: public virtual BTSerialInterface, public BleSerial
     esp_spp_cb_t * connectionCallback;
 
 };
-
 
 #endif

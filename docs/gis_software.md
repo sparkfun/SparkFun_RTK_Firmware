@@ -295,5 +295,55 @@ Known Issues:
 
 To verify the NMEA sentences are being delivered correctly, Survey Master has a built-in tool. Select the Device->Rover->More->'H-Terminal'. 
 
+## QField / QGIS
+
+![Opening page of QField](img/QField/SparkFun%20RTK%20QField%20-%20Open%20Project.png)
+
+QField is a free GIS the Android app that runs QGIS.
+
+![NMEA message configuration](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config_Messages.jpg)
+
+*The 'Reset to Surveying Defaults' button*
+
+First, configure the RTK device to output *only* NMEA messages. QField currently does not correctly parse other messages such as RAWX or RTCM so these will interfere with communication if they are enabled.
+
+These RTK device settings can be found under the [Messages menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_messages/) through the [WiFi config page](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_with_wifi/) or through the [Serial Config menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_with_serial/).
+
+![Alt text](img/QField/SparkFun%20RTK%20QField%20-%20Create%20Project.png)
+
+Create an account and project on [QFieldCloud](https://qfield.cloud/). This project will be synchronized and viewable on the QField app.
+
+![Open Test Project](img/QField/SparkFun%20RTK%20QField%20-%20Open%20Project.png)
+
+*Refresh Projects button*
+
+Once the project is created, press the Refresh projects list button to update the list. Then select your project.
+
+![Hamburger Menu](img/QField/SparkFun%20RTK%20QField%20-%20Open%20Settings.png)
+
+*'Hamburger' menu in upper right corner*
+
+Press the icon in the top left corner of the app to open the project settings.
+
+![Project Settings Menu](img/QField/SparkFun%20RTK%20QField%20-%20Project%20Settings%202.png)
+
+*Project settings*
+
+From the project settings menu, press the gear icon to open the device settings dropdown menu.
+
+![Project Settings Submenu](img/QField/SparkFun%20RTK%20QField%20-%20Project%20Settings.png)
+
+*Project settings submenu*
+
+From the submenu, select 'Settings'.
+
+![Position Menu](img/QField/SparkFun%20RTK%20QField%20-%20Select%20Positioning%20Devce.png)
+
+*Positioning Menu*
+
+Select the Positioning Menu. Then, with your RTK device on and in normal mode (not AP Config) press the Scan button in the QField app to update the dropdown list of available Bluetooth devices. If your device is not detected, be sure you've [paired your cellphone or laptop with Bluetooth](https://docs.sparkfun.com/SparkFun_RTK_Firmware/connecting_bluetooth/).
+
+Once connected exit out of the menus and see position information within your project.
+
 ## Other
 Hopefully, these examples give you an idea of how to connect the RTK product line to most any GIS software. If there is other GIS software that you'd like to see configuration information about, please open an issue on the [RTK Firmware repo](https://github.com/sparkfun/SparkFun_RTK_Firmware/issues) and we'll add it.

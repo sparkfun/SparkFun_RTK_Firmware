@@ -299,7 +299,7 @@ To verify the NMEA sentences are being delivered correctly, Survey Master has a 
 
 ![Opening page of QField](img/QField/SparkFun%20RTK%20QField%20-%20Open%20Project.png)
 
-QField is a free GIS the Android app that runs QGIS.
+[QField](https://docs.qfield.org/get-started/) is a free GIS the Android app that runs QGIS.
 
 ![NMEA message configuration](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config_Messages.jpg)
 
@@ -313,7 +313,7 @@ These RTK device settings can be found under the [Messages menu](https://docs.sp
 
 Create an account and project on [QFieldCloud](https://qfield.cloud/). This project will be synchronized and viewable on the QField app.
 
-![Open Test Project](img/QField/SparkFun%20RTK%20QField%20-%20Open%20Project.png)
+![Open Test Project](img/QField/SparkFun%20RTK%20QField%20-%20Refresh%20Project.png)
 
 *Refresh Projects button*
 

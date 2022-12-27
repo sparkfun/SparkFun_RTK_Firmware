@@ -97,14 +97,14 @@ bool ntripClientConnect()
       strcpy(settings.ntripClient_CasterHost, token);
   }
 
-  Serial.printf("NTRIP Client connecting to %s:%d\r\n", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
+  systemPrintf("NTRIP Client connecting to %s:%d\r\n", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
 
   int connectResponse = ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
 
   if (connectResponse < 1)
     return false;
 
-  Serial.println("NTRIP Client connected");
+  systemPrintln("NTRIP Client connected");
 
   // Set up the server request (GET)
   char serverRequest[SERVER_BUFFER_SIZE];
@@ -125,8 +125,8 @@ bool ntripClientConnect()
     char userCredentials[sizeof(settings.ntripClient_CasterUser) + sizeof(settings.ntripClient_CasterUserPW) + 1]; //The ':' takes up a spot
     snprintf(userCredentials, sizeof(userCredentials), "%s:%s", settings.ntripClient_CasterUser, settings.ntripClient_CasterUserPW);
 
-    Serial.print("NTRIP Client sending credentials: ");
-    Serial.println(userCredentials);
+    systemPrint("NTRIP Client sending credentials: ");
+    systemPrintln(userCredentials);
 
     //Encode with ESP32 built-in library
     base64 b;
@@ -141,15 +141,15 @@ bool ntripClientConnect()
   strncat(serverRequest, credentials, SERVER_BUFFER_SIZE - 1);
   strncat(serverRequest, "\r\n", SERVER_BUFFER_SIZE - 1);
 
-  Serial.print("NTRIP Client serverRequest size: ");
-  Serial.print(strlen(serverRequest));
-  Serial.print(" of ");
-  Serial.print(sizeof(serverRequest));
-  Serial.println(" bytes available");
+  systemPrint("NTRIP Client serverRequest size: ");
+  systemPrint(strlen(serverRequest));
+  systemPrint(" of ");
+  systemPrint(sizeof(serverRequest));
+  systemPrintln(" bytes available");
 
   // Send the server request
-  Serial.println("NTRIP Client sending server request: ");
-  Serial.println(serverRequest);
+  systemPrintln("NTRIP Client sending server request: ");
+  systemPrintln(serverRequest);
   ntripClient->write(serverRequest, strlen(serverRequest));
   ntripClientTimer = millis();
   return true;
@@ -178,7 +178,7 @@ bool ntripClientConnectLimitReached()
   else
   {
     //No more connection attempts, switching to Bluetooth
-    Serial.println("NTRIP Client connection attempts exceeded!");
+    systemPrintln("NTRIP Client connection attempts exceeded!");
 
     //Stop WiFi operations
     ntripClientStop(true); //Do not allocate new wifiClient
@@ -212,30 +212,30 @@ void ntripClientResponse(char * response, size_t maxLength)
 void ntripClientSetState(byte newState)
 {
   if (ntripClientState == newState)
-    Serial.print("*");
+    systemPrint("*");
   ntripClientState = newState;
   switch (newState)
   {
     default:
-      Serial.printf("Unknown NTRIP Client state: %d\r\n", newState);
+      systemPrintf("Unknown NTRIP Client state: %d\r\n", newState);
       break;
     case NTRIP_CLIENT_OFF:
-      Serial.println("NTRIP_CLIENT_OFF");
+      systemPrintln("NTRIP_CLIENT_OFF");
       break;
     case NTRIP_CLIENT_ON:
-      Serial.println("NTRIP_CLIENT_ON");
+      systemPrintln("NTRIP_CLIENT_ON");
       break;
     case NTRIP_CLIENT_WIFI_CONNECTING:
-      Serial.println("NTRIP_CLIENT_WIFI_CONNECTING");
+      systemPrintln("NTRIP_CLIENT_WIFI_CONNECTING");
       break;
     case NTRIP_CLIENT_WIFI_CONNECTED:
-      Serial.println("NTRIP_CLIENT_WIFI_CONNECTED");
+      systemPrintln("NTRIP_CLIENT_WIFI_CONNECTED");
       break;
     case NTRIP_CLIENT_CONNECTING:
-      Serial.println("NTRIP_CLIENT_CONNECTING");
+      systemPrintln("NTRIP_CLIENT_CONNECTING");
       break;
     case NTRIP_CLIENT_CONNECTED:
-      Serial.println("NTRIP_CLIENT_CONNECTED");
+      systemPrintln("NTRIP_CLIENT_CONNECTED");
       break;
   }
 }
@@ -257,7 +257,7 @@ void ntripClientStart()
   {
     //Display the heap state
     reportHeapNow();
-    Serial.println("NTRIP Client start");
+    systemPrintln("NTRIP Client start");
 
     //Allocate the ntripClient structure
     ntripClient = new WiFiClient();
@@ -332,7 +332,7 @@ void ntripClientUpdate()
     case NTRIP_CLIENT_ON:
       if (strlen(settings.ntripClient_wifiSSID) == 0)
       {
-        Serial.println("Error: Please enter SSID before starting NTRIP Client");
+        systemPrintln("Error: Please enter SSID before starting NTRIP Client");
         ntripClientSetState(NTRIP_CLIENT_OFF);
       }
       else
@@ -349,7 +349,7 @@ void ntripClientUpdate()
           if (millis() - ntripClientTimeoutPrint > 1000)
           {
             ntripClientTimeoutPrint = millis();
-            Serial.printf("NTRIP Client connection timeout wait: %ld of %d seconds \r\n",
+            systemPrintf("NTRIP Client connection timeout wait: %ld of %d seconds \r\n",
                           (millis() - ntripClientLastConnectionAttempt) / 1000,
                           ntripClientConnectionAttemptTimeout / 1000
                          );
@@ -366,7 +366,7 @@ void ntripClientUpdate()
         if (wifiConnectionTimeout() || wifiGetStatus() == WL_NO_SSID_AVAIL)
         {
           if (wifiGetStatus() == WL_NO_SSID_AVAIL)
-            Serial.printf("WiFi network '%s' not found\r\n", settings.ntripClient_wifiSSID);
+            systemPrintf("WiFi network '%s' not found\r\n", settings.ntripClient_wifiSSID);
 
           if (ntripClientConnectLimitReached()) //Stop WiFi, give up
             paintNtripWiFiFail(4000, true);
@@ -393,7 +393,7 @@ void ntripClientUpdate()
 
             //Assume service not available
             if (ntripClientConnectLimitReached())
-              Serial.println("NTRIP Client caster failed to connect. Do you have your caster address and port correct?");
+              systemPrintln("NTRIP Client caster failed to connect. Do you have your caster address and port correct?");
           }
           else
             //Socket opened to NTRIP system
@@ -415,7 +415,7 @@ void ntripClientUpdate()
         {
           //NTRIP web service did not respone
           if (ntripClientConnectLimitReached())
-            Serial.println("NTRIP Client caster failed to respond. Do you have your caster address and port correct?");
+            systemPrintln("NTRIP Client caster failed to respond. Do you have your caster address and port correct?");
         }
       }
       else
@@ -430,7 +430,7 @@ void ntripClientUpdate()
         if (strstr(response, "401") != NULL)
         {
           //Look for '401 Unauthorized'
-          Serial.printf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n", response);
+          systemPrintf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n", response);
 
           //Stop WiFi operations
           ntripClientStop(true); //Do not allocate new wifiClient
@@ -438,7 +438,7 @@ void ntripClientUpdate()
         else if (strstr(response, "banned") != NULL)
         {
           //Look for 'HTTP/1.1 200 OK' and banned IP information
-          Serial.printf("NTRIP Client connected to caster but caster reponded with problem: %s", response);
+          systemPrintf("NTRIP Client connected to caster but caster reponded with problem: %s", response);
 
           //Stop WiFi operations
           ntripClientStop(true); //Do not allocate new wifiClient
@@ -478,7 +478,7 @@ void ntripClientUpdate()
       if (!ntripClient->connected())
       {
         //Broken connection, retry the NTRIP client connection
-        Serial.println("NTRIP Client connection dropped");
+        systemPrintln("NTRIP Client connection dropped");
         ntripClientStop(false); //Allocate new wifiClient
       }
       else
@@ -489,7 +489,7 @@ void ntripClientUpdate()
           if ((millis() - ntripClientTimer) > NTRIP_CLIENT_RECEIVE_DATA_TIMEOUT)
           {
             //Timeout receiving NTRIP data, retry the NTRIP client connection
-            Serial.println("NTRIP Client: No data received timeout");
+            systemPrintln("NTRIP Client: No data received timeout");
             ntripClientStop(false); //Allocate new wifiClient
           }
         }

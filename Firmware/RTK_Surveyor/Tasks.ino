@@ -5,7 +5,7 @@ volatile static uint16_t dataHead = 0; //Head advances as data comes in from GNS
 volatile int availableHandlerSpace = 0; //settings.gnssHandlerBufferSize - usedSpace
 
 //If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
-//Task for writing to the GNSS receiver
+//Scan for escape characters to enter config menu
 void F9PSerialWriteTask(void *e)
 {
   while (true)
@@ -13,26 +13,60 @@ void F9PSerialWriteTask(void *e)
     //Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
     if (bluetoothGetState() == BT_CONNECTED)
     {
-      while (bluetoothRxDataAvailable())
+      while (btPrintEcho == false && bluetoothRxDataAvailable())
       {
-        //Pass bytes to GNSS receiver
-        int s = bluetoothReadBytes(wBuffer, sizeof(wBuffer));
+        //Check stream for command characters
+        byte incoming = bluetoothRead();
 
-        //TODO - control if this RTCM source should be listened to or not
-        serialGNSS.write(wBuffer, s);
-        bluetoothIncomingRTCM = true;
-        if (!inMainMenu) log_d("Bluetooth received %d RTCM bytes, sent to ZED", s);
+        if (incoming == btEscapeCharacter)
+        {
+          //Ignore escape characters received within 2 seconds of serial traffic
+          //Allow escape characters received within first 2 seconds of power on
+          if (millis() - btLastByteReceived > btMinEscapeTime || millis() < btMinEscapeTime)
+          {
+            btEscapeCharsReceived++;
+            if (btEscapeCharsReceived == btMaxEscapeCharacters)
+            {
+              printEndpoint = PRINT_ENDPOINT_ALL;
+              systemPrintln("Echoing all serial to BT device");
+              btPrintEcho = true;
 
-        if (settings.enableTaskReports == true)
-          Serial.printf("SerialWriteTask High watermark: %d\r\n",  uxTaskGetStackHighWaterMark(NULL));
-      }
-      delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
-      taskYIELD();
-    }
+              btEscapeCharsReceived = 0;
+              btLastByteReceived = millis();
+            }
+          }
+          else
+          {
+            //Ignore this escape character, passing along to output
+            serialGNSS.write(incoming);
+          }
+        }
+        else //This is just a character in the stream, ignore
+        {
+          //Pass any escape characters that turned out to not be a complete escape sequence
+          while (btEscapeCharsReceived-- > 0)
+            serialGNSS.write(btEscapeCharacter);
+
+          //Pass byte to GNSS receiver or to system
+          //TODO - control if this RTCM source should be listened to or not
+          serialGNSS.write(incoming);
+
+          btLastByteReceived = millis();
+          btEscapeCharsReceived = 0; //Update timeout check for escape char and partial frame
+
+          bluetoothIncomingRTCM = true;
+        } //End just a character in the stream
+
+      } //End btPrintEcho == false && bluetoothRxDataAvailable()
+
+    } //End bluetoothGetState() == BT_CONNECTED
+
+    if (settings.enableTaskReports == true)
+      systemPrintf("SerialWriteTask High watermark: %d\r\n",  uxTaskGetStackHighWaterMark(NULL));
 
     delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
-  }
+  } //End while(true)
 }
 
 //----------------------------------------------------------------------
@@ -89,7 +123,7 @@ void F9PSerialReadTask(void *e)
   while (true)
   {
     if (settings.enableTaskReports == true)
-      Serial.printf("SerialReadTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(NULL));
+      systemPrintf("SerialReadTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(NULL));
 
     //Determine if serial data is available
     while (serialGNSS.available())
@@ -134,18 +168,18 @@ void processUart1Message(PARSE_STATE * parse, uint8_t type)
     switch (type)
     {
       case SENTENCE_TYPE_NMEA:
-        Serial.printf ("    %s NMEA %s, %2d bytes\r\n", parse->parserName,
-                       parse->nmeaMessageName, parse->length);
+        systemPrintf ("    %s NMEA %s, %2d bytes\r\n", parse->parserName,
+                      parse->nmeaMessageName, parse->length);
         break;
 
       case SENTENCE_TYPE_RTCM:
-        Serial.printf ("    %s RTCM %d, %2d bytes\r\n", parse->parserName,
-                       parse->message, parse->length);
+        systemPrintf ("    %s RTCM %d, %2d bytes\r\n", parse->parserName,
+                      parse->message, parse->length);
         break;
 
       case SENTENCE_TYPE_UBX:
-        Serial.printf ("    %s UBX %d.%d, %2d bytes\r\n", parse->parserName,
-                       parse->message >> 8, parse->message & 0xff, parse->length);
+        systemPrintf ("    %s UBX %d.%d, %2d bytes\r\n", parse->parserName,
+                      parse->message >> 8, parse->message & 0xff, parse->length);
         break;
     }
   }
@@ -154,7 +188,7 @@ void processUart1Message(PARSE_STATE * parse, uint8_t type)
   bytesToCopy = parse->length;
   if ((bytesToCopy > availableHandlerSpace) && (!inMainMenu))
   {
-    Serial.printf("Ring buffer full, discarding %d bytes\r\n", bytesToCopy);
+    systemPrintf("Ring buffer full, discarding %d bytes\r\n", bytesToCopy);
     return;
   }
 
@@ -167,7 +201,7 @@ void processUart1Message(PARSE_STATE * parse, uint8_t type)
 
   //Display the dataHead offset
   if (settings.enablePrintRingBufferOffsets && (!inMainMenu))
-    Serial.printf("DH: %4d --> ", dataHead);
+    systemPrintf("DH: %4d --> ", dataHead);
 
   //Copy the data into the ring buffer
   memcpy(&ringBuffer[dataHead], parse->buffer, bytesToCopy);
@@ -188,7 +222,7 @@ void processUart1Message(PARSE_STATE * parse, uint8_t type)
 
   //Display the dataHead offset
   if (settings.enablePrintRingBufferOffsets && (!inMainMenu))
-    Serial.printf("%4d\r\n", dataHead);
+    systemPrintf("%4d\r\n", dataHead);
 
   //Start emptying the ring buffer
   //emptyRingBuffer(false);
@@ -258,8 +292,10 @@ void handleGNSSDataTask(void *e)
       if ((btTail + btBytesToSend) > settings.gnssHandlerBufferSize)
         btBytesToSend = settings.gnssHandlerBufferSize - btTail;
 
-      //Push new data to BT SPP
-      btBytesToSend = bluetoothWriteBytes(&ringBuffer[btTail], btBytesToSend);
+      //If we are in the config menu, supress data flowing from ZED to cell phone
+      if (btPrintEcho == false)
+        //Push new data to BT SPP
+        btBytesToSend = bluetoothWrite(&ringBuffer[btTail], btBytesToSend);
 
       if (btBytesToSend > 0)
       {
@@ -325,7 +361,7 @@ void handleGNSSDataTask(void *e)
           if (settings.enablePrintSDBuffers && !inMainMenu)
           {
             int availableUARTSpace = settings.uartReceiveBufferSize - serialGNSS.available();
-            Serial.printf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\n\r", serialGNSS.available(), 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
+            systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\n\r", serialGNSS.available(), 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
           }
 
           //Write the data to the file
@@ -354,7 +390,7 @@ void handleGNSSDataTask(void *e)
           if (settings.enablePrintBufferOverrun)
           {
             if (endTime - startTime > 150)
-              Serial.printf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\n\r", endTime - startTime, fileSize, sdBytesToRecord, combinedSpaceRemaining);
+              systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\n\r", endTime - startTime, fileSize, sdBytesToRecord, combinedSpaceRemaining);
           }
 
           xSemaphoreGive(sdCardSemaphore);
@@ -636,14 +672,14 @@ void ButtonCheckTask(void *e)
                   setupState = STATE_MARK_EVENT;
                 break;
               default:
-                Serial.printf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
+                systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
                 setupState = STATE_MARK_EVENT;
                 break;
             }
             break;
 
           default:
-            Serial.printf("ButtonCheckTask unknown system state: %d\r\n", systemState);
+            systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
             requestChangeState(STATE_ROVER_NOT_STARTED);
             break;
         }
@@ -758,14 +794,14 @@ void ButtonCheckTask(void *e)
                   setupState = STATE_MARK_EVENT;
                 break;
               default:
-                Serial.printf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
+                systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
                 setupState = STATE_MARK_EVENT;
                 break;
             }
             break;
 
           default:
-            Serial.printf("ButtonCheckTask unknown system state: %d\r\n", systemState);
+            systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
             requestChangeState(STATE_ROVER_NOT_STARTED);
             break;
         }
@@ -800,13 +836,13 @@ void idleTask(void *e)
 
       //Display the idle times
       if (settings.enablePrintIdleTime) {
-        Serial.printf("CPU %d idle time: %d%% (%d/%d)\r\n", cpu,
-                      idleCount * 100 / max_idle_count,
-                      idleCount, max_idle_count);
+        systemPrintf("CPU %d idle time: %d%% (%d/%d)\r\n", cpu,
+                     idleCount * 100 / max_idle_count,
+                     idleCount, max_idle_count);
 
         //Print the task count
         if (cpu)
-          Serial.printf("%d Tasks\r\n", uxTaskGetNumberOfTasks());
+          systemPrintf("%d Tasks\r\n", uxTaskGetNumberOfTasks());
       }
 
       //Restart the idle count for the next display time
@@ -818,8 +854,8 @@ void idleTask(void *e)
         && ((millis() - lastStackPrintTime) >= (IDLE_TIME_DISPLAY_SECONDS * 1000)))
     {
       lastStackPrintTime = millis();
-      Serial.printf("idleTask %d High watermark: %d\r\n",
-                    xPortGetCoreID(), uxTaskGetStackHighWaterMark(NULL));
+      systemPrintf("idleTask %d High watermark: %d\r\n",
+                   xPortGetCoreID(), uxTaskGetStackHighWaterMark(NULL));
     }
 
     //Let other same priority tasks run
@@ -915,18 +951,18 @@ void sdSizeCheckTask(void *e)
 
         uint64_t sdUsedSpace = sdCardSize - sdFreeSpace; //Don't think of it as used, think of it as unusable
 
-//        Serial.print("Card Size: ");
-//        Serial.print(stringHumanReadableSize(sdCardSize));
-//        Serial.print(" ");
-//        Serial.println(sdCardSize);
-//        Serial.print("Free space: ");
-//        Serial.print(stringHumanReadableSize(sdFreeSpace));
-//        Serial.print(" ");
-//        Serial.println(sdFreeSpace);
-//        Serial.print("Used space: ");
-//        Serial.print(stringHumanReadableSize(sdUsedSpace));
-//        Serial.print(" ");
-//        Serial.println(sdUsedSpace);
+        //        systemPrint("Card Size: ");
+        //        systemPrint(stringHumanReadableSize(sdCardSize));
+        //        systemPrint(" ");
+        //        systemPrintln(sdCardSize);
+        //        systemPrint("Free space: ");
+        //        systemPrint(stringHumanReadableSize(sdFreeSpace));
+        //        systemPrint(" ");
+        //        systemPrintln(sdFreeSpace);
+        //        systemPrint("Used space: ");
+        //        systemPrint(stringHumanReadableSize(sdUsedSpace));
+        //        systemPrint(" ");
+        //        systemPrintln(sdUsedSpace);
 
         outOfSDSpace = false;
 
@@ -939,7 +975,7 @@ void sdSizeCheckTask(void *e)
         log_d("sdCardSemaphore failed to yield, held by %s, Tasks.ino line %d\r\n", semaphoreHolder, __LINE__);
       }
     }
-    
+
     delay(1);
     taskYIELD(); //Let other tasks run
   }

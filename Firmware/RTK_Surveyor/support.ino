@@ -1,3 +1,228 @@
+//Helper functions to support printing to eiter the serial port or bluetooth connection
+
+//If we are printing to all endpoints, BT gets priority
+int systemAvailable()
+{
+  if (printEndpoint == PRINT_ENDPOINT_BLUETOOTH || printEndpoint == PRINT_ENDPOINT_ALL)
+    return (bluetoothRxDataAvailable());
+  return (Serial.available());
+}
+
+//If we are printing to all endpoints, BT gets priority
+int systemRead()
+{
+  if (printEndpoint == PRINT_ENDPOINT_BLUETOOTH || printEndpoint == PRINT_ENDPOINT_ALL)
+    return (bluetoothRead());
+  return (Serial.read());
+}
+
+//Output a buffer of the specified length to the serial port
+void systemWrite(const uint8_t *buffer, uint16_t length)
+{
+  if (printEndpoint == PRINT_ENDPOINT_ALL)
+  {
+    Serial.write(buffer, length);
+    bluetoothWrite(buffer, length);
+  }
+  else if (printEndpoint == PRINT_ENDPOINT_BLUETOOTH)
+    bluetoothWrite(buffer, length);
+  else
+    Serial.write(buffer, length);
+}
+
+//Ensure all serial output has been transmitted, FIFOs are empty
+void systemFlush()
+{
+  if (printEndpoint == PRINT_ENDPOINT_ALL)
+  {
+    Serial.flush();
+    bluetoothFlush();
+  }
+  else if (printEndpoint == PRINT_ENDPOINT_BLUETOOTH)
+    bluetoothFlush();
+  else
+    Serial.flush();
+}
+
+//Output a byte to the serial port
+void systemWrite(uint8_t value)
+{
+  systemWrite(&value, 1);
+}
+
+//Point the string at the selected endpoint
+void systemPrint(const char* string)
+{
+  systemWrite((const uint8_t*)string, strlen(string));
+}
+
+//Enable printfs to various endpoints
+//https://stackoverflow.com/questions/42131753/wrapper-for-printf
+void systemPrintf(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+
+  va_list args2;
+  va_copy(args2, args);
+  char buf[vsnprintf(NULL, 0, format, args) + 1];
+
+  vsnprintf(buf, sizeof buf, format, args2);
+
+  systemPrint(buf);
+
+  va_end(args);
+  va_end(args2);
+}
+
+//Print a string with a carriage return and linefeed
+void systemPrintln(const char* value)
+{
+  systemPrint(value);
+  systemPrint("\r\n");
+}
+
+//Print an integer value
+void systemPrint(int value)
+{
+  char temp[20];
+  sprintf(temp, "%d", value);
+  systemPrint(temp);
+}
+
+//Print an integer value as HEX or decimal
+void systemPrint(int value, uint8_t printType)
+{
+  char temp[20];
+
+  if (printType == HEX)
+    sprintf(temp, "%08X", value);
+  else if (printType == DEC)
+    sprintf(temp, "%d", value);
+
+  systemPrint(temp);
+}
+
+//Print an integer value with a carriage return and line feed
+void systemPrintln(int value)
+{
+  systemPrint(value);
+  systemPrint("\r\n");
+}
+
+//Print an 8-bit value as HEX or decimal
+void systemPrint(uint8_t value, uint8_t printType)
+{
+  char temp[20];
+
+  if (printType == HEX)
+    sprintf(temp, "%02X", value);
+  else if (printType == DEC)
+    sprintf(temp, "%d", value);
+
+  systemPrint(temp);
+}
+
+//Print an 8-bit value as HEX or decimal with a carriage return and linefeed
+void systemPrintln(uint8_t value, uint8_t printType)
+{
+  systemPrint(value, printType);
+  systemPrint("\r\n");
+}
+
+//Print a 16-bit value as HEX or decimal
+void systemPrint(uint16_t value, uint8_t printType)
+{
+  char temp[20];
+
+  if (printType == HEX)
+    sprintf(temp, "%04X", value);
+  else if (printType == DEC)
+    sprintf(temp, "%d", value);
+
+  systemPrint(temp);
+}
+
+//Print a 16-bit value as HEX or decimal with a carriage return and linefeed
+void systemPrintln(uint16_t value, uint8_t printType)
+{
+  systemPrint(value, printType);
+  systemPrint("\r\n");
+}
+
+//Print a floating point value with a specified number of decimal places
+void systemPrint(float value, uint8_t decimals)
+{
+  char temp[20];
+  sprintf(temp, "%.*f", decimals, value);
+  systemPrint(temp);
+}
+
+//Print a floating point value with a specified number of decimal places and a
+//carriage return and linefeed
+void systemPrintln(float value, uint8_t decimals)
+{
+  systemPrint(value, decimals);
+  systemPrint("\r\n");
+}
+
+//Print a double precision floating point value with a specified number of decimal places
+void systemPrint(double value, uint8_t decimals)
+{
+  char temp[300];
+  sprintf(temp, "%.*f", decimals, value);
+  systemPrint(temp);
+}
+
+//Print a double precision floating point value with a specified number of decimal
+//places and a carriage return and linefeed
+void systemPrintln(double value, uint8_t decimals)
+{
+  systemPrint(value, decimals);
+  systemPrint("\r\n");
+}
+
+//Print a string
+void systemPrint(String myString)
+{
+  char temp[300];
+  myString.toCharArray(temp, sizeof(temp));
+  systemPrint(temp);
+}
+void systemPrintln(String myString)
+{
+  systemPrint(myString);
+  systemPrint("\r\n");
+}
+
+//Print a carriage return and linefeed
+void systemPrintln()
+{
+  systemPrint("\r\n");
+}
+
+
+
+//Option not known
+void printUnknown(uint8_t unknownChoice)
+{
+  systemPrint("Unknown choice: ");
+  systemWrite(unknownChoice);
+  systemPrintln();
+}
+void printUnknown(int unknownValue)
+{
+  systemPrint("Unknown value: ");
+  systemPrintln((uint16_t)unknownValue, DEC);
+}
+
+//Clear the Serial/Bluetooth RX buffer before we begin scanning for characters
+void clearBuffer()
+{
+  systemFlush();
+  delay(20);//Wait for any incoming chars to hit buffer
+  while (systemAvailable() > 0) systemRead(); //Clear buffer
+}
+
 //Gathers raw characters from user until \n or \r is received
 //Handles backspace
 //Used for raw mixed entry (SSID, pws, etc)
@@ -15,17 +240,17 @@ InputResponse getString(char *userString, uint8_t stringSize)
     delay(1); //Yield to processor
 
     //Regularly poll to get latest data
-    if (online.gnss == true)
-      i2cGNSS.checkUblox();
+    //    if (online.gnss == true)
+    //      i2cGNSS.checkUblox();
 
     //Get the next input character
-    while (Serial.available() > 0)
+    while (systemAvailable() > 0)
     {
-      byte incoming = Serial.read();
+      byte incoming = systemRead();
 
       if ((incoming == '\r') || (incoming == '\n'))
       {
-        if (settings.echoUserInput) Serial.println(); //Echo if needed
+        if (settings.echoUserInput) systemPrintln(); //Echo if needed
         userString[spot] = '\0'; //Null terminate
 
         if (spot == 0) return INPUT_RESPONSE_EMPTY;
@@ -37,15 +262,15 @@ InputResponse getString(char *userString, uint8_t stringSize)
       {
         if (settings.echoUserInput == true && spot > 0)
         {
-          Serial.write('\b'); //Move back one space
-          Serial.print(" "); //Put a blank there to erase the letter from the terminal
-          Serial.print('\b'); //Move back again
+          systemWrite('\b'); //Move back one space
+          systemPrint(" "); //Put a blank there to erase the letter from the terminal
+          systemPrint('\b'); //Move back again
           spot--;
         }
       }
       else
       {
-        if (settings.echoUserInput) Serial.write(incoming); //Echo if needed
+        if (settings.echoUserInput) systemWrite(incoming); //Echo if needed
 
         userString[spot++] = incoming;
         if (spot == (stringSize - 1)) //Leave room for termination
@@ -82,7 +307,7 @@ byte getCharacterNumber()
   }
   else if (response == INPUT_RESPONSE_TIMEOUT)
   {
-    Serial.println("\n\rNo user response - Do you have line endings turned on?");
+    systemPrintln("\n\rNo user response - Do you have line endings turned on?");
     userByte = 255; //Timeout
   }
   else if (response == INPUT_RESPONSE_EMPTY)
@@ -111,7 +336,7 @@ long getNumber()
   }
   else if (response == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
   {
-    Serial.println("\n\rNo user response - Do you have line endings turned on?");
+    systemPrintln("\n\rNo user response - Do you have line endings turned on?");
     userNumber = INPUT_RESPONSE_GETNUMBER_TIMEOUT; //Timeout
   }
   else if (response == INPUT_RESPONSE_EMPTY)
@@ -134,7 +359,7 @@ double getDouble()
     sscanf(userEntry, "%lf", &userFloat);
   else if (response == INPUT_RESPONSE_TIMEOUT)
   {
-    Serial.println("No user response - Do you have line endings turned on?");
+    systemPrintln("No user response - Do you have line endings turned on?");
     userFloat = 0.0;
   }
   else if (response == INPUT_RESPONSE_EMPTY)
@@ -147,36 +372,15 @@ double getDouble()
 
 void printElapsedTime(const char* title)
 {
-  Serial.printf("%s: %ld\r\n", title, millis() - startTime);
+  systemPrintf("%s: %ld\r\n", title, millis() - startTime);
 }
 
 void printDebug(String thingToPrint)
 {
   if (settings.printDebugMessages == true)
   {
-    Serial.print(thingToPrint);
+    systemPrint(thingToPrint);
   }
-}
-
-//Option not known
-void printUnknown(uint8_t unknownChoice)
-{
-  Serial.print("Unknown choice: ");
-  Serial.write(unknownChoice);
-  Serial.println();
-}
-void printUnknown(int unknownValue)
-{
-  Serial.print("Unknown value: ");
-  Serial.printf("%d\r\n", unknownValue);
-}
-
-//Clear the Serial RX buffer before we begin scanning for characters
-void clearBuffer()
-{
-  Serial.flush();
-  delay(20);//Wait for any incoming chars to hit buffer
-  while (Serial.available() > 0) Serial.read(); //Clear buffer
 }
 
 #define TIMESTAMP_INTERVAL              1000    //Milliseconds
@@ -197,7 +401,7 @@ void printTimeStamp()
     struct tm timeinfo = rtc.getTimeStruct();
     char timestamp[30];
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
-    Serial.printf("%s.%03ld\r\n", timestamp, rtc.getMillis());
+    systemPrintf("%s.%03ld\r\n", timestamp, rtc.getMillis());
 
     //Select the next time to display the timestamp
     previousMilliseconds = currentMilliseconds;
@@ -307,7 +511,7 @@ bool checkRtcmMessage(uint8_t data)
     if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
     {
       printTimeStamp();
-      Serial.printf ("    Tx RTCM %d, %2d bytes\r\n", message, 3 + length + 3);
+      systemPrintf ("    Tx RTCM %d, %2d bytes\r\n", message, 3 + length + 3);
     }
   }
 
@@ -428,30 +632,30 @@ void dumpBuffer(uint8_t * buffer, uint16_t length)
       bytes = 16 - (offset & 0xf);
 
     //Display the offset
-    Serial.printf("0x%08lx: ", offset);
+    systemPrintf("0x%08lx: ", offset);
 
     //Skip leading bytes
     for (index = 0; index < (offset & 0xf); index++)
-      Serial.printf("   ");
+      systemPrintf("   ");
 
     //Display the data bytes
     for (index = 0; index < bytes; index++)
-      Serial.printf("%02x ", buffer[index]);
+      systemPrintf("%02x ", buffer[index]);
 
     //Separate the data bytes from the ASCII
     for (; index < (16 - (offset & 0xf)); index++)
-      Serial.printf("   ");
-    Serial.printf(" ");
+      systemPrintf("   ");
+    systemPrintf(" ");
 
     //Skip leading bytes
     for (index = 0; index < (offset & 0xf); index++)
-      Serial.printf(" ");
+      systemPrintf(" ");
 
     //Display the ASCII values
     for (index = 0; index < bytes; index++)
-      Serial.printf("%c", ((buffer[index] < ' ') || (buffer[index] >= 0x7f))
+      systemPrintf("%c", ((buffer[index] < ' ') || (buffer[index] >= 0x7f))
                     ? '.' : buffer[index]);
-    Serial.printf("\r\n");
+    systemPrintf("\r\n");
 
     //Set the next line of data
     buffer += bytes;
@@ -480,7 +684,7 @@ uint8_t nmeaLineTermination(PARSE_STATE * parse, uint8_t data)
     if (settings.enablePrintBadMessages && parse->crc && (!inMainMenu))
     {
       printTimeStamp();
-      Serial.printf ("    %s NMEA %s, %2d bytes, bad checksum, expecting 0x%c%c, computed: 0x%02x\r\n",
+      systemPrintf ("    %s NMEA %s, %2d bytes, bad checksum, expecting 0x%c%c, computed: 0x%02x\r\n",
                      parse->parserName,
                      parse->nmeaMessageName,
                      parse->length,
@@ -569,7 +773,7 @@ uint8_t rtcmReadCrc(PARSE_STATE * parse, uint8_t data)
   if (parse->length > parse->maxLength)
   {
     parse->maxLength = parse->length;
-    Serial.printf("Parser error maxLength: %d bytes\r\n", parse->maxLength);
+    systemPrintf("Parser error maxLength: %d bytes\r\n", parse->maxLength);
   }
 
   //Display the RTCM messages with bad CRC
@@ -577,7 +781,7 @@ uint8_t rtcmReadCrc(PARSE_STATE * parse, uint8_t data)
   if (settings.enablePrintBadMessages && parse->crc && (!inMainMenu))
   {
     printTimeStamp();
-    Serial.printf ("    %s RTCM %d, %2d bytes, bad CRC, expecting 0x%02x%02x%02x, computed: 0x%06x\r\n",
+    systemPrintf ("    %s RTCM %d, %2d bytes, bad CRC, expecting 0x%02x%02x%02x, computed: 0x%06x\r\n",
                    parse->parserName,
                    parse->message,
                    parse->length,
@@ -676,7 +880,7 @@ uint8_t ubloxCkB(PARSE_STATE * parse, uint8_t data)
   if (settings.enablePrintBadMessages && badChecksum && (!inMainMenu))
   {
     printTimeStamp();
-    Serial.printf ("    %s u-blox %d.%d, %2d bytes, bad checksum, expecting 0x%02X%02X, computed: 0x%02X%02X\r\n",
+    systemPrintf ("    %s u-blox %d.%d, %2d bytes, bad checksum, expecting 0x%02X%02X, computed: 0x%02X%02X\r\n",
                    parse->parserName,
                    parse->message >> 8,
                    parse->message & 0xff,
@@ -782,7 +986,7 @@ uint8_t ubloxSync2(PARSE_STATE * parse, uint8_t data)
     if (settings.enablePrintBadMessages && (!inMainMenu))
     {
       dumpBuffer(parse->buffer, parse->length - 1);
-      Serial.printf ("    %s Invalid UBX data, %d bytes\r\n", parse->parserName, parse->length - 1);
+      systemPrintf ("    %s Invalid UBX data, %d bytes\r\n", parse->parserName, parse->length - 1);
     }
     //Invalid sync 2 byte, place this byte at the beginning of the buffer
     parse->length = 0;

@@ -32,22 +32,22 @@ void menuPointPerfectKeys()
 {
   while (1)
   {
-    Serial.println();
-    Serial.println("Menu: PointPerfect Keys");
+    systemPrintln();
+    systemPrintln("Menu: PointPerfect Keys");
 
-    Serial.print("1) Set ThingStream Device Profile Token: ");
+    systemPrint("1) Set ThingStream Device Profile Token: ");
     if (strlen(settings.pointPerfectDeviceProfileToken) > 0)
-      Serial.println(settings.pointPerfectDeviceProfileToken);
+      systemPrintln(settings.pointPerfectDeviceProfileToken);
     else
-      Serial.println("Use SparkFun Token");
+      systemPrintln("Use SparkFun Token");
 
-    Serial.print("2) Set Current Key: ");
+    systemPrint("2) Set Current Key: ");
     if (strlen(settings.pointPerfectCurrentKey) > 0)
-      Serial.println(settings.pointPerfectCurrentKey);
+      systemPrintln(settings.pointPerfectCurrentKey);
     else
-      Serial.println("N/A");
+      systemPrintln("N/A");
 
-    Serial.print("3) Set Current Key Expiration Date (DD/MM/YYYY): ");
+    systemPrint("3) Set Current Key Expiration Date (DD/MM/YYYY): ");
     if (strlen(settings.pointPerfectCurrentKey) > 0 && settings.pointPerfectCurrentKeyStart > 0 && settings.pointPerfectCurrentKeyDuration > 0)
     {
       long long unixEpoch = thingstreamEpochToGPSEpoch(settings.pointPerfectCurrentKeyStart, settings.pointPerfectCurrentKeyDuration);
@@ -61,18 +61,18 @@ void menuPointPerfectKeys()
       long expYear;
       gpsWeekToWToDate(keyGPSWeek, keyGPSToW, &expDay, &expMonth, &expYear);
 
-      Serial.printf("%02ld/%02ld/%ld\r\n", expDay, expMonth, expYear);
+      systemPrintf("%02ld/%02ld/%ld\r\n", expDay, expMonth, expYear);
     }
     else
-      Serial.println("N/A");
+      systemPrintln("N/A");
 
-    Serial.print("4) Set Next Key: ");
+    systemPrint("4) Set Next Key: ");
     if (strlen(settings.pointPerfectNextKey) > 0)
-      Serial.println(settings.pointPerfectNextKey);
+      systemPrintln(settings.pointPerfectNextKey);
     else
-      Serial.println("N/A");
+      systemPrintln("N/A");
 
-    Serial.print("5) Set Next Key Expiration Date (DD/MM/YYYY): ");
+    systemPrint("5) Set Next Key Expiration Date (DD/MM/YYYY): ");
     if (strlen(settings.pointPerfectNextKey) > 0 && settings.pointPerfectNextKeyStart > 0 && settings.pointPerfectNextKeyDuration > 0)
     {
       long long unixEpoch = thingstreamEpochToGPSEpoch(settings.pointPerfectNextKeyStart, settings.pointPerfectNextKeyDuration);
@@ -86,36 +86,36 @@ void menuPointPerfectKeys()
       long expYear;
       gpsWeekToWToDate(keyGPSWeek, keyGPSToW, &expDay, &expMonth, &expYear);
 
-      Serial.printf("%02ld/%02ld/%ld\r\n", expDay, expMonth, expYear);
+      systemPrintf("%02ld/%02ld/%ld\r\n", expDay, expMonth, expYear);
     }
     else
-      Serial.println("N/A");
+      systemPrintln("N/A");
 
-    Serial.println("x) Exit");
+    systemPrintln("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
     {
-      Serial.print("Enter Device Profile Token: ");
+      systemPrint("Enter Device Profile Token: ");
       getString(settings.pointPerfectDeviceProfileToken, sizeof(settings.pointPerfectDeviceProfileToken));
     }
     else if (incoming == 2)
     {
-      Serial.print("Enter Current Key: ");
+      systemPrint("Enter Current Key: ");
       getString(settings.pointPerfectCurrentKey, sizeof(settings.pointPerfectCurrentKey));
     }
     else if (incoming == 3)
     {
       clearBuffer();
 
-      Serial.println("Enter Current Key Expiration Date: ");
+      systemPrintln("Enter Current Key Expiration Date: ");
       uint8_t expDay;
       uint8_t expMonth;
       uint16_t expYear;
       while (getDate(expDay, expMonth, expYear) == false)
       {
-        Serial.println("Date invalid. Please try again.");
+        systemPrintln("Date invalid. Please try again.");
       }
 
       dateToKeyStartDuration(expDay, expMonth, expYear, &settings.pointPerfectCurrentKeyStart, &settings.pointPerfectCurrentKeyDuration);
@@ -126,26 +126,26 @@ void menuPointPerfectKeys()
         settings.pointPerfectNextKeyStart = settings.pointPerfectCurrentKeyStart + settings.pointPerfectCurrentKeyDuration + 1; //Next key starts after current key
         settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration;
 
-        Serial.printf("  settings.pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
-        Serial.printf("  settings.pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
+        systemPrintf("  settings.pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
+        systemPrintf("  settings.pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
       }
     }
     else if (incoming == 4)
     {
-      Serial.print("Enter Next Key: ");
+      systemPrint("Enter Next Key: ");
       getString(settings.pointPerfectNextKey, sizeof(settings.pointPerfectNextKey));
     }
     else if (incoming == 5)
     {
       clearBuffer();
 
-      Serial.println("Enter Next Key Expiration Date: ");
+      systemPrintln("Enter Next Key Expiration Date: ");
       uint8_t expDay;
       uint8_t expMonth;
       uint16_t expYear;
       while (getDate(expDay, expMonth, expYear) == false)
       {
-        Serial.println("Date invalid. Please try again.");
+        systemPrintln("Date invalid. Please try again.");
       }
 
       dateToKeyStartDuration(expDay, expMonth, expYear, &settings.pointPerfectNextKeyStart, &settings.pointPerfectNextKeyDuration);
@@ -207,7 +207,7 @@ bool pointperfectProvisionDevice()
     {
       //Use the user's custom token
       strcpy(tokenString, settings.pointPerfectDeviceProfileToken);
-      Serial.printf("Using custom token: %s\r\n", tokenString);
+      systemPrintf("Using custom token: %s\r\n", tokenString);
     }
 
     pointPerfectAPIPost["token"] = tokenString;
@@ -218,7 +218,7 @@ bool pointperfectProvisionDevice()
     String json;
     serializeJson(pointPerfectAPIPost, json);
 
-    Serial.printf("Connecting to: %s\r\n", pointPerfectAPI);
+    systemPrintf("Connecting to: %s\r\n", pointPerfectAPI);
 
     HTTPClient http;
     http.begin(client, pointPerfectAPI);
@@ -232,8 +232,8 @@ bool pointperfectProvisionDevice()
 
     if (httpResponseCode != 200)
     {
-      Serial.printf("HTTP response error %d: ", httpResponseCode);
-      Serial.println(response);
+      systemPrintf("HTTP response error %d: ", httpResponseCode);
+      systemPrintln(response);
       break;
     }
     else
@@ -243,13 +243,13 @@ bool pointperfectProvisionDevice()
       jsonZtp = new DynamicJsonDocument(4096);
       if (!jsonZtp)
       {
-        Serial.println("ERROR - Failed to allocate jsonZtp!\r\n");
+        systemPrintln("ERROR - Failed to allocate jsonZtp!\r\n");
         break;
       }
       DeserializationError error = deserializeJson(*jsonZtp, response);
       if (DeserializationError::Ok != error)
       {
-        Serial.println("JSON error");
+        systemPrintln("JSON error");
         break;
       }
       else
@@ -257,17 +257,17 @@ bool pointperfectProvisionDevice()
         tempHolder = (char *)malloc(2000);
         if (!tempHolder)
         {
-          Serial.println("ERROR - Failed to allocate tempHolder buffer!\r\n");
+          systemPrintln("ERROR - Failed to allocate tempHolder buffer!\r\n");
           break;
         }
         strcpy(tempHolder, (const char*)((*jsonZtp)["certificate"]));
-        //      Serial.printf("len of PrivateCert: %d\r\n", strlen(tempHolder));
-        //      Serial.printf("privateCert: %s\r\n", tempHolder);
+        //      systemPrintf("len of PrivateCert: %d\r\n", strlen(tempHolder));
+        //      systemPrintf("privateCert: %s\r\n", tempHolder);
         recordFile("certificate", tempHolder, strlen(tempHolder));
 
         strcpy(tempHolder, (const char*)((*jsonZtp)["privateKey"]));
-        //      Serial.printf("len of privateKey: %d\r\n", strlen(tempHolder));
-        //      Serial.printf("privateKey: %s\r\n", tempHolder);
+        //      systemPrintf("len of privateKey: %d\r\n", strlen(tempHolder));
+        //      systemPrintf("privateKey: %s\r\n", tempHolder);
         recordFile("privateKey", tempHolder, strlen(tempHolder));
 
         strcpy(settings.pointPerfectClientID, (const char*)((*jsonZtp)["clientId"]));
@@ -284,7 +284,7 @@ bool pointperfectProvisionDevice()
       }
     } //HTTP Response was 200
 
-    Serial.println("Device successfully provisioned. Keys obtained.");
+    systemPrintln("Device successfully provisioned. Keys obtained.");
 
     recordSystemSettings();
     retVal = true;
@@ -322,7 +322,7 @@ bool pointperfectUpdateKeys()
     keyContents = (char*)malloc(CONTENT_SIZE);
     if ((!certificateContents) || (!keyContents))
     {
-      Serial.println("Failed to allocate content buffers!");
+      systemPrintln("Failed to allocate content buffers!");
       break;
     }
 
@@ -349,13 +349,13 @@ bool pointperfectUpdateKeys()
     int maxTries = 3;
     do
     {
-      Serial.print("MQTT connecting...");
+      systemPrint("MQTT connecting...");
 
       //Attempt to the key broker
       if (mqttClient.connect(settings.pointPerfectClientID))
       {
         //Successful connection
-        Serial.println("connected");
+        systemPrintln("connected");
         //mqttClient.subscribe(settings.pointPerfectLBandTopic); //The /pp/key/Lb channel fails to respond with keys
         mqttClient.subscribe("/pp/ubx/0236/Lb"); //Alternate channel for L-Band keys
         break;
@@ -364,7 +364,7 @@ bool pointperfectUpdateKeys()
       //Retry the connection attempt
       if (--maxTries)
       {
-        Serial.print(".");
+        systemPrint(".");
         log_d("failed, status code: %d try again in 1 second", mqttClient.state());
         delay(1000);
       }
@@ -373,12 +373,12 @@ bool pointperfectUpdateKeys()
     //Check for connection failure
     if (mqttClient.connected() == false)
     {
-      Serial.println("failed!");
+      systemPrintln("failed!");
       log_d("MQTT failed to connect");
       break;
     }
 
-    Serial.print("Waiting for keys");
+    systemPrint("Waiting for keys");
 
     //Wait for callback
     startTime = millis();
@@ -400,14 +400,14 @@ bool pointperfectUpdateKeys()
 
       //Continue waiting for the keys
       delay(100);
-      Serial.print(".");
+      systemPrint(".");
     }
-    Serial.println();
+    systemPrintln();
 
     //Determine if the keys were updated
     if (mqttMessageReceived)
     {
-      Serial.println("Keys successfully updated");
+      systemPrintln("Keys successfully updated");
       gotKeys = true;
     }
 
@@ -471,22 +471,22 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
       strcat(settings.pointPerfectNextKey, temp);
     }
 
-    //    Serial.println();
+    //    systemPrintln();
 
-    //    Serial.printf("pointPerfectCurrentKeyStart: %lld\r\n", settings.pointPerfectCurrentKeyStart);
-    //    Serial.printf("pointPerfectCurrentKeyDuration: %lld\r\n", settings.pointPerfectCurrentKeyDuration);
-    //    Serial.printf("pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
-    //    Serial.printf("pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
+    //    systemPrintf("pointPerfectCurrentKeyStart: %lld\r\n", settings.pointPerfectCurrentKeyStart);
+    //    systemPrintf("pointPerfectCurrentKeyDuration: %lld\r\n", settings.pointPerfectCurrentKeyDuration);
+    //    systemPrintf("pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
+    //    systemPrintf("pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
     //
-    //    Serial.printf("currentWeek: %d\r\n", currentWeek);
-    //    Serial.printf("currentToW: %d\r\n", currentToW);
-    //    Serial.print("Current key: ");
-    //    Serial.println(settings.pointPerfectCurrentKey);
+    //    systemPrintf("currentWeek: %d\r\n", currentWeek);
+    //    systemPrintf("currentToW: %d\r\n", currentToW);
+    //    systemPrint("Current key: ");
+    //    systemPrintln(settings.pointPerfectCurrentKey);
     //
-    //    Serial.printf("nextWeek: %d\r\n", nextWeek);
-    //    Serial.printf("nextToW: %d\r\n", nextToW);
-    //    Serial.print("nextKey key: ");
-    //    Serial.println(settings.pointPerfectNextKey);
+    //    systemPrintf("nextWeek: %d\r\n", nextWeek);
+    //    systemPrintf("nextToW: %d\r\n", nextToW);
+    //    systemPrint("nextKey key: ");
+    //    systemPrintln(settings.pointPerfectNextKey);
 
     //Convert from ToW and Week to key duration and key start
     WeekToWToUnixEpoch(&settings.pointPerfectCurrentKeyStart, currentWeek, currentToW);
@@ -501,10 +501,10 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
     settings.pointPerfectCurrentKeyDuration = settings.pointPerfectNextKeyStart - settings.pointPerfectCurrentKeyStart - 1;
     settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration; //We assume next key duration is the same as current key duration because we have to
 
-    //    Serial.printf("pointPerfectCurrentKeyStart: %lld\r\n", settings.pointPerfectCurrentKeyStart);
-    //    Serial.printf("pointPerfectCurrentKeyDuration: %lld\r\n", settings.pointPerfectCurrentKeyDuration);
-    //    Serial.printf("pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
-    //    Serial.printf("pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
+    //    systemPrintf("pointPerfectCurrentKeyStart: %lld\r\n", settings.pointPerfectCurrentKeyStart);
+    //    systemPrintf("pointPerfectCurrentKeyDuration: %lld\r\n", settings.pointPerfectCurrentKeyDuration);
+    //    systemPrintf("pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
+    //    systemPrintf("pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
   }
 
   mqttMessageReceived = true;
@@ -515,13 +515,13 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
 //https://www.includehelp.com/c-programs/validate-date.aspx
 bool getDate(uint8_t &dd, uint8_t &mm, uint16_t &yy)
 {
-  Serial.print("Enter Day: ");
+  systemPrint("Enter Day: ");
   dd = getNumber(); //Returns EXIT, TIMEOUT, or long
 
-  Serial.print("Enter Month: ");
+  systemPrint("Enter Month: ");
   mm = getNumber(); //Returns EXIT, TIMEOUT, or long
 
-  Serial.print("Enter Year (YYYY): ");
+  systemPrint("Enter Year (YYYY): ");
   yy = getNumber(); //Returns EXIT, TIMEOUT, or long
 
   //check year
@@ -673,16 +673,16 @@ void dateToKeyStartDuration(uint8_t expDay, uint8_t expMonth, uint16_t expYear, 
   *settingsKeyStart = startUnixEpoch * 1000L; //Convert to ms
   *settingsKeyDuration = (28 * 24 * 60 * 60 * 1000LL) - 1; //We assume keys last for 28 days (minus one ms to be before midnight)
 
-  Serial.printf("  KeyStart: %lld\r\n", *settingsKeyStart);
-  Serial.printf("  KeyDuration: %lld\r\n", *settingsKeyDuration);
+  systemPrintf("  KeyStart: %lld\r\n", *settingsKeyStart);
+  systemPrintf("  KeyDuration: %lld\r\n", *settingsKeyDuration);
 
   //Print ToW and Week for debugging
   uint16_t keyGPSWeek;
   uint32_t keyGPSToW;
   long long unixEpoch = thingstreamEpochToGPSEpoch(*settingsKeyStart, *settingsKeyDuration);
   unixEpochToWeekToW(unixEpoch, &keyGPSWeek, &keyGPSToW);
-  Serial.printf("  keyGPSWeek: %d\r\n", keyGPSWeek);
-  Serial.printf("  keyGPSToW: %d\r\n", keyGPSToW);
+  systemPrintf("  keyGPSWeek: %d\r\n", keyGPSWeek);
+  systemPrintf("  keyGPSToW: %d\r\n", keyGPSToW);
 }
 
 /*
@@ -763,12 +763,12 @@ void pointperfectApplyKeys()
     //NEO-D9S encrypted PMP messages are only supported on ZED-F9P firmware v1.30 and above
     if (zedModuleType != PLATFORM_F9P)
     {
-      Serial.println("Error: PointPerfect corrections currently only supported on the ZED-F9P.");
+      systemPrintln("Error: PointPerfect corrections currently only supported on the ZED-F9P.");
       return;
     }
     if (zedFirmwareVersionInt < 130)
     {
-      Serial.println("Error: PointPerfect corrections currently supported by ZED-F9P firmware v1.30 and above. Please upgrade your ZED firmware: https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver");
+      systemPrintln("Error: PointPerfect corrections currently supported by ZED-F9P firmware v1.30 and above. Please upgrade your ZED firmware: https://learn.sparkfun.com/tutorials/how-to-upgrade-firmware-of-a-u-blox-gnss-receiver");
       return;
     }
 
@@ -798,7 +798,7 @@ void pointperfectApplyKeys()
                         nextKeyLengthBytes, nextKeyGPSWeek, nextKeyGPSToW, settings.pointPerfectNextKey);
 
       if (response == false)
-        Serial.println("setDynamicSPARTNKeys failed");
+        systemPrintln("setDynamicSPARTNKeys failed");
       else
       {
         log_d("PointPerfect keys applied");
@@ -880,7 +880,7 @@ void beginLBand()
     }
     else
     {
-      Serial.println("Error: Unknown band area. Defaulting to US band.");
+      systemPrintln("Error: Unknown band area. Defaulting to US band.");
       settings.LBandFreq = 1556290000; //Default to US
     }
     recordSystemSettings();
@@ -906,7 +906,7 @@ void beginLBand()
   response &= i2cLBand.setVal32(UBLOX_CFG_UART2_BAUDRATE,         38400); // match baudrate with ZED default
 
   if (response == false)
-    Serial.println("L-Band failed to configure");
+    systemPrintln("L-Band failed to configure");
 
   i2cLBand.softwareResetGNSSOnly(); // Do a restart
 
@@ -928,44 +928,44 @@ void menuPointPerfect()
 #ifdef COMPILE_L_BAND
   while (1)
   {
-    Serial.println();
-    Serial.println("Menu: PointPerfect Corrections");
+    systemPrintln();
+    systemPrintln("Menu: PointPerfect Corrections");
 
     char hardwareID[13];
     sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
-    Serial.printf("Device ID: %s\r\n", hardwareID);
+    systemPrintf("Device ID: %s\r\n", hardwareID);
 
-    Serial.print("Days until keys expire: ");
+    systemPrint("Days until keys expire: ");
     if (strlen(settings.pointPerfectCurrentKey) > 0)
     {
       uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
-      Serial.println(daysRemaining);
+      systemPrintln(daysRemaining);
     }
     else
-      Serial.println("No keys");
+      systemPrintln("No keys");
 
-    Serial.print("1) Use PointPerfect Corrections: ");
-    if (settings.enablePointPerfectCorrections == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
+    systemPrint("1) Use PointPerfect Corrections: ");
+    if (settings.enablePointPerfectCorrections == true) systemPrintln("Enabled");
+    else systemPrintln("Disabled");
 
-    Serial.print("2) Set Home WiFi SSID: ");
-    Serial.println(settings.home_wifiSSID);
+    systemPrint("2) Set Home WiFi SSID: ");
+    systemPrintln(settings.home_wifiSSID);
 
-    Serial.print("3) Set Home WiFi PW: ");
-    Serial.println(settings.home_wifiPW);
+    systemPrint("3) Set Home WiFi PW: ");
+    systemPrintln(settings.home_wifiPW);
 
-    Serial.print("4) Toggle Auto Key Renewal: ");
-    if (settings.autoKeyRenewal == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
+    systemPrint("4) Toggle Auto Key Renewal: ");
+    if (settings.autoKeyRenewal == true) systemPrintln("Enabled");
+    else systemPrintln("Disabled");
 
     if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
-      Serial.println("5) Provision Device");
+      systemPrintln("5) Provision Device");
     else
-      Serial.println("5) Update Keys");
+      systemPrintln("5) Update Keys");
 
-    Serial.println("k) Manual Key Entry");
+    systemPrintln("k) Manual Key Entry");
 
-    Serial.println("x) Exit");
+    systemPrintln("x) Exit");
 
     byte incoming = getCharacterNumber();
 
@@ -975,12 +975,12 @@ void menuPointPerfect()
     }
     else if (incoming == 2)
     {
-      Serial.print("Enter Home WiFi SSID: ");
+      systemPrint("Enter Home WiFi SSID: ");
       getString(settings.home_wifiSSID, sizeof(settings.home_wifiSSID));
     }
     else if (incoming == 3)
     {
-      Serial.printf("Enter password for Home WiFi network %s: ", settings.home_wifiSSID);
+      systemPrintf("Enter password for Home WiFi network %s: ", settings.home_wifiSSID);
       getString(settings.home_wifiPW, sizeof(settings.home_wifiPW));
     }
     else if (incoming == 4)
@@ -992,7 +992,7 @@ void menuPointPerfect()
 #ifdef COMPILE_WIFI
       if (strlen(settings.home_wifiSSID) == 0)
       {
-        Serial.println("Error: Please enter SSID before getting keys");
+        systemPrintln("Error: Please enter SSID before getting keys");
       }
       else
       {
@@ -1002,10 +1002,10 @@ void menuPointPerfect()
         while (wifiGetStatus() != WL_CONNECTED)
         {
           delay(500);
-          Serial.print(".");
+          systemPrint(".");
           if (millis() - startTime > 15000)
           {
-            Serial.println("Error: No WiFi available");
+            systemPrintln("Error: No WiFi available");
             break;
           }
         }
@@ -1013,9 +1013,9 @@ void menuPointPerfect()
         if (wifiGetStatus() == WL_CONNECTED)
         {
 
-          Serial.println();
-          Serial.print("WiFi connected: ");
-          Serial.println(wifiGetIpAddress());
+          systemPrintln();
+          systemPrint("WiFi connected: ");
+          systemPrintln(wifiGetIpAddress());
 
           //Check if we have certificates
           char fileName[80];

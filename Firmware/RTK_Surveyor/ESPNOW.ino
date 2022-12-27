@@ -25,11 +25,11 @@ typedef struct PairMessage {
 #ifdef COMPILE_ESPNOW
 void espnowOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
-  //  Serial.print("Last Packet Send Status: ");
+  //  systemPrint("Last Packet Send Status: ");
   //  if (status == ESP_NOW_SEND_SUCCESS)
-  //    Serial.println("Delivery Success");
+  //    systemPrintln("Delivery Success");
   //  else
-  //    Serial.println("Delivery Fail");
+  //    systemPrintln("Delivery Fail");
 }
 #endif
 
@@ -120,7 +120,7 @@ void espnowStart()
 
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
-    Serial.println("Error starting ESP-Now");
+    systemPrintln("Error starting ESP-Now");
     return;
   }
 
@@ -170,7 +170,7 @@ void espnowStart()
     }
   }
 
-  Serial.println("ESP-Now Started");
+  systemPrintln("ESP-Now Started");
 #endif
 }
 
@@ -191,7 +191,7 @@ void espnowStop()
 
   // Deinit ESP-NOW
   if (esp_now_deinit() != ESP_OK) {
-    Serial.println("Error deinitializing ESP-NOW");
+    systemPrintln("Error deinitializing ESP-NOW");
     return;
   }
 
@@ -341,29 +341,29 @@ esp_err_t espnowRemovePeer(uint8_t *peerMac)
 void espnowSetState(ESPNOWState newState)
 {
   if (espnowState == newState)
-    Serial.print("*");
+    systemPrint("*");
   espnowState = newState;
 
-  Serial.print("espnowState: ");
+  systemPrint("espnowState: ");
   switch (newState)
   {
     case ESPNOW_OFF:
-      Serial.println("ESPNOW_OFF");
+      systemPrintln("ESPNOW_OFF");
       break;
     case ESPNOW_ON:
-      Serial.println("ESPNOW_ON");
+      systemPrintln("ESPNOW_ON");
       break;
     case ESPNOW_PAIRING:
-      Serial.println("ESPNOW_PAIRING");
+      systemPrintln("ESPNOW_PAIRING");
       break;
     case ESPNOW_MAC_RECEIVED:
-      Serial.println("ESPNOW_MAC_RECEIVED");
+      systemPrintln("ESPNOW_MAC_RECEIVED");
       break;
     case ESPNOW_PAIRED:
-      Serial.println("ESPNOW_PAIRED");
+      systemPrintln("ESPNOW_PAIRED");
       break;
     default:
-      Serial.printf("Unknown ESPNOW state: %d\r\n", newState);
+      systemPrintf("Unknown ESPNOW state: %d\r\n", newState);
       break;
   }
 }
@@ -403,7 +403,7 @@ void espnowProcessRTCM(byte incoming)
 //either through the serial menu or AP config
 void espnowStaticPairing()
 {
-  Serial.println("Begin ESP NOW Pairing");
+  systemPrintln("Begin ESP NOW Pairing");
 
   //Start ESP-Now if needed, put ESP-Now into broadcast state
   espnowBeginPairing();
@@ -411,7 +411,7 @@ void espnowStaticPairing()
   //Begin sending our MAC every 250ms until a remote device sends us there info
   randomSeed(millis());
 
-  Serial.println("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
+  systemPrintln("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
   clearBuffer();
 
   uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -421,7 +421,7 @@ void espnowStaticPairing()
   {
     if (Serial.available())
     {
-      Serial.println("User pressed button. Pairing canceled.");
+      systemPrintln("User pressed button. Pairing canceled.");
       break;
     }
 
@@ -432,7 +432,7 @@ void espnowStaticPairing()
 
       if (espnowIsPaired() == true) //Check if we've received a pairing message
       {
-        Serial.println("Pairing compete");
+        systemPrintln("Pairing compete");
         exitPair = true;
         break;
       }
@@ -440,6 +440,6 @@ void espnowStaticPairing()
 
     espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
 
-    Serial.println("Scanning for other radio...");
+    systemPrintln("Scanning for other radio...");
   }
 }

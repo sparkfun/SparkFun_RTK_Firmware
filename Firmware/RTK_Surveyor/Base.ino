@@ -71,7 +71,7 @@ bool configureUbloxModuleBase()
   response &= i2cGNSS.sendCfgValset(); //Closing value - #31
 
   if (response == false)
-    Serial.println("Base config fail");
+    systemPrintln("Base config fail");
 
   return (response);
 }
@@ -89,13 +89,13 @@ bool surveyInStart()
 
   if (needSurveyReset == true)
   {
-    Serial.println("Resetting survey");
+    systemPrintln("Resetting survey");
 
     if (surveyInReset() == false)
     {
-      Serial.println("Survey reset failed");
+      systemPrintln("Survey reset failed");
       if (surveyInReset() == false)
-        Serial.println("Survey reset failed - 2nd attempt");
+        systemPrintln("Survey reset failed - 2nd attempt");
     }
   }
 
@@ -106,11 +106,11 @@ bool surveyInStart()
 
   if (response == false)
   {
-    Serial.println("Survey start failed");
+    systemPrintln("Survey start failed");
     return (false);
   }
 
-  Serial.printf("Survey started. This will run until %d seconds have passed and less than %0.03f meter accuracy is achieved.\r\n",
+  systemPrintf("Survey started. This will run until %d seconds have passed and less than %0.03f meter accuracy is achieved.\r\n",
                 settings.observationSeconds,
                 settings.observationPositionAccuracy
                );
@@ -176,9 +176,9 @@ bool startFixedBase()
     long majorEcefZ = floor((settings.fixedEcefZ * 100) + 0.5);
     long minorEcefZ = floor((((settings.fixedEcefZ * 100.0) - majorEcefZ) * 100.0) + 0.5);
 
-    //    Serial.printf("fixedEcefY (should be -4716808.5807): %0.04f\r\n", settings.fixedEcefY);
-    //    Serial.printf("major (should be -471680858): %ld\r\n", majorEcefY);
-    //    Serial.printf("minor (should be -7): %ld\r\n", minorEcefY);
+    //    systemPrintf("fixedEcefY (should be -4716808.5807): %0.04f\r\n", settings.fixedEcefY);
+    //    systemPrintf("major (should be -471680858): %ld\r\n", majorEcefY);
+    //    systemPrintf("minor (should be -7): %ld\r\n", minorEcefY);
 
     //Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
     //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
@@ -208,17 +208,17 @@ bool startFixedBase()
     int32_t majorAlt = totalFixedAltitude * 100;
     int32_t minorAlt = ((totalFixedAltitude * 100) - majorAlt) * 100;
 
-    //    Serial.printf("fixedLong (should be -105.184774720): %0.09f\r\n", settings.fixedLong);
-    //    Serial.printf("major (should be -1051847747): %lld\r\n", majorLat);
-    //    Serial.printf("minor (should be -20): %lld\r\n", minorLat);
+    //    systemPrintf("fixedLong (should be -105.184774720): %0.09f\r\n", settings.fixedLong);
+    //    systemPrintf("major (should be -1051847747): %lld\r\n", majorLat);
+    //    systemPrintf("minor (should be -20): %lld\r\n", minorLat);
     //
-    //    Serial.printf("fixedLat (should be 40.090335429): %0.09f\r\n", settings.fixedLat);
-    //    Serial.printf("major (should be 400903354): %lld\r\n", majorLong);
-    //    Serial.printf("minor (should be 29): %lld\r\n", minorLong);
+    //    systemPrintf("fixedLat (should be 40.090335429): %0.09f\r\n", settings.fixedLat);
+    //    systemPrintf("major (should be 400903354): %lld\r\n", majorLong);
+    //    systemPrintf("minor (should be 29): %lld\r\n", minorLong);
     //
-    //    Serial.printf("fixedAlt (should be 1560.2284): %0.04f\r\n", settings.fixedAltitude);
-    //    Serial.printf("major (should be 156022): %ld\r\n", majorAlt);
-    //    Serial.printf("minor (should be 84): %ld\r\n", minorAlt);
+    //    systemPrintf("fixedAlt (should be 1560.2284): %0.04f\r\n", settings.fixedAltitude);
+    //    systemPrintf("major (should be 156022): %ld\r\n", majorAlt);
+    //    systemPrintf("minor (should be 84): %ld\r\n", minorAlt);
 
     response &= i2cGNSS.newCfgValset8(UBLOX_CFG_TMODE_MODE, 2); //Fixed
     response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TMODE_POS_TYPE, 1); //Position in LLH

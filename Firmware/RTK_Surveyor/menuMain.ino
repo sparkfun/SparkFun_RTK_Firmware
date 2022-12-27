@@ -136,6 +136,7 @@ void menuMain()
   }
 
   clearBuffer(); //Empty buffer of any newline chars
+  btPrintEchoExit = false; //We are out of the menu system
   inMainMenu = false;
 }
 

@@ -422,6 +422,7 @@ int systemTime_minutes = 0; //Used to test if logging is less than max minutes
 uint32_t powerPressedStartTime = 0; //Times how long user has been holding power button, used for power down
 bool inMainMenu = false; //Set true when in the serial config menu system.
 bool btPrintEcho = false; //Set true when in the serial config menu system via Bluetooth.
+bool btPrintEchoExit = false; //When true, exit all config menus.
 
 uint32_t lastBattUpdate = 0;
 uint32_t lastDisplayUpdate = 0;

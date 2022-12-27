@@ -49,6 +49,7 @@ void bluetoothCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
     systemPrintln("BT client disconnected");
     
     btPrintEcho = false;
+    btPrintEchoExit = true; //Force exit all config menus
     printEndpoint = PRINT_ENDPOINT_SERIAL;
 
     bluetoothState = BT_NOTCONNECTED;

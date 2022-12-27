@@ -240,8 +240,11 @@ InputResponse getString(char *userString, uint8_t stringSize)
     delay(1); //Yield to processor
 
     //Regularly poll to get latest data
-    //    if (online.gnss == true)
-    //      i2cGNSS.checkUblox();
+    if (online.gnss == true)
+      i2cGNSS.checkUblox();
+
+    if (btPrintEchoExit) //User has disconnect from BT. Force exit all menus.
+      return INPUT_RESPONSE_TIMEOUT;
 
     //Get the next input character
     while (systemAvailable() > 0)
@@ -334,7 +337,7 @@ long getNumber()
     else
       sscanf(userEntry, "%ld", &userNumber);
   }
-  else if (response == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
+  else if (response == INPUT_RESPONSE_TIMEOUT)
   {
     systemPrintln("\n\rNo user response - Do you have line endings turned on?");
     userNumber = INPUT_RESPONSE_GETNUMBER_TIMEOUT; //Timeout
@@ -654,7 +657,7 @@ void dumpBuffer(uint8_t * buffer, uint16_t length)
     //Display the ASCII values
     for (index = 0; index < bytes; index++)
       systemPrintf("%c", ((buffer[index] < ' ') || (buffer[index] >= 0x7f))
-                    ? '.' : buffer[index]);
+                   ? '.' : buffer[index]);
     systemPrintf("\r\n");
 
     //Set the next line of data
@@ -685,12 +688,12 @@ uint8_t nmeaLineTermination(PARSE_STATE * parse, uint8_t data)
     {
       printTimeStamp();
       systemPrintf ("    %s NMEA %s, %2d bytes, bad checksum, expecting 0x%c%c, computed: 0x%02x\r\n",
-                     parse->parserName,
-                     parse->nmeaMessageName,
-                     parse->length,
-                     parse->buffer[parse->nmeaLength - 2],
-                     parse->buffer[parse->nmeaLength - 1],
-                     parse->crc);
+                    parse->parserName,
+                    parse->nmeaMessageName,
+                    parse->length,
+                    parse->buffer[parse->nmeaLength - 2],
+                    parse->buffer[parse->nmeaLength - 1],
+                    parse->crc);
     }
 
     //Process this message if CRC is valid
@@ -782,13 +785,13 @@ uint8_t rtcmReadCrc(PARSE_STATE * parse, uint8_t data)
   {
     printTimeStamp();
     systemPrintf ("    %s RTCM %d, %2d bytes, bad CRC, expecting 0x%02x%02x%02x, computed: 0x%06x\r\n",
-                   parse->parserName,
-                   parse->message,
-                   parse->length,
-                   parse->buffer[parse->length - 3],
-                   parse->buffer[parse->length - 2],
-                   parse->buffer[parse->length - 1],
-                   parse->rtcmCrc);
+                  parse->parserName,
+                  parse->message,
+                  parse->length,
+                  parse->buffer[parse->length - 3],
+                  parse->buffer[parse->length - 2],
+                  parse->buffer[parse->length - 1],
+                  parse->rtcmCrc);
   }
 
   //Process the message if CRC is valid
@@ -881,14 +884,14 @@ uint8_t ubloxCkB(PARSE_STATE * parse, uint8_t data)
   {
     printTimeStamp();
     systemPrintf ("    %s u-blox %d.%d, %2d bytes, bad checksum, expecting 0x%02X%02X, computed: 0x%02X%02X\r\n",
-                   parse->parserName,
-                   parse->message >> 8,
-                   parse->message & 0xff,
-                   parse->length,
-                   parse->buffer[parse->nmeaLength - 2],
-                   parse->buffer[parse->nmeaLength - 1],
-                   parse->ck_a,
-                   parse->ck_b);
+                  parse->parserName,
+                  parse->message >> 8,
+                  parse->message & 0xff,
+                  parse->length,
+                  parse->buffer[parse->nmeaLength - 2],
+                  parse->buffer[parse->nmeaLength - 1],
+                  parse->ck_a,
+                  parse->ck_b);
   }
 
   //Process this message if checksum is valid

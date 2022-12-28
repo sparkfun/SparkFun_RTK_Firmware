@@ -1117,11 +1117,7 @@ String getFileList()
     systemPrintf("sdCardSemaphore failed to yield, held by %s, Form.ino line %d\r\n", semaphoreHolder, __LINE__);
   }
 
-  //systemPrint("string size: ");
-  //systemPrintln(returnText.length());
-
-  //systemPrint("returnText: ");
-  //systemPrintln(returnText);
+  log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
 
   return returnText;
 }

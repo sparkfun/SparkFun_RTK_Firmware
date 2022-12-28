@@ -44,6 +44,7 @@ var ecefY = -4716804.403;
 var ecefZ = 4086665.484;
 var lastFileName = "";
 var fileNumber = 0;
+var filesSelected = 0;
 var selectedFiles = "";
 var showingFileList = false;
 var fileTableText = "";
@@ -1203,15 +1204,16 @@ function getFileList() {
 
 function fileManagerDownload() {
     selectedFiles = document.querySelectorAll('input[name=fileID]:checked');
+    filesSelected = document.querySelectorAll('input[name=fileID]:checked').length;
     fileNumber = 0;
     sendFile(); //Start first send
 }
 
 function sendFile() {
+    if(fileNumber == filesSelected) return;
     var urltocall = "/file?name=" + selectedFiles[fileNumber].id + "&action=download";
     console.log(urltocall);
-    xmlhttp = new XMLHttpRequest();
-    window.open(urltocall, "_blank");
+    window.location.href = urltocall;
 
     fileNumber++;
 }
@@ -1268,7 +1270,6 @@ function errorHandler(event) {
 function abortHandler(event) {
     ge("uploadStatus").innerHTML = "Upload Aborted";
 }
-
 
 )====="; //End main.js
 

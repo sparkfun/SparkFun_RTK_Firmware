@@ -1186,7 +1186,7 @@ function getFileList() {
         showingFileList = true;
 
         //If the tab was just opened, create table from scratch
-        ge("fileManagerTable").innerHTML = "<table><tr align='left'><th>Name</th><th>Size</th></tr></tr></table>";
+        ge("fileManagerTable").innerHTML = "<table><tr align='left'><th>Name</th><th>Size</th><td><input type='checkbox' id='fileSelectAll' class='form-check-input' onClick='fileManagerToggle()'></td></tr></tr></table>";
         fileTableText = "";
 
         xmlhttp = new XMLHttpRequest();
@@ -1195,7 +1195,7 @@ function getFileList() {
 
         parseIncoming(xmlhttp.responseText); //Process CSV data into HTML
 
-        ge("fileManagerTable").innerHTML = fileTableText;
+        ge("fileManagerTable").innerHTML += fileTableText;
     }
     else {
         showingFileList = false;
@@ -1210,12 +1210,19 @@ function fileManagerDownload() {
 }
 
 function sendFile() {
-    if(fileNumber == filesSelected) return;
+    if (fileNumber == filesSelected) return;
     var urltocall = "/file?name=" + selectedFiles[fileNumber].id + "&action=download";
     console.log(urltocall);
     window.location.href = urltocall;
 
     fileNumber++;
+}
+
+function fileManagerToggle() {
+    var checkboxes = document.querySelectorAll('input[name=fileID]');
+    for (var i = 0, n = checkboxes.length; i < n; i++) {
+        checkboxes[i].checked = ge("fileSelectAll").checked;
+    }
 }
 
 function fileManagerDelete() {
@@ -3054,7 +3061,7 @@ static const char *index_html = R"=====(
 
             <!-- --------- File Manager --------- -->
             <div class="d-grid gap-2">
-                <button onclick="getFileList()"" id="fileManager" class="btn btn-primary mt-3 toggle-btn" type="button"
+                <button onclick="getFileList()"" id=" fileManager" class="btn btn-primary mt-3 toggle-btn" type="button"
                     data-toggle="collapse" data-target="#collapseFileManager" aria-expanded="false"
                     aria-controls="collapseFileManager">
                     File Manager <i id="fileManagerCaret" class="caret-icon bi icon-caret-down"></i>
@@ -3066,6 +3073,7 @@ static const char *index_html = R"=====(
                         <tr align='left'>
                             <th>Name</th>
                             <th>Size</th>
+                            <td><input type="checkbox" id="fileSelectAll" class="form-check-input" onClick="fileManagerToggle()"></td>
                         </tr>
                         <tr align='left'>
                             <td>SFE_Express_Settings_0.txt</td>

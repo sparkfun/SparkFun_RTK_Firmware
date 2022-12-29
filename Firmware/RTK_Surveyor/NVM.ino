@@ -300,6 +300,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   }
 
   settingsFile->printf("%s=%d\r\n", "wifiConfigOverAP", settings.wifiConfigOverAP);
+  settingsFile->printf("%s=%d\r\n", "wifiTcpPort", settings.wifiTcpPort);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -923,6 +924,8 @@ bool parseLine(char* str, Settings *settings)
     settings->forceResetOnSDFail = d;
   else if (strcmp(settingName, "wifiConfigOverAP") == 0)
     settings->wifiConfigOverAP = d;
+  else if (strcmp(settingName, "wifiTcpPort") == 0)
+    settings->wifiTcpPort = d;
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list

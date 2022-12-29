@@ -51,7 +51,6 @@ static const int WIFI_CONNECTION_TIMEOUT = 10 * 1000;  //Milliseconds
 static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
 
 #define WIFI_MAX_TCP_CLIENTS     4
-#define WIFI_TCP_PORT            1958
 
 //----------------------------------------
 // Locals - compiled out
@@ -68,7 +67,7 @@ static unsigned long wifiTimer = 0;
 static uint32_t lastWifiState = 0;
 
 //TCP server
-static WiFiServer wifiTcpServer(WIFI_TCP_PORT);
+static WiFiServer *wifiTcpServer = NULL;
 static WiFiClient wifiTcpClient[WIFI_MAX_TCP_CLIENTS];
 
 //----------------------------------------
@@ -275,7 +274,7 @@ void wifiSendTcpData(uint8_t * data, uint16_t length)
         systemPrint("Trying to connect TCP client to ");
         systemPrintln(ipAddress[0]);
       }
-      if (wifiTcpClient[0].connect(ipAddress[0], WIFI_TCP_PORT))
+      if (wifiTcpClient[0].connect(ipAddress[0], settings.wifiTcpPort))
       {
         online.tcpClient = true;
         systemPrint("TCP client connected to ");
@@ -299,7 +298,7 @@ void wifiSendTcpData(uint8_t * data, uint16_t length)
       {
         if ((!wifiTcpClient[index]) || (!wifiTcpClient[index].connected()))
         {
-          wifiTcpClient[index] = wifiTcpServer.available();
+          wifiTcpClient[index] = wifiTcpServer->available();
           if (!wifiTcpClient[index])
             break;
           ipAddress[index] = wifiTcpClient[index].remoteIP();
@@ -357,7 +356,10 @@ bool wifiTcpServerActive()
   online.tcpServer = false;
 
   //Stop the TCP server
-  wifiTcpServer.stop();
+  wifiTcpServer->stop();
+
+  if(wifiTcpServer != NULL)
+    free(wifiTcpServer);
 #endif  //COMPILE_WIFI
   return false;
 }
@@ -510,7 +512,10 @@ void wifiUpdate()
   if ((!wifiTcpServer) && (!settings.enableTcpClient) && settings.enableTcpServer
       && (wifiState == WIFI_CONNECTED))
   {
-    wifiTcpServer.begin();
+    if(wifiTcpServer == NULL)
+      wifiTcpServer = new WiFiServer(settings.wifiTcpPort);
+      
+    wifiTcpServer->begin();
     online.tcpServer = true;
     systemPrint("TCP Server online, IP Address ");
     systemPrintln(WiFi.localIP());

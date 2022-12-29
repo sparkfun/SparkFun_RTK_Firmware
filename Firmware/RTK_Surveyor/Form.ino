@@ -659,6 +659,7 @@ void createSettingsString(char* settingsCSV)
     stringRecord(settingsCSV, tagText, settings.wifiNetworks[x].password);
   }
   stringRecord(settingsCSV, "wifiConfigOverAP", settings.wifiConfigOverAP);
+  stringRecord(settingsCSV, "wifiTcpPort", settings.wifiTcpPort);
 
   //New settings not yet integrated
   //...
@@ -837,6 +838,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     recordLineToLFS(stationCoordinateGeodeticFileName, settingValueStr);
     log_d("%s recorded", settingValueStr);
   }
+  else if (strcmp(settingName, "wifiTcpPort") == 0)
+    settings.wifiTcpPort = settingValue;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

@@ -225,18 +225,6 @@ void menuSystem()
     else
       systemPrintln("Off");
 
-    systemPrint("c) Enable/disable WiFi TCP client (connect to phone): ");
-    if (settings.enableTcpClient == true)
-      systemPrintln("Enabled");
-    else
-      systemPrintln("Disabled");
-
-    systemPrint("n) Enable/disable WiFi TCP server: ");
-    if (settings.enableTcpServer == true)
-      systemPrintln("Enabled");
-    else
-      systemPrintln("Disabled");
-
     systemPrintln("r) Reset all settings to default");
 
     // Support mode switching
@@ -306,26 +294,6 @@ void menuSystem()
       else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
         settings.bluetoothRadioType = BLUETOOTH_RADIO_SPP;
       bluetoothStart();
-    }
-    else if (incoming == 'c')
-    {
-      //Toggle WiFi NEMA client (connect to phone)
-      settings.enableTcpClient ^= 1;
-    }
-    else if (incoming == 'n')
-    {
-      //Toggle WiFi NEMA server
-      settings.enableTcpServer ^= 1;
-      if ((!settings.enableTcpServer) && online.tcpServer)
-      {
-        //Tell the UART2 tasks that the TCP server is shutting down
-        online.tcpServer = false;
-
-        //Wait for the UART2 tasks to close the TCP client connections
-        while (wifiTcpServerActive())
-          delay(5);
-        systemPrintln("TCP Server offline");
-      }
     }
     else if (incoming == 'r')
     {
@@ -418,9 +386,17 @@ void menuWiFi()
       systemPrintf("%d) Password %d: %s\r\n", (x * 2) + 2, x + 1, settings.wifiNetworks[x].password);
     }
 
-    systemPrintf("%d) Configure device via WiFi Access Point or connect to WiFi: ", (MAX_WIFI_NETWORKS * 2) + 1);
-    if (settings.wifiConfigOverAP == true) systemPrintln("AP");
-    else systemPrintln("WiFi");
+    systemPrint("a) Configure device via WiFi Access Point or connect to WiFi: ");
+    systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "WiFi");
+
+    systemPrint("c) WiFi TCP Client (connect to phone): ");
+    systemPrintf("%s\r\n", settings.enableTcpClient ? "Enabled" : "Disabled");
+
+    systemPrint("s) WiFi TCP Server: ");
+    systemPrintf("%s\r\n", settings.enableTcpServer ? "Enabled" : "Disabled");
+
+    if (settings.enableTcpServer == true || settings.enableTcpClient == true)
+      systemPrintf("p) WiFi TCP Port: %ld\r\n", settings.wifiTcpPort);
 
     systemPrintln("x) Exit");
 
@@ -445,9 +421,42 @@ void menuWiFi()
         restartBase = true;
       }
     }
-    else if (incoming == (MAX_WIFI_NETWORKS * 2) + 1)
+    else if (incoming == 'a')
     {
       settings.wifiConfigOverAP ^= 1;
+    }
+
+    else if (incoming == 'c')
+    {
+      //Toggle WiFi NEMA client (connect to phone)
+      settings.enableTcpClient ^= 1;
+    }
+    else if (incoming == 's')
+    {
+      //Toggle WiFi NEMA server
+      settings.enableTcpServer ^= 1;
+      if ((!settings.enableTcpServer) && online.tcpServer)
+      {
+        //Tell the UART2 tasks that the TCP server is shutting down
+        online.tcpServer = false;
+
+        //Wait for the UART2 tasks to close the TCP client connections
+        while (wifiTcpServerActive())
+          delay(5);
+        systemPrintln("TCP Server offline");
+      }
+    }
+    else if (incoming == 'p')
+    {
+      systemPrint("Enter the TCP port to use (0 to 65535): ");
+      int wifiTcpPort = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((wifiTcpPort != INPUT_RESPONSE_GETNUMBER_EXIT) && (wifiTcpPort != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (wifiTcpPort < 0 || wifiTcpPort > 65535)
+          systemPrintln("Error: TCP Port out of range");
+        else
+          settings.wifiTcpPort = wifiTcpPort; //Recorded to NVM and file at main menu exit
+      }
     }
     else if (incoming == 'x')
       break;

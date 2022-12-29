@@ -165,6 +165,7 @@ bool sdSizeCheckTaskComplete = false;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
 #include <WiFi.h> //Built-in.
+#include <WiFiMulti.h> //Built-in.
 #include <HTTPClient.h> //Built-in. Needed for ThingStream API for ZTP
 #include <ArduinoJson.h> //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 #include <WiFiClientSecure.h> //Built-in.

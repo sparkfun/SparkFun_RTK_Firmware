@@ -72,8 +72,8 @@ void menuSystem()
 #ifdef COMPILE_WIFI
     systemPrint("WiFi MAC Address: ");
     systemPrintf("%02X:%02X:%02X:%02X:%02X:%02X\r\n", wifiMACAddress[0],
-                  wifiMACAddress[1], wifiMACAddress[2], wifiMACAddress[3],
-                  wifiMACAddress[4], wifiMACAddress[5]);
+                 wifiMACAddress[1], wifiMACAddress[2], wifiMACAddress[3],
+                 wifiMACAddress[4], wifiMACAddress[5]);
     if (wifiState == WIFI_CONNECTED)
       wifiDisplayIpAddress();
 #endif
@@ -99,12 +99,12 @@ void menuSystem()
 
     systemPrint("System Uptime: ");
     systemPrintf("%d %02d:%02d:%02d.%03lld (Resets: %d)\r\n",
-                  uptimeDays,
-                  uptimeHours,
-                  uptimeMinutes,
-                  uptimeSeconds,
-                  uptimeMilliseconds,
-                  settings.resetCount);
+                 uptimeDays,
+                 uptimeHours,
+                 uptimeMinutes,
+                 uptimeSeconds,
+                 uptimeMilliseconds,
+                 settings.resetCount);
 
     //Display NTRIP Client status and uptime
     if (settings.enableNtripClient == true && (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX))
@@ -146,12 +146,12 @@ void menuSystem()
 
       systemPrint(" Uptime: ");
       systemPrintf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n",
-                    uptimeDays,
-                    uptimeHours,
-                    uptimeMinutes,
-                    uptimeSeconds,
-                    uptimeMilliseconds,
-                    ntripClientConnectionAttemptsTotal);
+                   uptimeDays,
+                   uptimeHours,
+                   uptimeMinutes,
+                   uptimeSeconds,
+                   uptimeMilliseconds,
+                   ntripClientConnectionAttemptsTotal);
     }
 
     //Display NTRIP Server status and uptime
@@ -196,12 +196,12 @@ void menuSystem()
 
       systemPrint(" Uptime: ");
       systemPrintf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n",
-                    uptimeDays,
-                    uptimeHours,
-                    uptimeMinutes,
-                    uptimeSeconds,
-                    uptimeMilliseconds,
-                    ntripServerConnectionAttemptsTotal);
+                   uptimeDays,
+                   uptimeHours,
+                   uptimeMinutes,
+                   uptimeSeconds,
+                   uptimeMilliseconds,
+                   ntripServerConnectionAttemptsTotal);
     }
 
     if (settings.enableSD == true && online.microSD == true)
@@ -401,6 +401,74 @@ void menuSystem()
   clearBuffer(); //Empty buffer of any newline chars
 }
 
+//Set WiFi credentials
+//Enable TCP connections
+//TODO list networks
+//TODO change IP on config display to match AP or local IP
+void menuWiFi()
+{
+  while (1)
+  {
+    systemPrintln();
+    systemPrintln("Menu: WiFi Networks");
+
+    for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+    {
+      systemPrintf("%d) SSID %d: %s\r\n", (x * 2) + 1, x + 1, settings.wifiNetworks[x].ssid);
+      systemPrintf("%d) Password %d: %s\r\n", (x * 2) + 2, x + 1, settings.wifiNetworks[x].password);
+    }
+
+    systemPrintf("%d) Configure device via WiFi Access Point or connect to WiFi: ", (MAX_WIFI_NETWORKS * 2) + 1);
+    if (settings.wifiConfigOverAP == true) systemPrintln("AP");
+    else systemPrintln("WiFi");
+
+    systemPrintln("x) Exit");
+
+    byte incoming = getCharacterNumber();
+
+    if (incoming >= 1 && incoming <= MAX_WIFI_NETWORKS * 2)
+    {
+      int arraySlot = ((incoming - 1) / 2); //Adjust incoming to array starting at 0
+
+      if (incoming % 2 == 1)
+      {
+        systemPrintf("Enter SSID network %d: ", arraySlot + 1);
+        getString(settings.wifiNetworks[arraySlot].ssid, sizeof(settings.wifiNetworks[arraySlot].ssid));
+        restartRover = true; //If we are modifying the SSID table, force restart of rover/base
+        restartBase = true;
+      }
+      else
+      {
+        systemPrintf("Enter Password for %s: ", settings.wifiNetworks[arraySlot].ssid);
+        getString(settings.wifiNetworks[arraySlot].password, sizeof(settings.wifiNetworks[arraySlot].password));
+        restartRover = true;
+        restartBase = true;
+      }
+    }
+    else if (incoming == (MAX_WIFI_NETWORKS * 2) + 1)
+    {
+      settings.wifiConfigOverAP ^= 1;
+    }
+    else if (incoming == 'x')
+      break;
+    else if (incoming == INPUT_RESPONSE_EMPTY)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
+  }
+
+  //Erase passwords from empty SSID entries
+  for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+  {
+    if (strlen(settings.wifiNetworks[x].ssid) == 0)
+      strcpy(settings.wifiNetworks[x].password, "");
+  }
+
+  clearBuffer(); //Empty buffer of any newline chars
+}
+
 //Toggle control of heap reports and I2C GNSS debug
 void menuDebug()
 {
@@ -410,9 +478,9 @@ void menuDebug()
     systemPrintln("Menu: Debug");
 
     systemPrintf("Filtered by parser: %d NMEA / %d RTCM / %d UBX\n\r",
-                  failedParserMessages_NMEA,
-                  failedParserMessages_RTCM,
-                  failedParserMessages_UBX);
+                 failedParserMessages_NMEA,
+                 failedParserMessages_RTCM,
+                 failedParserMessages_UBX);
 
     systemPrint("1) u-blox I2C Debugging Output: ");
     if (settings.enableI2Cdebug == true) systemPrintln("Enabled");

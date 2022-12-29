@@ -65,31 +65,25 @@ void menuGNSS()
 
     if (settings.enableNtripClient == true)
     {
-      systemPrint("6) Set WiFi SSID: ");
-      systemPrintln(settings.ntripClient_wifiSSID);
-
-      systemPrint("7) Set WiFi PW: ");
-      systemPrintln(settings.ntripClient_wifiPW);
-
-      systemPrint("8) Set Caster Address: ");
+      systemPrint("6) Set Caster Address: ");
       systemPrintln(settings.ntripClient_CasterHost);
 
-      systemPrint("9) Set Caster Port: ");
+      systemPrint("7) Set Caster Port: ");
       systemPrintln(settings.ntripClient_CasterPort);
 
-      systemPrint("10) Set Caster User Name: ");
+      systemPrint("8) Set Caster User Name: ");
       systemPrintln(settings.ntripClient_CasterUser);
 
-      systemPrint("11) Set Caster User Password: ");
+      systemPrint("9) Set Caster User Password: ");
       systemPrintln(settings.ntripClient_CasterUserPW);
 
-      systemPrint("12) Set Mountpoint: ");
+      systemPrint("10) Set Mountpoint: ");
       systemPrintln(settings.ntripClient_MountPoint);
 
-      systemPrint("13) Set Mountpoint PW: ");
+      systemPrint("11) Set Mountpoint PW: ");
       systemPrintln(settings.ntripClient_MountPointPW);
 
-      systemPrint("14) Toggle sending GGA Location to Caster: ");
+      systemPrint("12) Toggle sending GGA Location to Caster: ");
       if (settings.ntripClient_TransmitGGA == true) systemPrintln("Enabled");
       else systemPrintln("Disabled");
     }
@@ -165,23 +159,11 @@ void menuGNSS()
     }
     else if (incoming == 6 && settings.enableNtripClient == true)
     {
-      systemPrint("Enter local WiFi SSID: ");
-      getString(settings.ntripClient_wifiSSID, sizeof(settings.ntripClient_wifiSSID));
-      restartRover = true;
-    }
-    else if (incoming == 7 && settings.enableNtripClient == true)
-    {
-      systemPrintf("Enter password for WiFi network %s: ", settings.ntripClient_wifiSSID);
-      getString(settings.ntripClient_wifiPW, sizeof(settings.ntripClient_wifiPW));
-      restartRover = true;
-    }
-    else if (incoming == 8 && settings.enableNtripClient == true)
-    {
       systemPrint("Enter new Caster Address: ");
       getString(settings.ntripClient_CasterHost, sizeof(settings.ntripClient_CasterHost));
       restartRover = true;
     }
-    else if (incoming == 9 && settings.enableNtripClient == true)
+    else if (incoming == 7 && settings.enableNtripClient == true)
     {
       systemPrint("Enter new Caster Port: ");
 
@@ -195,31 +177,31 @@ void menuGNSS()
         restartRover = true;
       }
     }
-    else if (incoming == 10 && settings.enableNtripClient == true)
+    else if (incoming == 8 && settings.enableNtripClient == true)
     {
       systemPrintf("Enter user name for %s: ", settings.ntripClient_CasterHost);
       getString(settings.ntripClient_CasterUser, sizeof(settings.ntripClient_CasterUser));
       restartRover = true;
     }
-    else if (incoming == 11 && settings.enableNtripClient == true)
+    else if (incoming == 9 && settings.enableNtripClient == true)
     {
       systemPrintf("Enter user password for %s: ", settings.ntripClient_CasterHost);
       getString(settings.ntripClient_CasterUserPW, sizeof(settings.ntripClient_CasterUserPW));
       restartRover = true;
     }
-    else if (incoming == 12 && settings.enableNtripClient == true)
+    else if (incoming == 10 && settings.enableNtripClient == true)
     {
       systemPrint("Enter new Mount Point: ");
       getString(settings.ntripClient_MountPoint, sizeof(settings.ntripClient_MountPoint));
       restartRover = true;
     }
-    else if (incoming == 13 && settings.enableNtripClient == true)
+    else if (incoming == 11 && settings.enableNtripClient == true)
     {
       systemPrintf("Enter password for Mount Point %s: ", settings.ntripClient_MountPoint);
       getString(settings.ntripClient_MountPointPW, sizeof(settings.ntripClient_MountPointPW));
       restartRover = true;
     }
-    else if (incoming == 14 && settings.enableNtripClient == true)
+    else if (incoming == 12 && settings.enableNtripClient == true)
     {
       settings.ntripClient_TransmitGGA ^= 1;
       restartRover = true;

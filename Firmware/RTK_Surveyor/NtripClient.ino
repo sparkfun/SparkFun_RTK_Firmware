@@ -330,7 +330,7 @@ void ntripClientUpdate()
 
     //Start WiFi
     case NTRIP_CLIENT_ON:
-      if (strlen(settings.ntripClient_wifiSSID) == 0)
+      if (wifiNetworkCount() == 0)
       {
         systemPrintln("Error: Please enter SSID before starting NTRIP Client");
         ntripClientSetState(NTRIP_CLIENT_OFF);
@@ -341,7 +341,7 @@ void ntripClientUpdate()
         if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)
         {
           ntripClientLastConnectionAttempt = millis();
-          wifiStart(settings.ntripClient_wifiSSID, settings.ntripClient_wifiPW);
+          wifiStart();
           ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTING);
         }
         else
@@ -363,10 +363,11 @@ void ntripClientUpdate()
       if (!wifiIsConnected())
       {
         //Throttle if SSID is not detected
-        if (wifiConnectionTimeout() || wifiGetStatus() == WL_NO_SSID_AVAIL)
+        if (wifiConnectionTimeout() || wifiGetStatus() == WL_DISCONNECTED)
         {
-          if (wifiGetStatus() == WL_NO_SSID_AVAIL)
-            systemPrintf("WiFi network '%s' not found\r\n", settings.ntripClient_wifiSSID);
+          //WL_NO_SSID_AVAIL was originally used but WiFiMulti puts radio into WL_DISCONNECTED state if no matching SSIDs are detected
+          if (wifiGetStatus() == WL_DISCONNECTED)
+            systemPrintln("No matching WiFi networks found");
 
           if (ntripClientConnectLimitReached()) //Stop WiFi, give up
             paintNtripWiFiFail(4000, true);

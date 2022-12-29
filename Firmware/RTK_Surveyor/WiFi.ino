@@ -150,8 +150,6 @@ void wifiStartAP()
   //#define LOCAL_WIFI_TESTING 1
 #ifdef LOCAL_WIFI_TESTING
   //Connect to local router
-#define WIFI_SSID "TRex"
-#define WIFI_PASSWORD "parachutes"
 
   WiFi.mode(WIFI_STA);
 
@@ -160,15 +158,8 @@ void wifiStartAP()
   esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station
 #endif
 
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  systemPrint("WiFi connecting to");
-  while (wifiGetStatus() != WL_CONNECTED)
-  {
-    systemPrint(".");
-    delay(500);
-  }
-  systemPrint("WiFi connected with IP: ");
-  systemPrintln(WiFi.localIP());
+  wifiConnect(); //Attempt to connect to any SSID on settings list
+  wifiPrintNetworkInfo();
 #else   //End LOCAL_WIFI_TESTING
   //Start in AP mode
 
@@ -199,6 +190,58 @@ void wifiStartAP()
 //----------------------------------------
 // Global WiFi Routines
 //----------------------------------------
+
+//Attempts a connection to all provided SSIDs
+//Returns true if successful
+//Gives up if no SSID detected or connection times out
+bool wifiConnect()
+{
+  //Check if we have any SSIDs
+  if (wifiNetworkCount() == 0)
+  {
+    systemPrintln("No WiFi networks stored in settings.");
+    return false;
+  }
+
+#ifdef COMPILE_WIFI
+
+  WiFiMulti wifiMulti;
+
+  //Load SSIDs
+  for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+  {
+    if (strlen(settings.wifiNetworks[x].ssid) > 0)
+      wifiMulti.addAP(settings.wifiNetworks[x].ssid, settings.wifiNetworks[x].password);
+  }
+
+  systemPrintln("Connecting WiFi...");
+
+  int timeout = 0; //Give up after timeount. Increases with each failed try.
+  for (int tries = 0 ; tries < 3 ; tries++)
+  {
+    timeout += 5000;
+
+    if (wifiMulti.run(timeout) == WL_CONNECTED)
+      return true;
+    systemPrintln("Timed out. Trying again.");
+  }
+#endif
+
+  return false;
+}
+
+//Counts the number of entered SSIDs
+int wifiNetworkCount()
+{
+  //Count SSIDs
+  int networkCount = 0;
+  for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+  {
+    if (strlen(settings.wifiNetworks[x].ssid) > 0)
+      networkCount++;
+  }
+  return networkCount;
+}
 
 //Determine if the WiFi connection has timed out
 bool wifiConnectionTimeout()
@@ -321,7 +364,7 @@ bool wifiTcpServerActive()
 
 //If radio is off entirely, start WiFi
 //If ESP-Now is active, only add the LR protocol
-void wifiStart(char* ssid, char* pw)
+void wifiStart()
 {
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_ESPNOW
@@ -350,8 +393,7 @@ void wifiStart(char* ssid, char* pw)
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
 #endif
 
-    systemPrintf("WiFi connecting to %s\r\n", ssid);
-    WiFi.begin(ssid, pw);
+    wifiConnect(); //Attempt to connect to any SSID on settings list
     wifiTimer = millis();
 
 #ifdef COMPILE_ESPNOW
@@ -442,7 +484,6 @@ void wifiStop()
 
 void wifiUpdate()
 {
-
 #ifdef COMPILE_WIFI
   //Periodically display the WiFi state
   if (settings.enablePrintWifiState && ((millis() - lastWifiState) > 15000))
@@ -483,4 +524,23 @@ void wifiUpdate()
   else if (systemState < STATE_BUBBLE_LEVEL)
     ntripServerUpdate();
 #endif  //COMPILE_WIFI
+}
+
+void wifiPrintNetworkInfo()
+{
+#ifdef COMPILE_WIFI
+  systemPrintln("\n\nNetwork Configuration:");
+  systemPrintln("----------------------");
+  systemPrint("         SSID: "); systemPrintln(WiFi.SSID());
+  systemPrint("  WiFi Status: "); systemPrintln(WiFi.status());
+  systemPrint("WiFi Strength: "); systemPrint(WiFi.RSSI()); systemPrintln(" dBm");
+  systemPrint("          MAC: "); systemPrintln(WiFi.macAddress());
+  systemPrint("           IP: "); systemPrintln(WiFi.localIP());
+  systemPrint("       Subnet: "); systemPrintln(WiFi.subnetMask());
+  systemPrint("      Gateway: "); systemPrintln(WiFi.gatewayIP());
+  systemPrint("        DNS 1: "); systemPrintln(WiFi.dnsIP(0));
+  systemPrint("        DNS 2: "); systemPrintln(WiFi.dnsIP(1));
+  systemPrint("        DNS 3: "); systemPrintln(WiFi.dnsIP(2));
+  systemPrintln();
+#endif
 }

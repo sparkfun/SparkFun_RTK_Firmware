@@ -948,20 +948,14 @@ void menuPointPerfect()
     if (settings.enablePointPerfectCorrections == true) systemPrintln("Enabled");
     else systemPrintln("Disabled");
 
-    systemPrint("2) Set Home WiFi SSID: ");
-    systemPrintln(settings.home_wifiSSID);
-
-    systemPrint("3) Set Home WiFi PW: ");
-    systemPrintln(settings.home_wifiPW);
-
-    systemPrint("4) Toggle Auto Key Renewal: ");
+    systemPrint("2) Toggle Auto Key Renewal: ");
     if (settings.autoKeyRenewal == true) systemPrintln("Enabled");
     else systemPrintln("Disabled");
 
     if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectLBandTopic) == 0)
-      systemPrintln("5) Provision Device");
+      systemPrintln("3) Provision Device");
     else
-      systemPrintln("5) Update Keys");
+      systemPrintln("3) Update Keys");
 
     systemPrintln("k) Manual Key Entry");
 
@@ -975,28 +969,18 @@ void menuPointPerfect()
     }
     else if (incoming == 2)
     {
-      systemPrint("Enter Home WiFi SSID: ");
-      getString(settings.home_wifiSSID, sizeof(settings.home_wifiSSID));
+      settings.autoKeyRenewal ^= 1;
     }
     else if (incoming == 3)
     {
-      systemPrintf("Enter password for Home WiFi network %s: ", settings.home_wifiSSID);
-      getString(settings.home_wifiPW, sizeof(settings.home_wifiPW));
-    }
-    else if (incoming == 4)
-    {
-      settings.autoKeyRenewal ^= 1;
-    }
-    else if (incoming == 5)
-    {
 #ifdef COMPILE_WIFI
-      if (strlen(settings.home_wifiSSID) == 0)
+      if (wifiNetworkCount() == 0)
       {
-        systemPrintln("Error: Please enter SSID before getting keys");
+        systemPrintln("Error: Please enter at least one SSID before getting keys");
       }
       else
       {
-        wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
+        wifiStart();
 
         unsigned long startTime = millis();
         while (wifiGetStatus() != WL_CONNECTED)
@@ -1012,7 +996,6 @@ void menuPointPerfect()
 
         if (wifiGetStatus() == WL_CONNECTED)
         {
-
           systemPrintln();
           systemPrint("WiFi connected: ");
           systemPrintln(wifiGetIpAddress());

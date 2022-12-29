@@ -55,6 +55,8 @@ void menuMain()
 
     systemPrintln("5) Configure Logging");
 
+    systemPrintln("6) Configure WiFi");
+
     systemPrintln("p) Configure User Profiles");
 
 #ifdef COMPILE_ESPNOW
@@ -88,6 +90,8 @@ void menuMain()
       menuPorts();
     else if (incoming == 5)
       menuLog();
+    else if (incoming == 6)
+      menuWiFi();
     else if (incoming == 's')
       menuSystem();
     else if (incoming == 'p')

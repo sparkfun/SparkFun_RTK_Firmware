@@ -200,6 +200,14 @@ enum LogTestState
 } ;
 uint8_t logTestState = LOGTEST_END;
 
+typedef struct WiFiNetwork
+{
+  char ssid[50];
+  char password[50];
+} WiFiNetwork;
+
+#define MAX_WIFI_NETWORKS 4
+
 typedef struct _PARSE_STATE * P_PARSE_STATE;
 
 //Parse routine
@@ -247,9 +255,9 @@ typedef enum
   INPUT_RESPONSE_GETNUMBER_EXIT = -9999999, //Less than min ECEF. User may be prompted for number but wants to exit without entering data
   INPUT_RESPONSE_GETNUMBER_TIMEOUT = -9999998,
   INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT = 255,
-  INPUT_RESPONSE_TIMEOUT = -2,
-  INPUT_RESPONSE_OVERFLOW = -1,
-  INPUT_RESPONSE_EMPTY = 0,
+  INPUT_RESPONSE_TIMEOUT = -3,
+  INPUT_RESPONSE_OVERFLOW = -2,
+  INPUT_RESPONSE_EMPTY = -1,
   INPUT_RESPONSE_VALID = 1,
 } InputResponse;
 
@@ -498,8 +506,6 @@ typedef struct {
   char ntripServer_CasterUserPW[50] = "";
   char ntripServer_MountPoint[50] = "bldr_dwntwn2"; //NTRIP Server
   char ntripServer_MountPointPW[50] = "WR5wRo4H";
-  char ntripServer_wifiSSID[50] = "TRex"; //NTRIP Server WiFi
-  char ntripServer_wifiPW[50] = "parachutes";
 
   //NTRIP Client
   bool enableNtripClient = false;
@@ -509,16 +515,12 @@ typedef struct {
   char ntripClient_CasterUserPW[50] = "";
   char ntripClient_MountPoint[50] = "bldr_SparkFun1";
   char ntripClient_MountPointPW[50] = "";
-  char ntripClient_wifiSSID[50] = "TRex"; //NTRIP Server WiFi
-  char ntripClient_wifiPW[50] = "parachutes";
   bool ntripClient_TransmitGGA = true;
 
   int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
 
   char pointPerfectDeviceProfileToken[40] = "";
   bool enablePointPerfectCorrections = true;
-  char home_wifiSSID[50] = ""; //WiFi network to use when attempting to obtain PointPerfect keys and ThingStream provisioning
-  char home_wifiPW[50] = "";
   bool autoKeyRenewal = true; //Attempt to get keys if we get under 28 days from the expiration date
   char pointPerfectClientID[50] = "";
   char pointPerfectBrokerHost[50] = ""; // pp.services.u-blox.com
@@ -578,6 +580,16 @@ typedef struct {
   bool enablePrintBufferOverrun = false;
   bool enablePrintSDBuffers = false;
   bool forceResetOnSDFail = false; //Set to true to reset system if SD is detected but fails to start.
+
+  WiFiNetwork wifiNetworks[MAX_WIFI_NETWORKS] = {
+    {"", ""},
+    {"", ""},
+    {"", ""},
+    {"", ""},
+  };
+
+  bool wifiConfigOverAP = true; //Configure device over Access Point or have it connect to WiFi 
+
 } Settings;
 Settings settings;
 const Settings defaultSettings = Settings();

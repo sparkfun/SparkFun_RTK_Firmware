@@ -78,7 +78,7 @@ void systemPrintf(const char* format, ...) {
 void systemPrintln(const char* value)
 {
   systemPrint(value);
-  systemPrint("\r\n");
+  systemPrintln();
 }
 
 //Print an integer value
@@ -102,11 +102,28 @@ void systemPrint(int value, uint8_t printType)
   systemPrint(temp);
 }
 
+//Pretty print IP addresses
+void systemPrint(IPAddress ipaddress)
+{
+  systemPrint(ipaddress[0], DEC);
+  systemPrint(".");
+  systemPrint(ipaddress[1], DEC);
+  systemPrint(".");
+  systemPrint(ipaddress[2], DEC);
+  systemPrint(".");
+  systemPrint(ipaddress[3], DEC);
+}
+void systemPrintln(IPAddress ipaddress)
+{
+  systemPrint(ipaddress);
+  systemPrintln();
+}
+
 //Print an integer value with a carriage return and line feed
 void systemPrintln(int value)
 {
   systemPrint(value);
-  systemPrint("\r\n");
+  systemPrintln();
 }
 
 //Print an 8-bit value as HEX or decimal
@@ -126,7 +143,7 @@ void systemPrint(uint8_t value, uint8_t printType)
 void systemPrintln(uint8_t value, uint8_t printType)
 {
   systemPrint(value, printType);
-  systemPrint("\r\n");
+  systemPrintln();
 }
 
 //Print a 16-bit value as HEX or decimal
@@ -146,7 +163,7 @@ void systemPrint(uint16_t value, uint8_t printType)
 void systemPrintln(uint16_t value, uint8_t printType)
 {
   systemPrint(value, printType);
-  systemPrint("\r\n");
+  systemPrintln();
 }
 
 //Print a floating point value with a specified number of decimal places
@@ -162,7 +179,7 @@ void systemPrint(float value, uint8_t decimals)
 void systemPrintln(float value, uint8_t decimals)
 {
   systemPrint(value, decimals);
-  systemPrint("\r\n");
+  systemPrintln();
 }
 
 //Print a double precision floating point value with a specified number of decimal places
@@ -178,20 +195,18 @@ void systemPrint(double value, uint8_t decimals)
 void systemPrintln(double value, uint8_t decimals)
 {
   systemPrint(value, decimals);
-  systemPrint("\r\n");
+  systemPrintln();
 }
 
 //Print a string
 void systemPrint(String myString)
 {
-  char temp[300];
-  myString.toCharArray(temp, sizeof(temp));
-  systemPrint(temp);
+  systemPrint(myString.c_str());
 }
 void systemPrintln(String myString)
 {
   systemPrint(myString);
-  systemPrint("\r\n");
+  systemPrintln();
 }
 
 //Print a carriage return and linefeed
@@ -199,8 +214,6 @@ void systemPrintln()
 {
   systemPrint("\r\n");
 }
-
-
 
 //Option not known
 void printUnknown(uint8_t unknownChoice)

@@ -332,7 +332,7 @@ void ntripClientUpdate()
     case NTRIP_CLIENT_ON:
       if (wifiNetworkCount() == 0)
       {
-        systemPrintln("Error: Please enter SSID before starting NTRIP Client");
+        systemPrintln("Error: Please enter at least one SSID before starting NTRIP Client");
         ntripClientSetState(NTRIP_CLIENT_OFF);
       }
       else

@@ -637,7 +637,7 @@ void updateSystemState()
               createCoordinateString(settingsCSV);
 
               //log_d("Sending coordinates: %s", settingsCSV);
-              websocket->textAll(String(settingsCSV));
+              websocket->textAll(settingsCSV);
             }
           }
 #endif

@@ -294,7 +294,7 @@ void changeProfileNumber(byte newProfileNumber)
   //If this is an empty/new profile slot, overwrite our current settings with defaults
   if (responseLFS == false && responseSD == false)
   {
-    systemPrintln("Default the settings");
+    systemPrintln("No profile found: Applying default settings");
     settingsToDefaults();
   }
 }

@@ -392,20 +392,20 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 #endif
 
 //Create a csv string with current settings
-void createSettingsString(char* settingsCSV)
+void createSettingsString(char* newSettings)
 {
 #ifdef COMPILE_AP
   char tagText[32];
   char nameText[64];
 
-  settingsCSV[0] = '\0'; //Erase current settings string
+  newSettings[0] = '\0'; //Erase current settings string
 
   //System Info
-  stringRecord(settingsCSV, "platformPrefix", platformPrefix);
+  stringRecord(newSettings, "platformPrefix", platformPrefix);
 
   char apRtkFirmwareVersion[86];
   sprintf(apRtkFirmwareVersion, "RTK %s Firmware: v%d.%d-%s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
-  stringRecord(settingsCSV, "rtkFirmwareVersion", apRtkFirmwareVersion);
+  stringRecord(newSettings, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
   char apZedPlatform[50];
   if (zedModuleType == PLATFORM_F9P)
@@ -415,93 +415,93 @@ void createSettingsString(char* settingsCSV)
 
   char apZedFirmwareVersion[80];
   sprintf(apZedFirmwareVersion, "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
-  stringRecord(settingsCSV, "zedFirmwareVersion", apZedFirmwareVersion);
+  stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
 
   char apDeviceBTID[30];
   sprintf(apDeviceBTID, "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);
-  stringRecord(settingsCSV, "deviceBTID", apDeviceBTID);
+  stringRecord(newSettings, "deviceBTID", apDeviceBTID);
 
   //GNSS Config
-  stringRecord(settingsCSV, "measurementRateHz", 1000.0 / settings.measurementRate, 2); //2 = decimals to print
-  stringRecord(settingsCSV, "dynamicModel", settings.dynamicModel);
-  stringRecord(settingsCSV, "ubxConstellationsGPS", settings.ubxConstellations[0].enabled); //GPS
-  stringRecord(settingsCSV, "ubxConstellationsSBAS", settings.ubxConstellations[1].enabled); //SBAS
-  stringRecord(settingsCSV, "ubxConstellationsGalileo", settings.ubxConstellations[2].enabled); //Galileo
-  stringRecord(settingsCSV, "ubxConstellationsBeiDou", settings.ubxConstellations[3].enabled); //BeiDou
-  stringRecord(settingsCSV, "ubxConstellationsGLONASS", settings.ubxConstellations[5].enabled); //GLONASS
+  stringRecord(newSettings, "measurementRateHz", 1000.0 / settings.measurementRate, 2); //2 = decimals to print
+  stringRecord(newSettings, "dynamicModel", settings.dynamicModel);
+  stringRecord(newSettings, "ubxConstellationsGPS", settings.ubxConstellations[0].enabled); //GPS
+  stringRecord(newSettings, "ubxConstellationsSBAS", settings.ubxConstellations[1].enabled); //SBAS
+  stringRecord(newSettings, "ubxConstellationsGalileo", settings.ubxConstellations[2].enabled); //Galileo
+  stringRecord(newSettings, "ubxConstellationsBeiDou", settings.ubxConstellations[3].enabled); //BeiDou
+  stringRecord(newSettings, "ubxConstellationsGLONASS", settings.ubxConstellations[5].enabled); //GLONASS
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    stringRecord(settingsCSV, settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
+    stringRecord(newSettings, settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
 
   //Base Config
-  stringRecord(settingsCSV, "baseTypeSurveyIn", !settings.fixedBase);
-  stringRecord(settingsCSV, "baseTypeFixed", settings.fixedBase);
-  stringRecord(settingsCSV, "observationSeconds", settings.observationSeconds);
-  stringRecord(settingsCSV, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
+  stringRecord(newSettings, "baseTypeSurveyIn", !settings.fixedBase);
+  stringRecord(newSettings, "baseTypeFixed", settings.fixedBase);
+  stringRecord(newSettings, "observationSeconds", settings.observationSeconds);
+  stringRecord(newSettings, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
 
   if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
   {
-    stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", true);
-    stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", false);
+    stringRecord(newSettings, "fixedBaseCoordinateTypeECEF", true);
+    stringRecord(newSettings, "fixedBaseCoordinateTypeGeo", false);
   }
   else
   {
-    stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", false);
-    stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", true);
+    stringRecord(newSettings, "fixedBaseCoordinateTypeECEF", false);
+    stringRecord(newSettings, "fixedBaseCoordinateTypeGeo", true);
   }
 
-  stringRecord(settingsCSV, "fixedEcefX", settings.fixedEcefX, 3);
-  stringRecord(settingsCSV, "fixedEcefY", settings.fixedEcefY, 3);
-  stringRecord(settingsCSV, "fixedEcefZ", settings.fixedEcefZ, 3);
-  stringRecord(settingsCSV, "fixedLat", settings.fixedLat, haeNumberOfDecimals);
-  stringRecord(settingsCSV, "fixedLong", settings.fixedLong, haeNumberOfDecimals);
-  stringRecord(settingsCSV, "fixedAltitude", settings.fixedAltitude, 4);
+  stringRecord(newSettings, "fixedEcefX", settings.fixedEcefX, 3);
+  stringRecord(newSettings, "fixedEcefY", settings.fixedEcefY, 3);
+  stringRecord(newSettings, "fixedEcefZ", settings.fixedEcefZ, 3);
+  stringRecord(newSettings, "fixedLat", settings.fixedLat, haeNumberOfDecimals);
+  stringRecord(newSettings, "fixedLong", settings.fixedLong, haeNumberOfDecimals);
+  stringRecord(newSettings, "fixedAltitude", settings.fixedAltitude, 4);
 
-  stringRecord(settingsCSV, "enableNtripServer", settings.enableNtripServer);
-  stringRecord(settingsCSV, "ntripServer_CasterHost", settings.ntripServer_CasterHost);
-  stringRecord(settingsCSV, "ntripServer_CasterPort", settings.ntripServer_CasterPort);
-  stringRecord(settingsCSV, "ntripServer_CasterUser", settings.ntripServer_CasterUser);
-  stringRecord(settingsCSV, "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
-  stringRecord(settingsCSV, "ntripServer_MountPoint", settings.ntripServer_MountPoint);
-  stringRecord(settingsCSV, "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
+  stringRecord(newSettings, "enableNtripServer", settings.enableNtripServer);
+  stringRecord(newSettings, "ntripServer_CasterHost", settings.ntripServer_CasterHost);
+  stringRecord(newSettings, "ntripServer_CasterPort", settings.ntripServer_CasterPort);
+  stringRecord(newSettings, "ntripServer_CasterUser", settings.ntripServer_CasterUser);
+  stringRecord(newSettings, "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
+  stringRecord(newSettings, "ntripServer_MountPoint", settings.ntripServer_MountPoint);
+  stringRecord(newSettings, "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
 
-  stringRecord(settingsCSV, "enableNtripClient", settings.enableNtripClient);
-  stringRecord(settingsCSV, "ntripClient_CasterHost", settings.ntripClient_CasterHost);
-  stringRecord(settingsCSV, "ntripClient_CasterPort", settings.ntripClient_CasterPort);
-  stringRecord(settingsCSV, "ntripClient_CasterUser", settings.ntripClient_CasterUser);
-  stringRecord(settingsCSV, "ntripClient_CasterUserPW", settings.ntripClient_CasterUserPW);
-  stringRecord(settingsCSV, "ntripClient_MountPoint", settings.ntripClient_MountPoint);
-  stringRecord(settingsCSV, "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
-  stringRecord(settingsCSV, "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
+  stringRecord(newSettings, "enableNtripClient", settings.enableNtripClient);
+  stringRecord(newSettings, "ntripClient_CasterHost", settings.ntripClient_CasterHost);
+  stringRecord(newSettings, "ntripClient_CasterPort", settings.ntripClient_CasterPort);
+  stringRecord(newSettings, "ntripClient_CasterUser", settings.ntripClient_CasterUser);
+  stringRecord(newSettings, "ntripClient_CasterUserPW", settings.ntripClient_CasterUserPW);
+  stringRecord(newSettings, "ntripClient_MountPoint", settings.ntripClient_MountPoint);
+  stringRecord(newSettings, "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
+  stringRecord(newSettings, "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
 
   //Sensor Fusion Config
-  stringRecord(settingsCSV, "enableSensorFusion", settings.enableSensorFusion);
-  stringRecord(settingsCSV, "autoIMUmountAlignment", settings.autoIMUmountAlignment);
+  stringRecord(newSettings, "enableSensorFusion", settings.enableSensorFusion);
+  stringRecord(newSettings, "autoIMUmountAlignment", settings.autoIMUmountAlignment);
 
   //System Config
-  stringRecord(settingsCSV, "enableLogging", settings.enableLogging);
-  stringRecord(settingsCSV, "maxLogTime_minutes", settings.maxLogTime_minutes);
-  stringRecord(settingsCSV, "maxLogLength_minutes", settings.maxLogLength_minutes);
+  stringRecord(newSettings, "enableLogging", settings.enableLogging);
+  stringRecord(newSettings, "maxLogTime_minutes", settings.maxLogTime_minutes);
+  stringRecord(newSettings, "maxLogLength_minutes", settings.maxLogLength_minutes);
 
   char sdSpace[30];
   sprintf(sdSpace, "%s", stringHumanReadableSize(sdFreeSpace));
-  stringRecord(settingsCSV, "sdFreeSpace", sdSpace);
+  stringRecord(newSettings, "sdFreeSpace", sdSpace);
   sprintf(sdSpace, "%s", stringHumanReadableSize(sdCardSize - sdFreeSpace));
-  stringRecord(settingsCSV, "sdUsedSpace", sdSpace);
+  stringRecord(newSettings, "sdUsedSpace", sdSpace);
 
-  stringRecord(settingsCSV, "enableResetDisplay", settings.enableResetDisplay);
+  stringRecord(newSettings, "enableResetDisplay", settings.enableResetDisplay);
 
   //Turn on SD display block last
-  stringRecord(settingsCSV, "sdMounted", online.microSD);
+  stringRecord(newSettings, "sdMounted", online.microSD);
 
   //Port Config
-  stringRecord(settingsCSV, "dataPortBaud", settings.dataPortBaud);
-  stringRecord(settingsCSV, "radioPortBaud", settings.radioPortBaud);
-  stringRecord(settingsCSV, "dataPortChannel", settings.dataPortChannel);
+  stringRecord(newSettings, "dataPortBaud", settings.dataPortBaud);
+  stringRecord(newSettings, "radioPortBaud", settings.radioPortBaud);
+  stringRecord(newSettings, "dataPortChannel", settings.dataPortChannel);
 
   //L-Band
   char hardwareID[13];
   sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
-  stringRecord(settingsCSV, "hardwareID", hardwareID);
+  stringRecord(newSettings, "hardwareID", hardwareID);
 
   char apDaysRemaining[20];
   if (strlen(settings.pointPerfectCurrentKey) > 0)
@@ -514,42 +514,42 @@ void createSettingsString(char* settingsCSV)
   else
     sprintf(apDaysRemaining, "No Keys");
 
-  stringRecord(settingsCSV, "daysRemaining", apDaysRemaining);
+  stringRecord(newSettings, "daysRemaining", apDaysRemaining);
 
-  stringRecord(settingsCSV, "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
-  stringRecord(settingsCSV, "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
-  stringRecord(settingsCSV, "autoKeyRenewal", settings.autoKeyRenewal);
+  stringRecord(newSettings, "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
+  stringRecord(newSettings, "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
+  stringRecord(newSettings, "autoKeyRenewal", settings.autoKeyRenewal);
 
   //External PPS/Triggers
-  stringRecord(settingsCSV, "enableExternalPulse", settings.enableExternalPulse);
-  stringRecord(settingsCSV, "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
-  stringRecord(settingsCSV, "externalPulseLength_us", settings.externalPulseLength_us);
-  stringRecord(settingsCSV, "externalPulsePolarity", settings.externalPulsePolarity);
-  stringRecord(settingsCSV, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
+  stringRecord(newSettings, "enableExternalPulse", settings.enableExternalPulse);
+  stringRecord(newSettings, "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
+  stringRecord(newSettings, "externalPulseLength_us", settings.externalPulseLength_us);
+  stringRecord(newSettings, "externalPulsePolarity", settings.externalPulsePolarity);
+  stringRecord(newSettings, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
 
   //Profiles
-  stringRecord(settingsCSV, "profileName", profileNames[profileNumber]); //Must come before profile number so AP config page JS has name before number
-  stringRecord(settingsCSV, "profileNumber", profileNumber);
+  stringRecord(newSettings, "profileName", profileNames[profileNumber]); //Must come before profile number so AP config page JS has name before number
+  stringRecord(newSettings, "profileNumber", profileNumber);
   for (int index = 0; index < MAX_PROFILE_COUNT; index++)
   {
     sprintf(tagText, "profile%dName", index);
     sprintf(nameText, "%d: %s", index + 1, profileNames[index]);
-    stringRecord(settingsCSV, tagText, nameText);
+    stringRecord(newSettings, tagText, nameText);
   }
-  //stringRecord(settingsCSV, "activeProfiles", activeProfiles);
+  //stringRecord(newSettings, "activeProfiles", activeProfiles);
 
   //System state at power on. Convert various system states to either Rover or Base.
   int lastState = 0; //0 = Rover, 1 = Base
   if (settings.lastState >= STATE_BASE_NOT_STARTED && settings.lastState <= STATE_BASE_FIXED_TRANSMITTING) lastState = 1;
-  stringRecord(settingsCSV, "baseRoverSetup", lastState);
+  stringRecord(newSettings, "baseRoverSetup", lastState);
 
   //Bluetooth radio type
-  stringRecord(settingsCSV, "bluetoothRadioType", settings.bluetoothRadioType);
+  stringRecord(newSettings, "bluetoothRadioType", settings.bluetoothRadioType);
 
   //Current coordinates come from HPPOSLLH call back
-  stringRecord(settingsCSV, "geodeticLat", latitude, haeNumberOfDecimals);
-  stringRecord(settingsCSV, "geodeticLon", longitude, haeNumberOfDecimals);
-  stringRecord(settingsCSV, "geodeticAlt", altitude, 3);
+  stringRecord(newSettings, "geodeticLat", latitude, haeNumberOfDecimals);
+  stringRecord(newSettings, "geodeticLon", longitude, haeNumberOfDecimals);
+  stringRecord(newSettings, "geodeticAlt", altitude, 3);
 
   double ecefX = 0;
   double ecefY = 0;
@@ -557,13 +557,13 @@ void createSettingsString(char* settingsCSV)
 
   geodeticToEcef(latitude, longitude, altitude, &ecefX, &ecefY, &ecefZ);
 
-  stringRecord(settingsCSV, "ecefX", ecefX, 3);
-  stringRecord(settingsCSV, "ecefY", ecefY, 3);
-  stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
+  stringRecord(newSettings, "ecefX", ecefX, 3);
+  stringRecord(newSettings, "ecefY", ecefY, 3);
+  stringRecord(newSettings, "ecefZ", ecefZ, 3);
 
   //Antenna height and ARP
-  stringRecord(settingsCSV, "antennaHeight", settings.antennaHeight);
-  stringRecord(settingsCSV, "antennaReferencePoint", settings.antennaReferencePoint, 1);
+  stringRecord(newSettings, "antennaHeight", settings.antennaHeight);
+  stringRecord(newSettings, "antennaReferencePoint", settings.antennaReferencePoint, 1);
 
   //Radio / ESP-Now settings
   char radioMAC[18];   //Send radio MAC
@@ -575,9 +575,9 @@ void createSettingsString(char* settingsCSV)
           wifiMACAddress[4],
           wifiMACAddress[5]
          );
-  stringRecord(settingsCSV, "radioMAC", radioMAC);
-  stringRecord(settingsCSV, "radioType", settings.radioType);
-  stringRecord(settingsCSV, "espnowPeerCount", settings.espnowPeerCount);
+  stringRecord(newSettings, "radioMAC", radioMAC);
+  stringRecord(newSettings, "radioType", settings.radioType);
+  stringRecord(newSettings, "espnowPeerCount", settings.espnowPeerCount);
   for (int index = 0; index < settings.espnowPeerCount; index++)
   {
     sprintf(tagText, "peerMAC%d", index);
@@ -589,9 +589,9 @@ void createSettingsString(char* settingsCSV)
             settings.espnowPeers[index][4],
             settings.espnowPeers[index][5]
            );
-    stringRecord(settingsCSV, tagText, nameText);
+    stringRecord(newSettings, tagText, nameText);
   }
-  stringRecord(settingsCSV, "espnowBroadcast", settings.espnowBroadcast);
+  stringRecord(newSettings, "espnowBroadcast", settings.espnowBroadcast);
 
   //Add ECEF and Geodetic station data
   for (int index = 0; index < MAX_STATIONS ; index++) //Arbitrary 50 station limit
@@ -606,7 +606,7 @@ void createSettingsString(char* settingsCSV)
       //log_d("ECEF SD station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
       sprintf(tagText, "stationECEF%d", index);
-      stringRecord(settingsCSV, tagText, stationInfo);
+      stringRecord(newSettings, tagText, stationInfo);
     }
     else if (getFileLineLFS(stationCoordinateECEFFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
     {
@@ -614,7 +614,7 @@ void createSettingsString(char* settingsCSV)
       //log_d("ECEF LFS station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
       sprintf(tagText, "stationECEF%d", index);
-      stringRecord(settingsCSV, tagText, stationInfo);
+      stringRecord(newSettings, tagText, stationInfo);
     }
     else
     {
@@ -635,7 +635,7 @@ void createSettingsString(char* settingsCSV)
       //log_d("Geo SD station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
       sprintf(tagText, "stationGeodetic%d", index);
-      stringRecord(settingsCSV, tagText, stationInfo);
+      stringRecord(newSettings, tagText, stationInfo);
     }
     else if (getFileLineLFS(stationCoordinateGeodeticFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
     {
@@ -643,7 +643,7 @@ void createSettingsString(char* settingsCSV)
       //log_d("Geo LFS station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
       sprintf(tagText, "stationGeodetic%d", index);
-      stringRecord(settingsCSV, tagText, stationInfo);
+      stringRecord(newSettings, tagText, stationInfo);
     }
     else
     {
@@ -656,20 +656,20 @@ void createSettingsString(char* settingsCSV)
   for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
   {
     sprintf(tagText, "wifiNetwork%dSSID", x);
-    stringRecord(settingsCSV, tagText, settings.wifiNetworks[x].ssid);
+    stringRecord(newSettings, tagText, settings.wifiNetworks[x].ssid);
 
     sprintf(tagText, "wifiNetwork%dPassword", x);
-    stringRecord(settingsCSV, tagText, settings.wifiNetworks[x].password);
+    stringRecord(newSettings, tagText, settings.wifiNetworks[x].password);
   }
-  stringRecord(settingsCSV, "wifiConfigOverAP", settings.wifiConfigOverAP);
-  stringRecord(settingsCSV, "wifiTcpPort", settings.wifiTcpPort);
+  stringRecord(newSettings, "wifiConfigOverAP", settings.wifiConfigOverAP);
+  stringRecord(newSettings, "wifiTcpPort", settings.wifiTcpPort);
 
   //New settings not yet integrated
   //...
 
-  strcat(settingsCSV, "\0");
-  systemPrintf("settingsCSV len: %d\r\n", strlen(settingsCSV));
-  systemPrintf("settingsCSV: %s\r\n", settingsCSV);
+  strcat(newSettings, "\0");
+  systemPrintf("newSettings len: %d\r\n", strlen(newSettings));
+  systemPrintf("newSettings: %s\r\n", newSettings);
 #endif
 }
 
@@ -861,6 +861,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "nicknameECEF") == 0) {}
   else if (strcmp(settingName, "nicknameGeodetic") == 0) {}
   else if (strcmp(settingName, "fileSelectAll") == 0) {}
+  else if (strcmp(settingName, "fixedHAE_APC") == 0) {}
 
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
@@ -893,12 +894,15 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     loadSettings();
 
     //Send new settings to browser. Re-use settingsCSV to avoid stack.
-    settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+    if (settingsCSV == NULL)
+      settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
+
     createSettingsString(settingsCSV);
-    log_d("Sending command: %s", settingsCSV);
-    websocket->textAll(String(settingsCSV));
-    free(settingsCSV);
+
+    log_d("Sending profile %d: %s", settingValue, settingsCSV);
+    websocket->textAll(settingsCSV);
   }
   else if (strcmp(settingName, "resetProfile") == 0)
   {
@@ -910,12 +914,15 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     activeProfiles = loadProfileNames();
 
     //Send new settings to browser. Re-use settingsCSV to avoid stack.
-    settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+    if (settingsCSV == NULL)
+      settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
+
     createSettingsString(settingsCSV);
-    log_d("Sending command: %s", settingsCSV);
-    websocket->textAll(String(settingsCSV));
-    free(settingsCSV);
+
+    log_d("Sending reset profile: %s", settingsCSV);
+    websocket->textAll(settingsCSV);
   }
   else if (strcmp(settingName, "forgetEspNowPeers") == 0)
   {
@@ -1071,6 +1078,9 @@ bool parseIncomingSettings()
 
   char* commaPtr = incomingSettings;
   char* headPtr = incomingSettings;
+
+  int counter = 0;
+  int maxAttempts = 500;
   while (*headPtr) //Check if string is over
   {
     //Spin to first comma
@@ -1091,13 +1101,24 @@ bool parseIncomingSettings()
     //log_d("settingName: %s value: %s", settingName, valueStr);
 
     updateSettingWithValue(settingName, valueStr);
+
+    //Avoid infinite loop if response is malformed
+    counter++;
+    if (counter == maxAttempts)
+    {
+      systemPrintln("Error: Incoming settings malformed.");
+      break;
+    }
   }
 
-  //Confirm receipt
+  if (counter < maxAttempts)
+  {
+    //Confirm receipt
+    log_d("Sending save confirmation");
 #ifdef COMPILE_AP
-  log_d("Sending save confirmation");
-  websocket->textAll("confirmSave,1,");
+    websocket->textAll("confirmSave,1,");
 #endif
+  }
 
   return (true);
 }

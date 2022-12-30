@@ -1208,13 +1208,13 @@ function getFileList() {
 
 function fileManagerDownload() {
     selectedFiles = document.querySelectorAll('input[name=fileID]:checked');
-    filesSelected = document.querySelectorAll('input[name=fileID]:checked').length;
+    numberOfFilesSelected = document.querySelectorAll('input[name=fileID]:checked').length;
     fileNumber = 0;
     sendFile(); //Start first send
 }
 
 function sendFile() {
-    if (fileNumber == filesSelected) return;
+    if (fileNumber == numberOfFilesSelected) return;
     var urltocall = "/file?name=" + selectedFiles[fileNumber].id + "&action=download";
     console.log(urltocall);
     window.location.href = urltocall;

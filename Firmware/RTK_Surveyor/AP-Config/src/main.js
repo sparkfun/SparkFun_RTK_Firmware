@@ -34,6 +34,9 @@ var selectedFiles = "";
 var showingFileList = false;
 var fileTableText = "";
 
+var recordsECEF = [];
+var recordsGeodetic = [];
+
 function parseIncoming(msg) {
     //console.log("incoming message: " + msg);
 
@@ -1006,14 +1009,19 @@ document.addEventListener("DOMContentLoaded", (event) => {
             hide("enableLoggingDetails");
         }
     });
+
+    ge("fixedAltitude").addEventListener("change", function () {
+        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+    });
+
+    ge("antennaHeight").addEventListener("change", function () {
+        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+    });
+
+    ge("antennaReferencePoint").addEventListener("change", function () {
+        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+    });
 })
-
-var recordsECEF = [];
-var recordsGeodetic = [];
-
-var bLen0 = 0;
-var bLen1 = 0;
-var bLen2 = 0;
 
 function addECEF() {
     errorCount = 0;
@@ -1090,8 +1098,6 @@ function updateECEFList() {
         var parts = $(this).text().split(' ');
         var nickname = parts[0].substring(0, 15);
         $(this).text(nickname + ': ' + parts[1] + ' ' + parts[2] + ' ' + parts[3]).text;
-    ge("fixedAltitude").addEventListener("change", function () {
-        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
     });
 }
 
@@ -1166,15 +1172,11 @@ function updateGeodeticList() {
         option.value = index;
         ge("StationCoordinatesGeodetic").add(option);
     }
-    ge("antennaHeight").addEventListener("change", function () {
-        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
 
     $("#StationCoordinatesGeodetic option").each(function () {
         var parts = $(this).text().split(' ');
         var nickname = parts[0].substring(0, 15);
         $(this).text(nickname + ': ' + parts[1] + ' ' + parts[2] + ' ' + parts[3]).text;
-    ge("antennaReferencePoint").addEventListener("change", function () {
-        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
     });
 }
 

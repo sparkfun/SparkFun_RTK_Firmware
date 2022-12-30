@@ -267,7 +267,10 @@ function sendData() {
     }
 
     //Check boxes, radio buttons
-    clsElements = document.querySelectorAll(".form-check-input, .form-radio");
+    //Remove file manager files
+    clsElements = document.querySelectorAll(".form-check-input:not(.fileManagerCheck), .form-radio");
+    console.log(clsElements.length);
+
     for (let x = 0; x < clsElements.length; x++) {
         settingCSV += clsElements[x].id + "," + clsElements[x].checked + ",";
     }

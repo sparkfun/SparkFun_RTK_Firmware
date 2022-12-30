@@ -1125,16 +1125,21 @@
                                     <p id="fixedLongError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
                             <div class="form-group row">
                                 <label for="fixedAltitude"
-                                    class="box-margin40 col-sm-3 col-5 col-form-label">HAE/Alt(m):</label>
+                                    class="box-margin40 col-sm-3 col-5 col-form-label">HAE Mark/Alt(m):
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Height Above Ellipsoid of the mark. This is the coordinate or altitude of the mark or monument on the ground.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
                                 <div class="col-sm-4 col-5">
                                     <input type="number" class="form-control" id="fixedAltitude">
                                     <p id="fixedAltitudeError" class="inlineError"></p>
                                 </div>
                             </div><br>
-
+        
                             <div class="form-group row">
                                 <label for="antennaHeight" class="box-margin40 col-sm-3 col-5 col-form-label">Antenna
                                     Height(mm):
@@ -1143,13 +1148,13 @@
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
-
+        
                                 <div class="col-sm-4 col-5">
                                     <input type="number" class="form-control" id="antennaHeight">
                                     <p id="antennaHeightError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
                             <div class="form-group row">
                                 <label for="antennaReferencePoint" class="box-margin40 col-5 col-form-label">Antenna
                                     Reference Point(mm):
@@ -1163,7 +1168,21 @@
                                     <p id="antennaReferencePointError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
+                            <div class="form-group row">
+                                <label for="fixedHAE_APC"
+                                    class="box-margin40 col-sm-3 col-5 col-form-label">HAE APC(m):
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Height Above Ellipsoid of the Antenna Phase Center. This is the sum of the antenna height, phase center, and mark height. Not user editable, shown for information only.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                                <div class="col-sm-4 col-5">
+                                    <input type="number" class="form-control" id="fixedHAE_APC" disabled>
+                                    <p id="fixedHAE_APCError" class="inlineError"></p>
+                                </div>
+                            </div><br>
+        
                             <div class="form-group row">
                                 <label for="nicknameGeodetic" class="box-margin40 col-sm-3 col-4 col-form-label">Name:
                                     <span class="tt" data-bs-placement="right"
@@ -1176,7 +1195,7 @@
                                     <p id="nicknameGeodeticError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
                             <div class="form-group row">
                                 <label>Commonly Used Coordinates
                                     <span class="tt" data-bs-placement="right"

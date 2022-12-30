@@ -40,10 +40,12 @@ void loadSettings()
   systemPrintf("Profile '%s' loaded\r\n", profileNames[profileNumber]);
 }
 
-//Set the settingsFileName used many places
+//Set the settingsFileName and coordinate file names used many places
 void setSettingsFileName()
 {
   sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
+  sprintf(stationCoordinateECEFFileName, "/StationCoordinates-ECEF_%d.csv", profileNumber);
+  sprintf(stationCoordinateGeodeticFileName, "/StationCoordinates-Geodetic_%d.csv", profileNumber);
 }
 
 //Load only LFS settings without recording

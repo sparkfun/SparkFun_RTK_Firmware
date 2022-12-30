@@ -104,8 +104,8 @@ uint8_t profileNumber = MAX_PROFILE_COUNT; //profileNumber gets set once at boot
 char profileNames[MAX_PROFILE_COUNT][50]; //Populated based on names found in LittleFS and SD
 char settingsFileName[60]; //Contains the %s_Settings_%d.txt with current profile number set
 
-const char stationCoordinateECEFFileName[] = "/StationCoordinates-ECEF.csv";
-const char stationCoordinateGeodeticFileName[] = "/StationCoordinates-Geodetic.csv";
+char stationCoordinateECEFFileName[60]; //Contains the /StationCoordinates-ECEF_%d.csv with current profile number set
+char stationCoordinateGeodeticFileName[60]; //Contains the /StationCoordinates-Geodetic_%d.csv with current profile number set
 const int MAX_STATIONS = 50; //Record upto 50 ECEF and Geodetic commonly used stations
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

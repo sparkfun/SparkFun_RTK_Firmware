@@ -68,6 +68,9 @@ static uint32_t blinking_icons;
 static uint32_t icons;
 static uint32_t iconsRadio;
 
+unsigned long ipDisplayTimer = 0;
+bool ipDisplayFirstHalf = false;
+
 // Fonts
 #include <res/qw_fnt_5x7.h>
 #include <res/qw_fnt_8x16.h>
@@ -1658,13 +1661,83 @@ void displayWiFiConfig()
   printTextCenter("SSID:", yPos, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
   yPos = yPos + fontHeight + 1;
-  printTextCenter("RTK Config", yPos, QW_FONT_5X7, 1, false);
+
+
+  if (settings.wifiConfigOverAP == true)
+    printTextCenter("RTK Config", yPos, QW_FONT_5X7, 1, false);
+  else
+  {
+    //Convert current SSID to string
+    char mySSID[50] = {'\0'};
+    sprintf(mySSID, "%s", WiFi.SSID());
+    
+    //Trim to a max length of 11
+    if (strlen(mySSID) > 11)
+    {
+      char mySSIDshort[50] = {'\0'};
+      strncpy(mySSIDshort, mySSID, 11);
+      printTextCenter(mySSIDshort, yPos, QW_FONT_5X7, 1, false);
+    }
+    else
+      printTextCenter(mySSID, yPos, QW_FONT_5X7, 1, false);
+  }
 
   yPos = yPos + fontHeight + 3;
   printTextCenter("IP:", yPos, QW_FONT_5X7, 1, false);
 
   yPos = yPos + fontHeight + 1;
-  printTextCenter("192.168.4.1", yPos, QW_FONT_5X7, 1, false);
+
+#ifdef COMPILE_AP
+  IPAddress myIpAddress;
+  if (settings.wifiConfigOverAP == true)
+    myIpAddress = WiFi.softAPIP();
+  else
+    myIpAddress = WiFi.localIP();
+
+  //Convert to string
+  char myIP[20] = {'\0'};
+  sprintf(myIP, "%d.%d.%d.%d", myIpAddress[0], myIpAddress[1], myIpAddress[2], myIpAddress[3]);
+
+  if (strlen(myIP) <= 11)
+    printTextCenter(myIP, yPos, QW_FONT_5X7, 1, false);
+  else
+  {
+    //Toggle the IP display back and forth
+    if (millis() - ipDisplayTimer > 2000)
+    {
+      ipDisplayTimer = millis();
+      if (ipDisplayFirstHalf == false)
+      {
+        //Display the first half of the IP address up to 11 characters
+        ipDisplayFirstHalf = true;
+      }
+      else
+      {
+        //Display the 2nd half of the IP address up to 11 characters
+        ipDisplayFirstHalf = false;
+      }
+    }
+
+    if (ipDisplayFirstHalf == true)
+    {
+      //Display the first half of the IP address up to 11 characters
+      char myIPFront[12]; //1 for null terminator
+      strncpy(myIPFront, myIP, 11);
+      myIPFront[11] = '\0';
+      printTextCenter(myIPFront, yPos, QW_FONT_5X7, 1, false);
+    }
+    else
+    {
+      //Display the 2nd half of the IP address up to 11 characters
+      char myIPBack[12]; //1 for null terminator
+      strncpy(myIPBack, myIP + (strlen(myIP) - 11), 11);
+      myIPBack[11] = '\0';
+      printTextCenter(myIPBack, yPos, QW_FONT_5X7, 1, false);
+    }
+  }
+#else
+  printTextCenter("No AP", yPos, QW_FONT_5X7, 1, false);
+#endif
 }
 
 //When user does a factory reset, let us know
@@ -2295,8 +2368,8 @@ void paintResets()
   {
     oled.setFont(QW_FONT_5X7); //Small font
     oled.setCursor(16 + (8 * 3) + 7, 38); //x, y
-    
-    if(settings.enablePrintBufferOverrun == false)
+
+    if (settings.enablePrintBufferOverrun == false)
       oled.print(settings.resetCount);
     else
       oled.print(settings.resetCount + bufferOverruns);

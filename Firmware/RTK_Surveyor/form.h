@@ -52,10 +52,13 @@ var ecefY = -4716804.403;
 var ecefZ = 4086665.484;
 var lastFileName = "";
 var fileNumber = 0;
-var filesSelected = 0;
+var numberOfFilesSelected = 0;
 var selectedFiles = "";
 var showingFileList = false;
 var fileTableText = "";
+
+var recordsECEF = [];
+var recordsGeodetic = [];
 
 function parseIncoming(msg) {
     //console.log("incoming message: " + msg);
@@ -81,6 +84,7 @@ function parseIncoming(msg) {
         else if (id == "platformPrefix") {
             platformPrefix = val;
             document.title = "RTK " + platformPrefix + " Setup";
+            fullPageUpdate = true;
 
             if (platformPrefix == "Surveyor") {
                 hide("dataPortChannelDropdown");
@@ -244,22 +248,30 @@ function parseIncoming(msg) {
     ge("profileChangeMessage").innerHTML = '';
     ge("resetProfileMsg").innerHTML = '';
 
-    //Force element updates
-    ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
-    ge("baseTypeSurveyIn").dispatchEvent(new CustomEvent('change'));
-    ge("baseTypeFixed").dispatchEvent(new CustomEvent('change'));
-    ge("fixedBaseCoordinateTypeECEF").dispatchEvent(new CustomEvent('change'));
-    ge("fixedBaseCoordinateTypeGeo").dispatchEvent(new CustomEvent('change'));
-    ge("enableLogging").dispatchEvent(new CustomEvent('change'));
-    ge("enableNtripClient").dispatchEvent(new CustomEvent('change'));
-    ge("enableNtripServer").dispatchEvent(new CustomEvent('change'));
-    ge("dataPortChannel").dispatchEvent(new CustomEvent('change'));
-    ge("enableExternalPulse").dispatchEvent(new CustomEvent('change'));
-    ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
-    ge("radioType").dispatchEvent(new CustomEvent('change'));
-    updateECEFList();
-    updateGeodeticList();
-    tcpBoxes();
+    //Don't update if all we received was coordinate info
+    if (fullPageUpdate) {
+        fullPageUpdate = false;
+
+        //Force element updates
+        ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
+        ge("baseTypeSurveyIn").dispatchEvent(new CustomEvent('change'));
+        ge("baseTypeFixed").dispatchEvent(new CustomEvent('change'));
+        ge("fixedBaseCoordinateTypeECEF").dispatchEvent(new CustomEvent('change'));
+        ge("fixedBaseCoordinateTypeGeo").dispatchEvent(new CustomEvent('change'));
+        ge("enableLogging").dispatchEvent(new CustomEvent('change'));
+        ge("enableNtripClient").dispatchEvent(new CustomEvent('change'));
+        ge("enableNtripServer").dispatchEvent(new CustomEvent('change'));
+        ge("dataPortChannel").dispatchEvent(new CustomEvent('change'));
+        ge("enableExternalPulse").dispatchEvent(new CustomEvent('change'));
+        ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
+        ge("radioType").dispatchEvent(new CustomEvent('change'));
+        ge("antennaReferencePoint").dispatchEvent(new CustomEvent('change'));
+
+        updateECEFList();
+        updateGeodeticList();
+        tcpBoxes();
+    }
+
 }
 
 function hide(id) {
@@ -281,7 +293,9 @@ function sendData() {
     }
 
     //Check boxes, radio buttons
-    clsElements = document.querySelectorAll(".form-check-input, .form-radio");
+    //Remove file manager files
+    clsElements = document.querySelectorAll(".form-check-input:not(.fileManagerCheck), .form-radio");
+
     for (let x = 0; x < clsElements.length; x++) {
         settingCSV += clsElements[x].id + "," + clsElements[x].checked + ",";
     }
@@ -351,8 +365,6 @@ function validateFields() {
     checkConstellations();
 
     if (ge("enableNtripClient").checked) {
-        checkElementString("ntripClient_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
-        checkElementString("ntripClient_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseGNSSConfig");
         checkElementString("ntripClient_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
         checkElementValue("ntripClient_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseGNSSConfig");
         checkElementString("ntripClient_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
@@ -360,8 +372,6 @@ function validateFields() {
         checkElementCasterUser("ntripClient_CasterUser", "www.rtk2go.com", "User must use their email address", "collapseGNSSConfig");
     }
     else {
-        clearElement("ntripClient_wifiSSID", "TRex");
-        clearElement("ntripClient_wifiPW", "parachutes");
         clearElement("ntripClient_CasterHost", "rtk2go.com");
         clearElement("ntripClient_CasterPort", 2101);
         clearElement("ntripClient_MountPoint", "bldr_SparkFun1");
@@ -505,16 +515,12 @@ function validateFields() {
         }
 
         if (ge("enableNtripServer").checked == true) {
-            checkElementString("ntripServer_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-            checkElementString("ntripServer_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
             checkElementString("ntripServer_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
             checkElementValue("ntripServer_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
             checkElementString("ntripServer_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
             checkElementString("ntripServer_MountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
         }
         else {
-            clearElement("ntripServer_wifiSSID", "TRex");
-            clearElement("ntripServer_wifiPW", "parachutes");
             clearElement("ntripServer_CasterHost", "rtk2go.com");
             clearElement("ntripServer_CasterPort", 2101);
             clearElement("ntripServer_CasterUser", "");
@@ -527,17 +533,12 @@ function validateFields() {
     //PointPerfect Config
     if (platformPrefix == "Facet L-Band") {
         if (ge("enablePointPerfectCorrections").checked == true) {
-            checkElementString("home_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapsePPConfig");
-            checkElementString("home_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapsePPConfig");
-
             value = ge("pointPerfectDeviceProfileToken").value;
             console.log(value);
             if (value.length > 0)
                 checkElementString("pointPerfectDeviceProfileToken", 36, 36, "Must be 36 characters", "collapsePPConfig");
         }
         else {
-            clearElement("home_wifiSSID", "");
-            clearElement("home_wifiPW", "");
             clearElement("pointPerfectDeviceProfileToken", "");
             ge("autoKeyRenewal").checked = true;
         }
@@ -555,7 +556,6 @@ function validateFields() {
     if (ge("enableTcpClient").checked || ge("enableTcpServer").checked) {
         checkElementString("wifiTcpPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
     }
-
 
     //System Config
     if (ge("enableLogging").checked) {
@@ -1031,14 +1031,19 @@ document.addEventListener("DOMContentLoaded", (event) => {
             hide("enableLoggingDetails");
         }
     });
+
+    ge("fixedAltitude").addEventListener("change", function () {
+        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+    });
+
+    ge("antennaHeight").addEventListener("change", function () {
+        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+    });
+
+    ge("antennaReferencePoint").addEventListener("change", function () {
+        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+    });
 })
-
-var recordsECEF = [];
-var recordsGeodetic = [];
-
-var bLen0 = 0;
-var bLen1 = 0;
-var bLen2 = 0;
 
 function addECEF() {
     errorCount = 0;
@@ -1209,7 +1214,7 @@ function getFileList() {
         showingFileList = true;
 
         //If the tab was just opened, create table from scratch
-        ge("fileManagerTable").innerHTML = "<table><tr align='left'><th>Name</th><th>Size</th><td><input type='checkbox' id='fileSelectAll' class='form-check-input' onClick='fileManagerToggle()'></td></tr></tr></table>";
+        ge("fileManagerTable").innerHTML = "<table><tr align='left'><th>Name</th><th>Size</th><td><input type='checkbox' id='fileSelectAll' class='form-check-input fileManagerCheck' onClick='fileManagerToggle()'></td></tr></tr></table>";
         fileTableText = "";
 
         xmlhttp = new XMLHttpRequest();
@@ -1227,13 +1232,13 @@ function getFileList() {
 
 function fileManagerDownload() {
     selectedFiles = document.querySelectorAll('input[name=fileID]:checked');
-    filesSelected = document.querySelectorAll('input[name=fileID]:checked').length;
+    numberOfFilesSelected = document.querySelectorAll('input[name=fileID]:checked').length;
     fileNumber = 0;
     sendFile(); //Start first send
 }
 
 function sendFile() {
-    if (fileNumber == filesSelected) return;
+    if (fileNumber == numberOfFilesSelected) return;
     var urltocall = "/file?name=" + selectedFiles[fileNumber].id + "&action=download";
     console.log(urltocall);
     window.location.href = urltocall;
@@ -1314,6 +1319,7 @@ function tcpBoxes() {
 )====="; //End main.js
 
 static const char *index_html = R"=====(
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -1431,7 +1437,6 @@ static const char *index_html = R"=====(
                     Profile Configuration <i id="profileCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
-            <!-- <div class="collapse show mb-2" id="collapseProfileConfig"> -->
             <div class="collapse mb-2" id="collapseProfileConfig">
                 <div class="card card-body">
 
@@ -1452,43 +1457,43 @@ static const char *index_html = R"=====(
                     <div class="form-group row">
                         <span style="display:inline; margin-left:20px;">
                             <input type="radio" name="profileRadio" value="1">
-                            <label id="profile1Name">12345678901234567890123456789012345678901234567890</label>
+                            <label id="profile1Name">12345678901234567890</label>
                         </span>
                     </div>
                     <div class="form-group row">
                         <span style="display:inline; margin-left:20px;">
                             <input type="radio" name="profileRadio" value="2">
-                            <label id="profile2Name">12345678901234567890123456789012345678901234567890</label>
+                            <label id="profile2Name"></label>
                         </span>
                     </div>
                     <div class="form-group row">
                         <span style="display:inline; margin-left:20px;">
                             <input type="radio" name="profileRadio" value="3">
-                            <label id="profile3Name">12345678901234567890123456789012345678901234567890</label>
+                            <label id="profile3Name"></label>
                         </span>
                     </div>
                     <div class="form-group row">
                         <span style="display:inline; margin-left:20px;">
                             <input type="radio" name="profileRadio" value="4">
-                            <label id="profile4Name">12345678901234567890123456789012345678901234567890</label>
+                            <label id="profile4Name"></label>
                         </span>
                     </div>
                     <div class="form-group row">
                         <span style="display:inline; margin-left:20px;">
                             <input type="radio" name="profileRadio" value="5">
-                            <label id="profile5Name">12345678901234567890123456789012345678901234567890</label>
+                            <label id="profile5Name"></label>
                         </span>
                     </div>
                     <div class="form-group row">
                         <span style="display:inline; margin-left:20px;">
                             <input type="radio" name="profileRadio" value="6">
-                            <label id="profile6Name">12345678901234567890123456789012345678901234567890</label>
+                            <label id="profile6Name"></label>
                         </span>
                     </div>
                     <div class="form-group row">
                         <span style="display:inline; margin-left:20px;">
                             <input type="radio" name="profileRadio" value="7">
-                            <label id="profile7Name">12345678901234567890123456789012345678901234567890</label>
+                            <label id="profile7Name"></label>
                         </span>
                     </div>
 
@@ -1521,7 +1526,7 @@ static const char *index_html = R"=====(
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapseGNSSConfig" aria-expanded="false" aria-controls="collapseGNSSConfig">
-                    GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-up"></i>
+                    GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseGNSSConfig">
@@ -1620,24 +1625,6 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div id="ntripClientConfig" class="collapse mb-2">
-                        <div class="form-group row">
-                            <label for="ntripClient_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
-                                SSID:</label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="ntripClient_wifiSSID">
-                                <p id="ntripClient_wifiSSIDError" class="inlineError"></p>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label for="ntripClient_wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
-                                PW:</label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="ntripClient_wifiPW">
-                                <p id="ntripClient_wifiPWError" class="inlineError"></p>
-                            </div>
-                        </div>
-
                         <div class="form-group row">
                             <label for="ntripClient_CasterHost"
                                 class="box-margin20 col-sm-3 col-5 col-form-label">Caster
@@ -2354,7 +2341,7 @@ static const char *index_html = R"=====(
                                     <p id="fixedEcefXError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
                             <div class="form-group row">
                                 <div class="col-sm-2 col-3">
                                     <label for="fixedEcefY" class="box-margin40 col-form-label">Y:</label>
@@ -2364,7 +2351,7 @@ static const char *index_html = R"=====(
                                     <p id="fixedEcefYError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
                             <div class="form-group row">
                                 <div class="col-sm-2 col-3">
                                     <label for="fixedEcefZ" class="box-margin40 col-form-label">Z:</label>
@@ -2374,7 +2361,7 @@ static const char *index_html = R"=====(
                                     <p id="fixedEcefZError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
                             <div class="form-group row">
                                 <div class="col-sm-2 col-3">
                                     <label for="nicknameECEF" class="box-margin40 col-form-label">Name:</label>
@@ -2384,7 +2371,7 @@ static const char *index_html = R"=====(
                                     <p id="nicknameECEFError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
                             <div class="form-group row">
                                 <label>Commonly Used Coordinates
                                     <span class="tt" data-bs-placement="right"
@@ -2460,16 +2447,21 @@ static const char *index_html = R"=====(
                                     <p id="fixedLongError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
                             <div class="form-group row">
                                 <label for="fixedAltitude"
-                                    class="box-margin40 col-sm-3 col-5 col-form-label">HAE/Alt(m):</label>
+                                    class="box-margin40 col-sm-3 col-5 col-form-label">HAE Mark/Alt(m):
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Height Above Ellipsoid of the mark. This is the coordinate or altitude of the mark or monument on the ground.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
                                 <div class="col-sm-4 col-5">
                                     <input type="number" class="form-control" id="fixedAltitude">
                                     <p id="fixedAltitudeError" class="inlineError"></p>
                                 </div>
                             </div><br>
-
+        
                             <div class="form-group row">
                                 <label for="antennaHeight" class="box-margin40 col-sm-3 col-5 col-form-label">Antenna
                                     Height(mm):
@@ -2478,13 +2470,13 @@ static const char *index_html = R"=====(
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
-
+        
                                 <div class="col-sm-4 col-5">
                                     <input type="number" class="form-control" id="antennaHeight">
                                     <p id="antennaHeightError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
                             <div class="form-group row">
                                 <label for="antennaReferencePoint" class="box-margin40 col-5 col-form-label">Antenna
                                     Reference Point(mm):
@@ -2498,7 +2490,21 @@ static const char *index_html = R"=====(
                                     <p id="antennaReferencePointError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
+                            <div class="form-group row">
+                                <label for="fixedHAE_APC"
+                                    class="box-margin40 col-sm-3 col-5 col-form-label">HAE APC(m):
+                                    <span class="tt" data-bs-placement="right"
+                                        title="Height Above Ellipsoid of the Antenna Phase Center. This is the sum of the antenna height, phase center, and mark height. Not user editable, shown for information only.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                                <div class="col-sm-4 col-5">
+                                    <input type="number" class="form-control" id="fixedHAE_APC" disabled>
+                                    <p id="fixedHAE_APCError" class="inlineError"></p>
+                                </div>
+                            </div><br>
+        
                             <div class="form-group row">
                                 <label for="nicknameGeodetic" class="box-margin40 col-sm-3 col-4 col-form-label">Name:
                                     <span class="tt" data-bs-placement="right"
@@ -2511,7 +2517,7 @@ static const char *index_html = R"=====(
                                     <p id="nicknameGeodeticError" class="inlineError"></p>
                                 </div>
                             </div>
-
+        
                             <div class="form-group row">
                                 <label>Commonly Used Coordinates
                                     <span class="tt" data-bs-placement="right"
@@ -2564,24 +2570,6 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div id="ntripServerConfig" class="collapse mb-2">
-                        <div class="form-group row">
-                            <label for="ntripServer_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
-                                SSID:</label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="ntripServer_wifiSSID">
-                                <p id="ntripServer_wifiSSIDError" class="inlineError"></p>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label for="ntripServer_wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
-                                PW:</label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="ntripServer_wifiPW">
-                                <p id="ntripServer_wifiPWError" class="inlineError"></p>
-                            </div>
-                        </div>
-
                         <div class="form-group row">
                             <label for="ntripServer_CasterHost"
                                 class="box-margin20 col-sm-3 col-5 col-form-label">Caster
@@ -2699,29 +2687,6 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div id="ppSettingsConfig">
-                        <div class="form-group row">
-                            <label for="home_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">Home WiFi
-                                SSID:
-                                <span class="tt" data-bs-placement="right"
-                                    title="The RTK Facet L-Band needs to obtain PointPerfect keys once every 28 days. This WiFi network will be connected to when necessary to obtain new keys.">
-                                    <span class="icon-info-circle text-primary ms-2"></span>
-                                </span>
-                            </label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="home_wifiSSID">
-                                <p id="home_wifiSSIDError" class="inlineError"></p>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label for="home_wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">Home WiFi
-                                PW:</label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="home_wifiPW">
-                                <p id="home_wifiPWError" class="inlineError"></p>
-                            </div>
-                        </div>
-
                         <div class="form-check mt-3">
                             <label class="form-check-label" for="autoKeyRenewal">Auto Key Renewal </label>
                             <input class="form-check-input" type="checkbox" value="" id="autoKeyRenewal">
@@ -2876,7 +2841,7 @@ static const char *index_html = R"=====(
                     WiFi Configuration <i id="wifiCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
-            <div class="collapse show" id="collapseWiFiConfig">
+            <div class="collapse" id="collapseWiFiConfig">
                 <div class="card card-body">
 
                     <div class="form-group mt-2">
@@ -2886,7 +2851,6 @@ static const char *index_html = R"=====(
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
-
 
                     <div class="form-group row">
                         <label for="wifiNetwork0SSID" class="col-3 col-form-label">SSID 1:</label>
@@ -3194,9 +3158,9 @@ static const char *index_html = R"=====(
                         </span>
 
                         <div class="form-check">
-                            Free: <p id="sdFreeSpaceMB" style="display:inline;">0</p>MB
+                            Free: <p id="sdFreeSpace" style="display:inline;">0 MB</p>
                             <br>
-                            Used: <p id="sdUsedSpaceMB" style="display:inline;">0</p>MB
+                            Used: <p id="sdUsedSpace" style="display:inline;">0 MB</p>
                         </div>
                     </div>
                     <div class="col-sm-7 col-6 mt-2">
@@ -3231,7 +3195,7 @@ static const char *index_html = R"=====(
 
             <!-- --------- File Manager --------- -->
             <div class="d-grid gap-2">
-                <button onclick="getFileList()"" id=" fileManager" class="btn btn-primary mt-3 toggle-btn" type="button"
+                <button onclick="getFileList()" id="fileManager" class="btn btn-primary mt-3 toggle-btn" type="button"
                     data-toggle="collapse" data-target="#collapseFileManager" aria-expanded="false"
                     aria-controls="collapseFileManager">
                     File Manager <i id="fileManagerCaret" class="caret-icon bi icon-caret-down"></i>
@@ -3243,27 +3207,28 @@ static const char *index_html = R"=====(
                         <tr align='left'>
                             <th>Name</th>
                             <th>Size</th>
-                            <td><input type="checkbox" id="fileSelectAll" class="form-check-input" onClick="fileManagerToggle()"></td>
+                            <td><input type="checkbox" id="fileSelectAll" class="form-check-input"
+                                    onClick="fileManagerToggle()"></td>
                         </tr>
                         <tr align='left'>
                             <td>SFE_Express_Settings_0.txt</td>
                             <td>5 MB</td>
                             <td><input type="checkbox" name="fileID" id="SFE_Express_Settings_0.txt"
-                                    class="form-check-input">
+                                    class="form-check-input fileManagerCheck">
                             </td>
                         </tr>
                         <tr align='left'>
                             <td>SFE_Express_221031_020106.ubx</td>
                             <td>221 KB</td>
                             <td><input type="checkbox" name="fileID" id="SFE_Express_221031_020106.ubx"
-                                    class="form-check-input">
+                                    class="form-check-input fileManagerCheck">
                             </td>
                         </tr>
                         <tr align='left'>
                             <td>SFE_Express_221031_020209.ubx</td>
                             <td>408 KB</td>
                             <td><input type="checkbox" name="fileID" id="SFE_Express_221031_020209.ubx"
-                                    class="form-check-input">
+                                    class="form-check-input fileManagerCheck">
                             </td>
                         </tr>
                     </table>

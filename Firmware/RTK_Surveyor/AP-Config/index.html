@@ -205,7 +205,7 @@
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
                     data-target="#collapseGNSSConfig" aria-expanded="false" aria-controls="collapseGNSSConfig">
-                    GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-up"></i>
+                    GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
             <div class="collapse" id="collapseGNSSConfig">
@@ -304,24 +304,6 @@
                     </div>
 
                     <div id="ntripClientConfig" class="collapse mb-2">
-                        <div class="form-group row">
-                            <label for="ntripClient_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
-                                SSID:</label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="ntripClient_wifiSSID">
-                                <p id="ntripClient_wifiSSIDError" class="inlineError"></p>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label for="ntripClient_wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
-                                PW:</label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="ntripClient_wifiPW">
-                                <p id="ntripClient_wifiPWError" class="inlineError"></p>
-                            </div>
-                        </div>
-
                         <div class="form-group row">
                             <label for="ntripClient_CasterHost"
                                 class="box-margin20 col-sm-3 col-5 col-form-label">Caster
@@ -965,7 +947,7 @@
                     Base Configuration <i id="baseCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
-            <div class="collapse" id="collapseBaseConfig">
+            <div class="collapse show" id="collapseBaseConfig">
                 <div class="card card-body">
 
                     <div id="surveyInRadio">
@@ -1249,24 +1231,6 @@
 
                     <div id="ntripServerConfig" class="collapse mb-2">
                         <div class="form-group row">
-                            <label for="ntripServer_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
-                                SSID:</label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="ntripServer_wifiSSID">
-                                <p id="ntripServer_wifiSSIDError" class="inlineError"></p>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label for="ntripServer_wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">WiFi
-                                PW:</label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="ntripServer_wifiPW">
-                                <p id="ntripServer_wifiPWError" class="inlineError"></p>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
                             <label for="ntripServer_CasterHost"
                                 class="box-margin20 col-sm-3 col-5 col-form-label">Caster
                                 Host:</label>
@@ -1383,29 +1347,6 @@
                     </div>
 
                     <div id="ppSettingsConfig">
-                        <div class="form-group row">
-                            <label for="home_wifiSSID" class="box-margin20 col-sm-3 col-4 col-form-label">Home WiFi
-                                SSID:
-                                <span class="tt" data-bs-placement="right"
-                                    title="The RTK Facet L-Band needs to obtain PointPerfect keys once every 28 days. This WiFi network will be connected to when necessary to obtain new keys.">
-                                    <span class="icon-info-circle text-primary ms-2"></span>
-                                </span>
-                            </label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="home_wifiSSID">
-                                <p id="home_wifiSSIDError" class="inlineError"></p>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label for="home_wifiPW" class="box-margin20 col-sm-3 col-4 col-form-label">Home WiFi
-                                PW:</label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="home_wifiPW">
-                                <p id="home_wifiPWError" class="inlineError"></p>
-                            </div>
-                        </div>
-
                         <div class="form-check mt-3">
                             <label class="form-check-label" for="autoKeyRenewal">Auto Key Renewal </label>
                             <input class="form-check-input" type="checkbox" value="" id="autoKeyRenewal">
@@ -1926,7 +1867,8 @@
                         <tr align='left'>
                             <th>Name</th>
                             <th>Size</th>
-                            <td><input type="checkbox" id="fileSelectAll" class="form-check-input" onClick="fileManagerToggle()"></td>
+                            <td><input type="checkbox" id="fileSelectAll" class="form-check-input"
+                                    onClick="fileManagerToggle()"></td>
                         </tr>
                         <tr align='left'>
                             <td>SFE_Express_Settings_0.txt</td>

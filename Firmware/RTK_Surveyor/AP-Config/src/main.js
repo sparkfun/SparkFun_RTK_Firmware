@@ -328,8 +328,6 @@ function validateFields() {
     checkConstellations();
 
     if (ge("enableNtripClient").checked) {
-        checkElementString("ntripClient_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
-        checkElementString("ntripClient_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseGNSSConfig");
         checkElementString("ntripClient_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
         checkElementValue("ntripClient_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseGNSSConfig");
         checkElementString("ntripClient_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
@@ -337,8 +335,6 @@ function validateFields() {
         checkElementCasterUser("ntripClient_CasterUser", "www.rtk2go.com", "User must use their email address", "collapseGNSSConfig");
     }
     else {
-        clearElement("ntripClient_wifiSSID", "TRex");
-        clearElement("ntripClient_wifiPW", "parachutes");
         clearElement("ntripClient_CasterHost", "rtk2go.com");
         clearElement("ntripClient_CasterPort", 2101);
         clearElement("ntripClient_MountPoint", "bldr_SparkFun1");
@@ -482,16 +478,12 @@ function validateFields() {
         }
 
         if (ge("enableNtripServer").checked == true) {
-            checkElementString("ntripServer_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
-            checkElementString("ntripServer_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapseBaseConfig");
             checkElementString("ntripServer_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
             checkElementValue("ntripServer_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseBaseConfig");
             checkElementString("ntripServer_MountPoint", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
             checkElementString("ntripServer_MountPointPW", 1, 30, "Must be 1 to 30 characters", "collapseBaseConfig");
         }
         else {
-            clearElement("ntripServer_wifiSSID", "TRex");
-            clearElement("ntripServer_wifiPW", "parachutes");
             clearElement("ntripServer_CasterHost", "rtk2go.com");
             clearElement("ntripServer_CasterPort", 2101);
             clearElement("ntripServer_CasterUser", "");
@@ -504,17 +496,12 @@ function validateFields() {
     //PointPerfect Config
     if (platformPrefix == "Facet L-Band") {
         if (ge("enablePointPerfectCorrections").checked == true) {
-            checkElementString("home_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapsePPConfig");
-            checkElementString("home_wifiPW", 0, 30, "Must be 0 to 30 characters", "collapsePPConfig");
-
             value = ge("pointPerfectDeviceProfileToken").value;
             console.log(value);
             if (value.length > 0)
                 checkElementString("pointPerfectDeviceProfileToken", 36, 36, "Must be 36 characters", "collapsePPConfig");
         }
         else {
-            clearElement("home_wifiSSID", "");
-            clearElement("home_wifiPW", "");
             clearElement("pointPerfectDeviceProfileToken", "");
             ge("autoKeyRenewal").checked = true;
         }
@@ -532,7 +519,6 @@ function validateFields() {
     if (ge("enableTcpClient").checked || ge("enableTcpServer").checked) {
         checkElementString("wifiTcpPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
     }
-
 
     //System Config
     if (ge("enableLogging").checked) {

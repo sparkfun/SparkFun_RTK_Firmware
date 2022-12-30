@@ -482,8 +482,11 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "maxLogTime_minutes", settings.maxLogTime_minutes);
   stringRecord(settingsCSV, "maxLogLength_minutes", settings.maxLogLength_minutes);
 
-  stringRecord(settingsCSV, "sdFreeSpace", stringHumanReadableSize(sdFreeSpace));
-  stringRecord(settingsCSV, "sdUsedSpace", stringHumanReadableSize(sdCardSize - sdFreeSpace));
+  char sdSpace[30];
+  sprintf(sdSpace, "%s", stringHumanReadableSize(sdFreeSpace));
+  stringRecord(settingsCSV, "sdFreeSpace", sdSpace);
+  sprintf(sdSpace, "%s", stringHumanReadableSize(sdCardSize - sdFreeSpace));
+  stringRecord(settingsCSV, "sdUsedSpace", sdSpace);
 
   stringRecord(settingsCSV, "enableResetDisplay", settings.enableResetDisplay);
 
@@ -935,20 +938,18 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       {
         char tempString[100]; //wifiNetwork0Password=parachutes
         sprintf(tempString, "wifiNetwork%dSSID", x);
-        settingsFile->println(tempString);
         if (strcmp(settingName, tempString) == 0)
         {
-          settings.wifiNetworks[x].ssid = settingValueStr;
+          strcpy(settings.wifiNetworks[x].ssid, settingValueStr);
           knownSetting = true;
           break;
         }
         else
         {
           sprintf(tempString, "wifiNetwork%dPassword", x);
-          settingsFile->println(tempString);
           if (strcmp(settingName, tempString) == 0)
           {
-            settings.wifiNetworks[x].password = settingValueStr;
+            strcpy(settings.wifiNetworks[x].password, settingValueStr);
             knownSetting = true;
             break;
           }

@@ -145,43 +145,45 @@ void wifiSetState(byte newState)
 
 void wifiStartAP()
 {
-  //When testing, operate on local WiFi instead of AP
-  //#define LOCAL_WIFI_TESTING 1
-#ifdef LOCAL_WIFI_TESTING
-  //Connect to local router
-
-  WiFi.mode(WIFI_STA);
-
-#ifdef COMPILE_ESPNOW
-  // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station
-#endif
-
-  wifiConnect(); //Attempt to connect to any SSID on settings list
-  wifiPrintNetworkInfo();
-#else   //End LOCAL_WIFI_TESTING
-  //Start in AP mode
-
-  WiFi.mode(WIFI_AP);
-
-#ifdef COMPILE_ESPNOW
-  // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-  esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi AP.
-#endif
-
-  IPAddress local_IP(192, 168, 4, 1);
-  IPAddress gateway(192, 168, 4, 1);
-  IPAddress subnet(255, 255, 255, 0);
-
-  WiFi.softAPConfig(local_IP, gateway, subnet);
-  if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
+  if (settings.wifiConfigOverAP == true)
   {
-    systemPrintln("WiFi AP failed to start");
-    return;
+    //Start in AP mode
+
+    WiFi.mode(WIFI_AP);
+
+#ifdef COMPILE_ESPNOW
+    // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
+    esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi AP.
+#endif
+
+    IPAddress local_IP(192, 168, 4, 1);
+    IPAddress gateway(192, 168, 4, 1);
+    IPAddress subnet(255, 255, 255, 0);
+
+    WiFi.softAPConfig(local_IP, gateway, subnet);
+    if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
+    {
+      systemPrintln("WiFi AP failed to start");
+      return;
+    }
+    systemPrint("WiFi AP Started with IP: ");
+    systemPrintln(WiFi.softAPIP());
   }
-  systemPrint("WiFi AP Started with IP: ");
-  systemPrintln(WiFi.softAPIP());
-#endif  //End AP Testing
+  else
+  {
+    //Start webserver on local WiFi instead of AP
+
+    WiFi.mode(WIFI_STA);
+
+#ifdef COMPILE_ESPNOW
+    // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station
+#endif
+
+    wifiConnect(); //Attempt to connect to any SSID on settings list
+    wifiPrintNetworkInfo();
+  }
+  
 }
 
 #endif  //COMPILE_WIFI
@@ -358,7 +360,7 @@ bool wifiTcpServerActive()
   //Stop the TCP server
   wifiTcpServer->stop();
 
-  if(wifiTcpServer != NULL)
+  if (wifiTcpServer != NULL)
     free(wifiTcpServer);
 #endif  //COMPILE_WIFI
   return false;
@@ -446,7 +448,7 @@ void wifiStop()
       delay(5);
     systemPrintln("TCP Server offline");
   }
-  
+
   if (wifiState == WIFI_OFF)
   {
     //Do nothing
@@ -512,9 +514,9 @@ void wifiUpdate()
   if ((!wifiTcpServer) && (!settings.enableTcpClient) && settings.enableTcpServer
       && (wifiState == WIFI_CONNECTED))
   {
-    if(wifiTcpServer == NULL)
+    if (wifiTcpServer == NULL)
       wifiTcpServer = new WiFiServer(settings.wifiTcpPort);
-      
+
     wifiTcpServer->begin();
     online.tcpServer = true;
     systemPrint("TCP Server online, IP Address ");

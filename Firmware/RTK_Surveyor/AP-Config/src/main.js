@@ -1090,6 +1090,8 @@ function updateECEFList() {
         var parts = $(this).text().split(' ');
         var nickname = parts[0].substring(0, 15);
         $(this).text(nickname + ': ' + parts[1] + ' ' + parts[2] + ' ' + parts[3]).text;
+    ge("fixedAltitude").addEventListener("change", function () {
+        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
     });
 }
 
@@ -1164,11 +1166,15 @@ function updateGeodeticList() {
         option.value = index;
         ge("StationCoordinatesGeodetic").add(option);
     }
+    ge("antennaHeight").addEventListener("change", function () {
+        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
 
     $("#StationCoordinatesGeodetic option").each(function () {
         var parts = $(this).text().split(' ');
         var nickname = parts[0].substring(0, 15);
         $(this).text(nickname + ': ' + parts[1] + ' ' + parts[2] + ' ' + parts[3]).text;
+    ge("antennaReferencePoint").addEventListener("change", function () {
+        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
     });
 }
 
@@ -1184,7 +1190,7 @@ function getFileList() {
         showingFileList = true;
 
         //If the tab was just opened, create table from scratch
-        ge("fileManagerTable").innerHTML = "<table><tr align='left'><th>Name</th><th>Size</th><td><input type='checkbox' id='fileSelectAll' class='form-check-input' onClick='fileManagerToggle()'></td></tr></tr></table>";
+        ge("fileManagerTable").innerHTML = "<table><tr align='left'><th>Name</th><th>Size</th><td><input type='checkbox' id='fileSelectAll' class='form-check-input fileManagerCheck' onClick='fileManagerToggle()'></td></tr></tr></table>";
         fileTableText = "";
 
         xmlhttp = new XMLHttpRequest();

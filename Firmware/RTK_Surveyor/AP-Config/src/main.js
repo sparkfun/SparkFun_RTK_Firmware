@@ -29,7 +29,7 @@ var ecefY = -4716804.403;
 var ecefZ = 4086665.484;
 var lastFileName = "";
 var fileNumber = 0;
-var filesSelected = 0;
+var numberOfFilesSelected = 0;
 var selectedFiles = "";
 var showingFileList = false;
 var fileTableText = "";
@@ -58,6 +58,7 @@ function parseIncoming(msg) {
         else if (id == "platformPrefix") {
             platformPrefix = val;
             document.title = "RTK " + platformPrefix + " Setup";
+            fullPageUpdate = true;
 
             if (platformPrefix == "Surveyor") {
                 hide("dataPortChannelDropdown");
@@ -221,22 +222,30 @@ function parseIncoming(msg) {
     ge("profileChangeMessage").innerHTML = '';
     ge("resetProfileMsg").innerHTML = '';
 
-    //Force element updates
-    ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
-    ge("baseTypeSurveyIn").dispatchEvent(new CustomEvent('change'));
-    ge("baseTypeFixed").dispatchEvent(new CustomEvent('change'));
-    ge("fixedBaseCoordinateTypeECEF").dispatchEvent(new CustomEvent('change'));
-    ge("fixedBaseCoordinateTypeGeo").dispatchEvent(new CustomEvent('change'));
-    ge("enableLogging").dispatchEvent(new CustomEvent('change'));
-    ge("enableNtripClient").dispatchEvent(new CustomEvent('change'));
-    ge("enableNtripServer").dispatchEvent(new CustomEvent('change'));
-    ge("dataPortChannel").dispatchEvent(new CustomEvent('change'));
-    ge("enableExternalPulse").dispatchEvent(new CustomEvent('change'));
-    ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
-    ge("radioType").dispatchEvent(new CustomEvent('change'));
-    updateECEFList();
-    updateGeodeticList();
-    tcpBoxes();
+    //Don't update if all we received was coordinate info
+    if (fullPageUpdate) {
+        fullPageUpdate = false;
+
+        //Force element updates
+        ge("measurementRateHz").dispatchEvent(new CustomEvent('change'));
+        ge("baseTypeSurveyIn").dispatchEvent(new CustomEvent('change'));
+        ge("baseTypeFixed").dispatchEvent(new CustomEvent('change'));
+        ge("fixedBaseCoordinateTypeECEF").dispatchEvent(new CustomEvent('change'));
+        ge("fixedBaseCoordinateTypeGeo").dispatchEvent(new CustomEvent('change'));
+        ge("enableLogging").dispatchEvent(new CustomEvent('change'));
+        ge("enableNtripClient").dispatchEvent(new CustomEvent('change'));
+        ge("enableNtripServer").dispatchEvent(new CustomEvent('change'));
+        ge("dataPortChannel").dispatchEvent(new CustomEvent('change'));
+        ge("enableExternalPulse").dispatchEvent(new CustomEvent('change'));
+        ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
+        ge("radioType").dispatchEvent(new CustomEvent('change'));
+        ge("antennaReferencePoint").dispatchEvent(new CustomEvent('change'));
+
+        updateECEFList();
+        updateGeodeticList();
+        tcpBoxes();
+    }
+
 }
 
 function hide(id) {

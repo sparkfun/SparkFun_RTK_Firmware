@@ -1,12 +1,20 @@
-//var gateway = 'ws://192.168.0.140/ws'; //WiFi mode
-var gateway = 'ws://192.168.4.1/ws'; //AP mode
-var websocket = new WebSocket(gateway);
+var gateway = `ws://${window.location.hostname}/ws`;
+var websocket;
 var resetTimeout = 0;
 var saveTimeout = 0;
 
-websocket.onmessage = function (msg) {
-    parseIncoming(msg.data);
-};
+window.addEventListener('load', onLoad);
+
+function onLoad(event) {
+    initWebSocket();
+}
+
+function initWebSocket() {
+    websocket = new WebSocket(gateway);
+    websocket.onmessage = function (msg) {
+        parseIncoming(msg.data);
+    };
+}
 
 function ge(e) {
     return document.getElementById(e);
@@ -228,6 +236,7 @@ function parseIncoming(msg) {
     ge("radioType").dispatchEvent(new CustomEvent('change'));
     updateECEFList();
     updateGeodeticList();
+    tcpBoxes();
 }
 
 function hide(id) {
@@ -492,7 +501,7 @@ function validateFields() {
         }
     }
 
-    //L-Band Config
+    //PointPerfect Config
     if (platformPrefix == "Facet L-Band") {
         if (ge("enablePointPerfectCorrections").checked == true) {
             checkElementString("home_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapsePPConfig");
@@ -510,6 +519,20 @@ function validateFields() {
             ge("autoKeyRenewal").checked = true;
         }
     }
+
+    //WiFi Config
+    checkElementString("wifiNetwork0SSID", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork0Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork1SSID", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork1Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork2SSID", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork2Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork3SSID", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork3Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    if (ge("enableTcpClient").checked || ge("enableTcpServer").checked) {
+        checkElementString("wifiTcpPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
+    }
+
 
     //System Config
     if (ge("enableLogging").checked) {
@@ -1253,4 +1276,14 @@ function errorHandler(event) {
 }
 function abortHandler(event) {
     ge("uploadStatus").innerHTML = "Upload Aborted";
+}
+
+function tcpBoxes() {
+    if (ge("enableTcpClient").checked || ge("enableTcpServer").checked) {
+        show("tcpSettingsConfig");
+    }
+    else {
+        hide("tcpSettingsConfig");
+        ge("wifiTcpPort").value = 2947;
+    }
 }

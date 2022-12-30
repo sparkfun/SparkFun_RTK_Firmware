@@ -463,8 +463,6 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
   stringRecord(settingsCSV, "ntripServer_MountPoint", settings.ntripServer_MountPoint);
   stringRecord(settingsCSV, "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
-  stringRecord(settingsCSV, "ntripServer_wifiSSID", settings.ntripServer_wifiSSID);
-  stringRecord(settingsCSV, "ntripServer_wifiPW", settings.ntripServer_wifiPW);
 
   stringRecord(settingsCSV, "enableNtripClient", settings.enableNtripClient);
   stringRecord(settingsCSV, "ntripClient_CasterHost", settings.ntripClient_CasterHost);
@@ -473,8 +471,6 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "ntripClient_CasterUserPW", settings.ntripClient_CasterUserPW);
   stringRecord(settingsCSV, "ntripClient_MountPoint", settings.ntripClient_MountPoint);
   stringRecord(settingsCSV, "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
-  stringRecord(settingsCSV, "ntripClient_wifiSSID", settings.ntripClient_wifiSSID);
-  stringRecord(settingsCSV, "ntripClient_wifiPW", settings.ntripClient_wifiPW);
   stringRecord(settingsCSV, "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
 
   //Sensor Fusion Config
@@ -486,8 +482,11 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "maxLogTime_minutes", settings.maxLogTime_minutes);
   stringRecord(settingsCSV, "maxLogLength_minutes", settings.maxLogLength_minutes);
 
-  stringRecord(settingsCSV, "sdFreeSpace", stringHumanReadableSize(sdFreeSpace));
-  stringRecord(settingsCSV, "sdUsedSpace", stringHumanReadableSize(sdCardSize - sdFreeSpace));
+  char sdSpace[30];
+  sprintf(sdSpace, "%s", stringHumanReadableSize(sdFreeSpace));
+  stringRecord(settingsCSV, "sdFreeSpace", sdSpace);
+  sprintf(sdSpace, "%s", stringHumanReadableSize(sdCardSize - sdFreeSpace));
+  stringRecord(settingsCSV, "sdUsedSpace", sdSpace);
 
   stringRecord(settingsCSV, "enableResetDisplay", settings.enableResetDisplay);
 
@@ -519,8 +518,6 @@ void createSettingsString(char* settingsCSV)
 
   stringRecord(settingsCSV, "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
   stringRecord(settingsCSV, "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
-  stringRecord(settingsCSV, "home_wifiSSID", settings.home_wifiSSID);
-  stringRecord(settingsCSV, "home_wifiPW", settings.home_wifiPW);
   stringRecord(settingsCSV, "autoKeyRenewal", settings.autoKeyRenewal);
 
   //External PPS/Triggers
@@ -655,6 +652,17 @@ void createSettingsString(char* settingsCSV)
     }
   }
 
+  //Add WiFi credential table
+  for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+  {
+    sprintf(tagText, "wifiNetwork%dSSID", x);
+    stringRecord(settingsCSV, tagText, settings.wifiNetworks[x].ssid);
+
+    sprintf(tagText, "wifiNetwork%dPassword", x);
+    stringRecord(settingsCSV, tagText, settings.wifiNetworks[x].password);
+  }
+  stringRecord(settingsCSV, "wifiConfigOverAP", settings.wifiConfigOverAP);
+  stringRecord(settingsCSV, "wifiTcpPort", settings.wifiTcpPort);
 
   //New settings not yet integrated
   //...
@@ -779,10 +787,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.ntripServer_MountPoint, settingValueStr);
   else if (strcmp(settingName, "ntripServer_MountPointPW") == 0)
     strcpy(settings.ntripServer_MountPointPW, settingValueStr);
-  else if (strcmp(settingName, "ntripServer_wifiSSID") == 0)
-    strcpy(settings.ntripServer_wifiSSID, settingValueStr);
-  else if (strcmp(settingName, "ntripServer_wifiPW") == 0)
-    strcpy(settings.ntripServer_wifiPW, settingValueStr);
 
   else if (strcmp(settingName, "enableNtripClient") == 0)
     settings.enableNtripClient = settingValueBool;
@@ -798,10 +802,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.ntripClient_MountPoint, settingValueStr);
   else if (strcmp(settingName, "ntripClient_MountPointPW") == 0)
     strcpy(settings.ntripClient_MountPointPW, settingValueStr);
-  else if (strcmp(settingName, "ntripClient_wifiSSID") == 0)
-    strcpy(settings.ntripClient_wifiSSID, settingValueStr);
-  else if (strcmp(settingName, "ntripClient_wifiPW") == 0)
-    strcpy(settings.ntripClient_wifiPW, settingValueStr);
   else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
     settings.ntripClient_TransmitGGA = settingValueBool;
   else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
@@ -810,10 +810,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.pointPerfectDeviceProfileToken, settingValueStr);
   else if (strcmp(settingName, "enablePointPerfectCorrections") == 0)
     settings.enablePointPerfectCorrections = settingValueBool;
-  else if (strcmp(settingName, "home_wifiSSID") == 0)
-    strcpy(settings.home_wifiSSID, settingValueStr);
-  else if (strcmp(settingName, "home_wifiPW") == 0)
-    strcpy(settings.home_wifiPW, settingValueStr);
   else if (strcmp(settingName, "autoKeyRenewal") == 0)
     settings.autoKeyRenewal = settingValueBool;
   else if (strcmp(settingName, "antennaHeight") == 0)
@@ -845,6 +841,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     recordLineToLFS(stationCoordinateGeodeticFileName, settingValueStr);
     log_d("%s recorded", settingValueStr);
   }
+  else if (strcmp(settingName, "wifiTcpPort") == 0)
+    settings.wifiTcpPort = settingValue;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}
@@ -932,6 +930,32 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else
   {
     bool knownSetting = false;
+
+    //Scan for WiFi credentials
+    if (knownSetting == false)
+    {
+      for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+      {
+        char tempString[100]; //wifiNetwork0Password=parachutes
+        sprintf(tempString, "wifiNetwork%dSSID", x);
+        if (strcmp(settingName, tempString) == 0)
+        {
+          strcpy(settings.wifiNetworks[x].ssid, settingValueStr);
+          knownSetting = true;
+          break;
+        }
+        else
+        {
+          sprintf(tempString, "wifiNetwork%dPassword", x);
+          if (strcmp(settingName, tempString) == 0)
+          {
+            strcpy(settings.wifiNetworks[x].password, settingValueStr);
+            knownSetting = true;
+            break;
+          }
+        }
+      }
+    }
 
     //Scan for constellation settings
     if (knownSetting == false)

@@ -51,7 +51,6 @@ static const int WIFI_CONNECTION_TIMEOUT = 10 * 1000;  //Milliseconds
 static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
 
 #define WIFI_MAX_TCP_CLIENTS     4
-#define WIFI_TCP_PORT            1958
 
 //----------------------------------------
 // Locals - compiled out
@@ -68,7 +67,7 @@ static unsigned long wifiTimer = 0;
 static uint32_t lastWifiState = 0;
 
 //TCP server
-static WiFiServer wifiTcpServer(WIFI_TCP_PORT);
+static WiFiServer *wifiTcpServer = NULL;
 static WiFiClient wifiTcpClient[WIFI_MAX_TCP_CLIENTS];
 
 //----------------------------------------
@@ -146,52 +145,45 @@ void wifiSetState(byte newState)
 
 void wifiStartAP()
 {
-  //When testing, operate on local WiFi instead of AP
-  //#define LOCAL_WIFI_TESTING 1
-#ifdef LOCAL_WIFI_TESTING
-  //Connect to local router
-#define WIFI_SSID "TRex"
-#define WIFI_PASSWORD "parachutes"
+  if (settings.wifiConfigOverAP == true)
+  {
+    //Start in AP mode
 
-  WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_AP);
 
 #ifdef COMPILE_ESPNOW
-  // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station
+    // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
+    esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi AP.
 #endif
 
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  systemPrint("WiFi connecting to");
-  while (wifiGetStatus() != WL_CONNECTED)
-  {
-    systemPrint(".");
-    delay(500);
-  }
-  systemPrint("WiFi connected with IP: ");
-  systemPrintln(WiFi.localIP());
-#else   //End LOCAL_WIFI_TESTING
-  //Start in AP mode
+    IPAddress local_IP(192, 168, 4, 1);
+    IPAddress gateway(192, 168, 4, 1);
+    IPAddress subnet(255, 255, 255, 0);
 
-  WiFi.mode(WIFI_AP);
+    WiFi.softAPConfig(local_IP, gateway, subnet);
+    if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
+    {
+      systemPrintln("WiFi AP failed to start");
+      return;
+    }
+    systemPrint("WiFi AP Started with IP: ");
+    systemPrintln(WiFi.softAPIP());
+  }
+  else
+  {
+    //Start webserver on local WiFi instead of AP
+
+    WiFi.mode(WIFI_STA);
 
 #ifdef COMPILE_ESPNOW
-  // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-  esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi AP.
+    // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station
 #endif
 
-  IPAddress local_IP(192, 168, 4, 1);
-  IPAddress gateway(192, 168, 4, 1);
-  IPAddress subnet(255, 255, 255, 0);
-
-  WiFi.softAPConfig(local_IP, gateway, subnet);
-  if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
-  {
-    systemPrintln("WiFi AP failed to start");
-    return;
+    wifiConnect(); //Attempt to connect to any SSID on settings list
+    wifiPrintNetworkInfo();
   }
-  systemPrint("WiFi AP Started with IP: ");
-  systemPrintln(WiFi.softAPIP());
-#endif  //End AP Testing
+  
 }
 
 #endif  //COMPILE_WIFI
@@ -199,6 +191,58 @@ void wifiStartAP()
 //----------------------------------------
 // Global WiFi Routines
 //----------------------------------------
+
+//Attempts a connection to all provided SSIDs
+//Returns true if successful
+//Gives up if no SSID detected or connection times out
+bool wifiConnect()
+{
+  //Check if we have any SSIDs
+  if (wifiNetworkCount() == 0)
+  {
+    systemPrintln("No WiFi networks stored in settings.");
+    return false;
+  }
+
+#ifdef COMPILE_WIFI
+
+  WiFiMulti wifiMulti;
+
+  //Load SSIDs
+  for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+  {
+    if (strlen(settings.wifiNetworks[x].ssid) > 0)
+      wifiMulti.addAP(settings.wifiNetworks[x].ssid, settings.wifiNetworks[x].password);
+  }
+
+  systemPrintln("Connecting WiFi...");
+
+  int timeout = 0; //Give up after timeount. Increases with each failed try.
+  for (int tries = 0 ; tries < 3 ; tries++)
+  {
+    timeout += 5000;
+
+    if (wifiMulti.run(timeout) == WL_CONNECTED)
+      return true;
+    systemPrintln("Timed out. Trying again.");
+  }
+#endif
+
+  return false;
+}
+
+//Counts the number of entered SSIDs
+int wifiNetworkCount()
+{
+  //Count SSIDs
+  int networkCount = 0;
+  for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+  {
+    if (strlen(settings.wifiNetworks[x].ssid) > 0)
+      networkCount++;
+  }
+  return networkCount;
+}
 
 //Determine if the WiFi connection has timed out
 bool wifiConnectionTimeout()
@@ -232,7 +276,7 @@ void wifiSendTcpData(uint8_t * data, uint16_t length)
         systemPrint("Trying to connect TCP client to ");
         systemPrintln(ipAddress[0]);
       }
-      if (wifiTcpClient[0].connect(ipAddress[0], WIFI_TCP_PORT))
+      if (wifiTcpClient[0].connect(ipAddress[0], settings.wifiTcpPort))
       {
         online.tcpClient = true;
         systemPrint("TCP client connected to ");
@@ -256,7 +300,7 @@ void wifiSendTcpData(uint8_t * data, uint16_t length)
       {
         if ((!wifiTcpClient[index]) || (!wifiTcpClient[index].connected()))
         {
-          wifiTcpClient[index] = wifiTcpServer.available();
+          wifiTcpClient[index] = wifiTcpServer->available();
           if (!wifiTcpClient[index])
             break;
           ipAddress[index] = wifiTcpClient[index].remoteIP();
@@ -314,14 +358,17 @@ bool wifiTcpServerActive()
   online.tcpServer = false;
 
   //Stop the TCP server
-  wifiTcpServer.stop();
+  wifiTcpServer->stop();
+
+  if (wifiTcpServer != NULL)
+    free(wifiTcpServer);
 #endif  //COMPILE_WIFI
   return false;
 }
 
 //If radio is off entirely, start WiFi
 //If ESP-Now is active, only add the LR protocol
-void wifiStart(char* ssid, char* pw)
+void wifiStart()
 {
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_ESPNOW
@@ -350,8 +397,7 @@ void wifiStart(char* ssid, char* pw)
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
 #endif
 
-    systemPrintf("WiFi connecting to %s\r\n", ssid);
-    WiFi.begin(ssid, pw);
+    wifiConnect(); //Attempt to connect to any SSID on settings list
     wifiTimer = millis();
 
 #ifdef COMPILE_ESPNOW
@@ -402,7 +448,7 @@ void wifiStop()
       delay(5);
     systemPrintln("TCP Server offline");
   }
-  
+
   if (wifiState == WIFI_OFF)
   {
     //Do nothing
@@ -442,7 +488,6 @@ void wifiStop()
 
 void wifiUpdate()
 {
-
 #ifdef COMPILE_WIFI
   //Periodically display the WiFi state
   if (settings.enablePrintWifiState && ((millis() - lastWifiState) > 15000))
@@ -469,7 +514,10 @@ void wifiUpdate()
   if ((!wifiTcpServer) && (!settings.enableTcpClient) && settings.enableTcpServer
       && (wifiState == WIFI_CONNECTED))
   {
-    wifiTcpServer.begin();
+    if (wifiTcpServer == NULL)
+      wifiTcpServer = new WiFiServer(settings.wifiTcpPort);
+
+    wifiTcpServer->begin();
     online.tcpServer = true;
     systemPrint("TCP Server online, IP Address ");
     systemPrintln(WiFi.localIP());
@@ -483,4 +531,23 @@ void wifiUpdate()
   else if (systemState < STATE_BUBBLE_LEVEL)
     ntripServerUpdate();
 #endif  //COMPILE_WIFI
+}
+
+void wifiPrintNetworkInfo()
+{
+#ifdef COMPILE_WIFI
+  systemPrintln("\n\nNetwork Configuration:");
+  systemPrintln("----------------------");
+  systemPrint("         SSID: "); systemPrintln(WiFi.SSID());
+  systemPrint("  WiFi Status: "); systemPrintln(WiFi.status());
+  systemPrint("WiFi Strength: "); systemPrint(WiFi.RSSI()); systemPrintln(" dBm");
+  systemPrint("          MAC: "); systemPrintln(WiFi.macAddress());
+  systemPrint("           IP: "); systemPrintln(WiFi.localIP());
+  systemPrint("       Subnet: "); systemPrintln(WiFi.subnetMask());
+  systemPrint("      Gateway: "); systemPrintln(WiFi.gatewayIP());
+  systemPrint("        DNS 1: "); systemPrintln(WiFi.dnsIP(0));
+  systemPrint("        DNS 2: "); systemPrintln(WiFi.dnsIP(1));
+  systemPrint("        DNS 3: "); systemPrintln(WiFi.dnsIP(2));
+  systemPrintln();
+#endif
 }

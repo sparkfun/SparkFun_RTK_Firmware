@@ -21,15 +21,23 @@
 //Convert file to hex at http://tomeko.net/online_tools/file_to_hex.php?lang=en
 
 static const char *main_js = R"=====(
-//var gateway = 'ws://192.168.0.140/ws'; //WiFi mode
-var gateway = 'ws://192.168.4.1/ws'; //AP mode
-var websocket = new WebSocket(gateway);
+var gateway = `ws://${window.location.hostname}/ws`;
+var websocket;
 var resetTimeout = 0;
 var saveTimeout = 0;
 
-websocket.onmessage = function (msg) {
-    parseIncoming(msg.data);
-};
+window.addEventListener('load', onLoad);
+
+function onLoad(event) {
+    initWebSocket();
+}
+
+function initWebSocket() {
+    websocket = new WebSocket(gateway);
+    websocket.onmessage = function (msg) {
+        parseIncoming(msg.data);
+    };
+}
 
 function ge(e) {
     return document.getElementById(e);
@@ -251,6 +259,7 @@ function parseIncoming(msg) {
     ge("radioType").dispatchEvent(new CustomEvent('change'));
     updateECEFList();
     updateGeodeticList();
+    tcpBoxes();
 }
 
 function hide(id) {
@@ -515,7 +524,7 @@ function validateFields() {
         }
     }
 
-    //L-Band Config
+    //PointPerfect Config
     if (platformPrefix == "Facet L-Band") {
         if (ge("enablePointPerfectCorrections").checked == true) {
             checkElementString("home_wifiSSID", 1, 30, "Must be 1 to 30 characters", "collapsePPConfig");
@@ -533,6 +542,20 @@ function validateFields() {
             ge("autoKeyRenewal").checked = true;
         }
     }
+
+    //WiFi Config
+    checkElementString("wifiNetwork0SSID", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork0Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork1SSID", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork1Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork2SSID", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork2Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork3SSID", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    checkElementString("wifiNetwork3Password", 0, 50, "Must be 0 to 50 characters", "collapseWiFiConfig");
+    if (ge("enableTcpClient").checked || ge("enableTcpServer").checked) {
+        checkElementString("wifiTcpPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
+    }
+
 
     //System Config
     if (ge("enableLogging").checked) {
@@ -1278,6 +1301,16 @@ function abortHandler(event) {
     ge("uploadStatus").innerHTML = "Upload Aborted";
 }
 
+function tcpBoxes() {
+    if (ge("enableTcpClient").checked || ge("enableTcpServer").checked) {
+        show("tcpSettingsConfig");
+    }
+    else {
+        hide("tcpSettingsConfig");
+        ge("wifiTcpPort").value = 2947;
+    }
+}
+
 )====="; //End main.js
 
 static const char *index_html = R"=====(
@@ -1390,6 +1423,7 @@ static const char *index_html = R"=====(
 
         <hr class="mt-0">
         <div style="margin-top:20px;">
+
             <!-- --------- Profile Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary toggle-btn" id="profileConfig" type="button" data-toggle="collapse"
@@ -2835,6 +2869,142 @@ static const char *index_html = R"=====(
                 </div>
             </div>
 
+            <!-- --------- WiFi Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
+                    data-target="#collapseWiFiConfig" aria-expanded="false" aria-controls="collapseWiFiConfig">
+                    WiFi Configuration <i id="wifiCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse show" id="collapseWiFiConfig">
+                <div class="card card-body">
+
+                    <div class="form-group mt-2">
+                        Networks:
+                        <span class="tt" data-bs-placement="right"
+                            title="Enter credentials for up to 4 WiFi networks. All networks will be tried and the best network available will be used.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork0SSID" class="col-3 col-form-label">SSID 1:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork0SSID">
+                            <p id="wifiNetwork0SSIDError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork0Password" class="col-3 col-form-label">PW
+                            1:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork0Password">
+                            <p id="wifiNetwork0PasswordError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork1SSID" class="col-3 col-form-label">SSID 2:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork1SSID">
+                            <p id="wifiNetwork1SSIDError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork1Password" class="col-3 col-form-label">PW
+                            2:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork1Password">
+                            <p id="wifiNetwork1PasswordError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork2SSID" class="col-3 col-form-label">SSID 3:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork2SSID">
+                            <p id="wifiNetwork2SSIDError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork2Password" class="col-3 col-form-label">PW
+                            3:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork2Password">
+                            <p id="wifiNetwork2PasswordError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork3SSID" class="col-3 col-form-label">SSID 4:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork3SSID">
+                            <p id="wifiNetwork3SSIDError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork3Password" class="col-3 col-form-label">PW
+                            4:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork3Password">
+                            <p id="wifiNetwork3PasswordError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="enableTcpClient">TCP Client</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enableTcpClient"
+                            onClick="tcpBoxes()">
+                        <span class="tt" data-bs-placement="right"
+                            title="If enabled, device will connect to WiFi and push NMEA over the given TCP port.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="enableTcpServer">TCP Server</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enableTcpServer"
+                            onClick="tcpBoxes()">
+                        <span class="tt" data-bs-placement="right"
+                            title="If enabled, device will allow inbound TCP connections and push NMEA when a client is connected.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div id="tcpSettingsConfig">
+                        <div class="form-group row">
+                            <label for="wifiTcpPort" class="box-margin20 col-sm-3 col-4 col-form-label">Port:
+                                <span class="tt" data-bs-placement="right" title="TCP port to use. Default: 2947">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="wifiTcpPort">
+                                <p id="wifiTcpPortError" class="inlineError"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="wifiConfigTypeDropdown" class="mt-3">
+                        <label for="wifiConfigType">Configure Mode: </label>
+                        <select name="wifiConfigType" id="wifiConfigOverAP" class="form-dropdown">
+                            <option value="1">AP</option>
+                            <option value="0">WiFi</option>
+                        </select>
+                        <span class="tt" data-bs-placement="right"
+                            title="In AP mode, the device will broadcast as an access point called RTK-Config. In WiFi mode, the device will connect to local WiFi and be configurable on the displayed IP address.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                </div>
+            </div>
+
             <!-- --------- Radio Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
@@ -3024,9 +3194,9 @@ static const char *index_html = R"=====(
                         </span>
 
                         <div class="form-check">
-                            Free: <p id="sdFreeSpace" style="display:inline;">0 MB</p>
+                            Free: <p id="sdFreeSpaceMB" style="display:inline;">0</p>MB
                             <br>
-                            Used: <p id="sdUsedSpace" style="display:inline;">0 MB</p>
+                            Used: <p id="sdUsedSpaceMB" style="display:inline;">0</p>MB
                         </div>
                     </div>
                     <div class="col-sm-7 col-6 mt-2">

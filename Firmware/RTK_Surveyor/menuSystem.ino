@@ -72,8 +72,8 @@ void menuSystem()
 #ifdef COMPILE_WIFI
     systemPrint("WiFi MAC Address: ");
     systemPrintf("%02X:%02X:%02X:%02X:%02X:%02X\r\n", wifiMACAddress[0],
-                  wifiMACAddress[1], wifiMACAddress[2], wifiMACAddress[3],
-                  wifiMACAddress[4], wifiMACAddress[5]);
+                 wifiMACAddress[1], wifiMACAddress[2], wifiMACAddress[3],
+                 wifiMACAddress[4], wifiMACAddress[5]);
     if (wifiState == WIFI_CONNECTED)
       wifiDisplayIpAddress();
 #endif
@@ -99,12 +99,12 @@ void menuSystem()
 
     systemPrint("System Uptime: ");
     systemPrintf("%d %02d:%02d:%02d.%03lld (Resets: %d)\r\n",
-                  uptimeDays,
-                  uptimeHours,
-                  uptimeMinutes,
-                  uptimeSeconds,
-                  uptimeMilliseconds,
-                  settings.resetCount);
+                 uptimeDays,
+                 uptimeHours,
+                 uptimeMinutes,
+                 uptimeSeconds,
+                 uptimeMilliseconds,
+                 settings.resetCount);
 
     //Display NTRIP Client status and uptime
     if (settings.enableNtripClient == true && (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX))
@@ -146,12 +146,12 @@ void menuSystem()
 
       systemPrint(" Uptime: ");
       systemPrintf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n",
-                    uptimeDays,
-                    uptimeHours,
-                    uptimeMinutes,
-                    uptimeSeconds,
-                    uptimeMilliseconds,
-                    ntripClientConnectionAttemptsTotal);
+                   uptimeDays,
+                   uptimeHours,
+                   uptimeMinutes,
+                   uptimeSeconds,
+                   uptimeMilliseconds,
+                   ntripClientConnectionAttemptsTotal);
     }
 
     //Display NTRIP Server status and uptime
@@ -196,12 +196,12 @@ void menuSystem()
 
       systemPrint(" Uptime: ");
       systemPrintf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n",
-                    uptimeDays,
-                    uptimeHours,
-                    uptimeMinutes,
-                    uptimeSeconds,
-                    uptimeMilliseconds,
-                    ntripServerConnectionAttemptsTotal);
+                   uptimeDays,
+                   uptimeHours,
+                   uptimeMinutes,
+                   uptimeSeconds,
+                   uptimeMilliseconds,
+                   ntripServerConnectionAttemptsTotal);
     }
 
     if (settings.enableSD == true && online.microSD == true)
@@ -224,18 +224,6 @@ void menuSystem()
       systemPrintln("BLE");
     else
       systemPrintln("Off");
-
-    systemPrint("c) Enable/disable WiFi TCP client (connect to phone): ");
-    if (settings.enableTcpClient == true)
-      systemPrintln("Enabled");
-    else
-      systemPrintln("Disabled");
-
-    systemPrint("n) Enable/disable WiFi TCP server: ");
-    if (settings.enableTcpServer == true)
-      systemPrintln("Enabled");
-    else
-      systemPrintln("Disabled");
 
     systemPrintln("r) Reset all settings to default");
 
@@ -306,26 +294,6 @@ void menuSystem()
       else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
         settings.bluetoothRadioType = BLUETOOTH_RADIO_SPP;
       bluetoothStart();
-    }
-    else if (incoming == 'c')
-    {
-      //Toggle WiFi NEMA client (connect to phone)
-      settings.enableTcpClient ^= 1;
-    }
-    else if (incoming == 'n')
-    {
-      //Toggle WiFi NEMA server
-      settings.enableTcpServer ^= 1;
-      if ((!settings.enableTcpServer) && online.tcpServer)
-      {
-        //Tell the UART2 tasks that the TCP server is shutting down
-        online.tcpServer = false;
-
-        //Wait for the UART2 tasks to close the TCP client connections
-        while (wifiTcpServerActive())
-          delay(5);
-        systemPrintln("TCP Server offline");
-      }
     }
     else if (incoming == 'r')
     {
@@ -401,6 +369,115 @@ void menuSystem()
   clearBuffer(); //Empty buffer of any newline chars
 }
 
+//Set WiFi credentials
+//Enable TCP connections
+//TODO list networks
+//TODO change IP on config display to match AP or local IP
+void menuWiFi()
+{
+  while (1)
+  {
+    systemPrintln();
+    systemPrintln("Menu: WiFi Networks");
+
+    for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+    {
+      systemPrintf("%d) SSID %d: %s\r\n", (x * 2) + 1, x + 1, settings.wifiNetworks[x].ssid);
+      systemPrintf("%d) Password %d: %s\r\n", (x * 2) + 2, x + 1, settings.wifiNetworks[x].password);
+    }
+
+    systemPrint("a) Configure device via WiFi Access Point or connect to WiFi: ");
+    systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "WiFi");
+
+    systemPrint("c) WiFi TCP Client (connect to phone): ");
+    systemPrintf("%s\r\n", settings.enableTcpClient ? "Enabled" : "Disabled");
+
+    systemPrint("s) WiFi TCP Server: ");
+    systemPrintf("%s\r\n", settings.enableTcpServer ? "Enabled" : "Disabled");
+
+    if (settings.enableTcpServer == true || settings.enableTcpClient == true)
+      systemPrintf("p) WiFi TCP Port: %ld\r\n", settings.wifiTcpPort);
+
+    systemPrintln("x) Exit");
+
+    byte incoming = getCharacterNumber();
+
+    if (incoming >= 1 && incoming <= MAX_WIFI_NETWORKS * 2)
+    {
+      int arraySlot = ((incoming - 1) / 2); //Adjust incoming to array starting at 0
+
+      if (incoming % 2 == 1)
+      {
+        systemPrintf("Enter SSID network %d: ", arraySlot + 1);
+        getString(settings.wifiNetworks[arraySlot].ssid, sizeof(settings.wifiNetworks[arraySlot].ssid));
+        restartRover = true; //If we are modifying the SSID table, force restart of rover/base
+        restartBase = true;
+      }
+      else
+      {
+        systemPrintf("Enter Password for %s: ", settings.wifiNetworks[arraySlot].ssid);
+        getString(settings.wifiNetworks[arraySlot].password, sizeof(settings.wifiNetworks[arraySlot].password));
+        restartRover = true;
+        restartBase = true;
+      }
+    }
+    else if (incoming == 'a')
+    {
+      settings.wifiConfigOverAP ^= 1;
+    }
+
+    else if (incoming == 'c')
+    {
+      //Toggle WiFi NEMA client (connect to phone)
+      settings.enableTcpClient ^= 1;
+    }
+    else if (incoming == 's')
+    {
+      //Toggle WiFi NEMA server
+      settings.enableTcpServer ^= 1;
+      if ((!settings.enableTcpServer) && online.tcpServer)
+      {
+        //Tell the UART2 tasks that the TCP server is shutting down
+        online.tcpServer = false;
+
+        //Wait for the UART2 tasks to close the TCP client connections
+        while (wifiTcpServerActive())
+          delay(5);
+        systemPrintln("TCP Server offline");
+      }
+    }
+    else if (incoming == 'p')
+    {
+      systemPrint("Enter the TCP port to use (0 to 65535): ");
+      int wifiTcpPort = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((wifiTcpPort != INPUT_RESPONSE_GETNUMBER_EXIT) && (wifiTcpPort != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (wifiTcpPort < 0 || wifiTcpPort > 65535)
+          systemPrintln("Error: TCP Port out of range");
+        else
+          settings.wifiTcpPort = wifiTcpPort; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 'x')
+      break;
+    else if (incoming == INPUT_RESPONSE_EMPTY)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
+  }
+
+  //Erase passwords from empty SSID entries
+  for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+  {
+    if (strlen(settings.wifiNetworks[x].ssid) == 0)
+      strcpy(settings.wifiNetworks[x].password, "");
+  }
+
+  clearBuffer(); //Empty buffer of any newline chars
+}
+
 //Toggle control of heap reports and I2C GNSS debug
 void menuDebug()
 {
@@ -410,9 +487,9 @@ void menuDebug()
     systemPrintln("Menu: Debug");
 
     systemPrintf("Filtered by parser: %d NMEA / %d RTCM / %d UBX\n\r",
-                  failedParserMessages_NMEA,
-                  failedParserMessages_RTCM,
-                  failedParserMessages_UBX);
+                 failedParserMessages_NMEA,
+                 failedParserMessages_RTCM,
+                 failedParserMessages_UBX);
 
     systemPrint("1) u-blox I2C Debugging Output: ");
     if (settings.enableI2Cdebug == true) systemPrintln("Enabled");

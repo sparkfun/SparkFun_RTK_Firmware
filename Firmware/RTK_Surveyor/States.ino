@@ -685,7 +685,7 @@ void updateSystemState()
           }
 
           //If there is no WiFi setup, and no keys, skip everything
-          else if (strlen(settings.home_wifiSSID) == 0 && strlen(settings.pointPerfectCurrentKey) == 0)
+          else if (wifiNetworkCount() == 0 && strlen(settings.pointPerfectCurrentKey) == 0)
           {
             changeState(settings.lastState); //Go to either rover or base
           }
@@ -693,7 +693,7 @@ void updateSystemState()
           //If we don't have keys, begin zero touch provisioning
           else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
           {
-            wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
+            wifiStart();
             changeState(STATE_KEYS_PROVISION_WIFI_STARTED);
           }
 
@@ -727,7 +727,7 @@ void updateSystemState()
 
           if (online.rtc == false)
           {
-            wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
+            wifiStart();
             changeState(STATE_KEYS_WIFI_STARTED); //If we can't check the RTC, continue
           }
 
@@ -737,7 +737,7 @@ void updateSystemState()
             settings.lastKeyAttempt = rtc.getEpoch(); //Mark it
             recordSystemSettings(); //Record these settings to unit
 
-            wifiStart(settings.home_wifiSSID, settings.home_wifiPW);
+            wifiStart();
             changeState(STATE_KEYS_WIFI_STARTED);
           }
           else

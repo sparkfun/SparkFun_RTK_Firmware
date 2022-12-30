@@ -107,6 +107,7 @@
 
         <hr class="mt-0">
         <div style="margin-top:20px;">
+
             <!-- --------- Profile Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary toggle-btn" id="profileConfig" type="button" data-toggle="collapse"
@@ -1552,6 +1553,141 @@
                 </div>
             </div>
 
+            <!-- --------- WiFi Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
+                    data-target="#collapseWiFiConfig" aria-expanded="false" aria-controls="collapseWiFiConfig">
+                    WiFi Configuration <i id="wifiCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="collapseWiFiConfig">
+                <div class="card card-body">
+
+                    <div class="form-group mt-2">
+                        Networks:
+                        <span class="tt" data-bs-placement="right"
+                            title="Enter credentials for up to 4 WiFi networks. All networks will be tried and the best network available will be used.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork0SSID" class="col-3 col-form-label">SSID 1:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork0SSID">
+                            <p id="wifiNetwork0SSIDError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork0Password" class="col-3 col-form-label">PW
+                            1:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork0Password">
+                            <p id="wifiNetwork0PasswordError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork1SSID" class="col-3 col-form-label">SSID 2:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork1SSID">
+                            <p id="wifiNetwork1SSIDError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork1Password" class="col-3 col-form-label">PW
+                            2:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork1Password">
+                            <p id="wifiNetwork1PasswordError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork2SSID" class="col-3 col-form-label">SSID 3:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork2SSID">
+                            <p id="wifiNetwork2SSIDError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork2Password" class="col-3 col-form-label">PW
+                            3:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork2Password">
+                            <p id="wifiNetwork2PasswordError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork3SSID" class="col-3 col-form-label">SSID 4:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork3SSID">
+                            <p id="wifiNetwork3SSIDError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="wifiNetwork3Password" class="col-3 col-form-label">PW
+                            4:</label>
+                        <div class="col-sm-8 col-7">
+                            <input type="text" class="form-control" id="wifiNetwork3Password">
+                            <p id="wifiNetwork3PasswordError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="enableTcpClient">TCP Client</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enableTcpClient"
+                            onClick="tcpBoxes()">
+                        <span class="tt" data-bs-placement="right"
+                            title="If enabled, device will connect to WiFi and push NMEA over the given TCP port.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="enableTcpServer">TCP Server</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enableTcpServer"
+                            onClick="tcpBoxes()">
+                        <span class="tt" data-bs-placement="right"
+                            title="If enabled, device will allow inbound TCP connections and push NMEA when a client is connected.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div id="tcpSettingsConfig">
+                        <div class="form-group row">
+                            <label for="wifiTcpPort" class="box-margin20 col-sm-3 col-4 col-form-label">Port:
+                                <span class="tt" data-bs-placement="right" title="TCP port to use. Default: 2947">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="wifiTcpPort">
+                                <p id="wifiTcpPortError" class="inlineError"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="wifiConfigTypeDropdown" class="mt-3">
+                        <label for="wifiConfigType">Configure Mode: </label>
+                        <select name="wifiConfigType" id="wifiConfigOverAP" class="form-dropdown">
+                            <option value="1">AP</option>
+                            <option value="0">WiFi</option>
+                        </select>
+                        <span class="tt" data-bs-placement="right"
+                            title="In AP mode, the device will broadcast as an access point called RTK-Config. In WiFi mode, the device will connect to local WiFi and be configurable on the displayed IP address.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                </div>
+            </div>
+
             <!-- --------- Radio Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" type="button" data-toggle="collapse"
@@ -1741,9 +1877,9 @@
                         </span>
 
                         <div class="form-check">
-                            Free: <p id="sdFreeSpaceMB" style="display:inline;">0</p>MB
+                            Free: <p id="sdFreeSpace" style="display:inline;">0 MB</p>
                             <br>
-                            Used: <p id="sdUsedSpaceMB" style="display:inline;">0</p>MB
+                            Used: <p id="sdUsedSpace" style="display:inline;">0 MB</p>
                         </div>
                     </div>
                     <div class="col-sm-7 col-6 mt-2">
@@ -1778,7 +1914,7 @@
 
             <!-- --------- File Manager --------- -->
             <div class="d-grid gap-2">
-                <button onclick="getFileList()"" id="fileManager" class="btn btn-primary mt-3 toggle-btn" type="button"
+                <button onclick="getFileList()" id="fileManager" class="btn btn-primary mt-3 toggle-btn" type="button"
                     data-toggle="collapse" data-target="#collapseFileManager" aria-expanded="false"
                     aria-controls="collapseFileManager">
                     File Manager <i id="fileManagerCaret" class="caret-icon bi icon-caret-down"></i>

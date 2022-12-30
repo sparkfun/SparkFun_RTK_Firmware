@@ -65,27 +65,21 @@ void menuBase()
 
     if (settings.enableNtripServer == true)
     {
-      systemPrint("7) Set WiFi SSID: ");
-      systemPrintln(settings.ntripServer_wifiSSID);
-
-      systemPrint("8) Set WiFi PW: ");
-      systemPrintln(settings.ntripServer_wifiPW);
-
-      systemPrint("9) Set Caster Address: ");
+      systemPrint("7) Set Caster Address: ");
       systemPrintln(settings.ntripServer_CasterHost);
 
-      systemPrint("10) Set Caster Port: ");
+      systemPrint("8) Set Caster Port: ");
       systemPrintln(settings.ntripServer_CasterPort);
 
-      systemPrint("11) Set Mountpoint: ");
+      systemPrint("9) Set Mountpoint: ");
       systemPrintln(settings.ntripServer_MountPoint);
 
-      systemPrint("12) Set Mountpoint PW: ");
+      systemPrint("10) Set Mountpoint PW: ");
       systemPrintln(settings.ntripServer_MountPointPW);
     }
 
     if (!settings.fixedBase) {
-      systemPrint("13) Select survey-in radio: ");
+      systemPrint("11) Select survey-in radio: ");
       systemPrintf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
     }
 
@@ -221,23 +215,11 @@ void menuBase()
     }
     else if (incoming == 7 && settings.enableNtripServer == true)
     {
-      systemPrint("Enter local WiFi SSID: ");
-      getString(settings.ntripServer_wifiSSID, sizeof(settings.ntripServer_wifiSSID));
-      restartBase = true;
-    }
-    else if (incoming == 8 && settings.enableNtripServer == true)
-    {
-      systemPrintf("Enter password for WiFi network %s: ", settings.ntripServer_wifiSSID);
-      getString(settings.ntripServer_wifiPW, sizeof(settings.ntripServer_wifiPW));
-      restartBase = true;
-    }
-    else if (incoming == 9 && settings.enableNtripServer == true)
-    {
       systemPrint("Enter new Caster Address: ");
       getString(settings.ntripServer_CasterHost, sizeof(settings.ntripServer_CasterHost));
       restartBase = true;
     }
-    else if (incoming == 10 && settings.enableNtripServer == true)
+    else if (incoming == 8 && settings.enableNtripServer == true)
     {
       systemPrint("Enter new Caster Port: ");
 
@@ -251,19 +233,19 @@ void menuBase()
         restartBase = true;
       }
     }
-    else if (incoming == 11 && settings.enableNtripServer == true)
+    else if (incoming == 9 && settings.enableNtripServer == true)
     {
       systemPrint("Enter new Mount Point: ");
       getString(settings.ntripServer_MountPoint, sizeof(settings.ntripServer_MountPoint));
       restartBase = true;
     }
-    else if (incoming == 12 && settings.enableNtripServer == true)
+    else if (incoming == 10 && settings.enableNtripServer == true)
     {
       systemPrintf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
       getString(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW));
       restartBase = true;
     }
-    else if ((!settings.fixedBase) && (incoming == 13))
+    else if ((!settings.fixedBase) && (incoming == 11))
     {
       settings.ntripServer_StartAtSurveyIn ^= 1;
       restartBase = true;

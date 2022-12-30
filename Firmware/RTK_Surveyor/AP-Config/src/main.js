@@ -29,6 +29,7 @@ var ecefY = -4716804.403;
 var ecefZ = 4086665.484;
 var lastFileName = "";
 var fileNumber = 0;
+var filesSelected = 0;
 var selectedFiles = "";
 var showingFileList = false;
 var fileTableText = "";
@@ -1185,7 +1186,7 @@ function getFileList() {
         showingFileList = true;
 
         //If the tab was just opened, create table from scratch
-        ge("fileManagerTable").innerHTML = "<table><tr align='left'><th>Name</th><th>Size</th></tr></tr></table>";
+        ge("fileManagerTable").innerHTML = "<table><tr align='left'><th>Name</th><th>Size</th><td><input type='checkbox' id='fileSelectAll' class='form-check-input' onClick='fileManagerToggle()'></td></tr></tr></table>";
         fileTableText = "";
 
         xmlhttp = new XMLHttpRequest();
@@ -1194,7 +1195,7 @@ function getFileList() {
 
         parseIncoming(xmlhttp.responseText); //Process CSV data into HTML
 
-        ge("fileManagerTable").innerHTML = fileTableText;
+        ge("fileManagerTable").innerHTML += fileTableText;
     }
     else {
         showingFileList = false;
@@ -1203,17 +1204,25 @@ function getFileList() {
 
 function fileManagerDownload() {
     selectedFiles = document.querySelectorAll('input[name=fileID]:checked');
+    filesSelected = document.querySelectorAll('input[name=fileID]:checked').length;
     fileNumber = 0;
     sendFile(); //Start first send
 }
 
 function sendFile() {
+    if (fileNumber == filesSelected) return;
     var urltocall = "/file?name=" + selectedFiles[fileNumber].id + "&action=download";
     console.log(urltocall);
-    xmlhttp = new XMLHttpRequest();
-    window.open(urltocall, "_blank");
+    window.location.href = urltocall;
 
     fileNumber++;
+}
+
+function fileManagerToggle() {
+    var checkboxes = document.querySelectorAll('input[name=fileID]');
+    for (var i = 0, n = checkboxes.length; i < n; i++) {
+        checkboxes[i].checked = ge("fileSelectAll").checked;
+    }
 }
 
 function fileManagerDelete() {

@@ -843,6 +843,12 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   }
   else if (strcmp(settingName, "wifiTcpPort") == 0)
     settings.wifiTcpPort = settingValue;
+  else if (strcmp(settingName, "wifiConfigOverAP") == 0)
+    settings.wifiConfigOverAP = settingValueBool;
+  else if (strcmp(settingName, "enableTcpClient") == 0)
+    settings.enableTcpClient = settingValueBool;
+  else if (strcmp(settingName, "enableTcpServer") == 0)
+    settings.enableTcpServer = settingValueBool;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}
@@ -854,6 +860,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "enableForgetRadios") == 0) {}
   else if (strcmp(settingName, "nicknameECEF") == 0) {}
   else if (strcmp(settingName, "nicknameGeodetic") == 0) {}
+  else if (strcmp(settingName, "fileSelectAll") == 0) {}
 
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
@@ -877,8 +884,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     ESP.restart();
   }
-
-
   else if (strcmp(settingName, "setProfile") == 0)
   {
     //Change to new profile

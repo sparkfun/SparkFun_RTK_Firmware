@@ -478,6 +478,10 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
       ubxFile->println(nmeaMessage);
       ubxFile->sync();
 
+      //Reset stats in case a new log is created
+      failedParserMessages_NMEA = 0;
+      failedParserMessages_RTCM = 0;
+      failedParserMessages_UBX = 0;
 
       //Close down file system
       ubxFile->close();

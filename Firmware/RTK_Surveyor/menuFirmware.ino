@@ -1,31 +1,19 @@
 //Update firmware if bin files found
 void menuFirmware()
 {
-  if (online.microSD == false)
-  {
-    systemPrintln("No SD card detected");
-  }
-
-  if (binCount == 0)
-  {
-    systemPrintln("No valid binary files found.");
-    delay(2000);
-    return;
-  }
-
   while (1)
   {
     systemPrintln();
     systemPrintln("Menu: Update Firmware");
 
+    systemPrintln("u) Update via WiFi");
+
     for (int x = 0 ; x < binCount ; x++)
-    {
-      systemPrintf("%d) Load %s\r\n", x + 1, binFileNames[x]);
-    }
+      systemPrintf("%d) Load SD file: %s\r\n", x + 1, binFileNames[x]);
 
     systemPrintln("x) Exit");
 
-    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
+    byte incoming = getCharacterNumber();
 
     if (incoming > 0 && incoming < (binCount + 1))
     {
@@ -33,15 +21,110 @@ void menuFirmware()
       incoming--;
       updateFromSD(binFileNames[incoming]);
     }
-    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
+    else if (incoming == 'u')
+    {
+      if (wifiNetworkCount() == 0)
+        systemPrintln("No networks entered");
+      else
+      {
+        bool previouslyConnected = wifiIsConnected();
+
+        if (wifiConnect() == true)
+        {
+          char versionString[20];
+          sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+          systemPrintf("Current firmware version: v%s\r\n", versionString);
+          systemPrintf("Checking to see if an update is available...\r\n", OTA_FIRMWARE_JSON_URL);
+
+          ESP32OTAPull ota;
+          ota.SetCallback(otaPullCallback);
+
+          int response = ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+          if (response == ESP32OTAPull::UPDATE_AVAILABLE)
+          {
+            systemPrintln("Installing new firmware");
+            ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString); //Install new firmware
+          }
+          else
+          {
+            systemPrintln("New firmware not available");
+            systemPrintf("CheckForOTAUpdate returned (%d): %s\r\n", response, otaPullErrorText(response));
+          }
+
+        }
+        else
+          systemPrintln("WiFi not available");
+
+        if (previouslyConnected == false)
+          wifiStop();
+      }
+    }
+
+    else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_EMPTY)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
     else
-      systemPrintf("Bad value: %d\r\n", incoming);
+      printUnknown(incoming);
   }
 
   clearBuffer(); //Empty buffer of any newline chars
+}
+
+void otaPullCallback(int bytesWritten, int totalLength)
+{
+  static int previousPercent = -1;
+  int percent = 100 * bytesWritten / totalLength;
+  if (percent != previousPercent)
+  {
+    //Indicate progress
+    int barWidthInCharacters = 20; //Width of progress bar, ie [###### % complete
+    long portionSize = totalLength / barWidthInCharacters;
+
+    //Indicate progress
+    systemPrint("\r\n[");
+    int barWidth = bytesWritten / portionSize;
+    for (int x = 0 ; x < barWidth ; x++)
+      systemPrint("=");
+    systemPrintf(" %d%%", percent);
+    if (bytesWritten == totalLength) systemPrintln("]");
+
+    displayFirmwareUpdateProgress(percent);
+
+    previousPercent = percent;
+  }
+}
+
+const char *otaPullErrorText(int code)
+{
+#ifdef COMPILE_WIFI
+  switch (code)
+  {
+    case ESP32OTAPull::UPDATE_AVAILABLE:
+      return "An update is available but wasn't installed";
+    case ESP32OTAPull::NO_UPDATE_PROFILE_FOUND:
+      return "No profile matches";
+    case ESP32OTAPull::NO_UPDATE_AVAILABLE:
+      return "Profile matched, but update not applicable";
+    case ESP32OTAPull::UPDATE_OK:
+      return "An update was done, but no reboot";
+    case ESP32OTAPull::HTTP_FAILED:
+      return "HTTP GET failure";
+    case ESP32OTAPull::WRITE_ERROR:
+      return "Write error";
+    case ESP32OTAPull::JSON_PROBLEM:
+      return "Invalid JSON";
+    case ESP32OTAPull::OTA_UPDATE_FAIL:
+      return "Update fail (no OTA partition?)";
+    default:
+      if (code > 0)
+        return "Unexpected HTTP response code";
+      break;
+  }
+#endif
+  return "Unknown error";
 }
 
 void mountSDThenUpdate(const char * firmwareFileName)

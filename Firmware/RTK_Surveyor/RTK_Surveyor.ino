@@ -170,6 +170,7 @@ bool sdSizeCheckTaskComplete = false;
 #include <ArduinoJson.h> //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 #include <WiFiClientSecure.h> //Built-in.
 #include <PubSubClient.h> //http://librarymanager/All#PubSubClient_MQTT_Lightweight v2.8.0 Used for MQTT obtaining of keys
+#include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting latest firmware OTA
 
 #include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
 
@@ -196,6 +197,8 @@ static int ntripClientConnectionAttemptsTotal; //Count the number of connection 
 static uint32_t ntripServerTimer;
 static uint32_t ntripServerStartTime;
 static int ntripServerConnectionAttemptsTotal; //Count the number of connection attempts absolutely
+
+#define OTA_FIRMWARE_JSON_URL "https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-Firmware.json"
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration

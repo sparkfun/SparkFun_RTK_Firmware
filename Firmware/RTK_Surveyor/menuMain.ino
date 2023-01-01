@@ -68,8 +68,7 @@ void menuMain()
 
     systemPrintln("s) Configure System");
 
-    if (binCount > 0)
-      systemPrintln("f) Firmware upgrade");
+    systemPrintln("f) Firmware upgrade");
 
     if (btPrintEcho)
       systemPrintln("b) Exit Bluetooth Echo mode");
@@ -102,7 +101,7 @@ void menuMain()
     else if (incoming == 'r')
       menuRadio();
 #endif
-    else if (incoming == 'f' && binCount > 0)
+    else if (incoming == 'f')
       menuFirmware();
     else if (incoming == 'b')
     {

@@ -204,6 +204,9 @@ bool wifiConnect()
     return false;
   }
 
+  if(wifiIsConnected())
+    return(true);
+
 #ifdef COMPILE_WIFI
 
   WiFiMulti wifiMulti;

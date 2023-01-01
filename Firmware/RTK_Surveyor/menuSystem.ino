@@ -371,8 +371,6 @@ void menuSystem()
 
 //Set WiFi credentials
 //Enable TCP connections
-//TODO list networks
-//TODO change IP on config display to match AP or local IP
 void menuWiFi()
 {
   while (1)

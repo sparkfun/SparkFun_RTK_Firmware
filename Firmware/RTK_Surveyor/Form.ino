@@ -485,8 +485,8 @@ void createSettingsString(char* newSettings)
   char sdSpace[30];
   sprintf(sdSpace, "%s", stringHumanReadableSize(sdFreeSpace));
   stringRecord(newSettings, "sdFreeSpace", sdSpace);
-  sprintf(sdSpace, "%s", stringHumanReadableSize(sdCardSize - sdFreeSpace));
-  stringRecord(newSettings, "sdUsedSpace", sdSpace);
+  sprintf(sdSpace, "%s", stringHumanReadableSize(sdCardSize));
+  stringRecord(newSettings, "sdSize", sdSpace);
 
   stringRecord(newSettings, "enableResetDisplay", settings.enableResetDisplay);
 

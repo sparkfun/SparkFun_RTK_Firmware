@@ -1829,18 +1829,6 @@
                         <p id="factoryDefaultsMsg" class="inlineSuccess"></p>
                     </div>
 
-                    <div class="col-sm-7 col-12 mt-2" id="sdMounted">
-                        SD Card<span class="tt" data-bs-placement="right"
-                            title="Various stats for the SD card are shown. If valid firmware is detected, the upgrade process will be made available.">
-                            <span class="icon-info-circle text-primary ms-2"></span>
-                        </span>
-
-                        <div class="form-check">
-                            Free: <p id="sdFreeSpace" style="display:inline;">0 MB</p>
-                            <br>
-                            Used: <p id="sdUsedSpace" style="display:inline;">0 MB</p>
-                        </div>
-                    </div>
                     <div class="col-sm-7 col-6 mt-2">
                         <div id="uploadNewFirmwareDiv" class="mb-2">
                             <label class="form-check-label" for="uploadNewFirmware">Update Firmware:</label>
@@ -1881,6 +1869,11 @@
             </div>
             <div class="collapse" id="collapseFileManager">
                 <div class="card card-body">
+
+                    <div align="center">
+                            SD Size: <p id="sdSize" style="display:inline;">0 MB</p> / Free: <p id="sdFreeSpace" style="display:inline;">0 MB</p>
+                    </div>
+
                     <table id="fileManagerTable">
                         <tr align='left'>
                             <th>Name</th>

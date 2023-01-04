@@ -106,7 +106,7 @@ char settingsFileName[60]; //Contains the %s_Settings_%d.txt with current profil
 
 char stationCoordinateECEFFileName[60]; //Contains the /StationCoordinates-ECEF_%d.csv with current profile number set
 char stationCoordinateGeodeticFileName[60]; //Contains the /StationCoordinates-Geodetic_%d.csv with current profile number set
-const int MAX_STATIONS = 50; //Record upto 50 ECEF and Geodetic commonly used stations
+const int COMMON_COORDINATES_MAX_STATIONS = 50; //Record upto 50 ECEF and Geodetic commonly used stations
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Handy library for setting ESP32 system time to GNSS time

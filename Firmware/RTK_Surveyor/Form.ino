@@ -594,7 +594,7 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "espnowBroadcast", settings.espnowBroadcast);
 
   //Add ECEF and Geodetic station data
-  for (int index = 0; index < MAX_STATIONS ; index++) //Arbitrary 50 station limit
+  for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
   {
     //stationInfo example: LocationA,-1280206.568,-4716804.403,4086665.484
     char stationInfo[100];
@@ -623,7 +623,7 @@ void createSettingsString(char* newSettings)
     }
   }
 
-  for (int index = 0; index < MAX_STATIONS ; index++) //Arbitrary 50 station limit
+  for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
   {
     //stationInfo example: LocationA,40.09029479,-105.18505761,1560.089
     char stationInfo[100];

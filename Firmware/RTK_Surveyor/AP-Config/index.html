@@ -942,7 +942,7 @@
             <!-- --------- Base Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="baseConfig" type="button" data-toggle="collapse"
-                    data-target="#collapseBaseConfig" aria-expanded="false" aria-controls="collapseBaseConfig">
+                    data-target="#collapseBaseConfig" aria-expanded="false" aria-controls="collapseBaseConfig" style="display:none">
                     Base Configuration <i id="baseCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
@@ -1019,7 +1019,7 @@
                                     <p id="fixedEcefXError" class="inlineError"></p>
                                 </div>
                             </div>
-        
+
                             <div class="form-group row">
                                 <div class="col-sm-2 col-3">
                                     <label for="fixedEcefY" class="box-margin40 col-form-label">Y:</label>
@@ -1029,7 +1029,7 @@
                                     <p id="fixedEcefYError" class="inlineError"></p>
                                 </div>
                             </div>
-        
+
                             <div class="form-group row">
                                 <div class="col-sm-2 col-3">
                                     <label for="fixedEcefZ" class="box-margin40 col-form-label">Z:</label>
@@ -1039,7 +1039,7 @@
                                     <p id="fixedEcefZError" class="inlineError"></p>
                                 </div>
                             </div>
-        
+
                             <div class="form-group row">
                                 <div class="col-sm-2 col-3">
                                     <label for="nicknameECEF" class="box-margin40 col-form-label">Name:</label>
@@ -1049,7 +1049,7 @@
                                     <p id="nicknameECEFError" class="inlineError"></p>
                                 </div>
                             </div>
-        
+
                             <div class="form-group row">
                                 <label>Commonly Used Coordinates
                                     <span class="tt" data-bs-placement="right"
@@ -1125,10 +1125,10 @@
                                     <p id="fixedLongError" class="inlineError"></p>
                                 </div>
                             </div>
-        
+
                             <div class="form-group row">
-                                <label for="fixedAltitude"
-                                    class="box-margin40 col-sm-3 col-5 col-form-label">HAE Mark/Alt(m):
+                                <label for="fixedAltitude" class="box-margin40 col-sm-3 col-5 col-form-label">HAE
+                                    Mark/Alt(m):
                                     <span class="tt" data-bs-placement="right"
                                         title="Height Above Ellipsoid of the mark. This is the coordinate or altitude of the mark or monument on the ground.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
@@ -1139,7 +1139,7 @@
                                     <p id="fixedAltitudeError" class="inlineError"></p>
                                 </div>
                             </div><br>
-        
+
                             <div class="form-group row">
                                 <label for="antennaHeight" class="box-margin40 col-sm-3 col-5 col-form-label">Antenna
                                     Height(mm):
@@ -1148,13 +1148,13 @@
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
-        
+
                                 <div class="col-sm-4 col-5">
                                     <input type="number" class="form-control" id="antennaHeight">
                                     <p id="antennaHeightError" class="inlineError"></p>
                                 </div>
                             </div>
-        
+
                             <div class="form-group row">
                                 <label for="antennaReferencePoint" class="box-margin40 col-5 col-form-label">Antenna
                                     Reference Point(mm):
@@ -1168,10 +1168,9 @@
                                     <p id="antennaReferencePointError" class="inlineError"></p>
                                 </div>
                             </div>
-        
+
                             <div class="form-group row">
-                                <label for="fixedHAE_APC"
-                                    class="box-margin40 col-sm-3 col-5 col-form-label">HAE APC(m):
+                                <label for="fixedHAE_APC" class="box-margin40 col-sm-3 col-5 col-form-label">HAE APC(m):
                                     <span class="tt" data-bs-placement="right"
                                         title="Height Above Ellipsoid of the Antenna Phase Center. This is the sum of the antenna height, phase center, and mark height. Not user editable, shown for information only.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
@@ -1182,7 +1181,7 @@
                                     <p id="fixedHAE_APCError" class="inlineError"></p>
                                 </div>
                             </div><br>
-        
+
                             <div class="form-group row">
                                 <label for="nicknameGeodetic" class="box-margin40 col-sm-3 col-4 col-form-label">Name:
                                     <span class="tt" data-bs-placement="right"
@@ -1195,7 +1194,7 @@
                                     <p id="nicknameGeodeticError" class="inlineError"></p>
                                 </div>
                             </div>
-        
+
                             <div class="form-group row">
                                 <label>Commonly Used Coordinates
                                     <span class="tt" data-bs-placement="right"
@@ -1314,7 +1313,8 @@
             <!-- --------- Sensor Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="sensorConfig" type="button" data-toggle="collapse"
-                    data-target="#collapseSensorConfig" aria-expanded="false" aria-controls="collapseSensorConfig">
+                    data-target="#collapseSensorConfig" aria-expanded="false" aria-controls="collapseSensorConfig"
+                    style="display:none">
                     Sensor Configuration <i id="sensorCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
@@ -1342,7 +1342,8 @@
             <!-- --------- Point Perfect Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="ppConfig" type="button" data-toggle="collapse"
-                    data-target="#collapsePPConfig" aria-expanded="false" aria-controls="collapsePPConfig">
+                    data-target="#collapsePPConfig" aria-expanded="false" aria-controls="collapsePPConfig"
+                    style="display:none">
                     PointPerfect Configuration <i id="pointPerfectCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
@@ -1731,7 +1732,7 @@
                     System Configuration <i id="systemCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
-            <div class="collapse" id="collapseSystemConfig">
+            <div class="collapse show" id="collapseSystemConfig">
                 <div class="card card-body">
 
                     <div id="baseRoverSetupDropdown" class="mb-2">
@@ -1863,7 +1864,7 @@
             <div class="d-grid gap-2">
                 <button onclick="getFileList()" id="fileManager" class="btn btn-primary mt-3 toggle-btn" type="button"
                     data-toggle="collapse" data-target="#collapseFileManager" aria-expanded="false"
-                    aria-controls="collapseFileManager">
+                    aria-controls="collapseFileManager" style="display:none">
                     File Manager <i id="fileManagerCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
@@ -1871,7 +1872,8 @@
                 <div class="card card-body">
 
                     <div align="center">
-                            SD Size: <p id="sdSize" style="display:inline;">0 MB</p> / Free: <p id="sdFreeSpace" style="display:inline;">0 MB</p>
+                        SD Size: <p id="sdSize" style="display:inline;">0 MB</p> / Free: <p id="sdFreeSpace"
+                            style="display:inline;">0 MB</p>
                     </div>
 
                     <table id="fileManagerTable">

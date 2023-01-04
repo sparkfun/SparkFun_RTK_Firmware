@@ -62,20 +62,23 @@ function parseIncoming(msg) {
             fullPageUpdate = true;
 
             if (platformPrefix == "Surveyor") {
-                hide("dataPortChannelDropdown");
-
+                show("baseConfig");
                 hide("sensorConfig");
                 hide("ppConfig");
+
+                hide("dataPortChannelDropdown");
             }
             else if (platformPrefix == "Express" || platformPrefix == "Facet") {
+                show("baseConfig");
                 hide("sensorConfig");
                 hide("ppConfig");
             }
             else if (platformPrefix == "Express Plus") {
-                ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
-
                 hide("baseConfig");
+                show("sensorConfig");
                 hide("ppConfig");
+
+                ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
 
                 hide("msgUBX_NAV_SVIN"); //Hide unsupported messages
                 hide("msgUBX_RTCM_1005");
@@ -100,6 +103,7 @@ function parseIncoming(msg) {
                 show("msgUBX_ESF_INS");
             }
             else if (platformPrefix == "Facet L-Band") {
+                show("baseConfig");
                 hide("sensorConfig");
                 show("ppConfig");
             }

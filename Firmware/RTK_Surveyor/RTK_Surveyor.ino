@@ -199,6 +199,9 @@ static uint32_t ntripServerStartTime;
 static int ntripServerConnectionAttemptsTotal; //Count the number of connection attempts absolutely
 
 #define OTA_FIRMWARE_JSON_URL "https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-Firmware.json"
+#define OTA_RC_FIRMWARE_JSON_URL "https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-RC-Firmware.json"
+bool apConfigFirmwareUpdateInProcess = false; //Goes true once WiFi is connected and OTA pull begins
+bool enableRCFirmware = false; //Goes true from AP config page
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration

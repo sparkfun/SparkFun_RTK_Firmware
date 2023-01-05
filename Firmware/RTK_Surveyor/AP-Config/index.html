@@ -89,7 +89,7 @@
         </h2>
         <div class="col-sm-12 mt-3">
             <div align="center" class="small">
-                <span id="rtkFirmwareVersion" style="display:inline;">RTK Firmware: v0.0</span> <br>
+                RTK Firmware: <span id="rtkFirmwareVersion" style="display:inline;">v0.0</span> <br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
                 <span id="deviceBTID" style="display:inline;">Device Bluetooth ID: 0000</span> <br>
                 <span id="coordinatesLLH" style="display:inline;">LLh:
@@ -942,7 +942,8 @@
             <!-- --------- Base Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="baseConfig" type="button" data-toggle="collapse"
-                    data-target="#collapseBaseConfig" aria-expanded="false" aria-controls="collapseBaseConfig" style="display:none">
+                    data-target="#collapseBaseConfig" aria-expanded="false" aria-controls="collapseBaseConfig"
+                    style="display:none">
                     Base Configuration <i id="baseCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
@@ -1534,7 +1535,7 @@
                     <div class="form-group row">
                         <label for="wifiNetwork0SSID" class="col-3 col-form-label">SSID 1:</label>
                         <div class="col-sm-8 col-7">
-                            <input type="text" class="form-control" id="wifiNetwork0SSID">
+                            <input type="text" class="form-control" id="wifiNetwork0SSID" value="test">
                             <p id="wifiNetwork0SSIDError" class="inlineError"></p>
                         </div>
                     </div>
@@ -1732,8 +1733,59 @@
                     System Configuration <i id="systemCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
-            <div class="collapse show" id="collapseSystemConfig">
+            <div class="collapse" id="collapseSystemConfig">
                 <div class="card card-body">
+
+                    <div id="uploadNewFirmwareDiv" class="mb-2">
+                        <label class="form-check-label" for="uploadNewFirmware">System Firmware:</label>
+                        <span id="rtkFirmwareVersionUpgrade" style="display:inline;">v0.0</span>
+                    </div>
+
+                    <div>
+                        <div align="center">
+                            <button type="button" id="btnCheckNewFirmware" class="btn btn-primary box-margin20"
+                                onClick="checkNewFirmware()">Check for New Firmware</button>
+
+                            <span class="tt" data-bs-placement="right"
+                                title="Check SparkFun to see if new firmware is available for this device.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                            <p id="firmwareCheckNewMsg"></p>
+
+                            <div>
+                                <label class="form-check-label" for="enableRCFirmware">Allow Beta Firmware</label>
+                                <input class="form-check-input" type="checkbox" value="" id="enableRCFirmware">
+                                <span class="tt" data-bs-placement="right"
+                                    title="Beta firmware contains the newest features but may not be stable. Not recommended for field work.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </div>
+                        </div>
+                        <br>
+
+                        <div align="center" id="divGetNewFirmware" style="display:none">
+                            <button type="button" id="btnGetNewFirmware" class="btn btn-primary box-margin20"
+                                onClick="getNewFirmware()">Update to v3.14.15</button>
+
+                            <center><progress id="firmwareUpdateProgressBar" value="12" max="100"
+                                    style="width:300px;"></progress>
+                                <p id="firmwareUpdateProgressMsg" class="inlineSuccess">37%</p>
+                            </center>
+                        </div>
+                    </div>
+
+                    <div align="center">
+                        <label class="btn btn-primary">
+                            <input type="file" name="binfile" id="submitFirmwareFile" onchange="firmwareUploadWait()" />
+                            Upload BIN
+                        </label>
+                        <span class="tt" data-bs-placement="right"
+                            title="Update the unit's firmware by uploading a binary file from the connected phone or PC.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span><br>
+                        <p id="firmwareUploadMsg" class="inlineSuccess"></p>
+                    </div>
+                    <br>
 
                     <div id="baseRoverSetupDropdown" class="mb-2">
                         <label for="baseRoverSetup">System Initial State: </label>
@@ -1828,24 +1880,6 @@
                             onClick="resetToFactoryDefaults()" disabled>Reset to Factory
                             Defaults</button>
                         <p id="factoryDefaultsMsg" class="inlineSuccess"></p>
-                    </div>
-
-                    <div class="col-sm-7 col-6 mt-2">
-                        <div id="uploadNewFirmwareDiv" class="mb-2">
-                            <label class="form-check-label" for="uploadNewFirmware">Update Firmware:</label>
-                            <span class="tt" data-bs-placement="right" title="Update the unit's firmware over WiFi.">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
-
-                            <div class="form-check">
-                                <label class="btn btn-primary">
-                                    <input type="file" name="binfile" id="submitFirmwareFile"
-                                        onchange="firmwareUploadWait()" />
-                                    Upload BIN
-                                </label>
-                                <p id="firmwareUploadMsg" class="inlineSuccess"></p>
-                            </div>
-                        </div>
                     </div>
 
                     <label class="mt-2" for="debugZone">Debug Zone:</label>

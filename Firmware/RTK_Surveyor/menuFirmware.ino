@@ -28,22 +28,36 @@ void menuFirmware()
       else
       {
         bool previouslyConnected = wifiIsConnected();
+        bool updateAvailable = false;
 
         if (wifiConnect() == true)
         {
           char versionString[20];
           sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
           systemPrintf("Current firmware version: v%s\r\n", versionString);
-          systemPrintf("Checking to see if an update is available...\r\n", OTA_FIRMWARE_JSON_URL);
+
+          if (enableRCFirmware == false)
+            systemPrintf("Checking to see if an update is available from %s\r\n", OTA_FIRMWARE_JSON_URL);
+          else
+            systemPrintf("Checking to see if an update is available from %s\r\n", OTA_RC_FIRMWARE_JSON_URL);
 
           ESP32OTAPull ota;
           ota.SetCallback(otaPullCallback);
 
-          int response = ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+          int response;
+          if (enableRCFirmware == false)
+            response = ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+          else
+            response = ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+
           if (response == ESP32OTAPull::UPDATE_AVAILABLE)
           {
+            updateAvailable = true;
             systemPrintln("Installing new firmware");
-            ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString); //Install new firmware
+            if (enableRCFirmware == false)
+              ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString); //Install new firmware
+            else
+              ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString); //Install new firmware
           }
           else
           {
@@ -55,7 +69,9 @@ void menuFirmware()
         else
           systemPrintln("WiFi not available");
 
-        if (previouslyConnected == false)
+        //If we have an update available, don't turn off WiFi
+        //If we don't have an update, and WiFi was originally off, turn it off again
+        if (updateAvailable == false && previouslyConnected == false)
           wifiStop();
       }
     }
@@ -71,60 +87,6 @@ void menuFirmware()
   }
 
   clearBuffer(); //Empty buffer of any newline chars
-}
-
-void otaPullCallback(int bytesWritten, int totalLength)
-{
-  static int previousPercent = -1;
-  int percent = 100 * bytesWritten / totalLength;
-  if (percent != previousPercent)
-  {
-    //Indicate progress
-    int barWidthInCharacters = 20; //Width of progress bar, ie [###### % complete
-    long portionSize = totalLength / barWidthInCharacters;
-
-    //Indicate progress
-    systemPrint("\r\n[");
-    int barWidth = bytesWritten / portionSize;
-    for (int x = 0 ; x < barWidth ; x++)
-      systemPrint("=");
-    systemPrintf(" %d%%", percent);
-    if (bytesWritten == totalLength) systemPrintln("]");
-
-    displayFirmwareUpdateProgress(percent);
-
-    previousPercent = percent;
-  }
-}
-
-const char *otaPullErrorText(int code)
-{
-#ifdef COMPILE_WIFI
-  switch (code)
-  {
-    case ESP32OTAPull::UPDATE_AVAILABLE:
-      return "An update is available but wasn't installed";
-    case ESP32OTAPull::NO_UPDATE_PROFILE_FOUND:
-      return "No profile matches";
-    case ESP32OTAPull::NO_UPDATE_AVAILABLE:
-      return "Profile matched, but update not applicable";
-    case ESP32OTAPull::UPDATE_OK:
-      return "An update was done, but no reboot";
-    case ESP32OTAPull::HTTP_FAILED:
-      return "HTTP GET failure";
-    case ESP32OTAPull::WRITE_ERROR:
-      return "Write error";
-    case ESP32OTAPull::JSON_PROBLEM:
-      return "Invalid JSON";
-    case ESP32OTAPull::OTA_UPDATE_FAIL:
-      return "Update fail (no OTA partition?)";
-    default:
-      if (code > 0)
-        return "Unexpected HTTP response code";
-      break;
-  }
-#endif
-  return "Unknown error";
 }
 
 void mountSDThenUpdate(const char * firmwareFileName)
@@ -350,4 +312,251 @@ void updateFromSD(const char *firmwareFileName)
   {
     systemPrintln("No firmware file found");
   }
+}
+
+//Returns true if we successfully got the versionAvailable
+//Modifies versionAvailable with OTA getVersion response
+//Connects to WiFi as needed
+bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
+{
+  bool gotVersion = false;
+#ifdef COMPILE_WIFI
+  bool previouslyConnected = wifiIsConnected();
+
+  if (wifiConnect() == true)
+  {
+    char versionString[20];
+    sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    systemPrintf("Current firmware version: v%s\r\n", versionString);
+
+    if (enableRCFirmware == false)
+      systemPrintf("Checking to see if an update is available from %s\r\n", OTA_FIRMWARE_JSON_URL);
+    else
+      systemPrintf("Checking to see if an update is available from %s\r\n", OTA_RC_FIRMWARE_JSON_URL);
+
+
+    ESP32OTAPull ota;
+
+    int response;
+    if (enableRCFirmware == false)
+      response = ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+    else
+      response = ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+
+    //We don't care if the library thinks the available firmware is newer, we just need a successful JSON parse
+    if (response == ESP32OTAPull::UPDATE_AVAILABLE || response == ESP32OTAPull::NO_UPDATE_AVAILABLE)
+      gotVersion = true;
+
+    //Call getVersion after original inquiry
+    String otaVersion = ota.getVersion();
+    otaVersion.toCharArray(versionAvailable, versionAvailableLength);
+  }
+  else
+    systemPrintln("WiFi not available");
+
+  //If WiFi was originally off, turn it off again
+  if (previouslyConnected == false)
+    wifiStop();
+
+  if (gotVersion == true)
+    log_d("Available OTA firmware version: %s\n\r", versionAvailable);
+
+#endif
+  return (gotVersion);
+}
+
+//Updates firmware using OTA pull
+//Exits by either updating firmware and resetting, or failing to connect
+void otaUpdate()
+{
+  bool updateAvailable = false;
+#ifdef COMPILE_WIFI
+  bool previouslyConnected = wifiIsConnected();
+
+  if (wifiConnect() == true)
+  {
+    char versionString[20];
+    sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+
+    ESP32OTAPull ota;
+
+    int response;
+    if (enableRCFirmware == false)
+      response = ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+    else
+      response = ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+
+    if (response == ESP32OTAPull::UPDATE_AVAILABLE)
+    {
+      systemPrintln("Installing new firmware");
+      ota.SetCallback(otaPullCallback);
+      if (enableRCFirmware == false)
+        ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString); //Install new firmware, no reset
+      else
+        ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString); //Install new firmware, no reset
+
+      if (apConfigFirmwareUpdateInProcess)
+      {
+#ifdef COMPILE_AP
+        //Tell AP page to display reset info
+        websocket->textAll("confirmReset,1,");
+#endif
+      }
+      ESP.restart();
+    }
+    else
+    {
+      systemPrintln("New firmware not available");
+    }
+  }
+  else
+    systemPrintln("WiFi not available");
+
+  //Update failed. If WiFi was originally off, turn it off again
+  if (previouslyConnected == false)
+    wifiStop();
+
+#endif
+
+}
+
+//Called while the OTA Pull update is happening
+void otaPullCallback(int bytesWritten, int totalLength)
+{
+  static int previousPercent = -1;
+  int percent = 100 * bytesWritten / totalLength;
+  if (percent != previousPercent)
+  {
+    //Indicate progress
+    int barWidthInCharacters = 20; //Width of progress bar, ie [###### % complete
+    long portionSize = totalLength / barWidthInCharacters;
+
+    //Indicate progress
+    systemPrint("\r\n[");
+    int barWidth = bytesWritten / portionSize;
+    for (int x = 0 ; x < barWidth ; x++)
+      systemPrint("=");
+    systemPrintf(" %d%%", percent);
+    if (bytesWritten == totalLength) systemPrintln("]");
+
+    displayFirmwareUpdateProgress(percent);
+
+    if (apConfigFirmwareUpdateInProcess == true)
+    {
+#ifdef COMPILE_AP
+      char myProgess[50];
+      sprintf(myProgess, "otaFirmwareStatus,%d,", percent);
+      websocket->textAll(myProgess);
+#endif
+    }
+
+    previousPercent = percent;
+  }
+}
+
+const char *otaPullErrorText(int code)
+{
+#ifdef COMPILE_WIFI
+  switch (code)
+  {
+    case ESP32OTAPull::UPDATE_AVAILABLE:
+      return "An update is available but wasn't installed";
+    case ESP32OTAPull::NO_UPDATE_PROFILE_FOUND:
+      return "No profile matches";
+    case ESP32OTAPull::NO_UPDATE_AVAILABLE:
+      return "Profile matched, but update not applicable";
+    case ESP32OTAPull::UPDATE_OK:
+      return "An update was done, but no reboot";
+    case ESP32OTAPull::HTTP_FAILED:
+      return "HTTP GET failure";
+    case ESP32OTAPull::WRITE_ERROR:
+      return "Write error";
+    case ESP32OTAPull::JSON_PROBLEM:
+      return "Invalid JSON";
+    case ESP32OTAPull::OTA_UPDATE_FAIL:
+      return "Update fail (no OTA partition?)";
+    default:
+      if (code > 0)
+        return "Unexpected HTTP response code";
+      break;
+  }
+#endif
+  return "Unknown error";
+}
+
+//Returns true if reportedVersion is newer than currentVersion
+//Version number comes in as v2.7-Jan 5 2023
+//2.7-Jan 5 2023 is newer than v2.7-Jan 1 2023
+bool isReportedVersionNewer(char* reportedVersion, char *currentVersion)
+{
+  float currentVersionNumber, reportedVersionNumber = 0.0;
+  int currentDay, reportedDay = 0;
+  int currentMonth, reportedMonth = 0;
+  int currentYear, reportedYear = 0;
+
+  breakVersionIntoParts(currentVersion, &currentVersionNumber, &currentYear, &currentMonth, &currentDay);
+  breakVersionIntoParts(reportedVersion, &reportedVersionNumber, &reportedYear, &reportedMonth, &reportedDay);
+
+  log_d("currentVersion: %f %d %d %d", currentVersionNumber, currentDay, currentMonth, currentYear);
+  log_d("reportedVersion: %f %d %d %d", reportedVersionNumber, reportedDay, reportedMonth, reportedYear);
+  if (enableRCFirmware) log_d("RC firmware enabled");
+
+  //Production firmware is named "2.6"
+  //Release Candidate firmware is named "2.6-Dec 5 2022"
+
+  //If the user is not using Release Candidate firmware, then check only the version number
+  if (enableRCFirmware == false)
+  {
+    //Check only the version number
+    if (reportedVersionNumber > currentVersionNumber)
+      return (true);
+    return (false);
+  }
+
+  //For RC firmware, compare firmware date as well
+  //Check version number
+  if (reportedVersionNumber > currentVersionNumber)
+    return (true);
+
+  //Check year/month/day
+  if (reportedYear > currentYear)
+    return (true);
+
+  if (reportedMonth > currentMonth)
+    return (true);
+
+  if (reportedDay > currentDay)
+    return (true);
+
+  return (false);
+}
+
+//Version number comes in as v2.7-Jan 5 2023
+//Given a char string, break into version number, year, month, day
+//Returns false if parsing failed
+bool breakVersionIntoParts(char *version, float *versionNumber, int *year, int *month, int *day)
+{
+  char monthStr[20];
+  int placed = sscanf(version, "%f-%s %d %d", versionNumber, monthStr, day, year);
+  if (placed != 4) return (false); //Something went wrong
+
+  (*month) = mapMonthName(monthStr);
+  if (*month == -1) return (false); //Something went wrong
+
+  return (true);
+}
+
+//https://stackoverflow.com/questions/21210319/assign-month-name-and-integer-values-from-string-using-sscanf
+int mapMonthName(char *mmm)
+{
+  static char const *months[] =
+  {
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  };
+  for (size_t i = 0; i < sizeof(months) / sizeof(months[0]); i++)
+  {
+    if (strcmp(mmm, months[i]) == 0)
+      return i + 1;
+  }
+  return -1;
 }

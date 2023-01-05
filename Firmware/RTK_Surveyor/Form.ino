@@ -131,96 +131,9 @@ void startWebServer()
     request->send(200, "text/plain", getFileList());
   });
 
-  webserver->on("/file", HTTP_GET, [](AsyncWebServerRequest * request)
-  {
-    //This section does not tolerate semaphore transactions
-
-    String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
-
-    if (request->hasParam("name") && request->hasParam("action"))
-    {
-      const char *fileName = request->getParam("name")->value().c_str();
-      const char *fileAction = request->getParam("action")->value().c_str();
-
-      logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
-
-      if (sd->exists(fileName) == false)
-      {
-        systemPrintln(logmessage + " ERROR: file does not exist");
-        request->send(400, "text/plain", "ERROR: file does not exist");
-      }
-      else
-      {
-        systemPrintln(logmessage + " file exists");
-
-        if (strcmp(fileAction, "download") == 0)
-        {
-          logmessage += " downloaded";
-
-          if (managerFileOpen == false)
-          {
-            if (managerTempFile.open(fileName, O_READ) == true)
-              managerFileOpen = true;
-            else
-              systemPrintln("Error: File Manager failed to open file");
-          }
-          else
-          {
-            //File is already in use. Wait your turn.
-            request->send(202, "text/plain", "ERROR: File already downloading");
-            //return (0);
-          }
-
-          int dataAvailable = managerTempFile.size() - managerTempFile.position();
-
-          AsyncWebServerResponse *response = request->beginResponse("text/plain", dataAvailable,
-                                             [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t
-          {
-            uint32_t bytes = 0;
-            uint32_t availableBytes = managerTempFile.available();
-
-            if (availableBytes > maxLen)
-            {
-              bytes = managerTempFile.read(buffer, maxLen);
-            }
-            else
-            {
-              bytes = managerTempFile.read(buffer, availableBytes);
-              managerFileOpen = false;
-              managerTempFile.close();
-
-              //xSemaphoreGive(sdCardSemaphore);
-
-              //systemPrintln("Send me more");
-              websocket->textAll("fmNext,1,"); //Tell browser to send next file if needed
-            }
-
-            return bytes;
-          });
-
-          response->addHeader("Cache-Control", "no-cache");
-          response->addHeader("Content-Disposition", "attachment; filename=" + String(fileName));
-          response->addHeader("Access-Control-Allow-Origin", "*");
-          request->send(response);
-        }
-        else if (strcmp(fileAction, "delete") == 0)
-        {
-          logmessage += " deleted";
-          sd->remove(fileName);
-          request->send(200, "text/plain", "Deleted File: " + String(fileName));
-        }
-        else
-        {
-          logmessage += " ERROR: invalid action param supplied";
-          request->send(400, "text/plain", "ERROR: invalid action param supplied");
-        }
-        systemPrintln(logmessage);
-      }
-    }
-    else
-    {
-      request->send(400, "text/plain", "ERROR: name and action params required");
-    }
+  //Handler for the filemanager
+  webserver->on("/file", HTTP_GET, [](AsyncWebServerRequest * request) {
+    handleFirmwareFileDownload(request);
   });
 
   webserver->begin();
@@ -268,6 +181,98 @@ void notFound(AsyncWebServerRequest *request) {
   String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
   systemPrintln(logmessage);
   request->send(404, "text/plain", "Not found");
+}
+#endif
+#endif
+
+//Handler for firmware file downloads
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
+static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
+{
+  //This section does not tolerate semaphore transactions
+  String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+
+  if (request->hasParam("name") && request->hasParam("action"))
+  {
+    const char *fileName = request->getParam("name")->value().c_str();
+    const char *fileAction = request->getParam("action")->value().c_str();
+
+    logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
+
+    if (sd->exists(fileName) == false)
+    {
+      systemPrintln(logmessage + " ERROR: file does not exist");
+      request->send(400, "text/plain", "ERROR: file does not exist");
+    }
+    else
+    {
+      systemPrintln(logmessage + " file exists");
+
+      if (strcmp(fileAction, "download") == 0)
+      {
+        logmessage += " downloaded";
+
+        if (managerFileOpen == false)
+        {
+          if (managerTempFile.open(fileName, O_READ) == true)
+            managerFileOpen = true;
+          else
+            systemPrintln("Error: File Manager failed to open file");
+        }
+        else
+        {
+          //File is already in use. Wait your turn.
+          request->send(202, "text/plain", "ERROR: File already downloading");
+        }
+
+        int dataAvailable = managerTempFile.size() - managerTempFile.position();
+
+        AsyncWebServerResponse *response = request->beginResponse("text/plain", dataAvailable,
+                                           [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t
+        {
+          uint32_t bytes = 0;
+          uint32_t availableBytes = managerTempFile.available();
+
+          if (availableBytes > maxLen)
+          {
+            bytes = managerTempFile.read(buffer, maxLen);
+          }
+          else
+          {
+            bytes = managerTempFile.read(buffer, availableBytes);
+            managerFileOpen = false;
+            managerTempFile.close();
+
+            websocket->textAll("fmNext,1,"); //Tell browser to send next file if needed
+          }
+
+          return bytes;
+        });
+
+        response->addHeader("Cache-Control", "no-cache");
+        response->addHeader("Content-Disposition", "attachment; filename=" + String(fileName));
+        response->addHeader("Access-Control-Allow-Origin", "*");
+        request->send(response);
+      }
+      else if (strcmp(fileAction, "delete") == 0)
+      {
+        logmessage += " deleted";
+        sd->remove(fileName);
+        request->send(200, "text/plain", "Deleted File: " + String(fileName));
+      }
+      else
+      {
+        logmessage += " ERROR: invalid action param supplied";
+        request->send(400, "text/plain", "ERROR: invalid action param supplied");
+      }
+      systemPrintln(logmessage);
+    }
+  }
+  else
+  {
+    request->send(400, "text/plain", "ERROR: name and action params required");
+  }
 }
 #endif
 #endif
@@ -404,7 +409,7 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "platformPrefix", platformPrefix);
 
   char apRtkFirmwareVersion[86];
-  sprintf(apRtkFirmwareVersion, "RTK %s Firmware: v%d.%d-%s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+  sprintf(apRtkFirmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
   stringRecord(newSettings, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
   char apZedPlatform[50];
@@ -849,6 +854,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.enableTcpClient = settingValueBool;
   else if (strcmp(settingName, "enableTcpServer") == 0)
     settings.enableTcpServer = settingValueBool;
+  else if (strcmp(settingName, "enableRCFirmware") == 0)
+    enableRCFirmware = settingValueBool;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}
@@ -935,6 +942,56 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   {
     if (settings.enableLogging == true && online.logging == true)
       endSD(false, true); //Close down file. A new one will be created at the next calling of updateLogs().
+  }
+  else if (strcmp(settingName, "checkNewFirmware") == 0)
+  {
+    log_d("Checking for new OTA Pull firmware");
+
+    websocket->textAll("checkingNewFirmware,1,"); //Tell the config page we received their request
+
+    char reportedVersion[20];
+    char newVersionCSV[100];
+
+    //Get firmware version from server
+    if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
+    {
+      //We got a version number, now determine if it's newer or not
+      char currentVersion[20];
+      sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+
+      strcpy(reportedVersion, "2.4-Jan  7 2023"); //Test new version
+
+      if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
+      {
+        log_d("New version detected");
+        sprintf(newVersionCSV, "newFirmwareVersion,%s,", reportedVersion);
+      }
+      else
+      {
+        log_d("No new firmware available");
+        sprintf(newVersionCSV, "newFirmwareVersion,CURRENT,");
+      }
+    }
+    else
+    {
+      //Failed to get version number
+      log_d("Sending error to AP config page");
+      sprintf(newVersionCSV, "newFirmwareVersion,ERROR,");
+    }
+
+    websocket->textAll(newVersionCSV);
+  }
+  else if (strcmp(settingName, "getNewFirmware") == 0)
+  {
+    log_d("Getting new OTA Pull firmware");
+
+    websocket->textAll("gettingNewFirmware,1,"); //Tell the config page we received their request
+
+    apConfigFirmwareUpdateInProcess = true;
+    otaUpdate();
+
+    //We get here if WiFi failed to connect
+    websocket->textAll("gettingNewFirmware,ERROR,");
   }
 
   //Check for bulk settings (constellations and message rates)

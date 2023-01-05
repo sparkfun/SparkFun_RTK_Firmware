@@ -227,7 +227,7 @@ bool wifiConnect()
 
     if (wifiMulti.run(timeout) == WL_CONNECTED)
       return true;
-    systemPrintln("Timed out. Trying again.");
+    systemPrintln("WiFi connection timed out. Trying again.");
   }
 #endif
 

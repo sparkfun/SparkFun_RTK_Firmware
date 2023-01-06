@@ -204,10 +204,10 @@ bool wifiConnect()
     return false;
   }
 
+#ifdef COMPILE_WIFI
+
   if(wifiIsConnected())
     return(true);
-
-#ifdef COMPILE_WIFI
 
   WiFiMulti wifiMulti;
 
@@ -396,7 +396,7 @@ void wifiStart()
       esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
     }
 #else
-    //Be sure the standard protocols are turned on. ESP Now have have previously turned them off.
+    //Be sure the standard protocols are turned on. ESP Now may have previously turned them off.
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
 #endif
 
@@ -424,7 +424,6 @@ void wifiStart()
 }
 
 //Stop WiFi and release all resources
-//See WiFiBluetoothSwitch sketch for more info
 //If ESP NOW is active, leave WiFi on enough for ESP NOW
 void wifiStop()
 {

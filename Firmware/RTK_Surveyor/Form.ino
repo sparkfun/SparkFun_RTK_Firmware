@@ -959,8 +959,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       char currentVersion[20];
       sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
-      strcpy(reportedVersion, "2.4-Jan  7 2023"); //Test new version
-
       if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
       {
         log_d("New version detected");

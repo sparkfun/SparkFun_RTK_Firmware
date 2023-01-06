@@ -1436,7 +1436,7 @@ function newFirmwareVersion(firmwareVersion) {
     ge("btnGetNewFirmware").innerHTML = "Update to v" + firmwareVersion;
     ge("btnGetNewFirmware").disabled = false;
     ge("firmwareUpdateProgressBar").value = 0;
-    showMsg('firmwareUpdateProgressMsg', "0");
+    clearMsg('firmwareUpdateProgressMsg');
     show("divGetNewFirmware");
 }
 

@@ -33,7 +33,11 @@ void menuFirmware()
         if (wifiConnect() == true)
         {
           char versionString[20];
-          sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+          if (enableRCFirmware == false)
+            sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+          else
+            sprintf(versionString, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+
           systemPrintf("Current firmware version: v%s\r\n", versionString);
 
           if (enableRCFirmware == false)

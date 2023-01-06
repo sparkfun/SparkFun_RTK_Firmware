@@ -375,9 +375,15 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
   else
     systemPrintln("WiFi not available");
 
-  //If WiFi was originally off, turn it off again
-  if (previouslyConnected == false)
-    wifiStop();
+  if (systemState != STATE_WIFI_CONFIG)
+  {
+    //wifiStop() turns off the entire radio including the webserver. We need to turn off Station mode only.
+    //For now, unit exits AP mode via reset so if we are in AP config mode, leave WiFi Station running.
+
+    //If WiFi was originally off, turn it off again
+    if (previouslyConnected == false)
+      wifiStop();
+  }
 
   if (gotVersion == true)
     log_d("Available OTA firmware version: %s\n\r", versionAvailable);
@@ -518,10 +524,15 @@ const char *otaPullErrorText(int code)
 //2.7-Jan 5 2023 is newer than v2.7-Jan 1 2023
 bool isReportedVersionNewer(char* reportedVersion, char *currentVersion)
 {
-  float currentVersionNumber, reportedVersionNumber = 0.0;
-  int currentDay, reportedDay = 0;
-  int currentMonth, reportedMonth = 0;
-  int currentYear, reportedYear = 0;
+  float currentVersionNumber = 0.0;
+  int currentDay = 0;
+  int currentMonth = 0;
+  int currentYear = 0;
+
+  float reportedVersionNumber = 0.0;
+  int reportedDay = 0;
+  int reportedMonth = 0;
+  int reportedYear = 0;
 
   breakVersionIntoParts(currentVersion, &currentVersionNumber, &currentYear, &currentMonth, &currentDay);
   breakVersionIntoParts(reportedVersion, &reportedVersionNumber, &reportedYear, &reportedMonth, &reportedDay);
@@ -566,11 +577,30 @@ bool isReportedVersionNewer(char* reportedVersion, char *currentVersion)
 bool breakVersionIntoParts(char *version, float *versionNumber, int *year, int *month, int *day)
 {
   char monthStr[20];
-  int placed = sscanf(version, "%f-%s %d %d", versionNumber, monthStr, day, year);
-  if (placed != 4) return (false); //Something went wrong
+  int placed = 0;
 
-  (*month) = mapMonthName(monthStr);
-  if (*month == -1) return (false); //Something went wrong
+  if (enableRCFirmware == false)
+  {
+    placed = sscanf(version, "%f", versionNumber);
+    if (placed != 1)
+    {
+      log_d("Failed to sscanf basic");
+      return (false); //Something went wrong
+    }
+  }
+  else
+  {
+    placed = sscanf(version, "%f-%s %d %d", versionNumber, monthStr, day, year);
+
+    if (placed != 4)
+    {
+      log_d("Failed to sscanf RC");
+      return (false); //Something went wrong
+    }
+
+    (*month) = mapMonthName(monthStr);
+    if (*month == -1) return (false); //Something went wrong
+  }
 
   return (true);
 }

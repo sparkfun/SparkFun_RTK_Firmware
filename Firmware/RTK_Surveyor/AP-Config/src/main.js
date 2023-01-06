@@ -131,13 +131,10 @@ function parseIncoming(msg) {
         ) {
             ge(id).innerHTML = val;
         }
-
         else if (id.includes("rtkFirmwareVersion")) {
             ge("rtkFirmwareVersion").innerHTML = val;
             ge("rtkFirmwareVersionUpgrade").innerHTML = val;
         }
-
-
         else if (id.includes("confirmReset")) {
             resetComplete();
         }
@@ -199,7 +196,7 @@ function parseIncoming(msg) {
             fileTableText += "<tr align='left'>";
             fileTableText += "<td>" + lastFileName + "</td>";
             fileTableText += "<td>" + val + "</td>";
-            fileTableText += "<td><input type='checkbox' id='" + lastFileName + "' name='fileID' class='form-check-input'></td>";
+            fileTableText += "<td><input type='checkbox' id='" + lastFileName + "' name='fileID' class='form-check-input fileManagerCheck'></td>";
             fileTableText += "</tr>";
         }
         else if (id.includes("fmNext")) {
@@ -1378,6 +1375,8 @@ function checkNewFirmware() {
 
     if (ge("enableRCFirmware").checked == true)
         settingCSV += "enableRCFirmware,true,";
+    else
+        settingCSV += "enableRCFirmware,false,";
 
     settingCSV += "checkNewFirmware,1,";
 
@@ -1456,6 +1455,8 @@ function gettingNewFirmware(val) {
 }
 
 function otaFirmwareStatus(percentComplete) {
+    clearTimeout(getNewFirmwareTimeout);
+
     showMsg('firmwareUpdateProgressMsg', percentComplete + "% Complete");
     ge("firmwareUpdateProgressBar").value = percentComplete;
 

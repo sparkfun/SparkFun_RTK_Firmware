@@ -330,7 +330,12 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
   if (wifiConnect() == true)
   {
     char versionString[20];
-    sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+
+    if (enableRCFirmware == false)
+      sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    else
+      sprintf(versionString, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+
     systemPrintf("Current firmware version: v%s\r\n", versionString);
 
     if (enableRCFirmware == false)
@@ -380,7 +385,8 @@ void otaUpdate()
   if (wifiConnect() == true)
   {
     char versionString[20];
-    sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+
+    sprintf(versionString, "%d.%d", 99, 99); //Force update with version 99.99. OTA Pull uses String > compare.
 
     ESP32OTAPull ota;
 
@@ -501,8 +507,8 @@ bool isReportedVersionNewer(char* reportedVersion, char *currentVersion)
   breakVersionIntoParts(currentVersion, &currentVersionNumber, &currentYear, &currentMonth, &currentDay);
   breakVersionIntoParts(reportedVersion, &reportedVersionNumber, &reportedYear, &reportedMonth, &reportedDay);
 
-  log_d("currentVersion: %f %d %d %d", currentVersionNumber, currentDay, currentMonth, currentYear);
-  log_d("reportedVersion: %f %d %d %d", reportedVersionNumber, reportedDay, reportedMonth, reportedYear);
+  log_d("currentVersion: %f %d %d %d", currentVersionNumber, currentYear, currentMonth, currentDay);
+  log_d("reportedVersion: %f %d %d %d", reportedVersionNumber, reportedYear, reportedMonth, reportedDay);
   if (enableRCFirmware) log_d("RC firmware enabled");
 
   //Production firmware is named "2.6"
@@ -522,16 +528,16 @@ bool isReportedVersionNewer(char* reportedVersion, char *currentVersion)
   if (reportedVersionNumber > currentVersionNumber)
     return (true);
 
-  //Check year/month/day
-  if (reportedYear > currentYear)
-    return (true);
+  //Check which date is more recent
+  //https://stackoverflow.com/questions/5283120/date-comparison-to-find-which-is-bigger-in-c
+  int reportedVersionScore = reportedDay + reportedMonth * 100 + reportedYear * 2000;
+  int currentVersionScore = currentDay + currentMonth * 100 + currentYear * 2000;
 
-  if (reportedMonth > currentMonth)
+  if (reportedVersionScore > currentVersionScore) {
+    log_d("Reported version is greater");
     return (true);
-
-  if (reportedDay > currentDay)
-    return (true);
-
+  }
+  
   return (false);
 }
 

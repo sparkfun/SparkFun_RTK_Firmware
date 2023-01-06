@@ -154,13 +154,10 @@ function parseIncoming(msg) {
         ) {
             ge(id).innerHTML = val;
         }
-
         else if (id.includes("rtkFirmwareVersion")) {
             ge("rtkFirmwareVersion").innerHTML = val;
             ge("rtkFirmwareVersionUpgrade").innerHTML = val;
         }
-
-
         else if (id.includes("confirmReset")) {
             resetComplete();
         }
@@ -222,7 +219,7 @@ function parseIncoming(msg) {
             fileTableText += "<tr align='left'>";
             fileTableText += "<td>" + lastFileName + "</td>";
             fileTableText += "<td>" + val + "</td>";
-            fileTableText += "<td><input type='checkbox' id='" + lastFileName + "' name='fileID' class='form-check-input'></td>";
+            fileTableText += "<td><input type='checkbox' id='" + lastFileName + "' name='fileID' class='form-check-input fileManagerCheck'></td>";
             fileTableText += "</tr>";
         }
         else if (id.includes("fmNext")) {
@@ -1370,8 +1367,7 @@ function tcpBoxes() {
     }
 }
 
-function networkCount()
-{
+function networkCount() {
     var count = 0;
 
     var wifiNetworks = document.querySelectorAll('input[id^=wifiNetwork]' && 'input[id$=SSID]');
@@ -1380,7 +1376,7 @@ function networkCount()
             count++;
     }
 
-    return(count);
+    return (count);
 }
 
 function checkNewFirmware() {
@@ -1402,6 +1398,8 @@ function checkNewFirmware() {
 
     if (ge("enableRCFirmware").checked == true)
         settingCSV += "enableRCFirmware,true,";
+    else
+        settingCSV += "enableRCFirmware,false,";
 
     settingCSV += "checkNewFirmware,1,";
 
@@ -1421,7 +1419,7 @@ function checkingNewFirmware() {
 function newFirmwareVersion(firmwareVersion) {
     clearMsg('firmwareCheckNewMsg');
     if (firmwareVersion == "ERROR") {
-        showMsgError('firmwareCheckNewMsg', "WiFi not available");
+        showMsgError('firmwareCheckNewMsg', "WiFi or Server not available");
         hide("divGetNewFirmware");
         ge("btnCheckNewFirmware").disabled = false;
         return;
@@ -1468,8 +1466,15 @@ function getNewFirmware() {
     getNewFirmwareTimeout = setTimeout(getNewFirmware, 2000);
 }
 
-function gettingNewFirmware() {
-    clearTimeout(getNewFirmwareTimeout);
+function gettingNewFirmware(val) {
+    if (val == "1") {
+        clearTimeout(getNewFirmwareTimeout);
+    }
+    else if (val == "ERROR") {
+        hide("divGetNewFirmware");
+        ge("btnCheckNewFirmware").disabled = false;
+        showMsg('firmwareCheckNewMsg', "Error getting new firmware", true);
+    }
 }
 
 function otaFirmwareStatus(percentComplete) {

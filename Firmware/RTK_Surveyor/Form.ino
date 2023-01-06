@@ -666,8 +666,15 @@ void createSettingsString(char* newSettings)
     sprintf(tagText, "wifiNetwork%dPassword", x);
     stringRecord(newSettings, tagText, settings.wifiNetworks[x].password);
   }
-  stringRecord(newSettings, "wifiConfigOverAP", settings.wifiConfigOverAP);
+
+  //Drop downs on the AP config page expect a value, whereas bools get stringRecord as true/false
+  if (settings.wifiConfigOverAP == true)
+    stringRecord(newSettings, "wifiConfigOverAP", 1); //1 = AP mode, 0 = WiFi
+  else
+    stringRecord(newSettings, "wifiConfigOverAP", 0); //1 = AP mode, 0 = WiFi
+
   stringRecord(newSettings, "wifiTcpPort", settings.wifiTcpPort);
+  stringRecord(newSettings, "enableRCFirmware", enableRCFirmware);
 
   //New settings not yet integrated
   //...
@@ -849,7 +856,13 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "wifiTcpPort") == 0)
     settings.wifiTcpPort = settingValue;
   else if (strcmp(settingName, "wifiConfigOverAP") == 0)
-    settings.wifiConfigOverAP = settingValueBool;
+  {
+    if (settingValue == 1) //Drop downs come back as a value
+      settings.wifiConfigOverAP = true;
+    else
+      settings.wifiConfigOverAP = false;
+  }
+
   else if (strcmp(settingName, "enableTcpClient") == 0)
     settings.enableTcpClient = settingValueBool;
   else if (strcmp(settingName, "enableTcpServer") == 0)
@@ -980,7 +993,9 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       sprintf(newVersionCSV, "newFirmwareVersion,ERROR,");
     }
 
+    Serial.println("1");
     websocket->textAll(newVersionCSV);
+    Serial.println("2");
   }
   else if (strcmp(settingName, "getNewFirmware") == 0)
   {
@@ -1172,9 +1187,9 @@ bool parseIncomingSettings()
   if (counter < maxAttempts)
   {
     //Confirm receipt
-    log_d("Sending save confirmation");
+    log_d("Sending receipt confirmation");
 #ifdef COMPILE_AP
-    websocket->textAll("confirmSave,1,");
+    websocket->textAll("confirmDataReceipt,1,");
 #endif
   }
 

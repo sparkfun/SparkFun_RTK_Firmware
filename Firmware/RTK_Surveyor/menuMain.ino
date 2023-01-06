@@ -61,6 +61,8 @@ void menuMain()
 
 #ifdef COMPILE_ESPNOW
     systemPrintln("r) Configure Radios");
+#else
+    systemPrintln("r) ESP_Now Not Compiled **");
 #endif
 
     if (online.lband == true)

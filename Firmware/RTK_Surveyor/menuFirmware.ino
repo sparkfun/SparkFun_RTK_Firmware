@@ -1,12 +1,34 @@
 //Update firmware if bin files found
 void menuFirmware()
 {
+  bool newOTAFirmwareAvailable = false;
+  char reportedVersion[50] = {'\0'};
+
   while (1)
   {
     systemPrintln();
     systemPrintln("Menu: Update Firmware");
 
-    systemPrintln("u) Update via WiFi");
+    char currentVersion[20];
+    if (enableRCFirmware == false)
+      sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    else
+      sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+
+    systemPrintf("Current firmware: v%s\r\n", currentVersion);
+
+    if (strlen(reportedVersion) > 0)
+    {
+      if (newOTAFirmwareAvailable == false)
+        systemPrintf("c) Check SparkFun for device firmware: Up to date\r\n");
+    }
+    else
+      systemPrintln("c) Check SparkFun for device firmware");
+
+    systemPrintf("e) Allow Beta Firmware: %s\r\n", enableRCFirmware ? "Enabled" : "Disabled");
+
+    if (newOTAFirmwareAvailable)
+      systemPrintf("u) Update to new firmware: v%s\r\n", reportedVersion);
 
     for (int x = 0 ; x < binCount ; x++)
       systemPrintf("%d) Load SD file: %s\r\n", x + 1, binFileNames[x]);
@@ -21,65 +43,46 @@ void menuFirmware()
       incoming--;
       updateFromSD(binFileNames[incoming]);
     }
-    else if (incoming == 'u')
+    else if (incoming == 'c')
     {
-      if (wifiNetworkCount() == 0)
-        systemPrintln("No networks entered");
-      else
+      //Get firmware version from server
+      if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
       {
-        bool previouslyConnected = wifiIsConnected();
-        bool updateAvailable = false;
+        //We got a version number, now determine if it's newer or not
+        char currentVersion[20];
+        if (enableRCFirmware == false)
+          sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+        else
+          sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
-        if (wifiConnect() == true)
+        if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
         {
-          char versionString[20];
-          if (enableRCFirmware == false)
-            sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-          else
-            sprintf(versionString, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
-
-          systemPrintf("Current firmware version: v%s\r\n", versionString);
-
-          if (enableRCFirmware == false)
-            systemPrintf("Checking to see if an update is available from %s\r\n", OTA_FIRMWARE_JSON_URL);
-          else
-            systemPrintf("Checking to see if an update is available from %s\r\n", OTA_RC_FIRMWARE_JSON_URL);
-
-          ESP32OTAPull ota;
-          ota.SetCallback(otaPullCallback);
-
-          int response;
-          if (enableRCFirmware == false)
-            response = ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
-          else
-            response = ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
-
-          if (response == ESP32OTAPull::UPDATE_AVAILABLE)
-          {
-            updateAvailable = true;
-            systemPrintln("Installing new firmware");
-            if (enableRCFirmware == false)
-              ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString); //Install new firmware
-            else
-              ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString); //Install new firmware
-          }
-          else
-          {
-            systemPrintln("New firmware not available");
-            systemPrintf("CheckForOTAUpdate returned (%d): %s\r\n", response, otaPullErrorText(response));
-          }
-
+          log_d("New version detected");
+          newOTAFirmwareAvailable = true;
         }
         else
-          systemPrintln("WiFi not available");
-
-        //If we have an update available, don't turn off WiFi
-        //If we don't have an update, and WiFi was originally off, turn it off again
-        if (updateAvailable == false && previouslyConnected == false)
-          wifiStop();
+        {
+          log_d("No new firmware available");
+        }
+      }
+      else
+      {
+        //Failed to get version number
+        systemPrintln("Failed to get version number from server");
       }
     }
+    else if (newOTAFirmwareAvailable && incoming == 'u')
+    {
+      otaUpdate();
 
+      //We get here if WiFi failed or the server was not available
+    }
+
+    else if (incoming == 'e')
+    {
+      enableRCFirmware ^= 1;
+      strcpy(reportedVersion, ""); //Reset to force c) menu
+    }
     else if (incoming == 'x')
       break;
     else if (incoming == INPUT_RESPONSE_EMPTY)
@@ -343,7 +346,6 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
     else
       systemPrintf("Checking to see if an update is available from %s\r\n", OTA_RC_FIRMWARE_JSON_URL);
 
-
     ESP32OTAPull ota;
 
     int response;
@@ -354,11 +356,21 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
 
     //We don't care if the library thinks the available firmware is newer, we just need a successful JSON parse
     if (response == ESP32OTAPull::UPDATE_AVAILABLE || response == ESP32OTAPull::NO_UPDATE_AVAILABLE)
+    {
       gotVersion = true;
 
-    //Call getVersion after original inquiry
-    String otaVersion = ota.getVersion();
-    otaVersion.toCharArray(versionAvailable, versionAvailableLength);
+      //Call getVersion after original inquiry
+      String otaVersion = ota.getVersion();
+      otaVersion.toCharArray(versionAvailable, versionAvailableLength);
+    }
+    else if (response == ESP32OTAPull::HTTP_FAILED)
+    {
+      systemPrintln("Firmware server not available");
+    }
+    else
+    {
+      systemPrintln("OTA failed");
+    }
   }
   else
     systemPrintln("WiFi not available");
@@ -374,7 +386,7 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
   return (gotVersion);
 }
 
-//Updates firmware using OTA pull
+//Force updates firmware using OTA pull
 //Exits by either updating firmware and resetting, or failing to connect
 void otaUpdate()
 {
@@ -385,8 +397,7 @@ void otaUpdate()
   if (wifiConnect() == true)
   {
     char versionString[20];
-
-    sprintf(versionString, "%d.%d", 99, 99); //Force update with version 99.99. OTA Pull uses String > compare.
+    sprintf(versionString, "%d.%d", 0, 0); //Force update with version 0.0
 
     ESP32OTAPull ota;
 
@@ -414,9 +425,17 @@ void otaUpdate()
       }
       ESP.restart();
     }
+    else if (response == ESP32OTAPull::NO_UPDATE_AVAILABLE)
+    {
+      systemPrintln("OTA Update: Current firmware is up to date");
+    }
+    else if (response == ESP32OTAPull::HTTP_FAILED)
+    {
+      systemPrintln("OTA Update: Firmware server not available");
+    }
     else
     {
-      systemPrintln("New firmware not available");
+      systemPrintln("OTA Update: OTA failed");
     }
   }
   else
@@ -537,7 +556,7 @@ bool isReportedVersionNewer(char* reportedVersion, char *currentVersion)
     log_d("Reported version is greater");
     return (true);
   }
-  
+
   return (false);
 }
 

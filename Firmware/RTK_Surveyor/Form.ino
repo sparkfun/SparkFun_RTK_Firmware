@@ -957,7 +957,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     {
       //We got a version number, now determine if it's newer or not
       char currentVersion[20];
-      sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+      if (enableRCFirmware == false)
+        sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+      else
+        sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
       if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
       {

@@ -373,6 +373,8 @@ void menuSystem()
 //Enable TCP connections
 void menuWiFi()
 {
+  bool restartWiFi = false; //Restart WiFi if user changes anything
+
   while (1)
   {
     systemPrintln();
@@ -410,6 +412,7 @@ void menuWiFi()
         getString(settings.wifiNetworks[arraySlot].ssid, sizeof(settings.wifiNetworks[arraySlot].ssid));
         restartRover = true; //If we are modifying the SSID table, force restart of rover/base
         restartBase = true;
+        restartWiFi = true;
       }
       else
       {
@@ -417,17 +420,20 @@ void menuWiFi()
         getString(settings.wifiNetworks[arraySlot].password, sizeof(settings.wifiNetworks[arraySlot].password));
         restartRover = true;
         restartBase = true;
+        restartWiFi = true;
       }
     }
     else if (incoming == 'a')
     {
       settings.wifiConfigOverAP ^= 1;
+      restartWiFi = true;
     }
 
     else if (incoming == 'c')
     {
       //Toggle WiFi NEMA client (connect to phone)
       settings.enableTcpClient ^= 1;
+      restartWiFi = true;
     }
     else if (incoming == 's')
     {
@@ -443,6 +449,7 @@ void menuWiFi()
           delay(5);
         systemPrintln("TCP Server offline");
       }
+      restartWiFi = true;
     }
     else if (incoming == 'p')
     {
@@ -453,7 +460,10 @@ void menuWiFi()
         if (wifiTcpPort < 0 || wifiTcpPort > 65535)
           systemPrintln("Error: TCP Port out of range");
         else
+        {
           settings.wifiTcpPort = wifiTcpPort; //Recorded to NVM and file at main menu exit
+          restartWiFi = true;
+        }
       }
     }
     else if (incoming == 'x')
@@ -471,6 +481,23 @@ void menuWiFi()
   {
     if (strlen(settings.wifiNetworks[x].ssid) == 0)
       strcpy(settings.wifiNetworks[x].password, "");
+  }
+
+  //Restart WiFi if anything changes
+  if (restartWiFi == true)
+  {
+    //Restart the AP webserver if we are in that state
+    if (systemState == STATE_WIFI_CONFIG)
+      requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
+    else
+    {
+      //Restart WiFi if we are not in AP config mode
+      if (wifiIsConnected())
+      {
+        wifiStop();
+        wifiStart();
+      }
+    }
   }
 
   clearBuffer(); //Empty buffer of any newline chars

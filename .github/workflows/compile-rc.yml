@@ -49,10 +49,7 @@ jobs:
           https://github.com/bblanchon/ArduinoJson.git 
           https://github.com/knolleary/pubsubclient.git
           https://github.com/avinabmalla/ESP32_BleSerial.git
-
-      - name: Get Forks
-        run: arduino-cli lib install --zip-path 
-          https://github.com/nseidle/ESP32-OTA-Pull/zipball/exposeVersion #Temporary fork
+          https://github.com/nseidle/ESP32-OTA-Pull.git
 
       #Incorporate ESP-Now patch into v2.0.4 core: https://github.com/espressif/arduino-esp32/pull/7044/files
       # - name: Patch ESP32 Core

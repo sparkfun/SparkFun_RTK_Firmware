@@ -45,30 +45,34 @@ void menuFirmware()
     }
     else if (incoming == 'c')
     {
-      //Get firmware version from server
-      if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
+      //Attempt to connect to local WiFi
+      if (wifiConnect() == true)
       {
-        //We got a version number, now determine if it's newer or not
-        char currentVersion[20];
-        if (enableRCFirmware == false)
-          sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-        else
-          sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+        //Get firmware version from server
+        if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
+        {
+          //We got a version number, now determine if it's newer or not
+          char currentVersion[20];
+          if (enableRCFirmware == false)
+            sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+          else
+            sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
-        if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
-        {
-          log_d("New version detected");
-          newOTAFirmwareAvailable = true;
+          if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
+          {
+            log_d("New version detected");
+            newOTAFirmwareAvailable = true;
+          }
+          else
+          {
+            log_d("No new firmware available");
+          }
         }
         else
         {
-          log_d("No new firmware available");
+          //Failed to get version number
+          systemPrintln("Failed to get version number from server");
         }
-      }
-      else
-      {
-        //Failed to get version number
-        systemPrintln("Failed to get version number from server");
       }
     }
     else if (newOTAFirmwareAvailable && incoming == 'u')

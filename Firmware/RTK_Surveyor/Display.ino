@@ -1662,15 +1662,17 @@ void displayWiFiConfig()
 
   yPos = yPos + fontHeight + 1;
 
-
   if (settings.wifiConfigOverAP == true)
     printTextCenter("RTK Config", yPos, QW_FONT_5X7, 1, false);
   else
   {
     //Convert current SSID to string
     char mySSID[50] = {'\0'};
+#ifdef COMPILE_WIFI
     sprintf(mySSID, "%s", WiFi.SSID());
-    
+#else
+    sprintf(mySSID, "%s", "Not Compiled");
+#endif
     //Trim to a max length of 11
     if (strlen(mySSID) > 11)
     {

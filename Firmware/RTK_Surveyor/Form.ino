@@ -146,8 +146,6 @@ void startWebServer()
   reportHeapNow();
 
 #endif //COMPILE_AP
-
-  wifiSetState(WIFI_NOTCONNECTED);
 #endif //COMPILE_WIFI
 
 }
@@ -383,13 +381,10 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 {
   if (type == WS_EVT_CONNECT) {
     client->text(settingsCSV);
-    wifiSetState(WIFI_CONNECTED);
-
     lastCoordinateUpdate = millis();
   }
   else if (type == WS_EVT_DISCONNECT) {
     log_d("Websocket client disconnected");
-    wifiSetState(WIFI_NOTCONNECTED);
 
     //User has either refreshed the page or disconnected. Recompile the current settings.
     createSettingsString(settingsCSV);

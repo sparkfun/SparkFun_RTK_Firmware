@@ -15,7 +15,7 @@
                                        |                      |
                                        |                      | ntripClientStop(false)
                                        v                Fail  |
-                         NTRIP_CLIENT_WIFI_CONNECTING ------->+
+                          NTRIP_CLIENT_WIFI_STARTED --------->+
                                        |                      ^
                                        |                      |
                                        v                Fail  |
@@ -67,9 +67,9 @@ static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; //5s between transmission of
 static WiFiClient * ntripClient;
 
 //Throttle the time between connection attempts
-static int ntripClientConnectionAttemptTimeout = 0;
+//ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
+static uint32_t ntripClientConnectionAttemptTimeout = 0;
 static uint32_t ntripClientLastConnectionAttempt = 0;
-static uint32_t ntripClientTimeoutPrint = 0;
 
 //Last time the NTRIP client state was displayed
 static uint32_t lastNtripClientState = 0;
@@ -170,8 +170,6 @@ bool ntripClientConnectLimitReached()
   if (limitReached == false)
   {
     ntripClientConnectionAttemptTimeout = ntripClientConnectionAttempts * 15 * 1000L; //Wait 15, 30, 45, etc seconds between attempts
-
-    log_d("ntripClientConnectionAttemptTimeout increased to %d minutes", ntripClientConnectionAttemptTimeout / (60 * 1000L));
 
     reportHeapNow();
   }
@@ -290,11 +288,9 @@ void ntripClientStop(bool wifiClientAllocated)
       ntripClient = new WiFiClient();
   }
 
-  //Stop WiFi if in use
+  //Increase timeouts if we started WiFi
   if (ntripClientState > NTRIP_CLIENT_ON)
   {
-    wifiStop();
-
     ntripClientLastConnectionAttempt = millis(); //Mark the Client stop so that we don't immediately attempt re-connect to Caster
     ntripClientConnectionAttemptTimeout = 15 * 1000L; //Wait 15s between stopping and the first re-connection attempt.
   }
@@ -314,11 +310,19 @@ void ntripClientStop(bool wifiClientAllocated)
 //Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
 void ntripClientUpdate()
 {
+  if (settings.enableNtripClient == false)
+  {
+    //If user turns off NTRIP Client via settings, stop server
+    if (ntripClientState > NTRIP_CLIENT_OFF)
+      ntripClientStop(true);  //Don't allocate new wifiClient
+    return;
+  }
+
 #ifdef COMPILE_WIFI
   //Periodically display the NTRIP client state
   if (settings.enablePrintNtripClientState && ((millis() - lastNtripClientState) > 15000))
   {
-    ntripClientSetState (ntripClientState);
+    ntripClientSetState(ntripClientState);
     lastNtripClientState = millis();
   }
 
@@ -333,7 +337,7 @@ void ntripClientUpdate()
       if (wifiNetworkCount() == 0)
       {
         systemPrintln("Error: Please enter at least one SSID before starting NTRIP Client");
-        ntripClientSetState(NTRIP_CLIENT_OFF);
+        ntripClientStop(true); //Do not allocate new wifiClient
       }
       else
       {
@@ -342,42 +346,16 @@ void ntripClientUpdate()
         {
           ntripClientLastConnectionAttempt = millis();
           wifiStart();
-          ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTING);
+          ntripClientSetState(NTRIP_CLIENT_WIFI_STARTED);
         }
-        else
-        {
-          if (millis() - ntripClientTimeoutPrint > 1000)
-          {
-            ntripClientTimeoutPrint = millis();
-            systemPrintf("NTRIP Client connection timeout wait: %ld of %d seconds \r\n",
-                          (millis() - ntripClientLastConnectionAttempt) / 1000,
-                          ntripClientConnectionAttemptTimeout / 1000
-                         );
-          }
-        }
-
       }
       break;
 
-    case NTRIP_CLIENT_WIFI_CONNECTING:
-      if (!wifiIsConnected())
-      {
-        //Throttle if SSID is not detected
-        if (wifiConnectionTimeout() || wifiGetStatus() == WL_DISCONNECTED)
-        {
-          //WL_NO_SSID_AVAIL was originally used but WiFiMulti puts radio into WL_DISCONNECTED state if no matching SSIDs are detected
-          if (wifiGetStatus() == WL_DISCONNECTED)
-            systemPrintln("No matching WiFi networks found");
-
-          if (ntripClientConnectLimitReached()) //Stop WiFi, give up
-            paintNtripWiFiFail(4000, true);
-        }
-      }
-      else
-      {
-        //WiFi connection established
+    case NTRIP_CLIENT_WIFI_STARTED:
+      if (wifiIsConnected())
         ntripClientSetState(NTRIP_CLIENT_WIFI_CONNECTED);
-      }
+      else if (wifiState == WIFI_OFF)
+        ntripClientSetState(NTRIP_CLIENT_OFF);
       break;
 
     case NTRIP_CLIENT_WIFI_CONNECTED:
@@ -390,19 +368,20 @@ void ntripClientUpdate()
           //Open connection to caster service
           if (!ntripClientConnect())
           {
-            log_d("NTRIP Client caster failed to connect. Trying again.");
-
             //Assume service not available
-            if (ntripClientConnectLimitReached())
-              systemPrintln("NTRIP Client caster failed to connect. Do you have your caster address and port correct?");
+            if (ntripClientConnectLimitReached()) //Updates ntripClientConnectionAttemptTimeout
+              systemPrintln("NTRIP caster failed to connect. Do you have your caster address and port correct?");
+            else
+            {
+              if (ntripClientConnectionAttemptTimeout / 1000 < 120)
+                systemPrintf("NTRIP Client failed to connect to caster. Trying again in %d seconds.\r\n", ntripClientConnectionAttemptTimeout / 1000);
+              else
+                systemPrintf("NTRIP Client failed to connect to caster. Trying again in %d minutes.\r\n", ntripClientConnectionAttemptTimeout / 1000 / 60);
+            }
           }
           else
             //Socket opened to NTRIP system
             ntripClientSetState(NTRIP_CLIENT_CONNECTING);
-        }
-        else
-        {
-          log_d("Waiting for Fix");
         }
       }
       break;
@@ -414,14 +393,21 @@ void ntripClientUpdate()
         //Check for response timeout
         if (millis() - ntripClientTimer > NTRIP_CLIENT_RESPONSE_TIMEOUT)
         {
-          //NTRIP web service did not respone
-          if (ntripClientConnectLimitReached())
-            systemPrintln("NTRIP Client caster failed to respond. Do you have your caster address and port correct?");
+          //NTRIP web service did not respond
+          if (ntripClientConnectLimitReached()) //Updates ntripClientConnectionAttemptTimeout
+            systemPrintln("NTRIP Caster failed to respond. Do you have your caster address and port correct?");
+          else
+          {
+            if (ntripClientConnectionAttemptTimeout / 1000 < 120)
+              systemPrintf("NTRIP Client failed to connect to caster. Trying again in %d seconds.\r\n", ntripClientConnectionAttemptTimeout / 1000);
+            else
+              systemPrintf("NTRIP Client failed to connect to caster. Trying again in %d minutes.\r\n", ntripClientConnectionAttemptTimeout / 1000 / 60);
+          }
         }
       }
       else
       {
-        // Caster web service responsed
+        //Caster web service responded
         char response[512];
         ntripClientResponse(&response[0], sizeof(response));
 
@@ -515,7 +501,7 @@ void ntripClientUpdate()
           i2cGNSS.pushRawData(rtcmData, rtcmCount);
           wifiIncomingRTCM = true;
 
-          if (!inMainMenu) log_d("NTRIP Client received %d RTCM bytes, pushed to ZED", rtcmCount);
+          //if (!inMainMenu) log_d("NTRIP Client received %d RTCM bytes, pushed to ZED", rtcmCount);
         }
       }
 
@@ -534,7 +520,7 @@ void pushGPGGA(NMEA_GGA_data_t *nmeaData)
     {
       lastGGAPush = millis();
 
-      log_d("Pushing GGA to server: %s", (const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+      //log_d("Pushing GGA to server: %s", (const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
 
       //Push our current GGA sentence to caster
       ntripClient->print((const char *)nmeaData->nmea);

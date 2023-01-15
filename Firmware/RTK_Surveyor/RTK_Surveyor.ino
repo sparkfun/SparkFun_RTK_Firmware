@@ -663,7 +663,11 @@ void loop()
 
   updateRadio(); //Check if we need to finish sending any RTCM over link radio
 
+  ntripClientUpdate(); //Check the NTRIP client connection and move data NTRIP --> ZED
 
+  ntripServerUpdate(); //Check the NTRIP server connection and move data ZED --> NTRIP
+
+  tcpUpdate(); //Turn on TCP Client or Server as needed
 
   printPosition(); //Periodically print GNSS coordinates if enabled
   

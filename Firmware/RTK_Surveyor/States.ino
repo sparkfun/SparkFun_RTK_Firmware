@@ -737,7 +737,7 @@ void updateSystemState()
             settings.lastKeyAttempt = rtc.getEpoch(); //Mark it
             recordSystemSettings(); //Record these settings to unit
 
-            wifiStart();
+            wifiStart(); //Starts WiFi state machine
             changeState(STATE_KEYS_WIFI_STARTED);
           }
           else
@@ -750,39 +750,19 @@ void updateSystemState()
 
       case (STATE_KEYS_WIFI_STARTED):
         {
-#ifdef COMPILE_WIFI
-          byte wifiStatus = wifiGetStatus();
-          if (wifiStatus == WL_CONNECTED)
-          {
-            wifiSetState(WIFI_CONNECTED);
-
+          if (wifiIsConnected())
             changeState(STATE_KEYS_WIFI_CONNECTED);
-          }
-          else if (wifiStatus == WL_NO_SSID_AVAIL)
-          {
+          else if (wifiState == WIFI_OFF)
             changeState(STATE_KEYS_WIFI_TIMEOUT);
-          }
-          else
-          {
-            systemPrint(".");
-            if (wifiConnectionTimeout())
-            {
-              //Give up after connection timeout
-              changeState(STATE_KEYS_WIFI_TIMEOUT);
-            }
-          }
-#endif
         }
         break;
 
       case (STATE_KEYS_WIFI_CONNECTED):
         {
           if (pointperfectUpdateKeys() == true) //Connect to ThingStream MQTT and get PointPerfect key UBX packet
-          {
             displayKeysUpdated();
-          }
 
-          wifiStop();
+          //WiFi will be turned off once we exit this state, if no other service needs it
 
           forceSystemStateUpdate = true; //Imediately go to this new state
           changeState(STATE_KEYS_DAYS_REMAINING);
@@ -821,8 +801,6 @@ void updateSystemState()
 
       case (STATE_KEYS_WIFI_TIMEOUT):
         {
-          wifiStop();
-
           paintKeyWiFiFail(2000);
 
           forceSystemStateUpdate = true; //Imediately go to this new state
@@ -861,28 +839,10 @@ void updateSystemState()
 
       case (STATE_KEYS_PROVISION_WIFI_STARTED):
         {
-#ifdef COMPILE_WIFI
-          byte wifiStatus = wifiGetStatus();
-          if (wifiStatus == WL_CONNECTED)
-          {
-            wifiSetState(WIFI_CONNECTED);
-
+          if (wifiIsConnected())
             changeState(STATE_KEYS_PROVISION_WIFI_CONNECTED);
-          }
-          else if (wifiStatus == WL_NO_SSID_AVAIL)
-          {
+          else if (wifiState == WIFI_OFF)
             changeState(STATE_KEYS_WIFI_TIMEOUT);
-          }
-          else
-          {
-            systemPrint(".");
-            if (wifiConnectionTimeout())
-            {
-              //Give up after connection timeout
-              changeState(STATE_KEYS_WIFI_TIMEOUT);
-            }
-          }
-#endif
         }
         break;
 
@@ -900,16 +860,11 @@ void updateSystemState()
             paintKeyProvisionFail(10000); //Device not whitelisted. Show device ID.
             changeState(STATE_KEYS_LBAND_ENCRYPTED);
           }
-
-          wifiStop();
-
         }
         break;
 
       case (STATE_KEYS_PROVISION_WIFI_TIMEOUT):
         {
-          wifiStop();
-
           paintKeyWiFiFail(2000);
 
           changeState(settings.lastState); //Go to either rover or base

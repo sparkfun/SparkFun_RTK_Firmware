@@ -982,24 +982,8 @@ void menuPointPerfect()
       {
         wifiStart();
 
-        unsigned long startTime = millis();
-        while (wifiGetStatus() != WL_CONNECTED)
+        if (wifiConnect(10000) == true)
         {
-          delay(500);
-          systemPrint(".");
-          if (millis() - startTime > 15000)
-          {
-            systemPrintln("Error: No WiFi available");
-            break;
-          }
-        }
-
-        if (wifiGetStatus() == WL_CONNECTED)
-        {
-          systemPrintln();
-          systemPrint("WiFi connected: ");
-          systemPrintln(wifiGetIpAddress());
-
           //Check if we have certificates
           char fileName[80];
           sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
@@ -1014,31 +998,37 @@ void menuPointPerfect()
           else
             pointperfectUpdateKeys();
         }
+        else
+        {
+          systemPrintln("Error: No WiFi available to get keys");
+          break;
+        }
+      }
 
-        wifiStop();
-      } //End strlen SSID check
+      wifiStop();
+    }
 #endif
-    }
-    else if (incoming == 'k')
-    {
-      menuPointPerfectKeys();
-    }
-    else if (incoming == 'x')
-      break;
-    else if (incoming == INPUT_RESPONSE_EMPTY)
-      break;
-    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
-      break;
-    else
-      printUnknown(incoming);
   }
-
-  if (strlen(settings.pointPerfectClientID) > 0)
+  else if (incoming == 'k')
   {
-    pointperfectApplyKeys();
+    menuPointPerfectKeys();
   }
+  else if (incoming == 'x')
+    break;
+  else if (incoming == INPUT_RESPONSE_EMPTY)
+    break;
+  else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+    break;
+  else
+    printUnknown(incoming);
+}
 
-  clearBuffer(); //Empty buffer of any newline chars
+if (strlen(settings.pointPerfectClientID) > 0)
+{
+  pointperfectApplyKeys();
+}
+
+clearBuffer(); //Empty buffer of any newline chars
 #endif  //COMPILE_L_BAND
 }
 

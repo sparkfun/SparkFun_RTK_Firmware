@@ -46,7 +46,7 @@ void menuFirmware()
     else if (incoming == 'c')
     {
       //Attempt to connect to local WiFi
-      if (wifiConnect() == true)
+      if (wifiConnect(10000) == true)
       {
         //Get firmware version from server
         if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
@@ -334,7 +334,7 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
 #ifdef COMPILE_WIFI
   bool previouslyConnected = wifiIsConnected();
 
-  if (wifiConnect() == true)
+  if (wifiConnect(10000) == true)
   {
     char versionString[20];
 
@@ -404,7 +404,7 @@ void otaUpdate()
 #ifdef COMPILE_WIFI
   bool previouslyConnected = wifiIsConnected();
 
-  if (wifiConnect() == true)
+  if (wifiConnect(10000) == true)
   {
     char versionString[20];
     sprintf(versionString, "%d.%d", 0, 0); //Force update with version 0.0

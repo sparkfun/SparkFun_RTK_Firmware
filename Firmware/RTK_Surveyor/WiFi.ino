@@ -14,41 +14,32 @@
 
   WiFi Station States:
 
-                                  WIFI_OFF
-                                    |   ^
-                           Use WiFi |   |
-                                    |   | WL_CONNECT_FAILED (Bad password)
-                                    |   | WL_NO_SSID_AVAIL (Out of range)
-                                    v   |
-                                   WIFI_ON
-                                    |   ^
-                         WiFi.begin |   | WiFi.stop
-                                    |   | WL_CONNECTION_LOST
-                                    |   | WL_CONNECT_FAILED (Bad password)
-                                    |   | WL_DISCONNECTED
-                                    |   | WL_NO_SSID_AVAIL (Out of range)
-                                    v   |
-                                  WIFI_NOT_CONNECTED
-                                    |   ^
-                       WL_CONNECTED |   | WiFi.disconnect
-                                    |   | WL_CONNECTION_LOST
-                                    |   | WL_CONNECT_FAILED (Bad password)
-                                    |   | WL_DISCONNECTED
-                                    |   | WL_NO_SSID_AVAIL (Out of range)
-                                    v   |
-                                  WIFI_CONNECTED
-
+                                  WIFI_OFF<--------------------.
+                                    |                          |
+                       wifiStart()  |                          |
+                                    |                          | WL_CONNECT_FAILED (Bad password)
+                                    |                          | WL_NO_SSID_AVAIL (Out of range)
+                                    v                 Fail     |
+                                  WIFI_CONNECTING------------->+
+                                    |    ^                     ^
+                     wifiConnect()  |    |                     | wifiStop()
+                                    |    | WL_CONNECTION_LOST  |
+                                    |    | WL_DISCONNECTED     |
+                                    v    |                     |
+                                  WIFI_CONNECTED --------------'
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
 // Constants
 //----------------------------------------
 
-//If we cannot connect to local wifi, give up/go to Rover
-static const int WIFI_CONNECTION_TIMEOUT = 10 * 1000;  //Milliseconds
-
 //Interval to use when displaying the IP address
 static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
+
+//Give up connecting after this number of attempts
+//Connection attempts are throttled to increase the time between attempts
+//30 attempts with 15 second increases will take almost two hours
+static const int MAX_WIFI_CONNECTION_ATTEMPTS = 30;
 
 #define WIFI_MAX_TCP_CLIENTS     4
 
@@ -59,9 +50,8 @@ static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
 #ifdef COMPILE_WIFI
 
 //WiFi Timer usage:
-//  * Measure connection time to access point
 //  * Measure interval to display IP address
-static unsigned long wifiTimer = 0;
+static unsigned long wifiDisplayTimer = 0;
 
 //Last time the WiFi state was displayed
 static uint32_t lastWifiState = 0;
@@ -69,6 +59,12 @@ static uint32_t lastWifiState = 0;
 //TCP server
 static WiFiServer *wifiTcpServer = NULL;
 static WiFiClient wifiTcpClient[WIFI_MAX_TCP_CLIENTS];
+
+//Throttle the time between connection attempts
+//ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
+static uint32_t wifiConnectionAttemptsTotal; //Count the number of connection attempts absolutely
+static uint32_t wifiLastConnectionAttempt = 0;
+static uint32_t wifiConnectionAttemptTimeout = 0;
 
 //----------------------------------------
 // WiFi Routines - compiled out
@@ -80,7 +76,7 @@ void wifiDisplayIpAddress()
   systemPrint(WiFi.localIP());
   systemPrintf(" RSSI: %d\r\n", WiFi.RSSI());
 
-  wifiTimer = millis();
+  wifiDisplayTimer = millis();
 }
 
 IPAddress wifiGetIpAddress()
@@ -93,23 +89,10 @@ byte wifiGetStatus()
   return WiFi.status();
 }
 
-bool wifiIsConnected()
-{
-  bool isConnected;
-
-  isConnected = (wifiGetStatus() == WL_CONNECTED);
-  if (isConnected)
-  {
-    wifiSetState(WIFI_CONNECTED);
-    wifiDisplayIpAddress();
-  }
-  return isConnected;
-}
-
 void wifiPeriodicallyDisplayIpAddress()
 {
   if (settings.enablePrintWifiIpAddress && (wifiGetStatus() == WL_CONNECTED))
-    if ((millis() - wifiTimer) >= WIFI_IP_ADDRESS_DISPLAY_INTERVAL)
+    if ((millis() - wifiDisplayTimer) >= WIFI_IP_ADDRESS_DISPLAY_INTERVAL)
       wifiDisplayIpAddress();
 }
 
@@ -143,12 +126,13 @@ void wifiSetState(byte newState)
 // WiFi Config Support Routines - compiled out
 //----------------------------------------
 
+//Start the access point for user to connect to and configure device
+//We can also start as a WiFi station and attempt to connect to local WiFi for config
 void wifiStartAP()
 {
   if (settings.wifiConfigOverAP == true)
   {
     //Start in AP mode
-
     WiFi.mode(WIFI_AP);
 
 #ifdef COMPILE_ESPNOW
@@ -172,7 +156,6 @@ void wifiStartAP()
   else
   {
     //Start webserver on local WiFi instead of AP
-
     WiFi.mode(WIFI_STA);
 
 #ifdef COMPILE_ESPNOW
@@ -180,10 +163,18 @@ void wifiStartAP()
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station
 #endif
 
-    wifiConnect(); //Attempt to connect to any SSID on settings list
-    wifiPrintNetworkInfo();
+    //Attempt to connect to local WiFi 3 times with increasing timeouts
+    int timeout = 0;
+    for (int x = 0 ; x < 3 ; x++)
+    {
+      timeout += 5000;
+      if (wifiConnect(timeout) == true) //Attempt to connect to any SSID on settings list
+      {
+        wifiPrintNetworkInfo();
+        break;
+      }
+    }
   }
-  
 }
 
 #endif  //COMPILE_WIFI
@@ -192,22 +183,205 @@ void wifiStartAP()
 // Global WiFi Routines
 //----------------------------------------
 
+//Advance the WiFi state from off to connected
+//Throttle connection attempts as needed
+void wifiUpdate()
+{
+#ifdef COMPILE_WIFI
+
+  //Periodically display the WiFi state
+  if (settings.enablePrintWifiState && ((millis() - lastWifiState) > 15000))
+  {
+    wifiSetState(wifiState);
+    lastWifiState = millis();
+  }
+
+  switch (wifiState)
+  {
+    default:
+      systemPrintf("Unknown wifiState: %d\r\n", wifiState);
+      break;
+
+    case WIFI_OFF:
+      //Any service that needs WiFi will call wifiStart()
+      break;
+
+    case WIFI_CONNECTING:
+      //Pause until connection timeout has passed
+      if (millis() - wifiLastConnectionAttempt > wifiConnectionAttemptTimeout)
+      {
+        wifiLastConnectionAttempt = millis();
+
+        if (wifiConnectLimitReached() == false) //Increases wifiConnectionAttemptTimeout
+        {
+          if (wifiConnect(10000) == true) //Attempt to connect to any SSID on settings list
+            wifiSetState(WIFI_CONNECTED);
+        }
+        else
+        {
+          //paintWiFiFail(4000, true); //TODO
+          wifiStop(); //Move back to WIFI_OFF
+        }
+      }
+
+      break;
+
+    case WIFI_CONNECTED:
+      //Verify link is still up
+      if (wifiIsConnected() == false)
+      {
+        log_d("WiFi link lost");
+        wifiConnectionAttemptTimeout = 0; //Reset the timeout
+        wifiSetState(WIFI_CONNECTING);
+      }
+      else
+      {
+        wifiPeriodicallyDisplayIpAddress(); //Periodically display the IP address
+
+        //If WiFi is connected, and no services require WiFi, shut it off
+        if (wifiIsNeeded() == false)
+          wifiStop();
+      }
+      break;
+
+#endif  //COMPILE_WIFI
+  }
+}
+
+//Starts the WiFi connection state machine (moves from WIFI_OFF to WIFI_CONNECTING)
+//Sets the appropriate protocols (WiFi + ESP-Now)
+//If radio is off entirely, start WiFi
+//If ESP-Now is active, only add the LR protocol
+void wifiStart()
+{
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_ESPNOW
+  bool restartESPNow = false;
+#endif
+
+  if (wifiIsConnected() == true) return; //We don't need to do anything
+
+  if (wifiState > WIFI_OFF) return; //We're in the midst of connecting
+
+  log_d("Starting WiFi");
+
+  if (wifiNetworkCount() == 0)
+  {
+    systemPrintln("Error: Please enter at least one SSID before using WiFi");
+    //paintWiFiNoNetworksFail(4000, true); //TODO
+    wifiSetState(WIFI_OFF);
+    return;
+  }
+
+  wifiSetState(WIFI_CONNECTING); //This starts the state machine running
+
+  WiFi.mode(WIFI_STA);
+
+#ifdef COMPILE_ESPNOW
+  if (espnowState > ESPNOW_OFF)
+  {
+    restartESPNow = true;
+    espnowStop();
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now. Stops WiFi Station.
+  }
+  else
+  {
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
+  }
+#else
+  //Be sure the standard protocols are turned on. ESP Now may have previously turned them off.
+  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
+#endif
+
+#ifdef COMPILE_ESPNOW
+  if (restartESPNow == true)
+    espnowStart();
+#endif
+
+  //Display the heap state
+  reportHeapNow();
+#endif  //COMPILE_WIFI
+}
+
+//Stop WiFi and release all resources
+//If ESP NOW is active, leave WiFi on enough for ESP NOW
+void wifiStop()
+{
+#ifdef COMPILE_WIFI
+  stopWebServer();
+
+  //Shutdown the TCP client
+  if (online.tcpClient)
+  {
+    //Tell the UART2 tasks that the TCP client is shutting down
+    online.tcpClient = false;
+    delay(5);
+    systemPrintln("TCP client offline");
+  }
+
+  //Shutdown the TCP server connection
+  if (online.tcpServer)
+  {
+    //Tell the UART2 tasks that the TCP server is shutting down
+    online.tcpServer = false;
+
+    //Wait for the UART2 tasks to close the TCP client connections
+    while (wifiTcpServerActive())
+      delay(5);
+    systemPrintln("TCP Server offline");
+  }
+
+  wifiSetState(WIFI_OFF);
+  
+  wifiConnectionAttemptTimeout = 0; //Reset the timeout
+
+#ifdef COMPILE_ESPNOW
+  //If WiFi is on but ESP NOW is off, then turn off radio entirely
+  if (espnowState == ESPNOW_OFF)
+  {
+    WiFi.mode(WIFI_OFF);
+    log_d("WiFi Stopped");
+  }
+  //If ESP-Now is active, change protocol to only Long Range
+  else if (espnowState > ESPNOW_OFF)
+  {
+
+    // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
+
+    WiFi.mode(WIFI_STA);
+
+    log_d("WiFi disabled, ESP-Now left in place");
+  }
+#else
+  //Turn off radio
+  WiFi.mode(WIFI_OFF);
+  log_d("WiFi Stopped");
+#endif
+
+  //Display the heap state
+  reportHeapNow();
+#endif  //COMPILE_WIFI
+}
+
+bool wifiIsConnected()
+{
+  bool isConnected = (wifiGetStatus() == WL_CONNECTED);
+  if (isConnected)
+    wifiPeriodicallyDisplayIpAddress();
+
+  return isConnected;
+}
+
 //Attempts a connection to all provided SSIDs
 //Returns true if successful
 //Gives up if no SSID detected or connection times out
-bool wifiConnect()
+bool wifiConnect(unsigned long timeout)
 {
-  //Check if we have any SSIDs
-  if (wifiNetworkCount() == 0)
-  {
-    systemPrintln("No WiFi networks stored in settings.");
-    return false;
-  }
-
 #ifdef COMPILE_WIFI
 
-  if(wifiIsConnected())
-    return(true);
+  if (wifiIsConnected())
+    return (true);
 
   WiFiMulti wifiMulti;
 
@@ -218,20 +392,54 @@ bool wifiConnect()
       wifiMulti.addAP(settings.wifiNetworks[x].ssid, settings.wifiNetworks[x].password);
   }
 
-  systemPrintln("Connecting WiFi...");
+  systemPrint("Connecting WiFi... ");
 
-  int timeout = 0; //Give up after timeount. Increases with each failed try.
-  for (int tries = 0 ; tries < 3 ; tries++)
+  int response = wifiMulti.run(timeout);
+  if (response == WL_CONNECTED)
   {
-    timeout += 5000;
-
-    if (wifiMulti.run(timeout) == WL_CONNECTED)
-      return true;
-    systemPrintln("WiFi connection timed out. Trying again.");
+    systemPrintln();
+    return true;
   }
+  else if (response == WL_DISCONNECTED)
+    systemPrint("No friendly WiFi networks detected. ");
+  else
+    systemPrintf("WiFi failed to connect: error #%d. ", response);
+
+  if (wifiConnectionAttemptTimeout / 1000 < 120)
+    systemPrintf("Next WiFi attempt in %d seconds.\r\n", wifiConnectionAttemptTimeout / 1000);
+  else
+    systemPrintf("Next WiFi attempt in %d minutes.\r\n", wifiConnectionAttemptTimeout / 1000 / 60);
+
 #endif
 
   return false;
+}
+
+//Based on the current settings and system states, determine if we need WiFi on or not
+//This function does not start WiFi. Any service that needs it should call wifiStart().
+//This function is used to turn WiFi off if nothing needs it.
+bool wifiIsNeeded()
+{
+  bool needed = false;
+
+  if (settings.enableNtripClient == true
+      && systemState <= STATE_ROVER_RTK_FIX
+     )
+    needed = true;
+
+  if (settings.enableNtripServer == true
+      && systemState >= STATE_BASE_NOT_STARTED
+      && systemState <= STATE_BASE_FIXED_TRANSMITTING
+     )
+    needed = true;
+
+  if (settings.enableTcpClient == true) needed = true;
+  if (settings.enableTcpServer == true) needed = true;
+
+  if (systemState == STATE_KEYS_WIFI_STARTED || systemState == STATE_KEYS_WIFI_CONNECTED) needed = true;
+  if (systemState == STATE_KEYS_PROVISION_WIFI_STARTED || systemState == STATE_KEYS_PROVISION_WIFI_CONNECTED) needed = true;
+
+  return needed;
 }
 
 //Counts the number of entered SSIDs
@@ -245,17 +453,6 @@ int wifiNetworkCount()
       networkCount++;
   }
   return networkCount;
-}
-
-//Determine if the WiFi connection has timed out
-bool wifiConnectionTimeout()
-{
-#ifdef COMPILE_WIFI
-  if ((millis() - wifiTimer) <= WIFI_CONNECTION_TIMEOUT)
-    return false;
-  systemPrintln("WiFi connection timeout!");
-#endif  //COMPILE_WIFI
-  return true;
 }
 
 //Send data to the TCP clients
@@ -357,6 +554,8 @@ bool wifiTcpServerActive()
   if ((settings.enableTcpServer && online.tcpServer) || wifiTcpConnected)
     return true;
 
+  log_d("Stopping TCP Server");
+
   //Shutdown the TCP server
   online.tcpServer = false;
 
@@ -364,146 +563,64 @@ bool wifiTcpServerActive()
   wifiTcpServer->stop();
 
   if (wifiTcpServer != NULL)
-    free(wifiTcpServer);
+    delete wifiTcpServer;
 #endif  //COMPILE_WIFI
   return false;
 }
 
-//If radio is off entirely, start WiFi
-//If ESP-Now is active, only add the LR protocol
-void wifiStart()
+//Determine if another connection is possible or if the limit has been reached
+bool wifiConnectLimitReached()
+{
+  //Retry the connection a few times
+  bool limitReached = false;
+  if (wifiConnectionAttempts++ >= MAX_WIFI_CONNECTION_ATTEMPTS) limitReached = true;
+
+  wifiConnectionAttemptsTotal++;
+
+  if (limitReached == false)
+  {
+    wifiConnectionAttemptTimeout = wifiConnectionAttempts * 15 * 1000L; //Wait 15, 30, 45, etc seconds between attempts
+
+    if (wifiConnectionAttemptTimeout / 1000 < 120)
+      systemPrintf("WiFi failed to connect. Trying again in %d seconds.\r\n", wifiConnectionAttemptTimeout / 1000);
+    else
+      systemPrintf("WiFi failed to connect. Trying again in %d minutes.\r\n", wifiConnectionAttemptTimeout / 1000 / 60);
+
+    reportHeapNow();
+  }
+  else
+  {
+    //No more connection attempts
+    systemPrintln("WiFi connection attempts exceeded!");
+  }
+  return limitReached;
+}
+
+void tcpUpdate()
 {
 #ifdef COMPILE_WIFI
-#ifdef COMPILE_ESPNOW
-  bool restartESPNow = false;
-#endif
 
-  if ((wifiState == WIFI_OFF) || (wifiState == WIFI_ON))
+  if (settings.enableTcpClient == false && settings.enableTcpServer == false) return; //Nothing to do
+
+  //If TCP is enabled, but WiFi is not connected, start WiFi
+  if (wifiIsConnected() == false && (settings.enableTcpClient == true || settings.enableTcpServer == true))
   {
-    wifiSetState(WIFI_NOTCONNECTED);
-
-    WiFi.mode(WIFI_STA);
-
-#ifdef COMPILE_ESPNOW
-    if (espnowState > ESPNOW_OFF)
-    {
-      restartESPNow = true;
-      espnowStop();
-      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now. Stops WiFi Station.
-    }
-    else
-    {
-      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
-    }
-#else
-    //Be sure the standard protocols are turned on. ESP Now may have previously turned them off.
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
-#endif
-
-    wifiConnect(); //Attempt to connect to any SSID on settings list
-    wifiTimer = millis();
-
-#ifdef COMPILE_ESPNOW
-    if (restartESPNow == true)
-      espnowStart();
-#endif
-
     //Verify WIFI_MAX_TCP_CLIENTS
     if ((sizeof(wifiTcpConnected) * 8) < WIFI_MAX_TCP_CLIENTS)
     {
       systemPrintf("Please set WIFI_MAX_TCP_CLIENTS <= %d or increase size of wifiTcpConnected\r\n", sizeof(wifiTcpConnected) * 8);
-      while (true)
-      {
-      }
+      while (true) ; //Freeze
     }
 
-    //Display the heap state
-    reportHeapNow();
+    wifiStart();
   }
-#endif  //COMPILE_WIFI
-}
-
-//Stop WiFi and release all resources
-//If ESP NOW is active, leave WiFi on enough for ESP NOW
-void wifiStop()
-{
-#ifdef COMPILE_WIFI
-  stopWebServer();
-
-  //Shutdown the TCP client
-  if (online.tcpClient)
-  {
-    //Tell the UART2 tasks that the TCP client is shutting down
-    online.tcpClient = false;
-    delay(5);
-    systemPrintln("TCP client offline");
-  }
-
-  //Shutdown the TCP server connection
-  if (online.tcpServer)
-  {
-    //Tell the UART2 tasks that the TCP server is shutting down
-    online.tcpServer = false;
-
-    //Wait for the UART2 tasks to close the TCP client connections
-    while (wifiTcpServerActive())
-      delay(5);
-    systemPrintln("TCP Server offline");
-  }
-
-  if (wifiState == WIFI_OFF)
-  {
-    //Do nothing
-  }
-
-#ifdef COMPILE_ESPNOW
-  //If WiFi is on but ESP NOW is off, then turn off radio entirely
-  else if (espnowState == ESPNOW_OFF)
-  {
-    wifiSetState(WIFI_OFF);
-    WiFi.mode(WIFI_OFF);
-    log_d("WiFi Stopped");
-  }
-  //If ESP-Now is active, change protocol to only Long Range
-  else if (espnowState > ESPNOW_OFF)
-  {
-    wifiSetState(WIFI_OFF);
-
-    // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
-
-    WiFi.mode(WIFI_STA);
-
-    log_d("WiFi disabled, ESP-Now left in place");
-  }
-#else
-  //Turn off radio
-  wifiSetState(WIFI_OFF);
-  WiFi.mode(WIFI_OFF);
-  log_d("WiFi Stopped");
-#endif
-
-  //Display the heap state
-  reportHeapNow();
-#endif  //COMPILE_WIFI
-}
-
-void wifiUpdate()
-{
-#ifdef COMPILE_WIFI
-  //Periodically display the WiFi state
-  if (settings.enablePrintWifiState && ((millis() - lastWifiState) > 15000))
-  {
-    wifiSetState (wifiState);
-    lastWifiState = millis();
-  }
-
-  //Periodically display the IP address
-  wifiPeriodicallyDisplayIpAddress();
 
   //Start the TCP client if enabled
-  if (settings.enableTcpClient && (!online.tcpClient) && (!settings.enableTcpServer)
-      && (wifiState == WIFI_CONNECTED))
+  if (settings.enableTcpClient
+      && (!online.tcpClient)
+      && (!settings.enableTcpServer)
+      && wifiIsConnected()
+     )
   {
     online.tcpClient = true;
     systemPrint("TCP client online, local IP ");
@@ -513,26 +630,20 @@ void wifiUpdate()
   }
 
   //Start the TCP server if enabled
-  if ((!wifiTcpServer) && (!settings.enableTcpClient) && settings.enableTcpServer
-      && (wifiState == WIFI_CONNECTED))
+  if (settings.enableTcpServer
+      && (wifiTcpServer == NULL)
+      && (!settings.enableTcpClient)
+      && wifiIsConnected()
+     )
   {
-    if (wifiTcpServer == NULL)
-      wifiTcpServer = new WiFiServer(settings.wifiTcpPort);
+    wifiTcpServer = new WiFiServer(settings.wifiTcpPort);
 
     wifiTcpServer->begin();
     online.tcpServer = true;
     systemPrint("TCP Server online, IP Address ");
     systemPrintln(WiFi.localIP());
   }
-
-  //Support NTRIP client during Rover operation
-  if (systemState < STATE_BASE_NOT_STARTED)
-    ntripClientUpdate();
-
-  //Support NTRIP server during Base operation
-  else if (systemState < STATE_BUBBLE_LEVEL)
-    ntripServerUpdate();
-#endif  //COMPILE_WIFI
+#endif
 }
 
 void wifiPrintNetworkInfo()

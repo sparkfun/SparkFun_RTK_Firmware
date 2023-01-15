@@ -1253,21 +1253,27 @@ String getFileList()
 }
 
 // Make size of files human readable
-String stringHumanReadableSize(uint64_t bytes) {
-
+String stringHumanReadableSize(uint64_t bytes)
+{
   char suffix[5] = {'\0'};
   char readableSize[50] = {'\0'};
+  float cardSize = 0.0;
 
   if (bytes < 1024) strcpy(suffix, "B");
   else if (bytes < (1024 * 1024)) strcpy(suffix, "KB");
   else if (bytes < (1024 * 1024 * 1024)) strcpy(suffix, "MB");
   else strcpy(suffix, "GB");
 
-  if (bytes < (1024 * 1024)) bytes = bytes / 1024.0; //KB
-  else if (bytes < (1024 * 1024 * 1024)) bytes = bytes / 1024.0 / 1024.0; //MB
-  else bytes = bytes / 1024.0 / 1024.0 / 1024.0; //GB
+  if (bytes < (1024 * 1024)) cardSize = bytes / 1024.0; //KB
+  else if (bytes < (1024 * 1024 * 1024)) cardSize = bytes / 1024.0 / 1024.0; //MB
+  else cardSize = bytes / 1024.0 / 1024.0 / 1024.0; //GB
 
-  sprintf(readableSize, "%lld %s", bytes, suffix); //Don't print decimal portion of bytes
+  if (strcmp(suffix, "GB") == 0)
+    sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
+  else if (strcmp(suffix, "MB") == 0)
+    sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
+  else
+    sprintf(readableSize, "%lld %s", cardSize, suffix); //Don't print decimal portion
 
   return String(readableSize);
 }

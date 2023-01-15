@@ -12,11 +12,9 @@ void menuLog()
     {
       char myString[200];
       snprintf(myString, sizeof(myString),
-               "Card size: %s (%lld bytes) / Free space: %s (%lld bytes)",
+               "SD card size: %s / Free space: %s",
                stringHumanReadableSize(sdCardSize),
-               sdCardSize,
-               stringHumanReadableSize(sdFreeSpace),
-               sdFreeSpace
+               stringHumanReadableSize(sdFreeSpace)
               );
       systemPrintln(myString);
     }

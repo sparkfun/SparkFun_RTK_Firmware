@@ -38,10 +38,16 @@ static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
 
 //Give up connecting after this number of attempts
 //Connection attempts are throttled to increase the time between attempts
-//30 attempts with 15 second increases will take almost two hours
-static const int MAX_WIFI_CONNECTION_ATTEMPTS = 30;
+static const int MAX_WIFI_CONNECTION_ATTEMPTS = 500;
 
 #define WIFI_MAX_TCP_CLIENTS     4
+
+//Throttle the time between connection attempts
+//ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
+static int wifiConnectionAttempts = 0; //Count the number of connection attempts between restarts
+static uint32_t wifiConnectionAttemptsTotal; //Count the number of connection attempts absolutely
+static uint32_t wifiLastConnectionAttempt = 0;
+static uint32_t wifiConnectionAttemptTimeout = 0;
 
 //----------------------------------------
 // Locals - compiled out
@@ -59,12 +65,6 @@ static uint32_t lastWifiState = 0;
 //TCP server
 static WiFiServer *wifiTcpServer = NULL;
 static WiFiClient wifiTcpClient[WIFI_MAX_TCP_CLIENTS];
-
-//Throttle the time between connection attempts
-//ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
-static uint32_t wifiConnectionAttemptsTotal; //Count the number of connection attempts absolutely
-static uint32_t wifiLastConnectionAttempt = 0;
-static uint32_t wifiConnectionAttemptTimeout = 0;
 
 //----------------------------------------
 // WiFi Routines - compiled out
@@ -231,7 +231,7 @@ void wifiUpdate()
       if (wifiIsConnected() == false)
       {
         log_d("WiFi link lost");
-        wifiConnectionAttemptTimeout = 0; //Reset the timeout
+        wifiConnectionAttempts = 0; //Reset the timeout
         wifiSetState(WIFI_CONNECTING);
       }
       else
@@ -243,9 +243,8 @@ void wifiUpdate()
           wifiStop();
       }
       break;
-
-#endif  //COMPILE_WIFI
   }
+#endif  //COMPILE_WIFI
 }
 
 //Starts the WiFi connection state machine (moves from WIFI_OFF to WIFI_CONNECTING)
@@ -332,8 +331,8 @@ void wifiStop()
   }
 
   wifiSetState(WIFI_OFF);
-  
-  wifiConnectionAttemptTimeout = 0; //Reset the timeout
+
+  wifiConnectionAttempts = 0; //Reset the timeout
 
 #ifdef COMPILE_ESPNOW
   //If WiFi is on but ESP NOW is off, then turn off radio entirely
@@ -366,11 +365,15 @@ void wifiStop()
 
 bool wifiIsConnected()
 {
+#ifdef COMPILE_WIFI
   bool isConnected = (wifiGetStatus() == WL_CONNECTED);
   if (isConnected)
     wifiPeriodicallyDisplayIpAddress();
 
   return isConnected;
+#else
+  return false;
+#endif
 }
 
 //Attempts a connection to all provided SSIDs

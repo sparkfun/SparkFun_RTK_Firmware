@@ -164,7 +164,6 @@ void stopWebServer()
 
   if (websocket != NULL)
   {
-    websocket->end()
     delete websocket;
     websocket = NULL;
   }

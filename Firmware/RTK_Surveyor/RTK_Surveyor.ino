@@ -172,7 +172,6 @@ bool sdSizeCheckTaskComplete = false;
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
-static int wifiConnectionAttempts = 0; //Count the number of connection attempts between restarts
 static int ntripClientConnectionAttempts = 0; //Count the number of connection attempts between restarts
 static int ntripServerConnectionAttempts = 0; //Count the number of connection attempts between restarts
 

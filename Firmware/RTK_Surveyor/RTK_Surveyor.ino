@@ -663,16 +663,12 @@ void loop()
 
   updateRadio(); //Check if we need to finish sending any RTCM over link radio
 
-  //Periodically print the position
-  if (settings.enablePrintPosition && ((millis() - lastPrintPosition) > 15000))
-  {
-    printCurrentConditions();
-    lastPrintPosition = millis();
-  }
 
   //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
   systemTime_minutes = millis() / 1000L / 60;
 
+  printPosition(); //Periodically print GNSS coordinates if enabled
+  
   //A small delay prevents panic if no other I2C or functions are called
   delay(10);
 }

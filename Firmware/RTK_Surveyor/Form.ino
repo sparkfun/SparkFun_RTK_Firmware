@@ -158,14 +158,14 @@ void stopWebServer()
   if (webserver != NULL)
   {
     webserver->end();
-    free(webserver);
+    delete webserver;
     webserver = NULL;
   }
 
   if (websocket != NULL)
   {
     websocket->end()
-    free(websocket);
+    delete websocket;
     websocket = NULL;
   }
 

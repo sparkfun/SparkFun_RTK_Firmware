@@ -1738,7 +1738,7 @@ void displayWiFiConfig()
     }
   }
 #else
-  printTextCenter("No AP", yPos, QW_FONT_5X7, 1, false);
+  printTextCenter("!Compiled", yPos, QW_FONT_5X7, 1, false);
 #endif
 }
 

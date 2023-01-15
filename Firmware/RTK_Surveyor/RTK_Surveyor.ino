@@ -17,9 +17,6 @@
   to the ZED-F9P to achieve RTK: F9PSerialWriteTask(), F9PSerialReadTask().
 
   Settings are loaded from microSD if available otherwise settings are pulled from ESP32's file system LittleFS.
-
-  As of v1.2, the heap is approximately 94072 during Rover Fix, 142260 during WiFi Casting. This is
-  important to maintain as unit will begin to have stability issues at ~30k.
 */
 
 const int FIRMWARE_VERSION_MAJOR = 3;
@@ -83,7 +80,6 @@ int pin_radio_rst;
 int pin_radio_pwr;
 int pin_radio_cts;
 int pin_radio_rts;
-
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
@@ -120,7 +116,7 @@ ESP32Time rtc;
 #include <SPI.h>
 #include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 
-SdFat * sd;
+SdFat *sd;
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
@@ -176,8 +172,9 @@ bool sdSizeCheckTaskComplete = false;
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
-static int ntripClientConnectionAttempts; //Count the number of connection attempts between restarts
-static int ntripServerConnectionAttempts; //Count the number of connection attempts between restarts
+static int wifiConnectionAttempts = 0; //Count the number of connection attempts between restarts
+static int ntripClientConnectionAttempts = 0; //Count the number of connection attempts between restarts
+static int ntripServerConnectionAttempts = 0; //Count the number of connection attempts between restarts
 
 #endif
 
@@ -256,7 +253,7 @@ uint8_t numSV;
 uint8_t fixType;
 uint8_t carrSoln;
 
-const byte haeNumberOfDecimals = 8; //Used for printing and transitting lat/lon
+const byte haeNumberOfDecimals = 8; //Used for printing and transmitting lat/lon
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //Battery fuel gauge and PWM LEDs
@@ -462,7 +459,6 @@ uint32_t rtcmLastReceived = 0;
 
 uint32_t maxSurveyInWait_s = 60L * 15L; //Re-start survey-in after X seconds
 
-
 uint16_t svinObservationTime = 0; //Use globals so we don't have to request these values multiple times (slow response)
 float svinMeanAccuracy = 0;
 
@@ -516,7 +512,6 @@ uint16_t failedParserMessages_NMEA = 0;
 unsigned long btLastByteReceived = 0; //Track when last BT transmission was received.
 const long btMinEscapeTime = 2000; //Bluetooth serial traffic must stop this amount before an escape char is recognized
 uint8_t btEscapeCharsReceived = 0; //Used to enter command mode
-
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
                      +---------------------------------------+      +----------+
@@ -662,7 +657,7 @@ void loop()
 
   updateSerial(); //Menu system via ESP32 USB connection
 
-  wifiUpdate(); //Bring up WiFi, NTRIP connection and move data NTRIP <--> ZED
+  wifiUpdate(); //Bring up WiFi when services need it
 
   updateLBand(); //Check if we've recently received PointPerfect corrections or not
 

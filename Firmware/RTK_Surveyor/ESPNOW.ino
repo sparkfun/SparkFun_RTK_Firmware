@@ -197,7 +197,7 @@ void espnowStop()
 
   if (wifiState == WIFI_OFF)
   {
-    //ESP Now is the only thing using the radio, turn it off entirely
+    //ESP Now was the only thing using the radio so turn WiFi radio off entirely
     WiFi.mode(WIFI_OFF);
 
     log_d("WiFi Radio off entirely");

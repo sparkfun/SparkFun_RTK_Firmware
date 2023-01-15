@@ -8,7 +8,7 @@ void startWebServer()
 #ifdef COMPILE_AP
 
   ntripClientStop(true); //Do not allocate new wifiClient
-  wifiStartAP();
+  wifiStartAP(); //Exits calling wifiConnect()
 
   incomingSettings = (char*)malloc(AP_CONFIG_SETTING_SIZE);
 
@@ -993,9 +993,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       sprintf(newVersionCSV, "newFirmwareVersion,ERROR,");
     }
 
-    Serial.println("1");
     websocket->textAll(newVersionCSV);
-    Serial.println("2");
   }
   else if (strcmp(settingName, "getNewFirmware") == 0)
   {

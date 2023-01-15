@@ -789,7 +789,7 @@ uint8_t rtcmReadCrc(PARSE_STATE * parse, uint8_t data)
   if (parse->length > parse->maxLength)
   {
     parse->maxLength = parse->length;
-    systemPrintf("Parser error maxLength: %d bytes\r\n", parse->maxLength);
+    systemPrintf("RTCM parser error maxLength: %d bytes\r\n", parse->maxLength);
   }
 
   //Display the RTCM messages with bad CRC

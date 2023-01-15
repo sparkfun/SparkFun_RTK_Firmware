@@ -581,3 +581,14 @@ bool setConstellations(bool sendCompleteBatch)
 
   return (response);
 }
+
+//Periodically print position if enabled
+void printPosition()
+{
+    //Periodically print the position
+  if (settings.enablePrintPosition && ((millis() - lastPrintPosition) > 15000))
+  {
+    printCurrentConditions();
+    lastPrintPosition = millis();
+  }
+}

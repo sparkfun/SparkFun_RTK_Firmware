@@ -297,7 +297,7 @@ bool pointperfectProvisionDevice()
     delete jsonZtp;
 
   bluetoothStart();
-  
+
   return (retVal);
 #else
   return (false);
@@ -308,7 +308,7 @@ bool pointperfectProvisionDevice()
 bool pointperfectUpdateKeys()
 {
 #ifdef COMPILE_WIFI
-  bluetoothStop(); //Release available heap to allow room for TLS 
+  bluetoothStop(); //Release available heap to allow room for TLS
 
   char * certificateContents = NULL; //Holds the contents of the keys prior to MQTT connection
   char * keyContents = NULL;
@@ -1013,7 +1013,6 @@ void menuPointPerfect()
           }
           else
             pointperfectUpdateKeys();
-
         }
 
         wifiStop();

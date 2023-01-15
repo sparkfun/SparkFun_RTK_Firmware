@@ -664,8 +664,6 @@ void loop()
   updateRadio(); //Check if we need to finish sending any RTCM over link radio
 
 
-  //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
-  systemTime_minutes = millis() / 1000L / 60;
 
   printPosition(); //Periodically print GNSS coordinates if enabled
   
@@ -712,6 +710,9 @@ void updateSD()
 //Push new data to log as needed
 void updateLogs()
 {
+  //Convert current system time to minutes. This is used in F9PSerialReadTask()/updateLogs() to see if we are within max log window.
+  systemTime_minutes = millis() / 1000L / 60;
+
   //If we are in AP config, don't touch the SD card
   if (systemState == STATE_WIFI_CONFIG_NOT_STARTED || systemState == STATE_WIFI_CONFIG)
     return;

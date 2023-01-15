@@ -113,8 +113,8 @@ typedef enum
 enum WiFiState
 {
   WIFI_OFF = 0,
-  WIFI_ON,
-  WIFI_NOTCONNECTED,
+  WIFI_START,
+  WIFI_CONNECTING,
   WIFI_CONNECTED,
 };
 volatile byte wifiState = WIFI_OFF;
@@ -132,8 +132,8 @@ volatile ESPNOWState espnowState = ESPNOW_OFF;
 enum NTRIPClientState
 {
   NTRIP_CLIENT_OFF = 0,         //Using Bluetooth or NTRIP server
-  NTRIP_CLIENT_ON,              //WIFI_ON state
-  NTRIP_CLIENT_WIFI_CONNECTING, //Connecting to WiFi access point
+  NTRIP_CLIENT_ON,              //WIFI_START state
+  NTRIP_CLIENT_WIFI_STARTED, //Connecting to WiFi access point
   NTRIP_CLIENT_WIFI_CONNECTED,  //WiFi connected to an access point
   NTRIP_CLIENT_CONNECTING,      //Attempting a connection to the NTRIP caster
   NTRIP_CLIENT_CONNECTED,       //Connected to the NTRIP caster
@@ -143,8 +143,8 @@ volatile byte ntripClientState = NTRIP_CLIENT_OFF;
 enum NTRIPServerState
 {
   NTRIP_SERVER_OFF = 0,         //Using Bluetooth or NTRIP client
-  NTRIP_SERVER_ON,              //WIFI_ON state
-  NTRIP_SERVER_WIFI_CONNECTING, //Connecting to WiFi access point
+  NTRIP_SERVER_ON,              //WIFI_START state
+  NTRIP_SERVER_WIFI_STARTED, //Connecting to WiFi access point
   NTRIP_SERVER_WIFI_CONNECTED,  //WiFi connected to an access point
   NTRIP_SERVER_WAIT_GNSS_DATA,  //Waiting for correction data from GNSS
   NTRIP_SERVER_CONNECTING,      //Attempting a connection to the NTRIP caster

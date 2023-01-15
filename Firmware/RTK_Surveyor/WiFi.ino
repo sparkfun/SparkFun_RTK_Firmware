@@ -127,11 +127,11 @@ void wifiSetState(byte newState)
     case WIFI_OFF:
       systemPrintln("WIFI_OFF");
       break;
-    case WIFI_ON:
-      systemPrintln("WIFI_ON");
+    case WIFI_START:
+      systemPrintln("WIFI_START");
       break;
-    case WIFI_NOTCONNECTED:
-      systemPrintln("WIFI_NOTCONNECTED");
+    case WIFI_CONNECTING:
+      systemPrintln("WIFI_CONNECTING");
       break;
     case WIFI_CONNECTED:
       systemPrintln("WIFI_CONNECTED");

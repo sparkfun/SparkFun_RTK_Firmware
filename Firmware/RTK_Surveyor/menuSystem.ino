@@ -116,7 +116,7 @@ void menuSystem()
           systemPrint("Disconnected");
           break;
         case NTRIP_CLIENT_ON:
-        case NTRIP_CLIENT_WIFI_CONNECTING:
+        case NTRIP_CLIENT_WIFI_STARTED:
         case NTRIP_CLIENT_WIFI_CONNECTED:
         case NTRIP_CLIENT_CONNECTING:
           systemPrint("Connecting");
@@ -164,7 +164,7 @@ void menuSystem()
           systemPrint("Disconnected");
           break;
         case NTRIP_SERVER_ON:
-        case NTRIP_SERVER_WIFI_CONNECTING:
+        case NTRIP_SERVER_WIFI_STARTED:
         case NTRIP_SERVER_WIFI_CONNECTED:
         case NTRIP_SERVER_WAIT_GNSS_DATA:
         case NTRIP_SERVER_CONNECTING:

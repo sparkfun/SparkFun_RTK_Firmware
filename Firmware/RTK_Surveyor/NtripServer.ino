@@ -1,8 +1,8 @@
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   NTRIP Server States:
-    NTRIP_SERVER_OFF: WiFi OFF or using NTRIP Client
-    NTRIP_SERVER_ON: WIFI_ON state
-    NTRIP_SERVER_WIFI_CONNECTING: Connecting to WiFi access point
+    NTRIP_SERVER_OFF: WiFi off or using NTRIP Client
+    NTRIP_SERVER_ON: WIFI_START state
+    NTRIP_SERVER_WIFI_STARTED: Connecting to WiFi access point
     NTRIP_SERVER_WIFI_CONNECTED: WiFi connected to an access point
     NTRIP_SERVER_WAIT_GNSS_DATA: Waiting for correction data from GNSS
     NTRIP_SERVER_CONNECTING: Attempting a connection to the NTRIP caster
@@ -17,7 +17,7 @@
                     |                  |                      |
                     |                  |                      | ntripServerStop(false)
                     |                  v                Fail  |
-                    |    NTRIP_SERVER_WIFI_CONNECTING ------->+
+                    |    NTRIP_SERVER_WIFI_STARTED ------->+
                     |                  |                      ^
                     |                  |                      |
                     |                  v                Fail  |
@@ -185,8 +185,8 @@ void ntripServerSetState(byte newState)
     case NTRIP_SERVER_ON:
       systemPrintln("NTRIP_SERVER_ON");
       break;
-    case NTRIP_SERVER_WIFI_CONNECTING:
-      systemPrintln("NTRIP_SERVER_WIFI_CONNECTING");
+    case NTRIP_SERVER_WIFI_STARTED:
+      systemPrintln("NTRIP_SERVER_WIFI_STARTED");
       break;
     case NTRIP_SERVER_WIFI_CONNECTED:
       systemPrintln("NTRIP_SERVER_WIFI_CONNECTED");

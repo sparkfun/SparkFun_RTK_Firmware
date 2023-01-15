@@ -1,8 +1,8 @@
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   NTRIP Client States:
-    NTRIP_CLIENT_OFF: WiFi off or or NTRIP server
-    NTRIP_CLIENT_ON: WIFI_ON state
-    NTRIP_CLIENT_WIFI_CONNECTING: Connecting to WiFi access point
+    NTRIP_CLIENT_OFF: WiFi off or using NTRIP server
+    NTRIP_CLIENT_ON: WIFI_START state
+    NTRIP_CLIENT_WIFI_STARTED: Connecting to WiFi access point
     NTRIP_CLIENT_WIFI_CONNECTED: WiFi connected to an access point
     NTRIP_CLIENT_CONNECTING: Attempting a connection to the NTRIP caster
     NTRIP_CLIENT_CONNECTED: Connected to the NTRIP caster
@@ -225,8 +225,8 @@ void ntripClientSetState(byte newState)
     case NTRIP_CLIENT_ON:
       systemPrintln("NTRIP_CLIENT_ON");
       break;
-    case NTRIP_CLIENT_WIFI_CONNECTING:
-      systemPrintln("NTRIP_CLIENT_WIFI_CONNECTING");
+    case NTRIP_CLIENT_WIFI_STARTED:
+      systemPrintln("NTRIP_CLIENT_WIFI_STARTED");
       break;
     case NTRIP_CLIENT_WIFI_CONNECTED:
       systemPrintln("NTRIP_CLIENT_WIFI_CONNECTED");

@@ -205,7 +205,7 @@ void espnowStop()
   //If WiFi is on, then disable LR protocol
   else if (wifiState > WIFI_OFF)
   {
-    wifiSetState(WIFI_NOTCONNECTED);
+    wifiSetState(WIFI_START); //Force WiFi to restart
 
     // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station.

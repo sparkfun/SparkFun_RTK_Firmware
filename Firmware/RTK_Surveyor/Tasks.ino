@@ -467,7 +467,7 @@ void updateBTled()
       ledcWrite(ledBTChannel, 255);
 
     //Pulse LED while no BT and we wait for WiFi connection
-    else if (wifiState == WIFI_NOTCONNECTED || wifiState == WIFI_CONNECTED)
+    else if (wifiState == WIFI_CONNECTING || wifiState == WIFI_CONNECTED)
     {
       //Fade in/out the BT LED during WiFi AP mode
       btFadeLevel += pwmFadeAmount;

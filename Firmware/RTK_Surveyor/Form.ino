@@ -160,12 +160,21 @@ void stopWebServer()
   if (webserver != NULL)
   {
     webserver->end();
-
-    free(settingsCSV);
-    free(websocket);
     free(webserver);
-
     webserver = NULL;
+  }
+
+  if (websocket != NULL)
+  {
+    websocket->end()
+    free(websocket);
+    websocket = NULL;
+  }
+
+  if (settingsCSV != NULL)
+  {
+    free(settingsCSV);
+    settingsCSV = NULL;
   }
 
   log_d("Web Server Stopped");

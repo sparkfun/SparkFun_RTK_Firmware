@@ -45,6 +45,10 @@ void menuFirmware()
     }
     else if (incoming == 'c')
     {
+      bool previouslyConnected = wifiIsConnected();
+
+      wifiStart(); //Makes sure any ESP-Now settings have been cleared
+
       //Attempt to connect to local WiFi
       if (wifiConnect(10000) == true)
       {
@@ -71,15 +75,25 @@ void menuFirmware()
         else
         {
           //Failed to get version number
-          systemPrintln("Failed to get version number from server");
+          systemPrintln("Failed to get version number from server.");
         }
       }
+      else
+        systemPrintln("Firmware update failed to connect to WiFi.");
+
+      if (previouslyConnected == false)
+        wifiStop();
     }
     else if (newOTAFirmwareAvailable && incoming == 'u')
     {
+      bool previouslyConnected = wifiIsConnected();
+
       otaUpdate();
 
       //We get here if WiFi failed or the server was not available
+
+      if (previouslyConnected == false)
+        wifiStop();
     }
 
     else if (incoming == 'e')
@@ -334,6 +348,8 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
 #ifdef COMPILE_WIFI
   bool previouslyConnected = wifiIsConnected();
 
+  wifiStart(); //Makes sure any ESP-Now settings have been cleared
+
   if (wifiConnect(10000) == true)
   {
     char versionString[20];
@@ -403,6 +419,8 @@ void otaUpdate()
   bool updateAvailable = false;
 #ifdef COMPILE_WIFI
   bool previouslyConnected = wifiIsConnected();
+
+  wifiStart(); //Makes sure any ESP-Now settings have been cleared
 
   if (wifiConnect(10000) == true)
   {

@@ -316,7 +316,7 @@ esp_err_t espnowAddPeer(uint8_t *peerMac, bool encrypt)
 
   esp_err_t result = esp_now_add_peer(&peerInfo);
   if (result != ESP_OK)
-    log_d("Failed to add peer");
+    log_d("Failed to add peer: 0x%02X%02X%02X%02X%02X%02X", peerMac[0], peerMac[1], peerMac[2], peerMac[3], peerMac[4], peerMac[5]);
   return (result);
 #else
   return (ESP_OK);

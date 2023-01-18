@@ -155,17 +155,16 @@ void stopWebServer()
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-  if (webserver != NULL)
-  {
-    webserver->end();
-    delete webserver;
-    webserver = NULL;
-  }
-
   if (websocket != NULL)
   {
     delete websocket;
     websocket = NULL;
+  }
+
+  if (webserver != nullptr)
+  {
+    webserver->end();
+    webserver = NULL;
   }
 
   if (settingsCSV != NULL)

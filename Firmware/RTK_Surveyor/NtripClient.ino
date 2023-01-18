@@ -465,7 +465,7 @@ void ntripClientUpdate()
       if (!ntripClient->connected())
       {
         //Broken connection, retry the NTRIP client connection
-        systemPrintln("NTRIP Client connection dropped");
+        systemPrintln("NTRIP Client connection to caster was broken");
         ntripClientStop(false); //Allocate new wifiClient
       }
       else

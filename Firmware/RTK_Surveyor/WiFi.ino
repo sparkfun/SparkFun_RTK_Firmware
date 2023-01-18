@@ -102,6 +102,7 @@ void wifiSetState(byte newState)
   if (wifiState == newState)
     systemPrint("*");
   wifiState = newState;
+
   switch (newState)
   {
     default:
@@ -156,12 +157,7 @@ void wifiStartAP()
   else
   {
     //Start webserver on local WiFi instead of AP
-    WiFi.mode(WIFI_STA);
-
-#ifdef COMPILE_ESPNOW
-    // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station
-#endif
+    wifiStart(); //Makes sure any ESP-Now settings have been cleared
 
     //Attempt to connect to local WiFi 3 times with increasing timeouts
     int timeout = 0;
@@ -215,6 +211,12 @@ void wifiUpdate()
         if (wifiConnect(10000) == true) //Attempt to connect to any SSID on settings list
         {
 
+          if (espnowState > ESPNOW_OFF)
+          {
+            //esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now. Stops WiFi Station.
+            espnowStart();
+          }
+
           wifiSetState(WIFI_CONNECTED);
         }
         else
@@ -243,7 +245,7 @@ void wifiUpdate()
       //Verify link is still up
       if (wifiIsConnected() == false)
       {
-        log_d("WiFi link lost");
+        systemPrintln("WiFi link lost");
         wifiConnectionAttempts = 0; //Reset the timeout
         wifiSetState(WIFI_CONNECTING);
       }
@@ -268,9 +270,13 @@ void wifiUpdate()
 void wifiStart()
 {
 #ifdef COMPILE_WIFI
-#ifdef COMPILE_ESPNOW
-  bool restartESPNow = false;
-#endif
+  if (wifiNetworkCount() == 0)
+  {
+    systemPrintln("Error: Please enter at least one SSID before using WiFi");
+    //paintWiFiNoNetworksFail(4000, true); //TODO
+    wifiStop();
+    return;
+  }
 
   if (wifiIsConnected() == true) return; //We don't need to do anything
 
@@ -278,38 +284,17 @@ void wifiStart()
 
   log_d("Starting WiFi");
 
-  if (wifiNetworkCount() == 0)
-  {
-    systemPrintln("Error: Please enter at least one SSID before using WiFi");
-    //paintWiFiNoNetworksFail(4000, true); //TODO
-    wifiSetState(WIFI_OFF);
-    return;
-  }
-
-  wifiSetState(WIFI_CONNECTING); //This starts the state machine running
-
   WiFi.mode(WIFI_STA);
 
-#ifdef COMPILE_ESPNOW
-  if (espnowState > ESPNOW_OFF)
-  {
-    restartESPNow = true;
-    espnowStop();
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now. Stops WiFi Station.
-  }
-  else
-  {
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
-  }
-#else
-  //Be sure the standard protocols are turned on. ESP Now may have previously turned them off.
-  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Set basic WiFi protocols. Stops WiFi Station.
-#endif
+  //Before attempting WiFiMulti connect, be sure we have default WiFi protocols enabled.
+  //This must come after WiFi.mode
+  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
 
-#ifdef COMPILE_ESPNOW
-  if (restartESPNow == true)
-    espnowStart();
-#endif
+  //If ESP-NOW is running, blend in ESP-NOW protocol.
+  if (espnowState > ESPNOW_OFF)
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now. Stops WiFi Station.
+
+  wifiSetState(WIFI_CONNECTING); //This starts the state machine running
 
   //Display the heap state
   reportHeapNow();
@@ -348,17 +333,14 @@ void wifiStop()
 
   wifiConnectionAttempts = 0; //Reset the timeout
 
-#ifdef COMPILE_ESPNOW
-  //If WiFi is on but ESP NOW is off, then turn off radio entirely
-  if (espnowState == ESPNOW_OFF)
-  {
-    WiFi.mode(WIFI_OFF);
-    log_d("WiFi Stopped");
-  }
-  //If ESP-Now is active, change protocol to only Long Range
-  else if (espnowState > ESPNOW_OFF)
-  {
+  //No matter what, turn off WiFi to stop rolling STA_DISCONNECTED and AUTH_EXPIRE notifications
+  WiFi.mode(WIFI_OFF);
+  log_d("WiFi Stopped");
 
+#ifdef COMPILE_ESPNOW
+  //If ESP-Now is active, change protocol to only Long Range and re-start WiFi
+  if (espnowState > ESPNOW_OFF)
+  {
     // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
 
@@ -366,10 +348,6 @@ void wifiStop()
 
     log_d("WiFi disabled, ESP-Now left in place");
   }
-#else
-  //Turn off radio
-  WiFi.mode(WIFI_OFF);
-  log_d("WiFi Stopped");
 #endif
 
   //Display the heap state
@@ -421,11 +399,6 @@ bool wifiConnect(unsigned long timeout)
     systemPrint("No friendly WiFi networks detected. ");
   else
     systemPrintf("WiFi failed to connect: error #%d. ", response);
-
-  if (wifiConnectionAttemptTimeout / 1000 < 120)
-    systemPrintf("Next WiFi attempt in %d seconds.\r\n", wifiConnectionAttemptTimeout / 1000);
-  else
-    systemPrintf("Next WiFi attempt in %d minutes.\r\n", wifiConnectionAttemptTimeout / 1000 / 60);
 
 #endif
 

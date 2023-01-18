@@ -89,24 +89,21 @@ void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type)
 //If the radio is off entirely, start the radio, turn on only the LR protocol
 void espnowStart()
 {
-
 #ifdef COMPILE_ESPNOW
   if (wifiState == WIFI_OFF && espnowState == ESPNOW_OFF)
   {
-    WiFi.mode(WIFI_STA);
-
     //Radio is off, turn it on
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
 
+    WiFi.mode(WIFI_STA);
+    
     log_d("WiFi off, ESP-Now added to protocols");
   }
   //If WiFi is on but ESP NOW is off, then enable LR protocol
   else if (wifiState > WIFI_OFF && espnowState == ESPNOW_OFF)
   {
-    WiFi.mode(WIFI_STA);
-
     //Enable WiFi + ESP-Now
-    // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
+    //Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Stops WiFi Station.
 
     log_d("WiFi on, ESP-Now added to protocols");
@@ -181,19 +178,28 @@ void espnowStop()
 #ifdef COMPILE_ESPNOW
   if (espnowState == ESPNOW_OFF) return;
 
-  // Turn off promiscuous WiFi mode
+  //Turn off promiscuous WiFi mode
   esp_wifi_set_promiscuous(false);
   esp_wifi_set_promiscuous_rx_cb(NULL);
 
-  // Deregister callbacks
+  //Deregister callbacks
   //esp_now_unregister_send_cb();
   esp_now_unregister_recv_cb();
 
-  // Deinit ESP-NOW
+  //Forget all ESP-Now Peers
+  for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+    espnowRemovePeer(settings.espnowPeers[x]);
+
+  //Leave WiFi with default settings (no WIFI_PROTOCOL_LR for ESP NOW)
+  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station.
+
+  //Deinit ESP-NOW
   if (esp_now_deinit() != ESP_OK) {
     systemPrintln("Error deinitializing ESP-NOW");
     return;
   }
+
+  espnowSetState(ESPNOW_OFF);
 
   if (wifiState == WIFI_OFF)
   {
@@ -202,22 +208,13 @@ void espnowStop()
 
     log_d("WiFi Radio off entirely");
   }
-  //If WiFi is on, then disable LR protocol
+  //If WiFi is on, then restart WiFi
   else if (wifiState > WIFI_OFF)
   {
-    wifiSetState(WIFI_START); //Force WiFi to restart
-
-    // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station.
-
-    WiFi.mode(WIFI_STA);
-
-    log_d("WiFi protocols on, LR protocol off");
+    wifiStart(); //Force WiFi to restart
   }
 
 #endif
-
-  espnowSetState(ESPNOW_OFF);
 }
 
 //Start ESP-Now if needed, put ESP-Now into broadcast state

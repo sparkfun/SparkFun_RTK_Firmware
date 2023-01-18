@@ -494,6 +494,7 @@ void menuWiFi()
       //Restart WiFi if we are not in AP config mode
       if (wifiIsConnected())
       {
+        log_d("Menu caused restarting of WiFi");
         wifiStop();
         wifiStart();
       }

@@ -410,17 +410,13 @@ void menuWiFi()
       {
         systemPrintf("Enter SSID network %d: ", arraySlot + 1);
         getString(settings.wifiNetworks[arraySlot].ssid, sizeof(settings.wifiNetworks[arraySlot].ssid));
-        restartRover = true; //If we are modifying the SSID table, force restart of rover/base
-        restartBase = true;
-        restartWiFi = true;
+        restartWiFi = true; //If we are modifying the SSID table, force restart of WiFi
       }
       else
       {
         systemPrintf("Enter Password for %s: ", settings.wifiNetworks[arraySlot].ssid);
         getString(settings.wifiNetworks[arraySlot].password, sizeof(settings.wifiNetworks[arraySlot].password));
-        restartRover = true;
-        restartBase = true;
-        restartWiFi = true;
+        restartWiFi = true; //If we are modifying the SSID table, force restart of WiFi
       }
     }
     else if (incoming == 'a')

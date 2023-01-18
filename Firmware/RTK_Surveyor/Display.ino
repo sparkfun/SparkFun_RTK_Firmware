@@ -68,8 +68,8 @@ static uint32_t blinking_icons;
 static uint32_t icons;
 static uint32_t iconsRadio;
 
-unsigned long ipDisplayTimer = 0;
-bool ipDisplayFirstHalf = false;
+unsigned long ssidDisplayTimer = 0;
+bool ssidDisplayFirstHalf = false;
 
 // Fonts
 #include <res/qw_fnt_5x7.h>
@@ -1655,31 +1655,51 @@ void displayWiFiConfig()
   int yPos = WiFi_Symbol_Height + 2;
   int fontHeight = 8;
 
+  const int displayMaxCharacters = 10; //Characters before pixels start getting cut off. 11 characters can cut off a few pixels.
+
   printTextCenter("SSID:", yPos, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
   yPos = yPos + fontHeight + 1;
 
-  if (settings.wifiConfigOverAP == true)
-    printTextCenter("RTK Config", yPos, QW_FONT_5X7, 1, false);
-  else
+  //Toggle display back and forth for long SSIDs and IPs
+  //Run the timer no matter what, but load firstHalf/lastHalf with the same thing if strlen < maxWidth
+  if (millis() - ssidDisplayTimer > 2000)
   {
-    //Convert current SSID to string
-    char mySSID[50] = {'\0'};
-#ifdef COMPILE_WIFI
-    sprintf(mySSID, "%s", WiFi.SSID());
-#else
-    sprintf(mySSID, "%s", "Not Compiled");
-#endif
-    //Trim to a max length of 11
-    if (strlen(mySSID) > 11)
-    {
-      char mySSIDshort[50] = {'\0'};
-      strncpy(mySSIDshort, mySSID, 11);
-      printTextCenter(mySSIDshort, yPos, QW_FONT_5X7, 1, false);
-    }
+    ssidDisplayTimer = millis();
+
+    if (ssidDisplayFirstHalf == false)
+      ssidDisplayFirstHalf = true;
     else
-      printTextCenter(mySSID, yPos, QW_FONT_5X7, 1, false);
+      ssidDisplayFirstHalf = false;
   }
+
+  //Convert current SSID to string
+  char mySSID[50] = {'\0'};
+
+#ifdef COMPILE_WIFI
+  sprintf(mySSID, "%s", WiFi.SSID().c_str());
+#else
+  sprintf(mySSID, "%s", "!Compiled");
+#endif
+
+  char mySSIDFront[displayMaxCharacters + 1]; //1 for null terminator
+  char mySSIDBack[displayMaxCharacters + 1]; //1 for null terminator
+
+  //Trim SSID to a max length
+  strncpy(mySSIDFront, mySSID, displayMaxCharacters);
+
+  if (strlen(mySSID) > displayMaxCharacters)
+    strncpy(mySSIDBack, mySSID + (strlen(mySSID) - displayMaxCharacters), displayMaxCharacters);
+  else
+    strncpy(mySSIDBack, mySSID, displayMaxCharacters);
+
+  mySSIDFront[displayMaxCharacters] = '\0';
+  mySSIDBack[displayMaxCharacters] = '\0';
+
+  if (ssidDisplayFirstHalf == true)
+    printTextCenter(mySSIDFront, yPos, QW_FONT_5X7, 1, false);
+  else
+    printTextCenter(mySSIDBack, yPos, QW_FONT_5X7, 1, false);
 
   yPos = yPos + fontHeight + 3;
   printTextCenter("IP:", yPos, QW_FONT_5X7, 1, false);
@@ -1697,43 +1717,24 @@ void displayWiFiConfig()
   char myIP[20] = {'\0'};
   sprintf(myIP, "%d.%d.%d.%d", myIpAddress[0], myIpAddress[1], myIpAddress[2], myIpAddress[3]);
 
-  if (strlen(myIP) <= 11)
-    printTextCenter(myIP, yPos, QW_FONT_5X7, 1, false);
-  else
-  {
-    //Toggle the IP display back and forth
-    if (millis() - ipDisplayTimer > 2000)
-    {
-      ipDisplayTimer = millis();
-      if (ipDisplayFirstHalf == false)
-      {
-        //Display the first half of the IP address up to 11 characters
-        ipDisplayFirstHalf = true;
-      }
-      else
-      {
-        //Display the 2nd half of the IP address up to 11 characters
-        ipDisplayFirstHalf = false;
-      }
-    }
+  char myIPFront[displayMaxCharacters + 1]; //1 for null terminator
+  char myIPBack[displayMaxCharacters + 1]; //1 for null terminator
 
-    if (ipDisplayFirstHalf == true)
-    {
-      //Display the first half of the IP address up to 11 characters
-      char myIPFront[12]; //1 for null terminator
-      strncpy(myIPFront, myIP, 11);
-      myIPFront[11] = '\0';
-      printTextCenter(myIPFront, yPos, QW_FONT_5X7, 1, false);
-    }
-    else
-    {
-      //Display the 2nd half of the IP address up to 11 characters
-      char myIPBack[12]; //1 for null terminator
-      strncpy(myIPBack, myIP + (strlen(myIP) - 11), 11);
-      myIPBack[11] = '\0';
-      printTextCenter(myIPBack, yPos, QW_FONT_5X7, 1, false);
-    }
-  }
+  strncpy(myIPFront, myIP, displayMaxCharacters);
+
+  if (strlen(myIP) > displayMaxCharacters)
+    strncpy(myIPBack, myIP + (strlen(myIP) - displayMaxCharacters), displayMaxCharacters);
+  else
+    strncpy(myIPBack, myIP, displayMaxCharacters);
+
+  myIPFront[displayMaxCharacters] = '\0';
+  myIPBack[displayMaxCharacters] = '\0';
+
+  if (ssidDisplayFirstHalf == true)
+    printTextCenter(myIPFront, yPos, QW_FONT_5X7, 1, false);
+  else
+    printTextCenter(myIPBack, yPos, QW_FONT_5X7, 1, false);
+
 #else
   printTextCenter("!Compiled", yPos, QW_FONT_5X7, 1, false);
 #endif

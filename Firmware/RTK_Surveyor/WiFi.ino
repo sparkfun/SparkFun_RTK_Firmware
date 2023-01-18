@@ -212,15 +212,28 @@ void wifiUpdate()
       {
         wifiLastConnectionAttempt = millis();
 
-        if (wifiConnectLimitReached() == false) //Increases wifiConnectionAttemptTimeout
+        if (wifiConnect(10000) == true) //Attempt to connect to any SSID on settings list
         {
-          if (wifiConnect(10000) == true) //Attempt to connect to any SSID on settings list
-            wifiSetState(WIFI_CONNECTED);
+
+          wifiSetState(WIFI_CONNECTED);
         }
         else
         {
-          //paintWiFiFail(4000, true); //TODO
-          wifiStop(); //Move back to WIFI_OFF
+          //We failed to connect
+
+          if (wifiConnectLimitReached() == false) //Increases wifiConnectionAttemptTimeout
+          {
+            if (wifiConnectionAttemptTimeout / 1000 < 120)
+              systemPrintf("Next WiFi attempt in %d seconds.\r\n", wifiConnectionAttemptTimeout / 1000);
+            else
+              systemPrintf("Next WiFi attempt in %d minutes.\r\n", wifiConnectionAttemptTimeout / 1000 / 60);
+          }
+          else
+          {
+            systemPrintln("WiFi connection failed. Giving up.");
+            //paintWiFiFail(4000, true); //TODO
+            wifiStop(); //Move back to WIFI_OFF
+          }
         }
       }
 
@@ -244,6 +257,7 @@ void wifiUpdate()
       }
       break;
   }
+
 #endif  //COMPILE_WIFI
 }
 

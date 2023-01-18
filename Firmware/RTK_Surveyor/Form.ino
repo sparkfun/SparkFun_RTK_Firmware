@@ -380,6 +380,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
   if (type == WS_EVT_CONNECT) {
+    log_d("Websocket client connected");
     client->text(settingsCSV);
     lastCoordinateUpdate = millis();
   }
@@ -1268,7 +1269,7 @@ String stringHumanReadableSize(uint64_t bytes)
   else if (strcmp(suffix, "MB") == 0)
     sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
   else
-    sprintf(readableSize, "%lld %s", cardSize, suffix); //Don't print decimal portion
+    sprintf(readableSize, "%0.0f %s", cardSize, suffix); //Don't print decimal portion
 
   return String(readableSize);
 }

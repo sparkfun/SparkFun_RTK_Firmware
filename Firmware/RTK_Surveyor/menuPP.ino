@@ -973,7 +973,6 @@ void menuPointPerfect()
     }
     else if (incoming == 3)
     {
-#ifdef COMPILE_WIFI
       if (wifiNetworkCount() == 0)
       {
         systemPrintln("Error: Please enter at least one SSID before getting keys");
@@ -1007,28 +1006,26 @@ void menuPointPerfect()
 
       wifiStop();
     }
-#endif
+    else if (incoming == 'k')
+    {
+      menuPointPerfectKeys();
+    }
+    else if (incoming == 'x')
+      break;
+    else if (incoming == INPUT_RESPONSE_EMPTY)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
   }
-  else if (incoming == 'k')
+
+  if (strlen(settings.pointPerfectClientID) > 0)
   {
-    menuPointPerfectKeys();
+    pointperfectApplyKeys();
   }
-  else if (incoming == 'x')
-    break;
-  else if (incoming == INPUT_RESPONSE_EMPTY)
-    break;
-  else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
-    break;
-  else
-    printUnknown(incoming);
-}
 
-if (strlen(settings.pointPerfectClientID) > 0)
-{
-  pointperfectApplyKeys();
-}
-
-clearBuffer(); //Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 #endif  //COMPILE_L_BAND
 }
 

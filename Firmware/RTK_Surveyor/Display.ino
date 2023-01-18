@@ -1566,6 +1566,11 @@ void displayGNSSFail(uint16_t displayTime)
   displayMessage("GNSS Failed", displayTime);
 }
 
+void displayNoWiFi(uint16_t displayTime)
+{
+  displayMessage("No WiFi", displayTime);
+}
+
 void displayRoverStart(uint16_t displayTime)
 {
   if (online.display == true)
@@ -1677,7 +1682,10 @@ void displayWiFiConfig()
   char mySSID[50] = {'\0'};
 
 #ifdef COMPILE_WIFI
-  sprintf(mySSID, "%s", WiFi.SSID().c_str());
+  if (settings.wifiConfigOverAP == true)
+    sprintf(mySSID, "%s", "RTK Config");
+  else
+    sprintf(mySSID, "%s", WiFi.SSID().c_str());
 #else
   sprintf(mySSID, "%s", "!Compiled");
 #endif

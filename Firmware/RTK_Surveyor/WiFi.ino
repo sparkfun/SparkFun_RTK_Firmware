@@ -129,10 +129,13 @@ void wifiSetState(byte newState)
 
 //Start the access point for user to connect to and configure device
 //We can also start as a WiFi station and attempt to connect to local WiFi for config
-void wifiStartAP()
+bool wifiStartAP()
 {
   if (settings.wifiConfigOverAP == true)
   {
+    //Stop any current WiFi activity
+    wifiStop();
+    
     //Start in AP mode
     WiFi.mode(WIFI_AP);
 
@@ -148,7 +151,7 @@ void wifiStartAP()
     if (WiFi.softAP("RTK Config") == false) //Must be short enough to fit OLED Width
     {
       systemPrintln("WiFi AP failed to start");
-      return;
+      return (false);
     }
     systemPrint("WiFi AP Started with IP: ");
     systemPrintln(WiFi.softAPIP());
@@ -158,9 +161,11 @@ void wifiStartAP()
     //Start webserver on local WiFi instead of AP
     wifiStart(); //Makes sure any ESP-Now settings have been cleared
 
-    //Attempt to connect to local WiFi 3 times with increasing timeouts
+    //Attempt to connect to local WiFi with increasing timeouts
     int timeout = 0;
-    for (int x = 0 ; x < 3 ; x++)
+    int x = 0;
+    const int maxTries = 2;
+    for ( ; x < maxTries ; x++)
     {
       timeout += 5000;
       if (wifiConnect(timeout) == true) //Attempt to connect to any SSID on settings list
@@ -169,7 +174,15 @@ void wifiStartAP()
         break;
       }
     }
+    if (x == maxTries)
+    {
+      displayNoWiFi(2000);
+      requestChangeState(STATE_ROVER_NOT_STARTED);
+      return(false);
+    }
   }
+
+  return(true);
 }
 
 #endif  //COMPILE_WIFI
@@ -227,7 +240,7 @@ void wifiUpdate()
           else
           {
             systemPrintln("WiFi connection failed. Giving up.");
-            //paintWiFiFail(4000, true); //TODO
+            displayNoWiFi(2000);
             wifiStop(); //Move back to WIFI_OFF
           }
         }
@@ -420,7 +433,7 @@ bool wifiIsNeeded()
 
   //If WiFi is on while we are in the following states, allow WiFi to continue to operate
   if (systemState >= STATE_BUBBLE_LEVEL && systemState <= STATE_PROFILE)
-  { 
+  {
     //Keep WiFi on if user presses setup button, enters bubble level, is in AP config mode, etc
     needed = true;
   }

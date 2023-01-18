@@ -209,19 +209,14 @@ void wifiUpdate()
 
         if (wifiConnect(10000) == true) //Attempt to connect to any SSID on settings list
         {
-
           if (espnowState > ESPNOW_OFF)
-          {
-            //esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now. Stops WiFi Station.
             espnowStart();
-          }
 
           wifiSetState(WIFI_CONNECTED);
         }
         else
         {
           //We failed to connect
-
           if (wifiConnectLimitReached() == false) //Increases wifiConnectionAttemptTimeout
           {
             if (wifiConnectionAttemptTimeout / 1000 < 120)
@@ -409,19 +404,26 @@ bool wifiIsNeeded()
 {
   bool needed = false;
 
-  if (settings.enableNtripClient == true
-      && systemState <= STATE_ROVER_RTK_FIX
-     )
-    needed = true;
-
-  if (settings.enableNtripServer == true
-      && systemState >= STATE_BASE_NOT_STARTED
-      && systemState <= STATE_BASE_FIXED_TRANSMITTING
-     )
-    needed = true;
-
   if (settings.enableTcpClient == true) needed = true;
   if (settings.enableTcpServer == true) needed = true;
+
+  //Handle WiFi within systemStates
+  if (systemState <= STATE_ROVER_RTK_FIX
+      && settings.enableNtripClient == true
+     )
+    needed = true;
+
+  if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING
+      && settings.enableNtripServer == true
+     )
+    needed = true;
+
+  //If WiFi is on while we are in the following states, allow WiFi to continue to operate
+  if (systemState >= STATE_BUBBLE_LEVEL && systemState <= STATE_PROFILE)
+  { 
+    //Keep WiFi on if user presses setup button, enters bubble level, is in AP config mode, etc
+    needed = true;
+  }
 
   if (systemState == STATE_KEYS_WIFI_STARTED || systemState == STATE_KEYS_WIFI_CONNECTED) needed = true;
   if (systemState == STATE_KEYS_PROVISION_WIFI_STARTED || systemState == STATE_KEYS_PROVISION_WIFI_CONNECTED) needed = true;
@@ -636,7 +638,7 @@ void tcpUpdate()
 void wifiPrintNetworkInfo()
 {
 #ifdef COMPILE_WIFI
-  systemPrintln("\n\nNetwork Configuration:");
+  systemPrintln("\nNetwork Configuration:");
   systemPrintln("----------------------");
   systemPrint("         SSID: "); systemPrintln(WiFi.SSID());
   systemPrint("  WiFi Status: "); systemPrintln(WiFi.status());

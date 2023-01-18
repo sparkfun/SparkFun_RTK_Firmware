@@ -796,8 +796,6 @@ uint32_t setESPNowIcon_TwoRadios()
 {
   uint32_t icons = 0;
 
-#ifdef COMPILE_ESPNOW
-
   if (espnowState == ESPNOW_PAIRED)
   {
     //Limit how often we update this spot
@@ -866,7 +864,6 @@ uint32_t setESPNowIcon_TwoRadios()
     else
       icons |= ICON_BLANK_LEFT;
   }
-#endif //ifdef COMPILE_ESPNOW
 
   return icons;
 }

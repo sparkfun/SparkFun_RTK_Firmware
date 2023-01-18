@@ -762,7 +762,6 @@ void beginI2C()
 //Depending on radio selection, begin hardware
 void radioStart()
 {
-#ifdef COMPILE_ESPNOW
   if (settings.radioType == RADIO_EXTERNAL)
   {
     espnowStop();
@@ -773,7 +772,6 @@ void radioStart()
   {
     espnowStart();
   }
-#endif
 }
 
 //Start task to determine SD card size

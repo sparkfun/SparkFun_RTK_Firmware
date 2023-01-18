@@ -406,12 +406,14 @@ uint8_t espnowOutgoingSpot = 0; //ESP Now has max of 250 characters
 uint16_t espnowBytesSent = 0; //May be more than 255
 uint8_t receivedMAC[6]; //Holds the broadcast MAC during pairing
 
-int espnowRSSI = 0;
 int packetRSSI = 0;
 unsigned long lastEspnowRssiUpdate = 0;
 
-const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 #endif
+
+int espnowRSSI = 0;
+const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Global variables
@@ -904,7 +906,6 @@ void updateRadio()
       //then we've reached the end of the RTCM stream. Send partial buffer.
       if (espnowOutgoingSpot > 0 && (millis() - espnowLastAdd) > 50)
       {
-
         if (settings.espnowBroadcast == false)
           esp_now_send(0, (uint8_t *) &espnowOutgoing, espnowOutgoingSpot); //Send partial packet to all peers
         else

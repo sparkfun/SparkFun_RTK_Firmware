@@ -136,10 +136,9 @@ void wifiStartAP()
     //Start in AP mode
     WiFi.mode(WIFI_AP);
 
-#ifdef COMPILE_ESPNOW
-    // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-    esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi AP.
-#endif
+    //Before attempting WiFiMulti connect, be sure we have default WiFi protocols enabled.
+    //This must come after WiFi.mode
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
 
     IPAddress local_IP(192, 168, 4, 1);
     IPAddress gateway(192, 168, 4, 1);
@@ -337,7 +336,6 @@ void wifiStop()
   WiFi.mode(WIFI_OFF);
   log_d("WiFi Stopped");
 
-#ifdef COMPILE_ESPNOW
   //If ESP-Now is active, change protocol to only Long Range and re-start WiFi
   if (espnowState > ESPNOW_OFF)
   {
@@ -348,7 +346,6 @@ void wifiStop()
 
     log_d("WiFi disabled, ESP-Now left in place");
   }
-#endif
 
   //Display the heap state
   reportHeapNow();

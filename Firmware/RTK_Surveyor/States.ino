@@ -889,7 +889,6 @@ void updateSystemState()
 
       case (STATE_ESPNOW_PAIRING):
         {
-#ifdef COMPILE_ESPNOW
           if (espnowIsPaired() == true)
           {
             paintEspNowPaired();
@@ -902,7 +901,6 @@ void updateSystemState()
             uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
             espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
           }
-#endif
         }
         break;
 

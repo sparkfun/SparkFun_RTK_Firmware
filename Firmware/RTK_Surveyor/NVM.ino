@@ -1006,7 +1006,6 @@ bool parseLine(char* str, Settings *settings)
     }
 
     //Scan for ESPNOW peers
-#ifdef COMPILE_ESPNOW
     if (knownSetting == false)
     {
       for (int x = 0 ; x < ESPNOW_MAX_PEERS ; x++)
@@ -1031,7 +1030,6 @@ bool parseLine(char* str, Settings *settings)
         }
       }
     }
-#endif //ifdef COMPILE_ESPNOW
 
     //Last catch
     if (knownSetting == false)

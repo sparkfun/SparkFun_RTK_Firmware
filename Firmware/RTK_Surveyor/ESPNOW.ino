@@ -96,7 +96,7 @@ void espnowStart()
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
 
     WiFi.mode(WIFI_STA);
-    
+
     log_d("WiFi off, ESP-Now added to protocols");
   }
   //If WiFi is on but ESP NOW is off, then enable LR protocol
@@ -211,6 +211,7 @@ void espnowStop()
   //If WiFi is on, then restart WiFi
   else if (wifiState > WIFI_OFF)
   {
+    log_d("ESP-Now starting WiFi");
     wifiStart(); //Force WiFi to restart
   }
 

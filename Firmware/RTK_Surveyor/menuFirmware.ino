@@ -47,6 +47,7 @@ void menuFirmware()
     {
       bool previouslyConnected = wifiIsConnected();
 
+      log_d("Firmware version Check starting WiFi");
       wifiStart(); //Makes sure any ESP-Now settings have been cleared
 
       //Attempt to connect to local WiFi
@@ -348,6 +349,7 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
 #ifdef COMPILE_WIFI
   bool previouslyConnected = wifiIsConnected();
 
+  log_d("OTA Check Version starting WiFi");
   wifiStart(); //Makes sure any ESP-Now settings have been cleared
 
   if (wifiConnect(10000) == true)
@@ -420,6 +422,7 @@ void otaUpdate()
 #ifdef COMPILE_WIFI
   bool previouslyConnected = wifiIsConnected();
 
+  log_d("OTA Update starting WiFi");
   wifiStart(); //Makes sure any ESP-Now settings have been cleared
 
   if (wifiConnect(10000) == true)

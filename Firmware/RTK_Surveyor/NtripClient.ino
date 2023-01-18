@@ -345,6 +345,7 @@ void ntripClientUpdate()
         if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)
         {
           ntripClientLastConnectionAttempt = millis();
+          log_d("NTRIP Client starting WiFi");
           wifiStart();
           ntripClientSetState(NTRIP_CLIENT_WIFI_STARTED);
         }

@@ -693,6 +693,7 @@ void updateSystemState()
           //If we don't have keys, begin zero touch provisioning
           else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
           {
+            log_d("L_Band Keys starting WiFi");
             wifiStart();
             changeState(STATE_KEYS_PROVISION_WIFI_STARTED);
           }
@@ -727,6 +728,7 @@ void updateSystemState()
 
           if (online.rtc == false)
           {
+            log_d("Keys Needed RTC off starting WiFi");
             wifiStart();
             changeState(STATE_KEYS_WIFI_STARTED); //If we can't check the RTC, continue
           }
@@ -737,6 +739,7 @@ void updateSystemState()
             settings.lastKeyAttempt = rtc.getEpoch(); //Mark it
             recordSystemSettings(); //Record these settings to unit
 
+            log_d("Keys Needed starting WiFi");
             wifiStart(); //Starts WiFi state machine
             changeState(STATE_KEYS_WIFI_STARTED);
           }

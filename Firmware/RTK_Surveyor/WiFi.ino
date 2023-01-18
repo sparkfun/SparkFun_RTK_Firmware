@@ -159,6 +159,7 @@ bool wifiStartAP()
   else
   {
     //Start webserver on local WiFi instead of AP
+    log_d("WiFi Config starting WiFi");
     wifiStart(); //Makes sure any ESP-Now settings have been cleared
 
     //Attempt to connect to local WiFi with increasing timeouts
@@ -583,11 +584,6 @@ bool wifiConnectLimitReached()
   {
     wifiConnectionAttemptTimeout = wifiConnectionAttempts * 15 * 1000L; //Wait 15, 30, 45, etc seconds between attempts
 
-    if (wifiConnectionAttemptTimeout / 1000 < 120)
-      systemPrintf("WiFi failed to connect. Trying again in %d seconds.\r\n", wifiConnectionAttemptTimeout / 1000);
-    else
-      systemPrintf("WiFi failed to connect. Trying again in %d minutes.\r\n", wifiConnectionAttemptTimeout / 1000 / 60);
-
     reportHeapNow();
   }
   else
@@ -614,6 +610,7 @@ void tcpUpdate()
       while (true) ; //Freeze
     }
 
+    log_d("tpcUpdate starting WiFi");
     wifiStart();
   }
 

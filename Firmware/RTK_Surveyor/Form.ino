@@ -8,7 +8,10 @@ void startWebServer()
 #ifdef COMPILE_AP
 
   ntripClientStop(true); //Do not allocate new wifiClient
-  wifiStartAP(); //Exits calling wifiConnect()
+  ntripServerStop(true); //Do not allocate new wifiClient
+  
+  if (wifiStartAP() == false) //Exits calling wifiConnect()
+    return;
 
   incomingSettings = (char*)malloc(AP_CONFIG_SETTING_SIZE);
 
@@ -147,7 +150,6 @@ void startWebServer()
 
 #endif //COMPILE_AP
 #endif //COMPILE_WIFI
-
 }
 
 void stopWebServer()

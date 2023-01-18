@@ -493,6 +493,7 @@ void menuWiFi()
         log_d("Menu caused restarting of WiFi");
         wifiStop();
         wifiStart();
+        wifiConnectionAttempts = 0; //Reset the timeout
       }
     }
   }

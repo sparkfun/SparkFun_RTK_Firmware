@@ -64,7 +64,7 @@ static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; //5s between transmission of
 //----------------------------------------
 
 //The WiFi connection to the NTRIP caster to obtain RTCM data.
-static WiFiClient * ntripClient;
+static WiFiClient *ntripClient;
 
 //Throttle the time between connection attempts
 //ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
@@ -501,7 +501,8 @@ void ntripClientUpdate()
           i2cGNSS.pushRawData(rtcmData, rtcmCount);
           wifiIncomingRTCM = true;
 
-          //if (!inMainMenu) log_d("NTRIP Client received %d RTCM bytes, pushed to ZED", rtcmCount);
+          if (!inMainMenu && settings.enablePrintNtripClientState)
+            systemPrintf("NTRIP Client received %d RTCM bytes, pushed to ZED\r\n", rtcmCount);
         }
       }
 

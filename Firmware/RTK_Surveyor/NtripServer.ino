@@ -69,7 +69,7 @@ uint32_t ntripServerBytesSent = 0;
 
 //Throttle the time between connection attempts
 //ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
-static uint32_t ntripServerConnectionAttemptTimeout = 0; 
+static uint32_t ntripServerConnectionAttemptTimeout = 0;
 static uint32_t ntripServerLastConnectionAttempt = 0;
 
 //Last time the NTRIP server state was displayed
@@ -243,7 +243,9 @@ void ntripServerProcessRTCM(uint8_t incoming)
     //If we have not gotten new RTCM bytes for a period of time, assume end of frame
     if (millis() - ntripServerTimer > 100 && ntripServerBytesSent > 0)
     {
-      if (!inMainMenu) log_d("NTRIP Server transmitted %d RTCM bytes to Caster", ntripServerBytesSent);
+      if (!inMainMenu && settings.enablePrintNtripServerState)
+        systemPrintf("NTRIP Server transmitted %d RTCM bytes to Caster\r\n", ntripServerBytesSent);
+
       ntripServerBytesSent = 0;
     }
 

@@ -43,7 +43,7 @@ plugins:
 repo_url: https://github.com/sparkfun/SparkFun_RTK_Firmware
 repo_name: sparkfun/SparkFun_RTK_Firmware
 
-copyright: Copyright 2022 SparkFun Electronics (6333 Dry Creek Parkway, Niwot, Colorado 80503)
+copyright: Copyright 2023 SparkFun Electronics (6333 Dry Creek Parkway, Niwot, Colorado 80503)
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -95,7 +95,7 @@ nav:
     - configure_sensor.md
     - menu_radios.md
     - menu_sensor.md
-    - menu_system_status.md
+    - menu_system.md
     - menu_debug.md
     - system_status_report.md
     - correction_sources.md

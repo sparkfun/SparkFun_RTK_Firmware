@@ -295,7 +295,71 @@ Known Issues:
 
 To verify the NMEA sentences are being delivered correctly, Survey Master has a built-in tool. Select the Device->Rover->More->'H-Terminal'. 
 
-## QField / QGIS
+## Vespucci
+
+[Vespucci](https://play.google.com/store/apps/details?id=de.blau.android&hl=en_US&gl=US) is an Open Street Map editor for Android.
+
+This software requires the RTK device to connect over TCP. Be sure you have a local WiFi network entered into the [WiFi Config menu](docs\menu_wifi.md), have a TCP Client or Server enabled, and have noted the TCP port (it's 2947 by default).
+
+![Vespucci Gear Button](img/Vespucci/SparkFun%20RTK%20Vespucci%20-%20Main%20Gear.png)
+
+With a map open, select the gear icon on the bottom bar.
+
+![Vespucci Preferences menu](img/Vespucci/SparkFun%20RTK%20Vespucci%20-%20Preferences.png)
+
+From the Preferences menu, scroll to the bottom and select 'Advanced Preferences'.
+
+![Preferences menu showing Location Settings](img/Vespucci/SparkFun%20RTK%20Vespucci%20-%20Location%20Settings.png)
+
+Select **Location settings**.
+
+![GPS source menu](img/Vespucci/SparkFun%20RTK%20Vespucci%20-%20GPS%20Source.png)
+
+Select **GPS/GNSS source**. Select **NMEA from TCP client**. TCP server is also supported.
+
+![Vespucci NMEA network source menu](img/Vespucci/SparkFun%20RTK%20Vespucci%20-%20NMEA%20Network%20Source.png)
+
+Select **NMEA network source**. Enter the IP address and TCP port of the RTK device. The IP address can be found by opening a serial terminal while connected to WiFi (it is reported every few seconds). The TCP port is entered into the [WiFi Config menu](docs\menu_wifi.md).
+
+![Vespucci showing location on map](img/Vespucci/SparkFun%20RTK%20Vespucci%20-%20Point%20on%20Map.png)
+
+Close all menus and you should see your location within Vespucci.
+
+## QGIS
+
+QGIS is a free and open-source geographic information system software for desktops. It's available [here](https://qgis.org/).
+
+Once the software is installed open QGIS Desktop.
+
+![View Menu](img/QGIS/SparkFun%20RTK%20QGIS%20-%20View%20Menu.png)
+
+Open the View Menu, then look for the 'Panels' submenu.
+
+![Panels submenu](img/QGIS/SparkFun%20RTK%20QGIS%20-%20Enable%20GPS%20Info%20Panel.png)
+
+From the Panels submenu, enable 'GPS Information'. This will show a new panel on the left side.
+
+At this point, you will need to enable *TCP Server* mode on your RTK device from the [WiFi Config menu](docs\menu_wifi.md). Once the RTK device is connected to local WiFi QGIS will be able to connect to the given IP address and TCP port.
+
+![Select GPSD](img/QGIS/SparkFun%20RTK%20QGIS%20-%20GPS%20Panel.png)
+
+Above: From the subpanel, select 'gpsd'.
+
+![Entering gpsd specifics](img/QGIS/SparkFun%20RTK%20QGIS%20-%20GPS%20Panel%20Entering%20IP%20and%20port.png)
+
+Enter the IP address of your RTK device. This can be found by opening a serial connection to the device. The IP address will be displayed every few seconds. Enter the TCP port to use. By default an RTK device uses 2947.
+
+Press 'Connect'. 
+
+![Viewing location in QGIS](img/QGIS/SparkFun%20RTK%20QGIS%20-%20Location%20on%20Map.png)
+
+The device location will be shown on the map. To see a map, be sure to enable OpenStreetMap under the XYZ Tiles on the Browser.
+
+![Connecting over Serial](img/QGIS/SparkFun%20RTK%20QGIS%20-%20Direct%20Serial%20Connection.png)
+
+Alternatively, a direct serial connection to the RTK device can be obtained. Use a USB cable to connect to the 'CONFIG UBLOX' port on RTK Surveyor/Express/Plus and the single USB C port on the RTK Facet/L-Band. Be sure you have the u-blox driver installed. Then select the appropriate COM port for the u-blox module. See [Configure with Serial](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_with_serial/) for more information.
+
+## QField
 
 ![Opening page of QField](img/QField/SparkFun%20RTK%20QField%20-%20Open%20Project.png)
 

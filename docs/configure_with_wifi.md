@@ -56,6 +56,14 @@ Clicking on the category 'carrot' will open or close that section. Clicking on a
 
 Please note that the firmware for the RTK device and the firmware for the ZED receiver is shown at the top of the page. This can be helpful when troubleshooting or requesting new features.
 
+## File Manager
+
+![Alt text](img/SparkFun%20RTK%20WiFi%20Config%20File%20Manager.png)
+
+Added in v3.0 firmware, a file manager is shown if an SD card is detected. This is a handy way to download files to a local device (cell phone or laptop) as well as delete any unneeded files. The SD size and free space are shown. And files may be uploaded to the SD card if needed.
+
+Additionally, clicking on the top checkbox will select all files for easy removal of a large number of files.
+
 ## Saving and Exit
 
 [![Save and Exit buttons](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_System_Save_Exit.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_System_Save_Exit.jpg)

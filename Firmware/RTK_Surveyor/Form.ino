@@ -165,21 +165,18 @@ void stopWebServer()
 
     if (websocket != NULL)
     {
-      Serial.println("Free websocket");
       delete websocket;
       websocket = NULL;
     }
 
     if (settingsCSV != NULL)
     {
-      Serial.println("Freeing settingsCSV");
       free(settingsCSV);
       settingsCSV = NULL;
     }
 
     if (incomingSettings != NULL)
     {
-      Serial.println("Freeing incomingSettings");
       free(incomingSettings);
       incomingSettings = NULL;
     }

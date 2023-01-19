@@ -1,6 +1,8 @@
 //Once connected to the access point for WiFi Config, the ESP32 sends current setting values in one long string to websocket
 //After user clicks 'save', data is validated via main.js and a long string of values is returned.
 
+bool websocketConnected = false;
+
 //Start webserver in AP mode
 void startWebServer()
 {
@@ -9,14 +11,16 @@ void startWebServer()
 
   ntripClientStop(true); //Do not allocate new wifiClient
   ntripServerStop(true); //Do not allocate new wifiClient
-  
+
   if (wifiStartAP() == false) //Exits calling wifiConnect()
     return;
 
   incomingSettings = (char*)malloc(AP_CONFIG_SETTING_SIZE);
-
-  //Clear any garbage from settings array
   memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
+
+  //Pre-load settings CSV
+  settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+  createSettingsString(settingsCSV);
 
   webserver = new AsyncWebServer(80);
   websocket = new AsyncWebSocket("/ws");
@@ -141,10 +145,6 @@ void startWebServer()
 
   webserver->begin();
 
-  //Pre-load settings CSV
-  settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
-  createSettingsString(settingsCSV);
-
   log_d("Web Server Started");
   reportHeapNow();
 
@@ -157,22 +157,32 @@ void stopWebServer()
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-  if (websocket != NULL)
-  {
-    delete websocket;
-    websocket = NULL;
-  }
-
-  if (webserver != nullptr)
+  if (webserver != NULL)
   {
     webserver->end();
+    free(webserver);
     webserver = NULL;
-  }
 
-  if (settingsCSV != NULL)
-  {
-    free(settingsCSV);
-    settingsCSV = NULL;
+    if (websocket != NULL)
+    {
+      Serial.println("Free websocket");
+      delete websocket;
+      websocket = NULL;
+    }
+
+    if (settingsCSV != NULL)
+    {
+      Serial.println("Freeing settingsCSV");
+      free(settingsCSV);
+      settingsCSV = NULL;
+    }
+
+    if (incomingSettings != NULL)
+    {
+      Serial.println("Freeing incomingSettings");
+      free(incomingSettings);
+      incomingSettings = NULL;
+    }
   }
 
   log_d("Web Server Stopped");
@@ -383,12 +393,14 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     log_d("Websocket client connected");
     client->text(settingsCSV);
     lastCoordinateUpdate = millis();
+    websocketConnected = true;
   }
   else if (type == WS_EVT_DISCONNECT) {
     log_d("Websocket client disconnected");
 
     //User has either refreshed the page or disconnected. Recompile the current settings.
     createSettingsString(settingsCSV);
+    websocketConnected = false;
   }
   else if (type == WS_EVT_DATA) {
     for (int i = 0; i < len; i++) {

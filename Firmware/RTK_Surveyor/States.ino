@@ -629,7 +629,7 @@ void updateSystemState()
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
           //Dynamically update the coordinates on the AP page
-          if (wifiState == WIFI_CONNECTED)
+          if (websocketConnected == true)
           {
             if (millis() - lastCoordinateUpdate > 1000)
             {

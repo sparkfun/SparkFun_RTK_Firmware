@@ -371,7 +371,7 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 AsyncWebServer *webserver = NULL;
 AsyncWebSocket *websocket = NULL;
 
-char *settingsCSV; //Push large array onto heap
+char *settingsCSV = NULL; //Push large array onto heap
 
 #endif
 #endif
@@ -379,7 +379,7 @@ char *settingsCSV; //Push large array onto heap
 //Because the incoming string is longer than max len, there are multiple callbacks so we
 //use a global to combine the incoming
 #define AP_CONFIG_SETTING_SIZE 5000
-char *incomingSettings;
+char *incomingSettings = NULL;
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 unsigned long lastCoordinateUpdate = 0;

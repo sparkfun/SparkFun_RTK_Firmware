@@ -84,16 +84,16 @@ nav:
     - configure_with_wifi.md
     - configure_with_bluetooth.md
     - configure_with_serial.md
-    - configure_with_settings_file.md
-    - configure_ucenter.md
     - configure_gnss.md
     - configure_messages.md
     - configure_base.md
+    - menu_wifi.md
     - configure_ports.md
     - configure_data_logging.md
     - configure_profiles.md
     - configure_pointperfect.md
     - menu_radios.md
+    - menu_sensor.md
     - menu_system_status.md
     - menu_debug.md
     - system_status_report.md
@@ -103,4 +103,6 @@ nav:
     - repair.md
     - accuracy_verification.md
     - embeddedsystem_connection.md
+    - configure_with_settings_file.md
+    - configure_ucenter.md
     - contribute.md

@@ -24,6 +24,22 @@ The GUI method is generally recommended. For more information see [here](https:/
 
 Remember, all SparkFun RTK devices are open source hardware meaning you have total access to the [firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and [hardware](https://github.com/sparkfun/SparkFun_RTK_Facet). Be sure to check out each repo for the latest firmware and hardware information.
 
+## Updating Firmware Over-The-Air
+
+![Updating Firmware from WiFi config page](img/SparkFun%20RTK%20OTA%20Firmware%20Update.gif)
+
+*Updating the firmware via WiFi config page*
+
+![Alt text](img/SparkFun%20RTK%20Firmware%20Update%20Menu.png)
+
+*Updating the firmware via Firmware serial menu*
+
+Introduced with version 3.0, firmware can be updated by pressing a button in the System Configuration section of the WiFi Config page, or over the Firmware menu of the serial interface. This makes checking and upgrading a unit very easy.
+
+Additionally, users may opt into checking for Beta firmware. This is the latest firmware that may have new features and is meant for testing. Beta firmware is not recommended for units deployed into the field as it may not be stable.
+
+If you have a device with firmware lower than v3.0, you will need to use the [GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-the-uploader-gui) or a method listed below to get to v3.x.
+
 ## Updating Firmware Using The Uploader GUI
 
 ![RTK Firmware GUI](./img/RTK_Uploader_Windows.png)

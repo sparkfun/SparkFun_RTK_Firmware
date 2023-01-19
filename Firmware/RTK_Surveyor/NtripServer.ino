@@ -337,6 +337,8 @@ void ntripServerUpdate()
     return;
   }
 
+  if (wifiInConfigMode()) return; //Do not service NTRIP during WiFi config
+
 #ifdef COMPILE_WIFI
   //Periodically display the NTRIP server state
   if (settings.enablePrintNtripServerState && ((millis() - ntripServerStateLastDisplayed) > 15000))

@@ -571,7 +571,7 @@ typedef struct {
   bool enableTcpServer = false;
   bool enablePrintTcpStatus = false;
   bool espnowBroadcast = true; //When true, overrides peers and sends all data via broadcast
-  uint16_t antennaHeight = 0; //in mm
+  int16_t antennaHeight = 0; //in mm
   float antennaReferencePoint = 0.0; //in mm
   bool echoUserInput = true;
   int uartReceiveBufferSize = 1024 * 2; //This buffer is filled automatically as the UART receives characters.

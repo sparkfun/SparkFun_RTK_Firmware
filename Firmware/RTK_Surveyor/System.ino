@@ -585,7 +585,7 @@ bool setConstellations(bool sendCompleteBatch)
 //Periodically print position if enabled
 void printPosition()
 {
-    //Periodically print the position
+  //Periodically print the position
   if (settings.enablePrintPosition && ((millis() - lastPrintPosition) > 15000))
   {
     printCurrentConditions();

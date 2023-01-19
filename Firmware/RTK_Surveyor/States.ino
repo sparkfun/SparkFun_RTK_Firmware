@@ -613,7 +613,7 @@ void updateSystemState()
             {
               systemPrint("Parsing: ");
               for (int x = 0 ; x < incomingSettingsSpot ; x++)
-                Serial.write(incomingSettings[x]);
+                systemWrite(incomingSettings[x]);
               systemPrintln();
 
               parseIncomingSettings();

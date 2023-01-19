@@ -979,9 +979,6 @@ void menuPointPerfect()
       }
       else
       {
-        log_d("L-Band Keys update starting WiFi");
-        wifiStart();
-
         if (wifiConnect(10000) == true)
         {
           //Check if we have certificates

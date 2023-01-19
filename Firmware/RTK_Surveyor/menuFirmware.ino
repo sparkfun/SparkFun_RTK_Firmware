@@ -47,9 +47,6 @@ void menuFirmware()
     {
       bool previouslyConnected = wifiIsConnected();
 
-      log_d("Firmware version Check starting WiFi");
-      wifiStart(); //Makes sure any ESP-Now settings have been cleared
-
       //Attempt to connect to local WiFi
       if (wifiConnect(10000) == true)
       {
@@ -349,9 +346,6 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
 #ifdef COMPILE_WIFI
   bool previouslyConnected = wifiIsConnected();
 
-  log_d("OTA Check Version starting WiFi");
-  wifiStart(); //Makes sure any ESP-Now settings have been cleared
-
   if (wifiConnect(10000) == true)
   {
     char versionString[20];
@@ -395,7 +389,9 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
     }
   }
   else
-    systemPrintln("WiFi not available");
+  {
+    systemPrintln("WiFi not available.");
+  }
 
   if (systemState != STATE_WIFI_CONFIG)
   {
@@ -421,9 +417,6 @@ void otaUpdate()
   bool updateAvailable = false;
 #ifdef COMPILE_WIFI
   bool previouslyConnected = wifiIsConnected();
-
-  log_d("OTA Update starting WiFi");
-  wifiStart(); //Makes sure any ESP-Now settings have been cleared
 
   if (wifiConnect(10000) == true)
   {
@@ -470,7 +463,9 @@ void otaUpdate()
     }
   }
   else
-    systemPrintln("WiFi not available");
+  {
+    systemPrintln("WiFi not available.");
+  }
 
   //Update failed. If WiFi was originally off, turn it off again
   if (previouslyConnected == false)

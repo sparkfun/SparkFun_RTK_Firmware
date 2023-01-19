@@ -31,10 +31,10 @@ void menuBase()
       {
         systemPrint("3) Set Lat/Long/Altitude coordinates: ");
         systemPrint(settings.fixedLat, haeNumberOfDecimals);
-        Serial.write(167); //°
+        systemWrite(167); //°
         systemPrint(", ");
         systemPrint(settings.fixedLong, haeNumberOfDecimals);
-        Serial.write(167); //°
+        systemWrite(167); //°
         systemPrint(", ");
         systemPrint(settings.fixedAltitude, 4);
         systemPrintln("m");

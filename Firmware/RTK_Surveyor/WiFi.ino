@@ -135,13 +135,17 @@ bool wifiStartAP()
   {
     //Stop any current WiFi activity
     wifiStop();
-    
+
     //Start in AP mode
     WiFi.mode(WIFI_AP);
 
-    //Before attempting WiFiMulti connect, be sure we have default WiFi protocols enabled.
-    //This must come after WiFi.mode
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+    //Before starting AP mode, be sure we have default WiFi protocols enabled.
+    //esp_wifi_set_protocol requires WiFi to be started
+    esp_err_t response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+    if (response != ESP_OK)
+      systemPrintf("wifiStartAP: Error setting WiFi protocols: %s\r\n", esp_err_to_name(response));
+    else
+      log_d("WiFi protocols set");
 
     IPAddress local_IP(192, 168, 4, 1);
     IPAddress gateway(192, 168, 4, 1);
@@ -159,8 +163,6 @@ bool wifiStartAP()
   else
   {
     //Start webserver on local WiFi instead of AP
-    log_d("WiFi Config starting WiFi");
-    wifiStart(); //Makes sure any ESP-Now settings have been cleared
 
     //Attempt to connect to local WiFi with increasing timeouts
     int timeout = 0;
@@ -179,11 +181,11 @@ bool wifiStartAP()
     {
       displayNoWiFi(2000);
       requestChangeState(STATE_ROVER_NOT_STARTED);
-      return(false);
+      return (false);
     }
   }
 
-  return(true);
+  return (true);
 }
 
 #endif  //COMPILE_WIFI
@@ -281,7 +283,7 @@ void wifiStart()
   if (wifiNetworkCount() == 0)
   {
     systemPrintln("Error: Please enter at least one SSID before using WiFi");
-    //paintWiFiNoNetworksFail(4000, true); //TODO
+    //paintNoWiFi(2000); //TODO
     wifiStop();
     return;
   }
@@ -291,16 +293,6 @@ void wifiStart()
   if (wifiState > WIFI_OFF) return; //We're in the midst of connecting
 
   log_d("Starting WiFi");
-
-  WiFi.mode(WIFI_STA);
-
-  //Before attempting WiFiMulti connect, be sure we have default WiFi protocols enabled.
-  //This must come after WiFi.mode
-  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
-
-  //If ESP-NOW is running, blend in ESP-NOW protocol.
-  if (espnowState > ESPNOW_OFF)
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now. Stops WiFi Station.
 
   wifiSetState(WIFI_CONNECTING); //This starts the state machine running
 
@@ -341,19 +333,25 @@ void wifiStop()
 
   wifiConnectionAttempts = 0; //Reset the timeout
 
-  //No matter what, turn off WiFi to stop rolling STA_DISCONNECTED and AUTH_EXPIRE notifications
-  WiFi.mode(WIFI_OFF);
-  log_d("WiFi Stopped");
 
   //If ESP-Now is active, change protocol to only Long Range and re-start WiFi
   if (espnowState > ESPNOW_OFF)
   {
-    // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
+    if (WiFi.getMode() == WIFI_OFF)
+      WiFi.mode(WIFI_STA);
 
-    WiFi.mode(WIFI_STA);
-
-    log_d("WiFi disabled, ESP-Now left in place");
+    //Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
+    //esp_wifi_set_protocol requires WiFi to be started
+    esp_err_t response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
+    if (response != ESP_OK)
+      systemPrintf("wifiStop: Error setting ESP-Now lone protocol: %s\r\n", esp_err_to_name(response));
+    else
+      log_d("WiFi disabled, ESP-Now left in place");
+  }
+  else
+  {
+    WiFi.mode(WIFI_OFF);
+    log_d("WiFi Stopped");
   }
 
   //Display the heap state
@@ -381,8 +379,38 @@ bool wifiConnect(unsigned long timeout)
 {
 #ifdef COMPILE_WIFI
 
-  if (wifiIsConnected())
-    return (true);
+  if (wifiIsConnected()) return (true); //Nothing to do
+
+  //Before we can issue esp_wifi_() commands WiFi must be started
+  if (WiFi.getMode() == WIFI_OFF)
+    WiFi.mode(WIFI_STA);
+
+  //Verify that the necessary protocols are set
+  uint8_t protocols = 0;
+  esp_err_t response = esp_wifi_get_protocol(WIFI_IF_STA, &protocols);
+  if (response != ESP_OK)
+    systemPrintf("wifiConnect: Failed to get protocols: %s\r\n", esp_err_to_name(response));
+
+  //If ESP-NOW is running, blend in ESP-NOW protocol.
+  if (espnowState > ESPNOW_OFF)
+  {
+    if (protocols != (WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR))
+    {
+      esp_err_t response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Enable WiFi + ESP-Now.
+      if (response != ESP_OK)
+        systemPrintf("wifiConnect: Error setting WiFi + ESP-NOW protocols: %s\r\n", esp_err_to_name(response));
+    }
+  }
+  else
+  {
+    //Make sure default WiFi protocols are in place
+    if (protocols != (WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N))
+    {
+      esp_err_t response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Enable WiFi.
+      if (response != ESP_OK)
+        systemPrintf("wifiConnect: Error setting WiFi + ESP-NOW protocols: %s\r\n", esp_err_to_name(response));
+    }
+  }
 
   WiFiMulti wifiMulti;
 
@@ -395,16 +423,16 @@ bool wifiConnect(unsigned long timeout)
 
   systemPrint("Connecting WiFi... ");
 
-  int response = wifiMulti.run(timeout);
-  if (response == WL_CONNECTED)
+  int wifiResponse = wifiMulti.run(timeout);
+  if (wifiResponse == WL_CONNECTED)
   {
     systemPrintln();
     return true;
   }
-  else if (response == WL_DISCONNECTED)
+  else if (wifiResponse == WL_DISCONNECTED)
     systemPrint("No friendly WiFi networks detected. ");
   else
-    systemPrintf("WiFi failed to connect: error #%d. ", response);
+    systemPrintf("WiFi failed to connect: error #%d. ", wifiResponse);
 
 #endif
 
@@ -599,6 +627,8 @@ void tcpUpdate()
 #ifdef COMPILE_WIFI
 
   if (settings.enableTcpClient == false && settings.enableTcpServer == false) return; //Nothing to do
+
+  if (wifiInConfigMode()) return; //Do not service TCP during WiFi config
 
   //If TCP is enabled, but WiFi is not connected, start WiFi
   if (wifiIsConnected() == false && (settings.enableTcpClient == true || settings.enableTcpServer == true))

@@ -432,7 +432,7 @@ void beginGNSS()
       return;
     }
   }
-  
+
   //Increase transactions to reduce transfer time
   i2cGNSS.i2cTransactionSize = 128;
 
@@ -769,9 +769,7 @@ void radioStart()
     //Nothing to start. UART2 of ZED is connected to external Radio port and is configured at configureUbloxModule()
   }
   else if (settings.radioType == RADIO_ESPNOW)
-  {
     espnowStart();
-  }
 }
 
 //Start task to determine SD card size

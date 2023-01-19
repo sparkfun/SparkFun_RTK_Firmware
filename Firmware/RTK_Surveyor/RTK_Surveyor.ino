@@ -20,7 +20,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 3;
-const int FIRMWARE_VERSION_MINOR = 0;
+const int FIRMWARE_VERSION_MINOR = 1;
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality

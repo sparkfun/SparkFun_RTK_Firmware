@@ -20,16 +20,9 @@ The **Data** port on the RTK Facet, Express, and Express Plus is very flexible. 
 
 * **NMEA** - The TX pin outputs any enabled messages (NMEA, UBX, and RTCM) at a default of 460,800bps (configurable 9600 to 921600bps). The RX pin can receive RTCM for RTK and can also receive UBX configuration commands if desired.
 * **PPS/Trigger** - The TX pin outputs the pulse-per-second signal that is accurate to 30ns RMS. This pin can be configured as an extremely accurate time base. The pulse length and time between pulses are configurable down to 1us. The RX pin is connected to the EXTINT pin on the ZED-F9P allowing for events to be measured with incredibly accurate nano-second resolution. Useful for things like audio triangulation. See the [External Event Logging](#surveyor-data-port) section below and the Timemark section of the [ZED-F9P Integration Manual](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/ZED-F9P_IntegrationManual__UBX-18010802_.pdf) for more information.
-* **I2C** - The TX pin operates as SCL, RX pin as SDA on the I2C bus. This allows additional sensors to be connected to the I2C bus.
+* **I2C** - (On Express, Facet, and Facet L-Band) The TX pin operates as SCL, RX pin as SDA on the I2C bus. This allows additional sensors to be connected to the I2C bus.
+* **Wheel/Dir Encoder** - (On Express Plus) Connect the DATA port to the wheel tick inputs on the ZED-F9R. This aids the Sensor Fusion engine for IMU based location fixes when installed in an automobile. Signals must be limited to 3.3V.
 * **GPIO** - The TX pin operates as a DAC-capable GPIO on the ESP32. The RX pin operates as an ADC-capable input on the ESP32. This is useful for custom applications.
-
-![Configuring the External Pulse and External Events](img/SparkFun%20RTK%20Ports%20PPS%20Config.png)
-
-*Configuring the External Pulse and External Events over WiFi*
-
-[![RTK Facet Mux Menu](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu_Mux.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu_Mux.jpg)
-
-*Port menu showing mux data port connections*
 
 ## Data Port
 
@@ -43,13 +36,38 @@ If you must run the data port at lower than 460800bps, and you need to enable a 
 
 Most applications do not need to plug anything into the **Data** port. Most users will get their NMEA position data over Bluetooth. However, this port can be useful for sending position data to an embedded microcontroller or single-board computer. The pinout is 3.3V / TX / RX / GND. **3.3V** is provided by this connector to power a remote device if needed. While the port is capable of sourcing up to 600mA, we do not recommend more than 300mA. This port should not be connected to a power source.
 
-## Surveyor Data Port
+### Wheel Ticks
 
-By default, the Data port is set to 460800bps and can be configured from 4800bps to 921600bps. 
+![Wheel/Direction Encoder drop down](img/SparkFun%20RTK%20Ports%20Menu%20Mux%20Config.png)
 
-Note: The Data port does not output NMEA by default. The unit must be opened and the *Serial NMEA Connection* switch must be moved to 'Ext Connector'. See [Hardware Overview - Advanced Features](https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_surveyor/#advanced-features) for the location of the switch.
+*On the RTK Express Plus only.* This dropdown is made available if users wish to connect wheel ticks and a direction encoder as inputs to the ZED-F9R. This aids the Sensor Fusion engine for IMU based location fixes when installed in an automobile. Signals must be limited to 3.3V.
 
-## External Event Logging
+### Pulse Per Second
+
+![Configuring the External Pulse and External Events](img/SparkFun%20RTK%20Ports%20PPS%20Config.png)
+
+*Configuring the External Pulse and External Events over WiFi*
+
+[![RTK Facet Mux Menu](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu_Mux.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Ports_Menu_Mux.jpg)
+
+*Port menu showing mux data port connections*
+
+When PPS/Event Trigger is selected, the Pulse-Per-Second output from the ZED-F9x is sent out of the TX pin of the DATA port. Once the RTK device has GNSS reception, this can be used as a *very* accurate time base. 
+
+The time between pulses can be configured down to 100ns (10MHz) with an accuracy of 30ns RMS and 60ns 99%. The pulse width and polarity are also configurable.
+
+[![Wires connected to a SparkFun USB C to Serial adapter](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Data_Port_to_USB.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Data_Port_to_USB.jpg)
+
+For PPS, only the Black and Green wires are needed. If you need to provide 3.3V to your system, the red wire can supply up to 600mA but we do not recommend sourcing more than 300mA.
+
+* **Red** - 3.3V
+* **Green** - TX (output from the RTK device)
+* **Orange** - RX (input into the RTK device)
+* **Black** - GND
+
+Similarly, the RX pin of the DATA port can be used for event logging. See [External Event Logging](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_ports/#external-event-logging) for more information.
+
+### External Event Logging
 
 ![Three RTK Express with External Triggers](img/RTK%20Express%20with%20External%20Microphones.png)
 
@@ -95,3 +113,10 @@ Where
 * 74: NMEA CRC
 
 The event timestamps can be analyzed to precisely coordinate or triangulate a past event. In the case of the three RTK Expresses with microphones, the three units' locations were known with RTK 14mm accuracy. The air temperature was taken to obtain the speed of sound. From these data points, we can solve for the location of a sound such as a popped balloon.
+
+## Surveyor Data Port
+
+By default, the Data port is set to 460800bps and can be configured from 4800bps to 921600bps. 
+
+Note: The Data port does not output NMEA by default. The unit must be opened and the *Serial NMEA Connection* switch must be moved to 'Ext Connector'. See [Hardware Overview - Advanced Features](https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_surveyor/#advanced-features) for the location of the switch.
+

@@ -92,6 +92,7 @@ nav:
     - configure_data_logging.md
     - configure_profiles.md
     - configure_pointperfect.md
+    - configure_sensor.md
     - menu_radios.md
     - menu_sensor.md
     - menu_system_status.md

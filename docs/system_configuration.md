@@ -4,28 +4,24 @@ Surveyor: ![Feature Supported](https://raw.githubusercontent.com/sparkfun/SparkF
 
 All device settings are stored both in internal memory and an SD card if one is detected. The device will load the latest settings at each power on. If there is a discrepancy between the internal settings and a settings file then the settings file will be used. This allows a collection of RTK products to be identically configured using one 'golden' settings file loaded onto an SD card.
 
-There are three ways to configure an RTK product:
+There are multiple ways to configure an RTK product:
 
+* [Bluetooth](docs\configure_with_bluetooth.md) - Good for in-field changes.
 * [WiFi](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_wifi/) - Good for in-field changes
 * [Serial Terminal](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_serial/) - Requires a computer but allows for all configuration settings
 * [Settings File](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_settings_file/) - Error-Prone; for very advanced users only.
 
-The serial terminal method is recommended for most advanced configurations. Most, but not all settings are also available over WiFi but can be tricky to input via mobile phone.
+The Bluetooth or Serial Terminal methods are recommended for most advanced configurations. Most, but not all settings are also available over WiFi but can be tricky to input via mobile phone.
 
-Firmware configuration options include:
+Device configuration options include:
 
-* [Base](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_base/)
-* [GNSS Messages](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_messages/)
-* [GNSS Receiver](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_gnss/)
-* [Logging](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_data_logging/)
-* [Point Perfect](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_pointperfect/)
-* [Ports](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_ports/)
-* [Profiles](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_profiles/)
-
-Hardware configuration:
-* [Bluetooth Connection](https://sparkfun.github.io/SparkFun_RTK_Firmware/connecting_bluetooth/)
-* [Embedded System Connection](https://sparkfun.github.io/SparkFun_RTK_Firmware/embeddedsystem_connection/)
-
-Software configuration options include:
-* [GIS Software](https://sparkfun.github.io/SparkFun_RTK_Firmware/gis_software/)
-* [u-center](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_ucenter/)
+* [Base](docs\configure_base.md)
+* [GNSS Messages](docs\configure_messages.md)
+* [GNSS Receiver](docs\configure_gnss.md)
+* [Logging](docs\configure_data_logging.md)
+* [Point Perfect](docs\configure_pointperfect.md)
+* [Ports](docs\configure_ports.md)
+* [Profiles](docs\configure_profiles.md)
+* [Radio](docs\menu_radios.md)
+* [Sensor](docs\menu_sensor.md)
+* [WiFi](docs\menu_wifi.md)

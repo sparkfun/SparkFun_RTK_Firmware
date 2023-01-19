@@ -7,20 +7,38 @@ The device has two primary firmwares:
 * Firmware on the ESP32 microcontroller. Keep reading.
 * Firmware on the u-blox ZED-F9P, ZED-F9P, or NEO-D9S Receiver. [See below](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-u-blox-firmware).
 
-![[Main Menu showing RTK Firmware v1.8-Oct 7 2021](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Serial_Config_-_Main.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Serial_Config_-_Main.jpg)
+The device firmware is displayed in a variety of places:
+* Power On
+* Serial Config Menu
+* WiFi Config
 
-*Main Menu showing RTK Firmware v1.8-Oct 7 2021*
+![RTK Express with firmware v3.0](img/SparkFun%20RTK%20Boot%20Screen%20Version%20Number.png)
 
-You can check your firmware by opening the main menu by pressing a key at any time.
+*RTK Express with firmware v3.0*
 
-From time to time SparkFun will release new firmware for the RTK product line to add and improve functionality. For most users, firmware can be upgraded by loading the appropriate binary file located on the [releases page](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [binaries repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries). Once the firmware is downloaded, loading the firmware onto an RTK product can be achieved by using one of the following methods:
+During power-on, the display will show the current device Firmware.
 
+![Main Menu showing RTK Firmware v3.0-Jan 19 2023](img/SparkFun%20RTK%20Main%20Menu.png)
+
+*Main Menu showing RTK Firmware v3.0-Jan 19 2023*
+
+The firmware is displayed when the main menu is opened over a serial connection.
+
+![WiFi Config page showing device firmware v2.7](img/SparkFun%20RTK%20WiFi%20Config%20Screen%20Version%20Number.png)
+
+*WiFi Config page showing device firmware v2.7 and ZED-F9P firmware HPG 1.32*
+
+The firmware is shown at the top of the WiFi config page.
+
+From time to time SparkFun will release new firmware for the RTK product line to add and improve functionality. For most users, firmware can be upgraded over WiFi using the OTA method.
+
+* [OTA Method](docs\firmware_update\#updating-firmware-over-the-air): Connect over WiFi to SparkFun to download the latest firmware *over-the-air*. This can be done using the serial menu or while in WiFi AP Config Mode. Requires a local WiFi network.
 * [GUI Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui): Use the [Windows, Linux, MacOS or Python GUI](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader) and a USB cable. (The Python package has been tested on Raspberry Pi)
 * [SD Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-the-sd-card): Load the firmware on an SD card, then use a serial terminal with the *Firmware Upgrade* menu
 * [WiFi Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-wifi): Load the firmware over WiFi when the device is in WiFi AP Config Mode
 * [CLI Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli): Use the command line *batch_program.bat*
 
-The GUI method is generally recommended. For more information see [here](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui).
+The OTA method is generally recommended. For more information see [here](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-over-the-air).
 
 Remember, all SparkFun RTK devices are open source hardware meaning you have total access to the [firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and [hardware](https://github.com/sparkfun/SparkFun_RTK_Facet). Be sure to check out each repo for the latest firmware and hardware information.
 
@@ -48,9 +66,10 @@ If you have a device with firmware lower than v3.0, you will need to use the [GU
 
 This GUI makes it easy to point and click your way through a firmware update. There are versions for Windows, Linux, MacOS and a Python package installer.
 
-The GUI can be downloaded from its own [**dedicated repo**](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader).
+The GUI can be downloaded from its own [dedicated repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader).
 
-Download the latest RTK firmware binary file located on the [**releases page**](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [**binaries repo**](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries).
+Download the latest RTK firmware binary file located on the [releases page](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [binaries repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries).
+
 
 **To Use**
 
@@ -90,13 +109,11 @@ In the rare event that a unit is not staying on long enough for new firmware to 
 
 ## Updating Firmware From WiFi
 
-**Note:** Firmware versions 1.1 to 1.9 have an issue that severely limits firmware upload over WiFi and is not recommended; use the 'Updating Firmware From Windows GUI' method instead. Firmware versions v1.10 and beyond support direct firmware updates via WiFi.
+![Advanced system settings](img/SparkFun%20RTK%20System%20Config%20Upload%20BIN.png)
 
-![Advanced system settings](img/SparkFun%20RTK%20System%20and%20Data%20Logging%20Configuration.png)
+**Note:** Firmware versions 1.1 to 1.9 have an issue that severely limits firmware upload over WiFi and is not recommended; use the [GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-the-uploader-gui) method instead. Firmware versions v1.10 and beyond support direct firmware updates via WiFi.
 
-*Advanced system settings*
-
-**Versions 1.10 and Greater:** Firmware may be uploaded to the unit by clicking on 'Choose File', selecting the binary such as 'RTK_Surveyor_Firmware_v1_xx.bin' and pressing upload. The unit will automatically reset once the firmware upload is complete.
+Firmware may be uploaded to the unit by clicking on 'Upload BIN', selecting the binary such as 'RTK_Surveyor_Firmware_v3_x.bin' and pressing upload. The unit will automatically reset once the firmware upload is complete.
 
 ## Updating Firmware From CLI
 
@@ -148,17 +165,17 @@ Upon completion, your RTK device will reset and power down.
 
 RTK Surveyors sold before September 2021 may have an ESP32 WROOM module with 4MB flash instead of 16MB flash. These units still support all the functionality of other RTK products with the following limitations:
 
-* There is not enough flash space for OTA. Upgrading the firmware must be done via [CLI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli) or [GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui). WiFi or SD update paths are not possible.
+* There is not enough flash space for OTA. Upgrading the firmware must be done via [CLI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli) or [GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui). OTA, WiFi, or SD update paths are not possible.
 
 The GUI (as of v1.3) will autodetect the ESP32's flash size and load the appropriate partition file. No user interaction is required.
 
-If you are using the CLI method, be sure to point at the [4MB partition file](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/blob/main/bin/RTK_Surveyor_Partitions_4MB.bin?raw=true). For example:
+If you are using the CLI method, be sure to point to the [4MB partition file](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries/blob/main/bin/RTK_Surveyor_Partitions_4MB.bin?raw=true). For example:
 
 ```
 esptool.exe --chip esp32 --port COM6 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x1000 ./bin/RTK_Surveyor.ino.bootloader.bin 0x8000 ./bin/**RTK_Surveyor_Partitions_4MB**.bin 0xe000 ./bin/boot_app0.bin 0x10000 ./RTK_Surveyor_Firmware_vxx.bin
 ```
 
-### Determining Size of Flash
+### Determining The Size of Flash
 
 To determine if the device has a 4MB module:
 

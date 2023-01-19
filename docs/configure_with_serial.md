@@ -2,6 +2,8 @@
 
 Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
 
+**Note:** Starting with v3.0 of the firmware any serial menu that is shown can also be accessed over Bluetooth. This makes any configuration of a device much easier in the field. Please see [Configure With Bluetooth](docs\configure_with_bluetooth.md) for more information.
+
 To configure an RTK device using serial attach a [USB C cable](https://www.sparkfun.com/products/15425) to the device. The device can be on or off.
 
 ## RTK Surveyor / Express / Express+
@@ -46,15 +48,13 @@ Note that some Windows terminal programs (e.g. Tera Term) may reboot the Facet w
 
 Pressing any button will display the Main menu. The Main menu will display the current firmware version and the Bluetooth broadcast name. Note: When powered on, the RTK device will broadcast itself as either *[Platform] Rover-XXXX* or *[Platform] Base-XXXX* depending on which state it is in. The Platform is 'Facet', 'Express', 'Surveyor', etc.
 
-1. Configure GNSS Receiver
-2. Configure GNSS [Messages](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_messages/)
-3. Configure [Base](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_base/)
-4. Configure [Ports](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_ports/)
-5. Configure [Logging](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_data_logging/)
+Pressing '1' or 's' for example, will open those submenus.
 
-&nbsp;&nbsp;&nbsp;p. Configure [Profiles](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_profiles/)
-&nbsp;&nbsp;&nbsp;s. [System Status](https://sparkfun.github.io/SparkFun_RTK_Firmware/menu_system_status/)
-&nbsp;&nbsp;&nbsp;f. Firmware upgrade
-&nbsp;&nbsp;&nbsp;x. Exit
+The menus will timeout after 10 minutes of inactivity, so if you do not press a key the device will exit the menu and return to reporting status messages.
 
-The menus will timeout after 15 seconds of inactivity, so if you do not press a key the device will exit the menu and return to reporting status messages after 15 seconds.
+![Configuration menu open over Bluetooth](img/Bluetooth/SparkFun%20RTK%20BEM%20-%20Exit%20BEM.png)
+
+*Configuration menu via Bluetooth*
+
+**Note:** Starting with firmware v3.0, Bluetooth-based configuration is supported. Please see [Configure With Bluetooth](docs\configure_with_bluetooth.md) for more information.
+

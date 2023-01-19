@@ -12,6 +12,8 @@ Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported]
 
 Beginning in firmware version 3.0, the WiFi menu allows a user to input credentials of up to four WiFi networks. WiFi is used for a variety of features on the RTK device. When WiFi is needed, the RTK device will attempt to connect to any network on the list of WiFi networks. For example, if you enter your home WiFi, work WiFi, and the WiFi for a mobile hotspot, the RTK device will automatically detect and connect to the network with the strongest signal.
 
+Additionally, the device will continue to try to connect to WiFi if a connection is not made. The connection timeout starts at 15 seconds and increases by 15 seconds with each failed attempt. For example, 15, 30, 45, etc seconds are delayed between each new WiFi connection attempt. Once a successful connection is made, the timeout is reset.
+
 WiFi is used for the following features:
 
 * NTRIP Client or Server

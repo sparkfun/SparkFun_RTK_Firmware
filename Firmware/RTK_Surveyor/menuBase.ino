@@ -4,92 +4,86 @@ void menuBase()
 {
   while (1)
   {
-    Serial.println();
-    Serial.println("Menu: Base");
+    systemPrintln();
+    systemPrintln("Menu: Base");
 
-    Serial.print("1) Toggle Base Mode: ");
-    if (settings.fixedBase == true) Serial.println("Fixed/Static Position");
-    else Serial.println("Use Survey-In");
+    systemPrint("1) Toggle Base Mode: ");
+    if (settings.fixedBase == true) systemPrintln("Fixed/Static Position");
+    else systemPrintln("Use Survey-In");
 
     if (settings.fixedBase == true)
     {
-      Serial.print("2) Toggle Coordinate System: ");
-      if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF) Serial.println("ECEF");
-      else Serial.println("Geodetic");
+      systemPrint("2) Toggle Coordinate System: ");
+      if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF) systemPrintln("ECEF");
+      else systemPrintln("Geodetic");
 
       if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
       {
-        Serial.print("3) Set ECEF X/Y/Z coordinates: ");
-        Serial.print(settings.fixedEcefX, 4);
-        Serial.print("m, ");
-        Serial.print(settings.fixedEcefY, 4);
-        Serial.print("m, ");
-        Serial.print(settings.fixedEcefZ, 4);
-        Serial.println("m");
+        systemPrint("3) Set ECEF X/Y/Z coordinates: ");
+        systemPrint(settings.fixedEcefX, 4);
+        systemPrint("m, ");
+        systemPrint(settings.fixedEcefY, 4);
+        systemPrint("m, ");
+        systemPrint(settings.fixedEcefZ, 4);
+        systemPrintln("m");
       }
       else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
       {
-        Serial.print("3) Set Lat/Long/Altitude coordinates: ");
-        Serial.print(settings.fixedLat, haeNumberOfDecimals);
-        Serial.write(167); //°
-        Serial.print(", ");
-        Serial.print(settings.fixedLong, haeNumberOfDecimals);
-        Serial.write(167); //°
-        Serial.print(", ");
-        Serial.print(settings.fixedAltitude, 4);
-        Serial.println("m");
+        systemPrint("3) Set Lat/Long/Altitude coordinates: ");
+        systemPrint(settings.fixedLat, haeNumberOfDecimals);
+        systemWrite(167); //°
+        systemPrint(", ");
+        systemPrint(settings.fixedLong, haeNumberOfDecimals);
+        systemWrite(167); //°
+        systemPrint(", ");
+        systemPrint(settings.fixedAltitude, 4);
+        systemPrintln("m");
 
-        Serial.printf("4) Set Antenna Height: %dmm\r\n", settings.antennaHeight);
+        systemPrintf("4) Set Antenna Height: %dmm\r\n", settings.antennaHeight);
 
-        Serial.printf("5) Set Antenna Reference Point: %0.1fmm\r\n", settings.antennaReferencePoint);
+        systemPrintf("5) Set Antenna Reference Point: %0.1fmm\r\n", settings.antennaReferencePoint);
       }
     }
     else
     {
-      Serial.print("2) Set minimum observation time: ");
-      Serial.print(settings.observationSeconds);
-      Serial.println(" seconds");
+      systemPrint("2) Set minimum observation time: ");
+      systemPrint(settings.observationSeconds);
+      systemPrintln(" seconds");
 
-      Serial.print("3) Set required Mean 3D Standard Deviation: ");
-      Serial.print(settings.observationPositionAccuracy, 3);
-      Serial.println(" meters");
+      systemPrint("3) Set required Mean 3D Standard Deviation: ");
+      systemPrint(settings.observationPositionAccuracy, 3);
+      systemPrintln(" meters");
 
-      Serial.print("4) Set required initial positional accuracy before Survey-In: ");
-      Serial.print(settings.surveyInStartingAccuracy, 3);
-      Serial.println(" meters");
+      systemPrint("4) Set required initial positional accuracy before Survey-In: ");
+      systemPrint(settings.surveyInStartingAccuracy, 3);
+      systemPrintln(" meters");
     }
 
-    Serial.print("6) Toggle NTRIP Server: ");
-    if (settings.enableNtripServer == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
+    systemPrint("6) Toggle NTRIP Server: ");
+    if (settings.enableNtripServer == true) systemPrintln("Enabled");
+    else systemPrintln("Disabled");
 
     if (settings.enableNtripServer == true)
     {
-      Serial.print("7) Set WiFi SSID: ");
-      Serial.println(settings.ntripServer_wifiSSID);
+      systemPrint("7) Set Caster Address: ");
+      systemPrintln(settings.ntripServer_CasterHost);
 
-      Serial.print("8) Set WiFi PW: ");
-      Serial.println(settings.ntripServer_wifiPW);
+      systemPrint("8) Set Caster Port: ");
+      systemPrintln(settings.ntripServer_CasterPort);
 
-      Serial.print("9) Set Caster Address: ");
-      Serial.println(settings.ntripServer_CasterHost);
+      systemPrint("9) Set Mountpoint: ");
+      systemPrintln(settings.ntripServer_MountPoint);
 
-      Serial.print("10) Set Caster Port: ");
-      Serial.println(settings.ntripServer_CasterPort);
-
-      Serial.print("11) Set Mountpoint: ");
-      Serial.println(settings.ntripServer_MountPoint);
-
-      Serial.print("12) Set Mountpoint PW: ");
-      Serial.println(settings.ntripServer_MountPointPW);
+      systemPrint("10) Set Mountpoint PW: ");
+      systemPrintln(settings.ntripServer_MountPointPW);
     }
 
     if (!settings.fixedBase) {
-      Serial.print("13) Select survey-in radio: ");
-      Serial.printf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
+      systemPrint("11) Select survey-in radio: ");
+      systemPrintf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
     }
 
-    Serial.println("x) Exit");
+    systemPrintln("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
@@ -108,9 +102,9 @@ void menuBase()
     {
       if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
       {
-        Serial.println("Enter the fixed ECEF coordinates that will be used in Base mode:");
+        systemPrintln("Enter the fixed ECEF coordinates that will be used in Base mode:");
 
-        Serial.print("ECEF X in meters (ex: -1280182.9200): ");
+        systemPrint("ECEF X in meters (ex: -1280182.9200): ");
         double fixedEcefX = getDouble();
 
         //Progress with additional prompts only if the user enters valid data
@@ -118,13 +112,13 @@ void menuBase()
         {
           settings.fixedEcefX = fixedEcefX;
 
-          Serial.print("\nECEF Y in meters (ex: -4716808.5807): ");
+          systemPrint("\nECEF Y in meters (ex: -4716808.5807): ");
           double fixedEcefY = getDouble();
           if (fixedEcefY != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedEcefY != INPUT_RESPONSE_GETNUMBER_EXIT)
           {
             settings.fixedEcefY = fixedEcefY;
 
-            Serial.print("\nECEF Z in meters (ex: 4086669.6393): ");
+            systemPrint("\nECEF Z in meters (ex: 4086669.6393): ");
             double fixedEcefZ = getDouble();
             if (fixedEcefZ != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedEcefZ != INPUT_RESPONSE_GETNUMBER_EXIT)
               settings.fixedEcefZ = fixedEcefZ;
@@ -133,9 +127,9 @@ void menuBase()
       }
       else  if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
       {
-        Serial.println("Enter the fixed Lat/Long/Altitude coordinates that will be used in Base mode:");
+        systemPrintln("Enter the fixed Lat/Long/Altitude coordinates that will be used in Base mode:");
 
-        Serial.print("Lat in degrees (ex: 40.090335429): ");
+        systemPrint("Lat in degrees (ex: 40.090335429): ");
         double fixedLat = getDouble();
 
         //Progress with additional prompts only if the user enters valid data
@@ -143,13 +137,13 @@ void menuBase()
         {
           settings.fixedLat = fixedLat;
 
-          Serial.print("\nLong in degrees (ex: -105.184774720): ");
+          systemPrint("\nLong in degrees (ex: -105.184774720): ");
           double fixedLong = getDouble();
           if (fixedLong != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedLong != INPUT_RESPONSE_GETNUMBER_EXIT)
           {
             settings.fixedLong = fixedLong;
 
-            Serial.print("\nAltitude in meters (ex: 1560.2284): ");
+            systemPrint("\nAltitude in meters (ex: 1560.2284): ");
             double fixedAltitude = getDouble();
             if (fixedAltitude != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedAltitude != INPUT_RESPONSE_GETNUMBER_EXIT)
               settings.fixedAltitude = fixedAltitude;
@@ -159,57 +153,57 @@ void menuBase()
     }
     else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 4)
     {
-      Serial.print("Enter the antenna height (a.k.a. pole length) in millimeters (-15000 to 15000mm): ");
+      systemPrint("Enter the antenna height (a.k.a. pole length) in millimeters (-15000 to 15000mm): ");
       int antennaHeight = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((antennaHeight != INPUT_RESPONSE_GETNUMBER_EXIT) && (antennaHeight != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
         if (antennaHeight < -15000 || antennaHeight > 15000) //Arbitrary 15m max
-          Serial.println("Error: Antenna Height out of range");
+          systemPrintln("Error: Antenna Height out of range");
         else
           settings.antennaHeight = antennaHeight; //Recorded to NVM and file at main menu exit
       }
     }
     else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 5)
     {
-      Serial.print("Enter the antenna reference point (a.k.a. ARP) in millimeters (-200.0 to 200.0mm): ");
+      systemPrint("Enter the antenna reference point (a.k.a. ARP) in millimeters (-200.0 to 200.0mm): ");
       float antennaReferencePoint = getDouble();
       if (antennaReferencePoint < -200.0 || antennaReferencePoint > 200.0) //Arbitrary 200mm max
-        Serial.println("Error: Antenna Reference Point out of range");
+        systemPrintln("Error: Antenna Reference Point out of range");
       else
         settings.antennaReferencePoint = antennaReferencePoint; //Recorded to NVM and file at main menu exit
     }
 
     else if (settings.fixedBase == false && incoming == 2)
     {
-      Serial.print("Enter the number of seconds for survey-in obseration time (60 to 600s): ");
+      systemPrint("Enter the number of seconds for survey-in obseration time (60 to 600s): ");
       int observationSeconds = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((observationSeconds != INPUT_RESPONSE_GETNUMBER_EXIT) && (observationSeconds != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
         if (observationSeconds < 60 || observationSeconds > 60 * 10) //Arbitrary 10 minute limit
-          Serial.println("Error: Observation seconds out of range");
+          systemPrintln("Error: Observation seconds out of range");
         else
           settings.observationSeconds = observationSeconds; //Recorded to NVM and file at main menu exit
       }
     }
     else if (settings.fixedBase == false && incoming == 3)
     {
-      Serial.print("Enter the number of meters for survey-in required position accuracy (1.0 to 5.0m): ");
+      systemPrint("Enter the number of meters for survey-in required position accuracy (1.0 to 5.0m): ");
       float observationPositionAccuracy = getDouble();
 #ifdef ENABLE_DEVELOPER
       if (observationPositionAccuracy < 1.0 || observationPositionAccuracy > 10.0) //Arbitrary 1m minimum
 #else
       if (observationPositionAccuracy < 1.0 || observationPositionAccuracy > 5.0) //Arbitrary 1m minimum
 #endif
-        Serial.println("Error: Observation positional accuracy requirement out of range");
+        systemPrintln("Error: Observation positional accuracy requirement out of range");
       else
         settings.observationPositionAccuracy = observationPositionAccuracy; //Recorded to NVM and file at main menu exit
     }
     else if (settings.fixedBase == false && incoming == 4)
     {
-      Serial.print("Enter the positional accuracy required before Survey-In begins (0.1 to 5.0m): ");
+      systemPrint("Enter the positional accuracy required before Survey-In begins (0.1 to 5.0m): ");
       float surveyInStartingAccuracy = getDouble();
       if (surveyInStartingAccuracy < 0.1 || surveyInStartingAccuracy > 5.0) //Arbitrary 0.1m minimum
-        Serial.println("Error: Starting accuracy out of range");
+        systemPrintln("Error: Starting accuracy out of range");
       else
         settings.surveyInStartingAccuracy = surveyInStartingAccuracy; //Recorded to NVM and file at main menu exit
     }
@@ -221,49 +215,37 @@ void menuBase()
     }
     else if (incoming == 7 && settings.enableNtripServer == true)
     {
-      Serial.print("Enter local WiFi SSID: ");
-      getString(settings.ntripServer_wifiSSID, sizeof(settings.ntripServer_wifiSSID));
+      systemPrint("Enter new Caster Address: ");
+      getString(settings.ntripServer_CasterHost, sizeof(settings.ntripServer_CasterHost));
       restartBase = true;
     }
     else if (incoming == 8 && settings.enableNtripServer == true)
     {
-      Serial.printf("Enter password for WiFi network %s: ", settings.ntripServer_wifiSSID);
-      getString(settings.ntripServer_wifiPW, sizeof(settings.ntripServer_wifiPW));
-      restartBase = true;
-    }
-    else if (incoming == 9 && settings.enableNtripServer == true)
-    {
-      Serial.print("Enter new Caster Address: ");
-      getString(settings.ntripServer_CasterHost, sizeof(settings.ntripServer_CasterHost));
-      restartBase = true;
-    }
-    else if (incoming == 10 && settings.enableNtripServer == true)
-    {
-      Serial.print("Enter new Caster Port: ");
+      systemPrint("Enter new Caster Port: ");
 
       int ntripServer_CasterPort = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((ntripServer_CasterPort != INPUT_RESPONSE_GETNUMBER_EXIT) && (ntripServer_CasterPort != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
         if (ntripServer_CasterPort < 1 || ntripServer_CasterPort > 99999) //Arbitrary 99k max port #
-          Serial.println("Error: Caster port out of range");
+          systemPrintln("Error: Caster port out of range");
         else
           settings.ntripServer_CasterPort = ntripServer_CasterPort; //Recorded to NVM and file at main menu exit
         restartBase = true;
       }
     }
-    else if (incoming == 11 && settings.enableNtripServer == true)
+    else if (incoming == 9 && settings.enableNtripServer == true)
     {
-      Serial.print("Enter new Mount Point: ");
+      systemPrint("Enter new Mount Point: ");
       getString(settings.ntripServer_MountPoint, sizeof(settings.ntripServer_MountPoint));
       restartBase = true;
     }
-    else if (incoming == 12 && settings.enableNtripServer == true)
+    else if (incoming == 10 && settings.enableNtripServer == true)
     {
-      Serial.printf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
+      systemPrintf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
       getString(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW));
       restartBase = true;
     }
-    else if ((!settings.fixedBase) && (incoming == 13))
+    else if ((!settings.fixedBase) && (incoming == 11))
     {
       settings.ntripServer_StartAtSurveyIn ^= 1;
       restartBase = true;
@@ -284,33 +266,33 @@ void menuSensorFusion()
 {
   while (1)
   {
-    Serial.println();
-    Serial.println("Menu: Sensor Fusion");
+    systemPrintln();
+    systemPrintln("Menu: Sensor Fusion");
 
-    Serial.print("Fusion Mode: ");
-    Serial.print(i2cGNSS.packetUBXESFSTATUS->data.fusionMode);
-    Serial.print(" - ");
+    systemPrint("Fusion Mode: ");
+    systemPrint(i2cGNSS.packetUBXESFSTATUS->data.fusionMode);
+    systemPrint(" - ");
     if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
-      Serial.println("Initializing");
+      systemPrintln("Initializing");
     else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1)
-      Serial.println("Calibrated");
+      systemPrintln("Calibrated");
     else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2)
-      Serial.println("Suspended");
+      systemPrintln("Suspended");
     else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
-      Serial.println("Disabled");
+      systemPrintln("Disabled");
 
     if (settings.enableSensorFusion == true && settings.dynamicModel != DYN_MODEL_AUTOMOTIVE)
-      Serial.println("Warning: Dynamic Model not set to Automotive. Sensor Fusion is best used with the Automotive Dynamic Model.");
+      systemPrintln("Warning: Dynamic Model not set to Automotive. Sensor Fusion is best used with the Automotive Dynamic Model.");
 
-    Serial.print("1) Toggle Sensor Fusion: ");
-    if (settings.enableSensorFusion == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
+    systemPrint("1) Toggle Sensor Fusion: ");
+    if (settings.enableSensorFusion == true) systemPrintln("Enabled");
+    else systemPrintln("Disabled");
 
-    Serial.print("2) Toggle Automatic IMU-mount Alignment: ");
-    if (settings.autoIMUmountAlignment == true) Serial.println("Enabled");
-    else Serial.println("Disabled");
+    systemPrint("2) Toggle Automatic IMU-mount Alignment: ");
+    if (settings.autoIMUmountAlignment == true) systemPrintln("Enabled");
+    else systemPrintln("Disabled");
 
-    Serial.println("x) Exit");
+    systemPrintln("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
@@ -440,7 +422,7 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
         int n = file.fgets(lineData, lineDataLength); //Use with SdFat library
         if (n <= 0)
         {
-          Serial.printf("Failed to read line %d from settings file\r\n", lineNumber);
+          systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
           break;
         }
         else
@@ -461,7 +443,7 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
     } //End Semaphore check
     else
     {
-      Serial.printf("sdCardSemaphore failed to yield, menuBase.ino line %d\r\n", __LINE__);
+      systemPrintf("sdCardSemaphore failed to yield, menuBase.ino line %d\r\n", __LINE__);
     }
     break;
   } //End SD online
@@ -517,7 +499,7 @@ bool removeFileSD(const char* fileName)
     } //End Semaphore check
     else
     {
-      Serial.printf("sdCardSemaphore failed to yield, menuBase.ino line %d\r\n", __LINE__);
+      systemPrintf("sdCardSemaphore failed to yield, menuBase.ino line %d\r\n", __LINE__);
     }
     break;
   } //End SD online
@@ -588,7 +570,7 @@ void recordLineToSD(const char* fileName, const char* lineData)
     } //End Semaphore check
     else
     {
-      Serial.printf("sdCardSemaphore failed to yield, menuBase.ino line %d\r\n", __LINE__);
+      systemPrintf("sdCardSemaphore failed to yield, menuBase.ino line %d\r\n", __LINE__);
     }
     break;
   } //End SD online
@@ -606,7 +588,7 @@ void recordLineToLFS(const char* fileName, const char* lineData)
   File file = LittleFS.open(fileName, FILE_APPEND);
   if (!file)
   {
-    Serial.printf("File %s failed to create\n\r", fileName);
+    systemPrintf("File %s failed to create\n\r", fileName);
     return;
   }
 

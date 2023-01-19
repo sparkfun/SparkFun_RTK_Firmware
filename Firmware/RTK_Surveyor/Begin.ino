@@ -140,7 +140,7 @@ void beginBoard()
     }
   }
 
-  Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+  systemPrintf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
   //Get unit MAC address
   esp_read_mac(wifiMACAddress, ESP_MAC_WIFI_STA);
@@ -167,24 +167,24 @@ void beginBoard()
     if (settings.enableResetDisplay == true)
     {
       settings.resetCount++;
-      Serial.printf("resetCount: %d\r\n", settings.resetCount);
+      systemPrintf("resetCount: %d\r\n", settings.resetCount);
       recordSystemSettingsToFileLFS(settingsFileName); //Avoid overwriting LittleFS settings onto SD
     }
 
-    Serial.print("Reset reason: ");
+    systemPrint("Reset reason: ");
     switch (esp_reset_reason())
     {
-      case ESP_RST_UNKNOWN: Serial.println("ESP_RST_UNKNOWN"); break;
-      case ESP_RST_POWERON : Serial.println("ESP_RST_POWERON"); break;
-      case ESP_RST_SW : Serial.println("ESP_RST_SW"); break;
-      case ESP_RST_PANIC : Serial.println("ESP_RST_PANIC"); break;
-      case ESP_RST_INT_WDT : Serial.println("ESP_RST_INT_WDT"); break;
-      case ESP_RST_TASK_WDT : Serial.println("ESP_RST_TASK_WDT"); break;
-      case ESP_RST_WDT : Serial.println("ESP_RST_WDT"); break;
-      case ESP_RST_DEEPSLEEP : Serial.println("ESP_RST_DEEPSLEEP"); break;
-      case ESP_RST_BROWNOUT : Serial.println("ESP_RST_BROWNOUT"); break;
-      case ESP_RST_SDIO : Serial.println("ESP_RST_SDIO"); break;
-      default : Serial.println("Unknown");
+      case ESP_RST_UNKNOWN: systemPrintln("ESP_RST_UNKNOWN"); break;
+      case ESP_RST_POWERON : systemPrintln("ESP_RST_POWERON"); break;
+      case ESP_RST_SW : systemPrintln("ESP_RST_SW"); break;
+      case ESP_RST_PANIC : systemPrintln("ESP_RST_PANIC"); break;
+      case ESP_RST_INT_WDT : systemPrintln("ESP_RST_INT_WDT"); break;
+      case ESP_RST_TASK_WDT : systemPrintln("ESP_RST_TASK_WDT"); break;
+      case ESP_RST_WDT : systemPrintln("ESP_RST_WDT"); break;
+      case ESP_RST_DEEPSLEEP : systemPrintln("ESP_RST_DEEPSLEEP"); break;
+      case ESP_RST_BROWNOUT : systemPrintln("ESP_RST_BROWNOUT"); break;
+      case ESP_RST_SDIO : systemPrintln("ESP_RST_SDIO"); break;
+      default : systemPrintln("Unknown");
     }
   }
 }
@@ -212,16 +212,7 @@ void beginSD()
     pinMode(pin_microSD_CS, OUTPUT);
     digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
 
-    //Allocate the data structure that manages the microSD card
-    if (!sd)
-    {
-      sd = new SdFat();
-      if (!sd)
-      {
-        log_d("Failed to allocate the SdFat structure!");
-        break;
-      }
-    }
+    resetSPI(); //Re-initialize the SPI/SD interface
 
     //Do a quick test to see if a card is present
     int tries = 0;
@@ -236,16 +227,29 @@ void beginSD()
       delay(10);
       tries++;
     }
-    if (tries == maxTries) break;
+    if (tries == maxTries) break; //Give up loop
 
     //If an SD card is present, allow SdFat to take over
     log_d("SD card detected");
 
+    //Allocate the data structure that manages the microSD card
+    if (!sd)
+    {
+      sd = new SdFat();
+      if (!sd)
+      {
+        log_d("Failed to allocate the SdFat structure!");
+        break;
+      }
+    }
+
     if (settings.spiFrequency > 16)
     {
-      Serial.println("Error: SPI Frequency out of range. Default to 16MHz");
+      systemPrintln("Error: SPI Frequency out of range. Default to 16MHz");
       settings.spiFrequency = 16;
     }
+
+    resetSPI(); //Re-initialize the SPI/SD interface
 
     if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
     {
@@ -261,8 +265,15 @@ void beginSD()
 
       if (tries == maxTries)
       {
-        Serial.println("SD init failed. Is card present? Formatted?");
+        systemPrintln("SD init failed. Is card formatted?");
         digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+
+        //Check reset count and prevent rolling reboot
+        if (settings.resetCount < 5)
+        {
+          if (settings.forceResetOnSDFail == true)
+            ESP.restart();
+        }
         break;
       }
     }
@@ -270,13 +281,13 @@ void beginSD()
     //Change to root directory. All new file creation will be in root.
     if (sd->chdir() == false)
     {
-      Serial.println("SD change directory failed");
+      systemPrintln("SD change directory failed");
       break;
     }
 
     if (createTestFile() == false)
     {
-      Serial.println("Failed to create test file. Format SD card with 'SD Card Formatter'.");
+      systemPrintln("Failed to create test file. Format SD card with 'SD Card Formatter'.");
       displaySDFail(5000);
       break;
     }
@@ -284,7 +295,11 @@ void beginSD()
     //Load firmware file from the microSD card if it is present
     scanForFirmware();
 
-    Serial.println("microSD: Online");
+    //Mark card not yet usable for logging
+    sdCardSize = 0;
+    outOfSDSpace = true;
+
+    systemPrintln("microSD: Online");
     online.microSD = true;
     break;
   }
@@ -304,7 +319,7 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   {
     sd->end();
     online.microSD = false;
-    Serial.println("microSD: Offline");
+    systemPrintln("microSD: Offline");
   }
 
   //Free the caches for the microSD card
@@ -319,13 +334,41 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
     xSemaphoreGive(sdCardSemaphore);
 }
 
+//Attempt to de-init the SD card
+//https://github.com/greiman/SdFat/issues/351
+void resetSPI()
+{
+  pinMode(pin_microSD_CS, OUTPUT);
+  digitalWrite(pin_microSD_CS, HIGH); //De-select SD card
+
+  //Flush SPI interface
+  SPI.begin();
+  SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
+  for (int x = 0 ; x < 10 ; x++)
+    SPI.transfer(0XFF);
+  SPI.endTransaction();
+  SPI.end();
+
+  digitalWrite(pin_microSD_CS, LOW); //Select SD card
+
+  //Flush SD interface
+  SPI.begin();
+  SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
+  for (int x = 0 ; x < 10 ; x++)
+    SPI.transfer(0XFF);
+  SPI.endTransaction();
+  SPI.end();
+
+  digitalWrite(pin_microSD_CS, HIGH); //Deselet SD card
+}
+
 //We want the UART2 interrupts to be pinned to core 0 to avoid competing with I2C interrupts
 //We do not start the UART2 for GNSS->BT reception here because the interrupts would be pinned to core 1
 //We instead start a task that runs on core 0, that then begins serial
 //See issue: https://github.com/espressif/arduino-esp32/issues/3386
 void beginUART2()
 {
-  rBuffer = (uint8_t*)malloc(settings.gnssHandlerBufferSize);
+  ringBuffer = (uint8_t*)malloc(settings.gnssHandlerBufferSize);
 
   if (pinUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
       pinUART2Task,
@@ -363,11 +406,11 @@ void beginFS()
   {
     if (LittleFS.begin(true) == false) //Format LittleFS if begin fails
     {
-      Serial.println("Error: LittleFS not online");
+      systemPrintln("Error: LittleFS not online");
     }
     else
     {
-      Serial.println("LittleFS Started");
+      systemPrintln("LittleFS Started");
       online.fs = true;
     }
   }
@@ -384,6 +427,7 @@ void beginGNSS()
     delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
     if (i2cGNSS.begin() == false)
     {
+      log_d("GNSS offline");
       displayGNSSFail(1000);
       return;
     }
@@ -420,7 +464,7 @@ void beginGNSS()
       zedFirmwareVersionInt = 132;
     else
     {
-      Serial.printf("Unknown firmware version: %s\r\n", zedFirmwareVersion);
+      systemPrintf("Unknown firmware version: %s\r\n", zedFirmwareVersion);
       zedFirmwareVersionInt = 99; //0.99 invalid firmware version
     }
 
@@ -431,7 +475,7 @@ void beginGNSS()
       zedModuleType = PLATFORM_F9R;
     else
     {
-      Serial.printf("Unknown ZED module: %s\r\n", i2cGNSS.minfo.extension[3]);
+      systemPrintf("Unknown ZED module: %s\r\n", i2cGNSS.minfo.extension[3]);
       zedModuleType = PLATFORM_F9P;
     }
 
@@ -462,20 +506,20 @@ void configureGNSS()
   if (response == false)
   {
     //Try once more
-    Serial.println("Failed to configure GNSS module. Trying again.");
+    systemPrintln("Failed to configure GNSS module. Trying again.");
     delay(1000);
     response = configureUbloxModule();
 
     if (response == false)
     {
-      Serial.println("Failed to configure GNSS module.");
+      systemPrintln("Failed to configure GNSS module.");
       displayGNSSFail(1000);
       online.gnss = false;
       return;
     }
   }
 
-  Serial.println("GNSS configuration complete");
+  systemPrintln("GNSS configuration complete");
 }
 
 //Set LEDs for output and configure PWM
@@ -516,7 +560,7 @@ void beginFuelGauge()
   // Set up the MAX17048 LiPo fuel gauge
   if (lipo.begin() == false)
   {
-    Serial.println("Fuel gauge not detected.");
+    systemPrintln("Fuel gauge not detected.");
     return;
   }
 
@@ -526,14 +570,14 @@ void beginFuelGauge()
   if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
   if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
 
-  Serial.println("MAX17048 configuration complete");
+  systemPrintln("MAX17048 configuration complete");
 
   checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
   //Check to see if we are dangerously low
   if (battLevel < 5 && battChangeRate < 0.5) //5% and not charging
   {
-    Serial.println("Battery too low. Please charge. Shutting down...");
+    systemPrintln("Battery too low. Please charge. Shutting down...");
 
     if (online.display == true)
       displayMessage("Charge Battery", 0);
@@ -561,7 +605,7 @@ void beginAccelerometer()
   //accel.setDataRate(LIS2DH12_ODR_100Hz); //6 measurements a second
   accel.setDataRate(LIS2DH12_ODR_400Hz); //25 measurements a second
 
-  Serial.println("Accelerometer configuration complete");
+  systemPrintln("Accelerometer configuration complete");
 
   online.accelerometer = true;
 }
@@ -592,7 +636,7 @@ void beginSystemState()
 
     if (systemState > STATE_SHUTDOWN)
     {
-      Serial.println("Unknown state - factory reset");
+      systemPrintln("Unknown state - factory reset");
       factoryReset();
     }
 
@@ -608,7 +652,7 @@ void beginSystemState()
 
     if (systemState > STATE_SHUTDOWN)
     {
-      Serial.println("Unknown state - factory reset");
+      systemPrintln("Unknown state - factory reset");
       factoryReset();
     }
 
@@ -663,7 +707,7 @@ bool beginExternalTriggers()
   response &= i2cGNSS.sendCfgValset32(UBLOX_CFG_TP_LEN_LOCK_TP1, settings.externalPulseLength_us); //Set the pulse length in us
 
   if (response == false)
-    Serial.println("beginExternalTriggers config failed");
+    systemPrintln("beginExternalTriggers config failed");
 
   if (settings.enableExternalHardwareEventLogging == true)
     i2cGNSS.setAutoTIMTM2callback(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
@@ -712,13 +756,12 @@ void beginI2C()
   if (endValue == 2)
     online.i2c = true;
   else
-    Serial.println("Error: I2C Bus Not Responding");
+    systemPrintln("Error: I2C Bus Not Responding");
 }
 
 //Depending on radio selection, begin hardware
 void radioStart()
 {
-#ifdef COMPILE_ESPNOW
   if (settings.radioType == RADIO_EXTERNAL)
   {
     espnowStop();
@@ -726,8 +769,34 @@ void radioStart()
     //Nothing to start. UART2 of ZED is connected to external Radio port and is configured at configureUbloxModule()
   }
   else if (settings.radioType == RADIO_ESPNOW)
-  {
     espnowStart();
+}
+
+//Start task to determine SD card size
+void beginSDSizeCheckTask()
+{
+  if (sdSizeCheckTaskHandle == NULL)
+  {
+    xTaskCreate(
+      sdSizeCheckTask, //Function to call
+      "SDSizeCheck", //Just for humans
+      sdSizeCheckStackSize, //Stack Size
+      NULL, //Task input parameter
+      sdSizeCheckTaskPriority, //Priority
+      &sdSizeCheckTaskHandle); //Task handle
+
+    log_d("sdSizeCheck Task started");
   }
-#endif
+}
+
+void deleteSDSizeCheckTask()
+{
+  //Delete task once it's complete
+  if (sdSizeCheckTaskHandle != NULL)
+  {
+    vTaskDelete(sdSizeCheckTaskHandle);
+    sdSizeCheckTaskHandle = NULL;
+    sdSizeCheckTaskComplete = false;
+    log_d("sdSizeCheck Task deleted");
+  }
 }

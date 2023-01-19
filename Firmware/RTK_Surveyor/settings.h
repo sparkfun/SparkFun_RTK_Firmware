@@ -97,6 +97,7 @@ typedef enum
   CUSTOM_NMEA_TYPE_STATUS,
   CUSTOM_NMEA_TYPE_LOGTEST_STATUS,
   CUSTOM_NMEA_TYPE_DEVICE_BT_ID,
+  CUSTOM_NMEA_TYPE_PARSER_STATS,
 } customNmeaType_e;
 
 //Freeze and blink LEDs if we hit a bad error
@@ -112,8 +113,8 @@ typedef enum
 enum WiFiState
 {
   WIFI_OFF = 0,
-  WIFI_ON,
-  WIFI_NOTCONNECTED,
+  WIFI_START,
+  WIFI_CONNECTING,
   WIFI_CONNECTED,
 };
 volatile byte wifiState = WIFI_OFF;
@@ -131,8 +132,8 @@ volatile ESPNOWState espnowState = ESPNOW_OFF;
 enum NTRIPClientState
 {
   NTRIP_CLIENT_OFF = 0,         //Using Bluetooth or NTRIP server
-  NTRIP_CLIENT_ON,              //WIFI_ON state
-  NTRIP_CLIENT_WIFI_CONNECTING, //Connecting to WiFi access point
+  NTRIP_CLIENT_ON,              //WIFI_START state
+  NTRIP_CLIENT_WIFI_STARTED, //Connecting to WiFi access point
   NTRIP_CLIENT_WIFI_CONNECTED,  //WiFi connected to an access point
   NTRIP_CLIENT_CONNECTING,      //Attempting a connection to the NTRIP caster
   NTRIP_CLIENT_CONNECTED,       //Connected to the NTRIP caster
@@ -142,8 +143,8 @@ volatile byte ntripClientState = NTRIP_CLIENT_OFF;
 enum NTRIPServerState
 {
   NTRIP_SERVER_OFF = 0,         //Using Bluetooth or NTRIP client
-  NTRIP_SERVER_ON,              //WIFI_ON state
-  NTRIP_SERVER_WIFI_CONNECTING, //Connecting to WiFi access point
+  NTRIP_SERVER_ON,              //WIFI_START state
+  NTRIP_SERVER_WIFI_STARTED, //Connecting to WiFi access point
   NTRIP_SERVER_WIFI_CONNECTED,  //WiFi connected to an access point
   NTRIP_SERVER_WAIT_GNSS_DATA,  //Waiting for correction data from GNSS
   NTRIP_SERVER_CONNECTING,      //Attempting a connection to the NTRIP caster
@@ -199,6 +200,47 @@ enum LogTestState
 } ;
 uint8_t logTestState = LOGTEST_END;
 
+typedef struct WiFiNetwork
+{
+  char ssid[50];
+  char password[50];
+} WiFiNetwork;
+
+#define MAX_WIFI_NETWORKS 4
+
+typedef struct _PARSE_STATE * P_PARSE_STATE;
+
+//Parse routine
+typedef uint8_t (* PARSE_ROUTINE)(P_PARSE_STATE parse,  //Parser state
+                                  uint8_t data);        //Incoming data byte
+
+//End of message callback routine
+typedef void (* EOM_CALLBACK)(P_PARSE_STATE parse,      //Parser state
+                                 uint8_t type);         //Message type
+
+#define PARSE_BUFFER_LENGTH       3000 //Some USB RAWX messages can be > 2k
+
+typedef struct _PARSE_STATE
+{
+  PARSE_ROUTINE state;            //Parser state routine
+  EOM_CALLBACK eomCallback;       //End of message callback routine
+  const char * parserName;        //Name of parser
+  uint32_t crc;                   //RTCM computed CRC
+  uint32_t rtcmCrc;               //Computed CRC value for the RTCM message
+  uint32_t invalidRtcmCrcs;       //Number of bad RTCM CRCs detected
+  uint16_t bytesRemaining;        //Bytes remaining in RTCM CRC calculation
+  uint16_t length;                //Message length including line termination
+  uint16_t maxLength;             //Maximum message length including line termination
+  uint16_t message;               //RTCM message number
+  uint16_t nmeaLength;            //Length of the NMEA message without line termination
+  uint8_t buffer[PARSE_BUFFER_LENGTH];  //Buffer containing the message
+  uint8_t nmeaMessageName[16];    //Message name
+  uint8_t nmeaMessageNameLength;  //Length of the message name
+  uint8_t ck_a;                   //U-blox checksum byte 1
+  uint8_t ck_b;                   //U-blox checksum byte 2
+  bool computeCrc;                //Compute the CRC when true
+} PARSE_STATE;
+
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
 {
@@ -213,12 +255,19 @@ typedef enum
   INPUT_RESPONSE_GETNUMBER_EXIT = -9999999, //Less than min ECEF. User may be prompted for number but wants to exit without entering data
   INPUT_RESPONSE_GETNUMBER_TIMEOUT = -9999998,
   INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT = 255,
-  INPUT_RESPONSE_TIMEOUT = -2,
-  INPUT_RESPONSE_OVERFLOW = -1,
-  INPUT_RESPONSE_EMPTY = 0,
+  INPUT_RESPONSE_TIMEOUT = -3,
+  INPUT_RESPONSE_OVERFLOW = -2,
+  INPUT_RESPONSE_EMPTY = -1,
   INPUT_RESPONSE_VALID = 1,
 } InputResponse;
 
+typedef enum
+{
+  PRINT_ENDPOINT_SERIAL = 0,
+  PRINT_ENDPOINT_BLUETOOTH,
+  PRINT_ENDPOINT_ALL,
+} PrintEndpoint;
+PrintEndpoint printEndpoint = PRINT_ENDPOINT_SERIAL; //Controls where the configuration menu gets piped to
 
 typedef enum
 {
@@ -239,6 +288,14 @@ typedef enum
   FUNCTION_FINDLOG,
   FUNCTION_LOGTEST,
   FUNCTION_FILELIST,
+  FUNCTION_FILEMANAGER_OPEN1,
+  FUNCTION_FILEMANAGER_OPEN2,
+  FUNCTION_FILEMANAGER_OPEN3,
+  FUNCTION_FILEMANAGER_UPLOAD1,
+  FUNCTION_FILEMANAGER_UPLOAD2,
+  FUNCTION_FILEMANAGER_UPLOAD3,
+  FUNCTION_SDSIZECHECK,
+  FUNCTION_LOG_CLOSURE,
 
 } SemaphoreFunction;
 
@@ -449,8 +506,6 @@ typedef struct {
   char ntripServer_CasterUserPW[50] = "";
   char ntripServer_MountPoint[50] = "bldr_dwntwn2"; //NTRIP Server
   char ntripServer_MountPointPW[50] = "WR5wRo4H";
-  char ntripServer_wifiSSID[50] = "TRex"; //NTRIP Server WiFi
-  char ntripServer_wifiPW[50] = "parachutes";
 
   //NTRIP Client
   bool enableNtripClient = false;
@@ -460,16 +515,12 @@ typedef struct {
   char ntripClient_CasterUserPW[50] = "";
   char ntripClient_MountPoint[50] = "bldr_SparkFun1";
   char ntripClient_MountPointPW[50] = "";
-  char ntripClient_wifiSSID[50] = "TRex"; //NTRIP Server WiFi
-  char ntripClient_wifiPW[50] = "parachutes";
   bool ntripClient_TransmitGGA = true;
 
   int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
 
   char pointPerfectDeviceProfileToken[40] = "";
   bool enablePointPerfectCorrections = true;
-  char home_wifiSSID[50] = ""; //WiFi network to use when attempting to obtain PointPerfect keys and ThingStream provisioning
-  char home_wifiPW[50] = "";
   bool autoKeyRenewal = true; //Attempt to get keys if we get under 28 days from the expiration date
   char pointPerfectClientID[50] = "";
   char pointPerfectBrokerHost[50] = ""; // pp.services.u-blox.com
@@ -516,17 +567,30 @@ typedef struct {
   bool enableRtcmMessageChecking = false;
   BluetoothRadioType_e bluetoothRadioType = BLUETOOTH_RADIO_SPP;
   bool runLogTest = false; //When set to true, device will create a series of test logs
-  bool enableNmeaClient = false;
-  bool enableNmeaServer = false;
-  bool enablePrintNmeaTcpStatus = false;
+  bool enableTcpClient = false;
+  bool enableTcpServer = false;
+  bool enablePrintTcpStatus = false;
   bool espnowBroadcast = true; //When true, overrides peers and sends all data via broadcast
   uint16_t antennaHeight = 0; //in mm
   float antennaReferencePoint = 0.0; //in mm
   bool echoUserInput = true;
   int uartReceiveBufferSize = 1024 * 2; //This buffer is filled automatically as the UART receives characters.
   int gnssHandlerBufferSize = 1024 * 4; //This buffer is filled from the UART receive buffer, and is then written to SD
+
   bool enablePrintBufferOverrun = false;
   bool enablePrintSDBuffers = false;
+  bool forceResetOnSDFail = false; //Set to true to reset system if SD is detected but fails to start.
+
+  WiFiNetwork wifiNetworks[MAX_WIFI_NETWORKS] = {
+    {"", ""},
+    {"", ""},
+    {"", ""},
+    {"", ""},
+  };
+
+  bool wifiConfigOverAP = true; //Configure device over Access Point or have it connect to WiFi 
+  uint16_t wifiTcpPort = 2947; //TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
+
 } Settings;
 Settings settings;
 const Settings defaultSettings = Settings();
@@ -547,8 +611,8 @@ struct struct_online {
   bool lband = false;
   bool lbandCorrections = false;
   bool i2c = false;
-  bool nmeaClient = false;
-  bool nmeaServer = false;
+  bool tcpClient = false;
+  bool tcpServer = false;
 } online;
 
 #ifdef COMPILE_WIFI

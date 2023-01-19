@@ -1,31 +1,41 @@
 //Update firmware if bin files found
 void menuFirmware()
 {
-  if (online.microSD == false)
-  {
-    Serial.println("No SD card detected");
-  }
-
-  if (binCount == 0)
-  {
-    Serial.println("No valid binary files found.");
-    delay(2000);
-    return;
-  }
+  bool newOTAFirmwareAvailable = false;
+  char reportedVersion[50] = {'\0'};
 
   while (1)
   {
-    Serial.println();
-    Serial.println("Menu: Update Firmware");
+    systemPrintln();
+    systemPrintln("Menu: Update Firmware");
+
+    char currentVersion[20];
+    if (enableRCFirmware == false)
+      sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    else
+      sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+
+    systemPrintf("Current firmware: v%s\r\n", currentVersion);
+
+    if (strlen(reportedVersion) > 0)
+    {
+      if (newOTAFirmwareAvailable == false)
+        systemPrintf("c) Check SparkFun for device firmware: Up to date\r\n");
+    }
+    else
+      systemPrintln("c) Check SparkFun for device firmware");
+
+    systemPrintf("e) Allow Beta Firmware: %s\r\n", enableRCFirmware ? "Enabled" : "Disabled");
+
+    if (newOTAFirmwareAvailable)
+      systemPrintf("u) Update to new firmware: v%s\r\n", reportedVersion);
 
     for (int x = 0 ; x < binCount ; x++)
-    {
-      Serial.printf("%d) Load %s\r\n", x + 1, binFileNames[x]);
-    }
+      systemPrintf("%d) Load SD file: %s\r\n", x + 1, binFileNames[x]);
 
-    Serial.println("x) Exit");
+    systemPrintln("x) Exit");
 
-    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
+    byte incoming = getCharacterNumber();
 
     if (incoming > 0 && incoming < (binCount + 1))
     {
@@ -33,12 +43,70 @@ void menuFirmware()
       incoming--;
       updateFromSD(binFileNames[incoming]);
     }
-    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
+    else if (incoming == 'c')
+    {
+      bool previouslyConnected = wifiIsConnected();
+
+      //Attempt to connect to local WiFi
+      if (wifiConnect(10000) == true)
+      {
+        //Get firmware version from server
+        if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
+        {
+          //We got a version number, now determine if it's newer or not
+          char currentVersion[20];
+          if (enableRCFirmware == false)
+            sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+          else
+            sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+
+          if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
+          {
+            log_d("New version detected");
+            newOTAFirmwareAvailable = true;
+          }
+          else
+          {
+            log_d("No new firmware available");
+          }
+        }
+        else
+        {
+          //Failed to get version number
+          systemPrintln("Failed to get version number from server.");
+        }
+      }
+      else
+        systemPrintln("Firmware update failed to connect to WiFi.");
+
+      if (previouslyConnected == false)
+        wifiStop();
+    }
+    else if (newOTAFirmwareAvailable && incoming == 'u')
+    {
+      bool previouslyConnected = wifiIsConnected();
+
+      otaUpdate();
+
+      //We get here if WiFi failed or the server was not available
+
+      if (previouslyConnected == false)
+        wifiStop();
+    }
+
+    else if (incoming == 'e')
+    {
+      enableRCFirmware ^= 1;
+      strcpy(reportedVersion, ""); //Reset to force c) menu
+    }
+    else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
+    else if (incoming == INPUT_RESPONSE_EMPTY)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
     else
-      Serial.printf("Bad value: %d\r\n", incoming);
+      printUnknown(incoming);
   }
 
   clearBuffer(); //Empty buffer of any newline chars
@@ -56,7 +124,7 @@ void mountSDThenUpdate(const char * firmwareFileName)
     beginSD();
 
   if (online.microSD != true)
-    Serial.println("microSD card is offline!");
+    systemPrintln("microSD card is offline!");
   else
   {
     //Attempt to access file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
@@ -67,7 +135,7 @@ void mountSDThenUpdate(const char * firmwareFileName)
     } //End Semaphore check
     else
     {
-      Serial.printf("sdCardSemaphore failed to yield, menuFirmware.ino line %d\r\n", __LINE__);
+      systemPrintf("sdCardSemaphore failed to yield, menuFirmware.ino line %d\r\n", __LINE__);
     }
   }
 
@@ -103,7 +171,7 @@ void scanForFirmware()
 
       if (strcmp(forceFirmwareFileName, fname) == 0)
       {
-        Serial.println("Forced firmware detected. Loading...");
+        systemPrintln("Forced firmware detected. Loading...");
         displayForcedFirmwareUpdate();
         updateFromSD(forceFirmwareFileName);
       }
@@ -117,7 +185,7 @@ void scanForFirmware()
           strcpy(binFileNames[binCount++], fname); //Add this to the array
         }
         else
-          Serial.printf("Unknown: %s\r\n", fname);
+          systemPrintf("Unknown: %s\r\n", fname);
       }
     }
     tempFile.close();
@@ -141,7 +209,7 @@ void updateFromSD(const char *firmwareFileName)
   //We cannot do OTA if there is only one partition
   if (appPartitions < 2)
   {
-    Serial.println("SD firmware updates are not available on 4MB devices. Please use the GUI or CLI update methods.");
+    systemPrintln("SD firmware updates are not available on 4MB devices. Please use the GUI or CLI update methods.");
     return;
   }
 
@@ -153,7 +221,7 @@ void updateFromSD(const char *firmwareFileName)
   //Delete tasks if running
   tasksStopUART2();
 
-  Serial.printf("Loading %s\r\n", firmwareFileName);
+  systemPrintf("Loading %s\r\n", firmwareFileName);
   if (sd->exists(firmwareFileName))
   {
     SdFile firmwareFile;
@@ -162,21 +230,21 @@ void updateFromSD(const char *firmwareFileName)
     size_t updateSize = firmwareFile.fileSize();
     if (updateSize == 0)
     {
-      Serial.println("Error: Binary is empty");
+      systemPrintln("Error: Binary is empty");
       firmwareFile.close();
       return;
     }
 
     if (Update.begin(updateSize) == false)
     {
-      Serial.println("Update begin failed. Not enough partition space available.");
+      systemPrintln("Update begin failed. Not enough partition space available.");
       firmwareFile.close();
       return;
     }
 
-    Serial.println("Moving file to OTA section");
-    Serial.print("Bytes to write: ");
-    Serial.print(updateSize);
+    systemPrintln("Moving file to OTA section");
+    systemPrint("Bytes to write: ");
+    systemPrint(updateSize);
 
     const int pageSize = 512 * 4;
     byte dataArray[pageSize];
@@ -200,7 +268,7 @@ void updateFromSD(const char *firmwareFileName)
 
       if (Update.write(dataArray, bytesToWrite) != bytesToWrite)
       {
-        Serial.println("\nWrite failed. Binary may be incorrectly aligned.");
+        systemPrintln("\nWrite failed. Binary may be incorrectly aligned.");
         break;
       }
       else
@@ -211,16 +279,16 @@ void updateFromSD(const char *firmwareFileName)
       {
         //Advance the bar
         barWidth++;
-        Serial.print("\n[");
+        systemPrint("\n[");
         for (int x = 0 ; x < barWidth ; x++)
-          Serial.print("=");
-        Serial.printf("%d%%", bytesWritten * 100 / updateSize);
-        if (bytesWritten == updateSize) Serial.println("]");
+          systemPrint("=");
+        systemPrintf("%d%%", bytesWritten * 100 / updateSize);
+        if (bytesWritten == updateSize) systemPrintln("]");
 
         displayFirmwareUpdateProgress(bytesWritten * 100 / updateSize);
       }
     }
-    Serial.println("\nFile move complete");
+    systemPrintln("\nFile move complete");
 
     if (Update.end())
     {
@@ -231,12 +299,12 @@ void updateFromSD(const char *firmwareFileName)
         //Clear all settings from LittleFS
         LittleFS.format();
 
-        Serial.println("Firmware updated successfully. Rebooting. Goodbye!");
+        systemPrintln("Firmware updated successfully. Rebooting. Goodbye!");
 
         //If forced firmware is detected, do a full reset of config as well
         if (strcmp(forceFirmwareFileName, firmwareFileName) == 0)
         {
-          Serial.println("Removing firmware file");
+          systemPrintln("Removing firmware file");
 
           //Remove forced firmware file to prevent endless loading
           firmwareFile.close();
@@ -249,22 +317,325 @@ void updateFromSD(const char *firmwareFileName)
         ESP.restart();
       }
       else
-        Serial.println("Update not finished? Something went wrong!");
+        systemPrintln("Update not finished? Something went wrong!");
     }
     else
     {
-      Serial.print("Error Occurred. Error #: ");
-      Serial.println(String(Update.getError()));
+      systemPrint("Error Occurred. Error #: ");
+      systemPrintln(String(Update.getError()));
     }
 
     firmwareFile.close();
 
     displayMessage("Update Failed", 0);
 
-    Serial.println("Firmware update failed. Please try again.");
+    systemPrintln("Firmware update failed. Please try again.");
   }
   else
   {
-    Serial.println("No firmware file found");
+    systemPrintln("No firmware file found");
   }
+}
+
+//Returns true if we successfully got the versionAvailable
+//Modifies versionAvailable with OTA getVersion response
+//Connects to WiFi as needed
+bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
+{
+  bool gotVersion = false;
+#ifdef COMPILE_WIFI
+  bool previouslyConnected = wifiIsConnected();
+
+  if (wifiConnect(10000) == true)
+  {
+    char versionString[20];
+
+    if (enableRCFirmware == false)
+      sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    else
+      sprintf(versionString, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+
+    systemPrintf("Current firmware version: v%s\r\n", versionString);
+
+    if (enableRCFirmware == false)
+      systemPrintf("Checking to see if an update is available from %s\r\n", OTA_FIRMWARE_JSON_URL);
+    else
+      systemPrintf("Checking to see if an update is available from %s\r\n", OTA_RC_FIRMWARE_JSON_URL);
+
+    ESP32OTAPull ota;
+
+    int response;
+    if (enableRCFirmware == false)
+      response = ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+    else
+      response = ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+
+    //We don't care if the library thinks the available firmware is newer, we just need a successful JSON parse
+    if (response == ESP32OTAPull::UPDATE_AVAILABLE || response == ESP32OTAPull::NO_UPDATE_AVAILABLE)
+    {
+      gotVersion = true;
+
+      //Call getVersion after original inquiry
+      String otaVersion = ota.getVersion();
+      otaVersion.toCharArray(versionAvailable, versionAvailableLength);
+    }
+    else if (response == ESP32OTAPull::HTTP_FAILED)
+    {
+      systemPrintln("Firmware server not available");
+    }
+    else
+    {
+      systemPrintln("OTA failed");
+    }
+  }
+  else
+  {
+    systemPrintln("WiFi not available.");
+  }
+
+  if (systemState != STATE_WIFI_CONFIG)
+  {
+    //wifiStop() turns off the entire radio including the webserver. We need to turn off Station mode only.
+    //For now, unit exits AP mode via reset so if we are in AP config mode, leave WiFi Station running.
+
+    //If WiFi was originally off, turn it off again
+    if (previouslyConnected == false)
+      wifiStop();
+  }
+
+  if (gotVersion == true)
+    log_d("Available OTA firmware version: %s\n\r", versionAvailable);
+
+#endif
+  return (gotVersion);
+}
+
+//Force updates firmware using OTA pull
+//Exits by either updating firmware and resetting, or failing to connect
+void otaUpdate()
+{
+  bool updateAvailable = false;
+#ifdef COMPILE_WIFI
+  bool previouslyConnected = wifiIsConnected();
+
+  if (wifiConnect(10000) == true)
+  {
+    char versionString[20];
+    sprintf(versionString, "%d.%d", 0, 0); //Force update with version 0.0
+
+    ESP32OTAPull ota;
+
+    int response;
+    if (enableRCFirmware == false)
+      response = ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+    else
+      response = ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+
+    if (response == ESP32OTAPull::UPDATE_AVAILABLE)
+    {
+      systemPrintln("Installing new firmware");
+      ota.SetCallback(otaPullCallback);
+      if (enableRCFirmware == false)
+        ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString); //Install new firmware, no reset
+      else
+        ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString); //Install new firmware, no reset
+
+      if (apConfigFirmwareUpdateInProcess)
+      {
+#ifdef COMPILE_AP
+        //Tell AP page to display reset info
+        websocket->textAll("confirmReset,1,");
+#endif
+      }
+      ESP.restart();
+    }
+    else if (response == ESP32OTAPull::NO_UPDATE_AVAILABLE)
+    {
+      systemPrintln("OTA Update: Current firmware is up to date");
+    }
+    else if (response == ESP32OTAPull::HTTP_FAILED)
+    {
+      systemPrintln("OTA Update: Firmware server not available");
+    }
+    else
+    {
+      systemPrintln("OTA Update: OTA failed");
+    }
+  }
+  else
+  {
+    systemPrintln("WiFi not available.");
+  }
+
+  //Update failed. If WiFi was originally off, turn it off again
+  if (previouslyConnected == false)
+    wifiStop();
+
+#endif
+
+}
+
+//Called while the OTA Pull update is happening
+void otaPullCallback(int bytesWritten, int totalLength)
+{
+  static int previousPercent = -1;
+  int percent = 100 * bytesWritten / totalLength;
+  if (percent != previousPercent)
+  {
+    //Indicate progress
+    int barWidthInCharacters = 20; //Width of progress bar, ie [###### % complete
+    long portionSize = totalLength / barWidthInCharacters;
+
+    //Indicate progress
+    systemPrint("\r\n[");
+    int barWidth = bytesWritten / portionSize;
+    for (int x = 0 ; x < barWidth ; x++)
+      systemPrint("=");
+    systemPrintf(" %d%%", percent);
+    if (bytesWritten == totalLength) systemPrintln("]");
+
+    displayFirmwareUpdateProgress(percent);
+
+    if (apConfigFirmwareUpdateInProcess == true)
+    {
+#ifdef COMPILE_AP
+      char myProgess[50];
+      sprintf(myProgess, "otaFirmwareStatus,%d,", percent);
+      websocket->textAll(myProgess);
+#endif
+    }
+
+    previousPercent = percent;
+  }
+}
+
+const char *otaPullErrorText(int code)
+{
+#ifdef COMPILE_WIFI
+  switch (code)
+  {
+    case ESP32OTAPull::UPDATE_AVAILABLE:
+      return "An update is available but wasn't installed";
+    case ESP32OTAPull::NO_UPDATE_PROFILE_FOUND:
+      return "No profile matches";
+    case ESP32OTAPull::NO_UPDATE_AVAILABLE:
+      return "Profile matched, but update not applicable";
+    case ESP32OTAPull::UPDATE_OK:
+      return "An update was done, but no reboot";
+    case ESP32OTAPull::HTTP_FAILED:
+      return "HTTP GET failure";
+    case ESP32OTAPull::WRITE_ERROR:
+      return "Write error";
+    case ESP32OTAPull::JSON_PROBLEM:
+      return "Invalid JSON";
+    case ESP32OTAPull::OTA_UPDATE_FAIL:
+      return "Update fail (no OTA partition?)";
+    default:
+      if (code > 0)
+        return "Unexpected HTTP response code";
+      break;
+  }
+#endif
+  return "Unknown error";
+}
+
+//Returns true if reportedVersion is newer than currentVersion
+//Version number comes in as v2.7-Jan 5 2023
+//2.7-Jan 5 2023 is newer than v2.7-Jan 1 2023
+bool isReportedVersionNewer(char* reportedVersion, char *currentVersion)
+{
+  float currentVersionNumber = 0.0;
+  int currentDay = 0;
+  int currentMonth = 0;
+  int currentYear = 0;
+
+  float reportedVersionNumber = 0.0;
+  int reportedDay = 0;
+  int reportedMonth = 0;
+  int reportedYear = 0;
+
+  breakVersionIntoParts(currentVersion, &currentVersionNumber, &currentYear, &currentMonth, &currentDay);
+  breakVersionIntoParts(reportedVersion, &reportedVersionNumber, &reportedYear, &reportedMonth, &reportedDay);
+
+  log_d("currentVersion: %f %d %d %d", currentVersionNumber, currentYear, currentMonth, currentDay);
+  log_d("reportedVersion: %f %d %d %d", reportedVersionNumber, reportedYear, reportedMonth, reportedDay);
+  if (enableRCFirmware) log_d("RC firmware enabled");
+
+  //Production firmware is named "2.6"
+  //Release Candidate firmware is named "2.6-Dec 5 2022"
+
+  //If the user is not using Release Candidate firmware, then check only the version number
+  if (enableRCFirmware == false)
+  {
+    //Check only the version number
+    if (reportedVersionNumber > currentVersionNumber)
+      return (true);
+    return (false);
+  }
+
+  //For RC firmware, compare firmware date as well
+  //Check version number
+  if (reportedVersionNumber > currentVersionNumber)
+    return (true);
+
+  //Check which date is more recent
+  //https://stackoverflow.com/questions/5283120/date-comparison-to-find-which-is-bigger-in-c
+  int reportedVersionScore = reportedDay + reportedMonth * 100 + reportedYear * 2000;
+  int currentVersionScore = currentDay + currentMonth * 100 + currentYear * 2000;
+
+  if (reportedVersionScore > currentVersionScore) {
+    log_d("Reported version is greater");
+    return (true);
+  }
+
+  return (false);
+}
+
+//Version number comes in as v2.7-Jan 5 2023
+//Given a char string, break into version number, year, month, day
+//Returns false if parsing failed
+bool breakVersionIntoParts(char *version, float *versionNumber, int *year, int *month, int *day)
+{
+  char monthStr[20];
+  int placed = 0;
+
+  if (enableRCFirmware == false)
+  {
+    placed = sscanf(version, "%f", versionNumber);
+    if (placed != 1)
+    {
+      log_d("Failed to sscanf basic");
+      return (false); //Something went wrong
+    }
+  }
+  else
+  {
+    placed = sscanf(version, "%f-%s %d %d", versionNumber, monthStr, day, year);
+
+    if (placed != 4)
+    {
+      log_d("Failed to sscanf RC");
+      return (false); //Something went wrong
+    }
+
+    (*month) = mapMonthName(monthStr);
+    if (*month == -1) return (false); //Something went wrong
+  }
+
+  return (true);
+}
+
+//https://stackoverflow.com/questions/21210319/assign-month-name-and-integer-values-from-string-using-sscanf
+int mapMonthName(char *mmm)
+{
+  static char const *months[] =
+  {
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  };
+  for (size_t i = 0; i < sizeof(months) / sizeof(months[0]); i++)
+  {
+    if (strcmp(mmm, months[i]) == 0)
+      return i + 1;
+  }
+  return -1;
 }

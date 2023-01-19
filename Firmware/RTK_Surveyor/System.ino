@@ -41,6 +41,8 @@ bool configureUbloxModule()
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1INPROT_UBX, 1);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1INPROT_NMEA, 1);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1INPROT_RTCM3X, 1);
+  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1INPROT_SPARTN, 0);
 
   response &= i2cGNSS.addCfgValset32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud); //Defaults to 230400 to maximize message output support
   response &= i2cGNSS.addCfgValset32(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud); //Defaults to 57600 to match SiK telemetry radio firmware default
@@ -50,9 +52,12 @@ bool configureUbloxModule()
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIOUTPROT_NMEA, 0);
   if (zedModuleType == PLATFORM_F9P)
     response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIOUTPROT_RTCM3X, 0);
+
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIINPROT_UBX, 0);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIINPROT_NMEA, 0);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIINPROT_RTCM3X, 0);
+  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIINPROT_SPARTN, 0);
 
   //Set the UART2 to only do RTCM (in case this device goes into base mode)
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2OUTPROT_UBX, 0);
@@ -62,6 +67,8 @@ bool configureUbloxModule()
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2INPROT_UBX, 0);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2INPROT_NMEA, 0);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2INPROT_RTCM3X, 1);
+  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2INPROT_SPARTN, 0);
 
   //We don't want NMEA over I2C, but we will want to deliver RTCM, and UBX+RTCM is not an option
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2COUTPROT_UBX, 1);
@@ -71,6 +78,13 @@ bool configureUbloxModule()
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2CINPROT_UBX, 1);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2CINPROT_NMEA, 1);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2CINPROT_RTCM3X, 1);
+  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+  {
+    if (productVariant == RTK_FACET_LBAND)
+      response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2CINPROT_SPARTN, 1); //We push NEO-D9S correction data (SPARTN) to ZED-F9P over the I2C interface
+    else
+      response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2CINPROT_SPARTN, 0);
+  }
 
   //The USB port on the ZED may be used for RTCM to/from the computer (as an NTRIP caster or client)
   //So let's be sure all protocols are on for the USB port
@@ -80,20 +94,26 @@ bool configureUbloxModule()
     response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBOUTPROT_RTCM3X, 1);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_UBX, 1);
   response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_NMEA, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_RTCM3X, 1); //35
+  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_RTCM3X, 1);
+  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_SPARTN, 0);
 
   response &= i2cGNSS.sendCfgValset();
+
+  if (response == false)
+    systemPrintln("Module failed config block 0");
+  response = true; //Reset
 
   //Enable the constellations the user has set
   response &= setConstellations(true); //19 messages. Send newCfg or sendCfg with value set
   if (response == false)
-    Serial.println("Module failed config block 1");
+    systemPrintln("Module failed config block 1");
   response = true; //Reset
 
   //Make sure the appropriate messages are enabled
   response &= setMessages(); //73 messages. Does a complete open/closed val set
   if (response == false)
-    Serial.println("Module failed config block 2");
+    systemPrintln("Module failed config block 2");
   response = true; //Reset
 
   //Disable NMEA messages on all but UART1
@@ -124,7 +144,7 @@ bool configureUbloxModule()
   response &= i2cGNSS.sendCfgValset();
 
   if (response == false)
-    Serial.println("Module failed config block 3");
+    systemPrintln("Module failed config block 3");
 
   if (zedModuleType == PLATFORM_F9R)
     response &= i2cGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
@@ -215,14 +235,14 @@ void checkBatteryLevels()
 
   if (settings.enablePrintBatteryMessages)
   {
-    Serial.printf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
+    systemPrintf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
 
     char tempStr[25];
     if (battChangeRate > 0)
       sprintf(tempStr, "C");
     else
       sprintf(tempStr, "Disc");
-    Serial.printf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
+    systemPrintf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
     if (battLevel < 10)
       sprintf(tempStr, "Red");
@@ -233,7 +253,7 @@ void checkBatteryLevels()
     else
       sprintf(tempStr, "No batt");
 
-    Serial.printf("%s\r\n", tempStr);
+    systemPrintf("%s\r\n", tempStr);
   }
 
   if (productVariant == RTK_SURVEYOR)
@@ -293,7 +313,7 @@ void reportHeapNow()
   if (settings.enableHeapReport == true)
   {
     lastHeapReport = millis();
-    Serial.printf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\r\n", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+    systemPrintf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\r\n", ESP.getFreeHeap(), xPortGetMinimumEverFreeHeapSize(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
   }
 }
 
@@ -502,7 +522,7 @@ bool setMessagesUSB()
       response &= i2cGNSS.addCfgValset8(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
   }
   response &= i2cGNSS.sendCfgValset();
-  
+
   return (response);
 }
 
@@ -560,4 +580,15 @@ bool setConstellations(bool sendCompleteBatch)
     response &= i2cGNSS.sendCfgValset();
 
   return (response);
+}
+
+//Periodically print position if enabled
+void printPosition()
+{
+  //Periodically print the position
+  if (settings.enablePrintPosition && ((millis() - lastPrintPosition) > 15000))
+  {
+    printCurrentConditions();
+    lastPrintPosition = millis();
+  }
 }

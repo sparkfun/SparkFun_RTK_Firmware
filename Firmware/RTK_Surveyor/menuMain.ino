@@ -2,14 +2,14 @@
 //Report status if ~ received, otherwise present config menu
 void updateSerial()
 {
-  if (Serial.available())
+  if (systemAvailable())
   {
-    byte incoming = Serial.read();
+    byte incoming = systemRead();
 
     if (incoming == '~')
     {
       //Output custom GNTXT message with all current system data
-      printCurrentConditionsNMEA();
+      //printCurrentConditionsNMEA();
     }
     else
       menuMain(); //Present user menu
@@ -25,51 +25,57 @@ void menuMain()
 
   while (1)
   {
-    Serial.println();
+    systemPrintln();
 #ifdef ENABLE_DEVELOPER
-    Serial.printf("SparkFun RTK %s v%d.%d-RC-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+    systemPrintf("SparkFun RTK %s v%d.%d-RC-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 #else
-    Serial.printf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+    systemPrintf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 #endif
 
 #ifdef COMPILE_BT
-    Serial.print("** Bluetooth broadcasting as: ");
-    Serial.print(deviceName);
-    Serial.println(" **");
+    systemPrint("** Bluetooth broadcasting as: ");
+    systemPrint(deviceName);
+    systemPrintln(" **");
 #else
-    Serial.println("** Bluetooth Not Compiled **");
+    systemPrintln("** Bluetooth Not Compiled **");
 #endif
 
-    Serial.println("Menu: Main");
+    systemPrintln("Menu: Main");
 
-    Serial.println("1) Configure GNSS Receiver");
+    systemPrintln("1) Configure GNSS Receiver");
 
-    Serial.println("2) Configure GNSS Messages");
+    systemPrintln("2) Configure GNSS Messages");
 
     if (zedModuleType == PLATFORM_F9P)
-      Serial.println("3) Configure Base");
+      systemPrintln("3) Configure Base");
     else if (zedModuleType == PLATFORM_F9R)
-      Serial.println("3) Configure Sensor Fusion");
+      systemPrintln("3) Configure Sensor Fusion");
 
-    Serial.println("4) Configure Ports");
+    systemPrintln("4) Configure Ports");
 
-    Serial.println("5) Configure Logging");
+    systemPrintln("5) Configure Logging");
 
-    Serial.println("p) Configure User Profiles");
+    systemPrintln("6) Configure WiFi");
+
+    systemPrintln("p) Configure User Profiles");
 
 #ifdef COMPILE_ESPNOW
-    Serial.println("r) Configure Radios");
+    systemPrintln("r) Configure Radios");
+#else
+    systemPrintln("r) ESP_Now Not Compiled **");
 #endif
 
     if (online.lband == true)
-      Serial.println("P) Configure PointPerfect");
+      systemPrintln("P) Configure PointPerfect");
 
-    Serial.println("s) Configure System");
+    systemPrintln("s) Configure System");
 
-    if (binCount > 0)
-      Serial.println("f) Firmware upgrade");
+    systemPrintln("f) Firmware upgrade");
 
-    Serial.println("x) Exit");
+    if (btPrintEcho)
+      systemPrintln("b) Exit Bluetooth Echo mode");
+
+    systemPrintln("x) Exit");
 
     byte incoming = getCharacterNumber();
 
@@ -85,6 +91,8 @@ void menuMain()
       menuPorts();
     else if (incoming == 5)
       menuLog();
+    else if (incoming == 6)
+      menuWiFi();
     else if (incoming == 's')
       menuSystem();
     else if (incoming == 'p')
@@ -95,8 +103,15 @@ void menuMain()
     else if (incoming == 'r')
       menuRadio();
 #endif
-    else if (incoming == 'f' && binCount > 0)
+    else if (incoming == 'f')
       menuFirmware();
+    else if (incoming == 'b')
+    {
+      printEndpoint = PRINT_ENDPOINT_SERIAL;
+      systemPrintln("BT device has exited echo mode");
+      btPrintEcho = false;
+      break; //Exit config menu
+    }
     else if (incoming == 'x')
       break;
     else if (incoming == INPUT_RESPONSE_EMPTY)
@@ -126,6 +141,7 @@ void menuMain()
   }
 
   clearBuffer(); //Empty buffer of any newline chars
+  btPrintEchoExit = false; //We are out of the menu system
   inMainMenu = false;
 }
 
@@ -145,29 +161,29 @@ void menuUserProfiles()
 
   while (1)
   {
-    Serial.println();
-    Serial.println("Menu: User Profiles");
+    systemPrintln();
+    systemPrintln("Menu: User Profiles");
 
     //List available profiles
     for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
     {
       if (activeProfiles & (1 << x))
-        Serial.printf("%d) Select %s", x + 1, profileNames[x]);
+        systemPrintf("%d) Select %s", x + 1, profileNames[x]);
       else
-        Serial.printf("%d) Select (Empty)", x + 1);
+        systemPrintf("%d) Select (Empty)", x + 1);
 
-      if (x == profileNumber) Serial.print(" <- Current");
+      if (x == profileNumber) systemPrint(" <- Current");
 
-      Serial.println();
+      systemPrintln();
     }
 
-    Serial.printf("%d) Edit profile name: %s\r\n", MAX_PROFILE_COUNT + 1, profileNames[profileNumber]);
+    systemPrintf("%d) Edit profile name: %s\r\n", MAX_PROFILE_COUNT + 1, profileNames[profileNumber]);
 
-    Serial.printf("%d) Set profile '%s' to factory defaults\r\n", MAX_PROFILE_COUNT + 2, profileNames[profileNumber]);
+    systemPrintf("%d) Set profile '%s' to factory defaults\r\n", MAX_PROFILE_COUNT + 2, profileNames[profileNumber]);
 
-    Serial.printf("%d) Delete profile '%s'\r\n", MAX_PROFILE_COUNT + 3, profileNames[profileNumber]);
+    systemPrintf("%d) Delete profile '%s'\r\n", MAX_PROFILE_COUNT + 3, profileNames[profileNumber]);
 
-    Serial.println("x) Exit");
+    systemPrintln("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
@@ -177,14 +193,14 @@ void menuUserProfiles()
     }
     else if (incoming == MAX_PROFILE_COUNT + 1)
     {
-      Serial.print("Enter new profile name: ");
+      systemPrint("Enter new profile name: ");
       getString(settings.profileName, sizeof(settings.profileName));
       recordSystemSettings(); //We need to update this immediately in case user lists the available profiles again
       setProfileName(profileNumber);
     }
     else if (incoming == MAX_PROFILE_COUNT + 2)
     {
-      Serial.printf("\r\nReset profile '%s' to factory defaults. Press 'y' to confirm:", profileNames[profileNumber]);
+      systemPrintf("\r\nReset profile '%s' to factory defaults. Press 'y' to confirm:", profileNames[profileNumber]);
       byte bContinue = getCharacterNumber();
       if (bContinue == 'y')
       {
@@ -198,11 +214,11 @@ void menuUserProfiles()
         forceReset = true; //Upon exit of menu, reset the device
       }
       else
-        Serial.println("Reset aborted");
+        systemPrintln("Reset aborted");
     }
     else if (incoming == MAX_PROFILE_COUNT + 3)
     {
-      Serial.printf("\r\nDelete profile '%s'. Press 'y' to confirm:", profileNames[profileNumber]);
+      systemPrintf("\r\nDelete profile '%s'. Press 'y' to confirm:", profileNames[profileNumber]);
       byte bContinue = getCharacterNumber();
       if (bContinue == 'y')
       {
@@ -236,7 +252,7 @@ void menuUserProfiles()
         activeProfiles = loadProfileNames();
       }
       else
-        Serial.println("Delete aborted");
+        systemPrintln("Delete aborted");
     }
 
     else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
@@ -249,7 +265,7 @@ void menuUserProfiles()
 
   if (originalProfileNumber != profileNumber || forceReset == true)
   {
-    Serial.println("Rebooting to apply new profile settings. Goodbye!");
+    systemPrintln("Rebooting to apply new profile settings. Goodbye!");
     delay(2000);
     ESP.restart();
   }
@@ -279,7 +295,7 @@ void changeProfileNumber(byte newProfileNumber)
   //If this is an empty/new profile slot, overwrite our current settings with defaults
   if (responseLFS == false && responseSD == false)
   {
-    Serial.println("Default the settings");
+    systemPrintln("No profile found: Applying default settings");
     settingsToDefaults();
   }
 }
@@ -301,7 +317,7 @@ void factoryReset()
 
       sd->remove(stationCoordinateECEFFileName); //Remove station files
       sd->remove(stationCoordinateGeodeticFileName);
-      
+
       xSemaphoreGive(sdCardSemaphore);
     } //End sdCardSemaphore
     else
@@ -309,17 +325,17 @@ void factoryReset()
       //An error occurs when a settings file is on the microSD card and it is not
       //deleted, as such the settings on the microSD card will be loaded when the
       //RTK reboots, resulting in failure to achieve the factory reset condition
-      Serial.printf("sdCardSemaphore failed to yield, menuMain.ino line %d\r\n", __LINE__);
+      systemPrintf("sdCardSemaphore failed to yield, menuMain.ino line %d\r\n", __LINE__);
     }
   }
-  
-  Serial.println("Formatting file system...");
+
+  systemPrintln("Formatting file system...");
   LittleFS.format();
 
   if (online.gnss == true)
     i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
-  Serial.println("Settings erased successfully. Rebooting. Goodbye!");
+  systemPrintln("Settings erased successfully. Rebooting. Goodbye!");
   delay(2000);
   ESP.restart();
 }
@@ -330,46 +346,45 @@ void menuRadio()
 #ifdef COMPILE_ESPNOW
   while (1)
   {
-    Serial.println();
-    Serial.println("Menu: Radios");
+    systemPrintln();
+    systemPrintln("Menu: Radios");
 
-    Serial.print("1) Select Radio Type: ");
-    if (settings.radioType == RADIO_EXTERNAL) Serial.println("External only");
-    else if (settings.radioType == RADIO_ESPNOW) Serial.println("Internal ESP-Now");
+    systemPrint("1) Select Radio Type: ");
+    if (settings.radioType == RADIO_EXTERNAL) systemPrintln("External only");
+    else if (settings.radioType == RADIO_ESPNOW) systemPrintln("Internal ESP-Now");
 
     if (settings.radioType == RADIO_ESPNOW)
     {
       //Pretty print the MAC of all radios
-      Serial.print("  Radio MAC: ");
+      systemPrint("  Radio MAC: ");
       for (int x = 0 ; x < 5 ; x++)
-        Serial.printf("%02X:", wifiMACAddress[x]);
-      Serial.printf("%02X\r\n", wifiMACAddress[5]);
+        systemPrintf("%02X:", wifiMACAddress[x]);
+      systemPrintf("%02X\r\n", wifiMACAddress[5]);
 
       if (settings.espnowPeerCount > 0)
       {
-        Serial.println("  Paired Radios: ");
+        systemPrintln("  Paired Radios: ");
         for (int x = 0 ; x < settings.espnowPeerCount ; x++)
         {
-          Serial.print("    ");
+          systemPrint("    ");
           for (int y = 0 ; y < 5 ; y++)
-            Serial.printf("%02X:", settings.espnowPeers[x][y]);
-          Serial.printf("%02X\r\n", settings.espnowPeers[x][5]);
+            systemPrintf("%02X:", settings.espnowPeers[x][y]);
+          systemPrintf("%02X\r\n", settings.espnowPeers[x][5]);
         }
       }
       else
-        Serial.println("  No Paired Radios");
+        systemPrintln("  No Paired Radios");
 
-
-      Serial.println("2) Pair radios");
-      Serial.println("3) Forget all radios");
+      systemPrintln("2) Pair radios");
+      systemPrintln("3) Forget all radios");
 #ifdef ENABLE_DEVELOPER
-      Serial.println("4) Add dummy radio");
-      Serial.println("5) Send dummy data");
-      Serial.println("6) Broadcast dummy data");
+      systemPrintln("4) Add dummy radio");
+      systemPrintln("5) Send dummy data");
+      systemPrintln("6) Broadcast dummy data");
 #endif
     }
 
-    Serial.println("x) Exit");
+    systemPrintln("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
@@ -384,7 +399,7 @@ void menuRadio()
     }
     else if (settings.radioType == RADIO_ESPNOW && incoming == 3)
     {
-      Serial.println("\r\nForgetting all paired radios. Press 'y' to confirm:");
+      systemPrintln("\r\nForgetting all paired radios. Press 'y' to confirm:");
       byte bContinue = getCharacterNumber();
       if (bContinue == 'y')
       {
@@ -394,7 +409,7 @@ void menuRadio()
             espnowRemovePeer(settings.espnowPeers[x]);
         }
         settings.espnowPeerCount = 0;
-        Serial.println("Radios forgotten");
+        systemPrintln("Radios forgotten");
       }
     }
 #ifdef ENABLE_DEVELOPER

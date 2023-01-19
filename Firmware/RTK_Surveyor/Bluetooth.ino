@@ -39,14 +39,19 @@ static volatile byte bluetoothState = BT_OFF;
 //Used for updating the bluetoothState state machine
 void bluetoothCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   if (event == ESP_SPP_SRV_OPEN_EVT) {
-    Serial.println("BT client Connected");
+    systemPrintln("BT client Connected");
     bluetoothState = BT_CONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, HIGH);
   }
 
   if (event == ESP_SPP_CLOSE_EVT ) {
-    Serial.println("BT client disconnected");
+    systemPrintln("BT client disconnected");
+    
+    btPrintEcho = false;
+    btPrintEchoExit = true; //Force exit all config menus
+    printEndpoint = PRINT_ENDPOINT_SERIAL;
+
     bluetoothState = BT_NOTCONNECTED;
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_bluetoothStatusLED, LOW);
@@ -69,11 +74,22 @@ byte bluetoothGetState()
 #endif  //COMPILE_BT
 }
 
+
 //Read data from the Bluetooth device
-int bluetoothReadBytes(uint8_t * buffer, int length)
+int bluetoothRead(uint8_t * buffer, int length)
 {
 #ifdef COMPILE_BT
   return bluetoothSerial->readBytes(buffer, length);
+#else   //COMPILE_BT
+  return 0;
+#endif  //COMPILE_BT
+}
+
+//Read data from the Bluetooth device
+uint8_t bluetoothRead()
+{
+#ifdef COMPILE_BT
+  return bluetoothSerial->read();
 #else   //COMPILE_BT
   return 0;
 #endif  //COMPILE_BT
@@ -86,6 +102,36 @@ bool bluetoothRxDataAvailable()
   return bluetoothSerial->available();
 #else   //COMPILE_BT
   return false;
+#endif  //COMPILE_BT
+}
+
+//Write data to the Bluetooth device
+int bluetoothWrite(const uint8_t *buffer, int length)
+{
+#ifdef COMPILE_BT
+  return bluetoothSerial->write(buffer, length);
+#else   //COMPILE_BT
+  return 0;
+#endif  //COMPILE_BT
+}
+
+//Write data to the Bluetooth device
+int bluetoothWrite(uint8_t value)
+{
+#ifdef COMPILE_BT
+  return bluetoothSerial->write(value);
+#else   //COMPILE_BT
+  return 0;
+#endif  //COMPILE_BT
+}
+
+//Flush Bluetooth device
+void bluetoothFlush()
+{
+#ifdef COMPILE_BT
+  bluetoothSerial->flush();
+#else   //COMPILE_BT
+  return;
 #endif  //COMPILE_BT
 }
 
@@ -115,7 +161,7 @@ void bluetoothStart()
 
     if (bluetoothSerial->begin(deviceName) == false)
     {
-      Serial.println("An error occurred initializing Bluetooth");
+      systemPrintln("An error occurred initializing Bluetooth");
 
       if (productVariant == RTK_SURVEYOR)
         digitalWrite(pin_bluetoothStatusLED, LOW);
@@ -145,8 +191,8 @@ void bluetoothStart()
     bluetoothSerial->register_callback(bluetoothCallback); //Controls BT Status LED on Surveyor
     bluetoothSerial->setTimeout(250);
 
-    Serial.print("Bluetooth broadcasting as: ");
-    Serial.println(deviceName);
+    systemPrint("Bluetooth broadcasting as: ");
+    systemPrintln(deviceName);
 
     //Start task for controlling Bluetooth pair LED
     if (productVariant == RTK_SURVEYOR)
@@ -220,22 +266,11 @@ void bluetoothTest(bool runTest)
   //Display Bluetooth MAC address and test results
   char macAddress[5];
   sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
-  Serial.print("Bluetooth ");
+  systemPrint("Bluetooth ");
   if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
-    Serial.print("Low Energy ");
-  Serial.print("(");
-  Serial.print(macAddress);
-  Serial.print("): ");
-  Serial.println(bluetoothStatusText);
-}
-
-//Write data to the Bluetooth device
-int bluetoothWriteBytes(const uint8_t * buffer, int length)
-{
-#ifdef COMPILE_BT
-  //Push new data to BT SPP
-  return bluetoothSerial->write(buffer, length);
-#else   //COMPILE_BT
-  return 0;
-#endif  //COMPILE_BT
+    systemPrint("Low Energy ");
+  systemPrint("(");
+  systemPrint(macAddress);
+  systemPrint("): ");
+  systemPrintln(bluetoothStatusText);
 }

@@ -68,6 +68,9 @@ static uint32_t blinking_icons;
 static uint32_t icons;
 static uint32_t iconsRadio;
 
+unsigned long ssidDisplayTimer = 0;
+bool ssidDisplayFirstHalf = false;
+
 // Fonts
 #include <res/qw_fnt_5x7.h>
 #include <res/qw_fnt_8x16.h>
@@ -94,7 +97,7 @@ void beginDisplay()
     {
       online.display = true;
 
-      Serial.println("Display started");
+      systemPrintln("Display started");
 
       //Display the SparkFun LOGO
       oled.erase();
@@ -107,7 +110,7 @@ void beginDisplay()
     delay(50); //Give display time to startup before attempting again
   }
 
-  Serial.println("Display not detected");
+  systemPrintln("Display not detected");
 }
 
 //Given the system state, display the appropriate information
@@ -342,7 +345,7 @@ void updateDisplay()
           displayShutdown();
           break;
         default:
-          Serial.printf("Unknown display: %d\r\n", systemState);
+          systemPrintf("Unknown display: %d\r\n", systemState);
           displayError("Display");
           break;
       }
@@ -793,8 +796,6 @@ uint32_t setESPNowIcon_TwoRadios()
 {
   uint32_t icons = 0;
 
-#ifdef COMPILE_ESPNOW
-
   if (espnowState == ESPNOW_PAIRED)
   {
     //Limit how often we update this spot
@@ -863,7 +864,6 @@ uint32_t setESPNowIcon_TwoRadios()
     else
       icons |= ICON_BLANK_LEFT;
   }
-#endif //ifdef COMPILE_ESPNOW
 
   return icons;
 }
@@ -1566,6 +1566,11 @@ void displayGNSSFail(uint16_t displayTime)
   displayMessage("GNSS Failed", displayTime);
 }
 
+void displayNoWiFi(uint16_t displayTime)
+{
+  displayMessage("No WiFi", displayTime);
+}
+
 void displayRoverStart(uint16_t displayTime)
 {
   if (online.display == true)
@@ -1655,16 +1660,92 @@ void displayWiFiConfig()
   int yPos = WiFi_Symbol_Height + 2;
   int fontHeight = 8;
 
+  const int displayMaxCharacters = 10; //Characters before pixels start getting cut off. 11 characters can cut off a few pixels.
+
   printTextCenter("SSID:", yPos, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
   yPos = yPos + fontHeight + 1;
-  printTextCenter("RTK Config", yPos, QW_FONT_5X7, 1, false);
+
+  //Toggle display back and forth for long SSIDs and IPs
+  //Run the timer no matter what, but load firstHalf/lastHalf with the same thing if strlen < maxWidth
+  if (millis() - ssidDisplayTimer > 2000)
+  {
+    ssidDisplayTimer = millis();
+
+    if (ssidDisplayFirstHalf == false)
+      ssidDisplayFirstHalf = true;
+    else
+      ssidDisplayFirstHalf = false;
+  }
+
+  //Convert current SSID to string
+  char mySSID[50] = {'\0'};
+
+#ifdef COMPILE_WIFI
+  if (settings.wifiConfigOverAP == true)
+    sprintf(mySSID, "%s", "RTK Config");
+  else
+    sprintf(mySSID, "%s", WiFi.SSID().c_str());
+#else
+  sprintf(mySSID, "%s", "!Compiled");
+#endif
+
+  char mySSIDFront[displayMaxCharacters + 1]; //1 for null terminator
+  char mySSIDBack[displayMaxCharacters + 1]; //1 for null terminator
+
+  //Trim SSID to a max length
+  strncpy(mySSIDFront, mySSID, displayMaxCharacters);
+
+  if (strlen(mySSID) > displayMaxCharacters)
+    strncpy(mySSIDBack, mySSID + (strlen(mySSID) - displayMaxCharacters), displayMaxCharacters);
+  else
+    strncpy(mySSIDBack, mySSID, displayMaxCharacters);
+
+  mySSIDFront[displayMaxCharacters] = '\0';
+  mySSIDBack[displayMaxCharacters] = '\0';
+
+  if (ssidDisplayFirstHalf == true)
+    printTextCenter(mySSIDFront, yPos, QW_FONT_5X7, 1, false);
+  else
+    printTextCenter(mySSIDBack, yPos, QW_FONT_5X7, 1, false);
 
   yPos = yPos + fontHeight + 3;
   printTextCenter("IP:", yPos, QW_FONT_5X7, 1, false);
 
   yPos = yPos + fontHeight + 1;
-  printTextCenter("192.168.4.1", yPos, QW_FONT_5X7, 1, false);
+
+#ifdef COMPILE_AP
+  IPAddress myIpAddress;
+  if (settings.wifiConfigOverAP == true)
+    myIpAddress = WiFi.softAPIP();
+  else
+    myIpAddress = WiFi.localIP();
+
+  //Convert to string
+  char myIP[20] = {'\0'};
+  sprintf(myIP, "%d.%d.%d.%d", myIpAddress[0], myIpAddress[1], myIpAddress[2], myIpAddress[3]);
+
+  char myIPFront[displayMaxCharacters + 1]; //1 for null terminator
+  char myIPBack[displayMaxCharacters + 1]; //1 for null terminator
+
+  strncpy(myIPFront, myIP, displayMaxCharacters);
+
+  if (strlen(myIP) > displayMaxCharacters)
+    strncpy(myIPBack, myIP + (strlen(myIP) - displayMaxCharacters), displayMaxCharacters);
+  else
+    strncpy(myIPBack, myIP, displayMaxCharacters);
+
+  myIPFront[displayMaxCharacters] = '\0';
+  myIPBack[displayMaxCharacters] = '\0';
+
+  if (ssidDisplayFirstHalf == true)
+    printTextCenter(myIPFront, yPos, QW_FONT_5X7, 1, false);
+  else
+    printTextCenter(myIPBack, yPos, QW_FONT_5X7, 1, false);
+
+#else
+  printTextCenter("!Compiled", yPos, QW_FONT_5X7, 1, false);
+#endif
 }
 
 //When user does a factory reset, let us know
@@ -1930,7 +2011,7 @@ void paintSystemTest()
       //Verify the ESP UART2 can communicate TX/RX to ZED UART1
       if (zedUartPassed == false)
       {
-        Serial.println("GNSS test");
+        systemPrintln("GNSS test");
 
         setMuxport(MUX_UBLOX_NMEA); //Set mux to UART so we can debug over data port
         delay(20);
@@ -2295,8 +2376,8 @@ void paintResets()
   {
     oled.setFont(QW_FONT_5X7); //Small font
     oled.setCursor(16 + (8 * 3) + 7, 38); //x, y
-    
-    if(settings.enablePrintBufferOverrun == false)
+
+    if (settings.enablePrintBufferOverrun == false)
       oled.print(settings.resetCount);
     else
       oled.print(settings.resetCount + bufferOverruns);

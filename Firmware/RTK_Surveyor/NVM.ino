@@ -37,13 +37,15 @@ void loadSettings()
   //Get bitmask of active profiles
   activeProfiles = loadProfileNames();
 
-  Serial.printf("Profile '%s' loaded\r\n", profileNames[profileNumber]);
+  systemPrintf("Profile '%s' loaded\r\n", profileNames[profileNumber]);
 }
 
-//Set the settingsFileName used many places
+//Set the settingsFileName and coordinate file names used many places
 void setSettingsFileName()
 {
   sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
+  sprintf(stationCoordinateECEFFileName, "/StationCoordinates-ECEF_%d.csv", profileNumber);
+  sprintf(stationCoordinateGeodeticFileName, "/StationCoordinates-Geodetic_%d.csv", profileNumber);
 }
 
 //Load only LFS settings without recording
@@ -96,7 +98,7 @@ void recordSystemSettingsToFileSD(char *fileName)
       SdFile settingsFile; //FAT32
       if (settingsFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
-        Serial.println("Failed to create settings file");
+        systemPrintln("Failed to create settings file");
         break;
       }
 
@@ -117,7 +119,7 @@ void recordSystemSettingsToFileSD(char *fileName)
 
       //This is an error because the current settings no longer match the settings
       //on the microSD card, and will not be restored to the expected settings!
-      Serial.printf("sdCardSemaphore failed to yield, held by %s, NVM.ino line %d\r\n", semaphoreHolder, __LINE__);
+      systemPrintf("sdCardSemaphore failed to yield, held by %s, NVM.ino line %d\r\n", semaphoreHolder, __LINE__);
     }
     break;
   }
@@ -214,8 +216,6 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%s\r\n", "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
   settingsFile->printf("%s=%s\r\n", "ntripServer_MountPoint", settings.ntripServer_MountPoint);
   settingsFile->printf("%s=%s\r\n", "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
-  settingsFile->printf("%s=%s\r\n", "ntripServer_wifiSSID", settings.ntripServer_wifiSSID);
-  settingsFile->printf("%s=%s\r\n", "ntripServer_wifiPW", settings.ntripServer_wifiPW);
   settingsFile->printf("%s=%d\r\n", "enableNtripClient", settings.enableNtripClient);
   settingsFile->printf("%s=%s\r\n", "ntripClient_CasterHost", settings.ntripClient_CasterHost);
   settingsFile->printf("%s=%d\r\n", "ntripClient_CasterPort", settings.ntripClient_CasterPort);
@@ -223,14 +223,10 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%s\r\n", "ntripClient_CasterUserPW", settings.ntripClient_CasterUserPW);
   settingsFile->printf("%s=%s\r\n", "ntripClient_MountPoint", settings.ntripClient_MountPoint);
   settingsFile->printf("%s=%s\r\n", "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
-  settingsFile->printf("%s=%s\r\n", "ntripClient_wifiSSID", settings.ntripClient_wifiSSID);
-  settingsFile->printf("%s=%s\r\n", "ntripClient_wifiPW", settings.ntripClient_wifiPW);
   settingsFile->printf("%s=%d\r\n", "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
   settingsFile->printf("%s=%d\r\n", "serialTimeoutGNSS", settings.serialTimeoutGNSS);
   settingsFile->printf("%s=%s\r\n", "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
   settingsFile->printf("%s=%d\r\n", "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
-  settingsFile->printf("%s=%s\r\n", "home_wifiSSID", settings.home_wifiSSID);
-  settingsFile->printf("%s=%s\r\n", "home_wifiPW", settings.home_wifiPW);
   settingsFile->printf("%s=%d\r\n", "autoKeyRenewal", settings.autoKeyRenewal);
   settingsFile->printf("%s=%s\r\n", "pointPerfectClientID", settings.pointPerfectClientID);
   settingsFile->printf("%s=%s\r\n", "pointPerfectBrokerHost", settings.pointPerfectBrokerHost);
@@ -284,8 +280,8 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "espnowPeerCount", settings.espnowPeerCount);
   settingsFile->printf("%s=%d\r\n", "enableRtcmMessageChecking", settings.enableRtcmMessageChecking);
   settingsFile->printf("%s=%d\r\n", "bluetoothRadioType", settings.bluetoothRadioType);
-  settingsFile->printf("%s=%d\r\n", "enableNmeaClient", settings.enableNmeaClient);
-  settingsFile->printf("%s=%d\r\n", "enableNmeaServer", settings.enableNmeaServer);
+  settingsFile->printf("%s=%d\r\n", "enableTcpClient", settings.enableTcpClient);
+  settingsFile->printf("%s=%d\r\n", "enableTcpServer", settings.enableTcpServer);
   settingsFile->printf("%s=%d\r\n", "espnowBroadcast", settings.espnowBroadcast);
   settingsFile->printf("%s=%d\r\n", "antennaHeight", settings.antennaHeight);
   settingsFile->printf("%s=%0.2f\r\n", "antennaReferencePoint", settings.antennaReferencePoint);
@@ -293,6 +289,20 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "uartReceiveBufferSize", settings.uartReceiveBufferSize);
   settingsFile->printf("%s=%d\r\n", "gnssHandlerBufferSize", settings.gnssHandlerBufferSize);
   settingsFile->printf("%s=%d\r\n", "enablePrintBufferOverrun", settings.enablePrintBufferOverrun);
+  settingsFile->printf("%s=%d\r\n", "forceResetOnSDFail", settings.forceResetOnSDFail);
+
+  //Record WiFi credential table
+  for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+  {
+    char tempString[100]; //wifiNetwork0Password=parachutes
+    sprintf(tempString, "wifiNetwork%dSSID=%s", x, settings.wifiNetworks[x].ssid);
+    settingsFile->println(tempString);
+    sprintf(tempString, "wifiNetwork%dPassword=%s", x, settings.wifiNetworks[x].password);
+    settingsFile->println(tempString);
+  }
+
+  settingsFile->printf("%s=%d\r\n", "wifiConfigOverAP", settings.wifiConfigOverAP);
+  settingsFile->printf("%s=%d\r\n", "wifiTcpPort", settings.wifiTcpPort);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -338,7 +348,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
         SdFile settingsFile; //FAT32
         if (settingsFile.open(fileName, O_READ) == false)
         {
-          Serial.println("Failed to open settings file");
+          systemPrintln("Failed to open settings file");
           break;
         }
 
@@ -351,23 +361,23 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
           //int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
           int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
           if (n <= 0) {
-            Serial.printf("Failed to read line %d from settings file\r\n", lineNumber);
+            systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
           }
           else if (line[n - 1] != '\n' && n == (sizeof(line) - 1)) {
-            Serial.printf("Settings line %d too long\r\n", lineNumber);
+            systemPrintf("Settings line %d too long\r\n", lineNumber);
             if (lineNumber == 0)
             {
               //If we can't read the first line of the settings file, give up
-              Serial.println("Giving up on settings file");
+              systemPrintln("Giving up on settings file");
               break;
             }
           }
           else if (parseLine(line, settings) == false) {
-            Serial.printf("Failed to parse line %d: %s\r\n", lineNumber, line);
+            systemPrintf("Failed to parse line %d: %s\r\n", lineNumber, line);
             if (lineNumber == 0)
             {
               //If we can't read the first line of the settings file, give up
-              Serial.println("Giving up on settings file");
+              systemPrintln("Giving up on settings file");
               break;
             }
           }
@@ -375,7 +385,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
           lineNumber++;
         }
 
-        //Serial.println("Config file read complete");
+        //systemPrintln("Config file read complete");
         settingsFile.close();
         status = true;
         break;
@@ -390,7 +400,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
     {
       //This is an error because if the settings exist on the microSD card that
       //those settings are not overriding the current settings as documented!
-      Serial.printf("sdCardSemaphore failed to yield, NVM.ino line %d\r\n", __LINE__);
+      systemPrintf("sdCardSemaphore failed to yield, NVM.ino line %d\r\n", __LINE__);
     }
     break;
   } //End SD online
@@ -425,23 +435,23 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
     int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
     //int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
     if (n <= 0) {
-      Serial.printf("Failed to read line %d from settings file\r\n", lineNumber);
+      systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
     }
     else if (line[n - 1] != '\n' && n == (sizeof(line) - 1)) {
-      Serial.printf("Settings line %d too long\r\n", lineNumber);
+      systemPrintf("Settings line %d too long\r\n", lineNumber);
       if (lineNumber == 0)
       {
         //If we can't read the first line of the settings file, give up
-        Serial.println("Giving up on settings file");
+        systemPrintln("Giving up on settings file");
         return (false);
       }
     }
     else if (parseLine(line, settings) == false) {
-      Serial.printf("Failed to parse line %d: %s\r\n", lineNumber, line);
+      systemPrintf("Failed to parse line %d: %s\r\n", lineNumber, line);
       if (lineNumber == 0)
       {
         //If we can't read the first line of the settings file, give up
-        Serial.println("Giving up on settings file");
+        systemPrintln("Giving up on settings file");
         return (false);
       }
     }
@@ -486,7 +496,7 @@ bool parseLine(char* str, Settings *settings)
   {
     //if (strcmp(settingName, "ntripServer_CasterHost") == 0) //Debug
     //if (strcmp(settingName, "profileName") == 0) //Debug
-    //  Serial.printf("Found problem spot raw: %s\r\n", str);
+    //  systemPrintf("Found problem spot raw: %s\r\n", str);
 
     //Assume the value is a string such as 8d8a48b. The leading number causes skipSpace to fail.
     //If settingValue has a mix of letters and numbers, just convert to string
@@ -512,7 +522,7 @@ bool parseLine(char* str, Settings *settings)
       //It's a mix. Skip strtod.
 
       //if (strcmp(settingName, "ntripServer_CasterHost") == 0) //Debug
-      //  Serial.printf("Skipping strtod - settingValue: %s\r\n", settingValue);
+      //  systemPrintf("Skipping strtod - settingValue: %s\r\n", settingValue);
     }
     else
     {
@@ -547,7 +557,7 @@ bool parseLine(char* str, Settings *settings)
 
     //Check to see if this setting file is compatible with this version of RTK Surveyor
     if (d != sizeof(Settings))
-      Serial.printf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\r\n", (int)d, sizeof(Settings));
+      systemPrintf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\r\n", (int)d, sizeof(Settings));
 
   }
   else if (strcmp(settingName, "rtkIdentifier") == 0)
@@ -792,10 +802,6 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->ntripServer_MountPoint, settingValue);
   else if (strcmp(settingName, "ntripServer_MountPointPW") == 0)
     strcpy(settings->ntripServer_MountPointPW, settingValue);
-  else if (strcmp(settingName, "ntripServer_wifiSSID") == 0)
-    strcpy(settings->ntripServer_wifiSSID, settingValue);
-  else if (strcmp(settingName, "ntripServer_wifiPW") == 0)
-    strcpy(settings->ntripServer_wifiPW, settingValue);
   else if (strcmp(settingName, "enableNtripClient") == 0)
     settings->enableNtripClient = d;
   else if (strcmp(settingName, "ntripClient_CasterHost") == 0)
@@ -810,10 +816,6 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->ntripClient_MountPoint, settingValue);
   else if (strcmp(settingName, "ntripClient_MountPointPW") == 0)
     strcpy(settings->ntripClient_MountPointPW, settingValue);
-  else if (strcmp(settingName, "ntripClient_wifiSSID") == 0)
-    strcpy(settings->ntripClient_wifiSSID, settingValue);
-  else if (strcmp(settingName, "ntripClient_wifiPW") == 0)
-    strcpy(settings->ntripClient_wifiPW, settingValue);
   else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
     settings->ntripClient_TransmitGGA = d;
   else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
@@ -822,10 +824,6 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->pointPerfectDeviceProfileToken, settingValue);
   else if (strcmp(settingName, "enablePointPerfectCorrections") == 0)
     settings->enablePointPerfectCorrections = d;
-  else if (strcmp(settingName, "home_wifiSSID") == 0)
-    strcpy(settings->home_wifiSSID, settingValue);
-  else if (strcmp(settingName, "home_wifiPW") == 0)
-    strcpy(settings->home_wifiPW, settingValue);
   else if (strcmp(settingName, "autoKeyRenewal") == 0)
     settings->autoKeyRenewal = d;
   else if (strcmp(settingName, "pointPerfectClientID") == 0)
@@ -906,10 +904,10 @@ bool parseLine(char* str, Settings *settings)
     settings->radioType = (RadioType_e)d;
   else if (strcmp(settingName, "bluetoothRadioType") == 0)
     settings->bluetoothRadioType = (BluetoothRadioType_e)d;
-  else if (strcmp(settingName, "enableNmeaClient") == 0)
-    settings->enableNmeaClient = d;
-  else if (strcmp(settingName, "enableNmeaServer") == 0)
-    settings->enableNmeaServer = d;
+  else if (strcmp(settingName, "enableTcpClient") == 0)
+    settings->enableTcpClient = d;
+  else if (strcmp(settingName, "enableTcpServer") == 0)
+    settings->enableTcpServer = d;
   else if (strcmp(settingName, "espnowBroadcast") == 0)
     settings->espnowBroadcast = d;
   else if (strcmp(settingName, "antennaHeight") == 0)
@@ -924,12 +922,44 @@ bool parseLine(char* str, Settings *settings)
     settings->gnssHandlerBufferSize = d;
   else if (strcmp(settingName, "enablePrintBufferOverrun") == 0)
     settings->enablePrintBufferOverrun = d;
+  else if (strcmp(settingName, "forceResetOnSDFail") == 0)
+    settings->forceResetOnSDFail = d;
+  else if (strcmp(settingName, "wifiConfigOverAP") == 0)
+    settings->wifiConfigOverAP = d;
+  else if (strcmp(settingName, "wifiTcpPort") == 0)
+    settings->wifiTcpPort = d;
 
-  //Check for bulk settings (constellations, message rates, ESPNOW Peers)
+  //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list
   else
   {
     bool knownSetting = false;
+
+    //Scan for WiFi settings
+    if (knownSetting == false)
+    {
+      for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+      {
+        char tempString[100]; //wifiNetwork0Password=parachutes
+        sprintf(tempString, "wifiNetwork%dSSID", x);
+        if (strcmp(settingName, tempString) == 0)
+        {
+          strcpy(settings->wifiNetworks[x].ssid, settingValue);
+          knownSetting = true;
+          break;
+        }
+        else
+        {
+          sprintf(tempString, "wifiNetwork%dPassword", x);
+          if (strcmp(settingName, tempString) == 0)
+          {
+            strcpy(settings->wifiNetworks[x].password, settingValue);
+            knownSetting = true;
+            break;
+          }
+        }
+      }
+    }
 
     //Scan for constellation settings
     if (knownSetting == false)
@@ -976,7 +1006,6 @@ bool parseLine(char* str, Settings *settings)
     }
 
     //Scan for ESPNOW peers
-#ifdef COMPILE_ESPNOW
     if (knownSetting == false)
     {
       for (int x = 0 ; x < ESPNOW_MAX_PEERS ; x++)
@@ -1001,12 +1030,11 @@ bool parseLine(char* str, Settings *settings)
         }
       }
     }
-#endif //ifdef COMPILE_ESPNOW
 
     //Last catch
     if (knownSetting == false)
     {
-      Serial.printf("Unknown setting %s\r\n", settingName);
+      systemPrintf("Unknown setting %s\r\n", settingName);
     }
   }
 
@@ -1052,7 +1080,7 @@ void loadProfileNumber()
   File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_READ);
   if (!fileProfileNumber)
   {
-    Serial.println("profileNumber.txt not found");
+    systemPrintln("profileNumber.txt not found");
     settings.updateZEDSettings = true; //Force module update
     recordProfileNumber(0); //Record profile
   }
@@ -1065,7 +1093,7 @@ void loadProfileNumber()
   //We have arbitrary limit of user profiles
   if (profileNumber >= MAX_PROFILE_COUNT)
   {
-    Serial.println("ProfileNumber invalid. Going to zero.");
+    systemPrintln("ProfileNumber invalid. Going to zero.");
     settings.updateZEDSettings = true; //Force module update
     recordProfileNumber(0); //Record profile
   }

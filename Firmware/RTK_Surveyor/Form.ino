@@ -1,45 +1,32 @@
 //Once connected to the access point for WiFi Config, the ESP32 sends current setting values in one long string to websocket
 //After user clicks 'save', data is validated via main.js and a long string of values is returned.
 
+bool websocketConnected = false;
+
 //Start webserver in AP mode
 void startWebServer()
 {
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-  //Check SD Size
-  if (online.microSD)
-  {
-    csd_t csd;
-    sd->card()->readCSD(&csd); //Card Specific Data
-    sdCardSizeMB = 0.000512 * sd->card()->sectorCount();
-    sd->volumeBegin();
-
-    //Find available cluster/space
-    sdFreeSpaceMB = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
-    sdFreeSpaceMB *= sd->vol()->sectorsPerCluster() / 2;
-    sdFreeSpaceMB /= 1024;
-
-    sdUsedSpaceMB = sdCardSizeMB - sdFreeSpaceMB; //Don't think of it as used, think of it as unusable
-
-    //  Serial.print("Card Size(MB): ");
-    //  Serial.println(sdCardSizeMB);
-    Serial.print("Free space(MB): ");
-    Serial.println(sdFreeSpaceMB);
-    Serial.print("Used space(MB): ");
-    Serial.println(sdUsedSpaceMB);
-  }
-
   ntripClientStop(true); //Do not allocate new wifiClient
-  wifiStartAP();
+  ntripServerStop(true); //Do not allocate new wifiClient
+
+  if (wifiStartAP() == false) //Exits calling wifiConnect()
+    return;
 
   incomingSettings = (char*)malloc(AP_CONFIG_SETTING_SIZE);
-
-  //Clear any garbage from settings array
   memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
 
-  ws.onEvent(onWsEvent);
-  server.addHandler(&ws);
+  //Pre-load settings CSV
+  settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+  createSettingsString(settingsCSV);
+
+  webserver = new AsyncWebServer(80);
+  websocket = new AsyncWebSocket("/ws");
+
+  websocket->onEvent(onWsEvent);
+  webserver->addHandler(websocket);
 
   // * index.html (not gz'd)
   // * favicon.ico
@@ -57,100 +44,112 @@ void startWebServer()
   // * /src/fonts/icomoon.ttf
   // * /src/fonts/icomoon.woof
 
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
+  // * /listfiles responds with a CSV of files and sizes in root
+  // * /file allows the download or deletion of a file
+
+  webserver->onNotFound(notFound);
+
+  webserver->onFileUpload(handleUpload); // Run handleUpload function when any file is uploaded. Must be before server.on() calls.
+
+  webserver->on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", index_html);
   });
 
-  server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", favicon_ico, sizeof(favicon_ico));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", bootstrap_bundle_min_js, sizeof(bootstrap_bundle_min_js));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", bootstrap_min_css, sizeof(bootstrap_min_css));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", bootstrap_min_js, sizeof(bootstrap_min_js));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/jquery-3.6.0.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/jquery-3.6.0.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", jquery_js, sizeof(jquery_js));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/javascript", main_js);
   });
 
-  server.on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", style_css, sizeof(style_css));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/fonts/icomoon.eot", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/fonts/icomoon.eot", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_eot, sizeof(icomoon_eot));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/fonts/icomoon.svg", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/fonts/icomoon.svg", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_svg, sizeof(icomoon_svg));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/fonts/icomoon.ttf", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/fonts/icomoon.ttf", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_ttf, sizeof(icomoon_ttf));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
-  server.on("/src/fonts/icomoon.woof", HTTP_GET, [](AsyncWebServerRequest * request) {
+  webserver->on("/src/fonts/icomoon.woof", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/plain", icomoon_woof, sizeof(icomoon_woof));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
 
   //Handler for the /upload form POST
-  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest * request) {
+  webserver->on("/upload", HTTP_POST, [](AsyncWebServerRequest * request) {
     request->send(200);
   }, handleFirmwareFileUpload);
 
-  server.begin();
+  //Handlers for file manager
+  webserver->on("/listfiles", HTTP_GET, [](AsyncWebServerRequest * request)
+  {
+    String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+    systemPrintln(logmessage);
+    request->send(200, "text/plain", getFileList());
+  });
 
-  //Pre-load settings CSV
-  settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
-  memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
-  createSettingsString(settingsCSV);
+  //Handler for the filemanager
+  webserver->on("/file", HTTP_GET, [](AsyncWebServerRequest * request) {
+    handleFirmwareFileDownload(request);
+  });
+
+  webserver->begin();
 
   log_d("Web Server Started");
   reportHeapNow();
 
 #endif //COMPILE_AP
-
-  wifiSetState(WIFI_NOTCONNECTED);
 #endif //COMPILE_WIFI
-
 }
 
 void stopWebServer()
@@ -158,10 +157,33 @@ void stopWebServer()
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-  free(settingsCSV);
+  if (webserver != NULL)
+  {
+    webserver->end();
+    free(webserver);
+    webserver = NULL;
 
-  //server.reset();
-  server.end();
+    if (websocket != NULL)
+    {
+      Serial.println("Free websocket");
+      delete websocket;
+      websocket = NULL;
+    }
+
+    if (settingsCSV != NULL)
+    {
+      Serial.println("Freeing settingsCSV");
+      free(settingsCSV);
+      settingsCSV = NULL;
+    }
+
+    if (incomingSettings != NULL)
+    {
+      Serial.println("Freeing incomingSettings");
+      free(incomingSettings);
+      incomingSettings = NULL;
+    }
+  }
 
   log_d("Web Server Stopped");
   reportHeapNow();
@@ -170,10 +192,112 @@ void stopWebServer()
 #endif
 }
 
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
+void notFound(AsyncWebServerRequest *request) {
+  String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+  systemPrintln(logmessage);
+  request->send(404, "text/plain", "Not found");
+}
+#endif
+#endif
+
+//Handler for firmware file downloads
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
+static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
+{
+  //This section does not tolerate semaphore transactions
+  String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+
+  if (request->hasParam("name") && request->hasParam("action"))
+  {
+    const char *fileName = request->getParam("name")->value().c_str();
+    const char *fileAction = request->getParam("action")->value().c_str();
+
+    logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
+
+    if (sd->exists(fileName) == false)
+    {
+      systemPrintln(logmessage + " ERROR: file does not exist");
+      request->send(400, "text/plain", "ERROR: file does not exist");
+    }
+    else
+    {
+      systemPrintln(logmessage + " file exists");
+
+      if (strcmp(fileAction, "download") == 0)
+      {
+        logmessage += " downloaded";
+
+        if (managerFileOpen == false)
+        {
+          if (managerTempFile.open(fileName, O_READ) == true)
+            managerFileOpen = true;
+          else
+            systemPrintln("Error: File Manager failed to open file");
+        }
+        else
+        {
+          //File is already in use. Wait your turn.
+          request->send(202, "text/plain", "ERROR: File already downloading");
+        }
+
+        int dataAvailable = managerTempFile.size() - managerTempFile.position();
+
+        AsyncWebServerResponse *response = request->beginResponse("text/plain", dataAvailable,
+                                           [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t
+        {
+          uint32_t bytes = 0;
+          uint32_t availableBytes = managerTempFile.available();
+
+          if (availableBytes > maxLen)
+          {
+            bytes = managerTempFile.read(buffer, maxLen);
+          }
+          else
+          {
+            bytes = managerTempFile.read(buffer, availableBytes);
+            managerFileOpen = false;
+            managerTempFile.close();
+
+            websocket->textAll("fmNext,1,"); //Tell browser to send next file if needed
+          }
+
+          return bytes;
+        });
+
+        response->addHeader("Cache-Control", "no-cache");
+        response->addHeader("Content-Disposition", "attachment; filename=" + String(fileName));
+        response->addHeader("Access-Control-Allow-Origin", "*");
+        request->send(response);
+      }
+      else if (strcmp(fileAction, "delete") == 0)
+      {
+        logmessage += " deleted";
+        sd->remove(fileName);
+        request->send(200, "text/plain", "Deleted File: " + String(fileName));
+      }
+      else
+      {
+        logmessage += " ERROR: invalid action param supplied";
+        request->send(400, "text/plain", "ERROR: invalid action param supplied");
+      }
+      systemPrintln(logmessage);
+    }
+  }
+  else
+  {
+    request->send(400, "text/plain", "ERROR: name and action params required");
+  }
+}
+#endif
+#endif
+
 //Handler for firmware file upload
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
-static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
+static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fileName, size_t index, uint8_t *data, size_t len, bool final)
 {
   if (!index)
   {
@@ -200,13 +324,13 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
       }
       else
       {
-        Serial.printf("Unknown: %s\r\n", fname);
+        systemPrintf("Unknown: %s\r\n", fname);
         return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
       }
     }
     else
     {
-      Serial.printf("Unknown: %s\r\n", fname);
+      systemPrintf("Unknown: %s\r\n", fname);
       return request->send(400, "text/html", "<b>Error:</b> Unknown file type");
     }
   }
@@ -228,13 +352,13 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
         char bytesSentMsg[100];
         sprintf(bytesSentMsg, "%'d bytes sent", binBytesSent);
 
-        Serial.printf("bytesSentMsg: %s\r\n", bytesSentMsg);
+        systemPrintf("bytesSentMsg: %s\r\n", bytesSentMsg);
 
         char statusMsg[200] = {'\0'};
         stringRecord(statusMsg, "firmwareUploadStatus", bytesSentMsg); //Convert to "firmwareUploadMsg,11214 bytes sent,"
 
-        Serial.printf("msg: %s\r\n", statusMsg);
-        ws.textAll(statusMsg);
+        systemPrintf("msg: %s\r\n", statusMsg);
+        websocket->textAll(statusMsg);
       }
 
     }
@@ -249,8 +373,8 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
     }
     else
     {
-      ws.textAll("firmwareUploadComplete,1,");
-      Serial.println("Firmware update complete. Restarting");
+      websocket->textAll("firmwareUploadComplete,1,");
+      systemPrintln("Firmware update complete. Restarting");
       delay(500);
       ESP.restart();
     }
@@ -266,12 +390,17 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
   if (type == WS_EVT_CONNECT) {
+    log_d("Websocket client connected");
     client->text(settingsCSV);
-    wifiSetState(WIFI_CONNECTED);
+    lastCoordinateUpdate = millis();
+    websocketConnected = true;
   }
   else if (type == WS_EVT_DISCONNECT) {
     log_d("Websocket client disconnected");
-    wifiSetState(WIFI_NOTCONNECTED);
+
+    //User has either refreshed the page or disconnected. Recompile the current settings.
+    createSettingsString(settingsCSV);
+    websocketConnected = false;
   }
   else if (type == WS_EVT_DATA) {
     for (int i = 0; i < len; i++) {
@@ -285,18 +414,20 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 #endif
 
 //Create a csv string with current settings
-void createSettingsString(char* settingsCSV)
+void createSettingsString(char* newSettings)
 {
 #ifdef COMPILE_AP
   char tagText[32];
   char nameText[64];
 
+  newSettings[0] = '\0'; //Erase current settings string
+
   //System Info
-  stringRecord(settingsCSV, "platformPrefix", platformPrefix);
+  stringRecord(newSettings, "platformPrefix", platformPrefix);
 
   char apRtkFirmwareVersion[86];
-  sprintf(apRtkFirmwareVersion, "RTK %s Firmware: v%d.%d-%s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
-  stringRecord(settingsCSV, "rtkFirmwareVersion", apRtkFirmwareVersion);
+  sprintf(apRtkFirmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+  stringRecord(newSettings, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
   char apZedPlatform[50];
   if (zedModuleType == PLATFORM_F9P)
@@ -306,94 +437,93 @@ void createSettingsString(char* settingsCSV)
 
   char apZedFirmwareVersion[80];
   sprintf(apZedFirmwareVersion, "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
-  stringRecord(settingsCSV, "zedFirmwareVersion", apZedFirmwareVersion);
+  stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
 
   char apDeviceBTID[30];
   sprintf(apDeviceBTID, "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);
-  stringRecord(settingsCSV, "deviceBTID", apDeviceBTID);
+  stringRecord(newSettings, "deviceBTID", apDeviceBTID);
 
   //GNSS Config
-  stringRecord(settingsCSV, "measurementRateHz", 1000.0 / settings.measurementRate, 2); //2 = decimals to print
-  stringRecord(settingsCSV, "dynamicModel", settings.dynamicModel);
-  stringRecord(settingsCSV, "ubxConstellationsGPS", settings.ubxConstellations[0].enabled); //GPS
-  stringRecord(settingsCSV, "ubxConstellationsSBAS", settings.ubxConstellations[1].enabled); //SBAS
-  stringRecord(settingsCSV, "ubxConstellationsGalileo", settings.ubxConstellations[2].enabled); //Galileo
-  stringRecord(settingsCSV, "ubxConstellationsBeiDou", settings.ubxConstellations[3].enabled); //BeiDou
-  stringRecord(settingsCSV, "ubxConstellationsGLONASS", settings.ubxConstellations[5].enabled); //GLONASS
+  stringRecord(newSettings, "measurementRateHz", 1000.0 / settings.measurementRate, 2); //2 = decimals to print
+  stringRecord(newSettings, "dynamicModel", settings.dynamicModel);
+  stringRecord(newSettings, "ubxConstellationsGPS", settings.ubxConstellations[0].enabled); //GPS
+  stringRecord(newSettings, "ubxConstellationsSBAS", settings.ubxConstellations[1].enabled); //SBAS
+  stringRecord(newSettings, "ubxConstellationsGalileo", settings.ubxConstellations[2].enabled); //Galileo
+  stringRecord(newSettings, "ubxConstellationsBeiDou", settings.ubxConstellations[3].enabled); //BeiDou
+  stringRecord(newSettings, "ubxConstellationsGLONASS", settings.ubxConstellations[5].enabled); //GLONASS
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    stringRecord(settingsCSV, settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
+    stringRecord(newSettings, settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
 
   //Base Config
-  stringRecord(settingsCSV, "baseTypeSurveyIn", !settings.fixedBase);
-  stringRecord(settingsCSV, "baseTypeFixed", settings.fixedBase);
-  stringRecord(settingsCSV, "observationSeconds", settings.observationSeconds);
-  stringRecord(settingsCSV, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
+  stringRecord(newSettings, "baseTypeSurveyIn", !settings.fixedBase);
+  stringRecord(newSettings, "baseTypeFixed", settings.fixedBase);
+  stringRecord(newSettings, "observationSeconds", settings.observationSeconds);
+  stringRecord(newSettings, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
 
   if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
   {
-    stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", true);
-    stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", false);
+    stringRecord(newSettings, "fixedBaseCoordinateTypeECEF", true);
+    stringRecord(newSettings, "fixedBaseCoordinateTypeGeo", false);
   }
   else
   {
-    stringRecord(settingsCSV, "fixedBaseCoordinateTypeECEF", false);
-    stringRecord(settingsCSV, "fixedBaseCoordinateTypeGeo", true);
+    stringRecord(newSettings, "fixedBaseCoordinateTypeECEF", false);
+    stringRecord(newSettings, "fixedBaseCoordinateTypeGeo", true);
   }
 
-  stringRecord(settingsCSV, "fixedEcefX", settings.fixedEcefX, 3);
-  stringRecord(settingsCSV, "fixedEcefY", settings.fixedEcefY, 3);
-  stringRecord(settingsCSV, "fixedEcefZ", settings.fixedEcefZ, 3);
-  stringRecord(settingsCSV, "fixedLat", settings.fixedLat, haeNumberOfDecimals);
-  stringRecord(settingsCSV, "fixedLong", settings.fixedLong, haeNumberOfDecimals);
-  stringRecord(settingsCSV, "fixedAltitude", settings.fixedAltitude, 4);
+  stringRecord(newSettings, "fixedEcefX", settings.fixedEcefX, 3);
+  stringRecord(newSettings, "fixedEcefY", settings.fixedEcefY, 3);
+  stringRecord(newSettings, "fixedEcefZ", settings.fixedEcefZ, 3);
+  stringRecord(newSettings, "fixedLat", settings.fixedLat, haeNumberOfDecimals);
+  stringRecord(newSettings, "fixedLong", settings.fixedLong, haeNumberOfDecimals);
+  stringRecord(newSettings, "fixedAltitude", settings.fixedAltitude, 4);
 
-  stringRecord(settingsCSV, "enableNtripServer", settings.enableNtripServer);
-  stringRecord(settingsCSV, "ntripServer_CasterHost", settings.ntripServer_CasterHost);
-  stringRecord(settingsCSV, "ntripServer_CasterPort", settings.ntripServer_CasterPort);
-  stringRecord(settingsCSV, "ntripServer_CasterUser", settings.ntripServer_CasterUser);
-  stringRecord(settingsCSV, "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
-  stringRecord(settingsCSV, "ntripServer_MountPoint", settings.ntripServer_MountPoint);
-  stringRecord(settingsCSV, "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
-  stringRecord(settingsCSV, "ntripServer_wifiSSID", settings.ntripServer_wifiSSID);
-  stringRecord(settingsCSV, "ntripServer_wifiPW", settings.ntripServer_wifiPW);
+  stringRecord(newSettings, "enableNtripServer", settings.enableNtripServer);
+  stringRecord(newSettings, "ntripServer_CasterHost", settings.ntripServer_CasterHost);
+  stringRecord(newSettings, "ntripServer_CasterPort", settings.ntripServer_CasterPort);
+  stringRecord(newSettings, "ntripServer_CasterUser", settings.ntripServer_CasterUser);
+  stringRecord(newSettings, "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
+  stringRecord(newSettings, "ntripServer_MountPoint", settings.ntripServer_MountPoint);
+  stringRecord(newSettings, "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
 
-  stringRecord(settingsCSV, "enableNtripClient", settings.enableNtripClient);
-  stringRecord(settingsCSV, "ntripClient_CasterHost", settings.ntripClient_CasterHost);
-  stringRecord(settingsCSV, "ntripClient_CasterPort", settings.ntripClient_CasterPort);
-  stringRecord(settingsCSV, "ntripClient_CasterUser", settings.ntripClient_CasterUser);
-  stringRecord(settingsCSV, "ntripClient_CasterUserPW", settings.ntripClient_CasterUserPW);
-  stringRecord(settingsCSV, "ntripClient_MountPoint", settings.ntripClient_MountPoint);
-  stringRecord(settingsCSV, "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
-  stringRecord(settingsCSV, "ntripClient_wifiSSID", settings.ntripClient_wifiSSID);
-  stringRecord(settingsCSV, "ntripClient_wifiPW", settings.ntripClient_wifiPW);
-  stringRecord(settingsCSV, "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
+  stringRecord(newSettings, "enableNtripClient", settings.enableNtripClient);
+  stringRecord(newSettings, "ntripClient_CasterHost", settings.ntripClient_CasterHost);
+  stringRecord(newSettings, "ntripClient_CasterPort", settings.ntripClient_CasterPort);
+  stringRecord(newSettings, "ntripClient_CasterUser", settings.ntripClient_CasterUser);
+  stringRecord(newSettings, "ntripClient_CasterUserPW", settings.ntripClient_CasterUserPW);
+  stringRecord(newSettings, "ntripClient_MountPoint", settings.ntripClient_MountPoint);
+  stringRecord(newSettings, "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
+  stringRecord(newSettings, "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
 
   //Sensor Fusion Config
-  stringRecord(settingsCSV, "enableSensorFusion", settings.enableSensorFusion);
-  stringRecord(settingsCSV, "autoIMUmountAlignment", settings.autoIMUmountAlignment);
+  stringRecord(newSettings, "enableSensorFusion", settings.enableSensorFusion);
+  stringRecord(newSettings, "autoIMUmountAlignment", settings.autoIMUmountAlignment);
 
   //System Config
-  stringRecord(settingsCSV, "enableLogging", settings.enableLogging);
-  stringRecord(settingsCSV, "maxLogTime_minutes", settings.maxLogTime_minutes);
-  stringRecord(settingsCSV, "maxLogLength_minutes", settings.maxLogLength_minutes);
+  stringRecord(newSettings, "enableLogging", settings.enableLogging);
+  stringRecord(newSettings, "maxLogTime_minutes", settings.maxLogTime_minutes);
+  stringRecord(newSettings, "maxLogLength_minutes", settings.maxLogLength_minutes);
 
-  stringRecord(settingsCSV, "sdFreeSpaceMB", sdFreeSpaceMB);
-  stringRecord(settingsCSV, "sdUsedSpaceMB", sdUsedSpaceMB);
+  char sdSpace[30];
+  sprintf(sdSpace, "%s", stringHumanReadableSize(sdFreeSpace));
+  stringRecord(newSettings, "sdFreeSpace", sdSpace);
+  sprintf(sdSpace, "%s", stringHumanReadableSize(sdCardSize));
+  stringRecord(newSettings, "sdSize", sdSpace);
 
-  stringRecord(settingsCSV, "enableResetDisplay", settings.enableResetDisplay);
+  stringRecord(newSettings, "enableResetDisplay", settings.enableResetDisplay);
 
   //Turn on SD display block last
-  stringRecord(settingsCSV, "sdMounted", online.microSD);
+  stringRecord(newSettings, "sdMounted", online.microSD);
 
   //Port Config
-  stringRecord(settingsCSV, "dataPortBaud", settings.dataPortBaud);
-  stringRecord(settingsCSV, "radioPortBaud", settings.radioPortBaud);
-  stringRecord(settingsCSV, "dataPortChannel", settings.dataPortChannel);
+  stringRecord(newSettings, "dataPortBaud", settings.dataPortBaud);
+  stringRecord(newSettings, "radioPortBaud", settings.radioPortBaud);
+  stringRecord(newSettings, "dataPortChannel", settings.dataPortChannel);
 
   //L-Band
   char hardwareID[13];
   sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
-  stringRecord(settingsCSV, "hardwareID", hardwareID);
+  stringRecord(newSettings, "hardwareID", hardwareID);
 
   char apDaysRemaining[20];
   if (strlen(settings.pointPerfectCurrentKey) > 0)
@@ -406,39 +536,177 @@ void createSettingsString(char* settingsCSV)
   else
     sprintf(apDaysRemaining, "No Keys");
 
-  stringRecord(settingsCSV, "daysRemaining", apDaysRemaining);
+  stringRecord(newSettings, "daysRemaining", apDaysRemaining);
 
-  stringRecord(settingsCSV, "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
-  stringRecord(settingsCSV, "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
-  stringRecord(settingsCSV, "home_wifiSSID", settings.home_wifiSSID);
-  stringRecord(settingsCSV, "home_wifiPW", settings.home_wifiPW);
-  stringRecord(settingsCSV, "autoKeyRenewal", settings.autoKeyRenewal);
+  stringRecord(newSettings, "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
+  stringRecord(newSettings, "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
+  stringRecord(newSettings, "autoKeyRenewal", settings.autoKeyRenewal);
 
   //External PPS/Triggers
-  stringRecord(settingsCSV, "enableExternalPulse", settings.enableExternalPulse);
-  stringRecord(settingsCSV, "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
-  stringRecord(settingsCSV, "externalPulseLength_us", settings.externalPulseLength_us);
-  stringRecord(settingsCSV, "externalPulsePolarity", settings.externalPulsePolarity);
-  stringRecord(settingsCSV, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
+  stringRecord(newSettings, "enableExternalPulse", settings.enableExternalPulse);
+  stringRecord(newSettings, "externalPulseTimeBetweenPulse_us", settings.externalPulseTimeBetweenPulse_us);
+  stringRecord(newSettings, "externalPulseLength_us", settings.externalPulseLength_us);
+  stringRecord(newSettings, "externalPulsePolarity", settings.externalPulsePolarity);
+  stringRecord(newSettings, "enableExternalHardwareEventLogging", settings.enableExternalHardwareEventLogging);
 
   //Profiles
-  stringRecord(settingsCSV, "profileName", profileNames[profileNumber]); //Must come before profile number so AP config page JS has name before number
-  stringRecord(settingsCSV, "profileNumber", profileNumber);
+  stringRecord(newSettings, "profileName", profileNames[profileNumber]); //Must come before profile number so AP config page JS has name before number
+  stringRecord(newSettings, "profileNumber", profileNumber);
   for (int index = 0; index < MAX_PROFILE_COUNT; index++)
   {
     sprintf(tagText, "profile%dName", index);
     sprintf(nameText, "%d: %s", index + 1, profileNames[index]);
-    stringRecord(settingsCSV, tagText, nameText);
+    stringRecord(newSettings, tagText, nameText);
   }
-  //stringRecord(settingsCSV, "activeProfiles", activeProfiles);
+  //stringRecord(newSettings, "activeProfiles", activeProfiles);
 
   //System state at power on. Convert various system states to either Rover or Base.
   int lastState = 0; //0 = Rover, 1 = Base
   if (settings.lastState >= STATE_BASE_NOT_STARTED && settings.lastState <= STATE_BASE_FIXED_TRANSMITTING) lastState = 1;
-  stringRecord(settingsCSV, "baseRoverSetup", lastState);
+  stringRecord(newSettings, "baseRoverSetup", lastState);
 
   //Bluetooth radio type
-  stringRecord(settingsCSV, "bluetoothRadioType", settings.bluetoothRadioType);
+  stringRecord(newSettings, "bluetoothRadioType", settings.bluetoothRadioType);
+
+  //Current coordinates come from HPPOSLLH call back
+  stringRecord(newSettings, "geodeticLat", latitude, haeNumberOfDecimals);
+  stringRecord(newSettings, "geodeticLon", longitude, haeNumberOfDecimals);
+  stringRecord(newSettings, "geodeticAlt", altitude, 3);
+
+  double ecefX = 0;
+  double ecefY = 0;
+  double ecefZ = 0;
+
+  geodeticToEcef(latitude, longitude, altitude, &ecefX, &ecefY, &ecefZ);
+
+  stringRecord(newSettings, "ecefX", ecefX, 3);
+  stringRecord(newSettings, "ecefY", ecefY, 3);
+  stringRecord(newSettings, "ecefZ", ecefZ, 3);
+
+  //Antenna height and ARP
+  stringRecord(newSettings, "antennaHeight", settings.antennaHeight);
+  stringRecord(newSettings, "antennaReferencePoint", settings.antennaReferencePoint, 1);
+
+  //Radio / ESP-Now settings
+  char radioMAC[18];   //Send radio MAC
+  sprintf(radioMAC, "%02X:%02X:%02X:%02X:%02X:%02X",
+          wifiMACAddress[0],
+          wifiMACAddress[1],
+          wifiMACAddress[2],
+          wifiMACAddress[3],
+          wifiMACAddress[4],
+          wifiMACAddress[5]
+         );
+  stringRecord(newSettings, "radioMAC", radioMAC);
+  stringRecord(newSettings, "radioType", settings.radioType);
+  stringRecord(newSettings, "espnowPeerCount", settings.espnowPeerCount);
+  for (int index = 0; index < settings.espnowPeerCount; index++)
+  {
+    sprintf(tagText, "peerMAC%d", index);
+    sprintf(nameText, "%02X:%02X:%02X:%02X:%02X:%02X",
+            settings.espnowPeers[index][0],
+            settings.espnowPeers[index][1],
+            settings.espnowPeers[index][2],
+            settings.espnowPeers[index][3],
+            settings.espnowPeers[index][4],
+            settings.espnowPeers[index][5]
+           );
+    stringRecord(newSettings, tagText, nameText);
+  }
+  stringRecord(newSettings, "espnowBroadcast", settings.espnowBroadcast);
+
+  //Add ECEF and Geodetic station data
+  for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
+  {
+    //stationInfo example: LocationA,-1280206.568,-4716804.403,4086665.484
+    char stationInfo[100];
+
+    //Try SD, then LFS
+    if (getFileLineSD(stationCoordinateECEFFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
+    {
+      trim(stationInfo); //Remove trailing whitespace
+      //log_d("ECEF SD station %d - found: %s", index, stationInfo);
+      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
+      sprintf(tagText, "stationECEF%d", index);
+      stringRecord(newSettings, tagText, stationInfo);
+    }
+    else if (getFileLineLFS(stationCoordinateECEFFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
+    {
+      trim(stationInfo); //Remove trailing whitespace
+      //log_d("ECEF LFS station %d - found: %s", index, stationInfo);
+      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
+      sprintf(tagText, "stationECEF%d", index);
+      stringRecord(newSettings, tagText, stationInfo);
+    }
+    else
+    {
+      //We could not find this line
+      break;
+    }
+  }
+
+  for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
+  {
+    //stationInfo example: LocationA,40.09029479,-105.18505761,1560.089
+    char stationInfo[100];
+
+    //Try SD, then LFS
+    if (getFileLineSD(stationCoordinateGeodeticFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
+    {
+      trim(stationInfo); //Remove trailing whitespace
+      //log_d("Geo SD station %d - found: %s", index, stationInfo);
+      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
+      sprintf(tagText, "stationGeodetic%d", index);
+      stringRecord(newSettings, tagText, stationInfo);
+    }
+    else if (getFileLineLFS(stationCoordinateGeodeticFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
+    {
+      trim(stationInfo); //Remove trailing whitespace
+      //log_d("Geo LFS station %d - found: %s", index, stationInfo);
+      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
+      sprintf(tagText, "stationGeodetic%d", index);
+      stringRecord(newSettings, tagText, stationInfo);
+    }
+    else
+    {
+      //We could not find this line
+      break;
+    }
+  }
+
+  //Add WiFi credential table
+  for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+  {
+    sprintf(tagText, "wifiNetwork%dSSID", x);
+    stringRecord(newSettings, tagText, settings.wifiNetworks[x].ssid);
+
+    sprintf(tagText, "wifiNetwork%dPassword", x);
+    stringRecord(newSettings, tagText, settings.wifiNetworks[x].password);
+  }
+
+  //Drop downs on the AP config page expect a value, whereas bools get stringRecord as true/false
+  if (settings.wifiConfigOverAP == true)
+    stringRecord(newSettings, "wifiConfigOverAP", 1); //1 = AP mode, 0 = WiFi
+  else
+    stringRecord(newSettings, "wifiConfigOverAP", 0); //1 = AP mode, 0 = WiFi
+
+  stringRecord(newSettings, "wifiTcpPort", settings.wifiTcpPort);
+  stringRecord(newSettings, "enableRCFirmware", enableRCFirmware);
+
+  //New settings not yet integrated
+  //...
+
+  strcat(newSettings, "\0");
+  systemPrintf("newSettings len: %d\r\n", strlen(newSettings));
+  systemPrintf("newSettings: %s\r\n", newSettings);
+#endif
+}
+
+//Create a csv string with the current coordinates
+void createCoordinateString(char* settingsCSV)
+{
+#ifdef COMPILE_AP
+  settingsCSV[0] = '\0'; //Erase current settings string
 
   //Current coordinates come from HPPOSLLH call back
   stringRecord(settingsCSV, "geodeticLat", latitude, haeNumberOfDecimals);
@@ -455,104 +723,7 @@ void createSettingsString(char* settingsCSV)
   stringRecord(settingsCSV, "ecefY", ecefY, 3);
   stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
 
-  //Antenna height and ARP
-  stringRecord(settingsCSV, "antennaHeight", settings.antennaHeight);
-  stringRecord(settingsCSV, "antennaReferencePoint", settings.antennaReferencePoint, 1);
-
-  //Radio / ESP-Now settings
-  char radioMAC[18];   //Send radio MAC
-  sprintf(radioMAC, "%02X:%02X:%02X:%02X:%02X:%02X",
-          wifiMACAddress[0],
-          wifiMACAddress[1],
-          wifiMACAddress[2],
-          wifiMACAddress[3],
-          wifiMACAddress[4],
-          wifiMACAddress[5]
-         );
-  stringRecord(settingsCSV, "radioMAC", radioMAC);
-  stringRecord(settingsCSV, "radioType", settings.radioType);
-  stringRecord(settingsCSV, "espnowPeerCount", settings.espnowPeerCount);
-  for (int index = 0; index < settings.espnowPeerCount; index++)
-  {
-    sprintf(tagText, "peerMAC%d", index);
-    sprintf(nameText, "%02X:%02X:%02X:%02X:%02X:%02X",
-            settings.espnowPeers[index][0],
-            settings.espnowPeers[index][1],
-            settings.espnowPeers[index][2],
-            settings.espnowPeers[index][3],
-            settings.espnowPeers[index][4],
-            settings.espnowPeers[index][5]
-           );
-    stringRecord(settingsCSV, tagText, nameText);
-  }
-  stringRecord(settingsCSV, "espnowBroadcast", settings.espnowBroadcast);
-
-  //Add ECEF and Geodetic station data
-  for (int index = 0; index < MAX_STATIONS ; index++) //Arbitrary 50 station limit
-  {
-    //stationInfo example: LocationA,-1280206.568,-4716804.403,4086665.484
-    char stationInfo[100];
-
-    //Try SD, then LFS
-    if (getFileLineSD(stationCoordinateECEFFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
-    {
-      trim(stationInfo); //Remove trailing whitespace
-      //log_d("ECEF SD station %d - found: %s", index, stationInfo);
-      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationECEF%d", index);
-      stringRecord(settingsCSV, tagText, stationInfo);
-    }
-    else if (getFileLineLFS(stationCoordinateECEFFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
-    {
-      trim(stationInfo); //Remove trailing whitespace
-      //log_d("ECEF LFS station %d - found: %s", index, stationInfo);
-      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationECEF%d", index);
-      stringRecord(settingsCSV, tagText, stationInfo);
-    }
-    else
-    {
-      //We could not find this line
-      break;
-    }
-  }
-
-  for (int index = 0; index < MAX_STATIONS ; index++) //Arbitrary 50 station limit
-  {
-    //stationInfo example: LocationA,40.09029479,-105.18505761,1560.089
-    char stationInfo[100];
-
-    //Try SD, then LFS
-    if (getFileLineSD(stationCoordinateGeodeticFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
-    {
-      trim(stationInfo); //Remove trailing whitespace
-      //log_d("Geo SD station %d - found: %s", index, stationInfo);
-      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationGeodetic%d", index);
-      stringRecord(settingsCSV, tagText, stationInfo);
-    }
-    else if (getFileLineLFS(stationCoordinateGeodeticFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
-    {
-      trim(stationInfo); //Remove trailing whitespace
-      //log_d("Geo LFS station %d - found: %s", index, stationInfo);
-      replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationGeodetic%d", index);
-      stringRecord(settingsCSV, tagText, stationInfo);
-    }
-    else
-    {
-      //We could not find this line
-      break;
-    }
-  }
-
-
-  //New settings not yet integrated
-  //...
-
   strcat(settingsCSV, "\0");
-  Serial.printf("settingsCSV len: %d\r\n", strlen(settingsCSV));
-  Serial.printf("settingsCSV: %s\r\n", settingsCSV);
 #endif
 }
 
@@ -645,10 +816,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.ntripServer_MountPoint, settingValueStr);
   else if (strcmp(settingName, "ntripServer_MountPointPW") == 0)
     strcpy(settings.ntripServer_MountPointPW, settingValueStr);
-  else if (strcmp(settingName, "ntripServer_wifiSSID") == 0)
-    strcpy(settings.ntripServer_wifiSSID, settingValueStr);
-  else if (strcmp(settingName, "ntripServer_wifiPW") == 0)
-    strcpy(settings.ntripServer_wifiPW, settingValueStr);
 
   else if (strcmp(settingName, "enableNtripClient") == 0)
     settings.enableNtripClient = settingValueBool;
@@ -664,10 +831,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.ntripClient_MountPoint, settingValueStr);
   else if (strcmp(settingName, "ntripClient_MountPointPW") == 0)
     strcpy(settings.ntripClient_MountPointPW, settingValueStr);
-  else if (strcmp(settingName, "ntripClient_wifiSSID") == 0)
-    strcpy(settings.ntripClient_wifiSSID, settingValueStr);
-  else if (strcmp(settingName, "ntripClient_wifiPW") == 0)
-    strcpy(settings.ntripClient_wifiPW, settingValueStr);
   else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
     settings.ntripClient_TransmitGGA = settingValueBool;
   else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
@@ -676,10 +839,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.pointPerfectDeviceProfileToken, settingValueStr);
   else if (strcmp(settingName, "enablePointPerfectCorrections") == 0)
     settings.enablePointPerfectCorrections = settingValueBool;
-  else if (strcmp(settingName, "home_wifiSSID") == 0)
-    strcpy(settings.home_wifiSSID, settingValueStr);
-  else if (strcmp(settingName, "home_wifiPW") == 0)
-    strcpy(settings.home_wifiPW, settingValueStr);
   else if (strcmp(settingName, "autoKeyRenewal") == 0)
     settings.autoKeyRenewal = settingValueBool;
   else if (strcmp(settingName, "antennaHeight") == 0)
@@ -711,6 +870,22 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     recordLineToLFS(stationCoordinateGeodeticFileName, settingValueStr);
     log_d("%s recorded", settingValueStr);
   }
+  else if (strcmp(settingName, "wifiTcpPort") == 0)
+    settings.wifiTcpPort = settingValue;
+  else if (strcmp(settingName, "wifiConfigOverAP") == 0)
+  {
+    if (settingValue == 1) //Drop downs come back as a value
+      settings.wifiConfigOverAP = true;
+    else
+      settings.wifiConfigOverAP = false;
+  }
+
+  else if (strcmp(settingName, "enableTcpClient") == 0)
+    settings.enableTcpClient = settingValueBool;
+  else if (strcmp(settingName, "enableTcpServer") == 0)
+    settings.enableTcpServer = settingValueBool;
+  else if (strcmp(settingName, "enableRCFirmware") == 0)
+    enableRCFirmware = settingValueBool;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}
@@ -722,6 +897,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "enableForgetRadios") == 0) {}
   else if (strcmp(settingName, "nicknameECEF") == 0) {}
   else if (strcmp(settingName, "nicknameGeodetic") == 0) {}
+  else if (strcmp(settingName, "fileSelectAll") == 0) {}
+  else if (strcmp(settingName, "fixedHAE_APC") == 0) {}
 
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
@@ -736,12 +913,15 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     factoryReset();
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
-    Serial.println("Reset after AP Config");
+    //Confirm receipt
+    log_d("Sending reset confirmation");
+    websocket->textAll("confirmReset,1,");
+    delay(500); //Allow for delivery
+
+    systemPrintln("Reset after AP Config");
 
     ESP.restart();
   }
-
-
   else if (strcmp(settingName, "setProfile") == 0)
   {
     //Change to new profile
@@ -751,12 +931,15 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     loadSettings();
 
     //Send new settings to browser. Re-use settingsCSV to avoid stack.
-    settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+    if (settingsCSV == NULL)
+      settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
+
     createSettingsString(settingsCSV);
-    log_d("Sending command: %s", settingsCSV);
-    ws.textAll(String(settingsCSV));
-    free(settingsCSV);
+
+    log_d("Sending profile %d: %s", settingValue, settingsCSV);
+    websocket->textAll(settingsCSV);
   }
   else if (strcmp(settingName, "resetProfile") == 0)
   {
@@ -768,12 +951,15 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     activeProfiles = loadProfileNames();
 
     //Send new settings to browser. Re-use settingsCSV to avoid stack.
-    settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+    if (settingsCSV == NULL)
+      settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
+
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
+
     createSettingsString(settingsCSV);
-    log_d("Sending command: %s", settingsCSV);
-    ws.textAll(String(settingsCSV));
-    free(settingsCSV);
+
+    log_d("Sending reset profile: %s", settingsCSV);
+    websocket->textAll(settingsCSV);
   }
   else if (strcmp(settingName, "forgetEspNowPeers") == 0)
   {
@@ -787,12 +973,89 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     if (settings.enableLogging == true && online.logging == true)
       endSD(false, true); //Close down file. A new one will be created at the next calling of updateLogs().
   }
+  else if (strcmp(settingName, "checkNewFirmware") == 0)
+  {
+    log_d("Checking for new OTA Pull firmware");
+
+    websocket->textAll("checkingNewFirmware,1,"); //Tell the config page we received their request
+
+    char reportedVersion[20];
+    char newVersionCSV[100];
+
+    //Get firmware version from server
+    if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
+    {
+      //We got a version number, now determine if it's newer or not
+      char currentVersion[20];
+      if (enableRCFirmware == false)
+        sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+      else
+        sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+
+      if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
+      {
+        log_d("New version detected");
+        sprintf(newVersionCSV, "newFirmwareVersion,%s,", reportedVersion);
+      }
+      else
+      {
+        log_d("No new firmware available");
+        sprintf(newVersionCSV, "newFirmwareVersion,CURRENT,");
+      }
+    }
+    else
+    {
+      //Failed to get version number
+      log_d("Sending error to AP config page");
+      sprintf(newVersionCSV, "newFirmwareVersion,ERROR,");
+    }
+
+    websocket->textAll(newVersionCSV);
+  }
+  else if (strcmp(settingName, "getNewFirmware") == 0)
+  {
+    log_d("Getting new OTA Pull firmware");
+
+    websocket->textAll("gettingNewFirmware,1,"); //Tell the config page we received their request
+
+    apConfigFirmwareUpdateInProcess = true;
+    otaUpdate();
+
+    //We get here if WiFi failed to connect
+    websocket->textAll("gettingNewFirmware,ERROR,");
+  }
 
   //Check for bulk settings (constellations and message rates)
   //Must be last on else list
   else
   {
     bool knownSetting = false;
+
+    //Scan for WiFi credentials
+    if (knownSetting == false)
+    {
+      for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
+      {
+        char tempString[100]; //wifiNetwork0Password=parachutes
+        sprintf(tempString, "wifiNetwork%dSSID", x);
+        if (strcmp(settingName, tempString) == 0)
+        {
+          strcpy(settings.wifiNetworks[x].ssid, settingValueStr);
+          knownSetting = true;
+          break;
+        }
+        else
+        {
+          sprintf(tempString, "wifiNetwork%dPassword", x);
+          if (strcmp(settingName, tempString) == 0)
+          {
+            strcpy(settings.wifiNetworks[x].password, settingValueStr);
+            knownSetting = true;
+            break;
+          }
+        }
+      }
+    }
 
     //Scan for constellation settings
     if (knownSetting == false)
@@ -828,7 +1091,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     //Last catch
     if (knownSetting == false)
     {
-      Serial.printf("Unknown '%s': %0.3lf\r\n", settingName, settingValue);
+      systemPrintf("Unknown '%s': %0.3lf\r\n", settingName, settingValue);
     }
   } //End last strcpy catch
 #endif
@@ -903,6 +1166,9 @@ bool parseIncomingSettings()
 
   char* commaPtr = incomingSettings;
   char* headPtr = incomingSettings;
+
+  int counter = 0;
+  int maxAttempts = 500;
   while (*headPtr) //Check if string is over
   {
     //Spin to first comma
@@ -923,7 +1189,157 @@ bool parseIncomingSettings()
     //log_d("settingName: %s value: %s", settingName, valueStr);
 
     updateSettingWithValue(settingName, valueStr);
+
+    //Avoid infinite loop if response is malformed
+    counter++;
+    if (counter == maxAttempts)
+    {
+      systemPrintln("Error: Incoming settings malformed.");
+      break;
+    }
+  }
+
+  if (counter < maxAttempts)
+  {
+    //Confirm receipt
+    log_d("Sending receipt confirmation");
+#ifdef COMPILE_AP
+    websocket->textAll("confirmDataReceipt,1,");
+#endif
   }
 
   return (true);
 }
+
+//When called, responds with the root folder list of files on SD card
+//Name and size are formatted in CSV, formatted to html by JS
+String getFileList()
+{
+  //settingsCSV[0] = '\'0; //Clear array
+  String returnText = "";
+  char fileName[50]; //Handle long file names
+
+  //Attempt to gain access to the SD card
+  if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+  {
+    markSemaphore(FUNCTION_FILEMANAGER_UPLOAD1);
+
+    SdFile dir;
+    dir.open("/"); //Open root
+    uint16_t fileCount = 0;
+
+    while (managerTempFile.openNext(&dir, O_READ))
+    {
+      if (managerTempFile.isFile())
+      {
+        fileCount++;
+
+        managerTempFile.getName(fileName, sizeof(fileName));
+
+        returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(managerTempFile.fileSize()) + ",";
+      }
+    }
+
+    dir.close();
+    managerTempFile.close();
+
+    xSemaphoreGive(sdCardSemaphore);
+  }
+  else
+  {
+    char semaphoreHolder[50];
+    getSemaphoreFunction(semaphoreHolder);
+
+    //This is an error because the current settings no longer match the settings
+    //on the microSD card, and will not be restored to the expected settings!
+    systemPrintf("sdCardSemaphore failed to yield, held by %s, Form.ino line %d\r\n", semaphoreHolder, __LINE__);
+  }
+
+  log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
+
+  return returnText;
+}
+
+// Make size of files human readable
+String stringHumanReadableSize(uint64_t bytes)
+{
+  char suffix[5] = {'\0'};
+  char readableSize[50] = {'\0'};
+  float cardSize = 0.0;
+
+  if (bytes < 1024) strcpy(suffix, "B");
+  else if (bytes < (1024 * 1024)) strcpy(suffix, "KB");
+  else if (bytes < (1024 * 1024 * 1024)) strcpy(suffix, "MB");
+  else strcpy(suffix, "GB");
+
+  if (bytes < (1024 * 1024)) cardSize = bytes / 1024.0; //KB
+  else if (bytes < (1024 * 1024 * 1024)) cardSize = bytes / 1024.0 / 1024.0; //MB
+  else cardSize = bytes / 1024.0 / 1024.0 / 1024.0; //GB
+
+  if (strcmp(suffix, "GB") == 0)
+    sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
+  else if (strcmp(suffix, "MB") == 0)
+    sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
+  else
+    sprintf(readableSize, "%0.0f %s", cardSize, suffix); //Don't print decimal portion
+
+  return String(readableSize);
+}
+
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
+
+// Handles uploading of user files to SD
+void handleUpload(AsyncWebServerRequest * request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+  String logmessage = "";
+
+  if (!index)
+  {
+    logmessage = "Upload Start: " + String(filename);
+
+    char tempFileName[50];
+    filename.toCharArray(tempFileName, sizeof(tempFileName));
+
+    //Attempt to gain access to the SD card
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      markSemaphore(FUNCTION_FILEMANAGER_UPLOAD1);
+      managerTempFile.open(tempFileName, O_CREAT | O_APPEND | O_WRITE);
+      xSemaphoreGive(sdCardSemaphore);
+    }
+
+    systemPrintln(logmessage);
+  }
+
+  if (len)
+  {
+    //Attempt to gain access to the SD card
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      markSemaphore(FUNCTION_FILEMANAGER_UPLOAD2);
+      managerTempFile.write(data, len); // stream the incoming chunk to the opened file
+      xSemaphoreGive(sdCardSemaphore);
+    }
+  }
+
+  if (final) {
+    logmessage = "Upload Complete: " + String(filename) + ",size: " + String(index + len);
+
+    //Attempt to gain access to the SD card
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      markSemaphore(FUNCTION_FILEMANAGER_UPLOAD3);
+      updateDataFileCreate(&managerTempFile); // Update the file create time & date
+
+      managerTempFile.close();
+      xSemaphoreGive(sdCardSemaphore);
+    }
+
+    systemPrintln(logmessage);
+    request->redirect("/");
+  }
+}
+
+#endif
+#endif

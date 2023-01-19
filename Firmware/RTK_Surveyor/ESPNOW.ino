@@ -25,11 +25,11 @@ typedef struct PairMessage {
 #ifdef COMPILE_ESPNOW
 void espnowOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
-  //  Serial.print("Last Packet Send Status: ");
+  //  systemPrint("Last Packet Send Status: ");
   //  if (status == ESP_NOW_SEND_SUCCESS)
-  //    Serial.println("Delivery Success");
+  //    systemPrintln("Delivery Success");
   //  else
-  //    Serial.println("Delivery Fail");
+  //    systemPrintln("Delivery Fail");
 }
 #endif
 
@@ -89,27 +89,34 @@ void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type)
 //If the radio is off entirely, start the radio, turn on only the LR protocol
 void espnowStart()
 {
-
 #ifdef COMPILE_ESPNOW
+
+  esp_err_t response;
+
   if (wifiState == WIFI_OFF && espnowState == ESPNOW_OFF)
   {
-    WiFi.mode(WIFI_STA);
+    if (WiFi.getMode() == WIFI_OFF)
+      WiFi.mode(WIFI_STA);
 
     //Radio is off, turn it on
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
-
-    log_d("WiFi off, ESP-Now added to protocols");
+    //esp_wifi_set_protocol requires WiFi to be started
+    response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR); //Stops WiFi Station.
+    if (response != ESP_OK)
+      systemPrintf("espnowStart: Error setting ESP-Now lone protocol: %s\r\n", esp_err_to_name(response));
+    else
+      log_d("WiFi off, ESP-Now added to protocols");
   }
   //If WiFi is on but ESP NOW is off, then enable LR protocol
   else if (wifiState > WIFI_OFF && espnowState == ESPNOW_OFF)
   {
-    WiFi.mode(WIFI_STA);
-
     //Enable WiFi + ESP-Now
-    // Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR); //Stops WiFi Station.
-
-    log_d("WiFi on, ESP-Now added to protocols");
+    //Enable long range, PHY rate of ESP32 will be 512Kbps or 256Kbps
+    //esp_wifi_set_protocol requires WiFi to be started
+    response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR);
+    if (response != ESP_OK)
+      systemPrintf("espnowStart: Error setting ESP-Now + WiFi protocols: %s\r\n", esp_err_to_name(response));
+    else
+      log_d("WiFi on, ESP-Now added to protocols");
   }
 
   //If ESP-Now is already active, do nothing
@@ -118,14 +125,18 @@ void espnowStart()
     log_d("ESP-Now already on");
   }
 
+
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
-    Serial.println("Error starting ESP-Now");
+    systemPrintln("espnowStart: Error starting ESP-Now");
     return;
   }
 
   // Use promiscuous callback to capture RSSI of packet
-  esp_wifi_set_promiscuous(true);
+  response = esp_wifi_set_promiscuous(true);
+  if (response != ESP_OK)
+    systemPrintf("espnowStart: Error setting promiscuous mode: %s\r\n", esp_err_to_name(response));
+
   esp_wifi_set_promiscuous_rx_cb(&promiscuous_rx_cb);
 
   // Register callbacks
@@ -170,7 +181,7 @@ void espnowStart()
     }
   }
 
-  Serial.println("ESP-Now Started");
+  systemPrintln("ESP-Now Started");
 #endif
 }
 
@@ -181,43 +192,54 @@ void espnowStop()
 #ifdef COMPILE_ESPNOW
   if (espnowState == ESPNOW_OFF) return;
 
-  // Turn off promiscuous WiFi mode
-  esp_wifi_set_promiscuous(false);
+  //Turn off promiscuous WiFi mode
+  esp_err_t response = esp_wifi_set_promiscuous(false);
+  if (response != ESP_OK)
+    systemPrintf("espnowStop: Failed to set promiscuous mode: %s\r\n", esp_err_to_name(response));
+
   esp_wifi_set_promiscuous_rx_cb(NULL);
 
-  // Deregister callbacks
+  //Deregister callbacks
   //esp_now_unregister_send_cb();
-  esp_now_unregister_recv_cb();
+  response = esp_now_unregister_recv_cb();
+  if (response != ESP_OK)
+    systemPrintf("espnowStop: Failed to unregister receive callback: %s\r\n", esp_err_to_name(response));
 
-  // Deinit ESP-NOW
+  //Forget all ESP-Now Peers
+  for (int x = 0 ; x < settings.espnowPeerCount ; x++)
+    espnowRemovePeer(settings.espnowPeers[x]);
+
+  //Leave WiFi with default settings (no WIFI_PROTOCOL_LR for ESP NOW)
+  //esp_wifi_set_protocol requires WiFi to be started
+  response = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+  if (response != ESP_OK)
+    systemPrintf("espnowStop: Error setting WiFi protocols: %s\r\n", esp_err_to_name(response));
+  else
+    log_d("WiFi on, ESP-Now added to protocols");
+
+  //Deinit ESP-NOW
   if (esp_now_deinit() != ESP_OK) {
-    Serial.println("Error deinitializing ESP-NOW");
+    systemPrintln("Error deinitializing ESP-NOW");
     return;
   }
 
+  espnowSetState(ESPNOW_OFF);
+
   if (wifiState == WIFI_OFF)
   {
-    //ESP Now is the only thing using the radio, turn it off entirely
+    //ESP Now was the only thing using the radio so turn WiFi radio off entirely
     WiFi.mode(WIFI_OFF);
 
     log_d("WiFi Radio off entirely");
   }
-  //If WiFi is on, then disable LR protocol
+  //If WiFi is on, then restart WiFi
   else if (wifiState > WIFI_OFF)
   {
-    wifiSetState(WIFI_NOTCONNECTED);
-
-    // Return protocol to default settings (no WIFI_PROTOCOL_LR for ESP NOW)
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N); //Stops WiFi Station.
-
-    WiFi.mode(WIFI_STA);
-
-    log_d("WiFi protocols on, LR protocol off");
+    log_d("ESP-Now starting WiFi");
+    wifiStart(); //Force WiFi to restart
   }
 
 #endif
-
-  espnowSetState(ESPNOW_OFF);
 }
 
 //Start ESP-Now if needed, put ESP-Now into broadcast state
@@ -316,7 +338,7 @@ esp_err_t espnowAddPeer(uint8_t *peerMac, bool encrypt)
 
   esp_err_t result = esp_now_add_peer(&peerInfo);
   if (result != ESP_OK)
-    log_d("Failed to add peer");
+    log_d("Failed to add peer: 0x%02X%02X%02X%02X%02X%02X", peerMac[0], peerMac[1], peerMac[2], peerMac[3], peerMac[4], peerMac[5]);
   return (result);
 #else
   return (ESP_OK);
@@ -327,10 +349,11 @@ esp_err_t espnowAddPeer(uint8_t *peerMac, bool encrypt)
 esp_err_t espnowRemovePeer(uint8_t *peerMac)
 {
 #ifdef COMPILE_ESPNOW
-  esp_err_t result = esp_now_del_peer(peerMac);
-  if (result != ESP_OK)
-    log_d("Failed to remove peer");
-  return (result);
+  esp_err_t response = esp_now_del_peer(peerMac);
+  if (response != ESP_OK)
+    log_d("Failed to remove peer: %s", esp_err_to_name(response));
+
+  return (response);
 #else
   return (ESP_OK);
 #endif
@@ -341,29 +364,29 @@ esp_err_t espnowRemovePeer(uint8_t *peerMac)
 void espnowSetState(ESPNOWState newState)
 {
   if (espnowState == newState)
-    Serial.print("*");
+    systemPrint("*");
   espnowState = newState;
 
-  Serial.print("espnowState: ");
+  systemPrint("espnowState: ");
   switch (newState)
   {
     case ESPNOW_OFF:
-      Serial.println("ESPNOW_OFF");
+      systemPrintln("ESPNOW_OFF");
       break;
     case ESPNOW_ON:
-      Serial.println("ESPNOW_ON");
+      systemPrintln("ESPNOW_ON");
       break;
     case ESPNOW_PAIRING:
-      Serial.println("ESPNOW_PAIRING");
+      systemPrintln("ESPNOW_PAIRING");
       break;
     case ESPNOW_MAC_RECEIVED:
-      Serial.println("ESPNOW_MAC_RECEIVED");
+      systemPrintln("ESPNOW_MAC_RECEIVED");
       break;
     case ESPNOW_PAIRED:
-      Serial.println("ESPNOW_PAIRED");
+      systemPrintln("ESPNOW_PAIRED");
       break;
     default:
-      Serial.printf("Unknown ESPNOW state: %d\r\n", newState);
+      systemPrintf("Unknown ESPNOW state: %d\r\n", newState);
       break;
   }
 }
@@ -403,7 +426,7 @@ void espnowProcessRTCM(byte incoming)
 //either through the serial menu or AP config
 void espnowStaticPairing()
 {
-  Serial.println("Begin ESP NOW Pairing");
+  systemPrintln("Begin ESP NOW Pairing");
 
   //Start ESP-Now if needed, put ESP-Now into broadcast state
   espnowBeginPairing();
@@ -411,7 +434,7 @@ void espnowStaticPairing()
   //Begin sending our MAC every 250ms until a remote device sends us there info
   randomSeed(millis());
 
-  Serial.println("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
+  systemPrintln("Begin pairing. Place other unit in pairing mode. Press any key to exit.");
   clearBuffer();
 
   uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -419,9 +442,9 @@ void espnowStaticPairing()
   bool exitPair = false;
   while (exitPair == false)
   {
-    if (Serial.available())
+    if (systemAvailable())
     {
-      Serial.println("User pressed button. Pairing canceled.");
+      systemPrintln("User pressed button. Pairing canceled.");
       break;
     }
 
@@ -432,7 +455,7 @@ void espnowStaticPairing()
 
       if (espnowIsPaired() == true) //Check if we've received a pairing message
       {
-        Serial.println("Pairing compete");
+        systemPrintln("Pairing compete");
         exitPair = true;
         break;
       }
@@ -440,6 +463,6 @@ void espnowStaticPairing()
 
     espnowSendPairMessage(broadcastMac); //Send unit's MAC address over broadcast, no ack, no encryption
 
-    Serial.println("Scanning for other radio...");
+    systemPrintln("Scanning for other radio...");
   }
 }

@@ -67,25 +67,9 @@ bool configureUbloxModuleRover()
 
   response &= i2cGNSS.sendCfgValset(); //Closing - 27 keys
   
-  if (response == false) Serial.println("Rover config failed");
+  if (response == false) log_d("Rover config failed");
 
   return (response);
-}
-
-//Given a payload, return the location of a given constellation
-//This is needed because IMES is not currently returned in the query packet
-//so QZSS and GLONAS are offset by -8 bytes.
-uint8_t locateGNSSID(uint8_t *customPayload, uint8_t constellation)
-{
-  for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
-  {
-    if (customPayload[4 + 8 * x] == constellation) //Test gnssid
-      return (4 + x * 8);
-  }
-
-  Serial.print("locateGNSSID failed: ");
-  Serial.println(constellation);
-  return (0);
 }
 
 //Turn on the three accuracy LEDs depending on our current HPA (horizontal positional accuracy)
@@ -102,9 +86,9 @@ void updateAccuracyLEDs()
       {
         if (settings.enablePrintRoverAccuracy)
         {
-          Serial.print("Rover Accuracy (m): ");
-          Serial.print(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
-          Serial.println();
+          systemPrint("Rover Accuracy (m): ");
+          systemPrint(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
+          systemPrintln();
         }
 
         if (productVariant == RTK_SURVEYOR)
@@ -137,12 +121,12 @@ void updateAccuracyLEDs()
       }
       else if (settings.enablePrintRoverAccuracy)
       {
-        Serial.print("Rover Accuracy: ");
-        Serial.print(horizontalAccuracy);
-        Serial.print(" ");
-        Serial.print("No lock. SIV: ");
-        Serial.print(numSV);
-        Serial.println();
+        systemPrint("Rover Accuracy: ");
+        systemPrint(horizontalAccuracy);
+        systemPrint(" ");
+        systemPrint("No lock. SIV: ");
+        systemPrint(numSV);
+        systemPrintln();
       }
     } //End GNSS online checking
   } //Check every 2000ms

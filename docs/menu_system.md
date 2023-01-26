@@ -31,6 +31,7 @@ The WiFi Config page also allows various aspects of the system to be configured 
 ## Factory Reset
 
 ![Issuing a factory reset](img/SparkFun%20RTK%20System%20Menu%20-%20Factory%20Reset.png)
+
 *Issuing and confirming a Factory Reset*
 
 If a device gets into an unknown state it can be returned to default settings. Press 'r' then 'y' to confirm. The device settings will be reset to defaults. Any settings file and commonly used coordinate files on the SD card associated with the current profile will be removed.

@@ -460,6 +460,13 @@ bool wifiIsNeeded()
      )
     needed = true;
 
+  //If the user has enabled NTRIP Client for an Assisted Survey-In, and Survey-In is running, keep WiFi on.
+  if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_TEMP_SURVEY_STARTED
+      && settings.enableNtripClient == true
+      && settings.fixedBase == false
+     )
+    needed = true;
+
   //If WiFi is on while we are in the following states, allow WiFi to continue to operate
   if (systemState >= STATE_BUBBLE_LEVEL && systemState <= STATE_PROFILE)
   {

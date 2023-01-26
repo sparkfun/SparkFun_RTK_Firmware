@@ -126,8 +126,10 @@ void menuPointPerfectKeys()
         settings.pointPerfectNextKeyStart = settings.pointPerfectCurrentKeyStart + settings.pointPerfectCurrentKeyDuration + 1; //Next key starts after current key
         settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration;
 
+#ifdef ENABLE_DEVELOPER
         systemPrintf("  settings.pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
         systemPrintf("  settings.pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
+#endif
       }
     }
     else if (incoming == 4)
@@ -471,23 +473,6 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
       strcat(settings.pointPerfectNextKey, temp);
     }
 
-    //    systemPrintln();
-
-    //    systemPrintf("pointPerfectCurrentKeyStart: %lld\r\n", settings.pointPerfectCurrentKeyStart);
-    //    systemPrintf("pointPerfectCurrentKeyDuration: %lld\r\n", settings.pointPerfectCurrentKeyDuration);
-    //    systemPrintf("pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
-    //    systemPrintf("pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
-    //
-    //    systemPrintf("currentWeek: %d\r\n", currentWeek);
-    //    systemPrintf("currentToW: %d\r\n", currentToW);
-    //    systemPrint("Current key: ");
-    //    systemPrintln(settings.pointPerfectCurrentKey);
-    //
-    //    systemPrintf("nextWeek: %d\r\n", nextWeek);
-    //    systemPrintf("nextToW: %d\r\n", nextToW);
-    //    systemPrint("nextKey key: ");
-    //    systemPrintln(settings.pointPerfectNextKey);
-
     //Convert from ToW and Week to key duration and key start
     WeekToWToUnixEpoch(&settings.pointPerfectCurrentKeyStart, currentWeek, currentToW);
     WeekToWToUnixEpoch(&settings.pointPerfectNextKeyStart, nextWeek, nextToW);
@@ -500,11 +485,6 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
 
     settings.pointPerfectCurrentKeyDuration = settings.pointPerfectNextKeyStart - settings.pointPerfectCurrentKeyStart - 1;
     settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration; //We assume next key duration is the same as current key duration because we have to
-
-    //    systemPrintf("pointPerfectCurrentKeyStart: %lld\r\n", settings.pointPerfectCurrentKeyStart);
-    //    systemPrintf("pointPerfectCurrentKeyDuration: %lld\r\n", settings.pointPerfectCurrentKeyDuration);
-    //    systemPrintf("pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
-    //    systemPrintf("pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
   }
 
   mqttMessageReceived = true;
@@ -673,16 +653,18 @@ void dateToKeyStartDuration(uint8_t expDay, uint8_t expMonth, uint16_t expYear, 
   *settingsKeyStart = startUnixEpoch * 1000L; //Convert to ms
   *settingsKeyDuration = (28 * 24 * 60 * 60 * 1000LL) - 1; //We assume keys last for 28 days (minus one ms to be before midnight)
 
-  systemPrintf("  KeyStart: %lld\r\n", *settingsKeyStart);
-  systemPrintf("  KeyDuration: %lld\r\n", *settingsKeyDuration);
-
   //Print ToW and Week for debugging
   uint16_t keyGPSWeek;
   uint32_t keyGPSToW;
   long long unixEpoch = thingstreamEpochToGPSEpoch(*settingsKeyStart, *settingsKeyDuration);
   unixEpochToWeekToW(unixEpoch, &keyGPSWeek, &keyGPSToW);
+
+#ifdef ENABLE_DEVELOPER
+  systemPrintf("  KeyStart: %lld\r\n", *settingsKeyStart);
+  systemPrintf("  KeyDuration: %lld\r\n", *settingsKeyDuration);
   systemPrintf("  keyGPSWeek: %d\r\n", keyGPSWeek);
   systemPrintf("  keyGPSToW: %d\r\n", keyGPSToW);
+#endif
 }
 
 /*

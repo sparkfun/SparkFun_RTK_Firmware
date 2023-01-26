@@ -328,7 +328,7 @@ void updateSystemState()
             systemPrint("Time elapsed: ");
             systemPrint(svinObservationTime);
             systemPrint(" Accuracy: ");
-            systemPrint(svinMeanAccuracy);
+            systemPrint(svinMeanAccuracy, 3);
             systemPrint(" SIV: ");
             systemPrint(numSV);
             systemPrintln();

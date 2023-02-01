@@ -81,7 +81,7 @@ jobs:
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_GITHUB_RTK_FILE_TOKEN }}
         with:
-          source_file: ./Blink/build/esp32.esp32.esp32/${{ env.FILENAME_PREFIX }}${{ env.RC_PREFIX }}${{ steps.date.outputs.date }}.bin
+          source_file: ./Firmware/RTK_Surveyor/build/esp32.esp32.esp32/${{ env.FILENAME_PREFIX }}${{ env.RC_PREFIX }}${{ steps.date.outputs.date }}.bin
           destination_repo: 'sparkfun/SparkFun_RTK_Firmware_Binaries'
           destination_folder: ''
           user_email: 'nathan@sparkfun.com'

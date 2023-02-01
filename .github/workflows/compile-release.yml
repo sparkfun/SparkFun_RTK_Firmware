@@ -5,7 +5,7 @@ on:
       - main
 
 env:
-  FILENAME_PREFIX: RTK_Surveyor_Firmware_
+  FILENAME_PREFIX: RTK_Surveyor_Firmware_v
   VERSION: 3.1
   POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
 

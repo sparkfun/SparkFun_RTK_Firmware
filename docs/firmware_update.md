@@ -196,7 +196,7 @@ The following products contain the following u-blox receivers:
 
 The firmware loaded onto the ZED-F9P, ZED-F9R, and NEO-D9S receivers is written by u-blox and can vary depending on the manufacture date. The RTK Firmware (that runs on the ESP32) is designed to flexibly work with any u-blox firmware. Upgrading the ZED-F9x/NEO-D9S is a good thing to consider but is not crucial to the use of RTK products.
 
-Not sure what firmware is loaded onto your RTK product? Open the [System Status Menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system_status/) to display the module's current firmware version.
+Not sure what firmware is loaded onto your RTK product? Open the [System Status Menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system/) to display the module's current firmware version.
 
 The firmware on u-blox devices can be updated using a [Windows-based GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-using-windows-gui) or [u-center](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-using-u-center). A CLI method is also possible using the `ubxfwupdate.exe` tool provided with u-center. Additionally, u-blox offers the source for the ubxfwupdate tool that is written in C. It is currently released only under an NDA so contact your local u-blox Field Applications Engineer if you need a different method.
 

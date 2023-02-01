@@ -358,7 +358,7 @@ void menuSystem()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_EMPTY)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
@@ -464,7 +464,7 @@ void menuWiFi()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_EMPTY)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
@@ -858,7 +858,7 @@ void menuDebug()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_EMPTY)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;

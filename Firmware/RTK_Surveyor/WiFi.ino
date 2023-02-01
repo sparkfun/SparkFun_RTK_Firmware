@@ -46,7 +46,6 @@ static const int MAX_WIFI_CONNECTION_ATTEMPTS = 500;
 //ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
 static int wifiConnectionAttempts = 0; //Count the number of connection attempts between restarts
 static uint32_t wifiConnectionAttemptsTotal; //Count the number of connection attempts absolutely
-static uint32_t wifiLastConnectionAttempt = 0;
 static uint32_t wifiConnectionAttemptTimeout = 0;
 
 //----------------------------------------
@@ -54,6 +53,8 @@ static uint32_t wifiConnectionAttemptTimeout = 0;
 //----------------------------------------
 
 #ifdef COMPILE_WIFI
+
+static uint32_t wifiLastConnectionAttempt = 0;
 
 //WiFi Timer usage:
 //  * Measure interval to display IP address

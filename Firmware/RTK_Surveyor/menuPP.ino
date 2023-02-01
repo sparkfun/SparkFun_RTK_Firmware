@@ -992,7 +992,7 @@ void menuPointPerfect()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_EMPTY)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;

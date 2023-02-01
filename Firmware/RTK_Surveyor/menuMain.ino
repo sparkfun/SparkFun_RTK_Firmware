@@ -55,7 +55,11 @@ void menuMain()
 
     systemPrintln("5) Configure Logging");
 
+#ifdef COMPILE_WIFI
     systemPrintln("6) Configure WiFi");
+#else
+    systemPrintln("6) **WiFi Not Compiled**");
+#endif
 
     systemPrintln("p) Configure User Profiles");
 
@@ -114,7 +118,7 @@ void menuMain()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_EMPTY)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;

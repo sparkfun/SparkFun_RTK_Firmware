@@ -501,11 +501,13 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "maxLogTime_minutes", settings.maxLogTime_minutes);
   stringRecord(newSettings, "maxLogLength_minutes", settings.maxLogLength_minutes);
 
-  char sdSpace[30];
-  sprintf(sdSpace, "%s", stringHumanReadableSize(sdFreeSpace));
-  stringRecord(newSettings, "sdFreeSpace", sdSpace);
-  sprintf(sdSpace, "%s", stringHumanReadableSize(sdCardSize));
-  stringRecord(newSettings, "sdSize", sdSpace);
+  char sdCardSizeChar[20];
+  stringHumanReadableSize(sdCardSize).toCharArray(sdCardSizeChar, sizeof(sdCardSizeChar));
+  char sdFreeSpaceChar[20];
+  stringHumanReadableSize(sdFreeSpace).toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
+
+  stringRecord(newSettings, "sdFreeSpace", sdCardSizeChar);
+  stringRecord(newSettings, "sdSize", sdFreeSpaceChar);
 
   stringRecord(newSettings, "enableResetDisplay", settings.enableResetDisplay);
 

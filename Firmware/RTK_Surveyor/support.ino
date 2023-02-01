@@ -776,8 +776,6 @@ uint8_t nmeaFindFirstComma(PARSE_STATE * parse, uint8_t data)
 //Read the CRC
 uint8_t rtcmReadCrc(PARSE_STATE * parse, uint8_t data)
 {
-  uint16_t dataSent;
-
   //Account for this data byte
   parse->bytesRemaining -= 1;
 
@@ -823,8 +821,6 @@ uint8_t rtcmReadCrc(PARSE_STATE * parse, uint8_t data)
 //Read the rest of the message
 uint8_t rtcmReadData(PARSE_STATE * parse, uint8_t data)
 {
-  uint16_t dataSent;
-
   //Account for this data byte
   parse->bytesRemaining -= 1;
 

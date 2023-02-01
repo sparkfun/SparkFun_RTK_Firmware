@@ -115,7 +115,6 @@ void F9PSerialReadTask(void *e)
 {
   static PARSE_STATE parse = {waitForPreamble, processUart1Message, "Log"};
 
-  bool newDataLost = false; //Goes true at the first instance of 0 bytes available
   uint8_t incomingData = 0;
 
   availableHandlerSpace = settings.gnssHandlerBufferSize;
@@ -949,7 +948,7 @@ void sdSizeCheckTask(void *e)
 
         xSemaphoreGive(sdCardSemaphore);
 
-        uint64_t sdUsedSpace = sdCardSize - sdFreeSpace; //Don't think of it as used, think of it as unusable
+        //uint64_t sdUsedSpace = sdCardSize - sdFreeSpace; //Don't think of it as used, think of it as unusable
 
         systemPrintf("SD card size: %s / Free space: %s\r\n",
                  stringHumanReadableSize(sdCardSize),

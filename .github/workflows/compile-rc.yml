@@ -7,6 +7,7 @@ on:
 env:
   FILENAME_PREFIX: RTK_Surveyor_Firmware_
   RC_PREFIX: RC-
+  VERSION: 3.1
   POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
 
 jobs:
@@ -67,7 +68,11 @@ jobs:
       - name: Get current date
         id: date
         run: echo "date=$(date +'%b_%d_%Y')" >> $GITHUB_OUTPUT
-      
+
+      - name: Get current date
+        id: dateNoScores
+        run: echo "dateNoScores=$(date +'%b %d %Y')" >> $GITHUB_OUTPUT
+
       - name: Rename binary
         run: |
           cd Firmware/RTK_Surveyor
@@ -75,8 +80,34 @@ jobs:
           cd esp32.esp32.esp32
           mv RTK_Surveyor.ino.bin ${{ env.FILENAME_PREFIX }}${{ env.RC_PREFIX }}${{ steps.date.outputs.date }}.bin
 
-      - name: Upload binary to action
-        uses: actions/upload-artifact@v3
-        with: 
-          name: ${{ env.FILENAME_PREFIX }}${{ env.RC_PREFIX }}${{ steps.date.outputs.date }}
-          path: ./Firmware/RTK_Surveyor/build/esp32.esp32.esp32/${{ env.FILENAME_PREFIX }}${{ env.RC_PREFIX }}${{ steps.date.outputs.date }}.bin       
+      - name: Push binary to Binaries Repo
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_GITHUB_RTK_FILE_TOKEN }}
+        with:
+          source_file: ./Firmware/RTK_Surveyor/build/esp32.esp32.esp32/${{ env.FILENAME_PREFIX }}${{ env.RC_PREFIX }}${{ steps.date.outputs.date }}.bin
+          destination_repo: 'sparkfun/SparkFun_RTK_Firmware_Binaries'
+          destination_folder: ''
+          user_email: 'nathan@sparkfun.com'
+          user_name: 'nseidle'
+          commit_message: 'Github Action - Updating Binary ${{ steps.dateNoScores.outputs.dateNoScores }}'
+
+      - name: Update JSON File
+        uses: "DamianReeves/write-file-action@master"
+        with:
+          path: RTK-RC-Firmware.json
+          write-mode: overwrite
+          contents: |
+            {"Configurations": [{"Version":"${{ env.VERSION }}-${{ steps.dateNoScores.outputs.dateNoScores }}", "URL":"https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/${{ env.FILENAME_PREFIX }}${{ env.RC_PREFIX }}${{ steps.date.outputs.date }}.bin"}]}
+
+      - name: Push JSON to Binaries Repo
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_GITHUB_RTK_FILE_TOKEN }}
+        with:
+          source_file: RTK-RC-Firmware.json
+          destination_repo: 'sparkfun/SparkFun_RTK_Firmware_Binaries'
+          destination_folder: ''
+          user_email: 'nathan@sparkfun.com'
+          user_name: 'nseidle'
+          commit_message: 'Github Action - Updating JSON ${{ steps.dateNoScores.outputs.dateNoScores }}'

@@ -68,7 +68,11 @@ jobs:
       - name: Get current date
         id: date
         run: echo "date=$(date +'%b_%d_%Y')" >> $GITHUB_OUTPUT
-      
+
+      - name: Get current date
+        id: dateNoScores
+        run: echo "dateNoScores=$(date +'%b %d %Y')" >> $GITHUB_OUTPUT
+
       - name: Rename binary
         run: |
           cd Firmware/RTK_Surveyor
@@ -106,4 +110,4 @@ jobs:
           destination_folder: ''
           user_email: 'nathan@sparkfun.com'
           user_name: 'nseidle'
-          commit_message: 'Github Action - Updating JSON ${{ steps.date.outputs.date }}'
+          commit_message: 'Github Action - Updating JSON ${{ steps.dateNoScores.outputs.dateNoScores }}'

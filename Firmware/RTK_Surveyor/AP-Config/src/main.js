@@ -846,6 +846,8 @@ function useGeodeticCoordinates() {
     ge("fixedLat").value = geodeticLat;
     ge("fixedLong").value = geodeticLon;
     ge("fixedAltitude").value = geodeticAlt;
+    var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000
+    ge("fixedHAE_APC").value = hae.toFixed(3);
 }
 
 function startNewLog() {
@@ -1061,15 +1063,18 @@ document.addEventListener("DOMContentLoaded", (event) => {
     });
 
     ge("fixedAltitude").addEventListener("change", function () {
-        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        ge("fixedHAE_APC").value = hae.toFixed(3);
     });
 
     ge("antennaHeight").addEventListener("change", function () {
-        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        ge("fixedHAE_APC").value = hae.toFixed(3);
     });
 
     ge("antennaReferencePoint").addEventListener("change", function () {
-        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        ge("fixedHAE_APC").value = hae.toFixed(3);
     });
 })
 
@@ -1160,6 +1165,8 @@ function addGeodetic() {
     checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
     checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
     checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
+    checkElementValue("antennaHeight", -15000, 15000, "Must be -15000 to 15000", "collapseBaseConfig");
+    checkElementValue("antennaReferencePoint", -200.0, 200.0, "Must be -200.0 to 200.0", "collapseBaseConfig");
 
     if (errorCount == 0) {
         //Check name against the list
@@ -1167,12 +1174,12 @@ function addGeodetic() {
         for (; index < recordsGeodetic.length; ++index) {
             var parts = recordsGeodetic[index].split(' ');
             if (ge("nicknameGeodetic").value == parts[0]) {
-                recordsGeodetic[index] = nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLong.value + ' ' + fixedAltitude.value;
+                recordsGeodetic[index] = nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLong.value + ' ' + fixedAltitude.value + ' ' + antennaHeight.value + ' ' + antennaReferencePoint.value;
                 break;
             }
         }
         if (index == recordsGeodetic.length)
-            recordsGeodetic.push(nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLong.value + ' ' + fixedAltitude.value);
+            recordsGeodetic.push(nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLong.value + ' ' + fixedAltitude.value + ' ' + antennaHeight.value + ' ' + antennaReferencePoint.value;
     }
 
     updateGeodeticList();
@@ -1189,14 +1196,19 @@ function loadGeodetic() {
     var val = ge("StationCoordinatesGeodetic").value;
     if (val > "") {
         var parts = recordsGeodetic[val].split(' ');
+        ge("nicknameGeodetic").value = parts[0];
         ge("fixedLat").value = parts[1];
         ge("fixedLong").value = parts[2];
         ge("fixedAltitude").value = parts[3];
-        ge("nicknameGeodetic").value = parts[0];
+        ge("antennaHeight").value = parts[4];
+        ge("antennaReferencePoint").value = parts[5];
+
+        clearError("nicknameGeodetic");
         clearError("fixedLat");
         clearError("fixedLong");
         clearError("fixedAltitude");
-        clearError("nicknameGeodetic");
+        clearError("antennaHeight");
+        clearError("antennaReferencePoint");
     }
 }
 
@@ -1216,7 +1228,6 @@ function updateGeodeticList() {
     }
 
     for (let index = 0; index < recordsGeodetic.length; ++index) {
-
         var option = document.createElement('option');
         option.text = recordsGeodetic[index];
         option.value = index;

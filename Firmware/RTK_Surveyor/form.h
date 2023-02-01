@@ -869,6 +869,8 @@ function useGeodeticCoordinates() {
     ge("fixedLat").value = geodeticLat;
     ge("fixedLong").value = geodeticLon;
     ge("fixedAltitude").value = geodeticAlt;
+    var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000
+    ge("fixedHAE_APC").value = hae.toFixed(3);
 }
 
 function startNewLog() {
@@ -1084,15 +1086,18 @@ document.addEventListener("DOMContentLoaded", (event) => {
     });
 
     ge("fixedAltitude").addEventListener("change", function () {
-        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        ge("fixedHAE_APC").value = hae.toFixed(3);
     });
 
     ge("antennaHeight").addEventListener("change", function () {
-        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        ge("fixedHAE_APC").value = hae.toFixed(3);
     });
 
     ge("antennaReferencePoint").addEventListener("change", function () {
-        ge("fixedHAE_APC").value = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        ge("fixedHAE_APC").value = hae.toFixed(3);
     });
 })
 
@@ -1478,6 +1483,8 @@ function gettingNewFirmware(val) {
 }
 
 function otaFirmwareStatus(percentComplete) {
+    clearTimeout(getNewFirmwareTimeout);
+
     showMsg('firmwareUpdateProgressMsg', percentComplete + "% Complete");
     ge("firmwareUpdateProgressBar").value = percentComplete;
 

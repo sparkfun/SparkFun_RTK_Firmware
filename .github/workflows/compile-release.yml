@@ -90,7 +90,7 @@ jobs:
           destination_folder: ''
           user_email: 'nathan@sparkfun.com'
           user_name: 'nseidle'
-          commit_message: 'Github Action - Updating Binary ${{ steps.date.outputs.date }}'
+          commit_message: 'Github Action - Updating Binary ${{ steps.dateNoScores.outputs.dateNoScores }}'
 
       - name: Update JSON File
         uses: "DamianReeves/write-file-action@master"

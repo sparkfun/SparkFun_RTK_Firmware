@@ -38,7 +38,6 @@ void menuSystem()
 
       battLevel = lipo.getSOC();
       battVoltage = lipo.getVoltage();
-      battChangeRate = lipo.getChangeRate();
 
       systemPrintf("Batt (%d%%) / Voltage: %0.02fV", battLevel, battVoltage);
       systemPrintln();

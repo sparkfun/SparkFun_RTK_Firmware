@@ -300,7 +300,7 @@ const int readTaskStackSize = 2000;
 
 TaskHandle_t handleGNSSDataTaskHandle = NULL;
 const uint8_t handleGNSSDataTaskPriority = 1; //3 being the highest, and 0 being the lowest
-const int handleGNSSDataTaskStackSize = 2000;
+const int handleGNSSDataTaskStackSize = 3000;
 
 TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
 volatile bool uart2pinned = false; //This variable is touched by core 0 but checked by core 1. Must be volatile.

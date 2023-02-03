@@ -115,7 +115,6 @@ void F9PSerialReadTask(void *e)
 {
   static PARSE_STATE parse = {waitForPreamble, processUart1Message, "Log"};
 
-  bool newDataLost = false; //Goes true at the first instance of 0 bytes available
   uint8_t incomingData = 0;
 
   availableHandlerSpace = settings.gnssHandlerBufferSize;
@@ -131,10 +130,6 @@ void F9PSerialReadTask(void *e)
       //Read the data from UART1
       incomingData = serialGNSS.read();
 
-      //For testing: Inject bad data once in awhile
-      //if(random(0,10000) == 1) //0.01% failure rate
-      //  incomingData = 0xAA; //Bogus data
-
       //Save the data byte
       parse.buffer[parse.length++] = incomingData;
       parse.length %= PARSE_BUFFER_LENGTH;
@@ -146,8 +141,6 @@ void F9PSerialReadTask(void *e)
       //Update the parser state based on the incoming byte
       parse.state(&parse, incomingData);
     }
-
-    //emptyRingBuffer(true); //Empty and record to SD
 
     delay(1);
     taskYIELD();
@@ -223,9 +216,6 @@ void processUart1Message(PARSE_STATE * parse, uint8_t type)
   //Display the dataHead offset
   if (settings.enablePrintRingBufferOffsets && (!inMainMenu))
     systemPrintf("%4d\r\n", dataHead);
-
-  //Start emptying the ring buffer
-  //emptyRingBuffer(false);
 }
 
 //If new data is in the ringBuffer, dole it out to appropriate interface
@@ -281,7 +271,6 @@ void handleGNSSDataTask(void *e)
     //Send data over Bluetooth
     //----------------------------------------------------------------------
 
-    //If we are actively survey-in then do not pass NMEA data from ZED to phone
     if (!btConnected)
       //Discard the data
       btTail = dataHead;
@@ -361,7 +350,7 @@ void handleGNSSDataTask(void *e)
           if (settings.enablePrintSDBuffers && !inMainMenu)
           {
             int availableUARTSpace = settings.uartReceiveBufferSize - serialGNSS.available();
-            systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\n\r", serialGNSS.available(), 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
+            systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\r\n", serialGNSS.available(), 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
           }
 
           //Write the data to the file
@@ -390,7 +379,7 @@ void handleGNSSDataTask(void *e)
           if (settings.enablePrintBufferOverrun)
           {
             if (endTime - startTime > 150)
-              systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\n\r", endTime - startTime, fileSize, sdBytesToRecord, combinedSpaceRemaining);
+              systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\r\n", endTime - startTime, fileSize, sdBytesToRecord, combinedSpaceRemaining);
           }
 
           xSemaphoreGive(sdCardSemaphore);
@@ -949,7 +938,7 @@ void sdSizeCheckTask(void *e)
 
         xSemaphoreGive(sdCardSemaphore);
 
-        uint64_t sdUsedSpace = sdCardSize - sdFreeSpace; //Don't think of it as used, think of it as unusable
+        //uint64_t sdUsedSpace = sdCardSize - sdFreeSpace; //Don't think of it as used, think of it as unusable
 
         systemPrintf("SD card size: %s / Free space: %s\r\n",
                  stringHumanReadableSize(sdCardSize),

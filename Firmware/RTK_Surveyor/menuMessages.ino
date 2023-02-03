@@ -10,18 +10,24 @@ void menuLog()
 
     if (settings.enableSD && online.microSD)
     {
+      char sdCardSizeChar[20];
+      stringHumanReadableSize(sdCardSize).toCharArray(sdCardSizeChar, sizeof(sdCardSizeChar));
+      char sdFreeSpaceChar[20];
+      stringHumanReadableSize(sdFreeSpace).toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
+
       char myString[200];
       snprintf(myString, sizeof(myString),
                "SD card size: %s / Free space: %s",
-               stringHumanReadableSize(sdCardSize),
-               stringHumanReadableSize(sdFreeSpace)
+               sdCardSizeChar,
+               sdFreeSpaceChar
               );
       systemPrintln(myString);
     }
     else
       systemPrintln("No microSD card is detected");
 
-    systemPrintf("Buffer overruns: %d\n\r", bufferOverruns);
+    if(bufferOverruns) 
+      systemPrintf("Buffer overruns: %d\r\n", bufferOverruns);
 
     systemPrint("1) Log to microSD: ");
     if (settings.enableLogging == true) systemPrintln("Enabled");

@@ -306,19 +306,32 @@ void ntripClientStop(bool wifiClientAllocated)
 #endif  //COMPILE_WIFI
 }
 
-//Check for the arrival of any correction data. Push it to the GNSS.
-//Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
-void ntripClientUpdate()
+//Determine if NTRIP Client is needed
+bool ntripClientIsNeeded()
 {
   if (settings.enableNtripClient == false)
   {
     //If user turns off NTRIP Client via settings, stop server
     if (ntripClientState > NTRIP_CLIENT_OFF)
       ntripClientStop(true);  //Don't allocate new wifiClient
-    return;
+    return(false);
   }
 
-  if (wifiInConfigMode()) return; //Do not service NTRIP during WiFi config
+  if (wifiInConfigMode()) return(false); //Do not service NTRIP during WiFi config
+
+  //Allow NTRIP Client to run during Survey-In,
+  //but do not allow NTRIP Client to run during Base
+  if (systemState == STATE_BASE_TEMP_TRANSMITTING)
+    return(false);
+
+  return(true);
+}
+
+//Check for the arrival of any correction data. Push it to the GNSS.
+//Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
+void ntripClientUpdate()
+{
+  if(ntripClientIsNeeded() == false) return;
 
 #ifdef COMPILE_WIFI
   //Periodically display the NTRIP client state

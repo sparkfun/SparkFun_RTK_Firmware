@@ -7,6 +7,14 @@ void menuBase()
     systemPrintln();
     systemPrintln("Menu: Base");
 
+    //Print the combined HAE APC if we are in the given mode
+    if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
+    {
+      systemPrintf("Total Height Above Ellipsoid - Antenna Phase Center (HAE APC): %0.3fmm\r\n",
+                   (((settings.fixedAltitude * 1000) + settings.antennaHeight + settings.antennaReferencePoint) / 1000)
+                  );
+    }
+
     systemPrint("1) Toggle Base Mode: ");
     if (settings.fixedBase == true) systemPrintln("Fixed/Static Position");
     else systemPrintln("Use Survey-In");
@@ -588,7 +596,7 @@ void recordLineToLFS(const char* fileName, const char* lineData)
   File file = LittleFS.open(fileName, FILE_APPEND);
   if (!file)
   {
-    systemPrintf("File %s failed to create\n\r", fileName);
+    systemPrintf("File %s failed to create\r\n", fileName);
     return;
   }
 

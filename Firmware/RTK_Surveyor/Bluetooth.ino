@@ -109,7 +109,11 @@ bool bluetoothRxDataAvailable()
 int bluetoothWrite(const uint8_t *buffer, int length)
 {
 #ifdef COMPILE_BT
-  return bluetoothSerial->write(buffer, length);
+  //BLE write does not handle 0 length requests correctly
+  if(length > 0)
+    return bluetoothSerial->write(buffer, length);
+  else
+    return 0;
 #else   //COMPILE_BT
   return 0;
 #endif  //COMPILE_BT

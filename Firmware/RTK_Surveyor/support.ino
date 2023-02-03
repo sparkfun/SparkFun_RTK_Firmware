@@ -323,7 +323,7 @@ byte getCharacterNumber()
   }
   else if (response == INPUT_RESPONSE_TIMEOUT)
   {
-    systemPrintln("\n\rNo user response - Do you have line endings turned on?");
+    systemPrintln("\r\nNo user response - Do you have line endings turned on?");
     userByte = 255; //Timeout
   }
   else if (response == INPUT_RESPONSE_EMPTY)
@@ -352,7 +352,7 @@ long getNumber()
   }
   else if (response == INPUT_RESPONSE_TIMEOUT)
   {
-    systemPrintln("\n\rNo user response - Do you have line endings turned on?");
+    systemPrintln("\r\nNo user response - Do you have line endings turned on?");
     userNumber = INPUT_RESPONSE_GETNUMBER_TIMEOUT; //Timeout
   }
   else if (response == INPUT_RESPONSE_EMPTY)
@@ -776,8 +776,6 @@ uint8_t nmeaFindFirstComma(PARSE_STATE * parse, uint8_t data)
 //Read the CRC
 uint8_t rtcmReadCrc(PARSE_STATE * parse, uint8_t data)
 {
-  uint16_t dataSent;
-
   //Account for this data byte
   parse->bytesRemaining -= 1;
 
@@ -823,8 +821,6 @@ uint8_t rtcmReadCrc(PARSE_STATE * parse, uint8_t data)
 //Read the rest of the message
 uint8_t rtcmReadData(PARSE_STATE * parse, uint8_t data)
 {
-  uint16_t dataSent;
-
   //Account for this data byte
   parse->bytesRemaining -= 1;
 

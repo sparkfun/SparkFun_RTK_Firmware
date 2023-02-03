@@ -255,6 +255,7 @@ typedef enum
   INPUT_RESPONSE_GETNUMBER_EXIT = -9999999, //Less than min ECEF. User may be prompted for number but wants to exit without entering data
   INPUT_RESPONSE_GETNUMBER_TIMEOUT = -9999998,
   INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT = 255,
+  INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY = 254,
   INPUT_RESPONSE_TIMEOUT = -3,
   INPUT_RESPONSE_OVERFLOW = -2,
   INPUT_RESPONSE_EMPTY = -1,
@@ -296,6 +297,7 @@ typedef enum
   FUNCTION_FILEMANAGER_UPLOAD3,
   FUNCTION_SDSIZECHECK,
   FUNCTION_LOG_CLOSURE,
+  FUNCTION_PRINT_FILE_LIST,
 
 } SemaphoreFunction;
 
@@ -571,7 +573,7 @@ typedef struct {
   bool enableTcpServer = false;
   bool enablePrintTcpStatus = false;
   bool espnowBroadcast = true; //When true, overrides peers and sends all data via broadcast
-  uint16_t antennaHeight = 0; //in mm
+  int16_t antennaHeight = 0; //in mm
   float antennaReferencePoint = 0.0; //in mm
   bool echoUserInput = true;
   int uartReceiveBufferSize = 1024 * 2; //This buffer is filled automatically as the UART receives characters.

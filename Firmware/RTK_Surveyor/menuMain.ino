@@ -55,14 +55,18 @@ void menuMain()
 
     systemPrintln("5) Configure Logging");
 
+#ifdef COMPILE_WIFI
     systemPrintln("6) Configure WiFi");
+#else
+    systemPrintln("6) **WiFi Not Compiled**");
+#endif
 
     systemPrintln("p) Configure User Profiles");
 
 #ifdef COMPILE_ESPNOW
     systemPrintln("r) Configure Radios");
 #else
-    systemPrintln("r) ESP_Now Not Compiled **");
+    systemPrintln("r) **ESP-Now Not Compiled**");
 #endif
 
     if (online.lband == true)
@@ -114,7 +118,7 @@ void menuMain()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_EMPTY)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;

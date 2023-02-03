@@ -1,8 +1,6 @@
 //Display current system status
 void menuSystem()
 {
-  bool sdCardAlreadyMounted;
-
   while (1)
   {
     systemPrintln();
@@ -38,7 +36,6 @@ void menuSystem()
 
       battLevel = lipo.getSOC();
       battVoltage = lipo.getVoltage();
-      battChangeRate = lipo.getChangeRate();
 
       systemPrintf("Batt (%d%%) / Voltage: %0.02fV", battLevel, battVoltage);
       systemPrintln();
@@ -308,35 +305,7 @@ void menuSystem()
     }
     else if ((incoming == 'f') && (settings.enableSD == true) &&  (online.microSD == true))
     {
-      sdCardAlreadyMounted = online.microSD;
-      if (!online.microSD)
-        beginSD();
-
-      //Notify the user if the microSD card is not available
-      if (!online.microSD)
-        systemPrintln("microSD card not online!");
-      else
-      {
-        //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-        if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
-        {
-          markSemaphore(FUNCTION_FILELIST);
-
-          systemPrintln("Files found (date time size name):\r\n");
-          sd->ls(LS_R | LS_DATE | LS_SIZE);
-        }
-        else
-        {
-          //Error failed to list the contents of the microSD card
-          systemPrintf("sdCardSemaphore failed to yield, menuSystem.ino line %d\r\n", __LINE__);
-        }
-
-        //Release the SD card if not originally mounted
-        if (sdCardAlreadyMounted)
-          xSemaphoreGive(sdCardSemaphore);
-        else
-          endSD(true, true);
-      }
+      printFileList();
     }
     // Support mode switching
     else if (incoming == 'B') {
@@ -358,7 +327,7 @@ void menuSystem()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_EMPTY)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
@@ -464,7 +433,7 @@ void menuWiFi()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_EMPTY)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
@@ -509,7 +478,7 @@ void menuDebug()
     systemPrintln();
     systemPrintln("Menu: Debug");
 
-    systemPrintf("Filtered by parser: %d NMEA / %d RTCM / %d UBX\n\r",
+    systemPrintf("Filtered by parser: %d NMEA / %d RTCM / %d UBX\r\n",
                  failedParserMessages_NMEA,
                  failedParserMessages_RTCM,
                  failedParserMessages_UBX);
@@ -858,7 +827,7 @@ void menuDebug()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_EMPTY)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
@@ -917,5 +886,89 @@ void printCurrentConditionsNMEA()
     char nmeaMessage[100]; //Max NMEA sentence length is 82
     createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, (char *)"OFFLINE"); //textID, buffer, text
     systemPrintln(nmeaMessage);
+  }
+}
+
+//When called, prints the contents of root folder list of files on SD card
+//This allows us to replace the sd.ls() function to point at Serial and BT outputs
+void printFileList()
+{
+  bool sdCardAlreadyMounted = online.microSD;
+  if (!online.microSD)
+    beginSD();
+
+  //Notify the user if the microSD card is not available
+  if (!online.microSD)
+    systemPrintln("microSD card not online!");
+  else
+  {
+    //Attempt to gain access to the SD card
+    if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    {
+      markSemaphore(FUNCTION_PRINT_FILE_LIST);
+
+      SdFile dir;
+      dir.open("/"); //Open root
+      uint16_t fileCount = 0;
+
+      SdFile tempFile;
+
+      systemPrintln("Files found:");
+
+      while (tempFile.openNext(&dir, O_READ))
+      {
+        if (tempFile.isFile())
+        {
+          fileCount++;
+
+          //2017-05-19 187362648 800_0291.MOV
+
+          //Get File Date from sdFat
+          uint16_t fileDate;
+          uint16_t fileTime;
+          tempFile.getCreateDateTime(&fileDate, &fileTime);
+
+          //Convert sdFat file date fromat into YYYY-MM-DD
+          char fileDateChar[20];
+          sprintf(fileDateChar, "%d-%02d-%02d",
+                  ((fileDate >> 9) + 1980), //Year
+                  ((fileDate >> 5) & 0b1111), //Month
+                  (fileDate & 0b11111) //Day
+                 );
+
+          char fileSizeChar[20];
+          stringHumanReadableSize(tempFile.fileSize()).toCharArray(fileSizeChar, sizeof(fileSizeChar));
+
+          char fileName[50]; //Handle long file names
+          tempFile.getName(fileName, sizeof(fileName));
+
+          char fileRecord[100];
+          sprintf(fileRecord, "%s\t%s\t%s", fileDateChar, fileSizeChar, fileName);
+
+          systemPrintln(fileRecord);
+        }
+      }
+
+      dir.close();
+      tempFile.close();
+
+      if (fileCount == 0)
+        systemPrintln("No files found");
+    }
+    else
+    {
+      char semaphoreHolder[50];
+      getSemaphoreFunction(semaphoreHolder);
+
+      //This is an error because the current settings no longer match the settings
+      //on the microSD card, and will not be restored to the expected settings!
+      systemPrintf("sdCardSemaphore failed to yield, held by %s, menuSystem.ino line %d\r\n", semaphoreHolder, __LINE__);
+    }
+
+    //Release the SD card if not originally mounted
+    if (sdCardAlreadyMounted)
+      xSemaphoreGive(sdCardSemaphore);
+    else
+      endSD(true, true);
   }
 }

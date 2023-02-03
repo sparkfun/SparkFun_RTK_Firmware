@@ -101,7 +101,7 @@ void menuFirmware()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == INPUT_RESPONSE_EMPTY)
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
       break;
@@ -404,7 +404,7 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
   }
 
   if (gotVersion == true)
-    log_d("Available OTA firmware version: %s\n\r", versionAvailable);
+    log_d("Available OTA firmware version: %s\r\n", versionAvailable);
 
 #endif
   return (gotVersion);
@@ -414,7 +414,6 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
 //Exits by either updating firmware and resetting, or failing to connect
 void otaUpdate()
 {
-  bool updateAvailable = false;
 #ifdef COMPILE_WIFI
   bool previouslyConnected = wifiIsConnected();
 

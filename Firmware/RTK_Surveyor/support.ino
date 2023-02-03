@@ -323,7 +323,7 @@ byte getCharacterNumber()
   }
   else if (response == INPUT_RESPONSE_TIMEOUT)
   {
-    systemPrintln("\n\rNo user response - Do you have line endings turned on?");
+    systemPrintln("\r\nNo user response - Do you have line endings turned on?");
     userByte = 255; //Timeout
   }
   else if (response == INPUT_RESPONSE_EMPTY)
@@ -352,7 +352,7 @@ long getNumber()
   }
   else if (response == INPUT_RESPONSE_TIMEOUT)
   {
-    systemPrintln("\n\rNo user response - Do you have line endings turned on?");
+    systemPrintln("\r\nNo user response - Do you have line endings turned on?");
     userNumber = INPUT_RESPONSE_GETNUMBER_TIMEOUT; //Timeout
   }
   else if (response == INPUT_RESPONSE_EMPTY)

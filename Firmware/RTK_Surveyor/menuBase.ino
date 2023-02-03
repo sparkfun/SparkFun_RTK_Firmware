@@ -596,7 +596,7 @@ void recordLineToLFS(const char* fileName, const char* lineData)
   File file = LittleFS.open(fileName, FILE_APPEND);
   if (!file)
   {
-    systemPrintf("File %s failed to create\n\r", fileName);
+    systemPrintf("File %s failed to create\r\n", fileName);
     return;
   }
 

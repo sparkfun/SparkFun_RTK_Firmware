@@ -26,7 +26,8 @@ void menuLog()
     else
       systemPrintln("No microSD card is detected");
 
-    systemPrintf("Buffer overruns: %d\n\r", bufferOverruns);
+    if(bufferOverruns) 
+      systemPrintf("Buffer overruns: %d\r\n", bufferOverruns);
 
     systemPrint("1) Log to microSD: ");
     if (settings.enableLogging == true) systemPrintln("Enabled");

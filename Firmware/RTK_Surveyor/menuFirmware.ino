@@ -404,7 +404,7 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
   }
 
   if (gotVersion == true)
-    log_d("Available OTA firmware version: %s\n\r", versionAvailable);
+    log_d("Available OTA firmware version: %s\r\n", versionAvailable);
 
 #endif
   return (gotVersion);

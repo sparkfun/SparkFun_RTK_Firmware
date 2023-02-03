@@ -166,7 +166,7 @@ void menuPortsMultiplexed()
     }
     else if (incoming == 2)
     {
-      systemPrintln("\n\rEnter the pin connection to use (1 to 4) for Data Port: ");
+      systemPrintln("\r\nEnter the pin connection to use (1 to 4) for Data Port: ");
       systemPrintln("1) NMEA TX Out/RX In");
       systemPrintln("2) PPS OUT/Event Trigger In");
       if (zedModuleType == PLATFORM_F9P)

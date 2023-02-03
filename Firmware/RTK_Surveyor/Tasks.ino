@@ -350,7 +350,7 @@ void handleGNSSDataTask(void *e)
           if (settings.enablePrintSDBuffers && !inMainMenu)
           {
             int availableUARTSpace = settings.uartReceiveBufferSize - serialGNSS.available();
-            systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\n\r", serialGNSS.available(), 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
+            systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\r\n", serialGNSS.available(), 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
           }
 
           //Write the data to the file
@@ -379,7 +379,7 @@ void handleGNSSDataTask(void *e)
           if (settings.enablePrintBufferOverrun)
           {
             if (endTime - startTime > 150)
-              systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\n\r", endTime - startTime, fileSize, sdBytesToRecord, combinedSpaceRemaining);
+              systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\r\n", endTime - startTime, fileSize, sdBytesToRecord, combinedSpaceRemaining);
           }
 
           xSemaphoreGive(sdCardSemaphore);

@@ -430,4 +430,4 @@ The software options for Apple iOS are much more limited because Apple products 
 
 We recommend SWMaps for iOS. SWMaps is available for iOS [here](https://apps.apple.com/us/app/sw-maps/id6444248083).  
 
-More information is available on the [System Menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system_status/) for switching between Bluetooth SPP and BLE.
+More information is available on the [System Menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system/) for switching between Bluetooth SPP and BLE.

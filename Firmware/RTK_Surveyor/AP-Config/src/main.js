@@ -1295,6 +1295,10 @@ function fileManagerToggle() {
 function fileManagerDelete() {
     selectedFiles = document.querySelectorAll('input[name=fileID]:checked');
 
+    if (confirm("Delete " + selectedFiles.length + " files?") == false) {
+        return;
+    }
+
     for (let x = 0; x < selectedFiles.length; x++) {
         var urltocall = "/file?name=" + selectedFiles[x].id + "&action=delete";
         xmlhttp = new XMLHttpRequest();

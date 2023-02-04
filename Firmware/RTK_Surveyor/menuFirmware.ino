@@ -9,6 +9,9 @@ void menuFirmware()
     systemPrintln();
     systemPrintln("Menu: Update Firmware");
 
+    if (btPrintEcho == true)
+      systemPrintln("Firmware update not available while configuration over Bluetooth is active");
+
     char currentVersion[20];
     if (enableRCFirmware == false)
       sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
@@ -43,9 +46,11 @@ void menuFirmware()
       incoming--;
       updateFromSD(binFileNames[incoming]);
     }
-    else if (incoming == 'c')
+    else if (incoming == 'c' && btPrintEcho == false)
     {
       bool previouslyConnected = wifiIsConnected();
+
+      bluetoothStop(); //Stop Bluetooth to allow for SSL on the heap
 
       //Attempt to connect to local WiFi
       if (wifiConnect(10000) == true)
@@ -76,11 +81,55 @@ void menuFirmware()
           systemPrintln("Failed to get version number from server.");
         }
       }
-      else
-        systemPrintln("Firmware update failed to connect to WiFi.");
+      else if (incoming == 'c' && btPrintEcho == false)
+      {
+        bool previouslyConnected = wifiIsConnected();
 
-      if (previouslyConnected == false)
-        wifiStop();
+        bluetoothStop(); //Stop Bluetooth to allow for SSL on the heap
+
+        //Attempt to connect to local WiFi
+        if (wifiConnect(10000) == true)
+        {
+          //Get firmware version from server
+          if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
+          {
+            //We got a version number, now determine if it's newer or not
+            char currentVersion[20];
+            if (enableRCFirmware == false)
+              sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+            else
+              sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+
+            if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
+            {
+              log_d("New version detected");
+              newOTAFirmwareAvailable = true;
+            }
+            else
+            {
+              log_d("No new firmware available");
+            }
+          }
+          else
+          {
+            //Failed to get version number
+            systemPrintln("Failed to get version number from server.");
+          }
+        }
+        else
+          systemPrintln("Firmware update failed to connect to WiFi.");
+
+        if (previouslyConnected == false)
+          wifiStop();
+
+        bluetoothStart(); //Restart BT according to settings
+      }
+
+    }
+    else if (incoming == 'c' && btPrintEcho == true)
+    {
+      systemPrintln("Firmware update not available while configuration over Bluetooth is active");
+      delay(2000);
     }
     else if (newOTAFirmwareAvailable && incoming == 'u')
     {

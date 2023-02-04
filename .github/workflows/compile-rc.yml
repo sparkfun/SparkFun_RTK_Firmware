@@ -81,6 +81,12 @@ jobs:
           cd esp32.esp32.esp32
           mv RTK_Surveyor.ino.bin ${{ env.FILENAME_PREFIX }}${{ env.RC_PREFIX }}${{ steps.date.outputs.date }}.bin
 
+      - name: Upload binary to action
+        uses: actions/upload-artifact@v3
+        with: 
+          name: ${{ env.FILENAME_PREFIX }}${{ env.RC_PREFIX }}${{ steps.date.outputs.date }}
+          path: ./Firmware/RTK_Surveyor/build/esp32.esp32.esp32/${{ env.FILENAME_PREFIX }}${{ env.RC_PREFIX }}${{ steps.date.outputs.date }}.bin 
+          
       - name: Push binary to Binaries Repo
         uses: dmnemec/copy_file_to_another_repo_action@main
         env:

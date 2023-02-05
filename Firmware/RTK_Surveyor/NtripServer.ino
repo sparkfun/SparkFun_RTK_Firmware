@@ -461,7 +461,7 @@ void ntripServerUpdate()
         else if (strstr(response, "banned") != NULL) //'Banned' found
         {
           //Look for 'HTTP/1.1 200 OK' and banned IP information
-          systemPrintf("NTRIP Server connected to caster but caster reponded with problem: %s", response);
+          systemPrintf("NTRIP Server connected to caster but caster responded with problem: %s", response);
 
           //Give up - Stop WiFi operations
           ntripServerStop(true); //Do not allocate new wifiClient
@@ -469,7 +469,7 @@ void ntripServerUpdate()
         else if (strstr(response, "200") == NULL) //'200' not found
         {
           //Look for 'ERROR - Mountpoint taken' from Emlid.
-          systemPrintf("NTRIP Server connected but caster reponded with problem: %s", response);
+          systemPrintf("NTRIP Server connected but caster responded with problem: %s", response);
 
           //Attempt to reconnect after throttle controlled timeout
           if (ntripServerConnectLimitReached())

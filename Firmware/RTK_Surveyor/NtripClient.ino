@@ -441,7 +441,15 @@ void ntripClientUpdate()
         else if (strstr(response, "banned") != NULL)
         {
           //Look for 'HTTP/1.1 200 OK' and banned IP information
-          systemPrintf("NTRIP Client connected to caster but caster reponded with problem: %s", response);
+          systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n", response);
+
+          //Stop WiFi operations
+          ntripClientStop(true); //Do not allocate new wifiClient
+        }
+        else if (strstr(response, "SOURCETABLE") != NULL)
+        {
+          //Look for 'SOURCETABLE 200 OK'
+          systemPrintf("Caster may not have mountpoint %s. Caster responded with problem: %s\r\n", settings.ntripClient_MountPoint, response);
 
           //Stop WiFi operations
           ntripClientStop(true); //Do not allocate new wifiClient

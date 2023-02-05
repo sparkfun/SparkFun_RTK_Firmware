@@ -1649,6 +1649,12 @@ void displaySerialConfig()
   displayMessage("Serial Config", 0);
 }
 
+//Display during blocking stop during to prevent screen freeze
+void displayWiFiConnect()
+{
+  displayMessage("WiFi Connect", 0);
+}
+
 //When user enters WiFi Config mode from setup, show splash while config happens
 void displayWiFiConfigNotStarted()
 {

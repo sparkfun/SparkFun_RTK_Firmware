@@ -382,6 +382,8 @@ bool wifiConnect(unsigned long timeout)
 
   if (wifiIsConnected()) return (true); //Nothing to do
 
+  displayWiFiConnect();
+
   //Before we can issue esp_wifi_() commands WiFi must be started
   if (WiFi.getMode() == WIFI_OFF)
     WiFi.mode(WIFI_STA);

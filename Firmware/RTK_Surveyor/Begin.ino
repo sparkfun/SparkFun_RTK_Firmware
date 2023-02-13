@@ -518,22 +518,42 @@ void beginFS()
 //Connect to ZED module and identify particulars
 void beginGNSS()
 {
-  if (i2cGNSS.begin() == false)
+  if (USE_I2C_GNSS)
   {
-    log_d("GNSS Failed to begin. Trying again.");
-
-    //Try again with power on delay
-    delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
     if (i2cGNSS.begin() == false)
     {
-      log_d("GNSS offline");
-      displayGNSSFail(1000);
-      return;
+      log_d("GNSS Failed to begin. Trying again.");
+  
+      //Try again with power on delay
+      delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
+      if (i2cGNSS.begin() == false)
+      {
+        log_d("GNSS offline");
+        displayGNSSFail(1000);
+        return;
+      }
     }
   }
+  else
+  {
+    if (i2cGNSS.begin(pin_GNSS_CS) == false)
+    {
+      log_d("GNSS Failed to begin. Trying again.");
+  
+      //Try again with power on delay
+      delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
+      if (i2cGNSS.begin(pin_GNSS_CS) == false)
+      {
+        log_d("GNSS offline");
+        displayGNSSFail(1000);
+        return;
+      }
+    }
+  }  
 
   //Increase transactions to reduce transfer time
-  i2cGNSS.i2cTransactionSize = 128;
+  if (USE_I2C_GNSS)
+    i2cGNSS.i2cTransactionSize = 128;
 
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
   if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info

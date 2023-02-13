@@ -425,7 +425,7 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
       gotVersion = true;
 
       //Call getVersion after original inquiry
-      String otaVersion = ota.getVersion();
+      String otaVersion = ota.GetVersion();
       otaVersion.toCharArray(versionAvailable, versionAvailableLength);
     }
     else if (response == ESP32OTAPull::HTTP_FAILED)

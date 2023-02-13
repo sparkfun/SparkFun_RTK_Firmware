@@ -38,28 +38,31 @@
 //Returns true if a card responds
 bool sdPresent(void)
 {
-  byte response = 0;
-
-  SPI.begin();
-  SPI.setClockDivider(SPI_CLOCK_DIV2);
-  SPI.setDataMode(SPI_MODE0);
-  SPI.setBitOrder(MSBFIRST);
-  pinMode(pin_microSD_CS, OUTPUT);
-
-  //Sending clocks while card power stabilizes...
-  deselectCard();             // always make sure
-  for (byte i = 0; i < 30; i++) // send several clocks while card power stabilizes
-    xchg(0xff);
-
-  //Sending CMD0 - GO IDLE...
-  for (byte i = 0; i < 0x10; i++) //Attempt to go idle
+  if (USE_SPI_MICROSD)
   {
-    response = sdSendCommand(SD_GO_IDLE, 0);  // send CMD0 - go to idle state
-    if (response == 1) break;
+    byte response = 0;
+  
+    SPI.begin();
+    SPI.setClockDivider(SPI_CLOCK_DIV2);
+    SPI.setDataMode(SPI_MODE0);
+    SPI.setBitOrder(MSBFIRST);
+    pinMode(pin_microSD_CS, OUTPUT);
+  
+    //Sending clocks while card power stabilizes...
+    deselectCard();             // always make sure
+    for (byte i = 0; i < 30; i++) // send several clocks while card power stabilizes
+      xchg(0xff);
+  
+    //Sending CMD0 - GO IDLE...
+    for (byte i = 0; i < 0x10; i++) //Attempt to go idle
+    {
+      response = sdSendCommand(SD_GO_IDLE, 0);  // send CMD0 - go to idle state
+      if (response == 1) break;
+    }
+    if (response != 1) return (false); //Card failed to respond to idle
+  
+    return (true);
   }
-  if (response != 1) return (false); //Card failed to respond to idle
-
-  return (true);
 }
 
 /*

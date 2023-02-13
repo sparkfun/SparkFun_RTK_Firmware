@@ -293,18 +293,35 @@ bool isConnected(uint8_t deviceAddress)
 //Create a test file in file structure to make sure we can
 bool createTestFile()
 {
-  SdFile testFile;
-  char testFileName[40] = "testfile.txt";
+  if (USE_SPI_MICROSD)
+  {
+    SdFile testFile;
+    char testFileName[40] = "testfile.txt";
+  
+    //Attempt to write to the file system
+    if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true)
+      return (false);
+  
+    //File successfully created
+    testFile.close();
+    if (sd->exists(testFileName))
+      sd->remove(testFileName);
+    return (!sd->exists(testFileName));
+  }
+  else
+  {
+    // SDIO MMC
+    char testFileName[40] = "/testfile.txt"; // Create it in the root directory
 
-  //Attempt to write to the file system
-  if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true)
-    return (false);
+    File testFile = SD_MMC.open(testFileName, FILE_WRITE);
 
-  //File successfully created
-  testFile.close();
-  if (sd->exists(testFileName))
-    sd->remove(testFileName);
-  return (true);
+    if (!testFile)
+      return (false);
+
+    //File successfully created
+    testFile.close();
+    return (SD_MMC.remove(testFileName));      
+  }
 }
 
 //If debug option is on, print available heap

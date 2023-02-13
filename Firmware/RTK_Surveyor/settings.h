@@ -60,6 +60,10 @@ typedef enum
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
 
+#define USE_SPI_GNSS    ((productVariant & PRODUCT_HAS_SPI_GNSS) > 0)
+#define USE_MMC_MICROSD ((productVariant & PRODUCT_HAS_MMC_MICROSD) > 0)
+#define USE_SPI_MICROSD (!USE_MMC_MICROSD)
+
 typedef enum
 {
   BUTTON_ROVER = 0,

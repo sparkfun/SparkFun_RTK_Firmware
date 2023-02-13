@@ -259,7 +259,8 @@ void beginSD()
 
   online.microSD = false;
   gotSemaphore = false;
-  while (settings.enableSD == true)
+  
+  while (settings.enableSD == true) // Note to self: should this be "if" instead of "while"?
   {
     //Setup SD card access semaphore
     if (sdCardSemaphore == NULL)
@@ -273,80 +274,111 @@ void beginSD()
     gotSemaphore = true;
     markSemaphore(FUNCTION_BEGINSD);
 
-    pinMode(pin_microSD_CS, OUTPUT);
-    digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
-
-    resetSPI(); //Re-initialize the SPI/SD interface
-
-    //Do a quick test to see if a card is present
-    int tries = 0;
-    int maxTries = 5;
-    while (tries < maxTries)
+    if (USE_SPI_MICROSD)
     {
-      if (sdPresent() == true) break;
-      //log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
+      pinMode(pin_microSD_CS, OUTPUT);
+      digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+      resetSPI(); //Re-initialize the SPI/SD interface
 
-      //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
-      //Max current is 200mA average across 1s, peak 300mA
-      delay(10);
-      tries++;
-    }
-    if (tries == maxTries) break; //Give up loop
-
-    //If an SD card is present, allow SdFat to take over
-    log_d("SD card detected");
-
-    //Allocate the data structure that manages the microSD card
-    if (!sd)
-    {
-      sd = new SdFat();
-      if (!sd)
+      //Do a quick test to see if a card is present
+      int tries = 0;
+      int maxTries = 5;
+      while (tries < maxTries)
       {
-        log_d("Failed to allocate the SdFat structure!");
-        break;
+        if (sdPresent() == true) break;
+        //log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
+  
+        //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
+        //Max current is 200mA average across 1s, peak 300mA
+        delay(10);
+        tries++;
       }
-    }
+      if (tries == maxTries) break; //Give up loop
 
-    if (settings.spiFrequency > 16)
-    {
-      systemPrintln("Error: SPI Frequency out of range. Default to 16MHz");
-      settings.spiFrequency = 16;
-    }
+      //If an SD card is present, allow SdFat to take over
+      log_d("SD card detected - using SPI and SdFat");
 
-    resetSPI(); //Re-initialize the SPI/SD interface
-
-    if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
-    {
-      tries = 0;
-      maxTries = 1;
-      for ( ; tries < maxTries ; tries++)
+      //Allocate the data structure that manages the microSD card
+      if (USE_SPI_MICROSD && !sd)
       {
-        log_d("SD init failed. Trying again %d out of %d", tries + 1, maxTries);
-
-        delay(250); //Give SD more time to power up, then try again
-        if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
-      }
-
-      if (tries == maxTries)
-      {
-        systemPrintln("SD init failed. Is card formatted?");
-        digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
-
-        //Check reset count and prevent rolling reboot
-        if (settings.resetCount < 5)
+        sd = new SdFat();
+        if (!sd)
         {
-          if (settings.forceResetOnSDFail == true)
-            ESP.restart();
+          log_d("Failed to allocate the SdFat structure!");
+          break;
         }
+      }
+  
+      if (settings.spiFrequency > 16)
+      {
+        systemPrintln("Error: SPI Frequency out of range. Default to 16MHz");
+        settings.spiFrequency = 16;
+      }
+  
+      resetSPI(); //Re-initialize the SPI/SD interface
+  
+      if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
+      {
+        tries = 0;
+        maxTries = 1;
+        for ( ; tries < maxTries ; tries++)
+        {
+          log_d("SD init failed - using SPI and SdFat. Trying again %d out of %d", tries + 1, maxTries);
+  
+          delay(250); //Give SD more time to power up, then try again
+          if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
+        }
+  
+        if (tries == maxTries)
+        {
+          systemPrintln("SD init failed - using SPI and SdFat. Is card formatted?");
+          digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+  
+          //Check reset count and prevent rolling reboot
+          if (settings.resetCount < 5)
+          {
+            if (settings.forceResetOnSDFail == true)
+              ESP.restart();
+          }
+          break;
+        }
+      }
+  
+      //Change to root directory. All new file creation will be in root.
+      if (sd->chdir() == false)
+      {
+        systemPrintln("SD change directory failed");
         break;
       }
     }
-
-    //Change to root directory. All new file creation will be in root.
-    if (sd->chdir() == false)
+    else
     {
-      systemPrintln("SD change directory failed");
-      break;
+      // SDIO MMC
+      if (SD_MMC.begin() == false)
+      {
+        int tries = 0;
+        int maxTries = 1;
+        for ( ; tries < maxTries ; tries++)
+        {
+          log_d("SD init failed - using SD_MMC. Trying again %d out of %d", tries + 1, maxTries);
+  
+          delay(250); //Give SD more time to power up, then try again
+          if (SD_MMC.begin() == true) break;
+        }
+  
+        if (tries == maxTries)
+        {
+          systemPrintln("SD init failed - using SD_MMC. Is card formatted?");
+  
+          //Check reset count and prevent rolling reboot
+          if (settings.resetCount < 5)
+          {
+            if (settings.forceResetOnSDFail == true)
+              ESP.restart();
+          }
+          break;
+        }        
+      }
     }
 
     if (createTestFile() == false)
@@ -402,28 +434,31 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
 //https://github.com/greiman/SdFat/issues/351
 void resetSPI()
 {
-  pinMode(pin_microSD_CS, OUTPUT);
-  digitalWrite(pin_microSD_CS, HIGH); //De-select SD card
-
-  //Flush SPI interface
-  SPI.begin();
-  SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
-  for (int x = 0 ; x < 10 ; x++)
-    SPI.transfer(0XFF);
-  SPI.endTransaction();
-  SPI.end();
-
-  digitalWrite(pin_microSD_CS, LOW); //Select SD card
-
-  //Flush SD interface
-  SPI.begin();
-  SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
-  for (int x = 0 ; x < 10 ; x++)
-    SPI.transfer(0XFF);
-  SPI.endTransaction();
-  SPI.end();
-
-  digitalWrite(pin_microSD_CS, HIGH); //Deselet SD card
+  if (USE_SPI_MICROSD)
+  {
+    pinMode(pin_microSD_CS, OUTPUT);
+    digitalWrite(pin_microSD_CS, HIGH); //De-select SD card
+  
+    //Flush SPI interface
+    SPI.begin();
+    SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
+    for (int x = 0 ; x < 10 ; x++)
+      SPI.transfer(0XFF);
+    SPI.endTransaction();
+    SPI.end();
+  
+    digitalWrite(pin_microSD_CS, LOW); //Select SD card
+  
+    //Flush SD interface
+    SPI.begin();
+    SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
+    for (int x = 0 ; x < 10 ; x++)
+      SPI.transfer(0XFF);
+    SPI.endTransaction();
+    SPI.end();
+  
+    digitalWrite(pin_microSD_CS, HIGH); //Deselet SD card
+  }
 }
 
 //We want the UART2 interrupts to be pinned to core 0 to avoid competing with I2C interrupts

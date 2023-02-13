@@ -658,7 +658,10 @@ void updateSystemState()
 
             //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
             //even if there is no GPS fix. We use it to test serial output.
-            i2cGNSS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_UART2, 1); //Enable message every second
+            i2cGNSS.newCfgValset(); // Create a new Configuration Item VALSET message
+            i2cGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 1); //Enable message 1230 every second
+            i2cGNSS.sendCfgValset(); // Send the VALSET
+            
 
             changeState(STATE_TESTING);
           }
@@ -795,7 +798,7 @@ void updateSystemState()
       case (STATE_KEYS_LBAND_CONFIGURE):
         {
           //Be sure we ignore any external RTCM sources
-          i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_UBX); //Set the UART2 to input UBX (no RTCM)
+          i2cGNSS.setUART2Input(COM_TYPE_UBX); //Set the UART2 to input UBX (no RTCM)
 
           pointperfectApplyKeys(); //Send current keys, if available, to ZED-F9P
 
@@ -835,7 +838,7 @@ void updateSystemState()
       case (STATE_KEYS_LBAND_ENCRYPTED):
         {
           //Since L-Band is not available, be sure RTCM can be provided over UART2
-          i2cGNSS.setPortInput(COM_PORT_UART2, COM_TYPE_RTCM3); //Set the UART2 to input RTCM
+          i2cGNSS.setUART2Input(COM_TYPE_RTCM3); //Set the UART2 to input RTCM
 
           forceSystemStateUpdate = true; //Imediately go to this new state
           changeState(settings.lastState); //Go to either rover or base

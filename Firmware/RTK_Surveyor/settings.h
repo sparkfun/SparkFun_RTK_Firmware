@@ -301,7 +301,7 @@ typedef enum
 
 } SemaphoreFunction;
 
-#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3
 
 //Each constellation will have its config key, enable, and a visible name
 typedef struct ubxConstellation

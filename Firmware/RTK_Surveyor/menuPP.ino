@@ -6,7 +6,7 @@
 
 #define CONTENT_SIZE 2000
 
-static SFE_UBLOX_GNSS_ADD i2cLBand; // NEO-D9S
+static SFE_UBLOX_GNSS_SUPER i2cLBand; // NEO-D9S
 static const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 
 //The PointPerfect token is provided at compile time via build flags
@@ -830,13 +830,8 @@ void beginLBand()
   //Check the firmware version of the NEO-D9S. Based on Example21_ModuleInfo.
   if (i2cLBand.getModuleInfo(1100) == true) // Try to get the module info
   {
-    //i2cLBand.minfo.extension[1] looks like 'FWVER=HPG 1.12'
-    strcpy(neoFirmwareVersion, i2cLBand.minfo.extension[1]);
-
-    //Remove 'FWVER='. It's extraneous and = causes settings file parsing issues
-    char *ptr = strstr(neoFirmwareVersion, "FWVER=");
-    if (ptr != NULL)
-      strcpy(neoFirmwareVersion, ptr + strlen("FWVER="));
+    // Reconstruct the firmware version
+    sprintf(neoFirmwareVersion, "%s %d.%02d", i2cLBand.getFirmwareType(), i2cLBand.getFirmwareVersionHigh(), i2cLBand.getFirmwareVersionLow());
 
     printNEOInfo(); //Print module firmware version
   }
@@ -871,21 +866,23 @@ void beginLBand()
     log_d("No fix available for L-Band frequency determination");
 
   bool response = true;
-  response &= i2cLBand.setVal32(UBLOX_CFG_PMP_CENTER_FREQUENCY,   settings.LBandFreq); // Default 1539812500 Hz
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SEARCH_WINDOW,      2200);        // Default 2200 Hz
-  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_SERVICE_ID,      0);           // Default 1
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SERVICE_ID,         21845);       // Default 50821
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DATA_RATE,          2400);        // Default 2400 bps
-  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_DESCRAMBLER,     1);           // Default 1
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DESCRAMBLER_INIT,   26969);       // Default 23560
-  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_PRESCRAMBLING,   0);           // Default 0
-  response &= i2cLBand.setVal64(UBLOX_CFG_PMP_UNIQUE_WORD,        16238547128276412563ull);
-  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C,   1); // Ensure UBX-RXM-PMP is enabled on the I2C port
-  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 1); // Output UBX-RXM-PMP on UART1
-  response &= i2cLBand.setVal(UBLOX_CFG_UART2OUTPROT_UBX, 1);         // Enable UBX output on UART2
-  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); // Output UBX-RXM-PMP on UART2
-  response &= i2cLBand.setVal32(UBLOX_CFG_UART1_BAUDRATE,         38400); // match baudrate with ZED default
-  response &= i2cLBand.setVal32(UBLOX_CFG_UART2_BAUDRATE,         38400); // match baudrate with ZED default
+  response &= i2cLBand.newCfgValset();
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_CENTER_FREQUENCY,     settings.LBandFreq); // Default 1539812500 Hz
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SEARCH_WINDOW,        2200);        // Default 2200 Hz
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_SERVICE_ID,       0);           // Default 1
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SERVICE_ID,           21845);       // Default 50821
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DATA_RATE,            2400);        // Default 2400 bps
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_DESCRAMBLER,      1);           // Default 1
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DESCRAMBLER_INIT,     26969);       // Default 23560
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_PRESCRAMBLING,    0);           // Default 0
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_UNIQUE_WORD,          16238547128276412563ull);
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C,   1); // Ensure UBX-RXM-PMP is enabled on the I2C port
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 1); // Output UBX-RXM-PMP on UART1
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX,         1);         // Enable UBX output on UART2
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); // Output UBX-RXM-PMP on UART2
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART1_BAUDRATE,           38400); // match baudrate with ZED default
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2_BAUDRATE,           38400); // match baudrate with ZED default
+  response &= i2cLBand.sendCfgValset();
 
   if (response == false)
     systemPrintln("L-Band failed to configure");

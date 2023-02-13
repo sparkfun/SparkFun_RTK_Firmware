@@ -202,34 +202,19 @@ bool enableRCFirmware = false; //Goes true from AP config page
 
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3
 
-#define SENTENCE_TYPE_NMEA              SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
-#define SENTENCE_TYPE_NONE              SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
-#define SENTENCE_TYPE_RTCM              SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_RTCM
-#define SENTENCE_TYPE_UBX               SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_UBX
+#define SENTENCE_TYPE_NMEA              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
+#define SENTENCE_TYPE_NONE              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
+#define SENTENCE_TYPE_RTCM              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_RTCM
+#define SENTENCE_TYPE_UBX               DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_UBX
 
 char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to system status menu and settings file.
 char neoFirmwareVersion[20]; //Output to system status menu.
-uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS)
+uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS). Note: will fail above 2.55!
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
-// Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
-class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
-{
-  public:
-    boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
-
-    struct minfoStructure // Structure to hold the module info (uses 341 bytes of RAM)
-    {
-      char swVersion[30];
-      char hwVersion[10];
-      uint8_t extensionNo = 0;
-      char extension[10][30];
-    } minfo;
-};
-
-SFE_UBLOX_GNSS_ADD i2cGNSS;
+SFE_UBLOX_GNSS_SUPER i2cGNSS;
 
 //These globals are updated regularly via the storePVTdata callback
 bool pvtUpdated = false;

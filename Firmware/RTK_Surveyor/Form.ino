@@ -229,8 +229,21 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
 
         if (managerFileOpen == false)
         {
-          if (managerTempFile.open(fileName, O_READ) == true)
-            managerFileOpen = true;
+          //Allocate the managerTempFile
+          if (!managerTempFile)
+          {
+            managerTempFile = new SdFile();
+            if (!managerTempFile)
+            {
+              systemPrintln("Error: Failed to allocate managerTempFile!");
+            }
+          }
+
+          if (managerTempFile)
+          {
+            if (managerTempFile->open(fileName, O_READ) == true)
+              managerFileOpen = true;
+          }
           else
             systemPrintln("Error: File Manager failed to open file");
         }
@@ -240,23 +253,23 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
           request->send(202, "text/plain", "ERROR: File already downloading");
         }
 
-        int dataAvailable = managerTempFile.size() - managerTempFile.position();
+        int dataAvailable = managerTempFile->size() - managerTempFile->position();
 
         AsyncWebServerResponse *response = request->beginResponse("text/plain", dataAvailable,
                                            [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t
         {
           uint32_t bytes = 0;
-          uint32_t availableBytes = managerTempFile.available();
+          uint32_t availableBytes = managerTempFile->available();
 
           if (availableBytes > maxLen)
           {
-            bytes = managerTempFile.read(buffer, maxLen);
+            bytes = managerTempFile->read(buffer, maxLen);
           }
           else
           {
-            bytes = managerTempFile.read(buffer, availableBytes);
+            bytes = managerTempFile->read(buffer, availableBytes);
             managerFileOpen = false;
-            managerTempFile.close();
+            managerTempFile->close();
 
             websocket->textAll("fmNext,1,"); //Tell browser to send next file if needed
           }
@@ -1212,6 +1225,7 @@ bool parseIncomingSettings()
 
 //When called, responds with the root folder list of files on SD card
 //Name and size are formatted in CSV, formatted to html by JS
+// TODO: check that getFileList cannot be called before managerTempFile is instantiated
 String getFileList()
 {
   //settingsCSV[0] = '\'0; //Clear array
@@ -1227,20 +1241,20 @@ String getFileList()
     dir.open("/"); //Open root
     uint16_t fileCount = 0;
 
-    while (managerTempFile.openNext(&dir, O_READ))
+    while (managerTempFile->openNext(&dir, O_READ))
     {
-      if (managerTempFile.isFile())
+      if (managerTempFile->isFile())
       {
         fileCount++;
 
-        managerTempFile.getName(fileName, sizeof(fileName));
+        managerTempFile->getName(fileName, sizeof(fileName));
 
-        returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(managerTempFile.fileSize()) + ",";
+        returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(managerTempFile->fileSize()) + ",";
       }
     }
 
     dir.close();
-    managerTempFile.close();
+    managerTempFile->close();
 
     xSemaphoreGive(sdCardSemaphore);
   }
@@ -1289,6 +1303,7 @@ String stringHumanReadableSize(uint64_t bytes)
 #ifdef COMPILE_AP
 
 // Handles uploading of user files to SD
+// TODO: check that handleUpload cannot be called before managerTempFile is instantiated
 void handleUpload(AsyncWebServerRequest * request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
   String logmessage = "";
@@ -1304,7 +1319,7 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD1);
-      managerTempFile.open(tempFileName, O_CREAT | O_APPEND | O_WRITE);
+      managerTempFile->open(tempFileName, O_CREAT | O_APPEND | O_WRITE);
       xSemaphoreGive(sdCardSemaphore);
     }
 
@@ -1317,7 +1332,7 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD2);
-      managerTempFile.write(data, len); // stream the incoming chunk to the opened file
+      managerTempFile->write(data, len); // stream the incoming chunk to the opened file
       xSemaphoreGive(sdCardSemaphore);
     }
   }
@@ -1329,9 +1344,9 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD3);
-      updateDataFileCreate(&managerTempFile); // Update the file create time & date
+      updateDataFileCreate(managerTempFile); // Update the file create time & date
 
-      managerTempFile.close();
+      managerTempFile->close();
       xSemaphoreGive(sdCardSemaphore);
     }
 

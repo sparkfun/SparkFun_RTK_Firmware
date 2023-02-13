@@ -25,6 +25,10 @@ void beginBoard()
   {
     productVariant = RTK_EXPRESS_PLUS;
   }
+  else if (idValue > (3300 * 1 / 3 * 0.9) && idValue < (3300 * 1 / 3 * 1.1))
+  {
+    productVariant = REFERENCE_STATION;
+  }
   else if (isConnected(0x19) == true) //Check for accelerometer
   {
     if (zedModuleType == PLATFORM_F9P) productVariant = RTK_EXPRESS;
@@ -139,6 +143,66 @@ void beginBoard()
       strcpy(platformPrefix, "Facet L-Band");
     }
   }
+#ifdef INCLUDE_SD_MMC
+  else if (productVariant == REFERENCE_STATION)
+  {
+    //v10
+    /*
+    Pin Allocations:
+    D0  : Boot + Boot Button
+    D1  : Serial TX (CH340 RX)
+    D2  : SDIO DAT0 - via 74HC4066 switch
+    D3  : Serial RX (CH340 TX)
+    D4  : SDIO DAT1
+    D5  : GNSS Chip Select
+    D12 : SDIO DAT2 - via 74HC4066 switch
+    D13 : SDIO DAT3
+    D14 : SDIO CLK
+    D15 : SDIO CMD - via 74HC4066 switch
+    D16 : Serial1 RXD
+    D17 : Serial1 TXD
+    D18 : SPI SCK
+    D19 : SPI POCI
+    D21 : I2C SDA
+    D22 : I2C SCL
+    D23 : SPI PICO
+    D25 : GNSS Time Pulse
+    D26 : STAT LED
+    D27 : Ethernet Chip Select
+    D32 : PWREN
+    D33 : Ethernet Interrupt
+    A34 : GNSS TX RDY
+    A35 : Board Detect (1.1V)
+    A36 : microSD card detect
+    A39 : Unused analog pin - used to generate random values for SSL
+    */
+
+    pin_baseStatusLED = 26;
+    pin_peripheralPowerControl = 32;
+    pin_Ethernet_CS = 27;
+    pin_GNSS_CS = 5;
+    pin_adc39 = 39;
+
+    pin_radio_rx = 17; // Radio RX In = ESP TX Out
+    pin_radio_tx = 16; // Radio TX Out = ESP RX In
+
+    pinMode(pin_Ethernet_CS, OUTPUT);
+    digitalWrite(pin_Ethernet_CS, HIGH);
+    pinMode(pin_GNSS_CS, OUTPUT);
+    digitalWrite(pin_GNSS_CS, HIGH);
+
+    if (esp_reset_reason() == ESP_RST_POWERON)
+    {
+      powerOnCheck(); //Only do check if we POR start
+    }
+
+    pinMode(pin_peripheralPowerControl, OUTPUT);
+    digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, W5500, etc
+
+    strcpy(platformFilePrefix, "SFE_Reference_Station");
+    strcpy(platformPrefix, "Reference Station");
+  }
+#endif
 
   systemPrintf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 

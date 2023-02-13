@@ -29,6 +29,8 @@ const int FIRMWARE_VERSION_MINOR = 2;
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
 //#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
+#define INCLUDE_SD_MMC // Comment out to remove SD MMC support - microSD SDIO connectivity on the REFERENCE_STATION
+
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
 //  to make sure that the settings stored in flash (LittleFS) are correct for this version of the RTK
@@ -80,6 +82,10 @@ int pin_radio_rst;
 int pin_radio_pwr;
 int pin_radio_cts;
 int pin_radio_rts;
+
+int pin_Ethernet_CS;
+int pin_GNSS_CS;
+int pin_microSD_CardDetect;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
@@ -114,8 +120,8 @@ ESP32Time rtc;
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
-#include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 
+#include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 SdFat *sd;
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
@@ -147,13 +153,26 @@ typedef enum LoggingType {
 } LoggingType;
 LoggingType loggingType = LOGGING_UNKNOWN;
 
-SdFile managerTempFile; //File used for uploading or downloading in file manager section of AP config
+SdFile * managerTempFile; //File used for uploading or downloading in file manager section of AP config
 bool managerFileOpen = false;
 
 TaskHandle_t sdSizeCheckTaskHandle = NULL; //Store handles so that we can kill the task once size is found
 const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being the lowest
 const int sdSizeCheckStackSize = 2000;
 bool sdSizeCheckTaskComplete = false;
+
+//microSD SDIO / MMC Interface
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+#ifdef INCLUDE_SD_MMC
+
+#include "FS.h"
+#include "SD_MMC.h"
+
+File * ubxFile_MMC;
+File * managerTempFile_MMC;
+
+#endif
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

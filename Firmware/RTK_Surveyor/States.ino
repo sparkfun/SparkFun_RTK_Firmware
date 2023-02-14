@@ -463,28 +463,46 @@ void updateSystemState()
               if (online.microSD == true)
               {
                 //Open the marks file
-                SdFile * marksFile = new SdFile();
-                if (marksFile && marksFile->open(fileName, O_APPEND | O_WRITE))
+                if (USE_SPI_MICROSD)
                 {
-                  fileOpen = true;
-                  marksFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                       rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+                  if (marksFile && marksFile->open(fileName, O_APPEND | O_WRITE))
+                  {
+                    fileOpen = true;
+                    marksFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
+                                         rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+                  }
+                  else if (marksFile && marksFile->open(fileName, O_CREAT | O_WRITE))
+                  {
+                    fileOpen = true;
+                    marksFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
+                                         rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+                    marksFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
+                                         rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+  
+                    //Add the column headers
+                    //YYYYMMDDHHMMSS, Lat: xxxx, Long: xxxx, Alt: xxxx, SIV: xx, HPA: xxxx, Batt: xxx
+                    //                           1         2         3         4         5         6         7         8         9
+                    //                  1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901
+                    strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
+                    marksFile->write(markBuffer, strlen(markBuffer));
+                  }
                 }
-                else if (marksFile && marksFile->open(fileName, O_CREAT | O_WRITE))
+#ifdef COMPILE_SD_MMC
+                else
                 {
-                  fileOpen = true;
-                  marksFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                       rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-                  marksFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                       rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-
-                  //Add the column headers
-                  //YYYYMMDDHHMMSS, Lat: xxxx, Long: xxxx, Alt: xxxx, SIV: xx, HPA: xxxx, Batt: xxx
-                  //                           1         2         3         4         5         6         7         8         9
-                  //                  1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901
-                  strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
-                  marksFile->write(markBuffer, strlen(markBuffer));
+                  bool writeHeader = !SD_MMC.exists(fileName); // Check if the file already exists
+                  *marksFile_SD_MMC = SD_MMC.open(fileName, FILE_APPEND);
+                  if (marksFile_SD_MMC)
+                  {
+                    fileOpen = true;
+                    if (writeHeader)
+                    {
+                      strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
+                      marksFile->write(markBuffer, strlen(markBuffer));
+                    }
+                  }
                 }
+#endif
                 if (fileOpen)
                 {
                   //Create the mark text

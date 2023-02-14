@@ -1224,24 +1224,51 @@ String getFileList()
   {
     markSemaphore(FUNCTION_FILEMANAGER_UPLOAD1);
 
-    SdFile dir;
-    dir.open("/"); //Open root
-    uint16_t fileCount = 0;
-
-    while (managerTempFile->openNext(&dir, O_READ))
+    if (USE_SPI_MICROSD)
     {
-      if (managerTempFile->isFile())
+      SdFile dir;
+      dir.open("/"); //Open root
+      uint16_t fileCount = 0;
+  
+      while (managerTempFile->openNext(&dir, O_READ))
       {
-        fileCount++;
+        if (managerTempFile->isFile())
+        {
+          fileCount++;
+  
+          managerTempFile->getName(fileName, sizeof(fileName));
+  
+          returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(managerTempFile->fileSize()) + ",";
+        }
+      }
+  
+      dir.close();
+      managerTempFile->close();
+    }
+#ifdef COMPILE_SD_MMC
+    else
+    {
+      File root = SD_MMC.open("/"); //Open root
 
-        managerTempFile->getName(fileName, sizeof(fileName));
+      if (root && root.isDirectory())
+      {
+        uint16_t fileCount = 0;
 
-        returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(managerTempFile->fileSize()) + ",";
+        File file = root.openNextFile();
+        while (file)
+        {
+          if (!file.isDirectory())
+          {
+            fileCount++;
+    
+            returnText += "fmName," + String(file.name()) + ",fmSize," + stringHumanReadableSize(file.size()) + ",";            
+          }
+          
+          file = root.openNextFile();
+        }
       }
     }
-
-    dir.close();
-    managerTempFile->close();
+#endif
 
     xSemaphoreGive(sdCardSemaphore);
   }

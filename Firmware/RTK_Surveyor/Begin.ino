@@ -426,6 +426,17 @@ void beginSD()
           break;
         }
       }
+  
+      //Allocate the marksFile
+      if (!marksFile)
+      {
+        marksFile = new SdFile();
+        if (!marksFile)
+        {
+          systemPrintln("Failed to allocate marksFile!");
+          break;
+        }
+      }
     }
 #ifdef COMPILE_SD_MMC
     else
@@ -448,6 +459,17 @@ void beginSD()
         if (!managerTempFile_SD_MMC)
         {
           systemPrintln("Failed to allocate managerTempFile!");
+          break;
+        }
+      }
+  
+      //Allocate the marksFile
+      if (!marksFile_SD_MMC)
+      {
+        marksFile_SD_MMC = new File();
+        if (!marksFile_SD_MMC)
+        {
+          systemPrintln("Failed to allocate marksFile!");
           break;
         }
       }

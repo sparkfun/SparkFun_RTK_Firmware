@@ -157,6 +157,9 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 SdFile * managerTempFile; //File used for uploading or downloading in file manager section of AP config
 bool managerFileOpen = false;
 
+SdFile * marksFile; // Marks file - used by States.ino
+SdFile * firmwareFile; // Firmware file - used by menuFirmware
+
 TaskHandle_t sdSizeCheckTaskHandle = NULL; //Store handles so that we can kill the task once size is found
 const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being the lowest
 const int sdSizeCheckStackSize = 2000;
@@ -172,6 +175,8 @@ bool sdSizeCheckTaskComplete = false;
 
 File * ubxFile_SD_MMC;
 File * managerTempFile_SD_MMC;
+File * marksFile_SD_MMC;
+File * firmwareFile_SD_MMC;
 
 #endif
 

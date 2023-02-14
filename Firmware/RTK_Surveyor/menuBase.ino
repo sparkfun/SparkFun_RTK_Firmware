@@ -414,39 +414,81 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
 
       gotSemaphore = true;
 
-      SdFile file; //FAT32
-      if (file.open(fileName, O_READ) == false)
+      if (USE_SPI_MICROSD)
       {
-        log_d("File %s not found", fileName);
-        break;
-      }
-
-      int lineNumber = 0;
-
-      while (file.available())
-      {
-        //Get the next line from the file
-        //int n = getLine(&file, lineData, lineDataLength); //Use with SD library
-        int n = file.fgets(lineData, lineDataLength); //Use with SdFat library
-        if (n <= 0)
+        SdFile file; //FAT32
+        if (file.open(fileName, O_READ) == false)
         {
-          systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
+          log_d("File %s not found", fileName);
           break;
         }
-        else
+  
+        int lineNumber = 0;
+  
+        while (file.available())
         {
-          if (lineNumber == lineToFind)
+          //Get the next line from the file
+          //int n = getLine(&file, lineData, lineDataLength); //Use with SD library
+          int n = file.fgets(lineData, lineDataLength); //Use with SdFat library
+          if (n <= 0)
           {
-            lineFound = true;
+            systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
             break;
           }
+          else
+          {
+            if (lineNumber == lineToFind)
+            {
+              lineFound = true;
+              break;
+            }
+          }
+  
+          if (strlen(lineData) > 0) //Ignore single \n or \r
+            lineNumber++;
         }
-
-        if (strlen(lineData) > 0) //Ignore single \n or \r
-          lineNumber++;
+  
+        file.close();
       }
-
-      file.close();
+#ifdef COMPILE_SD_MMC
+      else
+      {
+        File file = SD_MMC.open(fileName, FILE_READ);
+        
+        if (!file)
+        {
+          log_d("File %s not found", fileName);
+          break;
+        }
+  
+        int lineNumber = 0;
+  
+        while (file.available())
+        {
+          //Get the next line from the file
+          int n = file.readBytesUntil('\r', lineData, lineDataLength);
+          n += file.readBytesUntil('\n', &lineData[n], lineDataLength - n);
+          if (n <= 0)
+          {
+            systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
+            break;
+          }
+          else
+          {
+            if (lineNumber == lineToFind)
+            {
+              lineFound = true;
+              break;
+            }
+          }
+  
+          if (strlen(lineData) > 0) //Ignore single \n or \r
+            lineNumber++;
+        }
+  
+        file.close();        
+      }
+#endif
       break;
     } //End Semaphore check
     else
@@ -565,15 +607,32 @@ void recordLineToSD(const char* fileName, const char* lineData)
 
       gotSemaphore = true;
 
-      SdFile file; //FAT32
-      if (file.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+      if (USE_SPI_MICROSD)
       {
-        log_d("File %s not found", fileName);
-        break;
+        SdFile file; //FAT32
+        if (file.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+        {
+          log_d("File %s not found", fileName);
+          break;
+        }
+  
+        file.println(lineData);
+        file.close();
       }
-
-      file.println(lineData);
-      file.close();
+#ifdef COMPILE_SD_MMC
+      else
+      {
+        File file = SD_MMC.open(fileName, FILE_APPEND);
+        if (!file)
+        {
+          log_d("File %s not found", fileName);
+          break;
+        }
+  
+        file.println(lineData);
+        file.close();
+      }
+#endif
       break;
     } //End Semaphore check
     else

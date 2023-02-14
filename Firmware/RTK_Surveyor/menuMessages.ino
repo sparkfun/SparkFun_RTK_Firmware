@@ -532,32 +532,71 @@ bool findLastLog(char *lastLogName)
       markSemaphore(FUNCTION_FINDLOG);
 
       //Count available binaries
-      SdFile tempFile;
-      SdFile dir;
-      const char* LOG_EXTENSION = "ubx";
-      const char* LOG_PREFIX = platformFilePrefix;
-      char fname[50]; //Handle long file names
-
-      dir.open("/"); //Open root
-
-      while (tempFile.openNext(&dir, O_READ))
+      if (USE_SPI_MICROSD)
       {
-        if (tempFile.isFile())
+        SdFile tempFile;
+        SdFile dir;
+        const char* LOG_EXTENSION = "ubx";
+        const char* LOG_PREFIX = platformFilePrefix;
+        char fname[50]; //Handle long file names
+  
+        dir.open("/"); //Open root
+  
+        while (tempFile.openNext(&dir, O_READ))
         {
-          tempFile.getName(fname, sizeof(fname));
-
-          //Check for matching file name prefix and extension
-          if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
+          if (tempFile.isFile())
           {
-            if (strstr(fname, LOG_PREFIX) != NULL)
+            tempFile.getName(fname, sizeof(fname));
+  
+            //Check for matching file name prefix and extension
+            if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
             {
-              strcpy(lastLogName, fname); //Store this file as last known log file
-              foundAFile = true;
+              if (strstr(fname, LOG_PREFIX) != NULL)
+              {
+                strcpy(lastLogName, fname); //Store this file as last known log file
+                foundAFile = true;
+              }
             }
           }
+          tempFile.close();
         }
-        tempFile.close();
       }
+#ifdef COMPILE_SD_MMC
+      else
+      {
+        File tempFile;
+        File dir;
+        const char* LOG_EXTENSION = "ubx";
+        const char* LOG_PREFIX = platformFilePrefix;
+        char fname[50]; //Handle long file names
+  
+        dir = SD_MMC.open("/"); //Open root
+
+        if (dir && dir.isDirectory())
+        {
+          tempFile = dir.openNextFile();
+          while (tempFile)
+          {
+            if (!tempFile.isDirectory())
+            {
+              snprintf(fname, sizeof(fname), "%s", tempFile.name());
+    
+              //Check for matching file name prefix and extension
+              if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
+              {
+                if (strstr(fname, LOG_PREFIX) != NULL)
+                {
+                  strcpy(lastLogName, fname); //Store this file as last known log file
+                  foundAFile = true;
+                }
+              }
+            }
+            tempFile.close();
+            tempFile = dir.openNextFile();
+          }
+        }
+      }
+#endif
 
       xSemaphoreGive(sdCardSemaphore);
     }

@@ -503,7 +503,7 @@ void updateSystemState()
                     if (writeHeader)
                     {
                       strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
-                      marksFile->write(markBuffer, strlen(markBuffer));
+                      marksFile_SD_MMC->write((const uint8_t *)markBuffer, strlen(markBuffer));
                     }
                   }
                 }
@@ -535,20 +535,43 @@ void updateSystemState()
                              latitude, longitude, altitude, numSV, horizontalAccuracy,
                              battLevel, battVoltage);
 
-                  //Write the mark to the file
-                  marksFile->write(markBuffer, strlen(markBuffer));
-
-                  // Update the file to create time & date
-                  updateDataFileCreate(marksFile);
-
-                  //Close the mark file
-                  marksFile->close();
+                  if (USE_SPI_MICROSD)
+                  {
+                    //Write the mark to the file
+                    marksFile->write(markBuffer, strlen(markBuffer));
+  
+                    // Update the file to create time & date
+                    updateDataFileCreate(marksFile);
+  
+                    //Close the mark file
+                    marksFile->close();
+                  }
+#ifdef COMPILE_SD_MMC
+                  else
+                  {
+                    //Write the mark to the file
+                    marksFile_SD_MMC->write((const uint8_t *)markBuffer, strlen(markBuffer));
+  
+                    //Close the mark file
+                    marksFile_SD_MMC->close();
+                  }
+#endif                  
                   marked = true;
                 }
 
                 //Done with the file
-                if (marksFile)
-                  delete (marksFile);
+                if (USE_SPI_MICROSD)
+                {
+                  if (marksFile)
+                    delete (marksFile);
+                }
+#ifdef COMPILE_SD_MMC
+                else
+                {
+                  if (marksFile_SD_MMC)
+                    delete (marksFile_SD_MMC);
+                }
+#endif
 
                 //Dismount the SD card
                 if (!sdCardWasOnline)

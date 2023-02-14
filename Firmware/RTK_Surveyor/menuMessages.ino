@@ -361,23 +361,40 @@ void beginLogging(const char *customFileName)
       {
         markSemaphore(FUNCTION_CREATEFILE);
 
-        // O_CREAT - create the file if it does not exist
-        // O_APPEND - seek to the end of the file prior to each write
-        // O_WRITE - open for write
-        if (ubxFile->open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+        if (USE_SPI_MICROSD)
         {
-          systemPrintf("Failed to create GNSS UBX data file: %s\r\n", fileName);
-          online.logging = false;
-          xSemaphoreGive(sdCardSemaphore);
-          return;
+          // O_CREAT - create the file if it does not exist
+          // O_APPEND - seek to the end of the file prior to each write
+          // O_WRITE - open for write
+          if (ubxFile->open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+          {
+            systemPrintf("Failed to create GNSS UBX data file: %s\r\n", fileName);
+            online.logging = false;
+            xSemaphoreGive(sdCardSemaphore);
+            return;
+          }
         }
+#ifdef COMPILE_SD_MMC
+        else
+        {
+          *ubxFile_SD_MMC = SD_MMC.open(fileName, FILE_APPEND);
+          if (!ubxFile_SD_MMC)
+          {
+            systemPrintf("Failed to create GNSS UBX data file: %s\r\n", fileName);
+            online.logging = false;
+            xSemaphoreGive(sdCardSemaphore);
+            return;
+          }
+        }
+#endif
 
         fileSize = 0;
         lastLogSize = 0; //Reset counter - used for displaying active logging icon
 
         bufferOverruns = 0; //Reset counter
 
-        updateDataFileCreate(ubxFile); // Update the file to create time & date
+        if (USE_SPI_MICROSD)
+          updateDataFileCreate(ubxFile); // Update the file to create time & date
 
         startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 
@@ -404,7 +421,12 @@ void beginLogging(const char *customFileName)
         //Mark top of log with system information
         char nmeaMessage[82]; //Max NMEA sentence length is 82
         createNMEASentence(CUSTOM_NMEA_TYPE_RESET_REASON, nmeaMessage, rstReason); //textID, buffer, text
-        ubxFile->println(nmeaMessage);
+        if (USE_SPI_MICROSD)
+          ubxFile->println(nmeaMessage);
+#ifdef COMPILE_SD_MMC
+        else
+          ubxFile_SD_MMC->println(nmeaMessage);
+#endif
 
         //Record system firmware versions and info to log
 
@@ -412,17 +434,33 @@ void beginLogging(const char *customFileName)
         char firmwareVersion[30]; //v1.3 December 31 2021
         sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
         createNMEASentence(CUSTOM_NMEA_TYPE_SYSTEM_VERSION, nmeaMessage, firmwareVersion); //textID, buffer, text
-        ubxFile->println(nmeaMessage);
+        if (USE_SPI_MICROSD)
+          ubxFile->println(nmeaMessage);
+#ifdef COMPILE_SD_MMC
+        else
+          ubxFile_SD_MMC->println(nmeaMessage);
+#endif
+
 
         //ZED-F9P firmware: HPG 1.30
         createNMEASentence(CUSTOM_NMEA_TYPE_ZED_VERSION, nmeaMessage, zedFirmwareVersion); //textID, buffer, text
-        ubxFile->println(nmeaMessage);
+        if (USE_SPI_MICROSD)
+          ubxFile->println(nmeaMessage);
+#ifdef COMPILE_SD_MMC
+        else
+          ubxFile_SD_MMC->println(nmeaMessage);
+#endif
 
         //Device BT MAC. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/346
         char macAddress[5];
         sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
         createNMEASentence(CUSTOM_NMEA_TYPE_DEVICE_BT_ID, nmeaMessage, macAddress); //textID, buffer, text
-        ubxFile->println(nmeaMessage);
+        if (USE_SPI_MICROSD)
+          ubxFile->println(nmeaMessage);
+#ifdef COMPILE_SD_MMC
+        else
+          ubxFile_SD_MMC->println(nmeaMessage);
+#endif
 
         if (reuseLastLog == true)
         {
@@ -467,8 +505,15 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
 
       char nmeaMessage[82]; //Max NMEA sentence length is 82
       createNMEASentence(CUSTOM_NMEA_TYPE_PARSER_STATS, nmeaMessage, parserStats); //textID, buffer, text
-      ubxFile->println(nmeaMessage);
-      ubxFile->sync();
+      if (USE_SPI_MICROSD)
+      {
+        ubxFile->println(nmeaMessage);
+        ubxFile->sync();
+      }
+#ifdef COMPILE_SD_MMC
+      else
+        ubxFile_SD_MMC->println(nmeaMessage);
+#endif
 
       //Reset stats in case a new log is created
       failedParserMessages_NMEA = 0;
@@ -476,12 +521,23 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
       failedParserMessages_UBX = 0;
 
       //Close down file system
-      ubxFile->close();
+      if (USE_SPI_MICROSD)
+      {
+        ubxFile->close();
+        //Done with the log file
+        delete ubxFile;
+        ubxFile = NULL;
+      }
+#ifdef COMPILE_SD_MMC
+      else
+      {
+        ubxFile_SD_MMC->close();
+        //Done with the log file
+        delete ubxFile_SD_MMC;
+        ubxFile_SD_MMC = NULL;
+      }
+#endif
       systemPrintln("Log file closed");
-
-      //Done with the log file
-      delete ubxFile;
-      ubxFile = NULL;
 
       //Release the semaphore if requested
       if (releaseSemaphore)
@@ -865,7 +921,13 @@ void updateLogTest()
     {
       markSemaphore(FUNCTION_LOGTEST);
 
-      ubxFile->println(nmeaMessage);
+      if (USE_SPI_MICROSD)
+        ubxFile->println(nmeaMessage);
+#ifdef COMPILE_SD_MMC
+      else
+        ubxFile_SD_MMC->println(nmeaMessage);
+#endif
+
       xSemaphoreGive(sdCardSemaphore);
     }
     else

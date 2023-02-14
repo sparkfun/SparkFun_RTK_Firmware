@@ -432,7 +432,12 @@ void updateSystemState()
             {
               char nmeaMessage[82]; //Max NMEA sentence length is 82
               createNMEASentence(CUSTOM_NMEA_TYPE_WAYPOINT, nmeaMessage, (char*)"CustomEvent"); //textID, buffer, text
-              ubxFile->println(nmeaMessage);
+              if (USE_SPI_MICROSD)
+                ubxFile->println(nmeaMessage);
+#ifdef COMPILE_SD_MMC
+              else
+                ubxFile_SD_MMC->println(nmeaMessage);
+#endif
               logged = true;
             }
 

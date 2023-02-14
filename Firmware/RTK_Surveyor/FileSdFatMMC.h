@@ -27,11 +27,11 @@ public:
   ~FileSdFatMMC()
   {
     if (USE_SPI_MICROSD)
-      if (sdFile)
+      if (*sdFile) // operator bool
         delete sdFile;
 #ifdef COMPILE_SD_MMC
     else
-      if (file)
+      if (*file) // operator bool
         delete file;
 #endif
   };
@@ -46,19 +46,20 @@ public:
 #endif
   };
 
-  File open(const char *filepath, uint8_t mode)
+  bool open(const char *filepath, uint8_t mode)
   {
     if (USE_SPI_MICROSD)
-      return (File)sdFile->open(filepath, mode);
+      return sdFile->open(filepath, mode);
 #ifdef COMPILE_SD_MMC
     else
     {
       if (mode | O_APPEND)
-        return file->open(filepath, FILE_APPEND);
+        *file = SD_MMC.open(filepath, FILE_APPEND);
       else if (mode | O_WRITE)
-        return file->open(filepath, FILE_WRITE);
+        *file = SD_MMC.open(filepath, FILE_WRITE);
       else // if (mode | O_READ)
-        return file->open(filepath, FILE_READ);
+        *file = SD_MMC.open(filepath, FILE_READ);
+      return (*file); // operator bool
     }
 #endif    
   };

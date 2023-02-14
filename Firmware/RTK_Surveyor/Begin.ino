@@ -403,79 +403,28 @@ void beginSD()
     sdCardSize = 0;
     outOfSDSpace = true;
 
-    if (USE_SPI_MICROSD)
+    //Allocate the ubxFile
+    if (!ubxFile)
     {
-      //Allocate the ubxFile
+      ubxFile = new FileSdFatMMC();
       if (!ubxFile)
       {
-        ubxFile = new SdFile();
-        if (!ubxFile)
-        {
-          systemPrintln("Failed to allocate ubxFile!");
-          break;
-        }
+        systemPrintln("Failed to allocate ubxFile!");
+        break;
       }
-  
-      //Allocate the managerTempFile
+    }
+
+    //Allocate the managerTempFile
+    if (!managerTempFile)
+    {
+      managerTempFile = new FileSdFatMMC();
       if (!managerTempFile)
       {
-        managerTempFile = new SdFile();
-        if (!managerTempFile)
-        {
-          systemPrintln("Failed to allocate managerTempFile!");
-          break;
-        }
-      }
-  
-      //Allocate the marksFile
-      if (!marksFile)
-      {
-        marksFile = new SdFile();
-        if (!marksFile)
-        {
-          systemPrintln("Failed to allocate marksFile!");
-          break;
-        }
+        systemPrintln("Failed to allocate managerTempFile!");
+        break;
       }
     }
-#ifdef COMPILE_SD_MMC
-    else
-    {
-      //Allocate the ubxFile
-      if (!ubxFile_SD_MMC)
-      {
-        ubxFile_SD_MMC = new File();
-        if (!ubxFile_SD_MMC)
-        {
-          systemPrintln("Failed to allocate ubxFile!");
-          break;
-        }
-      }
-  
-      //Allocate the managerTempFile
-      if (!managerTempFile_SD_MMC)
-      {
-        managerTempFile_SD_MMC = new File();
-        if (!managerTempFile_SD_MMC)
-        {
-          systemPrintln("Failed to allocate managerTempFile!");
-          break;
-        }
-      }
-  
-      //Allocate the marksFile
-      if (!marksFile_SD_MMC)
-      {
-        marksFile_SD_MMC = new File();
-        if (!marksFile_SD_MMC)
-        {
-          systemPrintln("Failed to allocate marksFile!");
-          break;
-        }
-      }
-    }
-#endif
-
+    
     systemPrintln("microSD: Online");
     online.microSD = true;
     break;

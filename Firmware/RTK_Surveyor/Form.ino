@@ -229,23 +229,10 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
 
         if (managerFileOpen == false)
         {
-          if (USE_SPI_MICROSD)
-          {
-            if (managerTempFile->open(fileName, O_READ) == true)
-              managerFileOpen = true;
-            else
-              systemPrintln("Error: File Manager failed to open file");
-          }
-#ifdef COMPILE_SD_MMC
+          if (managerTempFile->open(fileName, O_READ) == true)
+            managerFileOpen = true;
           else
-          {
-            *managerTempFile_SD_MMC = SD_MMC.open(fileName, FILE_READ);
-            if (managerTempFile_SD_MMC)
-              managerFileOpen = true;
-            else
-              systemPrintln("Error: File Manager failed to open file");
-          }
-#endif
+            systemPrintln("Error: File Manager failed to open file");
         }
         else
         {

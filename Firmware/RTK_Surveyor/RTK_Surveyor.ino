@@ -27,9 +27,8 @@ const int FIRMWARE_VERSION_MINOR = 2;
 #define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
 //#define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
+#define COMPILE_SD_MMC // Comment out to remove REFERENCE_STATION microSD SD_MMC support
 //#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
-
-#define INCLUDE_SD_MMC // Comment out to remove SD MMC support - microSD SDIO connectivity on the REFERENCE_STATION
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -84,7 +83,9 @@ int pin_radio_cts;
 int pin_radio_rts;
 
 int pin_Ethernet_CS;
+int pin_Ethernet_Interrupt;
 int pin_GNSS_CS;
+int pin_GNSS_TimePulse;
 int pin_microSD_CardDetect;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -161,16 +162,16 @@ const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being th
 const int sdSizeCheckStackSize = 2000;
 bool sdSizeCheckTaskComplete = false;
 
-//microSD SDIO / MMC Interface
+//microSD SDIO / MMC Interface - for the REFERENCE_STATION
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-#ifdef INCLUDE_SD_MMC
+#ifdef COMPILE_SD_MMC
 
 #include "FS.h"
 #include "SD_MMC.h"
 
-File * ubxFile_MMC;
-File * managerTempFile_MMC;
+File * ubxFile_SD_MMC;
+File * managerTempFile_SD_MMC;
 
 #endif
 
@@ -424,7 +425,8 @@ const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #define lbandMACAddress         btMACAddress
 uint8_t wifiMACAddress[6]; //Display this address in the system menu
-uint8_t btMACAddress[6];   //Display this address when Bluetooth is enabled, otherwise display wifiMACAddress
+uint8_t btMACAddress[6]; //Display this address when Bluetooth is enabled, otherwise display wifiMACAddress
+uint8_t ethernetMACAddress[6]; //Display this address when Ethernet is enabled, otherwise display wifiMACAddress
 char deviceName[70]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const uint16_t menuTimeout = 60 * 10; //Menus will exit/timeout after this number of seconds
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
@@ -769,7 +771,12 @@ void updateLogs()
       {
         markSemaphore(FUNCTION_EVENT);
 
-        ubxFile->println(nmeaMessage);
+        if (USE_SPI_MICROSD)
+          ubxFile->println(nmeaMessage);
+#ifdef COMPILE_SD_MMC
+        else
+          ubxFile_SD_MMC->println(nmeaMessage);
+#endif
 
         xSemaphoreGive(sdCardSemaphore);
         newEventToRecord = false;

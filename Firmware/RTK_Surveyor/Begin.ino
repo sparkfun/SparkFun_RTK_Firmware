@@ -143,7 +143,7 @@ void beginBoard()
       strcpy(platformPrefix, "Facet L-Band");
     }
   }
-#ifdef INCLUDE_SD_MMC
+#ifdef COMPILE_SD_MMC
   else if (productVariant == REFERENCE_STATION)
   {
     //v10
@@ -181,7 +181,11 @@ void beginBoard()
     pin_peripheralPowerControl = 32;
     pin_Ethernet_CS = 27;
     pin_GNSS_CS = 5;
+    pin_GNSS_TimePulse = 25;
     pin_adc39 = 39;
+    pin_zed_tx_ready = 34;
+    pin_microSD_CardDetect = 36;
+    pin_Ethernet_Interrupt = 33;
 
     pin_radio_rx = 17; // Radio RX In = ESP TX Out
     pin_radio_tx = 16; // Radio TX Out = ESP RX In
@@ -210,6 +214,8 @@ void beginBoard()
   esp_read_mac(wifiMACAddress, ESP_MAC_WIFI_STA);
   memcpy(btMACAddress, wifiMACAddress, sizeof(wifiMACAddress));
   btMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
+  memcpy(ethernetMACAddress, wifiMACAddress, sizeof(wifiMACAddress));
+  ethernetMACAddress[5] += 3; //Convert MAC address to Ethernet MAC (add 3)
 
   //For all boards, check reset reason. If reset was due to wdt or panic, append last log
   loadSettingsPartial(); //Loads settings from LFS
@@ -260,7 +266,7 @@ void beginSD()
   online.microSD = false;
   gotSemaphore = false;
   
-  while (settings.enableSD == true) // Note to self: should this be "if" instead of "while"?
+  while (settings.enableSD == true)
   {
     //Setup SD card access semaphore
     if (sdCardSemaphore == NULL)
@@ -299,7 +305,7 @@ void beginSD()
       log_d("SD card detected - using SPI and SdFat");
 
       //Allocate the data structure that manages the microSD card
-      if (USE_SPI_MICROSD && !sd)
+      if (!sd)
       {
         sd = new SdFat();
         if (!sd)
@@ -351,6 +357,7 @@ void beginSD()
         break;
       }
     }
+#ifdef COMPILE_SD_MMC
     else
     {
       // SDIO MMC
@@ -380,6 +387,7 @@ void beginSD()
         }        
       }
     }
+#endif
 
     if (createTestFile() == false)
     {
@@ -394,6 +402,57 @@ void beginSD()
     //Mark card not yet usable for logging
     sdCardSize = 0;
     outOfSDSpace = true;
+
+    if (USE_SPI_MICROSD)
+    {
+      //Allocate the ubxFile
+      if (!ubxFile)
+      {
+        ubxFile = new SdFile();
+        if (!ubxFile)
+        {
+          systemPrintln("Failed to allocate ubxFile!");
+          break;
+        }
+      }
+  
+      //Allocate the managerTempFile
+      if (!managerTempFile)
+      {
+        managerTempFile = new SdFile();
+        if (!managerTempFile)
+        {
+          systemPrintln("Failed to allocate managerTempFile!");
+          break;
+        }
+      }
+    }
+#ifdef COMPILE_SD_MMC
+    else
+    {
+      //Allocate the ubxFile
+      if (!ubxFile_SD_MMC)
+      {
+        ubxFile_SD_MMC = new File();
+        if (!ubxFile_SD_MMC)
+        {
+          systemPrintln("Failed to allocate ubxFile!");
+          break;
+        }
+      }
+  
+      //Allocate the managerTempFile
+      if (!managerTempFile_SD_MMC)
+      {
+        managerTempFile_SD_MMC = new File();
+        if (!managerTempFile_SD_MMC)
+        {
+          systemPrintln("Failed to allocate managerTempFile!");
+          break;
+        }
+      }
+    }
+#endif
 
     systemPrintln("microSD: Online");
     online.microSD = true;
@@ -413,7 +472,12 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   //Done with the SD card
   if (online.microSD)
   {
-    sd->end();
+    if (USE_SPI_MICROSD)
+      sd->end();
+#ifdef COMPILE_SD_MMC
+    else
+      SD_MMC.end();
+#endif
     online.microSD = false;
     systemPrintln("microSD: Offline");
   }

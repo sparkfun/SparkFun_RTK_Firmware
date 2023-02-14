@@ -308,6 +308,7 @@ bool createTestFile()
       sd->remove(testFileName);
     return (!sd->exists(testFileName));
   }
+#ifdef COMPILE_SD_MMC
   else
   {
     // SDIO MMC
@@ -322,6 +323,7 @@ bool createTestFile()
     testFile.close();
     return (SD_MMC.remove(testFileName));      
   }
+#endif
 }
 
 //If debug option is on, print available heap

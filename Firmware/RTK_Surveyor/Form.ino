@@ -229,21 +229,8 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
 
         if (managerFileOpen == false)
         {
-          //Allocate the managerTempFile
-          if (!managerTempFile)
-          {
-            managerTempFile = new SdFile();
-            if (!managerTempFile)
-            {
-              systemPrintln("Error: Failed to allocate managerTempFile!");
-            }
-          }
-
-          if (managerTempFile)
-          {
-            if (managerTempFile->open(fileName, O_READ) == true)
-              managerFileOpen = true;
-          }
+          if (managerTempFile->open(fileName, O_READ) == true)
+            managerFileOpen = true;
           else
             systemPrintln("Error: File Manager failed to open file");
         }

@@ -140,7 +140,7 @@ bool configureUbloxModule()
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_SPI, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GST_SPI, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_SPI, 0);
-  response &= theGNSS.sendCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0);
   response &= theGNSS.sendCfgValset();
 
   if (response == false)

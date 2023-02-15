@@ -169,8 +169,8 @@ bool pointperfectProvisionDevice()
 #ifdef COMPILE_WIFI
   bluetoothStop(); //Free heap before starting secure client (requires ~70KB)
 
-  DynamicJsonDocument * jsonZtp = NULL;
-  char * tempHolder = NULL;
+  DynamicJsonDocument * jsonZtp = nullptr;
+  char * tempHolder = nullptr;
   bool retVal = false;
 
   do
@@ -312,8 +312,8 @@ bool pointperfectUpdateKeys()
 #ifdef COMPILE_WIFI
   bluetoothStop(); //Release available heap to allow room for TLS
 
-  char * certificateContents = NULL; //Holds the contents of the keys prior to MQTT connection
-  char * keyContents = NULL;
+  char * certificateContents = nullptr; //Holds the contents of the keys prior to MQTT connection
+  char * keyContents = nullptr;
   WiFiClientSecure secureClient;
   bool gotKeys = false;
 

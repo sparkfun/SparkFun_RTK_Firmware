@@ -479,7 +479,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
       ubxFile->close();
       //Done with the log file
       delete ubxFile;
-      ubxFile = NULL;
+      ubxFile = nullptr;
 
       systemPrintln("Log file closed");
 
@@ -533,7 +533,7 @@ bool findLastLog(char *lastLogName)
             //Check for matching file name prefix and extension
             if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
             {
-              if (strstr(fname, LOG_PREFIX) != NULL)
+              if (strstr(fname, LOG_PREFIX) != nullptr)
               {
                 strcpy(lastLogName, fname); //Store this file as last known log file
                 foundAFile = true;
@@ -566,7 +566,7 @@ bool findLastLog(char *lastLogName)
               //Check for matching file name prefix and extension
               if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
               {
-                if (strstr(fname, LOG_PREFIX) != NULL)
+                if (strstr(fname, LOG_PREFIX) != nullptr)
                 {
                   strcpy(lastLogName, fname); //Store this file as last known log file
                   foundAFile = true;
@@ -602,7 +602,7 @@ void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlo
   //Find the first occurrence
   for (startOfBlock = 0 ; startOfBlock < MAX_UBX_MSG ; startOfBlock++)
   {
-    if (strstr(settings.ubxMessages[startOfBlock].msgTextName, messageNamePiece) != NULL) break;
+    if (strstr(settings.ubxMessages[startOfBlock].msgTextName, messageNamePiece) != nullptr) break;
   }
   if (startOfBlock == MAX_UBX_MSG)
   {
@@ -615,7 +615,7 @@ void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlo
   //Find the last occurrence
   for (endOfBlock = startOfBlock + 1 ; endOfBlock < MAX_UBX_MSG ; endOfBlock++)
   {
-    if (strstr(settings.ubxMessages[endOfBlock].msgTextName, messageNamePiece) == NULL) break;
+    if (strstr(settings.ubxMessages[endOfBlock].msgTextName, messageNamePiece) == nullptr) break;
   }
 }
 

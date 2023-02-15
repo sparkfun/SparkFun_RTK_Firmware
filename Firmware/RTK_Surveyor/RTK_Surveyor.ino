@@ -159,7 +159,7 @@ LoggingType loggingType = LOGGING_UNKNOWN;
 FileSdFatMMC * managerTempFile; //File used for uploading or downloading in file manager section of AP config
 bool managerFileOpen = false;
 
-TaskHandle_t sdSizeCheckTaskHandle = NULL; //Store handles so that we can kill the task once size is found
+TaskHandle_t sdSizeCheckTaskHandle = nullptr; //Store handles so that we can kill the task once size is found
 const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being the lowest
 const int sdSizeCheckStackSize = 2000;
 bool sdSizeCheckTaskComplete = false;
@@ -283,20 +283,20 @@ HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
 #define SERIAL_SIZE_TX 512
 uint8_t wBuffer[SERIAL_SIZE_TX]; //Buffer for writing from incoming SPP to F9P
-TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+TaskHandle_t F9PSerialWriteTaskHandle = nullptr; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int writeTaskStackSize = 2000;
 
 uint8_t * ringBuffer; //Buffer for reading from F9P. At 230400bps, 23040 bytes/s. If SD blocks for 250ms, we need 23040 * 0.25 = 5760 bytes worst case.
-TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+TaskHandle_t F9PSerialReadTaskHandle = nullptr; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int readTaskStackSize = 2000;
 
-TaskHandle_t handleGNSSDataTaskHandle = NULL;
+TaskHandle_t handleGNSSDataTaskHandle = nullptr;
 const uint8_t handleGNSSDataTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int handleGNSSDataTaskStackSize = 3000;
 
-TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
+TaskHandle_t pinUART2TaskHandle = nullptr; //Dummy task to start UART2 on core 0.
 volatile bool uart2pinned = false; //This variable is touched by core 0 but checked by core 1. Must be volatile.
 
 volatile static int combinedSpaceRemaining = 0; //Overrun indicator
@@ -343,10 +343,10 @@ SPARKFUN_LIS2DH12 accel;
 //Buttons - Interrupt driven and debounce
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <JC_Button.h> // http://librarymanager/All#JC_Button
-Button *setupBtn = NULL; //We can't instantiate the buttons here because we don't yet know what pin numbers to use
-Button *powerBtn = NULL;
+Button *setupBtn = nullptr; //We can't instantiate the buttons here because we don't yet know what pin numbers to use
+Button *powerBtn = nullptr;
 
-TaskHandle_t ButtonCheckTaskHandle = NULL;
+TaskHandle_t ButtonCheckTaskHandle = nullptr;
 const uint8_t ButtonCheckTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int buttonTaskStackSize = 2000;
 
@@ -362,10 +362,10 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 #include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer
 #include "form.h"
 
-AsyncWebServer *webserver = NULL;
-AsyncWebSocket *websocket = NULL;
+AsyncWebServer *webserver = nullptr;
+AsyncWebSocket *websocket = nullptr;
 
-char *settingsCSV = NULL; //Push large array onto heap
+char *settingsCSV = nullptr; //Push large array onto heap
 
 #endif
 #endif
@@ -373,7 +373,7 @@ char *settingsCSV = NULL; //Push large array onto heap
 //Because the incoming string is longer than max len, there are multiple callbacks so we
 //use a global to combine the incoming
 #define AP_CONFIG_SETTING_SIZE 5000
-char *incomingSettings = NULL;
+char *incomingSettings = nullptr;
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 unsigned long lastCoordinateUpdate = 0;

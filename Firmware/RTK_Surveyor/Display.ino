@@ -2348,10 +2348,10 @@ void displayMessage(const char* message, uint16_t displayTime)
     uint8_t wordCount = 0;
     strcpy(temp, message); //strtok modifies the message so make copy
     char * token = strtok(temp, " ");
-    while (token != NULL)
+    while (token != nullptr)
     {
       wordCount++;
-      token = strtok(NULL, " ");
+      token = strtok(nullptr, " ");
     }
 
     uint8_t yPos = (oled.getHeight() / 2) - (fontHeight / 2);
@@ -2363,10 +2363,10 @@ void displayMessage(const char* message, uint16_t displayTime)
 
     strcpy(temp, message);
     token = strtok(temp, " ");
-    while (token != NULL)
+    while (token != nullptr)
     {
       printTextCenter(token, yPos, QW_FONT_8X16, 1, false); //text, y, font type, kerning, inverted
-      token = strtok(NULL, " ");
+      token = strtok(nullptr, " ");
       yPos += fontHeight;
     }
 

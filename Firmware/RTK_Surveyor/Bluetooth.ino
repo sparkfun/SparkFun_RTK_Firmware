@@ -219,7 +219,7 @@ void bluetoothStop()
 #ifdef COMPILE_BT
   if (bluetoothState == BT_NOTCONNECTED || bluetoothState == BT_CONNECTED)
   {
-    bluetoothSerial->register_callback(NULL);
+    bluetoothSerial->register_callback(nullptr);
     bluetoothSerial->flush(); //Complete any transfers
     bluetoothSerial->disconnect(); //Drop any clients
     bluetoothSerial->end(); //bluetoothSerial->end() will release significant RAM (~100k!) but a bluetoothSerial->start will crash.

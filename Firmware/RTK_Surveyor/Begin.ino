@@ -269,7 +269,7 @@ void beginSD()
   while (settings.enableSD == true)
   {
     //Setup SD card access semaphore
-    if (sdCardSemaphore == NULL)
+    if (sdCardSemaphore == nullptr)
       sdCardSemaphore = xSemaphoreCreateMutex();
     else if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) != pdPASS)
     {
@@ -457,7 +457,7 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   if (sd)
   {
     delete sd;
-    sd = NULL;
+    sd = nullptr;
   }
 
   //Release the semaphore
@@ -504,11 +504,11 @@ void beginUART2()
 {
   ringBuffer = (uint8_t*)malloc(settings.gnssHandlerBufferSize);
 
-  if (pinUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
+  if (pinUART2TaskHandle == nullptr) xTaskCreatePinnedToCore(
       pinUART2Task,
       "UARTStart", //Just for humans
       2000, //Stack Size
-      NULL, //Task input parameter
+      nullptr, //Task input parameter
       0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
       &pinUART2TaskHandle, //Task handle
       0); //Core where task should run, 0=core, 1=Arduino
@@ -531,7 +531,7 @@ void pinUART2Task( void *pvParameters )
 
   uart2pinned = true;
 
-  vTaskDelete( NULL ); //Delete task once it has run once
+  vTaskDelete( nullptr ); //Delete task once it has run once
 }
 
 void beginFS()
@@ -620,9 +620,9 @@ void beginGNSS()
     }
 
     //Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
-    if (strstr(theGNSS.getModuleName(), "ZED-F9P") != NULL)
+    if (strstr(theGNSS.getModuleName(), "ZED-F9P") != nullptr)
       zedModuleType = PLATFORM_F9P;
-    else if (strstr(theGNSS.getModuleName(), "ZED-F9R") != NULL)
+    else if (strstr(theGNSS.getModuleName(), "ZED-F9R") != nullptr)
       zedModuleType = PLATFORM_F9R;
     else
     {
@@ -815,12 +815,12 @@ void beginSystemState()
   }
 
   //Starts task for monitoring button presses
-  if (ButtonCheckTaskHandle == NULL)
+  if (ButtonCheckTaskHandle == nullptr)
     xTaskCreate(
       ButtonCheckTask,
       "BtnCheck", //Just for humans
       buttonTaskStackSize, //Stack Size
-      NULL, //Task input parameter
+      nullptr, //Task input parameter
       ButtonCheckTaskPriority,
       &ButtonCheckTaskHandle); //Task handle
 }
@@ -865,7 +865,7 @@ bool beginExternalTriggers()
   if (settings.enableExternalHardwareEventLogging == true)
     theGNSS.setAutoTIMTM2callbackPtr(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
   else
-    theGNSS.setAutoTIMTM2callbackPtr(NULL);
+    theGNSS.setAutoTIMTM2callbackPtr(nullptr);
 
   return (response);
 }
@@ -879,12 +879,12 @@ void beginIdleTasks()
     for (int index = 0; index < MAX_CPU_CORES; index++)
     {
       sprintf(taskName, "IdleTask%d", index);
-      if (idleTaskHandle[index] == NULL)
+      if (idleTaskHandle[index] == nullptr)
         xTaskCreatePinnedToCore(
           idleTask,
           taskName, //Just for humans
           2000, //Stack Size
-          NULL, //Task input parameter
+          nullptr, //Task input parameter
           0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
           &idleTaskHandle[index], //Task handle
           index); //Core where task should run, 0=core, 1=Arduino
@@ -928,13 +928,13 @@ void radioStart()
 //Start task to determine SD card size
 void beginSDSizeCheckTask()
 {
-  if (sdSizeCheckTaskHandle == NULL)
+  if (sdSizeCheckTaskHandle == nullptr)
   {
     xTaskCreate(
       sdSizeCheckTask, //Function to call
       "SDSizeCheck", //Just for humans
       sdSizeCheckStackSize, //Stack Size
-      NULL, //Task input parameter
+      nullptr, //Task input parameter
       sdSizeCheckTaskPriority, //Priority
       &sdSizeCheckTaskHandle); //Task handle
 
@@ -945,10 +945,10 @@ void beginSDSizeCheckTask()
 void deleteSDSizeCheckTask()
 {
   //Delete task once it's complete
-  if (sdSizeCheckTaskHandle != NULL)
+  if (sdSizeCheckTaskHandle != nullptr)
   {
     vTaskDelete(sdSizeCheckTaskHandle);
-    sdSizeCheckTaskHandle = NULL;
+    sdSizeCheckTaskHandle = nullptr;
     sdSizeCheckTaskComplete = false;
     log_d("sdSizeCheck Task deleted");
   }

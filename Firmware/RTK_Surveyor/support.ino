@@ -64,7 +64,7 @@ void systemPrintf(const char* format, ...) {
 
   va_list args2;
   va_copy(args2, args);
-  char buf[vsnprintf(NULL, 0, format, args) + 1];
+  char buf[vsnprintf(nullptr, 0, format, args) + 1];
 
   vsnprintf(buf, sizeof buf, format, args2);
 

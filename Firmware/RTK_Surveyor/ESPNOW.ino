@@ -197,7 +197,7 @@ void espnowStop()
   if (response != ESP_OK)
     systemPrintf("espnowStop: Failed to set promiscuous mode: %s\r\n", esp_err_to_name(response));
 
-  esp_wifi_set_promiscuous_rx_cb(NULL);
+  esp_wifi_set_promiscuous_rx_cb(nullptr);
 
   //Deregister callbacks
   //esp_now_unregister_send_cb();

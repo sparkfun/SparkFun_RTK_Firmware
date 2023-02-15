@@ -62,7 +62,7 @@ void F9PSerialWriteTask(void *e)
     } //End bluetoothGetState() == BT_CONNECTED
 
     if (settings.enableTaskReports == true)
-      systemPrintf("SerialWriteTask High watermark: %d\r\n",  uxTaskGetStackHighWaterMark(NULL));
+      systemPrintf("SerialWriteTask High watermark: %d\r\n",  uxTaskGetStackHighWaterMark(nullptr));
 
     delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
@@ -122,7 +122,7 @@ void F9PSerialReadTask(void *e)
   while (true)
   {
     if (settings.enableTaskReports == true)
-      systemPrintf("SerialReadTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(NULL));
+      systemPrintf("SerialReadTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(nullptr));
 
     //Determine if serial data is available
     while (serialGNSS.available())
@@ -479,8 +479,8 @@ void ButtonCheckTask(void *e)
 {
   uint8_t index;
 
-  if (setupBtn != NULL) setupBtn->begin();
-  if (powerBtn != NULL) powerBtn->begin();
+  if (setupBtn != nullptr) setupBtn->begin();
+  if (powerBtn != nullptr) powerBtn->begin();
 
   while (true)
   {
@@ -554,28 +554,28 @@ void ButtonCheckTask(void *e)
     }
     else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS) //Express: Check both of the momentary switches
     {
-      if (setupBtn != NULL) setupBtn->read();
-      if (powerBtn != NULL) powerBtn->read();
+      if (setupBtn != nullptr) setupBtn->read();
+      if (powerBtn != nullptr) powerBtn->read();
 
       if (systemState == STATE_SHUTDOWN)
       {
         //Ignore button presses while shutting down
       }
-      else if (powerBtn != NULL && powerBtn->pressedFor(shutDownButtonTime))
+      else if (powerBtn != nullptr && powerBtn->pressedFor(shutDownButtonTime))
       {
         forceSystemStateUpdate = true;
         requestChangeState(STATE_SHUTDOWN);
 
         if (inMainMenu) powerDown(true); //State machine is not updated while in menu system so go straight to power down as needed
       }
-      else if ((setupBtn != NULL && setupBtn->pressedFor(500)) &&
-               (powerBtn != NULL && powerBtn->pressedFor(500)))
+      else if ((setupBtn != nullptr && setupBtn->pressedFor(500)) &&
+               (powerBtn != nullptr && powerBtn->pressedFor(500)))
       {
         forceSystemStateUpdate = true;
         requestChangeState(STATE_TEST);
         lastTestMenuChange = millis(); //Avoid exiting test menu for 1s
       }
-      else if (setupBtn != NULL && setupBtn->wasReleased())
+      else if (setupBtn != nullptr && setupBtn->wasReleased())
       {
         switch (systemState)
         {
@@ -678,26 +678,26 @@ void ButtonCheckTask(void *e)
     } //End Platform = RTK Express
     else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND) //Check one momentary button
     {
-      if (powerBtn != NULL) powerBtn->read();
+      if (powerBtn != nullptr) powerBtn->read();
 
       if (systemState == STATE_SHUTDOWN)
       {
         //Ignore button presses while shutting down
       }
-      else if (powerBtn != NULL && powerBtn->pressedFor(shutDownButtonTime))
+      else if (powerBtn != nullptr && powerBtn->pressedFor(shutDownButtonTime))
       {
         forceSystemStateUpdate = true;
         requestChangeState(STATE_SHUTDOWN);
 
         if (inMainMenu) powerDown(true); //State machine is not updated while in menu system so go straight to power down as needed
       }
-      else if (powerBtn != NULL && systemState == STATE_ROVER_NOT_STARTED && firstRoverStart == true && powerBtn->pressedFor(500))
+      else if (powerBtn != nullptr && systemState == STATE_ROVER_NOT_STARTED && firstRoverStart == true && powerBtn->pressedFor(500))
       {
         forceSystemStateUpdate = true;
         requestChangeState(STATE_TEST);
         lastTestMenuChange = millis(); //Avoid exiting test menu for 1s
       }
-      else if (powerBtn != NULL && powerBtn->wasReleased() && firstRoverStart == false)
+      else if (powerBtn != nullptr && powerBtn->wasReleased() && firstRoverStart == false)
       {
         switch (systemState)
         {
@@ -846,7 +846,7 @@ void idleTask(void *e)
     {
       lastStackPrintTime = millis();
       systemPrintf("idleTask %d High watermark: %d\r\n",
-                   xPortGetCoreID(), uxTaskGetStackHighWaterMark(NULL));
+                   xPortGetCoreID(), uxTaskGetStackHighWaterMark(nullptr));
     }
 
     //Let other same priority tasks run
@@ -858,32 +858,32 @@ void idleTask(void *e)
 void tasksStartUART2()
 {
   //Reads data from ZED and stores data into circular buffer
-  if (F9PSerialReadTaskHandle == NULL)
+  if (F9PSerialReadTaskHandle == nullptr)
     xTaskCreate(
       F9PSerialReadTask, //Function to call
       "F9Read", //Just for humans
       readTaskStackSize, //Stack Size
-      NULL, //Task input parameter
+      nullptr, //Task input parameter
       F9PSerialReadTaskPriority, //Priority
       &F9PSerialReadTaskHandle); //Task handle
 
   //Reads data from circular buffer and sends data to SD, SPP, or TCP
-  if (handleGNSSDataTaskHandle == NULL)
+  if (handleGNSSDataTaskHandle == nullptr)
     xTaskCreate(
       handleGNSSDataTask, //Function to call
       "handleGNSSData", //Just for humans
       handleGNSSDataTaskStackSize, //Stack Size
-      NULL, //Task input parameter
+      nullptr, //Task input parameter
       handleGNSSDataTaskPriority, //Priority
       &handleGNSSDataTaskHandle); //Task handle
 
   //Reads data from BT and sends to ZED
-  if (F9PSerialWriteTaskHandle == NULL)
+  if (F9PSerialWriteTaskHandle == nullptr)
     xTaskCreate(
       F9PSerialWriteTask, //Function to call
       "F9Write", //Just for humans
       writeTaskStackSize, //Stack Size
-      NULL, //Task input parameter
+      nullptr, //Task input parameter
       F9PSerialWriteTaskPriority, //Priority
       &F9PSerialWriteTaskHandle); //Task handle
 }
@@ -892,20 +892,20 @@ void tasksStartUART2()
 void tasksStopUART2()
 {
   //Delete tasks if running
-  if (F9PSerialReadTaskHandle != NULL)
+  if (F9PSerialReadTaskHandle != nullptr)
   {
     vTaskDelete(F9PSerialReadTaskHandle);
-    F9PSerialReadTaskHandle = NULL;
+    F9PSerialReadTaskHandle = nullptr;
   }
-  if (handleGNSSDataTaskHandle != NULL)
+  if (handleGNSSDataTaskHandle != nullptr)
   {
     vTaskDelete(handleGNSSDataTaskHandle);
-    handleGNSSDataTaskHandle = NULL;
+    handleGNSSDataTaskHandle = nullptr;
   }
-  if (F9PSerialWriteTaskHandle != NULL)
+  if (F9PSerialWriteTaskHandle != nullptr)
   {
     vTaskDelete(F9PSerialWriteTaskHandle);
-    F9PSerialWriteTaskHandle = NULL;
+    F9PSerialWriteTaskHandle = nullptr;
   }
 
   //Give the other CPU time to finish

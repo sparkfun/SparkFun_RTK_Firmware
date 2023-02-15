@@ -90,10 +90,10 @@ bool ntripClientConnect()
   char hostname[50];
   strncpy(hostname, settings.ntripClient_CasterHost, 50); //strtok modifies string to be parsed so we create a copy
   char *token = strtok(hostname, "//");
-  if (token != NULL)
+  if (token != nullptr)
   {
-    token = strtok(NULL, "//"); //Advance to data after //
-    if (token != NULL)
+    token = strtok(nullptr, "//"); //Advance to data after //
+    if (token != nullptr)
       strcpy(settings.ntripClient_CasterHost, token);
   }
 
@@ -281,7 +281,7 @@ void ntripClientStop(bool wifiClientAllocated)
 
     //Free the NTRIP client resources
     delete ntripClient;
-    ntripClient = NULL;
+    ntripClient = nullptr;
 
     //Allocate the NTRIP client structure if not done
     if (wifiClientAllocated == false)
@@ -297,7 +297,7 @@ void ntripClientStop(bool wifiClientAllocated)
 
   // Return the Main Talker ID to "GN".
   theGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
-  theGNSS.setNMEAGPGGAcallbackPtr(NULL); // Remove callback
+  theGNSS.setNMEAGPGGAcallbackPtr(nullptr); // Remove callback
 
   //Determine the next NTRIP client state
   ntripClientSetState((ntripClient && (wifiClientAllocated == false)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
@@ -430,7 +430,7 @@ void ntripClientUpdate()
         log_d("Caster Response: %s", response);
 
         //Look for various responses
-        if (strstr(response, "401") != NULL)
+        if (strstr(response, "401") != nullptr)
         {
           //Look for '401 Unauthorized'
           systemPrintf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n", response);
@@ -438,7 +438,7 @@ void ntripClientUpdate()
           //Stop WiFi operations
           ntripClientStop(true); //Do not allocate new wifiClient
         }
-        else if (strstr(response, "banned") != NULL)
+        else if (strstr(response, "banned") != nullptr)
         {
           //Look for 'HTTP/1.1 200 OK' and banned IP information
           systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n", response);
@@ -446,7 +446,7 @@ void ntripClientUpdate()
           //Stop WiFi operations
           ntripClientStop(true); //Do not allocate new wifiClient
         }
-        else if (strstr(response, "SOURCETABLE") != NULL)
+        else if (strstr(response, "SOURCETABLE") != nullptr)
         {
           //Look for 'SOURCETABLE 200 OK'
           systemPrintf("Caster may not have mountpoint %s. Caster responded with problem: %s\r\n", settings.ntripClient_MountPoint, response);
@@ -454,7 +454,7 @@ void ntripClientUpdate()
           //Stop WiFi operations
           ntripClientStop(true); //Do not allocate new wifiClient
         }
-        else if (strstr(response, "200") != NULL)
+        else if (strstr(response, "200") != nullptr)
         {
           log_d("NTRIP Client connected to caster");
 
@@ -545,7 +545,7 @@ void pushGPGGA(NMEA_GGA_data_t *nmeaData)
     {
       lastGGAPush = millis();
 
-      //log_d("Pushing GGA to server: %s", (const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+      //log_d("Pushing GGA to server: %s", (const char *)nmeaData->nmea); // .nmea is printable (nullptr-terminated) and already has \r\n on the end
 
       //Push our current GGA sentence to caster
       ntripClient->print((const char *)nmeaData->nmea);

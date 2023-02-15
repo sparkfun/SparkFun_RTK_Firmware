@@ -15,7 +15,7 @@ bool configureUbloxModuleBase()
 
   theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  theGNSS.setNMEAGPGGAcallbackPtr(NULL); // Disable GPGGA call back that may have been set during Rover NTRIP Client mode
+  theGNSS.setNMEAGPGGAcallbackPtr(nullptr); // Disable GPGGA call back that may have been set during Rover NTRIP Client mode
 
   bool response = true;
 

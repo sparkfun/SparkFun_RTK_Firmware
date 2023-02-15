@@ -157,28 +157,28 @@ void stopWebServer()
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-  if (webserver != NULL)
+  if (webserver != nullptr)
   {
     webserver->end();
     free(webserver);
-    webserver = NULL;
+    webserver = nullptr;
 
-    if (websocket != NULL)
+    if (websocket != nullptr)
     {
       delete websocket;
-      websocket = NULL;
+      websocket = nullptr;
     }
 
-    if (settingsCSV != NULL)
+    if (settingsCSV != nullptr)
     {
       free(settingsCSV);
-      settingsCSV = NULL;
+      settingsCSV = nullptr;
     }
 
-    if (incomingSettings != NULL)
+    if (incomingSettings != nullptr)
     {
       free(incomingSettings);
-      incomingSettings = NULL;
+      incomingSettings = nullptr;
     }
   }
 
@@ -858,14 +858,14 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.lastState = STATE_ROVER_NOT_STARTED; //Default
     if (settingValue == 1) settings.lastState = STATE_BASE_NOT_STARTED;
   }
-  else if (strstr(settingName, "stationECEF") != NULL)
+  else if (strstr(settingName, "stationECEF") != nullptr)
   {
     replaceCharacter((char *)settingValueStr, ' ', ','); //Replace all ' ' with ',' before recording to file
     recordLineToSD(stationCoordinateECEFFileName, settingValueStr);
     recordLineToLFS(stationCoordinateECEFFileName, settingValueStr);
     log_d("%s recorded", settingValueStr);
   }
-  else if (strstr(settingName, "stationGeodetic") != NULL)
+  else if (strstr(settingName, "stationGeodetic") != nullptr)
   {
     replaceCharacter((char *)settingValueStr, ' ', ','); //Replace all ' ' with ',' before recording to file
     recordLineToSD(stationCoordinateGeodeticFileName, settingValueStr);
@@ -933,7 +933,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     loadSettings();
 
     //Send new settings to browser. Re-use settingsCSV to avoid stack.
-    if (settingsCSV == NULL)
+    if (settingsCSV == nullptr)
       settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
 
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
@@ -953,7 +953,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     activeProfiles = loadProfileNames();
 
     //Send new settings to browser. Re-use settingsCSV to avoid stack.
-    if (settingsCSV == NULL)
+    if (settingsCSV == nullptr)
       settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
 
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
@@ -1175,14 +1175,14 @@ bool parseIncomingSettings()
   {
     //Spin to first comma
     commaPtr = strstr(headPtr, ",");
-    if (commaPtr != NULL) {
+    if (commaPtr != nullptr) {
       *commaPtr = '\0';
       strcpy(settingName, headPtr);
       headPtr = commaPtr + 1;
     }
 
     commaPtr = strstr(headPtr, ",");
-    if (commaPtr != NULL) {
+    if (commaPtr != nullptr) {
       *commaPtr = '\0';
       strcpy(valueStr, headPtr);
       headPtr = commaPtr + 1;

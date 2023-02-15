@@ -1103,10 +1103,10 @@ bool parseLine(char* str, Settings *settings)
           uint8_t macByte = 0;
 
           char* token = strtok(settingValue, ","); //Break string up on ,
-          while (token != NULL && macByte < sizeof(macAddress))
+          while (token != nullptr && macByte < sizeof(macAddress))
           {
-            settings->espnowPeers[x][macByte++] = (uint8_t)strtol(token, NULL, 16);
-            token = strtok(NULL, ",");
+            settings->espnowPeers[x][macByte++] = (uint8_t)strtol(token, nullptr, 16);
+            token = strtok(nullptr, ",");
           }
 
           knownSetting = true;

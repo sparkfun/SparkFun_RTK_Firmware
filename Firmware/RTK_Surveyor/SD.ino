@@ -36,6 +36,9 @@
 //within a reasonable amount of time, there is no SD card on the bus.
 //Returns false if not card is detected
 //Returns true if a card responds
+//
+//This is SPI-specific.
+//TODO: figure out how to incorporate the SD_MMC SD card detect pin into this. Maybe best done in beginSD?
 bool sdPresent(void)
 {
   if (USE_SPI_MICROSD)

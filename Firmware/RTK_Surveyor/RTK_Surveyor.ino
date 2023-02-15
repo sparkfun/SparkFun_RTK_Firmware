@@ -125,9 +125,11 @@ ESP32Time rtc;
 #include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 SdFat *sd;
 
+#include "FileSdFatMMC.h" // Hybrid SdFat and SD_MMC file access
+
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
-SdFile * ubxFile; //File that all GNSS ubx messages sentences are written to
+FileSdFatMMC * ubxFile; //File that all GNSS ubx messages sentences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
 int startLogTime_minutes = 0; //Mark when we start any logging so we can stop logging after maxLogTime_minutes
 int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file so we can close it after x minutes and start a new one
@@ -154,31 +156,13 @@ typedef enum LoggingType {
 } LoggingType;
 LoggingType loggingType = LOGGING_UNKNOWN;
 
-SdFile * managerTempFile; //File used for uploading or downloading in file manager section of AP config
+FileSdFatMMC * managerTempFile; //File used for uploading or downloading in file manager section of AP config
 bool managerFileOpen = false;
-
-SdFile * marksFile; // Marks file - used by States.ino
-SdFile * firmwareFile; // Firmware file - used by menuFirmware
 
 TaskHandle_t sdSizeCheckTaskHandle = NULL; //Store handles so that we can kill the task once size is found
 const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being the lowest
 const int sdSizeCheckStackSize = 2000;
 bool sdSizeCheckTaskComplete = false;
-
-//microSD SDIO / MMC Interface - for the REFERENCE_STATION
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-#ifdef COMPILE_SD_MMC
-
-#include "FS.h"
-#include "SD_MMC.h"
-
-File * ubxFile_SD_MMC;
-File * managerTempFile_SD_MMC;
-File * marksFile_SD_MMC;
-File * firmwareFile_SD_MMC;
-
-#endif
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -776,12 +760,7 @@ void updateLogs()
       {
         markSemaphore(FUNCTION_EVENT);
 
-        if (USE_SPI_MICROSD)
-          ubxFile->println(nmeaMessage);
-#ifdef COMPILE_SD_MMC
-        else
-          ubxFile_SD_MMC->println(nmeaMessage);
-#endif
+        ubxFile->println(nmeaMessage);
 
         xSemaphoreGive(sdCardSemaphore);
         newEventToRecord = false;

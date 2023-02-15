@@ -607,32 +607,15 @@ void recordLineToSD(const char* fileName, const char* lineData)
 
       gotSemaphore = true;
 
-      if (USE_SPI_MICROSD)
+      FileSdFatMMC file;
+      if (file.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
-        SdFile file; //FAT32
-        if (file.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
-        {
-          log_d("File %s not found", fileName);
-          break;
-        }
-  
-        file.println(lineData);
-        file.close();
+        log_d("File %s not found", fileName);
+        break;
       }
-#ifdef COMPILE_SD_MMC
-      else
-      {
-        File file = SD_MMC.open(fileName, FILE_APPEND);
-        if (!file)
-        {
-          log_d("File %s not found", fileName);
-          break;
-        }
-  
-        file.println(lineData);
-        file.close();
-      }
-#endif
+
+      file.println(lineData);
+      file.close();
       break;
     } //End Semaphore check
     else

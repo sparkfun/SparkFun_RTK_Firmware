@@ -361,40 +361,23 @@ void beginLogging(const char *customFileName)
       {
         markSemaphore(FUNCTION_CREATEFILE);
 
-        if (USE_SPI_MICROSD)
+        // O_CREAT - create the file if it does not exist
+        // O_APPEND - seek to the end of the file prior to each write
+        // O_WRITE - open for write
+        if (ubxFile->open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
         {
-          // O_CREAT - create the file if it does not exist
-          // O_APPEND - seek to the end of the file prior to each write
-          // O_WRITE - open for write
-          if (ubxFile->open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
-          {
-            systemPrintf("Failed to create GNSS UBX data file: %s\r\n", fileName);
-            online.logging = false;
-            xSemaphoreGive(sdCardSemaphore);
-            return;
-          }
+          systemPrintf("Failed to create GNSS UBX data file: %s\r\n", fileName);
+          online.logging = false;
+          xSemaphoreGive(sdCardSemaphore);
+          return;
         }
-#ifdef COMPILE_SD_MMC
-        else
-        {
-          *ubxFile_SD_MMC = SD_MMC.open(fileName, FILE_APPEND);
-          if (!ubxFile_SD_MMC)
-          {
-            systemPrintf("Failed to create GNSS UBX data file: %s\r\n", fileName);
-            online.logging = false;
-            xSemaphoreGive(sdCardSemaphore);
-            return;
-          }
-        }
-#endif
 
         fileSize = 0;
         lastLogSize = 0; //Reset counter - used for displaying active logging icon
 
         bufferOverruns = 0; //Reset counter
 
-        if (USE_SPI_MICROSD)
-          updateDataFileCreate(ubxFile); // Update the file to create time & date
+        ubxFile->updateFileCreateTimestamp(); // Update the file to create time & date
 
         startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 
@@ -421,12 +404,7 @@ void beginLogging(const char *customFileName)
         //Mark top of log with system information
         char nmeaMessage[82]; //Max NMEA sentence length is 82
         createNMEASentence(CUSTOM_NMEA_TYPE_RESET_REASON, nmeaMessage, rstReason); //textID, buffer, text
-        if (USE_SPI_MICROSD)
-          ubxFile->println(nmeaMessage);
-#ifdef COMPILE_SD_MMC
-        else
-          ubxFile_SD_MMC->println(nmeaMessage);
-#endif
+        ubxFile->println(nmeaMessage);
 
         //Record system firmware versions and info to log
 
@@ -434,33 +412,17 @@ void beginLogging(const char *customFileName)
         char firmwareVersion[30]; //v1.3 December 31 2021
         sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
         createNMEASentence(CUSTOM_NMEA_TYPE_SYSTEM_VERSION, nmeaMessage, firmwareVersion); //textID, buffer, text
-        if (USE_SPI_MICROSD)
-          ubxFile->println(nmeaMessage);
-#ifdef COMPILE_SD_MMC
-        else
-          ubxFile_SD_MMC->println(nmeaMessage);
-#endif
-
+        ubxFile->println(nmeaMessage);
 
         //ZED-F9P firmware: HPG 1.30
         createNMEASentence(CUSTOM_NMEA_TYPE_ZED_VERSION, nmeaMessage, zedFirmwareVersion); //textID, buffer, text
-        if (USE_SPI_MICROSD)
-          ubxFile->println(nmeaMessage);
-#ifdef COMPILE_SD_MMC
-        else
-          ubxFile_SD_MMC->println(nmeaMessage);
-#endif
+        ubxFile->println(nmeaMessage);
 
         //Device BT MAC. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/346
         char macAddress[5];
         sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
         createNMEASentence(CUSTOM_NMEA_TYPE_DEVICE_BT_ID, nmeaMessage, macAddress); //textID, buffer, text
-        if (USE_SPI_MICROSD)
-          ubxFile->println(nmeaMessage);
-#ifdef COMPILE_SD_MMC
-        else
-          ubxFile_SD_MMC->println(nmeaMessage);
-#endif
+        ubxFile->println(nmeaMessage);
 
         if (reuseLastLog == true)
         {
@@ -505,15 +467,8 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
 
       char nmeaMessage[82]; //Max NMEA sentence length is 82
       createNMEASentence(CUSTOM_NMEA_TYPE_PARSER_STATS, nmeaMessage, parserStats); //textID, buffer, text
-      if (USE_SPI_MICROSD)
-      {
-        ubxFile->println(nmeaMessage);
-        ubxFile->sync();
-      }
-#ifdef COMPILE_SD_MMC
-      else
-        ubxFile_SD_MMC->println(nmeaMessage);
-#endif
+      ubxFile->println(nmeaMessage);
+      ubxFile->sync();
 
       //Reset stats in case a new log is created
       failedParserMessages_NMEA = 0;
@@ -521,22 +476,11 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
       failedParserMessages_UBX = 0;
 
       //Close down file system
-      if (USE_SPI_MICROSD)
-      {
-        ubxFile->close();
-        //Done with the log file
-        delete ubxFile;
-        ubxFile = NULL;
-      }
-#ifdef COMPILE_SD_MMC
-      else
-      {
-        ubxFile_SD_MMC->close();
-        //Done with the log file
-        delete ubxFile_SD_MMC;
-        ubxFile_SD_MMC = NULL;
-      }
-#endif
+      ubxFile->close();
+      //Done with the log file
+      delete ubxFile;
+      ubxFile = NULL;
+
       systemPrintln("Log file closed");
 
       //Release the semaphore if requested
@@ -553,24 +497,6 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
       log_d("sdCardSemaphore failed to yield, held by %s, menuMessages.ino line %d\r\n", semaphoreHolder, __LINE__);
     }
   }
-}
-
-//Update the file access and write time with date and time obtained from GNSS
-void updateDataFileAccess(SdFile *dataFile)
-{
-  if (online.rtc == true)
-  {
-    //ESP32Time returns month:0-11
-    dataFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-    dataFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-  }
-}
-
-//Update the file create time with date and time obtained from GNSS
-void updateDataFileCreate(SdFile *dataFile)
-{
-  if (online.rtc == true)
-    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11
 }
 
 //Finds last log
@@ -921,12 +847,7 @@ void updateLogTest()
     {
       markSemaphore(FUNCTION_LOGTEST);
 
-      if (USE_SPI_MICROSD)
-        ubxFile->println(nmeaMessage);
-#ifdef COMPILE_SD_MMC
-      else
-        ubxFile_SD_MMC->println(nmeaMessage);
-#endif
+      ubxFile->println(nmeaMessage);
 
       xSemaphoreGive(sdCardSemaphore);
     }

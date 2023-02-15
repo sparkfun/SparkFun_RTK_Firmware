@@ -229,23 +229,10 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
 
         if (managerFileOpen == false)
         {
-          if (USE_SPI_MICROSD)
-          {
-            if (managerTempFile->open(fileName, O_READ) == true)
-              managerFileOpen = true;
-            else
-              systemPrintln("Error: File Manager failed to open file");
-          }
-#ifdef COMPILE_SD_MMC
+          if (managerTempFile->open(fileName, O_READ) == true)
+            managerFileOpen = true;
           else
-          {
-            *managerTempFile_SD_MMC = SD_MMC.open(fileName, FILE_READ);
-            if (managerTempFile_SD_MMC)
-              managerFileOpen = true;
-            else
-              systemPrintln("Error: File Manager failed to open file");
-          }
-#endif
+            systemPrintln("Error: File Manager failed to open file");
         }
         else
         {
@@ -254,48 +241,24 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
         }
 
         int dataAvailable;
-        if (USE_SPI_MICROSD)
-          dataAvailable = managerTempFile->size() - managerTempFile->position();
-#ifdef COMPILE_SD_MMC
-        else
-          dataAvailable = managerTempFile_SD_MMC->size() - managerTempFile_SD_MMC->position();
-#endif
+        dataAvailable = managerTempFile->size() - managerTempFile->position();
 
         AsyncWebServerResponse *response = request->beginResponse("text/plain", dataAvailable,
                                            [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t
         {
           uint32_t bytes = 0;
           uint32_t availableBytes;
-          if (USE_SPI_MICROSD)
-            availableBytes = managerTempFile->available();
-#ifdef COMPILE_SD_MMC
-          else
-            availableBytes = managerTempFile_SD_MMC->available();
-#endif
+          availableBytes = managerTempFile->available();
 
           if (availableBytes > maxLen)
           {
-          if (USE_SPI_MICROSD)
             bytes = managerTempFile->read(buffer, maxLen);
-#ifdef COMPILE_SD_MMC
-          else
-            bytes = managerTempFile_SD_MMC->read(buffer, maxLen);
-#endif
           }
           else
-          {
-          if (USE_SPI_MICROSD)
           {
             bytes = managerTempFile->read(buffer, availableBytes);
             managerTempFile->close();
-          }
-#ifdef COMPILE_SD_MMC
-          else
-          {
-            bytes = managerTempFile_SD_MMC->read(buffer, availableBytes);
-            managerTempFile_SD_MMC->close();
-          }
-#endif
+
             managerFileOpen = false;
 
             websocket->textAll("fmNext,1,"); //Tell browser to send next file if needed
@@ -1265,24 +1228,25 @@ String getFileList()
 
     if (USE_SPI_MICROSD)
     {
-      SdFile dir;
-      dir.open("/"); //Open root
+      SdFile root;
+      root.open("/"); //Open root
+      SdFile file;
       uint16_t fileCount = 0;
   
-      while (managerTempFile->openNext(&dir, O_READ))
+      while (file.openNext(&root, O_READ))
       {
-        if (managerTempFile->isFile())
+        if (file.isFile())
         {
           fileCount++;
   
-          managerTempFile->getName(fileName, sizeof(fileName));
+          file.getName(fileName, sizeof(fileName));
   
-          returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(managerTempFile->fileSize()) + ",";
+          returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(file.fileSize()) + ",";
         }
       }
   
-      dir.close();
-      managerTempFile->close();
+      root.close();
+      file.close();
     }
 #ifdef COMPILE_SD_MMC
     else
@@ -1308,7 +1272,6 @@ String getFileList()
       }
       
       root.close();
-      managerTempFile_SD_MMC->close();
     }
 #endif
 
@@ -1375,12 +1338,7 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD1);
 
-      if (USE_SPI_MICROSD)
-        managerTempFile->open(tempFileName, O_CREAT | O_APPEND | O_WRITE);
-#ifdef COMPILE_SD_MMC
-      else
-        *managerTempFile_SD_MMC = SD_MMC.open(tempFileName, FILE_APPEND);
-#endif
+      managerTempFile->open(tempFileName, O_CREAT | O_APPEND | O_WRITE);
 
       xSemaphoreGive(sdCardSemaphore);
     }
@@ -1395,12 +1353,7 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD2);
 
-      if (USE_SPI_MICROSD)
-        managerTempFile->write(data, len); // stream the incoming chunk to the opened file
-#ifdef COMPILE_SD_MMC
-      else
-        managerTempFile_SD_MMC->write(data, len);
-#endif
+      managerTempFile->write(data, len); // stream the incoming chunk to the opened file
 
       xSemaphoreGive(sdCardSemaphore);
     }
@@ -1414,15 +1367,9 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD3);
 
-      if (USE_SPI_MICROSD)
-        updateDataFileCreate(managerTempFile); // Update the file create time & date
+      managerTempFile->updateFileCreateTimestamp(); // Update the file create time & date
 
-      if (USE_SPI_MICROSD)
-        managerTempFile->close();
-#ifdef COMPILE_SD_MMC
-      else
-        managerTempFile_SD_MMC->close();
-#endif
+      managerTempFile->close();
 
       xSemaphoreGive(sdCardSemaphore);
     }

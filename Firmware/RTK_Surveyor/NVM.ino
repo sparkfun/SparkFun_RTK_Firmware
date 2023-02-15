@@ -122,7 +122,7 @@ void recordSystemSettingsToFileSD(char *fileName)
           SD_MMC.remove(fileName);
         }
   
-        File settingsFile = SD_MMC.open(fileName, FILE_APPEND);
+        File settingsFile = SD_MMC.open(fileName, FILE_WRITE);
         
         if (!settingsFile)
         {
@@ -130,11 +130,7 @@ void recordSystemSettingsToFileSD(char *fileName)
           break;
         }
 
-        //updateDataFileCreate(&settingsFile); // Update the file to create time & date
-  
         recordSystemSettingsToFile(&settingsFile); //Record all the settings via strings to file
-  
-        //updateDataFileAccess(&settingsFile); // Update the file access time & date
   
         settingsFile.close();
       }

@@ -293,17 +293,18 @@ bool isConnected(uint8_t deviceAddress)
 //Create a test file in file structure to make sure we can
 bool createTestFile()
 {
+  FileSdFatMMC testFile;
+  char testFileName[40] = "testfile.txt";
+
+  //Attempt to write to the file system
+  if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true)
+    return (false);
+
+  //File successfully created
+  testFile.close();
+
   if (USE_SPI_MICROSD)
   {
-    SdFile testFile;
-    char testFileName[40] = "testfile.txt";
-  
-    //Attempt to write to the file system
-    if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true)
-      return (false);
-  
-    //File successfully created
-    testFile.close();
     if (sd->exists(testFileName))
       sd->remove(testFileName);
     return (!sd->exists(testFileName));
@@ -311,17 +312,9 @@ bool createTestFile()
 #ifdef COMPILE_SD_MMC
   else
   {
-    // SDIO MMC
-    char testFileName[40] = "/testfile.txt"; // Create it in the root directory
-
-    File testFile = SD_MMC.open(testFileName, FILE_WRITE);
-
-    if (!testFile)
-      return (false);
-
-    //File successfully created
-    testFile.close();
-    return (SD_MMC.remove(testFileName));      
+    if (SD_MMC.exists(testFileName))
+      SD_MMC.remove(testFileName);
+    return (!SD_MMC.exists(testFileName));      
   }
 #endif
 }

@@ -432,12 +432,7 @@ void updateSystemState()
             {
               char nmeaMessage[82]; //Max NMEA sentence length is 82
               createNMEASentence(CUSTOM_NMEA_TYPE_WAYPOINT, nmeaMessage, (char*)"CustomEvent"); //textID, buffer, text
-              if (USE_SPI_MICROSD)
-                ubxFile->println(nmeaMessage);
-#ifdef COMPILE_SD_MMC
-              else
-                ubxFile_SD_MMC->println(nmeaMessage);
-#endif
+              ubxFile->println(nmeaMessage);
               logged = true;
             }
 
@@ -467,47 +462,46 @@ void updateSystemState()
 
               if (online.microSD == true)
               {
-                //Open the marks file
+                //Check if the marks file already exists
+                bool marksFileExists = false;
                 if (USE_SPI_MICROSD)
                 {
-                  if (marksFile && marksFile->open(fileName, O_APPEND | O_WRITE))
+                  marksFileExists = sd->exists(fileName);
+                }
+#ifdef COMPILE_SD_MMC
+                else
+                {
+                  marksFileExists = SD_MMC.exists(fileName);
+                }
+#endif
+                
+                //Open the marks file
+                FileSdFatMMC marksFile;
+
+                if (marksFileExists)
+                {
+                  if (marksFile && marksFile.open(fileName, O_APPEND | O_WRITE))
                   {
                     fileOpen = true;
-                    marksFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                         rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+                    marksFile.updateFileCreateTimestamp();
                   }
-                  else if (marksFile && marksFile->open(fileName, O_CREAT | O_WRITE))
+                }
+                else
+                {
+                  if (marksFile && marksFile.open(fileName, O_CREAT | O_WRITE))
                   {
                     fileOpen = true;
-                    marksFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                         rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-                    marksFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                         rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+                    marksFile.updateFileAccessTimestamp();
   
                     //Add the column headers
                     //YYYYMMDDHHMMSS, Lat: xxxx, Long: xxxx, Alt: xxxx, SIV: xx, HPA: xxxx, Batt: xxx
                     //                           1         2         3         4         5         6         7         8         9
                     //                  1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901
                     strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
-                    marksFile->write(markBuffer, strlen(markBuffer));
+                    marksFile.write((const uint8_t *)markBuffer, strlen(markBuffer));
                   }
                 }
-#ifdef COMPILE_SD_MMC
-                else
-                {
-                  bool writeHeader = !SD_MMC.exists(fileName); // Check if the file already exists
-                  *marksFile_SD_MMC = SD_MMC.open(fileName, FILE_APPEND);
-                  if (marksFile_SD_MMC)
-                  {
-                    fileOpen = true;
-                    if (writeHeader)
-                    {
-                      strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
-                      marksFile_SD_MMC->write((const uint8_t *)markBuffer, strlen(markBuffer));
-                    }
-                  }
-                }
-#endif
+
                 if (fileOpen)
                 {
                   //Create the mark text
@@ -535,43 +529,17 @@ void updateSystemState()
                              latitude, longitude, altitude, numSV, horizontalAccuracy,
                              battLevel, battVoltage);
 
-                  if (USE_SPI_MICROSD)
-                  {
-                    //Write the mark to the file
-                    marksFile->write(markBuffer, strlen(markBuffer));
-  
-                    // Update the file to create time & date
-                    updateDataFileCreate(marksFile);
-  
-                    //Close the mark file
-                    marksFile->close();
-                  }
-#ifdef COMPILE_SD_MMC
-                  else
-                  {
-                    //Write the mark to the file
-                    marksFile_SD_MMC->write((const uint8_t *)markBuffer, strlen(markBuffer));
-  
-                    //Close the mark file
-                    marksFile_SD_MMC->close();
-                  }
-#endif                  
+                  //Write the mark to the file
+                  marksFile.write((const uint8_t *)markBuffer, strlen(markBuffer));
+
+                  // Update the file to create time & date
+                  marksFile.updateFileCreateTimestamp();
+
+                  //Close the mark file
+                  marksFile.close();
+
                   marked = true;
                 }
-
-                //Done with the file
-                if (USE_SPI_MICROSD)
-                {
-                  if (marksFile)
-                    delete (marksFile);
-                }
-#ifdef COMPILE_SD_MMC
-                else
-                {
-                  if (marksFile_SD_MMC)
-                    delete (marksFile_SD_MMC);
-                }
-#endif
 
                 //Dismount the SD card
                 if (!sdCardWasOnline)

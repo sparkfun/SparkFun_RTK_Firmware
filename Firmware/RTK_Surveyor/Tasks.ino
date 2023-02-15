@@ -356,18 +356,8 @@ void handleGNSSDataTask(void *e)
           //Write the data to the file
           long startTime = millis();
 
-          if (USE_SPI_MICROSD)
-          {
-            sdBytesToRecord = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
-            fileSize = ubxFile->fileSize(); //Update file size
-          }
-#ifdef COMPILE_SD_MMC
-          else
-          {
-            sdBytesToRecord = ubxFile_SD_MMC->write(&ringBuffer[sdTail], sliceToRecord);
-            fileSize = ubxFile_SD_MMC->size(); //Update file size
-          }
-#endif
+          sdBytesToRecord = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+          fileSize = ubxFile->fileSize(); //Update file size
           
           sdFreeSpace -= sliceToRecord; //Update remaining space on SD
 
@@ -377,11 +367,9 @@ void handleGNSSDataTask(void *e)
             if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
-            if (USE_SPI_MICROSD)
-            {
-              ubxFile->sync();
-              updateDataFileAccess(ubxFile); // Update the file access time & date
-            }
+            ubxFile->sync();
+            ubxFile->updateFileAccessTimestamp(); // Update the file access time & date
+
             if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
 

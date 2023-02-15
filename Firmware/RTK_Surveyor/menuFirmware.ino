@@ -339,62 +339,22 @@ void updateFromSD(const char *firmwareFileName)
   }
 #endif
   
-  if (USE_SPI_MICROSD)
-  {
-    //Allocate the firmwareFile
-    if (!firmwareFile)
-    {
-      firmwareFile = new SdFile();
-      if (!firmwareFile)
-      {
-        systemPrintln("Failed to allocate firmwareFile!");
-        return;
-      }
-    }
-  }
-#ifdef COMPILE_SD_MMC
-  else
-  {
-    //Allocate the firmwareFile
-    if (!firmwareFile_SD_MMC)
-    {
-      firmwareFile_SD_MMC = new File();
-      if (!firmwareFile_SD_MMC)
-      {
-        systemPrintln("Failed to allocate firmwareFile!");
-        return;
-      }
-    }
-  }
-#endif
+  FileSdFatMMC firmwareFile;
+  firmwareFile.open(firmwareFileName, O_READ);
 
-  if (USE_SPI_MICROSD)
-    firmwareFile->open(firmwareFileName, O_READ);
-#ifdef COMPILE_SD_MMC
-  else
-    *firmwareFile_SD_MMC = SD_MMC.open(firmwareFileName, FILE_READ);
-#endif
-
-  size_t updateSize;
-  
-  if (USE_SPI_MICROSD)
-    updateSize = firmwareFile->fileSize();
-#ifdef COMPILE_SD_MMC
-  else
-    updateSize = firmwareFile_SD_MMC->size();
-#endif
+  size_t updateSize = firmwareFile.size();
 
   if (updateSize == 0)
   {
     systemPrintln("Error: Binary is empty");
-    firmwareFileClose();
+    firmwareFile.close();
     return;
   }
 
   if (Update.begin(updateSize) == false)
   {
     systemPrintln("Update begin failed. Not enough partition space available.");
-    firmwareFileClose();
+    firmwareFile.close();
     return;
   }
 
@@ -412,15 +372,15 @@ void updateFromSD(const char *firmwareFileName)
   int barWidth = 0;
 
   //Bulk write from the SD file to flash
-  while (firmwareFileAvailable())
+  while (firmwareFile.available())
   {
     if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Toggle LED to indcate activity
 
     int bytesToWrite = pageSize; //Max number of bytes to read
-    if (firmwareFileAvailable() < bytesToWrite) bytesToWrite = firmwareFileAvailable(); //Trim this read size as needed
+    if (firmwareFile.available() < bytesToWrite) bytesToWrite = firmwareFile.available(); //Trim this read size as needed
 
-    firmwareFileRead(dataArray, bytesToWrite); //Read the next set of bytes from file into our temp array
+    firmwareFile.read(dataArray, bytesToWrite); //Read the next set of bytes from file into our temp array
 
     if (Update.write(dataArray, bytesToWrite) != bytesToWrite)
     {
@@ -463,7 +423,7 @@ void updateFromSD(const char *firmwareFileName)
         systemPrintln("Removing firmware file");
 
         //Remove forced firmware file to prevent endless loading
-        firmwareFileClose();
+        firmwareFile.close();
 
         if (USE_SPI_MICROSD)
           sd->remove(firmwareFileName);
@@ -487,41 +447,11 @@ void updateFromSD(const char *firmwareFileName)
     systemPrintln(String(Update.getError()));
   }
 
-  firmwareFileClose();
+  firmwareFile.close();
 
   displayMessage("Update Failed", 0);
 
   systemPrintln("Firmware update failed. Please try again.");
-}
-
-void firmwareFileClose()
-{
-  if (USE_SPI_MICROSD)
-    firmwareFile->close();
-#ifdef COMPILE_SD_MMC
-  else
-    firmwareFile_SD_MMC->close();
-#endif
-}
-
-int firmwareFileAvailable()
-{
-  if (USE_SPI_MICROSD)
-    return firmwareFile->available();
-#ifdef COMPILE_SD_MMC
-  else
-    return firmwareFile_SD_MMC->available();
-#endif
-}
-
-size_t firmwareFileRead(uint8_t* buf, size_t size)
-{
-  if (USE_SPI_MICROSD)
-    return firmwareFile->read(buf, size);
-#ifdef COMPILE_SD_MMC
-  else
-    return firmwareFile_SD_MMC->read(buf, size);
-#endif  
 }
 
 //Returns true if we successfully got the versionAvailable

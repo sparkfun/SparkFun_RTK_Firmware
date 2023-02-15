@@ -465,7 +465,7 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
     xSemaphoreGive(sdCardSemaphore);
 }
 
-//Attempt to de-init the SD card
+//Attempt to de-init the SD card - SPI only
 //https://github.com/greiman/SdFat/issues/351
 void resetSPI()
 {

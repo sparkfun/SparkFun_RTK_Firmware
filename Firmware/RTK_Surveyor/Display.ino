@@ -2026,7 +2026,7 @@ void paintSystemTest()
         while (serialGNSS.available()) serialGNSS.read();
         serialGNSS.flush();
 
-        SFE_UBLOX_GNSS myGNSS;
+        SFE_UBLOX_GNSS_SERIAL myGNSS;
 
         //begin() attempts 3 connections
         if (myGNSS.begin(serialGNSS) == true)

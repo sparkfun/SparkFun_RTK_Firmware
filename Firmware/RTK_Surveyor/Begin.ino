@@ -159,8 +159,8 @@ void beginBoard()
     D13 : SDIO DAT3
     D14 : SDIO CLK
     D15 : SDIO CMD - via 74HC4066 switch
-    D16 : Serial1 RXD
-    D17 : Serial1 TXD
+    D16 : Serial1 RXD : Note: connected to the I/O connector only - not to the ZED-F9P
+    D17 : Serial1 TXD : Note: connected to the I/O connector only - not to the ZED-F9P
     D18 : SPI SCK
     D19 : SPI POCI
     D21 : I2C SDA

@@ -238,6 +238,7 @@ void bluetoothTest(bool runTest)
 {
   //Verify the ESP UART2 can communicate TX/RX to ZED UART1
   const char * bluetoothStatusText;
+
   if (online.gnss == true)
   {
     if (runTest && (zedUartPassed == false))
@@ -247,7 +248,7 @@ void bluetoothTest(bool runTest)
       theGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, (115200 * 2)); //Defaults to 230400 to maximize message output support
       serialGNSS.begin((115200 * 2)); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
-      SFE_UBLOX_GNSS myGNSS;
+      SFE_UBLOX_GNSS_SERIAL myGNSS;
       if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
       {
         zedUartPassed = true;

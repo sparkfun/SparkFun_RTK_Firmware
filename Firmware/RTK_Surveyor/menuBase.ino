@@ -278,15 +278,15 @@ void menuSensorFusion()
     systemPrintln("Menu: Sensor Fusion");
 
     systemPrint("Fusion Mode: ");
-    systemPrint(i2cGNSS.packetUBXESFSTATUS->data.fusionMode);
+    systemPrint(theGNSS.packetUBXESFSTATUS->data.fusionMode);
     systemPrint(" - ");
-    if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
+    if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
       systemPrintln("Initializing");
-    else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1)
+    else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 1)
       systemPrintln("Calibrated");
-    else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2)
+    else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 2)
       systemPrintln("Suspended");
-    else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
+    else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
       systemPrintln("Disabled");
 
     if (settings.enableSensorFusion == true && settings.dynamicModel != DYN_MODEL_AUTOMOTIVE)
@@ -322,8 +322,8 @@ void menuSensorFusion()
       printUnknown(incoming);
   }
 
-  i2cGNSS.setVal8(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
-  i2cGNSS.setVal8(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
+  theGNSS.setVal8(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
+  theGNSS.setVal8(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
 
   clearBuffer(); //Empty buffer of any newline chars
 }
@@ -332,12 +332,12 @@ void menuSensorFusion()
 void setSensorFusion(bool enable)
 {
   if (getSensorFusion() != enable)
-    i2cGNSS.setVal8(UBLOX_CFG_SFCORE_USE_SF, enable, VAL_LAYER_ALL);
+    theGNSS.setVal8(UBLOX_CFG_SFCORE_USE_SF, enable, VAL_LAYER_ALL);
 }
 
 bool getSensorFusion()
 {
-  return (i2cGNSS.getVal8(UBLOX_CFG_SFCORE_USE_SF, VAL_LAYER_RAM, 1200));
+  return (theGNSS.getVal8(UBLOX_CFG_SFCORE_USE_SF, VAL_LAYER_RAM, 1200));
 }
 
 //Open the given file and load a given line to the given pointer

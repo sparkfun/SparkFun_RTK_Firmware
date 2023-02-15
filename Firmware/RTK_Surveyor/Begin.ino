@@ -555,13 +555,13 @@ void beginGNSS()
 {
   if (USE_I2C_GNSS)
   {
-    if (i2cGNSS.begin() == false)
+    if (theGNSS.begin() == false)
     {
       log_d("GNSS Failed to begin. Trying again.");
   
       //Try again with power on delay
       delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
-      if (i2cGNSS.begin() == false)
+      if (theGNSS.begin() == false)
       {
         log_d("GNSS offline");
         displayGNSSFail(1000);
@@ -571,13 +571,13 @@ void beginGNSS()
   }
   else
   {
-    if (i2cGNSS.begin(pin_GNSS_CS) == false)
+    if (theGNSS.begin(pin_GNSS_CS) == false)
     {
       log_d("GNSS Failed to begin. Trying again.");
   
       //Try again with power on delay
       delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
-      if (i2cGNSS.begin(pin_GNSS_CS) == false)
+      if (theGNSS.begin(pin_GNSS_CS) == false)
       {
         log_d("GNSS offline");
         displayGNSSFail(1000);
@@ -588,16 +588,16 @@ void beginGNSS()
 
   //Increase transactions to reduce transfer time
   if (USE_I2C_GNSS)
-    i2cGNSS.i2cTransactionSize = 128;
+    theGNSS.i2cTransactionSize = 128;
 
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
-  if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info
+  if (theGNSS.getModuleInfo(1100) == true) // Try to get the module info
   {
     // Reconstruct the firmware version
-    sprintf(zedFirmwareVersion, "%s %d.%02d", i2cGNSS.getFirmwareType(), i2cGNSS.getFirmwareVersionHigh(), i2cGNSS.getFirmwareVersionLow());
+    sprintf(zedFirmwareVersion, "%s %d.%02d", theGNSS.getFirmwareType(), theGNSS.getFirmwareVersionHigh(), theGNSS.getFirmwareVersionLow());
 
     // Construct the firmware version as uint8_t. Note: will fail above 2.55!
-    zedFirmwareVersionInt = (i2cGNSS.getFirmwareVersionHigh() * 100) + i2cGNSS.getFirmwareVersionLow();
+    zedFirmwareVersionInt = (theGNSS.getFirmwareVersionHigh() * 100) + theGNSS.getFirmwareVersionLow();
 
     // Check this is known firmware
     // "1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20 Spartan future support
@@ -620,13 +620,13 @@ void beginGNSS()
     }
 
     //Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
-    if (strstr(i2cGNSS.getModuleName(), "ZED-F9P") != NULL)
+    if (strstr(theGNSS.getModuleName(), "ZED-F9P") != NULL)
       zedModuleType = PLATFORM_F9P;
-    else if (strstr(i2cGNSS.getModuleName(), "ZED-F9R") != NULL)
+    else if (strstr(theGNSS.getModuleName(), "ZED-F9R") != NULL)
       zedModuleType = PLATFORM_F9R;
     else
     {
-      systemPrintf("Unknown ZED module: %s\r\n", i2cGNSS.getModuleName());
+      systemPrintf("Unknown ZED module: %s\r\n", theGNSS.getModuleName());
       zedModuleType = PLATFORM_F9P;
     }
 
@@ -641,8 +641,8 @@ void configureGNSS()
 {
   if (online.gnss == false) return;
 
-  i2cGNSS.setAutoPVTcallbackPtr(&storePVTdata); // Enable automatic NAV PVT messages with callback to storePVTdata
-  i2cGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); // Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
+  theGNSS.setAutoPVTcallbackPtr(&storePVTdata); // Enable automatic NAV PVT messages with callback to storePVTdata
+  theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); // Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
 
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
@@ -843,29 +843,29 @@ bool beginExternalTriggers()
 
   bool response = true;
 
-  response &= i2cGNSS.newCfgValset();
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, settings.enableExternalPulse); //Enable/disable timepulse
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_DEF, 0); //Time pulse definition is a period (in us)
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = raising edge
+  response &= theGNSS.newCfgValset();
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, settings.enableExternalPulse); //Enable/disable timepulse
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_DEF, 0); //Time pulse definition is a period (in us)
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = raising edge
 
   // While the module is _locking_ to GNSS time, turn off pulse
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
 
   // When the module is _locked_ to GNSS time, make it generate 1kHz
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, settings.externalPulseTimeBetweenPulse_us); //Set the period between pulses is us
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, settings.externalPulseLength_us); //Set the pulse length in us
-  response &= i2cGNSS.sendCfgValset();
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, settings.externalPulseTimeBetweenPulse_us); //Set the period between pulses is us
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, settings.externalPulseLength_us); //Set the pulse length in us
+  response &= theGNSS.sendCfgValset();
 
   if (response == false)
     systemPrintln("beginExternalTriggers config failed");
 
   if (settings.enableExternalHardwareEventLogging == true)
-    i2cGNSS.setAutoTIMTM2callbackPtr(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
+    theGNSS.setAutoTIMTM2callbackPtr(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
   else
-    i2cGNSS.setAutoTIMTM2callbackPtr(NULL);
+    theGNSS.setAutoTIMTM2callbackPtr(NULL);
 
   return (response);
 }

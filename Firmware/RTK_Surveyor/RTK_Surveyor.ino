@@ -223,7 +223,7 @@ char neoFirmwareVersion[20]; //Output to system status menu.
 uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS). Note: will fail above 2.55!
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
-SFE_UBLOX_GNSS_SUPER i2cGNSS;
+SFE_UBLOX_GNSS_SUPER theGNSS;
 
 //These globals are updated regularly via the storePVTdata callback
 bool pvtUpdated = false;
@@ -633,8 +633,8 @@ void loop()
 {
   if (online.gnss == true)
   {
-    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+    theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
   }
 
   updateSystemState();
@@ -830,8 +830,8 @@ void updateRTC()
       {
         lastRTCAttempt = millis();
 
-        i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-        i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+        theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+        theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
 
         bool timeValid = false;
         if (validTime == true && validDate == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
@@ -846,12 +846,12 @@ void updateRTC()
           int second;
 
           //Get the latest time in the GNSS
-          i2cGNSS.checkUblox();
+          theGNSS.checkUblox();
 
           //Get the time values
-          hour = i2cGNSS.getHour();     //Range: 0 - 23
-          minute = i2cGNSS.getMinute(); //Range: 0 - 59
-          second = i2cGNSS.getSecond(); //Range: 0 - 59
+          hour = theGNSS.getHour();     //Range: 0 - 23
+          minute = theGNSS.getMinute(); //Range: 0 - 59
+          second = theGNSS.getSecond(); //Range: 0 - 59
 
           //Perform time zone adjustment
           second += settings.timeZoneSeconds;
@@ -861,7 +861,7 @@ void updateRTC()
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi
           //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
-          rtc.setTime(second, minute, hour, i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());
+          rtc.setTime(second, minute, hour, theGNSS.getDay(), theGNSS.getMonth(), theGNSS.getYear());
 
           online.rtc = true;
 

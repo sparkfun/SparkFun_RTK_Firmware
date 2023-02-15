@@ -244,7 +244,7 @@ void bluetoothTest(bool runTest)
     {
       tasksStopUART2(); //Stop absoring ZED serial via task
 
-      i2cGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, (115200 * 2)); //Defaults to 230400 to maximize message output support
+      theGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, (115200 * 2)); //Defaults to 230400 to maximize message output support
       serialGNSS.begin((115200 * 2)); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
       SFE_UBLOX_GNSS myGNSS;
@@ -256,7 +256,7 @@ void bluetoothTest(bool runTest)
       else
         bluetoothStatusText = "Offline";
 
-      i2cGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud); //Defaults to 230400 to maximize message output support
+      theGNSS.setVal32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud); //Defaults to 230400 to maximize message output support
       serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
       tasksStartUART2(); //Return to normal operation

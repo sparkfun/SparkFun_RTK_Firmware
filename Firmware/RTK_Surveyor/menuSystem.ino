@@ -606,9 +606,9 @@ void menuDebug()
       settings.enableI2Cdebug ^= 1;
 
       if (settings.enableI2Cdebug)
-        i2cGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
+        theGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
       else
-        i2cGNSS.disableDebugging();
+        theGNSS.disableDebugging();
     }
     else if (incoming == 2)
     {

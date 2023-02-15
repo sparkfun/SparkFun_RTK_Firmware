@@ -254,7 +254,7 @@ InputResponse getString(char *userString, uint8_t stringSize)
 
     //Regularly poll to get latest data
     if (online.gnss == true)
-      i2cGNSS.checkUblox();
+      theGNSS.checkUblox();
 
     if (btPrintEchoExit) //User has disconnect from BT. Force exit all menus.
       return INPUT_RESPONSE_TIMEOUT;

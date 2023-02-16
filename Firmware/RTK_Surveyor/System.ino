@@ -118,6 +118,8 @@ bool configureUbloxModule()
 
   //Disable NMEA messages on all but UART1
   response &= theGNSS.newCfgValset();
+
+  // TODO: check if we should use "if (USE_I2C_GNSS)" here
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_I2C, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_I2C, 0);

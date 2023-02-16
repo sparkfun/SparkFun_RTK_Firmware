@@ -594,6 +594,9 @@ void beginGNSS()
   if (USE_I2C_GNSS)
     theGNSS.i2cTransactionSize = 128;
 
+  //Auto-send Valset messages before the buffer is completely full
+  theGNSS.autoSendCfgValsetAtSpaceRemaining(16);
+
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
   if (theGNSS.getModuleInfo(1100) == true) // Try to get the module info
   {

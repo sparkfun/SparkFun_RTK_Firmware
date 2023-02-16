@@ -638,7 +638,7 @@ bool WiFiGenericClass::useStaticBuffers(){
 
 void WiFiGenericClass::useStaticBuffers(bool bufferMode){
     if (lowLevelInitDone) {
-        log_w("WiFi already started. Call WiFi.mode(WIFI_MODE_nullptr) before setting Static Buffer Mode.");
+        log_w("WiFi already started. Call WiFi.mode(WIFI_MODE_NULL) before setting Static Buffer Mode.");
     } 
     _wifiUseStaticBuffers = bufferMode;
 }
@@ -755,7 +755,7 @@ static std::vector<WiFiEventCbList_t> cbEventList;
 
 bool WiFiGenericClass::_persistent = true;
 bool WiFiGenericClass::_long_range = false;
-wifi_mode_t WiFiGenericClass::_forceSleepLastMode = WIFI_MODE_nullptr;
+wifi_mode_t WiFiGenericClass::_forceSleepLastMode = WIFI_MODE_NULL;
 #if CONFIG_IDF_TARGET_ESP32S2
 wifi_ps_type_t WiFiGenericClass::_sleepEnabled = WIFI_PS_NONE;
 #else
@@ -1167,12 +1167,12 @@ bool WiFiGenericClass::mode(wifi_mode_t m)
 wifi_mode_t WiFiGenericClass::getMode()
 {
     if(!lowLevelInitDone || !_esp_wifi_started){
-        return WIFI_MODE_nullptr;
+        return WIFI_MODE_NULL;
     }
     wifi_mode_t mode;
     if(esp_wifi_get_mode(&mode) != ESP_OK){
         log_w("WiFi not started");
-        return WIFI_MODE_nullptr;
+        return WIFI_MODE_NULL;
     }
     return mode;
 }

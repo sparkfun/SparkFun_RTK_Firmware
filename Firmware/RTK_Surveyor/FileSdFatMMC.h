@@ -30,14 +30,16 @@ public:
   {
     if (USE_SPI_MICROSD)
     {
-      if (sdFile) // operator bool
-        delete sdFile;
+      ;
+      //if (sdFile) // operator bool
+      //  delete sdFile;
     }
 #ifdef COMPILE_SD_MMC
     else
     {
-      if (file) // operator bool
-        delete file;
+      ;
+      //if (file) // operator bool
+      //  delete file;
     }
 #endif
   };
@@ -67,7 +69,7 @@ public:
     if (USE_SPI_MICROSD)
     {
       sdFile->open(filepath, mode);
-      if (sdFile) // operator bool
+      if (*sdFile) // operator bool
         return true;
       return false;
     }
@@ -80,7 +82,7 @@ public:
         *file = SD_MMC.open(filepath, FILE_WRITE);
       else // if (mode & O_READ)
         *file = SD_MMC.open(filepath, FILE_READ);
-      if (file) // operator bool
+      if (*file) // operator bool
         return true;
       return false;
     }
@@ -150,19 +152,25 @@ public:
   void updateFileAccessTimestamp()
   {
     if (USE_SPI_MICROSD)
+    {
       if (online.rtc == true)
       {
         //ESP32Time returns month:0-11
         sdFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
         sdFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
       }
+    }
   };
 
   void updateFileCreateTimestamp()
   {
     if (USE_SPI_MICROSD)
+    {
       if (online.rtc == true)
+      {
         sdFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11
+      }
+    }
   };
 
   void sync()

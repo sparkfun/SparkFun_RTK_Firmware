@@ -306,7 +306,7 @@ bool isConnected(uint8_t deviceAddress)
 bool createTestFile()
 {
   FileSdFatMMC testFile;
-  char testFileName[40] = "testfile.txt";
+  char testFileName[40] = "/testfile.txt";
 
   //Attempt to write to the file system
   if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true)
@@ -315,21 +315,23 @@ bool createTestFile()
     return (false);
   }
 
+  testFile.println("Testing...");
+
   //File successfully created
   testFile.close();
 
   if (USE_SPI_MICROSD)
   {
-    if (sd->exists(testFileName))
-      sd->remove(testFileName);
-    return (!sd->exists(testFileName));
+//    if (sd->exists(testFileName))
+//      sd->remove(testFileName);
+    return (sd->exists(testFileName));
   }
 #ifdef COMPILE_SD_MMC
   else
   {
-    if (SD_MMC.exists(testFileName))
-      SD_MMC.remove(testFileName);
-    return (!SD_MMC.exists(testFileName));      
+//    if (SD_MMC.exists(testFileName))
+//      SD_MMC.remove(testFileName);
+    return (SD_MMC.exists(testFileName));      
   }
 #endif
 }

@@ -181,7 +181,8 @@ void processUart1Message(PARSE_STATE * parse, uint8_t type)
   bytesToCopy = parse->length;
   if ((bytesToCopy > availableHandlerSpace) && (!inMainMenu))
   {
-    systemPrintf("Ring buffer full, discarding %d bytes\r\n", bytesToCopy);
+    systemPrintf("Ring buffer full: discarding %d bytes (availableHandlerSpace is %d / %d)\r\n",
+                 bytesToCopy, availableHandlerSpace, settings.gnssHandlerBufferSize);
     return;
   }
 

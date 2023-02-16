@@ -282,6 +282,8 @@ void beginSD()
 
     if (USE_SPI_MICROSD)
     {
+      systemPrintln("Initializing microSD - using SPI, SdFat and SdFile");
+      
       pinMode(pin_microSD_CS, OUTPUT);
       digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
       resetSPI(); //Re-initialize the SPI/SD interface
@@ -360,6 +362,8 @@ void beginSD()
 #ifdef COMPILE_SD_MMC
     else
     {
+      systemPrintln("Initializing microSD - using SDIO, SD_MMC and File");
+      
       // SDIO MMC
       if (SD_MMC.begin() == false)
       {

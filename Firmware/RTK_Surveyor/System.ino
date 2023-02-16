@@ -308,7 +308,10 @@ bool createTestFile()
 
   //Attempt to write to the file system
   if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true)
+  {
+    systemPrintln("createTestFile: failed to create (open) test file");
     return (false);
+  }
 
   //File successfully created
   testFile.close();

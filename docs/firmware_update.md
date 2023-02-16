@@ -66,10 +66,9 @@ If you have a device with firmware lower than v3.0, you will need to use the [GU
 
 This GUI makes it easy to point and click your way through a firmware update. There are versions for Windows, Linux, MacOS and a Python package installer.
 
-The GUI can be downloaded from its own [dedicated repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader).
+The latest GUI release can be downloaded [here](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader/releases).
 
 Download the latest RTK firmware binary file located on the [releases page](https://github.com/sparkfun/SparkFun_RTK_Firmware/releases) or from the [binaries repo](https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries).
-
 
 **To Use**
 

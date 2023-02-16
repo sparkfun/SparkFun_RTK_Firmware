@@ -64,7 +64,7 @@ void systemPrintf(const char* format, ...) {
 
   va_list args2;
   va_copy(args2, args);
-  char buf[vsnprintf(NULL, 0, format, args) + 1];
+  char buf[vsnprintf(nullptr, 0, format, args) + 1];
 
   vsnprintf(buf, sizeof buf, format, args2);
 
@@ -254,7 +254,7 @@ InputResponse getString(char *userString, uint8_t stringSize)
 
     //Regularly poll to get latest data
     if (online.gnss == true)
-      i2cGNSS.checkUblox();
+      theGNSS.checkUblox();
 
     if (btPrintEchoExit) //User has disconnect from BT. Force exit all menus.
       return INPUT_RESPONSE_TIMEOUT;

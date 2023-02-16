@@ -169,8 +169,8 @@ bool pointperfectProvisionDevice()
 #ifdef COMPILE_WIFI
   bluetoothStop(); //Free heap before starting secure client (requires ~70KB)
 
-  DynamicJsonDocument * jsonZtp = NULL;
-  char * tempHolder = NULL;
+  DynamicJsonDocument * jsonZtp = nullptr;
+  char * tempHolder = nullptr;
   bool retVal = false;
 
   do
@@ -312,8 +312,8 @@ bool pointperfectUpdateKeys()
 #ifdef COMPILE_WIFI
   bluetoothStop(); //Release available heap to allow room for TLS
 
-  char * certificateContents = NULL; //Holds the contents of the keys prior to MQTT connection
-  char * keyContents = NULL;
+  char * certificateContents = nullptr; //Holds the contents of the keys prior to MQTT connection
+  char * keyContents = nullptr;
   WiFiClientSecure secureClient;
   bool gotKeys = false;
 
@@ -573,7 +573,7 @@ uint8_t getLeapSeconds()
     if (leapSeconds == 0) //Check to see if we've already set it
     {
       sfe_ublox_ls_src_e leapSecSource;
-      leapSeconds = i2cGNSS.getCurrentLeapSeconds(leapSecSource);
+      leapSeconds = theGNSS.getCurrentLeapSeconds(leapSecSource);
       return (leapSeconds);
     }
   }
@@ -727,8 +727,8 @@ void pushRXMPMP(UBX_RXM_PMP_message_data_t *pmpData)
   uint16_t payloadLen = ((uint16_t)pmpData->lengthMSB << 8) | (uint16_t)pmpData->lengthLSB;
   log_d("Pushing %d bytes of RXM-PMP data to GNSS", payloadLen);
 
-  i2cGNSS.pushRawData(&pmpData->sync1, (size_t)payloadLen + 6); // Push the sync chars, class, ID, length and payload
-  i2cGNSS.pushRawData(&pmpData->checksumA, (size_t)2); // Push the checksum bytes
+  theGNSS.pushRawData(&pmpData->sync1, (size_t)payloadLen + 6); // Push the sync chars, class, ID, length and payload
+  theGNSS.pushRawData(&pmpData->checksumA, (size_t)2); // Push the checksum bytes
 }
 
 //If we have decryption keys, and L-Band is online, configure module
@@ -769,13 +769,13 @@ void pointperfectApplyKeys()
       epoch = thingstreamEpochToGPSEpoch(settings.pointPerfectNextKeyStart, settings.pointPerfectNextKeyDuration);
       unixEpochToWeekToW(epoch, &nextKeyGPSWeek, &nextKeyGPSToW);
 
-      i2cGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); // use LBAND PMP message
+      theGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); // use LBAND PMP message
 
-      i2cGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_I2C, 1); // Enable UBX-RXM-COR messages on I2C
+      theGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_I2C, 1); // Enable UBX-RXM-COR messages on I2C
 
-      i2cGNSS.setVal8(UBLOX_CFG_NAVHPG_DGNSSMODE, 3); // Set the differential mode - ambiguities are fixed whenever possible
+      theGNSS.setVal8(UBLOX_CFG_NAVHPG_DGNSSMODE, 3); // Set the differential mode - ambiguities are fixed whenever possible
 
-      bool response = i2cGNSS.setDynamicSPARTNKeys(
+      bool response = theGNSS.setDynamicSPARTNKeys(
                         currentKeyLengthBytes, currentKeyGPSWeek, currentKeyGPSToW, settings.pointPerfectCurrentKey,
                         nextKeyLengthBytes, nextKeyGPSWeek, nextKeyGPSToW, settings.pointPerfectNextKey);
 
@@ -838,8 +838,8 @@ void beginLBand()
 
   if (online.gnss == true)
   {
-    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+    theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
   }
 
   //If we have a fix, check which frequency to use
@@ -891,7 +891,7 @@ void beginLBand()
 
   i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
 
-  i2cGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Check if the PMP data is being decrypted successfully
+  theGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Check if the PMP data is being decrypted successfully
 
   log_d("L-Band online");
 

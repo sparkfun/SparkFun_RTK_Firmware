@@ -356,18 +356,6 @@ void beginLogging(const char *customFileName)
         strcpy(fileName, customFileName);
       }
 
-      //Allocate the ubxFile
-      if (!ubxFile)
-      {
-        ubxFile = new SdFile();
-        if (!ubxFile)
-        {
-          systemPrintln("Failed to allocate ubxFile!");
-          online.logging = false;
-          return;
-        }
-      }
-
       //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {
@@ -389,7 +377,7 @@ void beginLogging(const char *customFileName)
 
         bufferOverruns = 0; //Reset counter
 
-        updateDataFileCreate(ubxFile); // Update the file to create time & date
+        ubxFile->updateFileCreateTimestamp(); // Update the file to create time & date
 
         startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 
@@ -489,11 +477,11 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
 
       //Close down file system
       ubxFile->close();
-      systemPrintln("Log file closed");
-
       //Done with the log file
       delete ubxFile;
-      ubxFile = NULL;
+      ubxFile = nullptr;
+
+      systemPrintln("Log file closed");
 
       //Release the semaphore if requested
       if (releaseSemaphore)
@@ -511,24 +499,6 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
   }
 }
 
-//Update the file access and write time with date and time obtained from GNSS
-void updateDataFileAccess(SdFile *dataFile)
-{
-  if (online.rtc == true)
-  {
-    //ESP32Time returns month:0-11
-    dataFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-    dataFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-  }
-}
-
-//Update the file create time with date and time obtained from GNSS
-void updateDataFileCreate(SdFile *dataFile)
-{
-  if (online.rtc == true)
-    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11
-}
-
 //Finds last log
 //Returns true if succesful
 bool findLastLog(char *lastLogName)
@@ -544,32 +514,71 @@ bool findLastLog(char *lastLogName)
       markSemaphore(FUNCTION_FINDLOG);
 
       //Count available binaries
-      SdFile tempFile;
-      SdFile dir;
-      const char* LOG_EXTENSION = "ubx";
-      const char* LOG_PREFIX = platformFilePrefix;
-      char fname[50]; //Handle long file names
-
-      dir.open("/"); //Open root
-
-      while (tempFile.openNext(&dir, O_READ))
+      if (USE_SPI_MICROSD)
       {
-        if (tempFile.isFile())
+        SdFile tempFile;
+        SdFile dir;
+        const char* LOG_EXTENSION = "ubx";
+        const char* LOG_PREFIX = platformFilePrefix;
+        char fname[50]; //Handle long file names
+  
+        dir.open("/"); //Open root
+  
+        while (tempFile.openNext(&dir, O_READ))
         {
-          tempFile.getName(fname, sizeof(fname));
-
-          //Check for matching file name prefix and extension
-          if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
+          if (tempFile.isFile())
           {
-            if (strstr(fname, LOG_PREFIX) != NULL)
+            tempFile.getName(fname, sizeof(fname));
+  
+            //Check for matching file name prefix and extension
+            if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
             {
-              strcpy(lastLogName, fname); //Store this file as last known log file
-              foundAFile = true;
+              if (strstr(fname, LOG_PREFIX) != nullptr)
+              {
+                strcpy(lastLogName, fname); //Store this file as last known log file
+                foundAFile = true;
+              }
             }
           }
+          tempFile.close();
         }
-        tempFile.close();
       }
+#ifdef COMPILE_SD_MMC
+      else
+      {
+        File tempFile;
+        File dir;
+        const char* LOG_EXTENSION = "ubx";
+        const char* LOG_PREFIX = platformFilePrefix;
+        char fname[50]; //Handle long file names
+  
+        dir = SD_MMC.open("/"); //Open root
+
+        if (dir && dir.isDirectory())
+        {
+          tempFile = dir.openNextFile();
+          while (tempFile)
+          {
+            if (!tempFile.isDirectory())
+            {
+              snprintf(fname, sizeof(fname), "%s", tempFile.name());
+    
+              //Check for matching file name prefix and extension
+              if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
+              {
+                if (strstr(fname, LOG_PREFIX) != nullptr)
+                {
+                  strcpy(lastLogName, fname); //Store this file as last known log file
+                  foundAFile = true;
+                }
+              }
+            }
+            tempFile.close();
+            tempFile = dir.openNextFile();
+          }
+        }
+      }
+#endif
 
       xSemaphoreGive(sdCardSemaphore);
     }
@@ -593,7 +602,7 @@ void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlo
   //Find the first occurrence
   for (startOfBlock = 0 ; startOfBlock < MAX_UBX_MSG ; startOfBlock++)
   {
-    if (strstr(settings.ubxMessages[startOfBlock].msgTextName, messageNamePiece) != NULL) break;
+    if (strstr(settings.ubxMessages[startOfBlock].msgTextName, messageNamePiece) != nullptr) break;
   }
   if (startOfBlock == MAX_UBX_MSG)
   {
@@ -606,7 +615,7 @@ void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlo
   //Find the last occurrence
   for (endOfBlock = startOfBlock + 1 ; endOfBlock < MAX_UBX_MSG ; endOfBlock++)
   {
-    if (strstr(settings.ubxMessages[endOfBlock].msgTextName, messageNamePiece) == NULL) break;
+    if (strstr(settings.ubxMessages[endOfBlock].msgTextName, messageNamePiece) == nullptr) break;
   }
 }
 
@@ -839,6 +848,7 @@ void updateLogTest()
       markSemaphore(FUNCTION_LOGTEST);
 
       ubxFile->println(nmeaMessage);
+
       xSemaphoreGive(sdCardSemaphore);
     }
     else

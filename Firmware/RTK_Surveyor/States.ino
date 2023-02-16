@@ -305,10 +305,10 @@ void updateSystemState()
           }
 
           //Get the data once to avoid duplicate slow responses
-          svinObservationTime = i2cGNSS.getSurveyInObservationTime(50);
-          svinMeanAccuracy = i2cGNSS.getSurveyInMeanAccuracy(50);
+          svinObservationTime = theGNSS.getSurveyInObservationTime(50);
+          svinMeanAccuracy = theGNSS.getSurveyInMeanAccuracy(50);
 
-          if (i2cGNSS.getSurveyInValid(50) == true) //Survey in complete
+          if (theGNSS.getSurveyInValid(50) == true) //Survey in complete
           {
             systemPrintf("Observation Time: %d\r\n", svinObservationTime);
             systemPrintln("Base survey complete! RTCM now broadcasting.");
@@ -462,29 +462,46 @@ void updateSystemState()
 
               if (online.microSD == true)
               {
+                //Check if the marks file already exists
+                bool marksFileExists = false;
+                if (USE_SPI_MICROSD)
+                {
+                  marksFileExists = sd->exists(fileName);
+                }
+#ifdef COMPILE_SD_MMC
+                else
+                {
+                  marksFileExists = SD_MMC.exists(fileName);
+                }
+#endif
+                
                 //Open the marks file
-                SdFile * marksFile = new SdFile();
-                if (marksFile && marksFile->open(fileName, O_APPEND | O_WRITE))
-                {
-                  fileOpen = true;
-                  marksFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                       rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-                }
-                else if (marksFile && marksFile->open(fileName, O_CREAT | O_WRITE))
-                {
-                  fileOpen = true;
-                  marksFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                       rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-                  marksFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(),
-                                       rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+                FileSdFatMMC marksFile;
 
-                  //Add the column headers
-                  //YYYYMMDDHHMMSS, Lat: xxxx, Long: xxxx, Alt: xxxx, SIV: xx, HPA: xxxx, Batt: xxx
-                  //                           1         2         3         4         5         6         7         8         9
-                  //                  1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901
-                  strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
-                  marksFile->write(markBuffer, strlen(markBuffer));
+                if (marksFileExists)
+                {
+                  if (marksFile && marksFile.open(fileName, O_APPEND | O_WRITE))
+                  {
+                    fileOpen = true;
+                    marksFile.updateFileCreateTimestamp();
+                  }
                 }
+                else
+                {
+                  if (marksFile && marksFile.open(fileName, O_CREAT | O_WRITE))
+                  {
+                    fileOpen = true;
+                    marksFile.updateFileAccessTimestamp();
+  
+                    //Add the column headers
+                    //YYYYMMDDHHMMSS, Lat: xxxx, Long: xxxx, Alt: xxxx, SIV: xx, HPA: xxxx, Batt: xxx
+                    //                           1         2         3         4         5         6         7         8         9
+                    //                  1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901
+                    strcpy(markBuffer, "Date, Time, Latitude, Longitude, Altitude Meters, SIV, HPA Meters, Battery Level, Voltage\n");
+                    marksFile.write((const uint8_t *)markBuffer, strlen(markBuffer));
+                  }
+                }
+
                 if (fileOpen)
                 {
                   //Create the mark text
@@ -513,19 +530,16 @@ void updateSystemState()
                              battLevel, battVoltage);
 
                   //Write the mark to the file
-                  marksFile->write(markBuffer, strlen(markBuffer));
+                  marksFile.write((const uint8_t *)markBuffer, strlen(markBuffer));
 
                   // Update the file to create time & date
-                  updateDataFileCreate(marksFile);
+                  marksFile.updateFileCreateTimestamp();
 
                   //Close the mark file
-                  marksFile->close();
+                  marksFile.close();
+
                   marked = true;
                 }
-
-                //Done with the file
-                if (marksFile)
-                  delete (marksFile);
 
                 //Dismount the SD card
                 if (!sdCardWasOnline)
@@ -658,9 +672,9 @@ void updateSystemState()
 
             //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
             //even if there is no GPS fix. We use it to test serial output.
-            i2cGNSS.newCfgValset(); // Create a new Configuration Item VALSET message
-            i2cGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 1); //Enable message 1230 every second
-            i2cGNSS.sendCfgValset(); // Send the VALSET
+            theGNSS.newCfgValset(); // Create a new Configuration Item VALSET message
+            theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 1); //Enable message 1230 every second
+            theGNSS.sendCfgValset(); // Send the VALSET
             
 
             changeState(STATE_TESTING);
@@ -798,7 +812,7 @@ void updateSystemState()
       case (STATE_KEYS_LBAND_CONFIGURE):
         {
           //Be sure we ignore any external RTCM sources
-          i2cGNSS.setUART2Input(COM_TYPE_UBX); //Set the UART2 to input UBX (no RTCM)
+          theGNSS.setUART2Input(COM_TYPE_UBX); //Set the UART2 to input UBX (no RTCM)
 
           pointperfectApplyKeys(); //Send current keys, if available, to ZED-F9P
 
@@ -838,7 +852,7 @@ void updateSystemState()
       case (STATE_KEYS_LBAND_ENCRYPTED):
         {
           //Since L-Band is not available, be sure RTCM can be provided over UART2
-          i2cGNSS.setUART2Input(COM_TYPE_RTCM3); //Set the UART2 to input RTCM
+          theGNSS.setUART2Input(COM_TYPE_RTCM3); //Set the UART2 to input RTCM
 
           forceSystemStateUpdate = true; //Imediately go to this new state
           changeState(settings.lastState); //Go to either rover or base

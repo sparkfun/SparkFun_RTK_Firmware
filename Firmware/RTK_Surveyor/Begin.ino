@@ -25,6 +25,10 @@ void beginBoard()
   {
     productVariant = RTK_EXPRESS_PLUS;
   }
+  else if (idValue > (3300 * 1 / 3 * 0.9) && idValue < (3300 * 1 / 3 * 1.1))
+  {
+    productVariant = REFERENCE_STATION;
+  }
   else if (isConnected(0x19) == true) //Check for accelerometer
   {
     if (zedModuleType == PLATFORM_F9P) productVariant = RTK_EXPRESS;
@@ -139,6 +143,70 @@ void beginBoard()
       strcpy(platformPrefix, "Facet L-Band");
     }
   }
+#ifdef COMPILE_SD_MMC
+  else if (productVariant == REFERENCE_STATION)
+  {
+    //v10
+    /*
+    Pin Allocations:
+    D0  : Boot + Boot Button
+    D1  : Serial TX (CH340 RX)
+    D2  : SDIO DAT0 - via 74HC4066 switch
+    D3  : Serial RX (CH340 TX)
+    D4  : SDIO DAT1
+    D5  : GNSS Chip Select
+    D12 : SDIO DAT2 - via 74HC4066 switch
+    D13 : SDIO DAT3
+    D14 : SDIO CLK
+    D15 : SDIO CMD - via 74HC4066 switch
+    D16 : Serial1 RXD : Note: connected to the I/O connector only - not to the ZED-F9P
+    D17 : Serial1 TXD : Note: connected to the I/O connector only - not to the ZED-F9P
+    D18 : SPI SCK
+    D19 : SPI POCI
+    D21 : I2C SDA
+    D22 : I2C SCL
+    D23 : SPI PICO
+    D25 : GNSS Time Pulse
+    D26 : STAT LED
+    D27 : Ethernet Chip Select
+    D32 : PWREN
+    D33 : Ethernet Interrupt
+    A34 : GNSS TX RDY
+    A35 : Board Detect (1.1V)
+    A36 : microSD card detect
+    A39 : Unused analog pin - used to generate random values for SSL
+    */
+
+    pin_baseStatusLED = 26;
+    pin_peripheralPowerControl = 32;
+    pin_Ethernet_CS = 27;
+    pin_GNSS_CS = 5;
+    pin_GNSS_TimePulse = 25;
+    pin_adc39 = 39;
+    pin_zed_tx_ready = 34;
+    pin_microSD_CardDetect = 36;
+    pin_Ethernet_Interrupt = 33;
+
+    pin_radio_rx = 17; // Radio RX In = ESP TX Out
+    pin_radio_tx = 16; // Radio TX Out = ESP RX In
+
+    pinMode(pin_Ethernet_CS, OUTPUT);
+    digitalWrite(pin_Ethernet_CS, HIGH);
+    pinMode(pin_GNSS_CS, OUTPUT);
+    digitalWrite(pin_GNSS_CS, HIGH);
+
+    if (esp_reset_reason() == ESP_RST_POWERON)
+    {
+      powerOnCheck(); //Only do check if we POR start
+    }
+
+    pinMode(pin_peripheralPowerControl, OUTPUT);
+    digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, W5500, etc
+
+    strcpy(platformFilePrefix, "SFE_Reference_Station");
+    strcpy(platformPrefix, "Reference Station");
+  }
+#endif
 
   systemPrintf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
@@ -146,6 +214,8 @@ void beginBoard()
   esp_read_mac(wifiMACAddress, ESP_MAC_WIFI_STA);
   memcpy(btMACAddress, wifiMACAddress, sizeof(wifiMACAddress));
   btMACAddress[5] += 2; //Convert MAC address to Bluetooth MAC (add 2): https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system.html#mac-address
+  memcpy(ethernetMACAddress, wifiMACAddress, sizeof(wifiMACAddress));
+  ethernetMACAddress[5] += 3; //Convert MAC address to Ethernet MAC (add 3)
 
   //For all boards, check reset reason. If reset was due to wdt or panic, append last log
   loadSettingsPartial(); //Loads settings from LFS
@@ -195,10 +265,11 @@ void beginSD()
 
   online.microSD = false;
   gotSemaphore = false;
+  
   while (settings.enableSD == true)
   {
     //Setup SD card access semaphore
-    if (sdCardSemaphore == NULL)
+    if (sdCardSemaphore == nullptr)
       sdCardSemaphore = xSemaphoreCreateMutex();
     else if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) != pdPASS)
     {
@@ -209,81 +280,118 @@ void beginSD()
     gotSemaphore = true;
     markSemaphore(FUNCTION_BEGINSD);
 
-    pinMode(pin_microSD_CS, OUTPUT);
-    digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
-
-    resetSPI(); //Re-initialize the SPI/SD interface
-
-    //Do a quick test to see if a card is present
-    int tries = 0;
-    int maxTries = 5;
-    while (tries < maxTries)
+    if (USE_SPI_MICROSD)
     {
-      if (sdPresent() == true) break;
-      //log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
+      systemPrintln("Initializing microSD - using SPI, SdFat and SdFile");
+      
+      pinMode(pin_microSD_CS, OUTPUT);
+      digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+      resetSPI(); //Re-initialize the SPI/SD interface
 
-      //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
-      //Max current is 200mA average across 1s, peak 300mA
-      delay(10);
-      tries++;
-    }
-    if (tries == maxTries) break; //Give up loop
+      //Do a quick test to see if a card is present
+      int tries = 0;
+      int maxTries = 5;
+      while (tries < maxTries)
+      {
+        if (sdPresent() == true) break;
+        //log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
+  
+        //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
+        //Max current is 200mA average across 1s, peak 300mA
+        delay(10);
+        tries++;
+      }
+      if (tries == maxTries) break; //Give up loop
 
-    //If an SD card is present, allow SdFat to take over
-    log_d("SD card detected");
+      //If an SD card is present, allow SdFat to take over
+      log_d("SD card detected - using SPI and SdFat");
 
-    //Allocate the data structure that manages the microSD card
-    if (!sd)
-    {
-      sd = new SdFat();
+      //Allocate the data structure that manages the microSD card
       if (!sd)
       {
-        log_d("Failed to allocate the SdFat structure!");
-        break;
-      }
-    }
-
-    if (settings.spiFrequency > 16)
-    {
-      systemPrintln("Error: SPI Frequency out of range. Default to 16MHz");
-      settings.spiFrequency = 16;
-    }
-
-    resetSPI(); //Re-initialize the SPI/SD interface
-
-    if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
-    {
-      tries = 0;
-      maxTries = 1;
-      for ( ; tries < maxTries ; tries++)
-      {
-        log_d("SD init failed. Trying again %d out of %d", tries + 1, maxTries);
-
-        delay(250); //Give SD more time to power up, then try again
-        if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
-      }
-
-      if (tries == maxTries)
-      {
-        systemPrintln("SD init failed. Is card formatted?");
-        digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
-
-        //Check reset count and prevent rolling reboot
-        if (settings.resetCount < 5)
+        sd = new SdFat();
+        if (!sd)
         {
-          if (settings.forceResetOnSDFail == true)
-            ESP.restart();
+          log_d("Failed to allocate the SdFat structure!");
+          break;
         }
+      }
+  
+      if (settings.spiFrequency > 16)
+      {
+        systemPrintln("Error: SPI Frequency out of range. Default to 16MHz");
+        settings.spiFrequency = 16;
+      }
+  
+      resetSPI(); //Re-initialize the SPI/SD interface
+  
+      if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
+      {
+        tries = 0;
+        maxTries = 1;
+        for ( ; tries < maxTries ; tries++)
+        {
+          log_d("SD init failed - using SPI and SdFat. Trying again %d out of %d", tries + 1, maxTries);
+  
+          delay(250); //Give SD more time to power up, then try again
+          if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
+        }
+  
+        if (tries == maxTries)
+        {
+          systemPrintln("SD init failed - using SPI and SdFat. Is card formatted?");
+          digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
+  
+          //Check reset count and prevent rolling reboot
+          if (settings.resetCount < 5)
+          {
+            if (settings.forceResetOnSDFail == true)
+              ESP.restart();
+          }
+          break;
+        }
+      }
+  
+      //Change to root directory. All new file creation will be in root.
+      if (sd->chdir() == false)
+      {
+        systemPrintln("SD change directory failed");
         break;
       }
     }
-
-    //Change to root directory. All new file creation will be in root.
-    if (sd->chdir() == false)
+#ifdef COMPILE_SD_MMC
+    else
     {
-      systemPrintln("SD change directory failed");
-      break;
+      systemPrintln("Initializing microSD - using SDIO, SD_MMC and File");
+      
+      // SDIO MMC
+      if (SD_MMC.begin() == false)
+      {
+        int tries = 0;
+        int maxTries = 1;
+        for ( ; tries < maxTries ; tries++)
+        {
+          log_d("SD init failed - using SD_MMC. Trying again %d out of %d", tries + 1, maxTries);
+  
+          delay(250); //Give SD more time to power up, then try again
+          if (SD_MMC.begin() == true) break;
+        }
+  
+        if (tries == maxTries)
+        {
+          systemPrintln("SD init failed - using SD_MMC. Is card formatted?");
+  
+          //Check reset count and prevent rolling reboot
+          if (settings.resetCount < 5)
+          {
+            if (settings.forceResetOnSDFail == true)
+              ESP.restart();
+          }
+          break;
+        }        
+      }
     }
+#endif
 
     if (createTestFile() == false)
     {
@@ -299,6 +407,28 @@ void beginSD()
     sdCardSize = 0;
     outOfSDSpace = true;
 
+    //Allocate the ubxFile
+    if (!ubxFile)
+    {
+      ubxFile = new FileSdFatMMC();
+      if (!ubxFile)
+      {
+        systemPrintln("Failed to allocate ubxFile!");
+        break;
+      }
+    }
+
+    //Allocate the managerTempFile
+    if (!managerTempFile)
+    {
+      managerTempFile = new FileSdFatMMC();
+      if (!managerTempFile)
+      {
+        systemPrintln("Failed to allocate managerTempFile!");
+        break;
+      }
+    }
+    
     systemPrintln("microSD: Online");
     online.microSD = true;
     break;
@@ -317,7 +447,12 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   //Done with the SD card
   if (online.microSD)
   {
-    sd->end();
+    if (USE_SPI_MICROSD)
+      sd->end();
+#ifdef COMPILE_SD_MMC
+    else
+      SD_MMC.end();
+#endif
     online.microSD = false;
     systemPrintln("microSD: Offline");
   }
@@ -326,7 +461,7 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   if (sd)
   {
     delete sd;
-    sd = NULL;
+    sd = nullptr;
   }
 
   //Release the semaphore
@@ -334,32 +469,35 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
     xSemaphoreGive(sdCardSemaphore);
 }
 
-//Attempt to de-init the SD card
+//Attempt to de-init the SD card - SPI only
 //https://github.com/greiman/SdFat/issues/351
 void resetSPI()
 {
-  pinMode(pin_microSD_CS, OUTPUT);
-  digitalWrite(pin_microSD_CS, HIGH); //De-select SD card
-
-  //Flush SPI interface
-  SPI.begin();
-  SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
-  for (int x = 0 ; x < 10 ; x++)
-    SPI.transfer(0XFF);
-  SPI.endTransaction();
-  SPI.end();
-
-  digitalWrite(pin_microSD_CS, LOW); //Select SD card
-
-  //Flush SD interface
-  SPI.begin();
-  SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
-  for (int x = 0 ; x < 10 ; x++)
-    SPI.transfer(0XFF);
-  SPI.endTransaction();
-  SPI.end();
-
-  digitalWrite(pin_microSD_CS, HIGH); //Deselet SD card
+  if (USE_SPI_MICROSD)
+  {
+    pinMode(pin_microSD_CS, OUTPUT);
+    digitalWrite(pin_microSD_CS, HIGH); //De-select SD card
+  
+    //Flush SPI interface
+    SPI.begin();
+    SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
+    for (int x = 0 ; x < 10 ; x++)
+      SPI.transfer(0XFF);
+    SPI.endTransaction();
+    SPI.end();
+  
+    digitalWrite(pin_microSD_CS, LOW); //Select SD card
+  
+    //Flush SD interface
+    SPI.begin();
+    SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
+    for (int x = 0 ; x < 10 ; x++)
+      SPI.transfer(0XFF);
+    SPI.endTransaction();
+    SPI.end();
+  
+    digitalWrite(pin_microSD_CS, HIGH); //Deselet SD card
+  }
 }
 
 //We want the UART2 interrupts to be pinned to core 0 to avoid competing with I2C interrupts
@@ -370,11 +508,11 @@ void beginUART2()
 {
   ringBuffer = (uint8_t*)malloc(settings.gnssHandlerBufferSize);
 
-  if (pinUART2TaskHandle == NULL) xTaskCreatePinnedToCore(
+  if (pinUART2TaskHandle == nullptr) xTaskCreatePinnedToCore(
       pinUART2Task,
       "UARTStart", //Just for humans
       2000, //Stack Size
-      NULL, //Task input parameter
+      nullptr, //Task input parameter
       0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
       &pinUART2TaskHandle, //Task handle
       0); //Core where task should run, 0=core, 1=Arduino
@@ -397,7 +535,7 @@ void pinUART2Task( void *pvParameters )
 
   uart2pinned = true;
 
-  vTaskDelete( NULL ); //Delete task once it has run once
+  vTaskDelete( nullptr ); //Delete task once it has run once
 }
 
 void beginFS()
@@ -419,31 +557,54 @@ void beginFS()
 //Connect to ZED module and identify particulars
 void beginGNSS()
 {
-  if (i2cGNSS.begin() == false)
+  if (USE_I2C_GNSS)
   {
-    log_d("GNSS Failed to begin. Trying again.");
-
-    //Try again with power on delay
-    delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
-    if (i2cGNSS.begin() == false)
+    if (theGNSS.begin() == false)
     {
-      log_d("GNSS offline");
-      displayGNSSFail(1000);
-      return;
+      log_d("GNSS Failed to begin. Trying again.");
+  
+      //Try again with power on delay
+      delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
+      if (theGNSS.begin() == false)
+      {
+        log_d("GNSS offline");
+        displayGNSSFail(1000);
+        return;
+      }
     }
   }
+  else
+  {
+    if (theGNSS.begin(pin_GNSS_CS) == false)
+    {
+      log_d("GNSS Failed to begin. Trying again.");
+  
+      //Try again with power on delay
+      delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
+      if (theGNSS.begin(pin_GNSS_CS) == false)
+      {
+        log_d("GNSS offline");
+        displayGNSSFail(1000);
+        return;
+      }
+    }
+  }  
 
   //Increase transactions to reduce transfer time
-  i2cGNSS.i2cTransactionSize = 128;
+  if (USE_I2C_GNSS)
+    theGNSS.i2cTransactionSize = 128;
+
+  //Auto-send Valset messages before the buffer is completely full
+  theGNSS.autoSendCfgValsetAtSpaceRemaining(16);
 
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
-  if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info
+  if (theGNSS.getModuleInfo(1100) == true) // Try to get the module info
   {
     // Reconstruct the firmware version
-    sprintf(zedFirmwareVersion, "%s %d.%02d", i2cGNSS.getFirmwareType(), i2cGNSS.getFirmwareVersionHigh(), i2cGNSS.getFirmwareVersionLow());
+    sprintf(zedFirmwareVersion, "%s %d.%02d", theGNSS.getFirmwareType(), theGNSS.getFirmwareVersionHigh(), theGNSS.getFirmwareVersionLow());
 
     // Construct the firmware version as uint8_t. Note: will fail above 2.55!
-    zedFirmwareVersionInt = (i2cGNSS.getFirmwareVersionHigh() * 100) + i2cGNSS.getFirmwareVersionLow();
+    zedFirmwareVersionInt = (theGNSS.getFirmwareVersionHigh() * 100) + theGNSS.getFirmwareVersionLow();
 
     // Check this is known firmware
     // "1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20 Spartan future support
@@ -466,13 +627,13 @@ void beginGNSS()
     }
 
     //Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
-    if (strstr(i2cGNSS.getModuleName(), "ZED-F9P") != NULL)
+    if (strstr(theGNSS.getModuleName(), "ZED-F9P") != nullptr)
       zedModuleType = PLATFORM_F9P;
-    else if (strstr(i2cGNSS.getModuleName(), "ZED-F9R") != NULL)
+    else if (strstr(theGNSS.getModuleName(), "ZED-F9R") != nullptr)
       zedModuleType = PLATFORM_F9R;
     else
     {
-      systemPrintf("Unknown ZED module: %s\r\n", i2cGNSS.getModuleName());
+      systemPrintf("Unknown ZED module: %s\r\n", theGNSS.getModuleName());
       zedModuleType = PLATFORM_F9P;
     }
 
@@ -487,8 +648,8 @@ void configureGNSS()
 {
   if (online.gnss == false) return;
 
-  i2cGNSS.setAutoPVTcallbackPtr(&storePVTdata); // Enable automatic NAV PVT messages with callback to storePVTdata
-  i2cGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); // Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
+  theGNSS.setAutoPVTcallbackPtr(&storePVTdata); // Enable automatic NAV PVT messages with callback to storePVTdata
+  theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); // Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
 
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
@@ -661,12 +822,12 @@ void beginSystemState()
   }
 
   //Starts task for monitoring button presses
-  if (ButtonCheckTaskHandle == NULL)
+  if (ButtonCheckTaskHandle == nullptr)
     xTaskCreate(
       ButtonCheckTask,
       "BtnCheck", //Just for humans
       buttonTaskStackSize, //Stack Size
-      NULL, //Task input parameter
+      nullptr, //Task input parameter
       ButtonCheckTaskPriority,
       &ButtonCheckTaskHandle); //Task handle
 }
@@ -689,29 +850,29 @@ bool beginExternalTriggers()
 
   bool response = true;
 
-  response &= i2cGNSS.newCfgValset();
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, settings.enableExternalPulse); //Enable/disable timepulse
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_DEF, 0); //Time pulse definition is a period (in us)
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = raising edge
+  response &= theGNSS.newCfgValset();
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, settings.enableExternalPulse); //Enable/disable timepulse
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_DEF, 0); //Time pulse definition is a period (in us)
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = raising edge
 
   // While the module is _locking_ to GNSS time, turn off pulse
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
 
   // When the module is _locked_ to GNSS time, make it generate 1kHz
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, settings.externalPulseTimeBetweenPulse_us); //Set the period between pulses is us
-  response &= i2cGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, settings.externalPulseLength_us); //Set the pulse length in us
-  response &= i2cGNSS.sendCfgValset();
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, settings.externalPulseTimeBetweenPulse_us); //Set the period between pulses is us
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, settings.externalPulseLength_us); //Set the pulse length in us
+  response &= theGNSS.sendCfgValset();
 
   if (response == false)
     systemPrintln("beginExternalTriggers config failed");
 
   if (settings.enableExternalHardwareEventLogging == true)
-    i2cGNSS.setAutoTIMTM2callbackPtr(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
+    theGNSS.setAutoTIMTM2callbackPtr(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
   else
-    i2cGNSS.setAutoTIMTM2callbackPtr(NULL);
+    theGNSS.setAutoTIMTM2callbackPtr(nullptr);
 
   return (response);
 }
@@ -725,12 +886,12 @@ void beginIdleTasks()
     for (int index = 0; index < MAX_CPU_CORES; index++)
     {
       sprintf(taskName, "IdleTask%d", index);
-      if (idleTaskHandle[index] == NULL)
+      if (idleTaskHandle[index] == nullptr)
         xTaskCreatePinnedToCore(
           idleTask,
           taskName, //Just for humans
           2000, //Stack Size
-          NULL, //Task input parameter
+          nullptr, //Task input parameter
           0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
           &idleTaskHandle[index], //Task handle
           index); //Core where task should run, 0=core, 1=Arduino
@@ -774,13 +935,13 @@ void radioStart()
 //Start task to determine SD card size
 void beginSDSizeCheckTask()
 {
-  if (sdSizeCheckTaskHandle == NULL)
+  if (sdSizeCheckTaskHandle == nullptr)
   {
     xTaskCreate(
       sdSizeCheckTask, //Function to call
       "SDSizeCheck", //Just for humans
       sdSizeCheckStackSize, //Stack Size
-      NULL, //Task input parameter
+      nullptr, //Task input parameter
       sdSizeCheckTaskPriority, //Priority
       &sdSizeCheckTaskHandle); //Task handle
 
@@ -791,10 +952,10 @@ void beginSDSizeCheckTask()
 void deleteSDSizeCheckTask()
 {
   //Delete task once it's complete
-  if (sdSizeCheckTaskHandle != NULL)
+  if (sdSizeCheckTaskHandle != nullptr)
   {
     vTaskDelete(sdSizeCheckTaskHandle);
-    sdSizeCheckTaskHandle = NULL;
+    sdSizeCheckTaskHandle = nullptr;
     sdSizeCheckTaskComplete = false;
     log_d("sdSizeCheck Task deleted");
   }

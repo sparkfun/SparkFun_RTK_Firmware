@@ -64,7 +64,7 @@ static unsigned long wifiDisplayTimer = 0;
 static uint32_t lastWifiState = 0;
 
 //TCP server
-static WiFiServer *wifiTcpServer = NULL;
+static WiFiServer *wifiTcpServer = nullptr;
 static WiFiClient wifiTcpClient[WIFI_MAX_TCP_CLIENTS];
 
 //----------------------------------------
@@ -603,7 +603,7 @@ bool wifiTcpServerActive()
   //Stop the TCP server
   wifiTcpServer->stop();
 
-  if (wifiTcpServer != NULL)
+  if (wifiTcpServer != nullptr)
     delete wifiTcpServer;
 #endif  //COMPILE_WIFI
   return false;
@@ -670,7 +670,7 @@ void tcpUpdate()
 
   //Start the TCP server if enabled
   if (settings.enableTcpServer
-      && (wifiTcpServer == NULL)
+      && (wifiTcpServer == nullptr)
       && (!settings.enableTcpClient)
       && wifiIsConnected()
      )

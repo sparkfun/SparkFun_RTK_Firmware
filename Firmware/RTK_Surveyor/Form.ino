@@ -1304,7 +1304,8 @@ String stringHumanReadableSize(uint64_t bytes)
   else if (bytes < (1024 * 1024 * 1024)) strcpy(suffix, "MB");
   else strcpy(suffix, "GB");
 
-  if (bytes < (1024 * 1024)) cardSize = bytes / 1024.0; //KB
+  if (bytes < (1024)) cardSize = bytes; //B
+  else if (bytes < (1024 * 1024)) cardSize = bytes / 1024.0; //KB
   else if (bytes < (1024 * 1024 * 1024)) cardSize = bytes / 1024.0 / 1024.0; //MB
   else cardSize = bytes / 1024.0 / 1024.0 / 1024.0; //GB
 
@@ -1312,8 +1313,10 @@ String stringHumanReadableSize(uint64_t bytes)
     sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
   else if (strcmp(suffix, "MB") == 0)
     sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
+  else if (strcmp(suffix, "KB") == 0)
+    sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
   else
-    sprintf(readableSize, "%0.0f %s", cardSize, suffix); //Don't print decimal portion
+    sprintf(readableSize, "%.0f %s", cardSize, suffix); //Don't print decimal portion
 
   return String(readableSize);
 }

@@ -322,16 +322,16 @@ bool createTestFile()
 
   if (USE_SPI_MICROSD)
   {
-//    if (sd->exists(testFileName))
-//      sd->remove(testFileName);
-    return (sd->exists(testFileName));
+    if (sd->exists(testFileName))
+      sd->remove(testFileName);
+    return (!sd->exists(testFileName));
   }
 #ifdef COMPILE_SD_MMC
   else
   {
-//    if (SD_MMC.exists(testFileName))
-//      SD_MMC.remove(testFileName);
-    return (SD_MMC.exists(testFileName));      
+    if (SD_MMC.exists(testFileName))
+      SD_MMC.remove(testFileName);
+    return (!SD_MMC.exists(testFileName));      
   }
 #endif
 }

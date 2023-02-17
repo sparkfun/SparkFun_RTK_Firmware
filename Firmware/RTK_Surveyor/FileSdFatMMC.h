@@ -19,10 +19,10 @@ public:
   FileSdFatMMC()
   {
     if (USE_SPI_MICROSD)
-      sdFile = new SdFile;
+      _sdFile = new SdFile;
 #ifdef COMPILE_SD_MMC
     else
-      file = new File;
+      _file = new File;
 #endif
   };
   
@@ -31,15 +31,15 @@ public:
     if (USE_SPI_MICROSD)
     {
       ;
-      //if (sdFile) // operator bool
-      //  delete sdFile;
+      //if (_sdFile) // operator bool
+      //  delete _sdFile;
     }
 #ifdef COMPILE_SD_MMC
     else
     {
       ;
-      //if (file) // operator bool
-      //  delete file;
+      //if (_file) // operator bool
+      //  delete _file;
     }
 #endif
   };
@@ -47,29 +47,28 @@ public:
   operator bool()
   {
     if (USE_SPI_MICROSD)
-      return sdFile;
+      return _sdFile;
 #ifdef COMPILE_SD_MMC
     else
-      return file;
+      return _file;
 #endif
   };
 
   size_t println(const char printMe[])
   {
     if (USE_SPI_MICROSD)
-      return sdFile->println(printMe);
+      return _sdFile->println(printMe);
 #ifdef COMPILE_SD_MMC
     else
-      return file->println(printMe);
+      return _file->println(printMe);
 #endif
   };
 
-  bool open(const char *filepath, uint8_t mode)
+  bool open(const char *filepath, oflag_t mode)
   {
     if (USE_SPI_MICROSD)
     {
-      sdFile->open(filepath, mode);
-      if (*sdFile) // operator bool
+      if (_sdFile->open(filepath, mode) == true)
         return true;
       return false;
     }
@@ -77,12 +76,12 @@ public:
     else
     {
       if (mode & O_APPEND)
-        *file = SD_MMC.open(filepath, FILE_APPEND);
+        *_file = SD_MMC.open(filepath, FILE_APPEND);
       else if (mode & O_WRITE)
-        *file = SD_MMC.open(filepath, FILE_WRITE);
+        *_file = SD_MMC.open(filepath, FILE_WRITE);
       else // if (mode & O_READ)
-        *file = SD_MMC.open(filepath, FILE_READ);
-      if (*file) // operator bool
+        *_file = SD_MMC.open(filepath, FILE_READ);
+      if (_file) // operator bool
         return true;
       return false;
     }
@@ -92,60 +91,60 @@ public:
   uint32_t size()
   {
     if (USE_SPI_MICROSD)
-      return sdFile->size();
+      return _sdFile->size();
 #ifdef COMPILE_SD_MMC
     else
-      return file->size();
+      return _file->size();
 #endif    
   };
 
   uint32_t position()
   {
     if (USE_SPI_MICROSD)
-      return sdFile->position();
+      return _sdFile->position();
 #ifdef COMPILE_SD_MMC
     else
-      return file->position();
+      return _file->position();
 #endif    
   };
 
   int available()
   {
     if (USE_SPI_MICROSD)
-      return sdFile->available();
+      return _sdFile->available();
 #ifdef COMPILE_SD_MMC
     else
-      return file->available();
+      return _file->available();
 #endif    
   };
 
   int read(uint8_t *buf, uint16_t nbyte)
   {
     if (USE_SPI_MICROSD)
-      return sdFile->read(buf, nbyte);
+      return _sdFile->read(buf, nbyte);
 #ifdef COMPILE_SD_MMC
     else
-      return file->read(buf, nbyte);
+      return _file->read(buf, nbyte);
 #endif    
   };
 
   size_t write(const uint8_t *buf, size_t size)
   {
     if (USE_SPI_MICROSD)
-      return sdFile->write(buf, size);
+      return _sdFile->write(buf, size);
 #ifdef COMPILE_SD_MMC
     else
-      return file->write(buf, size);
+      return _file->write(buf, size);
 #endif    
   };
 
   void close()
   {
     if (USE_SPI_MICROSD)
-      sdFile->close();
+      _sdFile->close();
 #ifdef COMPILE_SD_MMC
     else
-      file->close();
+      _file->close();
 #endif    
   };
 
@@ -156,8 +155,8 @@ public:
       if (online.rtc == true)
       {
         //ESP32Time returns month:0-11
-        sdFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-        sdFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+        _sdFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
+        _sdFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
       }
     }
   };
@@ -168,7 +167,7 @@ public:
     {
       if (online.rtc == true)
       {
-        sdFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11
+        _sdFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11
       }
     }
   };
@@ -176,13 +175,13 @@ public:
   void sync()
   {
     if (USE_SPI_MICROSD)
-      sdFile->sync();
+      _sdFile->sync();
   };
 
 protected:
-  SdFile * sdFile;
+  SdFile * _sdFile;
 #ifdef COMPILE_SD_MMC
-  File * file;
+  File * _file;
 #endif
 };
 

@@ -410,7 +410,7 @@ void beginSD()
     //Allocate the ubxFile
     if (!ubxFile)
     {
-      ubxFile = new FileSdFatMMC();
+      ubxFile = new FileSdFatMMC;
       if (!ubxFile)
       {
         systemPrintln("Failed to allocate ubxFile!");
@@ -421,7 +421,7 @@ void beginSD()
     //Allocate the managerTempFile
     if (!managerTempFile)
     {
-      managerTempFile = new FileSdFatMMC();
+      managerTempFile = new FileSdFatMMC;
       if (!managerTempFile)
       {
         systemPrintln("Failed to allocate managerTempFile!");

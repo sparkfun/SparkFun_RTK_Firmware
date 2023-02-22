@@ -431,8 +431,6 @@ bool checkRtcmMessage(uint8_t data)
   static uint16_t length;
   static uint16_t message;
   static bool sendMessage = false;
-  static uint32_t expectedChecksum;
-  static uint32_t actualChecksum;
 
   //    RTCM Standard 10403.2 - Chapter 4, Transport Layer
   //
@@ -443,88 +441,79 @@ bool checkRtcmMessage(uint8_t data)
   //    |  8 bits  | 6 bits |    10 bits     |  n-bits | 0-7 bits |   24 bits   |
   //    |   0xd3   | 000000 |   (in bytes)   |         |   zeros  |             |
   //    +----------+--------+----------------+---------+----------+-------------+
-  //    |                                                         |
-  //    |<------------------------ CRC -------------------------->|
+  //    |                                                                       |
+  //    |<-------------------------------- CRC -------------------------------->|
   //
 
   switch (rtcmParsingState)
   {
+    //Read the upper two bits of the length
+    case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
+      if (!(data & 3))
+      {
+        length = data << 8;
+        rtcmParsingState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
+        break;
+      }
+
+      //Wait for the preamble byte
+      rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+
+    //Fall through
+    //     |
+    //     |
+    //     V
+
     //Wait for the preamble byte (0xd3)
     case RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3:
       sendMessage = false;
       if (data == 0xd3)
       {
-        expectedChecksum = 0; // Seed the checksum with 0
-        crc24q(data, &expectedChecksum); // Update the expected checksum
         rtcmParsingState = RTCM_TRANSPORT_STATE_READ_LENGTH_1;
         sendMessage = true;
       }
-      break;
-
-    //Read the upper two bits of the length
-    case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
-      length = (((uint16_t)data) & 0x03) << 8; // Extract the two MS length bits
-      crc24q(data, &expectedChecksum); // Update the expected checksum
-      rtcmParsingState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
       break;
 
     //Read the lower 8 bits of the length
     case RTCM_TRANSPORT_STATE_READ_LENGTH_2:
       length |= data;
       bytesRemaining = length;
-      crc24q(data, &expectedChecksum); // Update the expected checksum
-      if (length > 0)
-        rtcmParsingState = RTCM_TRANSPORT_STATE_READ_MESSAGE_1;
-      else
-        RTCM_TRANSPORT_STATE_READ_CRC_1;
+      rtcmParsingState = RTCM_TRANSPORT_STATE_READ_MESSAGE_1;
       break;
 
     //Read the upper 8 bits of the message number
     case RTCM_TRANSPORT_STATE_READ_MESSAGE_1:
       message = data << 4;
       bytesRemaining -= 1;
-      crc24q(data, &expectedChecksum); // Update the expected checksum
-      if (bytesRemaining > 0)
-        rtcmParsingState = RTCM_TRANSPORT_STATE_READ_MESSAGE_2;
-      else
-        RTCM_TRANSPORT_STATE_READ_CRC_1;
+      rtcmParsingState = RTCM_TRANSPORT_STATE_READ_MESSAGE_2;
       break;
 
     //Read the lower 4 bits of the message number
     case RTCM_TRANSPORT_STATE_READ_MESSAGE_2:
       message |= data >> 4;
       bytesRemaining -= 1;
-      crc24q(data, &expectedChecksum); // Update the expected checksum
-      if (bytesRemaining > 0)
-        rtcmParsingState = RTCM_TRANSPORT_STATE_READ_DATA;
-      else
-        RTCM_TRANSPORT_STATE_READ_CRC_1;
+      rtcmParsingState = RTCM_TRANSPORT_STATE_READ_DATA;
       break;
 
     //Read the rest of the message
     case RTCM_TRANSPORT_STATE_READ_DATA:
       bytesRemaining -= 1;
-      crc24q(data, &expectedChecksum); // Update the expected checksum
       if (bytesRemaining <= 0)
         rtcmParsingState = RTCM_TRANSPORT_STATE_READ_CRC_1;
       break;
 
     //Read the upper 8 bits of the CRC
     case RTCM_TRANSPORT_STATE_READ_CRC_1:
-      actualChecksum = (uint32_t)data << 8;
       rtcmParsingState = RTCM_TRANSPORT_STATE_READ_CRC_2;
       break;
 
     //Read the middle 8 bits of the CRC
     case RTCM_TRANSPORT_STATE_READ_CRC_2:
-      actualChecksum |= data;
-      actualChecksum <<= 8;
       rtcmParsingState = RTCM_TRANSPORT_STATE_READ_CRC_3;
       break;
 
     //Read the lower 8 bits of the CRC
     case RTCM_TRANSPORT_STATE_READ_CRC_3:
-      actualChecksum |= data;
       rtcmParsingState = RTCM_TRANSPORT_STATE_CHECK_CRC;
       break;
   }
@@ -534,39 +523,16 @@ bool checkRtcmMessage(uint8_t data)
   {
     rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
 
-    // Check the CRC
-    if (actualChecksum == expectedChecksum)
+    //Display the RTCM message header
+    if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
     {
-      //Display the RTCM message header
-      if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
-      {
-        printTimeStamp();
-        systemPrintf ("    Tx RTCM %d, %2d bytes\r\n", message, 3 + length + 3);
-      }
+      printTimeStamp();
+      systemPrintf ("    Tx RTCM %d, %2d bytes\r\n", message, 3 + length + 3);
     }
   }
 
   //Let the upper layer know if this message should be sent
   return sendMessage;
-}
-
-void crc24q(uint8_t incoming, uint32_t *checksum)
-{
-  uint32_t crc = *checksum; // Seed is 0
-
-  crc ^= ((uint32_t)incoming) << 16; // XOR-in incoming
-
-  for (uint8_t i = 0; i < 8; i++)
-  {
-    crc <<= 1;
-    if (crc & 0x1000000)
-      // CRC-24Q Polynomial:
-      // gi = 1 for i = 0, 1, 3, 4, 5, 6, 7, 10, 11, 14, 17, 18, 23, 24
-      // 0b 1 1000 0110 0100 1100 1111 1011
-      crc ^= 0x1864CFB; // CRC-24Q
-  }
-
-  *checksum = crc & 0xFFFFFF;
 }
 
 const double WGS84_A = 6378137; //https://geographiclib.sourceforge.io/html/Constants_8hpp_source.html

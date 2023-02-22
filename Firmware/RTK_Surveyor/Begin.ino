@@ -363,6 +363,8 @@ void beginSD()
     else
     {
       systemPrintln("Initializing microSD - using SDIO, SD_MMC and File");
+
+      //TODO: add Card Detect input and check hot insertion
       
       // SDIO MMC
       if (SD_MMC.begin() == false)

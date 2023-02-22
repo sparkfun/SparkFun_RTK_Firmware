@@ -1234,7 +1234,7 @@ void paintDynamicModel()
       else if (zedModuleType == PLATFORM_F9R)
       {
         //Blink fusion rover until we have calibration
-        if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0) //Initializing
+        if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 0) //Initializing
         {
           //Blink Fusion Rover icon until sensor calibration is complete
           if (millis() - lastBaseIconUpdate > 500)
@@ -1251,12 +1251,12 @@ void paintDynamicModel()
               baseIconDisplayed = false;
           }
         }
-        else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1) //Calibrated
+        else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 1) //Calibrated
         {
           //Solid fusion rover
           displayBitmap(28, 2, Rover_Fusion_Width, Rover_Fusion_Height, Rover_Fusion);
         }
-        else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2 || i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3) //Suspended or disabled
+        else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 2 || theGNSS.packetUBXESFSTATUS->data.fusionMode == 3) //Suspended or disabled
         {
           //Empty rover
           displayBitmap(28, 2, Rover_Fusion_Empty_Width, Rover_Fusion_Empty_Height, Rover_Fusion_Empty);
@@ -1964,8 +1964,8 @@ void paintSystemTest()
       oled.print("GNSS:");
       if (online.gnss == true)
       {
-        i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-        i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+        theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+        theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
 
         int satsInView = numSV;
         if (satsInView > 5)
@@ -2026,7 +2026,7 @@ void paintSystemTest()
         while (serialGNSS.available()) serialGNSS.read();
         serialGNSS.flush();
 
-        SFE_UBLOX_GNSS myGNSS;
+        SFE_UBLOX_GNSS_SERIAL myGNSS;
 
         //begin() attempts 3 connections
         if (myGNSS.begin(serialGNSS) == true)
@@ -2348,10 +2348,10 @@ void displayMessage(const char* message, uint16_t displayTime)
     uint8_t wordCount = 0;
     strcpy(temp, message); //strtok modifies the message so make copy
     char * token = strtok(temp, " ");
-    while (token != NULL)
+    while (token != nullptr)
     {
       wordCount++;
-      token = strtok(NULL, " ");
+      token = strtok(nullptr, " ");
     }
 
     uint8_t yPos = (oled.getHeight() / 2) - (fontHeight / 2);
@@ -2363,10 +2363,10 @@ void displayMessage(const char* message, uint16_t displayTime)
 
     strcpy(temp, message);
     token = strtok(temp, " ");
-    while (token != NULL)
+    while (token != nullptr)
     {
       printTextCenter(token, yPos, QW_FONT_8X16, 1, false); //text, y, font type, kerning, inverted
-      token = strtok(NULL, " ");
+      token = strtok(nullptr, " ");
       yPos += fontHeight;
     }
 

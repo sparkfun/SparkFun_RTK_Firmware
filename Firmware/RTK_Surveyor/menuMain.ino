@@ -129,7 +129,7 @@ void menuMain()
   recordSystemSettings(); //Once all menus have exited, record the new settings to LittleFS and config file
 
   if (online.gnss == true)
-    i2cGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
+    theGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
 
   //Reboot as base only if currently operating as a base station
   if (restartBase && (systemState >= STATE_BASE_NOT_STARTED) && (systemState < STATE_BUBBLE_LEVEL))
@@ -337,7 +337,7 @@ void factoryReset()
   LittleFS.format();
 
   if (online.gnss == true)
-    i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
+    theGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
 
   systemPrintln("Settings erased successfully. Rebooting. Goodbye!");
   delay(2000);

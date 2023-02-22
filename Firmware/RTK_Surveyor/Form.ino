@@ -157,28 +157,28 @@ void stopWebServer()
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-  if (webserver != NULL)
+  if (webserver != nullptr)
   {
     webserver->end();
     free(webserver);
-    webserver = NULL;
+    webserver = nullptr;
 
-    if (websocket != NULL)
+    if (websocket != nullptr)
     {
       delete websocket;
-      websocket = NULL;
+      websocket = nullptr;
     }
 
-    if (settingsCSV != NULL)
+    if (settingsCSV != nullptr)
     {
       free(settingsCSV);
-      settingsCSV = NULL;
+      settingsCSV = nullptr;
     }
 
-    if (incomingSettings != NULL)
+    if (incomingSettings != nullptr)
     {
       free(incomingSettings);
-      incomingSettings = NULL;
+      incomingSettings = nullptr;
     }
   }
 
@@ -229,7 +229,7 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
 
         if (managerFileOpen == false)
         {
-          if (managerTempFile.open(fileName, O_READ) == true)
+          if (managerTempFile->open(fileName, O_READ) == true)
             managerFileOpen = true;
           else
             systemPrintln("Error: File Manager failed to open file");
@@ -240,23 +240,26 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
           request->send(202, "text/plain", "ERROR: File already downloading");
         }
 
-        int dataAvailable = managerTempFile.size() - managerTempFile.position();
+        int dataAvailable;
+        dataAvailable = managerTempFile->size() - managerTempFile->position();
 
         AsyncWebServerResponse *response = request->beginResponse("text/plain", dataAvailable,
                                            [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t
         {
           uint32_t bytes = 0;
-          uint32_t availableBytes = managerTempFile.available();
+          uint32_t availableBytes;
+          availableBytes = managerTempFile->available();
 
           if (availableBytes > maxLen)
           {
-            bytes = managerTempFile.read(buffer, maxLen);
+            bytes = managerTempFile->read(buffer, maxLen);
           }
           else
           {
-            bytes = managerTempFile.read(buffer, availableBytes);
+            bytes = managerTempFile->read(buffer, availableBytes);
+            managerTempFile->close();
+
             managerFileOpen = false;
-            managerTempFile.close();
 
             websocket->textAll("fmNext,1,"); //Tell browser to send next file if needed
           }
@@ -855,14 +858,14 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.lastState = STATE_ROVER_NOT_STARTED; //Default
     if (settingValue == 1) settings.lastState = STATE_BASE_NOT_STARTED;
   }
-  else if (strstr(settingName, "stationECEF") != NULL)
+  else if (strstr(settingName, "stationECEF") != nullptr)
   {
     replaceCharacter((char *)settingValueStr, ' ', ','); //Replace all ' ' with ',' before recording to file
     recordLineToSD(stationCoordinateECEFFileName, settingValueStr);
     recordLineToLFS(stationCoordinateECEFFileName, settingValueStr);
     log_d("%s recorded", settingValueStr);
   }
-  else if (strstr(settingName, "stationGeodetic") != NULL)
+  else if (strstr(settingName, "stationGeodetic") != nullptr)
   {
     replaceCharacter((char *)settingValueStr, ' ', ','); //Replace all ' ' with ',' before recording to file
     recordLineToSD(stationCoordinateGeodeticFileName, settingValueStr);
@@ -930,7 +933,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     loadSettings();
 
     //Send new settings to browser. Re-use settingsCSV to avoid stack.
-    if (settingsCSV == NULL)
+    if (settingsCSV == nullptr)
       settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
 
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
@@ -950,7 +953,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     activeProfiles = loadProfileNames();
 
     //Send new settings to browser. Re-use settingsCSV to avoid stack.
-    if (settingsCSV == NULL)
+    if (settingsCSV == nullptr)
       settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
 
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
@@ -1172,14 +1175,14 @@ bool parseIncomingSettings()
   {
     //Spin to first comma
     commaPtr = strstr(headPtr, ",");
-    if (commaPtr != NULL) {
+    if (commaPtr != nullptr) {
       *commaPtr = '\0';
       strcpy(settingName, headPtr);
       headPtr = commaPtr + 1;
     }
 
     commaPtr = strstr(headPtr, ",");
-    if (commaPtr != NULL) {
+    if (commaPtr != nullptr) {
       *commaPtr = '\0';
       strcpy(valueStr, headPtr);
       headPtr = commaPtr + 1;
@@ -1223,24 +1226,54 @@ String getFileList()
   {
     markSemaphore(FUNCTION_FILEMANAGER_UPLOAD1);
 
-    SdFile dir;
-    dir.open("/"); //Open root
-    uint16_t fileCount = 0;
-
-    while (managerTempFile.openNext(&dir, O_READ))
+    if (USE_SPI_MICROSD)
     {
-      if (managerTempFile.isFile())
+      SdFile root;
+      root.open("/"); //Open root
+      SdFile file;
+      uint16_t fileCount = 0;
+  
+      while (file.openNext(&root, O_READ))
       {
-        fileCount++;
-
-        managerTempFile.getName(fileName, sizeof(fileName));
-
-        returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(managerTempFile.fileSize()) + ",";
+        if (file.isFile())
+        {
+          fileCount++;
+  
+          file.getName(fileName, sizeof(fileName));
+  
+          returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(file.fileSize()) + ",";
+        }
       }
+  
+      root.close();
+      file.close();
     }
+#ifdef COMPILE_SD_MMC
+    else
+    {
+      File root = SD_MMC.open("/"); //Open root
 
-    dir.close();
-    managerTempFile.close();
+      if (root && root.isDirectory())
+      {
+        uint16_t fileCount = 0;
+
+        File file = root.openNextFile();
+        while (file)
+        {
+          if (!file.isDirectory())
+          {
+            fileCount++;
+    
+            returnText += "fmName," + String(file.name()) + ",fmSize," + stringHumanReadableSize(file.size()) + ",";            
+          }
+          
+          file = root.openNextFile();
+        }
+      }
+      
+      root.close();
+    }
+#endif
 
     xSemaphoreGive(sdCardSemaphore);
   }
@@ -1271,7 +1304,8 @@ String stringHumanReadableSize(uint64_t bytes)
   else if (bytes < (1024 * 1024 * 1024)) strcpy(suffix, "MB");
   else strcpy(suffix, "GB");
 
-  if (bytes < (1024 * 1024)) cardSize = bytes / 1024.0; //KB
+  if (bytes < (1024)) cardSize = bytes; //B
+  else if (bytes < (1024 * 1024)) cardSize = bytes / 1024.0; //KB
   else if (bytes < (1024 * 1024 * 1024)) cardSize = bytes / 1024.0 / 1024.0; //MB
   else cardSize = bytes / 1024.0 / 1024.0 / 1024.0; //GB
 
@@ -1279,8 +1313,10 @@ String stringHumanReadableSize(uint64_t bytes)
     sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
   else if (strcmp(suffix, "MB") == 0)
     sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
+  else if (strcmp(suffix, "KB") == 0)
+    sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
   else
-    sprintf(readableSize, "%0.0f %s", cardSize, suffix); //Don't print decimal portion
+    sprintf(readableSize, "%.0f %s", cardSize, suffix); //Don't print decimal portion
 
   return String(readableSize);
 }
@@ -1304,7 +1340,9 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD1);
-      managerTempFile.open(tempFileName, O_CREAT | O_APPEND | O_WRITE);
+
+      managerTempFile->open(tempFileName, O_CREAT | O_APPEND | O_WRITE);
+
       xSemaphoreGive(sdCardSemaphore);
     }
 
@@ -1317,7 +1355,9 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD2);
-      managerTempFile.write(data, len); // stream the incoming chunk to the opened file
+
+      managerTempFile->write(data, len); // stream the incoming chunk to the opened file
+
       xSemaphoreGive(sdCardSemaphore);
     }
   }
@@ -1329,9 +1369,11 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD3);
-      updateDataFileCreate(&managerTempFile); // Update the file create time & date
 
-      managerTempFile.close();
+      managerTempFile->updateFileCreateTimestamp(); // Update the file create time & date
+
+      managerTempFile->close();
+
       xSemaphoreGive(sdCardSemaphore);
     }
 

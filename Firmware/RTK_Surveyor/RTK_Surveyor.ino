@@ -25,8 +25,9 @@ const int FIRMWARE_VERSION_MINOR = 2;
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
 #define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
-#define COMPILE_BT //Comment out to remove Bluetooth functionality
+//#define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
+#define COMPILE_SD_MMC // Comment out to remove REFERENCE_STATION microSD SD_MMC support
 //#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
@@ -80,6 +81,12 @@ int pin_radio_rst;
 int pin_radio_pwr;
 int pin_radio_cts;
 int pin_radio_rts;
+
+int pin_Ethernet_CS;
+int pin_Ethernet_Interrupt;
+int pin_GNSS_CS;
+int pin_GNSS_TimePulse;
+int pin_microSD_CardDetect;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
@@ -114,13 +121,15 @@ ESP32Time rtc;
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
-#include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 
+#include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 SdFat *sd;
+
+#include "FileSdFatMMC.h" // Hybrid SdFat and SD_MMC file access
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
-SdFile * ubxFile; //File that all GNSS ubx messages sentences are written to
+FileSdFatMMC * ubxFile; //File that all GNSS ubx messages sentences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
 int startLogTime_minutes = 0; //Mark when we start any logging so we can stop logging after maxLogTime_minutes
 int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file so we can close it after x minutes and start a new one
@@ -147,10 +156,10 @@ typedef enum LoggingType {
 } LoggingType;
 LoggingType loggingType = LOGGING_UNKNOWN;
 
-SdFile managerTempFile; //File used for uploading or downloading in file manager section of AP config
+FileSdFatMMC * managerTempFile; //File used for uploading or downloading in file manager section of AP config
 bool managerFileOpen = false;
 
-TaskHandle_t sdSizeCheckTaskHandle = NULL; //Store handles so that we can kill the task once size is found
+TaskHandle_t sdSizeCheckTaskHandle = nullptr; //Store handles so that we can kill the task once size is found
 const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being the lowest
 const int sdSizeCheckStackSize = 2000;
 bool sdSizeCheckTaskComplete = false;
@@ -202,34 +211,19 @@ bool enableRCFirmware = false; //Goes true from AP config page
 
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3
 
-#define SENTENCE_TYPE_NMEA              SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
-#define SENTENCE_TYPE_NONE              SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
-#define SENTENCE_TYPE_RTCM              SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_RTCM
-#define SENTENCE_TYPE_UBX               SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_UBX
+#define SENTENCE_TYPE_NMEA              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
+#define SENTENCE_TYPE_NONE              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
+#define SENTENCE_TYPE_RTCM              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_RTCM
+#define SENTENCE_TYPE_UBX               DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_UBX
 
 char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to system status menu and settings file.
 char neoFirmwareVersion[20]; //Output to system status menu.
-uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS)
+uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS). Note: will fail above 2.55!
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
-// Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
-class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
-{
-  public:
-    boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
-
-    struct minfoStructure // Structure to hold the module info (uses 341 bytes of RAM)
-    {
-      char swVersion[30];
-      char hwVersion[10];
-      uint8_t extensionNo = 0;
-      char extension[10][30];
-    } minfo;
-};
-
-SFE_UBLOX_GNSS_ADD i2cGNSS;
+SFE_UBLOX_GNSS_SUPER theGNSS;
 
 //These globals are updated regularly via the storePVTdata callback
 bool pvtUpdated = false;
@@ -289,20 +283,20 @@ HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
 #define SERIAL_SIZE_TX 512
 uint8_t wBuffer[SERIAL_SIZE_TX]; //Buffer for writing from incoming SPP to F9P
-TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+TaskHandle_t F9PSerialWriteTaskHandle = nullptr; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int writeTaskStackSize = 2000;
 
 uint8_t * ringBuffer; //Buffer for reading from F9P. At 230400bps, 23040 bytes/s. If SD blocks for 250ms, we need 23040 * 0.25 = 5760 bytes worst case.
-TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+TaskHandle_t F9PSerialReadTaskHandle = nullptr; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int readTaskStackSize = 2000;
 
-TaskHandle_t handleGNSSDataTaskHandle = NULL;
+TaskHandle_t handleGNSSDataTaskHandle = nullptr;
 const uint8_t handleGNSSDataTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int handleGNSSDataTaskStackSize = 3000;
 
-TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
+TaskHandle_t pinUART2TaskHandle = nullptr; //Dummy task to start UART2 on core 0.
 volatile bool uart2pinned = false; //This variable is touched by core 0 but checked by core 1. Must be volatile.
 
 volatile static int combinedSpaceRemaining = 0; //Overrun indicator
@@ -349,10 +343,10 @@ SPARKFUN_LIS2DH12 accel;
 //Buttons - Interrupt driven and debounce
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <JC_Button.h> // http://librarymanager/All#JC_Button
-Button *setupBtn = NULL; //We can't instantiate the buttons here because we don't yet know what pin numbers to use
-Button *powerBtn = NULL;
+Button *setupBtn = nullptr; //We can't instantiate the buttons here because we don't yet know what pin numbers to use
+Button *powerBtn = nullptr;
 
-TaskHandle_t ButtonCheckTaskHandle = NULL;
+TaskHandle_t ButtonCheckTaskHandle = nullptr;
 const uint8_t ButtonCheckTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int buttonTaskStackSize = 2000;
 
@@ -368,10 +362,10 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 #include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer
 #include "form.h"
 
-AsyncWebServer *webserver = NULL;
-AsyncWebSocket *websocket = NULL;
+AsyncWebServer *webserver = nullptr;
+AsyncWebSocket *websocket = nullptr;
 
-char *settingsCSV = NULL; //Push large array onto heap
+char *settingsCSV = nullptr; //Push large array onto heap
 
 #endif
 #endif
@@ -379,7 +373,7 @@ char *settingsCSV = NULL; //Push large array onto heap
 //Because the incoming string is longer than max len, there are multiple callbacks so we
 //use a global to combine the incoming
 #define AP_CONFIG_SETTING_SIZE 5000
-char *incomingSettings = NULL;
+char *incomingSettings = nullptr;
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
 unsigned long lastCoordinateUpdate = 0;
@@ -420,7 +414,8 @@ const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #define lbandMACAddress         btMACAddress
 uint8_t wifiMACAddress[6]; //Display this address in the system menu
-uint8_t btMACAddress[6];   //Display this address when Bluetooth is enabled, otherwise display wifiMACAddress
+uint8_t btMACAddress[6]; //Display this address when Bluetooth is enabled, otherwise display wifiMACAddress
+uint8_t ethernetMACAddress[6]; //Display this address when Ethernet is enabled, otherwise display wifiMACAddress
 char deviceName[70]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const uint16_t menuTimeout = 60 * 10; //Menus will exit/timeout after this number of seconds
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
@@ -638,8 +633,8 @@ void loop()
 {
   if (online.gnss == true)
   {
-    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+    theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
   }
 
   updateSystemState();
@@ -835,8 +830,8 @@ void updateRTC()
       {
         lastRTCAttempt = millis();
 
-        i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-        i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+        theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+        theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
 
         bool timeValid = false;
         if (validTime == true && validDate == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
@@ -851,12 +846,12 @@ void updateRTC()
           int second;
 
           //Get the latest time in the GNSS
-          i2cGNSS.checkUblox();
+          theGNSS.checkUblox();
 
           //Get the time values
-          hour = i2cGNSS.getHour();     //Range: 0 - 23
-          minute = i2cGNSS.getMinute(); //Range: 0 - 59
-          second = i2cGNSS.getSecond(); //Range: 0 - 59
+          hour = theGNSS.getHour();     //Range: 0 - 23
+          minute = theGNSS.getMinute(); //Range: 0 - 59
+          second = theGNSS.getSecond(); //Range: 0 - 59
 
           //Perform time zone adjustment
           second += settings.timeZoneSeconds;
@@ -866,7 +861,7 @@ void updateRTC()
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi
           //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
-          rtc.setTime(second, minute, hour, i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());
+          rtc.setTime(second, minute, hour, theGNSS.getDay(), theGNSS.getMonth(), theGNSS.getYear());
 
           online.rtc = true;
 

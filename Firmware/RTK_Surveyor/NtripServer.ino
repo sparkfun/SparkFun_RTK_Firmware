@@ -89,10 +89,10 @@ bool ntripServerConnectCaster()
   char hostname[50];
   strncpy(hostname, settings.ntripServer_CasterHost, 50); //strtok modifies string to be parsed so we create a copy
   char *token = strtok(hostname, "//");
-  if (token != NULL)
+  if (token != nullptr)
   {
-    token = strtok(NULL, "//"); //Advance to data after //
-    if (token != NULL)
+    token = strtok(nullptr, "//"); //Advance to data after //
+    if (token != nullptr)
       strcpy(settings.ntripServer_CasterHost, token);
   }
 
@@ -305,7 +305,7 @@ void ntripServerStop(bool wifiClientAllocated)
 
     //Free the NTRIP server resources
     delete ntripServer;
-    ntripServer = NULL;
+    ntripServer = nullptr;
 
     //Allocate the NTRIP server structure if not done
     if (wifiClientAllocated == false)
@@ -450,7 +450,7 @@ void ntripServerUpdate()
         ntripServerResponse(response, sizeof(response));
 
         //Look for various responses
-        if (strstr(response, "401") != NULL)
+        if (strstr(response, "401") != nullptr)
         {
           //Look for '401 Unauthorized'
           systemPrintf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n", response);
@@ -458,7 +458,7 @@ void ntripServerUpdate()
           //Give up - Stop WiFi operations
           ntripServerStop(true); //Do not allocate new wifiClient
         }
-        else if (strstr(response, "banned") != NULL) //'Banned' found
+        else if (strstr(response, "banned") != nullptr) //'Banned' found
         {
           //Look for 'HTTP/1.1 200 OK' and banned IP information
           systemPrintf("NTRIP Server connected to caster but caster responded with problem: %s", response);
@@ -466,7 +466,7 @@ void ntripServerUpdate()
           //Give up - Stop WiFi operations
           ntripServerStop(true); //Do not allocate new wifiClient
         }
-        else if (strstr(response, "200") == NULL) //'200' not found
+        else if (strstr(response, "200") == nullptr) //'200' not found
         {
           //Look for 'ERROR - Mountpoint taken' from Emlid.
           systemPrintf("NTRIP Server connected but caster responded with problem: %s", response);
@@ -477,7 +477,7 @@ void ntripServerUpdate()
             systemPrintln("Caster failed to respond. Do you have your caster address and port correct?");
           }
         }
-        else if (strstr(response, "200") != NULL) //'200' found
+        else if (strstr(response, "200") != nullptr) //'200' found
 
         {
           systemPrintf("NTRIP Server connected to %s:%d %s\r\n",

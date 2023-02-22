@@ -425,6 +425,7 @@ void printTimeStamp()
 }
 
 //Parse the RTCM transport data
+//Called by processRTCM in Base.ino - defines whether the data is passed to the NTRIP server
 bool checkRtcmMessage(uint8_t data)
 {
   static uint16_t bytesRemaining;
@@ -441,14 +442,18 @@ bool checkRtcmMessage(uint8_t data)
   //    |  8 bits  | 6 bits |    10 bits     |  n-bits | 0-7 bits |   24 bits   |
   //    |   0xd3   | 000000 |   (in bytes)   |         |   zeros  |             |
   //    +----------+--------+----------------+---------+----------+-------------+
-  //    |                                                                       |
-  //    |<-------------------------------- CRC -------------------------------->|
+  //    |                                                         |
+  //    |<------------------------ CRC -------------------------->|
   //
 
   switch (rtcmParsingState)
   {
     //Read the upper two bits of the length
     case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
+      // PaulZC: The next line checks if the first length byte is zero. Curious...
+      // This limits 'valid' message lengths to 255 bytes instead of 1023. TODO: check this.
+      // Maybe the intent is to check that the 6 unused bits are all zero?
+      // In which case, the next line should be: if (data <= 3)
       if (!(data & 3))
       {
         length = data << 8;
@@ -518,7 +523,7 @@ bool checkRtcmMessage(uint8_t data)
       break;
   }
 
-  //Check the CRC
+  //Check the CRC. Note: this doesn't actually check the CRC!
   if (rtcmParsingState == RTCM_TRANSPORT_STATE_CHECK_CRC)
   {
     rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
@@ -1076,8 +1081,8 @@ uint8_t waitForPreamble(PARSE_STATE * parse, uint8_t data)
       //    |  8 bits  | 6 bits |    10 bits     |  n-bits | 0-7 bits |   24 bits   |
       //    |   0xd3   | 000000 |   (in bytes)   |         |   zeros  |             |
       //    +----------+--------+----------------+---------+----------+-------------+
-      //    |                                                                       |
-      //    |<-------------------------------- CRC -------------------------------->|
+      //    |                                                         |
+      //    |<------------------------ CRC -------------------------->|
       //
 
       //Start the CRC with this byte

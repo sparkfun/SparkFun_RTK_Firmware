@@ -218,18 +218,18 @@ void menuMessages()
   bool response = setMessages(); //Does a complete open/closed val set
   if (response == false)
   {
-    systemPrintln("menuMessages: Failed to enable UART1 messages - Try 1");
+    systemPrintln("menuMessages: Failed to enable messages - Try 1");
 
     response = setMessages(); //Does a complete open/closed val set
 
     if (response == false)
-      systemPrintln("menuMessages: Failed to enable UART1 messages - Try 2");
+      systemPrintln("menuMessages: Failed to enable messages - Try 2");
     else
-      systemPrintln("menuMessages: UART1 messages successfully enabled");
+      systemPrintln("menuMessages: messages successfully enabled");
   }
   else
   {
-    systemPrintln("menuMessages: UART1 messages successfully enabled");
+    systemPrintln("menuMessages: messages successfully enabled");
   }
 
   setLoggingType(); //Update Standard, PPP, or custom for icon selection
@@ -718,7 +718,7 @@ void setLogTestFrequencyMessages(int rate, int messages)
     log_d("Unknown message amount");
 
 
-  //Apply these message rates to both UART1 and USB
+  //Apply these message rates to both UART1 / SPI and USB
   setMessages(); //Does a complete open/closed val set
   setMessagesUSB();
 }
@@ -819,7 +819,7 @@ void updateLogTest()
       rate = 4;
       messages = 5;
       semaphoreWait = 10;
-      setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 and USB ports
+      setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 / SPI and USB ports
       log_d("Log Test Complete");
       break;
 
@@ -831,7 +831,7 @@ void updateLogTest()
 
   if (settings.runLogTest == true)
   {
-    setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 and USB ports
+    setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 / SPI and USB ports
 
     loggingSemaphoreWait_ms = semaphoreWait / portTICK_PERIOD_MS; //Update variable
 

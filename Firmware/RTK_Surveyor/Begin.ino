@@ -526,7 +526,7 @@ void beginUART2()
 //Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
 void pinUART2Task( void *pvParameters )
 {
-  serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize);
+  serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize); // TODO: work out if we can reduce or skip this when using SPI GNSS
   serialGNSS.setTimeout(settings.serialTimeoutGNSS);
   serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
@@ -559,6 +559,19 @@ void beginFS()
 //Connect to ZED module and identify particulars
 void beginGNSS()
 {
+  //If we're using SPI, then increase the logging buffer
+  if (USE_SPI_GNSS)
+  {
+    // setFileBufferSize must be called _before_ .begin
+    // Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
+    if (!theGNSS.setFileBufferSize(gnssHandlerBufferSize);
+    {
+      log_d("GNSS offline - no RAM for file buffer");
+      displayGNSSFail(1000);
+      return;
+    }
+  }
+
   if (USE_I2C_GNSS)
   {
     if (theGNSS.begin() == false)

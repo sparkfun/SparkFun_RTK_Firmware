@@ -454,15 +454,29 @@ void settingsToDefaults()
 //Enable all the valid messages for this platform
 //There are 73 messages so split in two batches, limited to 64 a batch
 //Uses dummy newCfg and sendCfg values to be sure we open/close a complete set
+//Note: autoSendCfgValsetAtSpaceRemaining makes this unnecessary...
 bool setMessages()
 {
   bool response = true;
+  
+  uint32_t spiOffset = 0; // Set to 1 if using SPI to convert UART1 keys to SPI
+  if (USE_SPI_GNSS)
+    spiOffset = 1;
+
+  // settings.ubxMessages contains a mix or UBX, NMEA and RTCM messages
+  // For SPI GNSS products, adding NMEA and RTCM to the logging buffer (instead of outputting on UART1) is ~easy.
+  // But, the UBX messages all need to have their respective setAuto and log methods called (e.g. setAutoPVTrate and logNAVPVT).
+  // Trouble is, settings.ubxMessages includes some UBX messages which _don't_ (yet) have Auto support in the GNSS library...
+  // I'm off to have a good think about this... I will probably need to add Auto support for everything. Or add a new
+  // helper function which can enable, store and log non-Auto messages...
+  uint32_t logRTCMMessages = 0;
+  uint32_t logNMEAMessages = 0;
 
   response &= theGNSS.newCfgValset();
   for (int x = 0 ; x < 36 ; x++)
   {
     if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey, settings.ubxMessages[x].msgRate);
+      response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey - spiOffset, settings.ubxMessages[x].msgRate);
   }
   response &= theGNSS.sendCfgValset();
 
@@ -471,7 +485,7 @@ bool setMessages()
   for (int x = 36 ; x < MAX_UBX_MSG ; x++)
   {
     if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey, settings.ubxMessages[x].msgRate);
+      response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey - spiOffset, settings.ubxMessages[x].msgRate);
   }
   response &= theGNSS.sendCfgValset();
 

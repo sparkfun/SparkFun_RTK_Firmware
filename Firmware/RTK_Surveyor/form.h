@@ -1129,9 +1129,17 @@ function addECEF() {
 }
 
 function deleteECEF() {
+
     var val = ge("StationCoordinatesECEF").value;
     if (val > "")
-        recordsECEF.splice(val, 1);
+    {
+        var parts = recordsECEF[val].split(' ');
+        var nickName = parts[0];
+
+        if (confirm("Delete location " + nickName + "?") == true) {
+            recordsECEF.splice(val, 1);
+        }
+    }
     updateECEFList();
 }
 
@@ -1211,7 +1219,14 @@ function addGeodetic() {
 function deleteGeodetic() {
     var val = ge("StationCoordinatesGeodetic").value;
     if (val > "")
-        recordsGeodetic.splice(val, 1);
+    {
+        var parts = recordsGeodetic[val].split(' ');
+        var nickName = parts[0];
+
+        if (confirm("Delete location " + nickName + "?") == true) {
+            recordsGeodetic.splice(val, 1);
+        }
+    }
     updateGeodeticList();
 }
 

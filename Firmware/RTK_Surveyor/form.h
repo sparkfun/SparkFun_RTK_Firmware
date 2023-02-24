@@ -538,6 +538,8 @@ function validateFields() {
                 clearElement("fixedLat", 40.09029479);
                 clearElement("fixedLong", -105.18505761);
                 clearElement("fixedAltitude", 1560.089);
+                clearElement("antennaHeight", 0);
+                clearElement("antennaReferencePoint", 0);
 
                 checkElementValue("fixedEcefX", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
                 checkElementValue("fixedEcefY", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
@@ -1240,6 +1242,8 @@ function loadGeodetic() {
         ge("fixedAltitude").value = parts[3];
         ge("antennaHeight").value = parts[4];
         ge("antennaReferencePoint").value = parts[5];
+
+        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
 
         clearError("nicknameGeodetic");
         clearError("fixedLat");

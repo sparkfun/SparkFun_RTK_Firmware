@@ -403,11 +403,14 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     websocketConnected = false;
   }
   else if (type == WS_EVT_DATA) {
-    for (int i = 0; i < len; i++) {
-      incomingSettings[incomingSettingsSpot++] = data[i];
-      incomingSettingsSpot %= AP_CONFIG_SETTING_SIZE;
+    if (currentlyParsingData == false)
+    {
+      for (int i = 0; i < len; i++) {
+        incomingSettings[incomingSettingsSpot++] = data[i];
+        incomingSettingsSpot %= AP_CONFIG_SETTING_SIZE;
+      }
+      timeSinceLastIncomingSetting = millis();
     }
-    timeSinceLastIncomingSetting = millis();
   }
 }
 #endif
@@ -1173,7 +1176,7 @@ bool parseIncomingSettings()
   char* headPtr = incomingSettings;
 
   int counter = 0;
-  int maxAttempts = 500;
+  int maxAttempts = 200;
   while (*headPtr) //Check if we've reached the end of the string
   {
     //Spin to first comma
@@ -1235,19 +1238,19 @@ String getFileList()
       root.open("/"); //Open root
       SdFile file;
       uint16_t fileCount = 0;
-  
+
       while (file.openNext(&root, O_READ))
       {
         if (file.isFile())
         {
           fileCount++;
-  
+
           file.getName(fileName, sizeof(fileName));
-  
+
           returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(file.fileSize()) + ",";
         }
       }
-  
+
       root.close();
       file.close();
     }
@@ -1266,14 +1269,14 @@ String getFileList()
           if (!file.isDirectory())
           {
             fileCount++;
-    
-            returnText += "fmName," + String(file.name()) + ",fmSize," + stringHumanReadableSize(file.size()) + ",";            
+
+            returnText += "fmName," + String(file.name()) + ",fmSize," + stringHumanReadableSize(file.size()) + ",";
           }
-          
+
           file = root.openNextFile();
         }
       }
-      
+
       root.close();
     }
 #endif

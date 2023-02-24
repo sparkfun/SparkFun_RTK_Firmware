@@ -509,8 +509,8 @@ void createSettingsString(char* newSettings)
   char sdFreeSpaceChar[20];
   stringHumanReadableSize(sdFreeSpace).toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
 
-  stringRecord(newSettings, "sdFreeSpace", sdCardSizeChar);
-  stringRecord(newSettings, "sdSize", sdFreeSpaceChar);
+  stringRecord(newSettings, "sdFreeSpace", sdFreeSpaceChar);
+  stringRecord(newSettings, "sdSize", sdCardSizeChar);
 
   stringRecord(newSettings, "enableResetDisplay", settings.enableResetDisplay);
 

@@ -1221,6 +1221,7 @@ function loadGeodetic() {
         ge("antennaReferencePoint").value = parts[5];
 
         var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        ge("fixedHAE_APC").value = hae.toFixed(3);
 
         clearError("nicknameGeodetic");
         clearError("fixedLat");

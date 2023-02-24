@@ -628,7 +628,7 @@ function validateFields() {
 
 var currentProfileNumber = 0;
 
-function changeConfig() {
+function changeProfile() {
     validateFields();
 
     if (errorCount == 1) {
@@ -653,7 +653,7 @@ function changeConfig() {
         websocket.send("setProfile," + currentProfileNumber + ",");
 
         ge("collapseProfileConfig").classList.add('show');
-        ge("collapseGNSSConfig").classList.add('show');
+        collapseSection("collapseGNSSConfig", "gnssCaret");
         collapseSection("collapseGNSSConfigMsg", "gnssMsgCaret");
         collapseSection("collapseBaseConfig", "baseCaret");
         collapseSection("collapseSensorConfig", "sensorCaret");
@@ -942,7 +942,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
     var radios = document.querySelectorAll('input[name=profileRadio]');
     for (var i = 0, max = radios.length; i < max; i++) {
         radios[i].onclick = function () {
-            changeConfig();
+            changeProfile();
         }
     }
 

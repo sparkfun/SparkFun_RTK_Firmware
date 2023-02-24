@@ -802,7 +802,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "profileName") == 0)
   {
     strcpy(settings.profileName, settingValueStr);
-    setProfileName(profileNumber);
+    setProfileName(profileNumber); //Copy the current settings.profileName into the array of profile names at location profileNumber
   }
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;
@@ -927,6 +927,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "setProfile") == 0)
   {
     //Change to new profile
+    Serial.printf("Changing to profile number %d\r\n", settingValue);
     changeProfileNumber(settingValue);
 
     //Load new profile into system
@@ -1173,7 +1174,7 @@ bool parseIncomingSettings()
 
   int counter = 0;
   int maxAttempts = 500;
-  while (*headPtr) //Check if string is over
+  while (*headPtr) //Check if we've reached the end of the string
   {
     //Spin to first comma
     commaPtr = strstr(headPtr, ",");
@@ -1206,7 +1207,7 @@ bool parseIncomingSettings()
   if (counter < maxAttempts)
   {
     //Confirm receipt
-    log_d("Sending receipt confirmation");
+    Serial.println("Sending receipt confirmation of settings");
 #ifdef COMPILE_AP
     websocket->textAll("confirmDataReceipt,1,");
 #endif

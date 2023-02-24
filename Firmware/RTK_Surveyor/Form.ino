@@ -916,7 +916,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
     //Confirm receipt
-    log_d("Sending reset confirmation");
+    Serial.println("Sending reset confirmation");
     websocket->textAll("confirmReset,1,");
     delay(500); //Allow for delivery
 
@@ -940,7 +940,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    log_d("Sending profile %d: %s", settingValue, settingsCSV);
+    Serial.printf("Sending profile %d\r\n", settingValue);
+    log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
   else if (strcmp(settingName, "resetProfile") == 0)
@@ -960,7 +961,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    log_d("Sending reset profile: %s", settingsCSV);
+    Serial.printf("Sending reset profile %d\r\n", settingValue);
+    log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
   else if (strcmp(settingName, "forgetEspNowPeers") == 0)

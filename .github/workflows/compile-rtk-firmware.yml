@@ -121,7 +121,7 @@ jobs:
           path: RTK-Firmware.json
           write-mode: overwrite
           contents: |
-            {"Configurations": [{"Version":"${{ env.VERSION_MAJOR }}.${{ env.VERSION_MINOR }}${{ env.JSON_ENDING }}", "URL":"https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}.bin"}]}
+            {"Configurations": [{"Version":"${{ env.FIRMWARE_VERSION_MAJOR }}.${{ env.FIRMWARE_VERSION_MINOR }}${{ env.JSON_ENDING }}", "URL":"https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}.bin"}]}
 
       - name: Push JSON to Binaries Repo
         uses: dmnemec/copy_file_to_another_repo_action@main

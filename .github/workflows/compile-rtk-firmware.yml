@@ -86,10 +86,12 @@ jobs:
               echo "FILE_ENDING_UNDERSCORE=_v${{ env.FIRMWARE_VERSION_MAJOR }}_${{ env.FIRMWARE_VERSION_MINOR }}" >> "$GITHUB_ENV"
               echo "FILE_ENDING_NOUNDERSCORE=_v${{ env.FIRMWARE_VERSION_MAJOR }}.${{ env.FIRMWARE_VERSION_MINOR }}" >> "$GITHUB_ENV"
               echo "JSON_ENDING=" >> "$GITHUB_ENV"
+              echo "JSON_FILE_NAME=RTK-Firmware.json" >> "$GITHUB_ENV"
           else
               echo "FILE_ENDING_UNDERSCORE=_RC-${{ steps.date.outputs.date }}" >> "$GITHUB_ENV"
               echo "FILE_ENDING_NOUNDERSCORE=_RC-${{ steps.dateNoScores.outputs.dateNoScores }}" >> "$GITHUB_ENV"
               echo "JSON_ENDING=-${{ steps.dateNoScores.outputs.dateNoScores }}" >> "$GITHUB_ENV"
+              echo "JSON_FILE_NAME=RTK-RC-Firmware.json" >> "$GITHUB_ENV"
           fi
 
       - name: Rename binary
@@ -128,7 +130,7 @@ jobs:
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_GITHUB_RTK_FILE_TOKEN }}
         with:
-          source_file: RTK-Firmware.json
+          source_file: ${{ env.JSON_FILE_NAME }}
           destination_repo: 'sparkfun/SparkFun_RTK_Firmware_Binaries'
           destination_folder: ''
           user_email: 'nathan@sparkfun.com'

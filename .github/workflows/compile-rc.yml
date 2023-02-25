@@ -44,7 +44,7 @@ jobs:
           https://github.com/me-no-dev/AsyncTCP.git 
           https://github.com/JChristensen/JC_Button.git 
           https://github.com/greiman/SdFat.git 
-          https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library.git 
+          https://github.com/sparkfun/SparkFun_u-blox_GNSS_v3.git
           https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.git 
           https://github.com/sparkfun/SparkFun_Qwiic_OLED_Arduino_Library.git 
           https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library.git 

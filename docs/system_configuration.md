@@ -15,13 +15,13 @@ The Bluetooth or Serial Terminal methods are recommended for most advanced confi
 
 Device configuration options include:
 
-* [Base](docs\configure_base.md)
-* [GNSS Messages](docs\configure_messages.md)
-* [GNSS Receiver](docs\configure_gnss.md)
-* [Logging](docs\configure_data_logging.md)
-* [Point Perfect](docs\configure_pointperfect.md)
-* [Ports](docs\configure_ports.md)
-* [Profiles](docs\configure_profiles.md)
-* [Radio](docs\menu_radios.md)
-* [Sensor](docs\menu_sensor.md)
-* [WiFi](docs\menu_wifi.md)
+* [Base](configure_base.md)
+* [GNSS Messages](configure_messages.md)
+* [GNSS Receiver](configure_gnss.md)
+* [Logging](configure_data_logging.md)
+* [Point Perfect](configure_pointperfect.md)
+* [Ports](configure_ports.md)
+* [Profiles](configure_profiles.md)
+* [Radio](menu_radios.md)
+* [Sensor](menu_sensor.md)
+* [WiFi](menu_wifi.md)

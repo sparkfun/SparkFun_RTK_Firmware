@@ -403,11 +403,14 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     websocketConnected = false;
   }
   else if (type == WS_EVT_DATA) {
-    for (int i = 0; i < len; i++) {
-      incomingSettings[incomingSettingsSpot++] = data[i];
-      incomingSettingsSpot %= AP_CONFIG_SETTING_SIZE;
+    if (currentlyParsingData == false)
+    {
+      for (int i = 0; i < len; i++) {
+        incomingSettings[incomingSettingsSpot++] = data[i];
+        incomingSettingsSpot %= AP_CONFIG_SETTING_SIZE;
+      }
+      timeSinceLastIncomingSetting = millis();
     }
-    timeSinceLastIncomingSetting = millis();
   }
 }
 #endif
@@ -509,8 +512,8 @@ void createSettingsString(char* newSettings)
   char sdFreeSpaceChar[20];
   stringHumanReadableSize(sdFreeSpace).toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
 
-  stringRecord(newSettings, "sdFreeSpace", sdCardSizeChar);
-  stringRecord(newSettings, "sdSize", sdFreeSpaceChar);
+  stringRecord(newSettings, "sdFreeSpace", sdFreeSpaceChar);
+  stringRecord(newSettings, "sdSize", sdCardSizeChar);
 
   stringRecord(newSettings, "enableResetDisplay", settings.enableResetDisplay);
 
@@ -802,7 +805,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "profileName") == 0)
   {
     strcpy(settings.profileName, settingValueStr);
-    setProfileName(profileNumber);
+    setProfileName(profileNumber); //Copy the current settings.profileName into the array of profile names at location profileNumber
   }
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;
@@ -916,7 +919,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
     //Confirm receipt
-    log_d("Sending reset confirmation");
+    Serial.println("Sending reset confirmation");
     websocket->textAll("confirmReset,1,");
     delay(500); //Allow for delivery
 
@@ -927,6 +930,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "setProfile") == 0)
   {
     //Change to new profile
+    Serial.printf("Changing to profile number %d\r\n", settingValue);
     changeProfileNumber(settingValue);
 
     //Load new profile into system
@@ -940,7 +944,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    log_d("Sending profile %d: %s", settingValue, settingsCSV);
+    Serial.printf("Sending profile %d\r\n", settingValue);
+    log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
   else if (strcmp(settingName, "resetProfile") == 0)
@@ -960,7 +965,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    log_d("Sending reset profile: %s", settingsCSV);
+    Serial.printf("Sending reset profile %d\r\n", settingValue);
+    log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
   else if (strcmp(settingName, "forgetEspNowPeers") == 0)
@@ -1170,8 +1176,8 @@ bool parseIncomingSettings()
   char* headPtr = incomingSettings;
 
   int counter = 0;
-  int maxAttempts = 500;
-  while (*headPtr) //Check if string is over
+  int maxAttempts = 200;
+  while (*headPtr) //Check if we've reached the end of the string
   {
     //Spin to first comma
     commaPtr = strstr(headPtr, ",");
@@ -1204,7 +1210,7 @@ bool parseIncomingSettings()
   if (counter < maxAttempts)
   {
     //Confirm receipt
-    log_d("Sending receipt confirmation");
+    Serial.println("Sending receipt confirmation of settings");
 #ifdef COMPILE_AP
     websocket->textAll("confirmDataReceipt,1,");
 #endif
@@ -1232,19 +1238,19 @@ String getFileList()
       root.open("/"); //Open root
       SdFile file;
       uint16_t fileCount = 0;
-  
+
       while (file.openNext(&root, O_READ))
       {
         if (file.isFile())
         {
           fileCount++;
-  
+
           file.getName(fileName, sizeof(fileName));
-  
+
           returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(file.fileSize()) + ",";
         }
       }
-  
+
       root.close();
       file.close();
     }
@@ -1263,14 +1269,14 @@ String getFileList()
           if (!file.isDirectory())
           {
             fileCount++;
-    
-            returnText += "fmName," + String(file.name()) + ",fmSize," + stringHumanReadableSize(file.size()) + ",";            
+
+            returnText += "fmName," + String(file.name()) + ",fmSize," + stringHumanReadableSize(file.size()) + ",";
           }
-          
+
           file = root.openNextFile();
         }
       }
-      
+
       root.close();
     }
 #endif

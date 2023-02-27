@@ -1222,7 +1222,7 @@ uint8_t loadProfileNames()
   return (profiles);
 }
 
-//Copy the profile name into the array of profile names
+//Given a profile number, copy the current settings.profileName into the array of profile names
 void setProfileName(uint8_t ProfileNumber)
 {
   //Update the name in the array of profile names

@@ -538,6 +538,8 @@ function validateFields() {
                 clearElement("fixedLat", 40.09029479);
                 clearElement("fixedLong", -105.18505761);
                 clearElement("fixedAltitude", 1560.089);
+                clearElement("antennaHeight", 0);
+                clearElement("antennaReferencePoint", 0);
 
                 checkElementValue("fixedEcefX", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
                 checkElementValue("fixedEcefY", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
@@ -626,7 +628,7 @@ function validateFields() {
 
 var currentProfileNumber = 0;
 
-function changeConfig() {
+function changeProfile() {
     validateFields();
 
     if (errorCount == 1) {
@@ -651,7 +653,7 @@ function changeConfig() {
         websocket.send("setProfile," + currentProfileNumber + ",");
 
         ge("collapseProfileConfig").classList.add('show');
-        ge("collapseGNSSConfig").classList.add('show');
+        collapseSection("collapseGNSSConfig", "gnssCaret");
         collapseSection("collapseGNSSConfigMsg", "gnssMsgCaret");
         collapseSection("collapseBaseConfig", "baseCaret");
         collapseSection("collapseSensorConfig", "sensorCaret");
@@ -940,7 +942,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
     var radios = document.querySelectorAll('input[name=profileRadio]');
     for (var i = 0, max = radios.length; i < max; i++) {
         radios[i].onclick = function () {
-            changeConfig();
+            changeProfile();
         }
     }
 
@@ -1129,9 +1131,17 @@ function addECEF() {
 }
 
 function deleteECEF() {
+
     var val = ge("StationCoordinatesECEF").value;
     if (val > "")
-        recordsECEF.splice(val, 1);
+    {
+        var parts = recordsECEF[val].split(' ');
+        var nickName = parts[0];
+
+        if (confirm("Delete location " + nickName + "?") == true) {
+            recordsECEF.splice(val, 1);
+        }
+    }
     updateECEFList();
 }
 
@@ -1211,7 +1221,14 @@ function addGeodetic() {
 function deleteGeodetic() {
     var val = ge("StationCoordinatesGeodetic").value;
     if (val > "")
-        recordsGeodetic.splice(val, 1);
+    {
+        var parts = recordsGeodetic[val].split(' ');
+        var nickName = parts[0];
+
+        if (confirm("Delete location " + nickName + "?") == true) {
+            recordsGeodetic.splice(val, 1);
+        }
+    }
     updateGeodeticList();
 }
 
@@ -1225,6 +1242,9 @@ function loadGeodetic() {
         ge("fixedAltitude").value = parts[3];
         ge("antennaHeight").value = parts[4];
         ge("antennaReferencePoint").value = parts[5];
+
+        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
+        ge("fixedHAE_APC").value = hae.toFixed(3);
 
         clearError("nicknameGeodetic");
         clearError("fixedLat");
@@ -2669,7 +2689,7 @@ static const char *index_html = R"=====(
                                 <label for="antennaReferencePoint" class="box-margin40 col-5 col-form-label">Antenna
                                     Reference Point(mm):
                                     <span class="tt" data-bs-placement="right"
-                                        title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration. Amount is added to HAE before starting fixed base.">
+                                        title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration. Amount is added to HAE before starting fixed base. Common ARPs: Facet(61.4mm) Facet L-Band (69mm) TOP106(52.9)">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>

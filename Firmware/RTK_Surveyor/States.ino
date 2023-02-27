@@ -627,6 +627,8 @@ void updateSystemState()
             //Allow for 750ms before we parse buffer for all data to arrive
             if (millis() - timeSinceLastIncomingSetting > 750)
             {
+              currentlyParsingData = true; //Disallow new data to flow from websocket while we are parsing the current data
+              
               systemPrint("Parsing: ");
               for (int x = 0 ; x < incomingSettingsSpot ; x++)
                 systemWrite(incomingSettings[x]);
@@ -639,6 +641,8 @@ void updateSystemState()
               //Clear buffer
               incomingSettingsSpot = 0;
               memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
+
+              currentlyParsingData = false; //Allow new data from websocket
             }
           }
 

@@ -19,16 +19,19 @@
   Settings are loaded from microSD if available otherwise settings are pulled from ESP32's file system LittleFS.
 */
 
-const int FIRMWARE_VERSION_MAJOR = 3;
-const int FIRMWARE_VERSION_MINOR = 2;
+//This is passed in from compiler extra flags
+#ifndef POINTPERFECT_TOKEN
+#define FIRMWARE_VERSION_MAJOR 99
+#define FIRMWARE_VERSION_MINOR 99
+#endif
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
 #define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
-//#define COMPILE_BT //Comment out to remove Bluetooth functionality
+#define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
 #define COMPILE_SD_MMC // Comment out to remove REFERENCE_STATION microSD SD_MMC support
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -114,7 +117,7 @@ const int COMMON_COORDINATES_MAX_STATIONS = 50; //Record upto 50 ECEF and Geodet
 
 //Handy library for setting ESP32 system time to GNSS time
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#include <ESP32Time.h> //http://librarymanager/All#ESP32Time
+#include <ESP32Time.h> //http://librarymanager/All#ESP32Time by FBiego v2.0.0
 ESP32Time rtc;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -207,11 +210,12 @@ static int ntripServerConnectionAttemptsTotal; //Count the number of connection 
 #define OTA_RC_FIRMWARE_JSON_URL "https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-RC-Firmware.json"
 bool apConfigFirmwareUpdateInProcess = false; //Goes true once WiFi is connected and OTA pull begins
 bool enableRCFirmware = false; //Goes true from AP config page
+bool currentlyParsingData = false; //Goes true when we hit 750ms timeout with new data
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3
+#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3 v3.0.2
 
 #define SENTENCE_TYPE_NMEA              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
 #define SENTENCE_TYPE_NONE              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
@@ -342,7 +346,7 @@ SPARKFUN_LIS2DH12 accel;
 
 //Buttons - Interrupt driven and debounce
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#include <JC_Button.h> // http://librarymanager/All#JC_Button
+#include <JC_Button.h> // http://librarymanager/All#JC_Button v2.1.2
 Button *setupBtn = nullptr; //We can't instantiate the buttons here because we don't yet know what pin numbers to use
 Button *powerBtn = nullptr;
 
@@ -359,7 +363,7 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-#include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer
+#include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer v1.2.3
 #include "form.h"
 
 AsyncWebServer *webserver = nullptr;

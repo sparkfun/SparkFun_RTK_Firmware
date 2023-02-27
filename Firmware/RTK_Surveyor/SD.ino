@@ -63,9 +63,9 @@ bool sdPresent(void)
       if (response == 1) break;
     }
     if (response != 1) return (false); //Card failed to respond to idle
-  
-    return (true);
   }
+  
+  return (true);
 }
 
 /*

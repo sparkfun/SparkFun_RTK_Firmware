@@ -65,7 +65,7 @@ void espnowOnDataReceived(const uint8_t *mac, const uint8_t *incomingData, int l
     if (USE_I2C_GNSS)
       serialGNSS.write(incomingData, len);
     else
-      theGNSS.pushRawData(incomingData, len);
+      theGNSS.pushRawData((uint8_t *)incomingData, len);
     if (!inMainMenu) log_d("ESPNOW received %d RTCM bytes, pushed to ZED, RSSI: %d", len, espnowRSSI);
 
     espnowIncomingRTCM = true;

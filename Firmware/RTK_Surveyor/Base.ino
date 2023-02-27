@@ -67,8 +67,8 @@ bool configureUbloxModuleBase()
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_SPI, 10);  //Enable message every 10 seconds
 
     // Enable logging of these messages so the RTCM will be stored automatically in the logging buffer
-    theGNSS.setRTCMLoggingMask( SFE_UBLOX_FILTER_RTCM_1005 | SFE_UBLOX_FILTER_RTCM_1074 | SFE_UBLOX_FILTER_RTCM_1084
-                                | SFE_UBLOX_FILTER_RTCM_1094 | SFE_UBLOX_FILTER_RTCM_1124 | SFE_UBLOX_FILTER_RTCM_1230 );
+    theGNSS.setRTCMLoggingMask( SFE_UBLOX_FILTER_RTCM_TYPE1005 | SFE_UBLOX_FILTER_RTCM_TYPE1074 | SFE_UBLOX_FILTER_RTCM_TYPE1084
+                                | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124 | SFE_UBLOX_FILTER_RTCM_TYPE1230 );
   }
 
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_USB, 1);

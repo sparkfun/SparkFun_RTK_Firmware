@@ -564,12 +564,7 @@ void beginGNSS()
   {
     // setFileBufferSize must be called _before_ .begin
     // Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
-    if (!theGNSS.setFileBufferSize(gnssHandlerBufferSize);
-    {
-      log_d("GNSS offline - no RAM for file buffer");
-      displayGNSSFail(1000);
-      return;
-    }
+    theGNSS.setFileBufferSize(settings.gnssHandlerBufferSize);
   }
 
   if (USE_I2C_GNSS)
@@ -602,6 +597,12 @@ void beginGNSS()
         displayGNSSFail(1000);
         return;
       }
+    }
+    if (theGNSS.getFileBufferSize() != settings.gnssHandlerBufferSize) // Need to call getFileBufferSize after begin
+    {
+      log_d("GNSS offline - no RAM for file buffer");
+      displayGNSSFail(1000);
+      return;
     }
   }  
 

@@ -452,9 +452,8 @@ void settingsToDefaults()
 }
 
 //Enable all the valid messages for this platform
-//There are 73 messages so split in two batches, limited to 64 a batch
+//There are ~73 messages so split into batches. VALSET is limited to 64 max per batch
 //Uses dummy newCfg and sendCfg values to be sure we open/close a complete set
-//Note: autoSendCfgValsetAtSpaceRemaining makes this unnecessary...
 bool setMessages()
 {
   bool response = true;
@@ -463,31 +462,44 @@ bool setMessages()
   if (USE_SPI_GNSS)
     spiOffset = 1;
 
+  int x = 0;
+  while (x < MAX_UBX_MSG)
+  {
+    response &= theGNSS.newCfgValset();
+    for ( ; ((x % 40) < 39) && (x < MAX_UBX_MSG) ; x++) // Limit 1st batch to 39. Batches after that will be (up to) 40 in size.
+    {
+      if (settings.ubxMessages[x].supported & zedModuleType)
+        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey - spiOffset, settings.ubxMessages[x].msgRate);
+    }
+    response &= theGNSS.sendCfgValset();
+  }
+
   // settings.ubxMessages contains a mix or UBX, NMEA and RTCM messages
-  // For SPI GNSS products, adding NMEA and RTCM to the logging buffer (instead of outputting on UART1) is ~easy.
-  // But, the UBX messages all need to have their respective setAuto and log methods called (e.g. setAutoPVTrate and logNAVPVT).
-  // Trouble is, settings.ubxMessages includes some UBX messages which _don't_ (yet) have Auto support in the GNSS library...
-  // I'm off to have a good think about this... I will probably need to add Auto support for everything. Or add a new
-  // helper function which can enable, store and log non-Auto messages...
-  uint32_t logRTCMMessages = 0;
-  uint32_t logNMEAMessages = 0;
-
-  response &= theGNSS.newCfgValset();
-  for (int x = 0 ; x < 36 ; x++)
+  // For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
+  if (USE_SPI_GNSS)
   {
-    if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey - spiOffset, settings.ubxMessages[x].msgRate);
-  }
-  response &= theGNSS.sendCfgValset();
+    uint32_t logRTCMMessages = 0;
+    uint32_t logNMEAMessages = 0;
+    
+    for (x = 0; x < MAX_UBX_MSG; x++)
+    {
+      if (settings.ubxMessages[x].msgClass == UBX_RTCM_MSB) // RTCM messages
+      {
+        if ((settings.ubxMessages[x].msgRate > 0) && (settings.ubxMessages[x].supported & zedModuleType))
+          logRTCMMessages |= settings.ubxMessages[x].filterMask;
+      }
+      else if (settings.ubxMessages[x].msgClass == UBX_CLASS_NMEA) // NMEA messages
+      {
+        if ((settings.ubxMessages[x].msgRate > 0) && (settings.ubxMessages[x].supported & zedModuleType))
+          logNMEAMessages |= settings.ubxMessages[x].filterMask;
+      }
+      else // UBX messages
+        theGNSS.enableUBXlogging(settings.ubxMessages[x].msgClass, settings.ubxMessages[x].msgID, settings.ubxMessages[x].msgRate > 0);
+    }
 
-  //Final messages
-  response &= theGNSS.newCfgValset();
-  for (int x = 36 ; x < MAX_UBX_MSG ; x++)
-  {
-    if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey - spiOffset, settings.ubxMessages[x].msgRate);
+    theGNSS.setRTCMLoggingMask(logRTCMMessages);
+    theGNSS.setNMEALoggingMask(logNMEAMessages);
   }
-  response &= theGNSS.sendCfgValset();
 
   return (response);
 }

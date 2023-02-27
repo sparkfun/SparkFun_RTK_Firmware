@@ -1,8 +1,6 @@
 //Initial startup functions for GNSS, SD, display, radio, etc
 
-//Based on hardware features, determine if this is RTK Surveyor or RTK Express hardware
-//Must be called after Wire.begin so that we can do I2C tests
-void beginBoard()
+void identifyBoard()
 {
   //Use ADC to check resistor divider
   int pin_adc_rtk_facet = 35;
@@ -29,14 +27,88 @@ void beginBoard()
   {
     productVariant = REFERENCE_STATION;
   }
-  else if (isConnected(0x19) == true) //Check for accelerometer
-  {
-    if (zedModuleType == PLATFORM_F9P) productVariant = RTK_EXPRESS;
-    else if (zedModuleType == PLATFORM_F9R) productVariant = RTK_EXPRESS_PLUS;
-  }
   else
   {
-    productVariant = RTK_SURVEYOR;
+    productVariant = RTK_UNKNOWN; // Need to wait until the GNSS and Accel have been initialized
+  }
+}
+
+void initializePowerPins()
+{
+  //Setup any essential power pins
+#ifdef COMPILE_SD_MMC
+  if (productVariant == REFERENCE_STATION)
+  {
+    //v10
+    //Pin Allocations:
+    //D0  : Boot + Boot Button
+    //D1  : Serial TX (CH340 RX)
+    //D2  : SDIO DAT0 - via 74HC4066 switch
+    //D3  : Serial RX (CH340 TX)
+    //D4  : SDIO DAT1
+    //D5  : GNSS Chip Select
+    //D12 : SDIO DAT2 - via 74HC4066 switch
+    //D13 : SDIO DAT3
+    //D14 : SDIO CLK
+    //D15 : SDIO CMD - via 74HC4066 switch
+    //D16 : Serial1 RXD : Note: connected to the I/O connector only - not to the ZED-F9P
+    //D17 : Serial1 TXD : Note: connected to the I/O connector only - not to the ZED-F9P
+    //D18 : SPI SCK
+    //D19 : SPI POCI
+    //D21 : I2C SDA
+    //D22 : I2C SCL
+    //D23 : SPI PICO
+    //D25 : GNSS Time Pulse
+    //D26 : STAT LED
+    //D27 : Ethernet Chip Select
+    //D32 : PWREN
+    //D33 : Ethernet Interrupt
+    //A34 : GNSS TX RDY
+    //A35 : Board Detect (1.1V)
+    //A36 : microSD card detect
+    //A39 : Unused analog pin - used to generate random values for SSL
+
+    pin_baseStatusLED = 26;
+    pin_peripheralPowerControl = 32;
+    pin_Ethernet_CS = 27;
+    pin_GNSS_CS = 5;
+    pin_GNSS_TimePulse = 25;
+    pin_adc39 = 39;
+    pin_zed_tx_ready = 34;
+    pin_microSD_CardDetect = 36;
+    pin_Ethernet_Interrupt = 33;
+
+    pin_radio_rx = 17; // Radio RX In = ESP TX Out
+    pin_radio_tx = 16; // Radio TX Out = ESP RX In
+
+    pinMode(pin_Ethernet_CS, OUTPUT);
+    digitalWrite(pin_Ethernet_CS, HIGH);
+    pinMode(pin_GNSS_CS, OUTPUT);
+    digitalWrite(pin_GNSS_CS, HIGH);
+
+    pinMode(pin_peripheralPowerControl, OUTPUT);
+    digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, W5500, etc
+    delay(100);
+  }
+#endif
+}
+
+//Based on hardware features, determine if this is RTK Surveyor or RTK Express hardware
+//Must be called after beginI2C (Wire.begin) so that we can do I2C tests
+//Must be called after beginGNSS so the GNSS type is known
+void beginBoard()
+{
+  if (productVariant == RTK_UNKNOWN)
+  {
+    if (isConnected(0x19) == true) //Check for accelerometer
+    {
+      if (zedModuleType == PLATFORM_F9P) productVariant = RTK_EXPRESS;
+      else if (zedModuleType == PLATFORM_F9R) productVariant = RTK_EXPRESS_PLUS;
+    }
+    else
+    {
+      productVariant = RTK_SURVEYOR;
+    }
   }
 
   //Setup hardware pins
@@ -146,62 +218,7 @@ void beginBoard()
 #ifdef COMPILE_SD_MMC
   else if (productVariant == REFERENCE_STATION)
   {
-    //v10
-    /*
-    Pin Allocations:
-    D0  : Boot + Boot Button
-    D1  : Serial TX (CH340 RX)
-    D2  : SDIO DAT0 - via 74HC4066 switch
-    D3  : Serial RX (CH340 TX)
-    D4  : SDIO DAT1
-    D5  : GNSS Chip Select
-    D12 : SDIO DAT2 - via 74HC4066 switch
-    D13 : SDIO DAT3
-    D14 : SDIO CLK
-    D15 : SDIO CMD - via 74HC4066 switch
-    D16 : Serial1 RXD : Note: connected to the I/O connector only - not to the ZED-F9P
-    D17 : Serial1 TXD : Note: connected to the I/O connector only - not to the ZED-F9P
-    D18 : SPI SCK
-    D19 : SPI POCI
-    D21 : I2C SDA
-    D22 : I2C SCL
-    D23 : SPI PICO
-    D25 : GNSS Time Pulse
-    D26 : STAT LED
-    D27 : Ethernet Chip Select
-    D32 : PWREN
-    D33 : Ethernet Interrupt
-    A34 : GNSS TX RDY
-    A35 : Board Detect (1.1V)
-    A36 : microSD card detect
-    A39 : Unused analog pin - used to generate random values for SSL
-    */
-
-    pin_baseStatusLED = 26;
-    pin_peripheralPowerControl = 32;
-    pin_Ethernet_CS = 27;
-    pin_GNSS_CS = 5;
-    pin_GNSS_TimePulse = 25;
-    pin_adc39 = 39;
-    pin_zed_tx_ready = 34;
-    pin_microSD_CardDetect = 36;
-    pin_Ethernet_Interrupt = 33;
-
-    pin_radio_rx = 17; // Radio RX In = ESP TX Out
-    pin_radio_tx = 16; // Radio TX Out = ESP RX In
-
-    pinMode(pin_Ethernet_CS, OUTPUT);
-    digitalWrite(pin_Ethernet_CS, HIGH);
-    pinMode(pin_GNSS_CS, OUTPUT);
-    digitalWrite(pin_GNSS_CS, HIGH);
-
-    if (esp_reset_reason() == ESP_RST_POWERON)
-    {
-      powerOnCheck(); //Only do check if we POR start
-    }
-
-    pinMode(pin_peripheralPowerControl, OUTPUT);
-    digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, W5500, etc
+    // No powerOnCheck
 
     strcpy(platformFilePrefix, "SFE_Reference_Station");
     strcpy(platformPrefix, "Reference Station");
@@ -265,6 +282,8 @@ void beginSD()
 
   online.microSD = false;
   gotSemaphore = false;
+
+  log_d("settings.enableSD: %d", settings.enableSD);
   
   while (settings.enableSD == true)
   {
@@ -526,14 +545,17 @@ void beginUART2()
 //Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
 void pinUART2Task( void *pvParameters )
 {
-  serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize); // TODO: work out if we can reduce or skip this when using SPI GNSS
-  serialGNSS.setTimeout(settings.serialTimeoutGNSS);
-  serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-
-  //Reduce threshold value above which RX FIFO full interrupt is generated
-  //Allows more time between when the UART interrupt occurs and when the FIFO buffer overruns
-  //serialGNSS.setRxFIFOFull(50); //Available in >v2.0.5
-  uart_set_rx_full_threshold(2, 50); //uart_num, threshold
+  if (USE_I2C_GNSS)
+  {
+    serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize); // TODO: work out if we can reduce or skip this when using SPI GNSS
+    serialGNSS.setTimeout(settings.serialTimeoutGNSS); // Requires serial traffic on the UART pins for detection
+    serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+  
+    //Reduce threshold value above which RX FIFO full interrupt is generated
+    //Allows more time between when the UART interrupt occurs and when the FIFO buffer overruns
+    //serialGNSS.setRxFIFOFull(50); //Available in >v2.0.5
+    uart_set_rx_full_threshold(2, 50); //uart_num, threshold
+  }
 
   uart2pinned = true;
 
@@ -562,8 +584,11 @@ void beginGNSS()
   //If we're using SPI, then increase the logging buffer
   if (USE_SPI_GNSS)
   {
+    SPI.begin(); // Begin SPI here - beginSD has not yet been called
+    
     // setFileBufferSize must be called _before_ .begin
     // Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
+    // Also used by Tasks.ino
     theGNSS.setFileBufferSize(settings.gnssHandlerBufferSize);
   }
 
@@ -585,13 +610,13 @@ void beginGNSS()
   }
   else
   {
-    if (theGNSS.begin(pin_GNSS_CS) == false)
+    if (theGNSS.begin(SPI, pin_GNSS_CS) == false)
     {
       log_d("GNSS Failed to begin. Trying again.");
   
       //Try again with power on delay
       delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
-      if (theGNSS.begin(pin_GNSS_CS) == false)
+      if (theGNSS.begin(SPI, pin_GNSS_CS) == false)
       {
         log_d("GNSS offline");
         displayGNSSFail(1000);
@@ -835,6 +860,20 @@ void beginSystemState()
       firstRoverStart = false;
 
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
+  }
+  else if (productVariant == REFERENCE_STATION)
+  {
+    systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
+
+    if (systemState > STATE_SHUTDOWN)
+    {
+      systemPrintln("Unknown state - factory reset");
+      factoryReset();
+    }
+
+    firstRoverStart = true; //Allow user to enter test screen during first rover start
+    if (systemState == STATE_BASE_NOT_STARTED)
+      firstRoverStart = false;
   }
 
   //Starts task for monitoring button presses

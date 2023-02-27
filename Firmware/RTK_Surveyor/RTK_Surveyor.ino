@@ -590,41 +590,65 @@ void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
 
-  beginI2C();
+  identifyBoard(); //Determine what hardware platform we are running on
+  log_d("identifyBoard complete");
 
-  beginDisplay(); //Start display first to be able to display any errors
+  initializePowerPins(); //Initialize any essential power pins - e.g. enable power for the Display
+  log_d("initializePowerPins complete");
+
+  beginI2C();
+  log_d("beginI2C complete");
+
+  beginDisplay(); //Start display to be able to display any errors
+  log_d("beginDisplay complete");
 
   beginGNSS(); //Connect to GNSS to get module type
+  log_d("beginGNSS complete");
 
   beginFS(); //Start file system for settings
+  log_d("beginFS complete");
 
-  beginBoard(); //Determine what hardware platform we are running on and check on button
+  beginBoard(); //Now finish settup up the board and check the on button
+  log_d("beginBoard complete");
 
   displaySplash(); //Display the RTK product name and firmware version
+  log_d("displaySplash complete");
 
   beginLEDs(); //LED and PWM setup
+  log_d("beginLEDs complete");
 
   beginSD(); //Test if SD is present
+  log_d("beginSD complete");
 
   loadSettings(); //Attempt to load settings after SD is started so we can read the settings file if available
+  log_d("loadSettings complete");
 
   beginIdleTasks(); //Enable processor load calculations
+  log_d("beginIdleTasks complete");
 
   beginUART2(); //Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
+  log_d("beginUART2 complete");
 
   beginFuelGauge(); //Configure battery fuel guage monitor
+  log_d("beginFuelGauge complete");
 
   configureGNSS(); //Configure ZED module
+  log_d("configureGNSS complete");
 
   beginAccelerometer();
+  log_d("beginAccelerometer complete");
 
   beginLBand();
+  log_d("beginLBand complete");
 
   beginExternalTriggers(); //Configure the time pulse output and TM2 input
+  log_d("beginExternalTriggers complete");
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
+  log_d("beginSystemState complete");
 
   updateRTC(); //The GNSS likely has time/date. Update ESP32 RTC to match. Needed for PointPerfect key expiration.
+  log_d("updateRTC complete");
 
   Serial.flush(); //Complete any previous prints
 

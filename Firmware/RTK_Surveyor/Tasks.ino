@@ -38,18 +38,32 @@ void F9PSerialWriteTask(void *e)
           else
           {
             //Ignore this escape character, passing along to output
-            serialGNSS.write(incoming);
+            if (USE_I2C_GNSS)
+              serialGNSS.write(incoming);
+            else
+              theGNSS.pushRawData(&incoming, 1);
           }
         }
         else //This is just a character in the stream, ignore
         {
           //Pass any escape characters that turned out to not be a complete escape sequence
           while (btEscapeCharsReceived-- > 0)
-            serialGNSS.write(btEscapeCharacter);
+          {
+            if (USE_I2C_GNSS)
+              serialGNSS.write(btEscapeCharacter);
+            else
+            {
+              uint8_t escChar = btEscapeCharacter;
+              theGNSS.pushRawData(&escChar, 1);
+            }
+          }
 
           //Pass byte to GNSS receiver or to system
           //TODO - control if this RTCM source should be listened to or not
-          serialGNSS.write(incoming);
+          if (USE_I2C_GNSS)
+            serialGNSS.write(incoming);
+          else
+            theGNSS.pushRawData(&incoming, 1);
 
           btLastByteReceived = millis();
           btEscapeCharsReceived = 0; //Update timeout check for escape char and partial frame
@@ -125,21 +139,43 @@ void F9PSerialReadTask(void *e)
       systemPrintf("SerialReadTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(nullptr));
 
     //Determine if serial data is available
-    while (serialGNSS.available())
+    if (USE_I2C_GNSS)
     {
-      //Read the data from UART1
-      incomingData = serialGNSS.read();
-
-      //Save the data byte
-      parse.buffer[parse.length++] = incomingData;
-      parse.length %= PARSE_BUFFER_LENGTH;
-
-      //Compute the CRC value for the message
-      if (parse.computeCrc)
-        parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
-
-      //Update the parser state based on the incoming byte
-      parse.state(&parse, incomingData);
+      while (serialGNSS.available())
+      {
+        //Read the data from UART1
+        incomingData = serialGNSS.read();
+  
+        //Save the data byte
+        parse.buffer[parse.length++] = incomingData;
+        parse.length %= PARSE_BUFFER_LENGTH;
+  
+        //Compute the CRC value for the message
+        if (parse.computeCrc)
+          parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
+  
+        //Update the parser state based on the incoming byte
+        parse.state(&parse, incomingData);
+      }
+    }
+    else // SPI GNSS
+    {
+      while (theGNSS.fileBufferAvailable() > 0)
+      {
+        //Read the data from the logging buffer
+        theGNSS.extractFileBufferData(&incomingData, 1); // TODO: make this more efficient by reading multiple bytes?
+  
+        //Save the data byte
+        parse.buffer[parse.length++] = incomingData;
+        parse.length %= PARSE_BUFFER_LENGTH;
+  
+        //Compute the CRC value for the message
+        if (parse.computeCrc)
+          parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
+  
+        //Update the parser state based on the incoming byte
+        parse.state(&parse, incomingData);
+      }
     }
 
     delay(1);
@@ -350,8 +386,18 @@ void handleGNSSDataTask(void *e)
 
           if (settings.enablePrintSDBuffers && !inMainMenu)
           {
-            int availableUARTSpace = settings.uartReceiveBufferSize - serialGNSS.available();
-            systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\r\n", serialGNSS.available(), 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
+            int bufferAvailable;
+            if (USE_I2C_GNSS)
+              bufferAvailable = serialGNSS.available();
+            else
+              bufferAvailable = theGNSS.fileBufferAvailable();
+            int availableUARTSpace;
+            if (USE_I2C_GNSS)
+              availableUARTSpace = settings.uartReceiveBufferSize - bufferAvailable;
+            else
+              // Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
+              availableUARTSpace = settings.gnssHandlerBufferSize - bufferAvailable;
+            systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\r\n", bufferAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
           }
 
           //Write the data to the file

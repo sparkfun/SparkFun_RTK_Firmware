@@ -510,22 +510,17 @@ bool setMessagesUSB()
 {
   bool response = true;
 
-  response &= theGNSS.newCfgValset();
-  for (int x = 0 ; x < 36 ; x++)
+  int x = 0;
+  while (x < MAX_UBX_MSG)
   {
-    if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
+    response &= theGNSS.newCfgValset();
+    for ( ; ((x % 40) < 39) && (x < MAX_UBX_MSG) ; x++) // Limit 1st batch to 39. Batches after that will be (up to) 40 in size.
+    {
+      if (settings.ubxMessages[x].supported & zedModuleType)
+        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
+    }
+    response &= theGNSS.sendCfgValset();
   }
-  response &= theGNSS.sendCfgValset();
-
-  //Final messages
-  response &= theGNSS.newCfgValset();
-  for (int x = 36 ; x < MAX_UBX_MSG ; x++)
-  {
-    if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
-  }
-  response &= theGNSS.sendCfgValset();
 
   return (response);
 }

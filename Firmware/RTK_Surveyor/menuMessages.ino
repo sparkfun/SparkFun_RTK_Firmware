@@ -353,7 +353,7 @@ void beginLogging(const char *customFileName)
       }
       else
       {
-        strcpy(fileName, customFileName);
+        strncpy(fileName, customFileName, sizeof(fileName) - 1);
       }
 
       //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
@@ -535,7 +535,7 @@ bool findLastLog(char *lastLogName)
             {
               if (strstr(fname, LOG_PREFIX) != nullptr)
               {
-                strcpy(lastLogName, fname); //Store this file as last known log file
+                strncpy(lastLogName, fname, sizeof(lastLogName) - 1); //Store this file as last known log file
                 foundAFile = true;
               }
             }
@@ -568,7 +568,7 @@ bool findLastLog(char *lastLogName)
               {
                 if (strstr(fname, LOG_PREFIX) != nullptr)
                 {
-                  strcpy(lastLogName, fname); //Store this file as last known log file
+                  strncpy(lastLogName, fname, sizeof(lastLogName) - 1); //Store this file as last known log file
                   foundAFile = true;
                 }
               }

@@ -146,7 +146,7 @@ void menuFirmware()
     else if (incoming == 'e')
     {
       enableRCFirmware ^= 1;
-      strcpy(reportedVersion, ""); //Reset to force c) menu
+      strncpy(reportedVersion, "", sizeof(reportedVersion) - 1); //Reset to force c) menu
     }
     else if (incoming == 'x')
       break;
@@ -233,7 +233,7 @@ void scanForFirmware()
           //Check for 'RTK_Surveyor_Firmware' start of file name
           if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
           {
-            strcpy(binFileNames[binCount++], fname); //Add this to the array
+            strncpy(binFileNames[binCount++], fname, sizeof(binFileNames[0]) - 1); //Add this to the array
           }
           else
             systemPrintf("Unknown: %s\r\n", fname);
@@ -276,7 +276,7 @@ void scanForFirmware()
           //Check for 'RTK_Surveyor_Firmware' start of file name
           if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
           {
-            strcpy(binFileNames[binCount++], fname); //Add this to the array
+            strncpy(binFileNames[binCount++], fname, sizeof(binFileNames[0]) - 1); //Add this to the array
           }
           else
             systemPrintf("Unknown: %s\r\n", fname);

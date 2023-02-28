@@ -87,7 +87,7 @@ bool ntripClientConnect()
     return false;
 
   //Remove any http:// or https:// prefix from host name
-  char hostname[50];
+  char hostname[51];
   strncpy(hostname, settings.ntripClient_CasterHost, 50); //strtok modifies string to be parsed so we create a copy
   char *token = strtok(hostname, "//");
   if (token != nullptr)
@@ -117,7 +117,7 @@ bool ntripClientConnect()
   char credentials[CREDENTIALS_BUFFER_SIZE];
   if (strlen(settings.ntripClient_CasterUser) == 0)
   {
-    strncpy(credentials, "Accept: */*\r\nConnection: close\r\n", sizeof(credentials));
+    strncpy(credentials, "Accept: */*\r\nConnection: close\r\n", sizeof(credentials) - 1);
   }
   else
   {

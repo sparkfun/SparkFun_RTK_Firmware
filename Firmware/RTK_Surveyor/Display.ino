@@ -2348,12 +2348,12 @@ void displayMessage(const char* message, uint16_t displayTime)
 {
   if (online.display == true)
   {
-    char temp[20];
+    char temp[21];
     uint8_t fontHeight = 15; //Assume fontsize 1
 
     //Count words based on spaces
     uint8_t wordCount = 0;
-    strcpy(temp, message); //strtok modifies the message so make copy
+    strncpy(temp, message, 20); //strtok modifies the message so make copy
     char * token = strtok(temp, " ");
     while (token != nullptr)
     {
@@ -2368,7 +2368,7 @@ void displayMessage(const char* message, uint16_t displayTime)
 
     //drawFrame();
 
-    strcpy(temp, message);
+    strncpy(temp, message, 20);
     token = strtok(temp, " ");
     while (token != nullptr)
     {

@@ -131,8 +131,8 @@ void beginBoard()
     //The following changes the POR default but will be overwritten by settings in NVM or settings file
     settings.ubxConstellations[1].enabled = false;
 
-    strcpy(platformFilePrefix, "SFE_Surveyor");
-    strcpy(platformPrefix, "Surveyor");
+    strncpy(platformFilePrefix, "SFE_Surveyor", sizeof(platformFilePrefix) - 1);
+    strncpy(platformPrefix, "Surveyor", sizeof(platformPrefix) - 1);
   }
   else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
@@ -159,13 +159,13 @@ void beginBoard()
 
     if (productVariant == RTK_EXPRESS)
     {
-      strcpy(platformFilePrefix, "SFE_Express");
-      strcpy(platformPrefix, "Express");
+      strncpy(platformFilePrefix, "SFE_Express", sizeof(platformFilePrefix) - 1);
+      strncpy(platformPrefix, "Express", sizeof(platformPrefix) - 1);
     }
     else if (productVariant == RTK_EXPRESS_PLUS)
     {
-      strcpy(platformFilePrefix, "SFE_Express_Plus");
-      strcpy(platformPrefix, "Express Plus");
+      strncpy(platformFilePrefix, "SFE_Express_Plus", sizeof(platformFilePrefix) - 1);
+      strncpy(platformPrefix, "Express Plus", sizeof(platformPrefix) - 1);
     }
   }
   else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
@@ -206,13 +206,13 @@ void beginBoard()
 
     if (productVariant == RTK_FACET)
     {
-      strcpy(platformFilePrefix, "SFE_Facet");
-      strcpy(platformPrefix, "Facet");
+      strncpy(platformFilePrefix, "SFE_Facet", sizeof(platformFilePrefix) - 1);
+      strncpy(platformPrefix, "Facet", sizeof(platformPrefix) - 1);
     }
     else if (productVariant == RTK_FACET_LBAND)
     {
-      strcpy(platformFilePrefix, "SFE_Facet_LBand");
-      strcpy(platformPrefix, "Facet L-Band");
+      strncpy(platformFilePrefix, "SFE_Facet_LBand", sizeof(platformFilePrefix) - 1);
+      strncpy(platformPrefix, "Facet L-Band", sizeof(platformPrefix) - 1);
     }
   }
 #ifdef COMPILE_SD_MMC
@@ -222,8 +222,8 @@ void beginBoard()
 
     settings.enablePrintBatteryMessages = false; // No pesky battery messages
 
-    strcpy(platformFilePrefix, "SFE_Reference_Station");
-    strcpy(platformPrefix, "Reference Station");
+    strncpy(platformFilePrefix, "SFE_Reference_Station", sizeof(platformFilePrefix) - 1);
+    strncpy(platformPrefix, "Reference Station", sizeof(platformPrefix) - 1);
   }
 #endif
 

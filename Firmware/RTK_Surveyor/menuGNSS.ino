@@ -216,8 +216,8 @@ void menuGNSS()
 
   //Error check for RTK2Go without email in user name
   //First force tolower the host name
-  char lowerHost[50];
-  strcpy(lowerHost, settings.ntripClient_CasterHost);
+  char lowerHost[51];
+  strncpy(lowerHost, settings.ntripClient_CasterHost, 50);
   for (int x = 0 ; x < 50 ; x++)
   {
     if (lowerHost[x] == '\0') break;

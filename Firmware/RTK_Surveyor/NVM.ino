@@ -1234,7 +1234,7 @@ uint8_t loadProfileNames()
 void setProfileName(uint8_t ProfileNumber)
 {
   //Update the name in the array of profile names
-  strcpy(profileNames[profileNumber], settings.profileName);
+  strncpy(profileNames[profileNumber], settings.profileName, sizeof(profileNames[0]) - 1);
 
   //Mark this profile as active
   activeProfiles |= 1 << ProfileNumber;

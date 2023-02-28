@@ -262,12 +262,12 @@ bool pointperfectProvisionDevice()
           systemPrintln("ERROR - Failed to allocate tempHolder buffer!\r\n");
           break;
         }
-        strcpy(tempHolder, (const char*)((*jsonZtp)["certificate"]));
+        strncpy(tempHolder, (const char*)((*jsonZtp)["certificate"]), sizeof(tempHolder) - 1);
         //      systemPrintf("len of PrivateCert: %d\r\n", strlen(tempHolder));
         //      systemPrintf("privateCert: %s\r\n", tempHolder);
         recordFile("certificate", tempHolder, strlen(tempHolder));
 
-        strcpy(tempHolder, (const char*)((*jsonZtp)["privateKey"]));
+        strncpy(tempHolder, (const char*)((*jsonZtp)["privateKey"]), sizeof(tempHolder) - 1);
         //      systemPrintf("len of privateKey: %d\r\n", strlen(tempHolder));
         //      systemPrintf("privateKey: %s\r\n", tempHolder);
         recordFile("privateKey", tempHolder, strlen(tempHolder));

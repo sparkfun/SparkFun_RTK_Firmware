@@ -147,11 +147,11 @@ void bluetoothStart()
 #ifdef COMPILE_BT
   if (bluetoothState == BT_OFF)
   {
-    char stateName[10];
+    char stateName[11];
     if (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX)
-      strcpy(stateName, "Rover-");
+      strncpy(stateName, "Rover-", 10);
     else if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
-      strcpy(stateName, "Base-");
+      strncpy(stateName, "Base-", 10);
 
     snprintf(deviceName, sizeof(deviceName), "%s %s%02X%02X", platformPrefix, stateName, btMACAddress[4], btMACAddress[5]);
 

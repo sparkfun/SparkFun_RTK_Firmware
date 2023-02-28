@@ -2,8 +2,8 @@
 
 #ifdef COMPILE_SD_MMC
 
-#include "FS.h"
-#include "SD_MMC.h"
+//#include "FS.h"
+#include "SD_MMC.h" // Also includes FS.h
 
 class FileSdFatMMC : public SdFile, public File
 

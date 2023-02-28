@@ -147,15 +147,6 @@ bool configureUbloxModule()
     log_d("Module config block 0 complete");
   response = true; //Reset
 
-  if (USE_SPI_GNSS) // Stop things from happening too quickly
-  {
-    for (int i = 0; i < 20; i++)
-    {
-      theGNSS.checkUblox();
-      delay(50);
-    }
-  }
-
   //Enable the constellations the user has set
   response &= setConstellations(true); //19 messages. Send newCfg or sendCfg with value set
   if (response == false)
@@ -616,45 +607,43 @@ bool setConstellations(bool sendCompleteBatch)
   bool enableMe = settings.ubxConstellations[0].enabled;
   response &= theGNSS.addCfgValset(settings.ubxConstellations[0].configKey, enableMe); //GPS
 
-  log_d("0x%X 0x%X", settings.ubxConstellations[0].configKey, enableMe);
-  
-//  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GPS_L1CA_ENA, settings.ubxConstellations[0].enabled);
-//  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GPS_L2C_ENA, settings.ubxConstellations[0].enabled);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GPS_L1CA_ENA, settings.ubxConstellations[0].enabled);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GPS_L2C_ENA, settings.ubxConstellations[0].enabled);
 
-//  //v1.12 ZED-F9P firmware does not allow for SBAS control
-//  //Also, if we can't identify the version (99), skip SBAS enable
-//  if ((zedModuleType == PLATFORM_F9P) && ((zedFirmwareVersionInt == 112) || (zedFirmwareVersionInt == 99)))
-//  {
-//    //Skip
-//  }
-//  else
-//  {
-//    response &= theGNSS.addCfgValset(settings.ubxConstellations[1].configKey, settings.ubxConstellations[1].enabled); //SBAS
-//    response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_SBAS_L1CA_ENA, settings.ubxConstellations[1].enabled);
-//  }
+  //v1.12 ZED-F9P firmware does not allow for SBAS control
+  //Also, if we can't identify the version (99), skip SBAS enable
+  if ((zedModuleType == PLATFORM_F9P) && ((zedFirmwareVersionInt == 112) || (zedFirmwareVersionInt == 99)))
+  {
+    //Skip
+  }
+  else
+  {
+    response &= theGNSS.addCfgValset(settings.ubxConstellations[1].configKey, settings.ubxConstellations[1].enabled); //SBAS
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_SBAS_L1CA_ENA, settings.ubxConstellations[1].enabled);
+  }
 
-//  response &= theGNSS.addCfgValset(settings.ubxConstellations[2].configKey, settings.ubxConstellations[2].enabled); //GAL
-//  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GAL_E1_ENA, settings.ubxConstellations[2].enabled);
-//  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GAL_E5B_ENA, settings.ubxConstellations[2].enabled);
-//
-//  response &= theGNSS.addCfgValset(settings.ubxConstellations[3].configKey, settings.ubxConstellations[3].enabled); //BDS
-//  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_BDS_B1_ENA, settings.ubxConstellations[3].enabled);
-//  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_BDS_B2_ENA, settings.ubxConstellations[3].enabled);
-//
-//  response &= theGNSS.addCfgValset(settings.ubxConstellations[4].configKey, settings.ubxConstellations[4].enabled); //QZSS
-//  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L1CA_ENA, settings.ubxConstellations[4].enabled);
+  response &= theGNSS.addCfgValset(settings.ubxConstellations[2].configKey, settings.ubxConstellations[2].enabled); //GAL
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GAL_E1_ENA, settings.ubxConstellations[2].enabled);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GAL_E5B_ENA, settings.ubxConstellations[2].enabled);
 
-//  //UBLOX_CFG_SIGNAL_QZSS_L1S_ENA not supported on F9R in v1.21 and below
-//  if (zedModuleType == PLATFORM_F9P)
-//    response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L1S_ENA, settings.ubxConstellations[4].enabled);
-//  else if ((zedModuleType == PLATFORM_F9R) && (zedFirmwareVersionInt > 121))
-//    response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L1S_ENA, settings.ubxConstellations[4].enabled);
+  response &= theGNSS.addCfgValset(settings.ubxConstellations[3].configKey, settings.ubxConstellations[3].enabled); //BDS
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_BDS_B1_ENA, settings.ubxConstellations[3].enabled);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_BDS_B2_ENA, settings.ubxConstellations[3].enabled);
 
-//  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L2C_ENA, settings.ubxConstellations[4].enabled);
+  response &= theGNSS.addCfgValset(settings.ubxConstellations[4].configKey, settings.ubxConstellations[4].enabled); //QZSS
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L1CA_ENA, settings.ubxConstellations[4].enabled);
 
-//  response &= theGNSS.addCfgValset(settings.ubxConstellations[5].configKey, settings.ubxConstellations[5].enabled); //GLO
-//  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GLO_L1_ENA, settings.ubxConstellations[5].enabled);
-//  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GLO_L2_ENA, settings.ubxConstellations[5].enabled);
+  //UBLOX_CFG_SIGNAL_QZSS_L1S_ENA not supported on F9R in v1.21 and below
+  if (zedModuleType == PLATFORM_F9P)
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L1S_ENA, settings.ubxConstellations[4].enabled);
+  else if ((zedModuleType == PLATFORM_F9R) && (zedFirmwareVersionInt > 121))
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L1S_ENA, settings.ubxConstellations[4].enabled);
+
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L2C_ENA, settings.ubxConstellations[4].enabled);
+
+  response &= theGNSS.addCfgValset(settings.ubxConstellations[5].configKey, settings.ubxConstellations[5].enabled); //GLO
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GLO_L1_ENA, settings.ubxConstellations[5].enabled);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GLO_L2_ENA, settings.ubxConstellations[5].enabled);
 
   if (sendCompleteBatch)
     response &= theGNSS.sendCfgValset();

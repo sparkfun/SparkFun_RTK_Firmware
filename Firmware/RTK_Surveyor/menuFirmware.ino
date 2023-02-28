@@ -432,7 +432,7 @@ void updateFromSD(const char *firmwareFileName)
           SD_MMC.remove(firmwareFileName);
 #endif
 
-        theGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
+        theGNSS.factoryDefault(); //Reset everything: baud rate, I2C address, update rate, everything. And save to BBR.
       }
 
       delay(1000);

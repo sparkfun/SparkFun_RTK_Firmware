@@ -974,16 +974,26 @@ void sdSizeCheckTask(void *e)
       {
         markSemaphore(FUNCTION_SDSIZECHECK);
 
-        csd_t csd;
-        sd->card()->readCSD(&csd); //Card Specific Data
-        sdCardSize = (uint64_t)512 * sd->card()->sectorCount();
-
-        sd->volumeBegin();
-
-        //Find available cluster/space
-        sdFreeSpace = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
-        sdFreeSpace *= sd->vol()->sectorsPerCluster();
-        sdFreeSpace *= 512L; //Bytes per sector
+        if (USE_SPI_MICROSD)
+        {
+          csd_t csd;
+          sd->card()->readCSD(&csd); //Card Specific Data
+          sdCardSize = (uint64_t)512 * sd->card()->sectorCount();
+  
+          sd->volumeBegin();
+  
+          //Find available cluster/space
+          sdFreeSpace = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
+          sdFreeSpace *= sd->vol()->sectorsPerCluster();
+          sdFreeSpace *= 512L; //Bytes per sector
+        }
+#ifdef COMPILE_SD_MMC
+        else
+        {
+          sdCardSize = SD_MMC.cardSize();
+          sdFreeSpace = SD_MMC.totalBytes() - SD_MMC.usedBytes();
+        }
+#endif
 
         xSemaphoreGive(sdCardSemaphore);
 

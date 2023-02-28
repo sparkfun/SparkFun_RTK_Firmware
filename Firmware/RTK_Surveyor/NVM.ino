@@ -508,7 +508,10 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
 {
   File settingsFile = LittleFS.open(fileName, FILE_READ);
   if (!settingsFile)
+  {
+    systemPrintf("settingsFile not found in LittleFS\r\n");
     return (false);
+  }
 
   char line[100];
   int lineNumber = 0;
@@ -516,8 +519,14 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
   while (settingsFile.available())
   {
     //Get the next line from the file
-    int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
-    //int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
+    int n;
+    if (USE_SPI_MICROSD)
+      n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
+      //int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
+#ifdef COMPILE_SD_MMC
+    else
+      n = getLine(&settingsFile, line, sizeof(line)); //We are using File from FS.h
+#endif
     if (n <= 0) {
       systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
     }

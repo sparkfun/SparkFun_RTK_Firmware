@@ -538,12 +538,27 @@ bool removeFileSD(const char* fileName)
       markSemaphore(FUNCTION_REMOVEFILE);
 
       gotSemaphore = true;
-      if (sd->exists(fileName))
+
+      if (USE_SPI_MICROSD)
       {
-        log_d("Removing from SD: %s", fileName);
-        sd->remove(fileName);
-        removed = true;
+        if (sd->exists(fileName))
+        {
+          log_d("Removing from SD: %s", fileName);
+          sd->remove(fileName);
+          removed = true;
+        }
       }
+#ifdef COMPPILE_SD_MMC
+      else
+      {
+        if (SD_MMC.exists(fileName))
+        {
+          log_d("Removing from SD: %s", fileName);
+          SD_MMC.remove(fileName);
+          removed = true;
+        }        
+      }
+#endif
 
       break;
     } //End Semaphore check

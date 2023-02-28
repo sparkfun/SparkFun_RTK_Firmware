@@ -214,7 +214,19 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
 
     logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
 
-    if (sd->exists(fileName) == false)
+    bool fileExists;
+    if (USE_SPI_MICROSD)
+    {
+      fileExists = sd->exists(fileName);
+    }
+#ifdef COMPILE_SD_MMC
+    else
+    {
+      fileExists = SD_MMC.exists(fileName);
+    }
+#endif
+
+    if (fileExists == false)
     {
       systemPrintln(logmessage + " ERROR: file does not exist");
       request->send(400, "text/plain", "ERROR: file does not exist");
@@ -275,7 +287,12 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
       else if (strcmp(fileAction, "delete") == 0)
       {
         logmessage += " deleted";
-        sd->remove(fileName);
+        if (USE_SPI_MICROSD)
+          sd->remove(fileName);
+#ifdef COMPLIE_SD_MMC
+        else
+          SD_MMC.remove(fileName);
+#endif
         request->send(200, "text/plain", "Deleted File: " + String(fileName));
       }
       else

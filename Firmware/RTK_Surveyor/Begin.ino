@@ -479,10 +479,13 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   }
 
   //Free the caches for the microSD card
-  if (sd)
+  if (USE_SPI_MICROSD)
   {
-    delete sd;
-    sd = nullptr;
+    if (sd)
+    {
+      delete sd;
+      sd = nullptr;
+    }
   }
 
   //Release the semaphore
@@ -750,6 +753,11 @@ void beginLEDs()
     ledcWrite(ledRedChannel, 0);
     ledcWrite(ledGreenChannel, 0);
     ledcWrite(ledBTChannel, 0);
+  }
+  else if (productVariant == REFERENCE_STATION)
+  {
+    pinMode(pin_baseStatusLED, OUTPUT);
+    digitalWrite(pin_baseStatusLED, LOW);
   }
 }
 

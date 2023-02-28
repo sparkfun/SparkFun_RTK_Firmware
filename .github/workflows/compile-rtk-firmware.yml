@@ -40,19 +40,19 @@ jobs:
           ArduinoJson@6.19.4
           pubsubclient@2.8.0
           ESP32_BleSerial@1.0.4
+          "SparkFun u-blox GNSS v3"@3.0.2
+          "SparkFun Micro OLED Breakout"@1.3.4
+          "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
+          "SparkFun LIS2DH12 Arduino Library"@1.0.3
 
       - name: Enable external libs
         run: arduino-cli config set library.enable_unsafe_install true
 
       - name: Get Libraries
         run: arduino-cli lib install --git-url 
-          https://github.com/sparkfun/SparkFun_u-blox_GNSS_v3.git
-          https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.git 
-          https://github.com/sparkfun/SparkFun_Qwiic_OLED_Arduino_Library.git 
-          https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library.git 
           https://github.com/nseidle/ESP32-OTA-Pull.git
           https://github.com/me-no-dev/ESPAsyncWebServer.git 
-          https://github.com/me-no-dev/AsyncTCP.git 
+          https://github.com/me-no-dev/AsyncTCP.git
           
       #Incorporate ESP-Now patch into core: https://github.com/espressif/arduino-esp32/pull/7044/files
       #- name: Patch ESP32 Core

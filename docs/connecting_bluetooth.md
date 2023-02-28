@@ -59,3 +59,9 @@ The device is now paired and a series of COM ports will be added under 'Device M
 *NMEA received over the Bluetooth COM port*
 
 If necessary, you can open a terminal connection to one of the COM ports. Because the Bluetooth driver creates multiple COM ports, it's impossible to tell which is the serial stream so it's easiest to just try each port until you see a stream of NMEA sentences (shown above). You're all set! Be sure to close out the terminal window so that other software can use that COM port.
+
+*Apple iOS*
+
+Apple products do not support Bluetooth SPP. That's ok! The SparkFun RTK devices support Bluetooth Low Energy (BLE) which does work with iOS.
+
+More information is available on the [System Menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system/) for switching between Bluetooth SPP and BLE.

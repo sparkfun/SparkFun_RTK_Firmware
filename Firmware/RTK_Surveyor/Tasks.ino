@@ -160,6 +160,7 @@ void F9PSerialReadTask(void *e)
     }
     else // SPI GNSS
     {
+      theGNSS.checkUblox(); // Check for new data
       while (theGNSS.fileBufferAvailable() > 0)
       {
         //Read the data from the logging buffer
@@ -390,7 +391,10 @@ void handleGNSSDataTask(void *e)
             if (USE_I2C_GNSS)
               bufferAvailable = serialGNSS.available();
             else
+            {
+              theGNSS.checkUblox();
               bufferAvailable = theGNSS.fileBufferAvailable();
+            }
             int availableUARTSpace;
             if (USE_I2C_GNSS)
               availableUARTSpace = settings.uartReceiveBufferSize - bufferAvailable;

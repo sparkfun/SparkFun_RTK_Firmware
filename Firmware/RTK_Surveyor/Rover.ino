@@ -35,7 +35,7 @@ bool configureUbloxModuleRover()
   //RTCM is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
   {
-    //Disable RTCM sentences from being generated on I2C / SPI, USB, and UART2
+    //Disable RTCM sentences from being generated on I2C, USB, and UART2. (Don't disable on UART1.)
     if (USE_I2C_GNSS)
     {
       response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 0);

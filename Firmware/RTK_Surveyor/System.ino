@@ -7,6 +7,12 @@ bool configureUbloxModule()
 
   bool response = true;
 
+  //Turn on/off debug messages
+  if (settings.enableI2Cdebug)
+    theGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
+  else
+    theGNSS.disableDebugging();
+
   //Wait for initial report from module
   int maxWait = 2000;
   startTime = millis();
@@ -166,7 +172,6 @@ bool configureUbloxModule()
   //Disable NMEA messages on all but UART1
   response &= theGNSS.newCfgValset();
 
-  // TODO: check if we should use "if (USE_I2C_GNSS)" here
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_I2C, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_I2C, 0);
@@ -183,13 +188,17 @@ bool configureUbloxModule()
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_UART2, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_UART2, 0);
 
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_SPI, 0);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_SPI, 0);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_SPI, 0);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_SPI, 0);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GST_SPI, 0);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_SPI, 0);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0);
+  if (USE_I2C_GNSS) // Don't disable NMEA on SPI if the GNSS is SPI!
+  {
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GST_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0);
+  }
+  
   response &= theGNSS.sendCfgValset();
 
   if (response == false)
@@ -199,12 +208,6 @@ bool configureUbloxModule()
 
   if (zedModuleType == PLATFORM_F9R)
     response &= theGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
-
-  //Turn on/off debug messages
-  if (settings.enableI2Cdebug)
-    theGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
-  else
-    theGNSS.disableDebugging();
 
   return (response);
 }
@@ -557,7 +560,9 @@ bool setMessages()
     }
 
     theGNSS.setRTCMLoggingMask(logRTCMMessages);
+    log_d("setRTCMLoggingMask 0x%X", logRTCMMessages);
     theGNSS.setNMEALoggingMask(logNMEAMessages);
+    log_d("setNMEALoggingMask 0x%X", logNMEAMessages);
 
     log_d("logging config complete");
   }

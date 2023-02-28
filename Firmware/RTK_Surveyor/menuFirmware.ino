@@ -14,9 +14,9 @@ void menuFirmware()
 
     char currentVersion[20];
     if (enableRCFirmware == false)
-      sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+      snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
     else
-      sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+      snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
     systemPrintf("Current firmware: v%s\r\n", currentVersion);
 
@@ -61,9 +61,9 @@ void menuFirmware()
           //We got a version number, now determine if it's newer or not
           char currentVersion[20];
           if (enableRCFirmware == false)
-            sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+            snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
           else
-            sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+            snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
           if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
           {
@@ -96,9 +96,9 @@ void menuFirmware()
             //We got a version number, now determine if it's newer or not
             char currentVersion[20];
             if (enableRCFirmware == false)
-              sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+              snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
             else
-              sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+              snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
             if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
             {
@@ -468,9 +468,9 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
     char versionString[20];
 
     if (enableRCFirmware == false)
-      sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+      snprintf(versionString, sizeof(versionString), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
     else
-      sprintf(versionString, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+      snprintf(versionString, sizeof(versionString), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
     systemPrintf("Current firmware version: v%s\r\n", versionString);
 
@@ -537,7 +537,7 @@ void otaUpdate()
   if (wifiConnect(10000) == true)
   {
     char versionString[20];
-    sprintf(versionString, "%d.%d", 0, 0); //Force update with version 0.0
+    snprintf(versionString, sizeof(versionString), "%d.%d", 0, 0); //Force update with version 0.0
 
     ESP32OTAPull ota;
 
@@ -615,9 +615,9 @@ void otaPullCallback(int bytesWritten, int totalLength)
     if (apConfigFirmwareUpdateInProcess == true)
     {
 #ifdef COMPILE_AP
-      char myProgess[50];
-      sprintf(myProgess, "otaFirmwareStatus,%d,", percent);
-      websocket->textAll(myProgess);
+      char myProgress[50];
+      snprintf(myProgress, sizeof(myProgress), "otaFirmwareStatus,%d,", percent);
+      websocket->textAll(myProgress);
 #endif
     }
 

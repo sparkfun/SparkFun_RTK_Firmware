@@ -867,7 +867,7 @@ void printCurrentConditionsNMEA()
   if (online.gnss == true)
   {
     char systemStatus[100];
-    sprintf(systemStatus, "%02d%02d%02d.%02d,%02d%02d%02d,%0.3f,%d,%0.9f,%0.9f,%0.2f,%d,%d,%d",
+    snprintf(systemStatus, sizeof(systemStatus), "%02d%02d%02d.%02d,%02d%02d%02d,%0.3f,%d,%0.9f,%0.9f,%0.2f,%d,%d,%d",
             gnssHour, gnssMinute, gnssSecond, mseconds,
             gnssDay, gnssMonth, gnssYear % 2000, //Limit to 2 digits
             horizontalAccuracy, numSV,
@@ -932,7 +932,7 @@ void printFileList()
   
             //Convert sdFat file date fromat into YYYY-MM-DD
             char fileDateChar[20];
-            sprintf(fileDateChar, "%d-%02d-%02d",
+            snprintf(fileDateChar, sizeof(fileDateChar), "%d-%02d-%02d",
                     ((fileDate >> 9) + 1980), //Year
                     ((fileDate >> 5) & 0b1111), //Month
                     (fileDate & 0b11111) //Day
@@ -945,7 +945,7 @@ void printFileList()
             tempFile.getName(fileName, sizeof(fileName));
   
             char fileRecord[100];
-            sprintf(fileRecord, "%s\t%s\t%s", fileDateChar, fileSizeChar, fileName);
+            snprintf(fileRecord, sizeof(fileRecord), "%s\t%s\t%s", fileDateChar, fileSizeChar, fileName);
   
             systemPrintln(fileRecord);
           }
@@ -992,10 +992,10 @@ void printFileList()
               stringHumanReadableSize(tempFile.size()).toCharArray(fileSizeChar, sizeof(fileSizeChar));
     
               char fileName[50]; //Handle long file names
-              snprintf(fileName, 50, "%s", tempFile.name());
+              snprintf(fileName, sizeof(fileName), "%s", tempFile.name());
     
               char fileRecord[100];
-              sprintf(fileRecord, "%s\t%s\t%s", fileDateChar, fileSizeChar, fileName);
+              snprintf(fileRecord, sizeof(fileRecord), "%s\t%s\t%s", fileDateChar, fileSizeChar, fileName);
     
               systemPrintln(fileRecord);
             }

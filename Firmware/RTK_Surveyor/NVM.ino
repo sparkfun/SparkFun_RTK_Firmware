@@ -29,7 +29,7 @@ void loadSettings()
 
   //Change empty profile name to 'Profile1' etc
   if (strlen(settings.profileName) == 0)
-    sprintf(settings.profileName, "Profile%d", profileNumber + 1);
+    snprintf(settings.profileName, sizeof(settings.profileName), "Profile%d", profileNumber + 1);
 
   //Record these settings to LittleFS and SD file to be sure they are the same
   recordSystemSettings();
@@ -43,9 +43,9 @@ void loadSettings()
 //Set the settingsFileName and coordinate file names used many places
 void setSettingsFileName()
 {
-  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
-  sprintf(stationCoordinateECEFFileName, "/StationCoordinates-ECEF_%d.csv", profileNumber);
-  sprintf(stationCoordinateGeodeticFileName, "/StationCoordinates-Geodetic_%d.csv", profileNumber);
+  snprintf(settingsFileName, sizeof(settingsFileName), "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
+  snprintf(stationCoordinateECEFFileName, sizeof(stationCoordinateECEFFileName), "/StationCoordinates-ECEF_%d.csv", profileNumber);
+  snprintf(stationCoordinateGeodeticFileName, sizeof(stationCoordinateGeodeticFileName), "/StationCoordinates-Geodetic_%d.csv", profileNumber);
 }
 
 //Load only LFS settings without recording
@@ -190,7 +190,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "rtkIdentifier", settings.rtkIdentifier);
 
   char firmwareVersion[30]; //v1.3 December 31 2021
-  sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+  snprintf(firmwareVersion, sizeof(firmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
   settingsFile->printf("%s=%s\r\n", "rtkFirmwareVersion", firmwareVersion);
 
   settingsFile->printf("%s=%s\r\n", "zedFirmwareVersion", zedFirmwareVersion);
@@ -293,7 +293,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < settings.espnowPeerCount ; x++)
   {
     char tempString[50]; //espnowPeers.1=B4,C1,33,42,DE,01,
-    sprintf(tempString, "espnowPeers.%d=%02X,%02X,%02X,%02X,%02X,%02X,", x,
+    snprintf(tempString, sizeof(tempString), "espnowPeers.%d=%02X,%02X,%02X,%02X,%02X,%02X,", x,
             settings.espnowPeers[x][0],
             settings.espnowPeers[x][1],
             settings.espnowPeers[x][2],
@@ -321,9 +321,9 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
   {
     char tempString[100]; //wifiNetwork0Password=parachutes
-    sprintf(tempString, "wifiNetwork%dSSID=%s", x, settings.wifiNetworks[x].ssid);
+    snprintf(tempString, sizeof(tempString), "wifiNetwork%dSSID=%s", x, settings.wifiNetworks[x].ssid);
     settingsFile->println(tempString);
-    sprintf(tempString, "wifiNetwork%dPassword=%s", x, settings.wifiNetworks[x].password);
+    snprintf(tempString, sizeof(tempString), "wifiNetwork%dPassword=%s", x, settings.wifiNetworks[x].password);
     settingsFile->println(tempString);
   }
 
@@ -334,7 +334,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
   {
     char tempString[50]; //constellation.BeiDou=1
-    sprintf(tempString, "constellation.%s=%d", settings.ubxConstellations[x].textName, settings.ubxConstellations[x].enabled);
+    snprintf(tempString, sizeof(tempString), "constellation.%s=%d", settings.ubxConstellations[x].textName, settings.ubxConstellations[x].enabled);
     settingsFile->println(tempString);
   }
 
@@ -342,7 +342,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
     char tempString[50]; //message.nmea_dtm.msgRate=5
-    sprintf(tempString, "message.%s.msgRate=%d", settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
+    snprintf(tempString, sizeof(tempString), "message.%s.msgRate=%d", settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
     settingsFile->println(tempString);
   }
 }
@@ -571,7 +571,7 @@ bool parseLine(char* str, Settings *settings)
 
   //Store this setting name
   char settingName[100];
-  sprintf(settingName, "%s", str);
+  snprintf(settingName, sizeof(settingName), "%s", str);
 
   double d = 0.0;
   char settingValue[100] = "";
@@ -592,7 +592,7 @@ bool parseLine(char* str, Settings *settings)
 
     //Assume the value is a string such as 8d8a48b. The leading number causes skipSpace to fail.
     //If settingValue has a mix of letters and numbers, just convert to string
-    sprintf(settingValue, "%s", str);
+    snprintf(settingValue, sizeof(settingValue), "%s", str);
 
     //Check if string is mixed: 8a011EF, 192.168.1.1, -102.4, t6-h4$, etc.
     bool hasSymbol = false;
@@ -623,14 +623,14 @@ bool parseLine(char* str, Settings *settings)
 
       if (d == 0.0) //strtod failed, may be string or may be 0 but let it pass
       {
-        sprintf(settingValue, "%s", str);
+        snprintf(settingValue, sizeof(settingValue), "%s", str);
       }
       else
       {
         if (str == ptr || *skipSpace(ptr)) return false; //Check str pointer
 
         //See issue https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/47
-        sprintf(settingValue, "%1.0lf", d); //Catch when the input is pure numbers (strtod was successful), store as settingValue
+        snprintf(settingValue, sizeof(settingValue), "%1.0lf", d); //Catch when the input is pure numbers (strtod was successful), store as settingValue
       }
     }
   }
@@ -1033,7 +1033,7 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
       {
         char tempString[100]; //wifiNetwork0Password=parachutes
-        sprintf(tempString, "wifiNetwork%dSSID", x);
+        snprintf(tempString, sizeof(tempString), "wifiNetwork%dSSID", x);
         if (strcmp(settingName, tempString) == 0)
         {
           strcpy(settings->wifiNetworks[x].ssid, settingValue);
@@ -1042,7 +1042,7 @@ bool parseLine(char* str, Settings *settings)
         }
         else
         {
-          sprintf(tempString, "wifiNetwork%dPassword", x);
+          snprintf(tempString, sizeof(tempString), "wifiNetwork%dPassword", x);
           if (strcmp(settingName, tempString) == 0)
           {
             strcpy(settings->wifiNetworks[x].password, settingValue);
@@ -1059,7 +1059,7 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
       {
         char tempString[50]; //constellation.GPS=1
-        sprintf(tempString, "constellation.%s", settings->ubxConstellations[x].textName);
+        snprintf(tempString, sizeof(tempString), "constellation.%s", settings->ubxConstellations[x].textName);
 
         if (strcmp(settingName, tempString) == 0)
         {
@@ -1081,7 +1081,7 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
         char tempString[50]; //message.nmea_dtm.msgRate=5
-        sprintf(tempString, "message.%s.msgRate", settings->ubxMessages[x].msgTextName);
+        snprintf(tempString, sizeof(tempString), "message.%s.msgRate", settings->ubxMessages[x].msgTextName);
 
         if (strcmp(settingName, tempString) == 0)
         {
@@ -1103,7 +1103,7 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < ESPNOW_MAX_PEERS ; x++)
       {
         char tempString[50]; //espnowPeers.1=B4,C1,33,42,DE,01,
-        sprintf(tempString, "espnowPeers.%d", x);
+        snprintf(tempString, sizeof(tempString), "espnowPeers.%d", x);
 
         if (strcmp(settingName, tempString) == 0)
         {
@@ -1220,7 +1220,7 @@ uint8_t loadProfileNames()
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
   {
     char fileName[56];
-    sprintf(fileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+    snprintf(fileName, sizeof(fileName), "/%s_Settings_%d.txt", platformFilePrefix, x);
 
     if (getProfileName(fileName, profileNames[x], sizeof(profileNames[x])) == true)
       //Mark this profile as active
@@ -1314,7 +1314,7 @@ uint8_t getProfileNumberFromUnit(uint8_t profileUnit)
 void recordFile(const char* fileID, char* fileContents, uint32_t fileSize)
 {
   char fileName[80];
-  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
+  snprintf(fileName, sizeof(fileName), "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
 
   if (LittleFS.exists(fileName))
   {
@@ -1338,7 +1338,7 @@ void recordFile(const char* fileID, char* fileContents, uint32_t fileSize)
 void loadFile(const char* fileID, char* fileContents)
 {
   char fileName[80];
-  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
+  snprintf(fileName, sizeof(fileName), "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
 
   File fileToRead = LittleFS.open(fileName, FILE_READ);
   if (fileToRead)

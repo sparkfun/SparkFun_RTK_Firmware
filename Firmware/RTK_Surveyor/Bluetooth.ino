@@ -153,7 +153,7 @@ void bluetoothStart()
     else if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
       strcpy(stateName, "Base-");
 
-    sprintf(deviceName, "%s %s%02X%02X", platformPrefix, stateName, btMACAddress[4], btMACAddress[5]);
+    snprintf(deviceName, sizeof(deviceName), "%s %s%02X%02X", platformPrefix, stateName, btMACAddress[4], btMACAddress[5]);
 
     // Select Bluetooth setup
     if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
@@ -270,7 +270,7 @@ void bluetoothTest(bool runTest)
 
   //Display Bluetooth MAC address and test results
   char macAddress[5];
-  sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
+  snprintf(macAddress, sizeof(macAddress), "%02X%02X", btMACAddress[4], btMACAddress[5]);
   systemPrint("Bluetooth ");
   if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
     systemPrint("Low Energy ");

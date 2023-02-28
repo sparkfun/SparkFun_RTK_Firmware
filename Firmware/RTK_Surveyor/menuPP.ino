@@ -179,15 +179,15 @@ bool pointperfectProvisionDevice()
     client.setCACert(AWS_PUBLIC_CERT);
 
     char hardwareID[13];
-    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
+    snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
 
 #ifdef WHITELISTED_ID
     //Override ID with testing ID
-    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1], whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
+    snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1], whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
 #endif
 
     char givenName[100];
-    sprintf(givenName, "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, hardwareID); //Get ready for JSON
+    snprintf(givenName, sizeof(givenName), "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, hardwareID); //Get ready for JSON
 
     StaticJsonDocument<256> pointPerfectAPIPost;
 
@@ -200,7 +200,7 @@ bool pointperfectProvisionDevice()
       for (int x = 0 ; x < sizeof(pointPerfectTokenArray) ; x++)
       {
         char temp[3];
-        sprintf(temp, "%02x", pointPerfectTokenArray[x]);
+        snprintf(temp, sizeof(temp), "%02x", pointPerfectTokenArray[x]);
         strcat(tokenString, temp);
         if (x == 3 || x == 5 || x == 7 || x == 9) strcat(tokenString, "-");
       }
@@ -466,10 +466,10 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
     for (int x = 0 ; x < 16 ; x++) //Force length to max of 32 bytes
     {
       char temp[3];
-      sprintf(temp, "%02X", currentKey[x]);
+      snprintf(temp, sizeof(temp), "%02X", currentKey[x]);
       strcat(settings.pointPerfectCurrentKey, temp);
 
-      sprintf(temp, "%02X", nextKey[x]);
+      snprintf(temp, sizeof(temp), "%02X", nextKey[x]);
       strcat(settings.pointPerfectNextKey, temp);
     }
 
@@ -831,7 +831,7 @@ void beginLBand()
   if (i2cLBand.getModuleInfo(1100) == true) // Try to get the module info
   {
     // Reconstruct the firmware version
-    sprintf(neoFirmwareVersion, "%s %d.%02d", i2cLBand.getFirmwareType(), i2cLBand.getFirmwareVersionHigh(), i2cLBand.getFirmwareVersionLow());
+    snprintf(neoFirmwareVersion, sizeof(neoFirmwareVersion), "%s %d.%02d", i2cLBand.getFirmwareType(), i2cLBand.getFirmwareVersionHigh(), i2cLBand.getFirmwareVersionLow());
 
     printNEOInfo(); //Print module firmware version
   }
@@ -911,7 +911,7 @@ void menuPointPerfect()
     systemPrintln("Menu: PointPerfect Corrections");
 
     char hardwareID[13];
-    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
+    snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
     systemPrintf("Device ID: %s\r\n", hardwareID);
 
     systemPrint("Days until keys expire: ");
@@ -962,7 +962,7 @@ void menuPointPerfect()
         {
           //Check if we have certificates
           char fileName[80];
-          sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
+          snprintf(fileName, sizeof(fileName), "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
           if (LittleFS.exists(fileName) == false)
           {
             pointperfectProvisionDevice(); //Connect to ThingStream API and get keys

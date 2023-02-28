@@ -453,7 +453,7 @@ void updateSystemState()
               day = rtc.getDay();
 
               //Build the file name
-              sprintf (fileName, "Marks_%04d_%02d_%02d.csv", year, month, day);
+              snprintf(fileName, sizeof(fileName), "Marks_%04d_%02d_%02d.csv", year, month, day);
 
               //Try to gain access the SD card
               sdCardWasOnline = online.microSD;
@@ -509,22 +509,22 @@ void updateSystemState()
                   //12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
                   //YYYY-MM-DD, HH:MM:SS, ---Latitude---, --Longitude---, --Alt--,SIV, --HPA---,Level,Volts\n
                   if (horizontalAccuracy >= 100.)
-                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.0f, %3d%%, %4.2f\n",
+                    snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.0f, %3d%%, %4.2f\n",
                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
                              latitude, longitude, altitude, numSV, horizontalAccuracy,
                              battLevel, battVoltage);
                   else if (horizontalAccuracy >= 10.)
-                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.1f, %3d%%, %4.2f\n",
+                    snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.1f, %3d%%, %4.2f\n",
                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
                              latitude, longitude, altitude, numSV, horizontalAccuracy,
                              battLevel, battVoltage);
                   else if (horizontalAccuracy >= 1.)
-                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.2f, %3d%%, %4.2f\n",
+                    snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.2f, %3d%%, %4.2f\n",
                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
                              latitude, longitude, altitude, numSV, horizontalAccuracy,
                              battLevel, battVoltage);
                   else
-                    sprintf (markBuffer, "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.3f, %3d%%, %4.2f\n",
+                    snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.3f, %3d%%, %4.2f\n",
                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
                              latitude, longitude, altitude, numSV, horizontalAccuracy,
                              battLevel, battVoltage);

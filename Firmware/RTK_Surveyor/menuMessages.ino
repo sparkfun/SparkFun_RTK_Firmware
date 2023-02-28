@@ -344,7 +344,7 @@ void beginLogging(const char *customFileName)
 
         if (strlen(fileName) == 0)
         {
-          sprintf(fileName, "/%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+          snprintf(fileName, sizeof(fileName), "/%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
                   platformFilePrefix,
                   rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
                   rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
@@ -410,7 +410,7 @@ void beginLogging(const char *customFileName)
 
         //SparkFun RTK Express v1.10-Feb 11 2022
         char firmwareVersion[30]; //v1.3 December 31 2021
-        sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+        snprintf(firmwareVersion, sizeof(firmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
         createNMEASentence(CUSTOM_NMEA_TYPE_SYSTEM_VERSION, nmeaMessage, firmwareVersion); //textID, buffer, text
         ubxFile->println(nmeaMessage);
 
@@ -420,7 +420,7 @@ void beginLogging(const char *customFileName)
 
         //Device BT MAC. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/346
         char macAddress[5];
-        sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
+        snprintf(macAddress, sizeof(macAddress), "%02X%02X", btMACAddress[4], btMACAddress[5]);
         createNMEASentence(CUSTOM_NMEA_TYPE_DEVICE_BT_ID, nmeaMessage, macAddress); //textID, buffer, text
         ubxFile->println(nmeaMessage);
 
@@ -460,7 +460,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
       //Record the number of NMEA/RTCM/UBX messages that were filtered out
       char parserStats[50];
 
-      sprintf(parserStats, "%d,%d,%d,",
+      snprintf(parserStats, sizeof(parserStats), "%d,%d,%d,",
               failedParserMessages_NMEA,
               failedParserMessages_RTCM,
               failedParserMessages_UBX);
@@ -597,7 +597,7 @@ bool findLastLog(char *lastLogName)
 void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlock)
 {
   char messageNamePiece[40]; //UBX_RTCM
-  sprintf(messageNamePiece, "UBX_%s", messageType); //Put UBX_ infront of type
+  snprintf(messageNamePiece, sizeof(messageNamePiece), "UBX_%s", messageType); //Put UBX_ infront of type
 
   //Find the first occurrence
   for (startOfBlock = 0 ; startOfBlock < MAX_UBX_MSG ; startOfBlock++)
@@ -743,7 +743,7 @@ void updateLogTest()
       //During the first test, create the log file
       reuseLastLog = false;
       char fileName[100];
-      sprintf(fileName, "/%s_LogTest_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+      snprintf(fileName, sizeof(fileName), "/%s_LogTest_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
               platformFilePrefix,
               rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
               rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
@@ -838,7 +838,7 @@ void updateLogTest()
     startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 
     char logMessage[100];
-    sprintf(logMessage, "Start log test: %dHz, %dMsg, %dMS", rate, messages, semaphoreWait);
+    snprintf(logMessage, sizeof(logMessage), "Start log test: %dHz, %dMsg, %dMS", rate, messages, semaphoreWait);
 
     char nmeaMessage[100]; //Max NMEA sentence length is 82
     createNMEASentence(CUSTOM_NMEA_TYPE_LOGTEST_STATUS, nmeaMessage, logMessage); //textID, buffer, text

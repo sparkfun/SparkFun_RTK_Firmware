@@ -367,7 +367,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
         binBytesLastUpdate = binBytesSent;
 
         char bytesSentMsg[100];
-        sprintf(bytesSentMsg, "%'d bytes sent", binBytesSent);
+        snprintf(bytesSentMsg, sizeof(bytesSentMsg), "%'d bytes sent", binBytesSent);
 
         systemPrintf("bytesSentMsg: %s\r\n", bytesSentMsg);
 
@@ -446,7 +446,7 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "platformPrefix", platformPrefix);
 
   char apRtkFirmwareVersion[86];
-  sprintf(apRtkFirmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+  snprintf(apRtkFirmwareVersion, sizeof(apRtkFirmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
   stringRecord(newSettings, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
   char apZedPlatform[50];
@@ -456,11 +456,11 @@ void createSettingsString(char* newSettings)
     strcpy(apZedPlatform, "ZED-F9R");
 
   char apZedFirmwareVersion[80];
-  sprintf(apZedFirmwareVersion, "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
+  snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
   stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
 
   char apDeviceBTID[30];
-  sprintf(apDeviceBTID, "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);
+  snprintf(apDeviceBTID, sizeof(apDeviceBTID), "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);
   stringRecord(newSettings, "deviceBTID", apDeviceBTID);
 
   //GNSS Config
@@ -544,7 +544,7 @@ void createSettingsString(char* newSettings)
 
   //L-Band
   char hardwareID[13];
-  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
+  snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
   stringRecord(newSettings, "hardwareID", hardwareID);
 
   char apDaysRemaining[20];
@@ -552,11 +552,11 @@ void createSettingsString(char* newSettings)
   {
 #ifdef COMPILE_L_BAND
     uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
-    sprintf(apDaysRemaining, "%d", daysRemaining);
+    snprintf(apDaysRemaining, sizeof(apDaysRemaining), "%d", daysRemaining);
 #endif
   }
   else
-    sprintf(apDaysRemaining, "No Keys");
+    snprintf(apDaysRemaining, sizeof(apDaysRemaining), "No Keys");
 
   stringRecord(newSettings, "daysRemaining", apDaysRemaining);
 
@@ -576,8 +576,8 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "profileNumber", profileNumber);
   for (int index = 0; index < MAX_PROFILE_COUNT; index++)
   {
-    sprintf(tagText, "profile%dName", index);
-    sprintf(nameText, "%d: %s", index + 1, profileNames[index]);
+    snprintf(tagText, sizeof(tagText), "profile%dName", index);
+    snprintf(nameText, sizeof(nameText), "%d: %s", index + 1, profileNames[index]);
     stringRecord(newSettings, tagText, nameText);
   }
   //stringRecord(newSettings, "activeProfiles", activeProfiles);
@@ -611,7 +611,7 @@ void createSettingsString(char* newSettings)
 
   //Radio / ESP-Now settings
   char radioMAC[18];   //Send radio MAC
-  sprintf(radioMAC, "%02X:%02X:%02X:%02X:%02X:%02X",
+  snprintf(radioMAC, sizeof(radioMAC), "%02X:%02X:%02X:%02X:%02X:%02X",
           wifiMACAddress[0],
           wifiMACAddress[1],
           wifiMACAddress[2],
@@ -624,8 +624,8 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "espnowPeerCount", settings.espnowPeerCount);
   for (int index = 0; index < settings.espnowPeerCount; index++)
   {
-    sprintf(tagText, "peerMAC%d", index);
-    sprintf(nameText, "%02X:%02X:%02X:%02X:%02X:%02X",
+    snprintf(tagText, sizeof(tagText), "peerMAC%d", index);
+    snprintf(nameText, sizeof(nameText), "%02X:%02X:%02X:%02X:%02X:%02X",
             settings.espnowPeers[index][0],
             settings.espnowPeers[index][1],
             settings.espnowPeers[index][2],
@@ -649,7 +649,7 @@ void createSettingsString(char* newSettings)
       trim(stationInfo); //Remove trailing whitespace
       //log_d("ECEF SD station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationECEF%d", index);
+      snprintf(tagText, sizeof(tagText), "stationECEF%d", index);
       stringRecord(newSettings, tagText, stationInfo);
     }
     else if (getFileLineLFS(stationCoordinateECEFFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
@@ -657,7 +657,7 @@ void createSettingsString(char* newSettings)
       trim(stationInfo); //Remove trailing whitespace
       //log_d("ECEF LFS station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationECEF%d", index);
+      snprintf(tagText, sizeof(tagText), "stationECEF%d", index);
       stringRecord(newSettings, tagText, stationInfo);
     }
     else
@@ -678,7 +678,7 @@ void createSettingsString(char* newSettings)
       trim(stationInfo); //Remove trailing whitespace
       //log_d("Geo SD station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationGeodetic%d", index);
+      snprintf(tagText, sizeof(tagText), "stationGeodetic%d", index);
       stringRecord(newSettings, tagText, stationInfo);
     }
     else if (getFileLineLFS(stationCoordinateGeodeticFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
@@ -686,7 +686,7 @@ void createSettingsString(char* newSettings)
       trim(stationInfo); //Remove trailing whitespace
       //log_d("Geo LFS station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationGeodetic%d", index);
+      snprintf(tagText, sizeof(tagText), "stationGeodetic%d", index);
       stringRecord(newSettings, tagText, stationInfo);
     }
     else
@@ -699,10 +699,10 @@ void createSettingsString(char* newSettings)
   //Add WiFi credential table
   for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
   {
-    sprintf(tagText, "wifiNetwork%dSSID", x);
+    snprintf(tagText, sizeof(tagText), "wifiNetwork%dSSID", x);
     stringRecord(newSettings, tagText, settings.wifiNetworks[x].ssid);
 
-    sprintf(tagText, "wifiNetwork%dPassword", x);
+    snprintf(tagText, sizeof(tagText), "wifiNetwork%dPassword", x);
     stringRecord(newSettings, tagText, settings.wifiNetworks[x].password);
   }
 
@@ -1013,26 +1013,26 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       //We got a version number, now determine if it's newer or not
       char currentVersion[20];
       if (enableRCFirmware == false)
-        sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+        snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
       else
-        sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+        snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
       if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
       {
         log_d("New version detected");
-        sprintf(newVersionCSV, "newFirmwareVersion,%s,", reportedVersion);
+        snprintf(newVersionCSV, sizeof(newVersionCSV), "newFirmwareVersion,%s,", reportedVersion);
       }
       else
       {
         log_d("No new firmware available");
-        sprintf(newVersionCSV, "newFirmwareVersion,CURRENT,");
+        snprintf(newVersionCSV, sizeof(newVersionCSV), "newFirmwareVersion,CURRENT,");
       }
     }
     else
     {
       //Failed to get version number
       log_d("Sending error to AP config page");
-      sprintf(newVersionCSV, "newFirmwareVersion,ERROR,");
+      snprintf(newVersionCSV, sizeof(newVersionCSV), "newFirmwareVersion,ERROR,");
     }
 
     websocket->textAll(newVersionCSV);
@@ -1062,7 +1062,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
       {
         char tempString[100]; //wifiNetwork0Password=parachutes
-        sprintf(tempString, "wifiNetwork%dSSID", x);
+        snprintf(tempString, sizeof(tempString), "wifiNetwork%dSSID", x);
         if (strcmp(settingName, tempString) == 0)
         {
           strcpy(settings.wifiNetworks[x].ssid, settingValueStr);
@@ -1071,7 +1071,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
         }
         else
         {
-          sprintf(tempString, "wifiNetwork%dPassword", x);
+          snprintf(tempString, sizeof(tempString), "wifiNetwork%dPassword", x);
           if (strcmp(settingName, tempString) == 0)
           {
             strcpy(settings.wifiNetworks[x].password, settingValueStr);
@@ -1088,7 +1088,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
       {
         char tempString[50]; //ubxConstellationsSBAS
-        sprintf(tempString, "ubxConstellations%s", settings.ubxConstellations[x].textName);
+        snprintf(tempString, sizeof(tempString), "ubxConstellations%s", settings.ubxConstellations[x].textName);
 
         if (strcmp(settingName, tempString) == 0)
         {
@@ -1126,7 +1126,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 void stringRecord(char* settingsCSV, const char *id, int settingValue)
 {
   char record[100];
-  sprintf(record, "%s,%d,", id, settingValue);
+  snprintf(record, sizeof(record), "%s,%d,", id, settingValue);
   strcat(settingsCSV, record);
 }
 
@@ -1134,7 +1134,7 @@ void stringRecord(char* settingsCSV, const char *id, int settingValue)
 void stringRecord(char* settingsCSV, const char *id, uint32_t settingValue)
 {
   char record[100];
-  sprintf(record, "%s,%d,", id, settingValue);
+  snprintf(record, sizeof(record), "%s,%d,", id, settingValue);
   strcat(settingsCSV, record);
 }
 
@@ -1142,13 +1142,13 @@ void stringRecord(char* settingsCSV, const char *id, uint32_t settingValue)
 void stringRecord(char* settingsCSV, const char *id, double settingValue, int decimalPlaces)
 {
   char format[10];
-  sprintf(format, "%%0.%dlf", decimalPlaces); //Create '%0.09lf'
+  snprintf(format, sizeof(format), "%%0.%dlf", decimalPlaces); //Create '%0.09lf'
 
   char formattedValue[20];
-  sprintf(formattedValue, format, settingValue);
+  snprintf(formattedValue, sizeof(formattedValue), format, settingValue);
 
   char record[100];
-  sprintf(record, "%s,%s,", id, formattedValue);
+  snprintf(record, sizeof(record), "%s,%s,", id, formattedValue);
   strcat(settingsCSV, record);
 }
 
@@ -1162,7 +1162,7 @@ void stringRecord(char* settingsCSV, const char *id, bool settingValue)
     strcpy(temp, "false");
 
   char record[100];
-  sprintf(record, "%s,%s,", id, temp);
+  snprintf(record, sizeof(record), "%s,%s,", id, temp);
   strcat(settingsCSV, record);
 }
 
@@ -1170,7 +1170,7 @@ void stringRecord(char* settingsCSV, const char *id, bool settingValue)
 void stringRecord(char* settingsCSV, const char *id, char* settingValue)
 {
   char record[100];
-  sprintf(record, "%s,%s,", id, settingValue);
+  snprintf(record, sizeof(record), "%s,%s,", id, settingValue);
   strcat(settingsCSV, record);
 }
 
@@ -1178,7 +1178,7 @@ void stringRecord(char* settingsCSV, const char *id, char* settingValue)
 void stringRecord(char* settingsCSV, const char *id, uint64_t settingValue)
 {
   char record[100];
-  sprintf(record, "%s,%lld,", id, settingValue);
+  snprintf(record, sizeof(record), "%s,%lld,", id, settingValue);
   strcat(settingsCSV, record);
 }
 
@@ -1333,13 +1333,13 @@ String stringHumanReadableSize(uint64_t bytes)
   else cardSize = bytes / 1024.0 / 1024.0 / 1024.0; //GB
 
   if (strcmp(suffix, "GB") == 0)
-    sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
+    snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); //Print decimal portion
   else if (strcmp(suffix, "MB") == 0)
-    sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
+    snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); //Print decimal portion
   else if (strcmp(suffix, "KB") == 0)
-    sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
+    snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); //Print decimal portion
   else
-    sprintf(readableSize, "%.0f %s", cardSize, suffix); //Don't print decimal portion
+    snprintf(readableSize, sizeof(readableSize), "%.0f %s", cardSize, suffix); //Don't print decimal portion
 
   return String(readableSize);
 }

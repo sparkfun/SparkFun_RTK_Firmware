@@ -365,7 +365,7 @@ void updateDisplay()
         const uint8_t * rtkMacAddress = getMacAddress();
 
         //Print four characters of MAC
-        sprintf(macAddress, "%02X%02X", rtkMacAddress[4], rtkMacAddress[5]);
+        snprintf(macAddress, sizeof(macAddress), "%02X%02X", rtkMacAddress[4], rtkMacAddress[5]);
         oled.setFont(QW_FONT_5X7); //Set font to smallest
         oled.setCursor(0, 3);
         oled.print(macAddress);
@@ -409,7 +409,7 @@ void updateDisplay()
         const uint8_t * rtkMacAddress = getMacAddress();
 
         //Print only last two digits of MAC
-        sprintf(macAddress, "%02X", rtkMacAddress[5]);
+        snprintf(macAddress, sizeof(macAddress), "%02X", rtkMacAddress[5]);
         oled.setFont(QW_FONT_5X7); //Set font to smallest
         oled.setCursor(14, 3);
         oled.print(macAddress);
@@ -523,9 +523,9 @@ void displaySplash()
     yPos = yPos + fontHeight + 7;
     char unitFirmware[50];
 #ifdef ENABLE_DEVELOPER
-    sprintf(unitFirmware, "v%d.%d-DEV", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    snprintf(unitFirmware, sizeof(unitFirmware), "v%d.%d-DEV", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 #else
-    sprintf(unitFirmware, "v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    snprintf(unitFirmware, sizeof(unitFirmware), "v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 #endif
     printTextCenter(unitFirmware, yPos, QW_FONT_5X7, 1, false);
 
@@ -1696,11 +1696,11 @@ void displayWiFiConfig()
 
 #ifdef COMPILE_WIFI
   if (settings.wifiConfigOverAP == true)
-    sprintf(mySSID, "%s", "RTK Config");
+    snprintf(mySSID, sizeof(mySSID), "%s", "RTK Config");
   else
-    sprintf(mySSID, "%s", WiFi.SSID().c_str());
+    snprintf(mySSID, sizeof(mySSID), "%s", WiFi.SSID().c_str());
 #else
-  sprintf(mySSID, "%s", "!Compiled");
+  snprintf(mySSID, sizeof(mySSID), "%s", "!Compiled");
 #endif
 
   char mySSIDFront[displayMaxCharacters + 1]; //1 for null terminator
@@ -1736,7 +1736,7 @@ void displayWiFiConfig()
 
   //Convert to string
   char myIP[20] = {'\0'};
-  sprintf(myIP, "%d.%d.%d.%d", myIpAddress[0], myIpAddress[1], myIpAddress[2], myIpAddress[3]);
+  snprintf(myIP, sizeof(myIP), "%d.%d.%d.%d", myIpAddress[0], myIpAddress[1], myIpAddress[2], myIpAddress[3]);
 
   char myIPFront[displayMaxCharacters + 1]; //1 for null terminator
   char myIPBack[displayMaxCharacters + 1]; //1 for null terminator
@@ -1856,7 +1856,7 @@ void displayFirmwareUpdateProgress(int percentComplete)
 
     yPos = yPos + fontHeight + 3;
     char temp[50];
-    sprintf(temp, "%d%%", percentComplete);
+    snprintf(temp, sizeof(temp), "%d%%", percentComplete);
     printTextCenter(temp, yPos, QW_FONT_8X16, 1, false); //text, y, font type, kerning, inverted
 
     oled.display(); //Push internal buffer to display
@@ -2014,7 +2014,7 @@ void paintSystemTest()
       //Get the last two digits of MAC
       char macAddress[5];
       const uint8_t * rtkMacAddress = getMacAddress();
-      sprintf(macAddress, "%02X%02X", rtkMacAddress[4], rtkMacAddress[5]);
+      snprintf(macAddress, sizeof(macAddress), "%02X%02X", rtkMacAddress[4], rtkMacAddress[5]);
 
       //Display MAC address
       oled.setCursor(xOffset, yOffset + (5 * charHeight) ); //x, y
@@ -2587,11 +2587,11 @@ void paintKeyProvisionFail(uint16_t displayTime)
     char hardwareID[13];
     const uint8_t * rtkMacAddress = getMacAddress();
 
-    sprintf(hardwareID, "%02X%02X%02X", rtkMacAddress[0], rtkMacAddress[1], rtkMacAddress[2]);
+    snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X", rtkMacAddress[0], rtkMacAddress[1], rtkMacAddress[2]);
     y += fontHeight;
     printTextCenter(hardwareID, y, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 
-    sprintf(hardwareID, "%02X%02X%02X", rtkMacAddress[3], rtkMacAddress[4], rtkMacAddress[5]);
+    snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X", rtkMacAddress[3], rtkMacAddress[4], rtkMacAddress[5]);
     y += fontHeight;
     printTextCenter(hardwareID, y, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
 

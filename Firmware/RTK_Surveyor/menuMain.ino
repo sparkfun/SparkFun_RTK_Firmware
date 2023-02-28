@@ -250,7 +250,7 @@ void menuUserProfiles()
         recordProfileNumber(0); //Move to Profile1
         profileNumber = 0;
 
-        sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Update file name with new profileNumber
+        snprintf(settingsFileName, sizeof(settingsFileName), "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Update file name with new profileNumber
 
         //We need to load these settings from file so that we can record a profile name change correctly
         bool responseLFS = loadSystemSettingsFromFileLFS(settingsFileName, &settings);
@@ -339,7 +339,7 @@ void factoryReset()
         for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
         {
           char fileName[56];
-          sprintf(fileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+          snprintf(fileName, sizeof(fileName), "/%s_Settings_%d.txt", platformFilePrefix, x);
           if (sd->exists(fileName))
           {
             log_d("Removing %s from SD", fileName);
@@ -360,7 +360,7 @@ void factoryReset()
         for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
         {
           char fileName[56];
-          sprintf(fileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+          snprintf(fileName, sizeof(fileName), "/%s_Settings_%d.txt", platformFilePrefix, x);
           if (SD_MMC.exists(fileName))
           {
             log_d("Removing %s from SD", fileName);

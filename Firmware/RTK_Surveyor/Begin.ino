@@ -647,7 +647,7 @@ void beginGNSS()
   if (theGNSS.getModuleInfo(1100) == true) // Try to get the module info
   {
     // Reconstruct the firmware version
-    sprintf(zedFirmwareVersion, "%s %d.%02d", theGNSS.getFirmwareType(), theGNSS.getFirmwareVersionHigh(), theGNSS.getFirmwareVersionLow());
+    snprintf(zedFirmwareVersion, sizeof(zedFirmwareVersion), "%s %d.%02d", theGNSS.getFirmwareType(), theGNSS.getFirmwareVersionHigh(), theGNSS.getFirmwareVersionLow());
 
     // Construct the firmware version as uint8_t. Note: will fail above 2.55!
     zedFirmwareVersionInt = (theGNSS.getFirmwareVersionHigh() * 100) + theGNSS.getFirmwareVersionLow();
@@ -953,7 +953,7 @@ void beginIdleTasks()
 
     for (int index = 0; index < MAX_CPU_CORES; index++)
     {
-      sprintf(taskName, "IdleTask%d", index);
+      snprintf(taskName, sizeof(taskName), "IdleTask%d", index);
       if (idleTaskHandle[index] == nullptr)
         xTaskCreatePinnedToCore(
           idleTask,

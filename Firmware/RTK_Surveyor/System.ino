@@ -300,19 +300,19 @@ void checkBatteryLevels()
 
     char tempStr[25];
     if (battChangeRate > 0)
-      sprintf(tempStr, "C");
+      snprintf(tempStr, sizeof(tempStr), "C");
     else
-      sprintf(tempStr, "Disc");
+      snprintf(tempStr, sizeof(tempStr), "Disc");
     systemPrintf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
     if (battLevel < 10)
-      sprintf(tempStr, "Red");
+      snprintf(tempStr, sizeof(tempStr), "Red");
     else if (battLevel < 50)
-      sprintf(tempStr, "Yellow");
+      snprintf(tempStr, sizeof(tempStr), "Yellow");
     else if (battLevel >= 50)
-      sprintf(tempStr, "Green");
+      snprintf(tempStr, sizeof(tempStr), "Green");
     else
-      sprintf(tempStr, "No batt");
+      snprintf(tempStr, sizeof(tempStr), "No batt");
 
     systemPrintf("%s\r\n", tempStr);
   }
@@ -484,14 +484,14 @@ void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, char *textMe
   const uint8_t sentenceNumber = 1;
 
   char nmeaTxt[200]; //Max NMEA sentence length is 82
-  sprintf(nmeaTxt, "$GNTXT,%02d,%02d,%02d,%s*", totalNumberOfSentences, sentenceNumber, textID, textMessage);
+  snprintf(nmeaTxt, sizeof(nmeaTxt), "$GNTXT,%02d,%02d,%02d,%s*", totalNumberOfSentences, sentenceNumber, textID, textMessage);
 
   //From: http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html
   byte CRC = 0; // XOR chars between '$' and '*'
   for (byte x = 1 ; x < strlen(nmeaTxt) - 1; x++)
     CRC = CRC ^ nmeaTxt[x];
 
-  sprintf(nmeaMessage, "%s%02X", nmeaTxt, CRC);
+  snprintf(nmeaMessage, sizeof(nmeaMessage), "%s%02X", nmeaTxt, CRC);
 }
 
 //Reset settings struct to default initializers

@@ -344,7 +344,7 @@ void beginLogging(const char *customFileName)
 
         if (strlen(fileName) == 0)
         {
-          sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+          sprintf(fileName, "/%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
                   platformFilePrefix,
                   rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
                   rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
@@ -743,7 +743,7 @@ void updateLogTest()
       //During the first test, create the log file
       reuseLastLog = false;
       char fileName[100];
-      sprintf(fileName, "%s_LogTest_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+      sprintf(fileName, "/%s_LogTest_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
               platformFilePrefix,
               rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
               rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23

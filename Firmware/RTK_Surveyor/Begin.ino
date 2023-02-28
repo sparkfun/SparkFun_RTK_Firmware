@@ -220,6 +220,8 @@ void beginBoard()
   {
     // No powerOnCheck
 
+    settings.enablePrintBatteryMessages = false; // No pesky battery messages
+
     strcpy(platformFilePrefix, "SFE_Reference_Station");
     strcpy(platformPrefix, "Reference Station");
   }
@@ -471,8 +473,8 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
     if (USE_SPI_MICROSD)
       sd->end();
 #ifdef COMPILE_SD_MMC
-    else
-      SD_MMC.end();
+//    else
+//      SD_MMC.end(); // NO!! DO NOT!!
 #endif
     online.microSD = false;
     systemPrintln("microSD: Offline");
@@ -799,6 +801,9 @@ void beginFuelGauge()
 //Begin accelerometer if available
 void beginAccelerometer()
 {
+  if (productVariant == REFERENCE_STATION)
+    return; // Don't display Accel Fail
+    
   if (accel.begin() == false)
   {
     online.accelerometer = false;

@@ -261,7 +261,7 @@ void danceLEDs()
   else
   {
     //Units can boot under 1s. Keep splash screen up for at least 2s.
-    while (millis() - splashStart < 2000) delay(1);
+    while ((millis() - splashStart) < 2000) delay(1);
   }
 }
 
@@ -525,10 +525,10 @@ bool setMessages()
     while (((x % 40) < 39) && (x < MAX_UBX_MSG)); // Limit 1st batch to 39. Batches after that will be (up to) 40 in size.
     
     response &= theGNSS.sendCfgValset();
-    log_d("setMessages: sent Valset for message %d", x);
+    log_d("sent Valset for message %d", x);
   }
 
-  log_d("setMessages: message config complete");
+  log_d("message config complete");
 
   // settings.ubxMessages contains a mix or UBX, NMEA and RTCM messages
   // For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
@@ -559,7 +559,7 @@ bool setMessages()
     theGNSS.setRTCMLoggingMask(logRTCMMessages);
     theGNSS.setNMEALoggingMask(logNMEAMessages);
 
-    log_d("setMessages: logging config complete");
+    log_d("logging config complete");
   }
 
   return (response);
@@ -585,7 +585,7 @@ bool setMessagesUSB()
     while (((x % 40) < 39) && (x < MAX_UBX_MSG)); // Limit 1st batch to 39. Batches after that will be (up to) 40 in size.
     
     response &= theGNSS.sendCfgValset();
-    log_d("setMessagesUSB: sent Valset for message %d", x);
+    log_d("sent Valset for message %d", x);
   }
 
   log_d("setMessagesUSB complete");

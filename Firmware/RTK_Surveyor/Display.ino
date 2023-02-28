@@ -444,7 +444,7 @@ void updateDisplay()
       }
 
       //Top right corner
-      if (icons & ICON_BATTERY)
+      if ((icons & ICON_BATTERY) && (productVariant != REFERENCE_STATION))
         paintBatteryLevel();
 
       //Center left
@@ -477,7 +477,10 @@ void displaySplash()
   if (online.display == true)
   {
     //Display SparkFun Logo for at least 1/10 of a second
-    while ((millis() - splashStart) < 100)
+    unsigned long minSplashFor = 100;
+    if (productVariant == REFERENCE_STATION) // Reference station starts up very quickly. Keep splash on for longer
+      minSplashFor = 1000;
+    while ((millis() - splashStart) < minSplashFor)
       delay(10);
 
     oled.erase();
@@ -511,6 +514,10 @@ void displaySplash()
     else if (productVariant == RTK_FACET_LBAND)
     {
       printTextCenter("Facet LB", yPos, QW_FONT_8X16, 1, false);
+    }
+    else if (productVariant == REFERENCE_STATION)
+    {
+      printTextCenter("Reference", yPos, QW_FONT_8X16, 1, false);
     }
 
     yPos = yPos + fontHeight + 7;

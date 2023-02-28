@@ -335,7 +335,7 @@ void factoryReset()
         sd->remove(stationCoordinateECEFFileName); //Remove station files
         sd->remove(stationCoordinateGeodeticFileName);
 
-#if defined(ENABLE_DEVELOPER) && defined(FACTORY_RESET_ON_POWER_ON) && defined(ERASE_PROFILES_AT_POWER_ON)
+#if defined(ENABLE_DEVELOPER) && defined(FACTORY_RESET_AT_POWER_ON) && defined(ERASE_PROFILES_AT_POWER_ON)
         for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
         {
           char fileName[56];
@@ -346,7 +346,6 @@ void factoryReset()
             sd->remove(fileName);          
           }
         }
-        sd->remove("/profileNumber.txt");
 #endif
       }
 #ifdef COMPILE_SD_MMC
@@ -357,7 +356,7 @@ void factoryReset()
         SD_MMC.remove(stationCoordinateECEFFileName); //Remove station files
         SD_MMC.remove(stationCoordinateGeodeticFileName);
 
-#if defined(ENABLE_DEVELOPER) && defined(FACTORY_RESET_ON_POWER_ON) && defined(ERASE_PROFILES_AT_POWER_ON)
+#if defined(ENABLE_DEVELOPER) && defined(FACTORY_RESET_AT_POWER_ON) && defined(ERASE_PROFILES_AT_POWER_ON)
         for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
         {
           char fileName[56];
@@ -368,7 +367,6 @@ void factoryReset()
             SD_MMC.remove(fileName);
           }
         }
-        SD_MMC.remove("/profileNumber.txt");
 #endif
       }
 #endif

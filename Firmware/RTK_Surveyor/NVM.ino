@@ -446,8 +446,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
         while (settingsFile.available())
         {
           //Get the next line from the file
-          int n = settingsFile.readBytesUntil('\r', line, sizeof(line));
-          n += settingsFile.readBytesUntil('\n', &line[n], sizeof(line) - n);
+          int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD_MMC File library
           if (n <= 0) {
             systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
           }

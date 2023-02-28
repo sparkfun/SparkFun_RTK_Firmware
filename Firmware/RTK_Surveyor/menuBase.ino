@@ -466,8 +466,7 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
         while (file.available())
         {
           //Get the next line from the file
-          int n = file.readBytesUntil('\r', lineData, lineDataLength);
-          n += file.readBytesUntil('\n', &lineData[n], lineDataLength - n);
+          int n = getLine(&file, lineData, lineDataLength); //Use with SD_MMC File library
           if (n <= 0)
           {
             systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);

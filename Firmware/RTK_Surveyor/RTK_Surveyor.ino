@@ -31,9 +31,9 @@
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
 #define COMPILE_SD_MMC // Comment out to remove REFERENCE_STATION microSD SD_MMC support
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
-//#define FACTORY_RESET_ON_POWER_ON //Uncomment this line to perform a factory reset at every power-on. Needs ENABLE_DEVELOPER
-//#define ERASE_PROFILES_AT_POWER_ON //Uncomment this line to erase all profiles at power-on. Needs FACTORY_RESET_ON_POWER_ON
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+//#define FACTORY_RESET_AT_POWER_ON //Uncomment this line to perform a factory reset at every power-on. Needs ENABLE_DEVELOPER
+//#define ERASE_PROFILES_AT_POWER_ON //Uncomment this line to erase _all_ profiles at power-on. Needs FACTORY_RESET_ON_POWER_ON
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -622,7 +622,7 @@ void setup()
   beginSD(); //Test if SD is present
   log_d("beginSD complete");
 
-#if defined(ENABLE_DEVELOPER) && defined(FACTORY_RESET_ON_POWER_ON)
+#if defined(ENABLE_DEVELOPER) && defined(FACTORY_RESET_AT_POWER_ON)
   if (esp_reset_reason() == ESP_RST_POWERON) // Reset now that beginSD has been called and online.microSD will be valid
     factoryReset();
 #endif

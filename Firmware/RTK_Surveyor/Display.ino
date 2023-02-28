@@ -517,7 +517,7 @@ void displaySplash()
     }
     else if (productVariant == REFERENCE_STATION)
     {
-      printTextCenter("Reference", yPos, QW_FONT_8X16, 1, false);
+      printTextCenter("Ref Stn", yPos, QW_FONT_8X16, 1, false);
     }
 
     yPos = yPos + fontHeight + 7;

@@ -178,6 +178,16 @@ public:
       _sdFile->sync();
   };
 
+  int fileSize()
+  {
+    if (USE_SPI_MICROSD)
+      return _sdFile->fileSize();
+#ifdef COMPILE_SD_MMC
+    else
+      return _file->fileSize();
+#endif    
+  };  
+
 protected:
   SdFile * _sdFile;
 #ifdef COMPILE_SD_MMC

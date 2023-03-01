@@ -184,7 +184,7 @@ class FileSdFatMMC : public SdFile
         return _sdFile->fileSize();
 #ifdef COMPILE_SD_MMC
       else
-        return _file->fileSize();
+        return _file->size();
 #endif
     };
 

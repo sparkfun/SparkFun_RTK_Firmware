@@ -547,7 +547,7 @@ bool removeFileSD(const char* fileName)
           removed = true;
         }
       }
-#ifdef COMPPILE_SD_MMC
+#ifdef COMPILE_SD_MMC
       else
       {
         if (SD_MMC.exists(fileName))

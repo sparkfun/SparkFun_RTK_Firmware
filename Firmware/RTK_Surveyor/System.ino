@@ -207,7 +207,9 @@ bool configureUbloxModule()
     log_d("Module config block 3 complete");
 
   if (zedModuleType == PLATFORM_F9R)
+  {
     response &= theGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
+  }
 
   return (response);
 }
@@ -522,10 +524,30 @@ bool setMessages()
     do
     {
       if (settings.ubxMessages[x].supported & zedModuleType)
-        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey - spiOffset, settings.ubxMessages[x].msgRate);
+      {
+        uint8_t rate = settings.ubxMessages[x].msgRate;
+
+        // If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH and ESF_STATUS remained enabled
+        // (but not enabled for logging)
+        if (USE_SPI_GNSS)
+        {
+          if (settings.ubxMessages[x].msgClass == UBX_CLASS_NAV)
+            if ((settings.ubxMessages[x].msgID ==  UBX_NAV_PVT) || (settings.ubxMessages[x].msgID ==  UBX_NAV_HPPOSLLH))
+              rate = 1;
+          if (settings.ubxMessages[x].msgClass == UBX_CLASS_ESF)
+              if (settings.ubxMessages[x].msgID ==  UBX_ESF_STATUS)
+                if (zedModuleType == PLATFORM_F9R)
+                  rate = 1;
+          if (settings.ubxMessages[x].msgClass == UBX_CLASS_TIM)
+            if (settings.ubxMessages[x].msgID ==  UBX_TIM_TM2)
+              rate = 1;
+        }
+        
+        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey - spiOffset, rate);
+      }
       x++;
     }
-    while (((x % 40) < 39) && (x < MAX_UBX_MSG)); // Limit 1st batch to 39. Batches after that will be (up to) 40 in size.
+    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); // Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
     
     response &= theGNSS.sendCfgValset();
     log_d("sent Valset for message %d", x);
@@ -533,8 +555,8 @@ bool setMessages()
 
   log_d("message config complete");
 
-  // settings.ubxMessages contains a mix or UBX, NMEA and RTCM messages
   // For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
+  // to mimic UART1
   if (USE_SPI_GNSS)
   {
     uint32_t logRTCMMessages = 0;
@@ -587,7 +609,7 @@ bool setMessagesUSB()
         response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
       x++;
     }
-    while (((x % 40) < 39) && (x < MAX_UBX_MSG)); // Limit 1st batch to 39. Batches after that will be (up to) 40 in size.
+    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); // Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
     
     response &= theGNSS.sendCfgValset();
     log_d("sent Valset for message %d", x);

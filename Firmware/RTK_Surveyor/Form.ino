@@ -289,7 +289,7 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
         logmessage += " deleted";
         if (USE_SPI_MICROSD)
           sd->remove(fileName);
-#ifdef COMPLIE_SD_MMC
+#ifdef COMPILE_SD_MMC
         else
           SD_MMC.remove(fileName);
 #endif

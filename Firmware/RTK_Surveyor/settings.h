@@ -60,6 +60,7 @@ typedef enum
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
 
+// Macros which show if: the GNSS is I2C or SPI; the microSD is SPI or SDIO
 #define USE_SPI_GNSS    ((productVariant & PRODUCT_HAS_SPI_GNSS) > 0)
 #define USE_I2C_GNSS    (!USE_SPI_GNSS)
 #define USE_MMC_MICROSD ((productVariant & PRODUCT_HAS_MMC_MICROSD) > 0)

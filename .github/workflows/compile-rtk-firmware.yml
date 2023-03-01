@@ -41,7 +41,6 @@ jobs:
           pubsubclient@2.8.0
           ESP32_BleSerial@1.0.4
           "SparkFun u-blox GNSS v3"@3.0.2
-          "SparkFun Qwiic OLED Arduino Library"@1.0.6
           "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
           "SparkFun LIS2DH12 Arduino Library"@1.0.3
           "ESP32-OTA-Pull"@1.0.0
@@ -50,7 +49,8 @@ jobs:
         run: arduino-cli config set library.enable_unsafe_install true
 
       - name: Get Libraries
-        run: arduino-cli lib install --git-url 
+        run: arduino-cli lib install --git-url
+          https://github.com/sparkfun/SparkFun_Qwiic_OLED_Arduino_Library.git
           https://github.com/me-no-dev/ESPAsyncWebServer.git 
           https://github.com/me-no-dev/AsyncTCP.git
           

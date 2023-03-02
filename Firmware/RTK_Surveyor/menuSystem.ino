@@ -885,13 +885,13 @@ void printCurrentConditionsNMEA()
            );
 
     char nmeaMessage[100]; //Max NMEA sentence length is 82
-    createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, systemStatus); //textID, buffer, text
+    createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, sizeof(nmeaMessage), systemStatus); //textID, buffer, sizeOfBuffer, text
     systemPrintln(nmeaMessage);
   }
   else
   {
     char nmeaMessage[100]; //Max NMEA sentence length is 82
-    createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, (char *)"OFFLINE"); //textID, buffer, text
+    createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, sizeof(nmeaMessage), (char *)"OFFLINE"); //textID, buffer, sizeOfBuffer, text
     systemPrintln(nmeaMessage);
   }
 }
@@ -989,10 +989,10 @@ void printFileList()
               struct tm *timeinfo = localtime(&lastWrite);
     
               char fileDateChar[20];
-              snprintf(fileDateChar, 20, "%d-%02d-%02d",
-                      timeinfo->tm_year + 1900, //Year - ESP32 2.0.2 starts the year at 1900...
-                      timeinfo->tm_mon + 1, //Month
-                      timeinfo->tm_mday //Day
+              snprintf(fileDateChar, 20, "%.0f-%02.0f-%02.0f",
+                      (float)timeinfo->tm_year + 1900, //Year - ESP32 2.0.2 starts the year at 1900...
+                      (float)timeinfo->tm_mon + 1, //Month
+                      (float)timeinfo->tm_mday //Day
                      );
     
               char fileSizeChar[20];

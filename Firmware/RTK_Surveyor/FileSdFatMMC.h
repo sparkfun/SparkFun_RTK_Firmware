@@ -166,6 +166,16 @@ public:
 #endif
   };
 
+  void flush()
+  {
+    if (USE_SPI_MICROSD)
+      _sdFile->flush();
+#ifdef COMPILE_SD_MMC
+    else
+      _file->flush();
+#endif
+  };
+
   void updateFileAccessTimestamp()
   {
     if (USE_SPI_MICROSD)

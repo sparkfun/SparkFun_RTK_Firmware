@@ -374,7 +374,6 @@ void beginLogging(const char *customFileName)
 
         fileSize = 0;
         lastLogSize = 0; //Reset counter - used for displaying active logging icon
-        lastLogPosition = 0;
 
         bufferOverruns = 0; //Reset counter
 
@@ -404,7 +403,7 @@ void beginLogging(const char *customFileName)
 
         //Mark top of log with system information
         char nmeaMessage[82]; //Max NMEA sentence length is 82
-        createNMEASentence(CUSTOM_NMEA_TYPE_RESET_REASON, nmeaMessage, rstReason); //textID, buffer, text
+        createNMEASentence(CUSTOM_NMEA_TYPE_RESET_REASON, nmeaMessage, sizeof(nmeaMessage), rstReason); //textID, buffer, sizeOfBuffer, text
         ubxFile->println(nmeaMessage);
 
         //Record system firmware versions and info to log
@@ -412,17 +411,17 @@ void beginLogging(const char *customFileName)
         //SparkFun RTK Express v1.10-Feb 11 2022
         char firmwareVersion[30]; //v1.3 December 31 2021
         snprintf(firmwareVersion, sizeof(firmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
-        createNMEASentence(CUSTOM_NMEA_TYPE_SYSTEM_VERSION, nmeaMessage, firmwareVersion); //textID, buffer, text
+        createNMEASentence(CUSTOM_NMEA_TYPE_SYSTEM_VERSION, nmeaMessage, sizeof(nmeaMessage), firmwareVersion); //textID, buffer, sizeOfBuffer, text
         ubxFile->println(nmeaMessage);
 
         //ZED-F9P firmware: HPG 1.30
-        createNMEASentence(CUSTOM_NMEA_TYPE_ZED_VERSION, nmeaMessage, zedFirmwareVersion); //textID, buffer, text
+        createNMEASentence(CUSTOM_NMEA_TYPE_ZED_VERSION, nmeaMessage, sizeof(nmeaMessage), zedFirmwareVersion); //textID, buffer, sizeOfBuffer, text
         ubxFile->println(nmeaMessage);
 
         //Device BT MAC. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/346
         char macAddress[5];
         snprintf(macAddress, sizeof(macAddress), "%02X%02X", btMACAddress[4], btMACAddress[5]);
-        createNMEASentence(CUSTOM_NMEA_TYPE_DEVICE_BT_ID, nmeaMessage, macAddress); //textID, buffer, text
+        createNMEASentence(CUSTOM_NMEA_TYPE_DEVICE_BT_ID, nmeaMessage, sizeof(nmeaMessage), macAddress); //textID, buffer, sizeOfBuffer, text
         ubxFile->println(nmeaMessage);
 
         if (reuseLastLog == true)
@@ -467,7 +466,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
               failedParserMessages_UBX);
 
       char nmeaMessage[82]; //Max NMEA sentence length is 82
-      createNMEASentence(CUSTOM_NMEA_TYPE_PARSER_STATS, nmeaMessage, parserStats); //textID, buffer, text
+      createNMEASentence(CUSTOM_NMEA_TYPE_PARSER_STATS, nmeaMessage, sizeof(nmeaMessage), parserStats); //textID, buffer, sizeOfBuffer, text
       ubxFile->println(nmeaMessage);
       ubxFile->sync();
 
@@ -842,7 +841,7 @@ void updateLogTest()
     snprintf(logMessage, sizeof(logMessage), "Start log test: %dHz, %dMsg, %dMS", rate, messages, semaphoreWait);
 
     char nmeaMessage[100]; //Max NMEA sentence length is 82
-    createNMEASentence(CUSTOM_NMEA_TYPE_LOGTEST_STATUS, nmeaMessage, logMessage); //textID, buffer, text
+    createNMEASentence(CUSTOM_NMEA_TYPE_LOGTEST_STATUS, nmeaMessage, sizeof(nmeaMessage), logMessage); //textID, buffer, sizeOfBuffer, text
 
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {

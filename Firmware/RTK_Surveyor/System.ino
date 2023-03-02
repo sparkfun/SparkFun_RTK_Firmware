@@ -489,7 +489,7 @@ void setMuxport(int channelNumber)
 //Create $GNTXT, type message complete with CRC
 //https://www.nmea.org/Assets/20160520%20txt%20amendment.pdf
 //Used for recording system events (boot reason, event triggers, etc) inside the log
-void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, char *textMessage)
+void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, size_t sizeOfNmeaMessage, char *textMessage)
 {
   //Currently we don't have messages longer than 82 char max so we hardcode the sentence numbers
   const uint8_t totalNumberOfSentences = 1;
@@ -503,7 +503,7 @@ void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, char *textMe
   for (byte x = 1 ; x < strlen(nmeaTxt) - 1; x++)
     CRC = CRC ^ nmeaTxt[x];
 
-  snprintf(nmeaMessage, sizeof(nmeaMessage), "%s%02X", nmeaTxt, CRC);
+  snprintf(nmeaMessage, sizeOfNmeaMessage, "%s%02X", nmeaTxt, CRC);
 }
 
 //Reset settings struct to default initializers

@@ -77,6 +77,7 @@ void initializePowerPins()
     pin_zed_tx_ready = 34;
     pin_microSD_CardDetect = 36;
     pin_Ethernet_Interrupt = 33;
+    pin_setupButton = 0;
 
     pin_radio_rx = 17; // Radio RX In = ESP TX Out
     pin_radio_tx = 16; // Radio TX Out = ESP RX In
@@ -894,6 +895,8 @@ void beginSystemState()
     firstRoverStart = true; //Allow user to enter test screen during first rover start
     if (systemState == STATE_BASE_NOT_STARTED)
       firstRoverStart = false;
+
+    setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
 
   //Starts task for monitoring button presses

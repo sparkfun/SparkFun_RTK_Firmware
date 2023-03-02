@@ -408,21 +408,22 @@ void handleGNSSDataTask(void *e)
           long startTime = millis();
 
           sdBytesToRecord = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+          if (USE_MMC_MICROSD)
+            ubxFile->flush();
           fileSize = ubxFile->fileSize(); //Update file size
-          filePosition = ubxFile->position(); //Update file position
           
           sdFreeSpace -= sliceToRecord; //Update remaining space on SD
 
           //Force file sync every 60s
           if (millis() - lastUBXLogSyncTime > 60000)
           {
-            if (productVariant == RTK_SURVEYOR)
+            if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
             ubxFile->sync();
             ubxFile->updateFileAccessTimestamp(); // Update the file access time & date
 
-            if (productVariant == RTK_SURVEYOR)
+            if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
 
             lastUBXLogSyncTime = millis();

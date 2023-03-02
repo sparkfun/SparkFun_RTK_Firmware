@@ -374,7 +374,7 @@ void updateFromSD(const char *firmwareFileName)
   //Bulk write from the SD file to flash
   while (firmwareFile.available())
   {
-    if (productVariant == RTK_SURVEYOR)
+    if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
       digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Toggle LED to indcate activity
 
     int bytesToWrite = pageSize; //Max number of bytes to read

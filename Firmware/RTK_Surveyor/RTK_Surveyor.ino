@@ -60,39 +60,39 @@
 //Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //These pins are set in beginBoard()
-int pin_batteryLevelLED_Red;
-int pin_batteryLevelLED_Green;
-int pin_positionAccuracyLED_1cm;
-int pin_positionAccuracyLED_10cm;
-int pin_positionAccuracyLED_100cm;
-int pin_baseStatusLED;
-int pin_bluetoothStatusLED;
-int pin_microSD_CS;
-int pin_zed_tx_ready;
-int pin_zed_reset;
-int pin_batteryLevel_alert;
+int pin_batteryLevelLED_Red = -1;
+int pin_batteryLevelLED_Green = -1;
+int pin_positionAccuracyLED_1cm = -1;
+int pin_positionAccuracyLED_10cm = -1;
+int pin_positionAccuracyLED_100cm = -1;
+int pin_baseStatusLED = -1;
+int pin_bluetoothStatusLED = -1;
+int pin_microSD_CS = -1;
+int pin_zed_tx_ready = -1;
+int pin_zed_reset = -1;
+int pin_batteryLevel_alert = -1;
 
-int pin_muxA;
-int pin_muxB;
-int pin_powerSenseAndControl;
-int pin_setupButton;
-int pin_powerFastOff;
-int pin_dac26;
-int pin_adc39;
-int pin_peripheralPowerControl;
+int pin_muxA = -1;
+int pin_muxB = -1;
+int pin_powerSenseAndControl = -1;
+int pin_setupButton = -1;
+int pin_powerFastOff = -1;
+int pin_dac26 = -1;
+int pin_adc39 = -1;
+int pin_peripheralPowerControl = -1;
 
-int pin_radio_rx;
-int pin_radio_tx;
-int pin_radio_rst;
-int pin_radio_pwr;
-int pin_radio_cts;
-int pin_radio_rts;
+int pin_radio_rx = -1;
+int pin_radio_tx = -1;
+int pin_radio_rst = -1;
+int pin_radio_pwr = -1;
+int pin_radio_cts = -1;
+int pin_radio_rts = -1;
 
-int pin_Ethernet_CS;
-int pin_Ethernet_Interrupt;
-int pin_GNSS_CS;
-int pin_GNSS_TimePulse;
-int pin_microSD_CardDetect;
+int pin_Ethernet_CS = -1;
+int pin_Ethernet_Interrupt = -1;
+int pin_GNSS_CS = -1;
+int pin_GNSS_TimePulse = -1;
+int pin_microSD_CardDetect = -1;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
@@ -308,7 +308,6 @@ volatile bool uart2pinned = false; //This variable is touched by core 0 but chec
 
 volatile static int combinedSpaceRemaining = 0; //Overrun indicator
 volatile static long fileSize = 0; //Updated with each write
-volatile static long filePosition = 0; //Updated with each write
 int bufferOverruns = 0; //Running count of possible data losses since power-on
 
 bool zedUartPassed = false; //Goes true during testing if ESP can communicate with ZED over UART
@@ -454,7 +453,6 @@ uint8_t loggingIconDisplayed = 0; //Increases every 500ms while logging
 uint8_t espnowIconDisplayed = 0; //Increases every 500ms while transmitting
 
 uint64_t lastLogSize = 0;
-uint64_t lastLogPosition = 0;
 bool logIncreasing = false; //Goes true when log file is greater than lastLogSize or logPosition changes
 bool reuseLastLog = false; //Goes true if we have a reset due to software (rather than POR)
 
@@ -792,7 +790,7 @@ void updateLogs()
       snprintf(eventData, sizeof(eventData), "%d,%d,%d,%d", triggerCount, triggerTowMsR, triggerTowSubMsR, triggerAccEst);
 
       char nmeaMessage[82]; //Max NMEA sentence length is 82
-      createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, eventData); //textID, buffer, text
+      createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, sizeof(nmeaMessage), eventData); //textID, buffer, sizeOfBuffer, text
 
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
@@ -844,11 +842,6 @@ void updateLogs()
           lastLogSize = fileSize;
           logIncreasing = true;
         }
-        else if (filePosition != lastLogPosition)
-        {
-          lastLogPosition = filePosition;
-          logIncreasing = true;
-        }        
         else
         {
           log_d("No increase in file size");

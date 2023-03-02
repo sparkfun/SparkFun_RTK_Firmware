@@ -232,6 +232,33 @@ uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported an
 
 SFE_UBLOX_GNSS_SUPER theGNSS;
 
+//// Use Michael's lock/unlock methods to prevent the UART2 task from calling checkUblox during a sendCommand and waitForResponse.
+//// Also prevents pushRawData from being called too.
+//class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
+//{
+//public:
+//  volatile bool _iAmLocked = false;
+//  bool lock(void)
+//  {
+//    if (_iAmLocked)
+//    {
+//      unsigned long startTime = millis();
+//      while (_iAmLocked && (millis() < (startTime + 2200)))
+//        delay(1); // YIELD
+//      if (_iAmLocked)
+//        return false;
+//    }
+//    _iAmLocked = true;
+//    return true;
+//  }
+//  void unlock(void)
+//  {
+//    _iAmLocked = false;  
+//  }
+//};
+//
+//SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
+
 //These globals are updated regularly via the storePVTdata callback
 bool pvtUpdated = false;
 double latitude;

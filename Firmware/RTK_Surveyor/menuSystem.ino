@@ -990,8 +990,8 @@ void printFileList()
     
               char fileDateChar[20];
               snprintf(fileDateChar, 20, "%d-%02d-%02d",
-                      timeinfo->tm_year, //Year
-                      timeinfo->tm_mon, //Month
+                      timeinfo->tm_year + 1900, //Year - ESP32 2.0.2 starts the year at 1900...
+                      timeinfo->tm_mon + 1, //Month
                       timeinfo->tm_mday //Day
                      );
     

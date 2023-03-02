@@ -598,6 +598,8 @@ void beginGNSS()
   if (USE_SPI_GNSS)
   {
     SPI.begin(); // Begin SPI here - beginSD has not yet been called
+
+    theGNSS._enableCheckUbloxLock = true; // Enable simple checkUblox locking
     
     // setFileBufferSize must be called _before_ .begin
     // Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting

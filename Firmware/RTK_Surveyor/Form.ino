@@ -229,6 +229,17 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
 
         if (managerFileOpen == false)
         {
+          //Allocate the managerTempFile
+          if (!managerTempFile)
+          {
+            managerTempFile = new FileSdFatMMC;
+            if (!managerTempFile)
+            {
+              systemPrintln("Failed to allocate managerTempFile!");
+              break;
+            }
+          }
+
           if (managerTempFile->open(fileName, O_READ) == true)
             managerFileOpen = true;
           else
@@ -1341,6 +1352,17 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
 
     char tempFileName[50];
     filename.toCharArray(tempFileName, sizeof(tempFileName));
+
+    //Allocate the managerTempFile
+    if (!managerTempFile)
+    {
+      managerTempFile = new FileSdFatMMC;
+      if (!managerTempFile)
+      {
+        systemPrintln("Failed to allocate managerTempFile!");
+        break;
+      }
+    }
 
     //Attempt to gain access to the SD card
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)

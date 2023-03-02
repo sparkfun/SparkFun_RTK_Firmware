@@ -408,29 +408,7 @@ void beginSD()
     //Mark card not yet usable for logging
     sdCardSize = 0;
     outOfSDSpace = true;
-
-    //Allocate the ubxFile
-    if (!ubxFile)
-    {
-      ubxFile = new FileSdFatMMC;
-      if (!ubxFile)
-      {
-        systemPrintln("Failed to allocate ubxFile!");
-        break;
-      }
-    }
-
-    //Allocate the managerTempFile
-    if (!managerTempFile)
-    {
-      managerTempFile = new FileSdFatMMC;
-      if (!managerTempFile)
-      {
-        systemPrintln("Failed to allocate managerTempFile!");
-        break;
-      }
-    }
-    
+   
     systemPrintln("microSD: Online");
     online.microSD = true;
     break;

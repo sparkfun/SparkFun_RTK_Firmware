@@ -366,6 +366,17 @@ void beginLogging(const char *customFileName)
         strcpy(logFileName, customFileName);
       }
 
+      //Allocate the ubxFile
+      if (!ubxFile)
+      {
+        ubxFile = new FileSdFatMMC;
+        if (!ubxFile)
+        {
+          systemPrintln("Failed to allocate ubxFile!");
+          return;
+        }
+      }
+
       //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {

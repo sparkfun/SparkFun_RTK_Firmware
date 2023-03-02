@@ -2218,45 +2218,106 @@ void paintDisplaySetup()
   {
     if (setupState == STATE_MARK_EVENT)
     {
-      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
-      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
+      if (online.accelerometer)
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      }
     }
     else if (setupState == STATE_ROVER_NOT_STARTED)
     {
-      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
-      printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
+      if (online.accelerometer)
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      }
     }
     else if (setupState == STATE_BASE_NOT_STARTED)
     {
-      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
-      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, true);
-      printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
+      if (online.accelerometer)
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, true);
+        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, true);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      }
     }
     else if (setupState == STATE_BUBBLE_LEVEL)
     {
-      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
-      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, true);
+      if (online.accelerometer)
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else
+      {
+        //We should never get here, but just in case
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
+      }
     }
     else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
     {
-      printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
+      if (online.accelerometer)
+      {
+        printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
+      }
     }
     else if (setupState == STATE_ESPNOW_PAIRING_NOT_STARTED)
     {
-      printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-      printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
+      if (online.accelerometer)
+      {
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else
+      {
+        printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
+      }
     }
     else if (setupState == STATE_PROFILE)
       paintDisplaySetupProfile("Base");
@@ -2265,38 +2326,89 @@ void paintDisplaySetup()
   {
     if (setupState == STATE_MARK_EVENT)
     {
-      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
-      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      if (online.accelerometer)
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, false);
+      }
     }
     else if (setupState == STATE_ROVER_NOT_STARTED)
     {
-      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
-      printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      if (online.accelerometer)
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
+        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, false);
+      }
     }
     else if (setupState == STATE_BUBBLE_LEVEL)
     {
-      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, true);
-      printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      if (online.accelerometer)
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, true);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else
+      {
+        //We should never get here, but just in case
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, true);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, false);
+      }
     }
     else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
     {
-      printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
+      if (online.accelerometer)
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, true);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, false);
+      }
     }
     else if (setupState == STATE_ESPNOW_PAIRING_NOT_STARTED)
     {
-      printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
-      printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-      printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
+      if (online.accelerometer)
+      {
+        printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else
+      {
+        printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
+      }
     }
     else if (setupState == STATE_PROFILE)
       paintDisplaySetupProfile("Rover");

@@ -359,7 +359,7 @@ void handleGNSSDataTask(void *e)
 
           sdBytesToRecord = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
           fileSize = ubxFile->fileSize(); //Update file size
-          
+
           sdFreeSpace -= sliceToRecord; //Update remaining space on SD
 
           //Force file sync every 60s
@@ -637,12 +637,22 @@ void ButtonCheckTask(void *e)
               case STATE_ROVER_NOT_STARTED:
                 //If F9R, skip base state
                 if (zedModuleType == PLATFORM_F9R)
-                  setupState = STATE_BUBBLE_LEVEL;
+                {
+                  //If accel offline, skip bubble
+                  if (online.accelerometer == true)
+                    setupState = STATE_BUBBLE_LEVEL;
+                  else
+                    setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                }
                 else
                   setupState = STATE_BASE_NOT_STARTED;
                 break;
               case STATE_BASE_NOT_STARTED:
-                setupState = STATE_BUBBLE_LEVEL;
+                //If accel offline, skip bubble
+                if (online.accelerometer == true)
+                  setupState = STATE_BUBBLE_LEVEL;
+                else
+                  setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_BUBBLE_LEVEL:
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
@@ -759,12 +769,22 @@ void ButtonCheckTask(void *e)
               case STATE_ROVER_NOT_STARTED:
                 //If F9R, skip base state
                 if (zedModuleType == PLATFORM_F9R)
-                  setupState = STATE_BUBBLE_LEVEL;
+                {
+                  //If accel offline, skip bubble
+                  if (online.accelerometer == true)
+                    setupState = STATE_BUBBLE_LEVEL;
+                  else
+                    setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                }
                 else
                   setupState = STATE_BASE_NOT_STARTED;
                 break;
               case STATE_BASE_NOT_STARTED:
-                setupState = STATE_BUBBLE_LEVEL;
+                //If accel offline, skip bubble
+                if (online.accelerometer == true)
+                  setupState = STATE_BUBBLE_LEVEL;
+                else
+                  setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_BUBBLE_LEVEL:
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
@@ -944,9 +964,9 @@ void sdSizeCheckTask(void *e)
         //uint64_t sdUsedSpace = sdCardSize - sdFreeSpace; //Don't think of it as used, think of it as unusable
 
         systemPrintf("SD card size: %s / Free space: %s\r\n",
-                 stringHumanReadableSize(sdCardSize),
-                 stringHumanReadableSize(sdFreeSpace)
-                );
+                     stringHumanReadableSize(sdCardSize),
+                     stringHumanReadableSize(sdFreeSpace)
+                    );
 
         outOfSDSpace = false;
 

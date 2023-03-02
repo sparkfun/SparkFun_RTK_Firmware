@@ -25,9 +25,8 @@ void menuSystem()
     if (online.display == true) systemPrintln("Online");
     else systemPrintln("Offline");
 
-    systemPrint("Accelerometer: ");
-    if (online.display == true) systemPrintln("Online");
-    else systemPrintln("Offline");
+    if (online.accelerometer == true)
+      systemPrint("Accelerometer: Online");
 
     systemPrint("Fuel Gauge: ");
     if (online.battery == true)
@@ -912,24 +911,24 @@ void printFileList()
         SdFile dir;
         dir.open("/"); //Open root
         uint16_t fileCount = 0;
-  
+
         SdFile tempFile;
-  
+
         systemPrintln("Files found:");
-  
+
         while (tempFile.openNext(&dir, O_READ))
         {
           if (tempFile.isFile())
           {
             fileCount++;
-  
+
             //2017-05-19 187362648 800_0291.MOV
-  
+
             //Get File Date from sdFat
             uint16_t fileDate;
             uint16_t fileTime;
             tempFile.getCreateDateTime(&fileDate, &fileTime);
-  
+
             //Convert sdFat file date fromat into YYYY-MM-DD
             char fileDateChar[20];
             sprintf(fileDateChar, "%d-%02d-%02d",
@@ -937,23 +936,23 @@ void printFileList()
                     ((fileDate >> 5) & 0b1111), //Month
                     (fileDate & 0b11111) //Day
                    );
-  
+
             char fileSizeChar[20];
             stringHumanReadableSize(tempFile.fileSize()).toCharArray(fileSizeChar, sizeof(fileSizeChar));
-  
+
             char fileName[50]; //Handle long file names
             tempFile.getName(fileName, sizeof(fileName));
-  
+
             char fileRecord[100];
             sprintf(fileRecord, "%s\t%s\t%s", fileDateChar, fileSizeChar, fileName);
-  
+
             systemPrintln(fileRecord);
           }
         }
-  
+
         dir.close();
         tempFile.close();
-  
+
         if (fileCount == 0)
           systemPrintln("No files found");
       }
@@ -966,47 +965,47 @@ void printFileList()
         if (dir && dir.isDirectory())
         {
           systemPrintln("Files found:");
-    
-          File tempFile = dir.openNextFile();    
+
+          File tempFile = dir.openNextFile();
           while (tempFile)
           {
             if (!tempFile.isDirectory())
             {
               fileCount++;
-    
+
               //2017-05-19 187362648 800_0291.MOV
-    
+
               //Get time of last write
               time_t lastWrite = tempFile.getLastWrite();
 
               struct tm *timeinfo = localtime(&lastWrite);
-    
+
               char fileDateChar[20];
               snprintf(fileDateChar, 20, "%d-%02d-%02d",
-                      timeinfo->tm_year, //Year
-                      timeinfo->tm_mon, //Month
-                      timeinfo->tm_mday //Day
-                     );
-    
+                       timeinfo->tm_year, //Year
+                       timeinfo->tm_mon, //Month
+                       timeinfo->tm_mday //Day
+                      );
+
               char fileSizeChar[20];
               stringHumanReadableSize(tempFile.size()).toCharArray(fileSizeChar, sizeof(fileSizeChar));
-    
+
               char fileName[50]; //Handle long file names
               snprintf(fileName, 50, "%s", tempFile.name());
-    
+
               char fileRecord[100];
               sprintf(fileRecord, "%s\t%s\t%s", fileDateChar, fileSizeChar, fileName);
-    
+
               systemPrintln(fileRecord);
             }
-            
+
             tempFile.close();
             tempFile = dir.openNextFile();
           }
         }
-    
+
         dir.close();
-  
+
         if (fileCount == 0)
           systemPrintln("No files found");
       }

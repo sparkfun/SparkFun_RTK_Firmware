@@ -512,6 +512,9 @@ uint16_t failedParserMessages_NMEA = 0;
 unsigned long btLastByteReceived = 0; //Track when last BT transmission was received.
 const long btMinEscapeTime = 2000; //Bluetooth serial traffic must stop this amount before an escape char is recognized
 uint8_t btEscapeCharsReceived = 0; //Used to enter command mode
+
+bool externalPowerConnected = false; //Goes true when a high voltage is seen on power control pin
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
                      +---------------------------------------+      +----------+

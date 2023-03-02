@@ -128,6 +128,7 @@ function parseIncoming(msg) {
             || id.includes("profile7Name")
             || id.includes("radioMAC")
             || id.includes("deviceBTID")
+            || id.includes("logFileName")
         ) {
             ge(id).innerHTML = val;
         }

@@ -631,6 +631,8 @@ void createSettingsString(char* newSettings)
   }
   stringRecord(newSettings, "espnowBroadcast", settings.espnowBroadcast);
 
+  stringRecord(newSettings, "logFileName", logFileName);
+
   //Add ECEF and Geodetic station data
   for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
   {
@@ -990,7 +992,16 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "startNewLog") == 0)
   {
     if (settings.enableLogging == true && online.logging == true)
-      endSD(false, true); //Close down file. A new one will be created at the next calling of updateLogs().
+    {
+      endLogging(false, true); //(gotSemaphore, releaseSemaphore) Close file. Reset parser stats.
+      beginLogging(); //Create new file based on current RTC.
+      setLoggingType(); //Determine if we are standard, PPP, or custom. Changes logging icon accordingly.
+
+      char newFileNameCSV[sizeof("logFileName,") + sizeof(logFileName) + 1];
+      sprintf(newFileNameCSV, "logFileName,%s,", logFileName);
+
+      websocket->textAll(newFileNameCSV); //Tell the config page the name of the file we just created
+    }
   }
   else if (strcmp(settingName, "checkNewFirmware") == 0)
   {

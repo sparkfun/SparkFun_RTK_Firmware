@@ -938,7 +938,7 @@ void ButtonCheckTask(void *e)
                   setupState = STATE_BASE_NOT_STARTED;
                 break;
               case STATE_BASE_NOT_STARTED:
-                setupState = STATE_WIFI_CONFIG_NOT_STARTED:
+                setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
                 setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;

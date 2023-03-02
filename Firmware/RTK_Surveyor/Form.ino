@@ -138,9 +138,9 @@ void startWebServer()
     request->send(200, "text/plain", getFileList());
   });
 
-  //Handler for the filemanager
+  //Handler for file manager
   webserver->on("/file", HTTP_GET, [](AsyncWebServerRequest * request) {
-    handleFirmwareFileDownload(request);
+    handleFileManager(request);
   });
 
   webserver->begin();
@@ -202,7 +202,7 @@ void notFound(AsyncWebServerRequest *request) {
 //Handler for firmware file downloads
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
-static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
+static void handleFileManager(AsyncWebServerRequest *request)
 {
   //This section does not tolerate semaphore transactions
   String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();

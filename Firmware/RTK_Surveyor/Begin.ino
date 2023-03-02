@@ -550,7 +550,14 @@ void beginUART2()
 //Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
 void pinUART2Task( void *pvParameters )
 {
-  if (USE_I2C_GNSS)
+//Note: ESP32 2.0.6 does some strange auto-bauding thing here which takes 20s to complete if there is no data for it to auto-baud.
+//      That's fine for most RTK products, but causes the Ref Stn to stall for 20s. However, it doesn't stall with ESP32 2.0.2...
+//      Note to my future self: uncomment these lines to prevent the stall if/when we upgrade to ESP32 ~2.0.6.
+//#if defined(ENABLE_DEVELOPER) && defined(REF_STN_GNSS_DEBUG)
+//  if (productVariant == REFERENCE_STATION)
+//#else
+//  if (USE_I2C_GNSS)
+//#endif
   {
     serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize); // TODO: work out if we can reduce or skip this when using SPI GNSS
     serialGNSS.setTimeout(settings.serialTimeoutGNSS); // Requires serial traffic on the UART pins for detection

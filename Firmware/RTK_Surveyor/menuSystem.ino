@@ -606,7 +606,14 @@ void menuDebug()
       settings.enableI2Cdebug ^= 1;
 
       if (settings.enableI2Cdebug)
+      {
+#if defined(ENABLE_DEVELOPER) && defined(REF_STN_GNSS_DEBUG)
+        if (productVariant == REFERENCE_STATION)
+          theGNSS.enableDebugging(serialGNSS); //Output all debug messages over serialGNSS
+        else
+#endif
         theGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
+      }
       else
         theGNSS.disableDebugging();
     }

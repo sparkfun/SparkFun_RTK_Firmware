@@ -409,6 +409,7 @@ void handleGNSSDataTask(void *e)
 
           sdBytesToRecord = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
           fileSize = ubxFile->fileSize(); //Update file size
+          filePosition = ubxFile->position(); //Update file position
           
           sdFreeSpace -= sliceToRecord; //Update remaining space on SD
 

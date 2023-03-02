@@ -374,6 +374,7 @@ void beginLogging(const char *customFileName)
 
         fileSize = 0;
         lastLogSize = 0; //Reset counter - used for displaying active logging icon
+        lastLogPosition = 0;
 
         bufferOverruns = 0; //Reset counter
 

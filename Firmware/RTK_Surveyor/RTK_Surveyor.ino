@@ -34,6 +34,7 @@
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 //#define FACTORY_RESET_AT_POWER_ON //Uncomment this line to perform a factory reset at every power-on. Needs ENABLE_DEVELOPER
 //#define ERASE_PROFILES_AT_POWER_ON //Uncomment this line to erase _all_ profiles at power-on. Needs FACTORY_RESET_ON_POWER_ON
+#define REF_STN_GNSS_DEBUG //Uncomment this line to output GNSS library debug messages on serialGNSS. Ref STn only. Needs ENABLE_DEVELOPER
 
 //Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -307,6 +308,7 @@ volatile bool uart2pinned = false; //This variable is touched by core 0 but chec
 
 volatile static int combinedSpaceRemaining = 0; //Overrun indicator
 volatile static long fileSize = 0; //Updated with each write
+volatile static long filePosition = 0; //Updated with each write
 int bufferOverruns = 0; //Running count of possible data losses since power-on
 
 bool zedUartPassed = false; //Goes true during testing if ESP can communicate with ZED over UART
@@ -452,7 +454,8 @@ uint8_t loggingIconDisplayed = 0; //Increases every 500ms while logging
 uint8_t espnowIconDisplayed = 0; //Increases every 500ms while transmitting
 
 uint64_t lastLogSize = 0;
-bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
+uint64_t lastLogPosition = 0;
+bool logIncreasing = false; //Goes true when log file is greater than lastLogSize or logPosition changes
 bool reuseLastLog = false; //Goes true if we have a reset due to software (rather than POR)
 
 uint16_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM()
@@ -841,6 +844,11 @@ void updateLogs()
           lastLogSize = fileSize;
           logIncreasing = true;
         }
+        else if (filePosition != lastLogPosition)
+        {
+          lastLogPosition = filePosition;
+          logIncreasing = true;
+        }        
         else
         {
           log_d("No increase in file size");

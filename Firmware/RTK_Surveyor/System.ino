@@ -9,7 +9,14 @@ bool configureUbloxModule()
 
   //Turn on/off debug messages
   if (settings.enableI2Cdebug)
+  {
+#if defined(ENABLE_DEVELOPER) && defined(REF_STN_GNSS_DEBUG)
+    if (productVariant == REFERENCE_STATION)
+      theGNSS.enableDebugging(serialGNSS); //Output all debug messages over serialGNSS
+    else
+#endif
     theGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
+  }
   else
     theGNSS.disableDebugging();
 
@@ -512,9 +519,9 @@ bool setMessages()
 {
   bool response = true;
   
-  uint32_t spiOffset = 0; // Set to 1 if using SPI to convert UART1 keys to SPI
+  uint32_t spiOffset = 0; // Set to 3 if using SPI to convert UART1 keys to SPI. This is brittle and non-perfect, but works.
   if (USE_SPI_GNSS)
-    spiOffset = 1;
+    spiOffset = 3;
 
   int x = 0;
   while (x < MAX_UBX_MSG)
@@ -543,14 +550,14 @@ bool setMessages()
               rate = 1;
         }
         
-        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey - spiOffset, rate);
+        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + spiOffset, rate);
       }
       x++;
     }
     while (((x % 43) < 42) && (x < MAX_UBX_MSG)); // Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
     
     response &= theGNSS.sendCfgValset();
-    log_d("sent Valset for message %d", x);
+    log_d("sent Valset for message %d: %s", x, response ? "OK" : "ERROR");
   }
 
   log_d("message config complete");

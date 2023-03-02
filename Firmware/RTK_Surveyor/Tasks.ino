@@ -933,15 +933,12 @@ void ButtonCheckTask(void *e)
               case STATE_ROVER_NOT_STARTED:
                 //If F9R, skip base state
                 if (zedModuleType == PLATFORM_F9R)
-                  setupState = STATE_BUBBLE_LEVEL;
+                  setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 else
                   setupState = STATE_BASE_NOT_STARTED;
                 break;
               case STATE_BASE_NOT_STARTED:
-                setupState = STATE_BUBBLE_LEVEL;
-                break;
-              case STATE_BUBBLE_LEVEL:
-                setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                setupState = STATE_WIFI_CONFIG_NOT_STARTED:
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
                 setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;

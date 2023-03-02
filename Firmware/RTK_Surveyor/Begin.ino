@@ -755,9 +755,6 @@ void beginAccelerometer()
   if (accel.begin() == false)
   {
     online.accelerometer = false;
-
-    displayAccelFail(1000);
-
     return;
   }
 

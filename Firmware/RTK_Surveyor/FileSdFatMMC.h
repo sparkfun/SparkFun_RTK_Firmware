@@ -2,7 +2,7 @@
 
 #ifdef COMPILE_SD_MMC
 
-//#include "FS.h"
+// #include "FS.h"
 #include "SD_MMC.h" // Also includes FS.h
 
 class FileSdFatMMC : public SdFile, public File
@@ -15,7 +15,6 @@ class FileSdFatMMC : public SdFile
 
 {
 public:
-
   FileSdFatMMC()
   {
     if (USE_SPI_MICROSD)
@@ -25,21 +24,21 @@ public:
       _file = new File;
 #endif
   };
-  
+
   ~FileSdFatMMC()
   {
     if (USE_SPI_MICROSD)
     {
       ;
-      //if (_sdFile) // operator bool
-      //  delete _sdFile;
+      // if (_sdFile) // operator bool
+      //   delete _sdFile;
     }
 #ifdef COMPILE_SD_MMC
     else
     {
       ;
-      //if (_file) // operator bool
-      //  delete _file;
+      // if (_file) // operator bool
+      //   delete _file;
     }
 #endif
   };
@@ -87,7 +86,7 @@ public:
         return true;
       return false;
     }
-#endif    
+#endif
     return false; // Keep the compiler happy
   };
 
@@ -97,8 +96,19 @@ public:
       return _sdFile->size();
 #ifdef COMPILE_SD_MMC
     else
-      return _file->size();
-#endif    
+      return (uint32_t)_file->size();
+#endif
+    return 0; // Keep the compiler happy
+  };
+
+  uint32_t fileSize()
+  {
+    if (USE_SPI_MICROSD)
+      return _sdFile->fileSize();
+#ifdef COMPILE_SD_MMC
+    else
+      return (uint32_t)_file->size();
+#endif
     return 0; // Keep the compiler happy
   };
 
@@ -108,8 +118,8 @@ public:
       return _sdFile->position();
 #ifdef COMPILE_SD_MMC
     else
-      return _file->position();
-#endif    
+      return (uint32_t)_file->position();
+#endif
     return 0; // Keep the compiler happy
   };
 
@@ -120,9 +130,9 @@ public:
 #ifdef COMPILE_SD_MMC
     else
       return _file->available();
-#endif    
+#endif
     return 0; // Keep the compiler happy
-};
+  };
 
   int read(uint8_t *buf, uint16_t nbyte)
   {
@@ -130,10 +140,10 @@ public:
       return _sdFile->read(buf, nbyte);
 #ifdef COMPILE_SD_MMC
     else
-      return _file->read(buf, nbyte);
-#endif    
+      return (int)_file->read(buf, nbyte);
+#endif
     return 0; // Keep the compiler happy
-};
+  };
 
   size_t write(const uint8_t *buf, size_t size)
   {
@@ -142,7 +152,7 @@ public:
 #ifdef COMPILE_SD_MMC
     else
       return _file->write(buf, size);
-#endif    
+#endif
     return 0; // Keep the compiler happy
   };
 
@@ -153,7 +163,7 @@ public:
 #ifdef COMPILE_SD_MMC
     else
       _file->close();
-#endif    
+#endif
   };
 
   void updateFileAccessTimestamp()
@@ -162,7 +172,7 @@ public:
     {
       if (online.rtc == true)
       {
-        //ESP32Time returns month:0-11
+        // ESP32Time returns month:0-11
         _sdFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
         _sdFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
       }
@@ -175,7 +185,7 @@ public:
     {
       if (online.rtc == true)
       {
-        _sdFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11
+        _sdFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); // ESP32Time returns month:0-11
       }
     }
   };
@@ -187,27 +197,27 @@ public:
   };
 
 protected:
-  SdFile * _sdFile;
+  SdFile *_sdFile;
 #ifdef COMPILE_SD_MMC
-  File * _file;
+  File *_file;
 #endif
 };
 
-//Update the file access and write time with date and time obtained from GNSS
-// These are SdFile-specific. SD_MMC does this automatically
+// Update the file access and write time with date and time obtained from GNSS
+//  These are SdFile-specific. SD_MMC does this automatically
 void updateDataFileAccess(SdFile *dataFile)
 {
   if (online.rtc == true)
   {
-    //ESP32Time returns month:0-11
+    // ESP32Time returns month:0-11
     dataFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
     dataFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
   }
 }
 
-//Update the file create time with date and time obtained from GNSS
+// Update the file create time with date and time obtained from GNSS
 void updateDataFileCreate(SdFile *dataFile)
 {
   if (online.rtc == true)
-    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11
+    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); // ESP32Time returns month:0-11
 }

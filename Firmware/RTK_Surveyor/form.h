@@ -151,6 +151,7 @@ function parseIncoming(msg) {
             || id.includes("profile7Name")
             || id.includes("radioMAC")
             || id.includes("deviceBTID")
+            || id.includes("logFileName")
         ) {
             ge(id).innerHTML = val;
         }
@@ -2472,7 +2473,8 @@ static const char *index_html = R"=====(
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="baseConfig" type="button" data-toggle="collapse"
                     data-target="#collapseBaseConfig" aria-expanded="false" aria-controls="collapseBaseConfig"
-                    style="display:none">
+                    >
+                    <!-- style="display:none"> -->
                     Base Configuration <i id="baseCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
@@ -3367,6 +3369,13 @@ static const char *index_html = R"=====(
                             <div class="col-sm-4 col-5 ms-3 form-group">
                                 <input type="number" class="form-control" id="maxLogLength_minutes">
                                 <p id="maxLogLength_minutesError" class="inlineError"></p>
+                            </div>
+                        </div>
+
+                        <div id="logFile" class="row">
+                            <div class="mb-2">
+                                <label for="logFile" class="form-group box-margin20">Log file name: <span id="logFileName" style="display:inline;">SFE_Log.ubx</span>
+                                </label>
                             </div>
                         </div>
 

@@ -248,7 +248,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
             if (!managerTempFile)
             {
               systemPrintln("Failed to allocate managerTempFile!");
-              break;
+              return;
             }
           }
 
@@ -1388,7 +1388,7 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
       if (!managerTempFile)
       {
         systemPrintln("Failed to allocate managerTempFile!");
-        break;
+        return;
       }
     }
     

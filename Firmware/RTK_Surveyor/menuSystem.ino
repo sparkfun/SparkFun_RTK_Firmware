@@ -29,7 +29,7 @@ void menuSystem()
       systemPrintln("Offline");
 
     if (online.accelerometer == true)
-      systemPrint("Accelerometer: Online");
+      systemPrintln("Accelerometer: Online");
 
     systemPrint("Fuel Gauge: ");
     if (online.battery == true)

@@ -381,7 +381,7 @@ char *settingsCSV = nullptr; //Push large array onto heap
 char *incomingSettings = nullptr;
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
-unsigned long lastCoordinateUpdate = 0;
+unsigned long lastDynamicDataUpdate = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //PointPerfect Corrections

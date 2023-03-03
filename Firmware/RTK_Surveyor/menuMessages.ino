@@ -22,11 +22,16 @@ void menuLog()
                sdFreeSpaceChar
               );
       systemPrintln(myString);
+
+      if (online.logging)
+      {
+        systemPrintf("Current log file name: %s\r\n", logFileName);
+      }
     }
     else
       systemPrintln("No microSD card is detected");
 
-    if(bufferOverruns) 
+    if (bufferOverruns) 
       systemPrintf("Buffer overruns: %d\r\n", bufferOverruns);
 
     systemPrint("1) Log to microSD: ");
@@ -94,8 +99,8 @@ void menuLog()
     }
     else if (incoming == 4 && settings.enableLogging == true && online.logging == true)
     {
-      endSD(false, true); //Close down file. A new one will be created at the next calling of updateLogs().
-      beginLogging();
+      endLogging(false, true); //(gotSemaphore, releaseSemaphore) Close file. Reset parser stats.
+      beginLogging(); //Create new file based on current RTC.
       setLoggingType(); //Determine if we are standard, PPP, or custom. Changes logging icon accordingly.
     }
     else if (incoming == 5)
@@ -336,15 +341,22 @@ void beginLogging(const char *customFileName)
         //Generate a standard log file name
         if (reuseLastLog == true) //attempt to use previous log
         {
-          if (findLastLog(fileName) == false)
+          reuseLastLog = false;
+
+          if (findLastLog(logFileName) == false)
             log_d("Failed to find last log. Making new one.");
           else
             log_d("Using last log file.");
         }
-
-        if (strlen(fileName) == 0)
+        else
         {
-          snprintf(fileName, sizeof(fileName), "/%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+          //We are not reusing the last log, so erase the global/original filename
+          strcpy(logFileName, "");
+        }
+
+        if (strlen(logFileName) == 0)
+        {
+          snprintf(logFileName, sizeof(logFileName), "/%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
                   platformFilePrefix,
                   rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
                   rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
@@ -353,7 +365,7 @@ void beginLogging(const char *customFileName)
       }
       else
       {
-        strncpy(fileName, customFileName, sizeof(fileName) - 1);
+        strncpy(logFileName, customFileName, sizeof(fileName) - 1);
       }
 
       //Attempt to write to file system. This avoids collisions with file writing in F9PSerialReadTask()
@@ -364,9 +376,9 @@ void beginLogging(const char *customFileName)
         // O_CREAT - create the file if it does not exist
         // O_APPEND - seek to the end of the file prior to each write
         // O_WRITE - open for write
-        if (ubxFile->open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+        if (ubxFile->open(logFileName, O_CREAT | O_APPEND | O_WRITE) == false)
         {
-          systemPrintf("Failed to create GNSS UBX data file: %s\r\n", fileName);
+          systemPrintf("Failed to create GNSS UBX data file: %s\r\n", logFileName);
           online.logging = false;
           xSemaphoreGive(sdCardSemaphore);
           return;
@@ -439,7 +451,7 @@ void beginLogging(const char *customFileName)
         return;
       }
 
-      systemPrintf("Log file name: %s\r\n", fileName);
+      systemPrintf("Log file name: %s\r\n", logFileName);
       online.logging = true;
     } //online.sd, enable.logging, online.rtc
   } //online.logging

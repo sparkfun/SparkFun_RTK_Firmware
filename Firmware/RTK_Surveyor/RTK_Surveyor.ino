@@ -170,6 +170,7 @@ const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being th
 const int sdSizeCheckStackSize = 2000;
 bool sdSizeCheckTaskComplete = false;
 
+char logFileName[sizeof("SFE_Facet_L-Band_230101_120101.ubx_plusExtraSpace")] = "";
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster

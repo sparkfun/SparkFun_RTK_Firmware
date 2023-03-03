@@ -1094,18 +1094,19 @@ document.addEventListener("DOMContentLoaded", (event) => {
     });
 
     ge("fixedAltitude").addEventListener("change", function () {
-        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
-        ge("fixedHAE_APC").value = hae.toFixed(3);
+        adjustHAE();
     });
 
     ge("antennaHeight").addEventListener("change", function () {
-        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
-        ge("fixedHAE_APC").value = hae.toFixed(3);
+        adjustHAE();
     });
 
     ge("antennaReferencePoint").addEventListener("change", function () {
-        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
-        ge("fixedHAE_APC").value = hae.toFixed(3);
+        adjustHAE();
+    });
+
+    ge("fixedHAE_APC").addEventListener("change", function () {
+        adjustHAE();
     });
 })
 
@@ -1139,8 +1140,7 @@ function addECEF() {
 function deleteECEF() {
 
     var val = ge("StationCoordinatesECEF").value;
-    if (val > "")
-    {
+    if (val > "") {
         var parts = recordsECEF[val].split(' ');
         var nickName = parts[0];
 
@@ -1226,8 +1226,7 @@ function addGeodetic() {
 
 function deleteGeodetic() {
     var val = ge("StationCoordinatesGeodetic").value;
-    if (val > "")
-    {
+    if (val > "") {
         var parts = recordsGeodetic[val].split(' ');
         var nickName = parts[0];
 
@@ -1236,6 +1235,22 @@ function deleteGeodetic() {
         }
     }
     updateGeodeticList();
+}
+
+function adjustHAE() {
+    var hae;
+    if (ge("adjustHAEMark").checked) {
+        ge("fixedHAE_APC").disabled = false;
+        ge("fixedAltitude").disabled = true;
+        hae = Number(ge("fixedHAE_APC").value) - (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
+        ge("fixedAltitude").value = hae.toFixed(3);
+    }
+    else {
+        ge("fixedHAE_APC").disabled = true;
+        ge("fixedAltitude").disabled = false;
+        hae = Number(ge("fixedAltitude").value) + (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
+        ge("fixedHAE_APC").value = hae.toFixed(3);
+    }
 }
 
 function loadGeodetic() {
@@ -1249,8 +1264,15 @@ function loadGeodetic() {
         ge("antennaHeight").value = parts[4];
         ge("antennaReferencePoint").value = parts[5];
 
-        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
-        ge("fixedHAE_APC").value = hae.toFixed(3);
+        var hae;
+        if (ge("adjustHAEMark").checked) {
+            hae = Number(ge("fixedHAE_APC").value) - (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
+            ge("fixedAltitude").value = hae.toFixed(3);
+        }
+        else {
+            hae = Number(ge("fixedAltitude").value) + (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
+            ge("fixedHAE_APC").value = hae.toFixed(3);
+        }
 
         clearError("nicknameGeodetic");
         clearError("fixedLat");
@@ -1591,6 +1613,11 @@ static const char *index_html = R"=====(
             color: green;
             font-size: smaller;
             font-weight: bold;
+        }
+
+        .box-small {
+            margin-left: 0px;
+            width: 30%;
         }
 
         .box-margin20 {
@@ -2668,18 +2695,30 @@ static const char *index_html = R"=====(
                             </div>
 
                             <div class="form-group row">
-                                <label for="fixedAltitude" class="box-margin40 col-sm-3 col-5 col-form-label">HAE
-                                    Mark/Alt(m):
-                                    <span class="tt" data-bs-placement="right"
+                                <div class="form-group row">
+                                    <label for="fixedAltitude" class="box-margin40 col-sm-3 col-6 col-form-label">HAE
+                                        Mark/Alt(m):
+                                        <span class="tt" data-bs-placement="right"
                                         title="Height Above Ellipsoid of the mark. This is the coordinate or altitude of the mark or monument on the ground.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
-                                </label>
-                                <div class="col-sm-4 col-5">
-                                    <input type="number" class="form-control" id="fixedAltitude">
-                                    <p id="fixedAltitudeError" class="inlineError"></p>
+                                    </label>
+                                    <div class="col-sm-4 col-4">
+                                        <input type="number" class="form-control" id="fixedAltitude">
+                                    </div>
                                 </div>
-                            </div><br>
+                                <p id="fixedAltitudeError" class="inlineError"></p>
+                            </div>
+
+                            <div class="form-check box-margin40">
+                                <label class="form-check-label" for="adjustHAEMark">Adjust Mark</label>
+                                <input class="form-check-input" type="checkbox" value="" id="adjustHAEMark"
+                                    onClick="adjustHAE()">
+                                <span class="tt" data-bs-placement="right"
+                                    title="If enabled, HAE Mark is calculated by *subtracting* the entered Antenna Height and ARP from the altitude reported by the GNSS receiver. This is handy when measuring a mark with a known pole height and ARP, but unknown mark elevation. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </div>
 
                             <div class="form-group row">
                                 <label for="antennaHeight" class="box-margin40 col-sm-3 col-5 col-form-label">Antenna
@@ -3349,36 +3388,29 @@ static const char *index_html = R"=====(
                     </div>
 
                     <div id="enableLoggingDetails" class="collapse mb-2">
-                        <div id="maxLogTime Input" class="row">
-                            <div class="col-sm-4 col-9 form-group">
-                                <label for="maxLogTime_minutes" class="form-group box-margin20">Max Log
-                                    Time (min):<span class="tt" data-bs-placement="right"
-                                        title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
-                                        <span class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
-                                </label>
-                            </div>
 
-                            <div class="col-sm-4 col-5 ms-3 form-group">
-                                <input type="number" class="form-control" id="maxLogTime_minutes">
-                                <p id="maxLogTime_minutesError" class="inlineError"></p>
-                            </div>
+                        <div class="form-group row">
+                            <label for="maxLogTime_minutes" class="box-margin40 col-sm-3 col-7 col-form-label">Max Log
+                                Time (min):
+                                <span class="tt" data-bs-placement="right"
+                                    title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
+                            <input type="number" class="form-control box-small" id="maxLogTime_minutes">
+                            <p id="maxLogTime_minutesError" class="inlineError"></p>
                         </div>
 
-                        <div id="maxLogLength Input" class="row">
-                            <div class="col-sm-4 col-9 form-group">
-                                <label for="maxLogLength_minutes" class="form-group box-margin20">Max Log
-                                    Length (min):<span class="tt" data-bs-placement="right"
-                                        title="Once this length of time is achieved, a new log will be created. This is useful for creating multiple logs over a long survey. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
-                                        <span class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
-                                </label>
-                            </div>
+                        <div class="form-group row">
+                            <label for="maxLogLength_minutes" class="box-margin40 col-sm-3 col-7 col-form-label">Max Log
+                                Length (min):<span class="tt" data-bs-placement="right"
+                                    title="Once this length of time is achieved, a new log will be created. This is useful for creating multiple logs over a long survey. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
 
-                            <div class="col-sm-4 col-5 ms-3 form-group">
-                                <input type="number" class="form-control" id="maxLogLength_minutes">
-                                <p id="maxLogLength_minutesError" class="inlineError"></p>
-                            </div>
+                            <input type="number" class="form-control box-small" id="maxLogLength_minutes">
+                            <p id="maxLogLength_minutesError" class="inlineError"></p>
                         </div>
 
                         <div id="logFile" class="row">

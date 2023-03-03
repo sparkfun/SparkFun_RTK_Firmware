@@ -52,6 +52,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file;
 #endif
+      return false; // Keep the compiler happy
     };
 
     size_t println(const char printMe[])
@@ -62,6 +63,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->println(printMe);
 #endif
+      return 0; // Keep the compiler happy
     };
 
     bool open(const char *filepath, oflag_t mode)
@@ -86,6 +88,7 @@ class FileSdFatMMC : public SdFile
         return false;
       }
 #endif
+      return false; // Keep the compiler happy
     };
 
     uint32_t size()
@@ -96,6 +99,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->size();
 #endif
+      return 0; // Keep the compiler happy
     };
 
     uint32_t position()
@@ -106,6 +110,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->position();
 #endif
+      return 0; // Keep the compiler happy
     };
 
     int available()
@@ -116,6 +121,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->available();
 #endif
+      return 0; // Keep the compiler happy
     };
 
     int read(uint8_t *buf, uint16_t nbyte)
@@ -126,6 +132,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->read(buf, nbyte);
 #endif
+      return 0; // Keep the compiler happy
     };
 
     size_t write(const uint8_t *buf, size_t size)
@@ -136,6 +143,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->write(buf, size);
 #endif
+      return 0; // Keep the compiler happy
     };
 
     void close()
@@ -145,6 +153,16 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
       else
         _file->close();
+#endif
+    };
+
+    void flush()
+    {
+      if (USE_SPI_MICROSD)
+        _sdFile->flush();
+#ifdef COMPILE_SD_MMC
+      else
+        _file->flush();
 #endif
     };
 
@@ -186,6 +204,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->size();
 #endif
+      return 0; // Keep the compiler happy
     };
 
   protected:

@@ -521,7 +521,7 @@ void ntripClientUpdate()
           //Restart the NTRIP receive data timer
           ntripClientTimer = millis();
 
-          //Push RTCM to GNSS module over I2C
+          //Push RTCM to GNSS module over I2C / SPI
           theGNSS.pushRawData(rtcmData, rtcmCount);
           wifiIncomingRTCM = true;
 

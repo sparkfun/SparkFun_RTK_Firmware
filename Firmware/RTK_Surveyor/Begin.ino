@@ -239,7 +239,7 @@ void beginBoard()
 
   //For all boards, check reset reason. If reset was due to wdt or panic, append last log
   loadSettingsPartial(); //Loads settings from LFS
-  if (esp_reset_reason() == ESP_RST_POWERON)
+  if ((esp_reset_reason() == ESP_RST_POWERON) || (esp_reset_reason() == ESP_RST_SW))
   {
     reuseLastLog = false; //Start new log
 

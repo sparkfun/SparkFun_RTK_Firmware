@@ -811,14 +811,9 @@ void beginFuelGauge()
 //Begin accelerometer if available
 void beginAccelerometer()
 {
-  if (productVariant == REFERENCE_STATION)
-    return; // Don't display Accel Fail
-    
   if (accel.begin() == false)
   {
     online.accelerometer = false;
-
-    displayAccelFail(1000);
 
     return;
   }

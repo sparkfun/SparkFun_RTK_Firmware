@@ -95,6 +95,55 @@ void startWebServer()
     request->send(response);
   });
 
+  //Battery icons
+  webserver->on("/src/BatteryBlank.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", batteryBlank_png, sizeof(batteryBlank_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery0.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery0_png, sizeof(battery0_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery1.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery1_png, sizeof(battery1_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery2.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery2_png, sizeof(battery2_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery3.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery3_png, sizeof(battery3_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+  webserver->on("/src/Battery0_Charging.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery0_Charging_png, sizeof(battery0_Charging_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery1_Charging.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery1_Charging_png, sizeof(battery1_Charging_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery2_Charging.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery2_Charging_png, sizeof(battery2_Charging_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery3_Charging.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery3_Charging_png, sizeof(battery3_Charging_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+
   webserver->on("/src/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", style_css, sizeof(style_css));
     response->addHeader("Content-Encoding", "gzip");
@@ -403,7 +452,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   if (type == WS_EVT_CONNECT) {
     log_d("Websocket client connected");
     client->text(settingsCSV);
-    lastCoordinateUpdate = millis();
+    lastDynamicDataUpdate = millis();
     websocketConnected = true;
   }
   else if (type == WS_EVT_DISCONNECT) {
@@ -633,6 +682,37 @@ void createSettingsString(char* newSettings)
 
   stringRecord(newSettings, "logFileName", logFileName);
 
+  //Determine battery icon
+  int iconLevel = 0;
+  if (battLevel < 25)
+    iconLevel = 0;
+  else if (battLevel < 50)
+    iconLevel = 1;
+  else if (battLevel < 75)
+    iconLevel = 2;
+  else //batt level > 75
+    iconLevel = 3;
+
+  char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+
+  if (externalPowerConnected)
+    sprintf(batteryIconFileName, "src/Battery%d_Charging.png", iconLevel);
+  else
+    sprintf(batteryIconFileName, "src/Battery%d.png", iconLevel);
+
+  stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
+
+  //Determine battery percent
+  char batteryPercent[sizeof("+100%")];
+  int tempLevel = battLevel;
+  if(tempLevel > 100) tempLevel = 100;
+  \
+  if (externalPowerConnected)
+    sprintf(batteryPercent, "+%d%%", tempLevel);
+  else
+    sprintf(batteryPercent, "%d%%", tempLevel);
+  stringRecord(newSettings, "batteryPercent", batteryPercent);
+
   //Add ECEF and Geodetic station data
   for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
   {
@@ -720,8 +800,8 @@ void createSettingsString(char* newSettings)
 #endif
 }
 
-//Create a csv string with the current coordinates
-void createCoordinateString(char* settingsCSV)
+//Create a csv string with the dynamic data to update (current coordinates, battery level, etc)
+void createDynamicDataString(char* settingsCSV)
 {
 #ifdef COMPILE_AP
   settingsCSV[0] = '\0'; //Erase current settings string
@@ -740,6 +820,34 @@ void createCoordinateString(char* settingsCSV)
   stringRecord(settingsCSV, "ecefX", ecefX, 3);
   stringRecord(settingsCSV, "ecefY", ecefY, 3);
   stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
+
+  //Determine battery icon
+  int iconLevel = 0;
+  if (battLevel < 25)
+    iconLevel = 0;
+  else if (battLevel < 50)
+    iconLevel = 1;
+  else if (battLevel < 75)
+    iconLevel = 2;
+  else //batt level > 75
+    iconLevel = 3;
+
+  char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+
+  if (externalPowerConnected)
+    sprintf(batteryIconFileName, "src/Battery%d_Charging.png", iconLevel);
+  else
+    sprintf(batteryIconFileName, "src/Battery%d.png", iconLevel);
+
+  stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
+
+  //Determine battery percent
+  char batteryPercent[sizeof("+100%")];
+  if (externalPowerConnected)
+    sprintf(batteryPercent, "+%d%%", battLevel);
+  else
+    sprintf(batteryPercent, "%d%%", battLevel);
+  stringRecord(settingsCSV, "batteryPercent", batteryPercent);
 
   strcat(settingsCSV, "\0");
 #endif

@@ -651,10 +651,10 @@ void updateSystemState()
           //Dynamically update the coordinates on the AP page
           if (websocketConnected == true)
           {
-            if (millis() - lastCoordinateUpdate > 1000)
+            if (millis() - lastDynamicDataUpdate > 1000)
             {
-              lastCoordinateUpdate = millis();
-              createCoordinateString(settingsCSV);
+              lastDynamicDataUpdate = millis();
+              createDynamicDataString(settingsCSV);
 
               //log_d("Sending coordinates: %s", settingsCSV);
               websocket->textAll(settingsCSV);

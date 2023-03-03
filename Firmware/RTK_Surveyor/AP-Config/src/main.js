@@ -129,6 +129,7 @@ function parseIncoming(msg) {
             || id.includes("radioMAC")
             || id.includes("deviceBTID")
             || id.includes("logFileName")
+            || id.includes("batteryPercent")
         ) {
             ge(id).innerHTML = val;
         }
@@ -215,6 +216,10 @@ function parseIncoming(msg) {
         else if (id.includes("otaFirmwareStatus")) {
             otaFirmwareStatus(val);
         }
+        else if (id.includes("batteryIconFileName")) {
+            ge("batteryIconFileName").src = val;
+        }
+
 
         //Check boxes / radio buttons
         else if (val == "true") {

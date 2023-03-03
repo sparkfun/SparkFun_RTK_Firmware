@@ -365,7 +365,7 @@ void beginLogging(const char *customFileName)
       }
       else
       {
-        strncpy(logFileName, customFileName, sizeof(fileName) - 1);
+        strncpy(logFileName, customFileName, sizeof(logFileName) - 1);
       }
 
       //Allocate the ubxFile

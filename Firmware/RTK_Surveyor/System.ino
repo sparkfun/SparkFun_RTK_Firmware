@@ -311,10 +311,17 @@ void checkBatteryLevels()
     systemPrintf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
 
     char tempStr[25];
-    if (battChangeRate > 0)
+    if (battChangeRate >= -0.01)
+    {
       snprintf(tempStr, sizeof(tempStr), "C");
+      externalPowerConnected = true;
+    }
     else
+    {
       snprintf(tempStr, sizeof(tempStr), "Disc");
+      externalPowerConnected = false;
+    }
+
     systemPrintf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
     if (battLevel < 10)
@@ -394,7 +401,7 @@ bool createTestFile()
   {
     if (SD_MMC.exists(testFileName))
       SD_MMC.remove(testFileName);
-    return (!SD_MMC.exists(testFileName));      
+    return (!SD_MMC.exists(testFileName));
   }
 #endif
 }

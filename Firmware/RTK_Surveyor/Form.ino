@@ -696,9 +696,9 @@ void createSettingsString(char* newSettings)
   char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
 
   if (externalPowerConnected)
-    sprintf(batteryIconFileName, "src/Battery%d_Charging.png", iconLevel);
+    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
   else
-    sprintf(batteryIconFileName, "src/Battery%d.png", iconLevel);
+    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
 
   stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
 
@@ -706,11 +706,11 @@ void createSettingsString(char* newSettings)
   char batteryPercent[sizeof("+100%")];
   int tempLevel = battLevel;
   if(tempLevel > 100) tempLevel = 100;
-  \
+
   if (externalPowerConnected)
-    sprintf(batteryPercent, "+%d%%", tempLevel);
+    snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", tempLevel);
   else
-    sprintf(batteryPercent, "%d%%", tempLevel);
+    snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", tempLevel);
   stringRecord(newSettings, "batteryPercent", batteryPercent);
 
   //Add ECEF and Geodetic station data
@@ -835,18 +835,18 @@ void createDynamicDataString(char* settingsCSV)
   char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
 
   if (externalPowerConnected)
-    sprintf(batteryIconFileName, "src/Battery%d_Charging.png", iconLevel);
+    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
   else
-    sprintf(batteryIconFileName, "src/Battery%d.png", iconLevel);
+    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
 
   stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
 
   //Determine battery percent
   char batteryPercent[sizeof("+100%")];
   if (externalPowerConnected)
-    sprintf(batteryPercent, "+%d%%", battLevel);
+    snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", battLevel);
   else
-    sprintf(batteryPercent, "%d%%", battLevel);
+    snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", battLevel);
   stringRecord(settingsCSV, "batteryPercent", batteryPercent);
 
   strcat(settingsCSV, "\0");

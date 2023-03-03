@@ -375,7 +375,7 @@ void beginLogging(const char *customFileName)
         if (!ubxFile)
         {
           systemPrintln("Failed to allocate ubxFile!");
-          break;
+          return;
         }
       }
 

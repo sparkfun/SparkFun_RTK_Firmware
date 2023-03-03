@@ -951,9 +951,9 @@ void printFileList()
           {
             fileCount++;
 
-            // 2017-05-19 187362648 800_0291.MOV
+            //2017-05-19 187362648 800_0291.MOV
 
-            // Get File Date from sdFat
+            //Get File Date from sdFat
             uint16_t fileDate;
             uint16_t fileTime;
             tempFile.getCreateDateTime(&fileDate, &fileTime);
@@ -1002,9 +1002,9 @@ void printFileList()
             {
               fileCount++;
 
-              // 2017-05-19 187362648 800_0291.MOV
+              //2017-05-19 187362648 800_0291.MOV
 
-              // Get time of last write
+              //Get time of last write
               time_t lastWrite = tempFile.getLastWrite();
 
               struct tm *timeinfo = localtime(&lastWrite);

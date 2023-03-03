@@ -1391,7 +1391,6 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
         return;
       }
     }
-    
     //Attempt to gain access to the SD card
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {

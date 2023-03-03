@@ -31,7 +31,7 @@ void menuLog()
     else
       systemPrintln("No microSD card is detected");
 
-    if (bufferOverruns) 
+    if (bufferOverruns)
       systemPrintf("Buffer overruns: %d\r\n", bufferOverruns);
 
     systemPrint("1) Log to microSD: ");
@@ -334,8 +334,6 @@ void beginLogging(const char *customFileName)
   {
     if (online.microSD == true && settings.enableLogging == true && online.rtc == true) //We can't create a file until we have date/time
     {
-      char fileName[66 + 6 + 40] = "";
-
       if (strlen(customFileName) == 0)
       {
         //Generate a standard log file name
@@ -544,15 +542,15 @@ bool findLastLog(char *lastLogName)
         const char* LOG_EXTENSION = "ubx";
         const char* LOG_PREFIX = platformFilePrefix;
         char fname[50]; //Handle long file names
-  
+
         dir.open("/"); //Open root
-  
+
         while (tempFile.openNext(&dir, O_READ))
         {
           if (tempFile.isFile())
           {
             tempFile.getName(fname, sizeof(fname));
-  
+
             //Check for matching file name prefix and extension
             if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
             {
@@ -574,7 +572,7 @@ bool findLastLog(char *lastLogName)
         const char* LOG_EXTENSION = "ubx";
         const char* LOG_PREFIX = platformFilePrefix;
         char fname[50]; //Handle long file names
-  
+
         dir = SD_MMC.open("/"); //Open root
 
         if (dir && dir.isDirectory())
@@ -585,7 +583,7 @@ bool findLastLog(char *lastLogName)
             if (!tempFile.isDirectory())
             {
               snprintf(fname, sizeof(fname), "%s", tempFile.name());
-    
+
               //Check for matching file name prefix and extension
               if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
               {

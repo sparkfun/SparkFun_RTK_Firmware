@@ -453,6 +453,9 @@ IPAddress ethernetSubnetMask;
 //But adding per1234's fix breaks WiFiServer...
 //It might be possible to add the W5500 support from the esp-idf?
 //https://github.com/espressif/esp-idf/tree/master/components/esp_eth/src
+//https://github.com/espressif/arduino-esp32/issues/5482
+//https://github.com/espressif/arduino-esp32/pull/7163
+//https://github.com/khoih-prog/WebServer_ESP32_W5500
 EthernetServer *ethernetHTTPServer = nullptr; //This will be instantiated when we know the HTTP port
 class derivedEthernetUDP : public EthernetUDP
 {

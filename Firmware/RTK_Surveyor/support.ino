@@ -1030,8 +1030,8 @@ uint8_t waitForPreamble(PARSE_STATE * parse, uint8_t data)
       //    |  8 bits  | n bytes | 8 bits | n bytes |  8 bits  | 2 bytes  |
       //    |     $    |         |    ,   |         |          |          |
       //    +----------+---------+--------+---------+----------+----------+
-      //    |                                                  |
-      //    |<------------------- Checksum ------------------->|
+      //               |                            |
+      //               |<-------- Checksum -------->|
       //
 
       parse->crc = 0;

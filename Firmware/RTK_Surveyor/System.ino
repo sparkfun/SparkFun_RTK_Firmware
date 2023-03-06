@@ -156,24 +156,18 @@ bool configureUbloxModule()
 
   if (response == false)
     systemPrintln("Module failed config block 0");
-  else
-    log_d("Module config block 0 complete");
   response = true; //Reset
 
   //Enable the constellations the user has set
   response &= setConstellations(true); //19 messages. Send newCfg or sendCfg with value set
   if (response == false)
     systemPrintln("Module failed config block 1");
-  else
-    log_d("Module config block 1 complete");
   response = true; //Reset
 
   //Make sure the appropriate messages are enabled
   response &= setMessages(); //73 messages. Does a complete open/closed val set
   if (response == false)
     systemPrintln("Module failed config block 2");
-  else
-    log_d("Module config block 2 complete");
   response = true; //Reset
 
   //Disable NMEA messages on all but UART1
@@ -210,8 +204,6 @@ bool configureUbloxModule()
 
   if (response == false)
     systemPrintln("Module failed config block 3");
-  else
-    log_d("Module config block 3 complete");
 
   if (zedModuleType == PLATFORM_F9R)
   {
@@ -564,10 +556,7 @@ bool setMessages()
     while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
     
     response &= theGNSS.sendCfgValset();
-    log_d("sent Valset for message %d: %s", x, response ? "OK" : "ERROR");
   }
-
-  log_d("message config complete");
 
   //For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
   //to mimic UART1
@@ -596,11 +585,7 @@ bool setMessages()
     }
 
     theGNSS.setRTCMLoggingMask(logRTCMMessages);
-    log_d("setRTCMLoggingMask 0x%X", logRTCMMessages);
     theGNSS.setNMEALoggingMask(logNMEAMessages);
-    log_d("setNMEALoggingMask 0x%X", logNMEAMessages);
-
-    log_d("logging config complete");
   }
 
   return (response);
@@ -626,10 +611,7 @@ bool setMessagesUSB()
     while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
     
     response &= theGNSS.sendCfgValset();
-    log_d("sent Valset for message %d", x);
   }
-
-  log_d("setMessagesUSB complete");
 
   return (response);
 }

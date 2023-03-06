@@ -33,9 +33,10 @@ void identifyBoard()
   }
 }
 
+//Setup any essential power pins
+//E.g. turn on power for the display before beginDisplay
 void initializePowerPins()
 {
-  //Setup any essential power pins
 #ifdef COMPILE_SD_MMC
   if (productVariant == REFERENCE_STATION)
   {

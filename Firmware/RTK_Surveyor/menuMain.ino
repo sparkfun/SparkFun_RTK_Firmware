@@ -334,19 +334,6 @@ void factoryReset()
   
         sd->remove(stationCoordinateECEFFileName); //Remove station files
         sd->remove(stationCoordinateGeodeticFileName);
-
-#if defined(ENABLE_DEVELOPER) && defined(FACTORY_RESET_AT_POWER_ON) && defined(ERASE_PROFILES_AT_POWER_ON)
-        for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
-        {
-          char fileName[56];
-          snprintf(fileName, sizeof(fileName), "/%s_Settings_%d.txt", platformFilePrefix, x);
-          if (sd->exists(fileName))
-          {
-            log_d("Removing %s from SD", fileName);
-            sd->remove(fileName);          
-          }
-        }
-#endif
       }
 #ifdef COMPILE_SD_MMC
       else
@@ -355,19 +342,6 @@ void factoryReset()
   
         SD_MMC.remove(stationCoordinateECEFFileName); //Remove station files
         SD_MMC.remove(stationCoordinateGeodeticFileName);
-
-#if defined(ENABLE_DEVELOPER) && defined(FACTORY_RESET_AT_POWER_ON) && defined(ERASE_PROFILES_AT_POWER_ON)
-        for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
-        {
-          char fileName[56];
-          snprintf(fileName, sizeof(fileName), "/%s_Settings_%d.txt", platformFilePrefix, x);
-          if (SD_MMC.exists(fileName))
-          {
-            log_d("Removing %s from SD", fileName);
-            SD_MMC.remove(fileName);
-          }
-        }
-#endif
       }
 #endif
 

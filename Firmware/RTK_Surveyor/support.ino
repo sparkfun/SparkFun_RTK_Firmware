@@ -85,7 +85,7 @@ void systemPrintln(const char* value)
 void systemPrint(int value)
 {
   char temp[20];
-  sprintf(temp, "%d", value);
+  snprintf(temp, sizeof(temp), "%d", value);
   systemPrint(temp);
 }
 
@@ -95,9 +95,9 @@ void systemPrint(int value, uint8_t printType)
   char temp[20];
 
   if (printType == HEX)
-    sprintf(temp, "%08X", value);
+    snprintf(temp, sizeof(temp), "%08X", value);
   else if (printType == DEC)
-    sprintf(temp, "%d", value);
+    snprintf(temp, sizeof(temp), "%d", value);
 
   systemPrint(temp);
 }
@@ -132,9 +132,9 @@ void systemPrint(uint8_t value, uint8_t printType)
   char temp[20];
 
   if (printType == HEX)
-    sprintf(temp, "%02X", value);
+    snprintf(temp, sizeof(temp), "%02X", value);
   else if (printType == DEC)
-    sprintf(temp, "%d", value);
+    snprintf(temp, sizeof(temp), "%d", value);
 
   systemPrint(temp);
 }
@@ -152,9 +152,9 @@ void systemPrint(uint16_t value, uint8_t printType)
   char temp[20];
 
   if (printType == HEX)
-    sprintf(temp, "%04X", value);
+    snprintf(temp, sizeof(temp), "%04X", value);
   else if (printType == DEC)
-    sprintf(temp, "%d", value);
+    snprintf(temp, sizeof(temp), "%d", value);
 
   systemPrint(temp);
 }
@@ -170,7 +170,7 @@ void systemPrintln(uint16_t value, uint8_t printType)
 void systemPrint(float value, uint8_t decimals)
 {
   char temp[20];
-  sprintf(temp, "%.*f", decimals, value);
+  snprintf(temp, sizeof(temp), "%.*f", decimals, value);
   systemPrint(temp);
 }
 
@@ -185,8 +185,8 @@ void systemPrintln(float value, uint8_t decimals)
 //Print a double precision floating point value with a specified number of decimal places
 void systemPrint(double value, uint8_t decimals)
 {
-  char temp[300];
-  sprintf(temp, "%.*f", decimals, value);
+  char temp[30];
+  snprintf(temp, sizeof(temp), "%.*f", decimals, value);
   systemPrint(temp);
 }
 
@@ -450,11 +450,8 @@ bool checkRtcmMessage(uint8_t data)
   {
     //Read the upper two bits of the length
     case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
-      // PaulZC: The next line checks if the first length byte is zero. Curious...
-      // This limits 'valid' message lengths to 255 bytes instead of 1023. TODO: check this.
-      // Maybe the intent is to check that the 6 unused bits are all zero?
-      // In which case, the next line should be: if (data <= 3)
-      if (!(data & 3))
+      //Verify the length byte - check the 6 MS bits are all zero
+      if (!(data & (~3)))
       {
         length = data << 8;
         rtcmParsingState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
@@ -868,7 +865,7 @@ uint8_t rtcmReadLength2(PARSE_STATE * parse, uint8_t data)
 //Read the upper two bits of the length
 uint8_t rtcmReadLength1(PARSE_STATE * parse, uint8_t data)
 {
-  //Verify the length byte
+  //Verify the length byte - check the 6 MS bits are all zero
   if (data & (~3))
   {
     //Invalid length, place this byte at the beginning of the buffer
@@ -1033,8 +1030,8 @@ uint8_t waitForPreamble(PARSE_STATE * parse, uint8_t data)
       //    |  8 bits  | n bytes | 8 bits | n bytes |  8 bits  | 2 bytes  |
       //    |     $    |         |    ,   |         |          |          |
       //    +----------+---------+--------+---------+----------+----------+
-      //    |                                                  |
-      //    |<------------------- Checksum ------------------->|
+      //               |                            |
+      //               |<-------- Checksum -------->|
       //
 
       parse->crc = 0;

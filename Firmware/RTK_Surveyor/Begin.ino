@@ -1,8 +1,6 @@
 //Initial startup functions for GNSS, SD, display, radio, etc
 
-//Based on hardware features, determine if this is RTK Surveyor or RTK Express hardware
-//Must be called after Wire.begin so that we can do I2C tests
-void beginBoard()
+void identifyBoard()
 {
   //Use ADC to check resistor divider
   int pin_adc_rtk_facet = 35;
@@ -29,14 +27,90 @@ void beginBoard()
   {
     productVariant = REFERENCE_STATION;
   }
-  else if (isConnected(0x19) == true) //Check for accelerometer
-  {
-    if (zedModuleType == PLATFORM_F9P) productVariant = RTK_EXPRESS;
-    else if (zedModuleType == PLATFORM_F9R) productVariant = RTK_EXPRESS_PLUS;
-  }
   else
   {
-    productVariant = RTK_SURVEYOR;
+    productVariant = RTK_UNKNOWN; //Need to wait until the GNSS and Accel have been initialized
+  }
+}
+
+//Setup any essential power pins
+//E.g. turn on power for the display before beginDisplay
+void initializePowerPins()
+{
+#ifdef COMPILE_SD_MMC
+  if (productVariant == REFERENCE_STATION)
+  {
+    //v10
+    //Pin Allocations:
+    //D0  : Boot + Boot Button
+    //D1  : Serial TX (CH340 RX)
+    //D2  : SDIO DAT0 - via 74HC4066 switch
+    //D3  : Serial RX (CH340 TX)
+    //D4  : SDIO DAT1
+    //D5  : GNSS Chip Select
+    //D12 : SDIO DAT2 - via 74HC4066 switch
+    //D13 : SDIO DAT3
+    //D14 : SDIO CLK
+    //D15 : SDIO CMD - via 74HC4066 switch
+    //D16 : Serial1 RXD : Note: connected to the I/O connector only - not to the ZED-F9P
+    //D17 : Serial1 TXD : Note: connected to the I/O connector only - not to the ZED-F9P
+    //D18 : SPI SCK
+    //D19 : SPI POCI
+    //D21 : I2C SDA
+    //D22 : I2C SCL
+    //D23 : SPI PICO
+    //D25 : GNSS Time Pulse
+    //D26 : STAT LED
+    //D27 : Ethernet Chip Select
+    //D32 : PWREN
+    //D33 : Ethernet Interrupt
+    //A34 : GNSS TX RDY
+    //A35 : Board Detect (1.1V)
+    //A36 : microSD card detect
+    //A39 : Unused analog pin - used to generate random values for SSL
+
+    pin_baseStatusLED = 26;
+    pin_peripheralPowerControl = 32;
+    pin_Ethernet_CS = 27;
+    pin_GNSS_CS = 5;
+    pin_GNSS_TimePulse = 25;
+    pin_adc39 = 39;
+    pin_zed_tx_ready = 34;
+    pin_microSD_CardDetect = 36;
+    pin_Ethernet_Interrupt = 33;
+    pin_setupButton = 0;
+
+    pin_radio_rx = 17; //Radio RX In = ESP TX Out
+    pin_radio_tx = 16; //Radio TX Out = ESP RX In
+
+    pinMode(pin_Ethernet_CS, OUTPUT);
+    digitalWrite(pin_Ethernet_CS, HIGH);
+    pinMode(pin_GNSS_CS, OUTPUT);
+    digitalWrite(pin_GNSS_CS, HIGH);
+
+    pinMode(pin_peripheralPowerControl, OUTPUT);
+    digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, W5500, etc
+    delay(100);
+  }
+#endif
+}
+
+//Based on hardware features, determine if this is RTK Surveyor or RTK Express hardware
+//Must be called after beginI2C (Wire.begin) so that we can do I2C tests
+//Must be called after beginGNSS so the GNSS type is known
+void beginBoard()
+{
+  if (productVariant == RTK_UNKNOWN)
+  {
+    if (isConnected(0x19) == true) //Check for accelerometer
+    {
+      if (zedModuleType == PLATFORM_F9P) productVariant = RTK_EXPRESS;
+      else if (zedModuleType == PLATFORM_F9R) productVariant = RTK_EXPRESS_PLUS;
+    }
+    else
+    {
+      productVariant = RTK_SURVEYOR;
+    }
   }
 
   //Setup hardware pins
@@ -59,8 +133,8 @@ void beginBoard()
     //The following changes the POR default but will be overwritten by settings in NVM or settings file
     settings.ubxConstellations[1].enabled = false;
 
-    strcpy(platformFilePrefix, "SFE_Surveyor");
-    strcpy(platformPrefix, "Surveyor");
+    strncpy(platformFilePrefix, "SFE_Surveyor", sizeof(platformFilePrefix) - 1);
+    strncpy(platformPrefix, "Surveyor", sizeof(platformPrefix) - 1);
   }
   else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
@@ -87,13 +161,13 @@ void beginBoard()
 
     if (productVariant == RTK_EXPRESS)
     {
-      strcpy(platformFilePrefix, "SFE_Express");
-      strcpy(platformPrefix, "Express");
+      strncpy(platformFilePrefix, "SFE_Express", sizeof(platformFilePrefix) - 1);
+      strncpy(platformPrefix, "Express", sizeof(platformPrefix) - 1);
     }
     else if (productVariant == RTK_EXPRESS_PLUS)
     {
-      strcpy(platformFilePrefix, "SFE_Express_Plus");
-      strcpy(platformPrefix, "Express Plus");
+      strncpy(platformFilePrefix, "SFE_Express_Plus", sizeof(platformFilePrefix) - 1);
+      strncpy(platformPrefix, "Express Plus", sizeof(platformPrefix) - 1);
     }
   }
   else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
@@ -134,77 +208,24 @@ void beginBoard()
 
     if (productVariant == RTK_FACET)
     {
-      strcpy(platformFilePrefix, "SFE_Facet");
-      strcpy(platformPrefix, "Facet");
+      strncpy(platformFilePrefix, "SFE_Facet", sizeof(platformFilePrefix) - 1);
+      strncpy(platformPrefix, "Facet", sizeof(platformPrefix) - 1);
     }
     else if (productVariant == RTK_FACET_LBAND)
     {
-      strcpy(platformFilePrefix, "SFE_Facet_LBand");
-      strcpy(platformPrefix, "Facet L-Band");
+      strncpy(platformFilePrefix, "SFE_Facet_LBand", sizeof(platformFilePrefix) - 1);
+      strncpy(platformPrefix, "Facet L-Band", sizeof(platformPrefix) - 1);
     }
   }
 #ifdef COMPILE_SD_MMC
   else if (productVariant == REFERENCE_STATION)
   {
-    //v10
-    /*
-    Pin Allocations:
-    D0  : Boot + Boot Button
-    D1  : Serial TX (CH340 RX)
-    D2  : SDIO DAT0 - via 74HC4066 switch
-    D3  : Serial RX (CH340 TX)
-    D4  : SDIO DAT1
-    D5  : GNSS Chip Select
-    D12 : SDIO DAT2 - via 74HC4066 switch
-    D13 : SDIO DAT3
-    D14 : SDIO CLK
-    D15 : SDIO CMD - via 74HC4066 switch
-    D16 : Serial1 RXD : Note: connected to the I/O connector only - not to the ZED-F9P
-    D17 : Serial1 TXD : Note: connected to the I/O connector only - not to the ZED-F9P
-    D18 : SPI SCK
-    D19 : SPI POCI
-    D21 : I2C SDA
-    D22 : I2C SCL
-    D23 : SPI PICO
-    D25 : GNSS Time Pulse
-    D26 : STAT LED
-    D27 : Ethernet Chip Select
-    D32 : PWREN
-    D33 : Ethernet Interrupt
-    A34 : GNSS TX RDY
-    A35 : Board Detect (1.1V)
-    A36 : microSD card detect
-    A39 : Unused analog pin - used to generate random values for SSL
-    */
+    //No powerOnCheck
 
-    pin_baseStatusLED = 26;
-    pin_peripheralPowerControl = 32;
-    pin_Ethernet_CS = 27;
-    pin_GNSS_CS = 5;
-    pin_GNSS_TimePulse = 25;
-    pin_adc39 = 39;
-    pin_zed_tx_ready = 34;
-    pin_microSD_CardDetect = 36;
-    pin_Ethernet_Interrupt = 33;
+    settings.enablePrintBatteryMessages = false; //No pesky battery messages
 
-    pin_radio_rx = 17; // Radio RX In = ESP TX Out
-    pin_radio_tx = 16; // Radio TX Out = ESP RX In
-
-    pinMode(pin_Ethernet_CS, OUTPUT);
-    digitalWrite(pin_Ethernet_CS, HIGH);
-    pinMode(pin_GNSS_CS, OUTPUT);
-    digitalWrite(pin_GNSS_CS, HIGH);
-
-    if (esp_reset_reason() == ESP_RST_POWERON)
-    {
-      powerOnCheck(); //Only do check if we POR start
-    }
-
-    pinMode(pin_peripheralPowerControl, OUTPUT);
-    digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, W5500, etc
-
-    strcpy(platformFilePrefix, "SFE_Reference_Station");
-    strcpy(platformPrefix, "Reference Station");
+    strncpy(platformFilePrefix, "SFE_Reference_Station", sizeof(platformFilePrefix) - 1);
+    strncpy(platformPrefix, "Reference Station", sizeof(platformPrefix) - 1);
   }
 #endif
 
@@ -219,7 +240,7 @@ void beginBoard()
 
   //For all boards, check reset reason. If reset was due to wdt or panic, append last log
   loadSettingsPartial(); //Loads settings from LFS
-  if (esp_reset_reason() == ESP_RST_POWERON || esp_reset_reason() == ESP_RST_SW)
+  if ((esp_reset_reason() == ESP_RST_POWERON) || (esp_reset_reason() == ESP_RST_SW))
   {
     reuseLastLog = false; //Start new log
 
@@ -265,6 +286,8 @@ void beginSD()
 
   online.microSD = false;
   gotSemaphore = false;
+
+  log_d("settings.enableSD: %d", settings.enableSD);
   
   while (settings.enableSD == true)
   {
@@ -366,7 +389,7 @@ void beginSD()
 
       //TODO: add Card Detect input and check hot insertion
       
-      // SDIO MMC
+      //SDIO MMC
       if (SD_MMC.begin() == false)
       {
         int tries = 0;
@@ -408,7 +431,7 @@ void beginSD()
     //Mark card not yet usable for logging
     sdCardSize = 0;
     outOfSDSpace = true;
-   
+
     systemPrintln("microSD: Online");
     online.microSD = true;
     break;
@@ -429,19 +452,18 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   {
     if (USE_SPI_MICROSD)
       sd->end();
-#ifdef COMPILE_SD_MMC
-    else
-      SD_MMC.end();
-#endif
     online.microSD = false;
     systemPrintln("microSD: Offline");
   }
 
   //Free the caches for the microSD card
-  if (sd)
+  if (USE_SPI_MICROSD)
   {
-    delete sd;
-    sd = nullptr;
+    if (sd)
+    {
+      delete sd;
+      sd = nullptr;
+    }
   }
 
   //Release the semaphore
@@ -493,7 +515,7 @@ void beginUART2()
       "UARTStart", //Just for humans
       2000, //Stack Size
       nullptr, //Task input parameter
-      0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
       &pinUART2TaskHandle, //Task handle
       0); //Core where task should run, 0=core, 1=Arduino
 
@@ -504,14 +526,24 @@ void beginUART2()
 //Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
 void pinUART2Task( void *pvParameters )
 {
-  serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize);
-  serialGNSS.setTimeout(settings.serialTimeoutGNSS);
-  serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-
-  //Reduce threshold value above which RX FIFO full interrupt is generated
-  //Allows more time between when the UART interrupt occurs and when the FIFO buffer overruns
-  //serialGNSS.setRxFIFOFull(50); //Available in >v2.0.5
-  uart_set_rx_full_threshold(2, 50); //uart_num, threshold
+//Note: ESP32 2.0.6 does some strange auto-bauding thing here which takes 20s to complete if there is no data for it to auto-baud.
+//      That's fine for most RTK products, but causes the Ref Stn to stall for 20s. However, it doesn't stall with ESP32 2.0.2...
+//      Uncomment these lines to prevent the stall if/when we upgrade to ESP32 ~2.0.6.
+//#if defined(ENABLE_DEVELOPER) && defined(REF_STN_GNSS_DEBUG)
+//  if (productVariant == REFERENCE_STATION)
+//#else
+//  if (USE_I2C_GNSS)
+//#endif
+  {
+    serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize); //TODO: work out if we can reduce or skip this when using SPI GNSS
+    serialGNSS.setTimeout(settings.serialTimeoutGNSS); //Requires serial traffic on the UART pins for detection
+    serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+  
+    //Reduce threshold value above which RX FIFO full interrupt is generated
+    //Allows more time between when the UART interrupt occurs and when the FIFO buffer overruns
+    //serialGNSS.setRxFIFOFull(50); //Available in >v2.0.5
+    uart_set_rx_full_threshold(2, 50); //uart_num, threshold
+  }
 
   uart2pinned = true;
 
@@ -537,6 +569,17 @@ void beginFS()
 //Connect to ZED module and identify particulars
 void beginGNSS()
 {
+  //If we're using SPI, then increase the logging buffer
+  if (USE_SPI_GNSS)
+  {
+    SPI.begin(); //Begin SPI here - beginSD has not yet been called
+
+    //setFileBufferSize must be called _before_ .begin
+    //Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
+    //Also used by Tasks.ino
+    theGNSS.setFileBufferSize(settings.gnssHandlerBufferSize);
+  }
+
   if (USE_I2C_GNSS)
   {
     if (theGNSS.begin() == false)
@@ -555,18 +598,24 @@ void beginGNSS()
   }
   else
   {
-    if (theGNSS.begin(pin_GNSS_CS) == false)
+    if (theGNSS.begin(SPI, pin_GNSS_CS) == false)
     {
       log_d("GNSS Failed to begin. Trying again.");
   
       //Try again with power on delay
       delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
-      if (theGNSS.begin(pin_GNSS_CS) == false)
+      if (theGNSS.begin(SPI, pin_GNSS_CS) == false)
       {
         log_d("GNSS offline");
         displayGNSSFail(1000);
         return;
       }
+    }
+    if (theGNSS.getFileBufferSize() != settings.gnssHandlerBufferSize) //Need to call getFileBufferSize after begin
+    {
+      log_d("GNSS offline - no RAM for file buffer");
+      displayGNSSFail(1000);
+      return;
     }
   }  
 
@@ -578,19 +627,19 @@ void beginGNSS()
   theGNSS.autoSendCfgValsetAtSpaceRemaining(16);
 
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
-  if (theGNSS.getModuleInfo(1100) == true) // Try to get the module info
+  if (theGNSS.getModuleInfo(1100) == true) //Try to get the module info
   {
-    // Reconstruct the firmware version
-    sprintf(zedFirmwareVersion, "%s %d.%02d", theGNSS.getFirmwareType(), theGNSS.getFirmwareVersionHigh(), theGNSS.getFirmwareVersionLow());
+    //Reconstruct the firmware version
+    snprintf(zedFirmwareVersion, sizeof(zedFirmwareVersion), "%s %d.%02d", theGNSS.getFirmwareType(), theGNSS.getFirmwareVersionHigh(), theGNSS.getFirmwareVersionLow());
 
-    // Construct the firmware version as uint8_t. Note: will fail above 2.55!
+    //Construct the firmware version as uint8_t. Note: will fail above 2.55!
     zedFirmwareVersionInt = (theGNSS.getFirmwareVersionHigh() * 100) + theGNSS.getFirmwareVersionLow();
 
-    // Check this is known firmware
-    // "1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20 Spartan future support
-    // "1.21" - Future F9R HPS v1.21
-    // "1.30" - ZED-F9P (HPG) released Dec, 2021. Also ZED-F9R (HPS) released Sept, 2022
-    // "1.32" - ZED-F9P released May, 2022
+    //Check this is known firmware
+    //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20 Spartan future support
+    //"1.21" - Future F9R HPS v1.21
+    //"1.30" - ZED-F9P (HPG) released Dec, 2021. Also ZED-F9R (HPS) released Sept, 2022
+    //"1.32" - ZED-F9P released May, 2022
 
     const uint8_t knownFirmwareVersions[] = { 100, 112, 113, 120, 121, 130, 132 };
     bool knownFirmware = false;
@@ -628,9 +677,9 @@ void configureGNSS()
 {
   if (online.gnss == false) return;
 
-  theGNSS.setAutoPVTcallbackPtr(&storePVTdata); // Enable automatic NAV PVT messages with callback to storePVTdata
-  theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); // Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
-
+  theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
+  theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); //Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
+  
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
   //the settings file or internal settings.
@@ -690,12 +739,17 @@ void beginLEDs()
     ledcWrite(ledGreenChannel, 0);
     ledcWrite(ledBTChannel, 0);
   }
+  else if (productVariant == REFERENCE_STATION)
+  {
+    pinMode(pin_baseStatusLED, OUTPUT);
+    digitalWrite(pin_baseStatusLED, LOW);
+  }
 }
 
 //Configure the on board MAX17048 fuel gauge
 void beginFuelGauge()
 {
-  // Set up the MAX17048 LiPo fuel gauge
+  //Set up the MAX17048 LiPo fuel gauge
   if (lipo.begin() == false)
   {
     systemPrintln("Fuel gauge not detected.");
@@ -733,6 +787,7 @@ void beginAccelerometer()
   if (accel.begin() == false)
   {
     online.accelerometer = false;
+
     return;
   }
 
@@ -797,6 +852,22 @@ void beginSystemState()
 
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }
+  else if (productVariant == REFERENCE_STATION)
+  {
+    systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
+
+    if (systemState > STATE_SHUTDOWN)
+    {
+      systemPrintln("Unknown state - factory reset");
+      factoryReset();
+    }
+
+    firstRoverStart = true; //Allow user to enter test screen during first rover start
+    if (systemState == STATE_BASE_NOT_STARTED)
+      firstRoverStart = false;
+
+    setupBtn = new Button(pin_setupButton); //Create the button in memory
+  }
 
   //Starts task for monitoring button presses
   if (ButtonCheckTaskHandle == nullptr)
@@ -834,11 +905,11 @@ bool beginExternalTriggers()
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = raising edge
 
-  // While the module is _locking_ to GNSS time, turn off pulse
+  //While the module is _locking_ to GNSS time, turn off pulse
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
 
-  // When the module is _locked_ to GNSS time, make it generate 1kHz
+  //When the module is _locked_ to GNSS time, make it generate 1kHz
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, settings.externalPulseTimeBetweenPulse_us); //Set the period between pulses is us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, settings.externalPulseLength_us); //Set the pulse length in us
   response &= theGNSS.sendCfgValset();
@@ -847,7 +918,9 @@ bool beginExternalTriggers()
     systemPrintln("beginExternalTriggers config failed");
 
   if (settings.enableExternalHardwareEventLogging == true)
+  {
     theGNSS.setAutoTIMTM2callbackPtr(&eventTriggerReceived); //Enable automatic TIM TM2 messages with callback to eventTriggerReceived
+  }
   else
     theGNSS.setAutoTIMTM2callbackPtr(nullptr);
 
@@ -862,14 +935,14 @@ void beginIdleTasks()
 
     for (int index = 0; index < MAX_CPU_CORES; index++)
     {
-      sprintf(taskName, "IdleTask%d", index);
+      snprintf(taskName, sizeof(taskName), "IdleTask%d", index);
       if (idleTaskHandle[index] == nullptr)
         xTaskCreatePinnedToCore(
           idleTask,
           taskName, //Just for humans
           2000, //Stack Size
           nullptr, //Task input parameter
-          0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+          0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
           &idleTaskHandle[index], //Task handle
           index); //Core where task should run, 0=core, 1=Arduino
     }

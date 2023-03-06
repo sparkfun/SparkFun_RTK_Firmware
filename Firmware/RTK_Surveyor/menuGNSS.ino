@@ -216,8 +216,8 @@ void menuGNSS()
 
   //Error check for RTK2Go without email in user name
   //First force tolower the host name
-  char lowerHost[50];
-  strcpy(lowerHost, settings.ntripClient_CasterHost);
+  char lowerHost[51];
+  strncpy(lowerHost, settings.ntripClient_CasterHost, sizeof(lowerHost) - 1);
   for (int x = 0 ; x < 50 ; x++)
   {
     if (lowerHost[x] == '\0') break;
@@ -237,8 +237,8 @@ void menuGNSS()
     }
   }
 
-  // Set dynamic model
-  theGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
+  //Set dynamic model
+  theGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
 
   clearBuffer(); //Empty buffer of any newline chars
 }

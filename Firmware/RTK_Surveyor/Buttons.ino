@@ -4,12 +4,14 @@
 void powerOnCheck()
 {
   powerPressedStartTime = millis();
-  if (digitalRead(pin_powerSenseAndControl) == LOW)
-    delay(500);
+  if (pin_powerSenseAndControl >= 0)
+    if (digitalRead(pin_powerSenseAndControl) == LOW)
+      delay(500);
 
 #ifndef ENABLE_DEVELOPER
-  if (digitalRead(pin_powerSenseAndControl) != LOW)
-    powerDown(false); //Power button tap. Returning to off state.
+  if (pin_powerSenseAndControl >= 0)
+    if (digitalRead(pin_powerSenseAndControl) != LOW)
+      powerDown(false); //Power button tap. Returning to off state.
 #endif
 
   powerPressedStartTime = 0; //Reset var to return to normal 'on' state
@@ -31,11 +33,20 @@ void powerDown(bool displayInfo)
     delay(2000);
   }
 
-  pinMode(pin_powerSenseAndControl, OUTPUT);
-  digitalWrite(pin_powerSenseAndControl, LOW);
+  if (pin_powerSenseAndControl >= 0)
+  {
+    pinMode(pin_powerSenseAndControl, OUTPUT);
+    digitalWrite(pin_powerSenseAndControl, LOW);
+  }
 
-  pinMode(pin_powerFastOff, OUTPUT);
-  digitalWrite(pin_powerFastOff, LOW);
+  if (pin_powerFastOff >= 0)
+  {
+    pinMode(pin_powerFastOff, OUTPUT);
+    digitalWrite(pin_powerFastOff, LOW);
+  }
+
+  if ((productVariant == RTK_FACET) || (productVariant == RTK_FACET_LBAND) || (productVariant == REFERENCE_STATION))
+    digitalWrite(pin_peripheralPowerControl, LOW);
 
   while (1)
     delay(1);

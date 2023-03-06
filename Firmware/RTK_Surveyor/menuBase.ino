@@ -428,8 +428,7 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
         while (file.available())
         {
           //Get the next line from the file
-          //int n = getLine(&file, lineData, lineDataLength); //Use with SD library
-          int n = file.fgets(lineData, lineDataLength); //Use with SdFat library
+          int n = file.fgets(lineData, lineDataLength);
           if (n <= 0)
           {
             systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
@@ -466,8 +465,7 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
         while (file.available())
         {
           //Get the next line from the file
-          int n = file.readBytesUntil('\r', lineData, lineDataLength);
-          n += file.readBytesUntil('\n', &lineData[n], lineDataLength - n);
+          int n = getLine(&file, lineData, lineDataLength);
           if (n <= 0)
           {
             systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
@@ -538,12 +536,27 @@ bool removeFileSD(const char* fileName)
       markSemaphore(FUNCTION_REMOVEFILE);
 
       gotSemaphore = true;
-      if (sd->exists(fileName))
+
+      if (USE_SPI_MICROSD)
       {
-        log_d("Removing from SD: %s", fileName);
-        sd->remove(fileName);
-        removed = true;
+        if (sd->exists(fileName))
+        {
+          log_d("Removing from SD: %s", fileName);
+          sd->remove(fileName);
+          removed = true;
+        }
       }
+#ifdef COMPILE_SD_MMC
+      else
+      {
+        if (SD_MMC.exists(fileName))
+        {
+          log_d("Removing from SD: %s", fileName);
+          SD_MMC.remove(fileName);
+          removed = true;
+        }        
+      }
+#endif
 
       break;
     } //End Semaphore check

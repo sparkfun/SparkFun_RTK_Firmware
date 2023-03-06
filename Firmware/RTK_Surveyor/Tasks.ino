@@ -38,18 +38,32 @@ void F9PSerialWriteTask(void *e)
           else
           {
             //Ignore this escape character, passing along to output
-            serialGNSS.write(incoming);
+            if (USE_I2C_GNSS)
+              serialGNSS.write(incoming);
+            else
+              theGNSS.pushRawData(&incoming, 1);
           }
         }
         else //This is just a character in the stream, ignore
         {
           //Pass any escape characters that turned out to not be a complete escape sequence
           while (btEscapeCharsReceived-- > 0)
-            serialGNSS.write(btEscapeCharacter);
+          {
+            if (USE_I2C_GNSS)
+              serialGNSS.write(btEscapeCharacter);
+            else
+            {
+              uint8_t escChar = btEscapeCharacter;
+              theGNSS.pushRawData(&escChar, 1);
+            }
+          }
 
           //Pass byte to GNSS receiver or to system
           //TODO - control if this RTCM source should be listened to or not
-          serialGNSS.write(incoming);
+          if (USE_I2C_GNSS)
+            serialGNSS.write(incoming);
+          else
+            theGNSS.pushRawData(&incoming, 1);
 
           btLastByteReceived = millis();
           btEscapeCharsReceived = 0; //Update timeout check for escape char and partial frame
@@ -125,21 +139,44 @@ void F9PSerialReadTask(void *e)
       systemPrintf("SerialReadTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(nullptr));
 
     //Determine if serial data is available
-    while (serialGNSS.available())
+    if (USE_I2C_GNSS)
     {
-      //Read the data from UART1
-      incomingData = serialGNSS.read();
-
-      //Save the data byte
-      parse.buffer[parse.length++] = incomingData;
-      parse.length %= PARSE_BUFFER_LENGTH;
-
-      //Compute the CRC value for the message
-      if (parse.computeCrc)
-        parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
-
-      //Update the parser state based on the incoming byte
-      parse.state(&parse, incomingData);
+      while (serialGNSS.available())
+      {
+        //Read the data from UART1
+        incomingData = serialGNSS.read();
+  
+        //Save the data byte
+        parse.buffer[parse.length++] = incomingData;
+        parse.length %= PARSE_BUFFER_LENGTH;
+  
+        //Compute the CRC value for the message
+        if (parse.computeCrc)
+          parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
+  
+        //Update the parser state based on the incoming byte
+        parse.state(&parse, incomingData);
+      }
+    }
+    else //SPI GNSS
+    {
+      theGNSS.checkUblox(); //Check for new data
+      while (theGNSS.fileBufferAvailable() > 0)
+      {
+        //Read the data from the logging buffer
+        theGNSS.extractFileBufferData(&incomingData, 1); //TODO: make this more efficient by reading multiple bytes?
+  
+        //Save the data byte
+        parse.buffer[parse.length++] = incomingData;
+        parse.length %= PARSE_BUFFER_LENGTH;
+  
+        //Compute the CRC value for the message
+        if (parse.computeCrc)
+          parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
+  
+        //Update the parser state based on the incoming byte
+        parse.state(&parse, incomingData);
+      }
     }
 
     delay(1);
@@ -350,14 +387,36 @@ void handleGNSSDataTask(void *e)
 
           if (settings.enablePrintSDBuffers && !inMainMenu)
           {
-            int availableUARTSpace = settings.uartReceiveBufferSize - serialGNSS.available();
-            systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\r\n", serialGNSS.available(), 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
+            int bufferAvailable;
+            if (USE_I2C_GNSS)
+              bufferAvailable = serialGNSS.available();
+            else
+            {
+              theGNSS.checkUblox();
+              bufferAvailable = theGNSS.fileBufferAvailable();
+            }
+            int availableUARTSpace;
+            if (USE_I2C_GNSS)
+              availableUARTSpace = settings.uartReceiveBufferSize - bufferAvailable;
+            else
+              //Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
+              availableUARTSpace = settings.gnssHandlerBufferSize - bufferAvailable;
+            systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\r\n", bufferAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
           }
 
           //Write the data to the file
           long startTime = millis();
 
           sdBytesToRecord = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+          static unsigned long lastFlush = 0;
+          if (USE_MMC_MICROSD)
+          {
+            if (millis() > (lastFlush + 250)) // Flush every 250ms, not every write
+            {
+              ubxFile->flush();
+              lastFlush += 250;
+            }
+          }
           fileSize = ubxFile->fileSize(); //Update file size
 
           sdFreeSpace -= sliceToRecord; //Update remaining space on SD
@@ -365,13 +424,13 @@ void handleGNSSDataTask(void *e)
           //Force file sync every 60s
           if (millis() - lastUBXLogSyncTime > 60000)
           {
-            if (productVariant == RTK_SURVEYOR)
+            if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
             ubxFile->sync();
-            ubxFile->updateFileAccessTimestamp(); // Update the file access time & date
+            ubxFile->updateFileAccessTimestamp(); //Update the file access time & date
 
-            if (productVariant == RTK_SURVEYOR)
+            if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
 
             lastUBXLogSyncTime = millis();
@@ -819,6 +878,125 @@ void ButtonCheckTask(void *e)
         }
       }
     } //End Platform = RTK Facet
+    else if (productVariant == REFERENCE_STATION) //Check one momentary button
+    {
+      if (setupBtn != nullptr) setupBtn->read();
+
+      if (systemState == STATE_SHUTDOWN)
+      {
+        //Ignore button presses while shutting down
+      }
+      else if (setupBtn != nullptr && setupBtn->pressedFor(shutDownButtonTime))
+      {
+        forceSystemStateUpdate = true;
+        requestChangeState(STATE_SHUTDOWN);
+
+        if (inMainMenu) powerDown(true); //State machine is not updated while in menu system so go straight to power down as needed
+      }
+      else if (setupBtn != nullptr && systemState == STATE_ROVER_NOT_STARTED && firstRoverStart == true && setupBtn->pressedFor(500))
+      {
+        forceSystemStateUpdate = true;
+        requestChangeState(STATE_TEST);
+        lastTestMenuChange = millis(); //Avoid exiting test menu for 1s
+      }
+      else if (setupBtn != nullptr && setupBtn->wasReleased() && firstRoverStart == false)
+      {
+        switch (systemState)
+        {
+          //If we are in any running state, change to STATE_DISPLAY_SETUP
+          case STATE_ROVER_NOT_STARTED:
+          case STATE_ROVER_NO_FIX:
+          case STATE_ROVER_FIX:
+          case STATE_ROVER_RTK_FLOAT:
+          case STATE_ROVER_RTK_FIX:
+          case STATE_BASE_NOT_STARTED:
+          case STATE_BASE_TEMP_SETTLE:
+          case STATE_BASE_TEMP_SURVEY_STARTED:
+          case STATE_BASE_TEMP_TRANSMITTING:
+          case STATE_BASE_FIXED_NOT_STARTED:
+          case STATE_BASE_FIXED_TRANSMITTING:
+          case STATE_BUBBLE_LEVEL:
+          case STATE_WIFI_CONFIG_NOT_STARTED:
+          case STATE_WIFI_CONFIG:
+          case STATE_ESPNOW_PAIRING_NOT_STARTED:
+          case STATE_ESPNOW_PAIRING:
+            lastSystemState = systemState; //Remember this state to return after we mark an event or ESP-Now pair
+            requestChangeState(STATE_DISPLAY_SETUP);
+            setupState = STATE_MARK_EVENT;
+            lastSetupMenuChange = millis();
+            break;
+
+          case STATE_MARK_EVENT:
+            //If the user presses the setup button during a mark event, do nothing
+            //Allow system to return to lastSystemState
+            break;
+
+          case STATE_PROFILE:
+            //If the user presses the setup button during a profile change, do nothing
+            //Allow system to return to lastSystemState
+            break;
+
+          case STATE_TEST:
+            //Do nothing. User is releasing the setup button.
+            break;
+
+          case STATE_TESTING:
+            //If we are in testing, return to Rover Not Started
+            requestChangeState(STATE_ROVER_NOT_STARTED);
+            break;
+
+          case STATE_DISPLAY_SETUP:
+            //If we are displaying the setup menu, cycle through possible system states
+            //Exit display setup and enter new system state after ~1500ms in updateSystemState()
+            lastSetupMenuChange = millis();
+
+            forceDisplayUpdate = true; //User is interacting so repaint display quickly
+
+            switch (setupState)
+            {
+              case STATE_MARK_EVENT:
+                setupState = STATE_ROVER_NOT_STARTED;
+                break;
+              case STATE_ROVER_NOT_STARTED:
+                //If F9R, skip base state
+                if (zedModuleType == PLATFORM_F9R)
+                  setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                else
+                  setupState = STATE_BASE_NOT_STARTED;
+                break;
+              case STATE_BASE_NOT_STARTED:
+                setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                break;
+              case STATE_WIFI_CONFIG_NOT_STARTED:
+                setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
+                break;
+              case STATE_ESPNOW_PAIRING_NOT_STARTED:
+                //If only one active profile do not show any profiles
+                index = getProfileNumberFromUnit(0);
+                displayProfile = getProfileNumberFromUnit(1);
+                setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
+                displayProfile = 0;
+                break;
+              case STATE_PROFILE:
+                //Done when no more active profiles
+                displayProfile++;
+                if (!getProfileNumberFromUnit(displayProfile))
+                  setupState = STATE_MARK_EVENT;
+                break;
+              default:
+                systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
+                setupState = STATE_MARK_EVENT;
+                break;
+            }
+            break;
+
+          default:
+            systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
+            requestChangeState(STATE_ROVER_NOT_STARTED);
+            break;
+        }
+      }
+    } //End Platform = REFERENCE_STATION
 
     delay(1); //Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
     taskYIELD();
@@ -948,16 +1126,26 @@ void sdSizeCheckTask(void *e)
       {
         markSemaphore(FUNCTION_SDSIZECHECK);
 
-        csd_t csd;
-        sd->card()->readCSD(&csd); //Card Specific Data
-        sdCardSize = (uint64_t)512 * sd->card()->sectorCount();
-
-        sd->volumeBegin();
-
-        //Find available cluster/space
-        sdFreeSpace = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
-        sdFreeSpace *= sd->vol()->sectorsPerCluster();
-        sdFreeSpace *= 512L; //Bytes per sector
+        if (USE_SPI_MICROSD)
+        {
+          csd_t csd;
+          sd->card()->readCSD(&csd); //Card Specific Data
+          sdCardSize = (uint64_t)512 * sd->card()->sectorCount();
+  
+          sd->volumeBegin();
+  
+          //Find available cluster/space
+          sdFreeSpace = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
+          sdFreeSpace *= sd->vol()->sectorsPerCluster();
+          sdFreeSpace *= 512L; //Bytes per sector
+        }
+#ifdef COMPILE_SD_MMC
+        else
+        {
+          sdCardSize = SD_MMC.cardSize();
+          sdFreeSpace = SD_MMC.totalBytes() - SD_MMC.usedBytes();
+        }
+#endif
 
         xSemaphoreGive(sdCardSemaphore);
 

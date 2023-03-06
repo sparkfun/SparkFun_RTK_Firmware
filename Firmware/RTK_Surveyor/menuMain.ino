@@ -233,14 +233,24 @@ void menuUserProfiles()
         //Remove profile from SD if available
         if (online.microSD == true)
         {
-          if (sd->exists(settingsFileName))
-            sd->remove(settingsFileName);
+          if (USE_SPI_MICROSD)
+          {
+            if (sd->exists(settingsFileName))
+              sd->remove(settingsFileName);
+          }
+#ifdef COMPILE_SD_MMC
+          else
+          {
+            if (SD_MMC.exists(settingsFileName))
+              SD_MMC.remove(settingsFileName);            
+          }
+#endif
         }
 
         recordProfileNumber(0); //Move to Profile1
         profileNumber = 0;
 
-        sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Update file name with new profileNumber
+        snprintf(settingsFileName, sizeof(settingsFileName), "/%s_Settings_%d.txt", platformFilePrefix, profileNumber); //Update file name with new profileNumber
 
         //We need to load these settings from file so that we can record a profile name change correctly
         bool responseLFS = loadSystemSettingsFromFileLFS(settingsFileName, &settings);
@@ -312,15 +322,28 @@ void factoryReset()
   tasksStopUART2();
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-  if (settings.enableSD && online.microSD)
+  //if (settings.enableSD && online.microSD) //Don't check settings.enableSD - it could be corrupt
+  if (online.microSD)
   {
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
-      //Remove this specific settings file. Don't remove the other profiles.
-      sd->remove(settingsFileName);
-
-      sd->remove(stationCoordinateECEFFileName); //Remove station files
-      sd->remove(stationCoordinateGeodeticFileName);
+      if (USE_SPI_MICROSD)
+      {
+        //Remove this specific settings file. Don't remove the other profiles.
+        sd->remove(settingsFileName);
+  
+        sd->remove(stationCoordinateECEFFileName); //Remove station files
+        sd->remove(stationCoordinateGeodeticFileName);
+      }
+#ifdef COMPILE_SD_MMC
+      else
+      {
+        SD_MMC.remove(settingsFileName);
+  
+        SD_MMC.remove(stationCoordinateECEFFileName); //Remove station files
+        SD_MMC.remove(stationCoordinateGeodeticFileName);
+      }
+#endif
 
       xSemaphoreGive(sdCardSemaphore);
     } //End sdCardSemaphore
@@ -337,7 +360,7 @@ void factoryReset()
   LittleFS.format();
 
   if (online.gnss == true)
-    theGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
+    theGNSS.factoryDefault(); //Reset everything: baud rate, I2C address, update rate, everything. And save to BBR.
 
   systemPrintln("Settings erased successfully. Rebooting. Goodbye!");
   delay(2000);

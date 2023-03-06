@@ -30,16 +30,17 @@
 #define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
-#define COMPILE_SD_MMC // Comment out to remove REFERENCE_STATION microSD SD_MMC support
+#define COMPILE_SD_MMC //Comment out to remove REFERENCE_STATION microSD SD_MMC support
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+//#define REF_STN_GNSS_DEBUG //Uncomment this line to output GNSS library debug messages on serialGNSS. Ref Stn only. Needs ENABLE_DEVELOPER
 
 //Define the RTK board identifier:
-//  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
-//  to make sure that the settings stored in flash (LittleFS) are correct for this version of the RTK
-//  (sizeOfSettings is not necessarily unique and we want to avoid problems when swapping from one variant to another)
-//  It is the sum of:
-//    the major firmware version * 0x10
-//    the minor firmware version
+// This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
+// to make sure that the settings stored in flash (LittleFS) are correct for this version of the RTK
+// (sizeOfSettings is not necessarily unique and we want to avoid problems when swapping from one variant to another)
+// It is the sum of:
+//   the major firmware version * 0x10
+//   the minor firmware version
 #define RTK_IDENTIFIER (FIRMWARE_VERSION_MAJOR * 0x10 + FIRMWARE_VERSION_MINOR)
 
 #include "settings.h"
@@ -57,39 +58,39 @@
 //Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //These pins are set in beginBoard()
-int pin_batteryLevelLED_Red;
-int pin_batteryLevelLED_Green;
-int pin_positionAccuracyLED_1cm;
-int pin_positionAccuracyLED_10cm;
-int pin_positionAccuracyLED_100cm;
-int pin_baseStatusLED;
-int pin_bluetoothStatusLED;
-int pin_microSD_CS;
-int pin_zed_tx_ready;
-int pin_zed_reset;
-int pin_batteryLevel_alert;
+int pin_batteryLevelLED_Red = -1;
+int pin_batteryLevelLED_Green = -1;
+int pin_positionAccuracyLED_1cm = -1;
+int pin_positionAccuracyLED_10cm = -1;
+int pin_positionAccuracyLED_100cm = -1;
+int pin_baseStatusLED = -1;
+int pin_bluetoothStatusLED = -1;
+int pin_microSD_CS = -1;
+int pin_zed_tx_ready = -1;
+int pin_zed_reset = -1;
+int pin_batteryLevel_alert = -1;
 
-int pin_muxA;
-int pin_muxB;
-int pin_powerSenseAndControl;
-int pin_setupButton;
-int pin_powerFastOff;
-int pin_dac26;
-int pin_adc39;
-int pin_peripheralPowerControl;
+int pin_muxA = -1;
+int pin_muxB = -1;
+int pin_powerSenseAndControl = -1;
+int pin_setupButton = -1;
+int pin_powerFastOff = -1;
+int pin_dac26 = -1;
+int pin_adc39 = -1;
+int pin_peripheralPowerControl = -1;
 
-int pin_radio_rx;
-int pin_radio_tx;
-int pin_radio_rst;
-int pin_radio_pwr;
-int pin_radio_cts;
-int pin_radio_rts;
+int pin_radio_rx = -1;
+int pin_radio_tx = -1;
+int pin_radio_rst = -1;
+int pin_radio_pwr = -1;
+int pin_radio_cts = -1;
+int pin_radio_rts = -1;
 
-int pin_Ethernet_CS;
-int pin_Ethernet_Interrupt;
-int pin_GNSS_CS;
-int pin_GNSS_TimePulse;
-int pin_microSD_CardDetect;
+int pin_Ethernet_CS = -1;
+int pin_Ethernet_Interrupt = -1;
+int pin_GNSS_CS = -1;
+int pin_GNSS_TimePulse = -1;
+int pin_microSD_CardDetect = -1;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
@@ -128,7 +129,7 @@ ESP32Time rtc;
 #include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 SdFat *sd;
 
-#include "FileSdFatMMC.h" // Hybrid SdFat and SD_MMC file access
+#include "FileSdFatMMC.h" //Hybrid SdFat and SD_MMC file access
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
@@ -193,16 +194,16 @@ static int ntripServerConnectionAttempts = 0; //Count the number of connection a
 volatile uint8_t wifiTcpConnected;
 
 //NTRIP client timer usage:
-//  * Measure the connection response time
-//  * Receive NTRIP data timeout
+// * Measure the connection response time
+// * Receive NTRIP data timeout
 static uint32_t ntripClientTimer;
 static uint32_t ntripClientStartTime; //For calculating uptime
 static int ntripClientConnectionAttemptsTotal; //Count the number of connection attempts absolutely
 
 //NTRIP server timer usage:
-//  * Measure the connection response time
-//  * Receive RTCM correction data timeout
-//  * Monitor last RTCM byte received for frame counting
+// * Measure the connection response time
+// * Receive RTCM correction data timeout
+// * Monitor last RTCM byte received for frame counting
 static uint32_t ntripServerTimer;
 static uint32_t ntripServerStartTime;
 static int ntripServerConnectionAttemptsTotal; //Count the number of connection attempts absolutely
@@ -228,7 +229,32 @@ char neoFirmwareVersion[20]; //Output to system status menu.
 uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS). Note: will fail above 2.55!
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
-SFE_UBLOX_GNSS_SUPER theGNSS;
+//Use Michael's lock/unlock methods to prevent the UART2 task from calling checkUblox during a sendCommand and waitForResponse.
+//Also prevents pushRawData from being called too.
+class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
+{
+public:
+  volatile bool _iAmLocked = false;
+  bool lock(void)
+  {
+    if (_iAmLocked)
+    {
+      unsigned long startTime = millis();
+      while (_iAmLocked && (millis() < (startTime + 2100)))
+        delay(1); //YIELD
+      if (_iAmLocked)
+        return false;
+    }
+    _iAmLocked = true;
+    return true;
+  }
+  void unlock(void)
+  {
+    _iAmLocked = false;  
+  }
+};
+
+SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
 
 //These globals are updated regularly via the storePVTdata callback
 bool pvtUpdated = false;
@@ -256,10 +282,10 @@ const byte haeNumberOfDecimals = 8; //Used for printing and transmitting lat/lon
 
 //Battery fuel gauge and PWM LEDs
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
+#include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
 SFE_MAX1704X lipo(MAX1704X_MAX17048);
 
-// RTK Surveyor LED PWM properties
+//RTK Surveyor LED PWM properties
 const int pwmFreq = 5000;
 const int ledRedChannel = 0;
 const int ledGreenChannel = 1;
@@ -277,7 +303,7 @@ float battChangeRate = 0.0;
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_BT
-// See bluetoothSelect.h for implemenation
+//See bluetoothSelect.h for implemenation
 #include "bluetoothSelect.h"
 #endif
 
@@ -347,7 +373,7 @@ SPARKFUN_LIS2DH12 accel;
 
 //Buttons - Interrupt driven and debounce
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#include <JC_Button.h> // http://librarymanager/All#JC_Button v2.1.2
+#include <JC_Button.h> //http://librarymanager/All#JC_Button v2.1.2
 Button *setupBtn = nullptr; //We can't instantiate the buttons here because we don't yet know what pin numbers to use
 Button *powerBtn = nullptr;
 
@@ -451,7 +477,7 @@ uint8_t loggingIconDisplayed = 0; //Increases every 500ms while logging
 uint8_t espnowIconDisplayed = 0; //Increases every 500ms while transmitting
 
 uint64_t lastLogSize = 0;
-bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
+bool logIncreasing = false; //Goes true when log file is greater than lastLogSize or logPosition changes
 bool reuseLastLog = false; //Goes true if we have a reset due to software (rather than POR)
 
 uint16_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM()
@@ -594,15 +620,19 @@ void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
 
+  identifyBoard(); //Determine what hardware platform we are running on
+
+  initializePowerPins(); //Initialize any essential power pins - e.g. enable power for the Display
+
   beginI2C();
 
-  beginDisplay(); //Start display first to be able to display any errors
+  beginDisplay(); //Start display to be able to display any errors
 
   beginGNSS(); //Connect to GNSS to get module type
 
   beginFS(); //Start file system for settings
 
-  beginBoard(); //Determine what hardware platform we are running on and check on button
+  beginBoard(); //Now finish settup up the board and check the on button
 
   displaySplash(); //Display the RTK product name and firmware version
 
@@ -762,7 +792,7 @@ void updateLogs()
       snprintf(eventData, sizeof(eventData), "%d,%d,%d,%d", triggerCount, triggerTowMsR, triggerTowSubMsR, triggerAccEst);
 
       char nmeaMessage[82]; //Max NMEA sentence length is 82
-      createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, eventData); //textID, buffer, text
+      createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, sizeof(nmeaMessage), eventData); //textID, buffer, sizeOfBuffer, text
 
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {

@@ -343,16 +343,16 @@ void menuPortHardwareTriggers()
 
 void eventTriggerReceived(UBX_TIM_TM2_data_t *ubxDataStruct)
 {
-  // It is the rising edge of the sound event (TRIG) which is important
-  // The falling edge is less useful, as it will be "debounced" by the loop code
-  if (ubxDataStruct->flags.bits.newRisingEdge) // 1 if a new rising edge was detected
+  //It is the rising edge of the sound event (TRIG) which is important
+  //The falling edge is less useful, as it will be "debounced" by the loop code
+  if (ubxDataStruct->flags.bits.newRisingEdge) //1 if a new rising edge was detected
   {
     systemPrintln("Rising Edge Event");
 
     triggerCount = ubxDataStruct->count;
-    triggerTowMsR = ubxDataStruct->towMsR; // Time Of Week of rising edge (ms)
-    triggerTowSubMsR = ubxDataStruct->towSubMsR; // Millisecond fraction of Time Of Week of rising edge in nanoseconds
-    triggerAccEst = ubxDataStruct->accEst; // Nanosecond accuracy estimate
+    triggerTowMsR = ubxDataStruct->towMsR; //Time Of Week of rising edge (ms)
+    triggerTowSubMsR = ubxDataStruct->towSubMsR; //Millisecond fraction of Time Of Week of rising edge in nanoseconds
+    triggerAccEst = ubxDataStruct->accEst; //Nanosecond accuracy estimate
 
     newEventToRecord = true;
   }

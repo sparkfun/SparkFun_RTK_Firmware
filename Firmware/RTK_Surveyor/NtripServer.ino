@@ -47,7 +47,7 @@
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
-// Constants - compiled out
+//Constants - compiled out
 //----------------------------------------
 
 #ifdef COMPILE_WIFI
@@ -58,10 +58,10 @@
 static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 30;
 
 //----------------------------------------
-// Locals - compiled out
+//Locals - compiled out
 //----------------------------------------
 
-// WiFi connection used to push RTCM to NTRIP caster over WiFi
+//WiFi connection used to push RTCM to NTRIP caster over WiFi
 static WiFiClient * ntripServer;
 
 //Count of bytes sent by the NTRIP server to the NTRIP caster
@@ -76,7 +76,7 @@ static uint32_t ntripServerLastConnectionAttempt = 0;
 static uint32_t ntripServerStateLastDisplayed = 0;
 
 //----------------------------------------
-// NTRIP Server Routines - compiled out
+//NTRIP Server Routines - compiled out
 //----------------------------------------
 
 //Initiate a connection to the NTRIP caster
@@ -86,8 +86,8 @@ bool ntripServerConnectCaster()
   char serverBuffer[SERVER_BUFFER_SIZE];
 
   //Remove any http:// or https:// prefix from host name
-  char hostname[50];
-  strncpy(hostname, settings.ntripServer_CasterHost, 50); //strtok modifies string to be parsed so we create a copy
+  char hostname[51];
+  strncpy(hostname, settings.ntripServer_CasterHost, sizeof(hostname) - 1); //strtok modifies string to be parsed so we create a copy
   char *token = strtok(hostname, "//");
   if (token != nullptr)
   {
@@ -107,9 +107,9 @@ bool ntripServerConnectCaster()
   systemPrintln("NTRIP Server connected");
 
   //Build the authorization credentials message
-  //  * Mount point
-  //  * Password
-  //  * Agent
+  // * Mount point
+  // * Password
+  // * Agent
   snprintf(serverBuffer, SERVER_BUFFER_SIZE,
            "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
            settings.ntripServer_MountPointPW,
@@ -158,11 +158,11 @@ void ntripServerResponse(char * response, size_t maxLength)
   //Make sure that we can zero terminate the response
   responseEnd = &response[maxLength - 1];
 
-  // Read bytes from the caster and store them
+  //Read bytes from the caster and store them
   while ((response < responseEnd) && ntripServer->available())
     *response++ = ntripServer->read();
 
-  // Zero terminate the response
+  //Zero terminate the response
   *response = '\0';
 }
 
@@ -203,10 +203,10 @@ void ntripServerSetState(byte newState)
       break;
   }
 }
-#endif  // COMPILE_WIFI
+#endif  //COMPILE_WIFI
 
 //----------------------------------------
-// Global NTRIP Server Routines
+//Global NTRIP Server Routines
 //----------------------------------------
 
 //This function gets called as each RTCM byte comes in

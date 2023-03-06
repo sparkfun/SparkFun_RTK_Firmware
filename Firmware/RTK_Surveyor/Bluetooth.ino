@@ -20,11 +20,11 @@
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
-// Constants
+//Constants
 //----------------------------------------
 
 //----------------------------------------
-// Locals - compiled out
+//Locals - compiled out
 //----------------------------------------
 
 #ifdef COMPILE_BT
@@ -32,7 +32,7 @@ BTSerialInterface *bluetoothSerial;
 static volatile byte bluetoothState = BT_OFF;
 
 //----------------------------------------
-// Bluetooth Routines - compiled out
+//Bluetooth Routines - compiled out
 //----------------------------------------
 
 //Call back for when BT connection event happens (connected/disconnect)
@@ -61,7 +61,7 @@ void bluetoothCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
 #endif  //COMPILE_BT
 
 //----------------------------------------
-// Global Bluetooth Routines
+//Global Bluetooth Routines
 //----------------------------------------
 
 //Return the Bluetooth state
@@ -147,15 +147,15 @@ void bluetoothStart()
 #ifdef COMPILE_BT
   if (bluetoothState == BT_OFF)
   {
-    char stateName[10];
+    char stateName[11];
     if (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX)
-      strcpy(stateName, "Rover-");
+      strncpy(stateName, "Rover-", sizeof(stateName) - 1);
     else if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
-      strcpy(stateName, "Base-");
+      strncpy(stateName, "Base-", sizeof(stateName) - 1);
 
-    sprintf(deviceName, "%s %s%02X%02X", platformPrefix, stateName, btMACAddress[4], btMACAddress[5]);
+    snprintf(deviceName, sizeof(deviceName), "%s %s%02X%02X", platformPrefix, stateName, btMACAddress[4], btMACAddress[5]);
 
-    // Select Bluetooth setup
+    //Select Bluetooth setup
     if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
       return;
     else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
@@ -241,7 +241,7 @@ void bluetoothTest(bool runTest)
 
   if (online.gnss == true)
   {
-    if (runTest && (zedUartPassed == false))
+    if (runTest && (zedUartPassed == false) && (USE_I2C_GNSS))
     {
       tasksStopUART2(); //Stop absoring ZED serial via task
 
@@ -270,7 +270,7 @@ void bluetoothTest(bool runTest)
 
   //Display Bluetooth MAC address and test results
   char macAddress[5];
-  sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
+  snprintf(macAddress, sizeof(macAddress), "%02X%02X", btMACAddress[4], btMACAddress[5]);
   systemPrint("Bluetooth ");
   if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
     systemPrint("Low Energy ");

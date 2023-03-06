@@ -9,15 +9,15 @@
 */
 
 //Define commands for the SD card
-#define  SD_GO_IDLE      (0x40 + 0)      // CMD0 - go to idle state
-#define  SD_INIT      (0x40 + 1)      // CMD1 - start initialization
-#define  SD_SEND_IF_COND  (0x40 + 8)      // CMD8 - send interface (conditional), works for SDHC only
-#define  SD_SEND_STATUS   (0x40 + 13)     // CMD13 - send card status
-#define  SD_SET_BLK_LEN   (0x40 + 16)     // CMD16 - set length of block in bytes
-#define  SD_LOCK_UNLOCK   (0x40 + 42)     // CMD42 - lock/unlock card
-#define  CMD55        (0x40 + 55)     // multi-byte preface command
-#define  SD_READ_OCR    (0x40 + 58)     // read OCR
-#define  SD_ADV_INIT    (0xc0 + 41)     // ACMD41, for SDHC cards - advanced start initialization
+#define  SD_GO_IDLE      (0x40 + 0)      //CMD0 - go to idle state
+#define  SD_INIT      (0x40 + 1)         //CMD1 - start initialization
+#define  SD_SEND_IF_COND  (0x40 + 8)     //CMD8 - send interface (conditional), works for SDHC only
+#define  SD_SEND_STATUS   (0x40 + 13)    //CMD13 - send card status
+#define  SD_SET_BLK_LEN   (0x40 + 16)    //CMD16 - set length of block in bytes
+#define  SD_LOCK_UNLOCK   (0x40 + 42)    //CMD42 - lock/unlock card
+#define  CMD55        (0x40 + 55)        //multi-byte preface command
+#define  SD_READ_OCR    (0x40 + 58)      //read OCR
+#define  SD_ADV_INIT    (0xc0 + 41)      //ACMD41, for SDHC cards - advanced start initialization
 
 //Define options for accessing the SD card's PWD (CMD42)
 #define  MASK_ERASE         0x08    //erase the entire card
@@ -52,20 +52,20 @@ bool sdPresent(void)
     pinMode(pin_microSD_CS, OUTPUT);
   
     //Sending clocks while card power stabilizes...
-    deselectCard();             // always make sure
-    for (byte i = 0; i < 30; i++) // send several clocks while card power stabilizes
+    deselectCard();               //always make sure
+    for (byte i = 0; i < 30; i++) //send several clocks while card power stabilizes
       xchg(0xff);
   
     //Sending CMD0 - GO IDLE...
     for (byte i = 0; i < 0x10; i++) //Attempt to go idle
     {
-      response = sdSendCommand(SD_GO_IDLE, 0);  // send CMD0 - go to idle state
+      response = sdSendCommand(SD_GO_IDLE, 0);  //send CMD0 - go to idle state
       if (response == 1) break;
     }
     if (response != 1) return (false); //Card failed to respond to idle
-  
-    return (true);
   }
+  
+  return (true);
 }
 
 /*
@@ -89,33 +89,33 @@ byte sdSendCommand(byte command, unsigned long arg)
 {
   byte response;
 
-  if (command & 0x80)         // special case, ACMD(n) is sent as CMD55 and CMDn
+  if (command & 0x80)         //special case, ACMD(n) is sent as CMD55 and CMDn
   {
-    command &= 0x7f;   // strip high bit for later
-    response = sdSendCommand(CMD55, 0); // send first part (recursion)
+    command &= 0x7f;   //strip high bit for later
+    response = sdSendCommand(CMD55, 0); //send first part (recursion)
     if (response > 1) return (response);
   }
 
   deselectCard();
   xchg(0xFF);
-  selectCard(); // enable CS
+  selectCard(); //enable CS
   xchg(0xFF);
 
-  xchg(command | 0x40);       // command always has bit 6 set!
-  xchg((byte)(arg >> 24)); // send data, starting with top byte
+  xchg(command | 0x40);    //command always has bit 6 set!
+  xchg((byte)(arg >> 24)); //send data, starting with top byte
   xchg((byte)(arg >> 16));
   xchg((byte)(arg >> 8));
   xchg((byte)(arg & 0xFF));
 
-  byte crc = 0x01;             // good for most cases
-  if (command == SD_GO_IDLE) crc = 0x95;     // this will be good enough for most commands
-  if (command == SD_SEND_IF_COND) crc = 0x87;  // special case, have to use different CRC
-  xchg(crc);                  // send final byte
+  byte crc = 0x01;             //good for most cases
+  if (command == SD_GO_IDLE) crc = 0x95;       //this will be good enough for most commands
+  if (command == SD_SEND_IF_COND) crc = 0x87;  //special case, have to use different CRC
+  xchg(crc);                  //send final byte
 
-  for (int i = 0; i < 30; i++)    // loop until timeout or response
+  for (int i = 0; i < 30; i++)    //loop until timeout or response
   {
     response = xchg(0xFF);
-    if ((response & 0x80) == 0) break; // high bit cleared means we got a response
+    if ((response & 0x80) == 0) break; //high bit cleared means we got a response
   }
 
   /*
@@ -129,11 +129,11 @@ byte sdSendCommand(byte command, unsigned long arg)
       (command != SD_SEND_IF_COND) &&
       (command != SD_LOCK_UNLOCK))
   {
-    deselectCard();             // all done
-    xchg(0xFF);             // close with eight more clocks
+    deselectCard();             //all done
+    xchg(0xFF);             //close with eight more clocks
   }
 
-  return (response);        // let the caller sort it out
+  return (response);        //let the caller sort it out
 }
 
 //Select (enable) the SD card

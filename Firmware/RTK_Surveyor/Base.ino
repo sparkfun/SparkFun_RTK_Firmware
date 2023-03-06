@@ -15,7 +15,7 @@ bool configureUbloxModuleBase()
 
   theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  theGNSS.setNMEAGPGGAcallbackPtr(nullptr); // Disable GPGGA call back that may have been set during Rover NTRIP Client mode
+  theGNSS.setNMEAGPGGAcallbackPtr(nullptr); //Disable GPGGA call back that may have been set during Rover NTRIP Client mode
 
   bool response = true;
 
@@ -27,19 +27,31 @@ bool configureUbloxModuleBase()
   //Since we are at 1Hz, allow GSV NMEA to be reported at whatever the user has chosen
   response &= theGNSS.addCfgValset(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module
 
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); // Disable NMEA message that may have been set during Rover NTRIP Client mode
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); //Disable NMEA message that may have been set during Rover NTRIP Client mode
 
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
     response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
 
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
 
+  //RTCM is only available on ZED-F9P modules
+  //
+  //For most RTK products, the GNSS is interfaced via both I2C and UART1. Configuration and PVT/HPPOS messages are
+  //configured over I2C. Any messages that need to be logged are output on UART1, and received by this code using
+  //serialGNSS.
   //In base mode the RTK device should output RTCM over all ports:
   //(Primary) UART2 in case the Surveyor is connected via radio to rover
   //(Optional) I2C in case user wants base to connect to WiFi and NTRIP Caster
   //(Seconday) USB in case the Surveyor is used as an NTRIP caster connected to SBC or other
   //(Tertiary) UART1 in case Surveyor is sending RTCM to phone that is then NTRIP Caster
+  //
+  //But, on the Reference Station, the GNSS is interfaced via SPI. It has no access to I2C and UART1.
+  //We use the GNSS library's built-in logging buffer to mimic UART1. The code in Tasks.ino reads
+  //data from the logging buffer as if it had come from UART1.
+  //So for that product - in Base mode - we can only output RTCM on SPI, USB and UART2.
+  //If we want to log the RTCM messages, we need to add them to the logging buffer inside the GNSS library.
+  //If we want to pass them along to (e.g.) radio, we do that using processRTCM (defined below).
 
   if (USE_I2C_GNSS)
   {
@@ -48,7 +60,7 @@ bool configureUbloxModuleBase()
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_I2C, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_I2C, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_I2C, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_I2C, 10);  //Enable message every 10 seconds
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_I2C, 10);  //Enable message every 10 cycles - note: this may conflict with settings and setMessages?
   
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_UART1, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_UART1, 1);
@@ -57,14 +69,36 @@ bool configureUbloxModuleBase()
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART1, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART1, 10);
   }
-  else
+  else //SPI GNSS
   {
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_SPI, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_SPI, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_SPI, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_SPI, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_SPI, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_SPI, 10);  //Enable message every 10 seconds    
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_SPI, 10);  //Enable message every 10 cycles - note: this may conflict with settings and setMessages?
+
+    //Enable logging of these messages so the RTCM will be stored automatically in the logging buffer.
+    //This mimics the data arriving via UART1.
+    uint32_t logRTCMMessages = theGNSS.getRTCMLoggingMask();
+    logRTCMMessages |= ( SFE_UBLOX_FILTER_RTCM_TYPE1005 | SFE_UBLOX_FILTER_RTCM_TYPE1074 | SFE_UBLOX_FILTER_RTCM_TYPE1084
+                       | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124 | SFE_UBLOX_FILTER_RTCM_TYPE1230 );
+    theGNSS.setRTCMLoggingMask(logRTCMMessages);
+    log_d("setRTCMLoggingMask 0x%X", logRTCMMessages);
+
+    //Update settings, otherwise setMessages could disable these again...
+    for (int x = 0; x < MAX_UBX_MSG; x++)
+    {
+      if (settings.ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
+      {
+        if (settings.ubxMessages[x].filterMask & //This is quicker than checking the msgID
+          ( SFE_UBLOX_FILTER_RTCM_TYPE1005 | SFE_UBLOX_FILTER_RTCM_TYPE1074 | SFE_UBLOX_FILTER_RTCM_TYPE1084
+          | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124))
+          settings.ubxMessages[x].msgRate = 1;
+        if (settings.ubxMessages[x].filterMask & SFE_UBLOX_FILTER_RTCM_TYPE1230)
+          settings.ubxMessages[x].msgRate = 10;
+      }
+    }
   }
 
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_USB, 1);

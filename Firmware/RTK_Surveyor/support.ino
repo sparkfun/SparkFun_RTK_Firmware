@@ -450,11 +450,8 @@ bool checkRtcmMessage(uint8_t data)
   {
     //Read the upper two bits of the length
     case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
-      // PaulZC: The next line checks if the first length byte is zero. Curious...
-      // This limits 'valid' message lengths to 255 bytes instead of 1023. TODO: check this.
-      // Maybe the intent is to check that the 6 unused bits are all zero?
-      // In which case, the next line should be: if (data <= 3)
-      if (!(data & 3))
+      //Verify the length byte - check the 6 MS bits are all zero
+      if (!(data & (~3)))
       {
         length = data << 8;
         rtcmParsingState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
@@ -868,7 +865,7 @@ uint8_t rtcmReadLength2(PARSE_STATE * parse, uint8_t data)
 //Read the upper two bits of the length
 uint8_t rtcmReadLength1(PARSE_STATE * parse, uint8_t data)
 {
-  //Verify the length byte
+  //Verify the length byte - check the 6 MS bits are all zero
   if (data & (~3))
   {
     //Invalid length, place this byte at the beginning of the buffer

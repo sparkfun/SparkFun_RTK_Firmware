@@ -391,8 +391,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
         while (settingsFile.available())
         {
           //Get the next line from the file
-          //int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
-          int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
+          int n = settingsFile.fgets(line, sizeof(line));
           if (n <= 0) {
             systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
           }
@@ -446,7 +445,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
         while (settingsFile.available())
         {
           //Get the next line from the file
-          int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD_MMC File library
+          int n = getLine(&settingsFile, line, sizeof(line));
           if (n <= 0) {
             systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
           }
@@ -520,11 +519,10 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
     //Get the next line from the file
     int n;
     if (USE_SPI_MICROSD)
-      n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
-      //int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
+      n = getLine(&settingsFile, line, sizeof(line));
 #ifdef COMPILE_SD_MMC
     else
-      n = getLine(&settingsFile, line, sizeof(line)); //We are using File from FS.h
+      n = getLine(&settingsFile, line, sizeof(line));
 #endif
     if (n <= 0) {
       systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);

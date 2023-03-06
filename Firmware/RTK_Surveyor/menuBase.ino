@@ -428,8 +428,7 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
         while (file.available())
         {
           //Get the next line from the file
-          //int n = getLine(&file, lineData, lineDataLength); //Use with SD library
-          int n = file.fgets(lineData, lineDataLength); //Use with SdFat library
+          int n = file.fgets(lineData, lineDataLength);
           if (n <= 0)
           {
             systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
@@ -466,7 +465,7 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
         while (file.available())
         {
           //Get the next line from the file
-          int n = getLine(&file, lineData, lineDataLength); //Use with SD_MMC File library
+          int n = getLine(&file, lineData, lineDataLength);
           if (n <= 0)
           {
             systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);

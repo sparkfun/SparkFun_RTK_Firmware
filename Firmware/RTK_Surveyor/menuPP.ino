@@ -1,12 +1,12 @@
 #ifdef COMPILE_L_BAND
 
 //----------------------------------------
-// Locals - compiled out
+//Locals - compiled out
 //----------------------------------------
 
 #define CONTENT_SIZE 2000
 
-static SFE_UBLOX_GNSS_SUPER i2cLBand; // NEO-D9S
+static SFE_UBLOX_GNSS_SUPER i2cLBand; //NEO-D9S
 static const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 
 //The PointPerfect token is provided at compile time via build flags
@@ -19,13 +19,13 @@ static uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; //Token in HEX
 static const char* pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
 
 //----------------------------------------
-// Forward declarations - compiled out
+//Forward declarations - compiled out
 //----------------------------------------
 
 void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
 
 //----------------------------------------
-// L-Band Routines - compiled out
+//L-Band Routines - compiled out
 //----------------------------------------
 
 void menuPointPerfectKeys()
@@ -629,7 +629,7 @@ long dateToUnixEpoch(uint8_t day, uint8_t month, uint16_t year)
   t.tm_hour = 0;
   t.tm_min = 0;
   t.tm_sec = 0;
-  t.tm_isdst = -1;        // Is DST on? 1 = yes, 0 = no, -1 = unknown
+  t.tm_isdst = -1;        //Is DST on? 1 = yes, 0 = no, -1 = unknown
 
   t_of_day = mktime(&t);
 
@@ -727,8 +727,8 @@ void pushRXMPMP(UBX_RXM_PMP_message_data_t *pmpData)
   uint16_t payloadLen = ((uint16_t)pmpData->lengthMSB << 8) | (uint16_t)pmpData->lengthLSB;
   log_d("Pushing %d bytes of RXM-PMP data to GNSS", payloadLen);
 
-  theGNSS.pushRawData(&pmpData->sync1, (size_t)payloadLen + 6); // Push the sync chars, class, ID, length and payload
-  theGNSS.pushRawData(&pmpData->checksumA, (size_t)2); // Push the checksum bytes
+  theGNSS.pushRawData(&pmpData->sync1, (size_t)payloadLen + 6); //Push the sync chars, class, ID, length and payload
+  theGNSS.pushRawData(&pmpData->checksumA, (size_t)2); //Push the checksum bytes
 }
 
 //If we have decryption keys, and L-Band is online, configure module
@@ -769,11 +769,11 @@ void pointperfectApplyKeys()
       epoch = thingstreamEpochToGPSEpoch(settings.pointPerfectNextKeyStart, settings.pointPerfectNextKeyDuration);
       unixEpochToWeekToW(epoch, &nextKeyGPSWeek, &nextKeyGPSToW);
 
-      theGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); // use LBAND PMP message
+      theGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); //use LBAND PMP message
 
-      theGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_I2C, 1); // Enable UBX-RXM-COR messages on I2C
+      theGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_I2C, 1); //Enable UBX-RXM-COR messages on I2C
 
-      theGNSS.setVal8(UBLOX_CFG_NAVHPG_DGNSSMODE, 3); // Set the differential mode - ambiguities are fixed whenever possible
+      theGNSS.setVal8(UBLOX_CFG_NAVHPG_DGNSSMODE, 3); //Set the differential mode - ambiguities are fixed whenever possible
 
       bool response = theGNSS.setDynamicSPARTNKeys(
                         currentKeyLengthBytes, currentKeyGPSWeek, currentKeyGPSToW, settings.pointPerfectCurrentKey,
@@ -794,7 +794,7 @@ void pointperfectApplyKeys()
   }
 }
 
-// Check if the PMP data is being decrypted successfully
+//Check if the PMP data is being decrypted successfully
 void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 {
   log_d("L-Band Eb/N0[dB] (>9 is good): %0.2f", ubxDataStruct->ebno * pow(2, -3));
@@ -814,7 +814,7 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 #endif  //COMPILE_L_BAND
 
 //----------------------------------------
-// Global L-Band Routines
+//Global L-Band Routines
 //----------------------------------------
 
 //Check if NEO-D9S is connected. Configure if available.
@@ -828,9 +828,9 @@ void beginLBand()
   }
 
   //Check the firmware version of the NEO-D9S. Based on Example21_ModuleInfo.
-  if (i2cLBand.getModuleInfo(1100) == true) // Try to get the module info
+  if (i2cLBand.getModuleInfo(1100) == true) //Try to get the module info
   {
-    // Reconstruct the firmware version
+    //Reconstruct the firmware version
     snprintf(neoFirmwareVersion, sizeof(neoFirmwareVersion), "%s %d.%02d", i2cLBand.getFirmwareType(), i2cLBand.getFirmwareVersionHigh(), i2cLBand.getFirmwareVersionLow());
 
     printNEOInfo(); //Print module firmware version
@@ -867,31 +867,31 @@ void beginLBand()
 
   bool response = true;
   response &= i2cLBand.newCfgValset();
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_CENTER_FREQUENCY,     settings.LBandFreq); // Default 1539812500 Hz
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SEARCH_WINDOW,        2200);        // Default 2200 Hz
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_SERVICE_ID,       0);           // Default 1
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SERVICE_ID,           21845);       // Default 50821
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DATA_RATE,            2400);        // Default 2400 bps
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_DESCRAMBLER,      1);           // Default 1
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DESCRAMBLER_INIT,     26969);       // Default 23560
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_PRESCRAMBLING,    0);           // Default 0
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_CENTER_FREQUENCY,     settings.LBandFreq); //Default 1539812500 Hz
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SEARCH_WINDOW,        2200);        //Default 2200 Hz
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_SERVICE_ID,       0);           //Default 1
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SERVICE_ID,           21845);       //Default 50821
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DATA_RATE,            2400);        //Default 2400 bps
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_DESCRAMBLER,      1);           //Default 1
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DESCRAMBLER_INIT,     26969);       //Default 23560
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_PRESCRAMBLING,    0);           //Default 0
   response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_UNIQUE_WORD,          16238547128276412563ull);
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C,   1); // Ensure UBX-RXM-PMP is enabled on the I2C port
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 1); // Output UBX-RXM-PMP on UART1
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX,         1);         // Enable UBX output on UART2
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); // Output UBX-RXM-PMP on UART2
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART1_BAUDRATE,           38400); // match baudrate with ZED default
-  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2_BAUDRATE,           38400); // match baudrate with ZED default
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C,   1); //Ensure UBX-RXM-PMP is enabled on the I2C port
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 1); //Output UBX-RXM-PMP on UART1
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX,         1);         //Enable UBX output on UART2
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); //Output UBX-RXM-PMP on UART2
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART1_BAUDRATE,           38400); //match baudrate with ZED default
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2_BAUDRATE,           38400); //match baudrate with ZED default
   response &= i2cLBand.sendCfgValset();
 
   if (response == false)
     systemPrintln("L-Band failed to configure");
 
-  i2cLBand.softwareResetGNSSOnly(); // Do a restart
+  i2cLBand.softwareResetGNSSOnly(); //Do a restart
 
-  i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
+  i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); //Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
 
-  theGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Check if the PMP data is being decrypted successfully
+  theGNSS.setRXMCORcallbackPtr(&checkRXMCOR); //Check if the PMP data is being decrypted successfully
 
   log_d("L-Band online");
 
@@ -1013,8 +1013,8 @@ void updateLBand()
 #ifdef COMPILE_L_BAND
   if (online.lbandCorrections == true)
   {
-    i2cLBand.checkUblox(); // Check for the arrival of new PMP data and process it.
-    i2cLBand.checkCallbacks(); // Check if any L-Band callbacks are waiting to be processed.
+    i2cLBand.checkUblox(); //Check for the arrival of new PMP data and process it.
+    i2cLBand.checkCallbacks(); //Check if any L-Band callbacks are waiting to be processed.
 
     if (lbandCorrectionsReceived == true && millis() - lastLBandDecryption > 5000)
       lbandCorrectionsReceived = false;

@@ -382,9 +382,9 @@ void beginLogging(const char *customFileName)
       {
         markSemaphore(FUNCTION_CREATEFILE);
 
-        // O_CREAT - create the file if it does not exist
-        // O_APPEND - seek to the end of the file prior to each write
-        // O_WRITE - open for write
+        //O_CREAT - create the file if it does not exist
+        //O_APPEND - seek to the end of the file prior to each write
+        //O_WRITE - open for write
         if (ubxFile->open(logFileName, O_CREAT | O_APPEND | O_WRITE) == false)
         {
           systemPrintf("Failed to create GNSS UBX data file: %s\r\n", logFileName);
@@ -398,7 +398,7 @@ void beginLogging(const char *customFileName)
 
         bufferOverruns = 0; //Reset counter
 
-        ubxFile->updateFileCreateTimestamp(); // Update the file to create time & date
+        ubxFile->updateFileCreateTimestamp(); //Update the file to create time & date
 
         startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 

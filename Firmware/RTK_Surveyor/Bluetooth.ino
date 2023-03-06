@@ -20,11 +20,11 @@
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
-// Constants
+//Constants
 //----------------------------------------
 
 //----------------------------------------
-// Locals - compiled out
+//Locals - compiled out
 //----------------------------------------
 
 #ifdef COMPILE_BT
@@ -32,7 +32,7 @@ BTSerialInterface *bluetoothSerial;
 static volatile byte bluetoothState = BT_OFF;
 
 //----------------------------------------
-// Bluetooth Routines - compiled out
+//Bluetooth Routines - compiled out
 //----------------------------------------
 
 //Call back for when BT connection event happens (connected/disconnect)
@@ -61,7 +61,7 @@ void bluetoothCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
 #endif  //COMPILE_BT
 
 //----------------------------------------
-// Global Bluetooth Routines
+//Global Bluetooth Routines
 //----------------------------------------
 
 //Return the Bluetooth state
@@ -155,7 +155,7 @@ void bluetoothStart()
 
     snprintf(deviceName, sizeof(deviceName), "%s %s%02X%02X", platformPrefix, stateName, btMACAddress[4], btMACAddress[5]);
 
-    // Select Bluetooth setup
+    //Select Bluetooth setup
     if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
       return;
     else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)

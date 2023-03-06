@@ -1,5 +1,5 @@
 //----------------------------------------
-// Constants
+//Constants
 //----------------------------------------
 
 //A bitfield is used to flag which icon needs to be illuminated
@@ -60,7 +60,7 @@
 #define ICON_LOGGING                     (1<<6) // right, bottom
 
 //----------------------------------------
-// Locals
+//Locals
 //----------------------------------------
 
 static QwiicMicroOLED oled;
@@ -71,16 +71,16 @@ static uint32_t iconsRadio;
 unsigned long ssidDisplayTimer = 0;
 bool ssidDisplayFirstHalf = false;
 
-// Fonts
+//Fonts
 #include <res/qw_fnt_5x7.h>
 #include <res/qw_fnt_8x16.h>
 #include <res/qw_fnt_largenum.h>
 
-// Icons
+//Icons
 #include "icons.h"
 
 //----------------------------------------
-// Routines
+//Routines
 //----------------------------------------
 
 void beginDisplay()
@@ -478,7 +478,7 @@ void displaySplash()
   {
     //Display SparkFun Logo for at least 1/10 of a second
     unsigned long minSplashFor = 100;
-    if (productVariant == REFERENCE_STATION) // Reference station starts up very quickly. Keep splash on for longer
+    if (productVariant == REFERENCE_STATION) //Reference station starts up very quickly. Keep splash on for longer
       minSplashFor = 1000;
     while ((millis() - splashStart) < minSplashFor)
       delay(10);
@@ -547,7 +547,7 @@ void displayError(const char * errorMessage)
 {
   if (online.display == true)
   {
-    oled.erase(); // Clear the display's internal buffer
+    oled.erase(); //Clear the display's internal buffer
 
     oled.setCursor(0, 0); //x, y
     oled.setFont(QW_FONT_5X7); //Set font to smallest
@@ -1588,7 +1588,7 @@ void displayRoverStart(uint16_t displayTime)
     uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
     printTextCenter("Rover", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
-    //  printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    //printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -1844,7 +1844,7 @@ void displayFirmwareUpdateProgress(int percentComplete)
   //Update the display if connected
   if (online.display == true)
   {
-    oled.erase(); // Clear the display's internal buffer
+    oled.erase(); //Clear the display's internal buffer
 
     int yPos = 3;
     int fontHeight = 8;

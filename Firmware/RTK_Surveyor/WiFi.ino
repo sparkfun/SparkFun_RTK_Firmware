@@ -30,7 +30,7 @@
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
-// Constants
+//Constants
 //----------------------------------------
 
 //Interval to use when displaying the IP address
@@ -49,7 +49,7 @@ static uint32_t wifiConnectionAttemptsTotal; //Count the number of connection at
 static uint32_t wifiConnectionAttemptTimeout = 0;
 
 //----------------------------------------
-// Locals - compiled out
+//Locals - compiled out
 //----------------------------------------
 
 #ifdef COMPILE_WIFI
@@ -57,7 +57,7 @@ static uint32_t wifiConnectionAttemptTimeout = 0;
 static uint32_t wifiLastConnectionAttempt = 0;
 
 //WiFi Timer usage:
-//  * Measure interval to display IP address
+// * Measure interval to display IP address
 static unsigned long wifiDisplayTimer = 0;
 
 //Last time the WiFi state was displayed
@@ -68,7 +68,7 @@ static WiFiServer *wifiTcpServer = nullptr;
 static WiFiClient wifiTcpClient[WIFI_MAX_TCP_CLIENTS];
 
 //----------------------------------------
-// WiFi Routines - compiled out
+//WiFi Routines - compiled out
 //----------------------------------------
 
 void wifiDisplayIpAddress()
@@ -125,7 +125,7 @@ void wifiSetState(byte newState)
 }
 
 //----------------------------------------
-// WiFi Config Support Routines - compiled out
+//WiFi Config Support Routines - compiled out
 //----------------------------------------
 
 //Start the access point for user to connect to and configure device
@@ -192,7 +192,7 @@ bool wifiStartAP()
 #endif  //COMPILE_WIFI
 
 //----------------------------------------
-// Global WiFi Routines
+//Global WiFi Routines
 //----------------------------------------
 
 //Advance the WiFi state from off to connected

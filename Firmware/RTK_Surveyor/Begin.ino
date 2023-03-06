@@ -29,7 +29,7 @@ void identifyBoard()
   }
   else
   {
-    productVariant = RTK_UNKNOWN; // Need to wait until the GNSS and Accel have been initialized
+    productVariant = RTK_UNKNOWN; //Need to wait until the GNSS and Accel have been initialized
   }
 }
 
@@ -79,8 +79,8 @@ void initializePowerPins()
     pin_Ethernet_Interrupt = 33;
     pin_setupButton = 0;
 
-    pin_radio_rx = 17; // Radio RX In = ESP TX Out
-    pin_radio_tx = 16; // Radio TX Out = ESP RX In
+    pin_radio_rx = 17; //Radio RX In = ESP TX Out
+    pin_radio_tx = 16; //Radio TX Out = ESP RX In
 
     pinMode(pin_Ethernet_CS, OUTPUT);
     digitalWrite(pin_Ethernet_CS, HIGH);
@@ -219,9 +219,9 @@ void beginBoard()
 #ifdef COMPILE_SD_MMC
   else if (productVariant == REFERENCE_STATION)
   {
-    // No powerOnCheck
+    //No powerOnCheck
 
-    settings.enablePrintBatteryMessages = false; // No pesky battery messages
+    settings.enablePrintBatteryMessages = false; //No pesky battery messages
 
     strncpy(platformFilePrefix, "SFE_Reference_Station", sizeof(platformFilePrefix) - 1);
     strncpy(platformPrefix, "Reference Station", sizeof(platformPrefix) - 1);
@@ -388,7 +388,7 @@ void beginSD()
 
       //TODO: add Card Detect input and check hot insertion
       
-      // SDIO MMC
+      //SDIO MMC
       if (SD_MMC.begin() == false)
       {
         int tries = 0;
@@ -451,10 +451,6 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   {
     if (USE_SPI_MICROSD)
       sd->end();
-#ifdef COMPILE_SD_MMC
-//    else
-//      SD_MMC.end(); // NO!! DO NOT!!
-#endif
     online.microSD = false;
     systemPrintln("microSD: Offline");
   }
@@ -518,7 +514,7 @@ void beginUART2()
       "UARTStart", //Just for humans
       2000, //Stack Size
       nullptr, //Task input parameter
-      0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+      0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
       &pinUART2TaskHandle, //Task handle
       0); //Core where task should run, 0=core, 1=Arduino
 
@@ -531,15 +527,15 @@ void pinUART2Task( void *pvParameters )
 {
 //Note: ESP32 2.0.6 does some strange auto-bauding thing here which takes 20s to complete if there is no data for it to auto-baud.
 //      That's fine for most RTK products, but causes the Ref Stn to stall for 20s. However, it doesn't stall with ESP32 2.0.2...
-//      Note to my future self: uncomment these lines to prevent the stall if/when we upgrade to ESP32 ~2.0.6.
+//      Uncomment these lines to prevent the stall if/when we upgrade to ESP32 ~2.0.6.
 //#if defined(ENABLE_DEVELOPER) && defined(REF_STN_GNSS_DEBUG)
 //  if (productVariant == REFERENCE_STATION)
 //#else
 //  if (USE_I2C_GNSS)
 //#endif
   {
-    serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize); // TODO: work out if we can reduce or skip this when using SPI GNSS
-    serialGNSS.setTimeout(settings.serialTimeoutGNSS); // Requires serial traffic on the UART pins for detection
+    serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize); //TODO: work out if we can reduce or skip this when using SPI GNSS
+    serialGNSS.setTimeout(settings.serialTimeoutGNSS); //Requires serial traffic on the UART pins for detection
     serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
   
     //Reduce threshold value above which RX FIFO full interrupt is generated
@@ -575,11 +571,11 @@ void beginGNSS()
   //If we're using SPI, then increase the logging buffer
   if (USE_SPI_GNSS)
   {
-    SPI.begin(); // Begin SPI here - beginSD has not yet been called
+    SPI.begin(); //Begin SPI here - beginSD has not yet been called
 
-    // setFileBufferSize must be called _before_ .begin
-    // Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
-    // Also used by Tasks.ino
+    //setFileBufferSize must be called _before_ .begin
+    //Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
+    //Also used by Tasks.ino
     theGNSS.setFileBufferSize(settings.gnssHandlerBufferSize);
   }
 
@@ -614,7 +610,7 @@ void beginGNSS()
         return;
       }
     }
-    if (theGNSS.getFileBufferSize() != settings.gnssHandlerBufferSize) // Need to call getFileBufferSize after begin
+    if (theGNSS.getFileBufferSize() != settings.gnssHandlerBufferSize) //Need to call getFileBufferSize after begin
     {
       log_d("GNSS offline - no RAM for file buffer");
       displayGNSSFail(1000);
@@ -630,19 +626,19 @@ void beginGNSS()
   theGNSS.autoSendCfgValsetAtSpaceRemaining(16);
 
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
-  if (theGNSS.getModuleInfo(1100) == true) // Try to get the module info
+  if (theGNSS.getModuleInfo(1100) == true) //Try to get the module info
   {
-    // Reconstruct the firmware version
+    //Reconstruct the firmware version
     snprintf(zedFirmwareVersion, sizeof(zedFirmwareVersion), "%s %d.%02d", theGNSS.getFirmwareType(), theGNSS.getFirmwareVersionHigh(), theGNSS.getFirmwareVersionLow());
 
-    // Construct the firmware version as uint8_t. Note: will fail above 2.55!
+    //Construct the firmware version as uint8_t. Note: will fail above 2.55!
     zedFirmwareVersionInt = (theGNSS.getFirmwareVersionHigh() * 100) + theGNSS.getFirmwareVersionLow();
 
-    // Check this is known firmware
-    // "1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20 Spartan future support
-    // "1.21" - Future F9R HPS v1.21
-    // "1.30" - ZED-F9P (HPG) released Dec, 2021. Also ZED-F9R (HPS) released Sept, 2022
-    // "1.32" - ZED-F9P released May, 2022
+    //Check this is known firmware
+    //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20 Spartan future support
+    //"1.21" - Future F9R HPS v1.21
+    //"1.30" - ZED-F9P (HPG) released Dec, 2021. Also ZED-F9R (HPS) released Sept, 2022
+    //"1.32" - ZED-F9P released May, 2022
 
     const uint8_t knownFirmwareVersions[] = { 100, 112, 113, 120, 121, 130, 132 };
     bool knownFirmware = false;
@@ -680,8 +676,8 @@ void configureGNSS()
 {
   if (online.gnss == false) return;
 
-  theGNSS.setAutoPVTcallbackPtr(&storePVTdata); // Enable automatic NAV PVT messages with callback to storePVTdata
-  theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); // Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
+  theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
+  theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); //Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
   
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
@@ -752,7 +748,7 @@ void beginLEDs()
 //Configure the on board MAX17048 fuel gauge
 void beginFuelGauge()
 {
-  // Set up the MAX17048 LiPo fuel gauge
+  //Set up the MAX17048 LiPo fuel gauge
   if (lipo.begin() == false)
   {
     systemPrintln("Fuel gauge not detected.");
@@ -908,11 +904,11 @@ bool beginExternalTriggers()
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = raising edge
 
-  // While the module is _locking_ to GNSS time, turn off pulse
+  //While the module is _locking_ to GNSS time, turn off pulse
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
 
-  // When the module is _locked_ to GNSS time, make it generate 1kHz
+  //When the module is _locked_ to GNSS time, make it generate 1kHz
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, settings.externalPulseTimeBetweenPulse_us); //Set the period between pulses is us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, settings.externalPulseLength_us); //Set the pulse length in us
   response &= theGNSS.sendCfgValset();
@@ -945,7 +941,7 @@ void beginIdleTasks()
           taskName, //Just for humans
           2000, //Stack Size
           nullptr, //Task input parameter
-          0, // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+          0, //Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
           &idleTaskHandle[index], //Task handle
           index); //Core where task should run, 0=core, 1=Arduino
     }

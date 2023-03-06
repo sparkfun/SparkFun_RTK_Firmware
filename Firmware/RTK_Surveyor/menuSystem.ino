@@ -1,4 +1,4 @@
-// Display current system status
+//Display current system status
 void menuSystem()
 {
   while (1)
@@ -29,7 +29,7 @@ void menuSystem()
       systemPrintln("Offline");
 
     if (online.accelerometer == true)
-      systemPrintln("Accelerometer: Online");
+      systemPrint("Accelerometer: Online");
 
     systemPrint("Fuel Gauge: ");
     if (online.battery == true)
@@ -71,7 +71,7 @@ void menuSystem()
       printNEOInfo();
     }
 
-    // Display the Bluetooth status
+    //Display the Bluetooth status
     bluetoothTest(false);
 
 #ifdef COMPILE_WIFI
@@ -83,7 +83,7 @@ void menuSystem()
       wifiDisplayIpAddress();
 #endif
 
-    // Display the uptime
+    //Display the uptime
     uint64_t uptimeMilliseconds = millis();
     uint32_t uptimeDays = 0;
     byte uptimeHours = 0;
@@ -111,7 +111,7 @@ void menuSystem()
                  uptimeMilliseconds,
                  settings.resetCount);
 
-    // Display NTRIP Client status and uptime
+    //Display NTRIP Client status and uptime
     if (settings.enableNtripClient == true && (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX))
     {
       systemPrint("NTRIP Client ");
@@ -159,7 +159,7 @@ void menuSystem()
                    ntripClientConnectionAttemptsTotal);
     }
 
-    // Display NTRIP Server status and uptime
+    //Display NTRIP Server status and uptime
     if (settings.enableNtripServer == true && (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING))
     {
       systemPrint("NTRIP Server ");
@@ -234,7 +234,7 @@ void menuSystem()
 
     systemPrintln("r) Reset all settings to default");
 
-    // Support mode switching
+    //Support mode switching
     systemPrintln("B) Switch to Base mode");
     systemPrintln("R) Switch to Rover mode");
     systemPrintln("W) Switch to WiFi Config mode");
@@ -249,7 +249,7 @@ void menuSystem()
     else if (incoming == 'z')
     {
       systemPrint("Enter time zone hour offset (-23 <= offset <= 23): ");
-      int value = getNumber(); // Returns EXIT, TIMEOUT, or long
+      int value = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
         if (value < -23 || value > 23)
@@ -259,7 +259,7 @@ void menuSystem()
           settings.timeZoneHours = value;
 
           systemPrint("Enter time zone minute offset (-59 <= offset <= 59): ");
-          int value = getNumber(); // Returns EXIT, TIMEOUT, or long
+          int value = getNumber(); //Returns EXIT, TIMEOUT, or long
           if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
           {
             if (value < -59 || value > 59)
@@ -269,7 +269,7 @@ void menuSystem()
               settings.timeZoneMinutes = value;
 
               systemPrint("Enter time zone second offset (-59 <= offset <= 59): ");
-              int value = getNumber(); // Returns EXIT, TIMEOUT, or long
+              int value = getNumber(); //Returns EXIT, TIMEOUT, or long
               if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
               {
                 if (value < -59 || value > 59)
@@ -279,11 +279,11 @@ void menuSystem()
                   settings.timeZoneSeconds = value;
                   online.rtc = false;
                   updateRTC();
-                } // Succesful seconds
+                } //Succesful seconds
               }
-            } // Succesful minute
+            } //Succesful minute
           }
-        } // Succesful hours
+        } //Succesful hours
       }
     }
     else if (incoming == 'e')
@@ -292,7 +292,7 @@ void menuSystem()
     }
     else if (incoming == 'b')
     {
-      // Restart Bluetooth
+      //Restart Bluetooth
       bluetoothStop();
       if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
         settings.bluetoothRadioType = BLUETOOTH_RADIO_BLE;
@@ -317,20 +317,20 @@ void menuSystem()
     {
       printFileList();
     }
-    // Support mode switching
+    //Support mode switching
     else if (incoming == 'B')
     {
-      forceSystemStateUpdate = true; // Imediately go to this new state
+      forceSystemStateUpdate = true; //Imediately go to this new state
       changeState(STATE_BASE_NOT_STARTED);
     }
     else if (incoming == 'R')
     {
-      forceSystemStateUpdate = true; // Imediately go to this new state
+      forceSystemStateUpdate = true; //Imediately go to this new state
       changeState(STATE_ROVER_NOT_STARTED);
     }
     else if (incoming == 'W')
     {
-      forceSystemStateUpdate = true; // Imediately go to this new state
+      forceSystemStateUpdate = true; //Imediately go to this new state
       changeState(STATE_WIFI_CONFIG_NOT_STARTED);
     }
     else if (incoming == 'S')
@@ -349,14 +349,14 @@ void menuSystem()
       printUnknown(incoming);
   }
 
-  clearBuffer(); // Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
-// Set WiFi credentials
-// Enable TCP connections
+//Set WiFi credentials
+//Enable TCP connections
 void menuWiFi()
 {
-  bool restartWiFi = false; // Restart WiFi if user changes anything
+  bool restartWiFi = false; //Restart WiFi if user changes anything
 
   while (1)
   {
@@ -387,19 +387,19 @@ void menuWiFi()
 
     if (incoming >= 1 && incoming <= MAX_WIFI_NETWORKS * 2)
     {
-      int arraySlot = ((incoming - 1) / 2); // Adjust incoming to array starting at 0
+      int arraySlot = ((incoming - 1) / 2); //Adjust incoming to array starting at 0
 
       if (incoming % 2 == 1)
       {
         systemPrintf("Enter SSID network %d: ", arraySlot + 1);
         getString(settings.wifiNetworks[arraySlot].ssid, sizeof(settings.wifiNetworks[arraySlot].ssid));
-        restartWiFi = true; // If we are modifying the SSID table, force restart of WiFi
+        restartWiFi = true; //If we are modifying the SSID table, force restart of WiFi
       }
       else
       {
         systemPrintf("Enter Password for %s: ", settings.wifiNetworks[arraySlot].ssid);
         getString(settings.wifiNetworks[arraySlot].password, sizeof(settings.wifiNetworks[arraySlot].password));
-        restartWiFi = true; // If we are modifying the SSID table, force restart of WiFi
+        restartWiFi = true; //If we are modifying the SSID table, force restart of WiFi
       }
     }
     else if (incoming == 'a')
@@ -410,20 +410,20 @@ void menuWiFi()
 
     else if (incoming == 'c')
     {
-      // Toggle WiFi NEMA client (connect to phone)
+      //Toggle WiFi NEMA client (connect to phone)
       settings.enableTcpClient ^= 1;
       restartWiFi = true;
     }
     else if (incoming == 's')
     {
-      // Toggle WiFi NEMA server
+      //Toggle WiFi NEMA server
       settings.enableTcpServer ^= 1;
       if ((!settings.enableTcpServer) && online.tcpServer)
       {
-        // Tell the UART2 tasks that the TCP server is shutting down
+        //Tell the UART2 tasks that the TCP server is shutting down
         online.tcpServer = false;
 
-        // Wait for the UART2 tasks to close the TCP client connections
+        //Wait for the UART2 tasks to close the TCP client connections
         while (wifiTcpServerActive())
           delay(5);
         systemPrintln("TCP Server offline");
@@ -433,14 +433,14 @@ void menuWiFi()
     else if (incoming == 'p')
     {
       systemPrint("Enter the TCP port to use (0 to 65535): ");
-      int wifiTcpPort = getNumber(); // Returns EXIT, TIMEOUT, or long
+      int wifiTcpPort = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((wifiTcpPort != INPUT_RESPONSE_GETNUMBER_EXIT) && (wifiTcpPort != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
         if (wifiTcpPort < 0 || wifiTcpPort > 65535)
           systemPrintln("Error: TCP Port out of range");
         else
         {
-          settings.wifiTcpPort = wifiTcpPort; // Recorded to NVM and file at main menu exit
+          settings.wifiTcpPort = wifiTcpPort; //Recorded to NVM and file at main menu exit
           restartWiFi = true;
         }
       }
@@ -455,36 +455,36 @@ void menuWiFi()
       printUnknown(incoming);
   }
 
-  // Erase passwords from empty SSID entries
+  //Erase passwords from empty SSID entries
   for (int x = 0; x < MAX_WIFI_NETWORKS; x++)
   {
     if (strlen(settings.wifiNetworks[x].ssid) == 0)
       strcpy(settings.wifiNetworks[x].password, "");
   }
 
-  // Restart WiFi if anything changes
+  //Restart WiFi if anything changes
   if (restartWiFi == true)
   {
-    // Restart the AP webserver if we are in that state
+    //Restart the AP webserver if we are in that state
     if (systemState == STATE_WIFI_CONFIG)
       requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
     else
     {
-      // Restart WiFi if we are not in AP config mode
+      //Restart WiFi if we are not in AP config mode
       if (wifiIsConnected())
       {
         log_d("Menu caused restarting of WiFi");
         wifiStop();
         wifiStart();
-        wifiConnectionAttempts = 0; // Reset the timeout
+        wifiConnectionAttempts = 0; //Reset the timeout
       }
     }
   }
 
-  clearBuffer(); // Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
-// Toggle control of heap reports and I2C GNSS debug
+//Toggle control of heap reports and I2C GNSS debug
 void menuDebug()
 {
   while (1)
@@ -631,10 +631,10 @@ void menuDebug()
       {
 #if defined(ENABLE_DEVELOPER) && defined(REF_STN_GNSS_DEBUG)
         if (productVariant == REFERENCE_STATION)
-          theGNSS.enableDebugging(serialGNSS); // Output all debug messages over serialGNSS
+          theGNSS.enableDebugging(serialGNSS); //Output all debug messages over serialGNSS
         else
 #endif
-          theGNSS.enableDebugging(Serial, true); // Enable only the critical debug messages over Serial
+          theGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
       }
       else
         theGNSS.disableDebugging();
@@ -650,37 +650,37 @@ void menuDebug()
     else if (incoming == 4)
     {
       systemPrint("Enter SPI frequency in MHz (1 to 16): ");
-      int freq = getNumber(); // Returns EXIT, TIMEOUT, or long
+      int freq = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((freq != INPUT_RESPONSE_GETNUMBER_EXIT) && (freq != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (freq < 1 || freq > 16) // Arbitrary 16MHz limit
+        if (freq < 1 || freq > 16) //Arbitrary 16MHz limit
           systemPrintln("Error: SPI frequency out of range");
         else
-          settings.spiFrequency = freq; // Recorded to NVM and file at main menu exit
+          settings.spiFrequency = freq; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 5)
     {
       systemPrint("Enter SPP RX Queue Size in Bytes (32 to 16384): ");
-      int queSize = getNumber(); // Returns EXIT, TIMEOUT, or long
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (queSize < 32 || queSize > 16384) // Arbitrary 16k limit
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
           systemPrintln("Error: Queue size out of range");
         else
-          settings.sppRxQueueSize = queSize; // Recorded to NVM and file at main menu exit
+          settings.sppRxQueueSize = queSize; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 6)
     {
       systemPrint("Enter SPP TX Queue Size in Bytes (32 to 16384): ");
-      int queSize = getNumber(); // Returns EXIT, TIMEOUT, or long
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (queSize < 32 || queSize > 16384) // Arbitrary 16k limit
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
           systemPrintln("Error: Queue size out of range");
         else
-          settings.sppTxQueueSize = queSize; // Recorded to NVM and file at main menu exit
+          settings.sppTxQueueSize = queSize; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 8)
@@ -689,19 +689,19 @@ void menuDebug()
       if (settings.enableResetDisplay == true)
       {
         settings.resetCount = 0;
-        recordSystemSettings(); // Record to NVM
+        recordSystemSettings(); //Record to NVM
       }
     }
     else if (incoming == 9)
     {
       systemPrint("Enter GNSS Serial Timeout in milliseconds (0 to 1000): ");
-      int serialTimeoutGNSS = getNumber(); // Returns EXIT, TIMEOUT, or long
+      int serialTimeoutGNSS = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((serialTimeoutGNSS != INPUT_RESPONSE_GETNUMBER_EXIT) && (serialTimeoutGNSS != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) // Arbitrary 1s limit
+        if (serialTimeoutGNSS < 0 || serialTimeoutGNSS > 1000) //Arbitrary 1s limit
           systemPrintln("Error: Timeout is out of range");
         else
-          settings.serialTimeoutGNSS = serialTimeoutGNSS; // Recorded to NVM and file at main menu exit
+          settings.serialTimeoutGNSS = serialTimeoutGNSS; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 10)
@@ -789,9 +789,9 @@ void menuDebug()
     {
       settings.runLogTest ^= 1;
 
-      logTestState = LOGTEST_START; // Start test
+      logTestState = LOGTEST_START; //Start test
 
-      // Mark current log file as complete to force test start
+      //Mark current log file as complete to force test start
       startCurrentLogTime_minutes = systemTime_minutes - settings.maxLogLength_minutes;
     }
     else if (incoming == 30)
@@ -813,25 +813,25 @@ void menuDebug()
     else if (incoming == 34)
     {
       systemPrint("Enter UART Receive Buffer Size in Bytes (32 to 16384): ");
-      int queSize = getNumber(); // Returns EXIT, TIMEOUT, or long
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (queSize < 32 || queSize > 16384) // Arbitrary 16k limit
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
           systemPrintln("Error: Queue size out of range");
         else
-          settings.uartReceiveBufferSize = queSize; // Recorded to NVM and file at main menu exit
+          settings.uartReceiveBufferSize = queSize; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 35)
     {
       systemPrint("Enter GNSS Handler Buffer Size in Bytes (32 to 16384): ");
-      int queSize = getNumber(); // Returns EXIT, TIMEOUT, or long
+      int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (queSize < 32 || queSize > 16384) // Arbitrary 16k limit
+        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
           systemPrintln("Error: Queue size out of range");
         else
-          settings.gnssHandlerBufferSize = queSize; // Recorded to NVM and file at main menu exit
+          settings.gnssHandlerBufferSize = queSize; //Recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 36)
@@ -852,7 +852,7 @@ void menuDebug()
     }
     else if (incoming == 't')
     {
-      requestChangeState(STATE_TEST); // We'll enter test mode once exiting all serial menus
+      requestChangeState(STATE_TEST); //We'll enter test mode once exiting all serial menus
     }
     else if (incoming == 'x')
       break;
@@ -864,11 +864,11 @@ void menuDebug()
       printUnknown(incoming);
   }
 
-  clearBuffer(); // Empty buffer of any newline chars
+  clearBuffer(); //Empty buffer of any newline chars
 }
 
-// Print the current long/lat/alt/HPA/SIV
-// From Example11_GetHighPrecisionPositionUsingDouble
+//Print the current long/lat/alt/HPA/SIV
+//From Example11_GetHighPrecisionPositionUsingDouble
 void printCurrentConditions()
 {
   if (online.gnss == true)
@@ -898,39 +898,39 @@ void printCurrentConditionsNMEA()
     char systemStatus[100];
     snprintf(systemStatus, sizeof(systemStatus), "%02d%02d%02d.%02d,%02d%02d%02d,%0.3f,%d,%0.9f,%0.9f,%0.2f,%d,%d,%d",
              gnssHour, gnssMinute, gnssSecond, mseconds,
-             gnssDay, gnssMonth, gnssYear % 2000, // Limit to 2 digits
+             gnssDay, gnssMonth, gnssYear % 2000, //Limit to 2 digits
              horizontalAccuracy, numSV,
              latitude, longitude,
              altitude,
              fixType, carrSoln,
              battLevel);
 
-    char nmeaMessage[100];                                                                       // Max NMEA sentence length is 82
-    createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, sizeof(nmeaMessage), systemStatus); // textID, buffer, sizeOfBuffer, text
+    char nmeaMessage[100];                                                                       //Max NMEA sentence length is 82
+    createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, sizeof(nmeaMessage), systemStatus); //textID, buffer, sizeOfBuffer, text
     systemPrintln(nmeaMessage);
   }
   else
   {
-    char nmeaMessage[100];                                                                            // Max NMEA sentence length is 82
-    createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, sizeof(nmeaMessage), (char *)"OFFLINE"); // textID, buffer, sizeOfBuffer, text
+    char nmeaMessage[100];                                                                            //Max NMEA sentence length is 82
+    createNMEASentence(CUSTOM_NMEA_TYPE_STATUS, nmeaMessage, sizeof(nmeaMessage), (char *)"OFFLINE"); //textID, buffer, sizeOfBuffer, text
     systemPrintln(nmeaMessage);
   }
 }
 
-// When called, prints the contents of root folder list of files on SD card
-// This allows us to replace the sd.ls() function to point at Serial and BT outputs
+//When called, prints the contents of root folder list of files on SD card
+//This allows us to replace the sd.ls() function to point at Serial and BT outputs
 void printFileList()
 {
   bool sdCardAlreadyMounted = online.microSD;
   if (!online.microSD)
     beginSD();
 
-  // Notify the user if the microSD card is not available
+  //Notify the user if the microSD card is not available
   if (!online.microSD)
     systemPrintln("microSD card not online!");
   else
   {
-    // Attempt to gain access to the SD card
+    //Attempt to gain access to the SD card
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_PRINT_FILE_LIST);
@@ -938,7 +938,7 @@ void printFileList()
       if (USE_SPI_MICROSD)
       {
         SdFile dir;
-        dir.open("/"); // Open root
+        dir.open("/"); //Open root
         uint16_t fileCount = 0;
 
         SdFile tempFile;
@@ -958,18 +958,18 @@ void printFileList()
             uint16_t fileTime;
             tempFile.getCreateDateTime(&fileDate, &fileTime);
 
-            // Convert sdFat file date fromat into YYYY-MM-DD
+            //Convert sdFat file date fromat into YYYY-MM-DD
             char fileDateChar[20];
             snprintf(fileDateChar, sizeof(fileDateChar), "%d-%02d-%02d",
-                     ((fileDate >> 9) + 1980),   // Year
-                     ((fileDate >> 5) & 0b1111), // Month
-                     (fileDate & 0b11111)        // Day
+                     ((fileDate >> 9) + 1980),   //Year
+                     ((fileDate >> 5) & 0b1111), //Month
+                     (fileDate & 0b11111)        //Day
             );
 
             char fileSizeChar[20];
             stringHumanReadableSize(tempFile.fileSize()).toCharArray(fileSizeChar, sizeof(fileSizeChar));
 
-            char fileName[50]; // Handle long file names
+            char fileName[50]; //Handle long file names
             tempFile.getName(fileName, sizeof(fileName));
 
             char fileRecord[100];
@@ -988,7 +988,7 @@ void printFileList()
 #ifdef COMPILE_SD_MMC
       else
       {
-        File dir = SD_MMC.open("/"); // Open root
+        File dir = SD_MMC.open("/"); //Open root
         uint16_t fileCount = 0;
 
         if (dir && dir.isDirectory())
@@ -1011,15 +1011,15 @@ void printFileList()
 
               char fileDateChar[20];
               snprintf(fileDateChar, 20, "%.0f-%02.0f-%02.0f",
-                       (float)timeinfo->tm_year + 1900, // Year - ESP32 2.0.2 starts the year at 1900...
-                       (float)timeinfo->tm_mon + 1,     // Month
-                       (float)timeinfo->tm_mday         // Day
+                       (float)timeinfo->tm_year + 1900, //Year - ESP32 2.0.2 starts the year at 1900...
+                       (float)timeinfo->tm_mon + 1,     //Month
+                       (float)timeinfo->tm_mday         //Day
               );
 
               char fileSizeChar[20];
               stringHumanReadableSize(tempFile.size()).toCharArray(fileSizeChar, sizeof(fileSizeChar));
 
-              char fileName[50]; // Handle long file names
+              char fileName[50]; //Handle long file names
               snprintf(fileName, sizeof(fileName), "%s", tempFile.name());
 
               char fileRecord[100];
@@ -1045,12 +1045,12 @@ void printFileList()
       char semaphoreHolder[50];
       getSemaphoreFunction(semaphoreHolder);
 
-      // This is an error because the current settings no longer match the settings
-      // on the microSD card, and will not be restored to the expected settings!
+      //This is an error because the current settings no longer match the settings
+      //on the microSD card, and will not be restored to the expected settings!
       systemPrintf("sdCardSemaphore failed to yield, held by %s, menuSystem.ino line %d\r\n", semaphoreHolder, __LINE__);
     }
 
-    // Release the SD card if not originally mounted
+    //Release the SD card if not originally mounted
     if (sdCardAlreadyMounted)
       xSemaphoreGive(sdCardSemaphore);
     else

@@ -538,7 +538,7 @@ void updateSystemState()
                   //Write the mark to the file
                   marksFile.write((const uint8_t *)markBuffer, strlen(markBuffer));
 
-                  // Update the file to create time & date
+                  //Update the file to create time & date
                   marksFile.updateFileCreateTimestamp();
 
                   //Close the mark file
@@ -580,7 +580,7 @@ void updateSystemState()
             else
               displayNoLogging(500); //Show 'No Logging'
 
-            // Return to the previous state
+            //Return to the previous state
             changeState(lastSystemState);
           } //End sdCardSemaphore
           else
@@ -685,9 +685,9 @@ void updateSystemState()
 
             //Enable RTCM 1230. This is the GLONASS bias sentence and is transmitted
             //even if there is no GPS fix. We use it to test serial output.
-            theGNSS.newCfgValset(); // Create a new Configuration Item VALSET message
+            theGNSS.newCfgValset(); //Create a new Configuration Item VALSET message
             theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 1); //Enable message 1230 every second
-            theGNSS.sendCfgValset(); // Send the VALSET
+            theGNSS.sendCfgValset(); //Send the VALSET
             
 
             changeState(STATE_TESTING);
@@ -928,7 +928,7 @@ void updateSystemState()
           {
             paintEspNowPaired();
 
-            // Return to the previous state
+            //Return to the previous state
             changeState(lastSystemState);
           }
           else

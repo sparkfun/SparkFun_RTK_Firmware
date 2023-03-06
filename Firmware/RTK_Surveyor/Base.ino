@@ -15,7 +15,7 @@ bool configureUbloxModuleBase()
 
   theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
-  theGNSS.setNMEAGPGGAcallbackPtr(nullptr); // Disable GPGGA call back that may have been set during Rover NTRIP Client mode
+  theGNSS.setNMEAGPGGAcallbackPtr(nullptr); //Disable GPGGA call back that may have been set during Rover NTRIP Client mode
 
   bool response = true;
 
@@ -27,13 +27,13 @@ bool configureUbloxModuleBase()
   //Since we are at 1Hz, allow GSV NMEA to be reported at whatever the user has chosen
   response &= theGNSS.addCfgValset(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module
 
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); // Disable NMEA message that may have been set during Rover NTRIP Client mode
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); //Disable NMEA message that may have been set during Rover NTRIP Client mode
 
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
     response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
 
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
 
   //RTCM is only available on ZED-F9P modules
   //
@@ -69,7 +69,7 @@ bool configureUbloxModuleBase()
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART1, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART1, 10);
   }
-  else // SPI GNSS
+  else //SPI GNSS
   {
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_SPI, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_SPI, 1);
@@ -78,20 +78,20 @@ bool configureUbloxModuleBase()
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_SPI, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_SPI, 10);  //Enable message every 10 cycles - note: this may conflict with settings and setMessages?
 
-    // Enable logging of these messages so the RTCM will be stored automatically in the logging buffer.
-    // This mimics the data arriving via UART1.
+    //Enable logging of these messages so the RTCM will be stored automatically in the logging buffer.
+    //This mimics the data arriving via UART1.
     uint32_t logRTCMMessages = theGNSS.getRTCMLoggingMask();
     logRTCMMessages |= ( SFE_UBLOX_FILTER_RTCM_TYPE1005 | SFE_UBLOX_FILTER_RTCM_TYPE1074 | SFE_UBLOX_FILTER_RTCM_TYPE1084
                        | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124 | SFE_UBLOX_FILTER_RTCM_TYPE1230 );
     theGNSS.setRTCMLoggingMask(logRTCMMessages);
     log_d("setRTCMLoggingMask 0x%X", logRTCMMessages);
 
-    // Update settings, otherwise setMessages could disable these again...
+    //Update settings, otherwise setMessages could disable these again...
     for (int x = 0; x < MAX_UBX_MSG; x++)
     {
-      if (settings.ubxMessages[x].msgClass == UBX_RTCM_MSB) // RTCM messages
+      if (settings.ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
       {
-        if (settings.ubxMessages[x].filterMask & // This is quicker than checking the msgID
+        if (settings.ubxMessages[x].filterMask & //This is quicker than checking the msgID
           ( SFE_UBLOX_FILTER_RTCM_TYPE1005 | SFE_UBLOX_FILTER_RTCM_TYPE1074 | SFE_UBLOX_FILTER_RTCM_TYPE1084
           | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124))
           settings.ubxMessages[x].msgRate = 1;

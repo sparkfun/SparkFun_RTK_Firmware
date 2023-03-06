@@ -322,7 +322,7 @@ void factoryReset()
   tasksStopUART2();
 
   //Attempt to write to file system. This avoids collisions with file writing from other functions like recordSystemSettingsToFile() and F9PSerialReadTask()
-  //if (settings.enableSD && online.microSD) // Don't check settings.enableSD - it could be corrupt
+  //if (settings.enableSD && online.microSD) //Don't check settings.enableSD - it could be corrupt
   if (online.microSD)
   {
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)

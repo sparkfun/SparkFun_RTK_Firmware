@@ -1,9 +1,9 @@
-// Define a hybrid class which can support both SdFat SdFile and SD_MMC File
+//Define a hybrid class which can support both SdFat SdFile and SD_MMC File
 
 #ifdef COMPILE_SD_MMC
 
-// #include "FS.h"
-#include "SD_MMC.h" // Also includes FS.h
+//#include "FS.h"
+#include "SD_MMC.h" //Also includes FS.h
 
 class FileSdFatMMC : public SdFile, public File
 
@@ -31,14 +31,14 @@ class FileSdFatMMC : public SdFile
       if (USE_SPI_MICROSD)
       {
         ;
-        //if (_sdFile) // operator bool
+        //if (_sdFile) //operator bool
         //  delete _sdFile;
       }
 #ifdef COMPILE_SD_MMC
       else
       {
         ;
-        //if (_file) // operator bool
+        //if (_file) //operator bool
         //  delete _file;
       }
 #endif
@@ -52,7 +52,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file;
 #endif
-      return false; // Keep the compiler happy
+      return false; //Keep the compiler happy
     };
 
     size_t println(const char printMe[])
@@ -63,7 +63,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->println(printMe);
 #endif
-      return 0; // Keep the compiler happy
+      return 0; //Keep the compiler happy
     };
 
     bool open(const char *filepath, oflag_t mode)
@@ -81,14 +81,14 @@ class FileSdFatMMC : public SdFile
           *_file = SD_MMC.open(filepath, FILE_APPEND);
         else if (mode & O_WRITE)
           *_file = SD_MMC.open(filepath, FILE_WRITE);
-        else // if (mode & O_READ)
+        else //if (mode & O_READ)
           *_file = SD_MMC.open(filepath, FILE_READ);
-        if (_file) // operator bool
+        if (_file) //operator bool
           return true;
         return false;
       }
 #endif
-      return false; // Keep the compiler happy
+      return false; //Keep the compiler happy
     };
 
     uint32_t size()
@@ -99,7 +99,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->size();
 #endif
-      return 0; // Keep the compiler happy
+      return 0; //Keep the compiler happy
     };
 
     uint32_t position()
@@ -110,7 +110,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->position();
 #endif
-      return 0; // Keep the compiler happy
+      return 0; //Keep the compiler happy
     };
 
     int available()
@@ -121,7 +121,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->available();
 #endif
-      return 0; // Keep the compiler happy
+      return 0; //Keep the compiler happy
     };
 
     int read(uint8_t *buf, uint16_t nbyte)
@@ -132,7 +132,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->read(buf, nbyte);
 #endif
-      return 0; // Keep the compiler happy
+      return 0; //Keep the compiler happy
     };
 
     size_t write(const uint8_t *buf, size_t size)
@@ -143,7 +143,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->write(buf, size);
 #endif
-      return 0; // Keep the compiler happy
+      return 0; //Keep the compiler happy
     };
 
     void close()
@@ -204,7 +204,7 @@ class FileSdFatMMC : public SdFile
       else
         return _file->size();
 #endif
-      return 0; // Keep the compiler happy
+      return 0; //Keep the compiler happy
     };
 
   protected:
@@ -214,21 +214,21 @@ class FileSdFatMMC : public SdFile
 #endif
 };
 
-// Update the file access and write time with date and time obtained from GNSS
-//  These are SdFile-specific. SD_MMC does this automatically
+//Update the file access and write time with date and time obtained from GNSS
+//These are SdFile-specific. SD_MMC does this automatically
 void updateDataFileAccess(SdFile *dataFile)
 {
   if (online.rtc == true)
   {
-    // ESP32Time returns month:0-11
+    //ESP32Time returns month:0-11
     dataFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
     dataFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
   }
 }
 
-// Update the file create time with date and time obtained from GNSS
+//Update the file create time with date and time obtained from GNSS
 void updateDataFileCreate(SdFile *dataFile)
 {
   if (online.rtc == true)
-    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); // ESP32Time returns month:0-11
+    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11
 }

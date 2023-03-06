@@ -30,7 +30,7 @@ bool configureUbloxModuleRover()
   if (zedModuleType == PLATFORM_F9P)
     response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
   
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
 
   //RTCM is only available on ZED-F9P modules
   //
@@ -101,7 +101,7 @@ void updateAccuracyLEDs()
         if (settings.enablePrintRoverAccuracy)
         {
           systemPrint("Rover Accuracy (m): ");
-          systemPrint(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
+          systemPrint(horizontalAccuracy, 4); //Print the accuracy with 4 decimal places
           systemPrintln();
         }
 
@@ -174,7 +174,7 @@ void storePVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 
 void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)
 {
-  horizontalAccuracy = ((float)ubxDataStruct->hAcc) / 10000.0; // Convert hAcc from mm*0.1 to m
+  horizontalAccuracy = ((float)ubxDataStruct->hAcc) / 10000.0; //Convert hAcc from mm*0.1 to m
 
   latitude = ((double)ubxDataStruct->lat) / 10000000.0;
   latitude += ((double)ubxDataStruct->latHp) / 1000000000.0;

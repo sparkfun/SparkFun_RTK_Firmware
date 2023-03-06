@@ -105,11 +105,11 @@ void recordSystemSettingsToFileSD(char *fileName)
           break;
         }
 
-        updateDataFileCreate(&settingsFile); // Update the file to create time & date
+        updateDataFileCreate(&settingsFile); //Update the file to create time & date
   
         recordSystemSettingsToFile((File *)&settingsFile); //Record all the settings via strings to file
   
-        updateDataFileAccess(&settingsFile); // Update the file access time & date
+        updateDataFileAccess(&settingsFile); //Update the file access time & date
   
         settingsFile.close();
       }
@@ -561,7 +561,7 @@ bool parseLine(char* str, Settings *settings)
 {
   char* ptr;
 
-  // Set strtok start of line.
+  //Set strtok start of line.
   str = strtok(str, "=");
   if (!str)
   {
@@ -637,7 +637,7 @@ bool parseLine(char* str, Settings *settings)
 
   //log_d("settingName: %s - value: %s - d: %0.9f", settingName, settingValue, d);
 
-  // Get setting name
+  //Get setting name
   if (strcmp(settingName, "sizeOfSettings") == 0)
   {
     //We may want to cause a factory reset from the settings file rather than the menu
@@ -1158,7 +1158,7 @@ int getLine(File * openFile, char * lineChars, int lineSize)
   return (count);
 }
 
-// Check for extra characters in field or find minus sign.
+//Check for extra characters in field or find minus sign.
 char* skipSpace(char* str) {
   while (isspace(*str)) str++;
   return str;

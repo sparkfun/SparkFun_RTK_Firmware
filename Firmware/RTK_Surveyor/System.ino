@@ -74,7 +74,7 @@ bool configureUbloxModule()
     if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
       response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_SPARTN, 0);
   }
-  else // SPI GNSS
+  else //SPI GNSS
   {
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_NMEA, 1);
@@ -195,7 +195,7 @@ bool configureUbloxModule()
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_UART2, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_UART2, 0);
 
-  if (USE_I2C_GNSS) // Don't disable NMEA on SPI if the GNSS is SPI!
+  if (USE_I2C_GNSS) //Don't disable NMEA on SPI if the GNSS is SPI!
   {
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_SPI, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_SPI, 0);
@@ -506,7 +506,7 @@ void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, size_t sizeO
   snprintf(nmeaTxt, sizeof(nmeaTxt), "$GNTXT,%02d,%02d,%02d,%s*", totalNumberOfSentences, sentenceNumber, textID, textMessage);
 
   //From: http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html
-  byte CRC = 0; // XOR chars between '$' and '*'
+  byte CRC = 0; //XOR chars between '$' and '*'
   for (byte x = 1 ; x < strlen(nmeaTxt) - 1; x++)
     CRC = CRC ^ nmeaTxt[x];
 
@@ -526,7 +526,7 @@ bool setMessages()
 {
   bool response = true;
   
-  uint32_t spiOffset = 0; // Set to 3 if using SPI to convert UART1 keys to SPI. This is brittle and non-perfect, but works.
+  uint32_t spiOffset = 0; //Set to 3 if using SPI to convert UART1 keys to SPI. This is brittle and non-perfect, but works.
   if (USE_SPI_GNSS)
     spiOffset = 3;
 
@@ -541,8 +541,8 @@ bool setMessages()
       {
         uint8_t rate = settings.ubxMessages[x].msgRate;
 
-        // If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH and ESF_STATUS remained enabled
-        // (but not enabled for logging)
+        //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH and ESF_STATUS remained enabled
+        //(but not enabled for logging)
         if (USE_SPI_GNSS)
         {
           if (settings.ubxMessages[x].msgClass == UBX_CLASS_NAV)
@@ -561,7 +561,7 @@ bool setMessages()
       }
       x++;
     }
-    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); // Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
     
     response &= theGNSS.sendCfgValset();
     log_d("sent Valset for message %d: %s", x, response ? "OK" : "ERROR");
@@ -569,8 +569,8 @@ bool setMessages()
 
   log_d("message config complete");
 
-  // For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
-  // to mimic UART1
+  //For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
+  //to mimic UART1
   if (USE_SPI_GNSS)
   {
     uint32_t logRTCMMessages = 0;
@@ -578,17 +578,17 @@ bool setMessages()
     
     for (x = 0; x < MAX_UBX_MSG; x++)
     {
-      if (settings.ubxMessages[x].msgClass == UBX_RTCM_MSB) // RTCM messages
+      if (settings.ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
       {
         if ((settings.ubxMessages[x].msgRate > 0) && (settings.ubxMessages[x].supported & zedModuleType))
           logRTCMMessages |= settings.ubxMessages[x].filterMask;
       }
-      else if (settings.ubxMessages[x].msgClass == UBX_CLASS_NMEA) // NMEA messages
+      else if (settings.ubxMessages[x].msgClass == UBX_CLASS_NMEA) //NMEA messages
       {
         if ((settings.ubxMessages[x].msgRate > 0) && (settings.ubxMessages[x].supported & zedModuleType))
           logNMEAMessages |= settings.ubxMessages[x].filterMask;
       }
-      else // UBX messages
+      else //UBX messages
       {
         if (settings.ubxMessages[x].supported & zedModuleType)
           theGNSS.enableUBXlogging(settings.ubxMessages[x].msgClass, settings.ubxMessages[x].msgID, settings.ubxMessages[x].msgRate > 0);
@@ -623,7 +623,7 @@ bool setMessagesUSB()
         response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
       x++;
     }
-    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); // Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
     
     response &= theGNSS.sendCfgValset();
     log_d("sent Valset for message %d", x);

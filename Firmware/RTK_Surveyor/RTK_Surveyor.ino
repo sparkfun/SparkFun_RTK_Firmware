@@ -30,19 +30,19 @@
 #define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
-#define COMPILE_SD_MMC // Comment out to remove REFERENCE_STATION microSD SD_MMC support
+#define COMPILE_SD_MMC //Comment out to remove REFERENCE_STATION microSD SD_MMC support
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 //#define FACTORY_RESET_AT_POWER_ON //Uncomment this line to perform a factory reset at every power-on. Needs ENABLE_DEVELOPER
 //#define ERASE_PROFILES_AT_POWER_ON //Uncomment this line to erase _all_ profiles at power-on. Needs FACTORY_RESET_ON_POWER_ON
 //#define REF_STN_GNSS_DEBUG //Uncomment this line to output GNSS library debug messages on serialGNSS. Ref Stn only. Needs ENABLE_DEVELOPER
 
 //Define the RTK board identifier:
-//  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
-//  to make sure that the settings stored in flash (LittleFS) are correct for this version of the RTK
-//  (sizeOfSettings is not necessarily unique and we want to avoid problems when swapping from one variant to another)
-//  It is the sum of:
-//    the major firmware version * 0x10
-//    the minor firmware version
+// This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
+// to make sure that the settings stored in flash (LittleFS) are correct for this version of the RTK
+// (sizeOfSettings is not necessarily unique and we want to avoid problems when swapping from one variant to another)
+// It is the sum of:
+//   the major firmware version * 0x10
+//   the minor firmware version
 #define RTK_IDENTIFIER (FIRMWARE_VERSION_MAJOR * 0x10 + FIRMWARE_VERSION_MINOR)
 
 #include "settings.h"
@@ -131,7 +131,7 @@ ESP32Time rtc;
 #include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 SdFat *sd;
 
-#include "FileSdFatMMC.h" // Hybrid SdFat and SD_MMC file access
+#include "FileSdFatMMC.h" //Hybrid SdFat and SD_MMC file access
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
@@ -196,16 +196,16 @@ static int ntripServerConnectionAttempts = 0; //Count the number of connection a
 volatile uint8_t wifiTcpConnected;
 
 //NTRIP client timer usage:
-//  * Measure the connection response time
-//  * Receive NTRIP data timeout
+// * Measure the connection response time
+// * Receive NTRIP data timeout
 static uint32_t ntripClientTimer;
 static uint32_t ntripClientStartTime; //For calculating uptime
 static int ntripClientConnectionAttemptsTotal; //Count the number of connection attempts absolutely
 
 //NTRIP server timer usage:
-//  * Measure the connection response time
-//  * Receive RTCM correction data timeout
-//  * Monitor last RTCM byte received for frame counting
+// * Measure the connection response time
+// * Receive RTCM correction data timeout
+// * Monitor last RTCM byte received for frame counting
 static uint32_t ntripServerTimer;
 static uint32_t ntripServerStartTime;
 static int ntripServerConnectionAttemptsTotal; //Count the number of connection attempts absolutely
@@ -219,7 +219,7 @@ bool currentlyParsingData = false; //Goes true when we hit 750ms timeout with ne
 
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3 v3.0.3
+#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3 v3.0.2
 
 #define SENTENCE_TYPE_NMEA              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
 #define SENTENCE_TYPE_NONE              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
@@ -231,8 +231,8 @@ char neoFirmwareVersion[20]; //Output to system status menu.
 uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS). Note: will fail above 2.55!
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
-// Use Michael's lock/unlock methods to prevent the UART2 task from calling checkUblox during a sendCommand and waitForResponse.
-// Also prevents pushRawData from being called too.
+//Use Michael's lock/unlock methods to prevent the UART2 task from calling checkUblox during a sendCommand and waitForResponse.
+//Also prevents pushRawData from being called too.
 class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 {
 public:
@@ -243,7 +243,7 @@ public:
     {
       unsigned long startTime = millis();
       while (_iAmLocked && (millis() < (startTime + 2100)))
-        delay(1); // YIELD
+        delay(1); //YIELD
       if (_iAmLocked)
         return false;
     }
@@ -284,10 +284,10 @@ const byte haeNumberOfDecimals = 8; //Used for printing and transmitting lat/lon
 
 //Battery fuel gauge and PWM LEDs
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
+#include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
 SFE_MAX1704X lipo(MAX1704X_MAX17048);
 
-// RTK Surveyor LED PWM properties
+//RTK Surveyor LED PWM properties
 const int pwmFreq = 5000;
 const int ledRedChannel = 0;
 const int ledGreenChannel = 1;
@@ -305,7 +305,7 @@ float battChangeRate = 0.0;
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_BT
-// See bluetoothSelect.h for implemenation
+//See bluetoothSelect.h for implemenation
 #include "bluetoothSelect.h"
 #endif
 
@@ -375,7 +375,7 @@ SPARKFUN_LIS2DH12 accel;
 
 //Buttons - Interrupt driven and debounce
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#include <JC_Button.h> // http://librarymanager/All#JC_Button v2.1.2
+#include <JC_Button.h> //http://librarymanager/All#JC_Button v2.1.2
 Button *setupBtn = nullptr; //We can't instantiate the buttons here because we don't yet know what pin numbers to use
 Button *powerBtn = nullptr;
 
@@ -653,7 +653,7 @@ void setup()
   log_d("beginSD complete");
 
 #if defined(ENABLE_DEVELOPER) && defined(FACTORY_RESET_AT_POWER_ON)
-  if (esp_reset_reason() == ESP_RST_POWERON) // Reset now that beginSD has been called and online.microSD will be valid
+  if (esp_reset_reason() == ESP_RST_POWERON) //Reset now that beginSD has been called and online.microSD will be valid
     factoryReset();
 #endif
 

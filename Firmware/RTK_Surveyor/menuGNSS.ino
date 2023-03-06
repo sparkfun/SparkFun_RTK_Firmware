@@ -237,8 +237,8 @@ void menuGNSS()
     }
   }
 
-  // Set dynamic model
-  theGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
+  //Set dynamic model
+  theGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
 
   clearBuffer(); //Empty buffer of any newline chars
 }

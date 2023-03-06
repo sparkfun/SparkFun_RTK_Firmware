@@ -158,13 +158,13 @@ void F9PSerialReadTask(void *e)
         parse.state(&parse, incomingData);
       }
     }
-    else // SPI GNSS
+    else //SPI GNSS
     {
-      theGNSS.checkUblox(); // Check for new data
+      theGNSS.checkUblox(); //Check for new data
       while (theGNSS.fileBufferAvailable() > 0)
       {
         //Read the data from the logging buffer
-        theGNSS.extractFileBufferData(&incomingData, 1); // TODO: make this more efficient by reading multiple bytes?
+        theGNSS.extractFileBufferData(&incomingData, 1); //TODO: make this more efficient by reading multiple bytes?
   
         //Save the data byte
         parse.buffer[parse.length++] = incomingData;
@@ -399,7 +399,7 @@ void handleGNSSDataTask(void *e)
             if (USE_I2C_GNSS)
               availableUARTSpace = settings.uartReceiveBufferSize - bufferAvailable;
             else
-              // Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
+              //Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
               availableUARTSpace = settings.gnssHandlerBufferSize - bufferAvailable;
             systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: %04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\r\n", bufferAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0, bufferOverruns);
           }
@@ -421,7 +421,7 @@ void handleGNSSDataTask(void *e)
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
             ubxFile->sync();
-            ubxFile->updateFileAccessTimestamp(); // Update the file access time & date
+            ubxFile->updateFileAccessTimestamp(); //Update the file access time & date
 
             if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state

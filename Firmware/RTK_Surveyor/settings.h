@@ -60,7 +60,7 @@ typedef enum
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
 
-// Macros which show if: the GNSS is I2C or SPI; the microSD is SPI or SDIO
+//Macros which show if: the GNSS is I2C or SPI; the microSD is SPI or SDIO
 #define USE_SPI_GNSS    ((productVariant & PRODUCT_HAS_SPI_GNSS) > 0)
 #define USE_I2C_GNSS    (!USE_SPI_GNSS)
 #define USE_MMC_MICROSD ((productVariant & PRODUCT_HAS_MMC_MICROSD) > 0)
@@ -355,7 +355,7 @@ typedef struct ubxMsg
 //This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
 typedef struct {
   int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int
-  int rtkIdentifier = RTK_IDENTIFIER; // rtkIdentifier **must** be the second entry
+  int rtkIdentifier = RTK_IDENTIFIER; //rtkIdentifier **must** be the second entry
   bool printDebugMessages = false;
   bool enableSD = true;
   bool enableDisplay = true;
@@ -536,8 +536,8 @@ typedef struct {
   bool enablePointPerfectCorrections = true;
   bool autoKeyRenewal = true; //Attempt to get keys if we get under 28 days from the expiration date
   char pointPerfectClientID[50] = "";
-  char pointPerfectBrokerHost[50] = ""; // pp.services.u-blox.com
-  char pointPerfectLBandTopic[20] = ""; // /pp/key/Lb
+  char pointPerfectBrokerHost[50] = ""; //pp.services.u-blox.com
+  char pointPerfectLBandTopic[20] = ""; ///pp/key/Lb
 
   char pointPerfectCurrentKey[33] = ""; //32 hexadecimal digits = 128 bits = 16 Bytes
   uint64_t pointPerfectCurrentKeyDuration = 0;

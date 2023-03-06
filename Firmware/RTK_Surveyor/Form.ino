@@ -49,7 +49,7 @@ void startWebServer()
 
   webserver->onNotFound(notFound);
 
-  webserver->onFileUpload(handleUpload); // Run handleUpload function when any file is uploaded. Must be before server.on() calls.
+  webserver->onFileUpload(handleUpload); //Run handleUpload function when any file is uploaded. Must be before server.on() calls.
 
   webserver->on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", index_html);
@@ -363,7 +363,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
     }
   }
 
-  // Write chunked data to the free sketch space
+  //Write chunked data to the free sketch space
   if (len)
   {
     if (Update.write(data, len) != len)
@@ -1337,7 +1337,7 @@ String getFileList()
   return returnText;
 }
 
-// Make size of files human readable
+//Make size of files human readable
 String stringHumanReadableSize(uint64_t bytes)
 {
   char suffix[5] = {'\0'};
@@ -1369,7 +1369,7 @@ String stringHumanReadableSize(uint64_t bytes)
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-// Handles uploading of user files to SD
+//Handles uploading of user files to SD
 void handleUpload(AsyncWebServerRequest * request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
   String logmessage = "";
@@ -1411,7 +1411,7 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD2);
 
-      managerTempFile->write(data, len); // stream the incoming chunk to the opened file
+      managerTempFile->write(data, len); //stream the incoming chunk to the opened file
 
       xSemaphoreGive(sdCardSemaphore);
     }
@@ -1425,7 +1425,7 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD3);
 
-      managerTempFile->updateFileCreateTimestamp(); // Update the file create time & date
+      managerTempFile->updateFileCreateTimestamp(); //Update the file create time & date
 
       managerTempFile->close();
 

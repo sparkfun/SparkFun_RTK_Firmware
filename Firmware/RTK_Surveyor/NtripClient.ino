@@ -88,7 +88,7 @@ bool ntripClientConnect()
 
   //Remove any http:// or https:// prefix from host name
   char hostname[51];
-  strncpy(hostname, settings.ntripClient_CasterHost, 50); //strtok modifies string to be parsed so we create a copy
+  strncpy(hostname, settings.ntripClient_CasterHost, sizeof(hostname) - 1); //strtok modifies string to be parsed so we create a copy
   char *token = strtok(hostname, "//");
   if (token != nullptr)
   {

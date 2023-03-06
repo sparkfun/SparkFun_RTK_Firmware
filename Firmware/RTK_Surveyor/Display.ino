@@ -2465,7 +2465,7 @@ void displayMessage(const char* message, uint16_t displayTime)
 
     //Count words based on spaces
     uint8_t wordCount = 0;
-    strncpy(temp, message, 20); //strtok modifies the message so make copy
+    strncpy(temp, message, sizeof(temp) - 1); //strtok modifies the message so make copy
     char * token = strtok(temp, " ");
     while (token != nullptr)
     {
@@ -2480,7 +2480,7 @@ void displayMessage(const char* message, uint16_t displayTime)
 
     //drawFrame();
 
-    strncpy(temp, message, 20);
+    strncpy(temp, message, sizeof(temp) - 1);
     token = strtok(temp, " ");
     while (token != nullptr)
     {

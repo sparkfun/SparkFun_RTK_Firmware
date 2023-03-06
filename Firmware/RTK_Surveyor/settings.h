@@ -53,18 +53,21 @@ typedef enum
   RTK_FACET,
   RTK_EXPRESS_PLUS,
   RTK_FACET_LBAND,
-  RTK_UNKNOWN = 0x3F,
-  PRODUCT_HAS_SPI_GNSS = 0x40,
-  PRODUCT_HAS_MMC_MICROSD = 0x80,
-  REFERENCE_STATION = 0xC0,
+  REFERENCE_STATION,
+  RTK_UNKNOWN,
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
 
-//Macros which show if: the GNSS is I2C or SPI; the microSD is SPI or SDIO
-#define USE_SPI_GNSS    ((productVariant & PRODUCT_HAS_SPI_GNSS) > 0)
+//Macros to show if the GNSS is I2C or SPI
+#define USE_SPI_GNSS    (productVariant == RTK_SURVEYOR)
 #define USE_I2C_GNSS    (!USE_SPI_GNSS)
-#define USE_MMC_MICROSD ((productVariant & PRODUCT_HAS_MMC_MICROSD) > 0)
+
+//Macros to show if the microSD is SPI or SDIO
+#define USE_MMC_MICROSD (productVariant == RTK_SURVEYOR)
 #define USE_SPI_MICROSD (!USE_MMC_MICROSD)
+
+//Macro to show if the the RTK variant has Ethernet
+#define HAS_ETHERNET    (productVariant == RTK_SURVEYOR)
 
 typedef enum
 {
@@ -251,6 +254,15 @@ typedef struct _PARSE_STATE
   bool computeCrc;                //Compute the CRC when true
 } PARSE_STATE;
 
+typedef enum
+{
+  ETHERNET_DHCP = 0,
+  ETHERNET_FIXED_IP,
+  ETHERNET_FIXED_IP_DNS,
+  ETHERNET_FIXED_IP_DNS_GATEWAY,
+  ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET,
+} ethernetConfigOptions;
+
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
 {
@@ -325,7 +337,6 @@ typedef struct ubxConstellation
 //These are the allowable constellations to receive from and log (if enabled)
 //Tested with u-center v21.02
 #define MAX_CONSTELLATIONS 6 //(sizeof(ubxConstellations)/sizeof(ubxConstellation))
-
 
 //Different ZED modules support different messages (F9P vs F9R vs F9T)
 //Create binary packed struct for different platforms
@@ -556,6 +567,17 @@ typedef struct {
   int8_t timeZoneMinutes = 0;
   int8_t timeZoneSeconds = 0;
 
+  //Ethernet
+#ifdef COMPILE_ETHERNET
+  IPAddress fixedIPAddress = { 192, 168, 0, 123 };
+  IPAddress DNS = { 194, 168, 4, 100 };
+  IPAddress gateway = { 192, 168, 0, 1 };
+  IPAddress subnetMask = { 255, 255, 255, 0 };
+  uint16_t httpPort = 80;
+  uint16_t ntpPort = 123;
+  ethernetConfigOptions ethernetConfig = ETHERNET_DHCP;
+#endif
+
   //Debug settings
   bool enablePrintWifiIpAddress = true;
   bool enablePrintState = false;
@@ -626,6 +648,9 @@ struct struct_online {
   bool i2c = false;
   bool tcpClient = false;
   bool tcpServer = false;
+  bool ethernet = false;
+  bool ethernetHTTPServer = false; //EthernetServer
+  bool ethernetNTPServer = false; //EthernetUDP
 } online;
 
 #ifdef COMPILE_WIFI

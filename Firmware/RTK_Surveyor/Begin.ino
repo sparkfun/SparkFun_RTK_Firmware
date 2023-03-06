@@ -1010,3 +1010,87 @@ void deleteSDSizeCheckTask()
     log_d("sdSizeCheck Task deleted");
   }
 }
+
+//Ethernet
+
+void beginEthernet()
+{
+  if (!HAS_ETHERNET)
+    return;
+
+#ifdef COMPILE_ETHERNET
+  Ethernet.init(pin_Ethernet_CS);
+
+  switch(settings.ethernetConfig)
+  {
+    case ETHERNET_FIXED_IP:
+      Ethernet.begin(ethernetMACAddress, settings.fixedIPAddress);
+      break;
+    case ETHERNET_FIXED_IP_DNS:
+      Ethernet.begin(ethernetMACAddress, settings.fixedIPAddress, settings.DNS);
+      break;
+    case ETHERNET_FIXED_IP_DNS_GATEWAY:
+      Ethernet.begin(ethernetMACAddress, settings.fixedIPAddress, settings.DNS, settings.gateway);
+      break;
+    case ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET:
+      Ethernet.begin(ethernetMACAddress, settings.fixedIPAddress, settings.DNS, settings.gateway, settings.subnetMask);
+      break;
+    case ETHERNET_DHCP:
+    default:
+      Ethernet.begin(ethernetMACAddress);
+      break;
+  }
+
+  if (Ethernet.hardwareStatus() == EthernetNoHardware)
+  {
+    log_d("Ethernet hardware not found");
+    online.ethernet = false;
+    return;
+  }
+
+  if (Ethernet.linkStatus() == LinkOFF)
+  {
+    log_d("Ethernet cable is not connected");
+    online.ethernet = false;
+    return;
+  }
+
+  online.ethernet = true;
+#endif
+}
+
+void beginEthernetHTTPServer()
+{
+  if (!HAS_ETHERNET)
+    return;
+
+#ifdef COMPILE_ETHERNET
+  if (online.ethernet)
+  {
+    ethernetHTTPServer = new EthernetServer(settings.httpPort);
+    online.ethernetHTTPServer = true;
+  }
+#endif
+}
+
+void beginEthernetNTPServer()
+{
+  if (!HAS_ETHERNET)
+    return;
+
+#ifdef COMPILE_ETHERNET
+  if (online.ethernet)
+  {
+    ethernetNTPServer = new derivedEthernetUDP;
+    ethernetNTPServer->begin(settings.ntpPort);
+    ntpSockIndex = ethernetNTPServer->getSockIndex(); //Get the socket index
+    attachInterrupt(pin_Ethernet_Interrupt, ntpISR, FALLING); //Attach the interrupt
+    online.ethernetNTPServer = true;
+  }
+#endif
+}
+
+void ntpISR()
+{
+  
+}

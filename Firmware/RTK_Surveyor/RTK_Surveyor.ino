@@ -31,6 +31,7 @@
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
 #define COMPILE_SD_MMC //Comment out to remove REFERENCE_STATION microSD SD_MMC support
+#define COMPILE_ETHERNET //Comment out to remove REFERENCE_STATION Ethernet (W5500) support
 #define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 //#define REF_STN_GNSS_DEBUG //Uncomment this line to output GNSS library debug messages on serialGNSS. Ref Stn only. Needs ENABLE_DEVELOPER
 
@@ -439,6 +440,30 @@ unsigned long lastEspnowRssiUpdate = 0;
 int espnowRSSI = 0;
 const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 
+//Ethernet
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#ifdef COMPILE_ETHERNET
+#include <EthernetLarge.h> // http://librarymanager/All#Arduino_Ethernet
+IPAddress ethernetIPAddress;
+IPAddress ethernetDNS;
+IPAddress ethernetGateway;
+IPAddress ethernetSubnetMask;
+//https://github.com/arduino-libraries/Ethernet/issues/88#issuecomment-455498941 must have been fixed in 2.0.>2
+//"C:\Users\<Your User>\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.2\cores\esp32\Server.h"
+//But adding per1234's fix breaks WiFiServer...
+//It might be possible to add the W5500 support from the esp-idf?
+//https://github.com/espressif/esp-idf/tree/master/components/esp_eth/src
+EthernetServer *ethernetHTTPServer = nullptr; //This will be instantiated when we know the HTTP port
+class derivedEthernetUDP : public EthernetUDP
+{
+  public:
+    uint8_t getSockIndex() { return sockindex; } // sockindex is protected in EthernetUDP. A derived class can access it.
+};
+derivedEthernetUDP *ethernetNTPServer = nullptr; //This will be instantiated when we know the NTP port
+volatile uint8_t ntpSockIndex; //The W5500 socket index for NTP - so we can enable and read the correct interrupt
+#endif
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Global variables
@@ -649,6 +674,12 @@ void setup()
   beginFuelGauge(); //Configure battery fuel guage monitor
 
   configureGNSS(); //Configure ZED module
+
+  beginEthernet(); //Start-up the Ethernet connection
+
+  beginEthernetHTTPServer();
+
+  beginEthernetNTPServer();
 
   beginAccelerometer();
 

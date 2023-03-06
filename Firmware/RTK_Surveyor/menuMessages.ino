@@ -230,11 +230,11 @@ void menuMessages()
     if (response == false)
       systemPrintln("menuMessages: Failed to enable messages - Try 2");
     else
-      systemPrintln("menuMessages: messages successfully enabled");
+      systemPrintln("menuMessages: Messages successfully enabled");
   }
   else
   {
-    systemPrintln("menuMessages: messages successfully enabled");
+    systemPrintln("menuMessages: Messages successfully enabled");
   }
 
   setLoggingType(); //Update Standard, PPP, or custom for icon selection
@@ -409,7 +409,7 @@ void beginLogging(const char *customFileName)
         char rstReason[30];
         switch (esp_reset_reason())
         {
-          case ESP_RST_UNKNOWN: strcpy(rstReason, "ESP_RST_UNKNOWN"); break;
+          case ESP_RST_UNKNOWN : strcpy(rstReason, "ESP_RST_UNKNOWN"); break;
           case ESP_RST_POWERON : strcpy(rstReason, "ESP_RST_POWERON"); break;
           case ESP_RST_SW : strcpy(rstReason, "ESP_RST_SW"); break;
           case ESP_RST_PANIC : strcpy(rstReason, "ESP_RST_PANIC"); break;

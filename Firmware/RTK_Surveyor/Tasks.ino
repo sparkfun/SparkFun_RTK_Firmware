@@ -408,8 +408,15 @@ void handleGNSSDataTask(void *e)
           long startTime = millis();
 
           sdBytesToRecord = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+          static unsigned long lastFlush = 0;
           if (USE_MMC_MICROSD)
-            ubxFile->flush();
+          {
+            if (millis() > (lastFlush + 250)) // Flush every 250ms, not every write
+            {
+              ubxFile->flush();
+              lastFlush += 250;
+            }
+          }
           fileSize = ubxFile->fileSize(); //Update file size
 
           sdFreeSpace -= sliceToRecord; //Update remaining space on SD

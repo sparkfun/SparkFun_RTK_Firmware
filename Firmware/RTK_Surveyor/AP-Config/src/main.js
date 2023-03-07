@@ -853,9 +853,16 @@ function useECEFCoordinates() {
 function useGeodeticCoordinates() {
     ge("fixedLat").value = geodeticLat;
     ge("fixedLong").value = geodeticLon;
-    ge("fixedAltitude").value = geodeticAlt;
-    var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000
-    ge("fixedHAE_APC").value = hae.toFixed(3);
+
+    var haeMethod = document.querySelector('input[name=markRadio]:checked').value;
+    if (haeMethod == 1) {
+        ge("fixedHAE_APC").value = geodeticAlt;
+    }
+    else {
+        ge("fixedAltitude").value = geodeticAlt;
+    }
+
+    adjustHAE();
 }
 
 function startNewLog() {
@@ -962,6 +969,16 @@ document.addEventListener("DOMContentLoaded", (event) => {
         if (ge("fixedBaseCoordinateTypeGeo").checked) {
             hide("ecefConfig");
             show("geodeticConfig");
+
+            if (platformPrefix == "Facet") {
+                ge("antennaReferencePoint").value = 61.4;
+            }
+            else if (platformPrefix == "Facet L-Band") {
+                ge("antennaReferencePoint").value = 69.0;
+            }
+            else {
+                ge("antennaReferencePoint").value = 0.0;
+            }
         }
     });
 
@@ -1085,6 +1102,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
     ge("fixedHAE_APC").addEventListener("change", function () {
         adjustHAE();
     });
+
 })
 
 function addECEF() {
@@ -1215,8 +1233,10 @@ function deleteGeodetic() {
 }
 
 function adjustHAE() {
+
+    var haeMethod = document.querySelector('input[name=markRadio]:checked').value;
     var hae;
-    if (ge("adjustHAEMark").checked) {
+    if (haeMethod == 1) {
         ge("fixedHAE_APC").disabled = false;
         ge("fixedAltitude").disabled = true;
         hae = Number(ge("fixedHAE_APC").value) - (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
@@ -1237,16 +1257,18 @@ function loadGeodetic() {
         ge("nicknameGeodetic").value = parts[0];
         ge("fixedLat").value = parts[1];
         ge("fixedLong").value = parts[2];
-        ge("fixedAltitude").value = parts[3];
         ge("antennaHeight").value = parts[4];
         ge("antennaReferencePoint").value = parts[5];
 
+        var haeMethod = document.querySelector('input[name=markRadio]:checked').value;
         var hae;
-        if (ge("adjustHAEMark").checked) {
+        if (haeMethod == 1) {
+            ge("fixedHAE_APC").value = parts[3];
             hae = Number(ge("fixedHAE_APC").value) - (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
             ge("fixedAltitude").value = hae.toFixed(3);
         }
         else {
+            ge("fixedAltitude").value = parts[3];
             hae = Number(ge("fixedAltitude").value) + (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
             ge("fixedHAE_APC").value = hae.toFixed(3);
         }

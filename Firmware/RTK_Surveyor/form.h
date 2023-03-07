@@ -876,9 +876,16 @@ function useECEFCoordinates() {
 function useGeodeticCoordinates() {
     ge("fixedLat").value = geodeticLat;
     ge("fixedLong").value = geodeticLon;
-    ge("fixedAltitude").value = geodeticAlt;
-    var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000
-    ge("fixedHAE_APC").value = hae.toFixed(3);
+
+    var haeMethod = document.querySelector('input[name=markRadio]:checked').value;
+    if (haeMethod == 1) {
+        ge("fixedHAE_APC").value = geodeticAlt;
+    }
+    else {
+        ge("fixedAltitude").value = geodeticAlt;
+    }
+
+    adjustHAE();
 }
 
 function startNewLog() {
@@ -985,6 +992,16 @@ document.addEventListener("DOMContentLoaded", (event) => {
         if (ge("fixedBaseCoordinateTypeGeo").checked) {
             hide("ecefConfig");
             show("geodeticConfig");
+
+            if (platformPrefix == "Facet") {
+                ge("antennaReferencePoint").value = 61.4;
+            }
+            else if (platformPrefix == "Facet L-Band") {
+                ge("antennaReferencePoint").value = 69.0;
+            }
+            else {
+                ge("antennaReferencePoint").value = 0.0;
+            }
         }
     });
 
@@ -1108,6 +1125,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
     ge("fixedHAE_APC").addEventListener("change", function () {
         adjustHAE();
     });
+
 })
 
 function addECEF() {
@@ -1238,8 +1256,10 @@ function deleteGeodetic() {
 }
 
 function adjustHAE() {
+
+    var haeMethod = document.querySelector('input[name=markRadio]:checked').value;
     var hae;
-    if (ge("adjustHAEMark").checked) {
+    if (haeMethod == 1) {
         ge("fixedHAE_APC").disabled = false;
         ge("fixedAltitude").disabled = true;
         hae = Number(ge("fixedHAE_APC").value) - (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
@@ -1260,16 +1280,18 @@ function loadGeodetic() {
         ge("nicknameGeodetic").value = parts[0];
         ge("fixedLat").value = parts[1];
         ge("fixedLong").value = parts[2];
-        ge("fixedAltitude").value = parts[3];
         ge("antennaHeight").value = parts[4];
         ge("antennaReferencePoint").value = parts[5];
 
+        var haeMethod = document.querySelector('input[name=markRadio]:checked').value;
         var hae;
-        if (ge("adjustHAEMark").checked) {
+        if (haeMethod == 1) {
+            ge("fixedHAE_APC").value = parts[3];
             hae = Number(ge("fixedHAE_APC").value) - (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
             ge("fixedAltitude").value = hae.toFixed(3);
         }
         else {
+            ge("fixedAltitude").value = parts[3];
             hae = Number(ge("fixedAltitude").value) + (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
             ge("fixedHAE_APC").value = hae.toFixed(3);
         }
@@ -2570,7 +2592,7 @@ static const char *index_html = R"=====(
                             <div class="form-group row">
                                 <div class="box-margin40 col-sm-8 col-8 col-form-label">
                                     <button type="button" id="useECEFCoordinates" class="btn btn-primary box-margin20"
-                                        onClick="useECEFCoordinates()">Paste Current XYZ</button>
+                                        onClick="useECEFCoordinates()">Load ECEF From ZED</button>
                                     <span class="tt" data-bs-placement="right"
                                         title="Puts the current ECEF coordinates into the fixed X/Y/Z boxes.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
@@ -2667,8 +2689,8 @@ static const char *index_html = R"=====(
                             <div class="form-group row">
                                 <div class="box-margin40 col-sm-8 col-8 col-form-label">
                                     <button type="button" id="useGeodeticCoordinates"
-                                        class="btn btn-primary box-margin20" onClick="useGeodeticCoordinates()">Paste
-                                        Current LLh</button>
+                                        class="btn btn-primary box-margin20" onClick="useGeodeticCoordinates()">Load LLh
+                                        From ZED</button>
                                     <span class="tt" data-bs-placement="right"
                                         title="Puts the current LLh into the fixed LLh boxes.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
@@ -2699,9 +2721,9 @@ static const char *index_html = R"=====(
                                     <label for="fixedAltitude" class="box-margin40 col-sm-3 col-6 col-form-label">HAE
                                         Mark/Alt(m):
                                         <span class="tt" data-bs-placement="right"
-                                        title="Height Above Ellipsoid of the mark. This is the coordinate or altitude of the mark or monument on the ground.">
-                                        <span class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
+                                            title="Height Above Ellipsoid of the mark. This is the coordinate or altitude of the mark or monument on the ground.">
+                                            <span class="icon-info-circle text-primary ms-2"></span>
+                                        </span>
                                     </label>
                                     <div class="col-sm-4 col-4">
                                         <input type="number" class="form-control" id="fixedAltitude">
@@ -2710,15 +2732,27 @@ static const char *index_html = R"=====(
                                 <p id="fixedAltitudeError" class="inlineError"></p>
                             </div>
 
-                            <div class="form-check box-margin40">
-                                <label class="form-check-label" for="adjustHAEMark">Adjust Mark</label>
-                                <input class="form-check-input" type="checkbox" value="" id="adjustHAEMark"
-                                    onClick="adjustHAE()">
-                                <span class="tt" data-bs-placement="right"
-                                    title="If enabled, HAE Mark is calculated by *subtracting* the entered Antenna Height and ARP from the altitude reported by the GNSS receiver. This is handy when measuring a mark with a known pole height and ARP, but unknown mark elevation. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
-                                    <span class="icon-info-circle text-primary ms-2"></span>
+                            <div class="form-group row">
+                                <span style="display:inline; margin-left:40px;">
+                                    <input type="radio" name="markRadio" value="2" onClick="adjustHAE()" checked>
+                                    <label id="callHAEAPC">Calculate HAE APC</label>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="If enabled, HAE APC is calculated by *adding* the entered Antenna Height and ARP to the altitude reported by the GNSS receiver. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
                                 </span>
                             </div>
+                            <div class="form-group row">
+                                <span style="display:inline; margin-left:40px;">
+                                    <input type="radio" name="markRadio" value="1" onClick="adjustHAE()">
+                                    <label id="calcHAEMark">Calculate HAE Mark</label>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="If enabled, HAE Mark is calculated by *subtracting* the entered Antenna Height and ARP from the altitude reported by the GNSS receiver. This is handy when measuring a mark with a known pole height and ARP, but unknown mark elevation. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </span>
+                            </div>
+
 
                             <div class="form-group row">
                                 <label for="antennaHeight" class="box-margin40 col-sm-3 col-5 col-form-label">Antenna

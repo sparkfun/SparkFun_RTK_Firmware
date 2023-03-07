@@ -40,7 +40,7 @@ jobs:
           ArduinoJson@6.19.4
           pubsubclient@2.8.0
           ESP32_BleSerial@1.0.4
-          "SparkFun u-blox GNSS v3"@3.0.2
+          "SparkFun u-blox GNSS v3"@3.0.3
           "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
           "SparkFun LIS2DH12 Arduino Library"@1.0.3
           "ESP32-OTA-Pull"@1.0.0

@@ -1,7 +1,7 @@
 #ifdef COMPILE_BT
 
 #include "BluetoothSerial.h"
-#include <BleSerial.h> // Click here to get the library: http://librarymanager/All#ESP32_BleSerial by Avinab Malla
+#include <BleSerial.h> //Click here to get the library: http://librarymanager/All#ESP32_BleSerial v1.0.4 by Avinab Malla
 
 class BTSerialInterface
 {
@@ -25,8 +25,8 @@ class BTSerialInterface
 
 class BTClassicSerial : public virtual BTSerialInterface, public BluetoothSerial
 {
-    // Everything is already implemented in BluetoothSerial since the code was
-    // originally written using that class
+    //Everything is already implemented in BluetoothSerial since the code was
+    //originally written using that class
   public:
     bool begin(String deviceName)
     {
@@ -89,7 +89,7 @@ class BTClassicSerial : public virtual BTSerialInterface, public BluetoothSerial
 class BTLESerial: public virtual BTSerialInterface, public BleSerial
 {
   public:
-    // Missing from BleSerial
+    //Missing from BleSerial
     bool begin(String deviceName)
     {
       BleSerial::begin(deviceName.c_str());
@@ -147,7 +147,7 @@ class BTLESerial: public virtual BTSerialInterface, public BleSerial
       BleSerial::flush();
     }
 
-    // override BLEServerCallbacks
+    //override BLEServerCallbacks
     void onConnect(BLEServer *pServer)
     {
       //bleConnected = true; Removed until PR is accepted

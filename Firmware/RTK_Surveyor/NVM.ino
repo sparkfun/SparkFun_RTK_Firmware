@@ -29,7 +29,7 @@ void loadSettings()
 
   //Change empty profile name to 'Profile1' etc
   if (strlen(settings.profileName) == 0)
-    sprintf(settings.profileName, "Profile%d", profileNumber + 1);
+    snprintf(settings.profileName, sizeof(settings.profileName), "Profile%d", profileNumber + 1);
 
   //Record these settings to LittleFS and SD file to be sure they are the same
   recordSystemSettings();
@@ -43,9 +43,9 @@ void loadSettings()
 //Set the settingsFileName and coordinate file names used many places
 void setSettingsFileName()
 {
-  sprintf(settingsFileName, "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
-  sprintf(stationCoordinateECEFFileName, "/StationCoordinates-ECEF_%d.csv", profileNumber);
-  sprintf(stationCoordinateGeodeticFileName, "/StationCoordinates-Geodetic_%d.csv", profileNumber);
+  snprintf(settingsFileName, sizeof(settingsFileName), "/%s_Settings_%d.txt", platformFilePrefix, profileNumber);
+  snprintf(stationCoordinateECEFFileName, sizeof(stationCoordinateECEFFileName), "/StationCoordinates-ECEF_%d.csv", profileNumber);
+  snprintf(stationCoordinateGeodeticFileName, sizeof(stationCoordinateGeodeticFileName), "/StationCoordinates-Geodetic_%d.csv", profileNumber);
 }
 
 //Load only LFS settings without recording
@@ -89,26 +89,52 @@ void recordSystemSettingsToFileSD(char *fileName)
       markSemaphore(FUNCTION_RECORDSETTINGS);
 
       gotSemaphore = true;
-      if (sd->exists(fileName))
+
+      if (USE_SPI_MICROSD)
       {
-        log_d("Removing from SD: %s", fileName);
-        sd->remove(fileName);
-      }
+        if (sd->exists(fileName))
+        {
+          log_d("Removing from SD: %s", fileName);
+          sd->remove(fileName);
+        }
+  
+        SdFile settingsFile; //FAT32
+        if (settingsFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+        {
+          systemPrintln("Failed to create settings file");
+          break;
+        }
 
-      SdFile settingsFile; //FAT32
-      if (settingsFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+        updateDataFileCreate(&settingsFile); //Update the file to create time & date
+  
+        recordSystemSettingsToFile((File *)&settingsFile); //Record all the settings via strings to file
+  
+        updateDataFileAccess(&settingsFile); //Update the file access time & date
+  
+        settingsFile.close();
+      }
+#ifdef COMPILE_SD_MMC
+      else
       {
-        systemPrintln("Failed to create settings file");
-        break;
+        if (SD_MMC.exists(fileName))
+        {
+          log_d("Removing from SD: %s", fileName);
+          SD_MMC.remove(fileName);
+        }
+  
+        File settingsFile = SD_MMC.open(fileName, FILE_WRITE);
+        
+        if (!settingsFile)
+        {
+          systemPrintln("Failed to create settings file");
+          break;
+        }
+
+        recordSystemSettingsToFile(&settingsFile); //Record all the settings via strings to file
+  
+        settingsFile.close();
       }
-
-      updateDataFileCreate(&settingsFile); // Update the file to create time & date
-
-      recordSystemSettingsToFile((File *)&settingsFile); //Record all the settings via strings to file
-
-      updateDataFileAccess(&settingsFile); // Update the file access time & date
-
-      settingsFile.close();
+#endif
 
       log_d("Settings recorded to SD: %s", fileName);
     }
@@ -164,7 +190,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "rtkIdentifier", settings.rtkIdentifier);
 
   char firmwareVersion[30]; //v1.3 December 31 2021
-  sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+  snprintf(firmwareVersion, sizeof(firmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
   settingsFile->printf("%s=%s\r\n", "rtkFirmwareVersion", firmwareVersion);
 
   settingsFile->printf("%s=%s\r\n", "zedFirmwareVersion", zedFirmwareVersion);
@@ -267,7 +293,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < settings.espnowPeerCount ; x++)
   {
     char tempString[50]; //espnowPeers.1=B4,C1,33,42,DE,01,
-    sprintf(tempString, "espnowPeers.%d=%02X,%02X,%02X,%02X,%02X,%02X,", x,
+    snprintf(tempString, sizeof(tempString), "espnowPeers.%d=%02X,%02X,%02X,%02X,%02X,%02X,", x,
             settings.espnowPeers[x][0],
             settings.espnowPeers[x][1],
             settings.espnowPeers[x][2],
@@ -295,9 +321,9 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
   {
     char tempString[100]; //wifiNetwork0Password=parachutes
-    sprintf(tempString, "wifiNetwork%dSSID=%s", x, settings.wifiNetworks[x].ssid);
+    snprintf(tempString, sizeof(tempString), "wifiNetwork%dSSID=%s", x, settings.wifiNetworks[x].ssid);
     settingsFile->println(tempString);
-    sprintf(tempString, "wifiNetwork%dPassword=%s", x, settings.wifiNetworks[x].password);
+    snprintf(tempString, sizeof(tempString), "wifiNetwork%dPassword=%s", x, settings.wifiNetworks[x].password);
     settingsFile->println(tempString);
   }
 
@@ -308,7 +334,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
   {
     char tempString[50]; //constellation.BeiDou=1
-    sprintf(tempString, "constellation.%s=%d", settings.ubxConstellations[x].textName, settings.ubxConstellations[x].enabled);
+    snprintf(tempString, sizeof(tempString), "constellation.%s=%d", settings.ubxConstellations[x].textName, settings.ubxConstellations[x].enabled);
     settingsFile->println(tempString);
   }
 
@@ -316,7 +342,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
     char tempString[50]; //message.nmea_dtm.msgRate=5
-    sprintf(tempString, "message.%s.msgRate=%d", settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
+    snprintf(tempString, sizeof(tempString), "message.%s.msgRate=%d", settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
     settingsFile->println(tempString);
   }
 }
@@ -343,8 +369,15 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
       markSemaphore(FUNCTION_LOADSETTINGS);
 
       gotSemaphore = true;
-      if (sd->exists(fileName))
+
+      if (USE_SPI_MICROSD)
       {
+        if (!sd->exists(fileName))
+        {
+          log_d("File %s not found", fileName);
+          break;
+        }
+        
         SdFile settingsFile; //FAT32
         if (settingsFile.open(fileName, O_READ) == false)
         {
@@ -358,8 +391,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
         while (settingsFile.available())
         {
           //Get the next line from the file
-          //int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
-          int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
+          int n = settingsFile.fgets(line, sizeof(line));
           if (n <= 0) {
             systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
           }
@@ -390,11 +422,61 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
         status = true;
         break;
       }
+#ifdef COMPILE_SD_MMC
       else
       {
-        log_d("File %s not found", fileName);
+        if (!SD_MMC.exists(fileName))
+        {
+          log_d("File %s not found", fileName);
+          break;
+        }
+        
+        File settingsFile = SD_MMC.open(fileName, FILE_READ);
+
+        if (!settingsFile)
+        {
+          systemPrintln("Failed to open settings file");
+          break;
+        }
+
+        char line[60];
+        int lineNumber = 0;
+
+        while (settingsFile.available())
+        {
+          //Get the next line from the file
+          int n = getLine(&settingsFile, line, sizeof(line));
+          if (n <= 0) {
+            systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
+          }
+          else if (line[n - 1] != '\n' && n == (sizeof(line) - 1)) {
+            systemPrintf("Settings line %d too long\r\n", lineNumber);
+            if (lineNumber == 0)
+            {
+              //If we can't read the first line of the settings file, give up
+              systemPrintln("Giving up on settings file");
+              break;
+            }
+          }
+          else if (parseLine(line, settings) == false) {
+            systemPrintf("Failed to parse line %d: %s\r\n", lineNumber, line);
+            if (lineNumber == 0)
+            {
+              //If we can't read the first line of the settings file, give up
+              systemPrintln("Giving up on settings file");
+              break;
+            }
+          }
+
+          lineNumber++;
+        }
+
+        //systemPrintln("Config file read complete");
+        settingsFile.close();
+        status = true;
         break;
       }
+#endif
     } //End Semaphore check
     else
     {
@@ -424,7 +506,10 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
 {
   File settingsFile = LittleFS.open(fileName, FILE_READ);
   if (!settingsFile)
+  {
+    systemPrintf("settingsFile not found in LittleFS\r\n");
     return (false);
+  }
 
   char line[100];
   int lineNumber = 0;
@@ -432,8 +517,13 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
   while (settingsFile.available())
   {
     //Get the next line from the file
-    int n = getLine(&settingsFile, line, sizeof(line)); //Use with SD library
-    //int n = settingsFile.fgets(line, sizeof(line)); //Use with SdFat library
+    int n;
+    if (USE_SPI_MICROSD)
+      n = getLine(&settingsFile, line, sizeof(line));
+#ifdef COMPILE_SD_MMC
+    else
+      n = getLine(&settingsFile, line, sizeof(line));
+#endif
     if (n <= 0) {
       systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
     }
@@ -469,7 +559,7 @@ bool parseLine(char* str, Settings *settings)
 {
   char* ptr;
 
-  // Set strtok start of line.
+  //Set strtok start of line.
   str = strtok(str, "=");
   if (!str)
   {
@@ -479,7 +569,7 @@ bool parseLine(char* str, Settings *settings)
 
   //Store this setting name
   char settingName[100];
-  sprintf(settingName, "%s", str);
+  snprintf(settingName, sizeof(settingName), "%s", str);
 
   double d = 0.0;
   char settingValue[100] = "";
@@ -500,7 +590,7 @@ bool parseLine(char* str, Settings *settings)
 
     //Assume the value is a string such as 8d8a48b. The leading number causes skipSpace to fail.
     //If settingValue has a mix of letters and numbers, just convert to string
-    sprintf(settingValue, "%s", str);
+    snprintf(settingValue, sizeof(settingValue), "%s", str);
 
     //Check if string is mixed: 8a011EF, 192.168.1.1, -102.4, t6-h4$, etc.
     bool hasSymbol = false;
@@ -531,21 +621,21 @@ bool parseLine(char* str, Settings *settings)
 
       if (d == 0.0) //strtod failed, may be string or may be 0 but let it pass
       {
-        sprintf(settingValue, "%s", str);
+        snprintf(settingValue, sizeof(settingValue), "%s", str);
       }
       else
       {
         if (str == ptr || *skipSpace(ptr)) return false; //Check str pointer
 
         //See issue https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/47
-        sprintf(settingValue, "%1.0lf", d); //Catch when the input is pure numbers (strtod was successful), store as settingValue
+        snprintf(settingValue, sizeof(settingValue), "%1.0lf", d); //Catch when the input is pure numbers (strtod was successful), store as settingValue
       }
     }
   }
 
   //log_d("settingName: %s - value: %s - d: %0.9f", settingName, settingValue, d);
 
-  // Get setting name
+  //Get setting name
   if (strcmp(settingName, "sizeOfSettings") == 0)
   {
     //We may want to cause a factory reset from the settings file rather than the menu
@@ -941,7 +1031,7 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
       {
         char tempString[100]; //wifiNetwork0Password=parachutes
-        sprintf(tempString, "wifiNetwork%dSSID", x);
+        snprintf(tempString, sizeof(tempString), "wifiNetwork%dSSID", x);
         if (strcmp(settingName, tempString) == 0)
         {
           strcpy(settings->wifiNetworks[x].ssid, settingValue);
@@ -950,7 +1040,7 @@ bool parseLine(char* str, Settings *settings)
         }
         else
         {
-          sprintf(tempString, "wifiNetwork%dPassword", x);
+          snprintf(tempString, sizeof(tempString), "wifiNetwork%dPassword", x);
           if (strcmp(settingName, tempString) == 0)
           {
             strcpy(settings->wifiNetworks[x].password, settingValue);
@@ -967,7 +1057,7 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
       {
         char tempString[50]; //constellation.GPS=1
-        sprintf(tempString, "constellation.%s", settings->ubxConstellations[x].textName);
+        snprintf(tempString, sizeof(tempString), "constellation.%s", settings->ubxConstellations[x].textName);
 
         if (strcmp(settingName, tempString) == 0)
         {
@@ -989,7 +1079,7 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
         char tempString[50]; //message.nmea_dtm.msgRate=5
-        sprintf(tempString, "message.%s.msgRate", settings->ubxMessages[x].msgTextName);
+        snprintf(tempString, sizeof(tempString), "message.%s.msgRate", settings->ubxMessages[x].msgTextName);
 
         if (strcmp(settingName, tempString) == 0)
         {
@@ -1011,7 +1101,7 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < ESPNOW_MAX_PEERS ; x++)
       {
         char tempString[50]; //espnowPeers.1=B4,C1,33,42,DE,01,
-        sprintf(tempString, "espnowPeers.%d", x);
+        snprintf(tempString, sizeof(tempString), "espnowPeers.%d", x);
 
         if (strcmp(settingName, tempString) == 0)
         {
@@ -1019,10 +1109,10 @@ bool parseLine(char* str, Settings *settings)
           uint8_t macByte = 0;
 
           char* token = strtok(settingValue, ","); //Break string up on ,
-          while (token != NULL && macByte < sizeof(macAddress))
+          while (token != nullptr && macByte < sizeof(macAddress))
           {
-            settings->espnowPeers[x][macByte++] = (uint8_t)strtol(token, NULL, 16);
-            token = strtok(NULL, ",");
+            settings->espnowPeers[x][macByte++] = (uint8_t)strtol(token, nullptr, 16);
+            token = strtok(nullptr, ",");
           }
 
           knownSetting = true;
@@ -1066,7 +1156,7 @@ int getLine(File * openFile, char * lineChars, int lineSize)
   return (count);
 }
 
-// Check for extra characters in field or find minus sign.
+//Check for extra characters in field or find minus sign.
 char* skipSpace(char* str) {
   while (isspace(*str)) str++;
   return str;
@@ -1128,7 +1218,7 @@ uint8_t loadProfileNames()
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
   {
     char fileName[56];
-    sprintf(fileName, "/%s_Settings_%d.txt", platformFilePrefix, x);
+    snprintf(fileName, sizeof(fileName), "/%s_Settings_%d.txt", platformFilePrefix, x);
 
     if (getProfileName(fileName, profileNames[x], sizeof(profileNames[x])) == true)
       //Mark this profile as active
@@ -1138,11 +1228,11 @@ uint8_t loadProfileNames()
   return (profiles);
 }
 
-//Copy the profile name into the array of profile names
+//Given a profile number, copy the current settings.profileName into the array of profile names
 void setProfileName(uint8_t ProfileNumber)
 {
   //Update the name in the array of profile names
-  strcpy(profileNames[profileNumber], settings.profileName);
+  strncpy(profileNames[profileNumber], settings.profileName, sizeof(profileNames[0]) - 1);
 
   //Mark this profile as active
   activeProfiles |= 1 << ProfileNumber;
@@ -1222,7 +1312,7 @@ uint8_t getProfileNumberFromUnit(uint8_t profileUnit)
 void recordFile(const char* fileID, char* fileContents, uint32_t fileSize)
 {
   char fileName[80];
-  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
+  snprintf(fileName, sizeof(fileName), "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
 
   if (LittleFS.exists(fileName))
   {
@@ -1246,7 +1336,7 @@ void recordFile(const char* fileID, char* fileContents, uint32_t fileSize)
 void loadFile(const char* fileID, char* fileContents)
 {
   char fileName[80];
-  sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
+  snprintf(fileName, sizeof(fileName), "/%s_%s_%d.txt", platformFilePrefix, fileID, profileNumber);
 
   File fileToRead = LittleFS.open(fileName, FILE_READ);
   if (fileToRead)

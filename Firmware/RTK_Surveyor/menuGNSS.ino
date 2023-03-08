@@ -216,8 +216,8 @@ void menuGNSS()
 
   //Error check for RTK2Go without email in user name
   //First force tolower the host name
-  char lowerHost[50];
-  strcpy(lowerHost, settings.ntripClient_CasterHost);
+  char lowerHost[51];
+  strncpy(lowerHost, settings.ntripClient_CasterHost, sizeof(lowerHost) - 1);
   for (int x = 0 ; x < 50 ; x++)
   {
     if (lowerHost[x] == '\0') break;
@@ -237,8 +237,8 @@ void menuGNSS()
     }
   }
 
-  // Set dynamic model
-  i2cGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
+  //Set dynamic model
+  theGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
 
   clearBuffer(); //Empty buffer of any newline chars
 }
@@ -326,9 +326,9 @@ bool setRate(double secondsBetweenSolutions)
   //systemPrintf("measurementRate / navRate: %d / %d\r\n", measRate, navRate);
 
   bool response = true;
-  response &= i2cGNSS.newCfgValset();
-  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_MEAS, measRate);
-  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_NAV, navRate);
+  response &= theGNSS.newCfgValset();
+  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, measRate);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, navRate);
 
   //If enabled, adjust GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
   if (settings.ubxMessages[8].msgRate > 0)
@@ -339,9 +339,9 @@ bool setRate(double secondsBetweenSolutions)
     log_d("Adjusting GSV setting to %f", measurementFrequency);
 
     setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //Update GSV setting in file
-    response &= i2cGNSS.addCfgValset8(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module
+    response &= theGNSS.addCfgValset(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module
   }
-  response &= i2cGNSS.sendCfgValset(); //Closing value - max 4 pairs
+  response &= theGNSS.sendCfgValset(); //Closing value - max 4 pairs
 
   //If we successfully set rates, only then record to settings
   if (response == true)

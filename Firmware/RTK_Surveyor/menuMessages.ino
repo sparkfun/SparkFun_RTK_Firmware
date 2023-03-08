@@ -22,11 +22,16 @@ void menuLog()
                sdFreeSpaceChar
               );
       systemPrintln(myString);
+
+      if (online.logging)
+      {
+        systemPrintf("Current log file name: %s\r\n", logFileName);
+      }
     }
     else
       systemPrintln("No microSD card is detected");
 
-    if(bufferOverruns) 
+    if (bufferOverruns)
       systemPrintf("Buffer overruns: %d\r\n", bufferOverruns);
 
     systemPrint("1) Log to microSD: ");
@@ -94,8 +99,8 @@ void menuLog()
     }
     else if (incoming == 4 && settings.enableLogging == true && online.logging == true)
     {
-      endSD(false, true); //Close down file. A new one will be created at the next calling of updateLogs().
-      beginLogging();
+      endLogging(false, true); //(gotSemaphore, releaseSemaphore) Close file. Reset parser stats.
+      beginLogging(); //Create new file based on current RTC.
       setLoggingType(); //Determine if we are standard, PPP, or custom. Changes logging icon accordingly.
     }
     else if (incoming == 5)
@@ -218,18 +223,18 @@ void menuMessages()
   bool response = setMessages(); //Does a complete open/closed val set
   if (response == false)
   {
-    systemPrintln("menuMessages: Failed to enable UART1 messages - Try 1");
+    systemPrintln("menuMessages: Failed to enable messages - Try 1");
 
     response = setMessages(); //Does a complete open/closed val set
 
     if (response == false)
-      systemPrintln("menuMessages: Failed to enable UART1 messages - Try 2");
+      systemPrintln("menuMessages: Failed to enable messages - Try 2");
     else
-      systemPrintln("menuMessages: UART1 messages successfully enabled");
+      systemPrintln("menuMessages: Messages successfully enabled");
   }
   else
   {
-    systemPrintln("menuMessages: UART1 messages successfully enabled");
+    systemPrintln("menuMessages: Messages successfully enabled");
   }
 
   setLoggingType(); //Update Standard, PPP, or custom for icon selection
@@ -329,22 +334,27 @@ void beginLogging(const char *customFileName)
   {
     if (online.microSD == true && settings.enableLogging == true && online.rtc == true) //We can't create a file until we have date/time
     {
-      char fileName[66 + 6 + 40] = "";
-
       if (strlen(customFileName) == 0)
       {
         //Generate a standard log file name
         if (reuseLastLog == true) //attempt to use previous log
         {
-          if (findLastLog(fileName) == false)
+          reuseLastLog = false;
+
+          if (findLastLog(logFileName) == false)
             log_d("Failed to find last log. Making new one.");
           else
             log_d("Using last log file.");
         }
-
-        if (strlen(fileName) == 0)
+        else
         {
-          sprintf(fileName, "%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+          //We are not reusing the last log, so erase the global/original filename
+          strcpy(logFileName, "");
+        }
+
+        if (strlen(logFileName) == 0)
+        {
+          snprintf(logFileName, sizeof(logFileName), "/%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
                   platformFilePrefix,
                   rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
                   rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
@@ -353,17 +363,16 @@ void beginLogging(const char *customFileName)
       }
       else
       {
-        strcpy(fileName, customFileName);
+        strncpy(logFileName, customFileName, sizeof(logFileName) - 1);
       }
 
       //Allocate the ubxFile
       if (!ubxFile)
       {
-        ubxFile = new SdFile();
+        ubxFile = new FileSdFatMMC;
         if (!ubxFile)
         {
           systemPrintln("Failed to allocate ubxFile!");
-          online.logging = false;
           return;
         }
       }
@@ -373,12 +382,12 @@ void beginLogging(const char *customFileName)
       {
         markSemaphore(FUNCTION_CREATEFILE);
 
-        // O_CREAT - create the file if it does not exist
-        // O_APPEND - seek to the end of the file prior to each write
-        // O_WRITE - open for write
-        if (ubxFile->open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
+        //O_CREAT - create the file if it does not exist
+        //O_APPEND - seek to the end of the file prior to each write
+        //O_WRITE - open for write
+        if (ubxFile->open(logFileName, O_CREAT | O_APPEND | O_WRITE) == false)
         {
-          systemPrintf("Failed to create GNSS UBX data file: %s\r\n", fileName);
+          systemPrintf("Failed to create GNSS UBX data file: %s\r\n", logFileName);
           online.logging = false;
           xSemaphoreGive(sdCardSemaphore);
           return;
@@ -389,7 +398,7 @@ void beginLogging(const char *customFileName)
 
         bufferOverruns = 0; //Reset counter
 
-        updateDataFileCreate(ubxFile); // Update the file to create time & date
+        ubxFile->updateFileCreateTimestamp(); //Update the file to create time & date
 
         startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 
@@ -400,7 +409,7 @@ void beginLogging(const char *customFileName)
         char rstReason[30];
         switch (esp_reset_reason())
         {
-          case ESP_RST_UNKNOWN: strcpy(rstReason, "ESP_RST_UNKNOWN"); break;
+          case ESP_RST_UNKNOWN : strcpy(rstReason, "ESP_RST_UNKNOWN"); break;
           case ESP_RST_POWERON : strcpy(rstReason, "ESP_RST_POWERON"); break;
           case ESP_RST_SW : strcpy(rstReason, "ESP_RST_SW"); break;
           case ESP_RST_PANIC : strcpy(rstReason, "ESP_RST_PANIC"); break;
@@ -415,25 +424,25 @@ void beginLogging(const char *customFileName)
 
         //Mark top of log with system information
         char nmeaMessage[82]; //Max NMEA sentence length is 82
-        createNMEASentence(CUSTOM_NMEA_TYPE_RESET_REASON, nmeaMessage, rstReason); //textID, buffer, text
+        createNMEASentence(CUSTOM_NMEA_TYPE_RESET_REASON, nmeaMessage, sizeof(nmeaMessage), rstReason); //textID, buffer, sizeOfBuffer, text
         ubxFile->println(nmeaMessage);
 
         //Record system firmware versions and info to log
 
         //SparkFun RTK Express v1.10-Feb 11 2022
         char firmwareVersion[30]; //v1.3 December 31 2021
-        sprintf(firmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
-        createNMEASentence(CUSTOM_NMEA_TYPE_SYSTEM_VERSION, nmeaMessage, firmwareVersion); //textID, buffer, text
+        snprintf(firmwareVersion, sizeof(firmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+        createNMEASentence(CUSTOM_NMEA_TYPE_SYSTEM_VERSION, nmeaMessage, sizeof(nmeaMessage), firmwareVersion); //textID, buffer, sizeOfBuffer, text
         ubxFile->println(nmeaMessage);
 
         //ZED-F9P firmware: HPG 1.30
-        createNMEASentence(CUSTOM_NMEA_TYPE_ZED_VERSION, nmeaMessage, zedFirmwareVersion); //textID, buffer, text
+        createNMEASentence(CUSTOM_NMEA_TYPE_ZED_VERSION, nmeaMessage, sizeof(nmeaMessage), zedFirmwareVersion); //textID, buffer, sizeOfBuffer, text
         ubxFile->println(nmeaMessage);
 
         //Device BT MAC. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/346
         char macAddress[5];
-        sprintf(macAddress, "%02X%02X", btMACAddress[4], btMACAddress[5]);
-        createNMEASentence(CUSTOM_NMEA_TYPE_DEVICE_BT_ID, nmeaMessage, macAddress); //textID, buffer, text
+        snprintf(macAddress, sizeof(macAddress), "%02X%02X", btMACAddress[4], btMACAddress[5]);
+        createNMEASentence(CUSTOM_NMEA_TYPE_DEVICE_BT_ID, nmeaMessage, sizeof(nmeaMessage), macAddress); //textID, buffer, sizeOfBuffer, text
         ubxFile->println(nmeaMessage);
 
         if (reuseLastLog == true)
@@ -451,7 +460,7 @@ void beginLogging(const char *customFileName)
         return;
       }
 
-      systemPrintf("Log file name: %s\r\n", fileName);
+      systemPrintf("Log file name: %s\r\n", logFileName);
       online.logging = true;
     } //online.sd, enable.logging, online.rtc
   } //online.logging
@@ -472,13 +481,13 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
       //Record the number of NMEA/RTCM/UBX messages that were filtered out
       char parserStats[50];
 
-      sprintf(parserStats, "%d,%d,%d,",
+      snprintf(parserStats, sizeof(parserStats), "%d,%d,%d,",
               failedParserMessages_NMEA,
               failedParserMessages_RTCM,
               failedParserMessages_UBX);
 
       char nmeaMessage[82]; //Max NMEA sentence length is 82
-      createNMEASentence(CUSTOM_NMEA_TYPE_PARSER_STATS, nmeaMessage, parserStats); //textID, buffer, text
+      createNMEASentence(CUSTOM_NMEA_TYPE_PARSER_STATS, nmeaMessage, sizeof(nmeaMessage), parserStats); //textID, buffer, sizeOfBuffer, text
       ubxFile->println(nmeaMessage);
       ubxFile->sync();
 
@@ -489,11 +498,11 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
 
       //Close down file system
       ubxFile->close();
-      systemPrintln("Log file closed");
-
       //Done with the log file
       delete ubxFile;
-      ubxFile = NULL;
+      ubxFile = nullptr;
+
+      systemPrintln("Log file closed");
 
       //Release the semaphore if requested
       if (releaseSemaphore)
@@ -511,24 +520,6 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
   }
 }
 
-//Update the file access and write time with date and time obtained from GNSS
-void updateDataFileAccess(SdFile *dataFile)
-{
-  if (online.rtc == true)
-  {
-    //ESP32Time returns month:0-11
-    dataFile->timestamp(T_ACCESS, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-    dataFile->timestamp(T_WRITE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond());
-  }
-}
-
-//Update the file create time with date and time obtained from GNSS
-void updateDataFileCreate(SdFile *dataFile)
-{
-  if (online.rtc == true)
-    dataFile->timestamp(T_CREATE, rtc.getYear(), rtc.getMonth() + 1, rtc.getDay(), rtc.getHour(true), rtc.getMinute(), rtc.getSecond()); //ESP32Time returns month:0-11
-}
-
 //Finds last log
 //Returns true if succesful
 bool findLastLog(char *lastLogName)
@@ -544,32 +535,71 @@ bool findLastLog(char *lastLogName)
       markSemaphore(FUNCTION_FINDLOG);
 
       //Count available binaries
-      SdFile tempFile;
-      SdFile dir;
-      const char* LOG_EXTENSION = "ubx";
-      const char* LOG_PREFIX = platformFilePrefix;
-      char fname[50]; //Handle long file names
-
-      dir.open("/"); //Open root
-
-      while (tempFile.openNext(&dir, O_READ))
+      if (USE_SPI_MICROSD)
       {
-        if (tempFile.isFile())
-        {
-          tempFile.getName(fname, sizeof(fname));
+        SdFile tempFile;
+        SdFile dir;
+        const char* LOG_EXTENSION = "ubx";
+        const char* LOG_PREFIX = platformFilePrefix;
+        char fname[50]; //Handle long file names
 
-          //Check for matching file name prefix and extension
-          if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
+        dir.open("/"); //Open root
+
+        while (tempFile.openNext(&dir, O_READ))
+        {
+          if (tempFile.isFile())
           {
-            if (strstr(fname, LOG_PREFIX) != NULL)
+            tempFile.getName(fname, sizeof(fname));
+
+            //Check for matching file name prefix and extension
+            if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
             {
-              strcpy(lastLogName, fname); //Store this file as last known log file
-              foundAFile = true;
+              if (strstr(fname, LOG_PREFIX) != nullptr)
+              {
+                strncpy(lastLogName, fname, sizeof(lastLogName) - 1); //Store this file as last known log file
+                foundAFile = true;
+              }
             }
           }
+          tempFile.close();
         }
-        tempFile.close();
       }
+#ifdef COMPILE_SD_MMC
+      else
+      {
+        File tempFile;
+        File dir;
+        const char* LOG_EXTENSION = "ubx";
+        const char* LOG_PREFIX = platformFilePrefix;
+        char fname[50]; //Handle long file names
+
+        dir = SD_MMC.open("/"); //Open root
+
+        if (dir && dir.isDirectory())
+        {
+          tempFile = dir.openNextFile();
+          while (tempFile)
+          {
+            if (!tempFile.isDirectory())
+            {
+              snprintf(fname, sizeof(fname), "%s", tempFile.name());
+
+              //Check for matching file name prefix and extension
+              if (strcmp(LOG_EXTENSION, &fname[strlen(fname) - strlen(LOG_EXTENSION)]) == 0)
+              {
+                if (strstr(fname, LOG_PREFIX) != nullptr)
+                {
+                  strncpy(lastLogName, fname, sizeof(lastLogName) - 1); //Store this file as last known log file
+                  foundAFile = true;
+                }
+              }
+            }
+            tempFile.close();
+            tempFile = dir.openNextFile();
+          }
+        }
+      }
+#endif
 
       xSemaphoreGive(sdCardSemaphore);
     }
@@ -588,12 +618,12 @@ bool findLastLog(char *lastLogName)
 void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlock)
 {
   char messageNamePiece[40]; //UBX_RTCM
-  sprintf(messageNamePiece, "UBX_%s", messageType); //Put UBX_ infront of type
+  snprintf(messageNamePiece, sizeof(messageNamePiece), "UBX_%s", messageType); //Put UBX_ infront of type
 
   //Find the first occurrence
   for (startOfBlock = 0 ; startOfBlock < MAX_UBX_MSG ; startOfBlock++)
   {
-    if (strstr(settings.ubxMessages[startOfBlock].msgTextName, messageNamePiece) != NULL) break;
+    if (strstr(settings.ubxMessages[startOfBlock].msgTextName, messageNamePiece) != nullptr) break;
   }
   if (startOfBlock == MAX_UBX_MSG)
   {
@@ -606,7 +636,7 @@ void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlo
   //Find the last occurrence
   for (endOfBlock = startOfBlock + 1 ; endOfBlock < MAX_UBX_MSG ; endOfBlock++)
   {
-    if (strstr(settings.ubxMessages[endOfBlock].msgTextName, messageNamePiece) == NULL) break;
+    if (strstr(settings.ubxMessages[endOfBlock].msgTextName, messageNamePiece) == nullptr) break;
   }
 }
 
@@ -709,7 +739,7 @@ void setLogTestFrequencyMessages(int rate, int messages)
     log_d("Unknown message amount");
 
 
-  //Apply these message rates to both UART1 and USB
+  //Apply these message rates to both UART1 / SPI and USB
   setMessages(); //Does a complete open/closed val set
   setMessagesUSB();
 }
@@ -734,7 +764,7 @@ void updateLogTest()
       //During the first test, create the log file
       reuseLastLog = false;
       char fileName[100];
-      sprintf(fileName, "%s_LogTest_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
+      snprintf(fileName, sizeof(fileName), "/%s_LogTest_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
               platformFilePrefix,
               rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
               rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
@@ -810,7 +840,7 @@ void updateLogTest()
       rate = 4;
       messages = 5;
       semaphoreWait = 10;
-      setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 and USB ports
+      setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 / SPI and USB ports
       log_d("Log Test Complete");
       break;
 
@@ -822,23 +852,24 @@ void updateLogTest()
 
   if (settings.runLogTest == true)
   {
-    setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 and USB ports
+    setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 / SPI and USB ports
 
     loggingSemaphoreWait_ms = semaphoreWait / portTICK_PERIOD_MS; //Update variable
 
     startCurrentLogTime_minutes = millis() / 1000L / 60; //Mark now as start of logging
 
     char logMessage[100];
-    sprintf(logMessage, "Start log test: %dHz, %dMsg, %dMS", rate, messages, semaphoreWait);
+    snprintf(logMessage, sizeof(logMessage), "Start log test: %dHz, %dMsg, %dMS", rate, messages, semaphoreWait);
 
     char nmeaMessage[100]; //Max NMEA sentence length is 82
-    createNMEASentence(CUSTOM_NMEA_TYPE_LOGTEST_STATUS, nmeaMessage, logMessage); //textID, buffer, text
+    createNMEASentence(CUSTOM_NMEA_TYPE_LOGTEST_STATUS, nmeaMessage, sizeof(nmeaMessage), logMessage); //textID, buffer, sizeOfBuffer, text
 
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_LOGTEST);
 
       ubxFile->println(nmeaMessage);
+
       xSemaphoreGive(sdCardSemaphore);
     }
     else

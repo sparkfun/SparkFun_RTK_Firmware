@@ -7,15 +7,28 @@ bool configureUbloxModule()
 
   bool response = true;
 
+  //Turn on/off debug messages
+  if (settings.enableI2Cdebug)
+  {
+#if defined(ENABLE_DEVELOPER) && defined(REF_STN_GNSS_DEBUG)
+    if (productVariant == REFERENCE_STATION)
+      theGNSS.enableDebugging(serialGNSS); //Output all debug messages over serialGNSS
+    else
+#endif
+    theGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
+  }
+  else
+    theGNSS.disableDebugging();
+
   //Wait for initial report from module
   int maxWait = 2000;
   startTime = millis();
   while (pvtUpdated == false)
   {
-    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+    theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
     delay(10);
-    if (millis() - startTime > maxWait)
+    if ((millis() - startTime) > maxWait)
     {
       log_d("PVT Update failed");
       break;
@@ -23,82 +36,123 @@ bool configureUbloxModule()
   }
 
   //The first thing we do is go to 1Hz to lighten any I2C traffic from a previous configuration
-  response &= i2cGNSS.newCfgValset();
-  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_MEAS, 1000);
-  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_NAV, 1);
+  response &= theGNSS.newCfgValset();
+  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, 1000);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, 1);
 
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
+    response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
 
   //UART1 will primarily be used to pass NMEA and UBX from ZED to ESP32 (eventually to cell phone)
   //but the phone can also provide RTCM data and a user may want to configure the ZED over Bluetooth.
   //So let's be sure to enable UBX+NMEA+RTCM on the input
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1OUTPROT_UBX, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1OUTPROT_NMEA, 1);
-  if (zedModuleType == PLATFORM_F9P)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1OUTPROT_RTCM3X, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1INPROT_UBX, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1INPROT_NMEA, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1INPROT_RTCM3X, 1);
-  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART1INPROT_SPARTN, 0);
+  if (USE_I2C_GNSS)
+  {
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_UBX, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_NMEA, 1);
+    if (zedModuleType == PLATFORM_F9P)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_RTCM3X, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_UBX, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_NMEA, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_RTCM3X, 1);
+    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_SPARTN, 0);
+  
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud); //Defaults to 230400 to maximize message output support
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud); //Defaults to 57600 to match SiK telemetry radio firmware default
+  
+    //Disable SPI port - This is just to remove some overhead by ZED
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_UBX, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_NMEA, 0);
+    if (zedModuleType == PLATFORM_F9P)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_RTCM3X, 0);
+  
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_UBX, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_NMEA, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_RTCM3X, 0);
+    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_SPARTN, 0);
+  }
+  else //SPI GNSS
+  {
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_UBX, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_NMEA, 1);
+    if (zedModuleType == PLATFORM_F9P)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_RTCM3X, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_UBX, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_NMEA, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_RTCM3X, 1);
+    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_SPARTN, 0);
+  
+    //Disable I2C and UART1 ports - This is just to remove some overhead by ZED
+    response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_UBX, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_NMEA, 0);
+    if (zedModuleType == PLATFORM_F9P)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_RTCM3X, 0);
+  
+    response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_UBX, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_NMEA, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_RTCM3X, 0);
+    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_SPARTN, 0);
 
-  response &= i2cGNSS.addCfgValset32(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud); //Defaults to 230400 to maximize message output support
-  response &= i2cGNSS.addCfgValset32(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud); //Defaults to 57600 to match SiK telemetry radio firmware default
-
-  //Disable SPI port - This is just to remove some overhead by ZED
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIOUTPROT_UBX, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIOUTPROT_NMEA, 0);
-  if (zedModuleType == PLATFORM_F9P)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIOUTPROT_RTCM3X, 0);
-
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIINPROT_UBX, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIINPROT_NMEA, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIINPROT_RTCM3X, 0);
-  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SPIINPROT_SPARTN, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_UBX, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_NMEA, 0);
+    if (zedModuleType == PLATFORM_F9P)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_RTCM3X, 0);
+  
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_UBX, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_NMEA, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_RTCM3X, 0);
+    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_SPARTN, 0);
+  }
 
   //Set the UART2 to only do RTCM (in case this device goes into base mode)
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2OUTPROT_UBX, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2OUTPROT_NMEA, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_NMEA, 0);
   if (zedModuleType == PLATFORM_F9P)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2OUTPROT_RTCM3X, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2INPROT_UBX, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2INPROT_NMEA, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2INPROT_RTCM3X, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_RTCM3X, 1);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_UBX, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_NMEA, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_RTCM3X, 1);
   if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_UART2INPROT_SPARTN, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_SPARTN, 0);
 
   //We don't want NMEA over I2C, but we will want to deliver RTCM, and UBX+RTCM is not an option
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2COUTPROT_UBX, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2COUTPROT_NMEA, 1);
-  if (zedModuleType == PLATFORM_F9P)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2COUTPROT_RTCM3X, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2CINPROT_UBX, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2CINPROT_NMEA, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2CINPROT_RTCM3X, 1);
-  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+  if (USE_I2C_GNSS)
   {
-    if (productVariant == RTK_FACET_LBAND)
-      response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2CINPROT_SPARTN, 1); //We push NEO-D9S correction data (SPARTN) to ZED-F9P over the I2C interface
-    else
-      response &= i2cGNSS.addCfgValset8(UBLOX_CFG_I2CINPROT_SPARTN, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_UBX, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_NMEA, 1);
+    if (zedModuleType == PLATFORM_F9P)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_RTCM3X, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_UBX, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_NMEA, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_RTCM3X, 1);
+    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    {
+      if (productVariant == RTK_FACET_LBAND)
+        response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_SPARTN, 1); //We push NEO-D9S correction data (SPARTN) to ZED-F9P over the I2C interface
+      else
+        response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_SPARTN, 0);
+    }
   }
 
   //The USB port on the ZED may be used for RTCM to/from the computer (as an NTRIP caster or client)
   //So let's be sure all protocols are on for the USB port
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBOUTPROT_UBX, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBOUTPROT_NMEA, 1);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_UBX, 1);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_NMEA, 1);
   if (zedModuleType == PLATFORM_F9P)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBOUTPROT_RTCM3X, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_UBX, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_NMEA, 1);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_RTCM3X, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_RTCM3X, 1);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_UBX, 1);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_NMEA, 1);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_RTCM3X, 1);
   if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_USBINPROT_SPARTN, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 0);
 
-  response &= i2cGNSS.sendCfgValset();
+  response &= theGNSS.sendCfgValset();
 
   if (response == false)
     systemPrintln("Module failed config block 0");
@@ -117,43 +171,44 @@ bool configureUbloxModule()
   response = true; //Reset
 
   //Disable NMEA messages on all but UART1
-  response &= i2cGNSS.newCfgValset();
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_I2C, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_I2C, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_I2C, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GST_I2C, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_I2C, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_I2C, 0);
+  response &= theGNSS.newCfgValset();
 
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_UART2, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_UART2, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_UART2, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_UART2, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GST_UART2, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_UART2, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_UART2, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_I2C, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_I2C, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_I2C, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GST_I2C, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_I2C, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_I2C, 0);
 
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_SPI, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_SPI, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_SPI, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_SPI, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GST_SPI, 0);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_SPI, 0);
-  response &= i2cGNSS.sendCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0);
-  response &= i2cGNSS.sendCfgValset();
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_UART2, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_UART2, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_UART2, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_UART2, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GST_UART2, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_UART2, 0);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_UART2, 0);
+
+  if (USE_I2C_GNSS) //Don't disable NMEA on SPI if the GNSS is SPI!
+  {
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GST_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_SPI, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0);
+  }
+  
+  response &= theGNSS.sendCfgValset();
 
   if (response == false)
     systemPrintln("Module failed config block 3");
 
   if (zedModuleType == PLATFORM_F9R)
-    response &= i2cGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
-
-  //Turn on/off debug messages
-  if (settings.enableI2Cdebug)
-    i2cGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
-  else
-    i2cGNSS.disableDebugging();
+  {
+    response &= theGNSS.setAutoESFSTATUS(true, false); //Tell the GPS to "send" each ESF Status, but do not update stale data when accessed
+  }
 
   return (response);
 }
@@ -197,10 +252,20 @@ void danceLEDs()
     delay(250);
     digitalWrite(pin_bluetoothStatusLED, LOW);
   }
+  else if (productVariant == REFERENCE_STATION)
+  {
+    for (int x = 0 ; x < 4 ; x++)
+    {
+      digitalWrite(pin_baseStatusLED, HIGH);
+      delay(250);
+      digitalWrite(pin_baseStatusLED, LOW);
+      delay(250);
+    }
+  }
   else
   {
     //Units can boot under 1s. Keep splash screen up for at least 2s.
-    while (millis() - splashStart < 2000) delay(1);
+    while ((millis() - splashStart) < 2000) delay(1);
   }
 }
 
@@ -238,20 +303,27 @@ void checkBatteryLevels()
     systemPrintf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
 
     char tempStr[25];
-    if (battChangeRate > 0)
-      sprintf(tempStr, "C");
+    if (battChangeRate >= -0.01)
+    {
+      snprintf(tempStr, sizeof(tempStr), "C");
+      externalPowerConnected = true;
+    }
     else
-      sprintf(tempStr, "Disc");
+    {
+      snprintf(tempStr, sizeof(tempStr), "Disc");
+      externalPowerConnected = false;
+    }
+
     systemPrintf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
     if (battLevel < 10)
-      sprintf(tempStr, "Red");
+      snprintf(tempStr, sizeof(tempStr), "Red");
     else if (battLevel < 50)
-      sprintf(tempStr, "Yellow");
+      snprintf(tempStr, sizeof(tempStr), "Yellow");
     else if (battLevel >= 50)
-      sprintf(tempStr, "Green");
+      snprintf(tempStr, sizeof(tempStr), "Green");
     else
-      sprintf(tempStr, "No batt");
+      snprintf(tempStr, sizeof(tempStr), "No batt");
 
     systemPrintf("%s\r\n", tempStr);
   }
@@ -293,18 +365,37 @@ bool isConnected(uint8_t deviceAddress)
 //Create a test file in file structure to make sure we can
 bool createTestFile()
 {
-  SdFile testFile;
-  char testFileName[40] = "testfile.txt";
+  FileSdFatMMC testFile;
+
+  //TODO: double-check that SdFat tollerates preceeding slashes
+  char testFileName[40] = "/testfile.txt";
 
   //Attempt to write to the file system
   if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true)
+  {
+    systemPrintln("createTestFile: failed to create (open) test file");
     return (false);
+  }
+
+  testFile.println("Testing...");
 
   //File successfully created
   testFile.close();
-  if (sd->exists(testFileName))
-    sd->remove(testFileName);
-  return (true);
+
+  if (USE_SPI_MICROSD)
+  {
+    if (sd->exists(testFileName))
+      sd->remove(testFileName);
+    return (!sd->exists(testFileName));
+  }
+#ifdef COMPILE_SD_MMC
+  else
+  {
+    if (SD_MMC.exists(testFileName))
+      SD_MMC.remove(testFileName);
+    return (!SD_MMC.exists(testFileName));
+  }
+#endif
 }
 
 //If debug option is on, print available heap
@@ -394,77 +485,24 @@ void setMuxport(int channelNumber)
   }
 }
 
-boolean SFE_UBLOX_GNSS_ADD::getModuleInfo(uint16_t maxWait)
-{
-  i2cGNSS.minfo.hwVersion[0] = 0;
-  i2cGNSS.minfo.swVersion[0] = 0;
-  for (int i = 0; i < 10; i++)
-    i2cGNSS.minfo.extension[i][0] = 0;
-  i2cGNSS.minfo.extensionNo = 0;
-
-  // Let's create our custom packet
-  uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
-
-  // The next line creates and initialises the packet information which wraps around the payload
-  ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
-
-  customCfg.cls = UBX_CLASS_MON; // This is the message Class
-  customCfg.id = UBX_MON_VER;    // This is the message ID
-  customCfg.len = 0;             // Setting the len (length) to zero let's us poll the current settings
-  customCfg.startingSpot = 0;    // Always set the startingSpot to zero (unless you really know what you are doing)
-
-  // Now let's send the command. The module info is returned in customPayload
-
-  if (sendCommand(&customCfg, maxWait) != SFE_UBLOX_STATUS_DATA_RECEIVED)
-    return (false); //If command send fails then bail
-
-  // Now let's extract the module info from customPayload
-
-  uint16_t position = 0;
-  for (int i = 0; i < 30; i++)
-  {
-    minfo.swVersion[i] = customPayload[position];
-    position++;
-  }
-  for (int i = 0; i < 10; i++)
-  {
-    minfo.hwVersion[i] = customPayload[position];
-    position++;
-  }
-
-  while (customCfg.len >= position + 30)
-  {
-    for (int i = 0; i < 30; i++)
-    {
-      minfo.extension[minfo.extensionNo][i] = customPayload[position];
-      position++;
-    }
-    minfo.extensionNo++;
-    if (minfo.extensionNo > 9)
-      break;
-  }
-
-  return (true); //Success!
-}
-
 //Create $GNTXT, type message complete with CRC
 //https://www.nmea.org/Assets/20160520%20txt%20amendment.pdf
 //Used for recording system events (boot reason, event triggers, etc) inside the log
-void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, char *textMessage)
+void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, size_t sizeOfNmeaMessage, char *textMessage)
 {
   //Currently we don't have messages longer than 82 char max so we hardcode the sentence numbers
   const uint8_t totalNumberOfSentences = 1;
   const uint8_t sentenceNumber = 1;
 
   char nmeaTxt[200]; //Max NMEA sentence length is 82
-  sprintf(nmeaTxt, "$GNTXT,%02d,%02d,%02d,%s*", totalNumberOfSentences, sentenceNumber, textID, textMessage);
+  snprintf(nmeaTxt, sizeof(nmeaTxt), "$GNTXT,%02d,%02d,%02d,%s*", totalNumberOfSentences, sentenceNumber, textID, textMessage);
 
   //From: http://engineeringnotes.blogspot.com/2015/02/generate-crc-for-nmea-strings-arduino.html
-  byte CRC = 0; // XOR chars between '$' and '*'
+  byte CRC = 0; //XOR chars between '$' and '*'
   for (byte x = 1 ; x < strlen(nmeaTxt) - 1; x++)
     CRC = CRC ^ nmeaTxt[x];
 
-  sprintf(nmeaMessage, "%s%02X", nmeaTxt, CRC);
+  snprintf(nmeaMessage, sizeOfNmeaMessage, "%s%02X", nmeaTxt, CRC);
 }
 
 //Reset settings struct to default initializers
@@ -474,28 +512,81 @@ void settingsToDefaults()
 }
 
 //Enable all the valid messages for this platform
-//There are 73 messages so split in two batches, limited to 64 a batch
+//There are ~73 messages so split into batches. VALSET is limited to 64 max per batch
 //Uses dummy newCfg and sendCfg values to be sure we open/close a complete set
 bool setMessages()
 {
   bool response = true;
+  
+  uint32_t spiOffset = 0; //Set to 3 if using SPI to convert UART1 keys to SPI. This is brittle and non-perfect, but works.
+  if (USE_SPI_GNSS)
+    spiOffset = 3;
 
-  response &= i2cGNSS.newCfgValset();
-  for (int x = 0 ; x < 36 ; x++)
+  int x = 0;
+  while (x < MAX_UBX_MSG)
   {
-    if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= i2cGNSS.addCfgValset8(settings.ubxMessages[x].msgConfigKey, settings.ubxMessages[x].msgRate);
-  }
-  response &= i2cGNSS.sendCfgValset();
+    response &= theGNSS.newCfgValset();
+    
+    do
+    {
+      if (settings.ubxMessages[x].supported & zedModuleType)
+      {
+        uint8_t rate = settings.ubxMessages[x].msgRate;
 
-  //Final messages
-  response &= i2cGNSS.newCfgValset();
-  for (int x = 36 ; x < MAX_UBX_MSG ; x++)
-  {
-    if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= i2cGNSS.addCfgValset8(settings.ubxMessages[x].msgConfigKey, settings.ubxMessages[x].msgRate);
+        //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH and ESF_STATUS remained enabled
+        //(but not enabled for logging)
+        if (USE_SPI_GNSS)
+        {
+          if (settings.ubxMessages[x].msgClass == UBX_CLASS_NAV)
+            if ((settings.ubxMessages[x].msgID ==  UBX_NAV_PVT) || (settings.ubxMessages[x].msgID ==  UBX_NAV_HPPOSLLH))
+              rate = 1;
+          if (settings.ubxMessages[x].msgClass == UBX_CLASS_ESF)
+              if (settings.ubxMessages[x].msgID ==  UBX_ESF_STATUS)
+                if (zedModuleType == PLATFORM_F9R)
+                  rate = 1;
+          if (settings.ubxMessages[x].msgClass == UBX_CLASS_TIM)
+            if (settings.ubxMessages[x].msgID ==  UBX_TIM_TM2)
+              rate = 1;
+        }
+        
+        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + spiOffset, rate);
+      }
+      x++;
+    }
+    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+    
+    response &= theGNSS.sendCfgValset();
   }
-  response &= i2cGNSS.sendCfgValset();
+
+  //For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
+  //to mimic UART1
+  if (USE_SPI_GNSS)
+  {
+    uint32_t logRTCMMessages = 0;
+    uint32_t logNMEAMessages = 0;
+    
+    for (x = 0; x < MAX_UBX_MSG; x++)
+    {
+      if (settings.ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
+      {
+        if ((settings.ubxMessages[x].msgRate > 0) && (settings.ubxMessages[x].supported & zedModuleType))
+          logRTCMMessages |= settings.ubxMessages[x].filterMask;
+      }
+      else if (settings.ubxMessages[x].msgClass == UBX_CLASS_NMEA) //NMEA messages
+      {
+        if ((settings.ubxMessages[x].msgRate > 0) && (settings.ubxMessages[x].supported & zedModuleType))
+          logNMEAMessages |= settings.ubxMessages[x].filterMask;
+      }
+      else //UBX messages
+      {
+        if (settings.ubxMessages[x].supported & zedModuleType)
+          theGNSS.enableUBXlogging(settings.ubxMessages[x].msgClass, settings.ubxMessages[x].msgID, settings.ubxMessages[x].msgRate > 0);
+      }
+    }
+
+    theGNSS.setRTCMLoggingMask(logRTCMMessages);
+    theGNSS.setNMEALoggingMask(logNMEAMessages);
+  }
 
   return (response);
 }
@@ -506,22 +597,21 @@ bool setMessagesUSB()
 {
   bool response = true;
 
-  response &= i2cGNSS.newCfgValset();
-  for (int x = 0 ; x < 36 ; x++)
+  int x = 0;
+  while (x < MAX_UBX_MSG)
   {
-    if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= i2cGNSS.addCfgValset8(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
+    response &= theGNSS.newCfgValset();
+    
+    do
+    {
+      if (settings.ubxMessages[x].supported & zedModuleType)
+        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
+      x++;
+    }
+    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+    
+    response &= theGNSS.sendCfgValset();
   }
-  response &= i2cGNSS.sendCfgValset();
-
-  //Final messages
-  response &= i2cGNSS.newCfgValset();
-  for (int x = 36 ; x < MAX_UBX_MSG ; x++)
-  {
-    if (settings.ubxMessages[x].supported & zedModuleType)
-      response &= i2cGNSS.addCfgValset8(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
-  }
-  response &= i2cGNSS.sendCfgValset();
 
   return (response);
 }
@@ -535,49 +625,51 @@ bool setConstellations(bool sendCompleteBatch)
   bool response = true;
 
   if (sendCompleteBatch)
-    response &= i2cGNSS.newCfgValset();
+    response &= theGNSS.newCfgValset();
 
-  response &= i2cGNSS.addCfgValset8(settings.ubxConstellations[0].configKey, settings.ubxConstellations[0].enabled); //GPS
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_GPS_L1CA_ENA, settings.ubxConstellations[0].enabled);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_GPS_L2C_ENA, settings.ubxConstellations[0].enabled);
+  bool enableMe = settings.ubxConstellations[0].enabled;
+  response &= theGNSS.addCfgValset(settings.ubxConstellations[0].configKey, enableMe); //GPS
+
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GPS_L1CA_ENA, settings.ubxConstellations[0].enabled);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GPS_L2C_ENA, settings.ubxConstellations[0].enabled);
 
   //v1.12 ZED-F9P firmware does not allow for SBAS control
   //Also, if we can't identify the version (99), skip SBAS enable
-  if (zedModuleType == PLATFORM_F9P && (zedFirmwareVersionInt == 112 || zedFirmwareVersionInt == 99))
+  if ((zedModuleType == PLATFORM_F9P) && ((zedFirmwareVersionInt == 112) || (zedFirmwareVersionInt == 99)))
   {
     //Skip
   }
   else
   {
-    response &= i2cGNSS.addCfgValset8(settings.ubxConstellations[1].configKey, settings.ubxConstellations[1].enabled); //SBAS
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_SBAS_L1CA_ENA, settings.ubxConstellations[1].enabled);
+    response &= theGNSS.addCfgValset(settings.ubxConstellations[1].configKey, settings.ubxConstellations[1].enabled); //SBAS
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_SBAS_L1CA_ENA, settings.ubxConstellations[1].enabled);
   }
 
-  response &= i2cGNSS.addCfgValset8(settings.ubxConstellations[2].configKey, settings.ubxConstellations[2].enabled); //GAL
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_GAL_E1_ENA, settings.ubxConstellations[2].enabled);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_GAL_E5B_ENA, settings.ubxConstellations[2].enabled);
+  response &= theGNSS.addCfgValset(settings.ubxConstellations[2].configKey, settings.ubxConstellations[2].enabled); //GAL
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GAL_E1_ENA, settings.ubxConstellations[2].enabled);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GAL_E5B_ENA, settings.ubxConstellations[2].enabled);
 
-  response &= i2cGNSS.addCfgValset8(settings.ubxConstellations[3].configKey, settings.ubxConstellations[3].enabled); //BDS
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_BDS_B1_ENA, settings.ubxConstellations[3].enabled);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_BDS_B2_ENA, settings.ubxConstellations[3].enabled);
+  response &= theGNSS.addCfgValset(settings.ubxConstellations[3].configKey, settings.ubxConstellations[3].enabled); //BDS
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_BDS_B1_ENA, settings.ubxConstellations[3].enabled);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_BDS_B2_ENA, settings.ubxConstellations[3].enabled);
 
-  response &= i2cGNSS.addCfgValset8(settings.ubxConstellations[4].configKey, settings.ubxConstellations[4].enabled); //QZSS
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_QZSS_L1CA_ENA, settings.ubxConstellations[4].enabled);
+  response &= theGNSS.addCfgValset(settings.ubxConstellations[4].configKey, settings.ubxConstellations[4].enabled); //QZSS
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L1CA_ENA, settings.ubxConstellations[4].enabled);
 
   //UBLOX_CFG_SIGNAL_QZSS_L1S_ENA not supported on F9R in v1.21 and below
   if (zedModuleType == PLATFORM_F9P)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_QZSS_L1S_ENA, settings.ubxConstellations[4].enabled);
-  else if (zedModuleType == PLATFORM_F9R && zedFirmwareVersionInt > 121)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_QZSS_L1S_ENA, settings.ubxConstellations[4].enabled);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L1S_ENA, settings.ubxConstellations[4].enabled);
+  else if ((zedModuleType == PLATFORM_F9R) && (zedFirmwareVersionInt > 121))
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L1S_ENA, settings.ubxConstellations[4].enabled);
 
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_QZSS_L2C_ENA, settings.ubxConstellations[4].enabled);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_QZSS_L2C_ENA, settings.ubxConstellations[4].enabled);
 
-  response &= i2cGNSS.addCfgValset8(settings.ubxConstellations[5].configKey, settings.ubxConstellations[5].enabled); //GLO
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_GLO_L1_ENA, settings.ubxConstellations[5].enabled);
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SIGNAL_GLO_L2_ENA, settings.ubxConstellations[5].enabled);
+  response &= theGNSS.addCfgValset(settings.ubxConstellations[5].configKey, settings.ubxConstellations[5].enabled); //GLO
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GLO_L1_ENA, settings.ubxConstellations[5].enabled);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_SIGNAL_GLO_L2_ENA, settings.ubxConstellations[5].enabled);
 
   if (sendCompleteBatch)
-    response &= i2cGNSS.sendCfgValset();
+    response &= theGNSS.sendCfgValset();
 
   return (response);
 }

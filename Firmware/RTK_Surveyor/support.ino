@@ -64,7 +64,7 @@ void systemPrintf(const char* format, ...) {
 
   va_list args2;
   va_copy(args2, args);
-  char buf[vsnprintf(NULL, 0, format, args) + 1];
+  char buf[vsnprintf(nullptr, 0, format, args) + 1];
 
   vsnprintf(buf, sizeof buf, format, args2);
 
@@ -85,7 +85,7 @@ void systemPrintln(const char* value)
 void systemPrint(int value)
 {
   char temp[20];
-  sprintf(temp, "%d", value);
+  snprintf(temp, sizeof(temp), "%d", value);
   systemPrint(temp);
 }
 
@@ -95,9 +95,9 @@ void systemPrint(int value, uint8_t printType)
   char temp[20];
 
   if (printType == HEX)
-    sprintf(temp, "%08X", value);
+    snprintf(temp, sizeof(temp), "%08X", value);
   else if (printType == DEC)
-    sprintf(temp, "%d", value);
+    snprintf(temp, sizeof(temp), "%d", value);
 
   systemPrint(temp);
 }
@@ -132,9 +132,9 @@ void systemPrint(uint8_t value, uint8_t printType)
   char temp[20];
 
   if (printType == HEX)
-    sprintf(temp, "%02X", value);
+    snprintf(temp, sizeof(temp), "%02X", value);
   else if (printType == DEC)
-    sprintf(temp, "%d", value);
+    snprintf(temp, sizeof(temp), "%d", value);
 
   systemPrint(temp);
 }
@@ -152,9 +152,9 @@ void systemPrint(uint16_t value, uint8_t printType)
   char temp[20];
 
   if (printType == HEX)
-    sprintf(temp, "%04X", value);
+    snprintf(temp, sizeof(temp), "%04X", value);
   else if (printType == DEC)
-    sprintf(temp, "%d", value);
+    snprintf(temp, sizeof(temp), "%d", value);
 
   systemPrint(temp);
 }
@@ -170,7 +170,7 @@ void systemPrintln(uint16_t value, uint8_t printType)
 void systemPrint(float value, uint8_t decimals)
 {
   char temp[20];
-  sprintf(temp, "%.*f", decimals, value);
+  snprintf(temp, sizeof(temp), "%.*f", decimals, value);
   systemPrint(temp);
 }
 
@@ -185,8 +185,8 @@ void systemPrintln(float value, uint8_t decimals)
 //Print a double precision floating point value with a specified number of decimal places
 void systemPrint(double value, uint8_t decimals)
 {
-  char temp[300];
-  sprintf(temp, "%.*f", decimals, value);
+  char temp[30];
+  snprintf(temp, sizeof(temp), "%.*f", decimals, value);
   systemPrint(temp);
 }
 
@@ -254,7 +254,7 @@ InputResponse getString(char *userString, uint8_t stringSize)
 
     //Regularly poll to get latest data
     if (online.gnss == true)
-      i2cGNSS.checkUblox();
+      theGNSS.checkUblox();
 
     if (btPrintEchoExit) //User has disconnect from BT. Force exit all menus.
       return INPUT_RESPONSE_TIMEOUT;
@@ -425,6 +425,7 @@ void printTimeStamp()
 }
 
 //Parse the RTCM transport data
+//Called by processRTCM in Base.ino - defines whether the data is passed to the NTRIP server
 bool checkRtcmMessage(uint8_t data)
 {
   static uint16_t bytesRemaining;
@@ -441,15 +442,16 @@ bool checkRtcmMessage(uint8_t data)
   //    |  8 bits  | 6 bits |    10 bits     |  n-bits | 0-7 bits |   24 bits   |
   //    |   0xd3   | 000000 |   (in bytes)   |         |   zeros  |             |
   //    +----------+--------+----------------+---------+----------+-------------+
-  //    |                                                                       |
-  //    |<-------------------------------- CRC -------------------------------->|
+  //    |                                                         |
+  //    |<------------------------ CRC -------------------------->|
   //
 
   switch (rtcmParsingState)
   {
     //Read the upper two bits of the length
     case RTCM_TRANSPORT_STATE_READ_LENGTH_1:
-      if (!(data & 3))
+      //Verify the length byte - check the 6 MS bits are all zero
+      if (!(data & (~3)))
       {
         length = data << 8;
         rtcmParsingState = RTCM_TRANSPORT_STATE_READ_LENGTH_2;
@@ -518,7 +520,7 @@ bool checkRtcmMessage(uint8_t data)
       break;
   }
 
-  //Check the CRC
+  //Check the CRC. Note: this doesn't actually check the CRC!
   if (rtcmParsingState == RTCM_TRANSPORT_STATE_CHECK_CRC)
   {
     rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
@@ -863,7 +865,7 @@ uint8_t rtcmReadLength2(PARSE_STATE * parse, uint8_t data)
 //Read the upper two bits of the length
 uint8_t rtcmReadLength1(PARSE_STATE * parse, uint8_t data)
 {
-  //Verify the length byte
+  //Verify the length byte - check the 6 MS bits are all zero
   if (data & (~3))
   {
     //Invalid length, place this byte at the beginning of the buffer
@@ -1028,8 +1030,8 @@ uint8_t waitForPreamble(PARSE_STATE * parse, uint8_t data)
       //    |  8 bits  | n bytes | 8 bits | n bytes |  8 bits  | 2 bytes  |
       //    |     $    |         |    ,   |         |          |          |
       //    +----------+---------+--------+---------+----------+----------+
-      //    |                                                  |
-      //    |<------------------- Checksum ------------------->|
+      //               |                            |
+      //               |<-------- Checksum -------->|
       //
 
       parse->crc = 0;
@@ -1076,8 +1078,8 @@ uint8_t waitForPreamble(PARSE_STATE * parse, uint8_t data)
       //    |  8 bits  | 6 bits |    10 bits     |  n-bits | 0-7 bits |   24 bits   |
       //    |   0xd3   | 000000 |   (in bytes)   |         |   zeros  |             |
       //    +----------+--------+----------------+---------+----------+-------------+
-      //    |                                                                       |
-      //    |<-------------------------------- CRC -------------------------------->|
+      //    |                                                         |
+      //    |<------------------------ CRC -------------------------->|
       //
 
       //Start the CRC with this byte

@@ -32,7 +32,7 @@
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
-// Constants - compiled out
+//Constants - compiled out
 //----------------------------------------
 
 #ifdef COMPILE_WIFI
@@ -60,7 +60,7 @@ static const int SERVER_BUFFER_SIZE = CREDENTIALS_BUFFER_SIZE + 3;
 static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; //5s between transmission of GGA messages, if enabled
 
 //----------------------------------------
-// Locals - compiled out
+//Locals - compiled out
 //----------------------------------------
 
 //The WiFi connection to the NTRIP caster to obtain RTCM data.
@@ -78,7 +78,7 @@ static uint32_t lastNtripClientState = 0;
 unsigned long lastGGAPush = 0;
 
 //----------------------------------------
-// NTRIP Client Routines - compiled out
+//NTRIP Client Routines - compiled out
 //----------------------------------------
 
 bool ntripClientConnect()
@@ -87,13 +87,13 @@ bool ntripClientConnect()
     return false;
 
   //Remove any http:// or https:// prefix from host name
-  char hostname[50];
-  strncpy(hostname, settings.ntripClient_CasterHost, 50); //strtok modifies string to be parsed so we create a copy
+  char hostname[51];
+  strncpy(hostname, settings.ntripClient_CasterHost, sizeof(hostname) - 1); //strtok modifies string to be parsed so we create a copy
   char *token = strtok(hostname, "//");
-  if (token != NULL)
+  if (token != nullptr)
   {
-    token = strtok(NULL, "//"); //Advance to data after //
-    if (token != NULL)
+    token = strtok(nullptr, "//"); //Advance to data after //
+    if (token != nullptr)
       strcpy(settings.ntripClient_CasterHost, token);
   }
 
@@ -106,18 +106,18 @@ bool ntripClientConnect()
 
   systemPrintln("NTRIP Client connected");
 
-  // Set up the server request (GET)
+  //Set up the server request (GET)
   char serverRequest[SERVER_BUFFER_SIZE];
   snprintf(serverRequest,
            SERVER_BUFFER_SIZE,
            "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun_RTK_%s_v%d.%d\r\n",
            settings.ntripClient_MountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
-  // Set up the credentials
+  //Set up the credentials
   char credentials[CREDENTIALS_BUFFER_SIZE];
   if (strlen(settings.ntripClient_CasterUser) == 0)
   {
-    strncpy(credentials, "Accept: */*\r\nConnection: close\r\n", sizeof(credentials));
+    strncpy(credentials, "Accept: */*\r\nConnection: close\r\n", sizeof(credentials) - 1);
   }
   else
   {
@@ -137,7 +137,7 @@ bool ntripClientConnect()
     snprintf(credentials, sizeof(credentials), "Authorization: Basic %s\r\n", encodedCredentials);
   }
 
-  // Add the encoded credentials to the server request
+  //Add the encoded credentials to the server request
   strncat(serverRequest, credentials, SERVER_BUFFER_SIZE - 1);
   strncat(serverRequest, "\r\n", SERVER_BUFFER_SIZE - 1);
 
@@ -147,7 +147,7 @@ bool ntripClientConnect()
   systemPrint(sizeof(serverRequest));
   systemPrintln(" bytes available");
 
-  // Send the server request
+  //Send the server request
   systemPrintln("NTRIP Client sending server request: ");
   systemPrintln(serverRequest);
   ntripClient->write(serverRequest, strlen(serverRequest));
@@ -198,11 +198,11 @@ void ntripClientResponse(char * response, size_t maxLength)
   //Make sure that we can zero terminate the response
   responseEnd = &response[maxLength - 1];
 
-  // Read bytes from the caster and store them
+  //Read bytes from the caster and store them
   while ((response < responseEnd) && ntripClientReceiveDataAvailable())
     *response++ = ntripClient->read();
 
-  // Zero terminate the response
+  //Zero terminate the response
   *response = '\0';
 }
 
@@ -241,7 +241,7 @@ void ntripClientSetState(byte newState)
 #endif
 
 //----------------------------------------
-// Global NTRIP Client Routines
+//Global NTRIP Client Routines
 //----------------------------------------
 
 void ntripClientStart()
@@ -281,7 +281,7 @@ void ntripClientStop(bool wifiClientAllocated)
 
     //Free the NTRIP client resources
     delete ntripClient;
-    ntripClient = NULL;
+    ntripClient = nullptr;
 
     //Allocate the NTRIP client structure if not done
     if (wifiClientAllocated == false)
@@ -295,9 +295,9 @@ void ntripClientStop(bool wifiClientAllocated)
     ntripClientConnectionAttemptTimeout = 15 * 1000L; //Wait 15s between stopping and the first re-connection attempt.
   }
 
-  // Return the Main Talker ID to "GN".
-  i2cGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
-  i2cGNSS.setNMEAGPGGAcallbackPtr(NULL); // Remove callback
+  //Return the Main Talker ID to "GN".
+  theGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
+  theGNSS.setNMEAGPGGAcallbackPtr(nullptr); //Remove callback
 
   //Determine the next NTRIP client state
   ntripClientSetState((ntripClient && (wifiClientAllocated == false)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
@@ -430,7 +430,7 @@ void ntripClientUpdate()
         log_d("Caster Response: %s", response);
 
         //Look for various responses
-        if (strstr(response, "401") != NULL)
+        if (strstr(response, "401") != nullptr)
         {
           //Look for '401 Unauthorized'
           systemPrintf("NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n", response);
@@ -438,15 +438,23 @@ void ntripClientUpdate()
           //Stop WiFi operations
           ntripClientStop(true); //Do not allocate new wifiClient
         }
-        else if (strstr(response, "banned") != NULL)
+        else if (strstr(response, "banned") != nullptr)
         {
           //Look for 'HTTP/1.1 200 OK' and banned IP information
-          systemPrintf("NTRIP Client connected to caster but caster reponded with problem: %s", response);
+          systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n", response);
 
           //Stop WiFi operations
           ntripClientStop(true); //Do not allocate new wifiClient
         }
-        else if (strstr(response, "200") != NULL)
+        else if (strstr(response, "SOURCETABLE") != nullptr)
+        {
+          //Look for 'SOURCETABLE 200 OK'
+          systemPrintf("Caster may not have mountpoint %s. Caster responded with problem: %s\r\n", settings.ntripClient_MountPoint, response);
+
+          //Stop WiFi operations
+          ntripClientStop(true); //Do not allocate new wifiClient
+        }
+        else if (strstr(response, "200") != nullptr)
         {
           log_d("NTRIP Client connected to caster");
 
@@ -455,14 +463,14 @@ void ntripClientUpdate()
 
           if (settings.ntripClient_TransmitGGA == true)
           {
-            // Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
-            i2cGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 1);
-            i2cGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); // Set up the callback for GPGGA
+            //Set the Main Talker ID to "GP". The NMEA GGA messages will be GPGGA instead of GNGGA
+            theGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 1);
+            theGNSS.setNMEAGPGGAcallbackPtr(&pushGPGGA); //Set up the callback for GPGGA
 
             float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
             if (measurementFrequency < 0.2) measurementFrequency = 0.2; //0.2Hz * 5 = 1 measurement every 5 seconds
             log_d("Adjusting GGA setting to %f", measurementFrequency);
-            i2cGNSS.setVal8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, measurementFrequency);  // Enable GGA over I2C. Tell the module to output GGA every second
+            theGNSS.setVal8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, measurementFrequency);  //Enable GGA over I2C. Tell the module to output GGA every second
 
             lastGGAPush = millis() - NTRIPCLIENT_MS_BETWEEN_GGA; //Force immediate transmission of GGA message
           }
@@ -513,8 +521,8 @@ void ntripClientUpdate()
           //Restart the NTRIP receive data timer
           ntripClientTimer = millis();
 
-          //Push RTCM to GNSS module over I2C
-          i2cGNSS.pushRawData(rtcmData, rtcmCount);
+          //Push RTCM to GNSS module over I2C / SPI
+          theGNSS.pushRawData(rtcmData, rtcmCount);
           wifiIncomingRTCM = true;
 
           if (!inMainMenu && settings.enablePrintNtripClientState)
@@ -537,7 +545,7 @@ void pushGPGGA(NMEA_GGA_data_t *nmeaData)
     {
       lastGGAPush = millis();
 
-      //log_d("Pushing GGA to server: %s", (const char *)nmeaData->nmea); // .nmea is printable (NULL-terminated) and already has \r\n on the end
+      //log_d("Pushing GGA to server: %s", (const char *)nmeaData->nmea); // .nmea is printable (nullptr-terminated) and already has \r\n on the end
 
       //Push our current GGA sentence to caster
       ntripClient->print((const char *)nmeaData->nmea);

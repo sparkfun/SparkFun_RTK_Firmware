@@ -128,6 +128,8 @@ function parseIncoming(msg) {
             || id.includes("profile7Name")
             || id.includes("radioMAC")
             || id.includes("deviceBTID")
+            || id.includes("logFileName")
+            || id.includes("batteryPercent")
         ) {
             ge(id).innerHTML = val;
         }
@@ -214,6 +216,10 @@ function parseIncoming(msg) {
         else if (id.includes("otaFirmwareStatus")) {
             otaFirmwareStatus(val);
         }
+        else if (id.includes("batteryIconFileName")) {
+            ge("batteryIconFileName").src = val;
+        }
+
 
         //Check boxes / radio buttons
         else if (val == "true") {
@@ -515,6 +521,8 @@ function validateFields() {
                 clearElement("fixedLat", 40.09029479);
                 clearElement("fixedLong", -105.18505761);
                 clearElement("fixedAltitude", 1560.089);
+                clearElement("antennaHeight", 0);
+                clearElement("antennaReferencePoint", 0);
 
                 checkElementValue("fixedEcefX", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
                 checkElementValue("fixedEcefY", -7000000, 7000000, "Must be -7000000 to 7000000", "collapseBaseConfig");
@@ -603,7 +611,7 @@ function validateFields() {
 
 var currentProfileNumber = 0;
 
-function changeConfig() {
+function changeProfile() {
     validateFields();
 
     if (errorCount == 1) {
@@ -628,7 +636,7 @@ function changeConfig() {
         websocket.send("setProfile," + currentProfileNumber + ",");
 
         ge("collapseProfileConfig").classList.add('show');
-        ge("collapseGNSSConfig").classList.add('show');
+        collapseSection("collapseGNSSConfig", "gnssCaret");
         collapseSection("collapseGNSSConfigMsg", "gnssMsgCaret");
         collapseSection("collapseBaseConfig", "baseCaret");
         collapseSection("collapseSensorConfig", "sensorCaret");
@@ -845,9 +853,12 @@ function useECEFCoordinates() {
 function useGeodeticCoordinates() {
     ge("fixedLat").value = geodeticLat;
     ge("fixedLong").value = geodeticLon;
-    ge("fixedAltitude").value = geodeticAlt;
-    var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000
-    ge("fixedHAE_APC").value = hae.toFixed(3);
+    ge("fixedHAE_APC").value = geodeticAlt;
+
+    $("input[name=markRadio][value=1]").prop('checked', true);
+    $("input[name=markRadio][value=2]").prop('checked', false);
+
+    adjustHAE();
 }
 
 function startNewLog() {
@@ -917,7 +928,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
     var radios = document.querySelectorAll('input[name=profileRadio]');
     for (var i = 0, max = radios.length; i < max; i++) {
         radios[i].onclick = function () {
-            changeConfig();
+            changeProfile();
         }
     }
 
@@ -954,6 +965,16 @@ document.addEventListener("DOMContentLoaded", (event) => {
         if (ge("fixedBaseCoordinateTypeGeo").checked) {
             hide("ecefConfig");
             show("geodeticConfig");
+
+            if (platformPrefix == "Facet") {
+                ge("antennaReferencePoint").value = 61.4;
+            }
+            else if (platformPrefix == "Facet L-Band") {
+                ge("antennaReferencePoint").value = 69.0;
+            }
+            else {
+                ge("antennaReferencePoint").value = 0.0;
+            }
         }
     });
 
@@ -1063,19 +1084,21 @@ document.addEventListener("DOMContentLoaded", (event) => {
     });
 
     ge("fixedAltitude").addEventListener("change", function () {
-        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
-        ge("fixedHAE_APC").value = hae.toFixed(3);
+        adjustHAE();
     });
 
     ge("antennaHeight").addEventListener("change", function () {
-        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
-        ge("fixedHAE_APC").value = hae.toFixed(3);
+        adjustHAE();
     });
 
     ge("antennaReferencePoint").addEventListener("change", function () {
-        var hae = Number(ge("fixedAltitude").value) + Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000;
-        ge("fixedHAE_APC").value = hae.toFixed(3);
+        adjustHAE();
     });
+
+    ge("fixedHAE_APC").addEventListener("change", function () {
+        adjustHAE();
+    });
+
 })
 
 function addECEF() {
@@ -1106,9 +1129,16 @@ function addECEF() {
 }
 
 function deleteECEF() {
+
     var val = ge("StationCoordinatesECEF").value;
-    if (val > "")
-        recordsECEF.splice(val, 1);
+    if (val > "") {
+        var parts = recordsECEF[val].split(' ');
+        var nickName = parts[0];
+
+        if (confirm("Delete location " + nickName + "?") == true) {
+            recordsECEF.splice(val, 1);
+        }
+    }
     updateECEFList();
 }
 
@@ -1187,9 +1217,33 @@ function addGeodetic() {
 
 function deleteGeodetic() {
     var val = ge("StationCoordinatesGeodetic").value;
-    if (val > "")
-        recordsGeodetic.splice(val, 1);
+    if (val > "") {
+        var parts = recordsGeodetic[val].split(' ');
+        var nickName = parts[0];
+
+        if (confirm("Delete location " + nickName + "?") == true) {
+            recordsGeodetic.splice(val, 1);
+        }
+    }
     updateGeodeticList();
+}
+
+function adjustHAE() {
+
+    var haeMethod = document.querySelector('input[name=markRadio]:checked').value;
+    var hae;
+    if (haeMethod == 1) {
+        ge("fixedHAE_APC").disabled = false;
+        ge("fixedAltitude").disabled = true;
+        hae = Number(ge("fixedHAE_APC").value) - (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
+        ge("fixedAltitude").value = hae.toFixed(3);
+    }
+    else {
+        ge("fixedHAE_APC").disabled = true;
+        ge("fixedAltitude").disabled = false;
+        hae = Number(ge("fixedAltitude").value) + (Number(ge("antennaHeight").value) / 1000 + Number(ge("antennaReferencePoint").value) / 1000);
+        ge("fixedHAE_APC").value = hae.toFixed(3);
+    }
 }
 
 function loadGeodetic() {
@@ -1199,9 +1253,15 @@ function loadGeodetic() {
         ge("nicknameGeodetic").value = parts[0];
         ge("fixedLat").value = parts[1];
         ge("fixedLong").value = parts[2];
-        ge("fixedAltitude").value = parts[3];
         ge("antennaHeight").value = parts[4];
         ge("antennaReferencePoint").value = parts[5];
+
+        ge("fixedAltitude").value = parts[3];
+
+        $("input[name=markRadio][value=1]").prop('checked', false);
+        $("input[name=markRadio][value=2]").prop('checked', true);
+
+        adjustHAE();
 
         clearError("nicknameGeodetic");
         clearError("fixedLat");

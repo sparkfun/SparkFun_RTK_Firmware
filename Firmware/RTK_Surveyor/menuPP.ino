@@ -1,12 +1,12 @@
 #ifdef COMPILE_L_BAND
 
 //----------------------------------------
-// Locals - compiled out
+//Locals - compiled out
 //----------------------------------------
 
 #define CONTENT_SIZE 2000
 
-static SFE_UBLOX_GNSS_ADD i2cLBand; // NEO-D9S
+static SFE_UBLOX_GNSS_SUPER i2cLBand; //NEO-D9S
 static const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 
 //The PointPerfect token is provided at compile time via build flags
@@ -19,13 +19,13 @@ static uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; //Token in HEX
 static const char* pointPerfectAPI = "https://api.thingstream.io/ztp/pointperfect/credentials";
 
 //----------------------------------------
-// Forward declarations - compiled out
+//Forward declarations - compiled out
 //----------------------------------------
 
 void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct);
 
 //----------------------------------------
-// L-Band Routines - compiled out
+//L-Band Routines - compiled out
 //----------------------------------------
 
 void menuPointPerfectKeys()
@@ -169,8 +169,8 @@ bool pointperfectProvisionDevice()
 #ifdef COMPILE_WIFI
   bluetoothStop(); //Free heap before starting secure client (requires ~70KB)
 
-  DynamicJsonDocument * jsonZtp = NULL;
-  char * tempHolder = NULL;
+  DynamicJsonDocument * jsonZtp = nullptr;
+  char * tempHolder = nullptr;
   bool retVal = false;
 
   do
@@ -179,15 +179,15 @@ bool pointperfectProvisionDevice()
     client.setCACert(AWS_PUBLIC_CERT);
 
     char hardwareID[13];
-    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
+    snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
 
 #ifdef WHITELISTED_ID
     //Override ID with testing ID
-    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1], whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
+    snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1], whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
 #endif
 
     char givenName[100];
-    sprintf(givenName, "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, hardwareID); //Get ready for JSON
+    snprintf(givenName, sizeof(givenName), "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, hardwareID); //Get ready for JSON
 
     StaticJsonDocument<256> pointPerfectAPIPost;
 
@@ -200,7 +200,7 @@ bool pointperfectProvisionDevice()
       for (int x = 0 ; x < sizeof(pointPerfectTokenArray) ; x++)
       {
         char temp[3];
-        sprintf(temp, "%02x", pointPerfectTokenArray[x]);
+        snprintf(temp, sizeof(temp), "%02x", pointPerfectTokenArray[x]);
         strcat(tokenString, temp);
         if (x == 3 || x == 5 || x == 7 || x == 9) strcat(tokenString, "-");
       }
@@ -262,12 +262,12 @@ bool pointperfectProvisionDevice()
           systemPrintln("ERROR - Failed to allocate tempHolder buffer!\r\n");
           break;
         }
-        strcpy(tempHolder, (const char*)((*jsonZtp)["certificate"]));
+        strncpy(tempHolder, (const char*)((*jsonZtp)["certificate"]), sizeof(tempHolder) - 1);
         //      systemPrintf("len of PrivateCert: %d\r\n", strlen(tempHolder));
         //      systemPrintf("privateCert: %s\r\n", tempHolder);
         recordFile("certificate", tempHolder, strlen(tempHolder));
 
-        strcpy(tempHolder, (const char*)((*jsonZtp)["privateKey"]));
+        strncpy(tempHolder, (const char*)((*jsonZtp)["privateKey"]), sizeof(tempHolder) - 1);
         //      systemPrintf("len of privateKey: %d\r\n", strlen(tempHolder));
         //      systemPrintf("privateKey: %s\r\n", tempHolder);
         recordFile("privateKey", tempHolder, strlen(tempHolder));
@@ -312,8 +312,8 @@ bool pointperfectUpdateKeys()
 #ifdef COMPILE_WIFI
   bluetoothStop(); //Release available heap to allow room for TLS
 
-  char * certificateContents = NULL; //Holds the contents of the keys prior to MQTT connection
-  char * keyContents = NULL;
+  char * certificateContents = nullptr; //Holds the contents of the keys prior to MQTT connection
+  char * keyContents = nullptr;
   WiFiClientSecure secureClient;
   bool gotKeys = false;
 
@@ -466,10 +466,10 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
     for (int x = 0 ; x < 16 ; x++) //Force length to max of 32 bytes
     {
       char temp[3];
-      sprintf(temp, "%02X", currentKey[x]);
+      snprintf(temp, sizeof(temp), "%02X", currentKey[x]);
       strcat(settings.pointPerfectCurrentKey, temp);
 
-      sprintf(temp, "%02X", nextKey[x]);
+      snprintf(temp, sizeof(temp), "%02X", nextKey[x]);
       strcat(settings.pointPerfectNextKey, temp);
     }
 
@@ -573,7 +573,7 @@ uint8_t getLeapSeconds()
     if (leapSeconds == 0) //Check to see if we've already set it
     {
       sfe_ublox_ls_src_e leapSecSource;
-      leapSeconds = i2cGNSS.getCurrentLeapSeconds(leapSecSource);
+      leapSeconds = theGNSS.getCurrentLeapSeconds(leapSecSource);
       return (leapSeconds);
     }
   }
@@ -629,7 +629,7 @@ long dateToUnixEpoch(uint8_t day, uint8_t month, uint16_t year)
   t.tm_hour = 0;
   t.tm_min = 0;
   t.tm_sec = 0;
-  t.tm_isdst = -1;        // Is DST on? 1 = yes, 0 = no, -1 = unknown
+  t.tm_isdst = -1;        //Is DST on? 1 = yes, 0 = no, -1 = unknown
 
   t_of_day = mktime(&t);
 
@@ -727,8 +727,8 @@ void pushRXMPMP(UBX_RXM_PMP_message_data_t *pmpData)
   uint16_t payloadLen = ((uint16_t)pmpData->lengthMSB << 8) | (uint16_t)pmpData->lengthLSB;
   log_d("Pushing %d bytes of RXM-PMP data to GNSS", payloadLen);
 
-  i2cGNSS.pushRawData(&pmpData->sync1, (size_t)payloadLen + 6); // Push the sync chars, class, ID, length and payload
-  i2cGNSS.pushRawData(&pmpData->checksumA, (size_t)2); // Push the checksum bytes
+  theGNSS.pushRawData(&pmpData->sync1, (size_t)payloadLen + 6); //Push the sync chars, class, ID, length and payload
+  theGNSS.pushRawData(&pmpData->checksumA, (size_t)2); //Push the checksum bytes
 }
 
 //If we have decryption keys, and L-Band is online, configure module
@@ -769,13 +769,13 @@ void pointperfectApplyKeys()
       epoch = thingstreamEpochToGPSEpoch(settings.pointPerfectNextKeyStart, settings.pointPerfectNextKeyDuration);
       unixEpochToWeekToW(epoch, &nextKeyGPSWeek, &nextKeyGPSToW);
 
-      i2cGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); // use LBAND PMP message
+      theGNSS.setVal8(UBLOX_CFG_SPARTN_USE_SOURCE, 1); //use LBAND PMP message
 
-      i2cGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_I2C, 1); // Enable UBX-RXM-COR messages on I2C
+      theGNSS.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_COR_I2C, 1); //Enable UBX-RXM-COR messages on I2C
 
-      i2cGNSS.setVal8(UBLOX_CFG_NAVHPG_DGNSSMODE, 3); // Set the differential mode - ambiguities are fixed whenever possible
+      theGNSS.setVal8(UBLOX_CFG_NAVHPG_DGNSSMODE, 3); //Set the differential mode - ambiguities are fixed whenever possible
 
-      bool response = i2cGNSS.setDynamicSPARTNKeys(
+      bool response = theGNSS.setDynamicSPARTNKeys(
                         currentKeyLengthBytes, currentKeyGPSWeek, currentKeyGPSToW, settings.pointPerfectCurrentKey,
                         nextKeyLengthBytes, nextKeyGPSWeek, nextKeyGPSToW, settings.pointPerfectNextKey);
 
@@ -794,7 +794,7 @@ void pointperfectApplyKeys()
   }
 }
 
-// Check if the PMP data is being decrypted successfully
+//Check if the PMP data is being decrypted successfully
 void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 {
   log_d("L-Band Eb/N0[dB] (>9 is good): %0.2f", ubxDataStruct->ebno * pow(2, -3));
@@ -814,7 +814,7 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 #endif  //COMPILE_L_BAND
 
 //----------------------------------------
-// Global L-Band Routines
+//Global L-Band Routines
 //----------------------------------------
 
 //Check if NEO-D9S is connected. Configure if available.
@@ -828,23 +828,18 @@ void beginLBand()
   }
 
   //Check the firmware version of the NEO-D9S. Based on Example21_ModuleInfo.
-  if (i2cLBand.getModuleInfo(1100) == true) // Try to get the module info
+  if (i2cLBand.getModuleInfo(1100) == true) //Try to get the module info
   {
-    //i2cLBand.minfo.extension[1] looks like 'FWVER=HPG 1.12'
-    strcpy(neoFirmwareVersion, i2cLBand.minfo.extension[1]);
-
-    //Remove 'FWVER='. It's extraneous and = causes settings file parsing issues
-    char *ptr = strstr(neoFirmwareVersion, "FWVER=");
-    if (ptr != NULL)
-      strcpy(neoFirmwareVersion, ptr + strlen("FWVER="));
+    //Reconstruct the firmware version
+    snprintf(neoFirmwareVersion, sizeof(neoFirmwareVersion), "%s %d.%02d", i2cLBand.getFirmwareType(), i2cLBand.getFirmwareVersionHigh(), i2cLBand.getFirmwareVersionLow());
 
     printNEOInfo(); //Print module firmware version
   }
 
   if (online.gnss == true)
   {
-    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+    theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
   }
 
   //If we have a fix, check which frequency to use
@@ -871,30 +866,32 @@ void beginLBand()
     log_d("No fix available for L-Band frequency determination");
 
   bool response = true;
-  response &= i2cLBand.setVal32(UBLOX_CFG_PMP_CENTER_FREQUENCY,   settings.LBandFreq); // Default 1539812500 Hz
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SEARCH_WINDOW,      2200);        // Default 2200 Hz
-  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_SERVICE_ID,      0);           // Default 1
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_SERVICE_ID,         21845);       // Default 50821
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DATA_RATE,          2400);        // Default 2400 bps
-  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_DESCRAMBLER,     1);           // Default 1
-  response &= i2cLBand.setVal16(UBLOX_CFG_PMP_DESCRAMBLER_INIT,   26969);       // Default 23560
-  response &= i2cLBand.setVal8(UBLOX_CFG_PMP_USE_PRESCRAMBLING,   0);           // Default 0
-  response &= i2cLBand.setVal64(UBLOX_CFG_PMP_UNIQUE_WORD,        16238547128276412563ull);
-  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C,   1); // Ensure UBX-RXM-PMP is enabled on the I2C port
-  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 1); // Output UBX-RXM-PMP on UART1
-  response &= i2cLBand.setVal(UBLOX_CFG_UART2OUTPROT_UBX, 1);         // Enable UBX output on UART2
-  response &= i2cLBand.setVal(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); // Output UBX-RXM-PMP on UART2
-  response &= i2cLBand.setVal32(UBLOX_CFG_UART1_BAUDRATE,         38400); // match baudrate with ZED default
-  response &= i2cLBand.setVal32(UBLOX_CFG_UART2_BAUDRATE,         38400); // match baudrate with ZED default
+  response &= i2cLBand.newCfgValset();
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_CENTER_FREQUENCY,     settings.LBandFreq); //Default 1539812500 Hz
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SEARCH_WINDOW,        2200);        //Default 2200 Hz
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_SERVICE_ID,       0);           //Default 1
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_SERVICE_ID,           21845);       //Default 50821
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DATA_RATE,            2400);        //Default 2400 bps
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_DESCRAMBLER,      1);           //Default 1
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_DESCRAMBLER_INIT,     26969);       //Default 23560
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_PRESCRAMBLING,    0);           //Default 0
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_UNIQUE_WORD,          16238547128276412563ull);
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C,   1); //Ensure UBX-RXM-PMP is enabled on the I2C port
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 1); //Output UBX-RXM-PMP on UART1
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX,         1);         //Enable UBX output on UART2
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); //Output UBX-RXM-PMP on UART2
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART1_BAUDRATE,           38400); //match baudrate with ZED default
+  response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2_BAUDRATE,           38400); //match baudrate with ZED default
+  response &= i2cLBand.sendCfgValset();
 
   if (response == false)
     systemPrintln("L-Band failed to configure");
 
-  i2cLBand.softwareResetGNSSOnly(); // Do a restart
+  i2cLBand.softwareResetGNSSOnly(); //Do a restart
 
-  i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
+  i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); //Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
 
-  i2cGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Check if the PMP data is being decrypted successfully
+  theGNSS.setRXMCORcallbackPtr(&checkRXMCOR); //Check if the PMP data is being decrypted successfully
 
   log_d("L-Band online");
 
@@ -914,7 +911,7 @@ void menuPointPerfect()
     systemPrintln("Menu: PointPerfect Corrections");
 
     char hardwareID[13];
-    sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
+    snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
     systemPrintf("Device ID: %s\r\n", hardwareID);
 
     systemPrint("Days until keys expire: ");
@@ -965,7 +962,7 @@ void menuPointPerfect()
         {
           //Check if we have certificates
           char fileName[80];
-          sprintf(fileName, "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
+          snprintf(fileName, sizeof(fileName), "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
           if (LittleFS.exists(fileName) == false)
           {
             pointperfectProvisionDevice(); //Connect to ThingStream API and get keys
@@ -1016,8 +1013,8 @@ void updateLBand()
 #ifdef COMPILE_L_BAND
   if (online.lbandCorrections == true)
   {
-    i2cLBand.checkUblox(); // Check for the arrival of new PMP data and process it.
-    i2cLBand.checkCallbacks(); // Check if any L-Band callbacks are waiting to be processed.
+    i2cLBand.checkUblox(); //Check for the arrival of new PMP data and process it.
+    i2cLBand.checkCallbacks(); //Check if any L-Band callbacks are waiting to be processed.
 
     if (lbandCorrectionsReceived == true && millis() - lastLBandDecryption > 5000)
       lbandCorrectionsReceived = false;

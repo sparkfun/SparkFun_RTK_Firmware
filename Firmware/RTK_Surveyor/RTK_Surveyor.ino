@@ -19,23 +19,28 @@
   Settings are loaded from microSD if available otherwise settings are pulled from ESP32's file system LittleFS.
 */
 
-const int FIRMWARE_VERSION_MAJOR = 3;
-const int FIRMWARE_VERSION_MINOR = 1;
+//This is passed in from compiler extra flags
+#ifndef POINTPERFECT_TOKEN
+#define FIRMWARE_VERSION_MAJOR 99
+#define FIRMWARE_VERSION_MINOR 99
+#endif
 
 #define COMPILE_WIFI //Comment out to remove WiFi functionality
 #define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
 #define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
-//#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+#define COMPILE_SD_MMC //Comment out to remove REFERENCE_STATION microSD SD_MMC support
+#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
+//#define REF_STN_GNSS_DEBUG //Uncomment this line to output GNSS library debug messages on serialGNSS. Ref Stn only. Needs ENABLE_DEVELOPER
 
 //Define the RTK board identifier:
-//  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
-//  to make sure that the settings stored in flash (LittleFS) are correct for this version of the RTK
-//  (sizeOfSettings is not necessarily unique and we want to avoid problems when swapping from one variant to another)
-//  It is the sum of:
-//    the major firmware version * 0x10
-//    the minor firmware version
+// This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
+// to make sure that the settings stored in flash (LittleFS) are correct for this version of the RTK
+// (sizeOfSettings is not necessarily unique and we want to avoid problems when swapping from one variant to another)
+// It is the sum of:
+//   the major firmware version * 0x10
+//   the minor firmware version
 #define RTK_IDENTIFIER (FIRMWARE_VERSION_MAJOR * 0x10 + FIRMWARE_VERSION_MINOR)
 
 #include "settings.h"
@@ -53,33 +58,39 @@ const int FIRMWARE_VERSION_MINOR = 1;
 //Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //These pins are set in beginBoard()
-int pin_batteryLevelLED_Red;
-int pin_batteryLevelLED_Green;
-int pin_positionAccuracyLED_1cm;
-int pin_positionAccuracyLED_10cm;
-int pin_positionAccuracyLED_100cm;
-int pin_baseStatusLED;
-int pin_bluetoothStatusLED;
-int pin_microSD_CS;
-int pin_zed_tx_ready;
-int pin_zed_reset;
-int pin_batteryLevel_alert;
+int pin_batteryLevelLED_Red = -1;
+int pin_batteryLevelLED_Green = -1;
+int pin_positionAccuracyLED_1cm = -1;
+int pin_positionAccuracyLED_10cm = -1;
+int pin_positionAccuracyLED_100cm = -1;
+int pin_baseStatusLED = -1;
+int pin_bluetoothStatusLED = -1;
+int pin_microSD_CS = -1;
+int pin_zed_tx_ready = -1;
+int pin_zed_reset = -1;
+int pin_batteryLevel_alert = -1;
 
-int pin_muxA;
-int pin_muxB;
-int pin_powerSenseAndControl;
-int pin_setupButton;
-int pin_powerFastOff;
-int pin_dac26;
-int pin_adc39;
-int pin_peripheralPowerControl;
+int pin_muxA = -1;
+int pin_muxB = -1;
+int pin_powerSenseAndControl = -1;
+int pin_setupButton = -1;
+int pin_powerFastOff = -1;
+int pin_dac26 = -1;
+int pin_adc39 = -1;
+int pin_peripheralPowerControl = -1;
 
-int pin_radio_rx;
-int pin_radio_tx;
-int pin_radio_rst;
-int pin_radio_pwr;
-int pin_radio_cts;
-int pin_radio_rts;
+int pin_radio_rx = -1;
+int pin_radio_tx = -1;
+int pin_radio_rst = -1;
+int pin_radio_pwr = -1;
+int pin_radio_cts = -1;
+int pin_radio_rts = -1;
+
+int pin_Ethernet_CS = -1;
+int pin_Ethernet_Interrupt = -1;
+int pin_GNSS_CS = -1;
+int pin_GNSS_TimePulse = -1;
+int pin_microSD_CardDetect = -1;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
@@ -107,20 +118,22 @@ const int COMMON_COORDINATES_MAX_STATIONS = 50; //Record upto 50 ECEF and Geodet
 
 //Handy library for setting ESP32 system time to GNSS time
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#include <ESP32Time.h> //http://librarymanager/All#ESP32Time
+#include <ESP32Time.h> //http://librarymanager/All#ESP32Time by FBiego v2.0.0
 ESP32Time rtc;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
-#include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 
+#include "SdFat.h" //http://librarymanager/All#sdfat_exfat by Bill Greiman. Currently uses v2.1.1
 SdFat *sd;
+
+#include "FileSdFatMMC.h" //Hybrid SdFat and SD_MMC file access
 
 char platformFilePrefix[40] = "SFE_Surveyor"; //Sets the prefix for logs and settings files
 
-SdFile * ubxFile; //File that all GNSS ubx messages sentences are written to
+FileSdFatMMC * ubxFile; //File that all GNSS ubx messages sentences are written to
 unsigned long lastUBXLogSyncTime = 0; //Used to record to SD every half second
 int startLogTime_minutes = 0; //Mark when we start any logging so we can stop logging after maxLogTime_minutes
 int startCurrentLogTime_minutes = 0; //Mark when we start this specific log file so we can close it after x minutes and start a new one
@@ -147,14 +160,15 @@ typedef enum LoggingType {
 } LoggingType;
 LoggingType loggingType = LOGGING_UNKNOWN;
 
-SdFile managerTempFile; //File used for uploading or downloading in file manager section of AP config
+FileSdFatMMC * managerTempFile; //File used for uploading or downloading in file manager section of AP config
 bool managerFileOpen = false;
 
-TaskHandle_t sdSizeCheckTaskHandle = NULL; //Store handles so that we can kill the task once size is found
+TaskHandle_t sdSizeCheckTaskHandle = nullptr; //Store handles so that we can kill the task once size is found
 const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being the lowest
 const int sdSizeCheckStackSize = 2000;
 bool sdSizeCheckTaskComplete = false;
 
+char logFileName[sizeof("SFE_Facet_L-Band_230101_120101.ubx_plusExtraSpace")] = "";
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster
@@ -180,16 +194,16 @@ static int ntripServerConnectionAttempts = 0; //Count the number of connection a
 volatile uint8_t wifiTcpConnected;
 
 //NTRIP client timer usage:
-//  * Measure the connection response time
-//  * Receive NTRIP data timeout
+// * Measure the connection response time
+// * Receive NTRIP data timeout
 static uint32_t ntripClientTimer;
 static uint32_t ntripClientStartTime; //For calculating uptime
 static int ntripClientConnectionAttemptsTotal; //Count the number of connection attempts absolutely
 
 //NTRIP server timer usage:
-//  * Measure the connection response time
-//  * Receive RTCM correction data timeout
-//  * Monitor last RTCM byte received for frame counting
+// * Measure the connection response time
+// * Receive RTCM correction data timeout
+// * Monitor last RTCM byte received for frame counting
 static uint32_t ntripServerTimer;
 static uint32_t ntripServerStartTime;
 static int ntripServerConnectionAttemptsTotal; //Count the number of connection attempts absolutely
@@ -198,38 +212,49 @@ static int ntripServerConnectionAttemptsTotal; //Count the number of connection 
 #define OTA_RC_FIRMWARE_JSON_URL "https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-RC-Firmware.json"
 bool apConfigFirmwareUpdateInProcess = false; //Goes true once WiFi is connected and OTA pull begins
 bool enableRCFirmware = false; //Goes true from AP config page
+bool currentlyParsingData = false; //Goes true when we hit 750ms timeout with new data
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3 v3.0.2
 
-#define SENTENCE_TYPE_NMEA              SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
-#define SENTENCE_TYPE_NONE              SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
-#define SENTENCE_TYPE_RTCM              SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_RTCM
-#define SENTENCE_TYPE_UBX               SFE_UBLOX_GNSS::SFE_UBLOX_SENTENCE_TYPE_UBX
+#define SENTENCE_TYPE_NMEA              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
+#define SENTENCE_TYPE_NONE              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
+#define SENTENCE_TYPE_RTCM              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_RTCM
+#define SENTENCE_TYPE_UBX               DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_UBX
 
 char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to system status menu and settings file.
 char neoFirmwareVersion[20]; //Output to system status menu.
-uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS)
+uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS). Note: will fail above 2.55!
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
-// Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
-class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
+//Use Michael's lock/unlock methods to prevent the UART2 task from calling checkUblox during a sendCommand and waitForResponse.
+//Also prevents pushRawData from being called too.
+class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 {
-  public:
-    boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
-
-    struct minfoStructure // Structure to hold the module info (uses 341 bytes of RAM)
+public:
+  volatile bool _iAmLocked = false;
+  bool lock(void)
+  {
+    if (_iAmLocked)
     {
-      char swVersion[30];
-      char hwVersion[10];
-      uint8_t extensionNo = 0;
-      char extension[10][30];
-    } minfo;
+      unsigned long startTime = millis();
+      while (_iAmLocked && (millis() < (startTime + 2100)))
+        delay(1); //YIELD
+      if (_iAmLocked)
+        return false;
+    }
+    _iAmLocked = true;
+    return true;
+  }
+  void unlock(void)
+  {
+    _iAmLocked = false;  
+  }
 };
 
-SFE_UBLOX_GNSS_ADD i2cGNSS;
+SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
 
 //These globals are updated regularly via the storePVTdata callback
 bool pvtUpdated = false;
@@ -257,10 +282,10 @@ const byte haeNumberOfDecimals = 8; //Used for printing and transmitting lat/lon
 
 //Battery fuel gauge and PWM LEDs
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
+#include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
 SFE_MAX1704X lipo(MAX1704X_MAX17048);
 
-// RTK Surveyor LED PWM properties
+//RTK Surveyor LED PWM properties
 const int pwmFreq = 5000;
 const int ledRedChannel = 0;
 const int ledGreenChannel = 1;
@@ -278,7 +303,7 @@ float battChangeRate = 0.0;
 //Hardware serial and BT buffers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_BT
-// See bluetoothSelect.h for implemenation
+//See bluetoothSelect.h for implemenation
 #include "bluetoothSelect.h"
 #endif
 
@@ -289,20 +314,20 @@ HardwareSerial serialGNSS(2); //TX on 17, RX on 16
 
 #define SERIAL_SIZE_TX 512
 uint8_t wBuffer[SERIAL_SIZE_TX]; //Buffer for writing from incoming SPP to F9P
-TaskHandle_t F9PSerialWriteTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+TaskHandle_t F9PSerialWriteTaskHandle = nullptr; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialWriteTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int writeTaskStackSize = 2000;
 
 uint8_t * ringBuffer; //Buffer for reading from F9P. At 230400bps, 23040 bytes/s. If SD blocks for 250ms, we need 23040 * 0.25 = 5760 bytes worst case.
-TaskHandle_t F9PSerialReadTaskHandle = NULL; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
+TaskHandle_t F9PSerialReadTaskHandle = nullptr; //Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
 const uint8_t F9PSerialReadTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int readTaskStackSize = 2000;
 
-TaskHandle_t handleGNSSDataTaskHandle = NULL;
+TaskHandle_t handleGNSSDataTaskHandle = nullptr;
 const uint8_t handleGNSSDataTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int handleGNSSDataTaskStackSize = 3000;
 
-TaskHandle_t pinUART2TaskHandle = NULL; //Dummy task to start UART2 on core 0.
+TaskHandle_t pinUART2TaskHandle = nullptr; //Dummy task to start UART2 on core 0.
 volatile bool uart2pinned = false; //This variable is touched by core 0 but checked by core 1. Must be volatile.
 
 volatile static int combinedSpaceRemaining = 0; //Overrun indicator
@@ -348,11 +373,11 @@ SPARKFUN_LIS2DH12 accel;
 
 //Buttons - Interrupt driven and debounce
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#include <JC_Button.h> // http://librarymanager/All#JC_Button
-Button *setupBtn = NULL; //We can't instantiate the buttons here because we don't yet know what pin numbers to use
-Button *powerBtn = NULL;
+#include <JC_Button.h> //http://librarymanager/All#JC_Button v2.1.2
+Button *setupBtn = nullptr; //We can't instantiate the buttons here because we don't yet know what pin numbers to use
+Button *powerBtn = nullptr;
 
-TaskHandle_t ButtonCheckTaskHandle = NULL;
+TaskHandle_t ButtonCheckTaskHandle = nullptr;
 const uint8_t ButtonCheckTaskPriority = 1; //3 being the highest, and 0 being the lowest
 const int buttonTaskStackSize = 2000;
 
@@ -365,13 +390,13 @@ unsigned long lastRockerSwitchChange = 0; //If quick toggle is detected (less th
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-#include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer
+#include "ESPAsyncWebServer.h" //Get from: https://github.com/me-no-dev/ESPAsyncWebServer v1.2.3
 #include "form.h"
 
-AsyncWebServer *webserver = NULL;
-AsyncWebSocket *websocket = NULL;
+AsyncWebServer *webserver = nullptr;
+AsyncWebSocket *websocket = nullptr;
 
-char *settingsCSV = NULL; //Push large array onto heap
+char *settingsCSV = nullptr; //Push large array onto heap
 
 #endif
 #endif
@@ -379,10 +404,10 @@ char *settingsCSV = NULL; //Push large array onto heap
 //Because the incoming string is longer than max len, there are multiple callbacks so we
 //use a global to combine the incoming
 #define AP_CONFIG_SETTING_SIZE 5000
-char *incomingSettings = NULL;
+char *incomingSettings = nullptr;
 int incomingSettingsSpot = 0;
 unsigned long timeSinceLastIncomingSetting = 0;
-unsigned long lastCoordinateUpdate = 0;
+unsigned long lastDynamicDataUpdate = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //PointPerfect Corrections
@@ -420,7 +445,8 @@ const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #define lbandMACAddress         btMACAddress
 uint8_t wifiMACAddress[6]; //Display this address in the system menu
-uint8_t btMACAddress[6];   //Display this address when Bluetooth is enabled, otherwise display wifiMACAddress
+uint8_t btMACAddress[6]; //Display this address when Bluetooth is enabled, otherwise display wifiMACAddress
+uint8_t ethernetMACAddress[6]; //Display this address when Ethernet is enabled, otherwise display wifiMACAddress
 char deviceName[70]; //The serial string that is broadcast. Ex: 'Surveyor Base-BC61'
 const uint16_t menuTimeout = 60 * 10; //Menus will exit/timeout after this number of seconds
 int systemTime_minutes = 0; //Used to test if logging is less than max minutes
@@ -451,7 +477,7 @@ uint8_t loggingIconDisplayed = 0; //Increases every 500ms while logging
 uint8_t espnowIconDisplayed = 0; //Increases every 500ms while transmitting
 
 uint64_t lastLogSize = 0;
-bool logIncreasing = false; //Goes true when log file is greater than lastLogSize
+bool logIncreasing = false; //Goes true when log file is greater than lastLogSize or logPosition changes
 bool reuseLastLog = false; //Goes true if we have a reset due to software (rather than POR)
 
 uint16_t rtcmPacketsSent = 0; //Used to count RTCM packets sent via processRTCM()
@@ -513,6 +539,9 @@ uint16_t failedParserMessages_NMEA = 0;
 unsigned long btLastByteReceived = 0; //Track when last BT transmission was received.
 const long btMinEscapeTime = 2000; //Bluetooth serial traffic must stop this amount before an escape char is recognized
 uint8_t btEscapeCharsReceived = 0; //Used to enter command mode
+
+bool externalPowerConnected = false; //Goes true when a high voltage is seen on power control pin
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
                      +---------------------------------------+      +----------+
@@ -591,15 +620,19 @@ void setup()
 {
   Serial.begin(115200); //UART0 for programming and debugging
 
+  identifyBoard(); //Determine what hardware platform we are running on
+
+  initializePowerPins(); //Initialize any essential power pins - e.g. enable power for the Display
+
   beginI2C();
 
-  beginDisplay(); //Start display first to be able to display any errors
+  beginDisplay(); //Start display to be able to display any errors
 
   beginGNSS(); //Connect to GNSS to get module type
 
   beginFS(); //Start file system for settings
 
-  beginBoard(); //Determine what hardware platform we are running on and check on button
+  beginBoard(); //Now finish settup up the board and check the on button
 
   displaySplash(); //Display the RTK product name and firmware version
 
@@ -638,8 +671,8 @@ void loop()
 {
   if (online.gnss == true)
   {
-    i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-    i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+    theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+    theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
   }
 
   updateSystemState();
@@ -759,7 +792,7 @@ void updateLogs()
       snprintf(eventData, sizeof(eventData), "%d,%d,%d,%d", triggerCount, triggerTowMsR, triggerTowSubMsR, triggerAccEst);
 
       char nmeaMessage[82]; //Max NMEA sentence length is 82
-      createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, eventData); //textID, buffer, text
+      createNMEASentence(CUSTOM_NMEA_TYPE_EVENT, nmeaMessage, sizeof(nmeaMessage), eventData); //textID, buffer, sizeOfBuffer, text
 
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
       {
@@ -835,8 +868,8 @@ void updateRTC()
       {
         lastRTCAttempt = millis();
 
-        i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-        i2cGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+        theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+        theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
 
         bool timeValid = false;
         if (validTime == true && validDate == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
@@ -851,12 +884,12 @@ void updateRTC()
           int second;
 
           //Get the latest time in the GNSS
-          i2cGNSS.checkUblox();
+          theGNSS.checkUblox();
 
           //Get the time values
-          hour = i2cGNSS.getHour();     //Range: 0 - 23
-          minute = i2cGNSS.getMinute(); //Range: 0 - 59
-          second = i2cGNSS.getSecond(); //Range: 0 - 59
+          hour = theGNSS.getHour();     //Range: 0 - 23
+          minute = theGNSS.getMinute(); //Range: 0 - 59
+          second = theGNSS.getSecond(); //Range: 0 - 59
 
           //Perform time zone adjustment
           second += settings.timeZoneSeconds;
@@ -866,7 +899,7 @@ void updateRTC()
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi
           //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
-          rtc.setTime(second, minute, hour, i2cGNSS.getDay(), i2cGNSS.getMonth(), i2cGNSS.getYear());
+          rtc.setTime(second, minute, hour, theGNSS.getDay(), theGNSS.getMonth(), theGNSS.getYear());
 
           online.rtc = true;
 

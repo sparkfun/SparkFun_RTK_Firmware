@@ -58,6 +58,11 @@
             font-weight: bold;
         }
 
+        .box-small {
+            margin-left: 0px;
+            width: 30%;
+        }
+
         .box-margin20 {
             margin-left: 20px;
         }
@@ -87,9 +92,10 @@
             <div align="center"><img src="src/rtk-setup.png" alt="SparkFun RTK WiFi Setup">
             </div>
         </h2>
-        <div class="col-sm-12 mt-3">
-            <div align="center" class="small">
-                RTK Firmware: <span id="rtkFirmwareVersion" style="display:inline;">v0.0</span> <br>
+        <!-- <div class="col-sm-12 mt-3"> -->
+        <div class="row">
+            <div align="center" class="small coulm left">
+                RTK Firmware: <span id="rtkFirmwareVersion" style="display:inline;">v0.0</span><br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
                 <span id="deviceBTID" style="display:inline;">Device Bluetooth ID: 0000</span> <br>
                 <span id="coordinatesLLH" style="display:inline;">LLh:
@@ -102,6 +108,10 @@
                     <span id="ecefY" style="display:inline;">-4716804.403</span>,
                     <span id="ecefZ" style="display:inline;">4086665.484</span>
                 </span><br>
+            </div>
+            <div class="column right">
+                <img id="batteryIconFileName" src="src/BatteryBlank.png" alt="Battery level">
+                <span id="batteryPercent" style="display:inline;"></span>
             </div>
         </div>
 
@@ -942,8 +952,8 @@
             <!-- --------- Base Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="baseConfig" type="button" data-toggle="collapse"
-                    data-target="#collapseBaseConfig" aria-expanded="false" aria-controls="collapseBaseConfig"
-                    style="display:none">
+                    data-target="#collapseBaseConfig" aria-expanded="false" aria-controls="collapseBaseConfig">
+                    <!-- style="display:none"> -->
                     Base Configuration <i id="baseCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
@@ -1003,7 +1013,7 @@
                             <div class="form-group row">
                                 <div class="box-margin40 col-sm-8 col-8 col-form-label">
                                     <button type="button" id="useECEFCoordinates" class="btn btn-primary box-margin20"
-                                        onClick="useECEFCoordinates()">Paste Current XYZ</button>
+                                        onClick="useECEFCoordinates()">Load ECEF From ZED</button>
                                     <span class="tt" data-bs-placement="right"
                                         title="Puts the current ECEF coordinates into the fixed X/Y/Z boxes.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
@@ -1100,8 +1110,8 @@
                             <div class="form-group row">
                                 <div class="box-margin40 col-sm-8 col-8 col-form-label">
                                     <button type="button" id="useGeodeticCoordinates"
-                                        class="btn btn-primary box-margin20" onClick="useGeodeticCoordinates()">Paste
-                                        Current LLh</button>
+                                        class="btn btn-primary box-margin20" onClick="useGeodeticCoordinates()">Load LLh
+                                        From ZED</button>
                                     <span class="tt" data-bs-placement="right"
                                         title="Puts the current LLh into the fixed LLh boxes.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
@@ -1128,18 +1138,42 @@
                             </div>
 
                             <div class="form-group row">
-                                <label for="fixedAltitude" class="box-margin40 col-sm-3 col-5 col-form-label">HAE
-                                    Mark/Alt(m):
+                                <div class="form-group row">
+                                    <label for="fixedAltitude" class="box-margin40 col-sm-3 col-6 col-form-label">HAE
+                                        Mark/Alt(m):
+                                        <span class="tt" data-bs-placement="right"
+                                            title="Height Above Ellipsoid of the mark. This is the coordinate or altitude of the mark or monument on the ground.">
+                                            <span class="icon-info-circle text-primary ms-2"></span>
+                                        </span>
+                                    </label>
+                                    <div class="col-sm-4 col-4">
+                                        <input type="number" class="form-control" id="fixedAltitude">
+                                    </div>
+                                </div>
+                                <p id="fixedAltitudeError" class="inlineError"></p>
+                            </div>
+
+                            <div class="form-group row">
+                                <span style="display:inline; margin-left:40px;">
+                                    <input type="radio" name="markRadio" value="1" onClick="adjustHAE()">
+                                    <label id="calcHAEMark">Calculate HAE Mark</label>
                                     <span class="tt" data-bs-placement="right"
-                                        title="Height Above Ellipsoid of the mark. This is the coordinate or altitude of the mark or monument on the ground.">
+                                        title="If enabled, HAE Mark is calculated by *subtracting* the entered Antenna Height and ARP from the altitude reported by the GNSS receiver. This is handy when measuring a mark with a known pole height and ARP, but unknown mark elevation. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
-                                </label>
-                                <div class="col-sm-4 col-5">
-                                    <input type="number" class="form-control" id="fixedAltitude">
-                                    <p id="fixedAltitudeError" class="inlineError"></p>
-                                </div>
-                            </div><br>
+                                </span>
+                            </div>
+                            <div class="form-group row">
+                                <span style="display:inline; margin-left:40px;">
+                                    <input type="radio" name="markRadio" value="2" onClick="adjustHAE()" checked>
+                                    <label id="callHAEAPC">Calculate HAE APC</label>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="If enabled, HAE APC is calculated by *adding* the entered Antenna Height and ARP to the altitude reported by the GNSS receiver. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </span>
+                            </div>
+
 
                             <div class="form-group row">
                                 <label for="antennaHeight" class="box-margin40 col-sm-3 col-5 col-form-label">Antenna
@@ -1160,7 +1194,7 @@
                                 <label for="antennaReferencePoint" class="box-margin40 col-5 col-form-label">Antenna
                                     Reference Point(mm):
                                     <span class="tt" data-bs-placement="right"
-                                        title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration. Amount is added to HAE before starting fixed base.">
+                                        title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration. Amount is added to HAE before starting fixed base. Common ARPs: Facet(61.4mm) Facet L-Band (69mm) TOP106(52.9)">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -1809,35 +1843,36 @@
                     </div>
 
                     <div id="enableLoggingDetails" class="collapse mb-2">
-                        <div id="maxLogTime Input" class="row">
-                            <div class="col-sm-4 col-9 form-group">
-                                <label for="maxLogTime_minutes" class="form-group box-margin20">Max Log
-                                    Time (min):<span class="tt" data-bs-placement="right"
-                                        title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
-                                        <span class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
-                                </label>
-                            </div>
 
-                            <div class="col-sm-4 col-5 ms-3 form-group">
-                                <input type="number" class="form-control" id="maxLogTime_minutes">
-                                <p id="maxLogTime_minutesError" class="inlineError"></p>
-                            </div>
+                        <div class="form-group row">
+                            <label for="maxLogTime_minutes" class="box-margin40 col-sm-3 col-7 col-form-label">Max Log
+                                Time (min):
+                                <span class="tt" data-bs-placement="right"
+                                    title="Once the max log time is achieved, logging will cease. This is useful for limiting long term, overnight, static surveys to a certain length of time. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
+                            <input type="number" class="form-control box-small" id="maxLogTime_minutes">
+                            <p id="maxLogTime_minutesError" class="inlineError"></p>
                         </div>
 
-                        <div id="maxLogLength Input" class="row">
-                            <div class="col-sm-4 col-9 form-group">
-                                <label for="maxLogLength_minutes" class="form-group box-margin20">Max Log
-                                    Length (min):<span class="tt" data-bs-placement="right"
-                                        title="Once this length of time is achieved, a new log will be created. This is useful for creating multiple logs over a long survey. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
-                                        <span class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
-                                </label>
-                            </div>
+                        <div class="form-group row">
+                            <label for="maxLogLength_minutes" class="box-margin40 col-sm-3 col-7 col-form-label">Max Log
+                                Length (min):<span class="tt" data-bs-placement="right"
+                                    title="Once this length of time is achieved, a new log will be created. This is useful for creating multiple logs over a long survey. Default: 1440 minutes. Limit: 1 to 2880 minutes.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
 
-                            <div class="col-sm-4 col-5 ms-3 form-group">
-                                <input type="number" class="form-control" id="maxLogLength_minutes">
-                                <p id="maxLogLength_minutesError" class="inlineError"></p>
+                            <input type="number" class="form-control box-small" id="maxLogLength_minutes">
+                            <p id="maxLogLength_minutesError" class="inlineError"></p>
+                        </div>
+
+                        <div id="logFile" class="row">
+                            <div class="mb-2">
+                                <label for="logFile" class="form-group box-margin20">Log file name: <span
+                                        id="logFileName" style="display:inline;">SFE_Log.ubx</span>
+                                </label>
                             </div>
                         </div>
 

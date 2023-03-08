@@ -1,7 +1,11 @@
 //Configure specific aspects of the receiver for rover mode
 bool configureUbloxModuleRover()
 {
-  if (online.gnss == false) return (false);
+  if (online.gnss == false)
+  {
+    log_d("GNSS not online");
+    return (false);
+  }
 
   //If our settings haven't changed, and this is first config since power on, trust ZED's settings
   if (settings.updateZEDSettings == false && firstPowerOn == true)
@@ -13,61 +17,71 @@ bool configureUbloxModuleRover()
 
   firstPowerOn = false; //If we switch between rover/base in the future, force config of module.
 
-  i2cGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
 
   bool response = true;
 
   //Set output rate
-  response &= i2cGNSS.newCfgValset();
-  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_MEAS, settings.measurementRate);
-  response &= i2cGNSS.addCfgValset16(UBLOX_CFG_RATE_NAV, settings.navigationRate);
+  response &= theGNSS.newCfgValset();
+  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, settings.measurementRate);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, settings.navigationRate);
 
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
+    response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
   
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); // Set dynamic model
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
 
   //RTCM is only available on ZED-F9P modules
+  //
+  //For most RTK products, the GNSS is interfaced via both I2C and UART1. Configuration and PVT/HPPOS messages are
+  //configured over I2C. Any messages that need to be logged are output on UART1, and received by this code using
+  //serialGNSS. So in Rover mode, we want to disable any RTCM messages on I2C (and USB and UART2).
+  //
+  //But, on the Reference Station, the GNSS is interfaced via SPI. It has no access to I2C and UART1. So for that
+  //product - in Rover mode - we want to leave any RTCM messages enabled on SPI so they can be logged if desired.
   if (zedModuleType == PLATFORM_F9P)
   {
-    //Disable RTCM sentences from being generated on I2C, USB, and UART2
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_I2C, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_I2C, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_I2C, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_I2C, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_I2C, 0);
+    if (USE_I2C_GNSS)
+    {
+      response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 0);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_I2C, 0);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_I2C, 0);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_I2C, 0);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_I2C, 0);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_I2C, 0);
+    }
+  
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_USB, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_USB, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_USB, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_USB, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_USB, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_USB, 0);
 
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_USB, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_USB, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_USB, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_USB, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_USB, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_USB, 0);
-
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_UART2, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_UART2, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_UART2, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_UART2, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART2, 0);
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_UART2, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_UART2, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_UART2, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_UART2, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART2, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 0);
   }
 
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
 
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_NMEA_HIGHPREC, 1); //Enable high precision NMEA
-  response &= i2cGNSS.addCfgValset8(UBLOX_CFG_NMEA_SVNUMBERING, 1); //Enable extended satellite numbering
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_HIGHPREC, 1); //Enable high precision NMEA
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_SVNUMBERING, 1); //Enable extended satellite numbering
 
   if (zedModuleType == PLATFORM_F9R)
   {
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
-    response &= i2cGNSS.addCfgValset8(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
   }
 
-  response &= i2cGNSS.sendCfgValset(); //Closing - 27 keys
+  response &= theGNSS.sendCfgValset(); //Closing - 27 keys
   
-  if (response == false) log_d("Rover config failed");
+  if (response == false)
+    log_d("Rover config failed");
 
   return (response);
 }
@@ -87,7 +101,7 @@ void updateAccuracyLEDs()
         if (settings.enablePrintRoverAccuracy)
         {
           systemPrint("Rover Accuracy (m): ");
-          systemPrint(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
+          systemPrint(horizontalAccuracy, 4); //Print the accuracy with 4 decimal places
           systemPrintln();
         }
 
@@ -160,7 +174,7 @@ void storePVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 
 void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)
 {
-  horizontalAccuracy = ((float)ubxDataStruct->hAcc) / 10000.0; // Convert hAcc from mm*0.1 to m
+  horizontalAccuracy = ((float)ubxDataStruct->hAcc) / 10000.0; //Convert hAcc from mm*0.1 to m
 
   latitude = ((double)ubxDataStruct->lat) / 10000000.0;
   latitude += ((double)ubxDataStruct->latHp) / 1000000000.0;

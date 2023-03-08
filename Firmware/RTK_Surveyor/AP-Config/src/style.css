@@ -53,3 +53,11 @@ input[type="file"] {
 .icon-caret-up:before {
   content: "\f0d8";
 }
+
+.left {
+  width: 85%;
+}
+
+.right {
+  width: 7%;
+}

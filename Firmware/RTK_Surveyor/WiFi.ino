@@ -30,7 +30,7 @@
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
-// Constants
+//Constants
 //----------------------------------------
 
 //Interval to use when displaying the IP address
@@ -49,7 +49,7 @@ static uint32_t wifiConnectionAttemptsTotal; //Count the number of connection at
 static uint32_t wifiConnectionAttemptTimeout = 0;
 
 //----------------------------------------
-// Locals - compiled out
+//Locals - compiled out
 //----------------------------------------
 
 #ifdef COMPILE_WIFI
@@ -57,18 +57,18 @@ static uint32_t wifiConnectionAttemptTimeout = 0;
 static uint32_t wifiLastConnectionAttempt = 0;
 
 //WiFi Timer usage:
-//  * Measure interval to display IP address
+// * Measure interval to display IP address
 static unsigned long wifiDisplayTimer = 0;
 
 //Last time the WiFi state was displayed
 static uint32_t lastWifiState = 0;
 
 //TCP server
-static WiFiServer *wifiTcpServer = NULL;
+static WiFiServer *wifiTcpServer = nullptr;
 static WiFiClient wifiTcpClient[WIFI_MAX_TCP_CLIENTS];
 
 //----------------------------------------
-// WiFi Routines - compiled out
+//WiFi Routines - compiled out
 //----------------------------------------
 
 void wifiDisplayIpAddress()
@@ -125,7 +125,7 @@ void wifiSetState(byte newState)
 }
 
 //----------------------------------------
-// WiFi Config Support Routines - compiled out
+//WiFi Config Support Routines - compiled out
 //----------------------------------------
 
 //Start the access point for user to connect to and configure device
@@ -192,7 +192,7 @@ bool wifiStartAP()
 #endif  //COMPILE_WIFI
 
 //----------------------------------------
-// Global WiFi Routines
+//Global WiFi Routines
 //----------------------------------------
 
 //Advance the WiFi state from off to connected
@@ -381,6 +381,8 @@ bool wifiConnect(unsigned long timeout)
 #ifdef COMPILE_WIFI
 
   if (wifiIsConnected()) return (true); //Nothing to do
+
+  displayWiFiConnect();
 
   //Before we can issue esp_wifi_() commands WiFi must be started
   if (WiFi.getMode() == WIFI_OFF)
@@ -601,7 +603,7 @@ bool wifiTcpServerActive()
   //Stop the TCP server
   wifiTcpServer->stop();
 
-  if (wifiTcpServer != NULL)
+  if (wifiTcpServer != nullptr)
     delete wifiTcpServer;
 #endif  //COMPILE_WIFI
   return false;
@@ -668,7 +670,7 @@ void tcpUpdate()
 
   //Start the TCP server if enabled
   if (settings.enableTcpServer
-      && (wifiTcpServer == NULL)
+      && (wifiTcpServer == nullptr)
       && (!settings.enableTcpClient)
       && wifiIsConnected()
      )

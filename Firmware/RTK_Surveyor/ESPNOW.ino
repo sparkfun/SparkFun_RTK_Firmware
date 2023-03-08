@@ -21,7 +21,7 @@ typedef struct PairMessage {
   uint8_t crc; //Simple check - add MAC together and limit to 8 bit
 } PairMessage;
 
-// Callback when data is sent
+//Callback when data is sent
 #ifdef COMPILE_ESPNOW
 void espnowOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
@@ -33,7 +33,7 @@ void espnowOnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 }
 #endif
 
-// Callback when data is received
+//Callback when data is received
 void espnowOnDataReceived(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
 #ifdef COMPILE_ESPNOW
@@ -61,8 +61,11 @@ void espnowOnDataReceived(const uint8_t *mac, const uint8_t *incomingData, int l
   {
     espnowRSSI = packetRSSI; //Record this packets RSSI as an ESP NOW packet
 
-    //Pass RTCM bytes (presumably) from ESP NOW out ESP32-UART2 to ZED-UART1
-    serialGNSS.write(incomingData, len);
+    //Pass RTCM bytes (presumably) from ESP NOW out ESP32-UART2 to ZED-UART1 / SPI
+    if (USE_I2C_GNSS)
+      serialGNSS.write(incomingData, len);
+    else
+      theGNSS.pushRawData((uint8_t *)incomingData, len);
     if (!inMainMenu) log_d("ESPNOW received %d RTCM bytes, pushed to ZED, RSSI: %d", len, espnowRSSI);
 
     espnowIncomingRTCM = true;
@@ -71,12 +74,12 @@ void espnowOnDataReceived(const uint8_t *mac, const uint8_t *incomingData, int l
 #endif
 }
 
-// Callback for all RX Packets
-// Get RSSI of all incoming management packets: https://esp32.com/viewtopic.php?t=13889
+//Callback for all RX Packets
+//Get RSSI of all incoming management packets: https://esp32.com/viewtopic.php?t=13889
 #ifdef COMPILE_ESPNOW
 void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type)
 {
-  // All espnow traffic uses action frames which are a subtype of the mgmnt frames so filter out everything else.
+  //All espnow traffic uses action frames which are a subtype of the mgmnt frames so filter out everything else.
   if (type != WIFI_PKT_MGMT)
     return;
 
@@ -126,20 +129,20 @@ void espnowStart()
   }
 
 
-  // Init ESP-NOW
+  //Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     systemPrintln("espnowStart: Error starting ESP-Now");
     return;
   }
 
-  // Use promiscuous callback to capture RSSI of packet
+  //Use promiscuous callback to capture RSSI of packet
   response = esp_wifi_set_promiscuous(true);
   if (response != ESP_OK)
     systemPrintf("espnowStart: Error setting promiscuous mode: %s\r\n", esp_err_to_name(response));
 
   esp_wifi_set_promiscuous_rx_cb(&promiscuous_rx_cb);
 
-  // Register callbacks
+  //Register callbacks
   //esp_now_register_send_cb(espnowOnDataSent);
   esp_now_register_recv_cb(espnowOnDataReceived);
 
@@ -197,7 +200,7 @@ void espnowStop()
   if (response != ESP_OK)
     systemPrintf("espnowStop: Failed to set promiscuous mode: %s\r\n", esp_err_to_name(response));
 
-  esp_wifi_set_promiscuous_rx_cb(NULL);
+  esp_wifi_set_promiscuous_rx_cb(nullptr);
 
   //Deregister callbacks
   //esp_now_unregister_send_cb();
@@ -247,9 +250,9 @@ void espnowBeginPairing()
 {
   espnowStart();
 
-  // To begin pairing, we must add the broadcast MAC to the peer list
+  //To begin pairing, we must add the broadcast MAC to the peer list
   uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  espnowAddPeer(broadcastMac, false); // Encryption is not supported for multicast addresses
+  espnowAddPeer(broadcastMac, false); //Encryption is not supported for multicast addresses
 
   espnowSetState(ESPNOW_PAIRING);
 }
@@ -300,7 +303,7 @@ bool espnowIsPaired()
 esp_err_t espnowSendPairMessage(uint8_t *sendToMac)
 {
 #ifdef COMPILE_ESPNOW
-  // Assemble message to send
+  //Assemble message to send
   PairMessage pairMessage;
 
   //Get unit MAC address

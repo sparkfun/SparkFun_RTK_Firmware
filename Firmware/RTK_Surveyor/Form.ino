@@ -49,7 +49,7 @@ void startWebServer()
 
   webserver->onNotFound(notFound);
 
-  webserver->onFileUpload(handleUpload); // Run handleUpload function when any file is uploaded. Must be before server.on() calls.
+  webserver->onFileUpload(handleUpload); //Run handleUpload function when any file is uploaded. Must be before server.on() calls.
 
   webserver->on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send_P(200, "text/html", index_html);
@@ -95,6 +95,55 @@ void startWebServer()
     request->send(response);
   });
 
+  //Battery icons
+  webserver->on("/src/BatteryBlank.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", batteryBlank_png, sizeof(batteryBlank_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery0.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery0_png, sizeof(battery0_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery1.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery1_png, sizeof(battery1_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery2.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery2_png, sizeof(battery2_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery3.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery3_png, sizeof(battery3_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+  webserver->on("/src/Battery0_Charging.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery0_Charging_png, sizeof(battery0_Charging_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery1_Charging.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery1_Charging_png, sizeof(battery1_Charging_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery2_Charging.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery2_Charging_png, sizeof(battery2_Charging_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+  webserver->on("/src/Battery3_Charging.png", HTTP_GET, [](AsyncWebServerRequest * request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", battery3_Charging_png, sizeof(battery3_Charging_png));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  });
+
+
   webserver->on("/src/style.css", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", style_css, sizeof(style_css));
     response->addHeader("Content-Encoding", "gzip");
@@ -138,9 +187,9 @@ void startWebServer()
     request->send(200, "text/plain", getFileList());
   });
 
-  //Handler for the filemanager
+  //Handler for file manager
   webserver->on("/file", HTTP_GET, [](AsyncWebServerRequest * request) {
-    handleFirmwareFileDownload(request);
+    handleFileManager(request);
   });
 
   webserver->begin();
@@ -157,28 +206,28 @@ void stopWebServer()
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-  if (webserver != NULL)
+  if (webserver != nullptr)
   {
     webserver->end();
     free(webserver);
-    webserver = NULL;
+    webserver = nullptr;
 
-    if (websocket != NULL)
+    if (websocket != nullptr)
     {
       delete websocket;
-      websocket = NULL;
+      websocket = nullptr;
     }
 
-    if (settingsCSV != NULL)
+    if (settingsCSV != nullptr)
     {
       free(settingsCSV);
-      settingsCSV = NULL;
+      settingsCSV = nullptr;
     }
 
-    if (incomingSettings != NULL)
+    if (incomingSettings != nullptr)
     {
       free(incomingSettings);
-      incomingSettings = NULL;
+      incomingSettings = nullptr;
     }
   }
 
@@ -202,7 +251,7 @@ void notFound(AsyncWebServerRequest *request) {
 //Handler for firmware file downloads
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
-static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
+static void handleFileManager(AsyncWebServerRequest *request)
 {
   //This section does not tolerate semaphore transactions
   String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
@@ -214,7 +263,19 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
 
     logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
 
-    if (sd->exists(fileName) == false)
+    bool fileExists;
+    if (USE_SPI_MICROSD)
+    {
+      fileExists = sd->exists(fileName);
+    }
+#ifdef COMPILE_SD_MMC
+    else
+    {
+      fileExists = SD_MMC.exists(fileName);
+    }
+#endif
+
+    if (fileExists == false)
     {
       systemPrintln(logmessage + " ERROR: file does not exist");
       request->send(400, "text/plain", "ERROR: file does not exist");
@@ -229,7 +290,18 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
 
         if (managerFileOpen == false)
         {
-          if (managerTempFile.open(fileName, O_READ) == true)
+          //Allocate the managerTempFile
+          if (!managerTempFile)
+          {
+            managerTempFile = new FileSdFatMMC;
+            if (!managerTempFile)
+            {
+              systemPrintln("Failed to allocate managerTempFile!");
+              return;
+            }
+          }
+
+          if (managerTempFile->open(fileName, O_READ) == true)
             managerFileOpen = true;
           else
             systemPrintln("Error: File Manager failed to open file");
@@ -240,23 +312,26 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
           request->send(202, "text/plain", "ERROR: File already downloading");
         }
 
-        int dataAvailable = managerTempFile.size() - managerTempFile.position();
+        int dataAvailable;
+        dataAvailable = managerTempFile->size() - managerTempFile->position();
 
         AsyncWebServerResponse *response = request->beginResponse("text/plain", dataAvailable,
                                            [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t
         {
           uint32_t bytes = 0;
-          uint32_t availableBytes = managerTempFile.available();
+          uint32_t availableBytes;
+          availableBytes = managerTempFile->available();
 
           if (availableBytes > maxLen)
           {
-            bytes = managerTempFile.read(buffer, maxLen);
+            bytes = managerTempFile->read(buffer, maxLen);
           }
           else
           {
-            bytes = managerTempFile.read(buffer, availableBytes);
+            bytes = managerTempFile->read(buffer, availableBytes);
+            managerTempFile->close();
+
             managerFileOpen = false;
-            managerTempFile.close();
 
             websocket->textAll("fmNext,1,"); //Tell browser to send next file if needed
           }
@@ -272,7 +347,12 @@ static void handleFirmwareFileDownload(AsyncWebServerRequest *request)
       else if (strcmp(fileAction, "delete") == 0)
       {
         logmessage += " deleted";
-        sd->remove(fileName);
+        if (USE_SPI_MICROSD)
+          sd->remove(fileName);
+#ifdef COMPILE_SD_MMC
+        else
+          SD_MMC.remove(fileName);
+#endif
         request->send(200, "text/plain", "Deleted File: " + String(fileName));
       }
       else
@@ -332,7 +412,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
     }
   }
 
-  // Write chunked data to the free sketch space
+  //Write chunked data to the free sketch space
   if (len)
   {
     if (Update.write(data, len) != len)
@@ -347,7 +427,7 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
         binBytesLastUpdate = binBytesSent;
 
         char bytesSentMsg[100];
-        sprintf(bytesSentMsg, "%'d bytes sent", binBytesSent);
+        snprintf(bytesSentMsg, sizeof(bytesSentMsg), "%'d bytes sent", binBytesSent);
 
         systemPrintf("bytesSentMsg: %s\r\n", bytesSentMsg);
 
@@ -389,7 +469,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   if (type == WS_EVT_CONNECT) {
     log_d("Websocket client connected");
     client->text(settingsCSV);
-    lastCoordinateUpdate = millis();
+    lastDynamicDataUpdate = millis();
     websocketConnected = true;
   }
   else if (type == WS_EVT_DISCONNECT) {
@@ -400,11 +480,14 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     websocketConnected = false;
   }
   else if (type == WS_EVT_DATA) {
-    for (int i = 0; i < len; i++) {
-      incomingSettings[incomingSettingsSpot++] = data[i];
-      incomingSettingsSpot %= AP_CONFIG_SETTING_SIZE;
+    if (currentlyParsingData == false)
+    {
+      for (int i = 0; i < len; i++) {
+        incomingSettings[incomingSettingsSpot++] = data[i];
+        incomingSettingsSpot %= AP_CONFIG_SETTING_SIZE;
+      }
+      timeSinceLastIncomingSetting = millis();
     }
-    timeSinceLastIncomingSetting = millis();
   }
 }
 #endif
@@ -423,7 +506,7 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "platformPrefix", platformPrefix);
 
   char apRtkFirmwareVersion[86];
-  sprintf(apRtkFirmwareVersion, "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+  snprintf(apRtkFirmwareVersion, sizeof(apRtkFirmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
   stringRecord(newSettings, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
   char apZedPlatform[50];
@@ -433,11 +516,11 @@ void createSettingsString(char* newSettings)
     strcpy(apZedPlatform, "ZED-F9R");
 
   char apZedFirmwareVersion[80];
-  sprintf(apZedFirmwareVersion, "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
+  snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
   stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
 
   char apDeviceBTID[30];
-  sprintf(apDeviceBTID, "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);
+  snprintf(apDeviceBTID, sizeof(apDeviceBTID), "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);
   stringRecord(newSettings, "deviceBTID", apDeviceBTID);
 
   //GNSS Config
@@ -506,8 +589,8 @@ void createSettingsString(char* newSettings)
   char sdFreeSpaceChar[20];
   stringHumanReadableSize(sdFreeSpace).toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
 
-  stringRecord(newSettings, "sdFreeSpace", sdCardSizeChar);
-  stringRecord(newSettings, "sdSize", sdFreeSpaceChar);
+  stringRecord(newSettings, "sdFreeSpace", sdFreeSpaceChar);
+  stringRecord(newSettings, "sdSize", sdCardSizeChar);
 
   stringRecord(newSettings, "enableResetDisplay", settings.enableResetDisplay);
 
@@ -521,7 +604,7 @@ void createSettingsString(char* newSettings)
 
   //L-Band
   char hardwareID[13];
-  sprintf(hardwareID, "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
+  snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
   stringRecord(newSettings, "hardwareID", hardwareID);
 
   char apDaysRemaining[20];
@@ -529,11 +612,11 @@ void createSettingsString(char* newSettings)
   {
 #ifdef COMPILE_L_BAND
     uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
-    sprintf(apDaysRemaining, "%d", daysRemaining);
+    snprintf(apDaysRemaining, sizeof(apDaysRemaining), "%d", daysRemaining);
 #endif
   }
   else
-    sprintf(apDaysRemaining, "No Keys");
+    snprintf(apDaysRemaining, sizeof(apDaysRemaining), "No Keys");
 
   stringRecord(newSettings, "daysRemaining", apDaysRemaining);
 
@@ -553,8 +636,8 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "profileNumber", profileNumber);
   for (int index = 0; index < MAX_PROFILE_COUNT; index++)
   {
-    sprintf(tagText, "profile%dName", index);
-    sprintf(nameText, "%d: %s", index + 1, profileNames[index]);
+    snprintf(tagText, sizeof(tagText), "profile%dName", index);
+    snprintf(nameText, sizeof(nameText), "%d: %s", index + 1, profileNames[index]);
     stringRecord(newSettings, tagText, nameText);
   }
   //stringRecord(newSettings, "activeProfiles", activeProfiles);
@@ -588,7 +671,7 @@ void createSettingsString(char* newSettings)
 
   //Radio / ESP-Now settings
   char radioMAC[18];   //Send radio MAC
-  sprintf(radioMAC, "%02X:%02X:%02X:%02X:%02X:%02X",
+  snprintf(radioMAC, sizeof(radioMAC), "%02X:%02X:%02X:%02X:%02X:%02X",
           wifiMACAddress[0],
           wifiMACAddress[1],
           wifiMACAddress[2],
@@ -601,8 +684,8 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "espnowPeerCount", settings.espnowPeerCount);
   for (int index = 0; index < settings.espnowPeerCount; index++)
   {
-    sprintf(tagText, "peerMAC%d", index);
-    sprintf(nameText, "%02X:%02X:%02X:%02X:%02X:%02X",
+    snprintf(tagText, sizeof(tagText), "peerMAC%d", index);
+    snprintf(nameText, sizeof(nameText), "%02X:%02X:%02X:%02X:%02X:%02X",
             settings.espnowPeers[index][0],
             settings.espnowPeers[index][1],
             settings.espnowPeers[index][2],
@@ -613,6 +696,39 @@ void createSettingsString(char* newSettings)
     stringRecord(newSettings, tagText, nameText);
   }
   stringRecord(newSettings, "espnowBroadcast", settings.espnowBroadcast);
+
+  stringRecord(newSettings, "logFileName", logFileName);
+
+  //Determine battery icon
+  int iconLevel = 0;
+  if (battLevel < 25)
+    iconLevel = 0;
+  else if (battLevel < 50)
+    iconLevel = 1;
+  else if (battLevel < 75)
+    iconLevel = 2;
+  else //batt level > 75
+    iconLevel = 3;
+
+  char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+
+  if (externalPowerConnected)
+    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
+  else
+    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
+
+  stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
+
+  //Determine battery percent
+  char batteryPercent[sizeof("+100%")];
+  int tempLevel = battLevel;
+  if(tempLevel > 100) tempLevel = 100;
+
+  if (externalPowerConnected)
+    snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", tempLevel);
+  else
+    snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", tempLevel);
+  stringRecord(newSettings, "batteryPercent", batteryPercent);
 
   //Add ECEF and Geodetic station data
   for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
@@ -626,7 +742,7 @@ void createSettingsString(char* newSettings)
       trim(stationInfo); //Remove trailing whitespace
       //log_d("ECEF SD station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationECEF%d", index);
+      snprintf(tagText, sizeof(tagText), "stationECEF%d", index);
       stringRecord(newSettings, tagText, stationInfo);
     }
     else if (getFileLineLFS(stationCoordinateECEFFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
@@ -634,7 +750,7 @@ void createSettingsString(char* newSettings)
       trim(stationInfo); //Remove trailing whitespace
       //log_d("ECEF LFS station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationECEF%d", index);
+      snprintf(tagText, sizeof(tagText), "stationECEF%d", index);
       stringRecord(newSettings, tagText, stationInfo);
     }
     else
@@ -655,7 +771,7 @@ void createSettingsString(char* newSettings)
       trim(stationInfo); //Remove trailing whitespace
       //log_d("Geo SD station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationGeodetic%d", index);
+      snprintf(tagText, sizeof(tagText), "stationGeodetic%d", index);
       stringRecord(newSettings, tagText, stationInfo);
     }
     else if (getFileLineLFS(stationCoordinateGeodeticFileName, index, stationInfo, sizeof(stationInfo)) == true) //fileName, lineNumber, array, arraySize
@@ -663,7 +779,7 @@ void createSettingsString(char* newSettings)
       trim(stationInfo); //Remove trailing whitespace
       //log_d("Geo LFS station %d - found: %s", index, stationInfo);
       replaceCharacter(stationInfo, ',', ' '); //Change all , to ' ' for easier parsing on the JS side
-      sprintf(tagText, "stationGeodetic%d", index);
+      snprintf(tagText, sizeof(tagText), "stationGeodetic%d", index);
       stringRecord(newSettings, tagText, stationInfo);
     }
     else
@@ -676,10 +792,10 @@ void createSettingsString(char* newSettings)
   //Add WiFi credential table
   for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
   {
-    sprintf(tagText, "wifiNetwork%dSSID", x);
+    snprintf(tagText, sizeof(tagText), "wifiNetwork%dSSID", x);
     stringRecord(newSettings, tagText, settings.wifiNetworks[x].ssid);
 
-    sprintf(tagText, "wifiNetwork%dPassword", x);
+    snprintf(tagText, sizeof(tagText), "wifiNetwork%dPassword", x);
     stringRecord(newSettings, tagText, settings.wifiNetworks[x].password);
   }
 
@@ -701,8 +817,8 @@ void createSettingsString(char* newSettings)
 #endif
 }
 
-//Create a csv string with the current coordinates
-void createCoordinateString(char* settingsCSV)
+//Create a csv string with the dynamic data to update (current coordinates, battery level, etc)
+void createDynamicDataString(char* settingsCSV)
 {
 #ifdef COMPILE_AP
   settingsCSV[0] = '\0'; //Erase current settings string
@@ -721,6 +837,34 @@ void createCoordinateString(char* settingsCSV)
   stringRecord(settingsCSV, "ecefX", ecefX, 3);
   stringRecord(settingsCSV, "ecefY", ecefY, 3);
   stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
+
+  //Determine battery icon
+  int iconLevel = 0;
+  if (battLevel < 25)
+    iconLevel = 0;
+  else if (battLevel < 50)
+    iconLevel = 1;
+  else if (battLevel < 75)
+    iconLevel = 2;
+  else //batt level > 75
+    iconLevel = 3;
+
+  char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+
+  if (externalPowerConnected)
+    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
+  else
+    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
+
+  stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
+
+  //Determine battery percent
+  char batteryPercent[sizeof("+100%")];
+  if (externalPowerConnected)
+    snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", battLevel);
+  else
+    snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", battLevel);
+  stringRecord(settingsCSV, "batteryPercent", batteryPercent);
 
   strcat(settingsCSV, "\0");
 #endif
@@ -799,7 +943,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "profileName") == 0)
   {
     strcpy(settings.profileName, settingValueStr);
-    setProfileName(profileNumber);
+    setProfileName(profileNumber); //Copy the current settings.profileName into the array of profile names at location profileNumber
   }
   else if (strcmp(settingName, "enableNtripServer") == 0)
     settings.enableNtripServer = settingValueBool;
@@ -855,14 +999,14 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.lastState = STATE_ROVER_NOT_STARTED; //Default
     if (settingValue == 1) settings.lastState = STATE_BASE_NOT_STARTED;
   }
-  else if (strstr(settingName, "stationECEF") != NULL)
+  else if (strstr(settingName, "stationECEF") != nullptr)
   {
     replaceCharacter((char *)settingValueStr, ' ', ','); //Replace all ' ' with ',' before recording to file
     recordLineToSD(stationCoordinateECEFFileName, settingValueStr);
     recordLineToLFS(stationCoordinateECEFFileName, settingValueStr);
     log_d("%s recorded", settingValueStr);
   }
-  else if (strstr(settingName, "stationGeodetic") != NULL)
+  else if (strstr(settingName, "stationGeodetic") != nullptr)
   {
     replaceCharacter((char *)settingValueStr, ' ', ','); //Replace all ' ' with ',' before recording to file
     recordLineToSD(stationCoordinateGeodeticFileName, settingValueStr);
@@ -913,7 +1057,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
     //Confirm receipt
-    log_d("Sending reset confirmation");
+    Serial.println("Sending reset confirmation");
     websocket->textAll("confirmReset,1,");
     delay(500); //Allow for delivery
 
@@ -924,20 +1068,22 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "setProfile") == 0)
   {
     //Change to new profile
+    Serial.printf("Changing to profile number %d\r\n", settingValue);
     changeProfileNumber(settingValue);
 
     //Load new profile into system
     loadSettings();
 
     //Send new settings to browser. Re-use settingsCSV to avoid stack.
-    if (settingsCSV == NULL)
+    if (settingsCSV == nullptr)
       settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
 
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
 
     createSettingsString(settingsCSV);
 
-    log_d("Sending profile %d: %s", settingValue, settingsCSV);
+    Serial.printf("Sending profile %d\r\n", settingValue);
+    log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
   else if (strcmp(settingName, "resetProfile") == 0)
@@ -950,14 +1096,15 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     activeProfiles = loadProfileNames();
 
     //Send new settings to browser. Re-use settingsCSV to avoid stack.
-    if (settingsCSV == NULL)
+    if (settingsCSV == nullptr)
       settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
 
     memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); //Clear any garbage from settings array
 
     createSettingsString(settingsCSV);
 
-    log_d("Sending reset profile: %s", settingsCSV);
+    Serial.printf("Sending reset profile %d\r\n", settingValue);
+    log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
   else if (strcmp(settingName, "forgetEspNowPeers") == 0)
@@ -970,7 +1117,16 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "startNewLog") == 0)
   {
     if (settings.enableLogging == true && online.logging == true)
-      endSD(false, true); //Close down file. A new one will be created at the next calling of updateLogs().
+    {
+      endLogging(false, true); //(gotSemaphore, releaseSemaphore) Close file. Reset parser stats.
+      beginLogging(); //Create new file based on current RTC.
+      setLoggingType(); //Determine if we are standard, PPP, or custom. Changes logging icon accordingly.
+
+      char newFileNameCSV[sizeof("logFileName,") + sizeof(logFileName) + 1];
+      snprintf(newFileNameCSV, sizeof(newFileNameCSV), "logFileName,%s,", logFileName);
+
+      websocket->textAll(newFileNameCSV); //Tell the config page the name of the file we just created
+    }
   }
   else if (strcmp(settingName, "checkNewFirmware") == 0)
   {
@@ -987,26 +1143,26 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       //We got a version number, now determine if it's newer or not
       char currentVersion[20];
       if (enableRCFirmware == false)
-        sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+        snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
       else
-        sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+        snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
       if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
       {
         log_d("New version detected");
-        sprintf(newVersionCSV, "newFirmwareVersion,%s,", reportedVersion);
+        snprintf(newVersionCSV, sizeof(newVersionCSV), "newFirmwareVersion,%s,", reportedVersion);
       }
       else
       {
         log_d("No new firmware available");
-        sprintf(newVersionCSV, "newFirmwareVersion,CURRENT,");
+        snprintf(newVersionCSV, sizeof(newVersionCSV), "newFirmwareVersion,CURRENT,");
       }
     }
     else
     {
       //Failed to get version number
       log_d("Sending error to AP config page");
-      sprintf(newVersionCSV, "newFirmwareVersion,ERROR,");
+      snprintf(newVersionCSV, sizeof(newVersionCSV), "newFirmwareVersion,ERROR,");
     }
 
     websocket->textAll(newVersionCSV);
@@ -1036,7 +1192,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       for (int x = 0 ; x < MAX_WIFI_NETWORKS ; x++)
       {
         char tempString[100]; //wifiNetwork0Password=parachutes
-        sprintf(tempString, "wifiNetwork%dSSID", x);
+        snprintf(tempString, sizeof(tempString), "wifiNetwork%dSSID", x);
         if (strcmp(settingName, tempString) == 0)
         {
           strcpy(settings.wifiNetworks[x].ssid, settingValueStr);
@@ -1045,7 +1201,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
         }
         else
         {
-          sprintf(tempString, "wifiNetwork%dPassword", x);
+          snprintf(tempString, sizeof(tempString), "wifiNetwork%dPassword", x);
           if (strcmp(settingName, tempString) == 0)
           {
             strcpy(settings.wifiNetworks[x].password, settingValueStr);
@@ -1062,7 +1218,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
       {
         char tempString[50]; //ubxConstellationsSBAS
-        sprintf(tempString, "ubxConstellations%s", settings.ubxConstellations[x].textName);
+        snprintf(tempString, sizeof(tempString), "ubxConstellations%s", settings.ubxConstellations[x].textName);
 
         if (strcmp(settingName, tempString) == 0)
         {
@@ -1100,7 +1256,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 void stringRecord(char* settingsCSV, const char *id, int settingValue)
 {
   char record[100];
-  sprintf(record, "%s,%d,", id, settingValue);
+  snprintf(record, sizeof(record), "%s,%d,", id, settingValue);
   strcat(settingsCSV, record);
 }
 
@@ -1108,7 +1264,7 @@ void stringRecord(char* settingsCSV, const char *id, int settingValue)
 void stringRecord(char* settingsCSV, const char *id, uint32_t settingValue)
 {
   char record[100];
-  sprintf(record, "%s,%d,", id, settingValue);
+  snprintf(record, sizeof(record), "%s,%d,", id, settingValue);
   strcat(settingsCSV, record);
 }
 
@@ -1116,13 +1272,13 @@ void stringRecord(char* settingsCSV, const char *id, uint32_t settingValue)
 void stringRecord(char* settingsCSV, const char *id, double settingValue, int decimalPlaces)
 {
   char format[10];
-  sprintf(format, "%%0.%dlf", decimalPlaces); //Create '%0.09lf'
+  snprintf(format, sizeof(format), "%%0.%dlf", decimalPlaces); //Create '%0.09lf'
 
   char formattedValue[20];
-  sprintf(formattedValue, format, settingValue);
+  snprintf(formattedValue, sizeof(formattedValue), format, settingValue);
 
   char record[100];
-  sprintf(record, "%s,%s,", id, formattedValue);
+  snprintf(record, sizeof(record), "%s,%s,", id, formattedValue);
   strcat(settingsCSV, record);
 }
 
@@ -1136,7 +1292,7 @@ void stringRecord(char* settingsCSV, const char *id, bool settingValue)
     strcpy(temp, "false");
 
   char record[100];
-  sprintf(record, "%s,%s,", id, temp);
+  snprintf(record, sizeof(record), "%s,%s,", id, temp);
   strcat(settingsCSV, record);
 }
 
@@ -1144,7 +1300,7 @@ void stringRecord(char* settingsCSV, const char *id, bool settingValue)
 void stringRecord(char* settingsCSV, const char *id, char* settingValue)
 {
   char record[100];
-  sprintf(record, "%s,%s,", id, settingValue);
+  snprintf(record, sizeof(record), "%s,%s,", id, settingValue);
   strcat(settingsCSV, record);
 }
 
@@ -1152,7 +1308,7 @@ void stringRecord(char* settingsCSV, const char *id, char* settingValue)
 void stringRecord(char* settingsCSV, const char *id, uint64_t settingValue)
 {
   char record[100];
-  sprintf(record, "%s,%lld,", id, settingValue);
+  snprintf(record, sizeof(record), "%s,%lld,", id, settingValue);
   strcat(settingsCSV, record);
 }
 
@@ -1167,19 +1323,19 @@ bool parseIncomingSettings()
   char* headPtr = incomingSettings;
 
   int counter = 0;
-  int maxAttempts = 500;
-  while (*headPtr) //Check if string is over
+  int maxAttempts = 200;
+  while (*headPtr) //Check if we've reached the end of the string
   {
     //Spin to first comma
     commaPtr = strstr(headPtr, ",");
-    if (commaPtr != NULL) {
+    if (commaPtr != nullptr) {
       *commaPtr = '\0';
       strcpy(settingName, headPtr);
       headPtr = commaPtr + 1;
     }
 
     commaPtr = strstr(headPtr, ",");
-    if (commaPtr != NULL) {
+    if (commaPtr != nullptr) {
       *commaPtr = '\0';
       strcpy(valueStr, headPtr);
       headPtr = commaPtr + 1;
@@ -1201,7 +1357,7 @@ bool parseIncomingSettings()
   if (counter < maxAttempts)
   {
     //Confirm receipt
-    log_d("Sending receipt confirmation");
+    Serial.println("Sending receipt confirmation of settings");
 #ifdef COMPILE_AP
     websocket->textAll("confirmDataReceipt,1,");
 #endif
@@ -1223,24 +1379,54 @@ String getFileList()
   {
     markSemaphore(FUNCTION_FILEMANAGER_UPLOAD1);
 
-    SdFile dir;
-    dir.open("/"); //Open root
-    uint16_t fileCount = 0;
-
-    while (managerTempFile.openNext(&dir, O_READ))
+    if (USE_SPI_MICROSD)
     {
-      if (managerTempFile.isFile())
+      SdFile root;
+      root.open("/"); //Open root
+      SdFile file;
+      uint16_t fileCount = 0;
+
+      while (file.openNext(&root, O_READ))
       {
-        fileCount++;
+        if (file.isFile())
+        {
+          fileCount++;
 
-        managerTempFile.getName(fileName, sizeof(fileName));
+          file.getName(fileName, sizeof(fileName));
 
-        returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(managerTempFile.fileSize()) + ",";
+          returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(file.fileSize()) + ",";
+        }
       }
-    }
 
-    dir.close();
-    managerTempFile.close();
+      root.close();
+      file.close();
+    }
+#ifdef COMPILE_SD_MMC
+    else
+    {
+      File root = SD_MMC.open("/"); //Open root
+
+      if (root && root.isDirectory())
+      {
+        uint16_t fileCount = 0;
+
+        File file = root.openNextFile();
+        while (file)
+        {
+          if (!file.isDirectory())
+          {
+            fileCount++;
+
+            returnText += "fmName," + String(file.name()) + ",fmSize," + stringHumanReadableSize(file.size()) + ",";
+          }
+
+          file = root.openNextFile();
+        }
+      }
+
+      root.close();
+    }
+#endif
 
     xSemaphoreGive(sdCardSemaphore);
   }
@@ -1259,7 +1445,7 @@ String getFileList()
   return returnText;
 }
 
-// Make size of files human readable
+//Make size of files human readable
 String stringHumanReadableSize(uint64_t bytes)
 {
   char suffix[5] = {'\0'};
@@ -1271,16 +1457,19 @@ String stringHumanReadableSize(uint64_t bytes)
   else if (bytes < (1024 * 1024 * 1024)) strcpy(suffix, "MB");
   else strcpy(suffix, "GB");
 
-  if (bytes < (1024 * 1024)) cardSize = bytes / 1024.0; //KB
+  if (bytes < (1024)) cardSize = bytes; //B
+  else if (bytes < (1024 * 1024)) cardSize = bytes / 1024.0; //KB
   else if (bytes < (1024 * 1024 * 1024)) cardSize = bytes / 1024.0 / 1024.0; //MB
   else cardSize = bytes / 1024.0 / 1024.0 / 1024.0; //GB
 
   if (strcmp(suffix, "GB") == 0)
-    sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
+    snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); //Print decimal portion
   else if (strcmp(suffix, "MB") == 0)
-    sprintf(readableSize, "%0.1f %s", cardSize, suffix); //Print decimal portion
+    snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); //Print decimal portion
+  else if (strcmp(suffix, "KB") == 0)
+    snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); //Print decimal portion
   else
-    sprintf(readableSize, "%0.0f %s", cardSize, suffix); //Don't print decimal portion
+    snprintf(readableSize, sizeof(readableSize), "%.0f %s", cardSize, suffix); //Don't print decimal portion
 
   return String(readableSize);
 }
@@ -1288,7 +1477,7 @@ String stringHumanReadableSize(uint64_t bytes)
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
 
-// Handles uploading of user files to SD
+//Handles uploading of user files to SD
 void handleUpload(AsyncWebServerRequest * request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
   String logmessage = "";
@@ -1300,11 +1489,23 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     char tempFileName[50];
     filename.toCharArray(tempFileName, sizeof(tempFileName));
 
+    //Allocate the managerTempFile
+    if (!managerTempFile)
+    {
+      managerTempFile = new FileSdFatMMC;
+      if (!managerTempFile)
+      {
+        systemPrintln("Failed to allocate managerTempFile!");
+        return;
+      }
+    }
     //Attempt to gain access to the SD card
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD1);
-      managerTempFile.open(tempFileName, O_CREAT | O_APPEND | O_WRITE);
+
+      managerTempFile->open(tempFileName, O_CREAT | O_APPEND | O_WRITE);
+
       xSemaphoreGive(sdCardSemaphore);
     }
 
@@ -1317,7 +1518,9 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD2);
-      managerTempFile.write(data, len); // stream the incoming chunk to the opened file
+
+      managerTempFile->write(data, len); //stream the incoming chunk to the opened file
+
       xSemaphoreGive(sdCardSemaphore);
     }
   }
@@ -1329,9 +1532,11 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
     if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
     {
       markSemaphore(FUNCTION_FILEMANAGER_UPLOAD3);
-      updateDataFileCreate(&managerTempFile); // Update the file create time & date
 
-      managerTempFile.close();
+      managerTempFile->updateFileCreateTimestamp(); //Update the file create time & date
+
+      managerTempFile->close();
+
       xSemaphoreGive(sdCardSemaphore);
     }
 

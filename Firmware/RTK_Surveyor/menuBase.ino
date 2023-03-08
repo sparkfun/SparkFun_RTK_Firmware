@@ -278,15 +278,15 @@ void menuSensorFusion()
     systemPrintln("Menu: Sensor Fusion");
 
     systemPrint("Fusion Mode: ");
-    systemPrint(i2cGNSS.packetUBXESFSTATUS->data.fusionMode);
+    systemPrint(theGNSS.packetUBXESFSTATUS->data.fusionMode);
     systemPrint(" - ");
-    if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
+    if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
       systemPrintln("Initializing");
-    else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 1)
+    else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 1)
       systemPrintln("Calibrated");
-    else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 2)
+    else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 2)
       systemPrintln("Suspended");
-    else if (i2cGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
+    else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
       systemPrintln("Disabled");
 
     if (settings.enableSensorFusion == true && settings.dynamicModel != DYN_MODEL_AUTOMOTIVE)
@@ -322,8 +322,8 @@ void menuSensorFusion()
       printUnknown(incoming);
   }
 
-  i2cGNSS.setVal8(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
-  i2cGNSS.setVal8(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
+  theGNSS.setVal8(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
+  theGNSS.setVal8(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
 
   clearBuffer(); //Empty buffer of any newline chars
 }
@@ -332,12 +332,12 @@ void menuSensorFusion()
 void setSensorFusion(bool enable)
 {
   if (getSensorFusion() != enable)
-    i2cGNSS.setVal8(UBLOX_CFG_SFCORE_USE_SF, enable, VAL_LAYER_ALL);
+    theGNSS.setVal8(UBLOX_CFG_SFCORE_USE_SF, enable, VAL_LAYER_ALL);
 }
 
 bool getSensorFusion()
 {
-  return (i2cGNSS.getVal8(UBLOX_CFG_SFCORE_USE_SF, VAL_LAYER_RAM, 1200));
+  return (theGNSS.getVal8(UBLOX_CFG_SFCORE_USE_SF, VAL_LAYER_RAM, 1200));
 }
 
 //Open the given file and load a given line to the given pointer
@@ -414,39 +414,79 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
 
       gotSemaphore = true;
 
-      SdFile file; //FAT32
-      if (file.open(fileName, O_READ) == false)
+      if (USE_SPI_MICROSD)
       {
-        log_d("File %s not found", fileName);
-        break;
-      }
-
-      int lineNumber = 0;
-
-      while (file.available())
-      {
-        //Get the next line from the file
-        //int n = getLine(&file, lineData, lineDataLength); //Use with SD library
-        int n = file.fgets(lineData, lineDataLength); //Use with SdFat library
-        if (n <= 0)
+        SdFile file; //FAT32
+        if (file.open(fileName, O_READ) == false)
         {
-          systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
+          log_d("File %s not found", fileName);
           break;
         }
-        else
+  
+        int lineNumber = 0;
+  
+        while (file.available())
         {
-          if (lineNumber == lineToFind)
+          //Get the next line from the file
+          int n = file.fgets(lineData, lineDataLength);
+          if (n <= 0)
           {
-            lineFound = true;
+            systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
             break;
           }
+          else
+          {
+            if (lineNumber == lineToFind)
+            {
+              lineFound = true;
+              break;
+            }
+          }
+  
+          if (strlen(lineData) > 0) //Ignore single \n or \r
+            lineNumber++;
         }
-
-        if (strlen(lineData) > 0) //Ignore single \n or \r
-          lineNumber++;
+  
+        file.close();
       }
-
-      file.close();
+#ifdef COMPILE_SD_MMC
+      else
+      {
+        File file = SD_MMC.open(fileName, FILE_READ);
+        
+        if (!file)
+        {
+          log_d("File %s not found", fileName);
+          break;
+        }
+  
+        int lineNumber = 0;
+  
+        while (file.available())
+        {
+          //Get the next line from the file
+          int n = getLine(&file, lineData, lineDataLength);
+          if (n <= 0)
+          {
+            systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
+            break;
+          }
+          else
+          {
+            if (lineNumber == lineToFind)
+            {
+              lineFound = true;
+              break;
+            }
+          }
+  
+          if (strlen(lineData) > 0) //Ignore single \n or \r
+            lineNumber++;
+        }
+  
+        file.close();        
+      }
+#endif
       break;
     } //End Semaphore check
     else
@@ -496,12 +536,27 @@ bool removeFileSD(const char* fileName)
       markSemaphore(FUNCTION_REMOVEFILE);
 
       gotSemaphore = true;
-      if (sd->exists(fileName))
+
+      if (USE_SPI_MICROSD)
       {
-        log_d("Removing from SD: %s", fileName);
-        sd->remove(fileName);
-        removed = true;
+        if (sd->exists(fileName))
+        {
+          log_d("Removing from SD: %s", fileName);
+          sd->remove(fileName);
+          removed = true;
+        }
       }
+#ifdef COMPILE_SD_MMC
+      else
+      {
+        if (SD_MMC.exists(fileName))
+        {
+          log_d("Removing from SD: %s", fileName);
+          SD_MMC.remove(fileName);
+          removed = true;
+        }        
+      }
+#endif
 
       break;
     } //End Semaphore check
@@ -565,7 +620,7 @@ void recordLineToSD(const char* fileName, const char* lineData)
 
       gotSemaphore = true;
 
-      SdFile file; //FAT32
+      FileSdFatMMC file;
       if (file.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
       {
         log_d("File %s not found", fileName);

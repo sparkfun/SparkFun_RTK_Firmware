@@ -14,9 +14,9 @@ void menuFirmware()
 
     char currentVersion[20];
     if (enableRCFirmware == false)
-      sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+      snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
     else
-      sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+      snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
     systemPrintf("Current firmware: v%s\r\n", currentVersion);
 
@@ -61,9 +61,9 @@ void menuFirmware()
           //We got a version number, now determine if it's newer or not
           char currentVersion[20];
           if (enableRCFirmware == false)
-            sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+            snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
           else
-            sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+            snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
           if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
           {
@@ -96,9 +96,9 @@ void menuFirmware()
             //We got a version number, now determine if it's newer or not
             char currentVersion[20];
             if (enableRCFirmware == false)
-              sprintf(currentVersion, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+              snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
             else
-              sprintf(currentVersion, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+              snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
             if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
             {
@@ -146,7 +146,7 @@ void menuFirmware()
     else if (incoming == 'e')
     {
       enableRCFirmware ^= 1;
-      strcpy(reportedVersion, ""); //Reset to force c) menu
+      strncpy(reportedVersion, "", sizeof(reportedVersion) - 1); //Reset to force c) menu
     }
     else if (incoming == 'x')
       break;
@@ -201,44 +201,92 @@ void mountSDThenUpdate(const char * firmwareFileName)
 void scanForFirmware()
 {
   //Count available binaries
-  SdFile tempFile;
-  SdFile dir;
-  const char* BIN_EXT = "bin";
-  const char* BIN_HEADER = "RTK_Surveyor_Firmware";
-
-  char fname[50]; //Handle long file names
-
-  dir.open("/"); //Open root
-
-  binCount = 0; //Reset count in case scanForFirmware is called again
-
-  while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
+  if (USE_SPI_MICROSD)
   {
-    if (tempFile.isFile())
+    SdFile tempFile;
+    SdFile dir;
+    const char* BIN_EXT = "bin";
+    const char* BIN_HEADER = "RTK_Surveyor_Firmware";
+  
+    char fname[50]; //Handle long file names
+  
+    dir.open("/"); //Open root
+  
+    binCount = 0; //Reset count in case scanForFirmware is called again
+  
+    while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
     {
-      tempFile.getName(fname, sizeof(fname));
-
-      if (strcmp(forceFirmwareFileName, fname) == 0)
+      if (tempFile.isFile())
       {
-        systemPrintln("Forced firmware detected. Loading...");
-        displayForcedFirmwareUpdate();
-        updateFromSD(forceFirmwareFileName);
-      }
-
-      //Check 'bin' extension
-      if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
-      {
-        //Check for 'RTK_Surveyor_Firmware' start of file name
-        if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
+        tempFile.getName(fname, sizeof(fname));
+  
+        if (strcmp(forceFirmwareFileName, fname) == 0)
         {
-          strcpy(binFileNames[binCount++], fname); //Add this to the array
+          systemPrintln("Forced firmware detected. Loading...");
+          displayForcedFirmwareUpdate();
+          updateFromSD(forceFirmwareFileName);
         }
-        else
-          systemPrintf("Unknown: %s\r\n", fname);
+  
+        //Check 'bin' extension
+        if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
+        {
+          //Check for 'RTK_Surveyor_Firmware' start of file name
+          if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
+          {
+            strncpy(binFileNames[binCount++], fname, sizeof(binFileNames[0]) - 1); //Add this to the array
+          }
+          else
+            systemPrintf("Unknown: %s\r\n", fname);
+        }
       }
+      tempFile.close();
     }
-    tempFile.close();
   }
+#ifdef COMPILE_SD_MMC
+  else
+  {
+    const char* BIN_EXT = "bin";
+    const char* BIN_HEADER = "RTK_Surveyor_Firmware";
+  
+    char fname[50]; //Handle long file names
+  
+    File dir = SD_MMC.open("/"); //Open root
+    if (!dir || !dir.isDirectory())
+      return;
+  
+    binCount = 0; //Reset count in case scanForFirmware is called again
+
+    File tempFile = dir.openNextFile();
+    while (tempFile && (binCount < maxBinFiles))
+    {
+      if (!tempFile.isDirectory())
+      {
+        snprintf(fname, sizeof(fname), "%s", tempFile.name());
+  
+        if (strcmp(forceFirmwareFileName, fname) == 0)
+        {
+          systemPrintln("Forced firmware detected. Loading...");
+          displayForcedFirmwareUpdate();
+          updateFromSD(forceFirmwareFileName);
+        }
+  
+        //Check 'bin' extension
+        if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
+        {
+          //Check for 'RTK_Surveyor_Firmware' start of file name
+          if (strncmp(fname, BIN_HEADER, strlen(BIN_HEADER)) == 0)
+          {
+            strncpy(binFileNames[binCount++], fname, sizeof(binFileNames[0]) - 1); //Add this to the array
+          }
+          else
+            systemPrintf("Unknown: %s\r\n", fname);
+        }
+      }
+      tempFile.close();
+      tempFile = dir.openNextFile();
+    }    
+  }
+#endif
 }
 
 //Look for firmware file on SD card and update as needed
@@ -271,119 +319,139 @@ void updateFromSD(const char *firmwareFileName)
   tasksStopUART2();
 
   systemPrintf("Loading %s\r\n", firmwareFileName);
-  if (sd->exists(firmwareFileName))
+
+  if (USE_SPI_MICROSD)
   {
-    SdFile firmwareFile;
-    firmwareFile.open(firmwareFileName, O_READ);
-
-    size_t updateSize = firmwareFile.fileSize();
-    if (updateSize == 0)
+    if (!sd->exists(firmwareFileName))
     {
-      systemPrintln("Error: Binary is empty");
-      firmwareFile.close();
+      systemPrintln("No firmware file found");
       return;
     }
-
-    if (Update.begin(updateSize) == false)
+  }
+#ifdef COMPILE_SD_MMC
+  else
+  {
+    if (!SD_MMC.exists(firmwareFileName))
     {
-      systemPrintln("Update begin failed. Not enough partition space available.");
-      firmwareFile.close();
+      systemPrintln("No firmware file found");
       return;
     }
+  }
+#endif
+  
+  FileSdFatMMC firmwareFile;
+  firmwareFile.open(firmwareFileName, O_READ);
 
-    systemPrintln("Moving file to OTA section");
-    systemPrint("Bytes to write: ");
-    systemPrint(updateSize);
+  size_t updateSize = firmwareFile.size();
 
-    const int pageSize = 512 * 4;
-    byte dataArray[pageSize];
-    int bytesWritten = 0;
+  if (updateSize == 0)
+  {
+    systemPrintln("Error: Binary is empty");
+    firmwareFile.close();
+    return;
+  }
 
-    //Indicate progress
-    int barWidthInCharacters = 20; //Width of progress bar, ie [###### % complete
-    long portionSize = updateSize / barWidthInCharacters;
-    int barWidth = 0;
+  if (Update.begin(updateSize) == false)
+  {
+    systemPrintln("Update begin failed. Not enough partition space available.");
+    firmwareFile.close();
+    return;
+  }
 
-    //Bulk write from the SD file to flash
-    while (firmwareFile.available())
+  systemPrintln("Moving file to OTA section");
+  systemPrint("Bytes to write: ");
+  systemPrint(updateSize);
+
+  const int pageSize = 512 * 4;
+  byte dataArray[pageSize];
+  int bytesWritten = 0;
+
+  //Indicate progress
+  int barWidthInCharacters = 20; //Width of progress bar, ie [###### % complete
+  long portionSize = updateSize / barWidthInCharacters;
+  int barWidth = 0;
+
+  //Bulk write from the SD file to flash
+  while (firmwareFile.available())
+  {
+    if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
+      digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Toggle LED to indcate activity
+
+    int bytesToWrite = pageSize; //Max number of bytes to read
+    if (firmwareFile.available() < bytesToWrite) bytesToWrite = firmwareFile.available(); //Trim this read size as needed
+
+    firmwareFile.read(dataArray, bytesToWrite); //Read the next set of bytes from file into our temp array
+
+    if (Update.write(dataArray, bytesToWrite) != bytesToWrite)
     {
-      if (productVariant == RTK_SURVEYOR)
-        digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Toggle LED to indcate activity
-
-      int bytesToWrite = pageSize; //Max number of bytes to read
-      if (firmwareFile.available() < bytesToWrite) bytesToWrite = firmwareFile.available(); //Trim this read size as needed
-
-      firmwareFile.read(dataArray, bytesToWrite); //Read the next set of bytes from file into our temp array
-
-      if (Update.write(dataArray, bytesToWrite) != bytesToWrite)
-      {
-        systemPrintln("\nWrite failed. Binary may be incorrectly aligned.");
-        break;
-      }
-      else
-        bytesWritten += bytesToWrite;
-
-      //Indicate progress
-      if (bytesWritten > barWidth * portionSize)
-      {
-        //Advance the bar
-        barWidth++;
-        systemPrint("\n[");
-        for (int x = 0 ; x < barWidth ; x++)
-          systemPrint("=");
-        systemPrintf("%d%%", bytesWritten * 100 / updateSize);
-        if (bytesWritten == updateSize) systemPrintln("]");
-
-        displayFirmwareUpdateProgress(bytesWritten * 100 / updateSize);
-      }
-    }
-    systemPrintln("\nFile move complete");
-
-    if (Update.end())
-    {
-      if (Update.isFinished())
-      {
-        displayFirmwareUpdateProgress(100);
-
-        //Clear all settings from LittleFS
-        LittleFS.format();
-
-        systemPrintln("Firmware updated successfully. Rebooting. Goodbye!");
-
-        //If forced firmware is detected, do a full reset of config as well
-        if (strcmp(forceFirmwareFileName, firmwareFileName) == 0)
-        {
-          systemPrintln("Removing firmware file");
-
-          //Remove forced firmware file to prevent endless loading
-          firmwareFile.close();
-          sd->remove(firmwareFileName);
-
-          i2cGNSS.factoryReset(); //Reset everything: baud rate, I2C address, update rate, everything.
-        }
-
-        delay(1000);
-        ESP.restart();
-      }
-      else
-        systemPrintln("Update not finished? Something went wrong!");
+      systemPrintln("\nWrite failed. Binary may be incorrectly aligned.");
+      break;
     }
     else
+      bytesWritten += bytesToWrite;
+
+    //Indicate progress
+    if (bytesWritten > barWidth * portionSize)
     {
-      systemPrint("Error Occurred. Error #: ");
-      systemPrintln(String(Update.getError()));
+      //Advance the bar
+      barWidth++;
+      systemPrint("\n[");
+      for (int x = 0 ; x < barWidth ; x++)
+        systemPrint("=");
+      systemPrintf("%d%%", bytesWritten * 100 / updateSize);
+      if (bytesWritten == updateSize) systemPrintln("]");
+
+      displayFirmwareUpdateProgress(bytesWritten * 100 / updateSize);
     }
+  }
+  systemPrintln("\nFile move complete");
 
-    firmwareFile.close();
+  if (Update.end())
+  {
+    if (Update.isFinished())
+    {
+      displayFirmwareUpdateProgress(100);
 
-    displayMessage("Update Failed", 0);
+      //Clear all settings from LittleFS
+      LittleFS.format();
 
-    systemPrintln("Firmware update failed. Please try again.");
+      systemPrintln("Firmware updated successfully. Rebooting. Goodbye!");
+
+      //If forced firmware is detected, do a full reset of config as well
+      if (strcmp(forceFirmwareFileName, firmwareFileName) == 0)
+      {
+        systemPrintln("Removing firmware file");
+
+        //Remove forced firmware file to prevent endless loading
+        firmwareFile.close();
+
+        if (USE_SPI_MICROSD)
+          sd->remove(firmwareFileName);
+#ifdef COMPILE_SD_MMC
+        else
+          SD_MMC.remove(firmwareFileName);
+#endif
+
+        theGNSS.factoryDefault(); //Reset everything: baud rate, I2C address, update rate, everything. And save to BBR.
+      }
+
+      delay(1000);
+      ESP.restart();
+    }
+    else
+      systemPrintln("Update not finished? Something went wrong!");
   }
   else
   {
-    systemPrintln("No firmware file found");
+    systemPrint("Error Occurred. Error #: ");
+    systemPrintln(String(Update.getError()));
   }
+
+  firmwareFile.close();
+
+  displayMessage("Update Failed", 0);
+
+  systemPrintln("Firmware update failed. Please try again.");
 }
 
 //Returns true if we successfully got the versionAvailable
@@ -400,9 +468,9 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
     char versionString[20];
 
     if (enableRCFirmware == false)
-      sprintf(versionString, "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+      snprintf(versionString, sizeof(versionString), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
     else
-      sprintf(versionString, "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+      snprintf(versionString, sizeof(versionString), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
     systemPrintf("Current firmware version: v%s\r\n", versionString);
 
@@ -425,7 +493,7 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
       gotVersion = true;
 
       //Call getVersion after original inquiry
-      String otaVersion = ota.getVersion();
+      String otaVersion = ota.GetVersion();
       otaVersion.toCharArray(versionAvailable, versionAvailableLength);
     }
     else if (response == ESP32OTAPull::HTTP_FAILED)
@@ -469,7 +537,7 @@ void otaUpdate()
   if (wifiConnect(10000) == true)
   {
     char versionString[20];
-    sprintf(versionString, "%d.%d", 0, 0); //Force update with version 0.0
+    snprintf(versionString, sizeof(versionString), "%d.%d", 0, 0); //Force update with version 0.0
 
     ESP32OTAPull ota;
 
@@ -547,9 +615,9 @@ void otaPullCallback(int bytesWritten, int totalLength)
     if (apConfigFirmwareUpdateInProcess == true)
     {
 #ifdef COMPILE_AP
-      char myProgess[50];
-      sprintf(myProgess, "otaFirmwareStatus,%d,", percent);
-      websocket->textAll(myProgess);
+      char myProgress[50];
+      snprintf(myProgress, sizeof(myProgress), "otaFirmwareStatus,%d,", percent);
+      websocket->textAll(myProgress);
 #endif
     }
 

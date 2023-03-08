@@ -529,8 +529,8 @@ void pinUART2Task( void *pvParameters )
 //Note: ESP32 2.0.6 does some strange auto-bauding thing here which takes 20s to complete if there is no data for it to auto-baud.
 //      That's fine for most RTK products, but causes the Ref Stn to stall for 20s. However, it doesn't stall with ESP32 2.0.2...
 //      Uncomment these lines to prevent the stall if/when we upgrade to ESP32 ~2.0.6.
-//#if defined(ENABLE_DEVELOPER) && defined(REF_STN_GNSS_DEBUG)
-//  if (productVariant == REFERENCE_STATION)
+//#if defined(REF_STN_GNSS_DEBUG)
+//  if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
 //#else
 //  if (USE_I2C_GNSS)
 //#endif

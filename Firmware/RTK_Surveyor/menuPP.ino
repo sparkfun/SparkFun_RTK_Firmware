@@ -126,10 +126,11 @@ void menuPointPerfectKeys()
         settings.pointPerfectNextKeyStart = settings.pointPerfectCurrentKeyStart + settings.pointPerfectCurrentKeyDuration + 1; //Next key starts after current key
         settings.pointPerfectNextKeyDuration = settings.pointPerfectCurrentKeyDuration;
 
-#ifdef ENABLE_DEVELOPER
-        systemPrintf("  settings.pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
-        systemPrintf("  settings.pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
-#endif
+        if (ENABLE_DEVELOPER)
+        {
+          systemPrintf("  settings.pointPerfectNextKeyStart: %lld\r\n", settings.pointPerfectNextKeyStart);
+          systemPrintf("  settings.pointPerfectNextKeyDuration: %lld\r\n", settings.pointPerfectNextKeyDuration);
+        }
       }
     }
     else if (incoming == 4)
@@ -659,12 +660,13 @@ void dateToKeyStartDuration(uint8_t expDay, uint8_t expMonth, uint16_t expYear, 
   long long unixEpoch = thingstreamEpochToGPSEpoch(*settingsKeyStart, *settingsKeyDuration);
   unixEpochToWeekToW(unixEpoch, &keyGPSWeek, &keyGPSToW);
 
-#ifdef ENABLE_DEVELOPER
-  systemPrintf("  KeyStart: %lld\r\n", *settingsKeyStart);
-  systemPrintf("  KeyDuration: %lld\r\n", *settingsKeyDuration);
-  systemPrintf("  keyGPSWeek: %d\r\n", keyGPSWeek);
-  systemPrintf("  keyGPSToW: %d\r\n", keyGPSToW);
-#endif
+  if (ENABLE_DEVELOPER)
+  {
+    systemPrintf("  KeyStart: %lld\r\n", *settingsKeyStart);
+    systemPrintf("  KeyDuration: %lld\r\n", *settingsKeyDuration);
+    systemPrintf("  keyGPSWeek: %d\r\n", keyGPSWeek);
+    systemPrintf("  keyGPSToW: %d\r\n", keyGPSToW);
+  }
 }
 
 /*

@@ -197,11 +197,12 @@ void menuBase()
     {
       systemPrint("Enter the number of meters for survey-in required position accuracy (1.0 to 5.0m): ");
       float observationPositionAccuracy = getDouble();
-#ifdef ENABLE_DEVELOPER
-      if (observationPositionAccuracy < 1.0 || observationPositionAccuracy > 10.0) //Arbitrary 1m minimum
-#else
-      if (observationPositionAccuracy < 1.0 || observationPositionAccuracy > 5.0) //Arbitrary 1m minimum
-#endif
+
+      float maxObservationPositionAccuracy = 5.0;
+      if (ENABLE_DEVELOPER)
+        maxObservationPositionAccuracy = 10.0;
+
+      if (observationPositionAccuracy < 1.0 || observationPositionAccuracy > maxObservationPositionAccuracy) //Arbitrary 1m minimum
         systemPrintln("Error: Observation positional accuracy requirement out of range");
       else
         settings.observationPositionAccuracy = observationPositionAccuracy; //Recorded to NVM and file at main menu exit
@@ -422,9 +423,9 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
           log_d("File %s not found", fileName);
           break;
         }
-  
+
         int lineNumber = 0;
-  
+
         while (file.available())
         {
           //Get the next line from the file
@@ -442,26 +443,26 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
               break;
             }
           }
-  
+
           if (strlen(lineData) > 0) //Ignore single \n or \r
             lineNumber++;
         }
-  
+
         file.close();
       }
 #ifdef COMPILE_SD_MMC
       else
       {
         File file = SD_MMC.open(fileName, FILE_READ);
-        
+
         if (!file)
         {
           log_d("File %s not found", fileName);
           break;
         }
-  
+
         int lineNumber = 0;
-  
+
         while (file.available())
         {
           //Get the next line from the file
@@ -479,12 +480,12 @@ bool getFileLineSD(const char* fileName, int lineToFind, char* lineData, int lin
               break;
             }
           }
-  
+
           if (strlen(lineData) > 0) //Ignore single \n or \r
             lineNumber++;
         }
-  
-        file.close();        
+
+        file.close();
       }
 #endif
       break;
@@ -554,7 +555,7 @@ bool removeFileSD(const char* fileName)
           log_d("Removing from SD: %s", fileName);
           SD_MMC.remove(fileName);
           removed = true;
-        }        
+        }
       }
 #endif
 

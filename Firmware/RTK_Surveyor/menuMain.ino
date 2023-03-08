@@ -26,11 +26,10 @@ void menuMain()
   while (1)
   {
     systemPrintln();
-#ifdef ENABLE_DEVELOPER
-    systemPrintf("SparkFun RTK %s v%d.%d-RC-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
-#else
-    systemPrintf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
-#endif
+    if (ENABLE_DEVELOPER)
+      systemPrintf("SparkFun RTK %s v%d.%d-RC-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
+    else
+      systemPrintf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
 #ifdef COMPILE_BT
     systemPrint("** Bluetooth broadcasting as: ");
@@ -242,7 +241,7 @@ void menuUserProfiles()
           else
           {
             if (SD_MMC.exists(settingsFileName))
-              SD_MMC.remove(settingsFileName);            
+              SD_MMC.remove(settingsFileName);
           }
 #endif
         }
@@ -331,7 +330,7 @@ void factoryReset()
       {
         //Remove this specific settings file. Don't remove the other profiles.
         sd->remove(settingsFileName);
-  
+
         sd->remove(stationCoordinateECEFFileName); //Remove station files
         sd->remove(stationCoordinateGeodeticFileName);
       }
@@ -339,7 +338,7 @@ void factoryReset()
       else
       {
         SD_MMC.remove(settingsFileName);
-  
+
         SD_MMC.remove(stationCoordinateECEFFileName); //Remove station files
         SD_MMC.remove(stationCoordinateGeodeticFileName);
       }
@@ -404,11 +403,12 @@ void menuRadio()
 
       systemPrintln("2) Pair radios");
       systemPrintln("3) Forget all radios");
-#ifdef ENABLE_DEVELOPER
-      systemPrintln("4) Add dummy radio");
-      systemPrintln("5) Send dummy data");
-      systemPrintln("6) Broadcast dummy data");
-#endif
+      if (ENABLE_DEVELOPER)
+      {
+        systemPrintln("4) Add dummy radio");
+        systemPrintln("5) Send dummy data");
+        systemPrintln("6) Broadcast dummy data");
+      }
     }
 
     systemPrintln("x) Exit");
@@ -439,8 +439,7 @@ void menuRadio()
         systemPrintln("Radios forgotten");
       }
     }
-#ifdef ENABLE_DEVELOPER
-    else if (settings.radioType == RADIO_ESPNOW && incoming == 4)
+    else if (ENABLE_DEVELOPER && settings.radioType == RADIO_ESPNOW && incoming == 4)
     {
       uint8_t peer1[] = {0xB8, 0xD6, 0x1A, 0x0D, 0x8F, 0x9C}; //Random MAC
       if (esp_now_is_peer_exist(peer1) == true)
@@ -459,18 +458,17 @@ void menuRadio()
 
       espnowSetState(ESPNOW_PAIRED);
     }
-    else if (settings.radioType == RADIO_ESPNOW && incoming == 5)
+    else if (ENABLE_DEVELOPER && settings.radioType == RADIO_ESPNOW && incoming == 5)
     {
       uint8_t espnowData[] = "This is the long string to test how quickly we can send one string to the other unit. I am going to need a much longer sentence if I want to get a long amount of data into one transmission. This is nearing 200 characters but needs to be near 250.";
       esp_now_send(0, (uint8_t *) &espnowData, sizeof(espnowData)); //Send packet to all peers
     }
-    else if (settings.radioType == RADIO_ESPNOW && incoming == 6)
+    else if (ENABLE_DEVELOPER && settings.radioType == RADIO_ESPNOW && incoming == 6)
     {
       uint8_t espnowData[] = "This is the long string to test how quickly we can send one string to the other unit. I am going to need a much longer sentence if I want to get a long amount of data into one transmission. This is nearing 200 characters but needs to be near 250.";
       uint8_t broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
       esp_now_send(broadcastMac, (uint8_t *) &espnowData, sizeof(espnowData)); //Send packet to all peers
     }
-#endif
 
     else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;

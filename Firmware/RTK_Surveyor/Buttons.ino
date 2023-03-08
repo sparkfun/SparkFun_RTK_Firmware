@@ -8,7 +8,7 @@ void powerOnCheck()
     if (digitalRead(pin_powerSenseAndControl) == LOW)
       delay(500);
 
-  if (ENABLE_DEVELOPER)
+  if (ENABLE_DEVELOPER == false)
   {
     if (pin_powerSenseAndControl >= 0)
       if (digitalRead(pin_powerSenseAndControl) != LOW)

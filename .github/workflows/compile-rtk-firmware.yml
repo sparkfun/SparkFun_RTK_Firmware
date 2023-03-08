@@ -19,6 +19,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
+      - name: Extract branch name
+        run: echo "BRANCH=${{github.ref_name}}" >> $GITHUB_ENV
+
       #File_Name_v3_1.bin
       #File_Name_RC-Jan_26_2023.bin
       - name: Create file ending and compiler flags based on branch
@@ -82,7 +85,7 @@ jobs:
         run: arduino-cli compile --fqbn esp32:esp32:esp32 ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
           --build-property build.partitions=partitions
           --build-property upload.maximum_size=3145728 
-          --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\" \"-DFIRMWARE_VERSION_MAJOR=$FIRMWARE_VERSION_MAJOR\" \"-DFIRMWARE_VERSION_MINOR=$FIRMWARE_VERSION_MINOR\"  \"-DENABLE_DEVELOPER=${{ env.ENABLE_DEVELOPER }}\""
+          --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\" \"-DFIRMWARE_VERSION_MAJOR=$FIRMWARE_VERSION_MAJOR\" \"-DFIRMWARE_VERSION_MINOR=$FIRMWARE_VERSION_MINOR\" \"-DENABLE_DEVELOPER=${{ env.ENABLE_DEVELOPER }}\""
           --export-binaries
 
       - name: Get current date
@@ -92,9 +95,6 @@ jobs:
       - name: Get current date
         id: dateNoScores
         run: echo "dateNoScores=$(date +'%b %d %Y')" >> $GITHUB_OUTPUT
-
-      - name: Extract branch name
-        run: echo "BRANCH=${{github.ref_name}}" >> $GITHUB_ENV
 
       - name: Rename binary
         run: |

@@ -1155,20 +1155,20 @@
 
                             <div class="form-group row">
                                 <span style="display:inline; margin-left:40px;">
-                                    <input type="radio" name="markRadio" value="2" onClick="adjustHAE()" checked>
-                                    <label id="callHAEAPC">Calculate HAE APC</label>
+                                    <input type="radio" name="markRadio" value="1" onClick="adjustHAE()">
+                                    <label id="calcHAEMark">Calculate HAE Mark</label>
                                     <span class="tt" data-bs-placement="right"
-                                        title="If enabled, HAE APC is calculated by *adding* the entered Antenna Height and ARP to the altitude reported by the GNSS receiver. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
+                                        title="If enabled, HAE Mark is calculated by *subtracting* the entered Antenna Height and ARP from the altitude reported by the GNSS receiver. This is handy when measuring a mark with a known pole height and ARP, but unknown mark elevation. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </span>
                             </div>
                             <div class="form-group row">
                                 <span style="display:inline; margin-left:40px;">
-                                    <input type="radio" name="markRadio" value="1" onClick="adjustHAE()">
-                                    <label id="calcHAEMark">Calculate HAE Mark</label>
+                                    <input type="radio" name="markRadio" value="2" onClick="adjustHAE()" checked>
+                                    <label id="callHAEAPC">Calculate HAE APC</label>
                                     <span class="tt" data-bs-placement="right"
-                                        title="If enabled, HAE Mark is calculated by *subtracting* the entered Antenna Height and ARP from the altitude reported by the GNSS receiver. This is handy when measuring a mark with a known pole height and ARP, but unknown mark elevation. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
+                                        title="If enabled, HAE APC is calculated by *adding* the entered Antenna Height and ARP to the altitude reported by the GNSS receiver. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </span>

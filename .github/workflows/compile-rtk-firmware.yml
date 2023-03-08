@@ -19,6 +19,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%b_%d_%Y')" >> $GITHUB_OUTPUT
+
+      - name: Get current date
+        id: dateNoScores
+        run: echo "dateNoScores=$(date +'%b %d %Y')" >> $GITHUB_OUTPUT
+
       - name: Extract branch name
         run: echo "BRANCH=${{github.ref_name}}" >> $GITHUB_ENV
 
@@ -87,14 +95,6 @@ jobs:
           --build-property upload.maximum_size=3145728 
           --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\" \"-DFIRMWARE_VERSION_MAJOR=$FIRMWARE_VERSION_MAJOR\" \"-DFIRMWARE_VERSION_MINOR=$FIRMWARE_VERSION_MINOR\" \"-DENABLE_DEVELOPER=${{ env.ENABLE_DEVELOPER }}\""
           --export-binaries
-
-      - name: Get current date
-        id: date
-        run: echo "date=$(date +'%b_%d_%Y')" >> $GITHUB_OUTPUT
-
-      - name: Get current date
-        id: dateNoScores
-        run: echo "dateNoScores=$(date +'%b %d %Y')" >> $GITHUB_OUTPUT
 
       - name: Rename binary
         run: |

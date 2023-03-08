@@ -287,8 +287,6 @@ void beginSD()
   online.microSD = false;
   gotSemaphore = false;
 
-  log_d("settings.enableSD: %d", settings.enableSD);
-  
   while (settings.enableSD == true)
   {
     //Setup SD card access semaphore
@@ -305,7 +303,7 @@ void beginSD()
 
     if (USE_SPI_MICROSD)
     {
-      systemPrintln("Initializing microSD - using SPI, SdFat and SdFile");
+      log_d("Initializing microSD - using SPI, SdFat and SdFile");
       
       pinMode(pin_microSD_CS, OUTPUT);
       digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected

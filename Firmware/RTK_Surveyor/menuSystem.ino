@@ -117,21 +117,21 @@ void menuSystem()
       systemPrint("NTRIP Client ");
       switch (ntripClientState)
       {
-      case NTRIP_CLIENT_OFF:
-        systemPrint("Disconnected");
-        break;
-      case NTRIP_CLIENT_ON:
-      case NTRIP_CLIENT_WIFI_STARTED:
-      case NTRIP_CLIENT_WIFI_CONNECTED:
-      case NTRIP_CLIENT_CONNECTING:
-        systemPrint("Connecting");
-        break;
-      case NTRIP_CLIENT_CONNECTED:
-        systemPrint("Connected");
-        break;
-      default:
-        systemPrintf("Unknown: %d", ntripClientState);
-        break;
+        case NTRIP_CLIENT_OFF:
+          systemPrint("Disconnected");
+          break;
+        case NTRIP_CLIENT_ON:
+        case NTRIP_CLIENT_WIFI_STARTED:
+        case NTRIP_CLIENT_WIFI_CONNECTED:
+        case NTRIP_CLIENT_CONNECTING:
+          systemPrint("Connecting");
+          break;
+        case NTRIP_CLIENT_CONNECTED:
+          systemPrint("Connected");
+          break;
+        default:
+          systemPrintf("Unknown: %d", ntripClientState);
+          break;
       }
       systemPrintf(" - %s/%s:%d", settings.ntripClient_CasterHost, settings.ntripClient_MountPoint, settings.ntripClient_CasterPort);
 
@@ -165,23 +165,23 @@ void menuSystem()
       systemPrint("NTRIP Server ");
       switch (ntripServerState)
       {
-      case NTRIP_SERVER_OFF:
-        systemPrint("Disconnected");
-        break;
-      case NTRIP_SERVER_ON:
-      case NTRIP_SERVER_WIFI_STARTED:
-      case NTRIP_SERVER_WIFI_CONNECTED:
-      case NTRIP_SERVER_WAIT_GNSS_DATA:
-      case NTRIP_SERVER_CONNECTING:
-      case NTRIP_SERVER_AUTHORIZATION:
-        systemPrint("Connecting");
-        break;
-      case NTRIP_SERVER_CASTING:
-        systemPrint("Connected");
-        break;
-      default:
-        systemPrintf("Unknown: %d", ntripServerState);
-        break;
+        case NTRIP_SERVER_OFF:
+          systemPrint("Disconnected");
+          break;
+        case NTRIP_SERVER_ON:
+        case NTRIP_SERVER_WIFI_STARTED:
+        case NTRIP_SERVER_WIFI_CONNECTED:
+        case NTRIP_SERVER_WAIT_GNSS_DATA:
+        case NTRIP_SERVER_CONNECTING:
+        case NTRIP_SERVER_AUTHORIZATION:
+          systemPrint("Connecting");
+          break;
+        case NTRIP_SERVER_CASTING:
+          systemPrint("Connected");
+          break;
+        default:
+          systemPrintf("Unknown: %d", ntripServerState);
+          break;
       }
       systemPrintf(" - %s/%s:%d", settings.ntripServer_CasterHost, settings.ntripServer_MountPoint, settings.ntripServer_CasterPort);
 
@@ -629,8 +629,8 @@ void menuDebug()
 
       if (settings.enableI2Cdebug)
       {
-#if defined(ENABLE_DEVELOPER) && defined(REF_STN_GNSS_DEBUG)
-        if (productVariant == REFERENCE_STATION)
+#if defined(REF_STN_GNSS_DEBUG)
+        if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
           theGNSS.enableDebugging(serialGNSS); //Output all debug messages over serialGNSS
         else
 #endif
@@ -964,7 +964,7 @@ void printFileList()
                      ((fileDate >> 9) + 1980),   //Year
                      ((fileDate >> 5) & 0b1111), //Month
                      (fileDate & 0b11111)        //Day
-            );
+                    );
 
             char fileSizeChar[20];
             stringHumanReadableSize(tempFile.fileSize()).toCharArray(fileSizeChar, sizeof(fileSizeChar));
@@ -1014,7 +1014,7 @@ void printFileList()
                        (float)timeinfo->tm_year + 1900, //Year - ESP32 2.0.2 starts the year at 1900...
                        (float)timeinfo->tm_mon + 1,     //Month
                        (float)timeinfo->tm_mday         //Day
-              );
+                      );
 
               char fileSizeChar[20];
               stringHumanReadableSize(tempFile.size()).toCharArray(fileSizeChar, sizeof(fileSizeChar));

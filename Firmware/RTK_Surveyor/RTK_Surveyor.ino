@@ -31,8 +31,12 @@
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
 #define COMPILE_SD_MMC //Comment out to remove REFERENCE_STATION microSD SD_MMC support
-#define ENABLE_DEVELOPER //Uncomment this line to enable special developer modes (don't check power button at startup)
 //#define REF_STN_GNSS_DEBUG //Uncomment this line to output GNSS library debug messages on serialGNSS. Ref Stn only. Needs ENABLE_DEVELOPER
+
+//Always define ENABLE_DEVELOPER to enable its use in conditional statements
+#ifndef ENABLE_DEVELOPER
+#define ENABLE_DEVELOPER true //This enable specials developer modes (don't check power button at startup). Passed in from compiler flags
+#endif
 
 //Define the RTK board identifier:
 // This is an int which is unique to this variant of the RTK Surveyor hardware which allows us

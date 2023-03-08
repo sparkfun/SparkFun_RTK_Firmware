@@ -10,8 +10,8 @@ bool configureUbloxModule()
   //Turn on/off debug messages
   if (settings.enableI2Cdebug)
   {
-#if defined(ENABLE_DEVELOPER) && defined(REF_STN_GNSS_DEBUG)
-    if (productVariant == REFERENCE_STATION)
+#if defined(REF_STN_GNSS_DEBUG)
+    if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
       theGNSS.enableDebugging(serialGNSS); //Output all debug messages over serialGNSS
     else
 #endif

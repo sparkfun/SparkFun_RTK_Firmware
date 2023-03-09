@@ -1,4 +1,3 @@
-static QwiicMicroOLED oled;
 static uint32_t blinking_icons;
 static uint32_t icons;
 

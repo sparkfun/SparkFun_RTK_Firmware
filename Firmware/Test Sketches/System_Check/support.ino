@@ -36,6 +36,12 @@ uint8_t getByteChoice(int numberOfSeconds)
     if (online.gnss == true)
       i2cGNSS.checkUblox(); //Regularly poll to get latest data
 
+    if (pin_powerSenseAndControl >= 0)
+    {
+      if (digitalRead(pin_powerSenseAndControl) == LOW)
+        ESP.restart(); //Use the power button as a reset
+    }
+
     if (Serial.available() > 0)
     {
       incoming = Serial.read();

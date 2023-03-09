@@ -39,33 +39,33 @@ const int FIRMWARE_VERSION_MINOR = 3;
 //Hardware connections
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //These pins are set in beginBoard()
-int pin_batteryLevelLED_Red;
-int pin_batteryLevelLED_Green;
-int pin_positionAccuracyLED_1cm;
-int pin_positionAccuracyLED_10cm;
-int pin_positionAccuracyLED_100cm;
-int pin_baseStatusLED;
-int pin_bluetoothStatusLED;
-int pin_microSD_CS;
-int pin_zed_tx_ready;
-int pin_zed_reset;
-int pin_batteryLevel_alert;
+int pin_batteryLevelLED_Red = -1;
+int pin_batteryLevelLED_Green = -1;
+int pin_positionAccuracyLED_1cm = -1;
+int pin_positionAccuracyLED_10cm = -1;
+int pin_positionAccuracyLED_100cm = -1;
+int pin_baseStatusLED = -1;
+int pin_bluetoothStatusLED = -1;
+int pin_microSD_CS = -1;
+int pin_zed_tx_ready = -1;
+int pin_zed_reset = -1;
+int pin_batteryLevel_alert = -1;
 
-int pin_muxA;
-int pin_muxB;
-int pin_powerSenseAndControl;
-int pin_setupButton;
-int pin_powerFastOff;
-int pin_dac26;
-int pin_adc39;
-int pin_peripheralPowerControl;
+int pin_muxA = -1;
+int pin_muxB = -1;
+int pin_powerSenseAndControl = -1;
+int pin_setupButton = -1;
+int pin_powerFastOff = -1;
+int pin_dac26 = -1;
+int pin_adc39 = -1;
+int pin_peripheralPowerControl = -1;
 
-int pin_radio_rx;
-int pin_radio_tx;
-int pin_radio_rst;
-int pin_radio_pwr;
-int pin_radio_cts;
-int pin_radio_rts;
+int pin_radio_rx = -1;
+int pin_radio_tx = -1;
+int pin_radio_rst = -1;
+int pin_radio_pwr = -1;
+int pin_radio_cts = -1;
+int pin_radio_rts = -1;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration
@@ -124,6 +124,12 @@ uint8_t fixType;
 uint8_t carrSoln;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+//Accelerometer for bubble leveling
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#include "SparkFun_LIS2DH12.h" //Click here to get the library: http://librarymanager/All#SparkFun_LIS2DH12
+SPARKFUN_LIS2DH12 accel;
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 //Battery fuel gauge and PWM LEDs
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h> // Click here to get the library: http://librarymanager/All#SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library
@@ -147,6 +153,7 @@ float battChangeRate = 0.0;
 //External Display
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include <SparkFun_Qwiic_OLED.h> //http://librarymanager/All#SparkFun_Qwiic_Graphic_OLED
+QwiicMicroOLED oled;
 
 #include <res/qw_fnt_5x7.h>
 #include <res/qw_fnt_8x16.h>
@@ -252,17 +259,53 @@ void setup()
 
   beginBoard(); //Determine what hardware platform we are running on and check on button
 
+  beginSD(); //Test if SD is present
+
   if (online.i2c == true)
   {
     beginGNSS(); //Connect to GNSS to get module type
 
     beginDisplay(); //Start display first to be able to display any errors
-    displayHelloWorld(); //Display something
+
+    beginAccelerometer();
 
     beginFuelGauge(); //Configure battery fuel guage monitor
-  }
 
-  beginSD(); //Test if SD is present
+    oled.erase();
+
+    uint8_t fontHeight = 8;
+    uint8_t yPos = 0;
+
+    if (online.accelerometer)
+      printTextCenter("Accel: OK", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    else
+      printTextCenter("Accel: BAD", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+
+    yPos += fontHeight;
+
+    if (online.microSD)
+      printTextCenter("SD: OK", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    else
+      printTextCenter("SD: BAD", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+
+    yPos += fontHeight;
+
+    if (online.gnss)
+      printTextCenter("GNSS: OK", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    else
+      printTextCenter("GNSS: BAD", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+
+    yPos += fontHeight;
+
+    if (online.battery)
+      printTextCenter("Batt: OK", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    else
+      printTextCenter("Batt: BAD", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+
+    yPos += fontHeight;
+
+    oled.display();
+  }
 
   menuSystem();
 }
@@ -270,4 +313,10 @@ void setup()
 void loop()
 {
   delay(10);
+
+  if(pin_powerSenseAndControl >= 0)
+  {
+    if(digitalRead(pin_powerSenseAndControl) == LOW)
+      ESP.restart(); //Use the power button as a reset
+  }
 }

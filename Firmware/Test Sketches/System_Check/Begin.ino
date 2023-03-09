@@ -374,3 +374,22 @@ void beginSD()
   if (sdCardSemaphore && gotSemaphore)
     xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
 }
+
+//Begin accelerometer if available
+void beginAccelerometer()
+{
+  if (accel.begin() == false)
+  {
+    online.accelerometer = false;
+
+    return;
+  }
+
+  //The larger the avgAmount the faster we should read the sensor
+  //accel.setDataRate(LIS2DH12_ODR_100Hz); //6 measurements a second
+  accel.setDataRate(LIS2DH12_ODR_400Hz); //25 measurements a second
+
+  Serial.println("Accelerometer configuration complete");
+
+  online.accelerometer = true;
+}

@@ -9,7 +9,7 @@ void menuGNSS()
     systemPrintln();
     systemPrintln("Menu: GNSS Receiver");
 
-    //Because we may be in base mode (always 1Hz), do not get freq from module, use settings instead
+    //Because we may be in base mode, do not get freq from module, use settings instead
     float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
 
     systemPrint("1) Set measurement rate in Hz: ");
@@ -109,8 +109,8 @@ void menuGNSS()
       }
       else
       {
-        setRate(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
-        //Settings recorded to NVM and file at main menu exit
+        //Do not set the rate here because we may be in a non-rover mode
+        restartRover = true;
       }
     }
     else if (incoming == 2)
@@ -123,8 +123,8 @@ void menuGNSS()
       }
       else
       {
-        setRate(rate); //This will set settings.measurementRate, settings.navigationRate, and GSV message
-        //Settings recorded to NVM and file at main menu exit
+        //Do not set the rate here because we may be in a non-rover mode
+        restartRover = true;
       }
     }
     else if (incoming == 3)

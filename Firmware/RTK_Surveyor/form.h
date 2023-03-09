@@ -292,6 +292,7 @@ function parseIncoming(msg) {
         ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
         ge("radioType").dispatchEvent(new CustomEvent('change'));
         ge("antennaReferencePoint").dispatchEvent(new CustomEvent('change'));
+        ge("measurementRateHzBase").dispatchEvent(new CustomEvent('change'));
 
         updateECEFList();
         updateGeodeticList();
@@ -582,6 +583,8 @@ function validateFields() {
             clearElement("ntripServer_MountPointPW", "WR5wRo4H");
         }
     }
+
+    checkElementValue("measurementRateHzBase", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseBaseConfig");
 
     //PointPerfect Config
     if (platformPrefix == "Facet L-Band") {
@@ -963,6 +966,14 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
     ge("measurementRateSec").addEventListener("change", function () {
         ge("measurementRateHz").value = 1.0 / ge("measurementRateSec").value;
+    });
+
+    ge("measurementRateHzBase").addEventListener("change", function () {
+        ge("measurementRateSecBase").value = 1.0 / ge("measurementRateHzBase").value;
+    });
+
+    ge("measurementRateSecBase").addEventListener("change", function () {
+        ge("measurementRateHzBase").value = 1.0 / ge("measurementRateSecBase").value;
     });
 
     ge("baseTypeSurveyIn").addEventListener("change", function () {
@@ -1790,6 +1801,7 @@ static const char *index_html = R"=====(
             </div>
             <div class="collapse" id="collapseGNSSConfig">
                 <div class="card card-body pt-1">
+
                     <div id="measurementRateInput">
                         Measurement Rate:
                         <div class="row">
@@ -1823,6 +1835,7 @@ static const char *index_html = R"=====(
                             </div>
                         </div>
                     </div>
+
                     <div id="dynamicModelDropdown">
                         <label for="dynamicModel">Dynamic Model:</label>
                         <select name="dynamicModel" id="dynamicModel" class="form-dropdown mb-2">
@@ -2853,6 +2866,40 @@ static const char *index_html = R"=====(
                                 </div>
                             </div>
 
+                        </div>
+                    </div>
+
+                    <div>
+                        Measurement Rate Base:
+                        <div class="row">
+                            <div class="col-sm-2 col-12 ms-3 form-group">
+                                <label for="measurementRateHzBase" class="col-form-label">In
+                                    Hz:
+                                    <span class="tt" data-bs-placement="right"
+                                        title="The number of solutions or location ‘fixes’ per second. Anything above 1Hz is not recommended. Default: 1Hz. Limit: 0.000122 to 10Hz.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="col-sm-4 col-5 ms-3 form-group">
+                                <input type="number" class="form-control mb-2" id="measurementRateHzBase">
+                                <p id="measurementRateHzBaseError" class="inlineError"></p>
+                            </div>
+
+                            <p class="small ms-3 mt-0 mb-0"><em>or</em></p>
+
+                            <div class="col-sm-2 col-12 ms-3 form-group">
+                                <label for="measurementRateSecBase">Seconds between measurements:
+                                    <span class="tt" data-bs-placement="right"
+                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when using a radio link with limited bandwidth. Limit: 0.1 to 8196 seconds."><span
+                                            class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="col-sm-4 col-5 ms-3 form-group">
+                                <input type="number" class="form-control mb-2" id="measurementRateSecBase">
+                                <p id="measurementRateSecBaseError" class="inlineError"></p>
+                            </div>
                         </div>
                     </div>
 

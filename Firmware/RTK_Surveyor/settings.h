@@ -603,8 +603,9 @@ typedef struct {
 
   bool wifiConfigOverAP = true; //Configure device over Access Point or have it connect to WiFi 
   uint16_t wifiTcpPort = 2947; //TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
-
   uint8_t minElev = 10; //Minimum elevation (in deg) for a GNSS satellite to be used in NAV
+  uint16_t measurementRateBase = 1; //During Base, elapsed ms between GNSS measurements. 25ms to 65535ms. Default 1Hz.
+  uint16_t navigationRateBase = 1; //During Base, ratio between number of measurements and navigation solutions. Default 1 for 1Hz (with measurementRateBase).
 
 } Settings;
 Settings settings;

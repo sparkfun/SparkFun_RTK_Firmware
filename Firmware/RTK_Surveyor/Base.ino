@@ -19,10 +19,10 @@ bool configureUbloxModuleBase()
 
   bool response = true;
 
-  //In Base mode we force 1Hz
+  //Set output rate
   response &= theGNSS.newCfgValset();
-  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, 1000);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, 1);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, settings.measurementRateBase);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, settings.navigationRateBase);
 
   //Since we are at 1Hz, allow GSV NMEA to be reported at whatever the user has chosen
   response &= theGNSS.addCfgValset(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module

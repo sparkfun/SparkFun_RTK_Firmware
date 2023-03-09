@@ -269,6 +269,7 @@ function parseIncoming(msg) {
         ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
         ge("radioType").dispatchEvent(new CustomEvent('change'));
         ge("antennaReferencePoint").dispatchEvent(new CustomEvent('change'));
+        ge("measurementRateHzBase").dispatchEvent(new CustomEvent('change'));
 
         updateECEFList();
         updateGeodeticList();
@@ -559,6 +560,8 @@ function validateFields() {
             clearElement("ntripServer_MountPointPW", "WR5wRo4H");
         }
     }
+
+    checkElementValue("measurementRateHzBase", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseBaseConfig");
 
     //PointPerfect Config
     if (platformPrefix == "Facet L-Band") {
@@ -940,6 +943,14 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
     ge("measurementRateSec").addEventListener("change", function () {
         ge("measurementRateHz").value = 1.0 / ge("measurementRateSec").value;
+    });
+
+    ge("measurementRateHzBase").addEventListener("change", function () {
+        ge("measurementRateSecBase").value = 1.0 / ge("measurementRateHzBase").value;
+    });
+
+    ge("measurementRateSecBase").addEventListener("change", function () {
+        ge("measurementRateHzBase").value = 1.0 / ge("measurementRateSecBase").value;
     });
 
     ge("baseTypeSurveyIn").addEventListener("change", function () {

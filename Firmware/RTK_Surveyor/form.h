@@ -1788,7 +1788,7 @@ static const char *index_html = R"=====(
                     GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
-            <div class="collapse show" id="collapseGNSSConfig">
+            <div class="collapse" id="collapseGNSSConfig">
                 <div class="card card-body pt-1">
                     <div id="measurementRateInput">
                         Measurement Rate:

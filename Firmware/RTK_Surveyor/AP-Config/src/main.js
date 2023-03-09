@@ -390,6 +390,8 @@ function validateFields() {
     checkElementValue("measurementRateHz", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseGNSSConfig");
     checkConstellations();
 
+    checkElementValue("minElev", 0, 90, "Must be between 0 and 90", "collapseGNSSConfig");
+
     if (ge("enableNtripClient").checked) {
         checkElementString("ntripClient_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
         checkElementValue("ntripClient_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseGNSSConfig");

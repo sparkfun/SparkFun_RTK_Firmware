@@ -115,7 +115,9 @@ bool configureUbloxModuleBase()
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART2, 1);
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 10);
 
-  response &= theGNSS.sendCfgValset(); //Closing value - #31
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
+
+  response &= theGNSS.sendCfgValset(); //Closing value - #32
 
   if (response == false)
     systemPrintln("Base config fail");

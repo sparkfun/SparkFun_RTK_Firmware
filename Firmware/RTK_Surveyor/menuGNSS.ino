@@ -86,7 +86,14 @@ void menuGNSS()
       systemPrint("12) Toggle sending GGA Location to Caster: ");
       if (settings.ntripClient_TransmitGGA == true) systemPrintln("Enabled");
       else systemPrintln("Disabled");
+
+      systemPrintf("13) Minimum elevation for a GNSS satellite to be used in fix (degrees): %d\r\n", settings.minElev);
     }
+    else
+    {
+      systemPrintf("6) Minimum elevation for a GNSS satellite to be used in fix (degrees): %d\r\n", settings.minElev);
+    }
+
 
     systemPrintln("x) Exit");
 
@@ -144,7 +151,11 @@ void menuGNSS()
           if (dynamicModel == 1)
             settings.dynamicModel = DYN_MODEL_PORTABLE; //The enum starts at 0 and skips 1.
           else
+          {
             settings.dynamicModel = dynamicModel; //Recorded to NVM and file at main menu exit
+
+            theGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
+          }
         }
       }
     }
@@ -206,6 +217,25 @@ void menuGNSS()
       settings.ntripClient_TransmitGGA ^= 1;
       restartRover = true;
     }
+    else if ( (incoming == 13 && settings.enableNtripClient == true)
+              || incoming == 6 && settings.enableNtripClient == false)
+    {
+      systemPrint("Enter minimum elevation in degrees: ");
+
+      int minElev = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((minElev != INPUT_RESPONSE_GETNUMBER_EXIT) && (minElev != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (minElev <= 0 || minElev > 90) //Arbitrary 90 degree max
+          systemPrintln("Error: Minimum elevation out of range");
+        else
+        {
+          settings.minElev = minElev; //Recorded to NVM and file at main menu exit
+
+          theGNSS.setVal8(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
+        }
+        restartRover = true;
+      }
+    }
     else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
     else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
@@ -236,9 +266,6 @@ void menuGNSS()
       delay(2000);
     }
   }
-
-  //Set dynamic model
-  theGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
 
   clearBuffer(); //Empty buffer of any newline chars
 }

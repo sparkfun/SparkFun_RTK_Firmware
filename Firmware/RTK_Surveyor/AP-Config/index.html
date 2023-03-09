@@ -274,6 +274,19 @@
                         <br>
                     </div>
 
+                    <div class="form-group row">
+                        <label for="minElev" class="col-sm-4 col-6 col-form-label">Min SV Elevation:
+                            <span class="tt" data-bs-placement="right"
+                                title="Minimum elevation in degrees for a GNSS satellite to be used in a fix.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="minElev">
+                            <p id="minElevError" class="inlineError"></p>
+                        </div>
+                    </div>
+
                     <div id="constellationCheckBoxes">
                         <label for="constellations">Constellations:</label>
                         <span class="tt" data-bs-placement="right"

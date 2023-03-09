@@ -730,7 +730,9 @@ void createSettingsString(char* newSettings)
     snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", tempLevel);
   stringRecord(newSettings, "batteryPercent", batteryPercent);
 
-  //Add ECEF and Geodetic station data
+  stringRecord(newSettings, "minElev", settings.minElev);
+
+  //Add ECEF and Geodetic station data to the end of settings
   for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
   {
     //stationInfo example: LocationA,-1280206.568,-4716804.403,4086665.484
@@ -1029,6 +1031,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.enableTcpServer = settingValueBool;
   else if (strcmp(settingName, "enableRCFirmware") == 0)
     enableRCFirmware = settingValueBool;
+  else if (strcmp(settingName, "minElev") == 0)
+    settings.minElev = settingValue;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

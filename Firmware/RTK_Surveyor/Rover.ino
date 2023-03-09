@@ -78,7 +78,9 @@ bool configureUbloxModuleRover()
     response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
   }
 
-  response &= theGNSS.sendCfgValset(); //Closing - 27 keys
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
+
+  response &= theGNSS.sendCfgValset(); //Closing - 28 keys
   
   if (response == false)
     log_d("Rover config failed");

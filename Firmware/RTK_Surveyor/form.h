@@ -413,6 +413,8 @@ function validateFields() {
     checkElementValue("measurementRateHz", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseGNSSConfig");
     checkConstellations();
 
+    checkElementValue("minElev", 0, 90, "Must be between 0 and 90", "collapseGNSSConfig");
+
     if (ge("enableNtripClient").checked) {
         checkElementString("ntripClient_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
         checkElementValue("ntripClient_CasterPort", 1, 99999, "Must be 1 to 99999", "collapseGNSSConfig");
@@ -1562,6 +1564,7 @@ function otaFirmwareStatus(percentComplete) {
         resetComplete();
     }
 }
+
 )====="; //End main.js
 
 static const char *index_html = R"=====(
@@ -1785,7 +1788,7 @@ static const char *index_html = R"=====(
                     GNSS Configuration <i id="gnssCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
-            <div class="collapse" id="collapseGNSSConfig">
+            <div class="collapse show" id="collapseGNSSConfig">
                 <div class="card card-body pt-1">
                     <div id="measurementRateInput">
                         Measurement Rate:
@@ -1840,6 +1843,19 @@ static const char *index_html = R"=====(
                         </span>
                         <p id="dynamicModelSensorFusionError" class="inlineError"></p>
                         <br>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="minElev" class="col-sm-4 col-6 col-form-label">Min SV Elevation:
+                            <span class="tt" data-bs-placement="right"
+                                title="Minimum elevation in degrees for a GNSS satellite to be used in a fix.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="minElev">
+                            <p id="minElevError" class="inlineError"></p>
+                        </div>
                     </div>
 
                     <div id="constellationCheckBoxes">

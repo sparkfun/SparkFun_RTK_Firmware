@@ -70,6 +70,13 @@
         .box-margin40 {
             margin-left: 40px;
         }
+
+        .battery {
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+            float: right;
+        }
     </style>
 </head>
 
@@ -87,14 +94,22 @@
         <b>Done</b><br><br>Firmware update complete. RTK device is now rebooting.
     </div>
 
-    <div class="container" style="margin-top:20px;max-width:600px;" id="mainPage">
-        <h2>
-            <div align="center"><img src="src/rtk-setup.png" alt="SparkFun RTK WiFi Setup">
-            </div>
-        </h2>
-        <!-- <div class="col-sm-12 mt-3"> -->
-        <div class="row">
-            <div align="center" class="small coulm left">
+    <div align="right" class="container" style="margin-top:10px;max-width:600px; margin-bottom: -25px;">
+        <img src="src/Battery2_Charging.png" alt="Battery level"> <span id="ecefZ" class="small"
+            style="display:inline;">67%</span>
+    </div>
+
+    <div class="container">
+
+        <div align="center" class="col-sm-12"><img src="src/rtk-setup.png" alt="SparkFun RTK WiFi Setup"></div>
+
+    </div>
+
+    <div class="container" style="margin-top:10px;max-width:600px;" id="mainPage">
+
+        <div align="center" class="row" style="display:block;">
+
+            <div align="center" class="small left">
                 RTK Firmware: <span id="rtkFirmwareVersion" style="display:inline;">v0.0</span><br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
                 <span id="deviceBTID" style="display:inline;">Device Bluetooth ID: 0000</span> <br>
@@ -109,10 +124,7 @@
                     <span id="ecefZ" style="display:inline;">4086665.484</span>
                 </span><br>
             </div>
-            <div class="column right">
-                <img id="batteryIconFileName" src="src/BatteryBlank.png" alt="Battery level">
-                <span id="batteryPercent" style="display:inline;"></span>
-            </div>
+
         </div>
 
         <hr class="mt-0">

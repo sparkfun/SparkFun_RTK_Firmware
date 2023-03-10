@@ -351,6 +351,7 @@ typedef struct ubxMsg
 //These are the allowable messages to broadcast and log (if enabled)
 //Tested with u-center v21.02
 #define MAX_UBX_MSG (13 + 25 + 5 + 10 + 3 + 12 + 5) //(sizeof(ubxMessages)/sizeof(ubxMsg))
+#define MAX_UBX_MSG_RTCM (12)
 
 //This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
 typedef struct {
@@ -604,8 +605,25 @@ typedef struct {
   bool wifiConfigOverAP = true; //Configure device over Access Point or have it connect to WiFi 
   uint16_t wifiTcpPort = 2947; //TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
   uint8_t minElev = 10; //Minimum elevation (in deg) for a GNSS satellite to be used in NAV
-  uint16_t measurementRateBase = 1; //During Base, elapsed ms between GNSS measurements. 25ms to 65535ms. Default 1Hz.
-  uint16_t navigationRateBase = 1; //During Base, ratio between number of measurements and navigation solutions. Default 1 for 1Hz (with measurementRateBase).
+
+  ubxMsg ubxMessagesBase[MAX_UBX_MSG_RTCM] = //Report rates for RTCM Base. Default to u-blox recommended rates.
+  {
+    //RTCM
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_UART1, UBX_RTCM_1005, UBX_RTCM_MSB, 1, "UBX_RTCM_1005", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1005},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_UART1, UBX_RTCM_1074, UBX_RTCM_MSB, 1, "UBX_RTCM_1074", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1074},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1077_UART1, UBX_RTCM_1077, UBX_RTCM_MSB, 0, "UBX_RTCM_1077", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1077},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_UART1, UBX_RTCM_1084, UBX_RTCM_MSB, 1, "UBX_RTCM_1084", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1084},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1087_UART1, UBX_RTCM_1087, UBX_RTCM_MSB, 0, "UBX_RTCM_1087", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1087},
+
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_UART1, UBX_RTCM_1094, UBX_RTCM_MSB, 1, "UBX_RTCM_1094", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1094},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1097_UART1, UBX_RTCM_1097, UBX_RTCM_MSB, 0, "UBX_RTCM_1097", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1097},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART1, UBX_RTCM_1124, UBX_RTCM_MSB, 1, "UBX_RTCM_1124", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1124},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1127_UART1, UBX_RTCM_1127, UBX_RTCM_MSB, 0, "UBX_RTCM_1127", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1127},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART1, UBX_RTCM_1230, UBX_RTCM_MSB, 10, "UBX_RTCM_1230", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1230},
+
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE4072_0_UART1, UBX_RTCM_4072_0, UBX_RTCM_MSB, 0, "UBX_RTCM_4072_0", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE4072_0},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE4072_1_UART1, UBX_RTCM_4072_1, UBX_RTCM_MSB, 0, "UBX_RTCM_4072_1", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE4072_1},
+  };
 
 } Settings;
 Settings settings;

@@ -731,7 +731,6 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "batteryPercent", batteryPercent);
 
   stringRecord(newSettings, "minElev", settings.minElev);
-  stringRecord(newSettings, "measurementRateHzBase", 1000.0 / settings.measurementRateBase, 2); //2 = decimals to print
 
   //Add ECEF and Geodetic station data to the end of settings
   for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
@@ -1034,8 +1033,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     enableRCFirmware = settingValueBool;
   else if (strcmp(settingName, "minElev") == 0)
     settings.minElev = settingValue;
-  else if (strcmp(settingName, "measurementRateHzBase") == 0)
-    settings.measurementRateBase = (int)(1000.0 / settingValue);
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

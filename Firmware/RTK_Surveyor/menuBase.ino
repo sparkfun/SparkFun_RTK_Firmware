@@ -85,41 +85,25 @@ void menuBase()
       systemPrint("10) Set Mountpoint PW: ");
       systemPrintln(settings.ntripServer_MountPointPW);
 
-      //Because we may be in rover mode, do not get freq from module, use settings instead
-      float measurementFrequency = (1000.0 / settings.measurementRateBase) / settings.navigationRateBase;
-
-      systemPrint("11) Set base measurement rate in Hz: ");
-      systemPrintln(measurementFrequency, 5);
-
-      systemPrint("12) Set base measurement rate in seconds between measurements: ");
-      systemPrintln(1 / measurementFrequency, 5);
+      systemPrintln("11) Set RTCM Message Rates");
 
       if (settings.fixedBase == false) //Survey-in
       {
-        systemPrint("13) Select survey-in radio: ");
+        systemPrint("12) Select survey-in radio: ");
         systemPrintf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
-
       }
     }
     else
     {
-      //Because we may be in rover mode, do not get freq from module, use settings instead
-      float measurementFrequency = (1000.0 / settings.measurementRateBase) / settings.navigationRateBase;
-
-      systemPrint("7) Set base measurement rate in Hz: ");
-      systemPrintln(measurementFrequency, 5);
-
-      systemPrint("8) Set base measurement rate in seconds between measurements: ");
-      systemPrintln(1 / measurementFrequency, 5);
+      systemPrintln("7) Set RTCM Message Rates");
 
       if (settings.fixedBase == false)  //Survey-in
       {
-        systemPrint("9) Select survey-in radio: ");
+        systemPrint("8) Select survey-in radio: ");
         systemPrintf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
       }
 
     }
-
 
     systemPrintln("x) Exit");
 
@@ -288,36 +272,10 @@ void menuBase()
               || ((settings.enableNtripServer == false) && (incoming == 7))
             )
     {
-      systemPrint("Enter GNSS measurement rate in Hz during base mode: ");
-      double rate = getDouble();
-      if (rate < 0.00012 || rate > 20.0) //20Hz limit with all constellations enabled
-      {
-        systemPrintln("Error: Measurement rate out of range");
-      }
-      else
-      {
-        //Do not set the rate here because we may be in a non-base mode
-        restartBase = true;
-      }
+      menuMessagesBaseRTCM(); //Set rates for RTCM during Base mode
     }
-    else if ( ((settings.enableNtripServer == true) && (incoming == 12))
-              || ((settings.enableNtripServer == false) && (incoming == 8))
-            )
-    {
-      systemPrint("Enter GNSS measurement rate in seconds between measurements during base mode: ");
-      float rate = getDouble();
-      if (rate < 0.0 || rate > 8255.0) //Limit of 127 (navRate) * 65000ms (measRate) = 137 minute limit.
-      {
-        systemPrintln("Error: Measurement rate out of range");
-      }
-      else
-      {
-        //Do not set the rate here because we may be in a non-base mode
-        restartBase = true;
-      }
-    }
-    else if ( ((settings.enableNtripServer == true) && (settings.fixedBase == false) && (incoming == 13))
-              || ((settings.enableNtripServer == false) && (settings.fixedBase == false) && (incoming == 9))
+    else if ( ((settings.enableNtripServer == true) && (settings.fixedBase == false) && (incoming == 12))
+              || ((settings.enableNtripServer == false) && (settings.fixedBase == false) && (incoming == 8))
             )
     {
       settings.ntripServer_StartAtSurveyIn ^= 1;

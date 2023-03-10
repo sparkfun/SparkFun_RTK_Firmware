@@ -292,7 +292,6 @@ function parseIncoming(msg) {
         ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
         ge("radioType").dispatchEvent(new CustomEvent('change'));
         ge("antennaReferencePoint").dispatchEvent(new CustomEvent('change'));
-        ge("measurementRateHzBase").dispatchEvent(new CustomEvent('change'));
 
         updateECEFList();
         updateGeodeticList();
@@ -584,8 +583,6 @@ function validateFields() {
         }
     }
 
-    checkElementValue("measurementRateHzBase", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseBaseConfig");
-
     //PointPerfect Config
     if (platformPrefix == "Facet L-Band") {
         if (ge("enablePointPerfectCorrections").checked == true) {
@@ -873,6 +870,41 @@ function resetToLoggingDefaults() {
     ge("UBX_RXM_RAWX").value = 1;
     ge("UBX_RXM_SFRBX").value = 1;
 }
+
+function resetToRTCMDefaults() {
+    ge("UBX_RTCM_1005Base").value = 1;
+    ge("UBX_RTCM_1074Base").value = 1;
+    ge("UBX_RTCM_1077Base").value = 0;
+    ge("UBX_RTCM_1084Base").value = 1;
+    ge("UBX_RTCM_1087Base").value = 0;
+
+    ge("UBX_RTCM_1094Base").value = 1;
+    ge("UBX_RTCM_1097Base").value = 0;
+    ge("UBX_RTCM_1124Base").value = 1;
+    ge("UBX_RTCM_1127Base").value = 0;
+    ge("UBX_RTCM_1230Base").value = 10;
+
+    ge("UBX_RTCM_4072_0Base").value = 0;
+    ge("UBX_RTCM_4072_1Base").value = 0;
+}
+
+function resetToLowBandwidthRTCM() {
+    ge("UBX_RTCM_1005Base").value = 10;
+    ge("UBX_RTCM_1074Base").value = 2;
+    ge("UBX_RTCM_1077Base").value = 0;
+    ge("UBX_RTCM_1084Base").value = 2;
+    ge("UBX_RTCM_1087Base").value = 0;
+
+    ge("UBX_RTCM_1094Base").value = 2;
+    ge("UBX_RTCM_1097Base").value = 0;
+    ge("UBX_RTCM_1124Base").value = 2;
+    ge("UBX_RTCM_1127Base").value = 0;
+    ge("UBX_RTCM_1230Base").value = 10;
+
+    ge("UBX_RTCM_4072_0Base").value = 0;
+    ge("UBX_RTCM_4072_1Base").value = 0;
+}
+
 function useECEFCoordinates() {
     ge("fixedEcefX").value = ecefX;
     ge("fixedEcefY").value = ecefY;
@@ -966,14 +998,6 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
     ge("measurementRateSec").addEventListener("change", function () {
         ge("measurementRateHz").value = 1.0 / ge("measurementRateSec").value;
-    });
-
-    ge("measurementRateHzBase").addEventListener("change", function () {
-        ge("measurementRateSecBase").value = 1.0 / ge("measurementRateHzBase").value;
-    });
-
-    ge("measurementRateSecBase").addEventListener("change", function () {
-        ge("measurementRateHzBase").value = 1.0 / ge("measurementRateSecBase").value;
     });
 
     ge("baseTypeSurveyIn").addEventListener("change", function () {
@@ -1652,6 +1676,13 @@ static const char *index_html = R"=====(
         .box-margin40 {
             margin-left: 40px;
         }
+
+        .battery {
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+            float: right;
+        }
     </style>
 </head>
 
@@ -1669,14 +1700,22 @@ static const char *index_html = R"=====(
         <b>Done</b><br><br>Firmware update complete. RTK device is now rebooting.
     </div>
 
-    <div class="container" style="margin-top:20px;max-width:600px;" id="mainPage">
-        <h2>
-            <div align="center"><img src="src/rtk-setup.png" alt="SparkFun RTK WiFi Setup">
-            </div>
-        </h2>
-        <!-- <div class="col-sm-12 mt-3"> -->
-        <div class="row">
-            <div align="center" class="small coulm left">
+    <div align="right" class="container" style="margin-top:10px;max-width:600px; margin-bottom: -25px;">
+        <img id="batteryIconFileName" src="src/BatteryBlank.png" alt="Battery level"> <span id="batteryPercent" class="small"
+            style="display:inline;"></span>
+    </div>
+
+    <div class="container">
+
+        <div align="center" class="col-sm-12"><img src="src/rtk-setup.png" alt="SparkFun RTK WiFi Setup"></div>
+
+    </div>
+
+    <div class="container" style="margin-top:10px;max-width:600px;" id="mainPage">
+
+        <div align="center" class="row" style="display:block;">
+
+            <div align="center" class="small left">
                 RTK Firmware: <span id="rtkFirmwareVersion" style="display:inline;">v0.0</span><br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
                 <span id="deviceBTID" style="display:inline;">Device Bluetooth ID: 0000</span> <br>
@@ -1691,10 +1730,7 @@ static const char *index_html = R"=====(
                     <span id="ecefZ" style="display:inline;">4086665.484</span>
                 </span><br>
             </div>
-            <div class="column right">
-                <img id="batteryIconFileName" src="src/BatteryBlank.png" alt="Battery level">
-                <span id="batteryPercent" style="display:inline;"></span>
-            </div>
+
         </div>
 
         <hr class="mt-0">
@@ -2869,40 +2905,6 @@ static const char *index_html = R"=====(
                         </div>
                     </div>
 
-                    <div>
-                        Measurement Rate Base:
-                        <div class="row">
-                            <div class="col-sm-2 col-12 ms-3 form-group">
-                                <label for="measurementRateHzBase" class="col-form-label">In
-                                    Hz:
-                                    <span class="tt" data-bs-placement="right"
-                                        title="The number of solutions or location ‘fixes’ per second. Anything above 1Hz is not recommended. Default: 1Hz. Limit: 0.000122 to 10Hz.">
-                                        <span class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
-                                </label>
-                            </div>
-                            <div class="col-sm-4 col-5 ms-3 form-group">
-                                <input type="number" class="form-control mb-2" id="measurementRateHzBase">
-                                <p id="measurementRateHzBaseError" class="inlineError"></p>
-                            </div>
-
-                            <p class="small ms-3 mt-0 mb-0"><em>or</em></p>
-
-                            <div class="col-sm-2 col-12 ms-3 form-group">
-                                <label for="measurementRateSecBase">Seconds between measurements:
-                                    <span class="tt" data-bs-placement="right"
-                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when using a radio link with limited bandwidth. Limit: 0.1 to 8196 seconds."><span
-                                            class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
-                                </label>
-                            </div>
-                            <div class="col-sm-4 col-5 ms-3 form-group">
-                                <input type="number" class="form-control mb-2" id="measurementRateSecBase">
-                                <p id="measurementRateSecBaseError" class="inlineError"></p>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="form-check mt-3">
                         <label class="form-check-label" for="enableNtripServer">Enable NTRIP Server</label>
                         <input class="form-check-input" type="checkbox" value="" id="enableNtripServer">
@@ -2973,6 +2975,122 @@ static const char *index_html = R"=====(
                             </div>
                         </div>
                     </div>
+
+                    <div>
+                        <button class="btn btn-md btn-outline-primary mt-3 toggle-btn" type="button"
+                            data-toggle="collapse" data-target="#collapseGNSSConfigMsgBase" aria-expanded="false"
+                            aria-controls="collapseGNSSConfigMsgBase">
+                            RTCM Rates <i class="caret-icon bi icon-caret-down"></i>
+                        </button>
+                        <span class="tt" data-bs-placement="right"
+                            title="RTCM is transmitted by the base at a default of 1Hz for messages 1005, 1074, 1084, 1094, 1124, and 0.1Hz for 1230. This can be lowered for radios with low bandwidth or tailored to transmit any/all RTCM messages. Limits: 0 to 20.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="collapse" id="collapseGNSSConfigMsgBase">
+                        <div class="card card-body" style="margin-top:5px;">
+
+                            <div style="margin-bottom:5px;">
+                                <button type="button" class="btn btn-primary"
+                                    onClick="resetToRTCMDefaults()">Reset to Defaults</button>
+                            </div>
+                            <div style="margin-bottom:5px;">
+                                <button type="button" class="btn btn-primary"
+                                    onClick="resetToLowBandwidthRTCM()">Reset to Low Bandwidth Link</button>
+                            </div>
+
+                            <hr>
+
+                            <div class="form-group row" id="msgUBX_RTCM_1005Base">
+                                <label for="UBX_RTCM_1005Base" class="col-sm-3 col-5 col-form-label">RTCM_1005:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1005Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1005BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1074Base">
+                                <label for="UBX_RTCM_1074Base" class="col-sm-3 col-5 col-form-label">RTCM_1074:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1074Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1074BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1077Base">
+                                <label for="UBX_RTCM_1077Base" class="col-sm-3 col-5 col-form-label">RTCM_1077:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1077Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1077BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1084Base">
+                                <label for="UBX_RTCM_1084Base" class="col-sm-3 col-5 col-form-label">RTCM_1084:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1084Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1084BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1087Base">
+                                <label for="UBX_RTCM_1087Base" class="col-sm-3 col-5 col-form-label">RTCM_1087:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1087Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1087BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1094Base">
+                                <label for="UBX_RTCM_1094Base" class="col-sm-3 col-5 col-form-label">RTCM_1094:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1094Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1094BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1097Base">
+                                <label for="UBX_RTCM_1097Base" class="col-sm-3 col-5 col-form-label">RTCM_1097:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1097Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1097BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1124Base">
+                                <label for="UBX_RTCM_1124Base" class="col-sm-3 col-5 col-form-label">RTCM_1124:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1124Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1124BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1127Base">
+                                <label for="UBX_RTCM_1127Base" class="col-sm-3 col-5 col-form-label">RTCM_1127:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1127Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1127BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1230Base">
+                                <label for="UBX_RTCM_1230Base" class="col-sm-3 col-5 col-form-label">RTCM_1230:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1230Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1230BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_4072_0Base">
+                                <label for="UBX_RTCM_4072_0Base" class="col-sm-4 col-6 col-form-label">RTCM_4072_0:</label>
+                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
+                                        id="UBX_RTCM_4072_0Base" value="0">
+                                    <p id="UBX_RTCM_4072_0BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_4072_1Base">
+                                <label for="UBX_RTCM_4072_1Base" class="col-sm-4 col-6 col-form-label">RTCM_4072_1:</label>
+                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
+                                        id="UBX_RTCM_4072_1Base" value="0">
+                                    <p id="UBX_RTCM_4072_1BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
 

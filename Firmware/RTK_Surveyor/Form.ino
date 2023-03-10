@@ -539,6 +539,8 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "baseTypeFixed", settings.fixedBase);
   stringRecord(newSettings, "observationSeconds", settings.observationSeconds);
   stringRecord(newSettings, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
+  for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+    stringRecord(newSettings, settings.ubxMessagesBase[x].msgTextName, settings.ubxMessagesBase[x].msgRate); //"UBX_RTCM_1005Base"
 
   if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
   {
@@ -1242,6 +1244,20 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
         if (strcmp(settingName, settings.ubxMessages[x].msgTextName) == 0)
         {
           settings.ubxMessages[x].msgRate = settingValue;
+          knownSetting = true;
+          break;
+        }
+      }
+    }
+
+    //Scan for Base RTCM message settings
+    if (knownSetting == false)
+    {
+      for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+      {
+        if (strcmp(settingName, settings.ubxMessagesBase[x].msgTextName) == 0)
+        {
+          settings.ubxMessagesBase[x].msgRate = settingValue;
           knownSetting = true;
           break;
         }

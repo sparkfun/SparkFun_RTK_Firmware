@@ -269,7 +269,6 @@ function parseIncoming(msg) {
         ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
         ge("radioType").dispatchEvent(new CustomEvent('change'));
         ge("antennaReferencePoint").dispatchEvent(new CustomEvent('change'));
-        ge("measurementRateHzBase").dispatchEvent(new CustomEvent('change'));
 
         updateECEFList();
         updateGeodeticList();
@@ -561,8 +560,6 @@ function validateFields() {
         }
     }
 
-    checkElementValue("measurementRateHzBase", 0.00012, 10, "Must be between 0.00012 and 10Hz", "collapseBaseConfig");
-
     //PointPerfect Config
     if (platformPrefix == "Facet L-Band") {
         if (ge("enablePointPerfectCorrections").checked == true) {
@@ -850,6 +847,41 @@ function resetToLoggingDefaults() {
     ge("UBX_RXM_RAWX").value = 1;
     ge("UBX_RXM_SFRBX").value = 1;
 }
+
+function resetToRTCMDefaults() {
+    ge("UBX_RTCM_1005Base").value = 1;
+    ge("UBX_RTCM_1074Base").value = 1;
+    ge("UBX_RTCM_1077Base").value = 0;
+    ge("UBX_RTCM_1084Base").value = 1;
+    ge("UBX_RTCM_1087Base").value = 0;
+
+    ge("UBX_RTCM_1094Base").value = 1;
+    ge("UBX_RTCM_1097Base").value = 0;
+    ge("UBX_RTCM_1124Base").value = 1;
+    ge("UBX_RTCM_1127Base").value = 0;
+    ge("UBX_RTCM_1230Base").value = 10;
+
+    ge("UBX_RTCM_4072_0Base").value = 0;
+    ge("UBX_RTCM_4072_1Base").value = 0;
+}
+
+function resetToLowBandwidthRTCM() {
+    ge("UBX_RTCM_1005Base").value = 10;
+    ge("UBX_RTCM_1074Base").value = 2;
+    ge("UBX_RTCM_1077Base").value = 0;
+    ge("UBX_RTCM_1084Base").value = 2;
+    ge("UBX_RTCM_1087Base").value = 0;
+
+    ge("UBX_RTCM_1094Base").value = 2;
+    ge("UBX_RTCM_1097Base").value = 0;
+    ge("UBX_RTCM_1124Base").value = 2;
+    ge("UBX_RTCM_1127Base").value = 0;
+    ge("UBX_RTCM_1230Base").value = 10;
+
+    ge("UBX_RTCM_4072_0Base").value = 0;
+    ge("UBX_RTCM_4072_1Base").value = 0;
+}
+
 function useECEFCoordinates() {
     ge("fixedEcefX").value = ecefX;
     ge("fixedEcefY").value = ecefY;
@@ -943,14 +975,6 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
     ge("measurementRateSec").addEventListener("change", function () {
         ge("measurementRateHz").value = 1.0 / ge("measurementRateSec").value;
-    });
-
-    ge("measurementRateHzBase").addEventListener("change", function () {
-        ge("measurementRateSecBase").value = 1.0 / ge("measurementRateHzBase").value;
-    });
-
-    ge("measurementRateSecBase").addEventListener("change", function () {
-        ge("measurementRateHzBase").value = 1.0 / ge("measurementRateSecBase").value;
     });
 
     ge("baseTypeSurveyIn").addEventListener("change", function () {

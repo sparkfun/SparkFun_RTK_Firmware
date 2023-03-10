@@ -346,6 +346,14 @@ void recordSystemSettingsToFile(File * settingsFile)
     snprintf(tempString, sizeof(tempString), "message.%s.msgRate=%d", settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
     settingsFile->println(tempString);
   }
+
+  //Record Base RTCM message settings
+  for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+  {
+    char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
+    snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate=%d", settings.ubxMessagesBase[x].msgTextName, settings.ubxMessagesBase[x].msgRate);
+    settingsFile->println(tempString);
+  }
 }
 
 //Given a fileName, parse the file and load the given settings struct
@@ -1089,6 +1097,28 @@ bool parseLine(char* str, Settings *settings)
           if (settings->ubxMessages[x].msgRate != d)
           {
             settings->ubxMessages[x].msgRate = d;
+            settings->updateZEDSettings = true;
+          }
+
+          knownSetting = true;
+          break;
+        }
+      }
+    }
+
+    //Scan for Base RTCM message settings
+    if (knownSetting == false)
+    {
+      for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+      {
+        char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
+        snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", settings->ubxMessagesBase[x].msgTextName);
+
+        if (strcmp(settingName, tempString) == 0)
+        {
+          if (settings->ubxMessagesBase[x].msgRate != d)
+          {
+            settings->ubxMessagesBase[x].msgRate = d;
             settings->updateZEDSettings = true;
           }
 

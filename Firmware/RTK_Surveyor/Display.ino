@@ -1288,6 +1288,12 @@ void paintDynamicModel()
     case (DYN_MODEL_BIKE):
       displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_10_Bike);
       break;
+    case (DYN_MODEL_MOWER):
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_11_Mower);
+      break;
+    case (DYN_MODEL_ESCOOTER):
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_12_EScooter);
+      break;
   }
 }
 

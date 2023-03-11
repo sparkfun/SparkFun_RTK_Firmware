@@ -51,6 +51,12 @@ void menuGNSS()
       case DYN_MODEL_BIKE:
         systemPrint("Bike");
         break;
+      case DYN_MODEL_MOWER:
+        systemPrint("Mower");
+        break;
+      case DYN_MODEL_ESCOOTER:
+        systemPrint("E-Scooter");
+        break;
       default:
         systemPrint("Unknown");
         break;
@@ -93,7 +99,6 @@ void menuGNSS()
     {
       systemPrintf("6) Minimum elevation for a GNSS satellite to be used in fix (degrees): %d\r\n", settings.minElev);
     }
-
 
     systemPrintln("x) Exit");
 
@@ -140,22 +145,32 @@ void menuGNSS()
       systemPrintln("8) Airborne 4g");
       systemPrintln("9) Wrist");
       systemPrintln("10) Bike");
+      //F9R versions starting at 1.21 have Mower and E-Scooter dynamic models
+      if (zedFirmwareVersionInt >= 121)
+      {
+        systemPrintln("11) Mower");
+        systemPrintln("12) E-Scooter");
+
+      }
 
       int dynamicModel = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((dynamicModel != INPUT_RESPONSE_GETNUMBER_EXIT) && (dynamicModel != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (dynamicModel < 1 || dynamicModel > DYN_MODEL_BIKE)
+        uint8_t maxModel = DYN_MODEL_BIKE;
+        //F9R versions starting at 1.21 have Mower and E-Scooter dynamic models
+        if (zedFirmwareVersionInt >= 121)
+          maxModel = DYN_MODEL_ESCOOTER;
+
+        if (dynamicModel < 1 || dynamicModel > maxModel)
           systemPrintln("Error: Dynamic model out of range");
         else
         {
           if (dynamicModel == 1)
             settings.dynamicModel = DYN_MODEL_PORTABLE; //The enum starts at 0 and skips 1.
           else
-          {
             settings.dynamicModel = dynamicModel; //Recorded to NVM and file at main menu exit
 
-            theGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
-          }
+          theGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
         }
       }
     }

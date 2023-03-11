@@ -518,6 +518,7 @@ void createSettingsString(char* newSettings)
   char apZedFirmwareVersion[80];
   snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
   stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
+  stringRecord(newSettings, "zedFirmwareVersionInt", zedFirmwareVersionInt);
 
   char apDeviceBTID[30];
   snprintf(apDeviceBTID, sizeof(apDeviceBTID), "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);

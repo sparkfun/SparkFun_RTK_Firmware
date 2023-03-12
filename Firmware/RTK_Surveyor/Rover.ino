@@ -71,6 +71,14 @@ bool configureUbloxModuleRover()
   {
     response &= theGNSS.addCfgValset(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
     response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_IMU_MNTALG_YAW, settings.imuYaw);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_IMU_MNTALG_PITCH, settings.imuPitch);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_IMU_MNTALG_ROLL, settings.imuRoll);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_DIS_AUTODIRPINPOL, settings.sfDisableWheelDirection);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_COMBINE_TICKS, settings.sfCombineWheelTicks);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV_PRIO, settings.rateNavPrio);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, settings.enableNAV2);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_USE_SPEED, settings.sfUseSpeed);
   }
 
   response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation

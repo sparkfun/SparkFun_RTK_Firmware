@@ -300,28 +300,94 @@ void menuSensorFusion()
     systemPrintln();
     systemPrintln("Menu: Sensor Fusion");
 
-    systemPrint("Fusion Mode: ");
-    systemPrint(theGNSS.packetUBXESFSTATUS->data.fusionMode);
-    systemPrint(" - ");
-    if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
-      systemPrintln("Initializing");
-    else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 1)
-      systemPrintln("Calibrated");
-    else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 2)
-      systemPrintln("Suspended");
-    else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
-      systemPrintln("Disabled");
+    if (settings.enableSensorFusion == true)
+    {
+      // packetUBXESFSTATUS is sent automatically by the module
+      systemPrint("Fusion Mode: ");
+      systemPrint(theGNSS.packetUBXESFSTATUS->data.fusionMode);
+      systemPrint(" - ");
+      if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 0)
+        systemPrint("Initializing");
+      else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 1)
+        systemPrint("Calibrated");
+      else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 2)
+        systemPrint("Suspended");
+      else if (theGNSS.packetUBXESFSTATUS->data.fusionMode == 3)
+        systemPrint("Disabled");
+      systemPrintln();
 
-    if (settings.enableSensorFusion == true && settings.dynamicModel != DYN_MODEL_AUTOMOTIVE)
-      systemPrintln("Warning: Dynamic Model not set to Automotive. Sensor Fusion is best used with the Automotive Dynamic Model.");
+      if (theGNSS.getEsfAlignment()) // Poll new ESF ALG data
+      {
+        systemPrint("Alignment Mode: ");
+        systemPrint(theGNSS.packetUBXESFALG->data.flags.bits.status);
+        systemPrint(" - ");
+        if (theGNSS.packetUBXESFALG->data.flags.bits.status == 0)
+          systemPrint("User Defined");
+        else if (theGNSS.packetUBXESFALG->data.flags.bits.status == 1)
+          systemPrint("Alignment Roll/Pitch Ongoing");
+        else if (theGNSS.packetUBXESFALG->data.flags.bits.status == 2)
+          systemPrint("Alignment Roll/Pitch/Yaw Ongoing");
+        else if (theGNSS.packetUBXESFALG->data.flags.bits.status == 3)
+          systemPrint("Coarse Alignment Used");
+        else if (theGNSS.packetUBXESFALG->data.flags.bits.status == 3)
+          systemPrint("Fine Alignment Used");
+        systemPrintln();
+      }
 
-    systemPrint("1) Toggle Sensor Fusion: ");
-    if (settings.enableSensorFusion == true) systemPrintln("Enabled");
-    else systemPrintln("Disabled");
+      if (settings.dynamicModel != DYN_MODEL_AUTOMOTIVE)
+        systemPrintln("Warning: Dynamic Model not set to Automotive. Sensor Fusion is best used with the Automotive Dynamic Model.");
+    }
 
-    systemPrint("2) Toggle Automatic IMU-mount Alignment: ");
-    if (settings.autoIMUmountAlignment == true) systemPrintln("Enabled");
-    else systemPrintln("Disabled");
+    systemPrintf("1) Toggle Sensor Fusion: %s\r\n", settings.enableSensorFusion ? "Enabled" : "Disabled");
+
+    if (settings.enableSensorFusion == true)
+    {
+      if (settings.autoIMUmountAlignment == true)
+      {
+        systemPrintf("2) Toggle Automatic IMU-mount Alignment: True - Yaw: %0.2f Pitch: %0.2f Roll: %0.2f\r\n", theGNSS.getESFyaw(), theGNSS.getESFpitch(), theGNSS.getESFroll());
+
+        systemPrintf("3) Disable automatic wheel tick direction pin polarity detection: %s\r\n", settings.sfDisableWheelDirection ? "True" : "False");
+
+        systemPrintf("4) Use combined rear wheel ticks instead of the single tick: %s\r\n", settings.sfCombineWheelTicks ? "True" : "False");
+
+        systemPrintf("5) Output rate of priority nav mode message: %d\r\n", settings.rateNavPrio);
+
+        systemPrintf("6) Enable secondary NAV2 output: %s\r\n", settings.enableNAV2 ? "True" : "False");
+
+        systemPrintf("7) Use speed measurements instead of single ticks: %s\r\n", settings.sfUseSpeed ? "True" : "False");
+      }
+      else
+      {
+        systemPrintf("2) Toggle Automatic IMU-mount Alignment: False\r\n");
+
+        systemPrintf("3) Manually set yaw: %0.2f\r\n", settings.imuYaw / 100.0);
+
+        systemPrintf("4) Manually set pitch: %0.2f\r\n", settings.imuPitch / 100.0);
+
+        systemPrintf("5) Manually set roll: %0.2f\r\n", settings.imuRoll / 100.0);
+
+        systemPrintf("6) Disable automatic wheel tick direction pin polarity detection: %s\r\n", settings.sfDisableWheelDirection ? "True" : "False");
+
+        systemPrintf("7) Use combined rear wheel ticks instead of the single tick: %s\r\n", settings.sfCombineWheelTicks ? "True" : "False");
+
+        systemPrintf("8) Output rate of priority nav mode message: %d\r\n", settings.rateNavPrio);
+
+        systemPrintf("9) Enable secondary NAV2 output: %s\r\n", settings.enableNAV2 ? "True" : "False");
+
+        systemPrintf("10) Use speed measurements instead of single ticks: %s\r\n", settings.sfUseSpeed ? "True" : "False");
+
+        //CFG-SFIMU-IMU_MNTALG_YAW
+        //CFG-SFIMU-IMU_MNTALG_PITCH
+        //CFG-SFIMU-IMU_MNTALG_ROLL
+        //CFG-SFODO-DIS_AUTODIRPINPOL
+        //CFG-SFODO-COMBINE_TICKS
+
+        //CFG-RATE-NAV_PRIO
+        //CFG-NAV2-OUT_ENABLED
+        //CFG-SFODO-USE_SPEED
+      }
+    }
+
 
     systemPrintln("x) Exit");
 
@@ -332,9 +398,95 @@ void menuSensorFusion()
       settings.enableSensorFusion ^= 1;
       setSensorFusion(settings.enableSensorFusion); //Enable/disable sensor fusion
     }
-    else if (incoming == 2)
+    else if (settings.enableSensorFusion == true && incoming == 2)
     {
       settings.autoIMUmountAlignment ^= 1;
+    }
+    else if (settings.enableSensorFusion == true && (
+               (settings.autoIMUmountAlignment == true && incoming == 3)
+               || (settings.autoIMUmountAlignment == false && incoming == 6)
+             ) )
+    {
+      settings.sfDisableWheelDirection ^= 1;
+    }
+    else if (settings.enableSensorFusion == true && (
+               (settings.autoIMUmountAlignment == true && incoming == 4)
+               || (settings.autoIMUmountAlignment == false && incoming == 7)
+             ))
+    {
+      settings.sfCombineWheelTicks ^= 1;
+    }
+
+    else if (settings.enableSensorFusion == true && settings.autoIMUmountAlignment == false && incoming == 3)
+    {
+      systemPrint("Enter yaw alignment in degrees (0.00 to 360.00): ");
+      double yaw = getDouble();
+      if (yaw < 0.00 || yaw > 360.00) //0 to 36,000
+      {
+        systemPrintln("Error: Yaw out of range");
+      }
+      else
+      {
+        settings.imuYaw = yaw * 100; //56.44 to 5644
+      }
+    }
+    else if (settings.enableSensorFusion == true && settings.autoIMUmountAlignment == false && incoming == 4)
+    {
+      systemPrint("Enter pitch alignment in degrees (-90.00 to 90.00): ");
+      double pitch = getDouble();
+      if (pitch < -90.00 || pitch > 90.00) //-9000 to 9000
+      {
+        systemPrintln("Error: Pitch out of range");
+      }
+      else
+      {
+        settings.imuPitch = pitch * 100; //56.44 to 5644
+      }
+    }
+    else if (settings.enableSensorFusion == true && settings.autoIMUmountAlignment == false && incoming == 5)
+    {
+      systemPrint("Enter roll alignment in degrees (-180.00 to 180.00): ");
+      double roll = getDouble();
+      if (roll < -180.00 || roll > 180.0) //-18000 to 18000
+      {
+        systemPrintln("Error: Roll out of range");
+      }
+      else
+      {
+        settings.imuRoll = roll * 100; //56.44 to 5644
+      }
+    }
+
+    else if (settings.enableSensorFusion == true && (
+               (settings.autoIMUmountAlignment == true && incoming == 5)
+               || (settings.autoIMUmountAlignment == false && incoming == 8)
+             ) )
+    {
+      systemPrint("Enter the output rate of priority nav mode message (0 to 30Hz): "); //TODO check maximum
+      int rate = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((rate != INPUT_RESPONSE_GETNUMBER_EXIT) && (rate != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (rate < 0 || rate > 30)
+          systemPrintln("Error: Output rate out of range");
+        else
+          settings.rateNavPrio = rate;
+      }
+    }
+
+    else if (settings.enableSensorFusion == true && (
+               (settings.autoIMUmountAlignment == true && incoming == 6)
+               || (settings.autoIMUmountAlignment == false && incoming == 9)
+             ))
+    {
+      settings.enableNAV2 ^= 1;
+    }
+
+    else if (settings.enableSensorFusion == true && (
+               (settings.autoIMUmountAlignment == true && incoming == 7)
+               || (settings.autoIMUmountAlignment == false && incoming == 10)
+             ))
+    {
+      settings.sfUseSpeed ^= 1;
     }
 
     else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
@@ -347,6 +499,14 @@ void menuSensorFusion()
 
   theGNSS.setVal8(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
   theGNSS.setVal8(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
+  theGNSS.setVal8(UBLOX_CFG_SFIMU_IMU_MNTALG_YAW, settings.imuYaw);
+  theGNSS.setVal8(UBLOX_CFG_SFIMU_IMU_MNTALG_PITCH, settings.imuPitch);
+  theGNSS.setVal8(UBLOX_CFG_SFIMU_IMU_MNTALG_ROLL, settings.imuRoll);
+  theGNSS.setVal8(UBLOX_CFG_SFODO_DIS_AUTODIRPINPOL, settings.sfDisableWheelDirection);
+  theGNSS.setVal8(UBLOX_CFG_SFODO_COMBINE_TICKS, settings.sfCombineWheelTicks);
+  theGNSS.setVal8(UBLOX_CFG_RATE_NAV_PRIO, settings.rateNavPrio);
+  theGNSS.setVal8(UBLOX_CFG_NAV2_OUT_ENABLED, settings.enableNAV2);
+  theGNSS.setVal8(UBLOX_CFG_SFODO_USE_SPEED, settings.sfUseSpeed);
 
   clearBuffer(); //Empty buffer of any newline chars
 }

@@ -634,8 +634,8 @@ void beginGNSS()
     zedFirmwareVersionInt = (theGNSS.getFirmwareVersionHigh() * 100) + theGNSS.getFirmwareVersionLow();
 
     //Check this is known firmware
-    //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20 Spartan future support
-    //"1.21" - Future F9R HPS v1.21
+    //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20
+    //"1.21" - F9R HPS v1.21
     //"1.30" - ZED-F9P (HPG) released Dec, 2021. Also ZED-F9R (HPS) released Sept, 2022
     //"1.32" - ZED-F9P released May, 2022
 

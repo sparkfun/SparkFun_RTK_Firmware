@@ -226,7 +226,7 @@ typedef uint8_t (* PARSE_ROUTINE)(P_PARSE_STATE parse,  //Parser state
 
 //End of message callback routine
 typedef void (* EOM_CALLBACK)(P_PARSE_STATE parse,      //Parser state
-                                 uint8_t type);         //Message type
+                              uint8_t type);         //Message type
 
 #define PARSE_BUFFER_LENGTH       3000 //Some USB RAWX messages can be > 2k
 
@@ -602,7 +602,7 @@ typedef struct {
     {"", ""},
   };
 
-  bool wifiConfigOverAP = true; //Configure device over Access Point or have it connect to WiFi 
+  bool wifiConfigOverAP = true; //Configure device over Access Point or have it connect to WiFi
   uint16_t wifiTcpPort = 2947; //TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
   uint8_t minElev = 10; //Minimum elevation (in deg) for a GNSS satellite to be used in NAV
 
@@ -624,6 +624,16 @@ typedef struct {
     {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE4072_0_UART1, UBX_RTCM_4072_0, UBX_RTCM_MSB, 0, "UBX_RTCM_4072_0Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE4072_0},
     {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE4072_1_UART1, UBX_RTCM_4072_1, UBX_RTCM_MSB, 0, "UBX_RTCM_4072_1Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE4072_1},
   };
+
+  uint32_t imuYaw = 0; //User defined IMU mount yaw angle (0 to 36,000) CFG-SFIMU-IMU_MNTALG_YAW
+  int16_t imuPitch = 0; //User defined IMU mount pitch angle (-9000 to 9000) CFG-SFIMU-IMU_MNTALG_PITCH
+  int16_t imuRoll = 0; //User defined IMU mount roll angle (-18000 to 18000) CFG-SFIMU-IMU_MNTALG_ROLL
+  bool sfDisableWheelDirection = false; //CFG-SFODO-DIS_AUTODIRPINPOL
+  bool sfCombineWheelTicks = false; //CFG-SFODO-COMBINE_TICKS
+  uint8_t rateNavPrio = 0; //Output rate of priority nav mode message - CFG-RATE-NAV_PRIO
+  bool enableNAV2 = false; //CFG-NAV2-OUT_ENABLED
+  //CFG-SFIMU-AUTO_MNTALG_ENA 0 = autoIMUmountAlignment
+  bool sfUseSpeed = false; //CFG-SFODO-USE_SPEED
 
 } Settings;
 Settings settings;

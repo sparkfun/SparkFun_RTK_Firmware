@@ -331,6 +331,15 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "wifiTcpPort", settings.wifiTcpPort);
   settingsFile->printf("%s=%d\r\n", "minElev", settings.minElev);
 
+  settingsFile->printf("%s=%d\r\n", "imuYaw", settings.imuYaw);
+  settingsFile->printf("%s=%d\r\n", "imuPitch", settings.imuPitch);
+  settingsFile->printf("%s=%d\r\n", "imuRoll", settings.imuRoll);
+  settingsFile->printf("%s=%d\r\n", "sfDisableWheelDirection", settings.sfDisableWheelDirection);
+  settingsFile->printf("%s=%d\r\n", "sfCombineWheelTicks", settings.sfCombineWheelTicks);
+  settingsFile->printf("%s=%d\r\n", "rateNavPrio", settings.rateNavPrio);
+  settingsFile->printf("%s=%d\r\n", "enableNAV2", settings.enableNAV2);
+  settingsFile->printf("%s=%d\r\n", "sfUseSpeed", settings.sfUseSpeed);
+
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
   {
@@ -1028,7 +1037,77 @@ bool parseLine(char* str, Settings *settings)
   else if (strcmp(settingName, "wifiTcpPort") == 0)
     settings->wifiTcpPort = d;
   else if (strcmp(settingName, "minElev") == 0)
-    settings->minElev = d;
+  {
+    if (settings->minElev != d)
+    {
+      settings->minElev = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "imuYaw") == 0)
+  {
+    if (settings->imuYaw != d)
+    {
+      settings->imuYaw = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "imuPitch") == 0)
+  {
+    if (settings->imuPitch != d)
+    {
+      settings->imuPitch = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "imuRoll") == 0)
+  {
+    if (settings->imuRoll != d)
+    {
+      settings->imuRoll = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "sfDisableWheelDirection") == 0)
+  {
+    if (settings->sfDisableWheelDirection != d)
+    {
+      settings->sfDisableWheelDirection = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "sfCombineWheelTicks") == 0)
+  {
+    if (settings->sfCombineWheelTicks != d)
+    {
+      settings->sfCombineWheelTicks = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "rateNavPrio") == 0)
+  {
+    if (settings->rateNavPrio != d)
+    {
+      settings->rateNavPrio = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "enableNAV2") == 0)
+  {
+    if (settings->enableNAV2 != d)
+    {
+      settings->enableNAV2 = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "sfUseSpeed") == 0)
+  {
+    if (settings->sfUseSpeed != d)
+    {
+      settings->sfUseSpeed = d;
+      settings->updateZEDSettings = true;
+    }
+  }
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list

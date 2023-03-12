@@ -114,8 +114,8 @@ void menuGNSS()
       }
       else
       {
-        //Do not set the rate here because we may be in a non-rover mode
-        restartRover = true;
+        setRate(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
+        //Settings recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 2)
@@ -128,8 +128,8 @@ void menuGNSS()
       }
       else
       {
-        //Do not set the rate here because we may be in a non-rover mode
-        restartRover = true;
+        setRate(rate); //This will set settings.measurementRate, settings.navigationRate, and GSV message
+        //Settings recorded to NVM and file at main menu exit
       }
     }
     else if (incoming == 3)

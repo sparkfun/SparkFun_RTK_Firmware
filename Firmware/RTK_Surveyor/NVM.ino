@@ -363,6 +363,42 @@ void recordSystemSettingsToFile(File * settingsFile)
     snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate=%d", settings.ubxMessagesBase[x].msgTextName, settings.ubxMessagesBase[x].msgRate);
     settingsFile->println(tempString);
   }
+
+  //Ethernet
+  {
+    char tempString[50];
+    snprintf(tempString, sizeof(tempString), "ethernetIP=%d,%d,%d,%d,",
+            settings.ethernetIP[0],
+            settings.ethernetIP[1],
+            settings.ethernetIP[2],
+            settings.ethernetIP[3]
+           );
+    settingsFile->println(tempString);
+    snprintf(tempString, sizeof(tempString), "ethernetDNS=%d,%d,%d,%d,",
+            settings.ethernetDNS[0],
+            settings.ethernetDNS[1],
+            settings.ethernetDNS[2],
+            settings.ethernetDNS[3]
+           );
+    settingsFile->println(tempString);
+    snprintf(tempString, sizeof(tempString), "ethernetGateway=%d,%d,%d,%d,",
+            settings.ethernetGateway[0],
+            settings.ethernetGateway[1],
+            settings.ethernetGateway[2],
+            settings.ethernetGateway[3]
+           );
+    settingsFile->println(tempString);
+    snprintf(tempString, sizeof(tempString), "ethernetSubnet=%d,%d,%d,%d,",
+            settings.ethernetSubnet[0],
+            settings.ethernetSubnet[1],
+            settings.ethernetSubnet[2],
+            settings.ethernetSubnet[3]
+           );
+    settingsFile->println(tempString);
+    settingsFile->printf("%s=%d\r\n", "ethernetHttpPort", settings.ethernetHttpPort);
+    settingsFile->printf("%s=%d\r\n", "ethernetNtpPort", settings.ethernetNtpPort);
+    settingsFile->printf("%s=%d\r\n", "ethernetConfig", settings.ethernetConfig);
+  }
 }
 
 //Given a fileName, parse the file and load the given settings struct
@@ -1108,6 +1144,13 @@ bool parseLine(char* str, Settings *settings)
       settings->updateZEDSettings = true;
     }
   }
+  //Ethernet
+  else if (strcmp(settingName, "ethernetHttpPort") == 0)
+    settings->ethernetHttpPort = d;
+  else if (strcmp(settingName, "ethernetNtpPort") == 0)
+    settings->ethernetNtpPort = d;
+  else if (strcmp(settingName, "ethernetConfig") == 0)
+    settings->ethernetConfig = (ethernetConfigOptions)d;
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list
@@ -1230,6 +1273,88 @@ bool parseLine(char* str, Settings *settings)
           knownSetting = true;
           break;
         }
+      }
+    }
+
+    //Ethernet
+    if (knownSetting == false)
+    {
+      char tempString[50];
+      snprintf(tempString, sizeof(tempString), "ethernetIP");
+
+      if (strcmp(settingName, tempString) == 0)
+      {
+        uint8_t ipAddress[4];
+        uint8_t ipByte = 0;
+
+        char* token = strtok(settingValue, ","); //Break string up on ,
+        while (token != nullptr && ipByte < sizeof(ipAddress))
+        {
+          settings->ethernetIP[ipByte++] = (uint8_t)strtol(token, nullptr, 16);
+          token = strtok(nullptr, ",");
+        }
+
+        knownSetting = true;
+      }
+    }
+    if (knownSetting == false)
+    {
+      char tempString[50];
+      snprintf(tempString, sizeof(tempString), "ethernetDNS");
+
+      if (strcmp(settingName, tempString) == 0)
+      {
+        uint8_t ipAddress[4];
+        uint8_t ipByte = 0;
+
+        char* token = strtok(settingValue, ","); //Break string up on ,
+        while (token != nullptr && ipByte < sizeof(ipAddress))
+        {
+          settings->ethernetDNS[ipByte++] = (uint8_t)strtol(token, nullptr, 16);
+          token = strtok(nullptr, ",");
+        }
+
+        knownSetting = true;
+      }
+    }
+    if (knownSetting == false)
+    {
+      char tempString[50];
+      snprintf(tempString, sizeof(tempString), "ethernetGateway");
+
+      if (strcmp(settingName, tempString) == 0)
+      {
+        uint8_t ipAddress[4];
+        uint8_t ipByte = 0;
+
+        char* token = strtok(settingValue, ","); //Break string up on ,
+        while (token != nullptr && ipByte < sizeof(ipAddress))
+        {
+          settings->ethernetGateway[ipByte++] = (uint8_t)strtol(token, nullptr, 16);
+          token = strtok(nullptr, ",");
+        }
+
+        knownSetting = true;
+      }
+    }
+    if (knownSetting == false)
+    {
+      char tempString[50];
+      snprintf(tempString, sizeof(tempString), "ethernetSubnet");
+
+      if (strcmp(settingName, tempString) == 0)
+      {
+        uint8_t ipAddress[4];
+        uint8_t ipByte = 0;
+
+        char* token = strtok(settingValue, ","); //Break string up on ,
+        while (token != nullptr && ipByte < sizeof(ipAddress))
+        {
+          settings->ethernetSubnet[ipByte++] = (uint8_t)strtol(token, nullptr, 16);
+          token = strtok(nullptr, ",");
+        }
+
+        knownSetting = true;
       }
     }
 

@@ -1022,16 +1022,16 @@ void beginEthernet()
   switch(settings.ethernetConfig)
   {
     case ETHERNET_FIXED_IP:
-      Ethernet.begin(ethernetMACAddress, settings.fixedIPAddress);
+      Ethernet.begin(ethernetMACAddress, settings.ethernetIP);
       break;
     case ETHERNET_FIXED_IP_DNS:
-      Ethernet.begin(ethernetMACAddress, settings.fixedIPAddress, settings.DNS);
+      Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS);
       break;
     case ETHERNET_FIXED_IP_DNS_GATEWAY:
-      Ethernet.begin(ethernetMACAddress, settings.fixedIPAddress, settings.DNS, settings.gateway);
+      Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway);
       break;
     case ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET:
-      Ethernet.begin(ethernetMACAddress, settings.fixedIPAddress, settings.DNS, settings.gateway, settings.subnetMask);
+      Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway, settings.ethernetSubnet);
       break;
     case ETHERNET_DHCP:
     default:
@@ -1065,7 +1065,7 @@ void beginEthernetHTTPServer()
 #ifdef COMPILE_ETHERNET
   if (online.ethernet)
   {
-    ethernetHTTPServer = new EthernetServer(settings.httpPort);
+    ethernetHTTPServer = new EthernetServer(settings.ethernetHttpPort);
     online.ethernetHTTPServer = true;
   }
 #endif
@@ -1080,7 +1080,7 @@ void beginEthernetNTPServer()
   if (online.ethernet)
   {
     ethernetNTPServer = new derivedEthernetUDP;
-    ethernetNTPServer->begin(settings.ntpPort);
+    ethernetNTPServer->begin(settings.ethernetNtpPort);
     ntpSockIndex = ethernetNTPServer->getSockIndex(); //Get the socket index
     attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); //Attach the interrupt
     online.ethernetNTPServer = true;

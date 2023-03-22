@@ -568,17 +568,6 @@ typedef struct {
   int8_t timeZoneMinutes = 0;
   int8_t timeZoneSeconds = 0;
 
-  //Ethernet
-#ifdef COMPILE_ETHERNET
-  IPAddress fixedIPAddress = { 192, 168, 0, 123 };
-  IPAddress DNS = { 194, 168, 4, 100 };
-  IPAddress gateway = { 192, 168, 0, 1 };
-  IPAddress subnetMask = { 255, 255, 255, 0 };
-  uint16_t httpPort = 80;
-  uint16_t ntpPort = 123;
-  ethernetConfigOptions ethernetConfig = ETHERNET_DHCP;
-#endif
-
   //Debug settings
   bool enablePrintWifiIpAddress = true;
   bool enablePrintState = false;
@@ -656,6 +645,15 @@ typedef struct {
   bool enableNAV2 = false; //CFG-NAV2-OUT_ENABLED
   //CFG-SFIMU-AUTO_MNTALG_ENA 0 = autoIMUmountAlignment
   bool sfUseSpeed = false; //CFG-SFODO-USE_SPEED
+
+  //Ethernet
+  IPAddress ethernetIP = { 192, 168, 0, 123 };
+  IPAddress ethernetDNS = { 194, 168, 4, 100 };
+  IPAddress ethernetGateway = { 192, 168, 0, 1 };
+  IPAddress ethernetSubnet = { 255, 255, 255, 0 };
+  uint16_t ethernetHttpPort = 80;
+  uint16_t ethernetNtpPort = 123;
+  ethernetConfigOptions ethernetConfig = ETHERNET_DHCP;
 
 } Settings;
 Settings settings;

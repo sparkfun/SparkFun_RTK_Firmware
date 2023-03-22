@@ -218,7 +218,7 @@ bool currentlyParsingData = false; //Goes true when we hit 750ms timeout with ne
 
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3 v3.0.2
+#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3 v3.0.5
 
 #define SENTENCE_TYPE_NMEA              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
 #define SENTENCE_TYPE_NONE              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
@@ -235,23 +235,24 @@ uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported an
 class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 {
 public:
-  volatile bool _iAmLocked = false;
+  SemaphoreHandle_t gnssSemaphore = nullptr;
+  bool createLock(void)
+  {
+    if (gnssSemaphore == nullptr)
+      gnssSemaphore = xSemaphoreCreateMutex();
+    return gnssSemaphore;
+  }
   bool lock(void)
   {
-    if (_iAmLocked)
-    {
-      unsigned long startTime = millis();
-      while (_iAmLocked && (millis() < (startTime + 2100)))
-        delay(1); //YIELD
-      if (_iAmLocked)
-        return false;
-    }
-    _iAmLocked = true;
-    return true;
+    return (xSemaphoreTake(gnssSemaphore, 2100) == pdPASS);
   }
   void unlock(void)
   {
-    _iAmLocked = false;  
+    xSemaphoreGive(gnssSemaphore);
+  }
+  void deleteLock(void)
+  {
+    vSemaphoreDelete(gnssSemaphore);
   }
 };
 
@@ -443,19 +444,12 @@ const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 //Ethernet
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_ETHERNET
-#include <EthernetLarge.h> // http://librarymanager/All#Arduino_Ethernet
+#include <Ethernet.h> // http://librarymanager/All#Arduino_Ethernet
+//#include <EthernetLarge.h> // https://github.com/OPEnSLab-OSU/EthernetLarge
 IPAddress ethernetIPAddress;
 IPAddress ethernetDNS;
 IPAddress ethernetGateway;
 IPAddress ethernetSubnetMask;
-//https://github.com/arduino-libraries/Ethernet/issues/88#issuecomment-455498941 must have been fixed in 2.0.>2
-//"C:\Users\<Your User>\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.2\cores\esp32\Server.h"
-//But adding per1234's fix breaks WiFiServer...
-//It might be possible to add the W5500 support from the esp-idf?
-//https://github.com/espressif/esp-idf/tree/master/components/esp_eth/src
-//https://github.com/espressif/arduino-esp32/issues/5482
-//https://github.com/espressif/arduino-esp32/pull/7163
-//https://github.com/khoih-prog/WebServer_ESP32_W5500
 EthernetServer *ethernetHTTPServer = nullptr; //This will be instantiated when we know the HTTP port
 class derivedEthernetUDP : public EthernetUDP
 {

@@ -70,6 +70,13 @@
         .box-margin40 {
             margin-left: 40px;
         }
+
+        .battery {
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+            float: right;
+        }
     </style>
 </head>
 
@@ -87,14 +94,22 @@
         <b>Done</b><br><br>Firmware update complete. RTK device is now rebooting.
     </div>
 
-    <div class="container" style="margin-top:20px;max-width:600px;" id="mainPage">
-        <h2>
-            <div align="center"><img src="src/rtk-setup.png" alt="SparkFun RTK WiFi Setup">
-            </div>
-        </h2>
-        <!-- <div class="col-sm-12 mt-3"> -->
-        <div class="row">
-            <div align="center" class="small coulm left">
+    <div align="right" class="container" style="margin-top:10px;max-width:600px; margin-bottom: -25px;">
+        <img id="batteryIconFileName" src="src/BatteryBlank.png" alt="Battery level"> <span id="batteryPercent" class="small"
+            style="display:inline;"></span>
+    </div>
+
+    <div class="container">
+
+        <div align="center" class="col-sm-12"><img src="src/rtk-setup.png" alt="SparkFun RTK WiFi Setup"></div>
+
+    </div>
+
+    <div class="container" style="margin-top:10px;max-width:600px;" id="mainPage">
+
+        <div align="center" class="row" style="display:block;">
+
+            <div align="center" class="small left">
                 RTK Firmware: <span id="rtkFirmwareVersion" style="display:inline;">v0.0</span><br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
                 <span id="deviceBTID" style="display:inline;">Device Bluetooth ID: 0000</span> <br>
@@ -109,10 +124,7 @@
                     <span id="ecefZ" style="display:inline;">4086665.484</span>
                 </span><br>
             </div>
-            <div class="column right">
-                <img id="batteryIconFileName" src="src/BatteryBlank.png" alt="Battery level">
-                <span id="batteryPercent" style="display:inline;"></span>
-            </div>
+
         </div>
 
         <hr class="mt-0">
@@ -219,6 +231,7 @@
             </div>
             <div class="collapse" id="collapseGNSSConfig">
                 <div class="card card-body pt-1">
+
                     <div id="measurementRateInput">
                         Measurement Rate:
                         <div class="row">
@@ -252,6 +265,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div id="dynamicModelDropdown">
                         <label for="dynamicModel">Dynamic Model:</label>
                         <select name="dynamicModel" id="dynamicModel" class="form-dropdown mb-2">
@@ -272,6 +286,19 @@
                         </span>
                         <p id="dynamicModelSensorFusionError" class="inlineError"></p>
                         <br>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="minElev" class="col-sm-4 col-6 col-form-label">Min SV Elevation:
+                            <span class="tt" data-bs-placement="right"
+                                title="Minimum elevation in degrees for a GNSS satellite to be used in a fix.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="minElev">
+                            <p id="minElevError" class="inlineError"></p>
+                        </div>
                     </div>
 
                     <div id="constellationCheckBoxes">
@@ -1013,7 +1040,7 @@
                             <div class="form-group row">
                                 <div class="box-margin40 col-sm-8 col-8 col-form-label">
                                     <button type="button" id="useECEFCoordinates" class="btn btn-primary box-margin20"
-                                        onClick="useECEFCoordinates()">Paste Current XYZ</button>
+                                        onClick="useECEFCoordinates()">Load ECEF From ZED</button>
                                     <span class="tt" data-bs-placement="right"
                                         title="Puts the current ECEF coordinates into the fixed X/Y/Z boxes.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
@@ -1110,8 +1137,8 @@
                             <div class="form-group row">
                                 <div class="box-margin40 col-sm-8 col-8 col-form-label">
                                     <button type="button" id="useGeodeticCoordinates"
-                                        class="btn btn-primary box-margin20" onClick="useGeodeticCoordinates()">Paste
-                                        Current LLh</button>
+                                        class="btn btn-primary box-margin20" onClick="useGeodeticCoordinates()">Load LLh
+                                        From ZED</button>
                                     <span class="tt" data-bs-placement="right"
                                         title="Puts the current LLh into the fixed LLh boxes.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
@@ -1142,9 +1169,9 @@
                                     <label for="fixedAltitude" class="box-margin40 col-sm-3 col-6 col-form-label">HAE
                                         Mark/Alt(m):
                                         <span class="tt" data-bs-placement="right"
-                                        title="Height Above Ellipsoid of the mark. This is the coordinate or altitude of the mark or monument on the ground.">
-                                        <span class="icon-info-circle text-primary ms-2"></span>
-                                    </span>
+                                            title="Height Above Ellipsoid of the mark. This is the coordinate or altitude of the mark or monument on the ground.">
+                                            <span class="icon-info-circle text-primary ms-2"></span>
+                                        </span>
                                     </label>
                                     <div class="col-sm-4 col-4">
                                         <input type="number" class="form-control" id="fixedAltitude">
@@ -1153,15 +1180,27 @@
                                 <p id="fixedAltitudeError" class="inlineError"></p>
                             </div>
 
-                            <div class="form-check box-margin40">
-                                <label class="form-check-label" for="adjustHAEMark">Adjust Mark</label>
-                                <input class="form-check-input" type="checkbox" value="" id="adjustHAEMark"
-                                    onClick="adjustHAE()">
-                                <span class="tt" data-bs-placement="right"
-                                    title="If enabled, HAE Mark is calculated by *subtracting* the entered Antenna Height and ARP from the altitude reported by the GNSS receiver. This is handy when measuring a mark with a known pole height and ARP, but unknown mark elevation. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
-                                    <span class="icon-info-circle text-primary ms-2"></span>
+                            <div class="form-group row">
+                                <span style="display:inline; margin-left:40px;">
+                                    <input type="radio" name="markRadio" value="1" onClick="adjustHAE()">
+                                    <label id="calcHAEMark">Calculate HAE Mark</label>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="If enabled, HAE Mark is calculated by *subtracting* the entered Antenna Height and ARP from the altitude reported by the GNSS receiver. This is handy when measuring a mark with a known pole height and ARP, but unknown mark elevation. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
                                 </span>
                             </div>
+                            <div class="form-group row">
+                                <span style="display:inline; margin-left:40px;">
+                                    <input type="radio" name="markRadio" value="2" onClick="adjustHAE()" checked>
+                                    <label id="callHAEAPC">Calculate HAE APC</label>
+                                    <span class="tt" data-bs-placement="right"
+                                        title="If enabled, HAE APC is calculated by *adding* the entered Antenna Height and ARP to the altitude reported by the GNSS receiver. Note: The HAE Mark value is always recorded to the Commonly Used Coordinates table.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </span>
+                            </div>
+
 
                             <div class="form-group row">
                                 <label for="antennaHeight" class="box-margin40 col-sm-3 col-5 col-form-label">Antenna
@@ -1330,6 +1369,122 @@
                             </div>
                         </div>
                     </div>
+
+                    <div>
+                        <button class="btn btn-md btn-outline-primary mt-3 toggle-btn" type="button"
+                            data-toggle="collapse" data-target="#collapseGNSSConfigMsgBase" aria-expanded="false"
+                            aria-controls="collapseGNSSConfigMsgBase">
+                            RTCM Rates <i class="caret-icon bi icon-caret-down"></i>
+                        </button>
+                        <span class="tt" data-bs-placement="right"
+                            title="RTCM is transmitted by the base at a default of 1Hz for messages 1005, 1074, 1084, 1094, 1124, and 0.1Hz for 1230. This can be lowered for radios with low bandwidth or tailored to transmit any/all RTCM messages. Limits: 0 to 20.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="collapse" id="collapseGNSSConfigMsgBase">
+                        <div class="card card-body" style="margin-top:5px;">
+
+                            <div style="margin-bottom:5px;">
+                                <button type="button" class="btn btn-primary"
+                                    onClick="resetToRTCMDefaults()">Reset to Defaults</button>
+                            </div>
+                            <div style="margin-bottom:5px;">
+                                <button type="button" class="btn btn-primary"
+                                    onClick="resetToLowBandwidthRTCM()">Reset to Low Bandwidth Link</button>
+                            </div>
+
+                            <hr>
+
+                            <div class="form-group row" id="msgUBX_RTCM_1005Base">
+                                <label for="UBX_RTCM_1005Base" class="col-sm-3 col-5 col-form-label">RTCM_1005:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1005Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1005BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1074Base">
+                                <label for="UBX_RTCM_1074Base" class="col-sm-3 col-5 col-form-label">RTCM_1074:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1074Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1074BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1077Base">
+                                <label for="UBX_RTCM_1077Base" class="col-sm-3 col-5 col-form-label">RTCM_1077:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1077Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1077BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1084Base">
+                                <label for="UBX_RTCM_1084Base" class="col-sm-3 col-5 col-form-label">RTCM_1084:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1084Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1084BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1087Base">
+                                <label for="UBX_RTCM_1087Base" class="col-sm-3 col-5 col-form-label">RTCM_1087:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1087Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1087BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1094Base">
+                                <label for="UBX_RTCM_1094Base" class="col-sm-3 col-5 col-form-label">RTCM_1094:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1094Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1094BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1097Base">
+                                <label for="UBX_RTCM_1097Base" class="col-sm-3 col-5 col-form-label">RTCM_1097:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1097Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1097BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1124Base">
+                                <label for="UBX_RTCM_1124Base" class="col-sm-3 col-5 col-form-label">RTCM_1124:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1124Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1124BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1127Base">
+                                <label for="UBX_RTCM_1127Base" class="col-sm-3 col-5 col-form-label">RTCM_1127:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1127Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1127BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_1230Base">
+                                <label for="UBX_RTCM_1230Base" class="col-sm-3 col-5 col-form-label">RTCM_1230:</label>
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1230Base"
+                                        value="0">
+                                    <p id="UBX_RTCM_1230BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_4072_0Base">
+                                <label for="UBX_RTCM_4072_0Base" class="col-sm-4 col-6 col-form-label">RTCM_4072_0:</label>
+                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
+                                        id="UBX_RTCM_4072_0Base" value="0">
+                                    <p id="UBX_RTCM_4072_0BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="msgUBX_RTCM_4072_1Base">
+                                <label for="UBX_RTCM_4072_1Base" class="col-sm-4 col-6 col-form-label">RTCM_4072_1:</label>
+                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
+                                        id="UBX_RTCM_4072_1Base" value="0">
+                                    <p id="UBX_RTCM_4072_1BaseError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
 

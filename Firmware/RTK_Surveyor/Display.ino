@@ -522,11 +522,11 @@ void displaySplash()
 
     yPos = yPos + fontHeight + 7;
     char unitFirmware[50];
-#ifdef ENABLE_DEVELOPER
-    snprintf(unitFirmware, sizeof(unitFirmware), "v%d.%d-DEV", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-#else
-    snprintf(unitFirmware, sizeof(unitFirmware), "v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-#endif
+    if (ENABLE_DEVELOPER)
+      snprintf(unitFirmware, sizeof(unitFirmware), "v%d.%d-DEV", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    else
+      snprintf(unitFirmware, sizeof(unitFirmware), "v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+
     printTextCenter(unitFirmware, yPos, QW_FONT_5X7, 1, false);
 
     oled.display();
@@ -1287,6 +1287,12 @@ void paintDynamicModel()
       break;
     case (DYN_MODEL_BIKE):
       displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_10_Bike);
+      break;
+    case (DYN_MODEL_MOWER):
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_11_Mower);
+      break;
+    case (DYN_MODEL_ESCOOTER):
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_12_EScooter);
       break;
   }
 }

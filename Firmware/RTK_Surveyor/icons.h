@@ -34,7 +34,7 @@ const uint8_t BT_Symbol [] = {
 /*
     WiFi_Symbol_3 [13, 9]
 
-                      1   
+                      1
              1234567890123
             .-------------.
         0x01|   *******   |
@@ -59,7 +59,7 @@ const uint8_t WiFi_Symbol_3 [] = {
 /*
     WiFi_Symbol_2 [13, 9]
 
-                      1   
+                      1
              1234567890123
             .-------------.
         0x01|             |
@@ -82,7 +82,7 @@ const uint8_t WiFi_Symbol_2 [] = {
 /*
     WiFi_Symbol_1 [13, 9]
 
-                      1   
+                      1
              1234567890123
             .-------------.
         0x01|             |
@@ -105,7 +105,7 @@ const uint8_t WiFi_Symbol_1 [] = {
 /*
     WiFi_Symbol_0 [13, 9]
 
-                      1   
+                      1
              1234567890123
             .-------------.
         0x01|             |
@@ -128,7 +128,7 @@ const uint8_t WiFi_Symbol_0 [] = {
 /*
     CrossHair [15, 15]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|       *       |
@@ -159,7 +159,7 @@ const uint8_t CrossHair [] = {
 /*
     CrossHairDual [15, 15]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|       *       |
@@ -190,7 +190,7 @@ const uint8_t CrossHairDual [] = {
 /*
     SIV_Antenna [12, 13]
 
-                      1  
+                      1
              123456789012
             .------------.
         0x01|            |
@@ -219,7 +219,7 @@ const uint8_t SIV_Antenna [] = {
 /*
     SIV_Antenna_LBand [12, 13]
 
-                      1  
+                      1
              123456789012
             .------------.
         0x01|            |
@@ -248,7 +248,7 @@ const uint8_t SIV_Antenna_LBand [] = {
 /*
     Rover_Fusion [15, 9]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01| *********     |
@@ -273,7 +273,7 @@ const uint8_t Rover_Fusion [] = {
 /*
     Rover_Fusion_Empty [15, 9]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01| *********     |
@@ -298,7 +298,7 @@ const uint8_t Rover_Fusion_Empty [] = {
 /*
     BaseTemporary [14, 12]
 
-                      1    
+                      1
              12345678901234
             .--------------.
         0x01| ****   ***   |
@@ -326,7 +326,7 @@ const uint8_t BaseTemporary [] = {
 /*
     BaseFixed [14, 12]
 
-                      1    
+                      1
              12345678901234
             .--------------.
         0x01| *****  ***** |
@@ -354,7 +354,7 @@ const uint8_t BaseFixed [] = {
 /*
     Battery_3 [19, 12]
 
-                      1         
+                      1
              1234567890123456789
             .-------------------.
         0x01|*****************  |
@@ -382,7 +382,7 @@ const uint8_t Battery_3 [] = {
 /*
     Battery_2 [19, 12]
 
-                      1         
+                      1
              1234567890123456789
             .-------------------.
         0x01|*****************  |
@@ -410,7 +410,7 @@ const uint8_t Battery_2 [] = {
 /*
     Battery_1 [19, 12]
 
-                      1         
+                      1
              1234567890123456789
             .-------------------.
         0x01|*****************  |
@@ -438,7 +438,7 @@ const uint8_t Battery_1 [] = {
 /*
     Battery_0 [19, 12]
 
-                      1         
+                      1
              1234567890123456789
             .-------------------.
         0x01|*****************  |
@@ -724,7 +724,7 @@ const uint8_t Logging_Custom_1 [] = {
 /*
     DynamicModel_1_Portable [15, 12]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|       **      |
@@ -752,7 +752,7 @@ const uint8_t DynamicModel_1_Portable [] = {
 /*
     DynamicModel_2_Stationary [15, 12]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|               |
@@ -778,7 +778,7 @@ const uint8_t DynamicModel_2_Stationary [] = {
 /*
     DynamicModel_3_Pedestrian [15, 12]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|      ***      |
@@ -804,7 +804,7 @@ const uint8_t DynamicModel_3_Pedestrian [] = {
 /*
     DynamicModel_4_Automotive [15, 12]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|               |
@@ -830,7 +830,7 @@ const uint8_t DynamicModel_4_Automotive [] = {
 /*
     DynamicModel_5_Sea [15, 12]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|               |
@@ -856,7 +856,7 @@ const uint8_t DynamicModel_5_Sea [] = {
 /*
     DynamicModel_6_Airborne1g [15, 12]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|               |
@@ -882,7 +882,7 @@ const uint8_t DynamicModel_6_Airborne1g [] = {
 /*
     DynamicModel_7_Airborne2g [15, 12]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|               |
@@ -908,7 +908,7 @@ const uint8_t DynamicModel_7_Airborne2g [] = {
 /*
     DynamicModel_8_Airborne4g [15, 12]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|               |
@@ -934,7 +934,7 @@ const uint8_t DynamicModel_8_Airborne4g [] = {
 /*
     DynamicModel_9_Wrist [15, 12]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|      ***      |
@@ -960,7 +960,7 @@ const uint8_t DynamicModel_9_Wrist [] = {
 /*
     DynamicModel_10_Bike [15, 12]
 
-                      1     
+                      1
              123456789012345
             .---------------.
         0x01|               |
@@ -981,6 +981,16 @@ const uint8_t DynamicModel_9_Wrist [] = {
 const uint8_t DynamicModel_10_Bike [] = {
   0x00, 0x80, 0x40, 0x50, 0x90, 0xB0, 0xC0, 0xC0, 0xC0, 0xA0, 0x98, 0x4C, 0x4C, 0x80, 0x00,
   0x00, 0x01, 0x02, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x02, 0x01, 0x00
+};
+
+const uint8_t DynamicModel_11_Mower [] = {
+  0x0C, 0x18, 0x30, 0x60, 0xC0, 0x80, 0x00, 0x00, 0x00, 0x40, 0xC0, 0xC0, 0x40, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x38, 0xE8, 0xA9, 0xEB, 0x2E, 0x2C, 0x2F, 0x2D, 0xED, 0xAF, 0xEC, 0x38,
+};
+
+const uint8_t DynamicModel_12_EScooter [] = {
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x04, 0xFC, 0xFC, 0x04, 0x08, 0x00, 0x00,
+  0x00, 0x1C, 0x7C, 0x58, 0x78, 0x18, 0x18, 0x18, 0x18, 0x7F, 0x5F, 0x78, 0x18, 0x00, 0x00,
 };
 
 /*
@@ -1034,7 +1044,7 @@ const uint8_t UploadArrow [] = {
 /*
     logoSparkFun [64, 48]
 
-                      1         2         3         4         5         6    
+                      1         2         3         4         5         6
              1234567890123456789012345678901234567890123456789012345678901234
             .----------------------------------------------------------------.
         0x01|                            **********                          |

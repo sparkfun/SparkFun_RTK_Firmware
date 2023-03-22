@@ -55,67 +55,45 @@ bool configureUbloxModuleBase()
 
   if (USE_I2C_GNSS)
   {
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_I2C, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_I2C, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_I2C, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_I2C, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_I2C, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_I2C, 10);  //Enable message every 10 cycles - note: this may conflict with settings and setMessages?
-  
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_UART1, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_UART1, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_UART1, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_UART1, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART1, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART1, 10);
+    for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
+    {
+      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey - 1, settings.ubxMessagesBase[x].msgRate); //UBLOX_CFG UART1 - 1 = I2C
+      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey, settings.ubxMessagesBase[x].msgRate); //UBLOX_CFG UART1
+      
+      //Disable messages on SPI
+      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey + 3, 0); //UBLOX_CFG UART1 + 3 = SPI
+    }
   }
   else //SPI GNSS
   {
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_SPI, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_SPI, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_SPI, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_SPI, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_SPI, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_SPI, 10);  //Enable message every 10 cycles - note: this may conflict with settings and setMessages?
+    for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
+    {
+      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey + 3, settings.ubxMessagesBase[x].msgRate); //UBLOX_CFG UART1 + 3 = SPI
+
+      //Disable messages on I2C and UART1
+      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey - 1, 0); //UBLOX_CFG UART1 - 1 = I2C
+      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey, 0); //UBLOX_CFG UART1
+    }
 
     //Enable logging of these messages so the RTCM will be stored automatically in the logging buffer.
     //This mimics the data arriving via UART1.
     uint32_t logRTCMMessages = theGNSS.getRTCMLoggingMask();
     logRTCMMessages |= ( SFE_UBLOX_FILTER_RTCM_TYPE1005 | SFE_UBLOX_FILTER_RTCM_TYPE1074 | SFE_UBLOX_FILTER_RTCM_TYPE1084
-                       | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124 | SFE_UBLOX_FILTER_RTCM_TYPE1230 );
+                         | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124 | SFE_UBLOX_FILTER_RTCM_TYPE1230 );
     theGNSS.setRTCMLoggingMask(logRTCMMessages);
     log_d("setRTCMLoggingMask 0x%X", logRTCMMessages);
-
-    //Update settings, otherwise setMessages could disable these again...
-    for (int x = 0; x < MAX_UBX_MSG; x++)
-    {
-      if (settings.ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
-      {
-        if (settings.ubxMessages[x].filterMask & //This is quicker than checking the msgID
-          ( SFE_UBLOX_FILTER_RTCM_TYPE1005 | SFE_UBLOX_FILTER_RTCM_TYPE1074 | SFE_UBLOX_FILTER_RTCM_TYPE1084
-          | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124))
-          settings.ubxMessages[x].msgRate = 1;
-        if (settings.ubxMessages[x].filterMask & SFE_UBLOX_FILTER_RTCM_TYPE1230)
-          settings.ubxMessages[x].msgRate = 10;
-      }
-    }
   }
 
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_USB, 1);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_USB, 1);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_USB, 1);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_USB, 1);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_USB, 1);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_USB, 10);
+  //Update message rates for UART2 and USB
+  for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
+  {
+    response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey + 1 , settings.ubxMessagesBase[x].msgRate); //UBLOX_CFG UART1 + 1 = UART2
+    response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey + 2 , settings.ubxMessagesBase[x].msgRate); //UBLOX_CFG UART1 + 2 = USB
+  }
 
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_UART2, 1);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_UART2, 1);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_UART2, 1);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_UART2, 1);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART2, 1);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 10);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
 
-  response &= theGNSS.sendCfgValset(); //Closing value - #31
+  response &= theGNSS.sendCfgValset(); //Closing value
 
   if (response == false)
     systemPrintln("Base config fail");
@@ -158,9 +136,9 @@ bool surveyInStart()
   }
 
   systemPrintf("Survey started. This will run until %d seconds have passed and less than %0.03f meter accuracy is achieved.\r\n",
-                settings.observationSeconds,
-                settings.observationPositionAccuracy
-               );
+               settings.observationSeconds,
+               settings.observationPositionAccuracy
+              );
 
   //Wait until active becomes true
   long maxTime = 5000;

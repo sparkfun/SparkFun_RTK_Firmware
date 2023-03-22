@@ -329,6 +329,16 @@ void recordSystemSettingsToFile(File * settingsFile)
 
   settingsFile->printf("%s=%d\r\n", "wifiConfigOverAP", settings.wifiConfigOverAP);
   settingsFile->printf("%s=%d\r\n", "wifiTcpPort", settings.wifiTcpPort);
+  settingsFile->printf("%s=%d\r\n", "minElev", settings.minElev);
+
+  settingsFile->printf("%s=%d\r\n", "imuYaw", settings.imuYaw);
+  settingsFile->printf("%s=%d\r\n", "imuPitch", settings.imuPitch);
+  settingsFile->printf("%s=%d\r\n", "imuRoll", settings.imuRoll);
+  settingsFile->printf("%s=%d\r\n", "sfDisableWheelDirection", settings.sfDisableWheelDirection);
+  settingsFile->printf("%s=%d\r\n", "sfCombineWheelTicks", settings.sfCombineWheelTicks);
+  settingsFile->printf("%s=%d\r\n", "rateNavPrio", settings.rateNavPrio);
+  settingsFile->printf("%s=%d\r\n", "enableNAV2", settings.enableNAV2);
+  settingsFile->printf("%s=%d\r\n", "sfUseSpeed", settings.sfUseSpeed);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -343,6 +353,14 @@ void recordSystemSettingsToFile(File * settingsFile)
   {
     char tempString[50]; //message.nmea_dtm.msgRate=5
     snprintf(tempString, sizeof(tempString), "message.%s.msgRate=%d", settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
+    settingsFile->println(tempString);
+  }
+
+  //Record Base RTCM message settings
+  for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+  {
+    char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
+    snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate=%d", settings.ubxMessagesBase[x].msgTextName, settings.ubxMessagesBase[x].msgRate);
     settingsFile->println(tempString);
   }
 }
@@ -1018,6 +1036,78 @@ bool parseLine(char* str, Settings *settings)
     settings->wifiConfigOverAP = d;
   else if (strcmp(settingName, "wifiTcpPort") == 0)
     settings->wifiTcpPort = d;
+  else if (strcmp(settingName, "minElev") == 0)
+  {
+    if (settings->minElev != d)
+    {
+      settings->minElev = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "imuYaw") == 0)
+  {
+    if (settings->imuYaw != d)
+    {
+      settings->imuYaw = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "imuPitch") == 0)
+  {
+    if (settings->imuPitch != d)
+    {
+      settings->imuPitch = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "imuRoll") == 0)
+  {
+    if (settings->imuRoll != d)
+    {
+      settings->imuRoll = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "sfDisableWheelDirection") == 0)
+  {
+    if (settings->sfDisableWheelDirection != d)
+    {
+      settings->sfDisableWheelDirection = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "sfCombineWheelTicks") == 0)
+  {
+    if (settings->sfCombineWheelTicks != d)
+    {
+      settings->sfCombineWheelTicks = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "rateNavPrio") == 0)
+  {
+    if (settings->rateNavPrio != d)
+    {
+      settings->rateNavPrio = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "enableNAV2") == 0)
+  {
+    if (settings->enableNAV2 != d)
+    {
+      settings->enableNAV2 = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "sfUseSpeed") == 0)
+  {
+    if (settings->sfUseSpeed != d)
+    {
+      settings->sfUseSpeed = d;
+      settings->updateZEDSettings = true;
+    }
+  }
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list
@@ -1086,6 +1176,28 @@ bool parseLine(char* str, Settings *settings)
           if (settings->ubxMessages[x].msgRate != d)
           {
             settings->ubxMessages[x].msgRate = d;
+            settings->updateZEDSettings = true;
+          }
+
+          knownSetting = true;
+          break;
+        }
+      }
+    }
+
+    //Scan for Base RTCM message settings
+    if (knownSetting == false)
+    {
+      for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+      {
+        char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
+        snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", settings->ubxMessagesBase[x].msgTextName);
+
+        if (strcmp(settingName, tempString) == 0)
+        {
+          if (settings->ubxMessagesBase[x].msgRate != d)
+          {
+            settings->ubxMessagesBase[x].msgRate = d;
             settings->updateZEDSettings = true;
           }
 

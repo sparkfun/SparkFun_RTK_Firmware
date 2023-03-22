@@ -287,8 +287,6 @@ void beginSD()
   online.microSD = false;
   gotSemaphore = false;
 
-  log_d("settings.enableSD: %d", settings.enableSD);
-  
   while (settings.enableSD == true)
   {
     //Setup SD card access semaphore
@@ -305,7 +303,7 @@ void beginSD()
 
     if (USE_SPI_MICROSD)
     {
-      systemPrintln("Initializing microSD - using SPI, SdFat and SdFile");
+      log_d("Initializing microSD - using SPI, SdFat and SdFile");
       
       pinMode(pin_microSD_CS, OUTPUT);
       digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
@@ -529,8 +527,8 @@ void pinUART2Task( void *pvParameters )
 //Note: ESP32 2.0.6 does some strange auto-bauding thing here which takes 20s to complete if there is no data for it to auto-baud.
 //      That's fine for most RTK products, but causes the Ref Stn to stall for 20s. However, it doesn't stall with ESP32 2.0.2...
 //      Uncomment these lines to prevent the stall if/when we upgrade to ESP32 ~2.0.6.
-//#if defined(ENABLE_DEVELOPER) && defined(REF_STN_GNSS_DEBUG)
-//  if (productVariant == REFERENCE_STATION)
+//#if defined(REF_STN_GNSS_DEBUG)
+//  if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
 //#else
 //  if (USE_I2C_GNSS)
 //#endif
@@ -636,8 +634,8 @@ void beginGNSS()
     zedFirmwareVersionInt = (theGNSS.getFirmwareVersionHigh() * 100) + theGNSS.getFirmwareVersionLow();
 
     //Check this is known firmware
-    //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20 Spartan future support
-    //"1.21" - Future F9R HPS v1.21
+    //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20
+    //"1.21" - F9R HPS v1.21
     //"1.30" - ZED-F9P (HPG) released Dec, 2021. Also ZED-F9R (HPS) released Sept, 2022
     //"1.32" - ZED-F9P released May, 2022
 

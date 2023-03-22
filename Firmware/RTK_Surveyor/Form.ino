@@ -518,6 +518,7 @@ void createSettingsString(char* newSettings)
   char apZedFirmwareVersion[80];
   snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
   stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
+  stringRecord(newSettings, "zedFirmwareVersionInt", zedFirmwareVersionInt);
 
   char apDeviceBTID[30];
   snprintf(apDeviceBTID, sizeof(apDeviceBTID), "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);
@@ -539,6 +540,8 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "baseTypeFixed", settings.fixedBase);
   stringRecord(newSettings, "observationSeconds", settings.observationSeconds);
   stringRecord(newSettings, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
+  for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+    stringRecord(newSettings, settings.ubxMessagesBase[x].msgTextName, settings.ubxMessagesBase[x].msgRate); //"UBX_RTCM_1005Base"
 
   if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
   {
@@ -730,7 +733,9 @@ void createSettingsString(char* newSettings)
     snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", tempLevel);
   stringRecord(newSettings, "batteryPercent", batteryPercent);
 
-  //Add ECEF and Geodetic station data
+  stringRecord(newSettings, "minElev", settings.minElev);
+
+  //Add ECEF and Geodetic station data to the end of settings
   for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
   {
     //stationInfo example: LocationA,-1280206.568,-4716804.403,4086665.484
@@ -1029,6 +1034,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.enableTcpServer = settingValueBool;
   else if (strcmp(settingName, "enableRCFirmware") == 0)
     enableRCFirmware = settingValueBool;
+  else if (strcmp(settingName, "minElev") == 0)
+    settings.minElev = settingValue;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}
@@ -1042,6 +1049,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "nicknameGeodetic") == 0) {}
   else if (strcmp(settingName, "fileSelectAll") == 0) {}
   else if (strcmp(settingName, "fixedHAE_APC") == 0) {}
+  else if (strcmp(settingName, "measurementRateSecBase") == 0) {}
 
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
@@ -1237,6 +1245,20 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
         if (strcmp(settingName, settings.ubxMessages[x].msgTextName) == 0)
         {
           settings.ubxMessages[x].msgRate = settingValue;
+          knownSetting = true;
+          break;
+        }
+      }
+    }
+
+    //Scan for Base RTCM message settings
+    if (knownSetting == false)
+    {
+      for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+      {
+        if (strcmp(settingName, settings.ubxMessagesBase[x].msgTextName) == 0)
+        {
+          settings.ubxMessagesBase[x].msgRate = settingValue;
           knownSetting = true;
           break;
         }

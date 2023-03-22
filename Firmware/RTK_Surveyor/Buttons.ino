@@ -8,12 +8,13 @@ void powerOnCheck()
     if (digitalRead(pin_powerSenseAndControl) == LOW)
       delay(500);
 
-#ifndef ENABLE_DEVELOPER
-  if (pin_powerSenseAndControl >= 0)
-    if (digitalRead(pin_powerSenseAndControl) != LOW)
-      powerDown(false); //Power button tap. Returning to off state.
-#endif
-
+  if (ENABLE_DEVELOPER == false)
+  {
+    if (pin_powerSenseAndControl >= 0)
+      if (digitalRead(pin_powerSenseAndControl) != LOW)
+        powerDown(false); //Power button tap. Returning to off state.
+  }
+  
   powerPressedStartTime = 0; //Reset var to return to normal 'on' state
 }
 

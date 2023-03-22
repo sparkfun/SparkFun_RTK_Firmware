@@ -229,7 +229,7 @@ typedef uint8_t (* PARSE_ROUTINE)(P_PARSE_STATE parse,  //Parser state
 
 //End of message callback routine
 typedef void (* EOM_CALLBACK)(P_PARSE_STATE parse,      //Parser state
-                                 uint8_t type);         //Message type
+                              uint8_t type);         //Message type
 
 #define PARSE_BUFFER_LENGTH       3000 //Some USB RAWX messages can be > 2k
 
@@ -362,6 +362,7 @@ typedef struct ubxMsg
 //These are the allowable messages to broadcast and log (if enabled)
 //Tested with u-center v21.02
 #define MAX_UBX_MSG (13 + 25 + 5 + 10 + 3 + 12 + 5) //(sizeof(ubxMessages)/sizeof(ubxMsg))
+#define MAX_UBX_MSG_RTCM (12)
 
 //This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
 typedef struct {
@@ -623,8 +624,38 @@ typedef struct {
     {"", ""},
   };
 
-  bool wifiConfigOverAP = true; //Configure device over Access Point or have it connect to WiFi 
+  bool wifiConfigOverAP = true; //Configure device over Access Point or have it connect to WiFi
   uint16_t wifiTcpPort = 2947; //TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
+  uint8_t minElev = 10; //Minimum elevation (in deg) for a GNSS satellite to be used in NAV
+
+  ubxMsg ubxMessagesBase[MAX_UBX_MSG_RTCM] = //Report rates for RTCM Base. Default to u-blox recommended rates.
+  {
+    //RTCM
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1005_UART1, UBX_RTCM_1005, UBX_RTCM_MSB, 1, "UBX_RTCM_1005Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1005},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1074_UART1, UBX_RTCM_1074, UBX_RTCM_MSB, 1, "UBX_RTCM_1074Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1074},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1077_UART1, UBX_RTCM_1077, UBX_RTCM_MSB, 0, "UBX_RTCM_1077Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1077},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1084_UART1, UBX_RTCM_1084, UBX_RTCM_MSB, 1, "UBX_RTCM_1084Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1084},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1087_UART1, UBX_RTCM_1087, UBX_RTCM_MSB, 0, "UBX_RTCM_1087Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1087},
+
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1094_UART1, UBX_RTCM_1094, UBX_RTCM_MSB, 1, "UBX_RTCM_1094Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1094},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1097_UART1, UBX_RTCM_1097, UBX_RTCM_MSB, 0, "UBX_RTCM_1097Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1097},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1124_UART1, UBX_RTCM_1124, UBX_RTCM_MSB, 1, "UBX_RTCM_1124Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1124},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1127_UART1, UBX_RTCM_1127, UBX_RTCM_MSB, 0, "UBX_RTCM_1127Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1127},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART1, UBX_RTCM_1230, UBX_RTCM_MSB, 10, "UBX_RTCM_1230Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE1230},
+
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE4072_0_UART1, UBX_RTCM_4072_0, UBX_RTCM_MSB, 0, "UBX_RTCM_4072_0Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE4072_0},
+    {UBLOX_CFG_MSGOUT_RTCM_3X_TYPE4072_1_UART1, UBX_RTCM_4072_1, UBX_RTCM_MSB, 0, "UBX_RTCM_4072_1Base", (PLATFORM_F9P), SFE_UBLOX_FILTER_RTCM_TYPE4072_1},
+  };
+
+  uint32_t imuYaw = 0; //User defined IMU mount yaw angle (0 to 36,000) CFG-SFIMU-IMU_MNTALG_YAW
+  int16_t imuPitch = 0; //User defined IMU mount pitch angle (-9000 to 9000) CFG-SFIMU-IMU_MNTALG_PITCH
+  int16_t imuRoll = 0; //User defined IMU mount roll angle (-18000 to 18000) CFG-SFIMU-IMU_MNTALG_ROLL
+  bool sfDisableWheelDirection = false; //CFG-SFODO-DIS_AUTODIRPINPOL
+  bool sfCombineWheelTicks = false; //CFG-SFODO-COMBINE_TICKS
+  uint8_t rateNavPrio = 0; //Output rate of priority nav mode message - CFG-RATE-NAV_PRIO
+  bool enableNAV2 = false; //CFG-NAV2-OUT_ENABLED
+  //CFG-SFIMU-AUTO_MNTALG_ENA 0 = autoIMUmountAlignment
+  bool sfUseSpeed = false; //CFG-SFODO-USE_SPEED
 
 } Settings;
 Settings settings;

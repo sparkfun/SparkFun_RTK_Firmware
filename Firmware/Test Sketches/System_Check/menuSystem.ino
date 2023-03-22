@@ -59,7 +59,7 @@ void menuSystem()
       else Serial.println(F("Offline"));
 
       Serial.print(F("Accelerometer: "));
-      if (online.display == true) Serial.println(F("Online"));
+      if (online.accelerometer == true) Serial.println(F("Online"));
       else Serial.println(F("Offline"));
 
       Serial.print(F("Fuel Gauge: "));

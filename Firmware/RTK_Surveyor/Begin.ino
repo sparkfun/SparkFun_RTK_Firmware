@@ -1082,13 +1082,22 @@ void beginEthernetNTPServer()
     ethernetNTPServer = new derivedEthernetUDP;
     ethernetNTPServer->begin(settings.ntpPort);
     ntpSockIndex = ethernetNTPServer->getSockIndex(); //Get the socket index
-    attachInterrupt(pin_Ethernet_Interrupt, ntpISR, FALLING); //Attach the interrupt
+    attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); //Attach the interrupt
     online.ethernetNTPServer = true;
   }
 #endif
 }
 
-void ntpISR()
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+// Ethernet (W5500) ISR
+// Triggered by the falling edge of the W5500 interrupt signal - indicates the arrival of a packet
+// Record the time the packet arrived
+
+void ethernetISR()
 {
-  
+  if (w5500CheckSocketInterrupt(ntpSockIndex))
+  {
+    gettimeofday((timeval *)&ethernetNtpTv, NULL); //Record the time of the NTP interrupt
+    w5500ClearSocketInterrupt(ntpSockIndex); //Not sure if it is best to clear the interrupt(s) here - or in the loop?
+  }
 }

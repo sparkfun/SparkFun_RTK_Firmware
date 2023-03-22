@@ -461,7 +461,8 @@ class derivedEthernetUDP : public EthernetUDP
     uint8_t getSockIndex() { return sockindex; } // sockindex is protected in EthernetUDP. A derived class can access it.
 };
 derivedEthernetUDP *ethernetNTPServer = nullptr; //This will be instantiated when we know the NTP port
-volatile uint8_t ntpSockIndex; //The W5500 socket index for NTP - so we can enable and read the correct interrupt
+volatile uint8_t ntpSockIndex;                   //The W5500 socket index for NTP - so we can enable and read the correct interrupt
+volatile struct timeval ethernetNtpTv;           //This will hold the time the Ethernet NTP packet arrived
 #endif
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

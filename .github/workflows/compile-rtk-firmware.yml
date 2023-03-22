@@ -89,6 +89,12 @@ jobs:
       #    cd Firmware/RTK_Surveyor/Patch/
       #    cp WiFiGeneric.cpp /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/libraries/WiFi/src/WiFiGeneric.cpp
 
+      #Patch Server.h to avoid https://github.com/arduino-libraries/Ethernet/issues/88#issuecomment-455498941
+      - name: Patch ESP32 Server.h for Ethernet
+        run: |
+          cd Firmware/RTK_Surveyor/Patch/
+          cp Server.h /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/cores/esp32/Server.h
+
       - name: Compile Sketch
         run: arduino-cli compile --fqbn esp32:esp32:esp32 ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
           --build-property build.partitions=partitions

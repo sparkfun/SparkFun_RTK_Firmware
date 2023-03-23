@@ -667,6 +667,12 @@ void beginGNSS()
     printZEDInfo(); //Print module type and firmware version
   }
 
+  if (HAS_GNSS_TP) //If the GNSS Time Pulse is connected, use it as an interrupt to set the clock accurately
+  {
+    pinMode(pin_GNSS_TimePulse, INPUT);
+    attachInterrupt(pin_GNSS_TimePulse, tpISR, RISING);
+  }
+
   online.gnss = true;
 }
 
@@ -1103,3 +1109,67 @@ void ethernetISR()
   }
 }
 #endif
+
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+// Time Pulse ISR
+// Triggered by the rising edge of the time pulse signal, indicates the top-of-second.
+// Set the ESP32 RTC to UTC
+
+void tpISR()
+{
+  unsigned long millisNow = millis();
+  if (pvtUpdated) // Only sync if pvtUpdated is true
+  {
+    if (millisNow - lastRTCSync > syncRTCInterval) // Only sync if it is more than resyncAfterMillis since the last sync
+    {
+      if (millisNow < (pvtArrivalMillis + 999)) // Only sync if the GNSS time is not stale
+      {
+        if (fullyResolved) // Only sync if GNSS time is fully resolved
+        {
+          if (tAcc < 5000) // Only sync if the tAcc is better than 5000ns
+          {
+            //To perform the time zone adjustment correctly, it's easiest if we convert the GNSS time and date
+            //into Unix epoch first and then apply the timeZone offset
+            uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020; //Jan 1st 2020 as days from Jan 1st 1970
+            t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[gnssYear - 2020]; //Add on the number of days since 2020
+            t += (uint32_t)SFE_UBLOX_DAYS_SINCE_MONTH[gnssYear % 4 == 0 ? 0 : 1][gnssMonth - 1]; //Add on the number of days since Jan 1st
+            t += (uint32_t)gnssDay - 1; //Add on the number of days since the 1st of the month
+            t *= 24; //Convert to hours
+            t += (uint32_t)gnssHour; //Add on the hour
+            t *= 60; //Convert to minutes
+            t += (uint32_t)gnssMinute; //Add on the minute
+            t *= 60; // Convert to seconds
+            t += (uint32_t)gnssSecond; //Add on the second
+          
+            int32_t us = gnssNano / 1000; //Convert nanos to micros
+            uint32_t micro;
+            // Adjust t if nano is negative
+            if (us < 0)
+            {
+              micro = (uint32_t)(us + 1000000); // Make nano +ve
+              t--;                              // Decrement t by 1 second
+            }
+            else
+            {
+              micro = us;
+            }
+            
+            t += settings.timeZoneSeconds;
+            t += settings.timeZoneMinutes * 60;
+            t += settings.timeZoneHours * 60 * 60;
+  
+            //Set the internal system time
+            //This is normally set with WiFi NTP but we will rarely have WiFi
+            //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
+            rtc.setTime(t, micro);
+  
+            lastRTCSync = millis();
+
+            gnssSyncTv.tv_sec = t; // Store the timeval of the sync
+            gnssSyncTv.tv_usec = micro;
+          }
+        }
+      }
+    }
+  }
+}

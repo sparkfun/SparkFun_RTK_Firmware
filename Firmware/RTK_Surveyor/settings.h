@@ -69,6 +69,11 @@ ProductVariant productVariant = RTK_SURVEYOR;
 //Macro to show if the the RTK variant has Ethernet
 #define HAS_ETHERNET    (productVariant == RTK_SURVEYOR)
 
+//Macro to show if the the RTK variant has a GNSS TP interrupt - for accurate clock setting
+//The GNSS UBX PVT message is sent ahead of the top-of-second
+//The rising edge of the TP signal indicates the true top-of-second
+#define HAS_GNSS_TP     (productVariant == RTK_SURVEYOR)
+
 typedef enum
 {
   BUTTON_ROVER = 0,

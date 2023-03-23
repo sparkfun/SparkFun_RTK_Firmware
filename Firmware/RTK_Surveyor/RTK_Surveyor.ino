@@ -125,6 +125,7 @@ const int COMMON_COORDINATES_MAX_STATIONS = 50; //Record upto 50 ECEF and Geodet
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <ESP32Time.h> //http://librarymanager/All#ESP32Time by FBiego v2.0.0
 ESP32Time rtc;
+unsigned long syncRTCInterval = 1000; //To begin, sync RTC every second. Interval can be increased once sync'd.
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //microSD Interface
@@ -263,6 +264,7 @@ public:
 SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
 
 //These globals are updated regularly via the storePVTdata callback
+unsigned long pvtArrivalMillis = 0;
 bool pvtUpdated = false;
 double latitude;
 double longitude;
@@ -272,16 +274,20 @@ bool validDate;
 bool validTime;
 bool confirmedDate;
 bool confirmedTime;
+bool fullyResolved;
+uint32_t tAcc;
 uint8_t gnssDay;
 uint8_t gnssMonth;
 uint16_t gnssYear;
 uint8_t gnssHour;
 uint8_t gnssMinute;
 uint8_t gnssSecond;
+int32_t gnssNano;
 uint16_t mseconds;
 uint8_t numSV;
 uint8_t fixType;
 uint8_t carrSoln;
+struct timeval gnssSyncTv; //This will hold the time the RTC was sync'd to GNSS time
 
 const byte haeNumberOfDecimals = 8; //Used for printing and transmitting lat/lon
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -496,6 +502,7 @@ uint32_t lastHeapReport = 0; //Report heap every 1s if option enabled
 uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
 uint32_t lastRTCAttempt = 0; //Wait 1000ms between checking GNSS for current date/time
+uint32_t lastRTCSync = 0; //Time in millis when the RTC was last sync'd
 uint32_t lastPrintPosition = 0; //For periodic display of the position
 
 uint32_t lastBaseIconUpdate = 0;
@@ -893,48 +900,66 @@ void updateLogs()
 //All SD writes will use the system date/time
 void updateRTC()
 {
-  if (online.rtc == false)
+  if (online.rtc == false) //Only do this if the rtc has not been sync'd previously
   {
-    if (online.gnss == true)
+    if (online.gnss == true) //Only do this if the GNSS is online
     {
-      if (millis() - lastRTCAttempt > 1000)
+      if (millis() - lastRTCAttempt > syncRTCInterval)
       {
         lastRTCAttempt = millis();
 
-        theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-        theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+        //theGNSS.checkUblox and theGNSS.checkCallbacks are called in the loop but updateRTC
+        //can also be called duing begin. To be safe, check for fresh PVT data here.
+        theGNSS.checkUblox(); //Poll to get latest data
+        theGNSS.checkCallbacks(); //Process any callbacks: ie, storePVTdata
 
         bool timeValid = false;
         if (validTime == true && validDate == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
           timeValid = true;
         if (confirmedTime == true && confirmedDate == true) //Requires GNSS fix
           timeValid = true;
+        if (timeValid && (millis() - pvtArrivalMillis > 999)) //If the GNSS time is over a second old, don't use it
+          timeValid = false;
 
         if (timeValid == true)
         {
-          int hour;
-          int minute;
-          int second;
-
-          //Get the latest time in the GNSS
-          theGNSS.checkUblox();
-
-          //Get the time values
-          hour = theGNSS.getHour();     //Range: 0 - 23
-          minute = theGNSS.getMinute(); //Range: 0 - 59
-          second = theGNSS.getSecond(); //Range: 0 - 59
-
-          //Perform time zone adjustment
-          second += settings.timeZoneSeconds;
-          minute += settings.timeZoneMinutes;
-          hour += settings.timeZoneHours;
+          //To perform the time zone adjustment correctly, it's easiest if we convert the GNSS time and date
+          //into Unix epoch first and then apply the timeZone offset
+          uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020; //Jan 1st 2020 as days from Jan 1st 1970
+          t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[gnssYear - 2020]; //Add on the number of days since 2020
+          t += (uint32_t)SFE_UBLOX_DAYS_SINCE_MONTH[gnssYear % 4 == 0 ? 0 : 1][gnssMonth - 1]; //Add on the number of days since Jan 1st
+          t += (uint32_t)gnssDay - 1; //Add on the number of days since the 1st of the month
+          t *= 24; //Convert to hours
+          t += (uint32_t)gnssHour; //Add on the hour
+          t *= 60; //Convert to minutes
+          t += (uint32_t)gnssMinute; //Add on the minute
+          t *= 60; // Convert to seconds
+          t += (uint32_t)gnssSecond; //Add on the second
+        
+          int32_t us = gnssNano / 1000; //Convert nanos to micros
+          uint32_t micro;
+          // Adjust t if nano is negative
+          if (us < 0)
+          {
+            micro = (uint32_t)(us + 1000000); // Make nano +ve
+            t--;                              // Decrement t by 1 second
+          }
+          else
+          {
+            micro = us;
+          }
+          
+          t += settings.timeZoneSeconds;
+          t += settings.timeZoneMinutes * 60;
+          t += settings.timeZoneHours * 60 * 60;
 
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi
           //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
-          rtc.setTime(second, minute, hour, theGNSS.getDay(), theGNSS.getMonth(), theGNSS.getYear());
+          rtc.setTime(t, micro);
 
           online.rtc = true;
+          lastRTCSync = millis();
 
           systemPrint("System time set to: ");
           systemPrintln(rtc.getDateTime(true));

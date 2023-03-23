@@ -163,6 +163,7 @@ void storePVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
   gnssHour = ubxDataStruct->hour;
   gnssMinute = ubxDataStruct->min;
   gnssSecond = ubxDataStruct->sec;
+  gnssNano = ubxDataStruct->nano;
   mseconds = ceil((ubxDataStruct->iTOW % 1000) / 10.0); //Limit to first two digits
 
   numSV = ubxDataStruct->numSV;
@@ -171,9 +172,12 @@ void storePVTdata(UBX_NAV_PVT_data_t *ubxDataStruct)
 
   validDate = ubxDataStruct->valid.bits.validDate;
   validTime = ubxDataStruct->valid.bits.validTime;
+  fullyResolved = ubxDataStruct->valid.bits.fullyResolved;
+  tAcc = ubxDataStruct->tAcc;
   confirmedDate = ubxDataStruct->flags2.bits.confirmedDate;
   confirmedTime = ubxDataStruct->flags2.bits.confirmedTime;
 
+  pvtArrivalMillis = millis();
   pvtUpdated = true;
 }
 

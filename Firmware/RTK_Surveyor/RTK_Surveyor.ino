@@ -264,6 +264,7 @@ public:
 SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
 
 //These globals are updated regularly via the storePVTdata callback
+struct timeval gnssSyncTv; //This will hold the time the RTC was sync'd to GNSS time via Time Pulse interrupt - used by NTP
 unsigned long pvtArrivalMillis = 0;
 bool pvtUpdated = false;
 double latitude;
@@ -287,7 +288,6 @@ uint16_t mseconds;
 uint8_t numSV;
 uint8_t fixType;
 uint8_t carrSoln;
-struct timeval gnssSyncTv; //This will hold the time the RTC was sync'd to GNSS time
 
 const byte haeNumberOfDecimals = 8; //Used for printing and transmitting lat/lon
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -925,38 +925,17 @@ void updateRTC()
         {
           //To perform the time zone adjustment correctly, it's easiest if we convert the GNSS time and date
           //into Unix epoch first and then apply the timeZone offset
-          uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020; //Jan 1st 2020 as days from Jan 1st 1970
-          t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[gnssYear - 2020]; //Add on the number of days since 2020
-          t += (uint32_t)SFE_UBLOX_DAYS_SINCE_MONTH[gnssYear % 4 == 0 ? 0 : 1][gnssMonth - 1]; //Add on the number of days since Jan 1st
-          t += (uint32_t)gnssDay - 1; //Add on the number of days since the 1st of the month
-          t *= 24; //Convert to hours
-          t += (uint32_t)gnssHour; //Add on the hour
-          t *= 60; //Convert to minutes
-          t += (uint32_t)gnssMinute; //Add on the minute
-          t *= 60; // Convert to seconds
-          t += (uint32_t)gnssSecond; //Add on the second
-        
-          int32_t us = gnssNano / 1000; //Convert nanos to micros
-          uint32_t micro;
-          // Adjust t if nano is negative
-          if (us < 0)
-          {
-            micro = (uint32_t)(us + 1000000); // Make nano +ve
-            t--;                              // Decrement t by 1 second
-          }
-          else
-          {
-            micro = us;
-          }
-          
-          t += settings.timeZoneSeconds;
-          t += settings.timeZoneMinutes * 60;
-          t += settings.timeZoneHours * 60 * 60;
+          uint32_t epochSecs;
+          uint32_t epochMicros
+          convertGnssTimeToEpoch(&epochSecs, &epochMicros)
+          epochSecs += settings.timeZoneSeconds;
+          epochSecs += settings.timeZoneMinutes * 60;
+          epochSecs += settings.timeZoneHours * 60 * 60;
 
           //Set the internal system time
           //This is normally set with WiFi NTP but we will rarely have WiFi
           //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
-          rtc.setTime(t, micro);
+          rtc.setTime(epochSecs, epochMicros);
 
           online.rtc = true;
           lastRTCSync = millis();

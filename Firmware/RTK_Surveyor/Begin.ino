@@ -1093,6 +1093,7 @@ void beginEthernetNTPServer()
 // Triggered by the falling edge of the W5500 interrupt signal - indicates the arrival of a packet
 // Record the time the packet arrived
 
+#ifdef COMPILE_ETHERNET
 void ethernetISR()
 {
   if (w5500CheckSocketInterrupt(ntpSockIndex))
@@ -1101,3 +1102,4 @@ void ethernetISR()
     w5500ClearSocketInterrupt(ntpSockIndex); //Not sure if it is best to clear the interrupt(s) here - or in the loop?
   }
 }
+#endif

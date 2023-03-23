@@ -613,6 +613,9 @@ void menuDebug()
     systemPrint("36) Print SD and UART buffer sizes: ");
     systemPrintf("%s\r\n", settings.enablePrintSDBuffers ? "Enabled" : "Disabled");
 
+    systemPrint("37) Print RTC resyncs: ");
+    systemPrintf("%s\r\n", settings.enablePrintRtcSync ? "Enabled" : "Disabled");
+
     systemPrintln("t) Enter Test Screen");
 
     systemPrintln("e) Erase LittleFS");
@@ -837,6 +840,10 @@ void menuDebug()
     else if (incoming == 36)
     {
       settings.enablePrintSDBuffers ^= 1;
+    }
+    else if (incoming == 37)
+    {
+      settings.enablePrintRtcSync ^= 1;
     }
     else if (incoming == 'e')
     {

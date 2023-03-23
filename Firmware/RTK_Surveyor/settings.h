@@ -59,20 +59,20 @@ typedef enum
 ProductVariant productVariant = RTK_SURVEYOR;
 
 //Macros to show if the GNSS is I2C or SPI
-#define USE_SPI_GNSS    (productVariant == RTK_SURVEYOR)
+#define USE_SPI_GNSS    (productVariant == REFERENCE_STATION)
 #define USE_I2C_GNSS    (!USE_SPI_GNSS)
 
 //Macros to show if the microSD is SPI or SDIO
-#define USE_MMC_MICROSD (productVariant == RTK_SURVEYOR)
+#define USE_MMC_MICROSD (productVariant == REFERENCE_STATION)
 #define USE_SPI_MICROSD (!USE_MMC_MICROSD)
 
 //Macro to show if the the RTK variant has Ethernet
-#define HAS_ETHERNET    (productVariant == RTK_SURVEYOR)
+#define HAS_ETHERNET    (productVariant == REFERENCE_STATION)
 
 //Macro to show if the the RTK variant has a GNSS TP interrupt - for accurate clock setting
 //The GNSS UBX PVT message is sent ahead of the top-of-second
 //The rising edge of the TP signal indicates the true top-of-second
-#define HAS_GNSS_TP     (productVariant == RTK_SURVEYOR)
+#define HAS_GNSS_TP     (productVariant == REFERENCE_STATION)
 
 typedef enum
 {
@@ -591,6 +591,7 @@ typedef struct {
   bool enablePrintNtripClientRtcm = false;
   bool enablePrintStates = true;
   bool enablePrintDuplicateStates = false;
+  bool enablePrintRtcSync = false;
   RadioType_e radioType = RADIO_EXTERNAL;
   uint8_t espnowPeers[5][6]; //Max of 5 peers. Contains the MAC addresses (6 bytes) of paired units
   uint8_t espnowPeerCount = 0;

@@ -903,17 +903,17 @@ bool beginExternalTriggers()
   bool response = true;
 
   response &= theGNSS.newCfgValset();
-  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
-  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, settings.enableExternalPulse); //Enable/disable timepulse
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_DEF, 0); //Time pulse definition is a period (in us)
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, settings.enableExternalPulse); //Enable/disable timepulse
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = raising edge
 
   //While the module is _locking_ to GNSS time, turn off pulse
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
 
-  //When the module is _locked_ to GNSS time, make it generate 1kHz
+  //When the module is _locked_ to GNSS time, make it generate 1Hz (Default is 100ms high, 900ms low)
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, settings.externalPulseTimeBetweenPulse_us); //Set the period between pulses is us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, settings.externalPulseLength_us); //Set the pulse length in us
   response &= theGNSS.sendCfgValset();
@@ -1120,7 +1120,7 @@ void tpISR()
   unsigned long millisNow = millis();
   if (pvtUpdated) // Only sync if pvtUpdated is true
   {
-    if (millisNow - lastRTCSync > syncRTCInterval) // Only sync if it is more than resyncAfterMillis since the last sync
+    if (millisNow - lastRTCSync > syncRTCInterval) // Only sync if it is more than syncRTCInterval since the last sync
     {
       if (millisNow < (pvtArrivalMillis + 999)) // Only sync if the GNSS time is not stale
       {
@@ -1131,8 +1131,8 @@ void tpISR()
             //To perform the time zone adjustment correctly, it's easiest if we convert the GNSS time and date
             //into Unix epoch first and then apply the timeZone offset
             uint32_t epochSecs;
-            uint32_t epochMicros
-            convertGnssTimeToEpoch(&epochSecs, &epochMicros)
+            uint32_t epochMicros;
+            convertGnssTimeToEpoch(&epochSecs, &epochMicros);
             epochSecs += settings.timeZoneSeconds;
             epochSecs += settings.timeZoneMinutes * 60;
             epochSecs += settings.timeZoneHours * 60 * 60;

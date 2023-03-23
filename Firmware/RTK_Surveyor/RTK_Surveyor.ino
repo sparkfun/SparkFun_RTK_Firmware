@@ -258,13 +258,16 @@ public:
   void deleteLock(void)
   {
     vSemaphoreDelete(gnssSemaphore);
+    gnssSemaphore = nullptr;
   }
 };
 
 SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
 
+volatile struct timeval gnssSyncTv; //This holds the time the RTC was sync'd to GNSS time via Time Pulse interrupt - used by NTP
+struct timeval previousGnssSyncTv; //This holds the time of the previous RTC sync
+
 //These globals are updated regularly via the storePVTdata callback
-struct timeval gnssSyncTv; //This will hold the time the RTC was sync'd to GNSS time via Time Pulse interrupt - used by NTP
 unsigned long pvtArrivalMillis = 0;
 bool pvtUpdated = false;
 double latitude;
@@ -649,9 +652,24 @@ bool externalPowerConnected = false; //Goes true when a high voltage is seen on 
                                   +-------+
 */
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+//Initialize any globals that can't easily be given default values
+
+void initializeGlobals()
+{
+  gnssSyncTv.tv_sec = 0;
+  gnssSyncTv.tv_usec = 0;
+  previousGnssSyncTv.tv_sec = 0;
+  previousGnssSyncTv.tv_usec = 0;
+  ethernetNtpTv.tv_sec = 0;
+  ethernetNtpTv.tv_usec = 0;
+}
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
 {
+  initializeGlobals(); //Initialize any global variables that can't be given default values
+  
   Serial.begin(115200); //UART0 for programming and debugging
 
   identifyBoard(); //Determine what hardware platform we are running on
@@ -926,8 +944,8 @@ void updateRTC()
           //To perform the time zone adjustment correctly, it's easiest if we convert the GNSS time and date
           //into Unix epoch first and then apply the timeZone offset
           uint32_t epochSecs;
-          uint32_t epochMicros
-          convertGnssTimeToEpoch(&epochSecs, &epochMicros)
+          uint32_t epochMicros;
+          convertGnssTimeToEpoch(&epochSecs, &epochMicros);
           epochSecs += settings.timeZoneSeconds;
           epochSecs += settings.timeZoneMinutes * 60;
           epochSecs += settings.timeZoneHours * 60 * 60;
@@ -952,6 +970,24 @@ void updateRTC()
       } //End lastRTCAttempt
     } //End online.gnss
   } //End online.rtc
+
+  if (settings.enablePrintRtcSync == true)
+  {
+    if ((previousGnssSyncTv.tv_sec != gnssSyncTv.tv_sec) || (previousGnssSyncTv.tv_usec != gnssSyncTv.tv_usec))
+    {
+      time_t nowtime;
+      struct tm *nowtm;
+      char tmbuf[64], buf[64];
+      
+      nowtime = gnssSyncTv.tv_sec;
+      nowtm = localtime(&nowtime);
+      strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
+      systemPrintf("RTC resync at: %s.%03d\r\n",  tmbuf, gnssSyncTv.tv_usec / 1000);
+      
+      previousGnssSyncTv.tv_sec = gnssSyncTv.tv_sec;
+      previousGnssSyncTv.tv_usec = gnssSyncTv.tv_usec;
+    }
+  }  
 }
 
 //Called from main loop

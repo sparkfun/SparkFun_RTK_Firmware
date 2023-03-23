@@ -191,7 +191,7 @@ void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)
   longitude += ((double)ubxDataStruct->lonHp) / 1000000000.0;
 }
 
-void convertGnssTimeToEpoch(uint_32_t *epochSecs, uint32_t *epochMicros)
+void convertGnssTimeToEpoch(uint32_t *epochSecs, uint32_t *epochMicros)
 {
   uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020; //Jan 1st 2020 as days from Jan 1st 1970
   t += (uint32_t)SFE_UBLOX_DAYS_SINCE_2020[gnssYear - 2020]; //Add on the number of days since 2020

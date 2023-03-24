@@ -683,6 +683,9 @@ void configureGNSS()
 
   theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
   theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); //Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
+
+  if (HAS_GNSS_TP)
+    theGNSS.setAutoTIMTPcallbackPtr(&storeTIMTPdata); //Enable automatic TIM TP messages with callback to storeTIMTPdata
   
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
@@ -708,6 +711,15 @@ void configureGNSS()
       online.gnss = false;
       return;
     }
+  }
+
+  //Default settings.measurementRate is 250ms (4Hz)
+  //We want the TIM TP messages to arrive every second
+  //Adjust the TIM TP rate to match
+  if (HAS_GNSS_TP)
+  {
+    uint8_t tpRate = 1000 / settings.measurementRate;
+    theGNSS.setAutoTIMTPrate(tpRate);
   }
 
   systemPrintln("GNSS configuration complete");
@@ -1118,11 +1130,11 @@ void ethernetISR()
 void tpISR()
 {
   unsigned long millisNow = millis();
-  if (pvtUpdated) // Only sync if pvtUpdated is true
+  if (timTpUpdated) // Only sync if timTpUpdated is true
   {
     if (millisNow - lastRTCSync > syncRTCInterval) // Only sync if it is more than syncRTCInterval since the last sync
     {
-      if (millisNow < (pvtArrivalMillis + 999)) // Only sync if the GNSS time is not stale
+      if (millisNow < (timTpArrivalMillis + 999)) // Only sync if the GNSS time is not stale
       {
         if (fullyResolved) // Only sync if GNSS time is fully resolved
         {
@@ -1130,16 +1142,13 @@ void tpISR()
           {
             //To perform the time zone adjustment correctly, it's easiest if we convert the GNSS time and date
             //into Unix epoch first and then apply the timeZone offset
-            uint32_t epochSecs;
-            uint32_t epochMicros;
-            convertGnssTimeToEpoch(&epochSecs, &epochMicros);
+            uint32_t epochSecs = timTpEpoch;
+            uint32_t epochMicros = timTpMicros;
             epochSecs += settings.timeZoneSeconds;
             epochSecs += settings.timeZoneMinutes * 60;
             epochSecs += settings.timeZoneHours * 60 * 60;
   
             //Set the internal system time
-            //This is normally set with WiFi NTP but we will rarely have WiFi
-            //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
             rtc.setTime(epochSecs, epochMicros);
   
             lastRTCSync = millis();

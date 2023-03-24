@@ -292,6 +292,11 @@ uint8_t numSV;
 uint8_t fixType;
 uint8_t carrSoln;
 
+unsigned long timTpArrivalMillis = 0;
+bool timTpUpdated = false;
+uint32_t timTpEpoch;
+uint32_t timTpMicros;
+
 const byte haeNumberOfDecimals = 8; //Used for printing and transmitting lat/lon
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

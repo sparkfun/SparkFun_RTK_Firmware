@@ -191,6 +191,28 @@ void storeHPdata(UBX_NAV_HPPOSLLH_data_t *ubxDataStruct)
   longitude += ((double)ubxDataStruct->lonHp) / 1000000000.0;
 }
 
+void storeTIMTPdata(UBX_TIM_TP_data_t *ubxDataStruct)
+{
+  uint32_t tow = ubxDataStruct->week - SFE_UBLOX_JAN_1ST_2020_WEEK; //Calculate the number of weeks since Jan 1st 2020
+  tow *= SFE_UBLOX_SECS_PER_WEEK; //Convert weeks to seconds
+  tow += SFE_UBLOX_EPOCH_WEEK_2086; //Add the TOW for Jan 1st 2020
+  tow += ubxDataStruct->towMS / 1000; //Add the TOW for the next TP
+
+  uint32_t us = ubxDataStruct->towMS % 1000; //Extract the milliseconds
+  us *= 1000; // Convert to microseconds
+
+  double subMS = ubxDataStruct->towSubMS; //Get towSubMS (ms * 2^-32)
+  subMS *= pow(2.0, -32.0); //Convert to milliseconds
+  subMS *= 1000; //Convert to microseconds
+
+  us += (uint32_t)subMS; // Add subMS
+
+  timTpEpoch = tow;
+  timTpMicros = us;
+  timTpArrivalMillis = millis();
+  timTpUpdated = true;
+}
+
 void convertGnssTimeToEpoch(uint32_t *epochSecs, uint32_t *epochMicros)
 {
   uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020; //Jan 1st 2020 as days from Jan 1st 1970

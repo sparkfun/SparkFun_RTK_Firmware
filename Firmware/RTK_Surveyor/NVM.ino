@@ -367,35 +367,10 @@ void recordSystemSettingsToFile(File * settingsFile)
 
   //Ethernet
   {
-    char tempString[50];
-    snprintf(tempString, sizeof(tempString), "ethernetIP=%d,%d,%d,%d,",
-            settings.ethernetIP[0],
-            settings.ethernetIP[1],
-            settings.ethernetIP[2],
-            settings.ethernetIP[3]
-           );
-    settingsFile->println(tempString);
-    snprintf(tempString, sizeof(tempString), "ethernetDNS=%d,%d,%d,%d,",
-            settings.ethernetDNS[0],
-            settings.ethernetDNS[1],
-            settings.ethernetDNS[2],
-            settings.ethernetDNS[3]
-           );
-    settingsFile->println(tempString);
-    snprintf(tempString, sizeof(tempString), "ethernetGateway=%d,%d,%d,%d,",
-            settings.ethernetGateway[0],
-            settings.ethernetGateway[1],
-            settings.ethernetGateway[2],
-            settings.ethernetGateway[3]
-           );
-    settingsFile->println(tempString);
-    snprintf(tempString, sizeof(tempString), "ethernetSubnet=%d,%d,%d,%d,",
-            settings.ethernetSubnet[0],
-            settings.ethernetSubnet[1],
-            settings.ethernetSubnet[2],
-            settings.ethernetSubnet[3]
-           );
-    settingsFile->println(tempString);
+    settingsFile->printf("%s=%s\r\n", "ethernetIP", settings.ethernetIP.toString());
+    settingsFile->printf("%s=%s\r\n", "ethernetDNS", settings.ethernetDNS.toString());
+    settingsFile->printf("%s=%s\r\n", "ethernetGateway", settings.ethernetGateway.toString());
+    settingsFile->printf("%s=%s\r\n", "ethernetSubnet", settings.ethernetSubnet.toString());
     settingsFile->printf("%s=%d\r\n", "ethernetHttpPort", settings.ethernetHttpPort);
     settingsFile->printf("%s=%d\r\n", "ethernetNtpPort", settings.ethernetNtpPort);
     settingsFile->printf("%s=%d\r\n", "ethernetConfig", settings.ethernetConfig);
@@ -1287,16 +1262,8 @@ bool parseLine(char* str, Settings *settings)
 
       if (strcmp(settingName, tempString) == 0)
       {
-        uint8_t ipAddress[4];
-        uint8_t ipByte = 0;
-
-        char* token = strtok(settingValue, ","); //Break string up on ,
-        while (token != nullptr && ipByte < sizeof(ipAddress))
-        {
-          settings->ethernetIP[ipByte++] = (uint8_t)strtol(token, nullptr, 16);
-          token = strtok(nullptr, ",");
-        }
-
+        String addr = String(settingName[strlen("ethernetIP=")]);
+        settings->ethernetIP.fromString(addr);
         knownSetting = true;
       }
     }
@@ -1307,16 +1274,8 @@ bool parseLine(char* str, Settings *settings)
 
       if (strcmp(settingName, tempString) == 0)
       {
-        uint8_t ipAddress[4];
-        uint8_t ipByte = 0;
-
-        char* token = strtok(settingValue, ","); //Break string up on ,
-        while (token != nullptr && ipByte < sizeof(ipAddress))
-        {
-          settings->ethernetDNS[ipByte++] = (uint8_t)strtol(token, nullptr, 16);
-          token = strtok(nullptr, ",");
-        }
-
+        String addr = String(settingName[strlen("ethernetDNS=")]);
+        settings->ethernetDNS.fromString(addr);
         knownSetting = true;
       }
     }
@@ -1327,16 +1286,8 @@ bool parseLine(char* str, Settings *settings)
 
       if (strcmp(settingName, tempString) == 0)
       {
-        uint8_t ipAddress[4];
-        uint8_t ipByte = 0;
-
-        char* token = strtok(settingValue, ","); //Break string up on ,
-        while (token != nullptr && ipByte < sizeof(ipAddress))
-        {
-          settings->ethernetGateway[ipByte++] = (uint8_t)strtol(token, nullptr, 16);
-          token = strtok(nullptr, ",");
-        }
-
+        String addr = String(settingName[strlen("ethernetGateway=")]);
+        settings->ethernetGateway.fromString(addr);
         knownSetting = true;
       }
     }
@@ -1347,16 +1298,8 @@ bool parseLine(char* str, Settings *settings)
 
       if (strcmp(settingName, tempString) == 0)
       {
-        uint8_t ipAddress[4];
-        uint8_t ipByte = 0;
-
-        char* token = strtok(settingValue, ","); //Break string up on ,
-        while (token != nullptr && ipByte < sizeof(ipAddress))
-        {
-          settings->ethernetSubnet[ipByte++] = (uint8_t)strtol(token, nullptr, 16);
-          token = strtok(nullptr, ",");
-        }
-
+        String addr = String(settingName[strlen("ethernetSubnet=")]);
+        settings->ethernetSubnet.fromString(addr);
         knownSetting = true;
       }
     }

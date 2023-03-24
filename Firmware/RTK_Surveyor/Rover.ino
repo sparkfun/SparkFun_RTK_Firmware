@@ -213,6 +213,7 @@ void storeTIMTPdata(UBX_TIM_TP_data_t *ubxDataStruct)
   timTpUpdated = true;
 }
 
+//Helper method to convert GNSS time and date into Unix Epoch
 void convertGnssTimeToEpoch(uint32_t *epochSecs, uint32_t *epochMicros)
 {
   uint32_t t = SFE_UBLOX_DAYS_FROM_1970_TO_2020; //Jan 1st 2020 as days from Jan 1st 1970

@@ -60,6 +60,15 @@ void menuMain()
     systemPrintln("6) **WiFi Not Compiled**");
 #endif
 
+#ifdef COMPILE_ETHERNET
+    if (HAS_ETHERNET)
+      systemPrintln("7) Configure Ethernet");
+    else
+      systemPrintln("7) **Ethernet Not Available**");
+#else
+    systemPrintln("7) **Ethernet Not Compiled**");
+#endif
+
     systemPrintln("p) Configure User Profiles");
 
 #ifdef COMPILE_ESPNOW
@@ -96,6 +105,8 @@ void menuMain()
       menuLog();
     else if (incoming == 6)
       menuWiFi();
+    else if (incoming == 7)
+      menuEthernet();
     else if (incoming == 's')
       menuSystem();
     else if (incoming == 'p')

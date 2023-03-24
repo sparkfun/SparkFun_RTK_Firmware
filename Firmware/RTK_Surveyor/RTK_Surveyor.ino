@@ -665,8 +665,10 @@ void initializeGlobals()
   gnssSyncTv.tv_usec = 0;
   previousGnssSyncTv.tv_sec = 0;
   previousGnssSyncTv.tv_usec = 0;
+#ifdef COMPILE_ETHERNET
   ethernetNtpTv.tv_sec = 0;
   ethernetNtpTv.tv_usec = 0;
+#endif
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -987,7 +989,7 @@ void updateRTC()
       nowtime = gnssSyncTv.tv_sec;
       nowtm = localtime(&nowtime);
       strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
-      systemPrintf("RTC resync at: %s.%03d\r\n",  tmbuf, gnssSyncTv.tv_usec / 1000);
+      systemPrintf("RTC resync took place at: %s.%03d\r\n",  tmbuf, gnssSyncTv.tv_usec / 1000);
       
       previousGnssSyncTv.tv_sec = gnssSyncTv.tv_sec;
       previousGnssSyncTv.tv_usec = gnssSyncTv.tv_usec;

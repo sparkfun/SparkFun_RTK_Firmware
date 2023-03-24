@@ -298,6 +298,24 @@ InputResponse getString(char *userString, uint8_t stringSize)
   return INPUT_RESPONSE_TIMEOUT;
 }
 
+//Get a valid IP Address (nnn.nnn.nnn.nnn) using getString
+//Returns INPUT_RESPONSE_TIMEOUT, INPUT_RESPONSE_OVERFLOW, INPUT_RESPONSE_EMPTY, INPUT_RESPONSE_INVALID or INPUT_RESPONSE_VALID
+InputResponse getIPAddress(char *userString, uint8_t stringSize)
+{
+  InputResponse result = getString(userString, stringSize);
+  if (result != INPUT_RESPONSE_VALID)
+    return result;
+  int dummy[4];
+  if (sscanf(userString, "%d.%d.%d.%d", &dummy[0], &dummy[1], &dummy[2], &dummy[3]) != 4) //Check that the user has entered nnn.nnn.nnn.nnn
+    return INPUT_RESPONSE_INVALID;
+  for (int i = 0; i <= 3; i++)
+  {
+    if ((dummy[i] < 0) || (dummy[i] > 255)) //Check each value is 0-255
+      return INPUT_RESPONSE_INVALID;
+  }
+  return INPUT_RESPONSE_VALID;
+}
+
 //Gets a single character or number (0-32) from the user. Negative numbers become the positive equivalent.
 //Numbers larger than 32 are allowed but will be confused with characters: ie, 74 = 'J'.
 //Returns 255 if timeout

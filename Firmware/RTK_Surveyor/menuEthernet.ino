@@ -170,10 +170,8 @@ void menuEthernet()
     else if ((settings.ethernetConfig >= ETHERNET_FIXED_IP) && (incoming == 2))
     {
       systemPrint("Enter new IP Address: ");
-      char tempStr[16];
-      getString(tempStr, sizeof(tempStr));
-      int dummy[4];
-      if (sscanf(tempStr, "%d.%d.%d.%d", &dummy[0], &dummy[1], &dummy[2], &dummy[3]) == 4) //Check that the user has entered nnn.nnn.nnn.nnn
+      char tempStr[20];
+      if (getIPAddress(tempStr, sizeof(tempStr)) == INPUT_RESPONSE_VALID)
       {
         settings.ethernetIP.fromString(tempStr);
         restartEthernet = true;        
@@ -182,10 +180,8 @@ void menuEthernet()
     else if ((settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS) && (incoming == 3))
     {
       systemPrint("Enter new DNS: ");
-      char tempStr[16];
-      getString(tempStr, sizeof(tempStr));
-      int dummy[4];
-      if (sscanf(tempStr, "%d.%d.%d.%d", &dummy[0], &dummy[1], &dummy[2], &dummy[3]) == 4) //Check that the user has entered nnn.nnn.nnn.nnn
+      char tempStr[20];
+      if (getIPAddress(tempStr, sizeof(tempStr)) == INPUT_RESPONSE_VALID)
       {
         settings.ethernetDNS.fromString(tempStr);
         restartEthernet = true;        
@@ -194,10 +190,8 @@ void menuEthernet()
     else if ((settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS_GATEWAY) && (incoming == 4))
     {
       systemPrint("Enter new Gateway: ");
-      char tempStr[16];
-      getString(tempStr, sizeof(tempStr));
-      int dummy[4];
-      if (sscanf(tempStr, "%d.%d.%d.%d", &dummy[0], &dummy[1], &dummy[2], &dummy[3]) == 4) //Check that the user has entered nnn.nnn.nnn.nnn
+      char tempStr[20];
+      if (getIPAddress(tempStr, sizeof(tempStr)) == INPUT_RESPONSE_VALID)
       {
         settings.ethernetGateway.fromString(tempStr);
         restartEthernet = true;        
@@ -206,10 +200,8 @@ void menuEthernet()
     else if ((settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET) && (incoming == 5))
     {
       systemPrint("Enter new Subnet Mask: ");
-      char tempStr[16];
-      getString(tempStr, sizeof(tempStr));
-      int dummy[4];
-      if (sscanf(tempStr, "%d.%d.%d.%d", &dummy[0], &dummy[1], &dummy[2], &dummy[3]) == 4) //Check that the user has entered nnn.nnn.nnn.nnn
+      char tempStr[20];
+      if (getIPAddress(tempStr, sizeof(tempStr)) == INPUT_RESPONSE_VALID)
       {
         settings.ethernetSubnet.fromString(tempStr);
         restartEthernet = true;        

@@ -939,6 +939,34 @@ void updateSystemState()
         }
         break;
 
+      case (STATE_NTPSERVER_NOT_STARTED):
+        {
+          settings.lastState = STATE_NTPSERVER_NOT_STARTED; //Record this state for next POR
+          recordSystemSettings();
+          
+          displayNtpStart(0); //Show 'NTP'
+          
+          if (online.ethernetNTPServer && online.gnss)
+          {
+            displayNtpStarted(500); //Show 'NTP Started'
+            changeState(STATE_NTPSERVER_NO_SYNC);
+          }
+        }
+        break;
+      case (STATE_NTPSERVER_NO_SYNC):
+        {
+          if (rtcSyncd)
+          {
+            changeState(STATE_NTPSERVER_SYNC);
+          }          
+        }
+        break;
+      case (STATE_NTPSERVER_SYNC):
+        {
+          //Nothing to do here?
+        }
+        break;
+
       case (STATE_SHUTDOWN):
         {
           forceDisplayUpdate = true;
@@ -1088,6 +1116,16 @@ void changeState(SystemState newState)
         systemPrint("State: ESP-Now Pairing");
         break;
 
+      case (STATE_NTPSERVER_NOT_STARTED):
+        systemPrint("State: NTP Server - Not Started");
+        break;
+      case (STATE_NTPSERVER_NO_SYNC):
+        systemPrint("State: NTP Server - No Sync");
+        break;
+      case (STATE_NTPSERVER_SYNC):
+        systemPrint("State: NTP Server - Sync");
+        break;
+      
       case (STATE_SHUTDOWN):
         systemPrint("State: Shut Down");
         break;

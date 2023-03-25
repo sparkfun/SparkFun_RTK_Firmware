@@ -3586,9 +3586,10 @@ static const char *index_html = R"=====(
                         <select name="baseRoverSetup" id="baseRoverSetup" class="form-dropdown">
                             <option value="0">Rover</option>
                             <option value="1">Base</option>
+                            <option value="2">NTP</option>
                         </select>
                         <span class="tt" data-bs-placement="right"
-                            title="Put the system into rover or base mode at next Power On or Reset.">
+                            title="Put the system into rover, base or NTP mode at next Power On or Reset.">
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>

@@ -35,6 +35,9 @@ typedef enum
   STATE_KEYS_PROVISION_WIFI_TIMEOUT,
   STATE_ESPNOW_PAIRING_NOT_STARTED,
   STATE_ESPNOW_PAIRING,
+  STATE_NTPSERVER_NOT_STARTED,
+  STATE_NTPSERVER_NO_SYNC,
+  STATE_NTPSERVER_SYNC,
   STATE_SHUTDOWN,
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
@@ -72,7 +75,7 @@ ProductVariant productVariant = RTK_SURVEYOR;
 //Macro to show if the the RTK variant has a GNSS TP interrupt - for accurate clock setting
 //The GNSS UBX PVT message is sent ahead of the top-of-second
 //The rising edge of the TP signal indicates the true top-of-second
-#define HAS_GNSS_TP     (productVariant == REFERENCE_STATION)
+#define HAS_GNSS_TP_INT (productVariant == REFERENCE_STATION)
 
 typedef enum
 {
@@ -267,6 +270,14 @@ typedef enum
   ETHERNET_FIXED_IP_DNS_GATEWAY,
   ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET,
 } ethernetConfigOptions;
+
+typedef enum
+{
+  ETH_NOT_BEGUN,
+  ETH_CAN_NOT_BEGIN,
+  ETH_BEGUN_NO_LINK,
+  ETH_LINK
+} ethernetStatus_e;
 
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
@@ -686,7 +697,7 @@ struct struct_online {
   bool i2c = false;
   bool tcpClient = false;
   bool tcpServer = false;
-  bool ethernet = false;
+  ethernetStatus_e ethernetStatus = ETH_NOT_BEGUN;
   bool ethernetHTTPServer = false; //EthernetServer
   bool ethernetNTPServer = false; //EthernetUDP
 } online;

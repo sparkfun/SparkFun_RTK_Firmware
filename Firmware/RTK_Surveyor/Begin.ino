@@ -667,7 +667,7 @@ void beginGNSS()
     printZEDInfo(); //Print module type and firmware version
   }
 
-  if (HAS_GNSS_TP) //If the GNSS Time Pulse is connected, use it as an interrupt to set the clock accurately
+  if (HAS_GNSS_TP_INT) //If the GNSS Time Pulse is connected, use it as an interrupt to set the clock accurately
   {
     pinMode(pin_GNSS_TimePulse, INPUT);
     attachInterrupt(pin_GNSS_TimePulse, tpISR, RISING);
@@ -684,7 +684,7 @@ void configureGNSS()
   theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
   theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); //Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
 
-  if (HAS_GNSS_TP)
+  if (HAS_GNSS_TP_INT)
     theGNSS.setAutoTIMTPcallbackPtr(&storeTIMTPdata); //Enable automatic TIM TP messages with callback to storeTIMTPdata
   
   //Configuring the ZED can take more than 2000ms. We save configuration to
@@ -716,7 +716,7 @@ void configureGNSS()
   //Default settings.measurementRate is 250ms (4Hz)
   //We want the TIM TP messages to arrive every second
   //Adjust the TIM TP rate to match
-  if (HAS_GNSS_TP)
+  if (HAS_GNSS_TP_INT)
   {
     uint8_t tpRate = 1000 / settings.measurementRate;
     theGNSS.setAutoTIMTPrate(tpRate);
@@ -870,17 +870,13 @@ void beginSystemState()
   }
   else if (productVariant == REFERENCE_STATION)
   {
-    systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
+    systemState = settings.lastState; //Return to either NTP or Base Not Started. The last state previous to power down.
 
     if (systemState > STATE_SHUTDOWN)
     {
       systemPrintln("Unknown state - factory reset");
       factoryReset();
     }
-
-    firstRoverStart = true; //Allow user to enter test screen during first rover start
-    if (systemState == STATE_BASE_NOT_STARTED)
-      firstRoverStart = false;
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
@@ -1059,6 +1055,7 @@ void tpISR()
               rtc.setTime(epochSecs, epochMicros);
     
               lastRTCSync = millis();
+              rtcSyncd = true;
   
               gnssSyncTv.tv_sec = epochSecs; // Store the timeval of the sync
               gnssSyncTv.tv_usec = epochMicros;

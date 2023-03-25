@@ -645,9 +645,11 @@ void createSettingsString(char* newSettings)
   }
   //stringRecord(newSettings, "activeProfiles", activeProfiles);
 
-  //System state at power on. Convert various system states to either Rover or Base.
-  int lastState = 0; //0 = Rover, 1 = Base
+  //System state at power on. Convert various system states to either Rover or Base or NTP.
+  int lastState = 0; //0 = Rover, 1 = Base, 2 = NTP
   if (settings.lastState >= STATE_BASE_NOT_STARTED && settings.lastState <= STATE_BASE_FIXED_TRANSMITTING) lastState = 1;
+  if (settings.lastState >= STATE_NTPSERVER_NOT_STARTED && settings.lastState <= STATE_NTPSERVER_SYNC) lastState = 2;
+  if ((lastState == 0) && (productVariant == REFERENCE_STATION)) lastState = 2; //Don't allow the ref stn to go into rover mode
   stringRecord(newSettings, "baseRoverSetup", lastState);
 
   //Bluetooth radio type
@@ -1003,6 +1005,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   {
     settings.lastState = STATE_ROVER_NOT_STARTED; //Default
     if (settingValue == 1) settings.lastState = STATE_BASE_NOT_STARTED;
+    if (settingValue == 2) settings.lastState = STATE_NTPSERVER_NOT_STARTED;
   }
   else if (strstr(settingName, "stationECEF") != nullptr)
   {

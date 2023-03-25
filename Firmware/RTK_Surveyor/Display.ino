@@ -59,6 +59,13 @@
 //Right bottom
 #define ICON_LOGGING                     (1<<6) // right, bottom
 
+//Left center
+#define ICON_CLOCK                       (1<<7)
+#define ICON_CLOCK_ACCURACY              (1<<8)
+
+//Right top
+#define ICON_ETHERNET                    (1<<9)
+
 //----------------------------------------
 //Locals
 //----------------------------------------
@@ -186,6 +193,26 @@ void updateDisplay()
           46|     **          **       ***      ***                 *       *
           47|   ******                                              *********
         */
+
+        case (STATE_NTPSERVER_NOT_STARTED):
+        case (STATE_NTPSERVER_NO_SYNC):
+          blinking_icons ^= ICON_CLOCK;
+          icons =   (blinking_icons & ICON_CLOCK) //Center left
+                    | ICON_CLOCK_ACCURACY //Center right
+                    | paintSIV();         //Bottom left
+          if (online.ethernetStatus == ETH_LINK)
+            icons |= ICON_ETHERNET; //Top Right
+          iconsRadio = setRadioIcons();   //Top left
+          break;
+
+        case (STATE_NTPSERVER_SYNC):
+          icons =   ICON_CLOCK            //Center left
+                    | ICON_CLOCK_ACCURACY //Center right
+                    | paintSIV();         //Bottom left
+          if (online.ethernetStatus == ETH_LINK)
+            icons |= ICON_ETHERNET; //Top Right
+          iconsRadio = setRadioIcons();   //Top left
+          break;
 
         case (STATE_ROVER_NOT_STARTED):
           icons =   ICON_BATTERY        //Top right
@@ -444,18 +471,24 @@ void updateDisplay()
       }
 
       //Top right corner
-      if ((icons & ICON_BATTERY) && (productVariant != REFERENCE_STATION))
+      if (icons & ICON_BATTERY)
         paintBatteryLevel();
+      else if (icons & ICON_ETHERNET)
+        displayBitmap(45, 0, Ethernet_Icon_Width, Ethernet_Icon_Height, Ethernet_Icon);
 
       //Center left
       if (icons & ICON_CROSS_HAIR)
         displayBitmap(0, 18, CrossHair_Width, CrossHair_Height, CrossHair);
       else if (icons & ICON_CROSS_HAIR_DUAL)
         displayBitmap(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual);
+      else if (icons & ICON_CLOCK)
+        displayBitmap(0, 18, Clock_Icon_Width, Clock_Icon_Height, Clock_Icon);
 
       //Center right
       if (icons & ICON_HORIZONTAL_ACCURACY)
         paintHorizontalAccuracy();
+      else if (icons & ICON_CLOCK_ACCURACY)
+        paintClockAccuracy();
 
       //Bottom left corner
       if (icons & ICON_SIV_ANTENNA)
@@ -1087,6 +1120,13 @@ uint32_t setModeIcon()
 
   switch (systemState)
   {
+    case (STATE_NTPSERVER_NOT_STARTED):
+      break;
+    case (STATE_NTPSERVER_NO_SYNC):
+    case (STATE_NTPSERVER_SYNC):
+      icons |= ICON_DYNAMIC_MODEL;
+      break;
+
     case (STATE_ROVER_NOT_STARTED):
       break;
     case (STATE_ROVER_NO_FIX):
@@ -1195,6 +1235,49 @@ void paintHorizontalAccuracy()
   {
     oled.print("."); //Remove leading zero
     oled.printf("%03d", (int)(horizontalAccuracy * 1000)); //Print down to millimeter
+  }
+}
+
+/*
+               111111111122222222223333333333444444444455555555556666
+     0123456789012345678901234567890123456789012345678901234567890123
+    .----------------------------------------------------------------
+  17|
+  18|
+  19|
+  20|
+  21|                           ***               ***      ***
+  22|                          *   *             *   *    *   *
+  23|                          *   *             *   *    *   *
+  24|                  **       * *               * *      * *
+  25|                  **        *                 *        *
+  26|                           * *               * *      * *
+  27|                          *   *             *   *    *   *
+  28|                          *   *             *   *    *   *
+  29|                  **      *   *     **      *   *    *   *
+  30|                  **       ***      **       ***      ***
+  31|
+  32|
+*/
+
+//Display clock accuracy tAcc
+void paintClockAccuracy()
+{
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.setCursor(16, 20); //x, y
+
+  if (online.gnss == false)
+  {
+    oled.print(":N/A");
+  }
+  else if (tAcc < 5000)
+  {
+    oled.print(":");
+    oled.print(tAcc);
+  }
+  else //if (tAcc >= 5000)
+  {
+    oled.print(">5000");
   }
 }
 
@@ -2265,7 +2348,14 @@ void paintDisplaySetup()
     }
     else if (setupState == STATE_BASE_NOT_STARTED)
     {
-      if (online.accelerometer)
+      if (productVariant == REFERENCE_STATION)
+      {
+        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, true);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else if (online.accelerometer)
       {
         printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
         printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
@@ -2278,6 +2368,15 @@ void paintDisplaySetup()
         printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
         printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, true);
         printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+    }
+    else if (setupState == STATE_NTPSERVER_NOT_STARTED)
+    {
+      {
+        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
+        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, false);
       }
     }
     else if (setupState == STATE_BUBBLE_LEVEL)
@@ -2300,7 +2399,14 @@ void paintDisplaySetup()
     }
     else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
     {
-      if (online.accelerometer)
+      if (productVariant == REFERENCE_STATION)
+      {
+        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, true);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else if (online.accelerometer)
       {
         printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
         printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
@@ -2317,7 +2423,14 @@ void paintDisplaySetup()
     }
     else if (setupState == STATE_ESPNOW_PAIRING_NOT_STARTED)
     {
-      if (online.accelerometer)
+      if (productVariant == REFERENCE_STATION)
+      {
+        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else if (online.accelerometer)
       {
         printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
         printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
@@ -2729,6 +2842,42 @@ void paintEspNowPaired()
   displayMessage("ESP-Now Paired", 2000);
 }
 
+void displayNtpStart(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 15;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+
+    printTextCenter("NTP", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    //printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayNtpStarted(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 15;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+
+    printTextCenter("NTP", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
 const uint8_t * getMacAddress()
 {
   static const uint8_t zero[6] = {0, 0, 0, 0, 0, 0};
@@ -2739,6 +2888,10 @@ const uint8_t * getMacAddress()
 #ifdef COMPILE_WIFI
   else if (wifiState != WIFI_OFF)
     return wifiMACAddress;
+#endif
+#ifdef COMPILE_ETHERNET
+  else if (online.ethernetStatus >= ETH_BEGUN_NO_LINK)
+    return ethernetMACAddress;
 #endif
 #endif
   return zero;

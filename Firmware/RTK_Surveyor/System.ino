@@ -252,16 +252,6 @@ void danceLEDs()
     delay(250);
     digitalWrite(pin_bluetoothStatusLED, LOW);
   }
-  else if (productVariant == REFERENCE_STATION)
-  {
-    for (int x = 0 ; x < 4 ; x++)
-    {
-      digitalWrite(pin_baseStatusLED, HIGH);
-      delay(250);
-      digitalWrite(pin_baseStatusLED, LOW);
-      delay(250);
-    }
-  }
   else
   {
     //Units can boot under 1s. Keep splash screen up for at least 2s.

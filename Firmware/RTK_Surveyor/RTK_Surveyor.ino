@@ -511,6 +511,7 @@ uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
 uint32_t lastRTCAttempt = 0; //Wait 1000ms between checking GNSS for current date/time
 uint32_t lastRTCSync = 0; //Time in millis when the RTC was last sync'd
+bool rtcSyncd = false; //Set to true when the RTC has been sync'd via TP pulse
 uint32_t lastPrintPosition = 0; //For periodic display of the position
 
 uint32_t lastBaseIconUpdate = 0;
@@ -770,7 +771,9 @@ void loop()
 
   updateEthernet(); //Maintain the ethernet connection
 
-  updateNTPServer(); //Process any received NTP requests
+  updateEthernetHTTPServer(); //Process any HTTP requests over Ethernet
+
+  updateEthernetNTPServer(); //Process any received NTP requests
 
   printPosition(); //Periodically print GNSS coordinates if enabled
 

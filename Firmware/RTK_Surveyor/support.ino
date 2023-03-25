@@ -265,7 +265,7 @@ InputResponse getString(char *userString, uint8_t stringSize)
     //Keep processing NTP requests
     if (online.ethernetNTPServer)
     {
-      updateNTPServer();
+      updateEthernetNTPServer();
     }
 
     //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

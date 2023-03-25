@@ -6,44 +6,58 @@ void beginEthernet()
     return;
 
 #ifdef COMPILE_ETHERNET
-  Ethernet.init(pin_Ethernet_CS);
 
-  switch(settings.ethernetConfig)
-  {
-    case ETHERNET_FIXED_IP:
-      Ethernet.begin(ethernetMACAddress, settings.ethernetIP);
-      break;
-    case ETHERNET_FIXED_IP_DNS:
-      Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS);
-      break;
-    case ETHERNET_FIXED_IP_DNS_GATEWAY:
-      Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway);
-      break;
-    case ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET:
-      Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway, settings.ethernetSubnet);
-      break;
-    case ETHERNET_DHCP:
-    default:
-      Ethernet.begin(ethernetMACAddress);
-      break;
-  }
-
-  if (Ethernet.hardwareStatus() == EthernetNoHardware)
-  {
-    log_d("Ethernet hardware not found");
-    online.ethernet = false;
+  if (online.ethernetStatus == ETH_CAN_NOT_BEGIN)
     return;
+
+  if (online.ethernetStatus == ETH_NOT_BEGUN)
+  {
+    Ethernet.init(pin_Ethernet_CS);
+  
+    switch(settings.ethernetConfig)
+    {
+      case ETHERNET_FIXED_IP:
+        Ethernet.begin(ethernetMACAddress, settings.ethernetIP);
+        break;
+      case ETHERNET_FIXED_IP_DNS:
+        Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS);
+        break;
+      case ETHERNET_FIXED_IP_DNS_GATEWAY:
+        Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway);
+        break;
+      case ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET:
+        Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway, settings.ethernetSubnet);
+        break;
+      case ETHERNET_DHCP:
+      default:
+        Ethernet.begin(ethernetMACAddress);
+        break;
+    }
+
+    if (Ethernet.hardwareStatus() == EthernetNoHardware)
+    {
+      log_d("Ethernet hardware not found");
+      online.ethernetStatus = ETH_CAN_NOT_BEGIN;
+      return;
+    }
+
+    online.ethernetStatus = ETH_BEGUN_NO_LINK;
   }
 
+  if (online.ethernetStatus == ETH_BEGUN_NO_LINK)
+  {
+    if (Ethernet.linkStatus() == LinkON)
+    {
+      online.ethernetStatus = ETH_LINK;
+      return;
+    }
+  }
+
+  //online.ethernetStatus == ETH_LINK
   if (Ethernet.linkStatus() == LinkOFF)
-  {
-    log_d("Ethernet cable is not connected");
-    online.ethernet = false;
-    return;
-  }
+    online.ethernetStatus = ETH_BEGUN_NO_LINK;
 
-  online.ethernet = true;
-#endif
+#endif ///COMPILE_ETHERNET
 }
 
 void beginEthernetHTTPServer()
@@ -52,7 +66,7 @@ void beginEthernetHTTPServer()
     return;
 
 #ifdef COMPILE_ETHERNET
-  if (online.ethernet)
+  if ((online.ethernetStatus == ETH_LINK) && (online.ethernetHTTPServer == false))
   {
     ethernetHTTPServer = new EthernetServer(settings.ethernetHttpPort);
     online.ethernetHTTPServer = true;
@@ -66,7 +80,7 @@ void beginEthernetNTPServer()
     return;
 
 #ifdef COMPILE_ETHERNET
-  if (online.ethernet)
+  if ((online.ethernetStatus == ETH_LINK) && (online.ethernetNTPServer == false))
   {
     ethernetNTPServer = new derivedEthernetUDP;
     ethernetNTPServer->begin(settings.ethernetNtpPort);
@@ -80,31 +94,18 @@ void beginEthernetNTPServer()
 #endif
 }
 
-void updateNTPServer()
-{  
-  if (!HAS_ETHERNET)
-    return;
-
-#ifdef COMPILE_ETHERNET
-  if (online.ethernetNTPServer)
-  {    
-    char ntpDiag[512]; // Char array to hold diagnostic messages
-    
-    // Check for new NTP requests - if the time has been sync'd
-    bool processed = processOneNTPRequest((lastRTCSync > 0), (const timeval *)&ethernetNtpTv, (const timeval *)&gnssSyncTv, ntpDiag, sizeof(ntpDiag));
-  
-    if (processed && settings.enablePrintNTPDiag && (!inMainMenu))
-      systemPrint(ntpDiag);
-  }
-#endif
-}
-
 void updateEthernet()
 {
   if (!HAS_ETHERNET)
     return;
 
 #ifdef COMPILE_ETHERNET
+
+  if (online.ethernetStatus == ETH_CAN_NOT_BEGIN)
+    return;
+
+  beginEthernet(); //This updates the link status
+
   //Maintain the ethernet connection  
   switch (Ethernet.maintain()) {
     case 1:
@@ -139,6 +140,47 @@ void updateEthernet()
       //nothing happened
       break;
   }
+#endif
+}
+
+void updateEthernetHTTPServer()
+{  
+  if (!HAS_ETHERNET)
+    return;
+
+#ifdef COMPILE_ETHERNET
+  if (online.ethernetHTTPServer == false)
+    beginEthernetHTTPServer();
+
+  if (online.ethernetHTTPServer == false)
+    return;
+
+  //TODO: Add Ethernet HTTP Server functionality here
+    
+#endif
+}
+
+void updateEthernetNTPServer()
+{  
+  if (!HAS_ETHERNET)
+    return;
+
+#ifdef COMPILE_ETHERNET
+
+  if (online.ethernetNTPServer == false)
+    beginEthernetNTPServer();
+
+  if (online.ethernetNTPServer == false)
+    return;  
+
+  char ntpDiag[512]; // Char array to hold diagnostic messages
+  
+  // Check for new NTP requests - if the time has been sync'd
+  bool processed = processOneNTPRequest(rtcSyncd, (const timeval *)&ethernetNtpTv, (const timeval *)&gnssSyncTv, ntpDiag, sizeof(ntpDiag));
+
+  if (processed && settings.enablePrintNTPDiag && (!inMainMenu))
+    systemPrint(ntpDiag);
+
 #endif
 }
 

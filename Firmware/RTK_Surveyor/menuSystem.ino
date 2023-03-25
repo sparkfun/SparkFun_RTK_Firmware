@@ -643,6 +643,9 @@ void menuDebug()
     systemPrint("37) Print RTC resyncs: ");
     systemPrintf("%s\r\n", settings.enablePrintRtcSync ? "Enabled" : "Disabled");
 
+    systemPrint("38) Print NTP Request diagnostics: ");
+    systemPrintf("%s\r\n", settings.enablePrintNTPDiag ? "Enabled" : "Disabled");
+
     systemPrintln("t) Enter Test Screen");
 
     systemPrintln("e) Erase LittleFS");
@@ -871,6 +874,10 @@ void menuDebug()
     else if (incoming == 37)
     {
       settings.enablePrintRtcSync ^= 1;
+    }
+    else if (incoming == 38)
+    {
+      settings.enablePrintNTPDiag ^= 1;
     }
     else if (incoming == 'e')
     {

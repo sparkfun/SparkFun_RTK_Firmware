@@ -768,6 +768,8 @@ void loop()
 
   tcpUpdate(); //Turn on TCP Client or Server as needed
 
+  updateNTPServer(); //Process any received NTP requests
+
   printPosition(); //Periodically print GNSS coordinates if enabled
 
   //A small delay prevents panic if no other I2C or functions are called

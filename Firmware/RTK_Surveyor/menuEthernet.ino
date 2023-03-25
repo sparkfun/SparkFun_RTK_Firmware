@@ -71,8 +71,30 @@ void beginEthernetNTPServer()
     ethernetNTPServer = new derivedEthernetUDP;
     ethernetNTPServer->begin(settings.ethernetNtpPort);
     ntpSockIndex = ethernetNTPServer->getSockIndex(); //Get the socket index
+    w5500ClearSocketInterrupts(); // Clear all interrupts
+    w5500EnableSocketInterrupt(ntpSockIndex); // Enable the RECV interrupt for the desired socket index
+    pinMode(pin_Ethernet_Interrupt, INPUT_PULLUP); //Prepare the interrupt pin
     attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); //Attach the interrupt
     online.ethernetNTPServer = true;
+  }
+#endif
+}
+
+void updateNTPServer()
+{  
+  if (!HAS_ETHERNET)
+    return;
+
+#ifdef COMPILE_ETHERNET
+  if (online.ethernetNTPServer)
+  {    
+    char ntpDiag[512]; // Char array to hold diagnostic messages
+    
+    // Check for new NTP requests - if the time has been sync'd
+    bool processed = processOneNTPRequest((lastRTCSync > 0), (const timeval *)&ethernetNtpTv, (const timeval *)&gnssSyncTv, ntpDiag, sizeof(ntpDiag));
+  
+    if (processed && settings.enablePrintNTPDiag)
+      systemPrint(ntpDiag);
   }
 #endif
 }
@@ -88,7 +110,7 @@ void ethernetISR()
   if (w5500CheckSocketInterrupt(ntpSockIndex))
   {
     gettimeofday((timeval *)&ethernetNtpTv, NULL); //Record the time of the NTP interrupt
-    w5500ClearSocketInterrupt(ntpSockIndex); //Not sure if it is best to clear the interrupt(s) here - or in the loop?
+    w5500ClearSocketInterrupt(ntpSockIndex); //Clear interrupt here
   }
 }
 #endif

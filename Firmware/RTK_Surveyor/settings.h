@@ -593,6 +593,7 @@ typedef struct {
   bool enablePrintStates = true;
   bool enablePrintDuplicateStates = false;
   bool enablePrintRtcSync = false;
+  bool enablePrintNTPDiag = false;
   RadioType_e radioType = RADIO_EXTERNAL;
   uint8_t espnowPeers[5][6]; //Max of 5 peers. Contains the MAC addresses (6 bytes) of paired units
   uint8_t espnowPeerCount = 0;

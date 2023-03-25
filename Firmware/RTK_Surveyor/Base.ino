@@ -14,6 +14,7 @@ bool configureUbloxModuleBase()
   firstPowerOn = false; //If we switch between rover/base in the future, force config of module.
 
   theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  theGNSS.checkCallbacks(); //Process any callbacks: ie, storePVTdata
 
   theGNSS.setNMEAGPGGAcallbackPtr(nullptr); //Disable GPGGA call back that may have been set during Rover NTRIP Client mode
 

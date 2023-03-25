@@ -18,6 +18,7 @@ bool configureUbloxModuleRover()
   firstPowerOn = false; //If we switch between rover/base in the future, force config of module.
 
   theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  theGNSS.checkCallbacks(); //Process any callbacks: ie, storePVTdata
 
   bool response = true;
 

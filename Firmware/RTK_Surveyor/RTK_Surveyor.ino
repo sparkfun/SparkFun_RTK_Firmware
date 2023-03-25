@@ -768,6 +768,8 @@ void loop()
 
   tcpUpdate(); //Turn on TCP Client or Server as needed
 
+  updateEthernet(); //Maintain the ethernet connection
+
   updateNTPServer(); //Process any received NTP requests
 
   printPosition(); //Periodically print GNSS coordinates if enabled

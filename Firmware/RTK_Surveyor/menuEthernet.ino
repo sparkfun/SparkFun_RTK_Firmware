@@ -99,6 +99,49 @@ void updateNTPServer()
 #endif
 }
 
+void updateEthernet()
+{
+  if (!HAS_ETHERNET)
+    return;
+
+#ifdef COMPILE_ETHERNET
+  //Maintain the ethernet connection  
+  switch (Ethernet.maintain()) {
+    case 1:
+      //renewed fail
+      if (settings.enablePrintEthernetDiag && (!inMainMenu)) systemPrintln("Ethernet: Error: renewed fail");
+      break;
+
+    case 2:
+      //renewed success
+      if (settings.enablePrintEthernetDiag && (!inMainMenu))
+      {
+        systemPrint("Ethernet: Renewed success. IP address: ");
+        systemPrintln(Ethernet.localIP());
+      }
+      break;
+
+    case 3:
+      //rebind fail
+      if (settings.enablePrintEthernetDiag && (!inMainMenu)) systemPrintln("Ethernet: Error: rebind fail");
+      break;
+
+    case 4:
+      //rebind success
+      if (settings.enablePrintEthernetDiag && (!inMainMenu))
+      {
+        systemPrint("Ethernet: Rebind success. IP address: ");
+        systemPrintln(Ethernet.localIP());
+      }
+      break;
+
+    default:
+      //nothing happened
+      break;
+  }
+#endif
+}
+
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 // Ethernet (W5500) ISR
 // Triggered by the falling edge of the W5500 interrupt signal - indicates the arrival of a packet
@@ -240,5 +283,12 @@ void menuEthernet()
   }
 
   clearBuffer(); //Empty buffer of any newline chars
+
+  if (restartEthernet) //Restart the ESP to use the new ethernet settings
+  {
+    recordSystemSettings();
+    ESP.restart();
+  }
+
 #endif  //COMPILE_ETHERNET
 }

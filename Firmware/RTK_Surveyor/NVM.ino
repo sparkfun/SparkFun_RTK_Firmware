@@ -289,6 +289,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "enablePrintDuplicateStates", settings.enablePrintDuplicateStates);
   settingsFile->printf("%s=%d\r\n", "enablePrintRtcSync", settings.enablePrintRtcSync);
   settingsFile->printf("%s=%d\r\n", "enablePrintNTPDiag", settings.enablePrintNTPDiag);
+  settingsFile->printf("%s=%d\r\n", "enablePrintEthernetDiag", settings.enablePrintEthernetDiag);
   settingsFile->printf("%s=%d\r\n", "radioType", settings.radioType);
 
   //Record peer MAC addresses
@@ -1019,6 +1020,8 @@ bool parseLine(char* str, Settings *settings)
     settings->enablePrintRtcSync = d;
   else if (strcmp(settingName, "enablePrintNTPDiag") == 0)
     settings->enablePrintNTPDiag = d;
+  else if (strcmp(settingName, "enablePrintEthernetDiag") == 0)
+    settings->enablePrintEthernetDiag = d;
   else if (strcmp(settingName, "radioType") == 0)
     settings->radioType = (RadioType_e)d;
   else if (strcmp(settingName, "espnowPeerCount") == 0)

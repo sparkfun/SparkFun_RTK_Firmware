@@ -252,9 +252,23 @@ InputResponse getString(char *userString, uint8_t stringSize)
   {
     delay(1); //Yield to processor
 
-    //Regularly poll to get latest data
+    //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    //Keep doing these important things while waiting for the user to enter data
+
+    //Regularly poll GNSS to get latest data. Keep the GNSS time updated.
     if (online.gnss == true)
+    {
       theGNSS.checkUblox();
+      theGNSS.checkCallbacks();
+    }
+    
+    //Keep processing NTP requests
+    if (online.ethernetNTPServer)
+    {
+      updateNTPServer();
+    }
+
+    //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
     if (btPrintEchoExit) //User has disconnect from BT. Force exit all menus.
       return INPUT_RESPONSE_TIMEOUT;

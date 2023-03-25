@@ -93,7 +93,7 @@ void updateNTPServer()
     // Check for new NTP requests - if the time has been sync'd
     bool processed = processOneNTPRequest((lastRTCSync > 0), (const timeval *)&ethernetNtpTv, (const timeval *)&gnssSyncTv, ntpDiag, sizeof(ntpDiag));
   
-    if (processed && settings.enablePrintNTPDiag)
+    if (processed && settings.enablePrintNTPDiag && (!inMainMenu))
       systemPrint(ntpDiag);
   }
 #endif

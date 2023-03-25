@@ -1035,34 +1035,37 @@ void deleteSDSizeCheckTask()
 void tpISR()
 {
   unsigned long millisNow = millis();
-  if (timTpUpdated) // Only sync if timTpUpdated is true
+  if (!inMainMenu) //Skip this if the menu is open
   {
-    if (millisNow - lastRTCSync > syncRTCInterval) // Only sync if it is more than syncRTCInterval since the last sync
+    if (timTpUpdated) // Only sync if timTpUpdated is true
     {
-      if (millisNow < (timTpArrivalMillis + 999)) // Only sync if the GNSS time is not stale
+      if (millisNow - lastRTCSync > syncRTCInterval) // Only sync if it is more than syncRTCInterval since the last sync
       {
-        if (fullyResolved) // Only sync if GNSS time is fully resolved
+        if (millisNow < (timTpArrivalMillis + 999)) // Only sync if the GNSS time is not stale
         {
-          if (tAcc < 5000) // Only sync if the tAcc is better than 5000ns
+          if (fullyResolved) // Only sync if GNSS time is fully resolved
           {
-            //To perform the time zone adjustment correctly, it's easiest if we convert the GNSS time and date
-            //into Unix epoch first and then apply the timeZone offset
-            uint32_t epochSecs = timTpEpoch;
-            uint32_t epochMicros = timTpMicros;
-            epochSecs += settings.timeZoneSeconds;
-            epochSecs += settings.timeZoneMinutes * 60;
-            epochSecs += settings.timeZoneHours * 60 * 60;
+            if (tAcc < 5000) // Only sync if the tAcc is better than 5000ns
+            {
+              //To perform the time zone adjustment correctly, it's easiest if we convert the GNSS time and date
+              //into Unix epoch first and then apply the timeZone offset
+              uint32_t epochSecs = timTpEpoch;
+              uint32_t epochMicros = timTpMicros;
+              epochSecs += settings.timeZoneSeconds;
+              epochSecs += settings.timeZoneMinutes * 60;
+              epochSecs += settings.timeZoneHours * 60 * 60;
+    
+              //Set the internal system time
+              rtc.setTime(epochSecs, epochMicros);
+    
+              lastRTCSync = millis();
   
-            //Set the internal system time
-            rtc.setTime(epochSecs, epochMicros);
+              gnssSyncTv.tv_sec = epochSecs; // Store the timeval of the sync
+              gnssSyncTv.tv_usec = epochMicros;
   
-            lastRTCSync = millis();
-
-            gnssSyncTv.tv_sec = epochSecs; // Store the timeval of the sync
-            gnssSyncTv.tv_usec = epochMicros;
-
-            if (syncRTCInterval < 59000) //From now on, sync every minute
-              syncRTCInterval = 59000;
+              if (syncRTCInterval < 59000) //From now on, sync every minute
+                syncRTCInterval = 59000;
+            }
           }
         }
       }

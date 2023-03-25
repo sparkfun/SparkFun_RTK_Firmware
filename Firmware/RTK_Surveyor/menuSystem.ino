@@ -305,6 +305,7 @@ void menuSystem()
                 {
                   settings.timeZoneSeconds = value;
                   online.rtc = false;
+                  syncRTCInterval = 1000; //Reset syncRTCInterval to 1000ms (tpISR could have set it to 59000)
                   updateRTC();
                 } //Succesful seconds
               }

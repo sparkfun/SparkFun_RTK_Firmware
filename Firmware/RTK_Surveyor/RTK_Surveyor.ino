@@ -960,8 +960,6 @@ void updateRTC()
           epochSecs += settings.timeZoneHours * 60 * 60;
 
           //Set the internal system time
-          //This is normally set with WiFi NTP but we will rarely have WiFi
-          //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
           rtc.setTime(epochSecs, epochMicros);
 
           online.rtc = true;

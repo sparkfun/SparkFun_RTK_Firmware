@@ -42,6 +42,9 @@
 #define ICON_UP_ARROW_RIGHT              (1<<27) // center,  0
 #define ICON_BLANK_RIGHT                 (1<<28) // center,  0
 
+//Left + Center Radio spot
+#define ICON_IP_ADDRESS                  (1<<29)
+
 //Right top
 #define ICON_BATTERY                     (1<<0) // 45,  0
 
@@ -201,8 +204,11 @@ void updateDisplay()
                     | ICON_CLOCK_ACCURACY //Center right
                     | paintSIV();         //Bottom left
           if (online.ethernetStatus == ETH_LINK)
-            icons |= ICON_ETHERNET; //Top Right
-          iconsRadio = setRadioIcons();   //Top left
+            blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+          else
+            blinking_icons ^= ICON_ETHERNET;
+          icons |= (blinking_icons & ICON_ETHERNET); //Top Right
+          iconsRadio = ICON_IP_ADDRESS;   //Top left
           break;
 
         case (STATE_NTPSERVER_SYNC):
@@ -210,8 +216,11 @@ void updateDisplay()
                     | ICON_CLOCK_ACCURACY //Center right
                     | paintSIV();         //Bottom left
           if (online.ethernetStatus == ETH_LINK)
-            icons |= ICON_ETHERNET; //Top Right
-          iconsRadio = setRadioIcons();   //Top left
+            blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+          else
+            blinking_icons ^= ICON_ETHERNET;
+          icons |= (blinking_icons & ICON_ETHERNET); //Top Right
+          iconsRadio = ICON_IP_ADDRESS;   //Top left
           break;
 
         case (STATE_ROVER_NOT_STARTED):
@@ -470,6 +479,10 @@ void updateDisplay()
         ;
       }
 
+      //Left + center spot
+      if (iconsRadio & ICON_IP_ADDRESS)
+        paintIPAddress();
+
       //Top right corner
       if (icons & ICON_BATTERY)
         paintBatteryLevel();
@@ -482,7 +495,7 @@ void updateDisplay()
       else if (icons & ICON_CROSS_HAIR_DUAL)
         displayBitmap(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual);
       else if (icons & ICON_CLOCK)
-        displayBitmap(0, 18, Clock_Icon_Width, Clock_Icon_Height, Clock_Icon);
+        paintClock();
 
       //Center right
       if (icons & ICON_HORIZONTAL_ACCURACY)
@@ -1238,46 +1251,68 @@ void paintHorizontalAccuracy()
   }
 }
 
-/*
-               111111111122222222223333333333444444444455555555556666
-     0123456789012345678901234567890123456789012345678901234567890123
-    .----------------------------------------------------------------
-  17|
-  18|
-  19|
-  20|
-  21|                           ***               ***      ***
-  22|                          *   *             *   *    *   *
-  23|                          *   *             *   *    *   *
-  24|                  **       * *               * *      * *
-  25|                  **        *                 *        *
-  26|                           * *               * *      * *
-  27|                          *   *             *   *    *   *
-  28|                          *   *             *   *    *   *
-  29|                  **      *   *     **      *   *    *   *
-  30|                  **       ***      **       ***      ***
-  31|
-  32|
-*/
+//Display clock with moving hands
+void paintClock()
+{
+  //Animate icon to show system running
+  static uint8_t clockIconDisplayed = 3;
+  clockIconDisplayed++; //Goto next icon
+  clockIconDisplayed %= 4; //Wrap
+
+  if (clockIconDisplayed == 0)
+    displayBitmap(0, 18, Clock_Icon_Width, Clock_Icon_Height, Clock_Icon_1);
+  else if (clockIconDisplayed == 1)
+    displayBitmap(0, 18, Clock_Icon_Width, Clock_Icon_Height, Clock_Icon_2);
+  else if (clockIconDisplayed == 2)
+    displayBitmap(0, 18, Clock_Icon_Width, Clock_Icon_Height, Clock_Icon_3);
+  else
+    displayBitmap(0, 18, Clock_Icon_Width, Clock_Icon_Height, Clock_Icon_4);
+}
 
 //Display clock accuracy tAcc
 void paintClockAccuracy()
 {
   oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
   oled.setCursor(16, 20); //x, y
+  oled.print(":");
 
   if (online.gnss == false)
   {
-    oled.print(":N/A");
+    oled.print(" N/A");
   }
-  else if (tAcc < 5000)
+  else if (tAcc < 10) // 9 or less : show as 9ns
   {
-    oled.print(":");
     oled.print(tAcc);
+    displayBitmap(36, 20, Millis_Icon_Width, Millis_Icon_Height, Nanos_Icon);
   }
-  else //if (tAcc >= 5000)
+  else if (tAcc < 100) // 99 or less : show as 99ns
   {
-    oled.print(">5000");
+    oled.print(tAcc);
+    displayBitmap(44, 20, Millis_Icon_Width, Millis_Icon_Height, Nanos_Icon);
+  }
+  else if (tAcc < 10000) // 9999 or less : show as 9.9μs
+  {
+    oled.print(tAcc / 1000);
+    oled.print(".");
+    oled.print((tAcc / 100) % 10);
+    displayBitmap(52, 20, Millis_Icon_Width, Millis_Icon_Height, Micros_Icon);
+  }
+  else if (tAcc < 100000) // 99999 or less : show as 99μs
+  {
+    oled.print(tAcc / 1000);
+    displayBitmap(44, 20, Millis_Icon_Width, Millis_Icon_Height, Micros_Icon);
+  }
+  else if (tAcc < 10000000) // 9999999 or less : show as 9.9ms
+  {
+    oled.print(tAcc / 1000000);
+    oled.print(".");
+    oled.print((tAcc / 100000) % 10);
+    displayBitmap(52, 20, Millis_Icon_Width, Millis_Icon_Height, Millis_Icon);
+  }
+  else //if (tAcc >= 100000)
+  {
+    oled.print(">10");
+    displayBitmap(52, 20, Millis_Icon_Width, Millis_Icon_Height, Millis_Icon);
   }
 }
 
@@ -1601,6 +1636,36 @@ void paintConnectingToNtripCaster()
   oled.setFont(QW_FONT_8X16);
 
   printTextwithKerning("Connecting", textX, textY, textKerning);
+}
+
+//Scroll through IP address. Wipe with spaces both ends.
+void paintIPAddress()
+{
+  char ipAddress[32];
+  snprintf(ipAddress, sizeof(ipAddress), "       %d.%d.%d.%d       ",
+#ifdef COMPILE_ETHERNET
+           Ethernet.localIP()[0], Ethernet.localIP()[1], Ethernet.localIP()[2], Ethernet.localIP()[3]);
+#else
+           0,0,0,0);
+#endif
+
+  static uint8_t ipAddressPosition = 0;
+
+  //Print seven characters of IP address
+  char printThis[9];
+  snprintf(printThis, sizeof(printThis), "%c%c%c%c%c%c%c",
+           ipAddress[ipAddressPosition + 0], ipAddress[ipAddressPosition + 1],
+           ipAddress[ipAddressPosition + 2], ipAddress[ipAddressPosition + 3],
+           ipAddress[ipAddressPosition + 4], ipAddress[ipAddressPosition + 5],
+           ipAddress[ipAddressPosition + 6]);
+
+  oled.setFont(QW_FONT_5X7); //Set font to smallest
+  oled.setCursor(0, 3);
+  oled.print(printThis);
+
+  ipAddressPosition++; //Increment the print position
+  if (ipAddress[ipAddressPosition + 7] == 0) //Wrap
+    ipAddressPosition = 0;
 }
 
 void displayBaseStart(uint16_t displayTime)
@@ -2852,7 +2917,6 @@ void displayNtpStart(uint16_t displayTime)
     uint8_t yPos = oled.getHeight() / 2 - fontHeight;
 
     printTextCenter("NTP", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
-    //printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -2871,6 +2935,24 @@ void displayNtpStarted(uint16_t displayTime)
 
     printTextCenter("NTP", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
     printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayNtpNotReady(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 8;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+
+    printTextCenter("Ethernet", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Not Ready", yPos + fontHeight, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 

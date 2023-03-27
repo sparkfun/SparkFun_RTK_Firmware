@@ -101,9 +101,6 @@ void updateSystemState()
             ledcWrite(ledBTChannel, 0); //Turn off BT LED
           }
 
-          if (productVariant == REFERENCE_STATION)
-            digitalWrite(pin_baseStatusLED, LOW);
-
           //Configure for rover mode
           displayRoverStart(0);
 
@@ -941,15 +938,25 @@ void updateSystemState()
 
       case (STATE_NTPSERVER_NOT_STARTED):
         {
+          firstRoverStart = false; //If NTP is starting, no test menu, normal button use.
+
+          if (online.gnss == false)
+            return;
+
           settings.lastState = STATE_NTPSERVER_NOT_STARTED; //Record this state for next POR
           recordSystemSettings();
           
-          displayNtpStart(0); //Show 'NTP'
+          displayNtpStart(500); //Show 'NTP'
           
-          if (online.ethernetNTPServer && online.gnss)
+          if (online.ethernetNTPServer)
           {
             displayNtpStarted(500); //Show 'NTP Started'
             changeState(STATE_NTPSERVER_NO_SYNC);
+          }
+          else
+          {
+            displayNtpNotReady(1000); //Show 'Ethernet Not Ready'
+            changeState(STATE_NTPSERVER_NO_SYNC);            
           }
         }
         break;

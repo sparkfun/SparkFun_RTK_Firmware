@@ -257,7 +257,8 @@ bool processOneNTPRequest(bool process, const timeval * recTv, const timeval * s
 
   if (ntpDiag != nullptr)
     *ntpDiag = 0; // Clear any existing diagnostics
-  
+
+#ifdef COMPILE_ETHERNET
   int packetDataSize = ethernetNTPServer->parsePacket();
 
   IPAddress remoteIP = ethernetNTPServer->remoteIP();
@@ -411,6 +412,8 @@ bool processOneNTPRequest(bool process, const timeval * recTv, const timeval * s
     */
     
   }
+
+#endif ///COMPILE_ETHERNET
   
   return processed;
 }

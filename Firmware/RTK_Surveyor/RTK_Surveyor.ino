@@ -477,6 +477,8 @@ class derivedEthernetUDP : public EthernetUDP
 derivedEthernetUDP *ethernetNTPServer = nullptr; //This will be instantiated when we know the NTP port
 volatile uint8_t ntpSockIndex;                   //The W5500 socket index for NTP - so we can enable and read the correct interrupt
 volatile struct timeval ethernetNtpTv;           //This will hold the time the Ethernet NTP packet arrived
+uint32_t lastLoggedNTPRequest = 0;
+bool ntpLogIncreasing = false;
 #endif
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -1135,6 +1137,9 @@ void getSemaphoreFunction(char* functionName)
       break;
     case FUNCTION_LOG_CLOSURE:
       strcpy(functionName, "Log Closure");
+      break;
+    case FUNCTION_NTPEVENT:
+      strcpy(functionName, "NTP Event");
       break;
   }
 }

@@ -456,7 +456,7 @@ void updateSystemState()
               day = rtc.getDay();
 
               //Build the file name
-              snprintf(fileName, sizeof(fileName), "Marks_%04d_%02d_%02d.csv", year, month, day);
+              snprintf(fileName, sizeof(fileName), "/Marks_%04d_%02d_%02d.csv", year, month, day);
 
               //Try to gain access the SD card
               sdCardWasOnline = online.microSD;

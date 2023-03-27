@@ -337,6 +337,7 @@ typedef enum
   FUNCTION_SDSIZECHECK,
   FUNCTION_LOG_CLOSURE,
   FUNCTION_PRINT_FILE_LIST,
+  FUNCTION_NTPEVENT,
 
 } SemaphoreFunction;
 
@@ -674,6 +675,7 @@ typedef struct {
   uint16_t ethernetHttpPort = 80;
   uint16_t ethernetNtpPort = 123;
   ethernetConfigOptions ethernetConfig = ETHERNET_DHCP;
+  bool enableNTPFile = false; //Log NTP requests to file
 
 } Settings;
 Settings settings;

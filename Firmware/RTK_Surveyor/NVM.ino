@@ -376,6 +376,7 @@ void recordSystemSettingsToFile(File * settingsFile)
     settingsFile->printf("%s=%d\r\n", "ethernetHttpPort", settings.ethernetHttpPort);
     settingsFile->printf("%s=%d\r\n", "ethernetNtpPort", settings.ethernetNtpPort);
     settingsFile->printf("%s=%d\r\n", "ethernetConfig", settings.ethernetConfig);
+    settingsFile->printf("%s=%d\r\n", "enableNTPFile", settings.enableNTPFile);
   }
 }
 
@@ -828,6 +829,8 @@ bool parseLine(char* str, Settings *settings)
     settings->enableLogging = d;
   else if (strcmp(settingName, "enableMarksFile") == 0)
     settings->enableMarksFile = d;
+  else if (strcmp(settingName, "enableNTPFile") == 0)
+    settings->enableNTPFile = d;
   else if (strcmp(settingName, "sppRxQueueSize") == 0)
     settings->sppRxQueueSize = d;
   else if (strcmp(settingName, "sppTxQueueSize") == 0)

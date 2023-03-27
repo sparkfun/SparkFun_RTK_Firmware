@@ -59,6 +59,13 @@ void menuLog()
     if (settings.forceResetOnSDFail == true) systemPrintln("Enabled");
     else systemPrintln("Disabled");
 
+    if (HAS_ETHERNET)
+    {
+      systemPrint("7) Write NTP requests to microSD: ");
+      if (settings.enableNTPFile == true) systemPrintln("Enabled");
+      else systemPrintln("Disabled");
+    }
+
     systemPrintln("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
@@ -110,6 +117,10 @@ void menuLog()
     else if (incoming == 6)
     {
       settings.forceResetOnSDFail ^= 1;
+    }
+    else if ((HAS_ETHERNET) && (incoming == 7))
+    {
+      settings.enableNTPFile ^= 1;
     }
     else if (incoming == 'x')
       break;

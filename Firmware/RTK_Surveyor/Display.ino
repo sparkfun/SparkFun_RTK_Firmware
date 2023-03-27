@@ -134,6 +134,9 @@ void updateDisplay()
       lastDisplayUpdate = millis();
       forceDisplayUpdate = false;
 
+      bool forceLoggingStandard = false;
+      bool noPulse = false;
+
       oled.reset(false); //Incase of previous corruption, force re-alignment of CGRAM. Do not init buffers as it takes time and causes screen to blink.
 
       oled.erase();
@@ -214,7 +217,10 @@ void updateDisplay()
         case (STATE_NTPSERVER_SYNC):
           icons =   ICON_CLOCK            //Center left
                     | ICON_CLOCK_ACCURACY //Center right
-                    | paintSIV();         //Bottom left
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING;       //Bottom right
+          forceLoggingStandard = true;
+          noPulse = true;
           if (online.ethernetStatus == ETH_LINK)
             blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
           else
@@ -511,7 +517,7 @@ void updateDisplay()
 
       //Bottom right corner
       if (icons & ICON_LOGGING)
-        paintLogging();
+        paintLogging(forceLoggingStandard, noPulse);
 
       oled.display(); //Push internal buffer to display
     }
@@ -1505,14 +1511,15 @@ uint32_t paintSIV()
 
 //Draw log icon
 //Turn off icon if log file fails to get bigger
-void paintLogging()
+void paintLogging(bool forceLoggingStandard = false, bool noPulse = false); //Header
+void paintLogging(bool forceLoggingStandard, bool noPulse)
 {
   //Animate icon to show system running
   loggingIconDisplayed++; //Goto next icon
   loggingIconDisplayed %= 4; //Wrap
-  if (online.logging == true && logIncreasing == true)
+  if (online.logging == true && (logIncreasing || ntpLogIncreasing))
   {
-    if (loggingType == LOGGING_STANDARD)
+    if (forceLoggingStandard || (loggingType == LOGGING_STANDARD))
     {
       if (loggingIconDisplayed == 0)
         displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
@@ -1546,7 +1553,7 @@ void paintLogging()
         displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_Custom_3);
     }
   }
-  else
+  else if (!noPulse)
   {
     const int pulseX = 64 - 4;
     const int pulseY = oled.getHeight();

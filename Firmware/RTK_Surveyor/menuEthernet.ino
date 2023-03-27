@@ -161,7 +161,7 @@ void updateEthernetHTTPServer()
 }
 
 void updateEthernetNTPServer()
-{  
+{
   if (!HAS_ETHERNET)
     return;
 
@@ -173,14 +173,113 @@ void updateEthernetNTPServer()
   if (online.ethernetNTPServer == false)
     return;  
 
-  char ntpDiag[512]; // Char array to hold diagnostic messages
+  char ntpDiag[512]; //Char array to hold diagnostic messages
   
-  // Check for new NTP requests - if the time has been sync'd
+  //Check for new NTP requests - if the time has been sync'd
   bool processed = processOneNTPRequest(rtcSyncd, (const timeval *)&ethernetNtpTv, (const timeval *)&gnssSyncTv, ntpDiag, sizeof(ntpDiag));
 
-  if (processed && settings.enablePrintNTPDiag && (!inMainMenu))
-    systemPrint(ntpDiag);
+  if (processed)
+  {
+    //Print the diagnostics - if enabled
+    if (settings.enablePrintNTPDiag && (!inMainMenu))
+      systemPrint(ntpDiag);
+  
+    //Log the NTP request to file - if enabled
+    if (settings.enableNTPFile)
+    {
+      //Gain access to the SPI controller for the microSD card
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+      {
+        markSemaphore(FUNCTION_NTPEVENT);
+  
+        //Get the marks file name
+        char fileName[32];
+        bool fileOpen = false;
+        bool sdCardWasOnline;
+        int year;
+        int month;
+        int day;
+  
+        //Get the date
+        year = rtc.getYear();
+        month = rtc.getMonth() + 1;
+        day = rtc.getDay();
+  
+        //Build the file name
+        snprintf(fileName, sizeof(fileName), "/NTP_Requests_%04d_%02d_%02d.txt", year, month, day);
+  
+        //Try to gain access the SD card
+        sdCardWasOnline = online.microSD;
+        if (online.microSD != true)
+          beginSD();
+  
+        if (online.microSD == true)
+        {
+          //Check if the NTP file already exists
+          bool ntpFileExists = false;
+          if (USE_SPI_MICROSD)
+          {
+            ntpFileExists = sd->exists(fileName);
+          }
+  #ifdef COMPILE_SD_MMC
+          else
+          {
+            ntpFileExists = SD_MMC.exists(fileName);
+          }
+  #endif
+          
+          //Open the NTP file
+          FileSdFatMMC ntpFile;
+  
+          if (ntpFileExists)
+          {
+            if (ntpFile && ntpFile.open(fileName, O_APPEND | O_WRITE))
+            {
+              fileOpen = true;
+              ntpFile.updateFileCreateTimestamp();
+            }
+          }
+          else
+          {
+            if (ntpFile && ntpFile.open(fileName, O_CREAT | O_WRITE))
+            {
+              fileOpen = true;
+              ntpFile.updateFileAccessTimestamp();
+  
+              //If you want to add a file header, do it here
+            }
+          }
+  
+          if (fileOpen)
+          {
+            //Write the NTP request to the file
+            ntpFile.write((const uint8_t *)ntpDiag, strlen(ntpDiag));
+  
+            //Update the file to create time & date
+            ntpFile.updateFileCreateTimestamp();
+  
+            //Close the mark file
+            ntpFile.close();
+          }
+  
+          //Dismount the SD card
+          if (!sdCardWasOnline)
+            endSD(true, false);
+        }
+  
+        //Done with the SPI controller
+        xSemaphoreGive(sdCardSemaphore);
+  
+        lastLoggedNTPRequest = millis();
+        ntpLogIncreasing = true;
+      } //End sdCardSemaphore
+    }
 
+  }
+
+  if (millis() > (lastLoggedNTPRequest + 5000))
+    ntpLogIncreasing = false;
+    
 #endif
 }
 

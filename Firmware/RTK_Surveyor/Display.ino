@@ -2967,6 +2967,24 @@ void displayNtpNotReady(uint16_t displayTime)
   }
 }
 
+void displayNTPFail(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 8;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+
+    printTextCenter("NTP", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Failed", yPos + fontHeight, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
 const uint8_t * getMacAddress()
 {
   static const uint8_t zero[6] = {0, 0, 0, 0, 0, 0};

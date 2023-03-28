@@ -938,7 +938,7 @@ void updateRTC()
   {
     if (online.gnss == true) //Only do this if the GNSS is online
     {
-      if (millis() - lastRTCAttempt > syncRTCInterval)
+      if (millis() - lastRTCAttempt > syncRTCInterval) //Only attempt this once per second
       {
         lastRTCAttempt = millis();
 
@@ -985,6 +985,7 @@ void updateRTC()
     } //End online.gnss
   } //End online.rtc
 
+  //Print TP time sync information here. Trying to do it in the ISR would be a bad idea....
   if (settings.enablePrintRtcSync == true)
   {
     if ((previousGnssSyncTv.tv_sec != gnssSyncTv.tv_sec) || (previousGnssSyncTv.tv_usec != gnssSyncTv.tv_usec))

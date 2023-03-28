@@ -523,20 +523,24 @@ bool setMessages()
       {
         uint8_t rate = settings.ubxMessages[x].msgRate;
 
-        //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH and ESF_STATUS remained enabled
+        //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH, ESF_STATUS and TIM_TP remained enabled
         //(but not enabled for logging)
         if (USE_SPI_GNSS)
         {
           if (settings.ubxMessages[x].msgClass == UBX_CLASS_NAV)
             if ((settings.ubxMessages[x].msgID ==  UBX_NAV_PVT) || (settings.ubxMessages[x].msgID ==  UBX_NAV_HPPOSLLH))
-              rate = 1;
+              if (rate == 0)
+                rate = 1;
           if (settings.ubxMessages[x].msgClass == UBX_CLASS_ESF)
               if (settings.ubxMessages[x].msgID ==  UBX_ESF_STATUS)
                 if (zedModuleType == PLATFORM_F9R)
-                  rate = 1;
+                  if (rate == 0)
+                    rate = 1;
           if (settings.ubxMessages[x].msgClass == UBX_CLASS_TIM)
             if (settings.ubxMessages[x].msgID ==  UBX_TIM_TM2)
-              rate = 1;
+              if (HAS_GNSS_TP_INT)
+                if (rate == 0)
+                  rate = 1;
         }
         
         response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + spiOffset, rate);

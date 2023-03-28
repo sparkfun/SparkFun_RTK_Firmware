@@ -417,3 +417,87 @@ bool processOneNTPRequest(bool process, const timeval * recTv, const timeval * s
   
   return processed;
 }
+
+//Configure specific aspects of the receiver for NTP mode
+bool configureUbloxModuleNTP()
+{
+  if (!HAS_GNSS_TP_INT) return (false);
+  
+  if (online.gnss == false) return (false);
+
+  //If our settings haven't changed, and this is first config since power on, trust ZED's settings
+  //Unless this is a Ref Syn - where the GNSS has no battery-backed RAM
+  if (productVariant != REFERENCE_STATION && settings.updateZEDSettings == false && firstPowerOn == true)
+  {
+    firstPowerOn = false; //Next time user switches modes, new settings will be applied
+    log_d("Skipping ZED NTP configuration");
+    return (true);
+  }
+
+  firstPowerOn = false; //If we switch between rover/base in the future, force config of module.
+
+  theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
+  theGNSS.checkCallbacks(); //Process any callbacks: ie, storePVTdata
+
+  theGNSS.setNMEAGPGGAcallbackPtr(nullptr); //Disable GPGGA call back that may have been set during Rover NTRIP Client mode
+
+  bool response = true;
+
+  //In NTP mode we force 1Hz
+  response &= theGNSS.newCfgValset();
+  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, 1000);
+  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, 1);
+
+  //Survey mode is only available on ZED-F9P modules
+  if (zedModuleType == PLATFORM_F9P)
+    response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
+
+  //Set dynamic model to stationary
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, DYN_MODEL_STATIONARY); //Set dynamic model
+
+  //Set time pulse to 1Hz (100:900)
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_DEF, 0); //Time pulse definition is a period (in us)
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, 1); //Enable timepulse
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, 1); //1 = raising edge
+
+  //While the module is _locking_ to GNSS time, turn off pulse
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
+
+  //When the module is _locked_ to GNSS time, make it generate 1Hz (100ms high, 900ms low)
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, 900000); //Set the period between pulses is us
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, 100000); //Set the pulse length in us
+
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
+
+  //Ensure PVT, HPPOSLLH and TP messages are being output at 1Hz on the correct port
+  if (USE_I2C_GNSS)
+  {
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_UBX_NAV_PVT_I2C, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_UBX_NAV_HPPOSLLH_I2C, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_UBX_TIM_TP_I2C, 1);
+    if (zedModuleType == PLATFORM_F9R)
+    {
+      response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_UBX_ESF_STATUS_I2C, 1);
+    }
+  }
+  else
+  {
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_UBX_NAV_PVT_SPI, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_UBX_NAV_HPPOSLLH_SPI, 1);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_UBX_TIM_TP_SPI, 1);
+    if (zedModuleType == PLATFORM_F9R)
+    {
+      response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_UBX_ESF_STATUS_SPI, 1);
+    }
+  }
+
+  response &= theGNSS.sendCfgValset(); //Closing value
+
+  if (response == false)
+    systemPrintln("NTP config fail");
+
+  return (response);
+}

@@ -943,23 +943,33 @@ void updateSystemState()
           if (online.gnss == false)
             return;
 
-          settings.lastState = STATE_NTPSERVER_NOT_STARTED; //Record this state for next POR
-          recordSystemSettings();
-          
           displayNtpStart(500); //Show 'NTP'
           
-          if (online.ethernetNTPServer)
+          if (configureUbloxModuleNTP() == true)
           {
-            displayNtpStarted(500); //Show 'NTP Started'
-            changeState(STATE_NTPSERVER_NO_SYNC);
+            settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+            settings.lastState = STATE_NTPSERVER_NOT_STARTED; //Record this state for next POR
+            recordSystemSettings();
+
+            if (online.ethernetNTPServer)
+            {
+              displayNtpStarted(500); //Show 'NTP Started'
+              changeState(STATE_NTPSERVER_NO_SYNC);
+            }
+            else
+            {
+              displayNtpNotReady(1000); //Show 'Ethernet Not Ready'
+              changeState(STATE_NTPSERVER_NO_SYNC);            
+            }
           }
           else
           {
-            displayNtpNotReady(1000); //Show 'Ethernet Not Ready'
-            changeState(STATE_NTPSERVER_NO_SYNC);            
+            displayNTPFail(1000); //Show 'NTP Failed'
+            //Do we stay in STATE_NTPSERVER_NOT_STARTED? I guess we do...
           }
         }
         break;
+        
       case (STATE_NTPSERVER_NO_SYNC):
         {
           if (rtcSyncd)
@@ -968,6 +978,7 @@ void updateSystemState()
           }          
         }
         break;
+        
       case (STATE_NTPSERVER_SYNC):
         {
           //Nothing to do here?

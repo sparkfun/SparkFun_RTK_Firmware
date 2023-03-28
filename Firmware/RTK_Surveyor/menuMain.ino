@@ -131,8 +131,10 @@ void menuMain()
     else if (incoming == 'x')
       break;
     else if (incoming == 'X')
+    {
       saveSettingsToZED = false;
       break;
+    }
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)

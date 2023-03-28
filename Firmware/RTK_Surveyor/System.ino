@@ -558,6 +558,14 @@ bool setMessages()
                 if (rate == 0)
                   rate = 1;
           }
+          if (settings.ubxMessages[x].msgClass == UBX_CLASS_RXM)
+              if (settings.ubxMessages[x].msgID ==  UBX_RXM_COR)
+                if (rate == 0)
+                  rate = 1;
+          if (settings.ubxMessages[x].msgClass == UBX_CLASS_NMEA)
+              if (settings.ubxMessages[x].msgID ==  UBX_NMEA_GGA)
+                if (rate == 0)
+                  rate = 1;
         }
         
         response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + spiOffset, rate);

@@ -89,7 +89,7 @@ void menuMain()
       systemPrintln("b) Exit Bluetooth Echo mode");
 
     systemPrintln("x) Exit");
-    systemPrintln("X) Exit - without saving the settings to ZED flash memory");
+    systemPrintln("X) Exit - without saving to ZED flash memory");
 
     byte incoming = getCharacterNumber();
 

@@ -22,6 +22,7 @@ void menuMain()
 {
   inMainMenu = true;
   displaySerialConfig(); //Display 'Serial Config' while user is configuring
+  bool saveSettingsToZED = true; //Default to always saving settings to ZED RAM, BBR and Flash. User can skip with 'X'
 
   while (1)
   {
@@ -88,6 +89,7 @@ void menuMain()
       systemPrintln("b) Exit Bluetooth Echo mode");
 
     systemPrintln("x) Exit");
+    systemPrintln("X) Exit - without saving the settings to ZED flash memory");
 
     byte incoming = getCharacterNumber();
 
@@ -128,6 +130,9 @@ void menuMain()
     }
     else if (incoming == 'x')
       break;
+    else if (incoming == 'X')
+      saveSettingsToZED = false;
+      break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
@@ -138,7 +143,7 @@ void menuMain()
 
   recordSystemSettings(); //Once all menus have exited, record the new settings to LittleFS and config file
 
-  if (online.gnss == true)
+  if ((online.gnss == true) && saveSettingsToZED)
     theGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
 
   //Reboot as base only if currently operating as a base station
@@ -151,7 +156,8 @@ void menuMain()
   if (restartRover == true)
   {
     restartRover = false;
-    requestChangeState(STATE_ROVER_NOT_STARTED); //Restart rover upon exit for latest changes to take effect
+    if (productVariant != REFERENCE_STATION) // Ref Stn does not support Rover mode
+      requestChangeState(STATE_ROVER_NOT_STARTED); //Restart rover upon exit for latest changes to take effect
   }
 
   clearBuffer(); //Empty buffer of any newline chars

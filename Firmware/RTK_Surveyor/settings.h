@@ -420,7 +420,7 @@ typedef struct {
   bool enableResetDisplay = false;
   uint8_t resetCount = 0;
   bool enableExternalPulse = true; //Send pulse once lock is achieved
-  uint64_t externalPulseTimeBetweenPulse_us = 900000; //us between pulses, max of 60s = 60 * 1000 * 1000
+  uint64_t externalPulseTimeBetweenPulse_us = 1000000; //us between pulses, max of 60s = 60 * 1000 * 1000
   uint64_t externalPulseLength_us = 100000; //us length of pulse, max of 60s = 60 * 1000 * 1000
   pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; //Pulse rises for pulse length, then falls
   bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low

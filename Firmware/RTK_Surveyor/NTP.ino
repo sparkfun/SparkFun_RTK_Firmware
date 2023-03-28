@@ -460,14 +460,14 @@ bool configureUbloxModuleNTP()
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, 1); //Enable timepulse
-  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, 1); //1 = raising edge
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, 1); //1 = rising edge
 
   //While the module is _locking_ to GNSS time, turn off pulse
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
 
   //When the module is _locked_ to GNSS time, make it generate 1Hz (100ms high, 900ms low)
-  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, 900000); //Set the period between pulses is us
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, 1000000); //Set the period between pulses is us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, 100000); //Set the pulse length in us
 
   response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation

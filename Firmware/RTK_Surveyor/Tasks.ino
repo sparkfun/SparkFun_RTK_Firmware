@@ -933,8 +933,8 @@ void ButtonCheckTask(void *e)
             break;
 
           case STATE_TESTING:
-            //If we are in testing, return to Rover Not Started
-            requestChangeState(STATE_ROVER_NOT_STARTED);
+            //If we are in testing, return to NTP Not Started
+            requestChangeState(STATE_NTPSERVER_NOT_STARTED);
             break;
 
           case STATE_DISPLAY_SETUP:

@@ -1061,7 +1061,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     //If update is successful, it will force system reset and not get here.
 
-    requestChangeState(STATE_ROVER_NOT_STARTED); //If update failed, return to Rover mode.
+    if (productVariant == REFERENCE_STATION)
+      requestChangeState(STATE_NTPSERVER_NOT_STARTED); //If update failed, return to NTP mode.
+    else
+      requestChangeState(STATE_ROVER_NOT_STARTED); //If update failed, return to Rover mode.
   }
   else if (strcmp(settingName, "factoryDefaultReset") == 0)
     factoryReset();

@@ -181,7 +181,10 @@ bool wifiStartAP()
     if (x == maxTries)
     {
       displayNoWiFi(2000);
-      requestChangeState(STATE_ROVER_NOT_STARTED);
+      if (productVariant == REFERENCE_STATION)
+        requestChangeState(STATE_NTPSERVER_NOT_STARTED); //If WiFi failed, return to NTP mode.
+      else
+        requestChangeState(STATE_ROVER_NOT_STARTED); //If WiFi failed, return to Rover mode.
       return (false);
     }
   }

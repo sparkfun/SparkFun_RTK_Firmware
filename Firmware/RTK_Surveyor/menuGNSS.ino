@@ -373,7 +373,7 @@ bool setRate(double secondsBetweenSolutions)
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, navRate);
 
   //If enabled, adjust GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
-  float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+  float measurementFrequency = (1000.0 / measRate) / navRate;
   if (measurementFrequency < 1.0) measurementFrequency = 1.0;
 
   if (settings.ubxMessages[8].msgRate > 0)

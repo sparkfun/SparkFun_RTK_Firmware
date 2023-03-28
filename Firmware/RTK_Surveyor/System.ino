@@ -199,6 +199,18 @@ bool configureUbloxModule()
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_SPI, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0);
   }
+
+  if (USE_SPI_GNSS) //If the GNSS is SPI, _do_ disable NMEA on UART1
+  {
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GST_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_UART1, 0);
+  }
+  
   
   response &= theGNSS.sendCfgValset();
 
@@ -537,10 +549,15 @@ bool setMessages()
                   if (rate == 0)
                     rate = 1;
           if (settings.ubxMessages[x].msgClass == UBX_CLASS_TIM)
+          {
             if (settings.ubxMessages[x].msgID ==  UBX_TIM_TM2)
+              if (rate == 0)
+                rate = 1;
+            if (settings.ubxMessages[x].msgID ==  UBX_TIM_TP)
               if (HAS_GNSS_TP_INT)
                 if (rate == 0)
                   rate = 1;
+          }
         }
         
         response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + spiOffset, rate);

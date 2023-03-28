@@ -470,6 +470,15 @@ bool configureUbloxModuleNTP()
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, 1000000); //Set the period between pulses is us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, 100000); //Set the pulse length in us
 
+  //Ensure pulse is aligned to top-of-second. This is the default. Set it here just to make sure.
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_ALIGN_TO_TOW_TP1, 1);
+
+  //Set the time grid to UTC. This is the default. Set it here just to make sure.
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_TIMEGRID_TP1, 0); // 0=UTC; 1=GPS
+  
+  //Sync to GNSS. This is the default. Set it here just to make sure.
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_SYNC_GNSS_TP1, 1);
+  
   response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
 
   //Ensure PVT, HPPOSLLH and TP messages are being output at 1Hz on the correct port

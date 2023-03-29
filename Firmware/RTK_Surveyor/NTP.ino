@@ -292,7 +292,7 @@ bool processOneNTPRequest(bool process, const timeval * recTv, const timeval * s
     packet.VN(packet.defaultVersion); // Set the version number
     packet.mode(packet.defaultMode); // Set the mode
     packet.stratum = packet.defaultStratum; // Set the stratum
-    packet.pollExponent = packet.defaultPollExponent; // Set the poll interval
+    packet.pollExponent = settings.ntpPollExponent; // Set the poll interval
     packet.precision = packet.defaultPrecision; // Set the precision
     packet.rootDelay = packet.defaultRootDelay; // Set the Root Delay
     packet.rootDispersion = packet.defaultRootDispersion; // Set the Root Dispersion
@@ -509,4 +509,47 @@ bool configureUbloxModuleNTP()
     systemPrintln("NTP config fail");
 
   return (response);
+}
+
+void menuNTP()
+{
+#ifdef COMPILE_ETHERNET
+  if (!HAS_ETHERNET)
+  {
+    clearBuffer(); //Empty buffer of any newline chars
+    return;
+  }
+
+  while (1)
+  {
+    systemPrintln();
+    systemPrintln("Menu: NTP");
+    systemPrintln();
+
+    systemPrint("1) Poll Exponent : 2^");
+    systemPrintln(settings.ntpPollExponent);
+
+    systemPrintln("x) Exit");
+
+    byte incoming = getCharacterNumber();
+
+    if (incoming == 1)
+    {
+      systemPrint("Enter new poll exponent (2^, Min 3, Max 17): ");
+      long newVal = getNumber();
+      if ((newVal >= 3) && (newVal <= 17))
+        settings.ntpPollExponent = newVal;
+    }
+    else if (incoming == 'x')
+      break;
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
+  }
+
+  clearBuffer(); //Empty buffer of any newline chars
+#endif  //COMPILE_ETHERNET
 }

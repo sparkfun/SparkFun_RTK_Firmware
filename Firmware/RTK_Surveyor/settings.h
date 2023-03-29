@@ -677,6 +677,9 @@ typedef struct {
   ethernetConfigOptions ethernetConfig = ETHERNET_DHCP;
   bool enableNTPFile = false; //Log NTP requests to file
 
+  //NTP
+  uint8_t ntpPollExponent = 6; //NTPpacket::defaultPollExponent 2^6 = 64 seconds
+
 } Settings;
 Settings settings;
 const Settings defaultSettings = Settings();

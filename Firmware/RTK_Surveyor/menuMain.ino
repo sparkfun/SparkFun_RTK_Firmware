@@ -63,11 +63,18 @@ void menuMain()
 
 #ifdef COMPILE_ETHERNET
     if (HAS_ETHERNET)
+    {
       systemPrintln("7) Configure Ethernet");
+      systemPrintln("8) Configure NTP");
+    }
     else
+    {
       systemPrintln("7) **Ethernet Not Available**");
+      systemPrintln("8) **NTP Not Available**");
+    }
 #else
     systemPrintln("7) **Ethernet Not Compiled**");
+    systemPrintln("8) **NTP Not Compiled**");
 #endif
 
     systemPrintln("p) Configure User Profiles");
@@ -109,6 +116,8 @@ void menuMain()
       menuWiFi();
     else if (incoming == 7)
       menuEthernet();
+    else if (incoming == 8)
+      menuNTP();
     else if (incoming == 's')
       menuSystem();
     else if (incoming == 'p')

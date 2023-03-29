@@ -1140,10 +1140,8 @@ uint32_t setModeIcon()
   switch (systemState)
   {
     case (STATE_NTPSERVER_NOT_STARTED):
-      break;
     case (STATE_NTPSERVER_NO_SYNC):
     case (STATE_NTPSERVER_SYNC):
-      icons |= ICON_DYNAMIC_MODEL;
       break;
 
     case (STATE_ROVER_NOT_STARTED):
@@ -2403,7 +2401,14 @@ void paintDisplaySetup()
     }
     else if (setupState == STATE_ROVER_NOT_STARTED)
     {
-      if (online.accelerometer)
+      if (productVariant == REFERENCE_STATION)
+      {
+        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, true);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else if (online.accelerometer)
       {
         printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
         printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
@@ -2424,8 +2429,8 @@ void paintDisplaySetup()
       {
         printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
         printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, true);
-        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
       }
       else if (online.accelerometer)
       {
@@ -2447,8 +2452,8 @@ void paintDisplaySetup()
       {
         printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
         printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
       }
     }
     else if (setupState == STATE_BUBBLE_LEVEL)
@@ -2475,8 +2480,8 @@ void paintDisplaySetup()
       {
         printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
         printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, true);
-        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (online.accelerometer)
       {
@@ -2497,8 +2502,8 @@ void paintDisplaySetup()
     {
       if (productVariant == REFERENCE_STATION)
       {
-        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
-        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
         printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
         printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
       }

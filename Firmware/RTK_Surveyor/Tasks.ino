@@ -913,6 +913,11 @@ void ButtonCheckTask(void *e)
           case STATE_BASE_TEMP_TRANSMITTING:
           case STATE_BASE_FIXED_NOT_STARTED:
           case STATE_BASE_FIXED_TRANSMITTING:
+          case STATE_ROVER_NOT_STARTED:
+          case STATE_ROVER_NO_FIX:
+          case STATE_ROVER_FIX:
+          case STATE_ROVER_RTK_FLOAT:
+          case STATE_ROVER_RTK_FIX:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
           case STATE_ESPNOW_PAIRING_NOT_STARTED:
@@ -950,6 +955,9 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_BASE_NOT_STARTED;
                 break;
               case STATE_BASE_NOT_STARTED:
+                setupState = STATE_ROVER_NOT_STARTED;
+                break;
+              case STATE_ROVER_NOT_STARTED:
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:

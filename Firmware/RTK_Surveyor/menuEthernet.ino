@@ -176,7 +176,7 @@ void updateEthernetNTPServer()
   char ntpDiag[512]; //Char array to hold diagnostic messages
   
   //Check for new NTP requests - if the time has been sync'd
-  bool processed = processOneNTPRequest(rtcSyncd, (const timeval *)&ethernetNtpTv, (const timeval *)&gnssSyncTv, ntpDiag, sizeof(ntpDiag));
+  bool processed = processOneNTPRequest(systemState == STATE_NTPSERVER_SYNC, (const timeval *)&ethernetNtpTv, (const timeval *)&gnssSyncTv, ntpDiag, sizeof(ntpDiag));
 
   if (processed)
   {

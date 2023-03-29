@@ -861,7 +861,7 @@ void beginSystemState()
   }
   else if (productVariant == REFERENCE_STATION)
   {
-    systemState = settings.lastState; //Return to either NTP or Base Not Started. The last state previous to power down.
+    systemState = settings.lastState; //Return to either NTP, Base or Rover Not Started. The last state previous to power down.
 
     if (systemState > STATE_SHUTDOWN)
     {

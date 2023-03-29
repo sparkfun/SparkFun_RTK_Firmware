@@ -158,8 +158,7 @@ void menuMain()
   if (restartRover == true)
   {
     restartRover = false;
-    if (productVariant != REFERENCE_STATION) // Ref Stn does not support Rover mode
-      requestChangeState(STATE_ROVER_NOT_STARTED); //Restart rover upon exit for latest changes to take effect
+    requestChangeState(STATE_ROVER_NOT_STARTED); //Restart rover upon exit for latest changes to take effect
   }
 
   clearBuffer(); //Empty buffer of any newline chars

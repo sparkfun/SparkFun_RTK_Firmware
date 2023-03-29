@@ -106,6 +106,9 @@ void updateEthernet()
 
   beginEthernet(); //This updates the link status
 
+  if (w5500CheckSocketInterrupt(ntpSockIndex))
+    w5500ClearSocketInterrupt(ntpSockIndex); //Clear the socket interrupt here
+
   //Maintain the ethernet connection  
   switch (Ethernet.maintain()) {
     case 1:
@@ -294,7 +297,7 @@ void ethernetISR()
   if (w5500CheckSocketInterrupt(ntpSockIndex))
   {
     gettimeofday((timeval *)&ethernetNtpTv, NULL); //Record the time of the NTP interrupt
-    w5500ClearSocketInterrupt(ntpSockIndex); //Clear interrupt here
+    //Don't clear the interrupt here - it may clash with a GNSS SPI transaction. Do it in updateEthernet
   }
 }
 #endif

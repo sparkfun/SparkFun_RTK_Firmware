@@ -229,6 +229,13 @@ void updateDisplay()
           iconsRadio = ICON_IP_ADDRESS;   //Top left
           break;
 
+        case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
+        case (STATE_CONFIG_VIA_ETH_NO_LINK):
+          break;
+        case (STATE_CONFIG_VIA_ETH):
+          displayConfigViaEth();
+          break;
+
         case (STATE_ROVER_NOT_STARTED):
           icons =   ICON_CROSS_HAIR     //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
@@ -1606,7 +1613,11 @@ void paintLogging(bool forceLoggingStandard, bool noPulse)
   //Animate icon to show system running
   loggingIconDisplayed++; //Goto next icon
   loggingIconDisplayed %= 4; //Wrap
-  if (online.logging == true && (logIncreasing || ntpLogIncreasing))
+#ifdef COMPILE_ETHERNET
+  if ((online.logging == true) && (logIncreasing || ntpLogIncreasing))
+#else
+  if ((online.logging == true) && (logIncreasing))
+#endif
   {
     if (forceLoggingStandard || (loggingType == LOGGING_STANDARD))
     {
@@ -2500,7 +2511,7 @@ void paintDisplaySetup()
         printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
         printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
         printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, true);
-        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+        printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, false);
       }
       else if (online.accelerometer)
       {
@@ -2524,7 +2535,7 @@ void paintDisplaySetup()
         printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
         printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, true);
         printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+        printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, false);
       }
       else if (online.accelerometer)
       {
@@ -2547,7 +2558,7 @@ void paintDisplaySetup()
         printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
         printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
         printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+        printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, false);
       }
     }
     else if (setupState == STATE_BUBBLE_LEVEL)
@@ -2568,14 +2579,21 @@ void paintDisplaySetup()
         printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
       }
     }
+    else if (setupState == STATE_CONFIG_VIA_ETH_NOT_STARTED)
+    {
+      printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+      printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, true);
+    }
     else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
     {
       if (productVariant == REFERENCE_STATION)
       {
-        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
-        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Cfg Eth", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("CfgWiFi", 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (online.accelerometer)
       {
@@ -2596,9 +2614,9 @@ void paintDisplaySetup()
     {
       if (productVariant == REFERENCE_STATION)
       {
-        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
-        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Config", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Cfg Eth", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("CfgWiFi", 12 * 2, QW_FONT_8X16, 1, false);
         printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
       }
       else if (online.accelerometer)
@@ -3082,6 +3100,95 @@ void displayNTPFail(uint16_t displayTime)
 
     delay(displayTime);
   }
+}
+
+void displayConfigViaEthNotStarted(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 15;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+
+    printTextCenter("Cfg Eth", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayConfigViaEthStarted(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 15;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+
+    printTextCenter("Cfg Eth", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayConfigViaEth()
+{
+#ifdef COMPILE_ETHERNET
+
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t xPos = (oled.getWidth() / 2) - (Ethernet_Icon_Width / 2);
+    uint8_t yPos = Ethernet_Icon_Height / 2;
+
+    static bool blink = 0;
+    blink ^= 1;
+    
+    if ((online.ethernetStatus == ETH_LINK) || blink)
+      displayBitmap(xPos, yPos, Ethernet_Icon_Width, Ethernet_Icon_Height, Ethernet_Icon);
+    
+    yPos += Ethernet_Icon_Height * 1.5;
+  
+    printTextCenter("IP:", yPos, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
+    yPos += 8;
+  
+    char ipAddress[40];
+    snprintf(ipAddress, sizeof(ipAddress), "          %d.%d.%d.%d          ",
+             Ethernet.localIP()[0], Ethernet.localIP()[1], Ethernet.localIP()[2], Ethernet.localIP()[3]);
+  
+    static uint8_t ipAddressPosition = 0;
+  
+    //Print ten characters of IP address
+    char printThis[12];
+    snprintf(printThis, sizeof(printThis), "%c%c%c%c%c%c%c%c%c%c",
+             ipAddress[ipAddressPosition + 0], ipAddress[ipAddressPosition + 1],
+             ipAddress[ipAddressPosition + 2], ipAddress[ipAddressPosition + 3],
+             ipAddress[ipAddressPosition + 4], ipAddress[ipAddressPosition + 5],
+             ipAddress[ipAddressPosition + 6], ipAddress[ipAddressPosition + 7],
+             ipAddress[ipAddressPosition + 8], ipAddress[ipAddressPosition + 9]);
+  
+    oled.setCursor(0, yPos);
+    oled.print(printThis);
+  
+    ipAddressPosition++; //Increment the print position
+    if (ipAddress[ipAddressPosition + 10] == 0) //Wrap
+      ipAddressPosition = 0;
+
+    oled.display();
+  }
+  
+#else
+  uint8_t fontHeight = 15;
+  uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+  printTextCenter("!Compiled", yPos, QW_FONT_5X7, 1, false);
+#endif
 }
 
 const uint8_t * getMacAddress()

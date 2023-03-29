@@ -965,7 +965,7 @@ void updateSystemState()
           else
           {
             displayNTPFail(1000); //Show 'NTP Failed'
-            //Do we stay in STATE_NTPSERVER_NOT_STARTED? I guess we do...
+            //Do we stay in STATE_NTPSERVER_NOT_STARTED? Or should we reset?
           }
         }
         break;
@@ -982,6 +982,43 @@ void updateSystemState()
       case (STATE_NTPSERVER_SYNC):
         {
           //Nothing to do here?
+        }
+        break;
+
+      case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
+        {
+          displayConfigViaEthNotStarted(500); //Show 'Cfg Eth'
+          
+          bluetoothStop();
+          espnowStop();
+
+          tasksStopUART2(); //Delete F9 serial tasks if running
+
+          if (online.ethernetHTTPServer)
+          {
+            displayConfigViaEthStarted(500); //Show 'Cfg Eth Started'        
+            changeState(STATE_CONFIG_VIA_ETH);
+          }
+          else
+          {
+            changeState(STATE_CONFIG_VIA_ETH_NO_LINK);            
+          }
+        }
+        break;
+        
+      case (STATE_CONFIG_VIA_ETH_NO_LINK):
+        {
+          displayNtpNotReady(0); //Show 'Ethernet Not Ready'
+          if (online.ethernetHTTPServer)
+          {
+            changeState(STATE_CONFIG_VIA_ETH);
+          }          
+        }
+        break;
+        
+      case (STATE_CONFIG_VIA_ETH):
+        {
+          //TODO: add many thnings here!
         }
         break;
 
@@ -1144,6 +1181,16 @@ void changeState(SystemState newState)
         systemPrint("State: NTP Server - Sync");
         break;
       
+      case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
+        systemPrint("State: Configure Via Ethernet - Not Started");
+        break;
+      case (STATE_CONFIG_VIA_ETH_NO_LINK):
+        systemPrint("State: Configure Via Ethernet - No Link");
+        break;
+      case (STATE_CONFIG_VIA_ETH):
+        systemPrint("State: Configure Via Ethernet");
+        break;
+
       case (STATE_SHUTDOWN):
         systemPrint("State: Shut Down");
         break;

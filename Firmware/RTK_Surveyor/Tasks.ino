@@ -920,6 +920,9 @@ void ButtonCheckTask(void *e)
           case STATE_ROVER_RTK_FIX:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
+          case STATE_CONFIG_VIA_ETH_NOT_STARTED:
+          case STATE_CONFIG_VIA_ETH_NO_LINK:
+          case STATE_CONFIG_VIA_ETH:
           case STATE_ESPNOW_PAIRING_NOT_STARTED:
           case STATE_ESPNOW_PAIRING:
             lastSystemState = systemState; //Remember this state to return after we mark an event or ESP-Now pair
@@ -958,6 +961,9 @@ void ButtonCheckTask(void *e)
                 setupState = STATE_ROVER_NOT_STARTED;
                 break;
               case STATE_ROVER_NOT_STARTED:
+                setupState = STATE_CONFIG_VIA_ETH_NOT_STARTED;
+                break;
+              case STATE_CONFIG_VIA_ETH_NOT_STARTED:
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:

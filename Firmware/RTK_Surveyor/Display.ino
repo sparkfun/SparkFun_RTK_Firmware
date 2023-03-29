@@ -230,44 +230,89 @@ void updateDisplay()
           break;
 
         case (STATE_ROVER_NOT_STARTED):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_CROSS_HAIR     //Center left
+          icons =   ICON_CROSS_HAIR     //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          if (productVariant != REFERENCE_STATION)
+            icons |= ICON_BATTERY; //Top right
+          else
+          {
+            if (online.ethernetStatus == ETH_LINK)
+              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+            else
+              blinking_icons ^= ICON_ETHERNET;
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+          }
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_NO_FIX):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_CROSS_HAIR     //Center left
+          icons =   ICON_CROSS_HAIR     //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          if (productVariant != REFERENCE_STATION)
+            icons |= ICON_BATTERY; //Top right
+          else
+          {
+            if (online.ethernetStatus == ETH_LINK)
+              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+            else
+              blinking_icons ^= ICON_ETHERNET;
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+          }
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_FIX):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_CROSS_HAIR     //Center left
+          icons =   ICON_CROSS_HAIR     //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          if (productVariant != REFERENCE_STATION)
+            icons |= ICON_BATTERY; //Top right
+          else
+          {
+            if (online.ethernetStatus == ETH_LINK)
+              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+            else
+              blinking_icons ^= ICON_ETHERNET;
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+          }
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_RTK_FLOAT):
           blinking_icons ^= ICON_CROSS_HAIR_DUAL;
-          icons =   ICON_BATTERY        //Top right
-                    | (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
+          icons =   (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          if (productVariant != REFERENCE_STATION)
+            icons |= ICON_BATTERY; //Top right
+          else
+          {
+            if (online.ethernetStatus == ETH_LINK)
+              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+            else
+              blinking_icons ^= ICON_ETHERNET;
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+          }
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_RTK_FIX):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_CROSS_HAIR_DUAL//Center left
+          icons =   ICON_CROSS_HAIR_DUAL//Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          if (productVariant != REFERENCE_STATION)
+            icons |= ICON_BATTERY; //Top right
+          else
+          {
+            if (online.ethernetStatus == ETH_LINK)
+              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+            else
+              blinking_icons ^= ICON_ETHERNET;
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+          }
           iconsRadio = setRadioIcons(); //Top left
           break;
 
@@ -280,32 +325,78 @@ void updateDisplay()
         //Blink crosshair icon until we have we have horz accuracy < user defined level
         case (STATE_BASE_TEMP_SETTLE):
           blinking_icons ^= ICON_CROSS_HAIR;
-          icons =   ICON_BATTERY        //Top right
-                    | (blinking_icons & ICON_CROSS_HAIR)  //Center left
+          icons =   (blinking_icons & ICON_CROSS_HAIR)  //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          if (productVariant != REFERENCE_STATION)
+            icons |= ICON_BATTERY; //Top right
+          else
+          {
+            if (online.ethernetStatus == ETH_LINK)
+              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+            else
+              blinking_icons ^= ICON_ETHERNET;
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+          }
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_LOGGING;       //Bottom right
+          icons =   ICON_LOGGING;       //Bottom right
+          if (productVariant != REFERENCE_STATION)
+            icons |= ICON_BATTERY; //Top right
+          else
+          {
+            if (online.ethernetStatus == ETH_LINK)
+              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+            else
+              blinking_icons ^= ICON_ETHERNET;
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+          }
           iconsRadio = setRadioIcons(); //Top left
           paintBaseTempSurveyStarted();
           break;
         case (STATE_BASE_TEMP_TRANSMITTING):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_LOGGING;       //Bottom right
+          icons =   ICON_LOGGING;       //Bottom right
+          if (productVariant != REFERENCE_STATION)
+            icons |= ICON_BATTERY; //Top right
+          else
+          {
+            if (online.ethernetStatus == ETH_LINK)
+              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+            else
+              blinking_icons ^= ICON_ETHERNET;
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+          }
           iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
-          icons =   ICON_BATTERY;       //Top right
+          icons = 0;       //Top right
+          if (productVariant != REFERENCE_STATION)
+            icons |= ICON_BATTERY; //Top right
+          else
+          {
+            if (online.ethernetStatus == ETH_LINK)
+              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+            else
+              blinking_icons ^= ICON_ETHERNET;
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+          }
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_LOGGING;       //Bottom right
+          icons =   ICON_LOGGING;       //Bottom right
+          if (productVariant != REFERENCE_STATION)
+            icons |= ICON_BATTERY; //Top right
+          else
+          {
+            if (online.ethernetStatus == ETH_LINK)
+              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+            else
+              blinking_icons ^= ICON_ETHERNET;
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+          }
           iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
           break;
@@ -2119,12 +2210,15 @@ void paintSystemTest()
           oled.print("FAIL");
       }
 
-      oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
-      oled.print("Batt:");
-      if (online.battery == true)
-        oled.print("OK");
-      else
-        oled.print("FAIL");
+      if (productVariant != REFERENCE_STATION)
+      {
+        oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
+        oled.print("Batt:");
+        if (online.battery == true)
+          oled.print("OK");
+        else
+          oled.print("FAIL");
+      }
 
       oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
       oled.print("GNSS:");

@@ -26,9 +26,13 @@ bool configureUbloxModuleBase()
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, 1);
 
   //Since we are at 1Hz, allow GSV NMEA to be reported at whatever the user has chosen
-  response &= theGNSS.addCfgValset(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module
+  uint32_t spiOffset = 0; //Set to 3 if using SPI to convert UART1 keys to SPI. This is brittle and non-perfect, but works.
+  if (USE_SPI_GNSS)
+    spiOffset = 3;
+  response &= theGNSS.addCfgValset(settings.ubxMessages[8].msgConfigKey + spiOffset, settings.ubxMessages[8].msgRate); //Update rate on module
 
-  response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); //Disable NMEA message that may have been set during Rover NTRIP Client mode
+  if (USE_I2C_GNSS)
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); //Disable NMEA message that may have been set during Rover NTRIP Client mode
 
   //Survey mode is only available on ZED-F9P modules
   if (zedModuleType == PLATFORM_F9P)

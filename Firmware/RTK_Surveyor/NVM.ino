@@ -378,6 +378,11 @@ void recordSystemSettingsToFile(File * settingsFile)
     settingsFile->printf("%s=%d\r\n", "ethernetConfig", settings.ethernetConfig);
     settingsFile->printf("%s=%d\r\n", "enableNTPFile", settings.enableNTPFile);
   }
+
+  //NTP
+  {
+    settingsFile->printf("%s=%d\r\n", "ntpPollExponent", settings.ntpPollExponent);
+  }
 }
 
 //Given a fileName, parse the file and load the given settings struct
@@ -1138,6 +1143,9 @@ bool parseLine(char* str, Settings *settings)
     settings->ethernetNtpPort = d;
   else if (strcmp(settingName, "ethernetConfig") == 0)
     settings->ethernetConfig = (ethernetConfigOptions)d;
+  //NTP
+  else if (strcmp(settingName, "ntpPollExponent") == 0)
+    settings->ntpPollExponent = d;
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list

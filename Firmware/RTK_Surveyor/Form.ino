@@ -533,7 +533,7 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "ubxConstellationsBeiDou", settings.ubxConstellations[3].enabled); //BeiDou
   stringRecord(newSettings, "ubxConstellationsGLONASS", settings.ubxConstellations[5].enabled); //GLONASS
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    stringRecord(newSettings, settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
+    stringRecord(newSettings, ubxMessages[x].msgTextName, settings.ubxMessageRates[x]);
 
   //Base Config
   stringRecord(newSettings, "baseTypeSurveyIn", !settings.fixedBase);
@@ -541,7 +541,7 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "observationSeconds", settings.observationSeconds);
   stringRecord(newSettings, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
   for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
-    stringRecord(newSettings, settings.ubxMessagesBase[x].msgTextName, settings.ubxMessagesBase[x].msgRate); //"UBX_RTCM_1005Base"
+    stringRecord(newSettings, ubxMessages[x].msgTextName, settings.ubxMessageRatesBase[x]); //"UBX_RTCM_1005Base"
 
   if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
   {
@@ -1242,9 +1242,9 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     {
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
-        if (strcmp(settingName, settings.ubxMessages[x].msgTextName) == 0)
+        if (strcmp(settingName, ubxMessages[x].msgTextName) == 0)
         {
-          settings.ubxMessages[x].msgRate = settingValue;
+          settings.ubxMessageRates[x] = settingValue;
           knownSetting = true;
           break;
         }
@@ -1256,9 +1256,9 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     {
       for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
       {
-        if (strcmp(settingName, settings.ubxMessagesBase[x].msgTextName) == 0)
+        if (strcmp(settingName, ubxMessages[x].msgTextName) == 0)
         {
-          settings.ubxMessagesBase[x].msgRate = settingValue;
+          settings.ubxMessageRatesBase[x] = settingValue;
           knownSetting = true;
           break;
         }

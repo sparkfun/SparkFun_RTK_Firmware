@@ -352,7 +352,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
     char tempString[50]; //message.nmea_dtm.msgRate=5
-    snprintf(tempString, sizeof(tempString), "message.%s.msgRate=%d", settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
+    snprintf(tempString, sizeof(tempString), "message.%s.msgRate=%d", ubxMessages[x].msgTextName, settings.ubxMessageRates[x]);
     settingsFile->println(tempString);
   }
 
@@ -360,7 +360,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
   {
     char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
-    snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate=%d", settings.ubxMessagesBase[x].msgTextName, settings.ubxMessagesBase[x].msgRate);
+    snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate=%d", ubxMessages[x].msgTextName, settings.ubxMessageRatesBase[x]);
     settingsFile->println(tempString);
   }
 }
@@ -433,6 +433,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
           }
 
           lineNumber++;
+          Serial.printf("lineNumber: %d\r\n", lineNumber);
         }
 
         //systemPrintln("Config file read complete");
@@ -1169,13 +1170,13 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
         char tempString[50]; //message.nmea_dtm.msgRate=5
-        snprintf(tempString, sizeof(tempString), "message.%s.msgRate", settings->ubxMessages[x].msgTextName);
+        snprintf(tempString, sizeof(tempString), "message.%s.msgRate", ubxMessages[x].msgTextName);
 
         if (strcmp(settingName, tempString) == 0)
         {
-          if (settings->ubxMessages[x].msgRate != d)
+          if (settings->ubxMessageRates[x] != d)
           {
-            settings->ubxMessages[x].msgRate = d;
+            settings->ubxMessageRates[x] = d;
             settings->updateZEDSettings = true;
           }
 
@@ -1191,13 +1192,13 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
       {
         char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
-        snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", settings->ubxMessagesBase[x].msgTextName);
+        snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", ubxMessages[x].msgTextName);
 
         if (strcmp(settingName, tempString) == 0)
         {
-          if (settings->ubxMessagesBase[x].msgRate != d)
+          if (settings->ubxMessageRatesBase[x] != d)
           {
-            settings->ubxMessagesBase[x].msgRate = d;
+            settings->ubxMessageRatesBase[x] = d;
             settings->updateZEDSettings = true;
           }
 

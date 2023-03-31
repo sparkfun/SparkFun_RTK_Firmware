@@ -25,7 +25,7 @@ bool configureUbloxModuleBase()
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, 1);
 
   //Since we are at 1Hz, allow GSV NMEA to be reported at whatever the user has chosen
-  response &= theGNSS.addCfgValset(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module
+  response &= theGNSS.addCfgValset(ubxMessages[8].msgConfigKey, settings.ubxMessageRates[8]); //Update rate on module
 
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); //Disable NMEA message that may have been set during Rover NTRIP Client mode
 
@@ -57,22 +57,22 @@ bool configureUbloxModuleBase()
   {
     for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
     {
-      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey - 1, settings.ubxMessagesBase[x].msgRate); //UBLOX_CFG UART1 - 1 = I2C
-      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey, settings.ubxMessagesBase[x].msgRate); //UBLOX_CFG UART1
+      response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey - 1, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 - 1 = I2C
+      response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1
       
       //Disable messages on SPI
-      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey + 3, 0); //UBLOX_CFG UART1 + 3 = SPI
+      response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 3, 0); //UBLOX_CFG UART1 + 3 = SPI
     }
   }
   else //SPI GNSS
   {
     for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
     {
-      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey + 3, settings.ubxMessagesBase[x].msgRate); //UBLOX_CFG UART1 + 3 = SPI
+      response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 3, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 3 = SPI
 
       //Disable messages on I2C and UART1
-      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey - 1, 0); //UBLOX_CFG UART1 - 1 = I2C
-      response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey, 0); //UBLOX_CFG UART1
+      response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey - 1, 0); //UBLOX_CFG UART1 - 1 = I2C
+      response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey, 0); //UBLOX_CFG UART1
     }
 
     //Enable logging of these messages so the RTCM will be stored automatically in the logging buffer.
@@ -87,8 +87,8 @@ bool configureUbloxModuleBase()
   //Update message rates for UART2 and USB
   for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
   {
-    response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey + 1 , settings.ubxMessagesBase[x].msgRate); //UBLOX_CFG UART1 + 1 = UART2
-    response &= theGNSS.addCfgValset(settings.ubxMessagesBase[x].msgConfigKey + 2 , settings.ubxMessagesBase[x].msgRate); //UBLOX_CFG UART1 + 2 = USB
+    response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 1 , settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 1 = UART2
+    response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 2 , settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 2 = USB
   }
 
   response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation

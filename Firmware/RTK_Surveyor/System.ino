@@ -529,27 +529,27 @@ bool setMessages()
     
     do
     {
-      if (settings.ubxMessages[x].supported & zedModuleType)
+      if (ubxMessages[x].supported & zedModuleType)
       {
-        uint8_t rate = settings.ubxMessages[x].msgRate;
+        uint8_t rate = settings.ubxMessageRates[x];
 
         //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH and ESF_STATUS remained enabled
         //(but not enabled for logging)
         if (USE_SPI_GNSS)
         {
-          if (settings.ubxMessages[x].msgClass == UBX_CLASS_NAV)
-            if ((settings.ubxMessages[x].msgID ==  UBX_NAV_PVT) || (settings.ubxMessages[x].msgID ==  UBX_NAV_HPPOSLLH))
+          if (ubxMessages[x].msgClass == UBX_CLASS_NAV)
+            if ((ubxMessages[x].msgID ==  UBX_NAV_PVT) || (ubxMessages[x].msgID ==  UBX_NAV_HPPOSLLH))
               rate = 1;
-          if (settings.ubxMessages[x].msgClass == UBX_CLASS_ESF)
-              if (settings.ubxMessages[x].msgID ==  UBX_ESF_STATUS)
+          if (ubxMessages[x].msgClass == UBX_CLASS_ESF)
+              if (ubxMessages[x].msgID ==  UBX_ESF_STATUS)
                 if (zedModuleType == PLATFORM_F9R)
                   rate = 1;
-          if (settings.ubxMessages[x].msgClass == UBX_CLASS_TIM)
-            if (settings.ubxMessages[x].msgID ==  UBX_TIM_TM2)
+          if (ubxMessages[x].msgClass == UBX_CLASS_TIM)
+            if (ubxMessages[x].msgID ==  UBX_TIM_TM2)
               rate = 1;
         }
         
-        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + spiOffset, rate);
+        response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + spiOffset, rate);
       }
       x++;
     }
@@ -567,20 +567,20 @@ bool setMessages()
     
     for (x = 0; x < MAX_UBX_MSG; x++)
     {
-      if (settings.ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
+      if (ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
       {
-        if ((settings.ubxMessages[x].msgRate > 0) && (settings.ubxMessages[x].supported & zedModuleType))
-          logRTCMMessages |= settings.ubxMessages[x].filterMask;
+        if ((settings.ubxMessageRates[x] > 0) && (ubxMessages[x].supported & zedModuleType))
+          logRTCMMessages |= ubxMessages[x].filterMask;
       }
-      else if (settings.ubxMessages[x].msgClass == UBX_CLASS_NMEA) //NMEA messages
+      else if (ubxMessages[x].msgClass == UBX_CLASS_NMEA) //NMEA messages
       {
-        if ((settings.ubxMessages[x].msgRate > 0) && (settings.ubxMessages[x].supported & zedModuleType))
-          logNMEAMessages |= settings.ubxMessages[x].filterMask;
+        if ((settings.ubxMessageRates[x] > 0) && (ubxMessages[x].supported & zedModuleType))
+          logNMEAMessages |= ubxMessages[x].filterMask;
       }
       else //UBX messages
       {
-        if (settings.ubxMessages[x].supported & zedModuleType)
-          theGNSS.enableUBXlogging(settings.ubxMessages[x].msgClass, settings.ubxMessages[x].msgID, settings.ubxMessages[x].msgRate > 0);
+        if (ubxMessages[x].supported & zedModuleType)
+          theGNSS.enableUBXlogging(ubxMessages[x].msgClass, ubxMessages[x].msgID, settings.ubxMessageRates[x] > 0);
       }
     }
 
@@ -604,8 +604,8 @@ bool setMessagesUSB()
     
     do
     {
-      if (settings.ubxMessages[x].supported & zedModuleType)
-        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + 2, settings.ubxMessages[x].msgRate);
+      if (ubxMessages[x].supported & zedModuleType)
+        response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 2, settings.ubxMessageRates[x]);
       x++;
     }
     while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.

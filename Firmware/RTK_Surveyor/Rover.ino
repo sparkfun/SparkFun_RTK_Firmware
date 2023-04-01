@@ -40,25 +40,29 @@ bool configureUbloxModuleRover()
   //
   //But, on the Reference Station, the GNSS is interfaced via SPI. It has no access to I2C and UART1. So for that
   //product - in Rover mode - we want to leave any RTCM messages enabled on SPI so they can be logged if desired.
+
+  //Find first RTCM record in ubxMessage array
+  int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+
   if (zedModuleType == PLATFORM_F9P)
   {
     if (USE_I2C_GNSS)
     {
       //Set RTCM messages to user's settings
       for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
-        response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey - 1, settings.ubxMessageRates[x]); //UBLOX_CFG UART1 - 1 = I2C
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey - 1, settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 - 1 = I2C
     }
     else
     {
       for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
-        response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 3, settings.ubxMessageRates[x]); //UBLOX_CFG UART1 + 3 = SPI
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 3, settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 3 = SPI
     }
 
     //Set RTCM messages to user's settings
     for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
     {
-      response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 1 , settings.ubxMessageRates[x]); //UBLOX_CFG UART1 + 1 = UART2
-      response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 2 , settings.ubxMessageRates[x]); //UBLOX_CFG UART1 + 2 = USB
+      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 1 , settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 1 = UART2
+      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 2 , settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 2 = USB
     }
   }
 
@@ -72,7 +76,7 @@ bool configureUbloxModuleRover()
   response &= theGNSS.sendCfgValset(); //Closing
 
   if (response == false)
-    log_d("Rover config failed");
+    log_d("Rover config failed 1");
 
   if (zedModuleType == PLATFORM_F9R)
   {
@@ -80,7 +84,7 @@ bool configureUbloxModuleRover()
 
     response &= theGNSS.addCfgValset(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
     response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
-    
+
     if (zedFirmwareVersionInt >= 121)
     {
       response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_IMU_MNTALG_YAW, settings.imuYaw);
@@ -96,7 +100,7 @@ bool configureUbloxModuleRover()
     response &= theGNSS.sendCfgValset(); //Closing - 28 keys
 
     if (response == false)
-      log_d("Rover config failed");
+      log_d("Rover config failed 2");
 
     if (response == false)
       Serial.println("Failed new config");

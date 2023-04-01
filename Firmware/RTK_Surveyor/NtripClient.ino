@@ -296,8 +296,11 @@ void ntripClientStop(bool wifiClientAllocated)
   }
 
   //Return the Main Talker ID to "GN".
-  theGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
-  theGNSS.setNMEAGPGGAcallbackPtr(nullptr); //Remove callback
+  if (online.gnss)
+  {
+    theGNSS.setVal8(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
+    theGNSS.setNMEAGPGGAcallbackPtr(nullptr); //Remove callback
+  }
 
   //Determine the next NTRIP client state
   ntripClientSetState((ntripClient && (wifiClientAllocated == false)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);

@@ -375,7 +375,7 @@ void recordSystemSettingsToFile(File * settingsFile)
     settingsFile->printf("%s=%s\r\n", "ethernetSubnet", settings.ethernetSubnet.toString());
     settingsFile->printf("%s=%d\r\n", "ethernetHttpPort", settings.ethernetHttpPort);
     settingsFile->printf("%s=%d\r\n", "ethernetNtpPort", settings.ethernetNtpPort);
-    settingsFile->printf("%s=%d\r\n", "ethernetConfig", settings.ethernetConfig);
+    settingsFile->printf("%s=%d\r\n", "ethernetDHCP", settings.ethernetDHCP);
     settingsFile->printf("%s=%d\r\n", "enableNTPFile", settings.enableNTPFile);
   }
 
@@ -1141,8 +1141,8 @@ bool parseLine(char* str, Settings *settings)
     settings->ethernetHttpPort = d;
   else if (strcmp(settingName, "ethernetNtpPort") == 0)
     settings->ethernetNtpPort = d;
-  else if (strcmp(settingName, "ethernetConfig") == 0)
-    settings->ethernetConfig = (ethernetConfigOptions)d;
+  else if (strcmp(settingName, "ethernetDHCP") == 0)
+    settings->ethernetDHCP = d;
   //NTP
   else if (strcmp(settingName, "ntpPollExponent") == 0)
     settings->ntpPollExponent = d;

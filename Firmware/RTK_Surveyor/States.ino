@@ -987,38 +987,44 @@ void updateSystemState()
 
       case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
         {
-          displayConfigViaEthNotStarted(500); //Show 'Cfg Eth'
-          
-          bluetoothStop();
-          espnowStop();
+          displayConfigViaEthNotStarted(1000);
 
-          tasksStopUART2(); //Delete F9 serial tasks if running
+          settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+          settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Record the _next_ state for POR
+          recordSystemSettings();
 
-          if (online.ethernetHTTPServer)
-          {
-            displayConfigViaEthStarted(500); //Show 'Cfg Eth Started'        
-            changeState(STATE_CONFIG_VIA_ETH);
-          }
-          else
-          {
-            changeState(STATE_CONFIG_VIA_ETH_NO_LINK);            
-          }
+          ESP.restart();
         }
         break;
         
-      case (STATE_CONFIG_VIA_ETH_NO_LINK):
+      case (STATE_CONFIG_VIA_ETH_STARTED):
         {
-          displayNtpNotReady(0); //Show 'Ethernet Not Ready'
-          if (online.ethernetHTTPServer)
-          {
-            changeState(STATE_CONFIG_VIA_ETH);
-          }          
+          displayConfigViaEthStarted(1000);
+          
+          //Configure the W5500
+          //To be called before ETH.begin()
+          ESP32_W5500_onEvent();
+        
+          //start the ethernet connection and the server:
+          //Use DHCP dynamic IP
+          //bool begin(int POCI_GPIO, int PICO_GPIO, int SCLK_GPIO, int CS_GPIO, int INT_GPIO, int SPI_CLOCK_MHZ,
+          //           int SPI_HOST, uint8_t *W5500_Mac = W5500_Default_Mac, bool installIsrService = true);
+          ETH.begin( pin_POCI, pin_PICO, pin_SCK, pin_Ethernet_CS, pin_Ethernet_Interrupt, 25, SPI3_HOST, ethernetMACAddress );
+        
+          if (!settings.ethernetDHCP)
+            ETH.config( settings.ethernetIP, settings.ethernetGateway, settings.ethernetSubnet, settings.ethernetDNS );
+        
+          ESP32_W5500_waitForConnect();
+
+          startWebServer(false, settings.ethernetHttpPort); //Start the async web server
+
+          changeState(STATE_CONFIG_VIA_ETH);
         }
         break;
-        
+
       case (STATE_CONFIG_VIA_ETH):
         {
-          //TODO: add many thnings here!
+          // Nothing to do here. Display will show the IP address (displayConfigViaEthernet)
         }
         break;
 
@@ -1184,8 +1190,8 @@ void changeState(SystemState newState)
       case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
         systemPrint("State: Configure Via Ethernet - Not Started");
         break;
-      case (STATE_CONFIG_VIA_ETH_NO_LINK):
-        systemPrint("State: Configure Via Ethernet - No Link");
+      case (STATE_CONFIG_VIA_ETH_STARTED):
+        systemPrint("State: Configure Via Ethernet - Started");
         break;
       case (STATE_CONFIG_VIA_ETH):
         systemPrint("State: Configure Via Ethernet");

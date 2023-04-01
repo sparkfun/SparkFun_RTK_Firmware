@@ -4,7 +4,8 @@
 bool websocketConnected = false;
 
 //Start webserver in AP mode
-void startWebServer()
+void startWebServer(bool startWiFi = true, int httpPort = 80); //Header
+void startWebServer(bool startWiFi, int httpPort)
 {
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
@@ -12,8 +13,9 @@ void startWebServer()
   ntripClientStop(true); //Do not allocate new wifiClient
   ntripServerStop(true); //Do not allocate new wifiClient
 
-  if (wifiStartAP() == false) //Exits calling wifiConnect()
-    return;
+  if (startWiFi)
+    if (wifiStartAP() == false) //Exits calling wifiConnect()
+      return;
 
   incomingSettings = (char*)malloc(AP_CONFIG_SETTING_SIZE);
   memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
@@ -22,7 +24,7 @@ void startWebServer()
   settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
   createSettingsString(settingsCSV);
 
-  webserver = new AsyncWebServer(80);
+  webserver = new AsyncWebServer(httpPort);
   websocket = new AsyncWebSocket("/ws");
 
   websocket->onEvent(onWsEvent);

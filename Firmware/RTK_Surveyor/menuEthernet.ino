@@ -14,25 +14,10 @@ void beginEthernet()
   {
     Ethernet.init(pin_Ethernet_CS);
   
-    switch(settings.ethernetConfig)
-    {
-      case ETHERNET_FIXED_IP:
-        Ethernet.begin(ethernetMACAddress, settings.ethernetIP);
-        break;
-      case ETHERNET_FIXED_IP_DNS:
-        Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS);
-        break;
-      case ETHERNET_FIXED_IP_DNS_GATEWAY:
-        Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway);
-        break;
-      case ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET:
-        Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway, settings.ethernetSubnet);
-        break;
-      case ETHERNET_DHCP:
-      default:
-        Ethernet.begin(ethernetMACAddress);
-        break;
-    }
+    if (settings.ethernetDHCP)
+      Ethernet.begin(ethernetMACAddress);
+    else
+      Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway, settings.ethernetSubnet);
 
     if (Ethernet.hardwareStatus() == EthernetNoHardware)
     {
@@ -60,20 +45,6 @@ void beginEthernet()
 #endif ///COMPILE_ETHERNET
 }
 
-void beginEthernetHTTPServer()
-{
-  if (!HAS_ETHERNET)
-    return;
-
-#ifdef COMPILE_ETHERNET
-  if ((online.ethernetStatus == ETH_LINK) && (online.ethernetHTTPServer == false))
-  {
-    ethernetHTTPServer = new EthernetServer(settings.ethernetHttpPort);
-    online.ethernetHTTPServer = true;
-  }
-#endif
-}
-
 void beginEthernetNTPServer()
 {
   if (!HAS_ETHERNET)
@@ -87,8 +58,6 @@ void beginEthernetNTPServer()
     ntpSockIndex = ethernetNTPServer->getSockIndex(); //Get the socket index
     w5500ClearSocketInterrupts(); // Clear all interrupts
     w5500EnableSocketInterrupt(ntpSockIndex); // Enable the RECV interrupt for the desired socket index
-    pinMode(pin_Ethernet_Interrupt, INPUT_PULLUP); //Prepare the interrupt pin
-    attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); //Attach the interrupt
     online.ethernetNTPServer = true;
   }
 #endif
@@ -143,23 +112,6 @@ void updateEthernet()
       //nothing happened
       break;
   }
-#endif
-}
-
-void updateEthernetHTTPServer()
-{  
-  if (!HAS_ETHERNET)
-    return;
-
-#ifdef COMPILE_ETHERNET
-  if (online.ethernetHTTPServer == false)
-    beginEthernetHTTPServer();
-
-  if (online.ethernetHTTPServer == false)
-    return;
-
-  //TODO: Add Ethernet HTTP Server functionality here
-    
 #endif
 }
 
@@ -319,46 +271,19 @@ void menuEthernet()
     systemPrintln();
 
     systemPrint("1) Ethernet Config  : ");
-    switch(settings.ethernetConfig)
-    {
-      case ETHERNET_FIXED_IP:
-        systemPrintln("Fixed IP");
-        break;
-      case ETHERNET_FIXED_IP_DNS:
-        systemPrintln("Fixed IP + DNS");
-        break;
-      case ETHERNET_FIXED_IP_DNS_GATEWAY:
-        systemPrintln("Fixed IP + DNS + Gateway");
-        break;
-      case ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET:
-        systemPrintln("Fixed IP + DNS + Gateway + Subnet Mask");
-        break;
-      case ETHERNET_DHCP:
-      default:
-        systemPrintln("DHCP");
-        break;
-    }
+    if (settings.ethernetDHCP)
+      systemPrintln("DHCP");
+    else
+      systemPrintln("Fixed IP");
 
-    if (settings.ethernetConfig >= ETHERNET_FIXED_IP)
+    if (!settings.ethernetDHCP)
     {
       systemPrint("2) Fixed IP Address : ");
       systemPrintln(settings.ethernetIP.toString());
-    }
-
-    if (settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS)
-    {
       systemPrint("3) DNS              : ");
       systemPrintln(settings.ethernetDNS.toString());
-    }
-
-    if (settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS_GATEWAY)
-    {
       systemPrint("4) Gateway          : ");
       systemPrintln(settings.ethernetGateway.toString());
-    }
-
-    if (settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET)
-    {
       systemPrint("5) Subnet Mask      : ");
       systemPrintln(settings.ethernetSubnet.toString());
     }
@@ -369,13 +294,10 @@ void menuEthernet()
 
     if (incoming == 1)
     {
-      if (settings.ethernetConfig < ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET)
-        settings.ethernetConfig = (ethernetConfigOptions)((int)settings.ethernetConfig + 1);
-      else
-        settings.ethernetConfig = ETHERNET_DHCP;
+      settings.ethernetDHCP ^= 1;
       restartEthernet = true;
     }
-    else if ((settings.ethernetConfig >= ETHERNET_FIXED_IP) && (incoming == 2))
+    else if ((!settings.ethernetDHCP) && (incoming == 2))
     {
       systemPrint("Enter new IP Address: ");
       char tempStr[20];
@@ -385,7 +307,7 @@ void menuEthernet()
         restartEthernet = true;        
       }
     }
-    else if ((settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS) && (incoming == 3))
+    else if ((!settings.ethernetDHCP) && (incoming == 3))
     {
       systemPrint("Enter new DNS: ");
       char tempStr[20];
@@ -395,7 +317,7 @@ void menuEthernet()
         restartEthernet = true;        
       }
     }
-    else if ((settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS_GATEWAY) && (incoming == 4))
+    else if ((!settings.ethernetDHCP) && (incoming == 4))
     {
       systemPrint("Enter new Gateway: ");
       char tempStr[20];
@@ -405,7 +327,7 @@ void menuEthernet()
         restartEthernet = true;        
       }
     }
-    else if ((settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET) && (incoming == 5))
+    else if ((!settings.ethernetDHCP) && (incoming == 5))
     {
       systemPrint("Enter new Subnet Mask: ");
       char tempStr[20];

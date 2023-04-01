@@ -39,7 +39,7 @@ typedef enum
   STATE_NTPSERVER_NO_SYNC,
   STATE_NTPSERVER_SYNC,
   STATE_CONFIG_VIA_ETH_NOT_STARTED,
-  STATE_CONFIG_VIA_ETH_NO_LINK,
+  STATE_CONFIG_VIA_ETH_STARTED,
   STATE_CONFIG_VIA_ETH,
   STATE_SHUTDOWN,
 } SystemState;
@@ -264,15 +264,6 @@ typedef struct _PARSE_STATE
   uint8_t ck_b;                   //U-blox checksum byte 2
   bool computeCrc;                //Compute the CRC when true
 } PARSE_STATE;
-
-typedef enum
-{
-  ETHERNET_DHCP = 0,
-  ETHERNET_FIXED_IP,
-  ETHERNET_FIXED_IP_DNS,
-  ETHERNET_FIXED_IP_DNS_GATEWAY,
-  ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET,
-} ethernetConfigOptions;
 
 typedef enum
 {
@@ -677,7 +668,7 @@ typedef struct {
   IPAddress ethernetSubnet = { 255, 255, 255, 0 };
   uint16_t ethernetHttpPort = 80;
   uint16_t ethernetNtpPort = 123;
-  ethernetConfigOptions ethernetConfig = ETHERNET_DHCP;
+  bool ethernetDHCP = true;
   bool enableNTPFile = false; //Log NTP requests to file
 
   //NTP
@@ -706,7 +697,6 @@ struct struct_online {
   bool tcpClient = false;
   bool tcpServer = false;
   ethernetStatus_e ethernetStatus = ETH_NOT_BEGUN;
-  bool ethernetHTTPServer = false; //EthernetServer
   bool ethernetNTPServer = false; //EthernetUDP
 } online;
 

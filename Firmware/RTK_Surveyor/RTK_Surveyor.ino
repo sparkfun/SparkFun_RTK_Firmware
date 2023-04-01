@@ -96,6 +96,10 @@ int pin_Ethernet_Interrupt = -1;
 int pin_GNSS_CS = -1;
 int pin_GNSS_TimePulse = -1;
 int pin_microSD_CardDetect = -1;
+
+int pin_PICO = 23;
+int pin_POCI = 19;
+int pin_SCK = 18;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
@@ -463,12 +467,10 @@ const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_ETHERNET
 #include <Ethernet.h> // http://librarymanager/All#Arduino_Ethernet
-//#include <EthernetLarge.h> // https://github.com/OPEnSLab-OSU/EthernetLarge
 IPAddress ethernetIPAddress;
 IPAddress ethernetDNS;
 IPAddress ethernetGateway;
 IPAddress ethernetSubnetMask;
-EthernetServer *ethernetHTTPServer = nullptr; //This will be instantiated when we know the HTTP port
 class derivedEthernetUDP : public EthernetUDP
 {
   public:
@@ -479,6 +481,8 @@ volatile uint8_t ntpSockIndex;                   //The W5500 socket index for NT
 volatile struct timeval ethernetNtpTv;           //This will hold the time the Ethernet NTP packet arrived
 uint32_t lastLoggedNTPRequest = 0;
 bool ntpLogIncreasing = false;
+
+#include "SparkFun_WebServer_ESP32_W5500.h" //SparkFun remix of Khoi Hoang's WebServer_ESP32_W5500
 #endif
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -690,7 +694,7 @@ void setup()
 
   beginDisplay(); //Start display to be able to display any errors
 
-  beginGNSS(); //Connect to GNSS to get module type
+  //beginGNSS(); //Connect to GNSS to get module type
 
   beginFS(); //Start file system for settings
 
@@ -710,19 +714,19 @@ void setup()
 
   beginFuelGauge(); //Configure battery fuel guage monitor
 
-  configureGNSS(); //Configure ZED module
+  //configureGNSS(); //Configure ZED module
 
-  beginEthernet(); //Start-up the Ethernet connection
+  //beginEthernet(); //Start-up the Ethernet connection
 
-  beginEthernetHTTPServer();
-
-  beginEthernetNTPServer();
+  //beginEthernetNTPServer();
 
   beginAccelerometer();
 
-  beginLBand();
+  //beginLBand();
 
-  beginExternalTriggers(); //Configure the time pulse output and TM2 input
+  //beginExternalTriggers(); //Configure the time pulse output and TM2 input
+
+  //beginInterrupts();
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
@@ -759,23 +763,21 @@ void loop()
 
   updateSerial(); //Menu system via ESP32 USB connection
 
-  wifiUpdate(); //Bring up WiFi when services need it
+  //wifiUpdate(); //Bring up WiFi when services need it
 
-  updateLBand(); //Check if we've recently received PointPerfect corrections or not
+  //updateLBand(); //Check if we've recently received PointPerfect corrections or not
 
   updateRadio(); //Check if we need to finish sending any RTCM over link radio
 
-  ntripClientUpdate(); //Check the NTRIP client connection and move data NTRIP --> ZED
+  //ntripClientUpdate(); //Check the NTRIP client connection and move data NTRIP --> ZED
 
-  ntripServerUpdate(); //Check the NTRIP server connection and move data ZED --> NTRIP
+  //ntripServerUpdate(); //Check the NTRIP server connection and move data ZED --> NTRIP
 
-  tcpUpdate(); //Turn on TCP Client or Server as needed
+  //tcpUpdate(); //Turn on TCP Client or Server as needed
 
-  updateEthernet(); //Maintain the ethernet connection
+  //updateEthernet(); //Maintain the ethernet connection
 
-  updateEthernetHTTPServer(); //Process any HTTP requests over Ethernet
-
-  updateEthernetNTPServer(); //Process any received NTP requests
+  //updateEthernetNTPServer(); //Process any received NTP requests
 
   printPosition(); //Periodically print GNSS coordinates if enabled
 

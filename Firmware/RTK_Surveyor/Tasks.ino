@@ -921,8 +921,6 @@ void ButtonCheckTask(void *e)
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
           case STATE_CONFIG_VIA_ETH_NOT_STARTED:
-          case STATE_CONFIG_VIA_ETH_NO_LINK:
-          case STATE_CONFIG_VIA_ETH:
           case STATE_ESPNOW_PAIRING_NOT_STARTED:
           case STATE_ESPNOW_PAIRING:
             lastSystemState = systemState; //Remember this state to return after we mark an event or ESP-Now pair
@@ -930,6 +928,10 @@ void ButtonCheckTask(void *e)
             setupState = STATE_NTPSERVER_NOT_STARTED;
             lastSetupMenuChange = millis();
             break;
+
+          //TODO: Add a reset/restart option while in Configure-Via-Ethernet
+          //case STATE_CONFIG_VIA_ETH_STARTED:
+          //case STATE_CONFIG_VIA_ETH:
 
           case STATE_PROFILE:
             //If the user presses the setup button during a profile change, do nothing
@@ -982,6 +984,11 @@ void ButtonCheckTask(void *e)
                 if (!getProfileNumberFromUnit(displayProfile))
                   setupState = STATE_NTPSERVER_NOT_STARTED;
                 break;
+
+              //TODO: Add a reset/restart option while in Configure-Via-Ethernet
+              //case STATE_CONFIG_VIA_ETH_STARTED:
+              //case STATE_CONFIG_VIA_ETH:
+
               default:
                 systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
                 setupState = STATE_NTPSERVER_NOT_STARTED;

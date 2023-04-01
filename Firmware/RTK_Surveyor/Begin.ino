@@ -667,12 +667,6 @@ void beginGNSS()
     printZEDInfo(); //Print module type and firmware version
   }
 
-  if (HAS_GNSS_TP_INT) //If the GNSS Time Pulse is connected, use it as an interrupt to set the clock accurately
-  {
-    pinMode(pin_GNSS_TimePulse, INPUT);
-    attachInterrupt(pin_GNSS_TimePulse, tpISR, RISING);
-  }
-
   online.gnss = true;
 }
 
@@ -714,6 +708,27 @@ void configureGNSS()
   }
 
   systemPrintln("GNSS configuration complete");
+}
+
+//Begin interrupts - but only if not about to go into Cofigure-Via-Ethernet
+void beginInterrupts()
+{
+  if (settings.lastState != STATE_CONFIG_VIA_ETH_STARTED)
+  {
+    if (HAS_GNSS_TP_INT) //If the GNSS Time Pulse is connected, use it as an interrupt to set the clock accurately
+    {
+      pinMode(pin_GNSS_TimePulse, INPUT);
+      attachInterrupt(pin_GNSS_TimePulse, tpISR, RISING);
+    }
+
+#ifdef COMPILE_ETHERNET
+    if (HAS_ETHERNET)
+    {
+      pinMode(pin_Ethernet_Interrupt, INPUT_PULLUP); //Prepare the interrupt pin
+      attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); //Attach the interrupt
+    }
+#endif
+  }
 }
 
 //Set LEDs for output and configure PWM

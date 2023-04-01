@@ -304,7 +304,7 @@ void beginSD()
     if (USE_SPI_MICROSD)
     {
       log_d("Initializing microSD - using SPI, SdFat and SdFile");
-      
+
       pinMode(pin_microSD_CS, OUTPUT);
       digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
       resetSPI(); //Re-initialize the SPI/SD interface
@@ -316,7 +316,7 @@ void beginSD()
       {
         if (sdPresent() == true) break;
         //log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
-  
+
         //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
         //Max current is 200mA average across 1s, peak 300mA
         delay(10);
@@ -337,15 +337,15 @@ void beginSD()
           break;
         }
       }
-  
+
       if (settings.spiFrequency > 16)
       {
         systemPrintln("Error: SPI Frequency out of range. Default to 16MHz");
         settings.spiFrequency = 16;
       }
-  
+
       resetSPI(); //Re-initialize the SPI/SD interface
-  
+
       if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
       {
         tries = 0;
@@ -353,16 +353,16 @@ void beginSD()
         for ( ; tries < maxTries ; tries++)
         {
           log_d("SD init failed - using SPI and SdFat. Trying again %d out of %d", tries + 1, maxTries);
-  
+
           delay(250); //Give SD more time to power up, then try again
           if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
         }
-  
+
         if (tries == maxTries)
         {
           systemPrintln("SD init failed - using SPI and SdFat. Is card formatted?");
           digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
-  
+
           //Check reset count and prevent rolling reboot
           if (settings.resetCount < 5)
           {
@@ -372,7 +372,7 @@ void beginSD()
           break;
         }
       }
-  
+
       //Change to root directory. All new file creation will be in root.
       if (sd->chdir() == false)
       {
@@ -386,7 +386,7 @@ void beginSD()
       systemPrintln("Initializing microSD - using SDIO, SD_MMC and File");
 
       //TODO: add Card Detect input and check hot insertion
-      
+
       //SDIO MMC
       if (SD_MMC.begin() == false)
       {
@@ -395,15 +395,15 @@ void beginSD()
         for ( ; tries < maxTries ; tries++)
         {
           log_d("SD init failed - using SD_MMC. Trying again %d out of %d", tries + 1, maxTries);
-  
+
           delay(250); //Give SD more time to power up, then try again
           if (SD_MMC.begin() == true) break;
         }
-  
+
         if (tries == maxTries)
         {
           systemPrintln("SD init failed - using SD_MMC. Is card formatted?");
-  
+
           //Check reset count and prevent rolling reboot
           if (settings.resetCount < 5)
           {
@@ -411,7 +411,7 @@ void beginSD()
               ESP.restart();
           }
           break;
-        }        
+        }
       }
     }
 #endif
@@ -477,7 +477,7 @@ void resetSPI()
   {
     pinMode(pin_microSD_CS, OUTPUT);
     digitalWrite(pin_microSD_CS, HIGH); //De-select SD card
-  
+
     //Flush SPI interface
     SPI.begin();
     SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
@@ -485,9 +485,9 @@ void resetSPI()
       SPI.transfer(0XFF);
     SPI.endTransaction();
     SPI.end();
-  
+
     digitalWrite(pin_microSD_CS, LOW); //Select SD card
-  
+
     //Flush SD interface
     SPI.begin();
     SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
@@ -495,7 +495,7 @@ void resetSPI()
       SPI.transfer(0XFF);
     SPI.endTransaction();
     SPI.end();
-  
+
     digitalWrite(pin_microSD_CS, HIGH); //Deselet SD card
   }
 }
@@ -524,19 +524,19 @@ void beginUART2()
 //Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
 void pinUART2Task( void *pvParameters )
 {
-//Note: ESP32 2.0.6 does some strange auto-bauding thing here which takes 20s to complete if there is no data for it to auto-baud.
-//      That's fine for most RTK products, but causes the Ref Stn to stall for 20s. However, it doesn't stall with ESP32 2.0.2...
-//      Uncomment these lines to prevent the stall if/when we upgrade to ESP32 ~2.0.6.
-//#if defined(REF_STN_GNSS_DEBUG)
-//  if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
-//#else
-//  if (USE_I2C_GNSS)
-//#endif
+  //Note: ESP32 2.0.6 does some strange auto-bauding thing here which takes 20s to complete if there is no data for it to auto-baud.
+  //      That's fine for most RTK products, but causes the Ref Stn to stall for 20s. However, it doesn't stall with ESP32 2.0.2...
+  //      Uncomment these lines to prevent the stall if/when we upgrade to ESP32 ~2.0.6.
+  //#if defined(REF_STN_GNSS_DEBUG)
+  //  if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
+  //#else
+  //  if (USE_I2C_GNSS)
+  //#endif
   {
     serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize); //TODO: work out if we can reduce or skip this when using SPI GNSS
     serialGNSS.setTimeout(settings.serialTimeoutGNSS); //Requires serial traffic on the UART pins for detection
     serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-  
+
     //Reduce threshold value above which RX FIFO full interrupt is generated
     //Allows more time between when the UART interrupt occurs and when the FIFO buffer overruns
     //serialGNSS.setRxFIFOFull(50); //Available in >v2.0.5
@@ -583,7 +583,7 @@ void beginGNSS()
     if (theGNSS.begin() == false)
     {
       log_d("GNSS Failed to begin. Trying again.");
-  
+
       //Try again with power on delay
       delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
       if (theGNSS.begin() == false)
@@ -599,7 +599,7 @@ void beginGNSS()
     if (theGNSS.begin(SPI, pin_GNSS_CS) == false)
     {
       log_d("GNSS Failed to begin. Trying again.");
-  
+
       //Try again with power on delay
       delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
       if (theGNSS.begin(SPI, pin_GNSS_CS) == false)
@@ -615,7 +615,7 @@ void beginGNSS()
       displayGNSSFail(1000);
       return;
     }
-  }  
+  }
 
   //Increase transactions to reduce transfer time
   if (USE_I2C_GNSS)
@@ -623,6 +623,9 @@ void beginGNSS()
 
   //Auto-send Valset messages before the buffer is completely full
   theGNSS.autoSendCfgValsetAtSpaceRemaining(16);
+
+  //Check if the ubxMessageRates or ubxMessageRatesBase need to be defaulted
+  checkMessageRates();
 
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
   if (theGNSS.getModuleInfo(1100) == true) //Try to get the module info
@@ -677,7 +680,7 @@ void configureGNSS()
 
   theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
   theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); //Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
-  
+
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
   //the settings file or internal settings.

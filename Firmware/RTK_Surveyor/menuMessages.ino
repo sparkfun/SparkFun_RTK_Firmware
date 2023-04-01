@@ -346,7 +346,7 @@ void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
     {
       //Check to see if this ZED platform supports this message
       int msgNumber = (incoming - 1) + startOfBlock;
-      
+
       if (ubxMessages[msgNumber].supported & zedModuleType)
       {
         int supportedVersion = 9999; //Not supported
@@ -769,6 +769,25 @@ uint8_t getMessageNumberByName(const char *msgName)
 
   systemPrintf("getMessageNumberByName: %s not found\r\n", msgName);
   return (0);
+}
+
+//Check rates to see if they need to be reset
+void checkMessageRates()
+{
+  if (settings.ubxMessageRates[0] == 254)
+  {
+    //Reset rates to defaults
+    for (int x = 0 ; x < MAX_UBX_MSG ; x++)
+      settings.ubxMessageRates[x] = ubxMessages[x].msgDefaultRate;
+  }
+
+  if (settings.ubxMessageRatesBase[0] == 254)
+  {
+    //Reset Base rates to defaults
+    int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+    for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+      settings.ubxMessageRatesBase[x] = ubxMessages[firstRTCMRecord + x].msgDefaultRate;
+  }
 }
 
 //Determine logging type

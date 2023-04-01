@@ -482,7 +482,7 @@ volatile struct timeval ethernetNtpTv;           //This will hold the time the E
 uint32_t lastLoggedNTPRequest = 0;
 bool ntpLogIncreasing = false;
 
-#include "SparkFun_WebServer_ESP32_W5500.h" //SparkFun remix of Khoi Hoang's WebServer_ESP32_W5500
+#include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.3
 #endif
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

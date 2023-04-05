@@ -937,6 +937,7 @@ void updateSystemState()
         }
         break;
 
+#ifdef COMPILE_ETHERNET
       case (STATE_NTPSERVER_NOT_STARTED):
         {
           firstRoverStart = false; //If NTP is starting, no test menu, normal button use.
@@ -1047,6 +1048,7 @@ void updateSystemState()
           ESP.restart(); //Restart to leave configure-via-ethernet mode
         }
         break;
+#endif
 
       case (STATE_SHUTDOWN):
         {

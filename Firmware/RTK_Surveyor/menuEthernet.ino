@@ -269,6 +269,7 @@ void updateEthernetNTPServer()
 //Start Ethernet WebServer ESP32 W5500 - needs exclusive access to WiFi, SPI and Interrupts
 void startEthernerWebServerESP32W5500()
 {
+#ifdef COMPILE_ETHERNET
   //Configure the W5500
   //To be called before ETH.begin()
   ESP32_W5500_onEvent();
@@ -282,7 +283,8 @@ void startEthernerWebServerESP32W5500()
   if (!settings.ethernetDHCP)
     ETH.config( settings.ethernetIP, settings.ethernetGateway, settings.ethernetSubnet, settings.ethernetDNS );
 
-  ESP32_W5500_waitForConnect();  
+  ESP32_W5500_waitForConnect();
+#endif
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

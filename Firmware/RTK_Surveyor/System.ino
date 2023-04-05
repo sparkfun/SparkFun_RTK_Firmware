@@ -543,7 +543,7 @@ bool setMessages(int maxRetries)
           if (USE_SPI_GNSS)
           {
             if (ubxMessages[x].msgClass == UBX_CLASS_NAV)
-              if ((ubxMessages[x].msgID ==  UBX_NAV_PVT) || (ubxMessages[x].msgID ==  UBX_NAV_HPPOSLLH))
+              if ((ubxMessages[x].msgID == UBX_NAV_PVT) || (ubxMessages[x].msgID == UBX_NAV_HPPOSLLH))
                 if (rate == 0)
                   rate = 1;
             if (ubxMessages[x].msgClass == UBX_CLASS_ESF)

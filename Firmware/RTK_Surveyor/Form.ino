@@ -266,8 +266,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
     logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
 
     char slashFileName[50];
-    slashFileName[0] = '/';
-    strncpy(&slashFileName[1], fileName, strlen(fileName) < 48 ? strlen(fileName) : 48);
+    snprintf(slashFileName, sizeof(slashFileName), "/%s", request->getParam("name")->value().c_str());
 
     bool fileExists;
     if (USE_SPI_MICROSD)

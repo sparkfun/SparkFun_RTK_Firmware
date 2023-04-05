@@ -246,7 +246,7 @@ void scanForFirmware()
   else
   {
     const char* BIN_EXT = "bin";
-    const char* BIN_HEADER = "RTK_Surveyor_Firmware";
+    const char* BIN_HEADER = "/RTK_Surveyor_Firmware";
   
     char fname[50]; //Handle long file names
   

@@ -165,7 +165,7 @@ bool configureUbloxModule()
   response = true; //Reset
 
   //Make sure the appropriate messages are enabled
-  response &= setMessages(); //Does a complete open/closed val set
+  response &= setMessages(MAX_SET_MESSAGES_RETRIES); //Does a complete open/closed val set
   if (response == false)
     systemPrintln("Module failed config block 2");
   response = true; //Reset
@@ -516,7 +516,7 @@ void settingsToDefaults()
 //Enable all the valid messages for this platform
 //There are ~89 messages so split into batches. VALSET is limited to 64 max per batch
 //Uses dummy newCfg and sendCfg values to be sure we open/close a complete set
-bool setMessages()
+bool setMessages(int maxRetries)
 {
   bool response = true;
   
@@ -524,87 +524,91 @@ bool setMessages()
   if (USE_SPI_GNSS)
     spiOffset = 3;
 
-  int x = 0;
-  while (x < MAX_UBX_MSG)
+  int tryNo = -1;
+  while ((++tryNo < maxRetries) && !response)
   {
-    response &= theGNSS.newCfgValset();
-    
-    do
+    int x = 0;
+    while (x < MAX_UBX_MSG)
     {
-      if (ubxMessages[x].supported & zedModuleType)
+      response &= theGNSS.newCfgValset();
+      
+      do
       {
-        uint8_t rate = settings.ubxMessageRates[x];
-
-        //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH, ESF_STATUS and TIM_TP remained enabled
-        //(but not enabled for logging)
-        if (USE_SPI_GNSS)
+        if (ubxMessages[x].supported & zedModuleType)
         {
-          if (ubxMessages[x].msgClass == UBX_CLASS_NAV)
-            if ((ubxMessages[x].msgID ==  UBX_NAV_PVT) || (ubxMessages[x].msgID ==  UBX_NAV_HPPOSLLH))
-              if (rate == 0)
-                rate = 1;
-          if (ubxMessages[x].msgClass == UBX_CLASS_ESF)
-            if (ubxMessages[x].msgID ==  UBX_ESF_STATUS)
-              if (zedModuleType == PLATFORM_F9R)
+          uint8_t rate = settings.ubxMessageRates[x];
+  
+          //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH, ESF_STATUS and TIM_TP remained enabled
+          //(but not enabled for logging)
+          if (USE_SPI_GNSS)
+          {
+            if (ubxMessages[x].msgClass == UBX_CLASS_NAV)
+              if ((ubxMessages[x].msgID ==  UBX_NAV_PVT) || (ubxMessages[x].msgID ==  UBX_NAV_HPPOSLLH))
                 if (rate == 0)
                   rate = 1;
-          if (ubxMessages[x].msgClass == UBX_CLASS_TIM)
-          {
-            if (ubxMessages[x].msgID ==  UBX_TIM_TM2)
-              if (rate == 0)
-                rate = 1;
-            if (ubxMessages[x].msgID ==  UBX_TIM_TP)
-              if (HAS_GNSS_TP_INT)
+            if (ubxMessages[x].msgClass == UBX_CLASS_ESF)
+              if (ubxMessages[x].msgID ==  UBX_ESF_STATUS)
+                if (zedModuleType == PLATFORM_F9R)
+                  if (rate == 0)
+                    rate = 1;
+            if (ubxMessages[x].msgClass == UBX_CLASS_TIM)
+            {
+              if (ubxMessages[x].msgID ==  UBX_TIM_TM2)
+                if (rate == 0)
+                  rate = 1;
+              if (ubxMessages[x].msgID ==  UBX_TIM_TP)
+                if (HAS_GNSS_TP_INT)
+                  if (rate == 0)
+                    rate = 1;
+            }
+            if (ubxMessages[x].msgClass == UBX_CLASS_RXM)
+              if (ubxMessages[x].msgID ==  UBX_RXM_COR)
+                if (rate == 0)
+                  rate = 1;
+            if (ubxMessages[x].msgClass == UBX_CLASS_NMEA)
+              if (ubxMessages[x].msgID ==  UBX_NMEA_GGA)
                 if (rate == 0)
                   rate = 1;
           }
-          if (ubxMessages[x].msgClass == UBX_CLASS_RXM)
-            if (ubxMessages[x].msgID ==  UBX_RXM_COR)
-              if (rate == 0)
-                rate = 1;
-          if (ubxMessages[x].msgClass == UBX_CLASS_NMEA)
-            if (ubxMessages[x].msgID ==  UBX_NMEA_GGA)
-              if (rate == 0)
-                rate = 1;
+          
+          response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + spiOffset, rate);
         }
-        
-        response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + spiOffset, rate);
+        x++;
       }
-      x++;
+      while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+      
+      response &= theGNSS.sendCfgValset();
     }
-    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
-    
-    response &= theGNSS.sendCfgValset();
-  }
-
-  //For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
-  //to mimic UART1
-  if (USE_SPI_GNSS)
-  {
-    uint32_t logRTCMMessages = 0;
-    uint32_t logNMEAMessages = 0;
-    
-    for (x = 0; x < MAX_UBX_MSG; x++)
+  
+    //For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
+    //to mimic UART1
+    if (USE_SPI_GNSS)
     {
-      if (ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
+      uint32_t logRTCMMessages = 0;
+      uint32_t logNMEAMessages = 0;
+      
+      for (x = 0; x < MAX_UBX_MSG; x++)
       {
-        if ((settings.ubxMessageRates[x] > 0) && (ubxMessages[x].supported & zedModuleType))
-          logRTCMMessages |= ubxMessages[x].filterMask;
+        if (ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
+        {
+          if ((settings.ubxMessageRates[x] > 0) && (ubxMessages[x].supported & zedModuleType))
+            logRTCMMessages |= ubxMessages[x].filterMask;
+        }
+        else if (ubxMessages[x].msgClass == UBX_CLASS_NMEA) //NMEA messages
+        {
+          if ((settings.ubxMessageRates[x] > 0) && (ubxMessages[x].supported & zedModuleType))
+            logNMEAMessages |= ubxMessages[x].filterMask;
+        }
+        else //UBX messages
+        {
+          if (ubxMessages[x].supported & zedModuleType)
+            theGNSS.enableUBXlogging(ubxMessages[x].msgClass, ubxMessages[x].msgID, settings.ubxMessageRates[x] > 0);
+        }
       }
-      else if (ubxMessages[x].msgClass == UBX_CLASS_NMEA) //NMEA messages
-      {
-        if ((settings.ubxMessageRates[x] > 0) && (ubxMessages[x].supported & zedModuleType))
-          logNMEAMessages |= ubxMessages[x].filterMask;
-      }
-      else //UBX messages
-      {
-        if (ubxMessages[x].supported & zedModuleType)
-          theGNSS.enableUBXlogging(ubxMessages[x].msgClass, ubxMessages[x].msgID, settings.ubxMessageRates[x] > 0);
-      }
+  
+      theGNSS.setRTCMLoggingMask(logRTCMMessages);
+      theGNSS.setNMEALoggingMask(logNMEAMessages);
     }
-
-    theGNSS.setRTCMLoggingMask(logRTCMMessages);
-    theGNSS.setNMEALoggingMask(logNMEAMessages);
   }
 
   return (response);
@@ -612,24 +616,28 @@ bool setMessages()
 
 //Enable all the valid messages for this platform over the USB port
 //Add 2 to every UART1 key. This is brittle and non-perfect, but works.
-bool setMessagesUSB()
+bool setMessagesUSB(int maxRetries)
 {
   bool response = true;
 
-  int x = 0;
-  while (x < MAX_UBX_MSG)
+  int tryNo = -1;
+  while ((++tryNo < maxRetries) && !response)
   {
-    response &= theGNSS.newCfgValset();
-    
-    do
+    int x = 0;
+    while (x < MAX_UBX_MSG)
     {
-      if (ubxMessages[x].supported & zedModuleType)
-        response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 2, settings.ubxMessageRates[x]);
-      x++;
+      response &= theGNSS.newCfgValset();
+      
+      do
+      {
+        if (ubxMessages[x].supported & zedModuleType)
+          response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 2, settings.ubxMessageRates[x]);
+        x++;
+      }
+      while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+      
+      response &= theGNSS.sendCfgValset();
     }
-    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
-    
-    response &= theGNSS.sendCfgValset();
   }
 
   return (response);

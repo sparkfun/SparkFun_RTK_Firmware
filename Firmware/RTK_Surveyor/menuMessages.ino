@@ -231,22 +231,11 @@ void menuMessages()
   clearBuffer(); //Empty buffer of any newline chars
 
   //Make sure the appropriate messages are enabled
-  bool response = setMessages(); //Does a complete open/closed val set
+  bool response = setMessages(MAX_SET_MESSAGES_RETRIES); //Does a complete open/closed val set
   if (response == false)
-  {
-    systemPrintln("menuMessages: Failed to enable messages - Try 1");
-
-    response = setMessages(); //Does a complete open/closed val set
-
-    if (response == false)
-      systemPrintln("menuMessages: Failed to enable messages - Try 2");
-    else
-      systemPrintln("menuMessages: Messages successfully enabled");
-  }
+    systemPrintf("menuMessages: Failed to enable messages - after %d tries", MAX_SET_MESSAGES_RETRIES);
   else
-  {
     systemPrintln("menuMessages: Messages successfully enabled");
-  }
 
   setLoggingType(); //Update Standard, PPP, or custom for icon selection
 }
@@ -863,8 +852,8 @@ void setLogTestFrequencyMessages(int rate, int messages)
 
 
   //Apply these message rates to both UART1 / SPI and USB
-  setMessages(); //Does a complete open/closed val set
-  setMessagesUSB();
+  setMessages(MAX_SET_MESSAGES_RETRIES); //Does a complete open/closed val set
+  setMessagesUSB(MAX_SET_MESSAGES_RETRIES);
 }
 
 //The log test allows us to record a series of different system configurations into

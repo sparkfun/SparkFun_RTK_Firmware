@@ -535,6 +535,8 @@ ubxMsg ubxMessages[] =
 #define MAX_UBX_MSG (sizeof(ubxMessages)/sizeof(ubxMsg))
 #define MAX_UBX_MSG_RTCM (12)
 
+#define MAX_SET_MESSAGES_RETRIES 5 //Try up to five times to set all the messages. Occasionally fails if set to 2
+
 //This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
 typedef struct {
   int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int

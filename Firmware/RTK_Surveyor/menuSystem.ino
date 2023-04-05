@@ -766,7 +766,7 @@ void menuDebug()
     }
     else if (incoming == 17)
     {
-      bool response = setMessagesUSB();
+      bool response = setMessagesUSB(MAX_SET_MESSAGES_RETRIES);
 
       if (response == false)
         systemPrintln(F("Failed to enable USB messages"));

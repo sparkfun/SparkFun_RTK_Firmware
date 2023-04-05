@@ -287,6 +287,17 @@ void startEthernerWebServerESP32W5500()
 #endif
 }
 
+void endEthernerWebServerESP32W5500()
+{
+  settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+  settings.lastState = STATE_NTPSERVER_NOT_STARTED; //Record the _next_ state for POR
+  recordSystemSettings();
+
+  ETH.end(); //This is _really_ important. It undoes the low-level changes to SPI and interrupts
+  
+  ESP.restart(); //Restart to leave configure-via-ethernet mode
+}
+
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 // Ethernet (W5500) ISR
 // Triggered by the falling edge of the W5500 interrupt signal - indicates the arrival of a packet

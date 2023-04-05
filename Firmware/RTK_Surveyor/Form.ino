@@ -511,16 +511,25 @@ void createSettingsString(char* newSettings)
   snprintf(apRtkFirmwareVersion, sizeof(apRtkFirmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
   stringRecord(newSettings, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
-  char apZedPlatform[50];
-  if (zedModuleType == PLATFORM_F9P)
-    strcpy(apZedPlatform, "ZED-F9P");
-  else if (zedModuleType == PLATFORM_F9R)
-    strcpy(apZedPlatform, "ZED-F9R");
-
-  char apZedFirmwareVersion[80];
-  snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
-  stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
-  stringRecord(newSettings, "zedFirmwareVersionInt", zedFirmwareVersionInt);
+  if (!configureViaEthernet) //ZED type is unknown if we are in configure-via-ethernet mode
+  {
+    char apZedPlatform[50];
+    if (zedModuleType == PLATFORM_F9P)
+      strcpy(apZedPlatform, "ZED-F9P");
+    else if (zedModuleType == PLATFORM_F9R)
+      strcpy(apZedPlatform, "ZED-F9R");
+  
+    char apZedFirmwareVersion[80];
+    snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
+    stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
+    stringRecord(newSettings, "zedFirmwareVersionInt", zedFirmwareVersionInt);
+  }
+  else
+  {
+    char apZedFirmwareVersion[80];
+    snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "ZED-F9: Unknown");
+    stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
+  }
 
   char apDeviceBTID[30];
   snprintf(apDeviceBTID, sizeof(apDeviceBTID), "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);
@@ -716,36 +725,39 @@ void createSettingsString(char* newSettings)
 
   stringRecord(newSettings, "logFileName", logFileName);
 
-  //Determine battery icon
-  int iconLevel = 0;
-  if (battLevel < 25)
-    iconLevel = 0;
-  else if (battLevel < 50)
-    iconLevel = 1;
-  else if (battLevel < 75)
-    iconLevel = 2;
-  else //batt level > 75
-    iconLevel = 3;
-
-  char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
-
-  if (externalPowerConnected)
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
-  else
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
-
-  stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
-
-  //Determine battery percent
-  char batteryPercent[sizeof("+100%")];
-  int tempLevel = battLevel;
-  if (tempLevel > 100) tempLevel = 100;
-
-  if (externalPowerConnected)
-    snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", tempLevel);
-  else
-    snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", tempLevel);
-  stringRecord(newSettings, "batteryPercent", batteryPercent);
+  if (productVariant != REFERENCE_STATION) //Ref Stn does not have a battery
+  {
+    //Determine battery icon
+    int iconLevel = 0;
+    if (battLevel < 25)
+      iconLevel = 0;
+    else if (battLevel < 50)
+      iconLevel = 1;
+    else if (battLevel < 75)
+      iconLevel = 2;
+    else //batt level > 75
+      iconLevel = 3;
+  
+    char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+  
+    if (externalPowerConnected)
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
+    else
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
+  
+    stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
+  
+    //Determine battery percent
+    char batteryPercent[sizeof("+100%")];
+    int tempLevel = battLevel;
+    if (tempLevel > 100) tempLevel = 100;
+  
+    if (externalPowerConnected)
+      snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", tempLevel);
+    else
+      snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", tempLevel);
+    stringRecord(newSettings, "batteryPercent", batteryPercent);
+  }
 
   stringRecord(newSettings, "minElev", settings.minElev);
 
@@ -857,33 +869,36 @@ void createDynamicDataString(char* settingsCSV)
   stringRecord(settingsCSV, "ecefY", ecefY, 3);
   stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
 
-  //Determine battery icon
-  int iconLevel = 0;
-  if (battLevel < 25)
-    iconLevel = 0;
-  else if (battLevel < 50)
-    iconLevel = 1;
-  else if (battLevel < 75)
-    iconLevel = 2;
-  else //batt level > 75
-    iconLevel = 3;
+  if (productVariant != REFERENCE_STATION) //Ref Stn does not have a battery
+  {
+    //Determine battery icon
+    int iconLevel = 0;
+    if (battLevel < 25)
+      iconLevel = 0;
+    else if (battLevel < 50)
+      iconLevel = 1;
+    else if (battLevel < 75)
+      iconLevel = 2;
+    else //batt level > 75
+      iconLevel = 3;
 
-  char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
-
-  if (externalPowerConnected)
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
-  else
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
-
-  stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
-
-  //Determine battery percent
-  char batteryPercent[sizeof("+100%")];
-  if (externalPowerConnected)
-    snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", battLevel);
-  else
-    snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", battLevel);
-  stringRecord(settingsCSV, "batteryPercent", batteryPercent);
+    char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+  
+    if (externalPowerConnected)
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
+    else
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
+  
+    stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
+  
+    //Determine battery percent
+    char batteryPercent[sizeof("+100%")];
+    if (externalPowerConnected)
+      snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", battLevel);
+    else
+      snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", battLevel);
+    stringRecord(settingsCSV, "batteryPercent", batteryPercent);
+  }
 
   strcat(settingsCSV, "\0");
 #endif
@@ -1088,6 +1103,11 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     delay(500); //Allow for delivery
 
     systemPrintln("Reset after AP Config");
+
+#ifdef COMPILE_ETHERNET
+    if (configureViaEthernet)
+      endEthernerWebServerESP32W5500();
+#endif
 
     ESP.restart();
   }

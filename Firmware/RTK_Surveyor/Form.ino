@@ -265,15 +265,19 @@ static void handleFileManager(AsyncWebServerRequest *request)
 
     logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
 
+    char slashFileName[50];
+    slashFileName[0] = '/';
+    strncpy(&slashFileName[1], fileName, strlen(fileName) < 48 ? strlen(fileName) : 48);
+
     bool fileExists;
     if (USE_SPI_MICROSD)
     {
-      fileExists = sd->exists(fileName);
+      fileExists = sd->exists(slashFileName);
     }
 #ifdef COMPILE_SD_MMC
     else
     {
-      fileExists = SD_MMC.exists(fileName);
+      fileExists = SD_MMC.exists(slashFileName);
     }
 #endif
 
@@ -303,7 +307,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
             }
           }
 
-          if (managerTempFile->open(fileName, O_READ) == true)
+          if (managerTempFile->open(slashFileName, O_READ) == true)
             managerFileOpen = true;
           else
             systemPrintln("Error: File Manager failed to open file");
@@ -350,10 +354,10 @@ static void handleFileManager(AsyncWebServerRequest *request)
       {
         logmessage += " deleted";
         if (USE_SPI_MICROSD)
-          sd->remove(fileName);
+          sd->remove(slashFileName);
 #ifdef COMPILE_SD_MMC
         else
-          SD_MMC.remove(fileName);
+          SD_MMC.remove(slashFileName);
 #endif
         request->send(200, "text/plain", "Deleted File: " + String(fileName));
       }
@@ -491,6 +495,8 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       timeSinceLastIncomingSetting = millis();
     }
   }
+  else
+    log_d("onWsEvent: unrecognised AwsEventType %d", type);
 }
 #endif
 #endif

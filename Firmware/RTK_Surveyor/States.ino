@@ -946,6 +946,8 @@ void updateSystemState()
 
           displayNtpStart(500); //Show 'NTP'
           
+          tasksStartUART2(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+
           if (configureUbloxModuleNTP() == true)
           {
             settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile

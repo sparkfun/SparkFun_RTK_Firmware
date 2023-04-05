@@ -69,6 +69,9 @@
 //Right top
 #define ICON_ETHERNET                    (1<<9)
 
+//Right bottom
+#define ICON_LOGGING_NTP                 (1<<10)
+
 //----------------------------------------
 //Locals
 //----------------------------------------
@@ -133,9 +136,6 @@ void updateDisplay()
     {
       lastDisplayUpdate = millis();
       forceDisplayUpdate = false;
-
-      bool forceLoggingStandard = false;
-      bool noPulse = false;
 
       oled.reset(false); //Incase of previous corruption, force re-alignment of CGRAM. Do not init buffers as it takes time and causes screen to blink.
 
@@ -218,9 +218,7 @@ void updateDisplay()
           icons =   ICON_CLOCK            //Center left
                     | ICON_CLOCK_ACCURACY //Center right
                     | paintSIV()          //Bottom left
-                    | ICON_LOGGING;       //Bottom right
-          forceLoggingStandard = true;
-          noPulse = true;
+                    | ICON_LOGGING_NTP;   //Bottom right
           if (online.ethernetStatus == ETH_LINK)
             blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
           else
@@ -230,10 +228,13 @@ void updateDisplay()
           break;
 
         case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
-        case (STATE_CONFIG_VIA_ETH_NO_LINK):
+          break;
+        case (STATE_CONFIG_VIA_ETH_STARTED):
           break;
         case (STATE_CONFIG_VIA_ETH):
-          displayConfigViaEth();
+          displayConfigViaEthernet();
+          break;
+        case (STATE_CONFIG_VIA_ETH_RESTART_NTP):
           break;
 
         case (STATE_ROVER_NOT_STARTED):
@@ -615,7 +616,9 @@ void updateDisplay()
 
       //Bottom right corner
       if (icons & ICON_LOGGING)
-        paintLogging(forceLoggingStandard, noPulse);
+        paintLogging();
+      else if (icons & ICON_LOGGING_NTP)
+        paintLoggingNTP(true); //NTP, no pulse
 
       oled.display(); //Push internal buffer to display
     }
@@ -1607,8 +1610,7 @@ uint32_t paintSIV()
 
 //Draw log icon
 //Turn off icon if log file fails to get bigger
-void paintLogging(bool forceLoggingStandard = false, bool noPulse = false); //Header
-void paintLogging(bool forceLoggingStandard, bool noPulse)
+void paintLogging()
 {
   //Animate icon to show system running
   loggingIconDisplayed++; //Goto next icon
@@ -1619,7 +1621,7 @@ void paintLogging(bool forceLoggingStandard, bool noPulse)
   if ((online.logging == true) && (logIncreasing))
 #endif
   {
-    if (forceLoggingStandard || (loggingType == LOGGING_STANDARD))
+    if (loggingType == LOGGING_STANDARD)
     {
       if (loggingIconDisplayed == 0)
         displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
@@ -1652,6 +1654,42 @@ void paintLogging(bool forceLoggingStandard, bool noPulse)
       else if (loggingIconDisplayed == 3)
         displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_Custom_3);
     }
+  }
+  else
+  {
+    const int pulseX = 64 - 4;
+    const int pulseY = oled.getHeight();
+    int height;
+
+    //Paint pulse to show system activity
+    height = loggingIconDisplayed << 2;
+    if (height)
+    {
+      oled.line(pulseX, pulseY, pulseX, pulseY - height);
+      oled.line(pulseX - 1, pulseY, pulseX - 1, pulseY - height);
+    }
+  }
+}
+
+void paintLoggingNTP(bool noPulse)
+{
+  //Animate icon to show system running
+  loggingIconDisplayed++; //Goto next icon
+  loggingIconDisplayed %= 4; //Wrap
+#ifdef COMPILE_ETHERNET //Some redundancy here. paintLoggingNTP should only be called if Ethernet is present
+  if ((online.logging == true) && (logIncreasing || ntpLogIncreasing))
+#else
+  if ((online.logging == true) && (logIncreasing))
+#endif
+  {
+    if (loggingIconDisplayed == 0)
+      displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+    else if (loggingIconDisplayed == 1)
+      displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_NTP_1);
+    else if (loggingIconDisplayed == 2)
+      displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_NTP_2);
+    else if (loggingIconDisplayed == 3)
+      displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_NTP_3);
   }
   else if (!noPulse)
   {
@@ -3108,10 +3146,16 @@ void displayConfigViaEthNotStarted(uint16_t displayTime)
   {
     oled.erase();
 
-    uint8_t fontHeight = 15;
-    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+    uint8_t fontHeight = 8;
+    uint8_t yPos = fontHeight;
 
-    printTextCenter("Cfg Eth", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Configure", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Via", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Ethernet", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Restart", yPos, QW_FONT_5X7, 1, true);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -3125,11 +3169,16 @@ void displayConfigViaEthStarted(uint16_t displayTime)
   {
     oled.erase();
 
-    uint8_t fontHeight = 15;
-    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+    uint8_t fontHeight = 8;
+    uint8_t yPos = fontHeight;
 
-    printTextCenter("Cfg Eth", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
-    printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Configure", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Via", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Ethernet", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Started", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
 
     oled.display();
 
@@ -3137,7 +3186,7 @@ void displayConfigViaEthStarted(uint16_t displayTime)
   }
 }
 
-void displayConfigViaEth()
+void displayConfigViaEthernet()
 {
 #ifdef COMPILE_ETHERNET
 
@@ -3151,7 +3200,7 @@ void displayConfigViaEth()
     static bool blink = 0;
     blink ^= 1;
     
-    if ((online.ethernetStatus == ETH_LINK) || blink)
+    if (ETH.linkUp() || blink)
       displayBitmap(xPos, yPos, Ethernet_Icon_Width, Ethernet_Icon_Height, Ethernet_Icon);
     
     yPos += Ethernet_Icon_Height * 1.5;
@@ -3160,8 +3209,9 @@ void displayConfigViaEth()
     yPos += 8;
   
     char ipAddress[40];
+    IPAddress localIP =  ETH.localIP();
     snprintf(ipAddress, sizeof(ipAddress), "          %d.%d.%d.%d          ",
-             Ethernet.localIP()[0], Ethernet.localIP()[1], Ethernet.localIP()[2], Ethernet.localIP()[3]);
+             localIP[0], localIP[1], localIP[2], localIP[3]);
   
     static uint8_t ipAddressPosition = 0;
   

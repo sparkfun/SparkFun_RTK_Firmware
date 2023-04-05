@@ -202,6 +202,13 @@ bool wifiStartAP()
 //Throttle connection attempts as needed
 void wifiUpdate()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping wifiUpdate");
+    return;
+  }
+    
 #ifdef COMPILE_WIFI
 
   //Periodically display the WiFi state
@@ -637,6 +644,13 @@ bool wifiConnectLimitReached()
 
 void tcpUpdate()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping tcpUpdate");
+    return;
+  }
+    
 #ifdef COMPILE_WIFI
 
   if (settings.enableTcpClient == false && settings.enableTcpServer == false) return; //Nothing to do

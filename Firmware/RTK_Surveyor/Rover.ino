@@ -41,25 +41,29 @@ bool configureUbloxModuleRover()
   //
   //But, on the Reference Station, the GNSS is interfaced via SPI. It has no access to I2C and UART1. So for that
   //product - in Rover mode - we want to leave any RTCM messages enabled on SPI so they can be logged if desired.
+
+  //Find first RTCM record in ubxMessage array
+  int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+
   if (zedModuleType == PLATFORM_F9P)
   {
     if (USE_I2C_GNSS)
     {
       //Set RTCM messages to user's settings
       for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
-        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey - 1, settings.ubxMessages[x].msgRate); //UBLOX_CFG UART1 - 1 = I2C
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey - 1, settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 - 1 = I2C
     }
     else
     {
       for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
-        response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + 3, settings.ubxMessages[x].msgRate); //UBLOX_CFG UART1 + 3 = SPI
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 3, settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 3 = SPI
     }
 
     //Set RTCM messages to user's settings
     for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
     {
-      response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + 1 , settings.ubxMessages[x].msgRate); //UBLOX_CFG UART1 + 1 = UART2
-      response &= theGNSS.addCfgValset(settings.ubxMessages[x].msgConfigKey + 2 , settings.ubxMessages[x].msgRate); //UBLOX_CFG UART1 + 2 = USB
+      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 1 , settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 1 = UART2
+      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 2 , settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 2 = USB
     }
   }
 
@@ -68,26 +72,41 @@ bool configureUbloxModuleRover()
   response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_HIGHPREC, 1); //Enable high precision NMEA
   response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_SVNUMBERING, 1); //Enable extended satellite numbering
 
-  if (zedModuleType == PLATFORM_F9R)
-  {
-    response &= theGNSS.addCfgValset(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
-    response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
-    response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_IMU_MNTALG_YAW, settings.imuYaw);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_IMU_MNTALG_PITCH, settings.imuPitch);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_IMU_MNTALG_ROLL, settings.imuRoll);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_DIS_AUTODIRPINPOL, settings.sfDisableWheelDirection);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_COMBINE_TICKS, settings.sfCombineWheelTicks);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV_PRIO, settings.rateNavPrio);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, settings.enableNAV2);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_USE_SPEED, settings.sfUseSpeed);
-  }
-
   response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
 
-  response &= theGNSS.sendCfgValset(); //Closing - 28 keys
+  response &= theGNSS.sendCfgValset(); //Closing
 
   if (response == false)
-    log_d("Rover config failed");
+    log_d("Rover config failed 1");
+
+  if (zedModuleType == PLATFORM_F9R)
+  {
+    response &= theGNSS.newCfgValset();
+
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
+    response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_AUTO_MNTALG_ENA, settings.autoIMUmountAlignment); //Enable/disable Automatic IMU-mount Alignment
+
+    if (zedFirmwareVersionInt >= 121)
+    {
+      response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_IMU_MNTALG_YAW, settings.imuYaw);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_IMU_MNTALG_PITCH, settings.imuPitch);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_SFIMU_IMU_MNTALG_ROLL, settings.imuRoll);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_DIS_AUTODIRPINPOL, settings.sfDisableWheelDirection);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_COMBINE_TICKS, settings.sfCombineWheelTicks);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV_PRIO, settings.rateNavPrio);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, settings.enableNAV2);
+      response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_USE_SPEED, settings.sfUseSpeed);
+    }
+
+    response &= theGNSS.sendCfgValset(); //Closing - 28 keys
+
+    if (response == false)
+      log_d("Rover config failed 2");
+
+    if (response == false)
+      Serial.println("Failed new config");
+  }
+
 
   return (response);
 }

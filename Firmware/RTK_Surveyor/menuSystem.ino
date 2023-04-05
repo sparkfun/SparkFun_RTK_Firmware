@@ -92,18 +92,12 @@ void menuSystem()
                    ethernetMACAddress[4], ethernetMACAddress[5]);
       systemPrint("Ethernet IP Address: ");
       systemPrintln(Ethernet.localIP());
-      if (settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS)
+      if (!settings.ethernetDHCP)
       {
         systemPrint("Ethernet DNS: ");
         systemPrintf("%s\r\n", settings.ethernetDNS.toString());
-      }
-      if (settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS_GATEWAY)
-      {
         systemPrint("Ethernet Gateway: ");
         systemPrintf("%s\r\n", settings.ethernetGateway.toString());
-      }
-      if (settings.ethernetConfig >= ETHERNET_FIXED_IP_DNS_GATEWAY_SUBNET)
-      {
         systemPrint("Ethernet Subnet Mask: ");
         systemPrintf("%s\r\n", settings.ethernetSubnet.toString());
       }

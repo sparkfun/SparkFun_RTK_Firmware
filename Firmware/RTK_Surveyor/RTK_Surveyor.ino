@@ -96,6 +96,10 @@ int pin_Ethernet_Interrupt = -1;
 int pin_GNSS_CS = -1;
 int pin_GNSS_TimePulse = -1;
 int pin_microSD_CardDetect = -1;
+
+int pin_PICO = 23;
+int pin_POCI = 19;
+int pin_SCK = 18;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
@@ -463,12 +467,10 @@ const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_ETHERNET
 #include <Ethernet.h> // http://librarymanager/All#Arduino_Ethernet
-//#include <EthernetLarge.h> // https://github.com/OPEnSLab-OSU/EthernetLarge
 IPAddress ethernetIPAddress;
 IPAddress ethernetDNS;
 IPAddress ethernetGateway;
 IPAddress ethernetSubnetMask;
-EthernetServer *ethernetHTTPServer = nullptr; //This will be instantiated when we know the HTTP port
 class derivedEthernetUDP : public EthernetUDP
 {
   public:
@@ -479,6 +481,8 @@ volatile uint8_t ntpSockIndex;                   //The W5500 socket index for NT
 volatile struct timeval ethernetNtpTv;           //This will hold the time the Ethernet NTP packet arrived
 uint32_t lastLoggedNTPRequest = 0;
 bool ntpLogIncreasing = false;
+
+#include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.4
 #endif
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -587,6 +591,12 @@ uint8_t btEscapeCharsReceived = 0; //Used to enter command mode
 
 bool externalPowerConnected = false; //Goes true when a high voltage is seen on power control pin
 
+//configureViaEthernet:
+// Set to true if configureViaEthernet.txt exists in LittleFS.
+// Causes setup and loop to skip any code which would cause SPI or interrupts to be initialized.
+// This is to allow SparkFun_WebServer_ESP32_W5500 to have _exclusive_ access to WiFi, SPI and Interrupts.
+bool configureViaEthernet = false;
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
                      +---------------------------------------+      +----------+
@@ -690,9 +700,11 @@ void setup()
 
   beginDisplay(); //Start display to be able to display any errors
 
-  beginGNSS(); //Connect to GNSS to get module type
+  beginFS(); //Start LittleFS file system for settings
 
-  beginFS(); //Start file system for settings
+  configureViaEthernet = checkConfigureViaEthernet(); //Check if going into dedicated configureViaEthernet (STATE_CONFIG_VIA_ETH) mode
+
+  beginGNSS(); //Connect to GNSS to get module type - but only if not going into configure-via-ethernet mode
 
   beginBoard(); //Now finish settup up the board and check the on button
 
@@ -710,19 +722,19 @@ void setup()
 
   beginFuelGauge(); //Configure battery fuel guage monitor
 
-  configureGNSS(); //Configure ZED module
+  configureGNSS(); //Configure ZED module - but only if not going into configure-via-ethernet mode
 
-  beginEthernet(); //Start-up the Ethernet connection
+  beginEthernet(); //Start-up the Ethernet connection - but only if not going into configure-via-ethernet mode
 
-  beginEthernetHTTPServer();
-
-  beginEthernetNTPServer();
+  beginEthernetNTPServer(); //Start the NTP server - but only if not going into configure-via-ethernet mode
 
   beginAccelerometer();
 
-  beginLBand();
+  beginLBand(); //Begin L-Band - but only if not going into configure-via-ethernet mode
 
-  beginExternalTriggers(); //Configure the time pulse output and TM2 input
+  beginExternalTriggers(); //Configure the time pulse output and TM2 input - but only if not going into configure-via-ethernet mode
+
+  beginInterrupts(); //Begin the TP and W5500 interrupts - but only if not going into configure-via-ethernet mode
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
@@ -759,9 +771,9 @@ void loop()
 
   updateSerial(); //Menu system via ESP32 USB connection
 
-  wifiUpdate(); //Bring up WiFi when services need it
+  wifiUpdate(); //Bring up WiFi when services need it - but only if not in configure-via-ethernet mode
 
-  updateLBand(); //Check if we've recently received PointPerfect corrections or not
+  updateLBand(); //Check if we've recently received PointPerfect corrections or not - but only if not in configure-via-ethernet mode
 
   updateRadio(); //Check if we need to finish sending any RTCM over link radio
 
@@ -769,13 +781,11 @@ void loop()
 
   ntripServerUpdate(); //Check the NTRIP server connection and move data ZED --> NTRIP
 
-  tcpUpdate(); //Turn on TCP Client or Server as needed
+  tcpUpdate(); //Turn on TCP Client or Server as needed - but only if not in configure-via-ethernet mode
 
-  updateEthernet(); //Maintain the ethernet connection
+  updateEthernet(); //Maintain the ethernet connection - but only if not in configure-via-ethernet mode
 
-  updateEthernetHTTPServer(); //Process any HTTP requests over Ethernet
-
-  updateEthernetNTPServer(); //Process any received NTP requests
+  updateEthernetNTPServer(); //Process any received NTP requests - but only if not in configure-via-ethernet mode
 
   printPosition(); //Periodically print GNSS coordinates if enabled
 

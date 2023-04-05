@@ -626,6 +626,7 @@ void updateSystemState()
           changeState(STATE_WIFI_CONFIG);
         }
         break;
+        
       case (STATE_WIFI_CONFIG):
         {
           if (incomingSettingsSpot > 0)
@@ -981,44 +982,67 @@ void updateSystemState()
         
       case (STATE_NTPSERVER_SYNC):
         {
-          //Nothing to do here?
+          //Do nothing - display only
         }
         break;
 
       case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
         {
-          displayConfigViaEthNotStarted(500); //Show 'Cfg Eth'
-          
-          bluetoothStop();
-          espnowStop();
+          displayConfigViaEthNotStarted(1000);
 
-          tasksStopUART2(); //Delete F9 serial tasks if running
+          settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+          settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Record the _next_ state for POR
+          recordSystemSettings();
 
-          if (online.ethernetHTTPServer)
-          {
-            displayConfigViaEthStarted(500); //Show 'Cfg Eth Started'        
-            changeState(STATE_CONFIG_VIA_ETH);
-          }
-          else
-          {
-            changeState(STATE_CONFIG_VIA_ETH_NO_LINK);            
-          }
+          forceConfigureViaEthernet(); //Create a file in LittleFS to force code into configure-via-ethernet mode
+
+          ESP.restart(); //Restart to go into the dedicated configure-via-ethernet mode
         }
         break;
         
-      case (STATE_CONFIG_VIA_ETH_NO_LINK):
+      case (STATE_CONFIG_VIA_ETH_STARTED):
         {
-          displayNtpNotReady(0); //Show 'Ethernet Not Ready'
-          if (online.ethernetHTTPServer)
+          //The code should only be able to enter this state if configureViaEthernet is true.
+          //If configureViaEthernet is not true, we need to restart again.
+          //(If we continue, startEthernerWebServerESP32W5500 will fail as it won't have exclusive access to SPI and ints).
+          if (!configureViaEthernet)
           {
-            changeState(STATE_CONFIG_VIA_ETH);
-          }          
+            displayConfigViaEthNotStarted(1000);
+            settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Re-record this state for POR
+            recordSystemSettings();
+  
+            forceConfigureViaEthernet(); //Create a file in LittleFS to force code into configure-via-ethernet mode
+  
+            ESP.restart(); //Restart to go into the dedicated configure-via-ethernet mode
+          }
+          
+          displayConfigViaEthStarted(1000);
+
+          startEthernerWebServerESP32W5500(); //Start Ethernet in dedicated configure-via-ethernet mode
+          
+          startWebServer(false, settings.ethernetHttpPort); //Start the async web server
+
+          changeState(STATE_CONFIG_VIA_ETH);
         }
         break;
-        
+
       case (STATE_CONFIG_VIA_ETH):
         {
-          //TODO: add many thnings here!
+          // Nothing to do here. Display will show the IP address (displayConfigViaEthernet)
+        }
+        break;
+
+      case (STATE_CONFIG_VIA_ETH_RESTART_NTP):
+        {
+          displayConfigViaEthNotStarted(1000);
+
+          settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+          settings.lastState = STATE_NTPSERVER_NOT_STARTED; //Record the _next_ state for POR
+          recordSystemSettings();
+
+          ETH.end(); //This is _really_ important. It undoes the low-level changes to SPI and interrupts
+          
+          ESP.restart(); //Restart to leave configure-via-ethernet mode
         }
         break;
 
@@ -1184,11 +1208,14 @@ void changeState(SystemState newState)
       case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
         systemPrint("State: Configure Via Ethernet - Not Started");
         break;
-      case (STATE_CONFIG_VIA_ETH_NO_LINK):
-        systemPrint("State: Configure Via Ethernet - No Link");
+      case (STATE_CONFIG_VIA_ETH_STARTED):
+        systemPrint("State: Configure Via Ethernet - Started");
         break;
       case (STATE_CONFIG_VIA_ETH):
         systemPrint("State: Configure Via Ethernet");
+        break;
+      case (STATE_CONFIG_VIA_ETH_RESTART_NTP):
+        systemPrint("State: Configure Via Ethernet - Restarting NTP");
         break;
 
       case (STATE_SHUTDOWN):

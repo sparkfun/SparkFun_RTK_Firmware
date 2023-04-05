@@ -164,22 +164,22 @@ void menuMessages()
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
-      menuMessagesSubtype(settings.ubxMessages, "NMEA");
+      menuMessagesSubtype(settings.ubxMessageRates, "NMEA");
     else if (incoming == 2 && zedModuleType == PLATFORM_F9P)
-      menuMessagesSubtype(settings.ubxMessages, "RTCM");
+      menuMessagesSubtype(settings.ubxMessageRates, "RTCM");
     else if (incoming == 2 && zedModuleType == PLATFORM_F9R)
-      menuMessagesSubtype(settings.ubxMessages, "ESF");
+      menuMessagesSubtype(settings.ubxMessageRates, "ESF");
     else if (incoming == 3)
-      menuMessagesSubtype(settings.ubxMessages, "RXM");
+      menuMessagesSubtype(settings.ubxMessageRates, "RXM");
     else if (incoming == 4)
-      menuMessagesSubtype(settings.ubxMessages, "NAV");
+      menuMessagesSubtype(settings.ubxMessageRates, "NAV");
     else if (incoming == 5)
-      menuMessagesSubtype(settings.ubxMessages, "MON");
+      menuMessagesSubtype(settings.ubxMessageRates, "MON");
     else if (incoming == 6)
-      menuMessagesSubtype(settings.ubxMessages, "TIM");
+      menuMessagesSubtype(settings.ubxMessageRates, "TIM");
     else if (incoming == 7)
     {
-      setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
+      setGNSSMessageRates(settings.ubxMessageRates, 0); //Turn off all messages
       setMessageRateByName("UBX_NMEA_GGA", 1);
       setMessageRateByName("UBX_NMEA_GSA", 1);
       setMessageRateByName("UBX_NMEA_GST", 1);
@@ -194,7 +194,7 @@ void menuMessages()
     }
     else if (incoming == 8)
     {
-      setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
+      setGNSSMessageRates(settings.ubxMessageRates, 0); //Turn off all messages
       setMessageRateByName("UBX_NMEA_GGA", 1);
       setMessageRateByName("UBX_NMEA_GSA", 1);
       setMessageRateByName("UBX_NMEA_GST", 1);
@@ -212,12 +212,12 @@ void menuMessages()
     }
     else if (incoming == 9)
     {
-      setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
+      setGNSSMessageRates(settings.ubxMessageRates, 0); //Turn off all messages
       systemPrintln("All messages disabled");
     }
     else if (incoming == 10)
     {
-      setGNSSMessageRates(settings.ubxMessages, 1); //Turn on all messages to report once per fix
+      setGNSSMessageRates(settings.ubxMessageRates, 1); //Turn on all messages to report once per fix
       systemPrintln("All messages enabled");
     }
     else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
@@ -268,43 +268,43 @@ void menuMessagesBaseRTCM()
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
-      menuMessagesSubtype(settings.ubxMessagesBase, "RTCM");
+      menuMessagesSubtype(settings.ubxMessageRatesBase, "RTCM");
     else if (incoming == 2)
     {
-      settings.ubxMessagesBase[0].msgRate = 1; //1105
-      settings.ubxMessagesBase[1].msgRate = 1; //1074
-      settings.ubxMessagesBase[2].msgRate = 0; //1077
-      settings.ubxMessagesBase[3].msgRate = 1; //1084
-      settings.ubxMessagesBase[4].msgRate = 0; //1087
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005")] = 1; //1105
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074")] = 1; //1074
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077")] = 0; //1077
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084")] = 1; //1084
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087")] = 0; //1087
 
-      settings.ubxMessagesBase[5].msgRate = 1; //1094
-      settings.ubxMessagesBase[6].msgRate = 0; //1097
-      settings.ubxMessagesBase[7].msgRate = 1; //1124
-      settings.ubxMessagesBase[8].msgRate = 0; //1127
-      settings.ubxMessagesBase[9].msgRate = 10; //1230
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094")] = 1; //1094
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097")] = 0; //1097
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124")] = 1; //1124
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127")] = 0; //1127
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230")] = 10; //1230
 
-      settings.ubxMessagesBase[10].msgRate = 0; //4072_
-      settings.ubxMessagesBase[11].msgRate = 0; //4072_1
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0")] = 0; //4072_0
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1")] = 0; //4072_1
 
       systemPrintln("Reset to Defaults (1005/74/84/94/124 1Hz & 1230 0.1Hz)");
       restartBase = true;
     }
     else if (incoming == 3)
     {
-      settings.ubxMessagesBase[0].msgRate = 10; //1105 0.1Hz
-      settings.ubxMessagesBase[1].msgRate = 2; //1074 0.5Hz
-      settings.ubxMessagesBase[2].msgRate = 0; //1077
-      settings.ubxMessagesBase[3].msgRate = 2; //1084 0.5Hz
-      settings.ubxMessagesBase[4].msgRate = 0; //1087
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005")] = 10; //1105 0.1Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074")] = 2; //1074 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077")] = 0; //1077
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084")] = 2; //1084 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087")] = 0; //1087
 
-      settings.ubxMessagesBase[5].msgRate = 2; //1094 0.5Hz
-      settings.ubxMessagesBase[6].msgRate = 0; //1097
-      settings.ubxMessagesBase[7].msgRate = 2; //1124 0.5Hz
-      settings.ubxMessagesBase[8].msgRate = 0; //1127
-      settings.ubxMessagesBase[9].msgRate = 10; //1230 0.1Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094")] = 2; //1094 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097")] = 0; //1097
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124")] = 2; //1124 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127")] = 0; //1127
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230")] = 10; //1230 0.1Hz
 
-      settings.ubxMessagesBase[10].msgRate = 0; //4072_
-      settings.ubxMessagesBase[11].msgRate = 0; //4072_1
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0")] = 0; //4072_0
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1")] = 0; //4072_1
 
       systemPrintln("Reset to Low Bandwidth Link (1074/84/94/124 0.5Hz & 1005/230 0.1Hz)");
       restartBase = true;
@@ -322,7 +322,7 @@ void menuMessagesBaseRTCM()
 
 //Given a sub type (ie "RTCM", "NMEA") present menu showing messages with this subtype
 //Controls the messages that get broadcast over Bluetooth and logged (if enabled)
-void menuMessagesSubtype(ubxMsg *localMessage, const char* messageType)
+void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
 {
   while (1)
   {
@@ -331,14 +331,21 @@ void menuMessagesSubtype(ubxMsg *localMessage, const char* messageType)
 
     int startOfBlock = 0;
     int endOfBlock = 0;
-    setMessageOffsets(localMessage, messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
+    setMessageOffsets(ubxMessages, messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
     for (int x = 0 ; x < (endOfBlock - startOfBlock) ; x++)
     {
       //Check to see if this ZED platform supports this message
-      if (localMessage[x + startOfBlock].supported & zedModuleType)
+      if (ubxMessages[x + startOfBlock].supported & zedModuleType)
       {
-        systemPrintf("%d) Message %s: ", x + 1, localMessage[x + startOfBlock].msgTextName);
-        systemPrintln(localMessage[x + startOfBlock].msgRate);
+        int supportedVersion = 9999; //Not supported
+        if (zedModuleType == PLATFORM_F9P) supportedVersion = ubxMessages[x].f9pFirmwareVersionSupported;
+        else if (zedModuleType == PLATFORM_F9R) supportedVersion = ubxMessages[x].f9rFirmwareVersionSupported;
+
+        if (zedFirmwareVersionInt >= supportedVersion)
+        {
+          systemPrintf("%d) Message %s: ", x + 1, ubxMessages[x + startOfBlock].msgTextName);
+          systemPrintln(localMessageRate[x + startOfBlock]);
+        }
       }
     }
 
@@ -349,8 +356,19 @@ void menuMessagesSubtype(ubxMsg *localMessage, const char* messageType)
     if (incoming >= 1 && incoming <= (endOfBlock - startOfBlock))
     {
       //Check to see if this ZED platform supports this message
-      if (localMessage[(incoming - 1) + startOfBlock].supported & zedModuleType)
-        inputMessageRate(localMessage[(incoming - 1) + startOfBlock]);
+      int msgNumber = (incoming - 1) + startOfBlock;
+
+      if (ubxMessages[msgNumber].supported & zedModuleType)
+      {
+        int supportedVersion = 9999; //Not supported
+        if (zedModuleType == PLATFORM_F9P) supportedVersion = ubxMessages[msgNumber].f9pFirmwareVersionSupported;
+        else if (zedModuleType == PLATFORM_F9R) supportedVersion = ubxMessages[msgNumber].f9rFirmwareVersionSupported;
+
+        if (zedFirmwareVersionInt >= supportedVersion)
+        {
+          inputMessageRate(localMessageRate[msgNumber], msgNumber);
+        }
+      }
       else
         printUnknown(incoming);
     }
@@ -365,11 +383,11 @@ void menuMessagesSubtype(ubxMsg *localMessage, const char* messageType)
   clearBuffer(); //Empty buffer of any newline chars
 }
 
-//Prompt the user to enter the message rate for a given ID
+//Prompt the user to enter the message rate for a given message ID
 //Assign the given value to the message
-void inputMessageRate(ubxMsg &localMessage)
+void inputMessageRate(uint8_t &localMessageRate, uint8_t messageNumber)
 {
-  systemPrintf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
+  systemPrintf("Enter %s message rate (0 to disable): ", ubxMessages[messageNumber].msgTextName);
   int rate = getNumber(); //Returns EXIT, TIMEOUT, or long
 
   if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
@@ -378,24 +396,24 @@ void inputMessageRate(ubxMsg &localMessage)
   while (rate < 0 || rate > 255) //8 bit limit
   {
     systemPrintln("Error: Message rate out of range");
-    systemPrintf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
+    systemPrintf("Enter %s message rate (0 to disable): ", ubxMessages[messageNumber].msgTextName);
     rate = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
       return; //Give up
   }
 
-  localMessage.msgRate = rate;
+  localMessageRate = rate;
 }
 
 //Set all GNSS message report rates to one value
 //Useful for turning on or off all messages for resetting and testing
 //We pass in the message array by reference so that we can modify a temp struct
 //like a dummy struct for USB message changes (all on/off) for testing
-void setGNSSMessageRates(ubxMsg *localMessage, uint8_t msgRate)
+void setGNSSMessageRates(uint8_t *localMessageRate, uint8_t msgRate)
 {
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    localMessage[x].msgRate = msgRate;
+    localMessageRate[x] = msgRate;
 }
 
 //Creates a log if logging is enabled, and SD is detected
@@ -725,7 +743,7 @@ uint8_t getActiveMessageCount()
 {
   uint8_t count = 0;
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    if (settings.ubxMessages[x].msgRate > 0) count++;
+    if (settings.ubxMessageRates[x] > 0) count++;
   return (count);
 }
 
@@ -734,9 +752,9 @@ bool setMessageRateByName(const char *msgName, uint8_t msgRate)
 {
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
-    if (strcmp(settings.ubxMessages[x].msgTextName, msgName) == 0)
+    if (strcmp(ubxMessages[x].msgTextName, msgName) == 0)
     {
-      settings.ubxMessages[x].msgRate = msgRate;
+      settings.ubxMessageRates[x] = msgRate;
       return (true);
     }
   }
@@ -748,14 +766,39 @@ bool setMessageRateByName(const char *msgName, uint8_t msgRate)
 //Given the name of a message, find it, and return the rate
 uint8_t getMessageRateByName(const char *msgName)
 {
+  return (settings.ubxMessageRates[getMessageNumberByName(msgName)]);
+}
+
+//Given the name of a message, return the array number
+uint8_t getMessageNumberByName(const char *msgName)
+{
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
-    if (strcmp(settings.ubxMessages[x].msgTextName, msgName) == 0)
-      return (settings.ubxMessages[x].msgRate);
+    if (strcmp(ubxMessages[x].msgTextName, msgName) == 0)
+      return (x);
   }
 
-  systemPrintf("getMessageRateByName: %s not found\r\n", msgName);
+  systemPrintf("getMessageNumberByName: %s not found\r\n", msgName);
   return (0);
+}
+
+//Check rates to see if they need to be reset
+void checkMessageRates()
+{
+  if (settings.ubxMessageRates[0] == 254)
+  {
+    //Reset rates to defaults
+    for (int x = 0 ; x < MAX_UBX_MSG ; x++)
+      settings.ubxMessageRates[x] = ubxMessages[x].msgDefaultRate;
+  }
+
+  if (settings.ubxMessageRatesBase[0] == 254)
+  {
+    //Reset Base rates to defaults
+    int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+    for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+      settings.ubxMessageRatesBase[x] = ubxMessages[firstRTCMRecord + x].msgDefaultRate;
+  }
 }
 
 //Determine logging type
@@ -792,7 +835,7 @@ void setLogTestFrequencyMessages(int rate, int messages)
   setRate(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
 
   //Set messages
-  setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
+  setGNSSMessageRates(settings.ubxMessageRates, 0); //Turn off all messages
   if (messages == 5)
   {
     setMessageRateByName("UBX_NMEA_GGA", 1);

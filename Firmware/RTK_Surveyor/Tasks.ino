@@ -921,14 +921,18 @@ void ButtonCheckTask(void *e)
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
           case STATE_CONFIG_VIA_ETH_NOT_STARTED:
-          case STATE_CONFIG_VIA_ETH_NO_LINK:
-          case STATE_CONFIG_VIA_ETH:
           case STATE_ESPNOW_PAIRING_NOT_STARTED:
           case STATE_ESPNOW_PAIRING:
             lastSystemState = systemState; //Remember this state to return after we mark an event or ESP-Now pair
             requestChangeState(STATE_DISPLAY_SETUP);
             setupState = STATE_NTPSERVER_NOT_STARTED;
             lastSetupMenuChange = millis();
+            break;
+
+          case STATE_CONFIG_VIA_ETH_STARTED:
+          case STATE_CONFIG_VIA_ETH:
+            //If the user presses the button during configure-via-ethernet, then do a complete restart into NTP mode
+            requestChangeState(STATE_CONFIG_VIA_ETH_RESTART_NTP);
             break;
 
           case STATE_PROFILE:

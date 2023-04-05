@@ -165,7 +165,7 @@ bool configureUbloxModule()
   response = true; //Reset
 
   //Make sure the appropriate messages are enabled
-  response &= setMessages(); //73 messages. Does a complete open/closed val set
+  response &= setMessages(); //Does a complete open/closed val set
   if (response == false)
     systemPrintln("Module failed config block 2");
   response = true; //Reset
@@ -514,7 +514,7 @@ void settingsToDefaults()
 }
 
 //Enable all the valid messages for this platform
-//There are ~73 messages so split into batches. VALSET is limited to 64 max per batch
+//There are ~89 messages so split into batches. VALSET is limited to 64 max per batch
 //Uses dummy newCfg and sendCfg values to be sure we open/close a complete set
 bool setMessages()
 {
@@ -549,16 +549,15 @@ bool setMessages()
                 if (rate == 0)
                   rate = 1;
           if (ubxMessages[x].msgClass == UBX_CLASS_TIM)
+          {
             if (ubxMessages[x].msgID ==  UBX_TIM_TM2)
-            {
-              if (ubxMessages[x].msgID ==  UBX_TIM_TM2)
+              if (rate == 0)
+                rate = 1;
+            if (ubxMessages[x].msgID ==  UBX_TIM_TP)
+              if (HAS_GNSS_TP_INT)
                 if (rate == 0)
                   rate = 1;
-              if (ubxMessages[x].msgID ==  UBX_TIM_TP)
-                if (HAS_GNSS_TP_INT)
-                  if (rate == 0)
-                    rate = 1;
-            }
+          }
           if (ubxMessages[x].msgClass == UBX_CLASS_RXM)
             if (ubxMessages[x].msgID ==  UBX_RXM_COR)
               if (rate == 0)

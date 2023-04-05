@@ -334,6 +334,13 @@ bool ntripClientIsNeeded()
 //Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
 void ntripClientUpdate()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping ntripClientUpdate");
+    return;
+  }
+    
   if(ntripClientIsNeeded() == false) return;
 
 #ifdef COMPILE_WIFI

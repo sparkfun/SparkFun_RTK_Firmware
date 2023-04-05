@@ -234,6 +234,8 @@ void updateDisplay()
         case (STATE_CONFIG_VIA_ETH):
           displayConfigViaEthernet();
           break;
+        case (STATE_CONFIG_VIA_ETH_RESTART_NTP):
+          break;
 
         case (STATE_ROVER_NOT_STARTED):
           icons =   ICON_CROSS_HAIR     //Center left

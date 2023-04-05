@@ -5,6 +5,13 @@ void beginEthernet()
   if (!HAS_ETHERNET)
     return;
 
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginEthernet");
+    return;
+  }
+    
 #ifdef COMPILE_ETHERNET
 
   if (online.ethernetStatus == ETH_CAN_NOT_BEGIN)
@@ -50,6 +57,13 @@ void beginEthernetNTPServer()
   if (!HAS_ETHERNET)
     return;
 
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginNTPServer");
+    return;
+  }
+    
 #ifdef COMPILE_ETHERNET
   if ((online.ethernetStatus == ETH_LINK) && (online.ethernetNTPServer == false))
   {
@@ -65,6 +79,13 @@ void beginEthernetNTPServer()
 
 void updateEthernet()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping updateEthernet");
+    return;
+  }
+    
   if (!HAS_ETHERNET)
     return;
 
@@ -117,6 +138,13 @@ void updateEthernet()
 
 void updateEthernetNTPServer()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping updateEthernetNTPServer");
+    return;
+  }
+    
   if (!HAS_ETHERNET)
     return;
 
@@ -236,6 +264,25 @@ void updateEthernetNTPServer()
     ntpLogIncreasing = false;
     
 #endif
+}
+
+//Start Ethernet WebServer ESP32 W5500 - needs exclusive access to WiFi, SPI and Interrupts
+void startEthernerWebServerESP32W5500()
+{
+  //Configure the W5500
+  //To be called before ETH.begin()
+  ESP32_W5500_onEvent();
+
+  //start the ethernet connection and the server:
+  //Use DHCP dynamic IP
+  //bool begin(int POCI_GPIO, int PICO_GPIO, int SCLK_GPIO, int CS_GPIO, int INT_GPIO, int SPI_CLOCK_MHZ,
+  //           int SPI_HOST, uint8_t *W5500_Mac = W5500_Default_Mac, bool installIsrService = true);
+  ETH.begin( pin_POCI, pin_PICO, pin_SCK, pin_Ethernet_CS, pin_Ethernet_Interrupt, 25, SPI3_HOST, ethernetMACAddress );
+
+  if (!settings.ethernetDHCP)
+    ETH.config( settings.ethernetIP, settings.ethernetGateway, settings.ethernetSubnet, settings.ethernetDNS );
+
+  ESP32_W5500_waitForConnect();  
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

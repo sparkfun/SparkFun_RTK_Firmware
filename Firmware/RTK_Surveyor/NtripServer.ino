@@ -329,6 +329,13 @@ void ntripServerStop(bool wifiClientAllocated)
 //Update the NTRIP server state machine
 void ntripServerUpdate()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping ntripServerUpdate");
+    return;
+  }
+    
   if (settings.enableNtripServer == false)
   {
     //If user turns off NTRIP Server via settings, stop server

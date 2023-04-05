@@ -929,9 +929,11 @@ void ButtonCheckTask(void *e)
             lastSetupMenuChange = millis();
             break;
 
-          //TODO: Add a reset/restart option while in Configure-Via-Ethernet
-          //case STATE_CONFIG_VIA_ETH_STARTED:
-          //case STATE_CONFIG_VIA_ETH:
+          case STATE_CONFIG_VIA_ETH_STARTED:
+          case STATE_CONFIG_VIA_ETH:
+            //If the user presses the button during configure-via-ethernet, then do a complete restart into NTP mode
+            requestChangeState(STATE_CONFIG_VIA_ETH_RESTART_NTP);
+            break;
 
           case STATE_PROFILE:
             //If the user presses the setup button during a profile change, do nothing
@@ -984,11 +986,6 @@ void ButtonCheckTask(void *e)
                 if (!getProfileNumberFromUnit(displayProfile))
                   setupState = STATE_NTPSERVER_NOT_STARTED;
                 break;
-
-              //TODO: Add a reset/restart option while in Configure-Via-Ethernet
-              //case STATE_CONFIG_VIA_ETH_STARTED:
-              //case STATE_CONFIG_VIA_ETH:
-
               default:
                 systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
                 setupState = STATE_NTPSERVER_NOT_STARTED;

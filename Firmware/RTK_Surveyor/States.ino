@@ -626,6 +626,7 @@ void updateSystemState()
           changeState(STATE_WIFI_CONFIG);
         }
         break;
+        
       case (STATE_WIFI_CONFIG):
         {
           if (incomingSettingsSpot > 0)
@@ -981,7 +982,7 @@ void updateSystemState()
         
       case (STATE_NTPSERVER_SYNC):
         {
-          //Nothing to do here?
+          //Do nothing - display only
         }
         break;
 
@@ -993,29 +994,32 @@ void updateSystemState()
           settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Record the _next_ state for POR
           recordSystemSettings();
 
-          ESP.restart();
+          forceConfigureViaEthernet(); //Create a file in LittleFS to force code into configure-via-ethernet mode
+
+          ESP.restart(); //Restart to go into the dedicated configure-via-ethernet mode
         }
         break;
         
       case (STATE_CONFIG_VIA_ETH_STARTED):
         {
-          displayConfigViaEthStarted(1000);
+          //The code should only be able to enter this state if configureViaEthernet is true.
+          //If configureViaEthernet is not true, we need to restart again.
+          //(If we continue, startEthernerWebServerESP32W5500 will fail as it won't have exclusive access to SPI and ints).
+          if (!configureViaEthernet)
+          {
+            displayConfigViaEthNotStarted(1000);
+            settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Re-record this state for POR
+            recordSystemSettings();
+  
+            forceConfigureViaEthernet(); //Create a file in LittleFS to force code into configure-via-ethernet mode
+  
+            ESP.restart(); //Restart to go into the dedicated configure-via-ethernet mode
+          }
           
-          //Configure the W5500
-          //To be called before ETH.begin()
-          ESP32_W5500_onEvent();
-        
-          //start the ethernet connection and the server:
-          //Use DHCP dynamic IP
-          //bool begin(int POCI_GPIO, int PICO_GPIO, int SCLK_GPIO, int CS_GPIO, int INT_GPIO, int SPI_CLOCK_MHZ,
-          //           int SPI_HOST, uint8_t *W5500_Mac = W5500_Default_Mac, bool installIsrService = true);
-          ETH.begin( pin_POCI, pin_PICO, pin_SCK, pin_Ethernet_CS, pin_Ethernet_Interrupt, 25, SPI3_HOST, ethernetMACAddress );
-        
-          if (!settings.ethernetDHCP)
-            ETH.config( settings.ethernetIP, settings.ethernetGateway, settings.ethernetSubnet, settings.ethernetDNS );
-        
-          ESP32_W5500_waitForConnect();
+          displayConfigViaEthStarted(1000);
 
+          startEthernerWebServerESP32W5500(); //Start Ethernet in dedicated configure-via-ethernet mode
+          
           startWebServer(false, settings.ethernetHttpPort); //Start the async web server
 
           changeState(STATE_CONFIG_VIA_ETH);
@@ -1025,6 +1029,20 @@ void updateSystemState()
       case (STATE_CONFIG_VIA_ETH):
         {
           // Nothing to do here. Display will show the IP address (displayConfigViaEthernet)
+        }
+        break;
+
+      case (STATE_CONFIG_VIA_ETH_RESTART_NTP):
+        {
+          displayConfigViaEthNotStarted(1000);
+
+          settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+          settings.lastState = STATE_NTPSERVER_NOT_STARTED; //Record the _next_ state for POR
+          recordSystemSettings();
+
+          ETH.end(); //This is _really_ important. It undoes the low-level changes to SPI and interrupts
+          
+          ESP.restart(); //Restart to leave configure-via-ethernet mode
         }
         break;
 
@@ -1195,6 +1213,9 @@ void changeState(SystemState newState)
         break;
       case (STATE_CONFIG_VIA_ETH):
         systemPrint("State: Configure Via Ethernet");
+        break;
+      case (STATE_CONFIG_VIA_ETH_RESTART_NTP):
+        systemPrint("State: Configure Via Ethernet - Restarting NTP");
         break;
 
       case (STATE_SHUTDOWN):

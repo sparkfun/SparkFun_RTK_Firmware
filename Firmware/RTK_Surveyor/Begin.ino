@@ -564,9 +564,56 @@ void beginFS()
   }
 }
 
+//Check if configureViaEthernet.txt exists
+//Used to indicate if SparkFun_WebServer_ESP32_W5500 needs _exclusive_ access to SPI and interrupts
+bool checkConfigureViaEthernet()
+{
+  if (online.fs == false)
+    return false;
+
+  if (LittleFS.exists("/configureViaEthernet.txt"))
+  {
+    log_d("LittleFS configureViaEthernet.txt exists");
+    LittleFS.remove("/configureViaEthernet.txt");
+    return true;
+  }
+
+  return false;
+}
+
+//Force configure-via-ethernet mode by creating configureViaEthernet.txt in LittleFS
+//Used to indicate if SparkFun_WebServer_ESP32_W5500 needs _exclusive_ access to SPI and interrupts
+bool forceConfigureViaEthernet()
+{
+  if (online.fs == false)
+    return false;
+
+  if (LittleFS.exists("/configureViaEthernet.txt"))
+  {
+    log_d("LittleFS configureViaEthernet.txt already exists");
+    return true;
+  }
+
+  File cveFile = LittleFS.open("/configureViaEthernet.txt", FILE_WRITE);
+  cveFile.close();
+
+  if (LittleFS.exists("/configureViaEthernet.txt"))
+    return true;
+
+  log_d("Unable to create configureViaEthernet.txt on LittleFS");
+  return false;
+}
+
 //Connect to ZED module and identify particulars
 void beginGNSS()
 {
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginGNSS");
+    return;
+  }
+    
   //If we're using SPI, then increase the logging buffer
   if (USE_SPI_GNSS)
   {
@@ -609,6 +656,7 @@ void beginGNSS()
         return;
       }
     }
+
     if (theGNSS.getFileBufferSize() != settings.gnssHandlerBufferSize) //Need to call getFileBufferSize after begin
     {
       log_d("GNSS offline - no RAM for file buffer");
@@ -673,6 +721,13 @@ void beginGNSS()
 //Configuration can take >1s so configure during splash
 void configureGNSS()
 {
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping configureGNSS");
+    return;
+  }
+    
   if (online.gnss == false) return;
 
   theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
@@ -713,22 +768,26 @@ void configureGNSS()
 //Begin interrupts - but only if not about to go into Cofigure-Via-Ethernet
 void beginInterrupts()
 {
-  if (settings.lastState != STATE_CONFIG_VIA_ETH_STARTED)
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
   {
-    if (HAS_GNSS_TP_INT) //If the GNSS Time Pulse is connected, use it as an interrupt to set the clock accurately
-    {
-      pinMode(pin_GNSS_TimePulse, INPUT);
-      attachInterrupt(pin_GNSS_TimePulse, tpISR, RISING);
-    }
+    log_d("configureViaEthernet: skipping beginInterrupts");
+    return;
+  }
+    
+  if (HAS_GNSS_TP_INT) //If the GNSS Time Pulse is connected, use it as an interrupt to set the clock accurately
+  {
+    pinMode(pin_GNSS_TimePulse, INPUT);
+    attachInterrupt(pin_GNSS_TimePulse, tpISR, RISING);
+  }
 
 #ifdef COMPILE_ETHERNET
-    if (HAS_ETHERNET)
-    {
-      pinMode(pin_Ethernet_Interrupt, INPUT_PULLUP); //Prepare the interrupt pin
-      attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); //Attach the interrupt
-    }
-#endif
+  if (HAS_ETHERNET)
+  {
+    pinMode(pin_Ethernet_Interrupt, INPUT_PULLUP); //Prepare the interrupt pin
+    attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); //Attach the interrupt
   }
+#endif
 }
 
 //Set LEDs for output and configure PWM
@@ -902,6 +961,13 @@ void beginSystemState()
 //Setup TM2 time stamp input as need
 bool beginExternalTriggers()
 {
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginExternalTriggers");
+    return (false);
+  }
+    
   if (online.gnss == false) return (false);
 
   //If our settings haven't changed, trust ZED's settings

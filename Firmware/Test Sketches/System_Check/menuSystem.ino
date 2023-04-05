@@ -30,10 +30,10 @@ void menuSystem()
     }
     else
     {
-      Serial.print("I think this is a RTK Surveyor because there is no accelerometer detected. ");
-      Serial.printf("Board ADC ID: %d", idValue);
+      Serial.print("I don't know what board this is. No ADC value matches.");
     }
     Serial.println();
+    Serial.printf("Board ADC ID: %d\r\n", idValue);
 
     if (online.i2c == false)
     {
@@ -113,7 +113,7 @@ void menuSystem()
       {
         //stopUART2Tasks(); //Stop absoring ZED serial via task
 
-        i2cGNSS.setSerialRate(460800, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
+        theGNSS.setSerialRate(460800, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
         serialGNSS.begin(460800); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
         SFE_UBLOX_GNSS myGNSS;
@@ -125,7 +125,7 @@ void menuSystem()
         else
           Serial.print(F("Offline"));
 
-        i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
+        theGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
         serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
 
         //startUART2Tasks(); //Return to normal operation

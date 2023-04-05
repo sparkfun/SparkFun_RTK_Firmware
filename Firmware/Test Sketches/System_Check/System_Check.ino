@@ -70,29 +70,58 @@ int pin_radio_rts = -1;
 
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_u-blox_GNSS_Arduino_Library.h> //http://librarymanager/All#SparkFun_u-blox_GNSS
+#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3 v3.0.2
+
+#define SENTENCE_TYPE_NMEA              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
+#define SENTENCE_TYPE_NONE              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
+#define SENTENCE_TYPE_RTCM              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_RTCM
+#define SENTENCE_TYPE_UBX               DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_UBX
 
 char zedFirmwareVersion[20]; //The string looks like 'HPG 1.12'. Output to system status menu and settings file.
 char neoFirmwareVersion[20]; //Output to system status menu.
 uint8_t zedFirmwareVersionInt = 0; //Controls which features (constellations) can be configured (v1.12 doesn't support SBAS)
 uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported and configured
 
-// Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
-class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
+//// Extend the class for getModuleInfo. Used to diplay ZED-F9P firmware version in debug menu.
+//class SFE_UBLOX_GNSS_ADD : public SFE_UBLOX_GNSS
+//{
+//  public:
+//    boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
+//
+//    struct minfoStructure // Structure to hold the module info (uses 341 bytes of RAM)
+//    {
+//      char swVersion[30];
+//      char hwVersion[10];
+//      uint8_t extensionNo = 0;
+//      char extension[10][30];
+//    } minfo;
+//};
+
+//SFE_UBLOX_GNSS_ADD theGNSS;
+
+class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 {
-  public:
-    boolean getModuleInfo(uint16_t maxWait = 1100); //Queries module, texts
-
-    struct minfoStructure // Structure to hold the module info (uses 341 bytes of RAM)
+public:
+  volatile bool _iAmLocked = false;
+  bool lock(void)
+  {
+    if (_iAmLocked)
     {
-      char swVersion[30];
-      char hwVersion[10];
-      uint8_t extensionNo = 0;
-      char extension[10][30];
-    } minfo;
+      unsigned long startTime = millis();
+      while (_iAmLocked && (millis() < (startTime + 2100)))
+        delay(1); //YIELD
+      if (_iAmLocked)
+        return false;
+    }
+    _iAmLocked = true;
+    return true;
+  }
+  void unlock(void)
+  {
+    _iAmLocked = false;  
+  }
 };
-
-SFE_UBLOX_GNSS_ADD i2cGNSS;
+SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
 
 //Used for config ZED for things not supported in library: getPortSettings, getSerialRate, getNMEASettings, getRTCMSettings
 //This array holds the payload data bytes. Global so that we can use between config functions.

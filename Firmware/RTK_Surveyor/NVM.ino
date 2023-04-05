@@ -97,7 +97,7 @@ void recordSystemSettingsToFileSD(char *fileName)
           log_d("Removing from SD: %s", fileName);
           sd->remove(fileName);
         }
-  
+
         SdFile settingsFile; //FAT32
         if (settingsFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
         {
@@ -106,11 +106,11 @@ void recordSystemSettingsToFileSD(char *fileName)
         }
 
         updateDataFileCreate(&settingsFile); //Update the file to create time & date
-  
+
         recordSystemSettingsToFile((File *)&settingsFile); //Record all the settings via strings to file
-  
+
         updateDataFileAccess(&settingsFile); //Update the file access time & date
-  
+
         settingsFile.close();
       }
 #ifdef COMPILE_SD_MMC
@@ -121,9 +121,9 @@ void recordSystemSettingsToFileSD(char *fileName)
           log_d("Removing from SD: %s", fileName);
           SD_MMC.remove(fileName);
         }
-  
+
         File settingsFile = SD_MMC.open(fileName, FILE_WRITE);
-        
+
         if (!settingsFile)
         {
           systemPrintln("Failed to create settings file");
@@ -131,7 +131,7 @@ void recordSystemSettingsToFileSD(char *fileName)
         }
 
         recordSystemSettingsToFile(&settingsFile); //Record all the settings via strings to file
-  
+
         settingsFile.close();
       }
 #endif
@@ -297,13 +297,13 @@ void recordSystemSettingsToFile(File * settingsFile)
   {
     char tempString[50]; //espnowPeers.1=B4,C1,33,42,DE,01,
     snprintf(tempString, sizeof(tempString), "espnowPeers.%d=%02X,%02X,%02X,%02X,%02X,%02X,", x,
-            settings.espnowPeers[x][0],
-            settings.espnowPeers[x][1],
-            settings.espnowPeers[x][2],
-            settings.espnowPeers[x][3],
-            settings.espnowPeers[x][4],
-            settings.espnowPeers[x][5]
-           );
+             settings.espnowPeers[x][0],
+             settings.espnowPeers[x][1],
+             settings.espnowPeers[x][2],
+             settings.espnowPeers[x][3],
+             settings.espnowPeers[x][4],
+             settings.espnowPeers[x][5]
+            );
     settingsFile->println(tempString);
   }
   settingsFile->printf("%s=%d\r\n", "espnowPeerCount", settings.espnowPeerCount);
@@ -355,15 +355,16 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
     char tempString[50]; //message.nmea_dtm.msgRate=5
-    snprintf(tempString, sizeof(tempString), "message.%s.msgRate=%d", settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
+    snprintf(tempString, sizeof(tempString), "message.%s.msgRate=%d", ubxMessages[x].msgTextName, settings.ubxMessageRates[x]);
     settingsFile->println(tempString);
   }
 
   //Record Base RTCM message settings
+  int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
   for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
   {
     char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
-    snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate=%d", settings.ubxMessagesBase[x].msgTextName, settings.ubxMessagesBase[x].msgRate);
+    snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate=%d", ubxMessages[firstRTCMRecord + x].msgTextName, settings.ubxMessageRatesBase[x]);
     settingsFile->println(tempString);
   }
 
@@ -415,7 +416,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
           log_d("File %s not found", fileName);
           break;
         }
-        
+
         SdFile settingsFile; //FAT32
         if (settingsFile.open(fileName, O_READ) == false)
         {
@@ -468,7 +469,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
           log_d("File %s not found", fileName);
           break;
         }
-        
+
         File settingsFile = SD_MMC.open(fileName, FILE_READ);
 
         if (!settingsFile)
@@ -688,6 +689,7 @@ bool parseLine(char* str, Settings *settings)
       systemPrintf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\r\n", (int)d, sizeof(Settings));
 
   }
+
   else if (strcmp(settingName, "rtkIdentifier") == 0)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "rtkFirmwareVersion") == 0)
@@ -696,6 +698,9 @@ bool parseLine(char* str, Settings *settings)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "neoFirmwareVersion") == 0)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
+  else if (strstr(settingName, "messageBase") != nullptr) //Retired in v3.3
+  {} //Do nothing. Just read it to avoid 'Unknown setting' error
+
   else if (strcmp(settingName, "printDebugMessages") == 0)
     settings->printDebugMessages = d;
   else if (strcmp(settingName, "enableSD") == 0)
@@ -1207,13 +1212,13 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
         char tempString[50]; //message.nmea_dtm.msgRate=5
-        snprintf(tempString, sizeof(tempString), "message.%s.msgRate", settings->ubxMessages[x].msgTextName);
+        snprintf(tempString, sizeof(tempString), "message.%s.msgRate", ubxMessages[x].msgTextName);
 
         if (strcmp(settingName, tempString) == 0)
         {
-          if (settings->ubxMessages[x].msgRate != d)
+          if (settings->ubxMessageRates[x] != d)
           {
-            settings->ubxMessages[x].msgRate = d;
+            settings->ubxMessageRates[x] = d;
             settings->updateZEDSettings = true;
           }
 
@@ -1229,13 +1234,13 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
       {
         char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
-        snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", settings->ubxMessagesBase[x].msgTextName);
+        snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", ubxMessages[x].msgTextName);
 
         if (strcmp(settingName, tempString) == 0)
         {
-          if (settings->ubxMessagesBase[x].msgRate != d)
+          if (settings->ubxMessageRatesBase[x] != d)
           {
-            settings->ubxMessagesBase[x].msgRate = d;
+            settings->ubxMessageRatesBase[x] = d;
             settings->updateZEDSettings = true;
           }
 

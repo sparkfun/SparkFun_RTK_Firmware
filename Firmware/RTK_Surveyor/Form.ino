@@ -535,15 +535,17 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "ubxConstellationsBeiDou", settings.ubxConstellations[3].enabled); //BeiDou
   stringRecord(newSettings, "ubxConstellationsGLONASS", settings.ubxConstellations[5].enabled); //GLONASS
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    stringRecord(newSettings, settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
+    stringRecord(newSettings, ubxMessages[x].msgTextName, settings.ubxMessageRates[x]);
 
   //Base Config
   stringRecord(newSettings, "baseTypeSurveyIn", !settings.fixedBase);
   stringRecord(newSettings, "baseTypeFixed", settings.fixedBase);
   stringRecord(newSettings, "observationSeconds", settings.observationSeconds);
   stringRecord(newSettings, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
+
+  int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
   for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
-    stringRecord(newSettings, settings.ubxMessagesBase[x].msgTextName, settings.ubxMessagesBase[x].msgRate); //"UBX_RTCM_1005Base"
+    stringRecord(newSettings, ubxMessages[firstRTCMRecord + x].msgTextName, settings.ubxMessageRatesBase[x]);
 
   if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
   {
@@ -687,13 +689,13 @@ void createSettingsString(char* newSettings)
   //Radio / ESP-Now settings
   char radioMAC[18];   //Send radio MAC
   snprintf(radioMAC, sizeof(radioMAC), "%02X:%02X:%02X:%02X:%02X:%02X",
-          wifiMACAddress[0],
-          wifiMACAddress[1],
-          wifiMACAddress[2],
-          wifiMACAddress[3],
-          wifiMACAddress[4],
-          wifiMACAddress[5]
-         );
+           wifiMACAddress[0],
+           wifiMACAddress[1],
+           wifiMACAddress[2],
+           wifiMACAddress[3],
+           wifiMACAddress[4],
+           wifiMACAddress[5]
+          );
   stringRecord(newSettings, "radioMAC", radioMAC);
   stringRecord(newSettings, "radioType", settings.radioType);
   stringRecord(newSettings, "espnowPeerCount", settings.espnowPeerCount);
@@ -701,13 +703,13 @@ void createSettingsString(char* newSettings)
   {
     snprintf(tagText, sizeof(tagText), "peerMAC%d", index);
     snprintf(nameText, sizeof(nameText), "%02X:%02X:%02X:%02X:%02X:%02X",
-            settings.espnowPeers[index][0],
-            settings.espnowPeers[index][1],
-            settings.espnowPeers[index][2],
-            settings.espnowPeers[index][3],
-            settings.espnowPeers[index][4],
-            settings.espnowPeers[index][5]
-           );
+             settings.espnowPeers[index][0],
+             settings.espnowPeers[index][1],
+             settings.espnowPeers[index][2],
+             settings.espnowPeers[index][3],
+             settings.espnowPeers[index][4],
+             settings.espnowPeers[index][5]
+            );
     stringRecord(newSettings, tagText, nameText);
   }
   stringRecord(newSettings, "espnowBroadcast", settings.espnowBroadcast);
@@ -737,7 +739,7 @@ void createSettingsString(char* newSettings)
   //Determine battery percent
   char batteryPercent[sizeof("+100%")];
   int tempLevel = battLevel;
-  if(tempLevel > 100) tempLevel = 100;
+  if (tempLevel > 100) tempLevel = 100;
 
   if (externalPowerConnected)
     snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", tempLevel);
@@ -1258,9 +1260,9 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     {
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
-        if (strcmp(settingName, settings.ubxMessages[x].msgTextName) == 0)
+        if (strcmp(settingName, ubxMessages[x].msgTextName) == 0)
         {
-          settings.ubxMessages[x].msgRate = settingValue;
+          settings.ubxMessageRates[x] = settingValue;
           knownSetting = true;
           break;
         }
@@ -1270,11 +1272,13 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     //Scan for Base RTCM message settings
     if (knownSetting == false)
     {
+      int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+
       for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
       {
-        if (strcmp(settingName, settings.ubxMessagesBase[x].msgTextName) == 0)
+        if (strcmp(settingName, ubxMessages[firstRTCMRecord + x].msgTextName) == 0)
         {
-          settings.ubxMessagesBase[x].msgRate = settingValue;
+          settings.ubxMessageRatesBase[x] = settingValue;
           knownSetting = true;
           break;
         }

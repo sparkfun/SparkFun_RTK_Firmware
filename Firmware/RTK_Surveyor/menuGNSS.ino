@@ -372,16 +372,18 @@ bool setRate(double secondsBetweenSolutions)
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, measRate);
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, navRate);
 
+  int gsvRecordNumber = getMessageNumberByName("UBX_NMEA_GSV");
+  
   //If enabled, adjust GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
-  float measurementFrequency = (1000.0 / measRate) / navRate;
-  if (measurementFrequency < 1.0) measurementFrequency = 1.0;
-
-  if (settings.ubxMessages[8].msgRate > 0)
+  if (settings.ubxMessageRates[gsvRecordNumber] > 0)
   {
+    float measurementFrequency = (1000.0 / measRate) / navRate;
+    if (measurementFrequency < 1.0) measurementFrequency = 1.0;
+
     log_d("Adjusting GSV setting to %f", measurementFrequency);
 
     setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //Update GSV setting in file
-    response &= theGNSS.addCfgValset(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module
+    response &= theGNSS.addCfgValset(ubxMessages[gsvRecordNumber].msgConfigKey, settings.ubxMessageRates[gsvRecordNumber]); //Update rate on module
   }
 
   response &= theGNSS.sendCfgValset(); //Closing value - max 4 pairs

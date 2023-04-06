@@ -1103,15 +1103,18 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
     //Confirm receipt
-    Serial.println("Sending reset confirmation");
+    systemPrintln("Sending reset confirmation");
     websocket->textAll("confirmReset,1,");
     delay(500); //Allow for delivery
 
-    systemPrintln("Reset after AP Config");
+    if (configureViaEthernet)
+      systemPrintln("Reset after Configure-Via-Ethernet");
+    else
+      systemPrintln("Reset after AP Config");
 
 #ifdef COMPILE_ETHERNET
     if (configureViaEthernet)
-      endEthernerWebServerESP32W5500();
+      endEthernerWebServerESP32W5500(); //Also does ESP.restart
 #endif
 
     ESP.restart();
@@ -1119,7 +1122,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "setProfile") == 0)
   {
     //Change to new profile
-    Serial.printf("Changing to profile number %d\r\n", settingValue);
+    systemPrintf("Changing to profile number %d\r\n", settingValue);
     changeProfileNumber(settingValue);
 
     //Load new profile into system
@@ -1133,7 +1136,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    Serial.printf("Sending profile %d\r\n", settingValue);
+    systemPrintf("Sending profile %d\r\n", settingValue);
     log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
@@ -1154,7 +1157,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    Serial.printf("Sending reset profile %d\r\n", settingValue);
+    systemPrintf("Sending reset profile %d\r\n", settingValue);
     log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
@@ -1424,7 +1427,7 @@ bool parseIncomingSettings()
   if (counter < maxAttempts)
   {
     //Confirm receipt
-    Serial.println("Sending receipt confirmation of settings");
+    systemPrintln("Sending receipt confirmation of settings");
 #ifdef COMPILE_AP
     websocket->textAll("confirmDataReceipt,1,");
 #endif

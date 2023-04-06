@@ -104,7 +104,7 @@ bool configureUbloxModuleRover()
       log_d("Rover config failed 2");
 
     if (response == false)
-      Serial.println("Failed new config");
+      systemPrintln("Failed new config");
   }
 
 

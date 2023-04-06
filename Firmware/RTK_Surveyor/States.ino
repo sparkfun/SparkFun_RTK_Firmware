@@ -991,7 +991,7 @@ void updateSystemState()
 
       case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
         {
-          displayConfigViaEthNotStarted(1000);
+          displayConfigViaEthNotStarted(1500);
 
           settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
           settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Record the _next_ state for POR
@@ -1010,7 +1010,7 @@ void updateSystemState()
           //(If we continue, startEthernerWebServerESP32W5500 will fail as it won't have exclusive access to SPI and ints).
           if (!configureViaEthernet)
           {
-            displayConfigViaEthNotStarted(1000);
+            displayConfigViaEthNotStarted(1500);
             settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Re-record this state for POR
             recordSystemSettings();
   
@@ -1019,7 +1019,11 @@ void updateSystemState()
             ESP.restart(); //Restart to go into the dedicated configure-via-ethernet mode
           }
           
-          displayConfigViaEthStarted(1000);
+          displayConfigViaEthStarted(1500);
+
+          bluetoothStop(); //Should be redundant - but just in case
+          espnowStop(); //Should be redundant - but just in case
+          tasksStopUART2(); //Delete F9 serial tasks if running
 
           startEthernerWebServerESP32W5500(); //Start Ethernet in dedicated configure-via-ethernet mode
           
@@ -1031,7 +1035,48 @@ void updateSystemState()
 
       case (STATE_CONFIG_VIA_ETH):
         {
-          // Nothing to do here. Display will show the IP address (displayConfigViaEthernet)
+          //Display will show the IP address (displayConfigViaEthernet)
+
+          if (incomingSettingsSpot > 0)
+          {
+            //Allow for 750ms before we parse buffer for all data to arrive
+            if (millis() - timeSinceLastIncomingSetting > 750)
+            {
+              currentlyParsingData = true; //Disallow new data to flow from websocket while we are parsing the current data
+              
+              systemPrint("Parsing: ");
+              for (int x = 0 ; x < incomingSettingsSpot ; x++)
+                systemWrite(incomingSettings[x]);
+              systemPrintln();
+
+              parseIncomingSettings();
+              settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
+              recordSystemSettings(); //Record these settings to unit
+
+              //Clear buffer
+              incomingSettingsSpot = 0;
+              memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
+
+              currentlyParsingData = false; //Allow new data from websocket
+            }
+          }
+
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
+          //Dynamically update the coordinates on the AP page
+          if (websocketConnected == true)
+          {
+            if (millis() - lastDynamicDataUpdate > 1000)
+            {
+              lastDynamicDataUpdate = millis();
+              createDynamicDataString(settingsCSV);
+
+              //log_d("Sending coordinates: %s", settingsCSV);
+              websocket->textAll(settingsCSV);
+            }
+          }
+#endif
+#endif
         }
         break;
 

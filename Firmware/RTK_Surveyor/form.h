@@ -92,6 +92,7 @@ function parseIncoming(msg) {
                 show("baseConfig");
                 hide("sensorConfig");
                 hide("ppConfig");
+                hide("ethernetConfig");
 
                 hide("dataPortChannelDropdown");
             }
@@ -99,11 +100,13 @@ function parseIncoming(msg) {
                 show("baseConfig");
                 hide("sensorConfig");
                 hide("ppConfig");
+                hide("ethernetConfig");
             }
             else if (platformPrefix == "Express Plus") {
                 hide("baseConfig");
                 show("sensorConfig");
                 hide("ppConfig");
+                hide("ethernetConfig");
 
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
 
@@ -133,6 +136,13 @@ function parseIncoming(msg) {
                 show("baseConfig");
                 hide("sensorConfig");
                 show("ppConfig");
+                hide("ethernetConfig");
+            }
+            else if (platformPrefix == "Reference Station") {
+                show("baseConfig");
+                hide("sensorConfig");
+                hide("ppConfig");
+                show("ethernetConfig");
             }
         }
         else if (id.includes("zedFirmwareVersionInt")) {
@@ -414,6 +424,7 @@ function validateFields() {
     collapseSection("collapsePortsConfig", "portsCaret");
     collapseSection("collapseRadioConfig", "radioCaret");
     collapseSection("collapseSystemConfig", "systemCaret");
+    collapseSection("collapseEthernetConfig", "ethernetCaret");
 
     errorCount = 0;
 
@@ -631,6 +642,16 @@ function validateFields() {
         clearElement("maxLogLength_minutes", 60 * 24);
     }
 
+    //Ethernet
+    if (platformPrefix == "Reference Station") {
+      if (ge("ethernetDHCP").checked == false) {
+          checkElementIPAddress("ethernetIP", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+      }
+      else {
+          clearElement("ethernetIP", "192.168.0.123");
+      }
+    }
+
     //Port Config
     if (platformPrefix != "Surveyor") {
         if (ge("enableExternalPulse").checked) {
@@ -639,7 +660,7 @@ function validateFields() {
         }
         else {
             clearElement("externalPulseTimeBetweenPulse_us", 100000);
-            clearElement("externalPulseLength_us", 900000);
+            clearElement("externalPulseLength_us", 1000000);
             ge("externalPulsePolarity").value = 0;
         }
     }
@@ -679,6 +700,7 @@ function changeProfile() {
         collapseSection("collapsePPConfig", "pointPerfectCaret");
         collapseSection("collapsePortsConfig", "portsCaret");
         collapseSection("collapseSystemConfig", "systemCaret");
+        collapseSection("collapseEthernetConfig", "ethernetCaret");
     }
 }
 
@@ -743,6 +765,18 @@ function checkElementValue(id, min, max, errorText, collapseID) {
 function checkElementString(id, min, max, errorText, collapseID) {
     value = ge(id).value;
     if (value.length < min || value.length > max) {
+        ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else
+        clearError(id);
+}
+
+function checkElementIPAddress(id, errorText, collapseID) {
+    value = ge(id).value;
+    var data = value.split('.');
+    if (data.length != 4) {
         ge(id + 'Error').innerHTML = 'Error: ' + errorText;
         ge(collapseID).classList.add('show');
         errorCount++;
@@ -3687,6 +3721,44 @@ static const char *index_html = R"=====(
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
+                </div>
+            </div>
+
+            <!-- --------- Ethernet Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary mt-3 toggle-btn" id="ethernetConfig" type="button" data-toggle="collapse"
+                    data-target="#collapseEthernetConfig" aria-expanded="false" aria-controls="collapseEthernetConfig">
+                    <!-- style="display:none"> -->
+                    Ethernet Configuration <i id="ethernetCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="collapseEthernetConfig">
+                <div class="card card-body">
+
+                    <div class="form-check mt-1 box-margin20">
+                        <label class="form-check-label" for="ethernetDHCP">Ethernet uses DHCP</label>
+                        <input class="form-check-input" type="checkbox" value="" id="ethernetDHCP" checked>
+                        <span class="tt" data-bs-placement="right"
+                            title="Ethernet will use DHCP. Disable to use a fixed IP Address, DNS, Gateway and Subnet Mask. Default: Enabled">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <br>
+                    
+                    <div class="form-group row">
+                        <label for="ethernetIP" class="col-5 col-form-label">Fixed IP Address:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this fixed IP Address">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetIP">
+                            <p id="ethernetIPError" class="inlineError"></p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

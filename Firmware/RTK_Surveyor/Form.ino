@@ -616,6 +616,12 @@ void createSettingsString(char* newSettings)
 
   stringRecord(newSettings, "enableResetDisplay", settings.enableResetDisplay);
 
+  //Ethernet
+  stringRecord(newSettings, "ethernetDHCP", settings.ethernetDHCP);
+  char ipAddressChar[20];
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s",settings.ethernetIP.toString().c_str());
+  stringRecord(newSettings, "ethernetIP", ipAddressChar);
+
   //Turn on SD display block last
   stringRecord(newSettings, "sdMounted", online.microSD);
 
@@ -1072,6 +1078,11 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     enableRCFirmware = settingValueBool;
   else if (strcmp(settingName, "minElev") == 0)
     settings.minElev = settingValue;
+
+  else if (strcmp(settingName, "ethernetDHCP") == 0)
+    settings.ethernetDHCP = settingValueBool;
+  else if (strcmp(settingName, "ethernetIP") == 0)
+    settings.ethernetIP.fromString(settingValueStr);
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

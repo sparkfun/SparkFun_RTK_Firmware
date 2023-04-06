@@ -644,12 +644,22 @@ function validateFields() {
 
     //Ethernet
     if (platformPrefix == "Reference Station") {
-      if (ge("ethernetDHCP").checked == false) {
+      //if (ge("ethernetDHCP").checked == false) {
           checkElementIPAddress("ethernetIP", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
-      }
-      else {
-          clearElement("ethernetIP", "192.168.0.123");
-      }
+          checkElementIPAddress("ethernetDNS", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+          checkElementIPAddress("ethernetGateway", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+          checkElementIPAddress("ethernetSubnet", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+          checkElementValue("ethernetHttpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
+          checkElementValue("ethernetNtpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
+      //}
+      //else {
+      //    clearElement("ethernetIP", "192.168.0.123");
+      //    clearElement("ethernetDNS", "192.168.4.100");
+      //    clearElement("ethernetGateway", "192.168.0.1");
+      //    clearElement("ethernetSubnet", "255.255.255.0");
+      //    clearElement("ethernetHttpPort", 80);
+      //    clearElement("ethernetNtpPort", 123);
+      //}
     }
 
     //Port Config
@@ -3739,7 +3749,7 @@ static const char *index_html = R"=====(
                         <label class="form-check-label" for="ethernetDHCP">Ethernet uses DHCP</label>
                         <input class="form-check-input" type="checkbox" value="" id="ethernetDHCP" checked>
                         <span class="tt" data-bs-placement="right"
-                            title="Ethernet will use DHCP. Disable to use a fixed IP Address, DNS, Gateway and Subnet Mask. Default: Enabled">
+                            title="If enabled, Ethernet will use DHCP. Disable to use a fixed IP Address, DNS, Gateway and Subnet Mask. Default: Enabled">
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
@@ -3756,6 +3766,69 @@ static const char *index_html = R"=====(
                         <div class="col-sm-5">
                             <input type="text" class="form-control" id="ethernetIP">
                             <p id="ethernetIPError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetDNS" class="col-5 col-form-label">DNS:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this DNS">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetDNS">
+                            <p id="ethernetDNSError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetGateway" class="col-5 col-form-label">Gateway:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this Gateway">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetGateway">
+                            <p id="ethernetGatewayError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetSubnet" class="col-5 col-form-label">Subnet Mask:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this subnet mask">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetSubnet">
+                            <p id="ethernetSubnetError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <br>
+                    
+                    <div class="form-group row">
+                        <label for="ethernetHttpPort" class="col-5 col-form-label">Ethernet HTTP Port:
+                            <span class="tt" data-bs-placement="right"
+                                title="Ethernet HTTP Port. Default is 80">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetHttpPort">
+                            <p id="ethernetHttpPortError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetNtpPort" class="col-5 col-form-label">Ethernet NTP Port:
+                            <span class="tt" data-bs-placement="right"
+                                title="Ethernet NTP Port. Default is 123">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetNtpPort">
+                            <p id="ethernetNtpPortError" class="inlineError"></p>
                         </div>
                     </div>
 

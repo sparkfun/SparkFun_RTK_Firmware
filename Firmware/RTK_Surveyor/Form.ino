@@ -619,8 +619,16 @@ void createSettingsString(char* newSettings)
   //Ethernet
   stringRecord(newSettings, "ethernetDHCP", settings.ethernetDHCP);
   char ipAddressChar[20];
-  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s",settings.ethernetIP.toString().c_str());
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetIP.toString().c_str());
   stringRecord(newSettings, "ethernetIP", ipAddressChar);
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetDNS.toString().c_str());
+  stringRecord(newSettings, "ethernetDNS", ipAddressChar);
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetGateway.toString().c_str());
+  stringRecord(newSettings, "ethernetGateway", ipAddressChar);
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetSubnet.toString().c_str());
+  stringRecord(newSettings, "ethernetSubnet", ipAddressChar);
+  stringRecord(newSettings, "ethernetHttpPort", settings.ethernetHttpPort);
+  stringRecord(newSettings, "ethernetNtpPort", settings.ethernetNtpPort);
 
   //Turn on SD display block last
   stringRecord(newSettings, "sdMounted", online.microSD);
@@ -1083,6 +1091,16 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.ethernetDHCP = settingValueBool;
   else if (strcmp(settingName, "ethernetIP") == 0)
     settings.ethernetIP.fromString(settingValueStr);
+  else if (strcmp(settingName, "ethernetDNS") == 0)
+    settings.ethernetDNS.fromString(settingValueStr);
+  else if (strcmp(settingName, "ethernetGateway") == 0)
+    settings.ethernetGateway.fromString(settingValueStr);
+  else if (strcmp(settingName, "ethernetSubnet") == 0)
+    settings.ethernetSubnet.fromString(settingValueStr);
+  else if (strcmp(settingName, "ethernetHttpPort") == 0)
+    settings.ethernetHttpPort = settingValue;
+  else if (strcmp(settingName, "ethernetNtpPort") == 0)
+    settings.ethernetNtpPort = settingValue;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

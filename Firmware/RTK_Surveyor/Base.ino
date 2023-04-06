@@ -18,99 +18,108 @@ bool configureUbloxModuleBase()
 
   theGNSS.setNMEAGPGGAcallbackPtr(nullptr); //Disable GPGGA call back that may have been set during Rover NTRIP Client mode
 
-  bool response = true;
+  bool success = false;
+  int tryNo = -1;
 
-  //In Base mode we force 1Hz
-  response &= theGNSS.newCfgValset();
-  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, 1000);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, 1);
-
-  //Since we are at 1Hz, allow GSV NMEA to be reported at whatever the user has chosen
-  uint32_t spiOffset = 0; //Set to 3 if using SPI to convert UART1 keys to SPI. This is brittle and non-perfect, but works.
-  if (USE_SPI_GNSS)
-    spiOffset = 3;
-  response &= theGNSS.addCfgValset(ubxMessages[8].msgConfigKey + spiOffset, settings.ubxMessageRates[8]); //Update rate on module
-
-  if (USE_I2C_GNSS)
-    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); //Disable NMEA message that may have been set during Rover NTRIP Client mode
-
-  //Survey mode is only available on ZED-F9P modules
-  if (zedModuleType == PLATFORM_F9P)
-    response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
-
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
-
-  //RTCM is only available on ZED-F9P modules
-  //
-  //For most RTK products, the GNSS is interfaced via both I2C and UART1. Configuration and PVT/HPPOS messages are
-  //configured over I2C. Any messages that need to be logged are output on UART1, and received by this code using
-  //serialGNSS.
-  //In base mode the RTK device should output RTCM over all ports:
-  //(Primary) UART2 in case the Surveyor is connected via radio to rover
-  //(Optional) I2C in case user wants base to connect to WiFi and NTRIP Caster
-  //(Seconday) USB in case the Surveyor is used as an NTRIP caster connected to SBC or other
-  //(Tertiary) UART1 in case Surveyor is sending RTCM to phone that is then NTRIP Caster
-  //
-  //But, on the Reference Station, the GNSS is interfaced via SPI. It has no access to I2C and UART1.
-  //We use the GNSS library's built-in logging buffer to mimic UART1. The code in Tasks.ino reads
-  //data from the logging buffer as if it had come from UART1.
-  //So for that product - in Base mode - we can only output RTCM on SPI, USB and UART2.
-  //If we want to log the RTCM messages, we need to add them to the logging buffer inside the GNSS library.
-  //If we want to pass them along to (e.g.) radio, we do that using processRTCM (defined below).
-
-  //Find first RTCM record in ubxMessage array
-  int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
-
-  //ubxMessageRatesBase is an array of ~12 uint8_ts
-  //ubxMessage is an array of ~80 messages
-  //We use firstRTCMRecord as an offset for the keys, but use x as the rate
+  while((++tryNo < MAX_SET_MESSAGES_RETRIES) && !success)
+  {
+    bool response = true;
   
-  if (USE_I2C_GNSS)
-  {
+    //In Base mode we force 1Hz
+    response &= theGNSS.newCfgValset();
+    response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, 1000);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, 1);
+  
+    //Since we are at 1Hz, allow GSV NMEA to be reported at whatever the user has chosen
+    uint32_t spiOffset = 0; //Set to 3 if using SPI to convert UART1 keys to SPI. This is brittle and non-perfect, but works.
+    if (USE_SPI_GNSS)
+      spiOffset = 3;
+    response &= theGNSS.addCfgValset(ubxMessages[8].msgConfigKey + spiOffset, settings.ubxMessageRates[8]); //Update rate on module
+  
+    if (USE_I2C_GNSS)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); //Disable NMEA message that may have been set during Rover NTRIP Client mode
+  
+    //Survey mode is only available on ZED-F9P modules
+    if (zedModuleType == PLATFORM_F9P)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
+  
+    response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
+  
+    //RTCM is only available on ZED-F9P modules
+    //
+    //For most RTK products, the GNSS is interfaced via both I2C and UART1. Configuration and PVT/HPPOS messages are
+    //configured over I2C. Any messages that need to be logged are output on UART1, and received by this code using
+    //serialGNSS.
+    //In base mode the RTK device should output RTCM over all ports:
+    //(Primary) UART2 in case the Surveyor is connected via radio to rover
+    //(Optional) I2C in case user wants base to connect to WiFi and NTRIP Caster
+    //(Seconday) USB in case the Surveyor is used as an NTRIP caster connected to SBC or other
+    //(Tertiary) UART1 in case Surveyor is sending RTCM to phone that is then NTRIP Caster
+    //
+    //But, on the Reference Station, the GNSS is interfaced via SPI. It has no access to I2C and UART1.
+    //We use the GNSS library's built-in logging buffer to mimic UART1. The code in Tasks.ino reads
+    //data from the logging buffer as if it had come from UART1.
+    //So for that product - in Base mode - we can only output RTCM on SPI, USB and UART2.
+    //If we want to log the RTCM messages, we need to add them to the logging buffer inside the GNSS library.
+    //If we want to pass them along to (e.g.) radio, we do that using processRTCM (defined below).
+  
+    //Find first RTCM record in ubxMessage array
+    int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+  
+    //ubxMessageRatesBase is an array of ~12 uint8_ts
+    //ubxMessage is an array of ~80 messages
+    //We use firstRTCMRecord as an offset for the keys, but use x as the rate
+    
+    if (USE_I2C_GNSS)
+    {
+      for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
+      {
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey - 1, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 - 1 = I2C
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1
+        
+        //Disable messages on SPI
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 3, 0); //UBLOX_CFG UART1 + 3 = SPI
+      }
+    }
+    else //SPI GNSS
+    {
+      for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
+      {
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 3, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 3 = SPI
+  
+        //Disable messages on I2C and UART1
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey - 1, 0); //UBLOX_CFG UART1 - 1 = I2C
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey, 0); //UBLOX_CFG UART1
+      }
+  
+      //Enable logging of these messages so the RTCM will be stored automatically in the logging buffer.
+      //This mimics the data arriving via UART1.
+      uint32_t logRTCMMessages = theGNSS.getRTCMLoggingMask();
+      logRTCMMessages |= ( SFE_UBLOX_FILTER_RTCM_TYPE1005 | SFE_UBLOX_FILTER_RTCM_TYPE1074 | SFE_UBLOX_FILTER_RTCM_TYPE1084
+                           | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124 | SFE_UBLOX_FILTER_RTCM_TYPE1230 );
+      theGNSS.setRTCMLoggingMask(logRTCMMessages);
+      log_d("setRTCMLoggingMask 0x%X", logRTCMMessages);
+    }
+  
+    //Update message rates for UART2 and USB
     for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
     {
-      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey - 1, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 - 1 = I2C
-      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1
-      
-      //Disable messages on SPI
-      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 3, 0); //UBLOX_CFG UART1 + 3 = SPI
+      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 1 , settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 1 = UART2
+      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 2 , settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 2 = USB
     }
-  }
-  else //SPI GNSS
-  {
-    for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
-    {
-      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 3, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 3 = SPI
+  
+    response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
+  
+    response &= theGNSS.sendCfgValset(); //Closing value
 
-      //Disable messages on I2C and UART1
-      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey - 1, 0); //UBLOX_CFG UART1 - 1 = I2C
-      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey, 0); //UBLOX_CFG UART1
-    }
-
-    //Enable logging of these messages so the RTCM will be stored automatically in the logging buffer.
-    //This mimics the data arriving via UART1.
-    uint32_t logRTCMMessages = theGNSS.getRTCMLoggingMask();
-    logRTCMMessages |= ( SFE_UBLOX_FILTER_RTCM_TYPE1005 | SFE_UBLOX_FILTER_RTCM_TYPE1074 | SFE_UBLOX_FILTER_RTCM_TYPE1084
-                         | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124 | SFE_UBLOX_FILTER_RTCM_TYPE1230 );
-    theGNSS.setRTCMLoggingMask(logRTCMMessages);
-    log_d("setRTCMLoggingMask 0x%X", logRTCMMessages);
+    if (response)
+      success = true;
   }
 
-  //Update message rates for UART2 and USB
-  for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
-  {
-    response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 1 , settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 1 = UART2
-    response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 2 , settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 2 = USB
-  }
-
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
-
-  response &= theGNSS.sendCfgValset(); //Closing value
-
-  if (response == false)
+  if (!success)
     systemPrintln("Base config fail");
 
-  return (response);
+  return (success);
 }
 
 //Start survey

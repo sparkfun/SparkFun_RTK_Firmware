@@ -387,9 +387,10 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
     const char* BIN_EXT = "bin";
     const char* BIN_HEADER = "RTK_Surveyor_Firmware";
 
-    char fname[50]; //Handle long file names
-    fileName.toCharArray(fname, sizeof(fname));
-    fname[fileName.length()] = '\0'; //Terminate array
+    int fnameLen = fileName.length();
+    char fname[fnameLen + 2] = { '/' }; //Filename must start with / or VERY bad things happen on SD_MMC
+    fileName.toCharArray(&fname[1], fnameLen + 1);
+    fname[fnameLen + 1] = '\0'; //Terminate array
 
     //Check 'bin' extension
     if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
@@ -1556,8 +1557,10 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
   {
     logmessage = "Upload Start: " + String(filename);
 
-    char tempFileName[50];
-    filename.toCharArray(tempFileName, sizeof(tempFileName));
+    int fileNameLen = filename.length();
+    char tempFileName[fileNameLen + 2] = { '/' }; //Filename must start with / or VERY bad things happen on SD_MMC
+    filename.toCharArray(&tempFileName[1], fileNameLen + 1);
+    tempFileName[fileNameLen + 1] = '\0'; //Terminate array
 
     //Allocate the managerTempFile
     if (!managerTempFile)

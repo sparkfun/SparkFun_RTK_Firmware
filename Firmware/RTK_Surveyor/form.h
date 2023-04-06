@@ -786,7 +786,12 @@ function checkElementString(id, min, max, errorText, collapseID) {
 function checkElementIPAddress(id, errorText, collapseID) {
     value = ge(id).value;
     var data = value.split('.');
-    if (data.length != 4) {
+    if ((data.length != 4) 
+        || ((data[0] == "") || (isNaN(Number(data[0]))) || (data[0] < 0) || (data[0] > 255))
+        || ((data[1] == "") || (isNaN(Number(data[1]))) || (data[1] < 0) || (data[1] > 255))
+        || ((data[2] == "") || (isNaN(Number(data[2]))) || (data[2] < 0) || (data[2] > 255))
+        || ((data[3] == "") || (isNaN(Number(data[3]))) || (data[3] < 0) || (data[3] > 255)))
+    {
         ge(id + 'Error').innerHTML = 'Error: ' + errorText;
         ge(collapseID).classList.add('show');
         errorCount++;

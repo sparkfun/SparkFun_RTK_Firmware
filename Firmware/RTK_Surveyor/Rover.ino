@@ -20,67 +20,78 @@ bool configureUbloxModuleRover()
   theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
   theGNSS.checkCallbacks(); //Process any callbacks: ie, storePVTdata
 
-  bool response = true;
+  bool success = false;
+  int tryNo = -1;
 
-  //Set output rate
-  response &= theGNSS.newCfgValset();
-  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, settings.measurementRate);
-  response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, settings.navigationRate);
-
-  //Survey mode is only available on ZED-F9P modules
-  if (zedModuleType == PLATFORM_F9P)
-    response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
-
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
-
-  //RTCM is only available on ZED-F9P modules
-  //
-  //For most RTK products, the GNSS is interfaced via both I2C and UART1. Configuration and PVT/HPPOS messages are
-  //configured over I2C. Any messages that need to be logged are output on UART1, and received by this code using
-  //serialGNSS. So in Rover mode, we want to disable any RTCM messages on I2C (and USB and UART2).
-  //
-  //But, on the Reference Station, the GNSS is interfaced via SPI. It has no access to I2C and UART1. So for that
-  //product - in Rover mode - we want to leave any RTCM messages enabled on SPI so they can be logged if desired.
-
-  //Find first RTCM record in ubxMessage array
-  int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
-
-  if (zedModuleType == PLATFORM_F9P)
+  while((++tryNo < MAX_SET_MESSAGES_RETRIES) && !success)
   {
-    if (USE_I2C_GNSS)
+    bool response = true;
+  
+    //Set output rate
+    response &= theGNSS.newCfgValset();
+    response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, settings.measurementRate);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, settings.navigationRate);
+  
+    //Survey mode is only available on ZED-F9P modules
+    if (zedModuleType == PLATFORM_F9P)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
+  
+    response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
+  
+    //RTCM is only available on ZED-F9P modules
+    //
+    //For most RTK products, the GNSS is interfaced via both I2C and UART1. Configuration and PVT/HPPOS messages are
+    //configured over I2C. Any messages that need to be logged are output on UART1, and received by this code using
+    //serialGNSS. So in Rover mode, we want to disable any RTCM messages on I2C (and USB and UART2).
+    //
+    //But, on the Reference Station, the GNSS is interfaced via SPI. It has no access to I2C and UART1. So for that
+    //product - in Rover mode - we want to leave any RTCM messages enabled on SPI so they can be logged if desired.
+  
+    //Find first RTCM record in ubxMessage array
+    int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+  
+    if (zedModuleType == PLATFORM_F9P)
     {
+      if (USE_I2C_GNSS)
+      {
+        //Set RTCM messages to user's settings
+        for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
+          response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey - 1, settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 - 1 = I2C
+      }
+      else
+      {
+        for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
+          response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 3, settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 3 = SPI
+      }
+  
       //Set RTCM messages to user's settings
       for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
-        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey - 1, settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 - 1 = I2C
+      {
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 1 , settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 1 = UART2
+        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 2 , settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 2 = USB
+      }
     }
-    else
-    {
-      for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
-        response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 3, settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 3 = SPI
-    }
+  
+    response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
+  
+    response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_HIGHPREC, 1); //Enable high precision NMEA
+    response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_SVNUMBERING, 1); //Enable extended satellite numbering
+  
+    response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
+  
+    response &= theGNSS.sendCfgValset(); //Closing
 
-    //Set RTCM messages to user's settings
-    for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
-    {
-      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 1 , settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 1 = UART2
-      response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 2 , settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 2 = USB
-    }
+    if (response)
+      success = true;
   }
 
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
-
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_HIGHPREC, 1); //Enable high precision NMEA
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_SVNUMBERING, 1); //Enable extended satellite numbering
-
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
-
-  response &= theGNSS.sendCfgValset(); //Closing
-
-  if (response == false)
+  if (!success)
     log_d("Rover config failed 1");
 
   if (zedModuleType == PLATFORM_F9R)
   {
+    bool response = true;
+    
     response &= theGNSS.newCfgValset();
 
     response &= theGNSS.addCfgValset(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion
@@ -101,14 +112,16 @@ bool configureUbloxModuleRover()
     response &= theGNSS.sendCfgValset(); //Closing - 28 keys
 
     if (response == false)
+    {
       log_d("Rover config failed 2");
-
-    if (response == false)
-      systemPrintln("Failed new config");
+      success = false;
+    }
   }
 
+  if (!success)
+    systemPrintln("Rover config fail");
 
-  return (response);
+  return (success);
 }
 
 //Turn on the three accuracy LEDs depending on our current HPA (horizontal positional accuracy)

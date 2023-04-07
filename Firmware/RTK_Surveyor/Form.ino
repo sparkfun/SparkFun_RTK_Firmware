@@ -1152,6 +1152,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       //(If the settings have been saved, then the code will restart in NTP, Base or Rover mode as desired.)
       if (settings.lastState == STATE_CONFIG_VIA_ETH_STARTED)
       {
+        systemPrintln("Settings were not saved. Resetting into NTP mode.");
         settings.lastState = STATE_NTPSERVER_NOT_STARTED;
         recordSystemSettings();
       }

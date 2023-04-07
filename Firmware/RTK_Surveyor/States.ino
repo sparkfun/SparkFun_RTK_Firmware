@@ -1085,6 +1085,12 @@ void updateSystemState()
           displayConfigViaEthNotStarted(1000);
 
           endEthernerWebServerESP32W5500();
+
+          settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+          settings.lastState = STATE_NTPSERVER_NOT_STARTED; //Record the _next_ state for POR
+          recordSystemSettings();
+
+          ESP.restart();
         }
         break;
 #endif

@@ -289,13 +289,9 @@ void startEthernerWebServerESP32W5500()
 
 void endEthernerWebServerESP32W5500()
 {
-  settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
-  settings.lastState = STATE_NTPSERVER_NOT_STARTED; //Record the _next_ state for POR
-  recordSystemSettings();
-
+#ifdef COMPILE_ETHERNET
   ETH.end(); //This is _really_ important. It undoes the low-level changes to SPI and interrupts
-  
-  ESP.restart(); //Restart to leave configure-via-ethernet mode
+#endif
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

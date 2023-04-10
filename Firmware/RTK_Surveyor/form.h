@@ -93,6 +93,7 @@ function parseIncoming(msg) {
                 hide("sensorConfig");
                 hide("ppConfig");
                 hide("ethernetConfig");
+                hide("ntpConfig");
 
                 hide("dataPortChannelDropdown");
             }
@@ -101,12 +102,14 @@ function parseIncoming(msg) {
                 hide("sensorConfig");
                 hide("ppConfig");
                 hide("ethernetConfig");
+                hide("ntpConfig");
             }
             else if (platformPrefix == "Express Plus") {
                 hide("baseConfig");
                 show("sensorConfig");
                 hide("ppConfig");
                 hide("ethernetConfig");
+                hide("ntpConfig");
 
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
 
@@ -137,12 +140,14 @@ function parseIncoming(msg) {
                 hide("sensorConfig");
                 show("ppConfig");
                 hide("ethernetConfig");
+                hide("ntpConfig");
             }
             else if (platformPrefix == "Reference Station") {
                 show("baseConfig");
                 hide("sensorConfig");
                 hide("ppConfig");
                 show("ethernetConfig");
+                show("ntpConfig");
             }
         }
         else if (id.includes("zedFirmwareVersionInt")) {
@@ -425,6 +430,7 @@ function validateFields() {
     collapseSection("collapseRadioConfig", "radioCaret");
     collapseSection("collapseSystemConfig", "systemCaret");
     collapseSection("collapseEthernetConfig", "ethernetCaret");
+    collapseSection("collapseNTPConfig", "ntpCaret");
 
     errorCount = 0;
 
@@ -662,6 +668,15 @@ function validateFields() {
       //}
     }
 
+    //NTP
+    if (platformPrefix == "Reference Station") {
+          checkElementValue("ntpPollExponent", 3, 17, "Must be 3 to 17", "collapseNTPConfig");
+          checkElementValue("ntpPrecision", -30, 0, "Must be -30 to 0", "collapseNTPConfig");
+          checkElementValue("ntpRootDelay", 0, 10000000, "Must be 0 to 10,000,000", "collapseNTPConfig");
+          checkElementValue("ntpRootDispersion", 0, 10000000, "Must be 0 to 10,000,000", "collapseNTPConfig");
+          checkElementString("ntpReferenceId", 1, 4, "Must be 1 to 4 chars", "collapseNTPConfig");
+    }
+
     //Port Config
     if (platformPrefix != "Surveyor") {
         if (ge("enableExternalPulse").checked) {
@@ -711,6 +726,7 @@ function changeProfile() {
         collapseSection("collapsePortsConfig", "portsCaret");
         collapseSection("collapseSystemConfig", "systemCaret");
         collapseSection("collapseEthernetConfig", "ethernetCaret");
+        collapseSection("collapseNTPConfig", "ntpCaret");
     }
 }
 
@@ -3834,6 +3850,81 @@ static const char *index_html = R"=====(
                         <div class="col-sm-5">
                             <input type="text" class="form-control" id="ethernetNtpPort">
                             <p id="ethernetNtpPortError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- --------- NTP Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary mt-3 toggle-btn" id="ntpConfig" type="button" data-toggle="collapse"
+                    data-target="#collapseNTPConfig" aria-expanded="false" aria-controls="collapseNTPConfig">
+                    <!-- style="display:none"> -->
+                    NTP Configuration <i id="ntpCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="collapseNTPConfig">
+                <div class="card card-body">
+
+                    <div class="form-group row">
+                        <label for="ntpPollExponent" class="col-5 col-form-label">Poll Exponent:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the maximum interval between successive messages. E.g. the default value of 6 sets the interval to 2^6 = 64s">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpPollExponent">
+                            <p id="ntpPollExponentError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpPrecision" class="col-5 col-form-label">Precision:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the precision of the system clock. E.g. the default value of -20 sets the precision to 2^-20 = ~1us">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpPrecision">
+                            <p id="ntpPrecisionError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpRootDelay" class="col-5 col-form-label">Root Delay:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the total round-trip delay to the reference clock in us. Default: 0">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpRootDelay">
+                            <p id="ntpRootDelayError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpRootDispersion" class="col-5 col-form-label">Root Dispersion:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the maximum error relative to the reference clock in us. Default: 1000">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpRootDispersion">
+                            <p id="ntpRootDispersionError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpReferenceId" class="col-5 col-form-label">Reference ID:
+                            <span class="tt" data-bs-placement="right"
+                                title="This code identifies the reference clock. Default: GPS. Limit: 1-4 characters">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpReferenceId">
+                            <p id="ntpReferenceIdError" class="inlineError"></p>
                         </div>
                     </div>
 

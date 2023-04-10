@@ -215,7 +215,23 @@ struct NTPpacket
     ptr += 4;
   }
 
-  uint32_t convertMicrosToFraction(uint32_t val)
+  uint32_t convertMicrosToSecsAndFraction(uint32_t val) //16-bit fraction used by root delay and dispersion
+  {
+    double secs = val;
+    secs /= 1000000.0; //Convert micros to seconds
+    secs = floor(secs); //Convert to integer, round down
+    
+    double microsecs = val;
+    microsecs -= secs * 1000000.0; //Subtract the seconds
+    microsecs /= 1000000.0; //Convert micros to seconds
+    microsecs *= pow(2.0, 16.0); //Convert to 16-bit fraction
+
+    uint32_t result = ((uint32_t)secs) << 16;
+    result |= ((uint32_t)microsecs) & 0xFFFF;
+    return (result);
+  }
+  
+  uint32_t convertMicrosToFraction(uint32_t val) //32-bit fraction used by the timestamps
   {
     val %= 1000000; // Just in case
     double v = val; // Convert micros to double
@@ -224,7 +240,7 @@ struct NTPpacket
     return (uint32_t)v;
   }
 
-  uint32_t convertFractionToMicros(uint32_t val)
+  uint32_t convertFractionToMicros(uint32_t val) //32-bit fraction used by the timestamps
   {
     double v = val; // Convert fraction to double
     v /= pow(2.0, 32.0); // Convert fraction to seconds
@@ -293,11 +309,19 @@ bool processOneNTPRequest(bool process, const timeval * recTv, const timeval * s
     packet.mode(packet.defaultMode); // Set the mode
     packet.stratum = packet.defaultStratum; // Set the stratum
     packet.pollExponent = settings.ntpPollExponent; // Set the poll interval
-    packet.precision = packet.defaultPrecision; // Set the precision
-    packet.rootDelay = packet.defaultRootDelay; // Set the Root Delay
-    packet.rootDispersion = packet.defaultRootDispersion; // Set the Root Dispersion
+    packet.precision = settings.ntpPrecision; // Set the precision
+    packet.rootDelay = packet.convertMicrosToSecsAndFraction(settings.ntpRootDelay); // Set the Root Delay
+    packet.rootDispersion = packet.convertMicrosToSecsAndFraction(settings.ntpRootDispersion); // Set the Root Dispersion
     for (uint8_t i = 0; i < packet.referenceIdLen; i++)
-      packet.referenceId[i] = packet.defaultReferenceId[i]; // Set the reference Id
+      packet.referenceId[i] = settings.ntpReferenceId[i]; // Set the reference Id
+
+    if (ntpDiag != nullptr)
+    {
+      char tmpbuf[128];
+      snprintf(tmpbuf, sizeof(tmpbuf), "%d %d %08X %08X %s\r\n",
+        packet.pollExponent, packet.precision, packet.rootDelay, packet.rootDispersion, packet.referenceId);
+      strlcat(ntpDiag, tmpbuf, ntpDiagSize);
+    }
 
     // REF: http://support.ntp.org/bin/view/Support/DraftRfc2030
     // '.. the client sets the Transmit Timestamp field in the request
@@ -538,7 +562,20 @@ void menuNTP()
     systemPrint("1) Poll Exponent : 2^");
     systemPrintln(settings.ntpPollExponent);
 
+    systemPrint("2) Precision : 2^");
+    systemPrintln(settings.ntpPrecision);
+
+    systemPrint("3) Root Delay (us) : ");
+    systemPrintln(settings.ntpRootDelay);
+
+    systemPrint("4) Root Dispersion (us) : ");
+    systemPrintln(settings.ntpRootDispersion);
+
+    systemPrint("5) Reference ID : ");
+    systemPrintln(settings.ntpReferenceId);
+
     systemPrintln("x) Exit");
+
 
     byte incoming = getCharacterNumber();
 
@@ -548,6 +585,40 @@ void menuNTP()
       long newVal = getNumber();
       if ((newVal >= 3) && (newVal <= 17))
         settings.ntpPollExponent = newVal;
+    }
+    else if (incoming == 2)
+    {
+      systemPrint("Enter new precision (2^, Min -30, Max 0): ");
+      long newVal = getNumber();
+      if ((newVal >= -30) && (newVal <= 0))
+        settings.ntpPrecision = newVal;
+    }
+    else if (incoming == 3)
+    {
+      systemPrint("Enter new root delay (us): ");
+      long newVal = getNumber();
+      if ((newVal >= 0) && (newVal <= 1000000))
+        settings.ntpRootDelay = newVal;
+    }
+    else if (incoming == 4)
+    {
+      systemPrint("Enter new root dispersion (us): ");
+      long newVal = getNumber();
+      if ((newVal >= 0) && (newVal <= 1000000))
+        settings.ntpRootDispersion = newVal;
+    }
+    else if (incoming == 5)
+    {
+      systemPrint("Enter new Reference ID (4 Chars Max): ");
+      char newId[5];
+      if (getString(newId, 5) == INPUT_RESPONSE_VALID)
+      {
+        int i = 0;
+        for (; i < strlen(newId); i++)
+          settings.ntpReferenceId[i] = newId[i];
+        for (; i < 5; i++)
+          settings.ntpReferenceId[i] = 0;
+      }  
     }
     else if (incoming == 'x')
       break;

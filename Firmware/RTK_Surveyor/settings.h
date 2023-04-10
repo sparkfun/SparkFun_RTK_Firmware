@@ -720,6 +720,10 @@ typedef struct {
 
   //NTP
   uint8_t ntpPollExponent = 6; //NTPpacket::defaultPollExponent 2^6 = 64 seconds
+  int8_t ntpPrecision = -20; //NTPpacket::defaultPrecision 2^-20 = 0.95us
+  uint32_t ntpRootDelay = 0; //NTPpacket::defaultRootDelay = 0. ntpRootDelay is defined in microseconds. processOneNTPRequest will convert it to seconds and fraction.
+  uint32_t ntpRootDispersion = 1000; //NTPpacket::defaultRootDispersion 1007us = 2^-16 * 66. ntpRootDispersion is defined in microseconds. processOneNTPRequest will convert it to seconds and fraction.
+  char ntpReferenceId[5] = { 'G', 'P', 'S', 0, 0 }; //NTPpacket::defaultReferenceId. Ref ID is 4 chars. Add one extra for a NULL.
 
 } Settings;
 Settings settings;

@@ -630,6 +630,16 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "ethernetHttpPort", settings.ethernetHttpPort);
   stringRecord(newSettings, "ethernetNtpPort", settings.ethernetNtpPort);
 
+  //NTP
+  stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
+  stringRecord(newSettings, "ntpPrecision", settings.ntpPrecision);
+  stringRecord(newSettings, "ntpRootDelay", settings.ntpRootDelay);
+  stringRecord(newSettings, "ntpRootDispersion", settings.ntpRootDispersion);
+  stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
+  char ntpRefId[5];
+  snprintf(ntpRefId, sizeof(ntpRefId), "%s", settings.ntpReferenceId);
+  stringRecord(newSettings, "ntpReferenceId", ntpRefId);
+
   //Turn on SD display block last
   stringRecord(newSettings, "sdMounted", online.microSD);
 
@@ -1101,6 +1111,22 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.ethernetHttpPort = settingValue;
   else if (strcmp(settingName, "ethernetNtpPort") == 0)
     settings.ethernetNtpPort = settingValue;
+
+  //NTP
+  else if (strcmp(settingName, "ntpPollExponent") == 0)
+    settings.ntpPollExponent = settingValue;
+  else if (strcmp(settingName, "ntpPrecision") == 0)
+    settings.ntpPrecision = settingValue;
+  else if (strcmp(settingName, "ntpRootDelay") == 0)
+    settings.ntpRootDelay = settingValue;
+  else if (strcmp(settingName, "ntpRootDispersion") == 0)
+    settings.ntpRootDispersion = settingValue;
+  else if (strcmp(settingName, "ntpReferenceId") == 0)
+  {
+    strcpy(settings.ntpReferenceId, settingValueStr);
+    for (int i = strlen(settingValueStr); i < 5; i++)
+      settings.ntpReferenceId[i] = 0;    
+  }
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

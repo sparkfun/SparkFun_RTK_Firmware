@@ -383,6 +383,10 @@ void recordSystemSettingsToFile(File * settingsFile)
   //NTP
   {
     settingsFile->printf("%s=%d\r\n", "ntpPollExponent", settings.ntpPollExponent);
+    settingsFile->printf("%s=%d\r\n", "ntpPrecision", settings.ntpPrecision);
+    settingsFile->printf("%s=%d\r\n", "ntpRootDelay", settings.ntpRootDelay);
+    settingsFile->printf("%s=%d\r\n", "ntpRootDispersion", settings.ntpRootDispersion);
+    settingsFile->printf("%s=%s\r\n", "ntpReferenceId", settings.ntpReferenceId);
   }
 }
 
@@ -1151,6 +1155,18 @@ bool parseLine(char* str, Settings *settings)
   //NTP
   else if (strcmp(settingName, "ntpPollExponent") == 0)
     settings->ntpPollExponent = d;
+  else if (strcmp(settingName, "ntpPrecision") == 0)
+    settings->ntpPrecision = d;
+  else if (strcmp(settingName, "ntpRootDelay") == 0)
+    settings->ntpRootDelay = d;
+  else if (strcmp(settingName, "ntpRootDispersion") == 0)
+    settings->ntpRootDispersion = d;
+  else if (strcmp(settingName, "ntpReferenceId") == 0)
+  {
+    strcpy(settings->ntpReferenceId, settingValue);
+    for (int i = strlen(settingValue); i < 5; i++)
+      settings->ntpReferenceId[i] = 0;
+  }
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list

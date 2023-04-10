@@ -315,14 +315,6 @@ bool processOneNTPRequest(bool process, const timeval * recTv, const timeval * s
     for (uint8_t i = 0; i < packet.referenceIdLen; i++)
       packet.referenceId[i] = settings.ntpReferenceId[i]; // Set the reference Id
 
-    if (ntpDiag != nullptr)
-    {
-      char tmpbuf[128];
-      snprintf(tmpbuf, sizeof(tmpbuf), "%d %d %08X %08X %s\r\n",
-        packet.pollExponent, packet.precision, packet.rootDelay, packet.rootDispersion, packet.referenceId);
-      strlcat(ntpDiag, tmpbuf, ntpDiagSize);
-    }
-
     // REF: http://support.ntp.org/bin/view/Support/DraftRfc2030
     // '.. the client sets the Transmit Timestamp field in the request
     // to the time of day according to the client clock in NTP timestamp format.'

@@ -293,8 +293,8 @@ InputResponse getString(char *userString, uint8_t stringSize)
         if (settings.echoUserInput == true && spot > 0)
         {
           systemWrite('\b'); //Move back one space
-          systemPrint(" "); //Put a blank there to erase the letter from the terminal
-          systemPrint('\b'); //Move back again
+          systemWrite(' '); //Put a blank there to erase the letter from the terminal
+          systemWrite('\b'); //Move back again
           spot--;
         }
       }
@@ -303,7 +303,7 @@ InputResponse getString(char *userString, uint8_t stringSize)
         if (settings.echoUserInput) systemWrite(incoming); //Echo if needed
 
         userString[spot++] = incoming;
-        if (spot == (stringSize - 1)) //Leave room for termination
+        if (spot == stringSize) //Leave room for termination
           return INPUT_RESPONSE_OVERFLOW;
       }
     }

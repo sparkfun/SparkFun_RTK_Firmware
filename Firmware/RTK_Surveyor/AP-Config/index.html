@@ -1969,9 +1969,10 @@
                         <select name="baseRoverSetup" id="baseRoverSetup" class="form-dropdown">
                             <option value="0">Rover</option>
                             <option value="1">Base</option>
+                            <option value="2">NTP</option>
                         </select>
                         <span class="tt" data-bs-placement="right"
-                            title="Put the system into rover or base mode at next Power On or Reset.">
+                            title="Put the system into rover, base or NTP mode at next Power On or Reset.">
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
@@ -2069,6 +2070,182 @@
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
+                </div>
+            </div>
+
+            <!-- --------- Ethernet Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary mt-3 toggle-btn" id="ethernetConfig" type="button" data-toggle="collapse"
+                    data-target="#collapseEthernetConfig" aria-expanded="false" aria-controls="collapseEthernetConfig">
+                    <!-- style="display:none"> -->
+                    Ethernet Configuration <i id="ethernetCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="collapseEthernetConfig">
+                <div class="card card-body">
+
+                    <div class="form-check mt-1 box-margin20">
+                        <label class="form-check-label" for="ethernetDHCP">Ethernet uses DHCP</label>
+                        <input class="form-check-input" type="checkbox" value="" id="ethernetDHCP" checked>
+                        <span class="tt" data-bs-placement="right"
+                            title="If enabled, Ethernet will use DHCP. Disable to use a fixed IP Address, DNS, Gateway and Subnet Mask. Default: Enabled">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <br>
+                    
+                    <div class="form-group row">
+                        <label for="ethernetIP" class="col-5 col-form-label">Fixed IP Address:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this fixed IP Address">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetIP">
+                            <p id="ethernetIPError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetDNS" class="col-5 col-form-label">DNS:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this DNS">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetDNS">
+                            <p id="ethernetDNSError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetGateway" class="col-5 col-form-label">Gateway:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this Gateway">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetGateway">
+                            <p id="ethernetGatewayError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetSubnet" class="col-5 col-form-label">Subnet Mask:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this subnet mask">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetSubnet">
+                            <p id="ethernetSubnetError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <br>
+                    
+                    <div class="form-group row">
+                        <label for="ethernetHttpPort" class="col-5 col-form-label">Ethernet HTTP Port:
+                            <span class="tt" data-bs-placement="right"
+                                title="Ethernet HTTP Port. Default is 80">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetHttpPort">
+                            <p id="ethernetHttpPortError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetNtpPort" class="col-5 col-form-label">Ethernet NTP Port:
+                            <span class="tt" data-bs-placement="right"
+                                title="Ethernet NTP Port. Default is 123">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetNtpPort">
+                            <p id="ethernetNtpPortError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- --------- NTP Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary mt-3 toggle-btn" id="ntpConfig" type="button" data-toggle="collapse"
+                    data-target="#collapseNTPConfig" aria-expanded="false" aria-controls="collapseNTPConfig">
+                    <!-- style="display:none"> -->
+                    NTP Configuration <i id="ntpCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="collapseNTPConfig">
+                <div class="card card-body">
+
+                    <div class="form-group row">
+                        <label for="ntpPollExponent" class="col-5 col-form-label">Poll Exponent:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the maximum interval between successive messages. E.g. the default value of 6 sets the interval to 2^6 = 64s">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpPollExponent">
+                            <p id="ntpPollExponentError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpPrecision" class="col-5 col-form-label">Precision:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the precision of the system clock. E.g. the default value of -20 sets the precision to 2^-20 = ~1us">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpPrecision">
+                            <p id="ntpPrecisionError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpRootDelay" class="col-5 col-form-label">Root Delay:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the total round-trip delay to the reference clock in us. Default: 0">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpRootDelay">
+                            <p id="ntpRootDelayError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpRootDispersion" class="col-5 col-form-label">Root Dispersion:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the maximum error relative to the reference clock in us. Default: 1000">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpRootDispersion">
+                            <p id="ntpRootDispersionError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpReferenceId" class="col-5 col-form-label">Reference ID:
+                            <span class="tt" data-bs-placement="right"
+                                title="This code identifies the reference clock. Default: GPS. Limit: 1-4 characters">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpReferenceId">
+                            <p id="ntpReferenceIdError" class="inlineError"></p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

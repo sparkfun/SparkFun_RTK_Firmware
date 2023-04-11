@@ -1,13 +1,13 @@
 //This contains files neccessary to load the config page:
 //Files that do not change (boostrap.min.css, favicon) are gzip and stored in const array
-// * index.html (not gz'd)
+// * index.html
 // * favicon.ico
 
 // * /src/bootstrap.bundle.min.js - Needed for popper
 // * /src/bootstrap.min.css
 // * /src/bootstrap.min.js
 // * /src/jquery-3.6.0.min.js
-// * /src/main.js (not gz'd)
+// * /src/main.js
 // * /src/rtk-setup.png
 // * /src/style.css
 
@@ -16,9 +16,10 @@
 // * /src/fonts/icomoon.ttf
 // * /src/fonts/icomoon.woof
 
-//To create uint8_t array:
-//Compress file to gzip using 7zip or other
-//Convert file to hex at http://tomeko.net/online_tools/file_to_hex.php?lang=en
+//To create uint8_t array from png/css/js etc. (will work on _any_ file, not just png's):
+//  cd Firmware\Tools
+//  python png_zipper.py ..\RTK_Surveyor\AP-Config\src\rtk-setup-wifi.png
+//  The hex is saved in ..\RTK_Surveyor\AP-Config\src\rtk-setup-wifi.png.gzip_hex
 
 //To convert AP-Config\src\main.js to main_js[], run the Python main_js_zipper.py script in the Tools folder:
 //  cd Firmware\Tools

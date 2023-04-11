@@ -135,7 +135,7 @@ with open(destfilename, 'wb') as f_out:
                     else:
                         f_out.write(bytes(' ', 'utf-8'))
 
-                f_out.write(bytes("0x{:02x}\r\n".format(content[-1]), 'utf-8'))
+                f_out.write(bytes("0x{:02X}\r\n".format(content[-1]), 'utf-8'))
 
                 f_out.write(f_in_3.read())
 

@@ -1689,15 +1689,22 @@ static const char *index_html = R"=====(
         }
 
         .battery {
-            position: relative;
-            top: 50%;
-            transform: translateY(-50%);
-            float: right;
+      position: absolute;
+      z-index: 1000; 
+      right: 10px;
+      max-width: 600px;
+      margin-top: 5px;
         }
     </style>
 </head>
 
 <body>
+  <div class="container" id="batteryIcon">
+    <div align="right" class="battery">
+           <img id="batteryIconFileName" src="src/Battery2_Charging.png" alt="Battery level"> <span id="batteryPercent" class="small"
+            style="display:inline;">+67</span>
+      </div>
+  </div>
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="resetInProcess">
         <b>Resetting</b><br><br>RTK device is rebooting. Please wait...
@@ -1709,11 +1716,6 @@ static const char *index_html = R"=====(
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="firmwareUploadComplete">
         <b>Done</b><br><br>Firmware update complete. RTK device is now rebooting.
-    </div>
-
-    <div align="right" class="container" style="margin-top:10px;max-width:600px; margin-bottom: -25px;">
-        <img id="batteryIconFileName" src="src/BatteryBlank.png" alt="Battery level"> <span id="batteryPercent" class="small"
-            style="display:inline;"></span>
     </div>
 
     <div class="container">

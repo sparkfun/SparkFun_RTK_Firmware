@@ -132,14 +132,14 @@ with open(destfilename, 'wb') as f_out:
                 content = f_in_2.read()
                 count = 1
                 for c in content:
-                    f_out.print(hex(c))
-                    f_out.print(',')
+                    f_out.write(bytes(hex(c), 'utf-8'))
+                    f_out.write(bytes(',', 'utf-8'))
                     count += 1
                     if count == 16:
                         count = 1
-                        f_out.print('\r\n')
+                        f_out.write(bytes('\r\n', 'utf-8'))
                     else:
-                        f_out.print(' ')
+                        f_out.write(bytes(' ', 'utf-8'))
 
                 f_out.write(f_in_3.read())
 

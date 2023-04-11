@@ -335,13 +335,13 @@ void menuEthernet()
     if (!settings.ethernetDHCP)
     {
       systemPrint("2) Fixed IP Address : ");
-      systemPrintln(settings.ethernetIP.toString());
+      systemPrintln(settings.ethernetIP.toString().c_str());
       systemPrint("3) DNS              : ");
-      systemPrintln(settings.ethernetDNS.toString());
+      systemPrintln(settings.ethernetDNS.toString().c_str());
       systemPrint("4) Gateway          : ");
-      systemPrintln(settings.ethernetGateway.toString());
+      systemPrintln(settings.ethernetGateway.toString().c_str());
       systemPrint("5) Subnet Mask      : ");
-      systemPrintln(settings.ethernetSubnet.toString());
+      systemPrintln(settings.ethernetSubnet.toString().c_str());
     }
 
     systemPrintln("x) Exit");
@@ -359,7 +359,8 @@ void menuEthernet()
       char tempStr[20];
       if (getIPAddress(tempStr, sizeof(tempStr)) == INPUT_RESPONSE_VALID)
       {
-        settings.ethernetIP.fromString(tempStr);
+        String tempString = String(tempStr);
+        settings.ethernetIP.fromString(tempString);
         restartEthernet = true;        
       }
     }
@@ -369,7 +370,8 @@ void menuEthernet()
       char tempStr[20];
       if (getIPAddress(tempStr, sizeof(tempStr)) == INPUT_RESPONSE_VALID)
       {
-        settings.ethernetDNS.fromString(tempStr);
+        String tempString = String(tempStr);
+        settings.ethernetDNS.fromString(tempString);
         restartEthernet = true;        
       }
     }
@@ -379,7 +381,8 @@ void menuEthernet()
       char tempStr[20];
       if (getIPAddress(tempStr, sizeof(tempStr)) == INPUT_RESPONSE_VALID)
       {
-        settings.ethernetGateway.fromString(tempStr);
+        String tempString = String(tempStr);
+        settings.ethernetGateway.fromString(tempString);
         restartEthernet = true;        
       }
     }
@@ -389,7 +392,8 @@ void menuEthernet()
       char tempStr[20];
       if (getIPAddress(tempStr, sizeof(tempStr)) == INPUT_RESPONSE_VALID)
       {
-        settings.ethernetSubnet.fromString(tempStr);
+        String tempString = String(tempStr);
+        settings.ethernetSubnet.fromString(tempString);
         restartEthernet = true;        
       }
     }

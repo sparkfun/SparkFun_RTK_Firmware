@@ -370,10 +370,10 @@ void recordSystemSettingsToFile(File * settingsFile)
 
   //Ethernet
   {
-    settingsFile->printf("%s=%s\r\n", "ethernetIP", settings.ethernetIP.toString());
-    settingsFile->printf("%s=%s\r\n", "ethernetDNS", settings.ethernetDNS.toString());
-    settingsFile->printf("%s=%s\r\n", "ethernetGateway", settings.ethernetGateway.toString());
-    settingsFile->printf("%s=%s\r\n", "ethernetSubnet", settings.ethernetSubnet.toString());
+    settingsFile->printf("%s=%s\r\n", "ethernetIP", settings.ethernetIP.toString().c_str());
+    settingsFile->printf("%s=%s\r\n", "ethernetDNS", settings.ethernetDNS.toString().c_str());
+    settingsFile->printf("%s=%s\r\n", "ethernetGateway", settings.ethernetGateway.toString().c_str());
+    settingsFile->printf("%s=%s\r\n", "ethernetSubnet", settings.ethernetSubnet.toString().c_str());
     settingsFile->printf("%s=%d\r\n", "ethernetHttpPort", settings.ethernetHttpPort);
     settingsFile->printf("%s=%d\r\n", "ethernetNtpPort", settings.ethernetNtpPort);
     settingsFile->printf("%s=%d\r\n", "ethernetDHCP", settings.ethernetDHCP);
@@ -1300,7 +1300,7 @@ bool parseLine(char* str, Settings *settings)
 
       if (strcmp(settingName, tempString) == 0)
       {
-        String addr = String(settingName[strlen("ethernetIP=")]);
+        String addr = String(settingValue);
         settings->ethernetIP.fromString(addr);
         knownSetting = true;
       }
@@ -1312,7 +1312,7 @@ bool parseLine(char* str, Settings *settings)
 
       if (strcmp(settingName, tempString) == 0)
       {
-        String addr = String(settingName[strlen("ethernetDNS=")]);
+        String addr = String(settingValue);
         settings->ethernetDNS.fromString(addr);
         knownSetting = true;
       }
@@ -1324,7 +1324,7 @@ bool parseLine(char* str, Settings *settings)
 
       if (strcmp(settingName, tempString) == 0)
       {
-        String addr = String(settingName[strlen("ethernetGateway=")]);
+        String addr = String(settingValue);
         settings->ethernetGateway.fromString(addr);
         knownSetting = true;
       }
@@ -1336,7 +1336,7 @@ bool parseLine(char* str, Settings *settings)
 
       if (strcmp(settingName, tempString) == 0)
       {
-        String addr = String(settingName[strlen("ethernetSubnet=")]);
+        String addr = String(settingValue);
         settings->ethernetSubnet.fromString(addr);
         knownSetting = true;
       }

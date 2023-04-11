@@ -1108,13 +1108,25 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "ethernetDHCP") == 0)
     settings.ethernetDHCP = settingValueBool;
   else if (strcmp(settingName, "ethernetIP") == 0)
-    settings.ethernetIP.fromString(settingValueStr);
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetIP.fromString(settingValueStr);    
+  }
   else if (strcmp(settingName, "ethernetDNS") == 0)
-    settings.ethernetDNS.fromString(settingValueStr);
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetDNS.fromString(settingValueStr);    
+  }
   else if (strcmp(settingName, "ethernetGateway") == 0)
-    settings.ethernetGateway.fromString(settingValueStr);
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetGateway.fromString(settingValueStr);    
+  }
   else if (strcmp(settingName, "ethernetSubnet") == 0)
-    settings.ethernetSubnet.fromString(settingValueStr);
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetSubnet.fromString(settingValueStr);    
+  }
   else if (strcmp(settingName, "ethernetHttpPort") == 0)
     settings.ethernetHttpPort = settingValue;
   else if (strcmp(settingName, "ethernetNtpPort") == 0)

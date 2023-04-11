@@ -555,7 +555,7 @@ typedef struct {
   bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
   bool enableMarksFile = false; //Log marks to the marks file
 
-  uint8_t ubxMessageRates[MAX_UBX_MSG] = {254}; //Mark to restore defaults.
+  uint8_t ubxMessageRates[MAX_UBX_MSG] = {254}; //Mark first record with key so defaults will be applied.
 
   //Constellations monitored/used for fix
   ubxConstellation ubxConstellations[MAX_CONSTELLATIONS] =
@@ -667,7 +667,7 @@ typedef struct {
   uint16_t wifiTcpPort = 2947; //TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
   uint8_t minElev = 10; //Minimum elevation (in deg) for a GNSS satellite to be used in NAV
 
-  uint8_t ubxMessageRatesBase[MAX_UBX_MSG_RTCM] = {254}; //Mark to restore defaults. Int value for each supported message - Report rates for RTCM Base. Default to u-blox recommended rates.
+  uint8_t ubxMessageRatesBase[MAX_UBX_MSG_RTCM] = {254}; //Mark first record with key so defaults will be applied. Int value for each supported message - Report rates for RTCM Base. Default to u-blox recommended rates.
 
   uint32_t imuYaw = 0; //User defined IMU mount yaw angle (0 to 36,000) CFG-SFIMU-IMU_MNTALG_YAW
   int16_t imuPitch = 0; //User defined IMU mount pitch angle (-9000 to 9000) CFG-SFIMU-IMU_MNTALG_PITCH

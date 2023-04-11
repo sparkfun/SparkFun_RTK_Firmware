@@ -54,7 +54,9 @@ void startWebServer(bool startWiFi, int httpPort)
   webserver->onFileUpload(handleUpload); //Run handleUpload function when any file is uploaded. Must be before server.on() calls.
 
   webserver->on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send_P(200, "text/html", index_html);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html, sizeof(index_html));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
   });
 
   webserver->on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {

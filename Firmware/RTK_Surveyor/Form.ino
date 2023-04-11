@@ -96,7 +96,11 @@ void startWebServer(bool startWiFi, int httpPort)
   });
 
   webserver->on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest * request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
+    AsyncWebServerResponse *response;
+    if (productVariant == REFERENCE_STATION)
+      response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
+    else
+      response = request->beginResponse_P(200, "image/png", rtkSetupWiFi_png, sizeof(rtkSetupWiFi_png));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });

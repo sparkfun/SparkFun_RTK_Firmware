@@ -1858,7 +1858,7 @@ static const char *index_html = R"=====(
                                 <label for="measurementRateHz" class="col-form-label">In
                                     Hz:
                                     <span class="tt" data-bs-placement="right"
-                                        title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Default: 4Hz. Limit: 0.000122 to 10Hz.">
+                                        title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Note: The measurement rate is overridden to 1Hz when in Base mode. Default: 4Hz. Limit: 0.000122 to 10Hz.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -1873,7 +1873,7 @@ static const char *index_html = R"=====(
                             <div class="col-sm-2 col-12 ms-3 form-group">
                                 <label for="measurementRateSec">Seconds between measurements:
                                     <span class="tt" data-bs-placement="right"
-                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when taking a measurement every few seconds across a long survey (24+ hours). Limit: 0.1 to 8196 seconds."><span
+                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when taking a measurement every few seconds across a long survey (24+ hours). Note: The measurement rate is overridden to 1Hz when in Base mode.Limit: 0.1 to 8196 seconds."><span
                                             class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -2996,7 +2996,7 @@ static const char *index_html = R"=====(
                             RTCM Rates <i class="caret-icon bi icon-caret-down"></i>
                         </button>
                         <span class="tt" data-bs-placement="right"
-                            title="RTCM is transmitted by the base at a default of 1Hz for messages 1005, 1074, 1084, 1094, 1124, and 0.1Hz for 1230. This can be lowered for radios with low bandwidth or tailored to transmit any/all RTCM messages. Limits: 0 to 20.">
+                            title="RTCM is transmitted by the base at a default of 1Hz for messages 1005, 1074, 1084, 1094, 1124, and 0.1Hz for 1230. This can be lowered for radios with low bandwidth or tailored to transmit any/all RTCM messages. Limits: 0 to 20. Note: The measurement rate is overridden to 1Hz when in Base mode.">
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>

@@ -88,7 +88,9 @@ void startWebServer(bool startWiFi, int httpPort)
   });
 
   webserver->on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send_P(200, "text/javascript", main_js);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", main_js, sizeof(main_js));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
   });
 
   webserver->on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest * request) {

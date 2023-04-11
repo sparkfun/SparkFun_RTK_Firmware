@@ -125,12 +125,12 @@ with open(destfilename, 'wb') as f_out:
                 f_out.write(bytes('\r\n', 'utf-8'))
 
                 content = f_in_2.read()
-                count = 1
+                count = 0
                 for c in content[:-2]:
                     f_out.write(bytes("0x{:02X},".format(c), 'utf-8'))
                     count += 1
                     if count == 16:
-                        count = 1
+                        count = 0
                         f_out.write(bytes('\r\n', 'utf-8'))
                     else:
                         f_out.write(bytes(' ', 'utf-8'))

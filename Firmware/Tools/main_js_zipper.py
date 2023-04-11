@@ -1,7 +1,12 @@
-# Opens ..\RTK_Surveyor\AP-Config\src\main.js, gzip's the contents and pastes into ..\RTK_Surveyor\Form.h
+# Opens ..\RTK_Surveyor\AP-Config\src\main.js, gzip's the contents and pastes into ..\RTK_Surveyor\form.h
 
 # Written by: Paul Clark
 # Last update: April 10th, 2023
+
+# To convert AP-Config\src\main.js to main_js[], run the Python main_js_zipper.py script in the Tools folder:
+#   cd Firmware\Tools
+#   python main_js_zipper.py
+
 
 # SparkFun code, firmware, and software is released under the MIT License (http://opensource.org/licenses/MIT)
 #
@@ -32,7 +37,13 @@ import os
 import gzip
 import shutil
 
-print('SparkFun RTK: gzip main.js into Form.h')
+defaultsource = '../RTK_Surveyor/AP-Config/src/main.js'
+defaultdest   = '../RTK_Surveyor/form.h'
+headersearch  = 'static const uint8_t main_js[] PROGMEM = {'
+footersearch  = '}; ///main_js'
+
+print()
+print('SparkFun RTK: gzip main.js into form.h')
 print()
 
 sourcefilename = ''
@@ -41,18 +52,11 @@ if sourcefilename == '':
     # Check if the bin filename was passed in argv
     if len(sys.argv) > 1: sourcefilename = sys.argv[1]
 
-# Find main.js in ..\RTK_Surveyor\AP-Config\src
-firstfile = ''
-for root, dirs, files in os.walk("../RTK_Surveyor/AP-Config/src"):
-    if len(files) > 0:
-        if root == ".": # Comment this line to check sub-directories too
-            for afile in files:
-                if afile == 'main.js':
-                    if firstfile == '': firstfile = os.path.join(root, afile)
-
 # Ask user for filename offering firstfile as the default
-if sourcefilename == '': sourcefilename = input('Enter the source filename (default: ' + firstfile + '): ') # Get the filename
-if sourcefilename == '': sourcefilename = firstfile
+if sourcefilename == '':
+    sourcefilename = input('Enter the source filename (default: ' + defaultsource + '): ') # Get the filename
+    print()
+if sourcefilename == '': sourcefilename = defaultsource
 
 destfilename = ''
 
@@ -60,22 +64,14 @@ if destfilename == '':
     # Check if the bin filename was passed in argv
     if len(sys.argv) > 2: destfilename = sys.argv[2]
 
-# Find Form.h in ..\RTK_Surveyor
-firstfile = ''
-for root, dirs, files in os.walk("../RTK_Surveyor"):
-    if len(files) > 0:
-        if root == ".": # Comment this line to check sub-directories too
-            for afile in files:
-                if afile == 'Form.h':
-                    if firstfile == '': firstfile = os.path.join(root, afile)
-
 # Ask user for filename offering firstfile as the default
-if destfilename == '': destfilename = input('Enter the destination filename (default: ' + destfile + '): ') # Get the filename
-if destfilename == '': destfilename = firstfile
+if destfilename == '':
+    destfilename = input('Enter the destination filename (default: ' + defaultdest + '): ') # Get the filename
+    print()
+if destfilename == '': destfilename = defaultdest
 
 zippedfilename = sourcefilename + '.gzip'
 
-print()
 print('Step 1: gzip',sourcefilename,'into',zippedfilename)
 print()
 
@@ -85,7 +81,6 @@ with open(sourcefilename, 'rb') as f_in:
 
 headerfilename = destfilename + '.header'
 
-print()
 print('Step 2: create',headerfilename,'from',destfilename)
 print()
 
@@ -94,17 +89,16 @@ with open(destfilename, 'rb') as f_in:
         content = f_in.read()
 
         try:
-            pos = content.index(bytes('static const uint8_t main_js[] PROGMEM = {', 'utf-8'))
+            pos = content.index(bytes(headersearch, 'utf-8'))
         except:
             raise Exception('Invalid destination file - could not find start of main_js!')
 
-        pos += len('static const uint8_t main_js[] PROGMEM = {')
+        pos += len(headersearch)
 
         f_out.write(content[:pos])
 
 footerfilename = destfilename + '.footer'
 
-print()
 print('Step 3: create',footerfilename,'from',destfilename)
 print()
 
@@ -113,13 +107,12 @@ with open(destfilename, 'rb') as f_in:
         content = f_in.read()
 
         try:
-            pos = content.index(bytes('}; ///main_js', 'utf-8'))
+            pos = content.index(bytes(footersearch, 'utf-8'))
         except:
             raise Exception('Invalid destination file - could not find end of main_js!')
 
         f_out.write(content[pos:])
 
-print()
 print('Step 4: create',destfilename,'from',headerfilename,'+',zippedfilename,'+',footerfilename)
 print()
 
@@ -129,11 +122,12 @@ with open(destfilename, 'wb') as f_out:
             with open(footerfilename, 'rb') as f_in_3:
                 f_out.write(f_in_1.read())
 
+                f_out.write(bytes('\r\n', 'utf-8'))
+
                 content = f_in_2.read()
                 count = 1
-                for c in content:
-                    f_out.write(bytes(hex(c), 'utf-8'))
-                    f_out.write(bytes(',', 'utf-8'))
+                for c in content[:-2]:
+                    f_out.write(bytes("0x{:02X},".format(c), 'utf-8'))
                     count += 1
                     if count == 16:
                         count = 1
@@ -141,12 +135,15 @@ with open(destfilename, 'wb') as f_out:
                     else:
                         f_out.write(bytes(' ', 'utf-8'))
 
+                f_out.write(bytes("0x{:02x}\r\n".format(content[-1]), 'utf-8'))
+
                 f_out.write(f_in_3.read())
 
-print()
 print('Step 5: delete',headerfilename,'+',zippedfilename,'+',footerfilename)
 print()
 
 os.remove(headerfilename)
 os.remove(zippedfilename)
 os.remove(footerfilename)
+
+print('Done!')

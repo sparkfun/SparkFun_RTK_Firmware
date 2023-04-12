@@ -575,7 +575,6 @@ bool setMessages(int maxRetries)
           response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + spiOffset, rate);
         }
         x++;
-        systemPrintln(x);
       }
       while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
       

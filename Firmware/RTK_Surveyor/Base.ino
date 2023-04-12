@@ -98,7 +98,6 @@ bool configureUbloxModuleBase()
       logRTCMMessages |= ( SFE_UBLOX_FILTER_RTCM_TYPE1005 | SFE_UBLOX_FILTER_RTCM_TYPE1074 | SFE_UBLOX_FILTER_RTCM_TYPE1084
                            | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124 | SFE_UBLOX_FILTER_RTCM_TYPE1230 );
       theGNSS.setRTCMLoggingMask(logRTCMMessages);
-      log_d("setRTCMLoggingMask 0x%X", logRTCMMessages);
     }
   
     //Update message rates for UART2 and USB

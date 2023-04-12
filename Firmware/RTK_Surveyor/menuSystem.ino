@@ -142,8 +142,8 @@ void menuSystem()
           systemPrint("Disconnected");
           break;
         case NTRIP_CLIENT_ON:
-        case NTRIP_CLIENT_WIFI_STARTED:
-        case NTRIP_CLIENT_WIFI_CONNECTED:
+        case NTRIP_CLIENT_WIFI_ETHERNET_STARTED:
+        case NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED:
         case NTRIP_CLIENT_CONNECTING:
           systemPrint("Connecting");
           break;

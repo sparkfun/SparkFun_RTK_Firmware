@@ -158,8 +158,8 @@ enum NTRIPClientState
 {
   NTRIP_CLIENT_OFF = 0,         //Using Bluetooth or NTRIP server
   NTRIP_CLIENT_ON,              //WIFI_START state
-  NTRIP_CLIENT_WIFI_STARTED, //Connecting to WiFi access point
-  NTRIP_CLIENT_WIFI_CONNECTED,  //WiFi connected to an access point
+  NTRIP_CLIENT_WIFI_ETHERNET_STARTED,   //Connecting to WiFi access point or Ethernet
+  NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED, //Connected to an access point or Ethernet
   NTRIP_CLIENT_CONNECTING,      //Attempting a connection to the NTRIP caster
   NTRIP_CLIENT_CONNECTED,       //Connected to the NTRIP caster
 };

@@ -141,12 +141,15 @@ void menuMessages()
       systemPrintln("2) Set ESF Messages");
     systemPrintln("3) Set RXM Messages");
     systemPrintln("4) Set NAV Messages");
-    systemPrintln("5) Set MON Messages");
-    systemPrintln("6) Set TIM Messages");
-    systemPrintln("7) Reset to Surveying Defaults (NMEAx5)");
-    systemPrintln("8) Reset to PPP Logging Defaults (NMEAx5 + RXMx2)");
-    systemPrintln("9) Turn off all messages");
-    systemPrintln("10) Turn on all messages");
+    systemPrintln("5) Set NAV2 Messages");
+    systemPrintln("6) Set MON Messages");
+    systemPrintln("7) Set TIM Messages");
+    systemPrintln("8) Set PUBX Messages");
+
+    systemPrintln("9) Reset to Surveying Defaults (NMEAx5)");
+    systemPrintln("10) Reset to PPP Logging Defaults (NMEAx5 + RXMx2)");
+    systemPrintln("11) Turn off all messages");
+    systemPrintln("12) Turn on all messages");
 
     systemPrintln("x) Exit");
 
@@ -163,10 +166,14 @@ void menuMessages()
     else if (incoming == 4)
       menuMessagesSubtype(settings.ubxMessageRates, "NAV");
     else if (incoming == 5)
-      menuMessagesSubtype(settings.ubxMessageRates, "MON");
+      menuMessagesSubtype(settings.ubxMessageRates, "NAV2");
     else if (incoming == 6)
-      menuMessagesSubtype(settings.ubxMessageRates, "TIM");
+      menuMessagesSubtype(settings.ubxMessageRates, "MON");
     else if (incoming == 7)
+      menuMessagesSubtype(settings.ubxMessageRates, "TIM");
+    else if (incoming == 8)
+      menuMessagesSubtype(settings.ubxMessageRates, "PUBX");
+    else if (incoming == 9)
     {
       setGNSSMessageRates(settings.ubxMessageRates, 0); //Turn off all messages
       setMessageRateByName("UBX_NMEA_GGA", 1);
@@ -181,7 +188,7 @@ void menuMessages()
       setMessageRateByName("UBX_NMEA_RMC", 1);
       systemPrintln("Reset to Surveying Defaults (NMEAx5)");
     }
-    else if (incoming == 8)
+    else if (incoming == 10)
     {
       setGNSSMessageRates(settings.ubxMessageRates, 0); //Turn off all messages
       setMessageRateByName("UBX_NMEA_GGA", 1);
@@ -199,12 +206,12 @@ void menuMessages()
       setMessageRateByName("UBX_RXM_SFRBX", 1);
       systemPrintln("Reset to PPP Logging Defaults (NMEAx5 + RXMx2)");
     }
-    else if (incoming == 9)
+    else if (incoming == 11)
     {
       setGNSSMessageRates(settings.ubxMessageRates, 0); //Turn off all messages
       systemPrintln("All messages disabled");
     }
-    else if (incoming == 10)
+    else if (incoming == 12)
     {
       setGNSSMessageRates(settings.ubxMessageRates, 1); //Turn on all messages to report once per fix
       systemPrintln("All messages enabled");

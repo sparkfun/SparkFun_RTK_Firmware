@@ -57,12 +57,16 @@ void beginEthernetNTPServer()
   if (!HAS_ETHERNET)
     return;
 
-  // Skip if going into configure-via-ethernet mode
+  //Skip if going into configure-via-ethernet mode
   if (configureViaEthernet)
   {
     log_d("configureViaEthernet: skipping beginNTPServer");
     return;
   }
+
+  //Skip if not in NTPSERVER mode
+  if (systemState < STATE_NTPSERVER_NOT_STARTED || systemState > STATE_NTPSERVER_SYNC)
+    return;
     
 #ifdef COMPILE_ETHERNET
   if ((online.ethernetStatus == ETH_LINK) && (online.ethernetNTPServer == false))
@@ -79,7 +83,7 @@ void beginEthernetNTPServer()
 
 void updateEthernet()
 {
-  // Skip if in configure-via-ethernet mode
+  //Skip if in configure-via-ethernet mode
   if (configureViaEthernet)
   {
     //log_d("configureViaEthernet: skipping updateEthernet");

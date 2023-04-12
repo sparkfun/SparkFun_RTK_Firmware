@@ -165,6 +165,7 @@ bool configureUbloxModule()
   response = true; //Reset
 
   //Make sure the appropriate messages are enabled
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, 1); //Enable NAV2 no matter what
   response &= setMessages(); //73 messages. Does a complete open/closed val set
   if (response == false)
     systemPrintln("Module failed config block 2");

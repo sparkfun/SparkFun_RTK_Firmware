@@ -518,15 +518,16 @@ void settingsToDefaults()
 //Uses dummy newCfg and sendCfg values to be sure we open/close a complete set
 bool setMessages(int maxRetries)
 {
-  bool response = true;
-  
   uint32_t spiOffset = 0; //Set to 3 if using SPI to convert UART1 keys to SPI. This is brittle and non-perfect, but works.
   if (USE_SPI_GNSS)
     spiOffset = 3;
 
+  bool success = false;
   int tryNo = -1;
-  while ((++tryNo < maxRetries) && !response)
+  while ((++tryNo < maxRetries) && !success)
   {
+    bool response = true;
+    
     int x = 0;
     while (x < MAX_UBX_MSG)
     {
@@ -574,6 +575,7 @@ bool setMessages(int maxRetries)
           response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + spiOffset, rate);
         }
         x++;
+        systemPrintln(x);
       }
       while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
       
@@ -609,20 +611,24 @@ bool setMessages(int maxRetries)
       theGNSS.setRTCMLoggingMask(logRTCMMessages);
       theGNSS.setNMEALoggingMask(logNMEAMessages);
     }
+  
+  if (response)
+    success = true;
   }
 
-  return (response);
+  return (success);
 }
 
 //Enable all the valid messages for this platform over the USB port
 //Add 2 to every UART1 key. This is brittle and non-perfect, but works.
 bool setMessagesUSB(int maxRetries)
 {
-  bool response = true;
-
+  bool success = false;
   int tryNo = -1;
-  while ((++tryNo < maxRetries) && !response)
+  while ((++tryNo < maxRetries) && !success)
   {
+    bool response = true;
+    
     int x = 0;
     while (x < MAX_UBX_MSG)
     {
@@ -638,9 +644,12 @@ bool setMessagesUSB(int maxRetries)
       
       response &= theGNSS.sendCfgValset();
     }
+
+  if (response)
+    success = true;
   }
 
-  return (response);
+  return (success);
 }
 
 //Enable all the valid constellations and bands for this platform

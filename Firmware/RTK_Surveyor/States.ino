@@ -101,6 +101,11 @@ void updateSystemState()
             ledcWrite(ledBTChannel, 0); //Turn off BT LED
           }
 
+          if (productVariant == REFERENCE_STATION)
+          {
+            digitalWrite(pin_baseStatusLED, LOW);
+          }
+
           //Configure for rover mode
           displayRoverStart(0);
 
@@ -600,20 +605,20 @@ void updateSystemState()
 
       case (STATE_WIFI_CONFIG_NOT_STARTED):
         {
-          if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
+          if (productVariant == RTK_SURVEYOR)
           {
             //Start BT LED Fade to indicate start of WiFi
             btLEDTask.detach(); //Increase BT LED blinker task rate
             btLEDTask.attach(btLEDTaskPace33Hz, updateBTled); //Rate in seconds, callback
 
             digitalWrite(pin_baseStatusLED, LOW);
-            if (productVariant == RTK_SURVEYOR)
-            {
-              digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-              digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-              digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-            }
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
           }
+
+          if (productVariant == REFERENCE_STATION)
+            digitalWrite(pin_baseStatusLED, LOW);
 
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 

@@ -152,6 +152,8 @@ bool configureUbloxModule()
   if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
     response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 0);
 
+  response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, 1); //Enable NAV2 messages no matter what
+
   response &= theGNSS.sendCfgValset();
 
   if (response == false)
@@ -165,7 +167,6 @@ bool configureUbloxModule()
   response = true; //Reset
 
   //Make sure the appropriate messages are enabled
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, 1); //Enable NAV2 no matter what
   response &= setMessages(); //Step through ubxMessageRates array
   if (response == false)
     systemPrintln("Module failed config block 2");

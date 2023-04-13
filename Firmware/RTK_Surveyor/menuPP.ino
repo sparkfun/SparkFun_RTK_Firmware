@@ -895,6 +895,8 @@ void beginLBand()
 
   theGNSS.setRXMCORcallbackPtr(&checkRXMCOR); //Check if the PMP data is being decrypted successfully
 
+  lbandStartTimer = millis();
+
   log_d("L-Band online");
 
   online.lband = true;
@@ -1009,7 +1011,6 @@ void menuPointPerfect()
 }
 
 //Process any new L-Band from I2C
-//If a certain amount of time has elapsed between last decryption, turn off L-Band icon
 void updateLBand()
 {
 #ifdef COMPILE_L_BAND
@@ -1018,8 +1019,24 @@ void updateLBand()
     i2cLBand.checkUblox(); //Check for the arrival of new PMP data and process it.
     i2cLBand.checkCallbacks(); //Check if any L-Band callbacks are waiting to be processed.
 
+    //If a certain amount of time has elapsed between last decryption, turn off L-Band icon
     if (lbandCorrectionsReceived == true && millis() - lastLBandDecryption > 5000)
       lbandCorrectionsReceived = false;
+
+    //If we don't get an L-Band fix within Timeout, hot-start ZED-F9x
+    if (carrSoln == 1) //RTK Float
+    {
+      if ( (millis() - lbandStartTimer) > (lbandFixTimeout_seconds * 1000L))
+      {
+        lbandStartTimer = millis(); //Reset timer
+        lbandRestarts++;
+
+        //Hotstart ZED to try to get RTK lock
+        theGNSS.softwareResetGNSSOnly();
+
+        log_d("Restarting ZED. Number of L-Band restarts: %d", lbandRestarts);
+      }
+    }
   }
 #endif  //COMPILE_L_BAND
 }

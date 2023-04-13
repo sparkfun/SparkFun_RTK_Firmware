@@ -166,7 +166,7 @@ bool configureUbloxModule()
 
   //Make sure the appropriate messages are enabled
   response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, 1); //Enable NAV2 no matter what
-  response &= setMessages(); //73 messages. Does a complete open/closed val set
+  response &= setMessages(); //Step through ubxMessageRates array
   if (response == false)
     systemPrintln("Module failed config block 2");
   response = true; //Reset
@@ -397,6 +397,8 @@ bool createTestFile()
     return (!SD_MMC.exists(testFileName));
   }
 #endif
+
+  return (false);
 }
 
 //If debug option is on, print available heap
@@ -512,6 +514,19 @@ void settingsToDefaults()
   settings = defaultSettings;
 }
 
+//Given a spot in the ubxMsg array, return true if this message is supported on this platform and firmware version
+bool messageSupported(int messageNumber)
+{
+  bool messageSupported = false;
+
+  if ( (zedModuleType == PLATFORM_F9P) && (zedFirmwareVersionInt >= ubxMessages[messageNumber].f9pFirmwareVersionSupported) )
+    messageSupported = true;
+  else if ( (zedModuleType == PLATFORM_F9R) && (zedFirmwareVersionInt >= ubxMessages[messageNumber].f9rFirmwareVersionSupported) )
+    messageSupported = true;
+
+  return (messageSupported);
+}
+
 //Enable all the valid messages for this platform
 //There are many messages so split into batches. VALSET is limited to 64 max per batch
 //Uses dummy newCfg and sendCfg values to be sure we open/close a complete set
@@ -523,38 +538,38 @@ bool setMessages()
   if (USE_SPI_GNSS)
     spiOffset = 3;
 
-  int x = 0;
-  while (x < MAX_UBX_MSG)
+  int messageNumber = 0;
+  while (messageNumber < MAX_UBX_MSG)
   {
     response &= theGNSS.newCfgValset();
 
     do
     {
-      if (ubxMessages[x].supported & zedModuleType)
+      if (messageSupported(messageNumber) == true)
       {
-        uint8_t rate = settings.ubxMessageRates[x];
+        uint8_t rate = settings.ubxMessageRates[messageNumber];
 
         //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH and ESF_STATUS remained enabled
         //(but not enabled for logging)
         if (USE_SPI_GNSS)
         {
-          if (ubxMessages[x].msgClass == UBX_CLASS_NAV)
-            if ((ubxMessages[x].msgID ==  UBX_NAV_PVT) || (ubxMessages[x].msgID ==  UBX_NAV_HPPOSLLH))
+          if (ubxMessages[messageNumber].msgClass == UBX_CLASS_NAV)
+            if ((ubxMessages[messageNumber].msgID == UBX_NAV_PVT) || (ubxMessages[messageNumber].msgID == UBX_NAV_HPPOSLLH))
               rate = 1;
-          if (ubxMessages[x].msgClass == UBX_CLASS_ESF)
-            if (ubxMessages[x].msgID ==  UBX_ESF_STATUS)
+          if (ubxMessages[messageNumber].msgClass == UBX_CLASS_ESF)
+            if (ubxMessages[messageNumber].msgID == UBX_ESF_STATUS)
               if (zedModuleType == PLATFORM_F9R)
                 rate = 1;
-          if (ubxMessages[x].msgClass == UBX_CLASS_TIM)
-            if (ubxMessages[x].msgID ==  UBX_TIM_TM2)
+          if (ubxMessages[messageNumber].msgClass == UBX_CLASS_TIM)
+            if (ubxMessages[messageNumber].msgID == UBX_TIM_TM2)
               rate = 1;
         }
 
-        response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + spiOffset, rate);
+        response &= theGNSS.addCfgValset(ubxMessages[messageNumber].msgConfigKey + spiOffset, rate);
       }
-      x++;
+      messageNumber++;
     }
-    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+    while (((messageNumber % 43) < 42) && (messageNumber < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
 
     response &= theGNSS.sendCfgValset();
   }
@@ -566,22 +581,24 @@ bool setMessages()
     uint32_t logRTCMMessages = 0;
     uint32_t logNMEAMessages = 0;
 
-    for (x = 0; x < MAX_UBX_MSG; x++)
+    for (int x = 0; x < MAX_UBX_MSG; x++)
     {
-      if (ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
+      if (messageSupported(x) == true)
       {
-        if ((settings.ubxMessageRates[x] > 0) && (ubxMessages[x].supported & zedModuleType))
-          logRTCMMessages |= ubxMessages[x].filterMask;
-      }
-      else if (ubxMessages[x].msgClass == UBX_CLASS_NMEA) //NMEA messages
-      {
-        if ((settings.ubxMessageRates[x] > 0) && (ubxMessages[x].supported & zedModuleType))
-          logNMEAMessages |= ubxMessages[x].filterMask;
-      }
-      else //UBX messages
-      {
-        if (ubxMessages[x].supported & zedModuleType)
+        if (ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
+        {
+          if (settings.ubxMessageRates[x] > 0)
+            logRTCMMessages |= ubxMessages[x].filterMask;
+        }
+        else if (ubxMessages[x].msgClass == UBX_CLASS_NMEA) //NMEA messages
+        {
+          if (settings.ubxMessageRates[x] > 0)
+            logNMEAMessages |= ubxMessages[x].filterMask;
+        }
+        else //UBX messages
+        {
           theGNSS.enableUBXlogging(ubxMessages[x].msgClass, ubxMessages[x].msgID, settings.ubxMessageRates[x] > 0);
+        }
       }
     }
 
@@ -598,18 +615,18 @@ bool setMessagesUSB()
 {
   bool response = true;
 
-  int x = 0;
-  while (x < MAX_UBX_MSG)
+  int messageNumber = 0;
+  while (messageNumber < MAX_UBX_MSG)
   {
     response &= theGNSS.newCfgValset();
 
     do
     {
-      if (ubxMessages[x].supported & zedModuleType)
-        response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 2, settings.ubxMessageRates[x]);
-      x++;
+      if (messageSupported(messageNumber) == true)
+        response &= theGNSS.addCfgValset(ubxMessages[messageNumber].msgConfigKey + 2, settings.ubxMessageRates[messageNumber]);
+      messageNumber++;
     }
-    while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+    while (((messageNumber % 43) < 42) && (messageNumber < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
 
     response &= theGNSS.sendCfgValset();
   }

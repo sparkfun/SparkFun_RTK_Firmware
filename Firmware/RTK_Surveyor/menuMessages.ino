@@ -331,17 +331,10 @@ void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
     for (int x = 0 ; x < (endOfBlock - startOfBlock) ; x++)
     {
       //Check to see if this ZED platform supports this message
-      if (ubxMessages[x + startOfBlock].supported & zedModuleType)
+      if (messageSupported(x + startOfBlock) == true)
       {
-        int supportedVersion = 9999; //Not supported
-        if (zedModuleType == PLATFORM_F9P) supportedVersion = ubxMessages[x].f9pFirmwareVersionSupported;
-        else if (zedModuleType == PLATFORM_F9R) supportedVersion = ubxMessages[x].f9rFirmwareVersionSupported;
-
-        if (zedFirmwareVersionInt >= supportedVersion)
-        {
-          systemPrintf("%d) Message %s: ", x + 1, ubxMessages[x + startOfBlock].msgTextName);
-          systemPrintln(localMessageRate[x + startOfBlock]);
-        }
+        systemPrintf("%d) Message %s: ", x + 1, ubxMessages[x + startOfBlock].msgTextName);
+        systemPrintln(localMessageRate[x + startOfBlock]);
       }
     }
 
@@ -354,17 +347,8 @@ void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
       //Check to see if this ZED platform supports this message
       int msgNumber = (incoming - 1) + startOfBlock;
 
-      if (ubxMessages[msgNumber].supported & zedModuleType)
-      {
-        int supportedVersion = 9999; //Not supported
-        if (zedModuleType == PLATFORM_F9P) supportedVersion = ubxMessages[msgNumber].f9pFirmwareVersionSupported;
-        else if (zedModuleType == PLATFORM_F9R) supportedVersion = ubxMessages[msgNumber].f9rFirmwareVersionSupported;
-
-        if (zedFirmwareVersionInt >= supportedVersion)
-        {
-          inputMessageRate(localMessageRate[msgNumber], msgNumber);
-        }
-      }
+      if (messageSupported(msgNumber) == true)
+        inputMessageRate(localMessageRate[msgNumber], msgNumber);
       else
         printUnknown(incoming);
     }

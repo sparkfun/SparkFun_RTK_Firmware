@@ -573,6 +573,12 @@ bool setMessages()
     while (((messageNumber % 43) < 42) && (messageNumber < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
 
     response &= theGNSS.sendCfgValset();
+
+    if (response == false)
+    {
+      log_d("sendCfg failed at messageNumber %d %s\r\n", messageNumber, ubxMessages[messageNumber].msgTextName);
+      response = true;
+    }
   }
 
   //For SPI GNSS products, we need to add each message to the GNSS Library logging buffer

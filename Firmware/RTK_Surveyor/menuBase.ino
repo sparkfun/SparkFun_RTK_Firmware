@@ -352,9 +352,7 @@ void menuSensorFusion()
 
         systemPrintf("5) Output rate of priority nav mode message: %d\r\n", settings.rateNavPrio);
 
-        systemPrintf("6) Enable secondary NAV2 output: %s\r\n", settings.enableNAV2 ? "True" : "False");
-
-        systemPrintf("7) Use speed measurements instead of single ticks: %s\r\n", settings.sfUseSpeed ? "True" : "False");
+        systemPrintf("6) Use speed measurements instead of single ticks: %s\r\n", settings.sfUseSpeed ? "True" : "False");
       }
       else
       {
@@ -372,9 +370,7 @@ void menuSensorFusion()
 
         systemPrintf("8) Output rate of priority nav mode message: %d\r\n", settings.rateNavPrio);
 
-        systemPrintf("9) Enable secondary NAV2 output: %s\r\n", settings.enableNAV2 ? "True" : "False");
-
-        systemPrintf("10) Use speed measurements instead of single ticks: %s\r\n", settings.sfUseSpeed ? "True" : "False");
+        systemPrintf("9) Use speed measurements instead of single ticks: %s\r\n", settings.sfUseSpeed ? "True" : "False");
 
         //CFG-SFIMU-IMU_MNTALG_YAW
         //CFG-SFIMU-IMU_MNTALG_PITCH
@@ -478,14 +474,6 @@ void menuSensorFusion()
                || (settings.autoIMUmountAlignment == false && incoming == 9)
              ))
     {
-      settings.enableNAV2 ^= 1;
-    }
-
-    else if (settings.enableSensorFusion == true && (
-               (settings.autoIMUmountAlignment == true && incoming == 7)
-               || (settings.autoIMUmountAlignment == false && incoming == 10)
-             ))
-    {
       settings.sfUseSpeed ^= 1;
     }
 
@@ -505,7 +493,6 @@ void menuSensorFusion()
   theGNSS.setVal8(UBLOX_CFG_SFODO_DIS_AUTODIRPINPOL, settings.sfDisableWheelDirection);
   theGNSS.setVal8(UBLOX_CFG_SFODO_COMBINE_TICKS, settings.sfCombineWheelTicks);
   theGNSS.setVal8(UBLOX_CFG_RATE_NAV_PRIO, settings.rateNavPrio);
-  theGNSS.setVal8(UBLOX_CFG_NAV2_OUT_ENABLED, settings.enableNAV2);
   theGNSS.setVal8(UBLOX_CFG_SFODO_USE_SPEED, settings.sfUseSpeed);
 
   clearBuffer(); //Empty buffer of any newline chars

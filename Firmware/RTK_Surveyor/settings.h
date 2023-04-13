@@ -708,7 +708,6 @@ typedef struct {
   bool sfDisableWheelDirection = false; //CFG-SFODO-DIS_AUTODIRPINPOL
   bool sfCombineWheelTicks = false; //CFG-SFODO-COMBINE_TICKS
   uint8_t rateNavPrio = 0; //Output rate of priority nav mode message - CFG-RATE-NAV_PRIO
-  bool enableNAV2 = false; //CFG-NAV2-OUT_ENABLED
   //CFG-SFIMU-AUTO_MNTALG_ENA 0 = autoIMUmountAlignment
   bool sfUseSpeed = false; //CFG-SFODO-USE_SPEED
 

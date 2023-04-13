@@ -337,7 +337,6 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "sfDisableWheelDirection", settings.sfDisableWheelDirection);
   settingsFile->printf("%s=%d\r\n", "sfCombineWheelTicks", settings.sfCombineWheelTicks);
   settingsFile->printf("%s=%d\r\n", "rateNavPrio", settings.rateNavPrio);
-  settingsFile->printf("%s=%d\r\n", "enableNAV2", settings.enableNAV2);
   settingsFile->printf("%s=%d\r\n", "sfUseSpeed", settings.sfUseSpeed);
 
   //Record constellation settings
@@ -1094,14 +1093,6 @@ bool parseLine(char* str, Settings *settings)
     if (settings->rateNavPrio != d)
     {
       settings->rateNavPrio = d;
-      settings->updateZEDSettings = true;
-    }
-  }
-  else if (strcmp(settingName, "enableNAV2") == 0)
-  {
-    if (settings->enableNAV2 != d)
-    {
-      settings->enableNAV2 = d;
       settings->updateZEDSettings = true;
     }
   }

@@ -30,7 +30,7 @@ bool configureUbloxModuleBase()
   response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); //Disable NMEA message that may have been set during Rover NTRIP Client mode
 
   //Survey mode is only available on ZED-F9P modules
-  if (zedModuleType == PLATFORM_F9P)
+  if (commandSupported(UBLOX_CFG_TMODE_MODE) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
 
   response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model

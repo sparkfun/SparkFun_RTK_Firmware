@@ -556,6 +556,42 @@ ubxMsg ubxMessages[] =
 #define MAX_UBX_MSG (sizeof(ubxMessages)/sizeof(ubxMsg))
 #define MAX_UBX_MSG_RTCM (12)
 
+
+//Struct to describe the necessary info for each UBX command
+//Each command will have a key, and minimum F9P/F9R versions that support that command
+typedef struct ubxCmd
+{
+  uint32_t cmdKey;
+  const char* cmdTextName;
+  uint16_t f9pFirmwareVersionSupported; //The minimum version this message is supported. 0 = all versions. 9999 = Not supported
+  uint16_t f9rFirmwareVersionSupported;
+} ubxCmd;
+
+//Static array containing all the compatible commands
+ubxCmd ubxCommands[] =
+{
+  {UBLOX_CFG_TMODE_MODE, "CFG_TMODE_MODE", 0, 9999}, //Survey mode is only available on ZED-F9P modules
+  
+  {UBLOX_CFG_UART1OUTPROT_RTCM3X, "CFG_UART1OUTPROT_RTCM3X", 0, 9999}, //RTCM not supported on F9R
+  {UBLOX_CFG_UART1INPROT_SPARTN, "CFG_UART1INPROT_SPARTN", 120, 9999}, //Supported on F9P 120 and up. Not supported on F9R 120.
+  
+  {UBLOX_CFG_UART2OUTPROT_RTCM3X, "CFG_UART2OUTPROT_RTCM3X", 0, 9999}, //RTCM not supported on F9R
+  {UBLOX_CFG_UART2INPROT_SPARTN, "CFG_UART2INPROT_SPARTN", 120, 9999}, //
+
+  {UBLOX_CFG_SPIOUTPROT_RTCM3X, "CFG_SPIOUTPROT_RTCM3X", 0, 9999}, //RTCM not supported on F9R
+  {UBLOX_CFG_SPIINPROT_SPARTN, "CFG_SPIINPROT_SPARTN", 120, 9999}, //
+
+  {UBLOX_CFG_I2COUTPROT_RTCM3X, "CFG_I2COUTPROT_RTCM3X", 0, 9999}, //RTCM not supported on F9R
+  {UBLOX_CFG_I2CINPROT_SPARTN, "CFG_I2CINPROT_SPARTN", 120, 9999}, //
+
+  {UBLOX_CFG_USBOUTPROT_RTCM3X, "CFG_USBOUTPROT_RTCM3X", 0, 9999}, //RTCM not supported on F9R
+  {UBLOX_CFG_USBINPROT_SPARTN, "CFG_USBINPROT_SPARTN", 120, 9999}, //
+
+  {UBLOX_CFG_NAV2_OUT_ENABLED, "CFG_NAV2_OUT_ENABLED", 130, 130}, //Supported on F9P 130 and up. Supported on F9R 130 and up.
+};
+
+#define MAX_UBX_CMD (sizeof(ubxCommands)/sizeof(ubxCmd))
+
 //This is all the settings that can be set on RTK Surveyor. It's recorded to NVM and the config file.
 typedef struct {
   int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int

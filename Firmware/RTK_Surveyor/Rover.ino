@@ -27,7 +27,7 @@ bool configureUbloxModuleRover()
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, settings.navigationRate);
 
   //Survey mode is only available on ZED-F9P modules
-  if (zedModuleType == PLATFORM_F9P)
+  if (commandSupported(UBLOX_CFG_TMODE_MODE) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
 
   response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model

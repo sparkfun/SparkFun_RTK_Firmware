@@ -40,8 +40,7 @@ bool configureUbloxModule()
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, 1000);
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, 1);
 
-  //Survey mode is only available on ZED-F9P modules
-  if (zedModuleType == PLATFORM_F9P)
+  if (commandSupported(UBLOX_CFG_TMODE_MODE) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
 
   //UART1 will primarily be used to pass NMEA and UBX from ZED to ESP32 (eventually to cell phone)
@@ -51,12 +50,12 @@ bool configureUbloxModule()
   {
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_NMEA, 1);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_UART1OUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_RTCM3X, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_NMEA, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_RTCM3X, 1);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    if (commandSupported(UBLOX_CFG_UART1INPROT_SPARTN) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_SPARTN, 0);
 
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud); //Defaults to 230400 to maximize message output support
@@ -65,60 +64,60 @@ bool configureUbloxModule()
     //Disable SPI port - This is just to remove some overhead by ZED
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_NMEA, 0);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_SPIOUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_RTCM3X, 0);
 
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_NMEA, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_RTCM3X, 0);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    if (commandSupported(UBLOX_CFG_SPIINPROT_SPARTN) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_SPARTN, 0);
   }
   else //SPI GNSS
   {
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_NMEA, 1);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_SPIOUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_RTCM3X, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_NMEA, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_RTCM3X, 1);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    if (commandSupported(UBLOX_CFG_SPIINPROT_SPARTN) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_SPARTN, 0);
 
     //Disable I2C and UART1 ports - This is just to remove some overhead by ZED
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_NMEA, 0);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_I2COUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_RTCM3X, 0);
 
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_NMEA, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_RTCM3X, 0);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    if (commandSupported(UBLOX_CFG_I2CINPROT_SPARTN) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_SPARTN, 0);
 
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_NMEA, 0);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_UART1OUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_RTCM3X, 0);
 
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_NMEA, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_RTCM3X, 0);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    if (commandSupported(UBLOX_CFG_UART1INPROT_SPARTN) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_SPARTN, 0);
   }
 
   //Set the UART2 to only do RTCM (in case this device goes into base mode)
   response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_NMEA, 0);
-  if (zedModuleType == PLATFORM_F9P)
+  if (commandSupported(UBLOX_CFG_UART2OUTPROT_RTCM3X) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_RTCM3X, 1);
   response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_UBX, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_NMEA, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_RTCM3X, 1);
-  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+  if (commandSupported(UBLOX_CFG_UART2INPROT_SPARTN) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_SPARTN, 0);
 
   //We don't want NMEA over I2C, but we will want to deliver RTCM, and UBX+RTCM is not an option
@@ -126,12 +125,14 @@ bool configureUbloxModule()
   {
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_NMEA, 1);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_I2COUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_RTCM3X, 1);
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_NMEA, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_RTCM3X, 1);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+
+    if (commandSupported(UBLOX_CFG_I2CINPROT_SPARTN) == true)
     {
       if (productVariant == RTK_FACET_LBAND)
         response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_SPARTN, 1); //We push NEO-D9S correction data (SPARTN) to ZED-F9P over the I2C interface
@@ -144,15 +145,16 @@ bool configureUbloxModule()
   //So let's be sure all protocols are on for the USB port
   response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_UBX, 1);
   response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_NMEA, 1);
-  if (zedModuleType == PLATFORM_F9P)
+  if (commandSupported(UBLOX_CFG_USBOUTPROT_RTCM3X) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_RTCM3X, 1);
   response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_UBX, 1);
   response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_NMEA, 1);
   response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_RTCM3X, 1);
-  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+  if (commandSupported(UBLOX_CFG_USBINPROT_SPARTN) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 0);
 
-  response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, 1); //Enable NAV2 messages no matter what
+  if (commandSupported(UBLOX_CFG_NAV2_OUT_ENABLED) == true)
+    response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, 1); //Enable NAV2 messages no matter what
 
   response &= theGNSS.sendCfgValset();
 
@@ -526,6 +528,31 @@ bool messageSupported(int messageNumber)
     messageSupported = true;
 
   return (messageSupported);
+}
+//Given a command key, return true if that key is supported on this platform and fimrware version
+bool commandSupported(const uint32_t key)
+{
+  bool commandSupported = false;
+
+  //Locate this key in the known key array
+  int commandNumber = 0;
+  for ( ; commandNumber < MAX_UBX_CMD ; commandNumber++)
+  {
+    if (ubxCommands[commandNumber].cmdKey == key) break;
+  }
+  if (commandNumber == MAX_UBX_CMD)
+  {
+    Serial.printf("commandSupported: Unknown command key 0x%02X\r\n", key);
+    commandSupported = false;
+  }
+  else
+  {
+    if ( (zedModuleType == PLATFORM_F9P) && (zedFirmwareVersionInt >= ubxCommands[commandNumber].f9pFirmwareVersionSupported) )
+      commandSupported = true;
+    else if ( (zedModuleType == PLATFORM_F9R) && (zedFirmwareVersionInt >= ubxCommands[commandNumber].f9rFirmwareVersionSupported) )
+      commandSupported = true;
+  }
+  return (commandSupported);
 }
 
 //Enable all the valid messages for this platform

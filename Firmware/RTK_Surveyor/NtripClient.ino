@@ -63,13 +63,9 @@ static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; //5s between transmission of
 //Locals - compiled out
 //----------------------------------------
 
-//The WiFi connection to the NTRIP caster to obtain RTCM data.
-static WiFiClient *ntripClient;
-
-//The Ethernet connection to the NTRIP caster to obtain RTCM data.
-#ifdef COMPILE_ETHERNET
-static EthernetClient *ntripClientEthernet;
-#endif
+//The WiFi / Ethernet connection to the NTRIP caster to obtain RTCM data.
+#include "NTRIPClient.h"
+static NTRIPClient *ntripClient;
 
 //Throttle the time between connection attempts
 //ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
@@ -88,18 +84,8 @@ unsigned long lastGGAPush = 0;
 
 bool ntripClientConnect()
 {
-#ifdef COMPILE_ETHERNET
-  if (HAS_ETHERNET)
-  {
-  if (!ntripClientEthernet)
-    return false;
-  }
-  else
-#endif
-  {
   if (!ntripClient)
     return false;
-  }
 
   //Remove any http:// or https:// prefix from host name
   char hostname[51];
@@ -114,18 +100,7 @@ bool ntripClientConnect()
 
   systemPrintf("NTRIP Client connecting to %s:%d\r\n", settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
 
-  int connectResponse;
-
-#ifdef COMPILE_ETHERNET
-  if (HAS_ETHERNET)
-  {
-    connectResponse = ntripClientEthernet->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
-  }
-  else
-#endif
-  {
-    connectResponse = ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
-  }
+  int connectResponse = ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
 
   if (connectResponse < 1)
     return false;
@@ -176,18 +151,7 @@ bool ntripClientConnect()
   //Send the server request
   systemPrintln("NTRIP Client sending server request: ");
   systemPrintln(serverRequest);
-
-#ifdef COMPILE_ETHERNET
-  if (HAS_ETHERNET)
-  {
-    ntripClientEthernet->write(serverRequest, strlen(serverRequest));
-  }
-  else
-#endif
-  {
-    ntripClient->write(serverRequest, strlen(serverRequest));
-  }
-
+  ntripClient->write((const uint8_t *)serverRequest, strlen(serverRequest));
   ntripClientTimer = millis();
   return true;
 }
@@ -221,65 +185,6 @@ bool ntripClientConnectLimitReached()
   return limitReached;
 }
 
-//Determine if NTRIP client data is available
-int ntripClientReceiveDataAvailable()
-{
-#ifdef COMPILE_ETHERNET
-  if (HAS_ETHERNET)
-  {
-    return ntripClientEthernet->available();
-  }
-  else
-#endif
-  {
-    return ntripClient->available();
-  }
-}
-
-//Read a byte from WiFi / Ethernet
-uint8_t ntripClientRead()
-{
-#ifdef COMPILE_ETHERNET
-  if (HAS_ETHERNET)
-  {
-    return (ntripClientEthernet->read());
-  }
-  else
-#endif
-  {
-    return (ntripClient->read());
-  }
-}
-
-//Check if client is still connected
-bool ntripClientConnected()
-{
-#ifdef COMPILE_ETHERNET
-  if (HAS_ETHERNET)
-  {
-    return (ntripClientEthernet->connected());
-  }
-  else
-#endif
-  {
-    return (ntripClient->connected());
-  }
-}
-
-int ntripClientPrint(const char *printMe)
-{
-#ifdef COMPILE_ETHERNET
-  if (HAS_ETHERNET)
-  {
-    return (ntripClientEthernet->print(printMe));
-  }
-  else
-#endif
-  {
-    return (ntripClient->print(printMe));
-  }
-}
-
 //Read the response from the NTRIP client
 void ntripClientResponse(char * response, size_t maxLength)
 {
@@ -289,9 +194,9 @@ void ntripClientResponse(char * response, size_t maxLength)
   responseEnd = &response[maxLength - 1];
 
   //Read bytes from the caster and store them
-  while ((response < responseEnd) && ntripClientReceiveDataAvailable())
+  while ((response < responseEnd) && (ntripClient->available() > 0))
   {
-    *response++ = ntripClientRead();
+    *response++ = ntripClient->read();
   }
 
   //Zero terminate the response
@@ -350,23 +255,11 @@ void ntripClientStart()
     systemPrintln("NTRIP Client start");
 
     //Allocate the ntripClient structure
+    ntripClient = new NTRIPClient();
+
     //Startup WiFi and the NTRIP client
-#ifdef COMPILE_ETHERNET
-    if (HAS_ETHERNET)
-    {
-      ntripClientEthernet = new EthernetClient;
-
-      if (ntripClientEthernet)
-        ntripClientSetState(NTRIP_CLIENT_ON);
-    }
-    else
-#endif
-    {
-      ntripClient = new WiFiClient();
-
-      if (ntripClient)
-        ntripClientSetState(NTRIP_CLIENT_ON);
-    }
+    if (ntripClient)
+      ntripClientSetState(NTRIP_CLIENT_ON);
   }
 
   ntripClientConnectionAttempts = 0;
@@ -378,41 +271,19 @@ void ntripClientStop(bool wifiClientAllocated)
 {
 #ifdef COMPILE_WIFI
 
-#ifdef COMPILE_ETHERNET
-  if (HAS_ETHERNET)
+  if (ntripClient)
   {
-    if (ntripClientEthernet)
-    {
-      //Break the NTRIP client connection if necessary
-      if (ntripClientEthernet->connected())
-        ntripClientEthernet->stop();
-        
-      //Free the NTRIP client resources
-      delete ntripClientEthernet;
-      ntripClientEthernet = nullptr;
+    //Break the NTRIP client connection if necessary
+    if (ntripClient->connected())
+      ntripClient->stop();
 
-      //Allocate the NTRIP client structure if not done
-      if (wifiClientAllocated == false)
-        ntripClientEthernet = new EthernetClient;
-    }
-  }
-  else
-#endif
-  {
-    if (ntripClient)
-    {
-      //Break the NTRIP client connection if necessary
-      if (ntripClient->connected())
-        ntripClient->stop();
+    //Free the NTRIP client resources
+    delete ntripClient;
+    ntripClient = nullptr;
 
-      //Free the NTRIP client resources
-      delete ntripClient;
-      ntripClient = nullptr;
-
-      //Allocate the NTRIP client structure if not done
-      if (wifiClientAllocated == false)
-        ntripClient = new WiFiClient();
-    }
+    //Allocate the NTRIP client structure if not done
+    if (wifiClientAllocated == false)
+      ntripClient = new NTRIPClient();
   }
 
   //Increase timeouts if we started WiFi
@@ -578,7 +449,7 @@ void ntripClientUpdate()
 
     case NTRIP_CLIENT_CONNECTING:
       //Check for no response from the caster service
-      if (ntripClientReceiveDataAvailable() < strlen("ICY 200 OK")) //Wait until at least a few bytes have arrived
+      if (ntripClient->available() < strlen("ICY 200 OK")) //Wait until at least a few bytes have arrived
       {
         //Check for response timeout
         if (millis() - ntripClientTimer > NTRIP_CLIENT_RESPONSE_TIMEOUT)
@@ -660,7 +531,7 @@ void ntripClientUpdate()
 
     case NTRIP_CLIENT_CONNECTED:
       //Check for a broken connection      
-      if (!ntripClientConnected())
+      if (!ntripClient->connected())
       {
         //Broken connection, retry the NTRIP client connection
         systemPrintln("NTRIP Client connection to caster was broken");
@@ -669,7 +540,7 @@ void ntripClientUpdate()
       else
       {
         //Check for timeout receiving NTRIP data
-        if (!ntripClientReceiveDataAvailable())
+        if (ntripClient->available() == 0)
         {
           if ((millis() - ntripClientTimer) > NTRIP_CLIENT_RECEIVE_DATA_TIMEOUT)
           {
@@ -685,9 +556,9 @@ void ntripClientUpdate()
           size_t rtcmCount = 0;
 
           //Collect any available RTCM data
-          while (ntripClientReceiveDataAvailable())
+          while (ntripClient->available() > 0)
           {
-            rtcmData[rtcmCount++] = ntripClientRead();
+            rtcmData[rtcmCount++] = ntripClient->read();
             if (rtcmCount == sizeof(rtcmData))
               break;
           }
@@ -713,7 +584,7 @@ void pushGPGGA(NMEA_GGA_data_t *nmeaData)
 {
 #ifdef COMPILE_WIFI
   //Provide the caster with our current position as needed
-  if (ntripClientConnected() == true && settings.ntripClient_TransmitGGA == true)
+  if (ntripClient->connected() && settings.ntripClient_TransmitGGA == true)
   {
     if (millis() - lastGGAPush > NTRIPCLIENT_MS_BETWEEN_GGA)
     {
@@ -722,7 +593,7 @@ void pushGPGGA(NMEA_GGA_data_t *nmeaData)
       //log_d("Pushing GGA to server: %s", (const char *)nmeaData->nmea); // .nmea is printable (nullptr-terminated) and already has \r\n on the end
 
       //Push our current GGA sentence to caster
-      ntripClientPrint((const char *)nmeaData->nmea);
+      ntripClient->print((const char *)nmeaData->nmea);
     }
   }
 #endif

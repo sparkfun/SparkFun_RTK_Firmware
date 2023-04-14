@@ -1026,7 +1026,7 @@ void updateLBand()
     //If we don't get an L-Band fix within Timeout, hot-start ZED-F9x
     if (carrSoln == 1) //RTK Float
     {
-      if ( (millis() - lbandStartTimer) > (lbandFixTimeout_seconds * 1000L))
+      if ( (millis() - lbandStartTimer) > (settings.lbandFixTimeout_seconds * 1000L))
       {
         lbandStartTimer = millis(); //Reset timer
         lbandRestarts++;

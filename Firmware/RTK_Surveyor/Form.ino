@@ -1057,11 +1057,11 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "minElev") == 0)
     settings.minElev = settingValue;
   else if (strcmp(settingName, "imuYaw") == 0)
-    settings.imuYaw = settingValue;
+    settings.imuYaw = settingValue * 100; //Comes in as 0 to 360.0 but stored as 0 to 36,000
   else if (strcmp(settingName, "imuPitch") == 0)
-    settings.imuPitch = settingValue;
+    settings.imuPitch = settingValue * 100; //Comes in as -90 to 90.0 but stored as -9000 to 9000
   else if (strcmp(settingName, "imuRoll") == 0)
-    settings.imuRoll = settingValue;
+    settings.imuRoll = settingValue * 100; //Comes in as -180 to 180.0 but stored as -18000 to 18000
   else if (strcmp(settingName, "sfDisableWheelDirection") == 0)
     settings.sfDisableWheelDirection = settingValueBool;
   else if (strcmp(settingName, "sfCombineWheelTicks") == 0)

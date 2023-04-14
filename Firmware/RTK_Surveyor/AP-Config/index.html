@@ -1529,6 +1529,65 @@
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
+
+                    <div class="form-group row">
+                        <label for="imuYaw" class="col-sm-4 col-6 col-form-label">Yaw Angle:
+                            <span class="tt" data-bs-placement="right"
+                                title="User defined IMU mount angle for yaw.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="imuYaw">
+                            <p id="imuYawError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="imuPitch" class="col-sm-4 col-6 col-form-label">Pitch Angle:
+                            <span class="tt" data-bs-placement="right"
+                                title="User defined IMU mount angle for pitch.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="imuPitch">
+                            <p id="imuPitchError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="imuRoll" class="col-sm-4 col-6 col-form-label">Roll Angle:
+                            <span class="tt" data-bs-placement="right"
+                                title="User defined IMU mount angle for roll.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="imuRoll">
+                            <p id="imuRollError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="sfDisableWheelDirection">Disable Wheel Tick Direction Detection</label>
+                        <input class="form-check-input" type="checkbox" value="" id="sfDisableWheelDirection">
+                        <span class="tt" data-bs-placement="right"
+                            title="Automatically identify the wheel tick direction using GNSS heading. Default: False">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="sfCombineWheelTicks">Combine Wheel Ticks</label>
+                        <input class="form-check-input" type="checkbox" value="" id="sfCombineWheelTicks">
+                        <span class="tt" data-bs-placement="right"
+                            title="Use combined rear wheel ticks instead of the
+                            single tick. Default: False">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
                 </div>
             </div>
 

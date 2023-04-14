@@ -280,6 +280,7 @@ function parseIncoming(msg) {
         ge("enablePointPerfectCorrections").dispatchEvent(new CustomEvent('change'));
         ge("radioType").dispatchEvent(new CustomEvent('change'));
         ge("antennaReferencePoint").dispatchEvent(new CustomEvent('change'));
+        ge("autoIMUmountAlignment").dispatchEvent(new CustomEvent('change'));
 
         updateECEFList();
         updateGeodeticList();
@@ -583,6 +584,15 @@ function validateFields() {
         else {
             clearElement("pointPerfectDeviceProfileToken", "");
             ge("autoKeyRenewal").checked = true;
+        }
+    }
+
+    //Sensor Config
+    if (platformPrefix == "Express Plus") {
+        if (ge("autoIMUmountAlignment").checked == false) {
+            checkElementValue("imuYaw", 0, 360, "Must be between 0.0 to 360.0", "collapseSensorConfig");
+            checkElementValue("imuPitch", -90, 90, "Must be between -90.0 to 90.0", "collapseSensorConfig");
+            checkElementValue("imuRoll", -180, 180, "Must be between -180.0 to 180.0", "collapseSensorConfig");
         }
     }
 
@@ -1146,6 +1156,19 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
     ge("fixedHAE_APC").addEventListener("change", function () {
         adjustHAE();
+    });
+
+    ge("autoIMUmountAlignment").addEventListener("change", function () {
+        if (ge("autoIMUmountAlignment").checked) {
+            ge("imuYaw").disabled = true;
+            ge("imuPitch").disabled = true;
+            ge("imuRoll").disabled = true;
+        }
+        else {
+            ge("imuYaw").disabled = false;
+            ge("imuPitch").disabled = false;
+            ge("imuRoll").disabled = false;
+        }
     });
 
 })

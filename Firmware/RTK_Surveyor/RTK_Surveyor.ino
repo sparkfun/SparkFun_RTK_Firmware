@@ -547,7 +547,6 @@ uint8_t btEscapeCharsReceived = 0; //Used to enter command mode
 bool externalPowerConnected = false; //Goes true when a high voltage is seen on power control pin
 
 unsigned long lbandStartTimer = 0; //Monitors the ZED during L-Band reception if a fix takes too long
-const int lbandFixTimeout_seconds = 120; //Number of seconds of no L-Band fix before resetting ZED
 int lbandRestarts = 0;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

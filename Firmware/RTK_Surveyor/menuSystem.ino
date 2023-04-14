@@ -613,6 +613,9 @@ void menuDebug()
     systemPrint("36) Print SD and UART buffer sizes: ");
     systemPrintf("%s\r\n", settings.enablePrintSDBuffers ? "Enabled" : "Disabled");
 
+    systemPrint("37) Set L-Band RTK Fix Timeout (seconds): ");
+    systemPrintln(settings.lbandFixTimeout_seconds);
+
     systemPrintln("t) Enter Test Screen");
 
     systemPrintln("e) Erase LittleFS");
@@ -837,6 +840,18 @@ void menuDebug()
     else if (incoming == 36)
     {
       settings.enablePrintSDBuffers ^= 1;
+    }
+    else if (incoming == 37)
+    {
+      systemPrint("Enter number of seconds in RTK float before hot-start (30 to 1200): ");
+      int timeout = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((timeout != INPUT_RESPONSE_GETNUMBER_EXIT) && (timeout != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (timeout < 30 || timeout > 1200) //Arbitrary 20 minute limit
+          systemPrintln("Error: Timeout out of range");
+        else
+          settings.lbandFixTimeout_seconds = timeout; //Recorded to NVM and file at main menu exit
+      }
     }
     else if (incoming == 'e')
     {

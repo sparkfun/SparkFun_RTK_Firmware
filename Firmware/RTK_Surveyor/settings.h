@@ -336,6 +336,16 @@ typedef enum ubxPlatform
   PLATFORM_F9T = 0b0100,
 } ubxPlatform;
 
+//Print the base coordinates in different formats, depending on the type the user has entered
+//These are the different supported types
+typedef enum
+{
+  COORDINATE_INPUT_TYPE_D = 0, //Default DD.ddddddddd
+  COORDINATE_INPUT_TYPE_DD_MM_SS, //DD MM SS.sssss
+  COORDINATE_INPUT_TYPE_DD_MM_SS_DASH, //DD-MM-SS.sssss
+
+} CoordinateInputType;
+
 #define UBX_ID_NOT_AVAILABLE 0xFF
 
 //These are the allowable messages to broadcast and log (if enabled)

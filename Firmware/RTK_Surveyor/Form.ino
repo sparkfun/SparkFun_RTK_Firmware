@@ -52,7 +52,9 @@ void startWebServer()
   webserver->onFileUpload(handleUpload); //Run handleUpload function when any file is uploaded. Must be before server.on() calls.
 
   webserver->on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send_P(200, "text/html", index_html);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html, sizeof(index_html));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
   });
 
   webserver->on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {
@@ -86,7 +88,9 @@ void startWebServer()
   });
 
   webserver->on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send_P(200, "text/javascript", main_js);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", main_js, sizeof(main_js));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
   });
 
   webserver->on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest * request) {

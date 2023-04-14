@@ -153,6 +153,14 @@ bool configureUbloxModule()
   if (commandSupported(UBLOX_CFG_USBINPROT_SPARTN) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 0);
 
+  if (commandSupported(UBLOX_CFG_NAVSPG_INFIL_MINCNO) == true)
+  {
+    if (zedModuleType == PLATFORM_F9R)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINCNO, settings.minCNO_F9R); //Set minimum satellite signal level for navigation - default 20
+    else
+      response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINCNO, settings.minCNO_F9P); //Set minimum satellite signal level for navigation - default 6
+  }
+
   if (commandSupported(UBLOX_CFG_NAV2_OUT_ENABLED) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, 1); //Enable NAV2 messages no matter what
 

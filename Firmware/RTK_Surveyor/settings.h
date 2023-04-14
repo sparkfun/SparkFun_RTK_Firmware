@@ -588,6 +588,7 @@ ubxCmd ubxCommands[] =
   {UBLOX_CFG_USBINPROT_SPARTN, "CFG_USBINPROT_SPARTN", 120, 9999}, //
 
   {UBLOX_CFG_NAV2_OUT_ENABLED, "CFG_NAV2_OUT_ENABLED", 130, 130}, //Supported on F9P 130 and up. Supported on F9R 130 and up.
+  {UBLOX_CFG_NAVSPG_INFIL_MINCNO, "CFG_NAVSPG_INFIL_MINCNO", 0, 0}, //
 };
 
 #define MAX_UBX_CMD (sizeof(ubxCommands)/sizeof(ubxCmd))
@@ -747,9 +748,7 @@ typedef struct {
   bool wifiConfigOverAP = true; //Configure device over Access Point or have it connect to WiFi
   uint16_t wifiTcpPort = 2947; //TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
   uint8_t minElev = 10; //Minimum elevation (in deg) for a GNSS satellite to be used in NAV
-
   uint8_t ubxMessageRatesBase[MAX_UBX_MSG_RTCM] = {254}; //Mark first record with key so defaults will be applied. Int value for each supported message - Report rates for RTCM Base. Default to u-blox recommended rates.
-
   uint32_t imuYaw = 0; //User defined IMU mount yaw angle (0 to 36,000) CFG-SFIMU-IMU_MNTALG_YAW
   int16_t imuPitch = 0; //User defined IMU mount pitch angle (-9000 to 9000) CFG-SFIMU-IMU_MNTALG_PITCH
   int16_t imuRoll = 0; //User defined IMU mount roll angle (-18000 to 18000) CFG-SFIMU-IMU_MNTALG_ROLL
@@ -758,7 +757,10 @@ typedef struct {
   uint8_t rateNavPrio = 0; //Output rate of priority nav mode message - CFG-RATE-NAV_PRIO
   //CFG-SFIMU-AUTO_MNTALG_ENA 0 = autoIMUmountAlignment
   bool sfUseSpeed = false; //CFG-SFODO-USE_SPEED
-
+  CoordinateInputType coordinateInputType = COORDINATE_INPUT_TYPE_D; //Default DD.ddddddddd
+  uint16_t lbandFixTimeout_seconds = 120; //Number of seconds of no L-Band fix before resetting ZED
+  int16_t minCNO_F9P = 6; //Minimum satellite signal level for navigation. ZED-F9P default is 6 dBHz
+  int16_t minCNO_F9R = 20; //Minimum satellite signal level for navigation. ZED-F9R default is 20 dBHz
 } Settings;
 Settings settings;
 const Settings defaultSettings = Settings();

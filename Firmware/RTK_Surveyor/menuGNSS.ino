@@ -6,6 +6,10 @@ void menuGNSS()
 
   while (1)
   {
+    int minCNO = settings.minCNO_F9P;
+    if (zedModuleType == PLATFORM_F9R)
+      minCNO = settings.minCNO_F9R;
+
     systemPrintln();
     systemPrintln("Menu: GNSS Receiver");
 
@@ -96,10 +100,14 @@ void menuGNSS()
       else systemPrintln("Disabled");
 
       systemPrintf("13) Minimum elevation for a GNSS satellite to be used in fix (degrees): %d\r\n", settings.minElev);
+
+      systemPrintf("14) Minimum satellite signal level for navigation (dBHz): %d\r\n", minCNO);
     }
     else
     {
       systemPrintf("6) Minimum elevation for a GNSS satellite to be used in fix (degrees): %d\r\n", settings.minElev);
+
+      systemPrintf("7) Minimum satellite signal level for navigation (dBHz): %d\r\n", minCNO);
     }
 
     systemPrintln("x) Exit");
@@ -253,6 +261,28 @@ void menuGNSS()
         restartRover = true;
       }
     }
+    else if ( (incoming == 14 && settings.enableNtripClient == true)
+              || incoming == 7 && settings.enableNtripClient == false)
+    {
+      systemPrint("Enter minimum satellite signal level for navigation in dBHz: ");
+
+      int newMinCNO = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((newMinCNO != INPUT_RESPONSE_GETNUMBER_EXIT) && (newMinCNO != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (newMinCNO <= 0 || newMinCNO > 90) //Arbitrary 90 dBHz max
+          systemPrintln("Error: Minimum dBHz out of range");
+        else
+        {
+          if (zedModuleType == PLATFORM_F9R)
+            settings.minCNO_F9R = newMinCNO; //Recorded to NVM and file at main menu exit
+          else
+            settings.minCNO_F9P = newMinCNO;
+
+          theGNSS.setVal8(UBLOX_CFG_NAVSPG_INFIL_MINCNO, newMinCNO); //Update minCNO
+        }
+        restartRover = true;
+      }
+    }
     else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
     else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
@@ -375,7 +405,7 @@ bool setRate(double secondsBetweenSolutions)
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, navRate);
 
   int gsvRecordNumber = getMessageNumberByName("UBX_NMEA_GSV");
-  
+
   //If enabled, adjust GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
   if (settings.ubxMessageRates[gsvRecordNumber] > 0)
   {

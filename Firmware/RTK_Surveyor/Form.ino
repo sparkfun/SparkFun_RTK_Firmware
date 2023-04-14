@@ -736,6 +736,20 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "batteryPercent", batteryPercent);
 
   stringRecord(newSettings, "minElev", settings.minElev);
+  stringRecord(newSettings, "imuYaw", settings.imuYaw);
+  stringRecord(newSettings, "imuPitch", settings.imuPitch);
+  stringRecord(newSettings, "imuRoll", settings.imuRoll);
+  stringRecord(newSettings, "sfDisableWheelDirection", settings.sfDisableWheelDirection);
+  stringRecord(newSettings, "sfCombineWheelTicks", settings.sfCombineWheelTicks);
+  stringRecord(newSettings, "rateNavPrio", settings.rateNavPrio);
+  stringRecord(newSettings, "sfUseSpeed", settings.sfUseSpeed);
+  stringRecord(newSettings, "coordinateInputType", settings.coordinateInputType);
+  //stringRecord(newSettings, "lbandFixTimeout_seconds", settings.lbandFixTimeout_seconds);
+
+  if (zedModuleType == PLATFORM_F9R)
+    stringRecord(newSettings, "minCNO", settings.minCNO_F9R);
+  else
+    stringRecord(newSettings, "minCNO", settings.minCNO_F9P);
 
   //Add ECEF and Geodetic station data to the end of settings
   for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
@@ -1038,6 +1052,27 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     enableRCFirmware = settingValueBool;
   else if (strcmp(settingName, "minElev") == 0)
     settings.minElev = settingValue;
+  else if (strcmp(settingName, "imuYaw") == 0)
+    settings.imuYaw = settingValue;
+  else if (strcmp(settingName, "imuPitch") == 0)
+    settings.imuPitch = settingValue;
+  else if (strcmp(settingName, "imuRoll") == 0)
+    settings.imuRoll = settingValue;
+  else if (strcmp(settingName, "sfDisableWheelDirection") == 0)
+    settings.sfDisableWheelDirection = settingValueBool;
+  else if (strcmp(settingName, "sfCombineWheelTicks") == 0)
+    settings.sfCombineWheelTicks = settingValueBool;
+  else if (strcmp(settingName, "rateNavPrio") == 0)
+    settings.rateNavPrio = settingValue;
+  else if (strcmp(settingName, "coordinateInputType") == 0)
+    settings.coordinateInputType = (CoordinateInputType)settingValue;
+  else if (strcmp(settingName, "minCNO") == 0)
+  {
+    if (zedModuleType == PLATFORM_F9R)
+      settings.minCNO_F9R = settingValue;
+    else
+      settings.minCNO_F9P = settingValue;
+  }
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

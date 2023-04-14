@@ -425,6 +425,7 @@ function validateFields() {
     checkConstellations();
 
     checkElementValue("minElev", 0, 90, "Must be between 0 and 90", "collapseGNSSConfig");
+    checkElementValue("minCNO", 0, 90, "Must be between 0 and 90", "collapseGNSSConfig");
 
     if (ge("enableNtripClient").checked) {
         checkElementString("ntripClient_CasterHost", 1, 30, "Must be 1 to 30 characters", "collapseGNSSConfig");
@@ -1917,6 +1918,19 @@ static const char *index_html = R"=====(
                         <div class="col-sm-4 col-6">
                             <input type="number" class="form-control" id="minElev">
                             <p id="minElevError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="minCNO" class="col-sm-4 col-6 col-form-label">Min C/N0:
+                            <span class="tt" data-bs-placement="right"
+                                title="Minimum satellite signal level to be used in a fix. Default: 6dBHz for ZED-F9P and 20dBHz for ZED-F9R.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="minCNO">
+                            <p id="minCNOError" class="inlineError"></p>
                         </div>
                     </div>
 

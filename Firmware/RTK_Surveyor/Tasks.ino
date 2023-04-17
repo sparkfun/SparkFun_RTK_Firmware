@@ -459,6 +459,9 @@ void handleGNSSDataTask(void *e)
           char semaphoreHolder[50];
           getSemaphoreFunction(semaphoreHolder);
           log_w("sdCardSemaphore failed to yield for SD write, held by %s, Tasks.ino line %d", semaphoreHolder, __LINE__);
+
+          delay(1); //Needed to prevent WDT resets during long Record Settings locks
+          taskYIELD();
         }
       } //End maxLogTime
     } //End logging

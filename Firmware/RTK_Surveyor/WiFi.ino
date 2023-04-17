@@ -36,10 +36,6 @@
 //Interval to use when displaying the IP address
 static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
 
-//Give up connecting after this number of attempts
-//Connection attempts are throttled to increase the time between attempts
-static const int MAX_WIFI_CONNECTION_ATTEMPTS = 500;
-
 #define WIFI_MAX_TCP_CLIENTS     4
 
 //Throttle the time between connection attempts
@@ -614,7 +610,7 @@ bool wifiConnectLimitReached()
 {
   //Retry the connection a few times
   bool limitReached = false;
-  if (wifiConnectionAttempts++ >= MAX_WIFI_CONNECTION_ATTEMPTS) limitReached = true;
+  if (wifiConnectionAttempts++ >= wifiMaxConnectionAttempts) limitReached = true;
 
   wifiConnectionAttemptsTotal++;
 

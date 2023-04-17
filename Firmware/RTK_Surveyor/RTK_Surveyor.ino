@@ -217,6 +217,11 @@ static int ntripServerConnectionAttemptsTotal; //Count the number of connection 
 bool apConfigFirmwareUpdateInProcess = false; //Goes true once WiFi is connected and OTA pull begins
 bool enableRCFirmware = false; //Goes true from AP config page
 bool currentlyParsingData = false; //Goes true when we hit 750ms timeout with new data
+
+//Give up connecting after this number of attempts
+//Connection attempts are throttled to increase the time between attempts
+int wifiMaxConnectionAttempts = 500;
+int wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts; //Modified during L-Band WiFi connect attempt
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration

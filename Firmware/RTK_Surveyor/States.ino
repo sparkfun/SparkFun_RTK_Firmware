@@ -743,7 +743,7 @@ void updateSystemState()
           else
           {
             //Determine days until next key expires
-            uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+            int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
             log_d("Days until keys expire: %d", daysRemaining);
 
             if (daysRemaining >= 28 && daysRemaining <= 56)
@@ -771,7 +771,7 @@ void updateSystemState()
             settings.lastKeyAttempt = rtc.getEpoch(); //Mark it
             recordSystemSettings(); //Record these settings to unit
 
-            log_d("Keys Needed starting WiFi");
+            log_d("Keys Needed. Starting WiFi");
             wifiStart(); //Starts WiFi state machine
             changeState(STATE_KEYS_WIFI_STARTED);
           }
@@ -810,9 +810,16 @@ void updateSystemState()
           {
             if (settings.pointPerfectNextKeyStart > 0)
             {
-              uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+              int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
               systemPrintf("Days until PointPerfect keys expire: %d\r\n", daysRemaining);
-              paintKeyDaysRemaining(daysRemaining, 2000);
+              if (daysRemaining >= 0)
+              {
+                paintKeyDaysRemaining(daysRemaining, 2000);
+              }
+              else
+              {
+                paintKeysExpired();
+              }
             }
           }
           paintLBandConfigure();

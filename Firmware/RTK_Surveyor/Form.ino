@@ -798,6 +798,20 @@ void createSettingsString(char* newSettings)
   }
 
   stringRecord(newSettings, "minElev", settings.minElev);
+  stringRecord(newSettings, "imuYaw", settings.imuYaw);
+  stringRecord(newSettings, "imuPitch", settings.imuPitch);
+  stringRecord(newSettings, "imuRoll", settings.imuRoll);
+  stringRecord(newSettings, "sfDisableWheelDirection", settings.sfDisableWheelDirection);
+  stringRecord(newSettings, "sfCombineWheelTicks", settings.sfCombineWheelTicks);
+  stringRecord(newSettings, "rateNavPrio", settings.rateNavPrio);
+  stringRecord(newSettings, "sfUseSpeed", settings.sfUseSpeed);
+  stringRecord(newSettings, "coordinateInputType", settings.coordinateInputType);
+  //stringRecord(newSettings, "lbandFixTimeout_seconds", settings.lbandFixTimeout_seconds);
+
+  if (zedModuleType == PLATFORM_F9R)
+    stringRecord(newSettings, "minCNO", settings.minCNO_F9R);
+  else
+    stringRecord(newSettings, "minCNO", settings.minCNO_F9P);
 
   //Add ECEF and Geodetic station data to the end of settings
   for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
@@ -981,10 +995,26 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.fixedEcefY = settingValue;
   else if (strcmp(settingName, "fixedEcefZ") == 0)
     settings.fixedEcefZ = settingValue;
-  else if (strcmp(settingName, "fixedLat") == 0)
-    settings.fixedLat = settingValue;
-  else if (strcmp(settingName, "fixedLong") == 0)
-    settings.fixedLong = settingValue;
+  else if (strcmp(settingName, "fixedLatText") == 0)
+  {
+    double newCoordinate = 0.0;
+    CoordinateInputType newCoordinateInputType = identifyInputType((char *)settingValueStr, &newCoordinate);
+    if (newCoordinateInputType == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+      settings.fixedLat = 0.0;
+    else
+    {
+      settings.fixedLat = newCoordinate;
+      settings.coordinateInputType = newCoordinateInputType;
+    }
+  }
+  else if (strcmp(settingName, "fixedLongText") == 0)
+  {
+    double newCoordinate = 0.0;
+    if (identifyInputType((char *)settingValueStr, &newCoordinate) == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+      settings.fixedLong = 0.0;
+    else
+      settings.fixedLong = newCoordinate;
+  }
   else if (strcmp(settingName, "fixedAltitude") == 0)
     settings.fixedAltitude = settingValue;
   else if (strcmp(settingName, "dataPortBaud") == 0)
@@ -1104,6 +1134,25 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     enableRCFirmware = settingValueBool;
   else if (strcmp(settingName, "minElev") == 0)
     settings.minElev = settingValue;
+  else if (strcmp(settingName, "imuYaw") == 0)
+    settings.imuYaw = settingValue * 100; //Comes in as 0 to 360.0 but stored as 0 to 36,000
+  else if (strcmp(settingName, "imuPitch") == 0)
+    settings.imuPitch = settingValue * 100; //Comes in as -90 to 90.0 but stored as -9000 to 9000
+  else if (strcmp(settingName, "imuRoll") == 0)
+    settings.imuRoll = settingValue * 100; //Comes in as -180 to 180.0 but stored as -18000 to 18000
+  else if (strcmp(settingName, "sfDisableWheelDirection") == 0)
+    settings.sfDisableWheelDirection = settingValueBool;
+  else if (strcmp(settingName, "sfCombineWheelTicks") == 0)
+    settings.sfCombineWheelTicks = settingValueBool;
+  else if (strcmp(settingName, "rateNavPrio") == 0)
+    settings.rateNavPrio = settingValue;
+  else if (strcmp(settingName, "minCNO") == 0)
+  {
+    if (zedModuleType == PLATFORM_F9R)
+      settings.minCNO_F9R = settingValue;
+    else
+      settings.minCNO_F9P = settingValue;
+  }
 
   else if (strcmp(settingName, "ethernetDHCP") == 0)
     settings.ethernetDHCP = settingValueBool;

@@ -72,15 +72,22 @@
         }
 
         .battery {
-            position: relative;
-            top: 50%;
-            transform: translateY(-50%);
-            float: right;
+            position: absolute;
+            z-index: 1000;
+            right: 10px;
+            max-width: 600px;
+            margin-top: 5px;
         }
     </style>
 </head>
 
 <body>
+    <div class="container" id="batteryIcon">
+        <div align="right" class="battery">
+            <img id="batteryIconFileName" src="src/Battery2_Charging.png" alt="Battery level"> <span id="batteryPercent"
+                class="small" style="display:inline;">+67</span>
+        </div>
+    </div>
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="resetInProcess">
         <b>Resetting</b><br><br>RTK device is rebooting. Please wait...
@@ -92,11 +99,6 @@
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="firmwareUploadComplete">
         <b>Done</b><br><br>Firmware update complete. RTK device is now rebooting.
-    </div>
-
-    <div align="right" class="container" style="margin-top:10px;max-width:600px; margin-bottom: -25px;">
-        <img id="batteryIconFileName" src="src/BatteryBlank.png" alt="Battery level"> <span id="batteryPercent" class="small"
-            style="display:inline;"></span>
     </div>
 
     <div class="container">
@@ -239,7 +241,7 @@
                                 <label for="measurementRateHz" class="col-form-label">In
                                     Hz:
                                     <span class="tt" data-bs-placement="right"
-                                        title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Default: 4Hz. Limit: 0.000122 to 10Hz.">
+                                        title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Note: The measurement rate is overridden to 1Hz when in Base mode. Default: 4Hz. Limit: 0.000122 to 10Hz.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -254,7 +256,7 @@
                             <div class="col-sm-2 col-12 ms-3 form-group">
                                 <label for="measurementRateSec">Seconds between measurements:
                                     <span class="tt" data-bs-placement="right"
-                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when taking a measurement every few seconds across a long survey (24+ hours). Limit: 0.1 to 8196 seconds."><span
+                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when taking a measurement every few seconds across a long survey (24+ hours). Note: The measurement rate is overridden to 1Hz when in Base mode.Limit: 0.1 to 8196 seconds."><span
                                             class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -298,6 +300,19 @@
                         <div class="col-sm-4 col-6">
                             <input type="number" class="form-control" id="minElev">
                             <p id="minElevError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="minCNO" class="col-sm-4 col-6 col-form-label">Min C/N0:
+                            <span class="tt" data-bs-placement="right"
+                                title="Minimum satellite signal level to be used in a fix. Default: 6dBHz for ZED-F9P and 20dBHz for ZED-F9R.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="minCNO">
+                            <p id="minCNOError" class="inlineError"></p>
                         </div>
                     </div>
 
@@ -1147,20 +1162,27 @@
                             </div>
 
                             <div class="form-group row">
-                                <label for="fixedLat"
+                                <label for="fixedLatText"
                                     class="box-margin40 col-sm-3 col-4 col-form-label">Latitude:</label>
                                 <div class="col-sm-4 col-6">
-                                    <input type="number" class="form-control" id="fixedLat">
-                                    <p id="fixedLatError" class="inlineError"></p>
+                                    <input type="text" class="form-control" id="fixedLatText">
+                                    <p id="fixedLatTextError" class="inlineError"></p>
                                 </div>
                             </div>
 
                             <div class="form-group row">
-                                <label for="fixedLong"
+                                <label for="fixedLongText"
                                     class="box-margin40 col-sm-3 col-4 col-form-label">Longitude:</label>
                                 <div class="col-sm-4 col-6">
-                                    <input type="number" class="form-control" id="fixedLong">
-                                    <p id="fixedLongError" class="inlineError"></p>
+                                    <input type="text" class="form-control" id="fixedLongText">
+                                    <p id="fixedLongTextError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div id="detectedFormat" class="box-margin40">
+                                    <label class="form-check-label">Detected Format:</label>
+                                    <span id="detectedFormatText" style="display:inline;"></span>
                                 </div>
                             </div>
 
@@ -1377,7 +1399,7 @@
                             RTCM Rates <i class="caret-icon bi icon-caret-down"></i>
                         </button>
                         <span class="tt" data-bs-placement="right"
-                            title="RTCM is transmitted by the base at a default of 1Hz for messages 1005, 1074, 1084, 1094, 1124, and 0.1Hz for 1230. This can be lowered for radios with low bandwidth or tailored to transmit any/all RTCM messages. Limits: 0 to 20.">
+                            title="RTCM is transmitted by the base at a default of 1Hz for messages 1005, 1074, 1084, 1094, 1124, and 0.1Hz for 1230. This can be lowered for radios with low bandwidth or tailored to transmit any/all RTCM messages. Limits: 0 to 20. Note: The measurement rate is overridden to 1Hz when in Base mode.">
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
@@ -1386,95 +1408,97 @@
                         <div class="card card-body" style="margin-top:5px;">
 
                             <div style="margin-bottom:5px;">
-                                <button type="button" class="btn btn-primary"
-                                    onClick="resetToRTCMDefaults()">Reset to Defaults</button>
+                                <button type="button" class="btn btn-primary" onClick="resetToRTCMDefaults()">Reset to
+                                    Defaults</button>
                             </div>
                             <div style="margin-bottom:5px;">
-                                <button type="button" class="btn btn-primary"
-                                    onClick="resetToLowBandwidthRTCM()">Reset to Low Bandwidth Link</button>
+                                <button type="button" class="btn btn-primary" onClick="resetToLowBandwidthRTCM()">Reset
+                                    to Low Bandwidth Link</button>
                             </div>
 
                             <hr>
 
                             <div class="form-group row" id="msgUBX_RTCM_1005Base">
                                 <label for="UBX_RTCM_1005Base" class="col-sm-3 col-5 col-form-label">RTCM_1005:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1005Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1005Base" value="0">
                                     <p id="UBX_RTCM_1005BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1074Base">
                                 <label for="UBX_RTCM_1074Base" class="col-sm-3 col-5 col-form-label">RTCM_1074:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1074Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1074Base" value="0">
                                     <p id="UBX_RTCM_1074BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1077Base">
                                 <label for="UBX_RTCM_1077Base" class="col-sm-3 col-5 col-form-label">RTCM_1077:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1077Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1077Base" value="0">
                                     <p id="UBX_RTCM_1077BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1084Base">
                                 <label for="UBX_RTCM_1084Base" class="col-sm-3 col-5 col-form-label">RTCM_1084:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1084Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1084Base" value="0">
                                     <p id="UBX_RTCM_1084BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1087Base">
                                 <label for="UBX_RTCM_1087Base" class="col-sm-3 col-5 col-form-label">RTCM_1087:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1087Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1087Base" value="0">
                                     <p id="UBX_RTCM_1087BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1094Base">
                                 <label for="UBX_RTCM_1094Base" class="col-sm-3 col-5 col-form-label">RTCM_1094:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1094Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1094Base" value="0">
                                     <p id="UBX_RTCM_1094BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1097Base">
                                 <label for="UBX_RTCM_1097Base" class="col-sm-3 col-5 col-form-label">RTCM_1097:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1097Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1097Base" value="0">
                                     <p id="UBX_RTCM_1097BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1124Base">
                                 <label for="UBX_RTCM_1124Base" class="col-sm-3 col-5 col-form-label">RTCM_1124:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1124Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1124Base" value="0">
                                     <p id="UBX_RTCM_1124BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1127Base">
                                 <label for="UBX_RTCM_1127Base" class="col-sm-3 col-5 col-form-label">RTCM_1127:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1127Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1127Base" value="0">
                                     <p id="UBX_RTCM_1127BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1230Base">
                                 <label for="UBX_RTCM_1230Base" class="col-sm-3 col-5 col-form-label">RTCM_1230:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1230Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1230Base" value="0">
                                     <p id="UBX_RTCM_1230BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_4072_0Base">
-                                <label for="UBX_RTCM_4072_0Base" class="col-sm-4 col-6 col-form-label">RTCM_4072_0:</label>
+                                <label for="UBX_RTCM_4072_0Base"
+                                    class="col-sm-4 col-6 col-form-label">RTCM_4072_0:</label>
                                 <div class="col-sm-7 col-6"><input type="number" class="form-control"
                                         id="UBX_RTCM_4072_0Base" value="0">
                                     <p id="UBX_RTCM_4072_0BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_4072_1Base">
-                                <label for="UBX_RTCM_4072_1Base" class="col-sm-4 col-6 col-form-label">RTCM_4072_1:</label>
+                                <label for="UBX_RTCM_4072_1Base"
+                                    class="col-sm-4 col-6 col-form-label">RTCM_4072_1:</label>
                                 <div class="col-sm-7 col-6"><input type="number" class="form-control"
                                         id="UBX_RTCM_4072_1Base" value="0">
                                     <p id="UBX_RTCM_4072_1BaseError" class="inlineError"></p>
@@ -1514,6 +1538,62 @@
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
+
+                    <div class="form-group row">
+                        <label for="imuYaw" class="col-sm-4 col-6 col-form-label">Yaw Angle:
+                            <span class="tt" data-bs-placement="right" title="User defined IMU mount angle for yaw.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="imuYaw">
+                            <p id="imuYawError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="imuPitch" class="col-sm-4 col-6 col-form-label">Pitch Angle:
+                            <span class="tt" data-bs-placement="right" title="User defined IMU mount angle for pitch.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="imuPitch">
+                            <p id="imuPitchError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="imuRoll" class="col-sm-4 col-6 col-form-label">Roll Angle:
+                            <span class="tt" data-bs-placement="right" title="User defined IMU mount angle for roll.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="imuRoll">
+                            <p id="imuRollError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="sfDisableWheelDirection">Disable Wheel Tick Direction
+                            Detection</label>
+                        <input class="form-check-input" type="checkbox" value="" id="sfDisableWheelDirection">
+                        <span class="tt" data-bs-placement="right"
+                            title="Automatically identify the wheel tick direction using GNSS heading. Default: False">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="sfCombineWheelTicks">Combine Wheel Ticks</label>
+                        <input class="form-check-input" type="checkbox" value="" id="sfCombineWheelTicks">
+                        <span class="tt" data-bs-placement="right" title="Use combined rear wheel ticks instead of the
+                            single tick. Default: False">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
                 </div>
             </div>
 

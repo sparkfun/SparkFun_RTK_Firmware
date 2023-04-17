@@ -24,27 +24,27 @@ bool configureUbloxModuleBase()
   while((++tryNo < MAX_SET_MESSAGES_RETRIES) && !success)
   {
     bool response = true;
-  
+
     //In Base mode we force 1Hz
     response &= theGNSS.newCfgValset();
     response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, 1000);
     response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, 1);
-  
+
     //Since we are at 1Hz, allow GSV NMEA to be reported at whatever the user has chosen
     uint32_t spiOffset = 0; //Set to 3 if using SPI to convert UART1 keys to SPI. This is brittle and non-perfect, but works.
     if (USE_SPI_GNSS)
       spiOffset = 3;
     response &= theGNSS.addCfgValset(ubxMessages[8].msgConfigKey + spiOffset, settings.ubxMessageRates[8]); //Update rate on module
-  
+
     if (USE_I2C_GNSS)
       response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0); //Disable NMEA message that may have been set during Rover NTRIP Client mode
-  
+
     //Survey mode is only available on ZED-F9P modules
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_TMODE_MODE) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
-  
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
-  
+
     //RTCM is only available on ZED-F9P modules
     //
     //For most RTK products, the GNSS is interfaced via both I2C and UART1. Configuration and PVT/HPPOS messages are
@@ -62,14 +62,14 @@ bool configureUbloxModuleBase()
     //So for that product - in Base mode - we can only output RTCM on SPI, USB and UART2.
     //If we want to log the RTCM messages, we need to add them to the logging buffer inside the GNSS library.
     //If we want to pass them along to (e.g.) radio, we do that using processRTCM (defined below).
-  
+
     //Find first RTCM record in ubxMessage array
     int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
-  
+
     //ubxMessageRatesBase is an array of ~12 uint8_ts
     //ubxMessage is an array of ~80 messages
     //We use firstRTCMRecord as an offset for the keys, but use x as the rate
-    
+  
     if (USE_I2C_GNSS)
     {
       for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)

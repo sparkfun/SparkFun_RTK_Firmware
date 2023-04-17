@@ -340,8 +340,11 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "sfDisableWheelDirection", settings.sfDisableWheelDirection);
   settingsFile->printf("%s=%d\r\n", "sfCombineWheelTicks", settings.sfCombineWheelTicks);
   settingsFile->printf("%s=%d\r\n", "rateNavPrio", settings.rateNavPrio);
-  settingsFile->printf("%s=%d\r\n", "enableNAV2", settings.enableNAV2);
   settingsFile->printf("%s=%d\r\n", "sfUseSpeed", settings.sfUseSpeed);
+  settingsFile->printf("%s=%d\r\n", "coordinateInputType", settings.coordinateInputType);
+  settingsFile->printf("%s=%d\r\n", "lbandFixTimeout_seconds", settings.lbandFixTimeout_seconds);
+  settingsFile->printf("%s=%d\r\n", "minCNO_F9R", settings.minCNO_F9R);
+  settingsFile->printf("%s=%d\r\n", "minCNO_F9P", settings.minCNO_F9P);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -1129,14 +1132,6 @@ bool parseLine(char* str, Settings *settings)
       settings->updateZEDSettings = true;
     }
   }
-  else if (strcmp(settingName, "enableNAV2") == 0)
-  {
-    if (settings->enableNAV2 != d)
-    {
-      settings->enableNAV2 = d;
-      settings->updateZEDSettings = true;
-    }
-  }
   else if (strcmp(settingName, "sfUseSpeed") == 0)
   {
     if (settings->sfUseSpeed != d)
@@ -1166,6 +1161,26 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->ntpReferenceId, settingValue);
     for (int i = strlen(settingValue); i < 5; i++)
       settings->ntpReferenceId[i] = 0;
+  }
+  else if (strcmp(settingName, "coordinateInputType") == 0)
+    settings->coordinateInputType = (CoordinateInputType)d;
+  else if (strcmp(settingName, "lbandFixTimeout_seconds") == 0)
+    settings->lbandFixTimeout_seconds = d;
+  else if (strcmp(settingName, "minCNO_F9R") == 0)
+  {
+    if (settings->minCNO_F9R != d)
+    {
+      settings->minCNO_F9R = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "minCNO_F9P") == 0)
+  {
+    if (settings->minCNO_F9P != d)
+    {
+      settings->minCNO_F9P = d;
+      settings->updateZEDSettings = true;
+    }
   }
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)

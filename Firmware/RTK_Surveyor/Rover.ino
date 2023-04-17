@@ -31,13 +31,13 @@ bool configureUbloxModuleRover()
     response &= theGNSS.newCfgValset();
     response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, settings.measurementRate);
     response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, settings.navigationRate);
-  
+
     //Survey mode is only available on ZED-F9P modules
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_TMODE_MODE) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
-  
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
-  
+
     //RTCM is only available on ZED-F9P modules
     //
     //For most RTK products, the GNSS is interfaced via both I2C and UART1. Configuration and PVT/HPPOS messages are
@@ -46,10 +46,10 @@ bool configureUbloxModuleRover()
     //
     //But, on the Reference Station, the GNSS is interfaced via SPI. It has no access to I2C and UART1. So for that
     //product - in Rover mode - we want to leave any RTCM messages enabled on SPI so they can be logged if desired.
-  
+
     //Find first RTCM record in ubxMessage array
     int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
-  
+
     if (zedModuleType == PLATFORM_F9P)
     {
       if (USE_I2C_GNSS)
@@ -105,7 +105,6 @@ bool configureUbloxModuleRover()
       response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_DIS_AUTODIRPINPOL, settings.sfDisableWheelDirection);
       response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_COMBINE_TICKS, settings.sfCombineWheelTicks);
       response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV_PRIO, settings.rateNavPrio);
-      response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, settings.enableNAV2);
       response &= theGNSS.addCfgValset(UBLOX_CFG_SFODO_USE_SPEED, settings.sfUseSpeed);
     }
 

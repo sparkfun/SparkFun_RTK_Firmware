@@ -15,7 +15,7 @@ bool configureUbloxModule()
       theGNSS.enableDebugging(serialGNSS); //Output all debug messages over serialGNSS
     else
 #endif
-    theGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
+      theGNSS.enableDebugging(Serial, true); //Enable only the critical debug messages over Serial
   }
   else
     theGNSS.disableDebugging();
@@ -40,8 +40,7 @@ bool configureUbloxModule()
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, 1000);
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, 1);
 
-  //Survey mode is only available on ZED-F9P modules
-  if (zedModuleType == PLATFORM_F9P)
+  if (commandSupported(UBLOX_CFG_TMODE_MODE) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
 
   //UART1 will primarily be used to pass NMEA and UBX from ZED to ESP32 (eventually to cell phone)
@@ -51,74 +50,74 @@ bool configureUbloxModule()
   {
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_NMEA, 1);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_UART1OUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_RTCM3X, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_NMEA, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_RTCM3X, 1);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    if (commandSupported(UBLOX_CFG_UART1INPROT_SPARTN) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_SPARTN, 0);
-  
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1_BAUDRATE, settings.dataPortBaud); //Defaults to 230400 to maximize message output support
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud); //Defaults to 57600 to match SiK telemetry radio firmware default
-  
+
     //Disable SPI port - This is just to remove some overhead by ZED
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_NMEA, 0);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_SPIOUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_RTCM3X, 0);
-  
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_NMEA, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_RTCM3X, 0);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    if (commandSupported(UBLOX_CFG_SPIINPROT_SPARTN) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_SPARTN, 0);
   }
   else //SPI GNSS
   {
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_NMEA, 1);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_SPIOUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_SPIOUTPROT_RTCM3X, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_NMEA, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_RTCM3X, 1);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    if (commandSupported(UBLOX_CFG_SPIINPROT_SPARTN) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_SPIINPROT_SPARTN, 0);
-  
+
     //Disable I2C and UART1 ports - This is just to remove some overhead by ZED
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_NMEA, 0);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_I2COUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_RTCM3X, 0);
-  
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_NMEA, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_RTCM3X, 0);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    if (commandSupported(UBLOX_CFG_I2CINPROT_SPARTN) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_SPARTN, 0);
 
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_NMEA, 0);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_UART1OUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_UART1OUTPROT_RTCM3X, 0);
-  
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_UBX, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_NMEA, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_RTCM3X, 0);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+    if (commandSupported(UBLOX_CFG_UART1INPROT_SPARTN) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_UART1INPROT_SPARTN, 0);
   }
 
   //Set the UART2 to only do RTCM (in case this device goes into base mode)
   response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_NMEA, 0);
-  if (zedModuleType == PLATFORM_F9P)
+  if (commandSupported(UBLOX_CFG_UART2OUTPROT_RTCM3X) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_RTCM3X, 1);
   response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_UBX, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_NMEA, 0);
   response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_RTCM3X, 1);
-  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+  if (commandSupported(UBLOX_CFG_UART2INPROT_SPARTN) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_SPARTN, 0);
 
   //We don't want NMEA over I2C, but we will want to deliver RTCM, and UBX+RTCM is not an option
@@ -126,12 +125,14 @@ bool configureUbloxModule()
   {
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_NMEA, 1);
-    if (zedModuleType == PLATFORM_F9P)
+    if (commandSupported(UBLOX_CFG_I2COUTPROT_RTCM3X) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_I2COUTPROT_RTCM3X, 1);
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_UBX, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_NMEA, 1);
     response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_RTCM3X, 1);
-    if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+
+    if (commandSupported(UBLOX_CFG_I2CINPROT_SPARTN) == true)
     {
       if (productVariant == RTK_FACET_LBAND)
         response &= theGNSS.addCfgValset(UBLOX_CFG_I2CINPROT_SPARTN, 1); //We push NEO-D9S correction data (SPARTN) to ZED-F9P over the I2C interface
@@ -144,13 +145,24 @@ bool configureUbloxModule()
   //So let's be sure all protocols are on for the USB port
   response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_UBX, 1);
   response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_NMEA, 1);
-  if (zedModuleType == PLATFORM_F9P)
+  if (commandSupported(UBLOX_CFG_USBOUTPROT_RTCM3X) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_USBOUTPROT_RTCM3X, 1);
   response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_UBX, 1);
   response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_NMEA, 1);
   response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_RTCM3X, 1);
-  if (zedModuleType == PLATFORM_F9P && zedFirmwareVersionInt >= 120)
+  if (commandSupported(UBLOX_CFG_USBINPROT_SPARTN) == true)
     response &= theGNSS.addCfgValset(UBLOX_CFG_USBINPROT_SPARTN, 0);
+
+  if (commandSupported(UBLOX_CFG_NAVSPG_INFIL_MINCNO) == true)
+  {
+    if (zedModuleType == PLATFORM_F9R)
+      response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINCNO, settings.minCNO_F9R); //Set minimum satellite signal level for navigation - default 20
+    else
+      response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINCNO, settings.minCNO_F9P); //Set minimum satellite signal level for navigation - default 6
+  }
+
+  if (commandSupported(UBLOX_CFG_NAV2_OUT_ENABLED) == true)
+    response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, 1); //Enable NAV2 messages no matter what
 
   response &= theGNSS.sendCfgValset();
 
@@ -398,6 +410,8 @@ bool createTestFile()
     return (!SD_MMC.exists(testFileName));
   }
 #endif
+
+  return (false);
 }
 
 //If debug option is on, print available heap
@@ -513,8 +527,46 @@ void settingsToDefaults()
   settings = defaultSettings;
 }
 
+//Given a spot in the ubxMsg array, return true if this message is supported on this platform and firmware version
+bool messageSupported(int messageNumber)
+{
+  bool messageSupported = false;
+
+  if ( (zedModuleType == PLATFORM_F9P) && (zedFirmwareVersionInt >= ubxMessages[messageNumber].f9pFirmwareVersionSupported) )
+    messageSupported = true;
+  else if ( (zedModuleType == PLATFORM_F9R) && (zedFirmwareVersionInt >= ubxMessages[messageNumber].f9rFirmwareVersionSupported) )
+    messageSupported = true;
+
+  return (messageSupported);
+}
+//Given a command key, return true if that key is supported on this platform and fimrware version
+bool commandSupported(const uint32_t key)
+{
+  bool commandSupported = false;
+
+  //Locate this key in the known key array
+  int commandNumber = 0;
+  for ( ; commandNumber < MAX_UBX_CMD ; commandNumber++)
+  {
+    if (ubxCommands[commandNumber].cmdKey == key) break;
+  }
+  if (commandNumber == MAX_UBX_CMD)
+  {
+    Serial.printf("commandSupported: Unknown command key 0x%02X\r\n", key);
+    commandSupported = false;
+  }
+  else
+  {
+    if ( (zedModuleType == PLATFORM_F9P) && (zedFirmwareVersionInt >= ubxCommands[commandNumber].f9pFirmwareVersionSupported) )
+      commandSupported = true;
+    else if ( (zedModuleType == PLATFORM_F9R) && (zedFirmwareVersionInt >= ubxCommands[commandNumber].f9rFirmwareVersionSupported) )
+      commandSupported = true;
+  }
+  return (commandSupported);
+}
+
 //Enable all the valid messages for this platform
-//There are ~89 messages so split into batches. VALSET is limited to 64 max per batch
+//There are many messages so split into batches. VALSET is limited to 64 max per batch
 //Uses dummy newCfg and sendCfg values to be sure we open/close a complete set
 bool setMessages(int maxRetries)
 {
@@ -524,61 +576,68 @@ bool setMessages(int maxRetries)
 
   bool success = false;
   int tryNo = -1;
+
   while ((++tryNo < maxRetries) && !success)
   {
     bool response = true;
+    int messageNumber = 0;
     
-    int x = 0;
-    while (x < MAX_UBX_MSG)
+    while (messageNumber < MAX_UBX_MSG)
     {
       response &= theGNSS.newCfgValset();
-      
+
       do
       {
-        if (ubxMessages[x].supported & zedModuleType)
+        if (messageSupported(messageNumber) == true)
         {
-          uint8_t rate = settings.ubxMessageRates[x];
-  
-          //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH, ESF_STATUS and TIM_TP remained enabled
+          uint8_t rate = settings.ubxMessageRates[messageNumber];
+
+          //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH and ESF_STATUS remained enabled
           //(but not enabled for logging)
           if (USE_SPI_GNSS)
           {
-            if (ubxMessages[x].msgClass == UBX_CLASS_NAV)
-              if ((ubxMessages[x].msgID == UBX_NAV_PVT) || (ubxMessages[x].msgID == UBX_NAV_HPPOSLLH))
+            if (ubxMessages[messageNumber].msgClass == UBX_CLASS_NAV)
+              if ((ubxMessages[messageNumber].msgID == UBX_NAV_PVT) || (ubxMessages[messageNumber].msgID == UBX_NAV_HPPOSLLH))
                 if (rate == 0)
                   rate = 1;
-            if (ubxMessages[x].msgClass == UBX_CLASS_ESF)
-              if (ubxMessages[x].msgID ==  UBX_ESF_STATUS)
+            if (ubxMessages[messageNumber].msgClass == UBX_CLASS_ESF)
+              if (ubxMessages[messageNumber].msgID == UBX_ESF_STATUS)
                 if (zedModuleType == PLATFORM_F9R)
                   if (rate == 0)
                     rate = 1;
-            if (ubxMessages[x].msgClass == UBX_CLASS_TIM)
+            if (ubxMessages[messageNumber].msgClass == UBX_CLASS_TIM)
             {
-              if (ubxMessages[x].msgID ==  UBX_TIM_TM2)
+              if (ubxMessages[messageNumber].msgID ==  UBX_TIM_TM2)
                 if (rate == 0)
                   rate = 1;
-              if (ubxMessages[x].msgID ==  UBX_TIM_TP)
+              if (ubxMessages[messageNumber].msgID ==  UBX_TIM_TP)
                 if (HAS_GNSS_TP_INT)
                   if (rate == 0)
                     rate = 1;
             }
-            if (ubxMessages[x].msgClass == UBX_CLASS_RXM)
-              if (ubxMessages[x].msgID ==  UBX_RXM_COR)
+            if (ubxMessages[messageNumber].msgClass == UBX_CLASS_RXM)
+              if (ubxMessages[messageNumber].msgID ==  UBX_RXM_COR)
                 if (rate == 0)
                   rate = 1;
-            if (ubxMessages[x].msgClass == UBX_CLASS_NMEA)
-              if (ubxMessages[x].msgID ==  UBX_NMEA_GGA)
+            if (ubxMessages[messageNumber].msgClass == UBX_CLASS_NMEA)
+              if (ubxMessages[messageNumber].msgID ==  UBX_NMEA_GGA)
                 if (rate == 0)
                   rate = 1;
           }
-          
-          response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + spiOffset, rate);
+
+          response &= theGNSS.addCfgValset(ubxMessages[messageNumber].msgConfigKey + spiOffset, rate);
         }
-        x++;
+        messageNumber++;
       }
-      while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
-      
+      while (((messageNumber % 43) < 42) && (messageNumber < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+
       response &= theGNSS.sendCfgValset();
+
+      if (response == false)
+      {
+        log_d("sendCfg failed at messageNumber %d %s\r\n", messageNumber, ubxMessages[messageNumber].msgTextName);
+        response = true;
+      }
     }
   
     //For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
@@ -624,28 +683,29 @@ bool setMessagesUSB(int maxRetries)
 {
   bool success = false;
   int tryNo = -1;
+
   while ((++tryNo < maxRetries) && !success)
   {
     bool response = true;
+    int messageNumber = 0;
     
-    int x = 0;
-    while (x < MAX_UBX_MSG)
+    while (messageNumber < MAX_UBX_MSG)
     {
       response &= theGNSS.newCfgValset();
-      
+
       do
       {
-        if (ubxMessages[x].supported & zedModuleType)
-          response &= theGNSS.addCfgValset(ubxMessages[x].msgConfigKey + 2, settings.ubxMessageRates[x]);
-        x++;
+        if (messageSupported(messageNumber) == true)
+          response &= theGNSS.addCfgValset(ubxMessages[messageNumber].msgConfigKey + 2, settings.ubxMessageRates[messageNumber]);
+        messageNumber++;
       }
-      while (((x % 43) < 42) && (x < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
-      
+      while (((messageNumber % 43) < 42) && (messageNumber < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+
       response &= theGNSS.sendCfgValset();
     }
 
-  if (response)
-    success = true;
+    if (response)
+      success = true;
   }
 
   return (success);
@@ -718,4 +778,237 @@ void printPosition()
     printCurrentConditions();
     lastPrintPosition = millis();
   }
+}
+
+//Given a user's string, try to identify the type and return the coordinate in DD.ddddddddd format
+CoordinateInputType identifyInputType(char* userEntryOriginal, double* coordinate)
+{
+  char userEntry[50];
+  strncpy(userEntry, userEntryOriginal, sizeof(userEntry) - 1); //strtok modifies the message so make copy into userEntry
+
+  *coordinate = 0.0; //Clear what is given to us
+
+  CoordinateInputType coordinateInputType = COORDINATE_INPUT_TYPE_INVALID_UNKNOWN;
+
+  int dashCount = 0;
+  int spaceCount = 0;
+  int decimalCount = 0;
+  int lengthOfLeadingNumber = 0;
+
+  //Scan entry for invalid chars
+  //A valid entry has only numbers, -, ' ', and .
+  for (int x = 0 ; x < strlen(userEntry) ; x++)
+  {
+    if (isdigit(userEntry[x])) //All good
+    {
+      if (decimalCount == 0) lengthOfLeadingNumber++;
+    }
+    else if (userEntry[x] == '-') dashCount++; //All good
+    else if (userEntry[x] == ' ') spaceCount++; //All good
+    else if (userEntry[x] == '.') decimalCount++; //All good
+    else return (COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //String contains invalid character
+  }
+
+  // Seven possible entry types
+  // DD.dddddd
+  // DDMM.mmmmmmm
+  // DD MM.mmmmmmm
+  // DD-MM.mmmmmmm
+  // DDMMSS.ssssss
+  // DD MM SS.ssssss
+  // DD-MM-SS.ssssss
+
+  if (decimalCount != 1) return (COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Just no. 40.09033470 is valid.
+  if (spaceCount > 2) return (COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 0, 1, or 2 allowed. 40 05 25.2049 is valid.
+  if (dashCount > 3) return (COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 0, 1, 2, or 3 allowed. -105-11-05.1629 is valid.
+  if (lengthOfLeadingNumber > 7) return (COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 7 or fewer. -1051105.188992 (DDDMMSS or DDMMSS) is valid
+
+  bool negativeSign = false;
+  if (userEntry[0] == '-')
+  {
+    userEntry[0] = ' ';
+    negativeSign = true;
+    dashCount--; //Use dashCount as the internal dashes only, not the leading negative sign
+  }
+
+  if (spaceCount == 0 && dashCount == 0 && (lengthOfLeadingNumber == 7 || lengthOfLeadingNumber == 6) ) //DDMMSS.ssssss
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DDMMSS;
+
+    long intPortion = atoi(userEntry); //Get DDDMMSS
+    long decimal = intPortion / 10000L; //Get DDD
+    intPortion -= (decimal * 10000L);
+    long minutes = intPortion / 100L; //Get MM
+    double seconds = atof(userEntry); //Get DDDMMSS.ssssss
+    seconds -= (decimal * 10000); //Remove DDD
+    seconds -= (minutes * 100); //Remove MM
+    *coordinate = decimal + (minutes / (double)60) + (seconds / (double)3600);
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (spaceCount == 0 && dashCount == 0 && (lengthOfLeadingNumber == 5 || lengthOfLeadingNumber == 4)) //DDMM.mmmmmmm
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DDMM;
+
+    long intPortion = atoi(userEntry); //Get DDDMM
+    long decimal = intPortion / 100L; //Get DDD
+    intPortion -= (decimal * 100L);
+    double minutes = atof(userEntry); //Get DDDMM.mmmmmmm
+    minutes -= (decimal * 100L); //Remove DDD
+    *coordinate = decimal + (minutes / (double)60);
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (dashCount == 1) //DD-MM.mmmmmmm
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_DASH;
+
+    char* token = strtok(userEntry, "-"); //Modifies the given array
+    //We trust that token points at something because the dashCount is > 0
+    int decimal = atoi(token); //Get DD
+    token = strtok(nullptr, "-");
+    double minutes = atof(token); //Get MM.mmmmmmm
+    *coordinate = decimal + (minutes / 60.0);
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (dashCount == 2) //DD-MM-SS.ssss
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_SS_DASH;
+
+    char* token = strtok(userEntry, "-"); //Modifies the given array
+    //We trust that token points at something because the spaceCount is > 0
+    int decimal = atoi(token); //Get DD
+    token = strtok(nullptr, "-");
+    int minutes = atoi(token); //Get MM
+    token = strtok(nullptr, "-");
+    double seconds = atof(token); //Get SS.ssssss
+    *coordinate = decimal + (minutes / (double)60) + (seconds / (double)3600);
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (spaceCount == 0) //DD.dddddd
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DD;
+    sscanf(userEntry, "%lf", coordinate); //Load float from userEntry into coordinate
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (spaceCount == 1) //DD MM.mmmmmmm
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM;
+
+    char* token = strtok(userEntry, " "); //Modifies the given array
+    //We trust that token points at something because the spaceCount is > 0
+    int decimal = atoi(token); //Get DD
+    token = strtok(nullptr, " ");
+    double minutes = atof(token); //Get MM.mmmmmmm
+    *coordinate = decimal + (minutes / 60.0);
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (spaceCount == 2) //DD MM SS.ssssss
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_SS;
+
+    char* token = strtok(userEntry, " "); //Modifies the given array
+    //We trust that token points at something because the spaceCount is > 0
+    int decimal = atoi(token); //Get DD
+    token = strtok(nullptr, " ");
+    int minutes = atoi(token); //Get MM
+    token = strtok(nullptr, " ");
+    double seconds = atof(token); //Get SS.ssssss
+    *coordinate = decimal + (minutes / (double)60) + (seconds / (double)3600);
+    if (negativeSign) *coordinate *= -1;
+  }
+
+  return (coordinateInputType);
+}
+
+//Given a coordinate and input type, output a string
+//So DD.ddddddddd can become 'DD MM SS.ssssss', etc
+void convertInput(double coordinate, CoordinateInputType coordinateInputType, char* coordinateString, int sizeOfCoordinateString)
+{
+  if (coordinateInputType == COORDINATE_INPUT_TYPE_DD)
+  {
+    snprintf(coordinateString, sizeOfCoordinateString, "%0.9f", coordinate);
+  }
+  else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DDMM
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_DASH
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SYMBOL
+          )
+  {
+    int longitudeDegrees = (int)coordinate;
+    coordinate -= longitudeDegrees;
+    coordinate *= 60;
+    if (coordinate < 1)
+      coordinate *= -1;
+
+    if (coordinateInputType == COORDINATE_INPUT_TYPE_DDMM)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d%010.7f", longitudeDegrees, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_DASH)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d-%010.7f", longitudeDegrees, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SYMBOL)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d°%010.7f'", longitudeDegrees, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d %010.7f", longitudeDegrees, coordinate);
+  }
+  else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DDMMSS
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS_DASH
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL
+          )
+  {
+    int longitudeDegrees = (int)coordinate;
+    coordinate -= longitudeDegrees;
+    coordinate *= 60;
+    if (coordinate < 1)
+      coordinate *= -1;
+
+    int longitudeMinutes = (int)coordinate;
+    coordinate -= longitudeMinutes;
+    coordinate *= 60;
+    if (coordinateInputType == COORDINATE_INPUT_TYPE_DDMMSS)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d%02d%09.6f", longitudeDegrees, longitudeMinutes, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS_DASH)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d-%02d-%09.6f", longitudeDegrees, longitudeMinutes, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d°%02d'%09.6f\"", longitudeDegrees, longitudeMinutes, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d %02d %09.6f", longitudeDegrees, longitudeMinutes, coordinate);
+  }
+}
+
+//Given an input type, return a printable string
+const char* printableInputType(CoordinateInputType coordinateInputType)
+{
+  switch (coordinateInputType)
+  {
+    default:
+      return ("Unknown");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD):
+      return ("DD.ddddddddd");
+      break;
+    case (COORDINATE_INPUT_TYPE_DDMM):
+      return ("DDMM.mmmmmmm");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM):
+      return ("DD MM.mmmmmmm");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM_DASH):
+      return ("DD-MM.mmmmmmm");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM_SYMBOL):
+      return ("DD°MM.mmmmmmm'");
+      break;
+    case (COORDINATE_INPUT_TYPE_DDMMSS):
+      return ("DDMMSS.ssssss");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM_SS):
+      return ("DD MM SS.ssssss");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM_SS_DASH):
+      return ("DD-MM-SS.ssssss");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL):
+      return ("DD°MM'SS.ssssss\"");
+      break;
+  }
+  return ("Unknown");
 }

@@ -72,22 +72,22 @@
         }
 
         .battery {
-			position: absolute;
-			z-index: 1000; 
-			right: 10px;
-			max-width: 600px;
-			margin-top: 5px;
+            position: absolute;
+            z-index: 1000;
+            right: 10px;
+            max-width: 600px;
+            margin-top: 5px;
         }
     </style>
 </head>
 
 <body>
-	<div class="container" id="batteryIcon">
-		<div align="right" class="battery">
-       		 <img id="batteryIconFileName" src="src/Battery2_Charging.png" alt="Battery level"> <span id="batteryPercent" class="small"
-            style="display:inline;">+67</span>
-    	</div>
-	</div>
+    <div class="container" id="batteryIcon">
+        <div align="right" class="battery">
+            <img id="batteryIconFileName" src="src/Battery2_Charging.png" alt="Battery level"> <span id="batteryPercent"
+                class="small" style="display:inline;">+67</span>
+        </div>
+    </div>
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="resetInProcess">
         <b>Resetting</b><br><br>RTK device is rebooting. Please wait...
@@ -1162,20 +1162,27 @@
                             </div>
 
                             <div class="form-group row">
-                                <label for="fixedLat"
+                                <label for="fixedLatText"
                                     class="box-margin40 col-sm-3 col-4 col-form-label">Latitude:</label>
                                 <div class="col-sm-4 col-6">
-                                    <input type="number" class="form-control" id="fixedLat">
-                                    <p id="fixedLatError" class="inlineError"></p>
+                                    <input type="text" class="form-control" id="fixedLatText">
+                                    <p id="fixedLatTextError" class="inlineError"></p>
                                 </div>
                             </div>
 
                             <div class="form-group row">
-                                <label for="fixedLong"
+                                <label for="fixedLongText"
                                     class="box-margin40 col-sm-3 col-4 col-form-label">Longitude:</label>
                                 <div class="col-sm-4 col-6">
-                                    <input type="number" class="form-control" id="fixedLong">
-                                    <p id="fixedLongError" class="inlineError"></p>
+                                    <input type="text" class="form-control" id="fixedLongText">
+                                    <p id="fixedLongTextError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div id="detectedFormat" class="box-margin40">
+                                    <label class="form-check-label">Detected Format:</label>
+                                    <span id="detectedFormatText" style="display:inline;"></span>
                                 </div>
                             </div>
 
@@ -1401,95 +1408,97 @@
                         <div class="card card-body" style="margin-top:5px;">
 
                             <div style="margin-bottom:5px;">
-                                <button type="button" class="btn btn-primary"
-                                    onClick="resetToRTCMDefaults()">Reset to Defaults</button>
+                                <button type="button" class="btn btn-primary" onClick="resetToRTCMDefaults()">Reset to
+                                    Defaults</button>
                             </div>
                             <div style="margin-bottom:5px;">
-                                <button type="button" class="btn btn-primary"
-                                    onClick="resetToLowBandwidthRTCM()">Reset to Low Bandwidth Link</button>
+                                <button type="button" class="btn btn-primary" onClick="resetToLowBandwidthRTCM()">Reset
+                                    to Low Bandwidth Link</button>
                             </div>
 
                             <hr>
 
                             <div class="form-group row" id="msgUBX_RTCM_1005Base">
                                 <label for="UBX_RTCM_1005Base" class="col-sm-3 col-5 col-form-label">RTCM_1005:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1005Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1005Base" value="0">
                                     <p id="UBX_RTCM_1005BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1074Base">
                                 <label for="UBX_RTCM_1074Base" class="col-sm-3 col-5 col-form-label">RTCM_1074:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1074Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1074Base" value="0">
                                     <p id="UBX_RTCM_1074BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1077Base">
                                 <label for="UBX_RTCM_1077Base" class="col-sm-3 col-5 col-form-label">RTCM_1077:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1077Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1077Base" value="0">
                                     <p id="UBX_RTCM_1077BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1084Base">
                                 <label for="UBX_RTCM_1084Base" class="col-sm-3 col-5 col-form-label">RTCM_1084:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1084Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1084Base" value="0">
                                     <p id="UBX_RTCM_1084BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1087Base">
                                 <label for="UBX_RTCM_1087Base" class="col-sm-3 col-5 col-form-label">RTCM_1087:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1087Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1087Base" value="0">
                                     <p id="UBX_RTCM_1087BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1094Base">
                                 <label for="UBX_RTCM_1094Base" class="col-sm-3 col-5 col-form-label">RTCM_1094:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1094Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1094Base" value="0">
                                     <p id="UBX_RTCM_1094BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1097Base">
                                 <label for="UBX_RTCM_1097Base" class="col-sm-3 col-5 col-form-label">RTCM_1097:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1097Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1097Base" value="0">
                                     <p id="UBX_RTCM_1097BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1124Base">
                                 <label for="UBX_RTCM_1124Base" class="col-sm-3 col-5 col-form-label">RTCM_1124:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1124Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1124Base" value="0">
                                     <p id="UBX_RTCM_1124BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1127Base">
                                 <label for="UBX_RTCM_1127Base" class="col-sm-3 col-5 col-form-label">RTCM_1127:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1127Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1127Base" value="0">
                                     <p id="UBX_RTCM_1127BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_1230Base">
                                 <label for="UBX_RTCM_1230Base" class="col-sm-3 col-5 col-form-label">RTCM_1230:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1230Base"
-                                        value="0">
+                                <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                        id="UBX_RTCM_1230Base" value="0">
                                     <p id="UBX_RTCM_1230BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_4072_0Base">
-                                <label for="UBX_RTCM_4072_0Base" class="col-sm-4 col-6 col-form-label">RTCM_4072_0:</label>
+                                <label for="UBX_RTCM_4072_0Base"
+                                    class="col-sm-4 col-6 col-form-label">RTCM_4072_0:</label>
                                 <div class="col-sm-7 col-6"><input type="number" class="form-control"
                                         id="UBX_RTCM_4072_0Base" value="0">
                                     <p id="UBX_RTCM_4072_0BaseError" class="inlineError"></p>
                                 </div>
                             </div>
                             <div class="form-group row" id="msgUBX_RTCM_4072_1Base">
-                                <label for="UBX_RTCM_4072_1Base" class="col-sm-4 col-6 col-form-label">RTCM_4072_1:</label>
+                                <label for="UBX_RTCM_4072_1Base"
+                                    class="col-sm-4 col-6 col-form-label">RTCM_4072_1:</label>
                                 <div class="col-sm-7 col-6"><input type="number" class="form-control"
                                         id="UBX_RTCM_4072_1Base" value="0">
                                     <p id="UBX_RTCM_4072_1BaseError" class="inlineError"></p>
@@ -1532,8 +1541,7 @@
 
                     <div class="form-group row">
                         <label for="imuYaw" class="col-sm-4 col-6 col-form-label">Yaw Angle:
-                            <span class="tt" data-bs-placement="right"
-                                title="User defined IMU mount angle for yaw.">
+                            <span class="tt" data-bs-placement="right" title="User defined IMU mount angle for yaw.">
                                 <span class="icon-info-circle text-primary ms-2"></span>
                             </span>
                         </label>
@@ -1545,8 +1553,7 @@
 
                     <div class="form-group row">
                         <label for="imuPitch" class="col-sm-4 col-6 col-form-label">Pitch Angle:
-                            <span class="tt" data-bs-placement="right"
-                                title="User defined IMU mount angle for pitch.">
+                            <span class="tt" data-bs-placement="right" title="User defined IMU mount angle for pitch.">
                                 <span class="icon-info-circle text-primary ms-2"></span>
                             </span>
                         </label>
@@ -1558,8 +1565,7 @@
 
                     <div class="form-group row">
                         <label for="imuRoll" class="col-sm-4 col-6 col-form-label">Roll Angle:
-                            <span class="tt" data-bs-placement="right"
-                                title="User defined IMU mount angle for roll.">
+                            <span class="tt" data-bs-placement="right" title="User defined IMU mount angle for roll.">
                                 <span class="icon-info-circle text-primary ms-2"></span>
                             </span>
                         </label>
@@ -1570,7 +1576,8 @@
                     </div>
 
                     <div class="form-check mt-3">
-                        <label class="form-check-label" for="sfDisableWheelDirection">Disable Wheel Tick Direction Detection</label>
+                        <label class="form-check-label" for="sfDisableWheelDirection">Disable Wheel Tick Direction
+                            Detection</label>
                         <input class="form-check-input" type="checkbox" value="" id="sfDisableWheelDirection">
                         <span class="tt" data-bs-placement="right"
                             title="Automatically identify the wheel tick direction using GNSS heading. Default: False">
@@ -1581,8 +1588,7 @@
                     <div class="form-check mt-3">
                         <label class="form-check-label" for="sfCombineWheelTicks">Combine Wheel Ticks</label>
                         <input class="form-check-input" type="checkbox" value="" id="sfCombineWheelTicks">
-                        <span class="tt" data-bs-placement="right"
-                            title="Use combined rear wheel ticks instead of the
+                        <span class="tt" data-bs-placement="right" title="Use combined rear wheel ticks instead of the
                             single tick. Default: False">
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>

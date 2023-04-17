@@ -18,6 +18,8 @@ function ge(e) {
     return document.getElementById(e);
 }
 
+var fixedLat = 0;
+var fixedLong = 0;
 var platformPrefix = "Surveyor";
 var geodeticLat = 40.01;
 var geodeticLon = -105.19;
@@ -40,6 +42,22 @@ var resetTimeout;
 var sendDataTimeout;
 var checkNewFirmwareTimeout;
 var getNewFirmwareTimeout;
+
+const CoordinateTypes = {
+    COORDINATE_INPUT_TYPE_DD: 0, //Default DD.ddddddddd
+    COORDINATE_INPUT_TYPE_DDMM: 1, //DDMM.mmmmm
+    COORDINATE_INPUT_TYPE_DD_MM: 2, //DD MM.mmmmm
+    COORDINATE_INPUT_TYPE_DD_MM_DASH: 3, //DD-MM.mmmmm
+    COORDINATE_INPUT_TYPE_DD_MM_SYMBOL: 4, //DD°MM.mmmmmmm'
+    COORDINATE_INPUT_TYPE_DDMMSS: 5, //DD MM SS.ssssss
+    COORDINATE_INPUT_TYPE_DD_MM_SS: 6, //DD MM SS.ssssss
+    COORDINATE_INPUT_TYPE_DD_MM_SS_DASH: 7, //DD-MM-SS.ssssss
+    COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL: 8, //DD°MM'SS.ssssss"
+    COORDINATE_INPUT_TYPE_INVALID_UNKNOWN: 9,
+}
+
+var convertedCoordinate = 0.0;
+var coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DD;
 
 function parseIncoming(msg) {
     //console.log("incoming message: " + msg);
@@ -230,7 +248,15 @@ function parseIncoming(msg) {
         else if (id.includes("batteryIconFileName")) {
             ge("batteryIconFileName").src = val;
         }
-
+        else if (id.includes("coordinateInputType")) {
+            coordinateInputType = val;
+        }
+        else if (id.includes("fixedLat")) {
+            fixedLat = val;
+        }
+        else if (id.includes("fixedLong")) {
+            fixedLong = val;
+        }
 
         //Check boxes / radio buttons
         else if (val == "true") {
@@ -285,6 +311,7 @@ function parseIncoming(msg) {
         updateECEFList();
         updateGeodeticList();
         tcpBoxes();
+        updateLatLong();
     }
 
 }
@@ -522,8 +549,8 @@ function validateFields() {
             clearElement("fixedEcefX", -1280206.568);
             clearElement("fixedEcefY", -4716804.403);
             clearElement("fixedEcefZ", 4086665.484);
-            clearElement("fixedLat", 40.09029479);
-            clearElement("fixedLong", -105.18505761);
+            clearElement("fixedLatText", 40.09029479);
+            clearElement("fixedLongText", -105.18505761);
             clearElement("fixedAltitude", 1560.089);
             clearElement("antennaHeight", 0);
             clearElement("antennaReferencePoint", 0);
@@ -533,8 +560,8 @@ function validateFields() {
             clearElement("observationPositionAccuracy", 5.0);
 
             if (ge("fixedBaseCoordinateTypeECEF").checked) {
-                clearElement("fixedLat", 40.09029479);
-                clearElement("fixedLong", -105.18505761);
+                clearElement("fixedLatText", 40.09029479);
+                clearElement("fixedLongText", -105.18505761);
                 clearElement("fixedAltitude", 1560.089);
                 clearElement("antennaHeight", 0);
                 clearElement("antennaReferencePoint", 0);
@@ -548,8 +575,7 @@ function validateFields() {
                 clearElement("fixedEcefY", -4716804.403);
                 clearElement("fixedEcefZ", 4086665.484);
 
-                checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
-                checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
+                checkLatLong(); //Verify Lat/Long input type
                 checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
 
                 checkElementValue("antennaHeight", -15000, 15000, "Must be -15000 to 15000", "collapseBaseConfig");
@@ -577,7 +603,6 @@ function validateFields() {
     if (platformPrefix == "Facet L-Band") {
         if (ge("enablePointPerfectCorrections").checked == true) {
             value = ge("pointPerfectDeviceProfileToken").value;
-            console.log(value);
             if (value.length > 0)
                 checkElementString("pointPerfectDeviceProfileToken", 36, 36, "Must be 36 characters", "collapsePPConfig");
         }
@@ -714,6 +739,63 @@ function checkBitMapValue(id, min, max, bitMap, errorText, collapseID) {
     else {
         clearError(id);
     }
+}
+
+//Check if Lat/Long input types are decipherable
+function checkLatLong() {
+    var id = "fixedLatText";
+    var collapseID = "collapseBaseConfig";
+    ge("detectedFormatText").value = "";
+
+    var inputTypeLat = identifyInputType(ge(id).value)
+    if (inputTypeLat == CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN) {
+        var errorText = "Coordinate format unknown";
+        ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else if (convertedCoordinate < -180 || convertedCoordinate > 180) {
+        var errorText = "Must be -180 to 180";
+        ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else
+        clearError(id);
+
+    id = "fixedLongText";
+    var inputTypeLong = identifyInputType(ge(id).value)
+    if (inputTypeLong == CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN) {
+        var errorText = "Coordinate format unknown";
+        ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else if (convertedCoordinate < -180 || convertedCoordinate > 180) {
+        var errorText = "Must be -180 to 180";
+        ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else
+        clearError(id);
+
+    if (inputTypeLong != inputTypeLat) {
+        var errorText = "Formats must match";
+        ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+        ge("detectedFormatText").innerHTML = printableInputType(CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN);
+    }
+    else
+        ge("detectedFormatText").innerHTML = printableInputType(inputTypeLat);
+}
+
+//Based on the coordinateInputType, format the lat/long text boxes
+function updateLatLong() {
+    ge("fixedLatText").value = convertInput(fixedLat, coordinateInputType);
+    ge("fixedLongText").value = convertInput(fixedLong, coordinateInputType);
+    checkLatLong(); //Updates the detected format
 }
 
 function checkElementValue(id, min, max, errorText, collapseID) {
@@ -910,8 +992,8 @@ function useECEFCoordinates() {
     ge("fixedEcefZ").value = ecefZ;
 }
 function useGeodeticCoordinates() {
-    ge("fixedLat").value = geodeticLat;
-    ge("fixedLong").value = geodeticLon;
+    ge("fixedLatText").value = geodeticLat;
+    ge("fixedLongText").value = geodeticLon;
     ge("fixedHAE_APC").value = geodeticAlt;
 
     $("input[name=markRadio][value=1]").prop('checked', true);
@@ -1264,8 +1346,7 @@ function addGeodetic() {
     nicknameGeodetic.value = removeBadChars(nicknameGeodetic.value);
 
     checkElementString("nicknameGeodetic", 1, 49, "Must be 1 to 49 characters", "collapseBaseConfig");
-    checkElementValue("fixedLat", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
-    checkElementValue("fixedLong", -180, 180, "Must be -180 to 180", "collapseBaseConfig");
+    checkLatLong();
     checkElementValue("fixedAltitude", -11034, 8849, "Must be -11034 to 8849", "collapseBaseConfig");
     checkElementValue("antennaHeight", -15000, 15000, "Must be -15000 to 15000", "collapseBaseConfig");
     checkElementValue("antennaReferencePoint", -200.0, 200.0, "Must be -200.0 to 200.0", "collapseBaseConfig");
@@ -1276,12 +1357,12 @@ function addGeodetic() {
         for (; index < recordsGeodetic.length; ++index) {
             var parts = recordsGeodetic[index].split(' ');
             if (ge("nicknameGeodetic").value == parts[0]) {
-                recordsGeodetic[index] = nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLong.value + ' ' + fixedAltitude.value + ' ' + antennaHeight.value + ' ' + antennaReferencePoint.value;
+                recordsGeodetic[index] = nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLongText.value + ' ' + fixedAltitude.value + ' ' + antennaHeight.value + ' ' + antennaReferencePoint.value;
                 break;
             }
         }
         if (index == recordsGeodetic.length)
-            recordsGeodetic.push(nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLong.value + ' ' + fixedAltitude.value + ' ' + antennaHeight.value + ' ' + antennaReferencePoint.value);
+            recordsGeodetic.push(nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLongText.value + ' ' + fixedAltitude.value + ' ' + antennaHeight.value + ' ' + antennaReferencePoint.value);
     }
 
     updateGeodeticList();
@@ -1323,8 +1404,8 @@ function loadGeodetic() {
     if (val > "") {
         var parts = recordsGeodetic[val].split(' ');
         ge("nicknameGeodetic").value = parts[0];
-        ge("fixedLat").value = parts[1];
-        ge("fixedLong").value = parts[2];
+        ge("fixedLatText").value = parts[1];
+        ge("fixedLongText").value = parts[2];
         ge("antennaHeight").value = parts[4];
         ge("antennaReferencePoint").value = parts[5];
 
@@ -1336,8 +1417,8 @@ function loadGeodetic() {
         adjustHAE();
 
         clearError("nicknameGeodetic");
-        clearError("fixedLat");
-        clearError("fixedLong");
+        clearError("fixedLatText");
+        clearError("fixedLongText");
         clearError("fixedAltitude");
         clearError("antennaHeight");
         clearError("antennaReferencePoint");
@@ -1610,4 +1691,226 @@ function otaFirmwareStatus(percentComplete) {
     if (percentComplete == 100) {
         resetComplete();
     }
+}
+
+//Given a user's string, try to identify the type and return the coordinate in DD.ddddddddd format
+function identifyInputType(userEntry) {
+    var coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN;
+    var dashCount = 0;
+    var spaceCount = 0;
+    var decimalCount = 0;
+    var lengthOfLeadingNumber = 0;
+    convertedCoordinate = 0.0; //Clear what is given to us
+
+    //Scan entry for invalid chars
+    //A valid entry has only numbers, -, ' ', and .
+    for (var x = 0; x < userEntry.length; x++) {
+
+        if (isdigit(userEntry[x])) {
+            if (decimalCount == 0) lengthOfLeadingNumber++
+        }
+        else if (userEntry[x] == '-') dashCount++; //All good
+        else if (userEntry[x] == ' ') spaceCount++; //All good
+        else if (userEntry[x] == '.') decimalCount++; //All good
+        else return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //String contains invalid character
+    }
+
+    // Seven possible entry types
+    // DD.dddddd
+    // DDMM.mmmmmmm
+    // DD MM.mmmmmmm
+    // DD-MM.mmmmmmm
+    // DDMMSS.ssssss
+    // DD MM SS.ssssss
+    // DD-MM-SS.ssssss
+
+    if (decimalCount != 1) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Just no. 40.09033470 is valid.
+    if (spaceCount > 2) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 0, 1, or 2 allowed. 40 05 25.2049 is valid.
+    if (dashCount > 3) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 0, 1, 2, or 3 allowed. -105-11-05.1629 is valid.
+    if (lengthOfLeadingNumber > 7) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 7 or fewer. -1051105.188992 (DDDMMSS or DDMMSS) is valid
+
+    var negativeSign = false;
+    if (userEntry[0] == '-') {
+        userEntry = setCharAt(userEntry, 0, ''); //Remove leading space
+        negativeSign = true;
+        dashCount--; //Use dashCount as the internal dashes only, not the leading negative sign
+    }
+
+    if (spaceCount == 0 && dashCount == 0 && (lengthOfLeadingNumber == 7 || lengthOfLeadingNumber == 6)) //DDMMSS.ssssss
+    {
+        coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DDMMSS;
+
+        var intPortion = Math.trunc(Number(userEntry)); //Get DDDMMSS
+        var decimal = Math.trunc(intPortion / 10000); //Get DDD
+        intPortion -= (decimal * 10000);
+        var minutes = Math.trunc(intPortion / 100); //Get MM
+        var seconds = userEntry; //Get DDDMMSS.ssssss
+        seconds -= (decimal * 10000); //Remove DDD
+        seconds -= (minutes * 100); //Remove MM
+        convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
+        if (convertedCoordinate) convertedCoordinate *= -1;
+    }
+    else if (spaceCount == 0 && dashCount == 0 && (lengthOfLeadingNumber == 5 || lengthOfLeadingNumber == 4)) //DDMM.mmmmmmm
+    {
+        coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DDMM;
+
+        var intPortion = Math.trunc(userEntry); //Get DDDMM
+        var decimal = intPortion / 100; //Get DDD
+        intPortion -= (decimal * 100);
+        var minutes = userEntry; //Get DDDMM.mmmmmmm
+        minutes -= (decimal * 100); //Remove DDD
+        convertedCoordinate = decimal + (minutes / 60.0);
+        if (negativeSign) convertedCoordinate *= -1;
+    }
+
+    else if (dashCount == 1) //DD-MM.mmmmmmm
+    {
+        coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_DASH;
+
+        var data = userEntry.split('-');
+        var decimal = Number(data[0]); //Get DD
+        var minutes = Number(data[1]); //Get MM.mmmmmmm
+        convertedCoordinate = decimal + (minutes / 60.0);
+        if (negativeSign) convertedCoordinate *= -1;
+    }
+    else if (dashCount == 2) //DD-MM-SS.ssss
+    {
+        coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH;
+
+        var data = userEntry.split('-');
+        var decimal = Number(data[0]); //Get DD
+        var minutes = Number(data[1]); //Get MM
+        var seconds = Number(data[2]); //Get SS.ssssss
+        convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
+        if (negativeSign) convertedCoordinate *= -1;
+    }
+    else if (spaceCount == 0) //DD.ddddddddd
+    {
+        coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DD;
+        convertedCoordinate = userEntry;
+        if (negativeSign) convertedCoordinate *= -1;
+    }
+    else if (spaceCount == 1) //DD MM.mmmmmmm
+    {
+        coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM;
+
+        var data = userEntry.split(' ');
+        var decimal = Number(data[0]); //Get DD
+        var minutes = Number(data[1]); //Get MM.mmmmmmm
+        convertedCoordinate = decimal + (minutes / 60.0);
+        if (negativeSign) convertedCoordinate *= -1;
+    }
+    else if (spaceCount == 2) //DD MM SS.ssssss
+    {
+        coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS;
+
+        var data = userEntry.split(' ');
+        var decimal = Number(data[0]); //Get DD
+        var minutes = Number(data[1]); //Get MM
+        var seconds = Number(data[2]); //Get SS.ssssss
+        convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
+        if (negativeSign) convertedCoordinate *= -1;
+    }
+
+    //console.log("convertedCoordinate: " + convertedCoordinate.toFixed(9));
+    return (coordinateInputType);
+}
+
+//Given a coordinate and input type, output a string
+//So DD.ddddddddd can become 'DD MM SS.ssssss', etc
+function convertInput(coordinate, coordinateInputType) {
+    var coordinateString = "";
+
+    if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD) {
+        coordinate = coordinate.toFixed(9);
+        return (coordinate);
+    }
+    else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM
+        || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DDMM
+        || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_DASH
+        || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SYMBOL
+    ) {
+        var longitudeDegrees = Math.trunc(coordinate);
+        coordinate -= longitudeDegrees;
+        coordinate *= 60;
+        if (coordinate < 1)
+            coordinate *= -1;
+
+        coordinate = coordinate.toFixed(7);
+
+        if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DDMM)
+            coordinateString = longitudeDegrees + "" + coordinate;
+        else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_DASH)
+            coordinateString = longitudeDegrees + "-" + coordinate;
+        else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SYMBOL)
+            coordinateString = longitudeDegrees + "°" + coordinate + "'";
+        else
+            coordinateString = longitudeDegrees + " " + coordinate;
+    }
+    else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS
+        || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DDMMSS
+        || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH
+        || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL
+    ) {
+        var longitudeDegrees = Math.trunc(coordinate);
+        coordinate -= longitudeDegrees;
+        coordinate *= 60;
+        if (coordinate < 1)
+            coordinate *= -1;
+
+        var longitudeMinutes = Math.trunc(coordinate);
+        coordinate -= longitudeMinutes;
+        coordinate *= 60;
+
+        coordinate = coordinate.toFixed(6);
+
+        if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DDMMSS)
+            coordinateString = longitudeDegrees + "" + longitudeMinutes + "" + coordinate;
+        else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH)
+            coordinateString = longitudeDegrees + "-" + longitudeMinutes + "-" + coordinate;
+        else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL)
+            coordinateString = longitudeDegrees + "°" + longitudeMinutes + "'" + coordinate + "\"";
+        else
+            coordinateString = longitudeDegrees + " " + longitudeMinutes + " " + coordinate;
+    }
+
+    return (coordinateString);
+}
+
+function isdigit(c) { return /\d/.test(c); }
+
+function setCharAt(str, index, chr) {
+    if (index > str.length - 1) return str;
+    return str.substring(0, index) + chr + str.substring(index + 1);
+}
+
+//Given an input type, return a printable string
+function printableInputType(coordinateInputType) {
+    switch (coordinateInputType) {
+        default:
+            return ("Unknown");
+            break;
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD):
+            return ("DD.ddddddddd");
+            break;
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DDMM):
+            return ("DDMM.mmmmmmm");
+            break;
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM):
+            return ("DD MM.mmmmmmm");
+            break;
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_DASH):
+            return ("DD-MM.mmmmmmm");
+            break;
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DDMMSS):
+            return ("DDMMSS.ssssss");
+            break;
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS):
+            return ("DD MM SS.ssssss");
+            break;
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH):
+            return ("DD-MM-SS.ssssss");
+            break;
+    }
+    return ("Unknown");
 }

@@ -744,3 +744,236 @@ void printPosition()
     lastPrintPosition = millis();
   }
 }
+
+//Given a user's string, try to identify the type and return the coordinate in DD.ddddddddd format
+CoordinateInputType identifyInputType(char* userEntryOriginal, double* coordinate)
+{
+  char userEntry[50];
+  strncpy(userEntry, userEntryOriginal, sizeof(userEntry) - 1); //strtok modifies the message so make copy into userEntry
+
+  *coordinate = 0.0; //Clear what is given to us
+
+  CoordinateInputType coordinateInputType = COORDINATE_INPUT_TYPE_INVALID_UNKNOWN;
+
+  int dashCount = 0;
+  int spaceCount = 0;
+  int decimalCount = 0;
+  int lengthOfLeadingNumber = 0;
+
+  //Scan entry for invalid chars
+  //A valid entry has only numbers, -, ' ', and .
+  for (int x = 0 ; x < strlen(userEntry) ; x++)
+  {
+    if (isdigit(userEntry[x])) //All good
+    {
+      if (decimalCount == 0) lengthOfLeadingNumber++;
+    }
+    else if (userEntry[x] == '-') dashCount++; //All good
+    else if (userEntry[x] == ' ') spaceCount++; //All good
+    else if (userEntry[x] == '.') decimalCount++; //All good
+    else return (COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //String contains invalid character
+  }
+
+  // Seven possible entry types
+  // DD.dddddd
+  // DDMM.mmmmmmm
+  // DD MM.mmmmmmm
+  // DD-MM.mmmmmmm
+  // DDMMSS.ssssss
+  // DD MM SS.ssssss
+  // DD-MM-SS.ssssss
+
+  if (decimalCount != 1) return (COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Just no. 40.09033470 is valid.
+  if (spaceCount > 2) return (COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 0, 1, or 2 allowed. 40 05 25.2049 is valid.
+  if (dashCount > 3) return (COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 0, 1, 2, or 3 allowed. -105-11-05.1629 is valid.
+  if (lengthOfLeadingNumber > 7) return (COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 7 or fewer. -1051105.188992 (DDDMMSS or DDMMSS) is valid
+
+  bool negativeSign = false;
+  if (userEntry[0] == '-')
+  {
+    userEntry[0] = ' ';
+    negativeSign = true;
+    dashCount--; //Use dashCount as the internal dashes only, not the leading negative sign
+  }
+
+  if (spaceCount == 0 && dashCount == 0 && (lengthOfLeadingNumber == 7 || lengthOfLeadingNumber == 6) ) //DDMMSS.ssssss
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DDMMSS;
+
+    long intPortion = atoi(userEntry); //Get DDDMMSS
+    long decimal = intPortion / 10000L; //Get DDD
+    intPortion -= (decimal * 10000L);
+    long minutes = intPortion / 100L; //Get MM
+    double seconds = atof(userEntry); //Get DDDMMSS.ssssss
+    seconds -= (decimal * 10000); //Remove DDD
+    seconds -= (minutes * 100); //Remove MM
+    *coordinate = decimal + (minutes / (double)60) + (seconds / (double)3600);
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (spaceCount == 0 && dashCount == 0 && (lengthOfLeadingNumber == 5 || lengthOfLeadingNumber == 4)) //DDMM.mmmmmmm
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DDMM;
+
+    long intPortion = atoi(userEntry); //Get DDDMM
+    long decimal = intPortion / 100L; //Get DDD
+    intPortion -= (decimal * 100L);
+    double minutes = atof(userEntry); //Get DDDMM.mmmmmmm
+    minutes -= (decimal * 100L); //Remove DDD
+    *coordinate = decimal + (minutes / (double)60);
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (dashCount == 1) //DD-MM.mmmmmmm
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_DASH;
+
+    char* token = strtok(userEntry, "-"); //Modifies the given array
+    //We trust that token points at something because the dashCount is > 0
+    int decimal = atoi(token); //Get DD
+    token = strtok(nullptr, "-");
+    double minutes = atof(token); //Get MM.mmmmmmm
+    *coordinate = decimal + (minutes / 60.0);
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (dashCount == 2) //DD-MM-SS.ssss
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_SS_DASH;
+
+    char* token = strtok(userEntry, "-"); //Modifies the given array
+    //We trust that token points at something because the spaceCount is > 0
+    int decimal = atoi(token); //Get DD
+    token = strtok(nullptr, "-");
+    int minutes = atoi(token); //Get MM
+    token = strtok(nullptr, "-");
+    double seconds = atof(token); //Get SS.ssssss
+    *coordinate = decimal + (minutes / (double)60) + (seconds / (double)3600);
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (spaceCount == 0) //DD.dddddd
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DD;
+    sscanf(userEntry, "%lf", coordinate); //Load float from userEntry into coordinate
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (spaceCount == 1) //DD MM.mmmmmmm
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM;
+
+    char* token = strtok(userEntry, " "); //Modifies the given array
+    //We trust that token points at something because the spaceCount is > 0
+    int decimal = atoi(token); //Get DD
+    token = strtok(nullptr, " ");
+    double minutes = atof(token); //Get MM.mmmmmmm
+    *coordinate = decimal + (minutes / 60.0);
+    if (negativeSign) *coordinate *= -1;
+  }
+  else if (spaceCount == 2) //DD MM SS.ssssss
+  {
+    coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_SS;
+
+    char* token = strtok(userEntry, " "); //Modifies the given array
+    //We trust that token points at something because the spaceCount is > 0
+    int decimal = atoi(token); //Get DD
+    token = strtok(nullptr, " ");
+    int minutes = atoi(token); //Get MM
+    token = strtok(nullptr, " ");
+    double seconds = atof(token); //Get SS.ssssss
+    *coordinate = decimal + (minutes / (double)60) + (seconds / (double)3600);
+    if (negativeSign) *coordinate *= -1;
+  }
+
+  return (coordinateInputType);
+}
+
+//Given a coordinate and input type, output a string
+//So DD.ddddddddd can become 'DD MM SS.ssssss', etc
+void convertInput(double coordinate, CoordinateInputType coordinateInputType, char* coordinateString, int sizeOfCoordinateString)
+{
+  if (coordinateInputType == COORDINATE_INPUT_TYPE_DD)
+  {
+    snprintf(coordinateString, sizeOfCoordinateString, "%0.9f", coordinate);
+  }
+  else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DDMM
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_DASH
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SYMBOL
+          )
+  {
+    int longitudeDegrees = (int)coordinate;
+    coordinate -= longitudeDegrees;
+    coordinate *= 60;
+    if (coordinate < 1)
+      coordinate *= -1;
+
+    if (coordinateInputType == COORDINATE_INPUT_TYPE_DDMM)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d%010.7f", longitudeDegrees, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_DASH)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d-%010.7f", longitudeDegrees, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SYMBOL)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d°%010.7f'", longitudeDegrees, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d %010.7f", longitudeDegrees, coordinate);
+  }
+  else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DDMMSS
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS_DASH
+           || coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL
+          )
+  {
+    int longitudeDegrees = (int)coordinate;
+    coordinate -= longitudeDegrees;
+    coordinate *= 60;
+    if (coordinate < 1)
+      coordinate *= -1;
+
+    int longitudeMinutes = (int)coordinate;
+    coordinate -= longitudeMinutes;
+    coordinate *= 60;
+    if (coordinateInputType == COORDINATE_INPUT_TYPE_DDMMSS)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d%02d%09.6f", longitudeDegrees, longitudeMinutes, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS_DASH)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d-%02d-%09.6f", longitudeDegrees, longitudeMinutes, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d°%02d'%09.6f\"", longitudeDegrees, longitudeMinutes, coordinate);
+    else if (coordinateInputType == COORDINATE_INPUT_TYPE_DD_MM_SS)
+      snprintf(coordinateString, sizeOfCoordinateString, "%02d %02d %09.6f", longitudeDegrees, longitudeMinutes, coordinate);
+  }
+}
+
+//Given an input type, return a printable string
+const char* printableInputType(CoordinateInputType coordinateInputType)
+{
+  switch (coordinateInputType)
+  {
+    default:
+      return ("Unknown");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD):
+      return ("DD.ddddddddd");
+      break;
+    case (COORDINATE_INPUT_TYPE_DDMM):
+      return ("DDMM.mmmmmmm");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM):
+      return ("DD MM.mmmmmmm");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM_DASH):
+      return ("DD-MM.mmmmmmm");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM_SYMBOL):
+      return ("DD°MM.mmmmmmm'");
+      break;
+    case (COORDINATE_INPUT_TYPE_DDMMSS):
+      return ("DDMMSS.ssssss");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM_SS):
+      return ("DD MM SS.ssssss");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM_SS_DASH):
+      return ("DD-MM-SS.ssssss");
+      break;
+    case (COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL):
+      return ("DD°MM'SS.ssssss\"");
+      break;
+  }
+  return ("Unknown");
+}

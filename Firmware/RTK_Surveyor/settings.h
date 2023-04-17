@@ -340,10 +340,16 @@ typedef enum ubxPlatform
 //These are the different supported types
 typedef enum
 {
-  COORDINATE_INPUT_TYPE_D = 0, //Default DD.ddddddddd
-  COORDINATE_INPUT_TYPE_DD_MM_SS, //DD MM SS.sssss
-  COORDINATE_INPUT_TYPE_DD_MM_SS_DASH, //DD-MM-SS.sssss
-
+  COORDINATE_INPUT_TYPE_DD = 0, //Default DD.ddddddddd
+  COORDINATE_INPUT_TYPE_DDMM, //DDMM.mmmmm
+  COORDINATE_INPUT_TYPE_DD_MM, //DD MM.mmmmm
+  COORDINATE_INPUT_TYPE_DD_MM_DASH, //DD-MM.mmmmm
+  COORDINATE_INPUT_TYPE_DD_MM_SYMBOL, //DD°MM.mmmmmmm'
+  COORDINATE_INPUT_TYPE_DDMMSS, //DD MM SS.ssssss
+  COORDINATE_INPUT_TYPE_DD_MM_SS, //DD MM SS.ssssss
+  COORDINATE_INPUT_TYPE_DD_MM_SS_DASH, //DD-MM-SS.ssssss
+  COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL, //DD°MM'SS.ssssss"
+  COORDINATE_INPUT_TYPE_INVALID_UNKNOWN,
 } CoordinateInputType;
 
 #define UBX_ID_NOT_AVAILABLE 0xFF
@@ -767,7 +773,7 @@ typedef struct {
   uint8_t rateNavPrio = 0; //Output rate of priority nav mode message - CFG-RATE-NAV_PRIO
   //CFG-SFIMU-AUTO_MNTALG_ENA 0 = autoIMUmountAlignment
   bool sfUseSpeed = false; //CFG-SFODO-USE_SPEED
-  CoordinateInputType coordinateInputType = COORDINATE_INPUT_TYPE_D; //Default DD.ddddddddd
+  CoordinateInputType coordinateInputType = COORDINATE_INPUT_TYPE_DD; //Default DD.ddddddddd
   uint16_t lbandFixTimeout_seconds = 120; //Number of seconds of no L-Band fix before resetting ZED
   int16_t minCNO_F9P = 6; //Minimum satellite signal level for navigation. ZED-F9P default is 6 dBHz
   int16_t minCNO_F9R = 20; //Minimum satellite signal level for navigation. ZED-F9R default is 20 dBHz

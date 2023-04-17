@@ -38,18 +38,27 @@ void menuBase()
       else if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
       {
         systemPrint("3) Set Lat/Long/Altitude coordinates: ");
-        systemPrint(settings.fixedLat, haeNumberOfDecimals);
-        systemWrite(167); //°
+
+        char coordinatePrintable[50];
+        convertInput(settings.fixedLat, settings.coordinateInputType, coordinatePrintable, sizeof(coordinatePrintable));
+        systemPrint(coordinatePrintable);
+
         systemPrint(", ");
-        systemPrint(settings.fixedLong, haeNumberOfDecimals);
-        systemWrite(167); //°
+
+        convertInput(settings.fixedLong, settings.coordinateInputType, coordinatePrintable, sizeof(coordinatePrintable));
+        systemPrint(coordinatePrintable);
+
         systemPrint(", ");
         systemPrint(settings.fixedAltitude, 4);
-        systemPrintln("m");
+        systemPrint("m");
+        systemPrintln();
 
-        systemPrintf("4) Set Antenna Height: %dmm\r\n", settings.antennaHeight);
+        systemPrint("4) Set coordinate display format: ");
+        systemPrintln(printableInputType(settings.coordinateInputType));
 
-        systemPrintf("5) Set Antenna Reference Point: %0.1fmm\r\n", settings.antennaReferencePoint);
+        systemPrintf("5) Set Antenna Height: %dmm\r\n", settings.antennaHeight);
+
+        systemPrintf("6) Set Antenna Reference Point: %0.1fmm\r\n", settings.antennaReferencePoint);
       }
     }
     else
@@ -67,39 +76,39 @@ void menuBase()
       systemPrintln(" meters");
     }
 
-    systemPrint("6) Toggle NTRIP Server: ");
+    systemPrint("7) Toggle NTRIP Server: ");
     if (settings.enableNtripServer == true) systemPrintln("Enabled");
     else systemPrintln("Disabled");
 
     if (settings.enableNtripServer == true)
     {
-      systemPrint("7) Set Caster Address: ");
+      systemPrint("8) Set Caster Address: ");
       systemPrintln(settings.ntripServer_CasterHost);
 
-      systemPrint("8) Set Caster Port: ");
+      systemPrint("9) Set Caster Port: ");
       systemPrintln(settings.ntripServer_CasterPort);
 
-      systemPrint("9) Set Mountpoint: ");
+      systemPrint("10) Set Mountpoint: ");
       systemPrintln(settings.ntripServer_MountPoint);
 
-      systemPrint("10) Set Mountpoint PW: ");
+      systemPrint("11) Set Mountpoint PW: ");
       systemPrintln(settings.ntripServer_MountPointPW);
 
-      systemPrintln("11) Set RTCM Message Rates");
+      systemPrintln("12) Set RTCM Message Rates");
 
       if (settings.fixedBase == false) //Survey-in
       {
-        systemPrint("12) Select survey-in radio: ");
+        systemPrint("13) Select survey-in radio: ");
         systemPrintf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
       }
     }
     else
     {
-      systemPrintln("7) Set RTCM Message Rates");
+      systemPrintln("8) Set RTCM Message Rates");
 
-      if (settings.fixedBase == false)  //Survey-in
+      if (settings.fixedBase == false) //Survey-in
       {
-        systemPrint("8) Select survey-in radio: ");
+        systemPrint("9) Select survey-in radio: ");
         systemPrintf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
       }
 
@@ -149,31 +158,48 @@ void menuBase()
       }
       else  if (settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC)
       {
+        //Progress with additional prompts only if the user enters valid data
+        char userEntry[50];
+
         systemPrintln("Enter the fixed Lat/Long/Altitude coordinates that will be used in Base mode:");
 
-        systemPrint("Lat in degrees (ex: 40.090335429): ");
-        double fixedLat = getDouble();
-
-        //Progress with additional prompts only if the user enters valid data
-        if (fixedLat != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedLat != INPUT_RESPONSE_GETNUMBER_EXIT)
+        systemPrint("Latitude in degrees (ex: 40.090335429, 40 05.4201257, 40-05.4201257, 4005.4201257, 40 05 25.207544, etc): ");
+        if (getString(userEntry, sizeof(userEntry)) == INPUT_RESPONSE_VALID)
         {
-          settings.fixedLat = fixedLat;
-
-          systemPrint("\nLong in degrees (ex: -105.184774720): ");
-          double fixedLong = getDouble();
-          if (fixedLong != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedLong != INPUT_RESPONSE_GETNUMBER_EXIT)
+          double fixedLat = 0.0;
+          //Identify which type of method they used
+          if (identifyInputType(userEntry, &fixedLat) != COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
           {
-            settings.fixedLong = fixedLong;
+            settings.fixedLat = fixedLat;
 
-            systemPrint("\nAltitude in meters (ex: 1560.2284): ");
-            double fixedAltitude = getDouble();
-            if (fixedAltitude != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedAltitude != INPUT_RESPONSE_GETNUMBER_EXIT)
-              settings.fixedAltitude = fixedAltitude;
-          }
-        }
-      }
-    }
+            //Progress with additional prompts only if the user enters valid data
+            systemPrint("\r\nLongitude in degrees (ex: -105.184774720, -105 11.0864832, -105-11.0864832, -105 11 05.188992, etc): ");
+            if (getString(userEntry, sizeof(userEntry)) == INPUT_RESPONSE_VALID)
+            {
+              double fixedLong = 0.0;
+
+              //Identify which type of method they used
+              if (identifyInputType(userEntry, &fixedLong) != COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+              {
+                settings.fixedLong = fixedLong;
+                settings.coordinateInputType = identifyInputType(userEntry, &fixedLong);
+
+                systemPrint("\nAltitude in meters (ex: 1560.2284): ");
+                double fixedAltitude = getDouble();
+                if (fixedAltitude != INPUT_RESPONSE_GETNUMBER_TIMEOUT && fixedAltitude != INPUT_RESPONSE_GETNUMBER_EXIT)
+                  settings.fixedAltitude = fixedAltitude;
+              } //idInput on fixedLong
+            } //getString for fixedLong
+          } //idInput on fixedLat
+        } //getString for fixedLat
+      } //COORD_TYPE_GEODETIC
+    } //Fixed base and '3'
+
     else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 4)
+    {
+      menuBaseCoordinateType(); //Set coordinate display format
+    }
+    else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 5)
     {
       systemPrint("Enter the antenna height (a.k.a. pole length) in millimeters (-15000 to 15000mm): ");
       int antennaHeight = getNumber(); //Returns EXIT, TIMEOUT, or long
@@ -185,7 +211,7 @@ void menuBase()
           settings.antennaHeight = antennaHeight; //Recorded to NVM and file at main menu exit
       }
     }
-    else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 5)
+    else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 6)
     {
       systemPrint("Enter the antenna reference point (a.k.a. ARP) in millimeters (-200.0 to 200.0mm): ");
       float antennaReferencePoint = getDouble();
@@ -231,18 +257,18 @@ void menuBase()
         settings.surveyInStartingAccuracy = surveyInStartingAccuracy; //Recorded to NVM and file at main menu exit
     }
 
-    else if (incoming == 6)
+    else if (incoming == 7)
     {
       settings.enableNtripServer ^= 1;
       restartBase = true;
     }
-    else if (incoming == 7 && settings.enableNtripServer == true)
+    else if (incoming == 8 && settings.enableNtripServer == true)
     {
       systemPrint("Enter new Caster Address: ");
       getString(settings.ntripServer_CasterHost, sizeof(settings.ntripServer_CasterHost));
       restartBase = true;
     }
-    else if (incoming == 8 && settings.enableNtripServer == true)
+    else if (incoming == 9 && settings.enableNtripServer == true)
     {
       systemPrint("Enter new Caster Port: ");
 
@@ -256,30 +282,65 @@ void menuBase()
         restartBase = true;
       }
     }
-    else if (incoming == 9 && settings.enableNtripServer == true)
+    else if (incoming == 10 && settings.enableNtripServer == true)
     {
       systemPrint("Enter new Mount Point: ");
       getString(settings.ntripServer_MountPoint, sizeof(settings.ntripServer_MountPoint));
       restartBase = true;
     }
-    else if (incoming == 10 && settings.enableNtripServer == true)
+    else if (incoming == 11 && settings.enableNtripServer == true)
     {
       systemPrintf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
       getString(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW));
       restartBase = true;
     }
-    else if ( ((settings.enableNtripServer == true) && (incoming == 11))
-              || ((settings.enableNtripServer == false) && (incoming == 7))
+    else if ( ((settings.enableNtripServer == true) && (incoming == 12))
+              || ((settings.enableNtripServer == false) && (incoming == 8))
             )
     {
       menuMessagesBaseRTCM(); //Set rates for RTCM during Base mode
     }
-    else if ( ((settings.enableNtripServer == true) && (settings.fixedBase == false) && (incoming == 12))
-              || ((settings.enableNtripServer == false) && (settings.fixedBase == false) && (incoming == 8))
+    else if ( ((settings.enableNtripServer == true) && (settings.fixedBase == false) && (incoming == 13))
+              || ((settings.enableNtripServer == false) && (settings.fixedBase == false) && (incoming == 9))
             )
     {
       settings.ntripServer_StartAtSurveyIn ^= 1;
       restartBase = true;
+    }
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
+  }
+
+  clearBuffer(); //Empty buffer of any newline chars
+}
+
+//Set coordinate display format
+void menuBaseCoordinateType()
+{
+  while (1)
+  {
+    systemPrintln();
+    systemPrintln("Menu: Coordinate Display Type");
+
+    systemPrintln("The coordinate type is autodetected during entry but can be changed here.");
+
+    systemPrint("Current display format: ");
+    systemPrintln(printableInputType(settings.coordinateInputType));
+
+    for (int x = 0 ; x < COORDINATE_INPUT_TYPE_INVALID_UNKNOWN ; x++)
+      systemPrintf("%d) %s\r\n", x + 1, printableInputType( (CoordinateInputType)x ));
+
+    systemPrintln("x) Exit");
+
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
+
+    if (incoming >= 1 && incoming < (COORDINATE_INPUT_TYPE_INVALID_UNKNOWN + 1))
+    {
+      settings.coordinateInputType = (CoordinateInputType) (incoming - 1); //Align from 1-9 to 0-8
     }
     else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;

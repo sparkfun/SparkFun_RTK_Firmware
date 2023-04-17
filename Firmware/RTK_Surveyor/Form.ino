@@ -934,10 +934,26 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.fixedEcefY = settingValue;
   else if (strcmp(settingName, "fixedEcefZ") == 0)
     settings.fixedEcefZ = settingValue;
-  else if (strcmp(settingName, "fixedLat") == 0)
-    settings.fixedLat = settingValue;
-  else if (strcmp(settingName, "fixedLong") == 0)
-    settings.fixedLong = settingValue;
+  else if (strcmp(settingName, "fixedLatText") == 0)
+  {
+    double newCoordinate = 0.0;
+    CoordinateInputType newCoordinateInputType = identifyInputType((char *)settingValueStr, &newCoordinate);
+    if (newCoordinateInputType == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+      settings.fixedLat = 0.0;
+    else
+    {
+      settings.fixedLat = newCoordinate;
+      settings.coordinateInputType = newCoordinateInputType;
+    }
+  }
+  else if (strcmp(settingName, "fixedLongText") == 0)
+  {
+    double newCoordinate = 0.0;
+    if (identifyInputType((char *)settingValueStr, &newCoordinate) == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+      settings.fixedLong = 0.0;
+    else
+      settings.fixedLong = newCoordinate;
+  }
   else if (strcmp(settingName, "fixedAltitude") == 0)
     settings.fixedAltitude = settingValue;
   else if (strcmp(settingName, "dataPortBaud") == 0)
@@ -1068,8 +1084,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.sfCombineWheelTicks = settingValueBool;
   else if (strcmp(settingName, "rateNavPrio") == 0)
     settings.rateNavPrio = settingValue;
-  else if (strcmp(settingName, "coordinateInputType") == 0)
-    settings.coordinateInputType = (CoordinateInputType)settingValue;
   else if (strcmp(settingName, "minCNO") == 0)
   {
     if (zedModuleType == PLATFORM_F9R)

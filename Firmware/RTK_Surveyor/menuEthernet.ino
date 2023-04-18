@@ -287,7 +287,8 @@ void startEthernerWebServerESP32W5500()
   if (!settings.ethernetDHCP)
     ETH.config( settings.ethernetIP, settings.ethernetGateway, settings.ethernetSubnet, settings.ethernetDNS );
 
-  ESP32_W5500_waitForConnect();
+  if (ETH.linkUp())
+    ESP32_W5500_waitForConnect();
 #endif
 }
 

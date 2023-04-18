@@ -577,6 +577,9 @@ bool setMessages(int maxRetries)
   bool success = false;
   int tryNo = -1;
 
+  //Try up to maxRetries times to configure the messages
+  //This corrects occasional failures seen on the Reference Station where the GNSS is connected via SPI
+  //instead of I2C and UART1. I believe the SETVAL ACK is occasionally missed due to the level of messages being processed.
   while ((++tryNo < maxRetries) && !success)
   {
     bool response = true;

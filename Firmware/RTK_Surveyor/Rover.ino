@@ -23,6 +23,9 @@ bool configureUbloxModuleRover()
   bool success = false;
   int tryNo = -1;
 
+  //Try up to MAX_SET_MESSAGES_RETRIES times to configure the GNSS
+  //This corrects occasional failures seen on the Reference Station where the GNSS is connected via SPI
+  //instead of I2C and UART1. I believe the SETVAL ACK is occasionally missed due to the level of messages being processed.
   while((++tryNo < MAX_SET_MESSAGES_RETRIES) && !success)
   {
     bool response = true;

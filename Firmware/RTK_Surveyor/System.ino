@@ -635,7 +635,7 @@ bool setMessages(int maxRetries)
 
       if (response == false)
       {
-        log_d("sendCfg failed at messageNumber %d %s%s\r\n", messageNumber, ubxMessages[messageNumber].msgTextName, tryNo < (maxRetries - 1) ? ". Retrying" : "");
+        log_d("sendCfg failed at messageNumber %d %s. Try %d of %d\r\n", messageNumber, messageNumber < MAX_UBX_MSG ? ubxMessages[messageNumber].msgTextName : "", tryNo + 1, maxRetries);
       }
     }
   

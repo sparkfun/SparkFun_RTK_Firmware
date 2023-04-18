@@ -653,7 +653,7 @@ bool setMessages(int maxRetries)
           if (messageSupported(messageNumber) == true)
             logRTCMMessages |= ubxMessages[messageNumber].filterMask;
         }
-        else if (ubxMessages[x].msgClass == UBX_CLASS_NMEA) //NMEA messages
+        else if (ubxMessages[messageNumber].msgClass == UBX_CLASS_NMEA) //NMEA messages
         {
           if (messageSupported(messageNumber) == true)
             logNMEAMessages |= ubxMessages[messageNumber].filterMask;

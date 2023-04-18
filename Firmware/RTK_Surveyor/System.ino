@@ -635,8 +635,7 @@ bool setMessages(int maxRetries)
 
       if (response == false)
       {
-        log_d("sendCfg failed at messageNumber %d %s\r\n", messageNumber, ubxMessages[messageNumber].msgTextName);
-        response = true;
+        log_d("sendCfg failed at messageNumber %d %s%s\r\n", messageNumber, ubxMessages[messageNumber].msgTextName, tryNo < (maxRetries - 1) ? ". Retrying" : "");
       }
     }
   
@@ -646,23 +645,23 @@ bool setMessages(int maxRetries)
     {
       uint32_t logRTCMMessages = 0;
       uint32_t logNMEAMessages = 0;
-      
-      for (x = 0; x < MAX_UBX_MSG; x++)
+
+      for (messageNumber = 0; messageNumber < MAX_UBX_MSG; messageNumber++)
       {
-        if (ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
+        if (ubxMessages[messageNumber].msgClass == UBX_RTCM_MSB) //RTCM messages
         {
-          if ((settings.ubxMessageRates[x] > 0) && (ubxMessages[x].supported & zedModuleType))
-            logRTCMMessages |= ubxMessages[x].filterMask;
+          if (messageSupported(messageNumber) == true)
+            logRTCMMessages |= ubxMessages[messageNumber].filterMask;
         }
         else if (ubxMessages[x].msgClass == UBX_CLASS_NMEA) //NMEA messages
         {
-          if ((settings.ubxMessageRates[x] > 0) && (ubxMessages[x].supported & zedModuleType))
-            logNMEAMessages |= ubxMessages[x].filterMask;
+          if (messageSupported(messageNumber) == true)
+            logNMEAMessages |= ubxMessages[messageNumber].filterMask;
         }
         else //UBX messages
         {
-          if (ubxMessages[x].supported & zedModuleType)
-            theGNSS.enableUBXlogging(ubxMessages[x].msgClass, ubxMessages[x].msgID, settings.ubxMessageRates[x] > 0);
+          if (messageSupported(messageNumber) == true)
+            theGNSS.enableUBXlogging(ubxMessages[messageNumber].msgClass, ubxMessages[messageNumber].msgID, settings.ubxMessageRates[messageNumber] > 0);
         }
       }
   
@@ -670,8 +669,8 @@ bool setMessages(int maxRetries)
       theGNSS.setNMEALoggingMask(logNMEAMessages);
     }
   
-  if (response)
-    success = true;
+    if (response)
+      success = true;
   }
 
   return (success);

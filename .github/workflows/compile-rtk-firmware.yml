@@ -93,6 +93,7 @@ jobs:
       #    cp WiFiGeneric.cpp /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/libraries/WiFi/src/WiFiGeneric.cpp
 
       #Patch Server.h to avoid https://github.com/arduino-libraries/Ethernet/issues/88#issuecomment-455498941
+      #Note: this patch can be removed if/when we upgrade to ESP32 core >= v2.0.6 
       - name: Patch ESP32 Server.h for Ethernet
         run: |
           cd Firmware/RTK_Surveyor/Patch/

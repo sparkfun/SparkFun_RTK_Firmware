@@ -928,8 +928,12 @@ void menuPointPerfect()
     systemPrint("Days until keys expire: ");
     if (strlen(settings.pointPerfectCurrentKey) > 0)
     {
-      uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
-      systemPrintln(daysRemaining);
+      int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+
+      if (daysRemaining < 0)
+        systemPrintln("Expired");
+      else
+        systemPrintln(daysRemaining);
     }
     else
       systemPrintln("No keys");

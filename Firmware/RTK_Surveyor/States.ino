@@ -243,7 +243,7 @@ void updateSystemState()
           displayBaseStart(0); //Show 'Base'
 
           //Allow WiFi to continue running if NTRIP Client is needed for assisted survey in
-          if(wifiIsNeeded() == false)
+          if (wifiIsNeeded() == false)
             wifiStop();
 
           bluetoothStop();
@@ -482,7 +482,7 @@ void updateSystemState()
                   marksFileExists = SD_MMC.exists(fileName);
                 }
 #endif
-                
+
                 //Open the marks file
                 FileSdFatMMC marksFile;
 
@@ -500,7 +500,7 @@ void updateSystemState()
                   {
                     fileOpen = true;
                     marksFile.updateFileAccessTimestamp();
-  
+
                     //Add the column headers
                     //YYYYMMDDHHMMSS, Lat: xxxx, Long: xxxx, Alt: xxxx, SIV: xx, HPA: xxxx, Batt: xxx
                     //                           1         2         3         4         5         6         7         8         9
@@ -518,24 +518,24 @@ void updateSystemState()
                   //YYYY-MM-DD, HH:MM:SS, ---Latitude---, --Longitude---, --Alt--,SIV, --HPA---,Level,Volts\n
                   if (horizontalAccuracy >= 100.)
                     snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.0f, %3d%%, %4.2f\n",
-                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
-                             latitude, longitude, altitude, numSV, horizontalAccuracy,
-                             battLevel, battVoltage);
+                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                              latitude, longitude, altitude, numSV, horizontalAccuracy,
+                              battLevel, battVoltage);
                   else if (horizontalAccuracy >= 10.)
                     snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.1f, %3d%%, %4.2f\n",
-                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
-                             latitude, longitude, altitude, numSV, horizontalAccuracy,
-                             battLevel, battVoltage);
+                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                              latitude, longitude, altitude, numSV, horizontalAccuracy,
+                              battLevel, battVoltage);
                   else if (horizontalAccuracy >= 1.)
                     snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.2f, %3d%%, %4.2f\n",
-                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
-                             latitude, longitude, altitude, numSV, horizontalAccuracy,
-                             battLevel, battVoltage);
+                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                              latitude, longitude, altitude, numSV, horizontalAccuracy,
+                              battLevel, battVoltage);
                   else
                     snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.3f, %3d%%, %4.2f\n",
-                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
-                             latitude, longitude, altitude, numSV, horizontalAccuracy,
-                             battLevel, battVoltage);
+                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                              latitude, longitude, altitude, numSV, horizontalAccuracy,
+                              battLevel, battVoltage);
 
                   //Write the mark to the file
                   marksFile.write((const uint8_t *)markBuffer, strlen(markBuffer));
@@ -640,7 +640,7 @@ void updateSystemState()
             if (millis() - timeSinceLastIncomingSetting > 750)
             {
               currentlyParsingData = true; //Disallow new data to flow from websocket while we are parsing the current data
-              
+
               systemPrint("Parsing: ");
               for (int x = 0 ; x < incomingSettingsSpot ; x++)
                 systemWrite(incomingSettings[x]);
@@ -691,7 +691,7 @@ void updateSystemState()
             theGNSS.newCfgValset(); //Create a new Configuration Item VALSET message
             theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 1); //Enable message 1230 every second
             theGNSS.sendCfgValset(); //Send the VALSET
-            
+
 
             changeState(STATE_TESTING);
           }
@@ -746,7 +746,7 @@ void updateSystemState()
           else
           {
             //Determine days until next key expires
-            uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+            int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
             log_d("Days until keys expire: %d", daysRemaining);
 
             if (daysRemaining >= 28 && daysRemaining <= 56)
@@ -774,7 +774,12 @@ void updateSystemState()
             settings.lastKeyAttempt = rtc.getEpoch(); //Mark it
             recordSystemSettings(); //Record these settings to unit
 
-            log_d("Keys Needed starting WiFi");
+            log_d("Keys Needed. Starting WiFi");
+            
+            //Temporarily limit WiFi connection attempts
+            wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts;
+            wifiMaxConnectionAttempts = 0; //Override setting during key retrieval. Give up after single failure. 
+            
             wifiStart(); //Starts WiFi state machine
             changeState(STATE_KEYS_WIFI_STARTED);
           }
@@ -791,7 +796,10 @@ void updateSystemState()
           if (wifiIsConnected())
             changeState(STATE_KEYS_WIFI_CONNECTED);
           else if (wifiState == WIFI_OFF)
+          {
+            wifiMaxConnectionAttempts = wifiOriginalMaxConnectionAttempts; //Override setting to 2 attemps during keys
             changeState(STATE_KEYS_WIFI_TIMEOUT);
+          }
         }
         break;
 
@@ -813,9 +821,16 @@ void updateSystemState()
           {
             if (settings.pointPerfectNextKeyStart > 0)
             {
-              uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+              int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
               systemPrintf("Days until PointPerfect keys expire: %d\r\n", daysRemaining);
-              paintKeyDaysRemaining(daysRemaining, 2000);
+              if (daysRemaining >= 0)
+              {
+                paintKeyDaysRemaining(daysRemaining, 2000);
+              }
+              else
+              {
+                paintKeysExpired();
+              }
             }
           }
           paintLBandConfigure();

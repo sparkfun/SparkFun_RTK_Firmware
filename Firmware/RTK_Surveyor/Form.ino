@@ -665,7 +665,7 @@ void createSettingsString(char* newSettings)
   if (strlen(settings.pointPerfectCurrentKey) > 0)
   {
 #ifdef COMPILE_L_BAND
-    uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+    int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
     snprintf(apDaysRemaining, sizeof(apDaysRemaining), "%d", daysRemaining);
 #endif
   }

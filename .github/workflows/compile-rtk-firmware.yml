@@ -40,12 +40,14 @@ jobs:
               echo "JSON_ENDING=" >> "$GITHUB_ENV"
               echo "JSON_FILE_NAME=RTK-Firmware.json" >> "$GITHUB_ENV"
               echo "ENABLE_DEVELOPER=false" >> "$GITHUB_ENV"
+              echo "DEBUG_LEVEL=none" >> "$GITHUB_ENV"
           else
               echo "FILE_ENDING_UNDERSCORE=_RC-${{ steps.date.outputs.date }}" >> "$GITHUB_ENV"
               echo "FILE_ENDING_NOUNDERSCORE=_RC-${{ steps.dateNoScores.outputs.dateNoScores }}" >> "$GITHUB_ENV"
               echo "JSON_ENDING=-${{ steps.dateNoScores.outputs.dateNoScores }}" >> "$GITHUB_ENV"
               echo "JSON_FILE_NAME=RTK-RC-Firmware.json" >> "$GITHUB_ENV"
               echo "ENABLE_DEVELOPER=true" >> "$GITHUB_ENV"
+              echo "DEBUG_LEVEL=debug" >> "$GITHUB_ENV"
           fi
 
       - name: Setup Arduino CLI
@@ -97,7 +99,7 @@ jobs:
           cp Server.h /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/cores/esp32/Server.h
 
       - name: Compile Sketch
-        run: arduino-cli compile --fqbn esp32:esp32:esp32 ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
+        run: arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${{ env.DEBUG_LEVEL }} ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
           --build-property build.partitions=partitions
           --build-property upload.maximum_size=3145728 
           --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\" \"-DFIRMWARE_VERSION_MAJOR=$FIRMWARE_VERSION_MAJOR\" \"-DFIRMWARE_VERSION_MINOR=$FIRMWARE_VERSION_MINOR\" \"-DENABLE_DEVELOPER=${{ env.ENABLE_DEVELOPER }}\""

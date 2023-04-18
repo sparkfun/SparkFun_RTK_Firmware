@@ -772,7 +772,12 @@ void checkMessageRates()
   {
     //Reset rates to defaults
     for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-      settings.ubxMessageRates[x] = ubxMessages[x].msgDefaultRate;
+    {
+      if (ubxMessages[x].msgClass == UBX_RTCM_MSB)
+        settings.ubxMessageRates[x] = 0; //For general rover messages, RTCM should be zero by default. ubxMessageRatesBase will have the proper defaults.
+      else
+        settings.ubxMessageRates[x] = ubxMessages[x].msgDefaultRate;
+    }
   }
 
   if (settings.ubxMessageRatesBase[0] == 254)

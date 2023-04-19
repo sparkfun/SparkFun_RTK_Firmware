@@ -22,7 +22,6 @@ void menuMain()
 {
   inMainMenu = true;
   displaySerialConfig(); //Display 'Serial Config' while user is configuring
-  bool saveSettingsToZED = true; //Default to always saving settings to ZED RAM, BBR and Flash. User can skip with 'X'
 
   while (1)
   {
@@ -64,17 +63,9 @@ void menuMain()
 #ifdef COMPILE_ETHERNET
     if (HAS_ETHERNET)
     {
-      systemPrintln("7) Configure Ethernet");
-      systemPrintln("8) Configure NTP");
+      systemPrintln("e) Configure Ethernet");
+      systemPrintln("n) Configure NTP");
     }
-    else
-    {
-      systemPrintln("7) **Ethernet Not Available**");
-      systemPrintln("8) **NTP Not Available**");
-    }
-#else
-    systemPrintln("7) **Ethernet Not Compiled**");
-    systemPrintln("8) **NTP Not Compiled**");
 #endif
 
     systemPrintln("p) Configure User Profiles");
@@ -96,7 +87,6 @@ void menuMain()
       systemPrintln("b) Exit Bluetooth Echo mode");
 
     systemPrintln("x) Exit");
-    systemPrintln("X) Exit - without saving to ZED flash memory");
 
     byte incoming = getCharacterNumber();
 
@@ -114,9 +104,9 @@ void menuMain()
       menuLog();
     else if (incoming == 6)
       menuWiFi();
-    else if (incoming == 7)
+    else if (incoming == 'e' && (HAS_ETHERNET))
       menuEthernet();
-    else if (incoming == 8)
+    else if (incoming == 'n' && (HAS_ETHERNET))
       menuNTP();
     else if (incoming == 's')
       menuSystem();
@@ -139,11 +129,6 @@ void menuMain()
     }
     else if (incoming == 'x')
       break;
-    else if (incoming == 'X')
-    {
-      saveSettingsToZED = false;
-      break;
-    }
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
@@ -154,7 +139,7 @@ void menuMain()
 
   recordSystemSettings(); //Once all menus have exited, record the new settings to LittleFS and config file
 
-  if ((online.gnss == true) && saveSettingsToZED)
+  if (online.gnss == true)
     theGNSS.saveConfiguration(); //Save the current settings to flash and BBR on the ZED-F9P
 
   //Reboot as base only if currently operating as a base station

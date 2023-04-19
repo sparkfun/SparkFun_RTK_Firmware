@@ -554,19 +554,19 @@ void menuNTP()
     systemPrintln("Menu: NTP");
     systemPrintln();
 
-    systemPrint("1) Poll Exponent : 2^");
+    systemPrint("1) Poll Exponent: 2^");
     systemPrintln(settings.ntpPollExponent);
 
-    systemPrint("2) Precision : 2^");
+    systemPrint("2) Precision: 2^");
     systemPrintln(settings.ntpPrecision);
 
-    systemPrint("3) Root Delay (us) : ");
+    systemPrint("3) Root Delay (us): ");
     systemPrintln(settings.ntpRootDelay);
 
-    systemPrint("4) Root Dispersion (us) : ");
+    systemPrint("4) Root Dispersion (us): ");
     systemPrintln(settings.ntpRootDispersion);
 
-    systemPrint("5) Reference ID : ");
+    systemPrint("5) Reference ID: ");
     systemPrintln(settings.ntpReferenceId);
 
     systemPrintln("x) Exit");

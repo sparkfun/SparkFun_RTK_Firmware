@@ -331,7 +331,7 @@ void menuEthernet()
     systemPrintln("Menu: Ethernet");
     systemPrintln();
 
-    systemPrint("1) Ethernet Config  : ");
+    systemPrint("1) Ethernet Config: ");
     if (settings.ethernetDHCP)
       systemPrintln("DHCP");
     else
@@ -339,13 +339,13 @@ void menuEthernet()
 
     if (!settings.ethernetDHCP)
     {
-      systemPrint("2) Fixed IP Address : ");
+      systemPrint("2) Fixed IP Address: ");
       systemPrintln(settings.ethernetIP.toString().c_str());
-      systemPrint("3) DNS              : ");
+      systemPrint("3) DNS: ");
       systemPrintln(settings.ethernetDNS.toString().c_str());
-      systemPrint("4) Gateway          : ");
+      systemPrint("4) Gateway: ");
       systemPrintln(settings.ethernetGateway.toString().c_str());
-      systemPrint("5) Subnet Mask      : ");
+      systemPrint("5) Subnet Mask: ");
       systemPrintln(settings.ethernetSubnet.toString().c_str());
     }
 
@@ -368,6 +368,8 @@ void menuEthernet()
         settings.ethernetIP.fromString(tempString);
         restartEthernet = true;        
       }
+      else
+        systemPrint("Error: invalid IP Address");
     }
     else if ((!settings.ethernetDHCP) && (incoming == 3))
     {
@@ -379,6 +381,8 @@ void menuEthernet()
         settings.ethernetDNS.fromString(tempString);
         restartEthernet = true;        
       }
+      else
+        systemPrint("Error: invalid DNS");
     }
     else if ((!settings.ethernetDHCP) && (incoming == 4))
     {
@@ -390,6 +394,8 @@ void menuEthernet()
         settings.ethernetGateway.fromString(tempString);
         restartEthernet = true;        
       }
+      else
+        systemPrint("Error: invalid Gateway");
     }
     else if ((!settings.ethernetDHCP) && (incoming == 5))
     {
@@ -401,6 +407,8 @@ void menuEthernet()
         settings.ethernetSubnet.fromString(tempString);
         restartEthernet = true;        
       }
+      else
+        systemPrint("Error: invalid Subnet Mask");
     }
     else if (incoming == 'x')
       break;

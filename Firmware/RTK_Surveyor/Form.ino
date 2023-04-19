@@ -700,9 +700,9 @@ void createSettingsString(char* newSettings)
   int lastState; //0 = Rover, 1 = Base, 2 = NTP
   if (productVariant == REFERENCE_STATION)
   {
-    lastState = 2; //Default to NTPSERVER. This is probably redundant? But just in case...
+    lastState = 1; //Default Base
     if (settings.lastState >= STATE_ROVER_NOT_STARTED && settings.lastState <= STATE_ROVER_RTK_FIX) lastState = 0;
-    if (settings.lastState >= STATE_BASE_NOT_STARTED && settings.lastState <= STATE_BASE_FIXED_TRANSMITTING) lastState = 1;
+    if (settings.lastState >= STATE_NTPSERVER_NOT_STARTED && settings.lastState <= STATE_NTPSERVER_SYNC) lastState = 2;
   }
   else
   {
@@ -1098,6 +1098,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.radioType = (RadioType_e)settingValue; //0 = Radio off, 1 = ESP-Now
   else if (strcmp(settingName, "baseRoverSetup") == 0)
   {
+    //0 = Rover, 1 = Base, 2 = NTP
     settings.lastState = STATE_ROVER_NOT_STARTED; //Default
     if (settingValue == 1) settings.lastState = STATE_BASE_NOT_STARTED;
     if (settingValue == 2) settings.lastState = STATE_NTPSERVER_NOT_STARTED;
@@ -1219,7 +1220,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     //If update is successful, it will force system reset and not get here.
 
     if (productVariant == REFERENCE_STATION)
-      requestChangeState(STATE_NTPSERVER_NOT_STARTED); //If update failed, return to NTP mode.
+      requestChangeState(STATE_BASE_NOT_STARTED); //If update failed, return to Base mode.
     else
       requestChangeState(STATE_ROVER_NOT_STARTED); //If update failed, return to Rover mode.
   }
@@ -1243,12 +1244,12 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
       //We need to exit configure-via-ethernet mode.
       //But if the settings have not been saved then lastState will still be STATE_CONFIG_VIA_ETH_STARTED.
-      //If that is true, then force exit to NTP mode. I think it is the best we can do.
+      //If that is true, then force exit to Base mode. I think it is the best we can do.
       //(If the settings have been saved, then the code will restart in NTP, Base or Rover mode as desired.)
       if (settings.lastState == STATE_CONFIG_VIA_ETH_STARTED)
       {
-        systemPrintln("Settings were not saved. Resetting into NTP mode.");
-        settings.lastState = STATE_NTPSERVER_NOT_STARTED;
+        systemPrintln("Settings were not saved. Resetting into Base mode.");
+        settings.lastState = STATE_BASE_NOT_STARTED;
         recordSystemSettings();
       }
     }

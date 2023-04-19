@@ -896,7 +896,7 @@ void ButtonCheckTask(void *e)
 
         if (inMainMenu) powerDown(true); //State machine is not updated while in menu system so go straight to power down as needed
       }
-      else if (setupBtn != nullptr && systemState == STATE_NTPSERVER_NOT_STARTED && setupBtn->pressedFor(500))
+      else if (setupBtn != nullptr && systemState == STATE_BASE_NOT_STARTED && firstRoverStart == true && setupBtn->pressedFor(500))
       {
         forceSystemStateUpdate = true;
         requestChangeState(STATE_TEST);
@@ -907,9 +907,6 @@ void ButtonCheckTask(void *e)
         switch (systemState)
         {
           //If we are in any running state, change to STATE_DISPLAY_SETUP
-          case STATE_NTPSERVER_NOT_STARTED:
-          case STATE_NTPSERVER_NO_SYNC:
-          case STATE_NTPSERVER_SYNC:
           case STATE_BASE_NOT_STARTED:
           case STATE_BASE_TEMP_SETTLE:
           case STATE_BASE_TEMP_SURVEY_STARTED:
@@ -921,21 +918,24 @@ void ButtonCheckTask(void *e)
           case STATE_ROVER_FIX:
           case STATE_ROVER_RTK_FLOAT:
           case STATE_ROVER_RTK_FIX:
+          case STATE_NTPSERVER_NOT_STARTED:
+          case STATE_NTPSERVER_NO_SYNC:
+          case STATE_NTPSERVER_SYNC:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
           case STATE_CONFIG_VIA_ETH_NOT_STARTED:
           case STATE_ESPNOW_PAIRING_NOT_STARTED:
           case STATE_ESPNOW_PAIRING:
-            lastSystemState = systemState; //Remember this state to return after we mark an event or ESP-Now pair
+            lastSystemState = systemState; //Remember this state to return after ESP-Now pair
             requestChangeState(STATE_DISPLAY_SETUP);
-            setupState = STATE_NTPSERVER_NOT_STARTED;
+            setupState = STATE_BASE_NOT_STARTED;
             lastSetupMenuChange = millis();
             break;
 
           case STATE_CONFIG_VIA_ETH_STARTED:
           case STATE_CONFIG_VIA_ETH:
-            //If the user presses the button during configure-via-ethernet, then do a complete restart into NTP mode
-            requestChangeState(STATE_CONFIG_VIA_ETH_RESTART_NTP);
+            //If the user presses the button during configure-via-ethernet, then do a complete restart into Base mode
+            requestChangeState(STATE_CONFIG_VIA_ETH_RESTART_BASE);
             break;
 
           case STATE_PROFILE:
@@ -948,8 +948,8 @@ void ButtonCheckTask(void *e)
             break;
 
           case STATE_TESTING:
-            //If we are in testing, return to NTP Not Started
-            requestChangeState(STATE_NTPSERVER_NOT_STARTED);
+            //If we are in testing, return to Base Not Started
+            requestChangeState(STATE_BASE_NOT_STARTED);
             break;
 
           case STATE_DISPLAY_SETUP:
@@ -961,13 +961,13 @@ void ButtonCheckTask(void *e)
 
             switch (setupState)
             {
-              case STATE_NTPSERVER_NOT_STARTED:
-                setupState = STATE_BASE_NOT_STARTED;
-                break;
               case STATE_BASE_NOT_STARTED:
                 setupState = STATE_ROVER_NOT_STARTED;
                 break;
               case STATE_ROVER_NOT_STARTED:
+                setupState = STATE_NTPSERVER_NOT_STARTED;
+                break;
+              case STATE_NTPSERVER_NOT_STARTED:
                 setupState = STATE_CONFIG_VIA_ETH_NOT_STARTED;
                 break;
               case STATE_CONFIG_VIA_ETH_NOT_STARTED:
@@ -980,25 +980,26 @@ void ButtonCheckTask(void *e)
                 //If only one active profile do not show any profiles
                 index = getProfileNumberFromUnit(0);
                 displayProfile = getProfileNumberFromUnit(1);
-                setupState = (index >= displayProfile) ? STATE_NTPSERVER_NOT_STARTED : STATE_PROFILE;
+                setupState = (index >= displayProfile) ? STATE_BASE_NOT_STARTED : STATE_PROFILE;
                 displayProfile = 0;
                 break;
               case STATE_PROFILE:
                 //Done when no more active profiles
                 displayProfile++;
                 if (!getProfileNumberFromUnit(displayProfile))
-                  setupState = STATE_NTPSERVER_NOT_STARTED;
+                  setupState = STATE_BASE_NOT_STARTED;
                 break;
               default:
                 systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
-                setupState = STATE_NTPSERVER_NOT_STARTED;
+              case STATE_MARK_EVENT: //Skip the warning message if setupState is still in the default Mark Event state
+                setupState = STATE_BASE_NOT_STARTED;
                 break;
             }
             break;
 
           default:
             systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
-            requestChangeState(STATE_NTPSERVER_NOT_STARTED);
+            requestChangeState(STATE_BASE_NOT_STARTED);
             break;
         }
       }

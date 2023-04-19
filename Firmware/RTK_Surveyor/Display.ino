@@ -200,43 +200,6 @@ void updateDisplay()
           47|   ******                                              *********
         */
 
-        case (STATE_NTPSERVER_NOT_STARTED):
-        case (STATE_NTPSERVER_NO_SYNC):
-          blinking_icons ^= ICON_CLOCK;
-          icons =   (blinking_icons & ICON_CLOCK) //Center left
-                    | ICON_CLOCK_ACCURACY //Center right
-                    | paintSIV();         //Bottom left
-          if (online.ethernetStatus == ETH_LINK)
-            blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-          else
-            blinking_icons ^= ICON_ETHERNET;
-          icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          iconsRadio = ICON_IP_ADDRESS;   //Top left
-          break;
-
-        case (STATE_NTPSERVER_SYNC):
-          icons =   ICON_CLOCK            //Center left
-                    | ICON_CLOCK_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
-                    | ICON_LOGGING_NTP;   //Bottom right
-          if (online.ethernetStatus == ETH_LINK)
-            blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-          else
-            blinking_icons ^= ICON_ETHERNET;
-          icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          iconsRadio = ICON_IP_ADDRESS;   //Top left
-          break;
-
-        case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
-          break;
-        case (STATE_CONFIG_VIA_ETH_STARTED):
-          break;
-        case (STATE_CONFIG_VIA_ETH):
-          displayConfigViaEthernet();
-          break;
-        case (STATE_CONFIG_VIA_ETH_RESTART_NTP):
-          break;
-
         case (STATE_ROVER_NOT_STARTED):
           icons =   ICON_CROSS_HAIR     //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
@@ -408,6 +371,44 @@ void updateDisplay()
           iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
           break;
+
+        case (STATE_NTPSERVER_NOT_STARTED):
+        case (STATE_NTPSERVER_NO_SYNC):
+          blinking_icons ^= ICON_CLOCK;
+          icons =   (blinking_icons & ICON_CLOCK) //Center left
+                    | ICON_CLOCK_ACCURACY //Center right
+                    | paintSIV();         //Bottom left
+          if (online.ethernetStatus == ETH_LINK)
+            blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+          else
+            blinking_icons ^= ICON_ETHERNET;
+          icons |= (blinking_icons & ICON_ETHERNET); //Top Right
+          iconsRadio = ICON_IP_ADDRESS;   //Top left
+          break;
+
+        case (STATE_NTPSERVER_SYNC):
+          icons =   ICON_CLOCK            //Center left
+                    | ICON_CLOCK_ACCURACY //Center right
+                    | paintSIV()          //Bottom left
+                    | ICON_LOGGING_NTP;   //Bottom right
+          if (online.ethernetStatus == ETH_LINK)
+            blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+          else
+            blinking_icons ^= ICON_ETHERNET;
+          icons |= (blinking_icons & ICON_ETHERNET); //Top Right
+          iconsRadio = ICON_IP_ADDRESS;   //Top left
+          break;
+
+        case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
+          break;
+        case (STATE_CONFIG_VIA_ETH_STARTED):
+          break;
+        case (STATE_CONFIG_VIA_ETH):
+          displayConfigViaEthernet();
+          break;
+        case (STATE_CONFIG_VIA_ETH_RESTART_BASE):
+          break;
+
         case (STATE_BUBBLE_LEVEL):
           paintBubbleLevel();
           break;
@@ -1240,11 +1241,6 @@ uint32_t setModeIcon()
 
   switch (systemState)
   {
-    case (STATE_NTPSERVER_NOT_STARTED):
-    case (STATE_NTPSERVER_NO_SYNC):
-    case (STATE_NTPSERVER_SYNC):
-      break;
-
     case (STATE_ROVER_NOT_STARTED):
       break;
     case (STATE_ROVER_NO_FIX):
@@ -1277,6 +1273,11 @@ uint32_t setModeIcon()
       break;
     case (STATE_BASE_FIXED_TRANSMITTING):
       icons |= ICON_BASE_FIXED;
+      break;
+
+    case (STATE_NTPSERVER_NOT_STARTED):
+    case (STATE_NTPSERVER_NO_SYNC):
+    case (STATE_NTPSERVER_SYNC):
       break;
 
     default:
@@ -2527,7 +2528,16 @@ void paintDisplaySetup()
   {
     if (setupState == STATE_MARK_EVENT)
     {
-      if (online.accelerometer)
+      if (productVariant == REFERENCE_STATION)
+      {
+        //setupState defaults to STATE_MARK_EVENT, which is not a valid state for the Ref Stn.
+        //It will be corrected by ButtonCheckTask. Until then, display but don't highlight an option.
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("NTP", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else if (online.accelerometer)
       {
         printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
         printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
@@ -2546,9 +2556,9 @@ void paintDisplaySetup()
     {
       if (productVariant == REFERENCE_STATION)
       {
-        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
-        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, true);
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
+        printTextCenter("NTP", 12 * 2, QW_FONT_8X16, 1, false);
         printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, false);
       }
       else if (online.accelerometer)
@@ -2570,9 +2580,9 @@ void paintDisplaySetup()
     {
       if (productVariant == REFERENCE_STATION)
       {
-        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
-        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, true);
-        printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("NTP", 12 * 2, QW_FONT_8X16, 1, false);
         printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, false);
       }
       else if (online.accelerometer)
@@ -2593,9 +2603,9 @@ void paintDisplaySetup()
     else if (setupState == STATE_NTPSERVER_NOT_STARTED)
     {
       {
-        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
-        printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
-        printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("NTP", 12 * 2, QW_FONT_8X16, 1, true);
         printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, false);
       }
     }
@@ -2619,17 +2629,17 @@ void paintDisplaySetup()
     }
     else if (setupState == STATE_CONFIG_VIA_ETH_NOT_STARTED)
     {
-      printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
-      printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
-      printTextCenter("Rover", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("NTP", 12 * 2, QW_FONT_8X16, 1, false);
       printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, true);
     }
     else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
     {
       if (productVariant == REFERENCE_STATION)
       {
-        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
-        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("NTP", 12 * 1, QW_FONT_8X16, 1, false);
         printTextCenter("Cfg Eth", 12 * 2, QW_FONT_8X16, 1, false);
         printTextCenter("CfgWiFi", 12 * 3, QW_FONT_8X16, 1, true);
       }
@@ -2652,7 +2662,7 @@ void paintDisplaySetup()
     {
       if (productVariant == REFERENCE_STATION)
       {
-        printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
         printTextCenter("Cfg Eth", 12 * 1, QW_FONT_8X16, 1, false);
         printTextCenter("CfgWiFi", 12 * 2, QW_FONT_8X16, 1, false);
         printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);

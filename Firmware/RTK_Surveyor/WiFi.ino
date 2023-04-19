@@ -178,7 +178,7 @@ bool wifiStartAP()
     {
       displayNoWiFi(2000);
       if (productVariant == REFERENCE_STATION)
-        requestChangeState(STATE_NTPSERVER_NOT_STARTED); //If WiFi failed, return to NTP mode.
+        requestChangeState(STATE_BASE_NOT_STARTED); //If WiFi failed, return to Base mode.
       else
         requestChangeState(STATE_ROVER_NOT_STARTED); //If WiFi failed, return to Rover mode.
       return (false);

@@ -612,10 +612,10 @@ typedef struct ubxCmd
 ubxCmd ubxCommands[] =
 {
   {UBLOX_CFG_TMODE_MODE, "CFG_TMODE_MODE", 0, 9999}, //Survey mode is only available on ZED-F9P modules
-  
+
   {UBLOX_CFG_UART1OUTPROT_RTCM3X, "CFG_UART1OUTPROT_RTCM3X", 0, 9999}, //RTCM not supported on F9R
   {UBLOX_CFG_UART1INPROT_SPARTN, "CFG_UART1INPROT_SPARTN", 120, 9999}, //Supported on F9P 120 and up. Not supported on F9R 120.
-  
+
   {UBLOX_CFG_UART2OUTPROT_RTCM3X, "CFG_UART2OUTPROT_RTCM3X", 0, 9999}, //RTCM not supported on F9R
   {UBLOX_CFG_UART2INPROT_SPARTN, "CFG_UART2INPROT_SPARTN", 120, 9999}, //
 

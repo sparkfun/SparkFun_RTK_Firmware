@@ -335,7 +335,7 @@ void ntripServerUpdate()
     //log_d("configureViaEthernet: skipping ntripServerUpdate");
     return;
   }
-    
+
   if (settings.enableNtripServer == false)
   {
     //If user turns off NTRIP Server via settings, stop server

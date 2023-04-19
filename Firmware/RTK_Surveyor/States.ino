@@ -631,7 +631,7 @@ void updateSystemState()
           changeState(STATE_WIFI_CONFIG);
         }
         break;
-        
+
       case (STATE_WIFI_CONFIG):
         {
           if (incomingSettingsSpot > 0)
@@ -775,11 +775,11 @@ void updateSystemState()
             recordSystemSettings(); //Record these settings to unit
 
             log_d("Keys Needed. Starting WiFi");
-            
+
             //Temporarily limit WiFi connection attempts
             wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts;
-            wifiMaxConnectionAttempts = 0; //Override setting during key retrieval. Give up after single failure. 
-            
+            wifiMaxConnectionAttempts = 0; //Override setting during key retrieval. Give up after single failure.
+
             wifiStart(); //Starts WiFi state machine
             changeState(STATE_KEYS_WIFI_STARTED);
           }
@@ -966,7 +966,7 @@ void updateSystemState()
             return;
 
           displayNtpStart(500); //Show 'NTP'
-          
+
           tasksStartUART2(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
 
           if (configureUbloxModuleNTP() == true)
@@ -983,7 +983,7 @@ void updateSystemState()
             else
             {
               displayNtpNotReady(1000); //Show 'Ethernet Not Ready'
-              changeState(STATE_NTPSERVER_NO_SYNC);            
+              changeState(STATE_NTPSERVER_NO_SYNC);
             }
           }
           else
@@ -993,16 +993,16 @@ void updateSystemState()
           }
         }
         break;
-        
+
       case (STATE_NTPSERVER_NO_SYNC):
         {
           if (rtcSyncd)
           {
             changeState(STATE_NTPSERVER_SYNC);
-          }          
+          }
         }
         break;
-        
+
       case (STATE_NTPSERVER_SYNC):
         {
           //Do nothing - display only
@@ -1022,7 +1022,7 @@ void updateSystemState()
           ESP.restart(); //Restart to go into the dedicated configure-via-ethernet mode
         }
         break;
-        
+
       case (STATE_CONFIG_VIA_ETH_STARTED):
         {
           //The code should only be able to enter this state if configureViaEthernet is true.
@@ -1033,12 +1033,12 @@ void updateSystemState()
             displayConfigViaEthNotStarted(1500);
             settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Re-record this state for POR
             recordSystemSettings();
-  
+
             forceConfigureViaEthernet(); //Create a file in LittleFS to force code into configure-via-ethernet mode
-  
+
             ESP.restart(); //Restart to go into the dedicated configure-via-ethernet mode
           }
-          
+
           displayConfigViaEthStarted(1500);
 
           bluetoothStop(); //Should be redundant - but just in case
@@ -1046,7 +1046,7 @@ void updateSystemState()
           tasksStopUART2(); //Delete F9 serial tasks if running
 
           startEthernerWebServerESP32W5500(); //Start Ethernet in dedicated configure-via-ethernet mode
-          
+
           startWebServer(false, settings.ethernetHttpPort); //Start the async web server
 
           changeState(STATE_CONFIG_VIA_ETH);
@@ -1063,7 +1063,7 @@ void updateSystemState()
             if (millis() - timeSinceLastIncomingSetting > 750)
             {
               currentlyParsingData = true; //Disallow new data to flow from websocket while we are parsing the current data
-              
+
               systemPrint("Parsing: ");
               for (int x = 0 ; x < incomingSettingsSpot ; x++)
                 systemWrite(incomingSettings[x]);
@@ -1273,7 +1273,7 @@ void changeState(SystemState newState)
       case (STATE_NTPSERVER_SYNC):
         systemPrint("State: NTP Server - Sync");
         break;
-      
+
       case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
         systemPrint("State: Configure Via Ethernet - Not Started");
         break;

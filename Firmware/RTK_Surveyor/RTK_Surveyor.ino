@@ -248,27 +248,27 @@ uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported an
 //Also prevents pushRawData from being called too.
 class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 {
-public:
-  SemaphoreHandle_t gnssSemaphore = nullptr;
-  bool createLock(void)
-  {
-    if (gnssSemaphore == nullptr)
-      gnssSemaphore = xSemaphoreCreateMutex();
-    return gnssSemaphore;
-  }
-  bool lock(void)
-  {
-    return (xSemaphoreTake(gnssSemaphore, 2100) == pdPASS);
-  }
-  void unlock(void)
-  {
-    xSemaphoreGive(gnssSemaphore);
-  }
-  void deleteLock(void)
-  {
-    vSemaphoreDelete(gnssSemaphore);
-    gnssSemaphore = nullptr;
-  }
+  public:
+    SemaphoreHandle_t gnssSemaphore = nullptr;
+    bool createLock(void)
+    {
+      if (gnssSemaphore == nullptr)
+        gnssSemaphore = xSemaphoreCreateMutex();
+      return gnssSemaphore;
+    }
+    bool lock(void)
+    {
+      return (xSemaphoreTake(gnssSemaphore, 2100) == pdPASS);
+    }
+    void unlock(void)
+    {
+      xSemaphoreGive(gnssSemaphore);
+    }
+    void deleteLock(void)
+    {
+      vSemaphoreDelete(gnssSemaphore);
+      gnssSemaphore = nullptr;
+    }
 };
 
 SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
@@ -479,7 +479,9 @@ IPAddress ethernetSubnetMask;
 class derivedEthernetUDP : public EthernetUDP
 {
   public:
-    uint8_t getSockIndex() { return sockindex; } // sockindex is protected in EthernetUDP. A derived class can access it.
+    uint8_t getSockIndex() {
+      return sockindex;  // sockindex is protected in EthernetUDP. A derived class can access it.
+    }
 };
 derivedEthernetUDP *ethernetNTPServer = nullptr; //This will be instantiated when we know the NTP port
 volatile uint8_t ntpSockIndex;                   //The W5500 socket index for NTP - so we can enable and read the correct interrupt
@@ -698,7 +700,7 @@ void initializeGlobals()
 void setup()
 {
   initializeGlobals(); //Initialize any global variables that can't be given default values
-  
+
   Serial.begin(115200); //UART0 for programming and debugging
 
   identifyBoard(); //Determine what hardware platform we are running on
@@ -1012,16 +1014,16 @@ void updateRTC()
       time_t nowtime;
       struct tm *nowtm;
       char tmbuf[64], buf[64];
-      
+
       nowtime = gnssSyncTv.tv_sec;
       nowtm = localtime(&nowtime);
       strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
       systemPrintf("RTC resync took place at: %s.%03d\r\n",  tmbuf, gnssSyncTv.tv_usec / 1000);
-      
+
       previousGnssSyncTv.tv_sec = gnssSyncTv.tv_sec;
       previousGnssSyncTv.tv_usec = gnssSyncTv.tv_usec;
     }
-  }  
+  }
 }
 
 //Called from main loop

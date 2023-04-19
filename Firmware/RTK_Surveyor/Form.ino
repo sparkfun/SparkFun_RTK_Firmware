@@ -532,7 +532,7 @@ void createSettingsString(char* newSettings)
       strcpy(apZedPlatform, "ZED-F9P");
     else if (zedModuleType == PLATFORM_F9R)
       strcpy(apZedPlatform, "ZED-F9R");
-  
+
     char apZedFirmwareVersion[80];
     snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
     stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
@@ -775,21 +775,21 @@ void createSettingsString(char* newSettings)
       iconLevel = 2;
     else //batt level > 75
       iconLevel = 3;
-  
+
     char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
-  
+
     if (externalPowerConnected)
       snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
     else
       snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
-  
+
     stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
-  
+
     //Determine battery percent
     char batteryPercent[sizeof("+100%")];
     int tempLevel = battLevel;
     if (tempLevel > 100) tempLevel = 100;
-  
+
     if (externalPowerConnected)
       snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", tempLevel);
     else
@@ -935,14 +935,14 @@ void createDynamicDataString(char* settingsCSV)
       iconLevel = 3;
 
     char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
-  
+
     if (externalPowerConnected)
       snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
     else
       snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
-  
+
     stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
-  
+
     //Determine battery percent
     char batteryPercent[sizeof("+100%")];
     if (externalPowerConnected)
@@ -1160,22 +1160,22 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "ethernetIP") == 0)
   {
     String tempString = String(settingValueStr);
-    settings.ethernetIP.fromString(settingValueStr);    
+    settings.ethernetIP.fromString(settingValueStr);
   }
   else if (strcmp(settingName, "ethernetDNS") == 0)
   {
     String tempString = String(settingValueStr);
-    settings.ethernetDNS.fromString(settingValueStr);    
+    settings.ethernetDNS.fromString(settingValueStr);
   }
   else if (strcmp(settingName, "ethernetGateway") == 0)
   {
     String tempString = String(settingValueStr);
-    settings.ethernetGateway.fromString(settingValueStr);    
+    settings.ethernetGateway.fromString(settingValueStr);
   }
   else if (strcmp(settingName, "ethernetSubnet") == 0)
   {
     String tempString = String(settingValueStr);
-    settings.ethernetSubnet.fromString(settingValueStr);    
+    settings.ethernetSubnet.fromString(settingValueStr);
   }
   else if (strcmp(settingName, "ethernetHttpPort") == 0)
     settings.ethernetHttpPort = settingValue;
@@ -1195,7 +1195,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   {
     strcpy(settings.ntpReferenceId, settingValueStr);
     for (int i = strlen(settingValueStr); i < 5; i++)
-      settings.ntpReferenceId[i] = 0;    
+      settings.ntpReferenceId[i] = 0;
   }
 
   //Unused variables - read to avoid errors

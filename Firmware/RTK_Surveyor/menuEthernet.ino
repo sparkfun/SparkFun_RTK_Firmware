@@ -67,7 +67,7 @@ void beginEthernetNTPServer()
   //Skip if not in NTPSERVER mode
   if (systemState < STATE_NTPSERVER_NOT_STARTED || systemState > STATE_NTPSERVER_SYNC)
     return;
-    
+
 #ifdef COMPILE_ETHERNET
   if ((online.ethernetStatus == ETH_LINK) && (online.ethernetNTPServer == false))
   {
@@ -89,7 +89,7 @@ void updateEthernet()
     //log_d("configureViaEthernet: skipping updateEthernet");
     return;
   }
-    
+
   if (!HAS_ETHERNET)
     return;
 
@@ -103,7 +103,7 @@ void updateEthernet()
   if (w5500CheckSocketInterrupt(ntpSockIndex))
     w5500ClearSocketInterrupt(ntpSockIndex); //Clear the socket interrupt here
 
-  //Maintain the ethernet connection  
+  //Maintain the ethernet connection
   switch (Ethernet.maintain()) {
     case 1:
       //renewed fail
@@ -148,7 +148,7 @@ void updateEthernetNTPServer()
     //log_d("configureViaEthernet: skipping updateEthernetNTPServer");
     return;
   }
-    
+
   if (!HAS_ETHERNET)
     return;
 
@@ -158,10 +158,10 @@ void updateEthernetNTPServer()
     beginEthernetNTPServer();
 
   if (online.ethernetNTPServer == false)
-    return;  
+    return;
 
   char ntpDiag[512]; //Char array to hold diagnostic messages
-  
+
   //Check for new NTP requests - if the time has been sync'd
   bool processed = processOneNTPRequest(systemState == STATE_NTPSERVER_SYNC, (const timeval *)&ethernetNtpTv, (const timeval *)&gnssSyncTv, ntpDiag, sizeof(ntpDiag));
 
@@ -170,7 +170,7 @@ void updateEthernetNTPServer()
     //Print the diagnostics - if enabled
     if (settings.enablePrintNTPDiag && (!inMainMenu))
       systemPrint(ntpDiag);
-  
+
     //Log the NTP request to file - if enabled
     if (settings.enableNTPFile)
     {
@@ -178,7 +178,7 @@ void updateEthernetNTPServer()
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {
         markSemaphore(FUNCTION_NTPEVENT);
-  
+
         //Get the marks file name
         char fileName[32];
         bool fileOpen = false;
@@ -186,20 +186,20 @@ void updateEthernetNTPServer()
         int year;
         int month;
         int day;
-  
+
         //Get the date
         year = rtc.getYear();
         month = rtc.getMonth() + 1;
         day = rtc.getDay();
-  
+
         //Build the file name
         snprintf(fileName, sizeof(fileName), "/NTP_Requests_%04d_%02d_%02d.txt", year, month, day);
-  
+
         //Try to gain access the SD card
         sdCardWasOnline = online.microSD;
         if (online.microSD != true)
           beginSD();
-  
+
         if (online.microSD == true)
         {
           //Check if the NTP file already exists
@@ -208,16 +208,16 @@ void updateEthernetNTPServer()
           {
             ntpFileExists = sd->exists(fileName);
           }
-  #ifdef COMPILE_SD_MMC
+#ifdef COMPILE_SD_MMC
           else
           {
             ntpFileExists = SD_MMC.exists(fileName);
           }
-  #endif
-          
+#endif
+
           //Open the NTP file
           FileSdFatMMC ntpFile;
-  
+
           if (ntpFileExists)
           {
             if (ntpFile && ntpFile.open(fileName, O_APPEND | O_WRITE))
@@ -232,31 +232,31 @@ void updateEthernetNTPServer()
             {
               fileOpen = true;
               ntpFile.updateFileAccessTimestamp();
-  
+
               //If you want to add a file header, do it here
             }
           }
-  
+
           if (fileOpen)
           {
             //Write the NTP request to the file
             ntpFile.write((const uint8_t *)ntpDiag, strlen(ntpDiag));
-  
+
             //Update the file to create time & date
             ntpFile.updateFileCreateTimestamp();
-  
+
             //Close the mark file
             ntpFile.close();
           }
-  
+
           //Dismount the SD card
           if (!sdCardWasOnline)
             endSD(true, false);
         }
-  
+
         //Done with the SPI controller
         xSemaphoreGive(sdCardSemaphore);
-  
+
         lastLoggedNTPRequest = millis();
         ntpLogIncreasing = true;
       } //End sdCardSemaphore
@@ -266,7 +266,7 @@ void updateEthernetNTPServer()
 
   if (millis() > (lastLoggedNTPRequest + 5000))
     ntpLogIncreasing = false;
-    
+
 #endif
 }
 
@@ -324,7 +324,7 @@ void menuEthernet()
   }
 
   bool restartEthernet = false;
-  
+
   while (1)
   {
     systemPrintln();
@@ -366,7 +366,7 @@ void menuEthernet()
       {
         String tempString = String(tempStr);
         settings.ethernetIP.fromString(tempString);
-        restartEthernet = true;        
+        restartEthernet = true;
       }
       else
         systemPrint("Error: invalid IP Address");
@@ -379,7 +379,7 @@ void menuEthernet()
       {
         String tempString = String(tempStr);
         settings.ethernetDNS.fromString(tempString);
-        restartEthernet = true;        
+        restartEthernet = true;
       }
       else
         systemPrint("Error: invalid DNS");
@@ -392,7 +392,7 @@ void menuEthernet()
       {
         String tempString = String(tempStr);
         settings.ethernetGateway.fromString(tempString);
-        restartEthernet = true;        
+        restartEthernet = true;
       }
       else
         systemPrint("Error: invalid Gateway");
@@ -405,7 +405,7 @@ void menuEthernet()
       {
         String tempString = String(tempStr);
         settings.ethernetSubnet.fromString(tempString);
-        restartEthernet = true;        
+        restartEthernet = true;
       }
       else
         systemPrint("Error: invalid Subnet Mask");

@@ -204,7 +204,7 @@ void wifiUpdate()
     //log_d("configureViaEthernet: skipping wifiUpdate");
     return;
   }
-    
+
 #ifdef COMPILE_WIFI
 
   //Periodically display the WiFi state
@@ -646,7 +646,7 @@ void tcpUpdate()
     //log_d("configureViaEthernet: skipping tcpUpdate");
     return;
   }
-    
+
 #ifdef COMPILE_WIFI
 
   if (settings.enableTcpClient == false && settings.enableTcpServer == false) return; //Nothing to do

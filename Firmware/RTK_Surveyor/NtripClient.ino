@@ -321,17 +321,17 @@ bool ntripClientIsNeeded()
     //If user turns off NTRIP Client via settings, stop server
     if (ntripClientState > NTRIP_CLIENT_OFF)
       ntripClientStop(true);  //Don't allocate new wifiClient
-    return(false);
+    return (false);
   }
 
-  if (wifiInConfigMode()) return(false); //Do not service NTRIP during WiFi config
+  if (wifiInConfigMode()) return (false); //Do not service NTRIP during WiFi config
 
   //Allow NTRIP Client to run during Survey-In,
   //but do not allow NTRIP Client to run during Base
   if (systemState == STATE_BASE_TEMP_TRANSMITTING)
-    return(false);
+    return (false);
 
-  return(true);
+  return (true);
 }
 
 //Check for the arrival of any correction data. Push it to the GNSS.
@@ -344,8 +344,8 @@ void ntripClientUpdate()
     //log_d("configureViaEthernet: skipping ntripClientUpdate");
     return;
   }
-    
-  if(ntripClientIsNeeded() == false) return;
+
+  if (ntripClientIsNeeded() == false) return;
 
 #ifdef COMPILE_WIFI
   //Periodically display the NTRIP client state
@@ -363,47 +363,47 @@ void ntripClientUpdate()
 
     //Start WiFi
     case NTRIP_CLIENT_ON:
-    {
+      {
 #ifdef COMPILE_ETHERNET
-      if (HAS_ETHERNET)
-      {
-        if (online.ethernetStatus < ETH_BEGUN_NO_LINK)
+        if (HAS_ETHERNET)
         {
-          systemPrintln("Error: Please connect Ethernet before starting NTRIP Client");
-          ntripClientStop(true); //Do not allocate new wifiClient
-        }
-        else
-        {
-          //Pause until connection timeout has passed
-          if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)
+          if (online.ethernetStatus < ETH_BEGUN_NO_LINK)
           {
-            ntripClientLastConnectionAttempt = millis();
-            log_d("NTRIP Client starting on Ethernet");
-            ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_STARTED);
+            systemPrintln("Error: Please connect Ethernet before starting NTRIP Client");
+            ntripClientStop(true); //Do not allocate new wifiClient
+          }
+          else
+          {
+            //Pause until connection timeout has passed
+            if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)
+            {
+              ntripClientLastConnectionAttempt = millis();
+              log_d("NTRIP Client starting on Ethernet");
+              ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_STARTED);
+            }
           }
         }
-      }
-      else
+        else
 #endif
-      {
-        if (wifiNetworkCount() == 0)
         {
-          systemPrintln("Error: Please enter at least one SSID before starting NTRIP Client");
-          ntripClientStop(true); //Do not allocate new wifiClient
-        }
-        else
-        {
-          //Pause until connection timeout has passed
-          if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)
+          if (wifiNetworkCount() == 0)
           {
-            ntripClientLastConnectionAttempt = millis();
-            log_d("NTRIP Client starting WiFi");
-            wifiStart();
-            ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_STARTED);
+            systemPrintln("Error: Please enter at least one SSID before starting NTRIP Client");
+            ntripClientStop(true); //Do not allocate new wifiClient
+          }
+          else
+          {
+            //Pause until connection timeout has passed
+            if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)
+            {
+              ntripClientLastConnectionAttempt = millis();
+              log_d("NTRIP Client starting WiFi");
+              wifiStart();
+              ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_STARTED);
+            }
           }
         }
       }
-    }
       break;
 
     case NTRIP_CLIENT_WIFI_ETHERNET_STARTED:
@@ -536,7 +536,7 @@ void ntripClientUpdate()
       break;
 
     case NTRIP_CLIENT_CONNECTED:
-      //Check for a broken connection      
+      //Check for a broken connection
       if (!ntripClient->connected())
       {
         //Broken connection, retry the NTRIP client connection

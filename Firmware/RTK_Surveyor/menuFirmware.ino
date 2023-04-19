@@ -207,26 +207,26 @@ void scanForFirmware()
     SdFile dir;
     const char* BIN_EXT = "bin";
     const char* BIN_HEADER = "RTK_Surveyor_Firmware";
-  
+
     char fname[50]; //Handle long file names
-  
+
     dir.open("/"); //Open root
-  
+
     binCount = 0; //Reset count in case scanForFirmware is called again
-  
+
     while (tempFile.openNext(&dir, O_READ) && binCount < maxBinFiles)
     {
       if (tempFile.isFile())
       {
         tempFile.getName(fname, sizeof(fname));
-  
+
         if (strcmp(forceFirmwareFileName, fname) == 0)
         {
           systemPrintln("Forced firmware detected. Loading...");
           displayForcedFirmwareUpdate();
           updateFromSD(forceFirmwareFileName);
         }
-  
+
         //Check 'bin' extension
         if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
         {
@@ -247,13 +247,13 @@ void scanForFirmware()
   {
     const char* BIN_EXT = "bin";
     const char* BIN_HEADER = "/RTK_Surveyor_Firmware";
-  
+
     char fname[50]; //Handle long file names
-  
+
     File dir = SD_MMC.open("/"); //Open root
     if (!dir || !dir.isDirectory())
       return;
-  
+
     binCount = 0; //Reset count in case scanForFirmware is called again
 
     File tempFile = dir.openNextFile();
@@ -262,14 +262,14 @@ void scanForFirmware()
       if (!tempFile.isDirectory())
       {
         snprintf(fname, sizeof(fname), "%s", tempFile.name());
-  
+
         if (strcmp(forceFirmwareFileName, fname) == 0)
         {
           systemPrintln("Forced firmware detected. Loading...");
           displayForcedFirmwareUpdate();
           updateFromSD(forceFirmwareFileName);
         }
-  
+
         //Check 'bin' extension
         if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
         {
@@ -284,7 +284,7 @@ void scanForFirmware()
       }
       tempFile.close();
       tempFile = dir.openNextFile();
-    }    
+    }
   }
 #endif
 }
@@ -338,7 +338,7 @@ void updateFromSD(const char *firmwareFileName)
     }
   }
 #endif
-  
+
   FileSdFatMMC firmwareFile;
   firmwareFile.open(firmwareFileName, O_READ);
 

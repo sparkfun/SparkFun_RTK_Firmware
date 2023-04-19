@@ -145,15 +145,15 @@ void F9PSerialReadTask(void *e)
       {
         //Read the data from UART1
         incomingData = serialGNSS.read();
-  
+
         //Save the data byte
         parse.buffer[parse.length++] = incomingData;
         parse.length %= PARSE_BUFFER_LENGTH;
-  
+
         //Compute the CRC value for the message
         if (parse.computeCrc)
           parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
-  
+
         //Update the parser state based on the incoming byte
         parse.state(&parse, incomingData);
       }
@@ -165,15 +165,15 @@ void F9PSerialReadTask(void *e)
       {
         //Read the data from the logging buffer
         theGNSS.extractFileBufferData(&incomingData, 1); //TODO: make this more efficient by reading multiple bytes?
-  
+
         //Save the data byte
         parse.buffer[parse.length++] = incomingData;
         parse.length %= PARSE_BUFFER_LENGTH;
-  
+
         //Compute the CRC value for the message
         if (parse.computeCrc)
           parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
-  
+
         //Update the parser state based on the incoming byte
         parse.state(&parse, incomingData);
       }
@@ -1140,9 +1140,9 @@ void sdSizeCheckTask(void *e)
           csd_t csd;
           sd->card()->readCSD(&csd); //Card Specific Data
           sdCardSize = (uint64_t)512 * sd->card()->sectorCount();
-  
+
           sd->volumeBegin();
-  
+
           //Find available cluster/space
           sdFreeSpace = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
           sdFreeSpace *= sd->vol()->sectorsPerCluster();

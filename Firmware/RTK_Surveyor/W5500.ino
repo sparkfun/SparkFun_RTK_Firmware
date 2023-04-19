@@ -28,7 +28,8 @@ const uint8_t w5500FDM4 = 0x03 << 0; //Fixed Data Length Mode 4 Byte
 const uint8_t w5500SocketRegisters[] = { w5500Socket0Register, w5500Socket1Register,
                                          w5500Socket2Register, w5500Socket3Register,
                                          w5500Socket4Register, w5500Socket5Register,
-                                         w5500Socket6Register, w5500Socket7Register };
+                                         w5500Socket6Register, w5500Socket7Register
+                                       };
 
 const uint8_t w5500SIR_ClearAll = 0xFF;
 const uint8_t w5500SIMR_EnableAll = 0xFF;
@@ -51,7 +52,7 @@ void w5500write(SPIClass &spiPort, const int cs, uint16_t address, uint8_t contr
 
   spiPort.transfer(address >> 8); //Address Phase
   spiPort.transfer(address & 0xFF);
-  
+
   spiPort.transfer(control | w5500RegisterWrite | w5500VDM); // Control Phase
 
   for (uint8_t i = 0; i < len; i++)
@@ -74,7 +75,7 @@ void w5500read(SPIClass &spiPort, const int cs, uint16_t address, uint8_t contro
 
   spiPort.transfer(address >> 8); //Address Phase
   spiPort.transfer(address & 0xFF);
-  
+
   spiPort.transfer(control | w5500VDM); //Control Phase
 
   for (uint8_t i = 0; i < len; i++)

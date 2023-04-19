@@ -24,7 +24,7 @@ bool configureUbloxModuleBase()
   //Try up to MAX_SET_MESSAGES_RETRIES times to configure the GNSS
   //This corrects occasional failures seen on the Reference Station where the GNSS is connected via SPI
   //instead of I2C and UART1. I believe the SETVAL ACK is occasionally missed due to the level of messages being processed.
-  while((++tryNo < MAX_SET_MESSAGES_RETRIES) && !success)
+  while ((++tryNo < MAX_SET_MESSAGES_RETRIES) && !success)
   {
     bool response = true;
 
@@ -72,14 +72,14 @@ bool configureUbloxModuleBase()
     //ubxMessageRatesBase is an array of ~12 uint8_ts
     //ubxMessage is an array of ~80 messages
     //We use firstRTCMRecord as an offset for the keys, but use x as the rate
-  
+
     if (USE_I2C_GNSS)
     {
       for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
       {
         response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey - 1, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 - 1 = I2C
         response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1
-        
+
         //Disable messages on SPI
         response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 3, 0); //UBLOX_CFG UART1 + 3 = SPI
       }
@@ -89,12 +89,12 @@ bool configureUbloxModuleBase()
       for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
       {
         response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 3, settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 3 = SPI
-  
+
         //Disable messages on I2C and UART1
         response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey - 1, 0); //UBLOX_CFG UART1 - 1 = I2C
         response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey, 0); //UBLOX_CFG UART1
       }
-  
+
       //Enable logging of these messages so the RTCM will be stored automatically in the logging buffer.
       //This mimics the data arriving via UART1.
       uint32_t logRTCMMessages = theGNSS.getRTCMLoggingMask();
@@ -102,16 +102,16 @@ bool configureUbloxModuleBase()
                            | SFE_UBLOX_FILTER_RTCM_TYPE1094 | SFE_UBLOX_FILTER_RTCM_TYPE1124 | SFE_UBLOX_FILTER_RTCM_TYPE1230 );
       theGNSS.setRTCMLoggingMask(logRTCMMessages);
     }
-  
+
     //Update message rates for UART2 and USB
     for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
     {
       response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 1 , settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 1 = UART2
       response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 2 , settings.ubxMessageRatesBase[x]); //UBLOX_CFG UART1 + 2 = USB
     }
-  
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
-  
+
     response &= theGNSS.sendCfgValset(); //Closing value
 
     if (response)

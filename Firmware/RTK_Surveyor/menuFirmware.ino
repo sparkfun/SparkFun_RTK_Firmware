@@ -246,7 +246,7 @@ void scanForFirmware()
   else
   {
     const char* BIN_EXT = "bin";
-    const char* BIN_HEADER = "RTK_Surveyor_Firmware";
+    const char* BIN_HEADER = "/RTK_Surveyor_Firmware";
   
     char fname[50]; //Handle long file names
   
@@ -374,7 +374,7 @@ void updateFromSD(const char *firmwareFileName)
   //Bulk write from the SD file to flash
   while (firmwareFile.available())
   {
-    if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
+    if (productVariant == RTK_SURVEYOR)
       digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Toggle LED to indcate activity
 
     int bytesToWrite = pageSize; //Max number of bytes to read

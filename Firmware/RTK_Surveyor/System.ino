@@ -177,7 +177,7 @@ bool configureUbloxModule()
   response = true; //Reset
 
   //Make sure the appropriate messages are enabled
-  response &= setMessages(); //Step through ubxMessageRates array
+  response &= setMessages(MAX_SET_MESSAGES_RETRIES); //Does a complete open/closed val set
   if (response == false)
     systemPrintln("Module failed config block 2");
   response = true; //Reset
@@ -212,6 +212,18 @@ bool configureUbloxModule()
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_SPI, 0);
   }
 
+  if (USE_SPI_GNSS) //If the GNSS is SPI, _do_ disable NMEA on UART1
+  {
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GST_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_UART1, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_UART1, 0);
+  }
+  
+  
   response &= theGNSS.sendCfgValset();
 
   if (response == false)
@@ -263,16 +275,6 @@ void danceLEDs()
     digitalWrite(pin_baseStatusLED, LOW);
     delay(250);
     digitalWrite(pin_bluetoothStatusLED, LOW);
-  }
-  else if (productVariant == REFERENCE_STATION)
-  {
-    for (int x = 0 ; x < 4 ; x++)
-    {
-      digitalWrite(pin_baseStatusLED, HIGH);
-      delay(250);
-      digitalWrite(pin_baseStatusLED, LOW);
-      delay(250);
-    }
   }
   else
   {
@@ -566,114 +568,152 @@ bool commandSupported(const uint32_t key)
 //Enable all the valid messages for this platform
 //There are many messages so split into batches. VALSET is limited to 64 max per batch
 //Uses dummy newCfg and sendCfg values to be sure we open/close a complete set
-bool setMessages()
+bool setMessages(int maxRetries)
 {
-  bool response = true;
-
   uint32_t spiOffset = 0; //Set to 3 if using SPI to convert UART1 keys to SPI. This is brittle and non-perfect, but works.
   if (USE_SPI_GNSS)
     spiOffset = 3;
 
-  int messageNumber = 0;
-  while (messageNumber < MAX_UBX_MSG)
+  bool success = false;
+  int tryNo = -1;
+
+  //Try up to maxRetries times to configure the messages
+  //This corrects occasional failures seen on the Reference Station where the GNSS is connected via SPI
+  //instead of I2C and UART1. I believe the SETVAL ACK is occasionally missed due to the level of messages being processed.
+  while ((++tryNo < maxRetries) && !success)
   {
-    response &= theGNSS.newCfgValset();
-
-    do
+    bool response = true;
+    int messageNumber = 0;
+    
+    while (messageNumber < MAX_UBX_MSG)
     {
-      if (messageSupported(messageNumber) == true)
+      response &= theGNSS.newCfgValset();
+
+      do
       {
-        uint8_t rate = settings.ubxMessageRates[messageNumber];
-
-        //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH and ESF_STATUS remained enabled
-        //(but not enabled for logging)
-        if (USE_SPI_GNSS)
+        if (messageSupported(messageNumber) == true)
         {
-          if (ubxMessages[messageNumber].msgClass == UBX_CLASS_NAV)
-            if ((ubxMessages[messageNumber].msgID == UBX_NAV_PVT) || (ubxMessages[messageNumber].msgID == UBX_NAV_HPPOSLLH))
-              rate = 1;
-          if (ubxMessages[messageNumber].msgClass == UBX_CLASS_ESF)
-            if (ubxMessages[messageNumber].msgID == UBX_ESF_STATUS)
-              if (zedModuleType == PLATFORM_F9R)
-                rate = 1;
-          if (ubxMessages[messageNumber].msgClass == UBX_CLASS_TIM)
-            if (ubxMessages[messageNumber].msgID == UBX_TIM_TM2)
-              rate = 1;
-        }
+          uint8_t rate = settings.ubxMessageRates[messageNumber];
 
-        response &= theGNSS.addCfgValset(ubxMessages[messageNumber].msgConfigKey + spiOffset, rate);
+          //If the GNSS is SPI, we need to make sure that NAV_PVT, NAV_HPPOSLLH and ESF_STATUS remained enabled
+          //(but not enabled for logging)
+          if (USE_SPI_GNSS)
+          {
+            if (ubxMessages[messageNumber].msgClass == UBX_CLASS_NAV)
+              if ((ubxMessages[messageNumber].msgID == UBX_NAV_PVT) || (ubxMessages[messageNumber].msgID == UBX_NAV_HPPOSLLH))
+                if (rate == 0)
+                  rate = 1;
+            if (ubxMessages[messageNumber].msgClass == UBX_CLASS_ESF)
+              if (ubxMessages[messageNumber].msgID == UBX_ESF_STATUS)
+                if (zedModuleType == PLATFORM_F9R)
+                  if (rate == 0)
+                    rate = 1;
+            if (ubxMessages[messageNumber].msgClass == UBX_CLASS_TIM)
+            {
+              if (ubxMessages[messageNumber].msgID ==  UBX_TIM_TM2)
+                if (rate == 0)
+                  rate = 1;
+              if (ubxMessages[messageNumber].msgID ==  UBX_TIM_TP)
+                if (HAS_GNSS_TP_INT)
+                  if (rate == 0)
+                    rate = 1;
+            }
+            if (ubxMessages[messageNumber].msgClass == UBX_CLASS_RXM)
+              if (ubxMessages[messageNumber].msgID ==  UBX_RXM_COR)
+                if (rate == 0)
+                  rate = 1;
+            if (ubxMessages[messageNumber].msgClass == UBX_CLASS_NMEA)
+              if (ubxMessages[messageNumber].msgID ==  UBX_NMEA_GGA)
+                if (rate == 0)
+                  rate = 1;
+          }
+
+          response &= theGNSS.addCfgValset(ubxMessages[messageNumber].msgConfigKey + spiOffset, rate);
+        }
+        messageNumber++;
       }
-      messageNumber++;
-    }
-    while (((messageNumber % 43) < 42) && (messageNumber < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+      while (((messageNumber % 43) < 42) && (messageNumber < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
 
-    response &= theGNSS.sendCfgValset();
+      response &= theGNSS.sendCfgValset();
 
-    if (response == false)
-    {
-      log_d("sendCfg failed at messageNumber %d %s\r\n", messageNumber, ubxMessages[messageNumber].msgTextName);
-      response = true;
-    }
-  }
-
-  //For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
-  //to mimic UART1
-  if (USE_SPI_GNSS)
-  {
-    uint32_t logRTCMMessages = 0;
-    uint32_t logNMEAMessages = 0;
-
-    for (int x = 0; x < MAX_UBX_MSG; x++)
-    {
-      if (messageSupported(x) == true)
+      if (response == false)
       {
-        if (ubxMessages[x].msgClass == UBX_RTCM_MSB) //RTCM messages
+        log_d("sendCfg failed at messageNumber %d %s. Try %d of %d\r\n", messageNumber, messageNumber < MAX_UBX_MSG ? ubxMessages[messageNumber].msgTextName : "", tryNo + 1, maxRetries);
+      }
+    }
+  
+    //For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
+    //to mimic UART1
+    if (USE_SPI_GNSS)
+    {
+      uint32_t logRTCMMessages = 0;
+      uint32_t logNMEAMessages = 0;
+
+      for (messageNumber = 0; messageNumber < MAX_UBX_MSG; messageNumber++)
+      {
+        if (ubxMessages[messageNumber].msgClass == UBX_RTCM_MSB) //RTCM messages
         {
-          if (settings.ubxMessageRates[x] > 0)
-            logRTCMMessages |= ubxMessages[x].filterMask;
+          if (messageSupported(messageNumber) == true)
+            logRTCMMessages |= ubxMessages[messageNumber].filterMask;
         }
-        else if (ubxMessages[x].msgClass == UBX_CLASS_NMEA) //NMEA messages
+        else if (ubxMessages[messageNumber].msgClass == UBX_CLASS_NMEA) //NMEA messages
         {
-          if (settings.ubxMessageRates[x] > 0)
-            logNMEAMessages |= ubxMessages[x].filterMask;
+          if (messageSupported(messageNumber) == true)
+            logNMEAMessages |= ubxMessages[messageNumber].filterMask;
         }
         else //UBX messages
         {
-          theGNSS.enableUBXlogging(ubxMessages[x].msgClass, ubxMessages[x].msgID, settings.ubxMessageRates[x] > 0);
+          if (messageSupported(messageNumber) == true)
+            theGNSS.enableUBXlogging(ubxMessages[messageNumber].msgClass, ubxMessages[messageNumber].msgID, settings.ubxMessageRates[messageNumber] > 0);
         }
       }
+  
+      theGNSS.setRTCMLoggingMask(logRTCMMessages);
+      theGNSS.setNMEALoggingMask(logNMEAMessages);
     }
-
-    theGNSS.setRTCMLoggingMask(logRTCMMessages);
-    theGNSS.setNMEALoggingMask(logNMEAMessages);
+  
+    if (response)
+      success = true;
   }
 
-  return (response);
+  return (success);
 }
 
 //Enable all the valid messages for this platform over the USB port
 //Add 2 to every UART1 key. This is brittle and non-perfect, but works.
-bool setMessagesUSB()
+bool setMessagesUSB(int maxRetries)
 {
-  bool response = true;
+  bool success = false;
+  int tryNo = -1;
 
-  int messageNumber = 0;
-  while (messageNumber < MAX_UBX_MSG)
+  //Try up to maxRetries times to configure the messages
+  //This corrects occasional failures seen on the Reference Station where the GNSS is connected via SPI
+  //instead of I2C and UART1. I believe the SETVAL ACK is occasionally missed due to the level of messages being processed.
+  while ((++tryNo < maxRetries) && !success)
   {
-    response &= theGNSS.newCfgValset();
-
-    do
+    bool response = true;
+    int messageNumber = 0;
+    
+    while (messageNumber < MAX_UBX_MSG)
     {
-      if (messageSupported(messageNumber) == true)
-        response &= theGNSS.addCfgValset(ubxMessages[messageNumber].msgConfigKey + 2, settings.ubxMessageRates[messageNumber]);
-      messageNumber++;
-    }
-    while (((messageNumber % 43) < 42) && (messageNumber < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+      response &= theGNSS.newCfgValset();
 
-    response &= theGNSS.sendCfgValset();
+      do
+      {
+        if (messageSupported(messageNumber) == true)
+          response &= theGNSS.addCfgValset(ubxMessages[messageNumber].msgConfigKey + 2, settings.ubxMessageRates[messageNumber]);
+        messageNumber++;
+      }
+      while (((messageNumber % 43) < 42) && (messageNumber < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
+
+      response &= theGNSS.sendCfgValset();
+    }
+
+    if (response)
+      success = true;
   }
 
-  return (response);
+  return (success);
 }
 
 //Enable all the valid constellations and bands for this platform

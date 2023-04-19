@@ -87,6 +87,8 @@ function parseIncoming(msg) {
                 show("baseConfig");
                 hide("sensorConfig");
                 hide("ppConfig");
+                hide("ethernetConfig");
+                hide("ntpConfig");
 
                 hide("dataPortChannelDropdown");
             }
@@ -94,11 +96,15 @@ function parseIncoming(msg) {
                 show("baseConfig");
                 hide("sensorConfig");
                 hide("ppConfig");
+                hide("ethernetConfig");
+                hide("ntpConfig");
             }
             else if (platformPrefix == "Express Plus") {
                 hide("baseConfig");
                 show("sensorConfig");
                 hide("ppConfig");
+                hide("ethernetConfig");
+                hide("ntpConfig");
 
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
 
@@ -128,6 +134,15 @@ function parseIncoming(msg) {
                 show("baseConfig");
                 hide("sensorConfig");
                 show("ppConfig");
+                hide("ethernetConfig");
+                hide("ntpConfig");
+            }
+            else if (platformPrefix == "Reference Station") {
+                show("baseConfig");
+                hide("sensorConfig");
+                hide("ppConfig");
+                show("ethernetConfig");
+                show("ntpConfig");
             }
         }
         else if (id.includes("zedFirmwareVersionInt")) {
@@ -419,6 +434,8 @@ function validateFields() {
     collapseSection("collapsePortsConfig", "portsCaret");
     collapseSection("collapseRadioConfig", "radioCaret");
     collapseSection("collapseSystemConfig", "systemCaret");
+    collapseSection("collapseEthernetConfig", "ethernetCaret");
+    collapseSection("collapseNTPConfig", "ntpCaret");
 
     errorCount = 0;
 
@@ -644,6 +661,35 @@ function validateFields() {
         clearElement("maxLogLength_minutes", 60 * 24);
     }
 
+    //Ethernet
+    if (platformPrefix == "Reference Station") {
+      //if (ge("ethernetDHCP").checked == false) {
+          checkElementIPAddress("ethernetIP", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+          checkElementIPAddress("ethernetDNS", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+          checkElementIPAddress("ethernetGateway", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+          checkElementIPAddress("ethernetSubnet", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+          checkElementValue("ethernetHttpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
+          checkElementValue("ethernetNtpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
+      //}
+      //else {
+      //    clearElement("ethernetIP", "192.168.0.123");
+      //    clearElement("ethernetDNS", "192.168.4.100");
+      //    clearElement("ethernetGateway", "192.168.0.1");
+      //    clearElement("ethernetSubnet", "255.255.255.0");
+      //    clearElement("ethernetHttpPort", 80);
+      //    clearElement("ethernetNtpPort", 123);
+      //}
+    }
+
+    //NTP
+    if (platformPrefix == "Reference Station") {
+          checkElementValue("ntpPollExponent", 3, 17, "Must be 3 to 17", "collapseNTPConfig");
+          checkElementValue("ntpPrecision", -30, 0, "Must be -30 to 0", "collapseNTPConfig");
+          checkElementValue("ntpRootDelay", 0, 10000000, "Must be 0 to 10,000,000", "collapseNTPConfig");
+          checkElementValue("ntpRootDispersion", 0, 10000000, "Must be 0 to 10,000,000", "collapseNTPConfig");
+          checkElementString("ntpReferenceId", 1, 4, "Must be 1 to 4 chars", "collapseNTPConfig");
+    }
+
     //Port Config
     if (platformPrefix != "Surveyor") {
         if (ge("enableExternalPulse").checked) {
@@ -652,7 +698,7 @@ function validateFields() {
         }
         else {
             clearElement("externalPulseTimeBetweenPulse_us", 100000);
-            clearElement("externalPulseLength_us", 900000);
+            clearElement("externalPulseLength_us", 1000000);
             ge("externalPulsePolarity").value = 0;
         }
     }
@@ -692,6 +738,8 @@ function changeProfile() {
         collapseSection("collapsePPConfig", "pointPerfectCaret");
         collapseSection("collapsePortsConfig", "portsCaret");
         collapseSection("collapseSystemConfig", "systemCaret");
+        collapseSection("collapseEthernetConfig", "ethernetCaret");
+        collapseSection("collapseNTPConfig", "ntpCaret");
     }
 }
 
@@ -813,6 +861,23 @@ function checkElementValue(id, min, max, errorText, collapseID) {
 function checkElementString(id, min, max, errorText, collapseID) {
     value = ge(id).value;
     if (value.length < min || value.length > max) {
+        ge(id + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else
+        clearError(id);
+}
+
+function checkElementIPAddress(id, errorText, collapseID) {
+    value = ge(id).value;
+    var data = value.split('.');
+    if ((data.length != 4) 
+        || ((data[0] == "") || (isNaN(Number(data[0]))) || (data[0] < 0) || (data[0] > 255))
+        || ((data[1] == "") || (isNaN(Number(data[1]))) || (data[1] < 0) || (data[1] > 255))
+        || ((data[2] == "") || (isNaN(Number(data[2]))) || (data[2] < 0) || (data[2] > 255))
+        || ((data[3] == "") || (isNaN(Number(data[3]))) || (data[3] < 0) || (data[3] > 255)))
+    {
         ge(id + 'Error').innerHTML = 'Error: ' + errorText;
         ge(collapseID).classList.add('show');
         errorCount++;

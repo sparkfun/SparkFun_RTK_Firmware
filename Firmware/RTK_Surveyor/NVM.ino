@@ -287,6 +287,9 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "enablePrintNtripClientRtcm", settings.enablePrintNtripClientRtcm);
   settingsFile->printf("%s=%d\r\n", "enablePrintStates", settings.enablePrintStates);
   settingsFile->printf("%s=%d\r\n", "enablePrintDuplicateStates", settings.enablePrintDuplicateStates);
+  settingsFile->printf("%s=%d\r\n", "enablePrintRtcSync", settings.enablePrintRtcSync);
+  settingsFile->printf("%s=%d\r\n", "enablePrintNTPDiag", settings.enablePrintNTPDiag);
+  settingsFile->printf("%s=%d\r\n", "enablePrintEthernetDiag", settings.enablePrintEthernetDiag);
   settingsFile->printf("%s=%d\r\n", "radioType", settings.radioType);
 
   //Record peer MAC addresses
@@ -366,6 +369,27 @@ void recordSystemSettingsToFile(File * settingsFile)
     char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
     snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate=%d", ubxMessages[firstRTCMRecord + x].msgTextName, settings.ubxMessageRatesBase[x]);
     settingsFile->println(tempString);
+  }
+
+  //Ethernet
+  {
+    settingsFile->printf("%s=%s\r\n", "ethernetIP", settings.ethernetIP.toString().c_str());
+    settingsFile->printf("%s=%s\r\n", "ethernetDNS", settings.ethernetDNS.toString().c_str());
+    settingsFile->printf("%s=%s\r\n", "ethernetGateway", settings.ethernetGateway.toString().c_str());
+    settingsFile->printf("%s=%s\r\n", "ethernetSubnet", settings.ethernetSubnet.toString().c_str());
+    settingsFile->printf("%s=%d\r\n", "ethernetHttpPort", settings.ethernetHttpPort);
+    settingsFile->printf("%s=%d\r\n", "ethernetNtpPort", settings.ethernetNtpPort);
+    settingsFile->printf("%s=%d\r\n", "ethernetDHCP", settings.ethernetDHCP);
+    settingsFile->printf("%s=%d\r\n", "enableNTPFile", settings.enableNTPFile);
+  }
+
+  //NTP
+  {
+    settingsFile->printf("%s=%d\r\n", "ntpPollExponent", settings.ntpPollExponent);
+    settingsFile->printf("%s=%d\r\n", "ntpPrecision", settings.ntpPrecision);
+    settingsFile->printf("%s=%d\r\n", "ntpRootDelay", settings.ntpRootDelay);
+    settingsFile->printf("%s=%d\r\n", "ntpRootDispersion", settings.ntpRootDispersion);
+    settingsFile->printf("%s=%s\r\n", "ntpReferenceId", settings.ntpReferenceId);
   }
 }
 
@@ -822,6 +846,8 @@ bool parseLine(char* str, Settings *settings)
     settings->enableLogging = d;
   else if (strcmp(settingName, "enableMarksFile") == 0)
     settings->enableMarksFile = d;
+  else if (strcmp(settingName, "enableNTPFile") == 0)
+    settings->enableNTPFile = d;
   else if (strcmp(settingName, "sppRxQueueSize") == 0)
     settings->sppRxQueueSize = d;
   else if (strcmp(settingName, "sppTxQueueSize") == 0)
@@ -1010,6 +1036,12 @@ bool parseLine(char* str, Settings *settings)
     settings->enablePrintStates = d;
   else if (strcmp(settingName, "enablePrintDuplicateStates") == 0)
     settings->enablePrintDuplicateStates = d;
+  else if (strcmp(settingName, "enablePrintRtcSync") == 0)
+    settings->enablePrintRtcSync = d;
+  else if (strcmp(settingName, "enablePrintNTPDiag") == 0)
+    settings->enablePrintNTPDiag = d;
+  else if (strcmp(settingName, "enablePrintEthernetDiag") == 0)
+    settings->enablePrintEthernetDiag = d;
   else if (strcmp(settingName, "radioType") == 0)
     settings->radioType = (RadioType_e)d;
   else if (strcmp(settingName, "espnowPeerCount") == 0)
@@ -1107,6 +1139,28 @@ bool parseLine(char* str, Settings *settings)
       settings->sfUseSpeed = d;
       settings->updateZEDSettings = true;
     }
+  }
+  //Ethernet
+  else if (strcmp(settingName, "ethernetHttpPort") == 0)
+    settings->ethernetHttpPort = d;
+  else if (strcmp(settingName, "ethernetNtpPort") == 0)
+    settings->ethernetNtpPort = d;
+  else if (strcmp(settingName, "ethernetDHCP") == 0)
+    settings->ethernetDHCP = d;
+  //NTP
+  else if (strcmp(settingName, "ntpPollExponent") == 0)
+    settings->ntpPollExponent = d;
+  else if (strcmp(settingName, "ntpPrecision") == 0)
+    settings->ntpPrecision = d;
+  else if (strcmp(settingName, "ntpRootDelay") == 0)
+    settings->ntpRootDelay = d;
+  else if (strcmp(settingName, "ntpRootDispersion") == 0)
+    settings->ntpRootDispersion = d;
+  else if (strcmp(settingName, "ntpReferenceId") == 0)
+  {
+    strcpy(settings->ntpReferenceId, settingValue);
+    for (int i = strlen(settingValue); i < 5; i++)
+      settings->ntpReferenceId[i] = 0;
   }
   else if (strcmp(settingName, "coordinateInputType") == 0)
     settings->coordinateInputType = (CoordinateInputType)d;
@@ -1250,6 +1304,56 @@ bool parseLine(char* str, Settings *settings)
           knownSetting = true;
           break;
         }
+      }
+    }
+
+    //Ethernet
+    if (knownSetting == false)
+    {
+      char tempString[50];
+      snprintf(tempString, sizeof(tempString), "ethernetIP");
+
+      if (strcmp(settingName, tempString) == 0)
+      {
+        String addr = String(settingValue);
+        settings->ethernetIP.fromString(addr);
+        knownSetting = true;
+      }
+    }
+    if (knownSetting == false)
+    {
+      char tempString[50];
+      snprintf(tempString, sizeof(tempString), "ethernetDNS");
+
+      if (strcmp(settingName, tempString) == 0)
+      {
+        String addr = String(settingValue);
+        settings->ethernetDNS.fromString(addr);
+        knownSetting = true;
+      }
+    }
+    if (knownSetting == false)
+    {
+      char tempString[50];
+      snprintf(tempString, sizeof(tempString), "ethernetGateway");
+
+      if (strcmp(settingName, tempString) == 0)
+      {
+        String addr = String(settingValue);
+        settings->ethernetGateway.fromString(addr);
+        knownSetting = true;
+      }
+    }
+    if (knownSetting == false)
+    {
+      char tempString[50];
+      snprintf(tempString, sizeof(tempString), "ethernetSubnet");
+
+      if (strcmp(settingName, tempString) == 0)
+      {
+        String addr = String(settingValue);
+        settings->ethernetSubnet.fromString(addr);
+        knownSetting = true;
       }
     }
 

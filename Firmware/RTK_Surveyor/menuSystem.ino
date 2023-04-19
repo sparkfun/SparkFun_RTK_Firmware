@@ -83,6 +83,32 @@ void menuSystem()
       wifiDisplayIpAddress();
 #endif
 
+#ifdef COMPILE_ETHERNET
+    if (HAS_ETHERNET)
+    {
+      systemPrint("Ethernet cable: ");
+      if (Ethernet.linkStatus() == LinkON)
+        systemPrintln("connected");
+      else
+        systemPrintln("disconnected");
+      systemPrint("Ethernet MAC Address: ");
+      systemPrintf("%02X:%02X:%02X:%02X:%02X:%02X\r\n", ethernetMACAddress[0],
+                   ethernetMACAddress[1], ethernetMACAddress[2], ethernetMACAddress[3],
+                   ethernetMACAddress[4], ethernetMACAddress[5]);
+      systemPrint("Ethernet IP Address: ");
+      systemPrintln(Ethernet.localIP());
+      if (!settings.ethernetDHCP)
+      {
+        systemPrint("Ethernet DNS: ");
+        systemPrintf("%s\r\n", settings.ethernetDNS.toString());
+        systemPrint("Ethernet Gateway: ");
+        systemPrintf("%s\r\n", settings.ethernetGateway.toString());
+        systemPrint("Ethernet Subnet Mask: ");
+        systemPrintf("%s\r\n", settings.ethernetSubnet.toString());
+      }
+    }
+#endif
+
     //Display the uptime
     uint64_t uptimeMilliseconds = millis();
     uint32_t uptimeDays = 0;
@@ -121,8 +147,8 @@ void menuSystem()
           systemPrint("Disconnected");
           break;
         case NTRIP_CLIENT_ON:
-        case NTRIP_CLIENT_WIFI_STARTED:
-        case NTRIP_CLIENT_WIFI_CONNECTED:
+        case NTRIP_CLIENT_WIFI_ETHERNET_STARTED:
+        case NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED:
         case NTRIP_CLIENT_CONNECTING:
           systemPrint("Connecting");
           break;
@@ -169,8 +195,8 @@ void menuSystem()
           systemPrint("Disconnected");
           break;
         case NTRIP_SERVER_ON:
-        case NTRIP_SERVER_WIFI_STARTED:
-        case NTRIP_SERVER_WIFI_CONNECTED:
+        case NTRIP_SERVER_WIFI_ETHERNET_STARTED:
+        case NTRIP_SERVER_WIFI_ETHERNET_CONNECTED:
         case NTRIP_SERVER_WAIT_GNSS_DATA:
         case NTRIP_SERVER_CONNECTING:
         case NTRIP_SERVER_AUTHORIZATION:
@@ -278,6 +304,8 @@ void menuSystem()
                 {
                   settings.timeZoneSeconds = value;
                   online.rtc = false;
+                  syncRTCInterval = 1000; //Reset syncRTCInterval to 1000ms (tpISR could have set it to 59000)
+                  rtcSyncd = false;
                   updateRTC();
                 } //Succesful seconds
               }
@@ -613,7 +641,16 @@ void menuDebug()
     systemPrint("36) Print SD and UART buffer sizes: ");
     systemPrintf("%s\r\n", settings.enablePrintSDBuffers ? "Enabled" : "Disabled");
 
-    systemPrint("37) Set L-Band RTK Fix Timeout (seconds): ");
+    systemPrint("37) Print RTC resyncs: ");
+    systemPrintf("%s\r\n", settings.enablePrintRtcSync ? "Enabled" : "Disabled");
+
+    systemPrint("38) Print NTP Request diagnostics: ");
+    systemPrintf("%s\r\n", settings.enablePrintNTPDiag ? "Enabled" : "Disabled");
+
+    systemPrint("39) Print Ethernet diagnostics: ");
+    systemPrintf("%s\r\n", settings.enablePrintEthernetDiag ? "Enabled" : "Disabled");
+
+    systemPrint("40) Set L-Band RTK Fix Timeout (seconds): ");
     systemPrintln(settings.lbandFixTimeout_seconds);
 
     systemPrintln("t) Enter Test Screen");
@@ -737,7 +774,7 @@ void menuDebug()
     }
     else if (incoming == 17)
     {
-      bool response = setMessagesUSB();
+      bool response = setMessagesUSB(MAX_SET_MESSAGES_RETRIES);
 
       if (response == false)
         systemPrintln(F("Failed to enable USB messages"));
@@ -842,6 +879,18 @@ void menuDebug()
       settings.enablePrintSDBuffers ^= 1;
     }
     else if (incoming == 37)
+    {
+      settings.enablePrintRtcSync ^= 1;
+    }
+    else if (incoming == 38)
+    {
+      settings.enablePrintNTPDiag ^= 1;
+    }
+    else if (incoming == 39)
+    {
+      settings.enablePrintEthernetDiag ^= 1;
+    }
+    else if (incoming == 40)
     {
       systemPrint("Enter number of seconds in RTK float before hot-start (30 to 1200): ");
       int timeout = getNumber(); //Returns EXIT, TIMEOUT, or long

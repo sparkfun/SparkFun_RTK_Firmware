@@ -102,7 +102,9 @@ void updateSystemState()
           }
 
           if (productVariant == REFERENCE_STATION)
+          {
             digitalWrite(pin_baseStatusLED, LOW);
+          }
 
           //Configure for rover mode
           displayRoverStart(0);
@@ -459,7 +461,7 @@ void updateSystemState()
               day = rtc.getDay();
 
               //Build the file name
-              snprintf(fileName, sizeof(fileName), "Marks_%04d_%02d_%02d.csv", year, month, day);
+              snprintf(fileName, sizeof(fileName), "/Marks_%04d_%02d_%02d.csv", year, month, day);
 
               //Try to gain access the SD card
               sdCardWasOnline = online.microSD;
@@ -603,20 +605,20 @@ void updateSystemState()
 
       case (STATE_WIFI_CONFIG_NOT_STARTED):
         {
-          if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
+          if (productVariant == RTK_SURVEYOR)
           {
             //Start BT LED Fade to indicate start of WiFi
             btLEDTask.detach(); //Increase BT LED blinker task rate
             btLEDTask.attach(btLEDTaskPace33Hz, updateBTled); //Rate in seconds, callback
 
             digitalWrite(pin_baseStatusLED, LOW);
-            if (productVariant == RTK_SURVEYOR)
-            {
-              digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-              digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-              digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-            }
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
           }
+
+          if (productVariant == REFERENCE_STATION)
+            digitalWrite(pin_baseStatusLED, LOW);
 
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 
@@ -629,6 +631,7 @@ void updateSystemState()
           changeState(STATE_WIFI_CONFIG);
         }
         break;
+        
       case (STATE_WIFI_CONFIG):
         {
           if (incomingSettingsSpot > 0)
@@ -954,6 +957,164 @@ void updateSystemState()
         }
         break;
 
+#ifdef COMPILE_ETHERNET
+      case (STATE_NTPSERVER_NOT_STARTED):
+        {
+          firstRoverStart = false; //If NTP is starting, no test menu, normal button use.
+
+          if (online.gnss == false)
+            return;
+
+          displayNtpStart(500); //Show 'NTP'
+          
+          tasksStartUART2(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+
+          if (configureUbloxModuleNTP() == true)
+          {
+            settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+            settings.lastState = STATE_NTPSERVER_NOT_STARTED; //Record this state for next POR
+            recordSystemSettings();
+
+            if (online.ethernetNTPServer)
+            {
+              displayNtpStarted(500); //Show 'NTP Started'
+              changeState(STATE_NTPSERVER_NO_SYNC);
+            }
+            else
+            {
+              displayNtpNotReady(1000); //Show 'Ethernet Not Ready'
+              changeState(STATE_NTPSERVER_NO_SYNC);            
+            }
+          }
+          else
+          {
+            displayNTPFail(1000); //Show 'NTP Failed'
+            //Do we stay in STATE_NTPSERVER_NOT_STARTED? Or should we reset?
+          }
+        }
+        break;
+        
+      case (STATE_NTPSERVER_NO_SYNC):
+        {
+          if (rtcSyncd)
+          {
+            changeState(STATE_NTPSERVER_SYNC);
+          }          
+        }
+        break;
+        
+      case (STATE_NTPSERVER_SYNC):
+        {
+          //Do nothing - display only
+        }
+        break;
+
+      case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
+        {
+          displayConfigViaEthNotStarted(1500);
+
+          settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+          settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Record the _next_ state for POR
+          recordSystemSettings();
+
+          forceConfigureViaEthernet(); //Create a file in LittleFS to force code into configure-via-ethernet mode
+
+          ESP.restart(); //Restart to go into the dedicated configure-via-ethernet mode
+        }
+        break;
+        
+      case (STATE_CONFIG_VIA_ETH_STARTED):
+        {
+          //The code should only be able to enter this state if configureViaEthernet is true.
+          //If configureViaEthernet is not true, we need to restart again.
+          //(If we continue, startEthernerWebServerESP32W5500 will fail as it won't have exclusive access to SPI and ints).
+          if (!configureViaEthernet)
+          {
+            displayConfigViaEthNotStarted(1500);
+            settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Re-record this state for POR
+            recordSystemSettings();
+  
+            forceConfigureViaEthernet(); //Create a file in LittleFS to force code into configure-via-ethernet mode
+  
+            ESP.restart(); //Restart to go into the dedicated configure-via-ethernet mode
+          }
+          
+          displayConfigViaEthStarted(1500);
+
+          bluetoothStop(); //Should be redundant - but just in case
+          espnowStop(); //Should be redundant - but just in case
+          tasksStopUART2(); //Delete F9 serial tasks if running
+
+          startEthernerWebServerESP32W5500(); //Start Ethernet in dedicated configure-via-ethernet mode
+          
+          startWebServer(false, settings.ethernetHttpPort); //Start the async web server
+
+          changeState(STATE_CONFIG_VIA_ETH);
+        }
+        break;
+
+      case (STATE_CONFIG_VIA_ETH):
+        {
+          //Display will show the IP address (displayConfigViaEthernet)
+
+          if (incomingSettingsSpot > 0)
+          {
+            //Allow for 750ms before we parse buffer for all data to arrive
+            if (millis() - timeSinceLastIncomingSetting > 750)
+            {
+              currentlyParsingData = true; //Disallow new data to flow from websocket while we are parsing the current data
+              
+              systemPrint("Parsing: ");
+              for (int x = 0 ; x < incomingSettingsSpot ; x++)
+                systemWrite(incomingSettings[x]);
+              systemPrintln();
+
+              parseIncomingSettings();
+              settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
+              recordSystemSettings(); //Record these settings to unit
+
+              //Clear buffer
+              incomingSettingsSpot = 0;
+              memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
+
+              currentlyParsingData = false; //Allow new data from websocket
+            }
+          }
+
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
+          //Dynamically update the coordinates on the AP page
+          if (websocketConnected == true)
+          {
+            if (millis() - lastDynamicDataUpdate > 1000)
+            {
+              lastDynamicDataUpdate = millis();
+              createDynamicDataString(settingsCSV);
+
+              //log_d("Sending coordinates: %s", settingsCSV);
+              websocket->textAll(settingsCSV);
+            }
+          }
+#endif
+#endif
+        }
+        break;
+
+      case (STATE_CONFIG_VIA_ETH_RESTART_BASE):
+        {
+          displayConfigViaEthNotStarted(1000);
+
+          endEthernerWebServerESP32W5500();
+
+          settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+          settings.lastState = STATE_BASE_NOT_STARTED; //Record the _next_ state for POR
+          recordSystemSettings();
+
+          ESP.restart();
+        }
+        break;
+#endif
+
       case (STATE_SHUTDOWN):
         {
           forceDisplayUpdate = true;
@@ -1101,6 +1262,29 @@ void changeState(SystemState newState)
         break;
       case (STATE_ESPNOW_PAIRING):
         systemPrint("State: ESP-Now Pairing");
+        break;
+
+      case (STATE_NTPSERVER_NOT_STARTED):
+        systemPrint("State: NTP Server - Not Started");
+        break;
+      case (STATE_NTPSERVER_NO_SYNC):
+        systemPrint("State: NTP Server - No Sync");
+        break;
+      case (STATE_NTPSERVER_SYNC):
+        systemPrint("State: NTP Server - Sync");
+        break;
+      
+      case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
+        systemPrint("State: Configure Via Ethernet - Not Started");
+        break;
+      case (STATE_CONFIG_VIA_ETH_STARTED):
+        systemPrint("State: Configure Via Ethernet - Started");
+        break;
+      case (STATE_CONFIG_VIA_ETH):
+        systemPrint("State: Configure Via Ethernet");
+        break;
+      case (STATE_CONFIG_VIA_ETH_RESTART_BASE):
+        systemPrint("State: Configure Via Ethernet - Restarting Base");
         break;
 
       case (STATE_SHUTDOWN):

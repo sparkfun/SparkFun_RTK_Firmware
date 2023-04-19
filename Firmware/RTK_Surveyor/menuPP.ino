@@ -822,6 +822,13 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 //Check if NEO-D9S is connected. Configure if available.
 void beginLBand()
 {
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginLBand");
+    return;
+  }
+    
 #ifdef COMPILE_L_BAND
   if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
   {
@@ -1019,6 +1026,13 @@ void menuPointPerfect()
 //Process any new L-Band from I2C
 void updateLBand()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping updateLBand");
+    return;
+  }
+    
 #ifdef COMPILE_L_BAND
   if (online.lbandCorrections == true)
   {

@@ -4,7 +4,8 @@
 bool websocketConnected = false;
 
 //Start webserver in AP mode
-void startWebServer()
+void startWebServer(bool startWiFi = true, int httpPort = 80); //Header
+void startWebServer(bool startWiFi, int httpPort)
 {
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
@@ -12,8 +13,9 @@ void startWebServer()
   ntripClientStop(true); //Do not allocate new wifiClient
   ntripServerStop(true); //Do not allocate new wifiClient
 
-  if (wifiStartAP() == false) //Exits calling wifiConnect()
-    return;
+  if (startWiFi)
+    if (wifiStartAP() == false) //Exits calling wifiConnect()
+      return;
 
   incomingSettings = (char*)malloc(AP_CONFIG_SETTING_SIZE);
   memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
@@ -22,7 +24,7 @@ void startWebServer()
   settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
   createSettingsString(settingsCSV);
 
-  webserver = new AsyncWebServer(80);
+  webserver = new AsyncWebServer(httpPort);
   websocket = new AsyncWebSocket("/ws");
 
   websocket->onEvent(onWsEvent);
@@ -94,7 +96,11 @@ void startWebServer()
   });
 
   webserver->on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest * request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
+    AsyncWebServerResponse *response;
+    if (productVariant == REFERENCE_STATION)
+      response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
+    else
+      response = request->beginResponse_P(200, "image/png", rtkSetupWiFi_png, sizeof(rtkSetupWiFi_png));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
@@ -267,15 +273,18 @@ static void handleFileManager(AsyncWebServerRequest *request)
 
     logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
 
+    char slashFileName[50];
+    snprintf(slashFileName, sizeof(slashFileName), "/%s", request->getParam("name")->value().c_str());
+
     bool fileExists;
     if (USE_SPI_MICROSD)
     {
-      fileExists = sd->exists(fileName);
+      fileExists = sd->exists(slashFileName);
     }
 #ifdef COMPILE_SD_MMC
     else
     {
-      fileExists = SD_MMC.exists(fileName);
+      fileExists = SD_MMC.exists(slashFileName);
     }
 #endif
 
@@ -305,7 +314,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
             }
           }
 
-          if (managerTempFile->open(fileName, O_READ) == true)
+          if (managerTempFile->open(slashFileName, O_READ) == true)
             managerFileOpen = true;
           else
             systemPrintln("Error: File Manager failed to open file");
@@ -352,10 +361,10 @@ static void handleFileManager(AsyncWebServerRequest *request)
       {
         logmessage += " deleted";
         if (USE_SPI_MICROSD)
-          sd->remove(fileName);
+          sd->remove(slashFileName);
 #ifdef COMPILE_SD_MMC
         else
-          SD_MMC.remove(fileName);
+          SD_MMC.remove(slashFileName);
 #endif
         request->send(200, "text/plain", "Deleted File: " + String(fileName));
       }
@@ -386,9 +395,10 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
     const char* BIN_EXT = "bin";
     const char* BIN_HEADER = "RTK_Surveyor_Firmware";
 
-    char fname[50]; //Handle long file names
-    fileName.toCharArray(fname, sizeof(fname));
-    fname[fileName.length()] = '\0'; //Terminate array
+    int fnameLen = fileName.length();
+    char fname[fnameLen + 2] = { '/' }; //Filename must start with / or VERY bad things happen on SD_MMC
+    fileName.toCharArray(&fname[1], fnameLen + 1);
+    fname[fnameLen + 1] = '\0'; //Terminate array
 
     //Check 'bin' extension
     if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
@@ -493,6 +503,8 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       timeSinceLastIncomingSetting = millis();
     }
   }
+  else
+    log_d("onWsEvent: unrecognised AwsEventType %d", type);
 }
 #endif
 #endif
@@ -513,16 +525,25 @@ void createSettingsString(char* newSettings)
   snprintf(apRtkFirmwareVersion, sizeof(apRtkFirmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
   stringRecord(newSettings, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
-  char apZedPlatform[50];
-  if (zedModuleType == PLATFORM_F9P)
-    strcpy(apZedPlatform, "ZED-F9P");
-  else if (zedModuleType == PLATFORM_F9R)
-    strcpy(apZedPlatform, "ZED-F9R");
-
-  char apZedFirmwareVersion[80];
-  snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
-  stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
-  stringRecord(newSettings, "zedFirmwareVersionInt", zedFirmwareVersionInt);
+  if (!configureViaEthernet) //ZED type is unknown if we are in configure-via-ethernet mode
+  {
+    char apZedPlatform[50];
+    if (zedModuleType == PLATFORM_F9P)
+      strcpy(apZedPlatform, "ZED-F9P");
+    else if (zedModuleType == PLATFORM_F9R)
+      strcpy(apZedPlatform, "ZED-F9R");
+  
+    char apZedFirmwareVersion[80];
+    snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
+    stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
+    stringRecord(newSettings, "zedFirmwareVersionInt", zedFirmwareVersionInt);
+  }
+  else
+  {
+    char apZedFirmwareVersion[80];
+    snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "ZED-F9: Unknown");
+    stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
+  }
 
   char apDeviceBTID[30];
   snprintf(apDeviceBTID, sizeof(apDeviceBTID), "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);
@@ -603,6 +624,30 @@ void createSettingsString(char* newSettings)
 
   stringRecord(newSettings, "enableResetDisplay", settings.enableResetDisplay);
 
+  //Ethernet
+  stringRecord(newSettings, "ethernetDHCP", settings.ethernetDHCP);
+  char ipAddressChar[20];
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetIP.toString().c_str());
+  stringRecord(newSettings, "ethernetIP", ipAddressChar);
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetDNS.toString().c_str());
+  stringRecord(newSettings, "ethernetDNS", ipAddressChar);
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetGateway.toString().c_str());
+  stringRecord(newSettings, "ethernetGateway", ipAddressChar);
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetSubnet.toString().c_str());
+  stringRecord(newSettings, "ethernetSubnet", ipAddressChar);
+  stringRecord(newSettings, "ethernetHttpPort", settings.ethernetHttpPort);
+  stringRecord(newSettings, "ethernetNtpPort", settings.ethernetNtpPort);
+
+  //NTP
+  stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
+  stringRecord(newSettings, "ntpPrecision", settings.ntpPrecision);
+  stringRecord(newSettings, "ntpRootDelay", settings.ntpRootDelay);
+  stringRecord(newSettings, "ntpRootDispersion", settings.ntpRootDispersion);
+  stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
+  char ntpRefId[5];
+  snprintf(ntpRefId, sizeof(ntpRefId), "%s", settings.ntpReferenceId);
+  stringRecord(newSettings, "ntpReferenceId", ntpRefId);
+
   //Turn on SD display block last
   stringRecord(newSettings, "sdMounted", online.microSD);
 
@@ -651,9 +696,19 @@ void createSettingsString(char* newSettings)
   }
   //stringRecord(newSettings, "activeProfiles", activeProfiles);
 
-  //System state at power on. Convert various system states to either Rover or Base.
-  int lastState = 0; //0 = Rover, 1 = Base
-  if (settings.lastState >= STATE_BASE_NOT_STARTED && settings.lastState <= STATE_BASE_FIXED_TRANSMITTING) lastState = 1;
+  //System state at power on. Convert various system states to either Rover or Base or NTP.
+  int lastState; //0 = Rover, 1 = Base, 2 = NTP
+  if (productVariant == REFERENCE_STATION)
+  {
+    lastState = 1; //Default Base
+    if (settings.lastState >= STATE_ROVER_NOT_STARTED && settings.lastState <= STATE_ROVER_RTK_FIX) lastState = 0;
+    if (settings.lastState >= STATE_NTPSERVER_NOT_STARTED && settings.lastState <= STATE_NTPSERVER_SYNC) lastState = 2;
+  }
+  else
+  {
+    lastState = 0; //Default Rover
+    if (settings.lastState >= STATE_BASE_NOT_STARTED && settings.lastState <= STATE_BASE_FIXED_TRANSMITTING) lastState = 1;
+  }
   stringRecord(newSettings, "baseRoverSetup", lastState);
 
   //Bluetooth radio type
@@ -708,36 +763,39 @@ void createSettingsString(char* newSettings)
 
   stringRecord(newSettings, "logFileName", logFileName);
 
-  //Determine battery icon
-  int iconLevel = 0;
-  if (battLevel < 25)
-    iconLevel = 0;
-  else if (battLevel < 50)
-    iconLevel = 1;
-  else if (battLevel < 75)
-    iconLevel = 2;
-  else //batt level > 75
-    iconLevel = 3;
-
-  char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
-
-  if (externalPowerConnected)
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
-  else
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
-
-  stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
-
-  //Determine battery percent
-  char batteryPercent[sizeof("+100%")];
-  int tempLevel = battLevel;
-  if (tempLevel > 100) tempLevel = 100;
-
-  if (externalPowerConnected)
-    snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", tempLevel);
-  else
-    snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", tempLevel);
-  stringRecord(newSettings, "batteryPercent", batteryPercent);
+  if (productVariant != REFERENCE_STATION) //Ref Stn does not have a battery
+  {
+    //Determine battery icon
+    int iconLevel = 0;
+    if (battLevel < 25)
+      iconLevel = 0;
+    else if (battLevel < 50)
+      iconLevel = 1;
+    else if (battLevel < 75)
+      iconLevel = 2;
+    else //batt level > 75
+      iconLevel = 3;
+  
+    char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+  
+    if (externalPowerConnected)
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
+    else
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
+  
+    stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
+  
+    //Determine battery percent
+    char batteryPercent[sizeof("+100%")];
+    int tempLevel = battLevel;
+    if (tempLevel > 100) tempLevel = 100;
+  
+    if (externalPowerConnected)
+      snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", tempLevel);
+    else
+      snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", tempLevel);
+    stringRecord(newSettings, "batteryPercent", batteryPercent);
+  }
 
   stringRecord(newSettings, "minElev", settings.minElev);
   stringRecord(newSettings, "imuYaw", settings.imuYaw);
@@ -863,33 +921,36 @@ void createDynamicDataString(char* settingsCSV)
   stringRecord(settingsCSV, "ecefY", ecefY, 3);
   stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
 
-  //Determine battery icon
-  int iconLevel = 0;
-  if (battLevel < 25)
-    iconLevel = 0;
-  else if (battLevel < 50)
-    iconLevel = 1;
-  else if (battLevel < 75)
-    iconLevel = 2;
-  else //batt level > 75
-    iconLevel = 3;
+  if (productVariant != REFERENCE_STATION) //Ref Stn does not have a battery
+  {
+    //Determine battery icon
+    int iconLevel = 0;
+    if (battLevel < 25)
+      iconLevel = 0;
+    else if (battLevel < 50)
+      iconLevel = 1;
+    else if (battLevel < 75)
+      iconLevel = 2;
+    else //batt level > 75
+      iconLevel = 3;
 
-  char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
-
-  if (externalPowerConnected)
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
-  else
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
-
-  stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
-
-  //Determine battery percent
-  char batteryPercent[sizeof("+100%")];
-  if (externalPowerConnected)
-    snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", battLevel);
-  else
-    snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", battLevel);
-  stringRecord(settingsCSV, "batteryPercent", batteryPercent);
+    char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+  
+    if (externalPowerConnected)
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
+    else
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
+  
+    stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
+  
+    //Determine battery percent
+    char batteryPercent[sizeof("+100%")];
+    if (externalPowerConnected)
+      snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", battLevel);
+    else
+      snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", battLevel);
+    stringRecord(settingsCSV, "batteryPercent", batteryPercent);
+  }
 
   strcat(settingsCSV, "\0");
 #endif
@@ -1037,8 +1098,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.radioType = (RadioType_e)settingValue; //0 = Radio off, 1 = ESP-Now
   else if (strcmp(settingName, "baseRoverSetup") == 0)
   {
+    //0 = Rover, 1 = Base, 2 = NTP
     settings.lastState = STATE_ROVER_NOT_STARTED; //Default
     if (settingValue == 1) settings.lastState = STATE_BASE_NOT_STARTED;
+    if (settingValue == 2) settings.lastState = STATE_NTPSERVER_NOT_STARTED;
   }
   else if (strstr(settingName, "stationECEF") != nullptr)
   {
@@ -1092,6 +1155,49 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
       settings.minCNO_F9P = settingValue;
   }
 
+  else if (strcmp(settingName, "ethernetDHCP") == 0)
+    settings.ethernetDHCP = settingValueBool;
+  else if (strcmp(settingName, "ethernetIP") == 0)
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetIP.fromString(settingValueStr);    
+  }
+  else if (strcmp(settingName, "ethernetDNS") == 0)
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetDNS.fromString(settingValueStr);    
+  }
+  else if (strcmp(settingName, "ethernetGateway") == 0)
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetGateway.fromString(settingValueStr);    
+  }
+  else if (strcmp(settingName, "ethernetSubnet") == 0)
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetSubnet.fromString(settingValueStr);    
+  }
+  else if (strcmp(settingName, "ethernetHttpPort") == 0)
+    settings.ethernetHttpPort = settingValue;
+  else if (strcmp(settingName, "ethernetNtpPort") == 0)
+    settings.ethernetNtpPort = settingValue;
+
+  //NTP
+  else if (strcmp(settingName, "ntpPollExponent") == 0)
+    settings.ntpPollExponent = settingValue;
+  else if (strcmp(settingName, "ntpPrecision") == 0)
+    settings.ntpPrecision = settingValue;
+  else if (strcmp(settingName, "ntpRootDelay") == 0)
+    settings.ntpRootDelay = settingValue;
+  else if (strcmp(settingName, "ntpRootDispersion") == 0)
+    settings.ntpRootDispersion = settingValue;
+  else if (strcmp(settingName, "ntpReferenceId") == 0)
+  {
+    strcpy(settings.ntpReferenceId, settingValueStr);
+    for (int i = strlen(settingValueStr); i < 5; i++)
+      settings.ntpReferenceId[i] = 0;    
+  }
+
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}
   else if (strcmp(settingName, "baseTypeSurveyIn") == 0) {}
@@ -1113,25 +1219,47 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     //If update is successful, it will force system reset and not get here.
 
-    requestChangeState(STATE_ROVER_NOT_STARTED); //If update failed, return to Rover mode.
+    if (productVariant == REFERENCE_STATION)
+      requestChangeState(STATE_BASE_NOT_STARTED); //If update failed, return to Base mode.
+    else
+      requestChangeState(STATE_ROVER_NOT_STARTED); //If update failed, return to Rover mode.
   }
   else if (strcmp(settingName, "factoryDefaultReset") == 0)
     factoryReset();
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
     //Confirm receipt
-    Serial.println("Sending reset confirmation");
+    log_d("Sending reset confirmation");
     websocket->textAll("confirmReset,1,");
     delay(500); //Allow for delivery
 
-    systemPrintln("Reset after AP Config");
+    if (configureViaEthernet)
+      systemPrintln("Reset after Configure-Via-Ethernet");
+    else
+      systemPrintln("Reset after AP Config");
+
+    if (configureViaEthernet)
+    {
+      endEthernerWebServerESP32W5500();
+
+      //We need to exit configure-via-ethernet mode.
+      //But if the settings have not been saved then lastState will still be STATE_CONFIG_VIA_ETH_STARTED.
+      //If that is true, then force exit to Base mode. I think it is the best we can do.
+      //(If the settings have been saved, then the code will restart in NTP, Base or Rover mode as desired.)
+      if (settings.lastState == STATE_CONFIG_VIA_ETH_STARTED)
+      {
+        systemPrintln("Settings were not saved. Resetting into Base mode.");
+        settings.lastState = STATE_BASE_NOT_STARTED;
+        recordSystemSettings();
+      }
+    }
 
     ESP.restart();
   }
   else if (strcmp(settingName, "setProfile") == 0)
   {
     //Change to new profile
-    Serial.printf("Changing to profile number %d\r\n", settingValue);
+    log_d("Changing to profile number %d\r\n", settingValue);
     changeProfileNumber(settingValue);
 
     //Load new profile into system
@@ -1145,7 +1273,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    Serial.printf("Sending profile %d\r\n", settingValue);
+    log_d("Sending profile %d\r\n", settingValue);
     log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
@@ -1166,7 +1294,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    Serial.printf("Sending reset profile %d\r\n", settingValue);
+    log_d("Sending reset profile %d\r\n", settingValue);
     log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
@@ -1436,7 +1564,7 @@ bool parseIncomingSettings()
   if (counter < maxAttempts)
   {
     //Confirm receipt
-    Serial.println("Sending receipt confirmation of settings");
+    log_d("Sending receipt confirmation of settings");
 #ifdef COMPILE_AP
     websocket->textAll("confirmDataReceipt,1,");
 #endif
@@ -1565,8 +1693,10 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
   {
     logmessage = "Upload Start: " + String(filename);
 
-    char tempFileName[50];
-    filename.toCharArray(tempFileName, sizeof(tempFileName));
+    int fileNameLen = filename.length();
+    char tempFileName[fileNameLen + 2] = { '/' }; //Filename must start with / or VERY bad things happen on SD_MMC
+    filename.toCharArray(&tempFileName[1], fileNameLen + 1);
+    tempFileName[fileNameLen + 1] = '\0'; //Terminate array
 
     //Allocate the managerTempFile
     if (!managerTempFile)

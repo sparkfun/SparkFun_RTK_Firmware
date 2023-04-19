@@ -409,7 +409,7 @@ bool setRate(double secondsBetweenSolutions)
   //If enabled, adjust GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
   if (settings.ubxMessageRates[gsvRecordNumber] > 0)
   {
-    float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+    float measurementFrequency = (1000.0 / measRate) / navRate;
     if (measurementFrequency < 1.0) measurementFrequency = 1.0;
 
     log_d("Adjusting GSV setting to %f", measurementFrequency);
@@ -417,6 +417,7 @@ bool setRate(double secondsBetweenSolutions)
     setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //Update GSV setting in file
     response &= theGNSS.addCfgValset(ubxMessages[gsvRecordNumber].msgConfigKey, settings.ubxMessageRates[gsvRecordNumber]); //Update rate on module
   }
+
   response &= theGNSS.sendCfgValset(); //Closing value - max 4 pairs
 
   //If we successfully set rates, only then record to settings

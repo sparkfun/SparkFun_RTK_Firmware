@@ -35,6 +35,13 @@ typedef enum
   STATE_KEYS_PROVISION_WIFI_TIMEOUT,
   STATE_ESPNOW_PAIRING_NOT_STARTED,
   STATE_ESPNOW_PAIRING,
+  STATE_NTPSERVER_NOT_STARTED,
+  STATE_NTPSERVER_NO_SYNC,
+  STATE_NTPSERVER_SYNC,
+  STATE_CONFIG_VIA_ETH_NOT_STARTED,
+  STATE_CONFIG_VIA_ETH_STARTED,
+  STATE_CONFIG_VIA_ETH,
+  STATE_CONFIG_VIA_ETH_RESTART_BASE,
   STATE_SHUTDOWN,
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
@@ -53,18 +60,26 @@ typedef enum
   RTK_FACET,
   RTK_EXPRESS_PLUS,
   RTK_FACET_LBAND,
-  RTK_UNKNOWN = 0x3F,
-  PRODUCT_HAS_SPI_GNSS = 0x40,
-  PRODUCT_HAS_MMC_MICROSD = 0x80,
-  REFERENCE_STATION = 0xC0,
+  REFERENCE_STATION,
+  RTK_UNKNOWN,
 } ProductVariant;
 ProductVariant productVariant = RTK_SURVEYOR;
 
-//Macros which show if: the GNSS is I2C or SPI; the microSD is SPI or SDIO
-#define USE_SPI_GNSS    ((productVariant & PRODUCT_HAS_SPI_GNSS) > 0)
+//Macros to show if the GNSS is I2C or SPI
+#define USE_SPI_GNSS    (productVariant == REFERENCE_STATION)
 #define USE_I2C_GNSS    (!USE_SPI_GNSS)
-#define USE_MMC_MICROSD ((productVariant & PRODUCT_HAS_MMC_MICROSD) > 0)
+
+//Macros to show if the microSD is SPI or SDIO
+#define USE_MMC_MICROSD (productVariant == REFERENCE_STATION)
 #define USE_SPI_MICROSD (!USE_MMC_MICROSD)
+
+//Macro to show if the the RTK variant has Ethernet
+#define HAS_ETHERNET    (productVariant == REFERENCE_STATION)
+
+//Macro to show if the the RTK variant has a GNSS TP interrupt - for accurate clock setting
+//The GNSS UBX PVT message is sent ahead of the top-of-second
+//The rising edge of the TP signal indicates the true top-of-second
+#define HAS_GNSS_TP_INT (productVariant == REFERENCE_STATION)
 
 typedef enum
 {
@@ -143,8 +158,8 @@ enum NTRIPClientState
 {
   NTRIP_CLIENT_OFF = 0,         //Using Bluetooth or NTRIP server
   NTRIP_CLIENT_ON,              //WIFI_START state
-  NTRIP_CLIENT_WIFI_STARTED, //Connecting to WiFi access point
-  NTRIP_CLIENT_WIFI_CONNECTED,  //WiFi connected to an access point
+  NTRIP_CLIENT_WIFI_ETHERNET_STARTED,   //Connecting to WiFi access point or Ethernet
+  NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED, //Connected to an access point or Ethernet
   NTRIP_CLIENT_CONNECTING,      //Attempting a connection to the NTRIP caster
   NTRIP_CLIENT_CONNECTED,       //Connected to the NTRIP caster
 };
@@ -154,8 +169,8 @@ enum NTRIPServerState
 {
   NTRIP_SERVER_OFF = 0,         //Using Bluetooth or NTRIP client
   NTRIP_SERVER_ON,              //WIFI_START state
-  NTRIP_SERVER_WIFI_STARTED, //Connecting to WiFi access point
-  NTRIP_SERVER_WIFI_CONNECTED,  //WiFi connected to an access point
+  NTRIP_SERVER_WIFI_ETHERNET_STARTED,   //Connecting to WiFi access point
+  NTRIP_SERVER_WIFI_ETHERNET_CONNECTED, //WiFi connected to an access point
   NTRIP_SERVER_WAIT_GNSS_DATA,  //Waiting for correction data from GNSS
   NTRIP_SERVER_CONNECTING,      //Attempting a connection to the NTRIP caster
   NTRIP_SERVER_AUTHORIZATION,   //Validate the credentials
@@ -251,6 +266,14 @@ typedef struct _PARSE_STATE
   bool computeCrc;                //Compute the CRC when true
 } PARSE_STATE;
 
+typedef enum
+{
+  ETH_NOT_BEGUN,
+  ETH_CAN_NOT_BEGIN,
+  ETH_BEGUN_NO_LINK,
+  ETH_LINK
+} ethernetStatus_e;
+
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 enum BTState
 {
@@ -266,6 +289,7 @@ typedef enum
   INPUT_RESPONSE_GETNUMBER_TIMEOUT = -9999998,
   INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT = 255,
   INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY = 254,
+  INPUT_RESPONSE_INVALID = -4,
   INPUT_RESPONSE_TIMEOUT = -3,
   INPUT_RESPONSE_OVERFLOW = -2,
   INPUT_RESPONSE_EMPTY = -1,
@@ -308,6 +332,7 @@ typedef enum
   FUNCTION_SDSIZECHECK,
   FUNCTION_LOG_CLOSURE,
   FUNCTION_PRINT_FILE_LIST,
+  FUNCTION_NTPEVENT,
 
 } SemaphoreFunction;
 
@@ -325,7 +350,6 @@ typedef struct ubxConstellation
 //These are the allowable constellations to receive from and log (if enabled)
 //Tested with u-center v21.02
 #define MAX_CONSTELLATIONS 6 //(sizeof(ubxConstellations)/sizeof(ubxConstellation))
-
 
 //Different ZED modules support different messages (F9P vs F9R vs F9T)
 //Create binary packed struct for different platforms
@@ -572,6 +596,7 @@ ubxMsg ubxMessages[] =
 #define MAX_UBX_MSG (sizeof(ubxMessages)/sizeof(ubxMsg))
 #define MAX_UBX_MSG_RTCM (12)
 
+#define MAX_SET_MESSAGES_RETRIES 5 //Try up to five times to set all the messages. Occasionally fails if set to 2
 
 //Struct to describe the necessary info for each UBX command
 //Each command will have a key, and minimum F9P/F9R versions that support that command
@@ -647,7 +672,7 @@ typedef struct {
   bool enableResetDisplay = false;
   uint8_t resetCount = 0;
   bool enableExternalPulse = true; //Send pulse once lock is achieved
-  uint64_t externalPulseTimeBetweenPulse_us = 900000; //us between pulses, max of 60s = 60 * 1000 * 1000
+  uint64_t externalPulseTimeBetweenPulse_us = 1000000; //us between pulses, max of 60s = 60 * 1000 * 1000
   uint64_t externalPulseLength_us = 100000; //us length of pulse, max of 60s = 60 * 1000 * 1000
   pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; //Pulse rises for pulse length, then falls
   bool enableExternalHardwareEventLogging = false; //Log when INT/TM2 pin goes low
@@ -734,6 +759,9 @@ typedef struct {
   bool enablePrintNtripClientRtcm = false;
   bool enablePrintStates = true;
   bool enablePrintDuplicateStates = false;
+  bool enablePrintRtcSync = false;
+  bool enablePrintNTPDiag = false;
+  bool enablePrintEthernetDiag = false;
   RadioType_e radioType = RADIO_EXTERNAL;
   uint8_t espnowPeers[5][6]; //Max of 5 peers. Contains the MAC addresses (6 bytes) of paired units
   uint8_t espnowPeerCount = 0;
@@ -773,6 +801,24 @@ typedef struct {
   uint8_t rateNavPrio = 0; //Output rate of priority nav mode message - CFG-RATE-NAV_PRIO
   //CFG-SFIMU-AUTO_MNTALG_ENA 0 = autoIMUmountAlignment
   bool sfUseSpeed = false; //CFG-SFODO-USE_SPEED
+
+  //Ethernet
+  IPAddress ethernetIP = { 192, 168, 0, 123 };
+  IPAddress ethernetDNS = { 194, 168, 4, 100 };
+  IPAddress ethernetGateway = { 192, 168, 0, 1 };
+  IPAddress ethernetSubnet = { 255, 255, 255, 0 };
+  uint16_t ethernetHttpPort = 80;
+  uint16_t ethernetNtpPort = 123;
+  bool ethernetDHCP = true;
+  bool enableNTPFile = false; //Log NTP requests to file
+
+  //NTP
+  uint8_t ntpPollExponent = 6; //NTPpacket::defaultPollExponent 2^6 = 64 seconds
+  int8_t ntpPrecision = -20; //NTPpacket::defaultPrecision 2^-20 = 0.95us
+  uint32_t ntpRootDelay = 0; //NTPpacket::defaultRootDelay = 0. ntpRootDelay is defined in microseconds. processOneNTPRequest will convert it to seconds and fraction.
+  uint32_t ntpRootDispersion = 1000; //NTPpacket::defaultRootDispersion 1007us = 2^-16 * 66. ntpRootDispersion is defined in microseconds. processOneNTPRequest will convert it to seconds and fraction.
+  char ntpReferenceId[5] = { 'G', 'P', 'S', 0, 0 }; //NTPpacket::defaultReferenceId. Ref ID is 4 chars. Add one extra for a NULL.
+
   CoordinateInputType coordinateInputType = COORDINATE_INPUT_TYPE_DD; //Default DD.ddddddddd
   uint16_t lbandFixTimeout_seconds = 180; //Number of seconds of no L-Band fix before resetting ZED
   int16_t minCNO_F9P = 6; //Minimum satellite signal level for navigation. ZED-F9P default is 6 dBHz
@@ -799,6 +845,8 @@ struct struct_online {
   bool i2c = false;
   bool tcpClient = false;
   bool tcpServer = false;
+  ethernetStatus_e ethernetStatus = ETH_NOT_BEGUN;
+  bool ethernetNTPServer = false; //EthernetUDP
 } online;
 
 #ifdef COMPILE_WIFI

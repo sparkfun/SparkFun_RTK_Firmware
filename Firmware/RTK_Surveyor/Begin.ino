@@ -564,9 +564,56 @@ void beginFS()
   }
 }
 
+//Check if configureViaEthernet.txt exists
+//Used to indicate if SparkFun_WebServer_ESP32_W5500 needs _exclusive_ access to SPI and interrupts
+bool checkConfigureViaEthernet()
+{
+  if (online.fs == false)
+    return false;
+
+  if (LittleFS.exists("/configureViaEthernet.txt"))
+  {
+    log_d("LittleFS configureViaEthernet.txt exists");
+    LittleFS.remove("/configureViaEthernet.txt");
+    return true;
+  }
+
+  return false;
+}
+
+//Force configure-via-ethernet mode by creating configureViaEthernet.txt in LittleFS
+//Used to indicate if SparkFun_WebServer_ESP32_W5500 needs _exclusive_ access to SPI and interrupts
+bool forceConfigureViaEthernet()
+{
+  if (online.fs == false)
+    return false;
+
+  if (LittleFS.exists("/configureViaEthernet.txt"))
+  {
+    log_d("LittleFS configureViaEthernet.txt already exists");
+    return true;
+  }
+
+  File cveFile = LittleFS.open("/configureViaEthernet.txt", FILE_WRITE);
+  cveFile.close();
+
+  if (LittleFS.exists("/configureViaEthernet.txt"))
+    return true;
+
+  log_d("Unable to create configureViaEthernet.txt on LittleFS");
+  return false;
+}
+
 //Connect to ZED module and identify particulars
 void beginGNSS()
 {
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginGNSS");
+    return;
+  }
+    
   //If we're using SPI, then increase the logging buffer
   if (USE_SPI_GNSS)
   {
@@ -609,6 +656,7 @@ void beginGNSS()
         return;
       }
     }
+
     if (theGNSS.getFileBufferSize() != settings.gnssHandlerBufferSize) //Need to call getFileBufferSize after begin
     {
       log_d("GNSS offline - no RAM for file buffer");
@@ -676,11 +724,21 @@ void beginGNSS()
 //Configuration can take >1s so configure during splash
 void configureGNSS()
 {
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping configureGNSS");
+    return;
+  }
+    
   if (online.gnss == false) return;
 
   theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
   theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); //Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
 
+  if (HAS_GNSS_TP_INT)
+    theGNSS.setAutoTIMTPcallbackPtr(&storeTIMTPdata); //Enable automatic TIM TP messages with callback to storeTIMTPdata
+  
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
   //the settings file or internal settings.
@@ -708,6 +766,31 @@ void configureGNSS()
   }
 
   systemPrintln("GNSS configuration complete");
+}
+
+//Begin interrupts
+void beginInterrupts()
+{
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginInterrupts");
+    return;
+  }
+    
+  if (HAS_GNSS_TP_INT) //If the GNSS Time Pulse is connected, use it as an interrupt to set the clock accurately
+  {
+    pinMode(pin_GNSS_TimePulse, INPUT);
+    attachInterrupt(pin_GNSS_TimePulse, tpISR, RISING);
+  }
+
+#ifdef COMPILE_ETHERNET
+  if (HAS_ETHERNET)
+  {
+    pinMode(pin_Ethernet_Interrupt, INPUT_PULLUP); //Prepare the interrupt pin
+    attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); //Attach the interrupt
+  }
+#endif
 }
 
 //Set LEDs for output and configure PWM
@@ -855,17 +938,13 @@ void beginSystemState()
   }
   else if (productVariant == REFERENCE_STATION)
   {
-    systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
+    systemState = settings.lastState; //Return to either NTP, Base or Rover Not Started. The last state previous to power down.
 
     if (systemState > STATE_SHUTDOWN)
     {
       systemPrintln("Unknown state - factory reset");
       factoryReset();
     }
-
-    firstRoverStart = true; //Allow user to enter test screen during first rover start
-    if (systemState == STATE_BASE_NOT_STARTED)
-      firstRoverStart = false;
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
@@ -885,6 +964,13 @@ void beginSystemState()
 //Setup TM2 time stamp input as need
 bool beginExternalTriggers()
 {
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginExternalTriggers");
+    return (false);
+  }
+    
   if (online.gnss == false) return (false);
 
   //If our settings haven't changed, trust ZED's settings
@@ -900,17 +986,17 @@ bool beginExternalTriggers()
   bool response = true;
 
   response &= theGNSS.newCfgValset();
-  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
-  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, settings.enableExternalPulse); //Enable/disable timepulse
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_DEF, 0); //Time pulse definition is a period (in us)
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
-  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = raising edge
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, settings.enableExternalPulse); //Enable/disable timepulse
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = rising edge
 
   //While the module is _locking_ to GNSS time, turn off pulse
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
 
-  //When the module is _locked_ to GNSS time, make it generate 1kHz
+  //When the module is _locked_ to GNSS time, make it generate 1Hz (Default is 100ms high, 900ms low)
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, settings.externalPulseTimeBetweenPulse_us); //Set the period between pulses is us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, settings.externalPulseLength_us); //Set the pulse length in us
   response &= theGNSS.sendCfgValset();
@@ -1009,5 +1095,55 @@ void deleteSDSizeCheckTask()
     sdSizeCheckTaskHandle = nullptr;
     sdSizeCheckTaskComplete = false;
     log_d("sdSizeCheck Task deleted");
+  }
+}
+
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+// Time Pulse ISR
+// Triggered by the rising edge of the time pulse signal, indicates the top-of-second.
+// Set the ESP32 RTC to UTC
+
+void tpISR()
+{
+  unsigned long millisNow = millis();
+  if (!inMainMenu) //Skip this if the menu is open
+  {
+    if (online.rtc) //Only sync if the RTC has been set via PVT first
+    {
+      if (timTpUpdated) // Only sync if timTpUpdated is true
+      {
+        if (millisNow - lastRTCSync > syncRTCInterval) // Only sync if it is more than syncRTCInterval since the last sync
+        {
+          if (millisNow < (timTpArrivalMillis + 999)) // Only sync if the GNSS time is not stale
+          {
+            if (fullyResolved) // Only sync if GNSS time is fully resolved
+            {
+              if (tAcc < 5000) // Only sync if the tAcc is better than 5000ns
+              {
+                //To perform the time zone adjustment correctly, it's easiest if we convert the GNSS time and date
+                //into Unix epoch first and then apply the timeZone offset
+                uint32_t epochSecs = timTpEpoch;
+                uint32_t epochMicros = timTpMicros;
+                epochSecs += settings.timeZoneSeconds;
+                epochSecs += settings.timeZoneMinutes * 60;
+                epochSecs += settings.timeZoneHours * 60 * 60;
+      
+                //Set the internal system time
+                rtc.setTime(epochSecs, epochMicros);
+      
+                lastRTCSync = millis();
+                rtcSyncd = true;
+    
+                gnssSyncTv.tv_sec = epochSecs; // Store the timeval of the sync
+                gnssSyncTv.tv_usec = epochMicros;
+    
+                if (syncRTCInterval < 59000) //From now on, sync every minute
+                  syncRTCInterval = 59000;
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }

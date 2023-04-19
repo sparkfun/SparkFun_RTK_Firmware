@@ -177,7 +177,10 @@ bool wifiStartAP()
     if (x == maxTries)
     {
       displayNoWiFi(2000);
-      requestChangeState(STATE_ROVER_NOT_STARTED);
+      if (productVariant == REFERENCE_STATION)
+        requestChangeState(STATE_BASE_NOT_STARTED); //If WiFi failed, return to Base mode.
+      else
+        requestChangeState(STATE_ROVER_NOT_STARTED); //If WiFi failed, return to Rover mode.
       return (false);
     }
   }
@@ -195,6 +198,13 @@ bool wifiStartAP()
 //Throttle connection attempts as needed
 void wifiUpdate()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping wifiUpdate");
+    return;
+  }
+    
 #ifdef COMPILE_WIFI
 
   //Periodically display the WiFi state
@@ -630,6 +640,13 @@ bool wifiConnectLimitReached()
 
 void tcpUpdate()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping tcpUpdate");
+    return;
+  }
+    
 #ifdef COMPILE_WIFI
 
   if (settings.enableTcpClient == false && settings.enableTcpServer == false) return; //Nothing to do

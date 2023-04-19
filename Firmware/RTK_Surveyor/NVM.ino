@@ -564,12 +564,8 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
   {
     //Get the next line from the file
     int n;
-    if (USE_SPI_MICROSD)
-      n = getLine(&settingsFile, line, sizeof(line));
-#ifdef COMPILE_SD_MMC
-    else
-      n = getLine(&settingsFile, line, sizeof(line));
-#endif
+    n = getLine(&settingsFile, line, sizeof(line));
+
     if (n <= 0) {
       systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
     }
@@ -593,7 +589,7 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
     }
 
     lineNumber++;
-    if (lineNumber > 100) //Arbitrary limit. Catch corrupt files.
+    if (lineNumber > 300) //Arbitrary limit. Catch corrupt files.
     {
       log_d("Giving up reading file: %s", fileName);
       break;

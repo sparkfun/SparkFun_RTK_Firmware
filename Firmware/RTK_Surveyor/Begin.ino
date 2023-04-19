@@ -37,7 +37,6 @@ void identifyBoard()
 //E.g. turn on power for the display before beginDisplay
 void initializePowerPins()
 {
-#ifdef COMPILE_SD_MMC
   if (productVariant == REFERENCE_STATION)
   {
     //v10
@@ -92,7 +91,6 @@ void initializePowerPins()
     digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, W5500, etc
     delay(100);
   }
-#endif
 }
 
 //Based on hardware features, determine if this is RTK Surveyor or RTK Express hardware
@@ -217,7 +215,6 @@ void beginBoard()
       strncpy(platformPrefix, "Facet L-Band", sizeof(platformPrefix) - 1);
     }
   }
-#ifdef COMPILE_SD_MMC
   else if (productVariant == REFERENCE_STATION)
   {
     //No powerOnCheck
@@ -227,7 +224,6 @@ void beginBoard()
     strncpy(platformFilePrefix, "SFE_Reference_Station", sizeof(platformFilePrefix) - 1);
     strncpy(platformPrefix, "Reference Station", sizeof(platformPrefix) - 1);
   }
-#endif
 
   systemPrintf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 

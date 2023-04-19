@@ -185,6 +185,12 @@ bool ntripClientConnectLimitReached()
   return limitReached;
 }
 
+//Determine if NTRIP client data is available
+int ntripClientReceiveDataAvailable()
+{
+  return ntripClient->available();
+}
+
 //Read the response from the NTRIP client
 void ntripClientResponse(char * response, size_t maxLength)
 {
@@ -194,7 +200,7 @@ void ntripClientResponse(char * response, size_t maxLength)
   responseEnd = &response[maxLength - 1];
 
   //Read bytes from the caster and store them
-  while ((response < responseEnd) && (ntripClient->available() > 0))
+  while ((response < responseEnd) && (ntripClientReceiveDataAvailable() > 0))
   {
     *response++ = ntripClient->read();
   }
@@ -449,7 +455,7 @@ void ntripClientUpdate()
 
     case NTRIP_CLIENT_CONNECTING:
       //Check for no response from the caster service
-      if (ntripClient->available() < strlen("ICY 200 OK")) //Wait until at least a few bytes have arrived
+      if (ntripClientReceiveDataAvailable() < strlen("ICY 200 OK")) //Wait until at least a few bytes have arrived
       {
         //Check for response timeout
         if (millis() - ntripClientTimer > NTRIP_CLIENT_RESPONSE_TIMEOUT)
@@ -540,7 +546,7 @@ void ntripClientUpdate()
       else
       {
         //Check for timeout receiving NTRIP data
-        if (ntripClient->available() == 0)
+        if (ntripClientReceiveDataAvailable() == 0)
         {
           if ((millis() - ntripClientTimer) > NTRIP_CLIENT_RECEIVE_DATA_TIMEOUT)
           {
@@ -556,7 +562,7 @@ void ntripClientUpdate()
           size_t rtcmCount = 0;
 
           //Collect any available RTCM data
-          while (ntripClient->available() > 0)
+          while (ntripClientReceiveDataAvailable() > 0)
           {
             rtcmData[rtcmCount++] = ntripClient->read();
             if (rtcmCount == sizeof(rtcmData))

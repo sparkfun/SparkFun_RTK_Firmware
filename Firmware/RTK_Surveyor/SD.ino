@@ -32,13 +32,10 @@
 #define  ERASE_MASK     (1<<3)
 
 //Begin initialization by sending CMD0 and waiting until SD card
-//responds with In Idle Mode (0x01).  If the response is not 0x01
+//responds with In Idle Mode (0x01). If the response is not 0x01
 //within a reasonable amount of time, there is no SD card on the bus.
 //Returns false if not card is detected
 //Returns true if a card responds
-//
-//This is SPI-specific.
-//TODO: figure out how to incorporate the SD_MMC SD card detect pin into this. Maybe best done in beginSD?
 bool sdPresent(void)
 {
   if (productVariant == REFERENCE_STATION)

@@ -381,7 +381,23 @@ void beginSD()
     {
       systemPrintln("Initializing microSD - using SDIO, SD_MMC and File");
 
-      //TODO: add Card Detect input and check hot insertion
+      //Check to see if a card is present
+      int tries = 0;
+      int maxTries = 5;
+      while (tries < maxTries)
+      {
+        if (sdPresent() == true) break;
+        //log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
+
+        //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
+        //Max current is 200mA average across 1s, peak 300mA
+        delay(10);
+        tries++;
+      }
+      if (tries == maxTries) break; //Give up loop
+
+      //If an SD card is present, allow SdFat to take over
+      log_d("SD card detected - using SPI and SdFat");
 
       //SDIO MMC
       if (SD_MMC.begin() == false)
@@ -615,7 +631,7 @@ void beginGNSS()
     log_d("configureViaEthernet: skipping beginGNSS");
     return;
   }
-    
+
   //If we're using SPI, then increase the logging buffer
   if (USE_SPI_GNSS)
   {
@@ -732,7 +748,7 @@ void configureGNSS()
     log_d("configureViaEthernet: skipping configureGNSS");
     return;
   }
-    
+
   if (online.gnss == false) return;
 
   theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
@@ -740,7 +756,7 @@ void configureGNSS()
 
   if (HAS_GNSS_TP_INT)
     theGNSS.setAutoTIMTPcallbackPtr(&storeTIMTPdata); //Enable automatic TIM TP messages with callback to storeTIMTPdata
-  
+
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
   //the settings file or internal settings.
@@ -779,7 +795,7 @@ void beginInterrupts()
     log_d("configureViaEthernet: skipping beginInterrupts");
     return;
   }
-    
+
   if (HAS_GNSS_TP_INT) //If the GNSS Time Pulse is connected, use it as an interrupt to set the clock accurately
   {
     pinMode(pin_GNSS_TimePulse, INPUT);
@@ -972,7 +988,7 @@ bool beginExternalTriggers()
     log_d("configureViaEthernet: skipping beginExternalTriggers");
     return (false);
   }
-    
+
   if (online.gnss == false) return (false);
 
   //If our settings haven't changed, trust ZED's settings
@@ -1129,16 +1145,16 @@ void tpISR()
                 epochSecs += settings.timeZoneSeconds;
                 epochSecs += settings.timeZoneMinutes * 60;
                 epochSecs += settings.timeZoneHours * 60 * 60;
-      
+
                 //Set the internal system time
                 rtc.setTime(epochSecs, epochMicros);
-      
+
                 lastRTCSync = millis();
                 rtcSyncd = true;
-    
+
                 gnssSyncTv.tv_sec = epochSecs; // Store the timeval of the sync
                 gnssSyncTv.tv_usec = epochMicros;
-    
+
                 if (syncRTCInterval < 59000) //From now on, sync every minute
                   syncRTCInterval = 59000;
               }

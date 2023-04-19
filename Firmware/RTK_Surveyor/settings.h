@@ -41,7 +41,7 @@ typedef enum
   STATE_CONFIG_VIA_ETH_NOT_STARTED,
   STATE_CONFIG_VIA_ETH_STARTED,
   STATE_CONFIG_VIA_ETH,
-  STATE_CONFIG_VIA_ETH_RESTART_NTP,
+  STATE_CONFIG_VIA_ETH_RESTART_BASE,
   STATE_SHUTDOWN,
 } SystemState;
 volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
@@ -169,8 +169,8 @@ enum NTRIPServerState
 {
   NTRIP_SERVER_OFF = 0,         //Using Bluetooth or NTRIP client
   NTRIP_SERVER_ON,              //WIFI_START state
-  NTRIP_SERVER_WIFI_STARTED, //Connecting to WiFi access point
-  NTRIP_SERVER_WIFI_CONNECTED,  //WiFi connected to an access point
+  NTRIP_SERVER_WIFI_ETHERNET_STARTED,   //Connecting to WiFi access point
+  NTRIP_SERVER_WIFI_ETHERNET_CONNECTED, //WiFi connected to an access point
   NTRIP_SERVER_WAIT_GNSS_DATA,  //Waiting for correction data from GNSS
   NTRIP_SERVER_CONNECTING,      //Attempting a connection to the NTRIP caster
   NTRIP_SERVER_AUTHORIZATION,   //Validate the credentials

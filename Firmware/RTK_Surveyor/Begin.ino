@@ -768,7 +768,7 @@ void configureGNSS()
   systemPrintln("GNSS configuration complete");
 }
 
-//Begin interrupts - but only if not about to go into Cofigure-Via-Ethernet
+//Begin interrupts
 void beginInterrupts()
 {
   // Skip if going into configure-via-ethernet mode

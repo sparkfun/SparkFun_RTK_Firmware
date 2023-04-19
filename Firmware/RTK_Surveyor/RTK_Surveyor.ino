@@ -712,7 +712,7 @@ void setup()
 
   configureViaEthernet = checkConfigureViaEthernet(); //Check if going into dedicated configureViaEthernet (STATE_CONFIG_VIA_ETH) mode
 
-  beginGNSS(); //Connect to GNSS to get module type - but only if not going into configure-via-ethernet mode
+  beginGNSS(); //Connect to GNSS to get module type
 
   beginBoard(); //Now finish settup up the board and check the on button
 
@@ -730,19 +730,19 @@ void setup()
 
   beginFuelGauge(); //Configure battery fuel guage monitor
 
-  configureGNSS(); //Configure ZED module - but only if not going into configure-via-ethernet mode
+  configureGNSS(); //Configure ZED module
 
-  beginEthernet(); //Start-up the Ethernet connection - but only if not going into configure-via-ethernet mode
+  beginEthernet(); //Start-up the Ethernet connection
 
-  beginEthernetNTPServer(); //Start the NTP server - but only if not going into configure-via-ethernet mode
+  beginEthernetNTPServer(); //Start the NTP server
 
   beginAccelerometer();
 
-  beginLBand(); //Begin L-Band - but only if not going into configure-via-ethernet mode
+  beginLBand(); //Begin L-Band
 
-  beginExternalTriggers(); //Configure the time pulse output and TM2 input - but only if not going into configure-via-ethernet mode
+  beginExternalTriggers(); //Configure the time pulse output and TM2 input
 
-  beginInterrupts(); //Begin the TP and W5500 interrupts - but only if not going into configure-via-ethernet mode
+  beginInterrupts(); //Begin the TP and W5500 interrupts
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
@@ -779,9 +779,9 @@ void loop()
 
   updateSerial(); //Menu system via ESP32 USB connection
 
-  wifiUpdate(); //Bring up WiFi when services need it - but only if not in configure-via-ethernet mode
+  wifiUpdate(); //Bring up WiFi when services need it
 
-  updateLBand(); //Check if we've recently received PointPerfect corrections or not - but only if not in configure-via-ethernet mode
+  updateLBand(); //Check if we've recently received PointPerfect corrections or not
 
   updateRadio(); //Check if we need to finish sending any RTCM over link radio
 
@@ -789,11 +789,11 @@ void loop()
 
   ntripServerUpdate(); //Check the NTRIP server connection and move data ZED --> NTRIP
 
-  tcpUpdate(); //Turn on TCP Client or Server as needed - but only if not in configure-via-ethernet mode
+  tcpUpdate(); //Turn on TCP Client or Server as needed
 
-  updateEthernet(); //Maintain the ethernet connection - but only if not in configure-via-ethernet mode
+  updateEthernet(); //Maintain the ethernet connection
 
-  updateEthernetNTPServer(); //Process any received NTP requests - but only if not in configure-via-ethernet mode
+  updateEthernetNTPServer(); //Process any received NTP requests
 
   printPosition(); //Periodically print GNSS coordinates if enabled
 

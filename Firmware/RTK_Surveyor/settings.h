@@ -268,10 +268,11 @@ typedef struct _PARSE_STATE
 
 typedef enum
 {
-  ETH_NOT_BEGUN,
+  ETH_NOT_STARTED,
+  ETH_STARTED_CHECK_CABLE,
+  ETH_STARTED_START_DHCP,
+  ETH_CONNECTED,
   ETH_CAN_NOT_BEGIN,
-  ETH_BEGUN_NO_LINK,
-  ETH_LINK
 } ethernetStatus_e;
 
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
@@ -845,7 +846,7 @@ struct struct_online {
   bool i2c = false;
   bool tcpClient = false;
   bool tcpServer = false;
-  ethernetStatus_e ethernetStatus = ETH_NOT_BEGUN;
+  ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
   bool ethernetNTPServer = false; //EthernetUDP
 } online;
 

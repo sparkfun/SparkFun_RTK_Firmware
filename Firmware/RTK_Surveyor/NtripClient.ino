@@ -410,7 +410,7 @@ void ntripClientUpdate()
 #ifdef COMPILE_ETHERNET
       if (HAS_ETHERNET)
       {
-        if (online.ethernetStatus == ETH_LINK)
+        if (online.ethernetStatus == ETH_CONNECTED)
           ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED);
         else if (online.ethernetStatus >= ETH_BEGUN_NO_LINK)
           ntripClientSetState(NTRIP_CLIENT_OFF);

@@ -209,7 +209,7 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
@@ -226,7 +226,7 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
@@ -243,7 +243,7 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
@@ -261,7 +261,7 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
@@ -278,7 +278,7 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
@@ -304,7 +304,7 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
@@ -318,7 +318,7 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
@@ -333,7 +333,7 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
@@ -348,7 +348,7 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
@@ -362,7 +362,7 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
@@ -378,7 +378,7 @@ void updateDisplay()
           icons =   (blinking_icons & ICON_CLOCK) //Center left
                     | ICON_CLOCK_ACCURACY //Center right
                     | paintSIV();         //Bottom left
-          if (online.ethernetStatus == ETH_LINK)
+          if (online.ethernetStatus == ETH_CONNECTED)
             blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
           else
             blinking_icons ^= ICON_ETHERNET;
@@ -391,7 +391,7 @@ void updateDisplay()
                     | ICON_CLOCK_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING_NTP;   //Bottom right
-          if (online.ethernetStatus == ETH_LINK)
+          if (online.ethernetStatus == ETH_CONNECTED)
             blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
           else
             blinking_icons ^= ICON_ETHERNET;

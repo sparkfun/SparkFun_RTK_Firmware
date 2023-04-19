@@ -1,8 +1,9 @@
 //Ethernet
 
+//Regularly called to update the Ethernet status
 void beginEthernet()
 {
-  if (!HAS_ETHERNET)
+  if (HAS_ETHERNET == false)
     return;
 
   // Skip if going into configure-via-ethernet mode
@@ -11,44 +12,80 @@ void beginEthernet()
     log_d("configureViaEthernet: skipping beginEthernet");
     return;
   }
-    
+
 #ifdef COMPILE_ETHERNET
 
-  if (online.ethernetStatus == ETH_CAN_NOT_BEGIN)
-    return;
-
-  if (online.ethernetStatus == ETH_NOT_BEGUN)
+  switch (online.ethernetStatus)
   {
-    Ethernet.init(pin_Ethernet_CS);
-  
-    if (settings.ethernetDHCP)
-      Ethernet.begin(ethernetMACAddress);
-    else
+    default:
+      log_d("Unknown status");
+      break;
+
+    case (ETH_NOT_STARTED):
+      Ethernet.init(pin_Ethernet_CS);
+
+      //First we start Ethernet without DHCP to detect if a cable is connected
+      //DHCP causes system freeze for ~62 seconds so we avoid it until a cable is conncted
       Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway, settings.ethernetSubnet);
 
-    if (Ethernet.hardwareStatus() == EthernetNoHardware)
-    {
-      log_d("Ethernet hardware not found");
-      online.ethernetStatus = ETH_CAN_NOT_BEGIN;
-      return;
-    }
+      if (Ethernet.hardwareStatus() == EthernetNoHardware)
+      {
+        log_d("Ethernet hardware not found");
+        online.ethernetStatus = ETH_CAN_NOT_BEGIN;
+        return;
+      }
 
-    online.ethernetStatus = ETH_BEGUN_NO_LINK;
+      online.ethernetStatus = ETH_STARTED_CHECK_CABLE;
+      break;
+
+    case (ETH_STARTED_CHECK_CABLE):
+      if (millis() - lastEthernetCheck > 1000) //Don't check for cable but once a second
+      {
+        lastEthernetCheck = millis();
+
+        if (Ethernet.linkStatus() == LinkON)
+        {
+          if (settings.ethernetDHCP)
+            online.ethernetStatus = ETH_STARTED_START_DHCP;
+          else
+          {
+            Serial.println("Ethernet started with static IP");
+            online.ethernetStatus = ETH_CONNECTED;
+          }
+        }
+        else
+        {
+          //log_d("No cable detected");
+        }
+      }
+      break;
+
+    case (ETH_STARTED_START_DHCP):
+      Ethernet.begin(ethernetMACAddress);
+
+      if (Ethernet.hardwareStatus() == EthernetNoHardware)
+      {
+        log_d("Ethernet hardware not found");
+        online.ethernetStatus = ETH_CAN_NOT_BEGIN;
+        return;
+      }
+
+      log_d("Ethernet started with DHCP");
+      online.ethernetStatus = ETH_CONNECTED;
+      break;
+
+    case (ETH_CONNECTED):
+      if (Ethernet.linkStatus() == LinkOFF)
+      {
+        log_d("Ethernet cable disconnected!");
+        online.ethernetStatus = ETH_STARTED_CHECK_CABLE;
+      }
+      break;
+
+    case (ETH_CAN_NOT_BEGIN):
+      break;
+
   }
-
-  if (online.ethernetStatus == ETH_BEGUN_NO_LINK)
-  {
-    if (Ethernet.linkStatus() == LinkON)
-    {
-      online.ethernetStatus = ETH_LINK;
-      return;
-    }
-  }
-
-  //online.ethernetStatus == ETH_LINK
-  if (Ethernet.linkStatus() == LinkOFF)
-    online.ethernetStatus = ETH_BEGUN_NO_LINK;
-
 #endif ///COMPILE_ETHERNET
 }
 
@@ -69,7 +106,7 @@ void beginEthernetNTPServer()
     return;
 
 #ifdef COMPILE_ETHERNET
-  if ((online.ethernetStatus == ETH_LINK) && (online.ethernetNTPServer == false))
+  if ((online.ethernetStatus == ETH_CONNECTED) && (online.ethernetNTPServer == false))
   {
     ethernetNTPServer = new derivedEthernetUDP;
     ethernetNTPServer->begin(settings.ethernetNtpPort);

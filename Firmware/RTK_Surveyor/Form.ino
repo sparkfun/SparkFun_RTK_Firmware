@@ -1229,7 +1229,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
     //Confirm receipt
-    systemPrintln("Sending reset confirmation");
+    log_d("Sending reset confirmation");
     websocket->textAll("confirmReset,1,");
     delay(500); //Allow for delivery
 
@@ -1259,7 +1259,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "setProfile") == 0)
   {
     //Change to new profile
-    systemPrintf("Changing to profile number %d\r\n", settingValue);
+    log_d("Changing to profile number %d\r\n", settingValue);
     changeProfileNumber(settingValue);
 
     //Load new profile into system
@@ -1273,7 +1273,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    systemPrintf("Sending profile %d\r\n", settingValue);
+    log_d("Sending profile %d\r\n", settingValue);
     log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
@@ -1294,7 +1294,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    systemPrintf("Sending reset profile %d\r\n", settingValue);
+    log_d("Sending reset profile %d\r\n", settingValue);
     log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
@@ -1564,7 +1564,7 @@ bool parseIncomingSettings()
   if (counter < maxAttempts)
   {
     //Confirm receipt
-    systemPrintln("Sending receipt confirmation of settings");
+    log_d("Sending receipt confirmation of settings");
 #ifdef COMPILE_AP
     websocket->textAll("confirmDataReceipt,1,");
 #endif

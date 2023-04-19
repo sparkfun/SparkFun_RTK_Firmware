@@ -410,6 +410,12 @@ void beginSD()
         }
       }
     }
+#else
+    else
+    {
+      log_d("SD_MMC not compiled");
+      break; //No SD available.
+    }
 #endif
 
     if (createTestFile() == false)

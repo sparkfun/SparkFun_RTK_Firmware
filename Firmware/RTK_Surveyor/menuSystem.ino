@@ -86,6 +86,11 @@ void menuSystem()
 #ifdef COMPILE_ETHERNET
     if (HAS_ETHERNET)
     {
+      systemPrint("Ethernet cable: ");
+      if (Ethernet.linkStatus() == LinkON)
+        systemPrintln("connected");
+      else
+        systemPrintln("disconnected");
       systemPrint("Ethernet MAC Address: ");
       systemPrintf("%02X:%02X:%02X:%02X:%02X:%02X\r\n", ethernetMACAddress[0],
                    ethernetMACAddress[1], ethernetMACAddress[2], ethernetMACAddress[3],

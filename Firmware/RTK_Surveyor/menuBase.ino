@@ -213,7 +213,7 @@ void menuBase()
     }
     else if (settings.fixedBase == true && settings.fixedBaseCoordinateType == COORD_TYPE_GEODETIC && incoming == 6)
     {
-      systemPrint("Enter the antenna reference point (a.k.a. ARP) in millimeters (-200.0 to 200.0mm): ");
+      systemPrint("Enter the antenna reference point (a.k.a. ARP) in millimeters (-200.0 to 200.0mm). Common antennas Facet=71.8mm Facet L-Band=69.0mm TOP106=52.9: ");
       float antennaReferencePoint = getDouble();
       if (antennaReferencePoint < -200.0 || antennaReferencePoint > 200.0) //Arbitrary 200mm max
         systemPrintln("Error: Antenna Reference Point out of range");

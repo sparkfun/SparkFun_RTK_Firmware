@@ -918,6 +918,8 @@ void menuPointPerfect()
     snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
     systemPrintf("Device ID: %s\r\n", hardwareID);
 
+    log_d("Time to first L-Band fix: %ds", lbandTimeToFix / 1000);
+
     systemPrint("Days until keys expire: ");
     if (strlen(settings.pointPerfectCurrentKey) > 0)
     {
@@ -1040,6 +1042,11 @@ void updateLBand()
 
         log_d("Restarting ZED. Number of L-Band restarts: %d", lbandRestarts);
       }
+    }
+    else if (carrSoln == 2 && lbandTimeToFix == 0)
+    {
+      lbandTimeToFix = millis();
+      log_d("Time to first L-Band fix: %ds", lbandTimeToFix / 1000);
     }
   }
 #endif  //COMPILE_L_BAND

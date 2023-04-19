@@ -580,6 +580,8 @@ void menuNTP()
       long newVal = getNumber();
       if ((newVal >= 3) && (newVal <= 17))
         settings.ntpPollExponent = newVal;
+      else
+        systemPrintln("Error: poll exponent out of range");
     }
     else if (incoming == 2)
     {
@@ -587,6 +589,8 @@ void menuNTP()
       long newVal = getNumber();
       if ((newVal >= -30) && (newVal <= 0))
         settings.ntpPrecision = newVal;
+      else
+        systemPrintln("Error: precision out of range");
     }
     else if (incoming == 3)
     {
@@ -594,6 +598,8 @@ void menuNTP()
       long newVal = getNumber();
       if ((newVal >= 0) && (newVal <= 1000000))
         settings.ntpRootDelay = newVal;
+      else
+        systemPrintln("Error: root delay out of range");
     }
     else if (incoming == 4)
     {
@@ -601,6 +607,8 @@ void menuNTP()
       long newVal = getNumber();
       if ((newVal >= 0) && (newVal <= 1000000))
         settings.ntpRootDispersion = newVal;
+      else
+        systemPrintln("Error: root dispersion out of range");
     }
     else if (incoming == 5)
     {
@@ -613,7 +621,9 @@ void menuNTP()
           settings.ntpReferenceId[i] = newId[i];
         for (; i < 5; i++)
           settings.ntpReferenceId[i] = 0;
-      }  
+      }
+      else
+        systemPrintln("Error: invalid Reference ID");      
     }
     else if (incoming == 'x')
       break;

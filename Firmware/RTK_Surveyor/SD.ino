@@ -41,21 +41,31 @@
 //TODO: figure out how to incorporate the SD_MMC SD card detect pin into this. Maybe best done in beginSD?
 bool sdPresent(void)
 {
-  if (USE_SPI_MICROSD)
+  if (productVariant == REFERENCE_STATION)
+  {
+    if (pin_microSD_CardDetect > 0)
+    {
+      pinMode(pin_microSD_CardDetect, INPUT); //Internal pullups not supported on input only pins
+      if (digitalRead(pin_microSD_CardDetect) == LOW)
+        return (true); //Card low - SD in place
+      return (false); //Card detect high - No SD
+    }
+  }
+  else if (USE_SPI_MICROSD)
   {
     byte response = 0;
-  
+
     SPI.begin();
     SPI.setClockDivider(SPI_CLOCK_DIV2);
     SPI.setDataMode(SPI_MODE0);
     SPI.setBitOrder(MSBFIRST);
     pinMode(pin_microSD_CS, OUTPUT);
-  
+
     //Sending clocks while card power stabilizes...
     deselectCard();               //always make sure
     for (byte i = 0; i < 30; i++) //send several clocks while card power stabilizes
       xchg(0xff);
-  
+
     //Sending CMD0 - GO IDLE...
     for (byte i = 0; i < 0x10; i++) //Attempt to go idle
     {
@@ -64,7 +74,7 @@ bool sdPresent(void)
     }
     if (response != 1) return (false); //Card failed to respond to idle
   }
-  
+
   return (true);
 }
 

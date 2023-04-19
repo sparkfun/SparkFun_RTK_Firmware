@@ -593,6 +593,11 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
     }
 
     lineNumber++;
+    if (lineNumber > 100) //Arbitrary limit. Catch corrupt files.
+    {
+      log_d("Giving up reading file: %s", fileName);
+      break;
+    }
   }
 
   settingsFile.close();

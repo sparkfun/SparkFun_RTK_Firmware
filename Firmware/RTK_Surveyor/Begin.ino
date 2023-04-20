@@ -379,25 +379,10 @@ void beginSD()
 #ifdef COMPILE_SD_MMC
     else
     {
-      systemPrintln("Initializing microSD - using SDIO, SD_MMC and File");
-
       //Check to see if a card is present
-      int tries = 0;
-      int maxTries = 5;
-      while (tries < maxTries)
-      {
-        if (sdPresent() == true) break;
-        //log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
+      if (sdPresent() == false) break; //Give up on loop
 
-        //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
-        //Max current is 200mA average across 1s, peak 300mA
-        delay(10);
-        tries++;
-      }
-      if (tries == maxTries) break; //Give up loop
-
-      //If an SD card is present, allow SdFat to take over
-      log_d("SD card detected - using SPI and SdFat");
+      systemPrintln("Initializing microSD - using SDIO, SD_MMC and File");
 
       //SDIO MMC
       if (SD_MMC.begin() == false)

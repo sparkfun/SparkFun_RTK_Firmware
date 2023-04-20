@@ -1291,8 +1291,6 @@ bool parseLine(char* str, Settings *settings)
 
         snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", ubxMessages[firstRTCMRecord + x].msgTextName);
 
-        Serial.printf("Looking for % s in % s\r\n", tempString, settingName);
-
         if (strcmp(settingName, tempString) == 0)
         {
           if (settings->ubxMessageRatesBase[x] != d)

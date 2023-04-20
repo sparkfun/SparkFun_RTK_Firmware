@@ -491,6 +491,7 @@ bool ntpLogIncreasing = false;
 
 #include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.5
 #endif
+
 unsigned long lastEthernetCheck = 0; //Prevents cable checking from continually happening
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
@@ -838,6 +839,13 @@ void updateSD()
 
   if (sdSizeCheckTaskComplete == true)
     deleteSDSizeCheckTask();
+
+  //Check if SD card is still present
+  if (productVariant == REFERENCE_STATION)
+  {
+    if (sdPresent() == false)
+      endSD(false, true); //(alreadyHaveSemaphore, releaseSemaphore) Close down SD.
+  }
 }
 
 //Create or close files as needed (startup or as user changes settings)

@@ -453,6 +453,11 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   {
     if (USE_SPI_MICROSD)
       sd->end();
+#ifdef COMPILE_SD_MMC
+    else
+      SD_MMC.end();
+#endif
+
     online.microSD = false;
     systemPrintln("microSD: Offline");
   }
@@ -838,7 +843,7 @@ void beginFuelGauge()
 {
   if (productVariant == REFERENCE_STATION)
     return; //Reference station does not have a battery
-    
+
   //Set up the MAX17048 LiPo fuel gauge
   if (lipo.begin() == false)
   {

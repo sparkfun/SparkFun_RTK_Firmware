@@ -553,7 +553,7 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
   File settingsFile = LittleFS.open(fileName, FILE_READ);
   if (!settingsFile)
   {
-    systemPrintf("settingsFile not found in LittleFS\r\n");
+    //log_d("settingsFile not found in LittleFS\r\n");
     return (false);
   }
 

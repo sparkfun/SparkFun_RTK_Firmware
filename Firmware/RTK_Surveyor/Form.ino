@@ -763,7 +763,12 @@ void createSettingsString(char* newSettings)
 
   stringRecord(newSettings, "logFileName", logFileName);
 
-  if (productVariant != REFERENCE_STATION) //Ref Stn does not have a battery
+  if (HAS_NO_BATTERY) //Ref Stn does not have a battery
+  {
+    stringRecord(newSettings, "batteryIconFileName", "src/BatteryBlank.png");
+    stringRecord(newSettings, "batteryPercent", " ");
+  }
+  else
   {
     //Determine battery icon
     int iconLevel = 0;
@@ -921,7 +926,12 @@ void createDynamicDataString(char* settingsCSV)
   stringRecord(settingsCSV, "ecefY", ecefY, 3);
   stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
 
-  if (productVariant != REFERENCE_STATION) //Ref Stn does not have a battery
+  if (HAS_NO_BATTERY) //Ref Stn does not have a battery
+  {
+    stringRecord(settingsCSV, "batteryIconFileName", "src/BatteryBlank.png");
+    stringRecord(settingsCSV, "batteryPercent", " ");
+  }
+  else
   {
     //Determine battery icon
     int iconLevel = 0;

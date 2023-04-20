@@ -126,6 +126,21 @@ void beginDisplay()
   systemPrintln("Display not detected");
 }
 
+//Avoid code repetition
+void displayBatteryVsEthernet()
+{
+  if (HAS_BATTERY)
+    icons |= ICON_BATTERY; //Top right
+  else //if (HAS_ETHERNET)
+  {
+    if (online.ethernetStatus == ETH_CONNECTED)
+      blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+    else
+      blinking_icons ^= ICON_ETHERNET;
+    icons |= (blinking_icons & ICON_ETHERNET); //Top Right
+  }
+}
+
 //Given the system state, display the appropriate information
 void updateDisplay()
 {
@@ -205,16 +220,7 @@ void updateDisplay()
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
-          if (productVariant != REFERENCE_STATION)
-            icons |= ICON_BATTERY; //Top right
-          else
-          {
-            if (online.ethernetStatus == ETH_CONNECTED)
-              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-            else
-              blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          }
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_NO_FIX):
@@ -222,16 +228,7 @@ void updateDisplay()
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
-          if (productVariant != REFERENCE_STATION)
-            icons |= ICON_BATTERY; //Top right
-          else
-          {
-            if (online.ethernetStatus == ETH_CONNECTED)
-              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-            else
-              blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          }
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_FIX):
@@ -239,16 +236,7 @@ void updateDisplay()
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
-          if (productVariant != REFERENCE_STATION)
-            icons |= ICON_BATTERY; //Top right
-          else
-          {
-            if (online.ethernetStatus == ETH_CONNECTED)
-              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-            else
-              blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          }
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_RTK_FLOAT):
@@ -257,16 +245,7 @@ void updateDisplay()
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
-          if (productVariant != REFERENCE_STATION)
-            icons |= ICON_BATTERY; //Top right
-          else
-          {
-            if (online.ethernetStatus == ETH_CONNECTED)
-              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-            else
-              blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          }
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_RTK_FIX):
@@ -274,16 +253,7 @@ void updateDisplay()
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
-          if (productVariant != REFERENCE_STATION)
-            icons |= ICON_BATTERY; //Top right
-          else
-          {
-            if (online.ethernetStatus == ETH_CONNECTED)
-              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-            else
-              blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          }
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
 
@@ -300,74 +270,29 @@ void updateDisplay()
                     | ICON_HORIZONTAL_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
-          if (productVariant != REFERENCE_STATION)
-            icons |= ICON_BATTERY; //Top right
-          else
-          {
-            if (online.ethernetStatus == ETH_CONNECTED)
-              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-            else
-              blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          }
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
           icons =   ICON_LOGGING;       //Bottom right
-          if (productVariant != REFERENCE_STATION)
-            icons |= ICON_BATTERY; //Top right
-          else
-          {
-            if (online.ethernetStatus == ETH_CONNECTED)
-              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-            else
-              blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          }
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           paintBaseTempSurveyStarted();
           break;
         case (STATE_BASE_TEMP_TRANSMITTING):
           icons =   ICON_LOGGING;       //Bottom right
-          if (productVariant != REFERENCE_STATION)
-            icons |= ICON_BATTERY; //Top right
-          else
-          {
-            if (online.ethernetStatus == ETH_CONNECTED)
-              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-            else
-              blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          }
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
           icons = 0;       //Top right
-          if (productVariant != REFERENCE_STATION)
-            icons |= ICON_BATTERY; //Top right
-          else
-          {
-            if (online.ethernetStatus == ETH_CONNECTED)
-              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-            else
-              blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          }
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
           icons =   ICON_LOGGING;       //Bottom right
-          if (productVariant != REFERENCE_STATION)
-            icons |= ICON_BATTERY; //Top right
-          else
-          {
-            if (online.ethernetStatus == ETH_CONNECTED)
-              blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
-            else
-              blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
-          }
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
           break;

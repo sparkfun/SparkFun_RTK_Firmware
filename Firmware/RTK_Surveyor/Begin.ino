@@ -851,6 +851,9 @@ void beginLEDs()
 //Configure the on board MAX17048 fuel gauge
 void beginFuelGauge()
 {
+  if (productVariant == REFERENCE_STATION)
+    return; //Reference station does not have a battery
+    
   //Set up the MAX17048 LiPo fuel gauge
   if (lipo.begin() == false)
   {

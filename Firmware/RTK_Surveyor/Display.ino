@@ -3018,6 +3018,11 @@ void paintGettingKeys()
   displayMessage("Getting Keys", 0);
 }
 
+void paintGettingEthernetIP()
+{
+  displayMessage("Getting IP", 0);
+}
+
 //If an L-Band is indoors without reception, we have a ~2s wait for the RTC to come online
 //Display something while we wait
 void paintRTCWait()

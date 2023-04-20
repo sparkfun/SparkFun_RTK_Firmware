@@ -45,8 +45,13 @@ void beginEthernet()
 
         if (Ethernet.linkStatus() == LinkON)
         {
+          log_d("Ethernet cable detected");
+
           if (settings.ethernetDHCP)
+          {
+            paintGettingEthernetIP();
             online.ethernetStatus = ETH_STARTED_START_DHCP;
+          }
           else
           {
             Serial.println("Ethernet started with static IP");

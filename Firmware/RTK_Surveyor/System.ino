@@ -552,7 +552,7 @@ bool commandSupported(const uint32_t key)
   }
   if (commandNumber == MAX_UBX_CMD)
   {
-    systemPrintln("commandSupported: Unknown command key 0x%02X\r\n", key);
+    systemPrintf("commandSupported: Unknown command key 0x%02X\r\n", key);
     commandSupported = false;
   }
   else

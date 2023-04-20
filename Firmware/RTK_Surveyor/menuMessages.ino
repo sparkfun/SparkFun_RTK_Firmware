@@ -267,7 +267,10 @@ void menuMessagesBaseRTCM()
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
+    {
       menuMessagesSubtype(settings.ubxMessageRatesBase, "RTCM-Base");
+      restartBase = true;
+    }
     else if (incoming == 2)
     {
       settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005")] = 1; //1105

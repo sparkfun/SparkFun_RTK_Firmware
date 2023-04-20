@@ -1457,7 +1457,7 @@ const uint8_t ESPNOW_Symbol_0 [] = {
 /*
     milliseconds [8, 12]
 
-                     
+
              12345678
             .--------.
         0x01|** *    |
@@ -1485,7 +1485,7 @@ const uint8_t Millis_Icon [] = {
 /*
     microseconds [8, 12]
 
-                     
+
              12345678
             .--------.
         0x01|*    *  |
@@ -1511,7 +1511,7 @@ const uint8_t Micros_Icon [] = {
 /*
     nanoseconds [8, 12]
 
-                     
+
              12345678
             .--------.
         0x01|****    |

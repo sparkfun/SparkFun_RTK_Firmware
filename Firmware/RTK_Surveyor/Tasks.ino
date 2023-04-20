@@ -145,15 +145,15 @@ void F9PSerialReadTask(void *e)
       {
         //Read the data from UART1
         incomingData = serialGNSS.read();
-  
+
         //Save the data byte
         parse.buffer[parse.length++] = incomingData;
         parse.length %= PARSE_BUFFER_LENGTH;
-  
+
         //Compute the CRC value for the message
         if (parse.computeCrc)
           parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
-  
+
         //Update the parser state based on the incoming byte
         parse.state(&parse, incomingData);
       }
@@ -165,15 +165,15 @@ void F9PSerialReadTask(void *e)
       {
         //Read the data from the logging buffer
         theGNSS.extractFileBufferData(&incomingData, 1); //TODO: make this more efficient by reading multiple bytes?
-  
+
         //Save the data byte
         parse.buffer[parse.length++] = incomingData;
         parse.length %= PARSE_BUFFER_LENGTH;
-  
+
         //Compute the CRC value for the message
         if (parse.computeCrc)
           parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
-  
+
         //Update the parser state based on the incoming byte
         parse.state(&parse, incomingData);
       }
@@ -407,7 +407,8 @@ void handleGNSSDataTask(void *e)
           //Write the data to the file
           long startTime = millis();
 
-          sdBytesToRecord = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+          int sdBytesRecorded = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+
           static unsigned long lastFlush = 0;
           if (USE_MMC_MICROSD)
           {
@@ -419,7 +420,7 @@ void handleGNSSDataTask(void *e)
           }
           fileSize = ubxFile->fileSize(); //Update file size
 
-          sdFreeSpace -= sliceToRecord; //Update remaining space on SD
+          sdFreeSpace -= sdBytesRecorded; //Update remaining space on SD
 
           //Force file sync every 60s
           if (millis() - lastUBXLogSyncTime > 60000)
@@ -441,15 +442,15 @@ void handleGNSSDataTask(void *e)
           if (settings.enablePrintBufferOverrun)
           {
             if (endTime - startTime > 150)
-              systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\r\n", endTime - startTime, fileSize, sdBytesToRecord, combinedSpaceRemaining);
+              systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\r\n", endTime - startTime, fileSize, sdBytesRecorded, combinedSpaceRemaining);
           }
 
           xSemaphoreGive(sdCardSemaphore);
 
           //Account for the sent data or dropped
-          if (sdBytesToRecord > 0)
+          if (sdBytesRecorded > 0)
           {
-            sdTail += sdBytesToRecord;
+            sdTail += sdBytesRecorded;
             if (sdTail >= settings.gnssHandlerBufferSize)
               sdTail -= settings.gnssHandlerBufferSize;
           }
@@ -1140,9 +1141,9 @@ void sdSizeCheckTask(void *e)
           csd_t csd;
           sd->card()->readCSD(&csd); //Card Specific Data
           sdCardSize = (uint64_t)512 * sd->card()->sectorCount();
-  
+
           sd->volumeBegin();
-  
+
           //Find available cluster/space
           sdFreeSpace = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
           sdFreeSpace *= sd->vol()->sectorsPerCluster();

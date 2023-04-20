@@ -261,7 +261,7 @@ InputResponse getString(char *userString, uint8_t stringSize)
       theGNSS.checkUblox();
       theGNSS.checkCallbacks();
     }
-    
+
     //Keep processing NTP requests
     if (online.ethernetNTPServer)
     {

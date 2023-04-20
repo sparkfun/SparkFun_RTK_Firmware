@@ -222,8 +222,8 @@ bool configureUbloxModule()
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_UART1, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_UART1, 0);
   }
-  
-  
+
+
   response &= theGNSS.sendCfgValset();
 
   if (response == false)
@@ -584,7 +584,7 @@ bool setMessages(int maxRetries)
   {
     bool response = true;
     int messageNumber = 0;
-    
+
     while (messageNumber < MAX_UBX_MSG)
     {
       response &= theGNSS.newCfgValset();
@@ -634,14 +634,13 @@ bool setMessages(int maxRetries)
       }
       while (((messageNumber % 43) < 42) && (messageNumber < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
 
-      response &= theGNSS.sendCfgValset();
-
-      if (response == false)
+      if (theGNSS.sendCfgValset() == false)
       {
-        log_d("sendCfg failed at messageNumber %d %s. Try %d of %d\r\n", messageNumber, messageNumber < MAX_UBX_MSG ? ubxMessages[messageNumber].msgTextName : "", tryNo + 1, maxRetries);
+        log_d("sendCfg failed at messageNumber %d %s. Try %d of %d.", messageNumber - 1, (messageNumber - 1) < MAX_UBX_MSG ? ubxMessages[messageNumber - 1].msgTextName : "", tryNo + 1, maxRetries);
+        response &= false; //If any one of the Valset fails, report failure overall
       }
     }
-  
+
     //For SPI GNSS products, we need to add each message to the GNSS Library logging buffer
     //to mimic UART1
     if (USE_SPI_GNSS)
@@ -667,11 +666,11 @@ bool setMessages(int maxRetries)
             theGNSS.enableUBXlogging(ubxMessages[messageNumber].msgClass, ubxMessages[messageNumber].msgID, settings.ubxMessageRates[messageNumber] > 0);
         }
       }
-  
+
       theGNSS.setRTCMLoggingMask(logRTCMMessages);
       theGNSS.setNMEALoggingMask(logNMEAMessages);
     }
-  
+
     if (response)
       success = true;
   }
@@ -693,7 +692,7 @@ bool setMessagesUSB(int maxRetries)
   {
     bool response = true;
     int messageNumber = 0;
-    
+
     while (messageNumber < MAX_UBX_MSG)
     {
       response &= theGNSS.newCfgValset();

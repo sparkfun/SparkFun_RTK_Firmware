@@ -37,7 +37,6 @@ void identifyBoard()
 //E.g. turn on power for the display before beginDisplay
 void initializePowerPins()
 {
-#ifdef COMPILE_SD_MMC
   if (productVariant == REFERENCE_STATION)
   {
     //v10
@@ -92,7 +91,6 @@ void initializePowerPins()
     digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, W5500, etc
     delay(100);
   }
-#endif
 }
 
 //Based on hardware features, determine if this is RTK Surveyor or RTK Express hardware
@@ -217,7 +215,6 @@ void beginBoard()
       strncpy(platformPrefix, "Facet L-Band", sizeof(platformPrefix) - 1);
     }
   }
-#ifdef COMPILE_SD_MMC
   else if (productVariant == REFERENCE_STATION)
   {
     //No powerOnCheck
@@ -227,7 +224,6 @@ void beginBoard()
     strncpy(platformFilePrefix, "SFE_Reference_Station", sizeof(platformFilePrefix) - 1);
     strncpy(platformPrefix, "Reference Station", sizeof(platformPrefix) - 1);
   }
-#endif
 
   systemPrintf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
@@ -383,9 +379,10 @@ void beginSD()
 #ifdef COMPILE_SD_MMC
     else
     {
-      systemPrintln("Initializing microSD - using SDIO, SD_MMC and File");
+      //Check to see if a card is present
+      if (sdPresent() == false) break; //Give up on loop
 
-      //TODO: add Card Detect input and check hot insertion
+      systemPrintln("Initializing microSD - using SDIO, SD_MMC and File");
 
       //SDIO MMC
       if (SD_MMC.begin() == false)
@@ -413,6 +410,12 @@ void beginSD()
           break;
         }
       }
+    }
+#else
+    else
+    {
+      log_d("SD_MMC not compiled");
+      break; //No SD available.
     }
 #endif
 
@@ -450,6 +453,11 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   {
     if (USE_SPI_MICROSD)
       sd->end();
+#ifdef COMPILE_SD_MMC
+    else
+      SD_MMC.end();
+#endif
+
     online.microSD = false;
     systemPrintln("microSD: Offline");
   }
@@ -613,7 +621,7 @@ void beginGNSS()
     log_d("configureViaEthernet: skipping beginGNSS");
     return;
   }
-    
+
   //If we're using SPI, then increase the logging buffer
   if (USE_SPI_GNSS)
   {
@@ -737,7 +745,7 @@ void configureGNSS()
     log_d("configureViaEthernet: skipping configureGNSS");
     return;
   }
-    
+
   if (online.gnss == false) return;
 
   theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
@@ -745,7 +753,7 @@ void configureGNSS()
 
   if (HAS_GNSS_TP_INT)
     theGNSS.setAutoTIMTPcallbackPtr(&storeTIMTPdata); //Enable automatic TIM TP messages with callback to storeTIMTPdata
-  
+
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
   //the settings file or internal settings.
@@ -784,7 +792,7 @@ void beginInterrupts()
     log_d("configureViaEthernet: skipping beginInterrupts");
     return;
   }
-    
+
   if (HAS_GNSS_TP_INT) //If the GNSS Time Pulse is connected, use it as an interrupt to set the clock accurately
   {
     pinMode(pin_GNSS_TimePulse, INPUT);
@@ -840,6 +848,9 @@ void beginLEDs()
 //Configure the on board MAX17048 fuel gauge
 void beginFuelGauge()
 {
+  if (productVariant == REFERENCE_STATION)
+    return; //Reference station does not have a battery
+
   //Set up the MAX17048 LiPo fuel gauge
   if (lipo.begin() == false)
   {
@@ -977,7 +988,7 @@ bool beginExternalTriggers()
     log_d("configureViaEthernet: skipping beginExternalTriggers");
     return (false);
   }
-    
+
   if (online.gnss == false) return (false);
 
   //If our settings haven't changed, trust ZED's settings
@@ -1134,16 +1145,16 @@ void tpISR()
                 epochSecs += settings.timeZoneSeconds;
                 epochSecs += settings.timeZoneMinutes * 60;
                 epochSecs += settings.timeZoneHours * 60 * 60;
-      
+
                 //Set the internal system time
                 rtc.setTime(epochSecs, epochMicros);
-      
+
                 lastRTCSync = millis();
                 rtcSyncd = true;
-    
+
                 gnssSyncTv.tv_sec = epochSecs; // Store the timeval of the sync
                 gnssSyncTv.tv_usec = epochMicros;
-    
+
                 if (syncRTCInterval < 59000) //From now on, sync every minute
                   syncRTCInterval = 59000;
               }

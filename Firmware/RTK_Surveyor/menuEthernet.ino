@@ -1,8 +1,9 @@
 //Ethernet
 
+//Regularly called to update the Ethernet status
 void beginEthernet()
 {
-  if (!HAS_ETHERNET)
+  if (HAS_ETHERNET == false)
     return;
 
   // Skip if going into configure-via-ethernet mode
@@ -11,44 +12,85 @@ void beginEthernet()
     log_d("configureViaEthernet: skipping beginEthernet");
     return;
   }
-    
+
 #ifdef COMPILE_ETHERNET
 
-  if (online.ethernetStatus == ETH_CAN_NOT_BEGIN)
-    return;
-
-  if (online.ethernetStatus == ETH_NOT_BEGUN)
+  switch (online.ethernetStatus)
   {
-    Ethernet.init(pin_Ethernet_CS);
-  
-    if (settings.ethernetDHCP)
-      Ethernet.begin(ethernetMACAddress);
-    else
+    default:
+      log_d("Unknown status");
+      break;
+
+    case (ETH_NOT_STARTED):
+      Ethernet.init(pin_Ethernet_CS);
+
+      //First we start Ethernet without DHCP to detect if a cable is connected
+      //DHCP causes system freeze for ~62 seconds so we avoid it until a cable is conncted
       Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway, settings.ethernetSubnet);
 
-    if (Ethernet.hardwareStatus() == EthernetNoHardware)
-    {
-      log_d("Ethernet hardware not found");
-      online.ethernetStatus = ETH_CAN_NOT_BEGIN;
-      return;
-    }
+      if (Ethernet.hardwareStatus() == EthernetNoHardware)
+      {
+        log_d("Ethernet hardware not found");
+        online.ethernetStatus = ETH_CAN_NOT_BEGIN;
+        return;
+      }
 
-    online.ethernetStatus = ETH_BEGUN_NO_LINK;
+      online.ethernetStatus = ETH_STARTED_CHECK_CABLE;
+      break;
+
+    case (ETH_STARTED_CHECK_CABLE):
+      if (millis() - lastEthernetCheck > 1000) //Don't check for cable but once a second
+      {
+        lastEthernetCheck = millis();
+
+        if (Ethernet.linkStatus() == LinkON)
+        {
+          log_d("Ethernet cable detected");
+
+          if (settings.ethernetDHCP)
+          {
+            paintGettingEthernetIP();
+            online.ethernetStatus = ETH_STARTED_START_DHCP;
+          }
+          else
+          {
+            Serial.println("Ethernet started with static IP");
+            online.ethernetStatus = ETH_CONNECTED;
+          }
+        }
+        else
+        {
+          //log_d("No cable detected");
+        }
+      }
+      break;
+
+    case (ETH_STARTED_START_DHCP):
+      Ethernet.begin(ethernetMACAddress);
+
+      if (Ethernet.hardwareStatus() == EthernetNoHardware)
+      {
+        log_d("Ethernet hardware not found");
+        online.ethernetStatus = ETH_CAN_NOT_BEGIN;
+        return;
+      }
+
+      log_d("Ethernet started with DHCP");
+      online.ethernetStatus = ETH_CONNECTED;
+      break;
+
+    case (ETH_CONNECTED):
+      if (Ethernet.linkStatus() == LinkOFF)
+      {
+        log_d("Ethernet cable disconnected!");
+        online.ethernetStatus = ETH_STARTED_CHECK_CABLE;
+      }
+      break;
+
+    case (ETH_CAN_NOT_BEGIN):
+      break;
+
   }
-
-  if (online.ethernetStatus == ETH_BEGUN_NO_LINK)
-  {
-    if (Ethernet.linkStatus() == LinkON)
-    {
-      online.ethernetStatus = ETH_LINK;
-      return;
-    }
-  }
-
-  //online.ethernetStatus == ETH_LINK
-  if (Ethernet.linkStatus() == LinkOFF)
-    online.ethernetStatus = ETH_BEGUN_NO_LINK;
-
 #endif ///COMPILE_ETHERNET
 }
 
@@ -67,9 +109,9 @@ void beginEthernetNTPServer()
   //Skip if not in NTPSERVER mode
   if (systemState < STATE_NTPSERVER_NOT_STARTED || systemState > STATE_NTPSERVER_SYNC)
     return;
-    
+
 #ifdef COMPILE_ETHERNET
-  if ((online.ethernetStatus == ETH_LINK) && (online.ethernetNTPServer == false))
+  if ((online.ethernetStatus == ETH_CONNECTED) && (online.ethernetNTPServer == false))
   {
     ethernetNTPServer = new derivedEthernetUDP;
     ethernetNTPServer->begin(settings.ethernetNtpPort);
@@ -89,7 +131,7 @@ void updateEthernet()
     //log_d("configureViaEthernet: skipping updateEthernet");
     return;
   }
-    
+
   if (!HAS_ETHERNET)
     return;
 
@@ -103,7 +145,7 @@ void updateEthernet()
   if (w5500CheckSocketInterrupt(ntpSockIndex))
     w5500ClearSocketInterrupt(ntpSockIndex); //Clear the socket interrupt here
 
-  //Maintain the ethernet connection  
+  //Maintain the ethernet connection
   switch (Ethernet.maintain()) {
     case 1:
       //renewed fail
@@ -148,7 +190,7 @@ void updateEthernetNTPServer()
     //log_d("configureViaEthernet: skipping updateEthernetNTPServer");
     return;
   }
-    
+
   if (!HAS_ETHERNET)
     return;
 
@@ -158,10 +200,10 @@ void updateEthernetNTPServer()
     beginEthernetNTPServer();
 
   if (online.ethernetNTPServer == false)
-    return;  
+    return;
 
   char ntpDiag[512]; //Char array to hold diagnostic messages
-  
+
   //Check for new NTP requests - if the time has been sync'd
   bool processed = processOneNTPRequest(systemState == STATE_NTPSERVER_SYNC, (const timeval *)&ethernetNtpTv, (const timeval *)&gnssSyncTv, ntpDiag, sizeof(ntpDiag));
 
@@ -170,7 +212,7 @@ void updateEthernetNTPServer()
     //Print the diagnostics - if enabled
     if (settings.enablePrintNTPDiag && (!inMainMenu))
       systemPrint(ntpDiag);
-  
+
     //Log the NTP request to file - if enabled
     if (settings.enableNTPFile)
     {
@@ -178,7 +220,7 @@ void updateEthernetNTPServer()
       if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
       {
         markSemaphore(FUNCTION_NTPEVENT);
-  
+
         //Get the marks file name
         char fileName[32];
         bool fileOpen = false;
@@ -186,20 +228,20 @@ void updateEthernetNTPServer()
         int year;
         int month;
         int day;
-  
+
         //Get the date
         year = rtc.getYear();
         month = rtc.getMonth() + 1;
         day = rtc.getDay();
-  
+
         //Build the file name
         snprintf(fileName, sizeof(fileName), "/NTP_Requests_%04d_%02d_%02d.txt", year, month, day);
-  
+
         //Try to gain access the SD card
         sdCardWasOnline = online.microSD;
         if (online.microSD != true)
           beginSD();
-  
+
         if (online.microSD == true)
         {
           //Check if the NTP file already exists
@@ -208,16 +250,16 @@ void updateEthernetNTPServer()
           {
             ntpFileExists = sd->exists(fileName);
           }
-  #ifdef COMPILE_SD_MMC
+#ifdef COMPILE_SD_MMC
           else
           {
             ntpFileExists = SD_MMC.exists(fileName);
           }
-  #endif
-          
+#endif
+
           //Open the NTP file
           FileSdFatMMC ntpFile;
-  
+
           if (ntpFileExists)
           {
             if (ntpFile && ntpFile.open(fileName, O_APPEND | O_WRITE))
@@ -232,31 +274,31 @@ void updateEthernetNTPServer()
             {
               fileOpen = true;
               ntpFile.updateFileAccessTimestamp();
-  
+
               //If you want to add a file header, do it here
             }
           }
-  
+
           if (fileOpen)
           {
             //Write the NTP request to the file
             ntpFile.write((const uint8_t *)ntpDiag, strlen(ntpDiag));
-  
+
             //Update the file to create time & date
             ntpFile.updateFileCreateTimestamp();
-  
+
             //Close the mark file
             ntpFile.close();
           }
-  
+
           //Dismount the SD card
           if (!sdCardWasOnline)
             endSD(true, false);
         }
-  
+
         //Done with the SPI controller
         xSemaphoreGive(sdCardSemaphore);
-  
+
         lastLoggedNTPRequest = millis();
         ntpLogIncreasing = true;
       } //End sdCardSemaphore
@@ -266,7 +308,7 @@ void updateEthernetNTPServer()
 
   if (millis() > (lastLoggedNTPRequest + 5000))
     ntpLogIncreasing = false;
-    
+
 #endif
 }
 
@@ -324,7 +366,7 @@ void menuEthernet()
   }
 
   bool restartEthernet = false;
-  
+
   while (1)
   {
     systemPrintln();
@@ -366,7 +408,7 @@ void menuEthernet()
       {
         String tempString = String(tempStr);
         settings.ethernetIP.fromString(tempString);
-        restartEthernet = true;        
+        restartEthernet = true;
       }
       else
         systemPrint("Error: invalid IP Address");
@@ -379,7 +421,7 @@ void menuEthernet()
       {
         String tempString = String(tempStr);
         settings.ethernetDNS.fromString(tempString);
-        restartEthernet = true;        
+        restartEthernet = true;
       }
       else
         systemPrint("Error: invalid DNS");
@@ -392,7 +434,7 @@ void menuEthernet()
       {
         String tempString = String(tempStr);
         settings.ethernetGateway.fromString(tempString);
-        restartEthernet = true;        
+        restartEthernet = true;
       }
       else
         systemPrint("Error: invalid Gateway");
@@ -405,7 +447,7 @@ void menuEthernet()
       {
         String tempString = String(tempStr);
         settings.ethernetSubnet.fromString(tempString);
-        restartEthernet = true;        
+        restartEthernet = true;
       }
       else
         systemPrint("Error: invalid Subnet Mask");

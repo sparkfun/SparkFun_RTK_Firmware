@@ -14,7 +14,7 @@ void powerOnCheck()
       if (digitalRead(pin_powerSenseAndControl) != LOW)
         powerDown(false); //Power button tap. Returning to off state.
   }
-  
+
   powerPressedStartTime = 0; //Reset var to return to normal 'on' state
 }
 

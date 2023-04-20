@@ -26,10 +26,10 @@ bool configureUbloxModuleRover()
   //Try up to MAX_SET_MESSAGES_RETRIES times to configure the GNSS
   //This corrects occasional failures seen on the Reference Station where the GNSS is connected via SPI
   //instead of I2C and UART1. I believe the SETVAL ACK is occasionally missed due to the level of messages being processed.
-  while((++tryNo < MAX_SET_MESSAGES_RETRIES) && !success)
+  while ((++tryNo < MAX_SET_MESSAGES_RETRIES) && !success)
   {
     bool response = true;
-  
+
     //Set output rate
     response &= theGNSS.newCfgValset();
     response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, settings.measurementRate);
@@ -66,7 +66,7 @@ bool configureUbloxModuleRover()
         for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
           response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 3, settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 3 = SPI
       }
-  
+
       //Set RTCM messages to user's settings
       for (int x = 0; x < MAX_UBX_MSG_RTCM; x++)
       {
@@ -74,14 +74,14 @@ bool configureUbloxModuleRover()
         response &= theGNSS.addCfgValset(ubxMessages[firstRTCMRecord + x].msgConfigKey + 2 , settings.ubxMessageRates[firstRTCMRecord + x]); //UBLOX_CFG UART1 + 2 = USB
       }
     }
-  
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_MAINTALKERID, 3); //Return talker ID to GNGGA after NTRIP Client set to GPGGA
-  
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_HIGHPREC, 1); //Enable high precision NMEA
     response &= theGNSS.addCfgValset(UBLOX_CFG_NMEA_SVNUMBERING, 1); //Enable extended satellite numbering
-  
+
     response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
-  
+
     response &= theGNSS.sendCfgValset(); //Closing
 
     if (response)
@@ -94,7 +94,7 @@ bool configureUbloxModuleRover()
   if (zedModuleType == PLATFORM_F9R)
   {
     bool response = true;
-    
+
     response &= theGNSS.newCfgValset();
 
     response &= theGNSS.addCfgValset(UBLOX_CFG_SFCORE_USE_SF, settings.enableSensorFusion); //Enable/disable sensor fusion

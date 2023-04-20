@@ -209,11 +209,11 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
           }
           iconsRadio = setRadioIcons(); //Top left
           break;
@@ -226,11 +226,11 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
           }
           iconsRadio = setRadioIcons(); //Top left
           break;
@@ -243,11 +243,11 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
           }
           iconsRadio = setRadioIcons(); //Top left
           break;
@@ -261,11 +261,11 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
           }
           iconsRadio = setRadioIcons(); //Top left
           break;
@@ -278,11 +278,11 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
           }
           iconsRadio = setRadioIcons(); //Top left
           break;
@@ -304,11 +304,11 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
           }
           iconsRadio = setRadioIcons(); //Top left
           break;
@@ -318,11 +318,11 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
           }
           iconsRadio = setRadioIcons(); //Top left
           paintBaseTempSurveyStarted();
@@ -333,11 +333,11 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
           }
           iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
@@ -348,11 +348,11 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
           }
           iconsRadio = setRadioIcons(); //Top left
           break;
@@ -362,11 +362,11 @@ void updateDisplay()
             icons |= ICON_BATTERY; //Top right
           else
           {
-            if (online.ethernetStatus == ETH_LINK)
+            if (online.ethernetStatus == ETH_CONNECTED)
               blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
             else
               blinking_icons ^= ICON_ETHERNET;
-            icons |= (blinking_icons & ICON_ETHERNET); //Top Right            
+            icons |= (blinking_icons & ICON_ETHERNET); //Top Right
           }
           iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
@@ -378,7 +378,7 @@ void updateDisplay()
           icons =   (blinking_icons & ICON_CLOCK) //Center left
                     | ICON_CLOCK_ACCURACY //Center right
                     | paintSIV();         //Bottom left
-          if (online.ethernetStatus == ETH_LINK)
+          if (online.ethernetStatus == ETH_CONNECTED)
             blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
           else
             blinking_icons ^= ICON_ETHERNET;
@@ -391,7 +391,7 @@ void updateDisplay()
                     | ICON_CLOCK_ACCURACY //Center right
                     | paintSIV()          //Bottom left
                     | ICON_LOGGING_NTP;   //Bottom right
-          if (online.ethernetStatus == ETH_LINK)
+          if (online.ethernetStatus == ETH_CONNECTED)
             blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
           else
             blinking_icons ^= ICON_ETHERNET;
@@ -1792,7 +1792,7 @@ void paintIPAddress()
 #ifdef COMPILE_ETHERNET
            Ethernet.localIP()[0], Ethernet.localIP()[1], Ethernet.localIP()[2], Ethernet.localIP()[3]);
 #else
-           0,0,0,0);
+           0, 0, 0, 0);
 #endif
 
   static uint8_t ipAddressPosition = 0;
@@ -3018,6 +3018,11 @@ void paintGettingKeys()
   displayMessage("Getting Keys", 0);
 }
 
+void paintGettingEthernetIP()
+{
+  displayMessage("Getting IP", 0);
+}
+
 //If an L-Band is indoors without reception, we have a ~2s wait for the RTC to come online
 //Display something while we wait
 void paintRTCWait()
@@ -3209,22 +3214,22 @@ void displayConfigViaEthernet()
 
     static bool blink = 0;
     blink ^= 1;
-    
+
     if (ETH.linkUp() || blink)
       displayBitmap(xPos, yPos, Ethernet_Icon_Width, Ethernet_Icon_Height, Ethernet_Icon);
-    
+
     yPos += Ethernet_Icon_Height * 1.5;
-  
+
     printTextCenter("IP:", yPos, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
     yPos += 8;
-  
+
     char ipAddress[40];
     IPAddress localIP =  ETH.localIP();
     snprintf(ipAddress, sizeof(ipAddress), "          %d.%d.%d.%d          ",
              localIP[0], localIP[1], localIP[2], localIP[3]);
-  
+
     static uint8_t ipAddressPosition = 0;
-  
+
     //Print ten characters of IP address
     char printThis[12];
     snprintf(printThis, sizeof(printThis), "%c%c%c%c%c%c%c%c%c%c",
@@ -3233,17 +3238,17 @@ void displayConfigViaEthernet()
              ipAddress[ipAddressPosition + 4], ipAddress[ipAddressPosition + 5],
              ipAddress[ipAddressPosition + 6], ipAddress[ipAddressPosition + 7],
              ipAddress[ipAddressPosition + 8], ipAddress[ipAddressPosition + 9]);
-  
+
     oled.setCursor(0, yPos);
     oled.print(printThis);
-  
+
     ipAddressPosition++; //Increment the print position
     if (ipAddress[ipAddressPosition + 10] == 0) //Wrap
       ipAddressPosition = 0;
 
     oled.display();
   }
-  
+
 #else
   uint8_t fontHeight = 15;
   uint8_t yPos = oled.getHeight() / 2 - fontHeight;

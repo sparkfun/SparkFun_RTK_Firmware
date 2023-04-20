@@ -1283,10 +1283,15 @@ bool parseLine(char* str, Settings *settings)
     //Scan for Base RTCM message settings
     if (knownSetting == false)
     {
+      int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+
       for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
       {
         char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
-        snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", ubxMessages[x].msgTextName);
+
+        snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", ubxMessages[firstRTCMRecord + x].msgTextName);
+
+        Serial.printf("Looking for % s in % s\r\n", tempString, settingName);
 
         if (strcmp(settingName, tempString) == 0)
         {

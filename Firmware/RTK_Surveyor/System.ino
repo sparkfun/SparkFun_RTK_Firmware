@@ -634,9 +634,7 @@ bool setMessages(int maxRetries)
       }
       while (((messageNumber % 43) < 42) && (messageNumber < MAX_UBX_MSG)); //Limit 1st batch to 42. Batches after that will be (up to) 43 in size. It's a HHGTTG thing.
 
-      response &= theGNSS.sendCfgValset();
-
-      if (response == false)
+      if (theGNSS.sendCfgValset() == false)
       {
         log_d("sendCfg failed at messageNumber %d %s. Try %d of %d.", messageNumber - 1, (messageNumber - 1) < MAX_UBX_MSG ? ubxMessages[messageNumber - 1].msgTextName : "", tryNo + 1, maxRetries);
         response &= false; //If any one of the Valset fails, report failure overall

@@ -1183,6 +1183,26 @@ bool parseLine(char* str, Settings *settings)
       settings->updateZEDSettings = true;
     }
   }
+  else if (strcmp(settingName, "ethernetIP") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetIP.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetDNS") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetDNS.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetGateway") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetGateway.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetSubnet") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetSubnet.fromString(addr);
+  }
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list
@@ -1305,56 +1325,6 @@ bool parseLine(char* str, Settings *settings)
           knownSetting = true;
           break;
         }
-      }
-    }
-
-    //Ethernet
-    if (knownSetting == false)
-    {
-      char tempString[50];
-      snprintf(tempString, sizeof(tempString), "ethernetIP");
-
-      if (strcmp(settingName, tempString) == 0)
-      {
-        String addr = String(settingValue);
-        settings->ethernetIP.fromString(addr);
-        knownSetting = true;
-      }
-    }
-    if (knownSetting == false)
-    {
-      char tempString[50];
-      snprintf(tempString, sizeof(tempString), "ethernetDNS");
-
-      if (strcmp(settingName, tempString) == 0)
-      {
-        String addr = String(settingValue);
-        settings->ethernetDNS.fromString(addr);
-        knownSetting = true;
-      }
-    }
-    if (knownSetting == false)
-    {
-      char tempString[50];
-      snprintf(tempString, sizeof(tempString), "ethernetGateway");
-
-      if (strcmp(settingName, tempString) == 0)
-      {
-        String addr = String(settingValue);
-        settings->ethernetGateway.fromString(addr);
-        knownSetting = true;
-      }
-    }
-    if (knownSetting == false)
-    {
-      char tempString[50];
-      snprintf(tempString, sizeof(tempString), "ethernetSubnet");
-
-      if (strcmp(settingName, tempString) == 0)
-      {
-        String addr = String(settingValue);
-        settings->ethernetSubnet.fromString(addr);
-        knownSetting = true;
       }
     }
 

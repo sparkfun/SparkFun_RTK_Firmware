@@ -3193,7 +3193,7 @@ const uint8_t * getMacAddress()
     return wifiMACAddress;
 #endif
 #ifdef COMPILE_ETHERNET
-  else if (online.ethernetStatus >= ETH_BEGUN_NO_LINK)
+  else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
     return ethernetMACAddress;
 #endif
 #endif

@@ -550,6 +550,8 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
 //Returns false if a file was not opened/loaded
 bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
 {
+  //log_d("reading setting fileName: %s", fileName);
+
   File settingsFile = LittleFS.open(fileName, FILE_READ);
   if (!settingsFile)
   {
@@ -705,8 +707,6 @@ bool parseLine(char* str, Settings *settings)
   else if (strcmp(settingName, "zedFirmwareVersion") == 0)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "neoFirmwareVersion") == 0)
-  {} //Do nothing. Just read it to avoid 'Unknown setting' error
-  else if (strstr(settingName, "messageBase") != nullptr) //Retired in v3.3
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
 
   else if (strcmp(settingName, "printDebugMessages") == 0)
@@ -1183,6 +1183,26 @@ bool parseLine(char* str, Settings *settings)
       settings->updateZEDSettings = true;
     }
   }
+  else if (strcmp(settingName, "ethernetIP") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetIP.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetDNS") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetDNS.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetGateway") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetGateway.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetSubnet") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetSubnet.fromString(addr);
+  }
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list
@@ -1263,10 +1283,13 @@ bool parseLine(char* str, Settings *settings)
     //Scan for Base RTCM message settings
     if (knownSetting == false)
     {
+      int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+
       for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
       {
         char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
-        snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", ubxMessages[x].msgTextName);
+
+        snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", ubxMessages[firstRTCMRecord + x].msgTextName);
 
         if (strcmp(settingName, tempString) == 0)
         {
@@ -1305,56 +1328,6 @@ bool parseLine(char* str, Settings *settings)
           knownSetting = true;
           break;
         }
-      }
-    }
-
-    //Ethernet
-    if (knownSetting == false)
-    {
-      char tempString[50];
-      snprintf(tempString, sizeof(tempString), "ethernetIP");
-
-      if (strcmp(settingName, tempString) == 0)
-      {
-        String addr = String(settingValue);
-        settings->ethernetIP.fromString(addr);
-        knownSetting = true;
-      }
-    }
-    if (knownSetting == false)
-    {
-      char tempString[50];
-      snprintf(tempString, sizeof(tempString), "ethernetDNS");
-
-      if (strcmp(settingName, tempString) == 0)
-      {
-        String addr = String(settingValue);
-        settings->ethernetDNS.fromString(addr);
-        knownSetting = true;
-      }
-    }
-    if (knownSetting == false)
-    {
-      char tempString[50];
-      snprintf(tempString, sizeof(tempString), "ethernetGateway");
-
-      if (strcmp(settingName, tempString) == 0)
-      {
-        String addr = String(settingValue);
-        settings->ethernetGateway.fromString(addr);
-        knownSetting = true;
-      }
-    }
-    if (knownSetting == false)
-    {
-      char tempString[50];
-      snprintf(tempString, sizeof(tempString), "ethernetSubnet");
-
-      if (strcmp(settingName, tempString) == 0)
-      {
-        String addr = String(settingValue);
-        settings->ethernetSubnet.fromString(addr);
-        knownSetting = true;
       }
     }
 

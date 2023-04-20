@@ -687,9 +687,6 @@ void beginGNSS()
   //Auto-send Valset messages before the buffer is completely full
   theGNSS.autoSendCfgValsetAtSpaceRemaining(16);
 
-  //Check if the ubxMessageRates or ubxMessageRatesBase need to be defaulted
-  checkMessageRates();
-
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
   if (theGNSS.getModuleInfo(1100) == true) //Try to get the module info
   {
@@ -747,6 +744,9 @@ void configureGNSS()
   }
 
   if (online.gnss == false) return;
+
+  //Check if the ubxMessageRates or ubxMessageRatesBase need to be defaulted
+  checkMessageRates();
 
   theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
   theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); //Enable automatic NAV HPPOSLLH messages with callback to storeHPdata

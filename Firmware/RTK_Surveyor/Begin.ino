@@ -623,6 +623,7 @@ void beginGNSS()
     //Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
     //Also used by Tasks.ino
     theGNSS.setFileBufferSize(settings.gnssHandlerBufferSize);
+    theGNSS.setRTCMBufferSize(settings.gnssHandlerBufferSize);
   }
 
   if (USE_I2C_GNSS)
@@ -660,6 +661,12 @@ void beginGNSS()
     if (theGNSS.getFileBufferSize() != settings.gnssHandlerBufferSize) //Need to call getFileBufferSize after begin
     {
       log_d("GNSS offline - no RAM for file buffer");
+      displayGNSSFail(1000);
+      return;
+    }
+    if (theGNSS.getRTCMBufferSize() != settings.gnssHandlerBufferSize) //Need to call getRTCMBufferSize after begin
+    {
+      log_d("GNSS offline - no RAM for RTCM buffer");
       displayGNSSFail(1000);
       return;
     }

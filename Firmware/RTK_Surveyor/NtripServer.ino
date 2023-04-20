@@ -335,7 +335,11 @@ void ntripServerUpdate()
     //log_d("configureViaEthernet: skipping ntripServerUpdate");
     return;
   }
-    
+
+  //For Ref Stn, process any RTCM data waiting in the u-blox library RTCM Buffer
+  //This causes the state change from NTRIP_SERVER_WAIT_GNSS_DATA to NTRIP_SERVER_CONNECTING
+  processRTCMBuffer();
+
   if (settings.enableNtripServer == false)
   {
     //If user turns off NTRIP Server via settings, stop server

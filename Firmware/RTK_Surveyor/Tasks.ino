@@ -407,7 +407,8 @@ void handleGNSSDataTask(void *e)
           //Write the data to the file
           long startTime = millis();
 
-          sdBytesToRecord = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+          int sdBytesRecorded = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+
           static unsigned long lastFlush = 0;
           if (USE_MMC_MICROSD)
           {
@@ -419,7 +420,7 @@ void handleGNSSDataTask(void *e)
           }
           fileSize = ubxFile->fileSize(); //Update file size
 
-          sdFreeSpace -= sliceToRecord; //Update remaining space on SD
+          sdFreeSpace -= sdBytesRecorded; //Update remaining space on SD
 
           //Force file sync every 60s
           if (millis() - lastUBXLogSyncTime > 60000)
@@ -441,15 +442,15 @@ void handleGNSSDataTask(void *e)
           if (settings.enablePrintBufferOverrun)
           {
             if (endTime - startTime > 150)
-              systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\r\n", endTime - startTime, fileSize, sdBytesToRecord, combinedSpaceRemaining);
+              systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\r\n", endTime - startTime, fileSize, sdBytesRecorded, combinedSpaceRemaining);
           }
 
           xSemaphoreGive(sdCardSemaphore);
 
           //Account for the sent data or dropped
-          if (sdBytesToRecord > 0)
+          if (sdBytesRecorded > 0)
           {
-            sdTail += sdBytesToRecord;
+            sdTail += sdBytesRecorded;
             if (sdTail >= settings.gnssHandlerBufferSize)
               sdTail -= settings.gnssHandlerBufferSize;
           }

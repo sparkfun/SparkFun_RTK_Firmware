@@ -638,7 +638,8 @@ bool setMessages(int maxRetries)
 
       if (response == false)
       {
-        log_d("sendCfg failed at messageNumber %d %s. Try %d of %d\r\n", messageNumber, messageNumber < MAX_UBX_MSG ? ubxMessages[messageNumber].msgTextName : "", tryNo + 1, maxRetries);
+        log_d("sendCfg failed at messageNumber %d %s. Try %d of %d.", messageNumber - 1, (messageNumber - 1) < MAX_UBX_MSG ? ubxMessages[messageNumber - 1].msgTextName : "", tryNo + 1, maxRetries);
+        response &= false; //If any one of the Valset fails, report failure overall
       }
     }
 

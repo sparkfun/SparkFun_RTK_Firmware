@@ -550,6 +550,8 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
 //Returns false if a file was not opened/loaded
 bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
 {
+  //log_d("reading setting fileName: %s", fileName);
+
   File settingsFile = LittleFS.open(fileName, FILE_READ);
   if (!settingsFile)
   {
@@ -705,8 +707,6 @@ bool parseLine(char* str, Settings *settings)
   else if (strcmp(settingName, "zedFirmwareVersion") == 0)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "neoFirmwareVersion") == 0)
-  {} //Do nothing. Just read it to avoid 'Unknown setting' error
-  else if (strstr(settingName, "messageBase") != nullptr) //Retired in v3.3
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
 
   else if (strcmp(settingName, "printDebugMessages") == 0)

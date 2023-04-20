@@ -54,7 +54,7 @@ void beginEthernet()
           }
           else
           {
-            Serial.println("Ethernet started with static IP");
+            systemPrintln("Ethernet started with static IP");
             online.ethernetStatus = ETH_CONNECTED;
           }
         }

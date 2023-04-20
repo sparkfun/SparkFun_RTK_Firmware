@@ -267,7 +267,10 @@ void menuMessagesBaseRTCM()
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
+    {
       menuMessagesSubtype(settings.ubxMessageRatesBase, "RTCM-Base");
+      restartBase = true;
+    }
     else if (incoming == 2)
     {
       settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005")] = 1; //1105
@@ -334,7 +337,6 @@ void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
 
     if (strcmp(messageType, "RTCM-Base") == 0) //The ubxMessageRatesBase array is 0 to MAX_UBX_MSG_RTCM - 1
     {
-      Serial.println("Special handling");
       startOfBlock = 0;
       endOfBlock = MAX_UBX_MSG_RTCM;
       rtcmOffset = getMessageNumberByName("UBX_RTCM_1005");

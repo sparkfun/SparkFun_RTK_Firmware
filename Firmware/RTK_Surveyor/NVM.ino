@@ -589,7 +589,7 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
     }
 
     lineNumber++;
-    if (lineNumber > 300) //Arbitrary limit. Catch corrupt files.
+    if (lineNumber > 400) //Arbitrary limit. Catch corrupt files.
     {
       log_d("Giving up reading file: %s", fileName);
       break;

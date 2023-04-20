@@ -267,7 +267,7 @@ void menuMessagesBaseRTCM()
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
-      menuMessagesSubtype(settings.ubxMessageRatesBase, "RTCM");
+      menuMessagesSubtype(settings.ubxMessageRatesBase, "RTCM-Base");
     else if (incoming == 2)
     {
       settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005")] = 1; //1105
@@ -330,13 +330,24 @@ void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
 
     int startOfBlock = 0;
     int endOfBlock = 0;
-    setMessageOffsets(ubxMessages, messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
+    int rtcmOffset = 0; //Used to offset messageSupported lookup
+
+    if (strcmp(messageType, "RTCM-Base") == 0) //The ubxMessageRatesBase array is 0 to MAX_UBX_MSG_RTCM - 1
+    {
+      Serial.println("Special handling");
+      startOfBlock = 0;
+      endOfBlock = MAX_UBX_MSG_RTCM;
+      rtcmOffset = getMessageNumberByName("UBX_RTCM_1005");
+    }
+    else
+      setMessageOffsets(ubxMessages, messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
+
     for (int x = 0 ; x < (endOfBlock - startOfBlock) ; x++)
     {
       //Check to see if this ZED platform supports this message
-      if (messageSupported(x + startOfBlock) == true)
+      if (messageSupported(x + startOfBlock + rtcmOffset) == true)
       {
-        systemPrintf("%d) Message %s: ", x + 1, ubxMessages[x + startOfBlock].msgTextName);
+        systemPrintf("%d) Message %s: ", x + 1, ubxMessages[x + startOfBlock + rtcmOffset].msgTextName);
         systemPrintln(localMessageRate[x + startOfBlock]);
       }
     }
@@ -765,7 +776,7 @@ uint8_t getMessageNumberByName(const char *msgName)
   return (0);
 }
 
-//Check rates to see if they need to be reset
+//Check rates to see if they need to be reset to defaults
 void checkMessageRates()
 {
   if (settings.ubxMessageRates[0] == 254)

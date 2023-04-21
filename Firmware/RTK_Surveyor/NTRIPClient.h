@@ -1,12 +1,21 @@
+#if !defined(COMPILE_WIFI) && !defined(COMPILE_ETHERNET)
+
+//Remove all of NTRIPClient.h
+
+#else
+
 //Define a hybrid class which can support both WiFiClient and EthernetClient
+//Build the Class according to WiFi and Ethernet compile guards
 
-#ifdef COMPILE_WIFI
-
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_WIFI) && defined(COMPILE_ETHERNET)
 
 class NTRIPClient : public WiFiClient, public EthernetClient
 
-#else
+#elif defined(COMPILE_ETHERNET)
+
+class NTRIPClient : public EthernetClient
+
+#elif defined(COMPILE_WIFI)
 
 class NTRIPClient : public WiFiClient
 
@@ -17,17 +26,22 @@ class NTRIPClient : public WiFiClient
 
     NTRIPClient()
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
         _ntripClientEthernet = new EthernetClient;
       else
-#endif
         _ntripClientWiFi = new WiFiClient;
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+        _ntripClientEthernet = new EthernetClient;
+#elif defined(COMPILE_WIFI)
+      _ntripClientWiFi = new WiFiClient;
+#endif
     };
 
     ~NTRIPClient()
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
       {
         _ntripClientEthernet->stop();
@@ -35,117 +49,200 @@ class NTRIPClient : public WiFiClient
         _ntripClientEthernet = nullptr;
       }
       else
-#endif
       {
         //EthernetClient does not have a destructor. It is virtual.
         delete _ntripClientWiFi;
         _ntripClientWiFi = nullptr;
       }
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+      {
+        _ntripClientEthernet->stop();
+        delete _ntripClientEthernet;
+        _ntripClientEthernet = nullptr;
+      }
+#elif defined(COMPILE_WIFI)
+      //EthernetClient does not have a destructor. It is virtual.
+      delete _ntripClientWiFi;
+      _ntripClientWiFi = nullptr;
+#endif
     };
 
     operator bool()
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
         return _ntripClientEthernet;
       else
-#endif
         return _ntripClientWiFi;
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+        return _ntripClientEthernet;
+      else
+        return false;
+#elif defined(COMPILE_WIFI)
+      return _ntripClientWiFi;
+#endif
     };
 
     int connect(const char *host, uint16_t port)
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
         return _ntripClientEthernet->connect(host, port);
       else
-#endif
         return _ntripClientWiFi->connect(host, port);
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+        return _ntripClientEthernet->connect(host, port);
+      else
+        return 0;
+#elif defined(COMPILE_WIFI)
+      return _ntripClientWiFi->connect(host, port);
+#endif
     };
 
     size_t write(uint8_t b)
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
         return _ntripClientEthernet->write(b);
       else
-#endif
         return _ntripClientWiFi->write(b);
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+        return _ntripClientEthernet->write(b);
+      else
+        return 0;
+#elif defined(COMPILE_WIFI)
+      return _ntripClientWiFi->write(b);
+#endif
     };
 
     size_t write(const uint8_t *buf, size_t size)
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
         return _ntripClientEthernet->write(buf, size);
       else
-#endif
         return _ntripClientWiFi->write(buf, size);
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+        return _ntripClientEthernet->write(buf, size);
+      else
+        return 0;
+#elif defined(COMPILE_WIFI)
+      return _ntripClientWiFi->write(buf, size);
+#endif
     };
 
     int available()
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
         return _ntripClientEthernet->available();
       else
-#endif
         return _ntripClientWiFi->available();
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+        return _ntripClientEthernet->available();
+      else
+        return 0;
+#elif defined(COMPILE_WIFI)
+      return _ntripClientWiFi->available();
+#endif
     };
 
     int read(uint8_t *buf, size_t size)
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
         return _ntripClientEthernet->read();
       else
-#endif
         return _ntripClientWiFi->read();
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+        return _ntripClientEthernet->read();
+      else
+        return 0;
+#elif defined(COMPILE_WIFI)
+      return _ntripClientWiFi->read();
+#endif
     };
 
     int read()
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
         return _ntripClientEthernet->read();
       else
-#endif
         return _ntripClientWiFi->read();
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+        return _ntripClientEthernet->read();
+      else
+        return 0;
+#elif defined(COMPILE_WIFI)
+      return _ntripClientWiFi->read();
+#endif
     };
 
     void stop()
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
         _ntripClientEthernet->stop();
       else
-#endif
         _ntripClientWiFi->stop();
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+        _ntripClientEthernet->stop();
+      else
+        return ;
+#elif defined(COMPILE_WIFI)
+      _ntripClientWiFi->stop();
+#endif
     };
 
     uint8_t connected()
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
         return _ntripClientEthernet->connected();
       else
-#endif
         return _ntripClientWiFi->connected();
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+        return _ntripClientEthernet->connected();
+      else
+        return 0;
+#elif defined(COMPILE_WIFI)
+      return _ntripClientWiFi->connected();
+#endif
     };
 
     size_t print(const char *printMe)
     {
-#ifdef COMPILE_ETHERNET
+#if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
       if (HAS_ETHERNET)
         return _ntripClientEthernet->print(printMe);
       else
-#endif
         return _ntripClientWiFi->print(printMe);
+#elif defined(COMPILE_ETHERNET)
+      if (HAS_ETHERNET)
+        return _ntripClientEthernet->print(printMe);
+      else
+        return 0;
+#elif defined(COMPILE_WIFI)
+      return _ntripClientWiFi->print(printMe);
+#endif
     };
 
   protected:
+#if defined(COMPILE_WIFI)
     WiFiClient * _ntripClientWiFi;
-#ifdef COMPILE_ETHERNET
+#endif
+#if defined(COMPILE_ETHERNET)
     EthernetClient * _ntripClientEthernet;
 #endif
 };

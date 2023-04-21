@@ -922,48 +922,57 @@ void beginAccelerometer()
 //Depending on platform and previous power down state, set system state
 void beginSystemState()
 {
+  if (systemState > STATE_NOT_SET)
+  {
+    systemPrintln("Unknown state - factory reset");
+    factoryReset();
+  }
+
   if (productVariant == RTK_SURVEYOR)
   {
+    if (settings.lastState == STATE_NOT_SET) //Default
+    {
+      systemState = STATE_ROVER_NOT_STARTED;
+      settings.lastState = systemState;
+    }
+
     //If the rocker switch was moved while off, force module settings
     //When switch is set to '1' = BASE, pin will be shorted to ground
     if (settings.lastState == STATE_ROVER_NOT_STARTED && digitalRead(pin_setupButton) == LOW) settings.updateZEDSettings = true;
     else if (settings.lastState == STATE_BASE_NOT_STARTED && digitalRead(pin_setupButton) == HIGH) settings.updateZEDSettings = true;
 
-    if (online.lband == false)
-      systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask() will correct as needed.
-    else
-      systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
+    systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask() will correct as needed.
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
   else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
+    if (settings.lastState == STATE_NOT_SET) //Default
+    {
+      systemState = STATE_ROVER_NOT_STARTED;
+      settings.lastState = systemState;
+    }
+
     if (online.lband == false)
       systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
     else
       systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
-
-    if (systemState > STATE_SHUTDOWN)
-    {
-      systemPrintln("Unknown state - factory reset");
-      factoryReset();
-    }
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }
   else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
   {
+    if (settings.lastState == STATE_NOT_SET) //Default
+    {
+      systemState = STATE_ROVER_NOT_STARTED;
+      settings.lastState = systemState;
+    }
+
     if (online.lband == false)
       systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
     else
       systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
-
-    if (systemState > STATE_SHUTDOWN)
-    {
-      systemPrintln("Unknown state - factory reset");
-      factoryReset();
-    }
 
     firstRoverStart = true; //Allow user to enter test screen during first rover start
     if (systemState == STATE_BASE_NOT_STARTED)
@@ -973,13 +982,13 @@ void beginSystemState()
   }
   else if (productVariant == REFERENCE_STATION)
   {
-    systemState = settings.lastState; //Return to either NTP, Base or Rover Not Started. The last state previous to power down.
-
-    if (systemState > STATE_SHUTDOWN)
+    if (settings.lastState == STATE_NOT_SET) //Default
     {
-      systemPrintln("Unknown state - factory reset");
-      factoryReset();
+      systemState = STATE_BASE_NOT_STARTED;
+      settings.lastState = systemState;
     }
+
+    systemState = settings.lastState; //Return to either NTP, Base or Rover Not Started. The last state previous to power down.
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
   }

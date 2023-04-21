@@ -347,7 +347,18 @@ void updateSystemState()
             {
               systemPrintf("Survey-In took more than %d minutes. Returning to rover mode.\r\n", maxSurveyInWait_s / 60);
 
-              surveyInReset();
+              if (surveyInReset() == false)
+              {
+                systemPrintln("Survey reset failed - attempt 1/3");
+                if (surveyInReset() == false)
+                {
+                  systemPrintln("Survey reset failed - attempt 2/3");
+                  if (surveyInReset() == false)
+                  {
+                    systemPrintln("Survey reset failed - attempt 3/3");
+                  }
+                }
+              }
 
               changeState(STATE_ROVER_NOT_STARTED);
             }

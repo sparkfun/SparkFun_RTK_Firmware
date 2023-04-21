@@ -126,7 +126,10 @@ with open(destfilename, 'wb') as f_out:
 
                 content = f_in_2.read()
                 count = 0
+                
                 for c in content[:-2]:
+                    if count == 0:
+                        f_out.write(bytes('  ', 'utf-8'))
                     f_out.write(bytes("0x{:02X},".format(c), 'utf-8'))
                     count += 1
                     if count == 16:
@@ -135,6 +138,8 @@ with open(destfilename, 'wb') as f_out:
                     else:
                         f_out.write(bytes(' ', 'utf-8'))
 
+                if count == 0:
+                    f_out.write(bytes('  ', 'utf-8'))
                 f_out.write(bytes("0x{:02X}\r\n".format(content[-1]), 'utf-8'))
 
                 f_out.write(f_in_3.read())

@@ -81,6 +81,10 @@ ProductVariant productVariant = RTK_SURVEYOR;
 //The rising edge of the TP signal indicates the true top-of-second
 #define HAS_GNSS_TP_INT (productVariant == REFERENCE_STATION)
 
+//Macro to show if the the RTK variant has no battery
+#define HAS_NO_BATTERY  (productVariant == REFERENCE_STATION)
+#define HAS_BATTERY     (!HAS_NO_BATTERY)
+
 typedef enum
 {
   BUTTON_ROVER = 0,

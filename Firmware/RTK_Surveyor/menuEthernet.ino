@@ -17,10 +17,6 @@ void beginEthernet()
 
   switch (online.ethernetStatus)
   {
-    default:
-      log_d("Unknown status");
-      break;
-
     case (ETH_NOT_STARTED):
       Ethernet.init(pin_Ethernet_CS);
 
@@ -90,6 +86,9 @@ void beginEthernet()
     case (ETH_CAN_NOT_BEGIN):
       break;
 
+    default:
+      log_d("Unknown status");
+      break;
   }
 #endif ///COMPILE_ETHERNET
 }

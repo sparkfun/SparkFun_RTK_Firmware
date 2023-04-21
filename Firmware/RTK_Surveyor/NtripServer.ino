@@ -336,6 +336,10 @@ void ntripServerUpdate()
     return;
   }
 
+  //For Ref Stn, process any RTCM data waiting in the u-blox library RTCM Buffer
+  //This causes the state change from NTRIP_SERVER_WAIT_GNSS_DATA to NTRIP_SERVER_CONNECTING
+  processRTCMBuffer();
+
   if (settings.enableNtripServer == false)
   {
     //If user turns off NTRIP Server via settings, stop server
@@ -365,12 +369,7 @@ void ntripServerUpdate()
 #ifdef COMPILE_ETHERNET
       if (HAS_ETHERNET)
       {
-        if (online.ethernetStatus < ETH_BEGUN_NO_LINK)
-        {
-          systemPrintln("Error: Please connect Ethernet before starting NTRIP Server");
-          ntripServerStop(true); //Do not allocate new wifiClient
-        }
-        else
+        if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
         {
           //Pause until connection timeout has passed
           if (millis() - ntripServerLastConnectionAttempt > ntripServerConnectionAttemptTimeout)
@@ -379,6 +378,11 @@ void ntripServerUpdate()
             log_d("NTRIP Server starting on Ethernet");
             ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_STARTED);
           }
+        }
+        else
+        {
+          systemPrintln("Error: Please connect Ethernet before starting NTRIP Server");
+          ntripServerStop(true); //Do not allocate new wifiClient
         }
       }
       else
@@ -410,7 +414,7 @@ void ntripServerUpdate()
       {
         if (online.ethernetStatus == ETH_CONNECTED)
           ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_CONNECTED);
-        else if (online.ethernetStatus >= ETH_BEGUN_NO_LINK)
+        else
           ntripServerSetState(NTRIP_SERVER_OFF);
       }
       else

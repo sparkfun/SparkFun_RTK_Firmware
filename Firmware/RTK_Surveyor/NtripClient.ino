@@ -367,12 +367,7 @@ void ntripClientUpdate()
 #ifdef COMPILE_ETHERNET
         if (HAS_ETHERNET)
         {
-          if (online.ethernetStatus < ETH_BEGUN_NO_LINK)
-          {
-            systemPrintln("Error: Please connect Ethernet before starting NTRIP Client");
-            ntripClientStop(true); //Do not allocate new wifiClient
-          }
-          else
+          if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
           {
             //Pause until connection timeout has passed
             if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)
@@ -381,6 +376,11 @@ void ntripClientUpdate()
               log_d("NTRIP Client starting on Ethernet");
               ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_STARTED);
             }
+          }
+          else
+          {
+            systemPrintln("Error: Please connect Ethernet before starting NTRIP Client");
+            ntripClientStop(true); //Do not allocate new wifiClient
           }
         }
         else
@@ -412,7 +412,7 @@ void ntripClientUpdate()
       {
         if (online.ethernetStatus == ETH_CONNECTED)
           ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED);
-        else if (online.ethernetStatus >= ETH_BEGUN_NO_LINK)
+        else
           ntripClientSetState(NTRIP_CLIENT_OFF);
       }
       else

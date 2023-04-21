@@ -43,10 +43,11 @@ typedef enum
   STATE_CONFIG_VIA_ETH,
   STATE_CONFIG_VIA_ETH_RESTART_BASE,
   STATE_SHUTDOWN,
+  STATE_NOT_SET, //Must be last on list
 } SystemState;
-volatile SystemState systemState = STATE_ROVER_NOT_STARTED;
-SystemState lastSystemState = STATE_ROVER_NOT_STARTED;
-SystemState requestedSystemState = STATE_ROVER_NOT_STARTED;
+volatile SystemState systemState = STATE_NOT_SET;
+SystemState lastSystemState = STATE_NOT_SET;
+SystemState requestedSystemState = STATE_NOT_SET;
 bool newSystemStateRequested = false;
 
 //The setup display can show a limited set of states
@@ -671,7 +672,7 @@ typedef struct {
   uint16_t sppRxQueueSize = 2048;
   uint16_t sppTxQueueSize = 512;
   uint8_t dynamicModel = DYN_MODEL_PORTABLE;
-  SystemState lastState = STATE_ROVER_NOT_STARTED; //For Express, start unit in last known state
+  SystemState lastState = STATE_NOT_SET; //Start unit in last known state
   bool enableSensorFusion = false; //If IMU is available, avoid using it unless user specifically selects automotive
   bool autoIMUmountAlignment = true; //Allows unit to automatically establish device orientation in vehicle
   bool enableResetDisplay = false;

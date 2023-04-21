@@ -1301,6 +1301,9 @@ void changeState(SystemState newState)
       case (STATE_SHUTDOWN):
         systemPrint("State: Shut Down");
         break;
+      case (STATE_NOT_SET):
+        systemPrint("State: Not Set");
+        break;
       default:
         systemPrintf("Change State Unknown: %d", systemState);
         break;

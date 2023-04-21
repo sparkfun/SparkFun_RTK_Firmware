@@ -420,7 +420,7 @@ void ntripClientUpdate()
           ntripClientSetState(NTRIP_CLIENT_OFF);
         else
         {
-          //What for ethernet to connect
+          //Wait for ethernet to connect
         }
       }
       else

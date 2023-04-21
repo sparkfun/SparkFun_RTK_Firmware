@@ -194,12 +194,12 @@ char logFileName[sizeof("SFE_Facet_L-Band_230101_120101.ubx_plusExtraSpace")] = 
 
 #include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
 
+#endif
+
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
 static int ntripClientConnectionAttempts = 0; //Count the number of connection attempts between restarts
 static int ntripServerConnectionAttempts = 0; //Count the number of connection attempts between restarts
-
-#endif
 
 volatile uint8_t wifiTcpConnected;
 
@@ -495,7 +495,7 @@ bool ntpLogIncreasing = false;
 unsigned long lastEthernetCheck = 0; //Prevents cable checking from continually happening
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#include "NTRIPClient.h" //Define a hybrid class which can support both WiFiClient and EthernetClient
 
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

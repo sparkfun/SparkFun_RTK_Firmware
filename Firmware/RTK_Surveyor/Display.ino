@@ -1680,9 +1680,37 @@ void paintBaseTempSurveyStarted()
   else
     oled.print(">10");
 
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("Time:");
+  if (!HAS_ANTENNA_SHORT_OPEN)
+  {
+    oled.setCursor(0, 39); //x, y
+    oled.setFont(QW_FONT_5X7);
+    oled.print("Time:");
+  }
+  else
+  {
+    static uint32_t blinkers = 0;
+    if (aStatus == SFE_UBLOX_ANTENNA_STATUS_SHORT)
+    {
+      blinkers ^= ICON_ANTENNA_SHORT;
+      if (blinkers & ICON_ANTENNA_SHORT)
+        displayBitmap(2, 35, Antenna_Short_Width, Antenna_Short_Height, Antenna_Short);
+    }
+    else if (aStatus == SFE_UBLOX_ANTENNA_STATUS_OPEN)
+    {
+      blinkers ^= ICON_ANTENNA_OPEN;
+      if (blinkers & ICON_ANTENNA_OPEN)
+        displayBitmap(2, 35, Antenna_Open_Width, Antenna_Open_Height, Antenna_Open);
+    }
+    else
+    {
+      blinkers &= ~ICON_ANTENNA_SHORT;
+      blinkers &= ~ICON_ANTENNA_OPEN;
+      oled.setCursor(0, 39); //x, y
+      oled.setFont(QW_FONT_5X7);
+      oled.print("Time:");
+    }
+  }
+
 
   oled.setCursor(30, 36); //x, y
   oled.setFont(QW_FONT_8X16);

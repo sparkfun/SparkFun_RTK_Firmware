@@ -306,6 +306,8 @@ bool timTpUpdated = false;
 uint32_t timTpEpoch;
 uint32_t timTpMicros;
 
+uint8_t aStatus = SFE_UBLOX_ANTENNA_STATUS_DONTKNOW;
+
 const byte haeNumberOfDecimals = 8; //Used for printing and transmitting lat/lon
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

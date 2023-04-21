@@ -754,6 +754,23 @@ void configureGNSS()
   if (HAS_GNSS_TP_INT)
     theGNSS.setAutoTIMTPcallbackPtr(&storeTIMTPdata); //Enable automatic TIM TP messages with callback to storeTIMTPdata
 
+  if (HAS_ANTENNA_SHORT_OPEN)
+  {
+    theGNSS.newCfgValset();
+  
+    theGNSS.addCfgValset(UBLOX_CFG_HW_ANT_CFG_SHORTDET, 1); // Enable antenna short detection
+    theGNSS.addCfgValset(UBLOX_CFG_HW_ANT_CFG_OPENDET, 1); // Enable antenna open detection
+  
+    if (theGNSS.sendCfgValset())
+    {
+      theGNSS.setAutoMONHWcallbackPtr(&storeMONHWdata); //Enable automatic MON HW messages with callback to storeMONHWdata
+    }
+    else
+    {
+      systemPrintln("Failed to configure GNSS antenna detection");
+    }
+  }
+
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
   //the settings file or internal settings.

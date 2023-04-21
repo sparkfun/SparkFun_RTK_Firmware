@@ -72,6 +72,10 @@
 //Right bottom
 #define ICON_LOGGING_NTP                 (1<<10)
 
+//Left bottom
+#define ICON_ANTENNA_SHORT               (1<<11)
+#define ICON_ANTENNA_OPEN                (1<<12)
+
 //----------------------------------------
 //Locals
 //----------------------------------------
@@ -140,6 +144,31 @@ void displayBatteryVsEthernet()
     icons |= (blinking_icons & ICON_ETHERNET); //Top Right
   }
 }
+void displaySivVsOpenShort()
+{
+  if (!HAS_ANTENNA_SHORT_OPEN)
+    icons |= paintSIV();
+  else
+  {
+    if (aStatus == SFE_UBLOX_ANTENNA_STATUS_SHORT)
+    {
+      blinking_icons ^= ICON_ANTENNA_SHORT;
+      icons |= (blinking_icons & ICON_ANTENNA_SHORT);
+    }
+    else if (aStatus == SFE_UBLOX_ANTENNA_STATUS_OPEN)
+    {
+      blinking_icons ^= ICON_ANTENNA_OPEN;
+      icons |= (blinking_icons & ICON_ANTENNA_OPEN);
+    }
+    else
+    {
+      blinking_icons &= ~ICON_ANTENNA_SHORT;
+      blinking_icons &= ~ICON_ANTENNA_OPEN;
+      icons |= paintSIV();
+    }
+  }
+}
+
 
 //Given the system state, display the appropriate information
 void updateDisplay()
@@ -218,24 +247,24 @@ void updateDisplay()
         case (STATE_ROVER_NOT_STARTED):
           icons =   ICON_CROSS_HAIR     //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
           displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_NO_FIX):
           icons =   ICON_CROSS_HAIR     //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
           displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_FIX):
           icons =   ICON_CROSS_HAIR     //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
           displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
@@ -243,16 +272,16 @@ void updateDisplay()
           blinking_icons ^= ICON_CROSS_HAIR_DUAL;
           icons =   (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
           displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_RTK_FIX):
           icons =   ICON_CROSS_HAIR_DUAL//Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
           displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
@@ -268,8 +297,8 @@ void updateDisplay()
           blinking_icons ^= ICON_CROSS_HAIR;
           icons =   (blinking_icons & ICON_CROSS_HAIR)  //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
           displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
@@ -301,8 +330,8 @@ void updateDisplay()
         case (STATE_NTPSERVER_NO_SYNC):
           blinking_icons ^= ICON_CLOCK;
           icons =   (blinking_icons & ICON_CLOCK) //Center left
-                    | ICON_CLOCK_ACCURACY //Center right
-                    | paintSIV();         //Bottom left
+                    | ICON_CLOCK_ACCURACY; //Center right
+          displaySivVsOpenShort(); //Bottom left
           if (online.ethernetStatus == ETH_CONNECTED)
             blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
           else
@@ -314,8 +343,8 @@ void updateDisplay()
         case (STATE_NTPSERVER_SYNC):
           icons =   ICON_CLOCK            //Center left
                     | ICON_CLOCK_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING_NTP;   //Bottom right
+          displaySivVsOpenShort(); //Bottom left
           if (online.ethernetStatus == ETH_CONNECTED)
             blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
           else
@@ -539,6 +568,10 @@ void updateDisplay()
         displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
       else if (icons & ICON_SIV_ANTENNA_LBAND)
         displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
+      else if (icons & ICON_ANTENNA_SHORT)
+        displayBitmap(2, 35, Antenna_Short_Width, Antenna_Short_Height, Antenna_Short);
+      else if (icons & ICON_ANTENNA_OPEN)
+        displayBitmap(2, 35, Antenna_Open_Width, Antenna_Open_Height, Antenna_Open);
 
       //Bottom right corner
       if (icons & ICON_LOGGING)
@@ -1680,9 +1713,37 @@ void paintRTCM()
   else
     printTextCenter("Xmitting", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
+
+  if (!HAS_ANTENNA_SHORT_OPEN)
+  {
+    oled.setCursor(0, 39); //x, y
+    oled.setFont(QW_FONT_5X7);
+    oled.print("RTCM:");
+  }
+  else
+  {
+    static uint32_t blinkers = 0;
+    if (aStatus == SFE_UBLOX_ANTENNA_STATUS_SHORT)
+    {
+      blinkers ^= ICON_ANTENNA_SHORT;
+      if (blinkers & ICON_ANTENNA_SHORT)
+        displayBitmap(2, 35, Antenna_Short_Width, Antenna_Short_Height, Antenna_Short);
+    }
+    else if (aStatus == SFE_UBLOX_ANTENNA_STATUS_OPEN)
+    {
+      blinkers ^= ICON_ANTENNA_OPEN;
+      if (blinkers & ICON_ANTENNA_OPEN)
+        displayBitmap(2, 35, Antenna_Open_Width, Antenna_Open_Height, Antenna_Open);
+    }
+    else
+    {
+      blinkers &= ~ICON_ANTENNA_SHORT;
+      blinkers &= ~ICON_ANTENNA_OPEN;
+      oled.setCursor(0, 39); //x, y
+      oled.setFont(QW_FONT_5X7);
+      oled.print("RTCM:");      
+    }
+  }
 
   if (rtcmPacketsSent < 100)
     oled.setCursor(30, 36); //x, y - Give space for two digits

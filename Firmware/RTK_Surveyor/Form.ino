@@ -47,6 +47,8 @@ void startWebServer(bool startWiFi, int httpPort)
   // * /src/fonts/icomoon.woof
 
   // * /listfiles responds with a CSV of files and sizes in root
+  // * /listMessages responds with a CSV of messages supported by this platform
+  // * /listMessagesBase responds with a CSV of RTCM Base messages supported by this platform
   // * /file allows the download or deletion of a file
 
   webserver->onNotFound(notFound);
@@ -189,12 +191,28 @@ void startWebServer(bool startWiFi, int httpPort)
     request->send(200);
   }, handleFirmwareFileUpload);
 
-  //Handlers for file manager
+  //Handler for file manager
   webserver->on("/listfiles", HTTP_GET, [](AsyncWebServerRequest * request)
   {
     String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
     systemPrintln(logmessage);
     request->send(200, "text/plain", getFileList());
+  });
+
+  //Handler for supported messages list
+  webserver->on("/listMessages", HTTP_GET, [](AsyncWebServerRequest * request)
+  {
+    String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+    systemPrintln(logmessage);
+    request->send(200, "text/plain", createMessageList());
+  });
+
+  //Handler for supported RTCM/Base messages list
+  webserver->on("/listMessagesBase", HTTP_GET, [](AsyncWebServerRequest * request)
+  {
+    String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+    systemPrintln(logmessage);
+    request->send(200, "text/plain", createMessageListBase());
   });
 
   //Handler for file manager
@@ -557,22 +575,12 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "ubxConstellationsGalileo", settings.ubxConstellations[2].enabled); //Galileo
   stringRecord(newSettings, "ubxConstellationsBeiDou", settings.ubxConstellations[3].enabled); //BeiDou
   stringRecord(newSettings, "ubxConstellationsGLONASS", settings.ubxConstellations[5].enabled); //GLONASS
-  for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    stringRecord(newSettings, ubxMessages[x].msgTextName, settings.ubxMessageRates[x]);
 
   //Base Config
   stringRecord(newSettings, "baseTypeSurveyIn", !settings.fixedBase);
   stringRecord(newSettings, "baseTypeFixed", settings.fixedBase);
   stringRecord(newSettings, "observationSeconds", settings.observationSeconds);
   stringRecord(newSettings, "observationPositionAccuracy", settings.observationPositionAccuracy, 2);
-
-  char tempString[50];
-  int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
-  for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
-  {
-    snprintf(tempString, sizeof(tempString), "%sBase", ubxMessages[firstRTCMRecord + x].msgTextName); //UBX_RTCM_1074Base
-    stringRecord(newSettings, tempString, settings.ubxMessageRatesBase[x]);
-  }
 
   if (settings.fixedBaseCoordinateType == COORD_TYPE_ECEF)
   {
@@ -769,8 +777,8 @@ void createSettingsString(char* newSettings)
 
   if (HAS_NO_BATTERY) //Ref Stn does not have a battery
   {
-    stringRecord(newSettings, "batteryIconFileName", "src/BatteryBlank.png");
-    stringRecord(newSettings, "batteryPercent", " ");
+    stringRecord(newSettings, "batteryIconFileName", (char *)"src/BatteryBlank.png");
+    stringRecord(newSettings, "batteryPercent", (char *)" ");
   }
   else
   {
@@ -932,8 +940,8 @@ void createDynamicDataString(char* settingsCSV)
 
   if (HAS_NO_BATTERY) //Ref Stn does not have a battery
   {
-    stringRecord(settingsCSV, "batteryIconFileName", "src/BatteryBlank.png");
-    stringRecord(settingsCSV, "batteryPercent", " ");
+    stringRecord(settingsCSV, "batteryIconFileName", (char *)"src/BatteryBlank.png");
+    stringRecord(settingsCSV, "batteryPercent", (char *)" ");
   }
   else
   {
@@ -1437,9 +1445,12 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     //Scan for message settings
     if (knownSetting == false)
     {
+      char tempString[50];
+
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
-        if (strcmp(settingName, ubxMessages[x].msgTextName) == 0)
+        snprintf(tempString, sizeof(tempString), "%s", ubxMessages[x].msgTextName); //UBX_RTCM_1074
+        if (strcmp(settingName, tempString) == 0)
         {
           settings.ubxMessageRates[x] = settingValue;
           knownSetting = true;
@@ -1465,7 +1476,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
         }
       }
     }
-
     //Last catch
     if (knownSetting == false)
     {
@@ -1546,7 +1556,7 @@ bool parseIncomingSettings()
   char* headPtr = incomingSettings;
 
   int counter = 0;
-  int maxAttempts = 200;
+  int maxAttempts = 500;
   while (*headPtr) //Check if we've reached the end of the string
   {
     //Spin to first comma
@@ -1661,6 +1671,43 @@ String getFileList()
     //This is an error because the current settings no longer match the settings
     //on the microSD card, and will not be restored to the expected settings!
     systemPrintf("sdCardSemaphore failed to yield, held by %s, Form.ino line %d\r\n", semaphoreHolder, __LINE__);
+  }
+
+  log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
+
+  return returnText;
+}
+
+//When called, responds with the messages supported on this platform
+//Message name and current rate are formatted in CSV, formatted to html by JS
+String createMessageList()
+{
+  String returnText = "";
+
+  char tempString[50];
+  for (int messageNumber = 0 ; messageNumber < MAX_UBX_MSG ; messageNumber++)
+  {
+    if (messageSupported(messageNumber) == true)
+      returnText += String(ubxMessages[messageNumber].msgTextName) + "," + String(settings.ubxMessageRates[messageNumber]) + ","; //UBX_RTCM_1074,4,
+  }
+
+  log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
+
+  return returnText;
+}
+
+//When called, responds with the RTCM/Base messages supported on this platform
+//Message name and current rate are formatted in CSV, formatted to html by JS
+String createMessageListBase()
+{
+  String returnText = "";
+
+  int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+
+  for (int messageNumber = 0 ; messageNumber < MAX_UBX_MSG_RTCM ; messageNumber++)
+  {
+    if (messageSupported(messageNumber) == true)
+      returnText += String(ubxMessages[messageNumber + firstRTCMRecord].msgTextName) + "Base," + String(settings.ubxMessageRatesBase[messageNumber]) + ","; //UBX_RTCM_1074Base,4,
   }
 
   log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());

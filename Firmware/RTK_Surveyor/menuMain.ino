@@ -367,7 +367,7 @@ void factoryReset()
     }
   }
 
-  systemPrintln("Formatting file system...");
+  systemPrintln("Formatting internal file system...");
   LittleFS.format();
 
   if (online.gnss == true)

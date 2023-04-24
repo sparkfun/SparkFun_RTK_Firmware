@@ -32,7 +32,13 @@ var fileNumber = 0;
 var numberOfFilesSelected = 0;
 var selectedFiles = "";
 var showingFileList = false;
+var obtainedMessageList = false;
+var obtainedMessageListBase = false;
+var showingMessageRTCMList = false;
 var fileTableText = "";
+var messageText = "";
+var lastMessageType = "";
+var lastMessageTypeBase = "";
 
 var recordsECEF = [];
 var recordsGeodetic = [];
@@ -107,28 +113,6 @@ function parseIncoming(msg) {
                 hide("ntpConfig");
 
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
-
-                hide("msgUBX_NAV_SVIN"); //Hide unsupported messages
-                hide("msgUBX_RTCM_1005");
-                hide("msgUBX_RTCM_1074");
-                hide("msgUBX_RTCM_1077");
-                hide("msgUBX_RTCM_1084");
-                hide("msgUBX_RTCM_1087");
-
-                hide("msgUBX_RTCM_1094");
-                hide("msgUBX_RTCM_1097");
-                hide("msgUBX_RTCM_1124");
-                hide("msgUBX_RTCM_1127");
-                hide("msgUBX_RTCM_1230");
-
-                hide("msgUBX_RTCM_4072_0");
-                hide("msgUBX_RTCM_4072_1");
-
-                show("msgUBX_ESF_MEAS");
-                show("msgUBX_ESF_RAW");
-                show("msgUBX_ESF_STATUS");
-                show("msgUBX_ESF_ALG");
-                show("msgUBX_ESF_INS");
             }
             else if (platformPrefix == "Facet L-Band") {
                 show("baseConfig");
@@ -247,6 +231,35 @@ function parseIncoming(msg) {
         }
         else if (id.includes("fmNext")) {
             sendFile();
+        }
+        else if (id.includes("UBX_")) {
+            var messageName = id;
+            var messageRate = val;
+            var messageNameLabel = "";
+
+            var messageData = messageName.split('_');
+            if (messageData.length >= 3) {
+                var messageType = messageData[1]; //UBX_RTCM_1074 = RTCM
+                if (lastMessageType != messageType) {
+                    lastMessageType = messageType;
+                    messageText += "<hr>";
+                }
+
+                messageNameLabel = messageData[1] + "_" + messageData[2]; //RTCM_1074
+                if (messageData.length == 4) {
+                    messageNameLabel = messageData[1] + "_" + messageData[2] + "_" + messageData[3]; //RTCM_4072_1
+                }
+
+                //Remove Base if seen
+                messageNameLabel = messageNameLabel.split('Base').join(''); //UBX_RTCM_1074Base
+            }
+
+            messageText += "<div class='form-group row' id='msg" + messageName + "'>";
+            messageText += "<label for='" + messageName + "' class='col-sm-4 col-6 col-form-label'>" + messageNameLabel + ":</label>";
+            messageText += "<div class='col-sm-4 col-4'><input type='number' class='form-control'";
+            messageText += "id='" + messageName + "' value='" + messageRate + "'>";
+            messageText += "<p id='" + messageName + "Error' class='inlineError'></p>";
+            messageText += "</div></div>";
         }
         else if (id.includes("checkingNewFirmware")) {
             checkingNewFirmware();
@@ -466,95 +479,11 @@ function validateFields() {
         ge("ntripClient_TransmitGGA").checked = true;
     }
 
-    checkMessageValue("UBX_NMEA_DTM");
-    checkMessageValue("UBX_NMEA_GBS");
-    checkMessageValue("UBX_NMEA_GGA");
-    checkMessageValue("UBX_NMEA_GLL");
-    checkMessageValue("UBX_NMEA_GNS");
-
-    checkMessageValue("UBX_NMEA_GRS");
-    checkMessageValue("UBX_NMEA_GSA");
-    checkMessageValue("UBX_NMEA_GST");
-    checkMessageValue("UBX_NMEA_GSV");
-    checkMessageValue("UBX_NMEA_RMC");
-
-    checkMessageValue("UBX_NMEA_VLW");
-    checkMessageValue("UBX_NMEA_VTG");
-    checkMessageValue("UBX_NMEA_ZDA");
-
-    checkMessageValue("UBX_NAV_ATT");
-    checkMessageValue("UBX_NAV_CLOCK");
-    checkMessageValue("UBX_NAV_DOP");
-    checkMessageValue("UBX_NAV_EOE");
-    checkMessageValue("UBX_NAV_GEOFENCE");
-
-    checkMessageValue("UBX_NAV_HPPOSECEF");
-    checkMessageValue("UBX_NAV_HPPOSLLH");
-    checkMessageValue("UBX_NAV_ODO");
-    checkMessageValue("UBX_NAV_ORB");
-    checkMessageValue("UBX_NAV_POSECEF");
-
-    checkMessageValue("UBX_NAV_POSLLH");
-    checkMessageValue("UBX_NAV_PVT");
-    checkMessageValue("UBX_NAV_RELPOSNED");
-    checkMessageValue("UBX_NAV_SAT");
-    checkMessageValue("UBX_NAV_SIG");
-
-    checkMessageValue("UBX_NAV_STATUS");
-    checkMessageValue("UBX_NAV_SVIN");
-    checkMessageValue("UBX_NAV_TIMEBDS");
-    checkMessageValue("UBX_NAV_TIMEGAL");
-    checkMessageValue("UBX_NAV_TIMEGLO");
-
-    checkMessageValue("UBX_NAV_TIMEGPS");
-    checkMessageValue("UBX_NAV_TIMELS");
-    checkMessageValue("UBX_NAV_TIMEUTC");
-    checkMessageValue("UBX_NAV_VELECEF");
-    checkMessageValue("UBX_NAV_VELNED");
-
-    checkMessageValue("UBX_RXM_MEASX");
-    checkMessageValue("UBX_RXM_RAWX");
-    checkMessageValue("UBX_RXM_RLM");
-    checkMessageValue("UBX_RXM_RTCM");
-    checkMessageValue("UBX_RXM_SFRBX");
-
-    checkMessageValue("UBX_MON_COMMS");
-    checkMessageValue("UBX_MON_HW2");
-    checkMessageValue("UBX_MON_HW3");
-    checkMessageValue("UBX_MON_HW");
-    checkMessageValue("UBX_MON_IO");
-
-    checkMessageValue("UBX_MON_MSGPP");
-    checkMessageValue("UBX_MON_RF");
-    checkMessageValue("UBX_MON_RXBUF");
-    checkMessageValue("UBX_MON_RXR");
-    checkMessageValue("UBX_MON_TXBUF");
-
-    checkMessageValue("UBX_TIM_TM2");
-    checkMessageValue("UBX_TIM_TP");
-    checkMessageValue("UBX_TIM_VRFY");
-
-    checkMessageValue("UBX_RTCM_1005");
-    checkMessageValue("UBX_RTCM_1074");
-    checkMessageValue("UBX_RTCM_1077");
-    checkMessageValue("UBX_RTCM_1084");
-    checkMessageValue("UBX_RTCM_1087");
-
-    checkMessageValue("UBX_RTCM_1094");
-    checkMessageValue("UBX_RTCM_1097");
-    checkMessageValue("UBX_RTCM_1124");
-    checkMessageValue("UBX_RTCM_1127");
-    checkMessageValue("UBX_RTCM_1230");
-
-    checkMessageValue("UBX_RTCM_4072_0");
-    checkMessageValue("UBX_RTCM_4072_1");
-
-    if (platformPrefix == "Express Plus") {
-        checkMessageValue("UBX_ESF_MEAS");
-        checkMessageValue("UBX_ESF_RAW");
-        checkMessageValue("UBX_ESF_STATUS");
-        checkMessageValue("UBX_ESF_ALG");
-        checkMessageValue("UBX_ESF_INS");
+    //Check all UBX message boxes
+    var ubxMessages = document.querySelectorAll('input[id^=UBX_]'); //match all ids starting with UBX_
+    for (let x = 0; x < ubxMessages.length; x++) {
+        var messageName = ubxMessages[x].id;
+        checkMessageValue(messageName);
     }
 
     //Base Config
@@ -663,31 +592,31 @@ function validateFields() {
 
     //Ethernet
     if (platformPrefix == "Reference Station") {
-      //if (ge("ethernetDHCP").checked == false) {
-          checkElementIPAddress("ethernetIP", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
-          checkElementIPAddress("ethernetDNS", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
-          checkElementIPAddress("ethernetGateway", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
-          checkElementIPAddress("ethernetSubnet", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
-          checkElementValue("ethernetHttpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
-          checkElementValue("ethernetNtpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
-      //}
-      //else {
-      //    clearElement("ethernetIP", "192.168.0.123");
-      //    clearElement("ethernetDNS", "192.168.4.100");
-      //    clearElement("ethernetGateway", "192.168.0.1");
-      //    clearElement("ethernetSubnet", "255.255.255.0");
-      //    clearElement("ethernetHttpPort", 80);
-      //    clearElement("ethernetNtpPort", 123);
-      //}
+        //if (ge("ethernetDHCP").checked == false) {
+        checkElementIPAddress("ethernetIP", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+        checkElementIPAddress("ethernetDNS", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+        checkElementIPAddress("ethernetGateway", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+        checkElementIPAddress("ethernetSubnet", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
+        checkElementValue("ethernetHttpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
+        checkElementValue("ethernetNtpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
+        //}
+        //else {
+        //    clearElement("ethernetIP", "192.168.0.123");
+        //    clearElement("ethernetDNS", "192.168.4.100");
+        //    clearElement("ethernetGateway", "192.168.0.1");
+        //    clearElement("ethernetSubnet", "255.255.255.0");
+        //    clearElement("ethernetHttpPort", 80);
+        //    clearElement("ethernetNtpPort", 123);
+        //}
     }
 
     //NTP
     if (platformPrefix == "Reference Station") {
-          checkElementValue("ntpPollExponent", 3, 17, "Must be 3 to 17", "collapseNTPConfig");
-          checkElementValue("ntpPrecision", -30, 0, "Must be -30 to 0", "collapseNTPConfig");
-          checkElementValue("ntpRootDelay", 0, 10000000, "Must be 0 to 10,000,000", "collapseNTPConfig");
-          checkElementValue("ntpRootDispersion", 0, 10000000, "Must be 0 to 10,000,000", "collapseNTPConfig");
-          checkElementString("ntpReferenceId", 1, 4, "Must be 1 to 4 chars", "collapseNTPConfig");
+        checkElementValue("ntpPollExponent", 3, 17, "Must be 3 to 17", "collapseNTPConfig");
+        checkElementValue("ntpPrecision", -30, 0, "Must be -30 to 0", "collapseNTPConfig");
+        checkElementValue("ntpRootDelay", 0, 10000000, "Must be 0 to 10,000,000", "collapseNTPConfig");
+        checkElementValue("ntpRootDispersion", 0, 10000000, "Must be 0 to 10,000,000", "collapseNTPConfig");
+        checkElementString("ntpReferenceId", 1, 4, "Must be 1 to 4 chars", "collapseNTPConfig");
     }
 
     //Port Config
@@ -872,12 +801,11 @@ function checkElementString(id, min, max, errorText, collapseID) {
 function checkElementIPAddress(id, errorText, collapseID) {
     value = ge(id).value;
     var data = value.split('.');
-    if ((data.length != 4) 
+    if ((data.length != 4)
         || ((data[0] == "") || (isNaN(Number(data[0]))) || (data[0] < 0) || (data[0] > 255))
         || ((data[1] == "") || (isNaN(Number(data[1]))) || (data[1] < 0) || (data[1] > 255))
         || ((data[2] == "") || (isNaN(Number(data[2]))) || (data[2] < 0) || (data[2] > 255))
-        || ((data[3] == "") || (isNaN(Number(data[3]))) || (data[3] < 0) || (data[3] > 255)))
-    {
+        || ((data[3] == "") || (isNaN(Number(data[3]))) || (data[3] < 0) || (data[3] > 255))) {
         ge(id + 'Error').innerHTML = 'Error: ' + errorText;
         ge(collapseID).classList.add('show');
         errorCount++;
@@ -909,94 +837,12 @@ function zeroElement(id) {
 }
 
 function zeroMessages() {
-    zeroElement("UBX_NMEA_DTM");
-    zeroElement("UBX_NMEA_GBS");
-    zeroElement("UBX_NMEA_GGA");
-    zeroElement("UBX_NMEA_GLL");
-    zeroElement("UBX_NMEA_GNS");
 
-    zeroElement("UBX_NMEA_GRS");
-    zeroElement("UBX_NMEA_GSA");
-    zeroElement("UBX_NMEA_GST");
-    zeroElement("UBX_NMEA_GSV");
-    zeroElement("UBX_NMEA_RMC");
-
-    zeroElement("UBX_NMEA_VLW");
-    zeroElement("UBX_NMEA_VTG");
-    zeroElement("UBX_NMEA_ZDA");
-
-    zeroElement("UBX_NAV_ATT");
-    zeroElement("UBX_NAV_CLOCK");
-    zeroElement("UBX_NAV_DOP");
-    zeroElement("UBX_NAV_EOE");
-    zeroElement("UBX_NAV_GEOFENCE");
-
-    zeroElement("UBX_NAV_HPPOSECEF");
-    zeroElement("UBX_NAV_HPPOSLLH");
-    zeroElement("UBX_NAV_ODO");
-    zeroElement("UBX_NAV_ORB");
-    zeroElement("UBX_NAV_POSECEF");
-
-    zeroElement("UBX_NAV_POSLLH");
-    zeroElement("UBX_NAV_PVT");
-    zeroElement("UBX_NAV_RELPOSNED");
-    zeroElement("UBX_NAV_SAT");
-    zeroElement("UBX_NAV_SIG");
-
-    zeroElement("UBX_NAV_STATUS");
-    zeroElement("UBX_NAV_SVIN");
-    zeroElement("UBX_NAV_TIMEBDS");
-    zeroElement("UBX_NAV_TIMEGAL");
-    zeroElement("UBX_NAV_TIMEGLO");
-
-    zeroElement("UBX_NAV_TIMEGPS");
-    zeroElement("UBX_NAV_TIMELS");
-    zeroElement("UBX_NAV_TIMEUTC");
-    zeroElement("UBX_NAV_VELECEF");
-    zeroElement("UBX_NAV_VELNED");
-
-    zeroElement("UBX_RXM_MEASX");
-    zeroElement("UBX_RXM_RAWX");
-    zeroElement("UBX_RXM_RLM");
-    zeroElement("UBX_RXM_RTCM");
-    zeroElement("UBX_RXM_SFRBX");
-
-    zeroElement("UBX_MON_COMMS");
-    zeroElement("UBX_MON_HW2");
-    zeroElement("UBX_MON_HW3");
-    zeroElement("UBX_MON_HW");
-    zeroElement("UBX_MON_IO");
-
-    zeroElement("UBX_MON_MSGPP");
-    zeroElement("UBX_MON_RF");
-    zeroElement("UBX_MON_RXBUF");
-    zeroElement("UBX_MON_RXR");
-    zeroElement("UBX_MON_TXBUF");
-
-    zeroElement("UBX_TIM_TM2");
-    zeroElement("UBX_TIM_TP");
-    zeroElement("UBX_TIM_VRFY");
-
-    zeroElement("UBX_RTCM_1005");
-    zeroElement("UBX_RTCM_1074");
-    zeroElement("UBX_RTCM_1077");
-    zeroElement("UBX_RTCM_1084");
-    zeroElement("UBX_RTCM_1087");
-
-    zeroElement("UBX_RTCM_1094");
-    zeroElement("UBX_RTCM_1097");
-    zeroElement("UBX_RTCM_1124");
-    zeroElement("UBX_RTCM_1127");
-    zeroElement("UBX_RTCM_1230");
-
-    zeroElement("UBX_RTCM_4072_0");
-    zeroElement("UBX_RTCM_4072_1");
-
-    zeroElement("UBX_ESF_MEAS");
-    zeroElement("UBX_ESF_RAW");
-    zeroElement("UBX_ESF_STATUS");
-    zeroElement("UBX_ESF_ALG");
-    zeroElement("UBX_ESF_INS");
+    var ubxMessages = document.querySelectorAll('input[id^=UBX_]'); //match all ids starting with UBX_
+    for (let x = 0; x < ubxMessages.length; x++) {
+        var messageName = ubxMessages[x].id;
+        zeroElement(messageName);
+    }
 }
 function resetToNmeaDefaults() {
     zeroMessages();
@@ -1547,6 +1393,40 @@ function getFileList() {
     }
 }
 
+function getMessageList() {
+    if (obtainedMessageList == false) {
+        obtainedMessageList = true;
+
+        ge("messageList").innerHTML = "";
+        messageText = "";
+
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.open("GET", "/listMessages", false);
+        xmlhttp.send();
+
+        parseIncoming(xmlhttp.responseText); //Process CSV data into HTML
+
+        ge("messageList").innerHTML += messageText;
+    }
+}
+
+function getMessageListBase() {
+    if (obtainedMessageListBase == false) {
+        obtainedMessageListBase = true;
+
+        ge("messageListBase").innerHTML = "";
+        messageText = "";
+
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.open("GET", "/listMessagesBase", false);
+        xmlhttp.send();
+
+        parseIncoming(xmlhttp.responseText); //Process CSV data into HTML
+
+        ge("messageListBase").innerHTML += messageText;
+    }
+}
+
 function fileManagerDownload() {
     selectedFiles = document.querySelectorAll('input[name=fileID]:checked');
     numberOfFilesSelected = document.querySelectorAll('input[name=fileID]:checked').length;
@@ -1887,7 +1767,7 @@ function convertInput(coordinate, coordinateInputType) {
     var coordinateString = "";
 
     if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD) {
-        coordinate = coordinate.toFixed(9);
+        coordinate = Number(coordinate).toFixed(9);
         return (coordinate);
     }
     else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM

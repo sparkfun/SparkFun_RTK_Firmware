@@ -881,7 +881,7 @@ void beginFuelGauge()
   if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
   if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
 
-  systemPrintln("MAX17048 configuration complete");
+  systemPrintln("Fuel gauge configuration complete");
 
   checkBatteryLevels(); //Force check so you see battery level immediately at power on
 

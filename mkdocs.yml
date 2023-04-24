@@ -74,8 +74,7 @@ extra:
       link: https://twitter.com/sparkfun
   
 nav:
-  - Software Specifics:
-    - intro.md
+  - Introduction: index.md
     - connecting_bluetooth.md
     - gis_software.md
     - firmware_update.md

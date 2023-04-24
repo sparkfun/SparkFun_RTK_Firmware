@@ -428,7 +428,10 @@ void ntripClientUpdate()
         if (wifiIsConnected())
           ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED);
         else if (wifiState == WIFI_OFF)
-          ntripClientSetState(NTRIP_CLIENT_OFF);
+        {
+          //WiFi failed to connect. Restart Client which will restart WiFi.
+          ntripClientSetState(NTRIP_CLIENT_ON);
+        }
       }
       break;
 

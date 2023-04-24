@@ -248,6 +248,11 @@ void storeTIMTPdata(UBX_TIM_TP_data_t *ubxDataStruct)
   timTpUpdated = true;
 }
 
+void storeMONHWdata(UBX_MON_HW_data_t *ubxDataStruct)
+{
+  aStatus = ubxDataStruct->aStatus;
+}
+
 //Helper method to convert GNSS time and date into Unix Epoch
 void convertGnssTimeToEpoch(uint32_t *epochSecs, uint32_t *epochMicros)
 {

@@ -626,6 +626,10 @@ bool setMessages(int maxRetries)
               if (ubxMessages[messageNumber].msgID ==  UBX_NMEA_GGA)
                 if (rate == 0)
                   rate = 1;
+            if (ubxMessages[messageNumber].msgClass == UBX_CLASS_MON)
+              if (ubxMessages[messageNumber].msgID ==  UBX_MON_HW)
+                if (rate == 0)
+                  rate = 1;
           }
 
           response &= theGNSS.addCfgValset(ubxMessages[messageNumber].msgConfigKey + spiOffset, rate);

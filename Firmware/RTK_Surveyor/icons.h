@@ -364,6 +364,64 @@ const uint8_t SIV_Antenna_LBand [] = {
 };
 
 /*
+       Antenna_Short [12, 13]
+
+                      1
+             123456789012
+            .------------.
+        0x01|      *     |
+        0x02|      *     |
+        0x04|      *     |
+        0x08|     **     |
+        0x10|    * *     |
+        0x20|   *  ***** |
+        0x40|  *      *  |
+        0x80| *****  *   |
+        0x01|     * *    |
+        0x02|     **     |
+        0x04|     *      |
+        0x08|     *      |
+        0x10|     *      |
+            '------------'
+*/
+
+const int Antenna_Short_Height = 13;
+const int Antenna_Short_Width = 12;
+const uint8_t Antenna_Short [] = {
+  0x00, 0x80, 0xC0, 0xA0, 0x90, 0x88, 0x3F, 0x20, 0xA0, 0x60, 0x20, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00
+};
+
+/*
+       Antenna_Open [12, 13]
+
+                      1
+             123456789012
+            .------------.
+        0x01|     **     |
+        0x02|     **     |
+        0x04|     **     |
+        0x08|     **     |
+        0x10|    **      |
+        0x20|   **       |
+        0x40|   **  **   |
+        0x80|       **   |
+        0x01|      **    |
+        0x02|     **     |
+        0x04|     **     |
+        0x08|     **     |
+        0x10|     **     |
+            '------------'
+*/
+
+const int Antenna_Open_Height = 13;
+const int Antenna_Open_Width = 12;
+const uint8_t Antenna_Open [] = {
+  0x00, 0x00, 0x00, 0x60, 0x70, 0x1F, 0x0F, 0xC0, 0xC0, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x1E, 0x1F, 0x01, 0x00, 0x00, 0x00, 0x00
+};
+
+/*
     Rover_Fusion [15, 9]
 
                       1

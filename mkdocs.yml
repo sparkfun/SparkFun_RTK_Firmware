@@ -3,6 +3,8 @@ site_name: SparkFun RTK Product Manual
 site_description: A guide to the SparkFun RTK hardware, firmware, and features
 site_url: https://sparkfun.github.io/SparkFun_RTK_Firmware
 
+repo_name: sparkfun/SparkFun_RTK_Firmware
+repo_url: https://github.com/sparkfun/SparkFun_RTK_Firmware
 edit_uri: edit/main/docs/
 
 theme:
@@ -16,9 +18,9 @@ theme:
     code: Roboto Mono
   features:
     - content.code.annotate
-    - navigation.tracking
-    - navigation.tabs.sticky
-    - navigation.tabs    
+    # - navigation.tracking
+    # - navigation.tabs.sticky
+    # - navigation.tabs    
 
   icon:
     repo: fontawesome/brands/github
@@ -39,9 +41,6 @@ theme:
 plugins:
   - search
   - monorepo
-
-repo_url: https://github.com/sparkfun/SparkFun_RTK_Firmware
-repo_name: sparkfun/SparkFun_RTK_Firmware
 
 copyright: Copyright 2023 SparkFun Electronics (6333 Dry Creek Parkway, Niwot, Colorado 80503)
 

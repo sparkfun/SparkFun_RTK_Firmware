@@ -73,35 +73,35 @@ extra:
       link: https://twitter.com/sparkfun
   
 nav:
-    - Introduction: index.md
-    - connecting_bluetooth.md
-    - gis_software.md
-    - firmware_update.md
-    - displays.md
-    - system_configuration.md
-    - configure_with_wifi.md
-    - configure_with_bluetooth.md
-    - configure_with_serial.md
-    - configure_gnss.md
-    - configure_messages.md
-    - configure_base.md
-    - menu_wifi.md
-    - configure_ports.md
-    - configure_data_logging.md
-    - configure_profiles.md
-    - configure_pointperfect.md
-    - configure_sensor.md
-    - menu_radios.md
-    - menu_sensor.md
-    - menu_system.md
-    - menu_debug.md
-    - system_status_report.md
-    - correction_sources.md
-    - correction_transport.md
-    - permanent_base.md
-    - repair.md
-    - accuracy_verification.md
-    - embeddedsystem_connection.md
-    - configure_with_settings_file.md
-    - configure_ucenter.md
-    - contribute.md
+  - Introduction: index.md
+  - connecting_bluetooth.md
+  - gis_software.md
+  - firmware_update.md
+  - displays.md
+  - system_configuration.md
+  - configure_with_wifi.md
+  - configure_with_bluetooth.md
+  - configure_with_serial.md
+  - configure_gnss.md
+  - configure_messages.md
+  - configure_base.md
+  - menu_wifi.md
+  - configure_ports.md
+  - configure_data_logging.md
+  - configure_profiles.md
+  - configure_pointperfect.md
+  - configure_sensor.md
+  - menu_radios.md
+  - menu_sensor.md
+  - menu_system.md
+  - menu_debug.md
+  - system_status_report.md
+  - correction_sources.md
+  - correction_transport.md
+  - permanent_base.md
+  - repair.md
+  - accuracy_verification.md
+  - embeddedsystem_connection.md
+  - configure_with_settings_file.md
+  - configure_ucenter.md
+  - contribute.md

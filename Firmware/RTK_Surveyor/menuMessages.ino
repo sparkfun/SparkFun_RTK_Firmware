@@ -539,7 +539,7 @@ void beginLogging(const char *customFileName)
         createNMEASentence(CUSTOM_NMEA_TYPE_DEVICE_BT_ID, nmeaMessage, sizeof(nmeaMessage), macAddress); //textID, buffer, sizeOfBuffer, text
         ubxFile->println(nmeaMessage);
 
-        //Record today's time/date into log. This is incase a log is restarted. See issue 440: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/440
+        //Record today's time/date into log. This is in case a log is restarted. See issue 440: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/440
         char currentDate[sizeof("230101,120101")];
         snprintf(currentDate, sizeof(currentDate), "%02d%02d%02d,%02d%02d%02d",
                  rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11

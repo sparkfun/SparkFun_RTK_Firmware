@@ -1706,7 +1706,7 @@ String createMessageListBase()
 
   for (int messageNumber = 0 ; messageNumber < MAX_UBX_MSG_RTCM ; messageNumber++)
   {
-    if (messageSupported(messageNumber) == true)
+    if (messageSupported(firstRTCMRecord + messageNumber) == true)
       returnText += String(ubxMessages[messageNumber + firstRTCMRecord].msgTextName) + "Base," + String(settings.ubxMessageRatesBase[messageNumber]) + ","; //UBX_RTCM_1074Base,4,
   }
 

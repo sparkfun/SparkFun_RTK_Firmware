@@ -371,7 +371,7 @@ void ntripServerUpdate()
 
     //Start WiFi
     case NTRIP_SERVER_ON:
-      if (HAS_ETHERNET)
+      if (HAS_ETHERNET && !settings.ntripUseWiFiNotEthernet)
       {
         if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
         {
@@ -412,7 +412,7 @@ void ntripServerUpdate()
 
     //Wait for connection to an access point
     case NTRIP_SERVER_WIFI_ETHERNET_STARTED:
-      if (HAS_ETHERNET)
+      if (HAS_ETHERNET && !settings.ntripUseWiFiNotEthernet)
       {
         if (online.ethernetStatus == ETH_CONNECTED)
           ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_CONNECTED);

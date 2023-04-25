@@ -77,31 +77,39 @@ void menuGNSS()
 
     if (settings.enableNtripClient == true)
     {
-      systemPrint("6) Set Caster Address: ");
+      int menuEntry = 6;
+      if (HAS_ETHERNET)
+      {
+        systemPrintf("%d) Use WiFi (not Ethernet) for NTRIP: ", menuEntry++);
+        if (settings.ntripUseWiFiNotEthernet == true) systemPrintln("Enabled");
+        else systemPrintln("Disabled");
+      }
+
+      systemPrintf("%d) Set Caster Address: ", menuEntry++);
       systemPrintln(settings.ntripClient_CasterHost);
 
-      systemPrint("7) Set Caster Port: ");
+      systemPrintf("%d) Set Caster Port: ", menuEntry++);
       systemPrintln(settings.ntripClient_CasterPort);
 
-      systemPrint("8) Set Caster User Name: ");
+      systemPrintf("%d) Set Caster User Name: ", menuEntry++);
       systemPrintln(settings.ntripClient_CasterUser);
 
-      systemPrint("9) Set Caster User Password: ");
+      systemPrintf("%d) Set Caster User Password: ", menuEntry++);
       systemPrintln(settings.ntripClient_CasterUserPW);
 
-      systemPrint("10) Set Mountpoint: ");
+      systemPrintf("%d) Set Mountpoint: ", menuEntry++);
       systemPrintln(settings.ntripClient_MountPoint);
 
-      systemPrint("11) Set Mountpoint PW: ");
+      systemPrintf("%d) Set Mountpoint PW: ", menuEntry++);
       systemPrintln(settings.ntripClient_MountPointPW);
 
-      systemPrint("12) Toggle sending GGA Location to Caster: ");
+      systemPrintf("%d) Toggle sending GGA Location to Caster: ", menuEntry++);
       if (settings.ntripClient_TransmitGGA == true) systemPrintln("Enabled");
       else systemPrintln("Disabled");
 
-      systemPrintf("13) Minimum elevation for a GNSS satellite to be used in fix (degrees): %d\r\n", settings.minElev);
+      systemPrintf("%d) Minimum elevation for a GNSS satellite to be used in fix (degrees): %d\r\n", menuEntry++, settings.minElev);
 
-      systemPrintf("14) Minimum satellite signal level for navigation (dBHz): %d\r\n", minCNO);
+      systemPrintf("%d) Minimum satellite signal level for navigation (dBHz): %d\r\n", menuEntry++, minCNO);
     }
     else
     {
@@ -193,13 +201,18 @@ void menuGNSS()
       settings.enableNtripClient ^= 1;
       restartRover = true;
     }
-    else if (incoming == 6 && settings.enableNtripClient == true)
+    else if (incoming == 6 && settings.enableNtripClient == true && HAS_ETHERNET)
+    {
+      settings.ntripUseWiFiNotEthernet ^= 1;
+      restartRover = true;
+    }
+    else if ((incoming == 6 + (HAS_ETHERNET ? 1 : 0)) && settings.enableNtripClient == true)
     {
       systemPrint("Enter new Caster Address: ");
       getString(settings.ntripClient_CasterHost, sizeof(settings.ntripClient_CasterHost));
       restartRover = true;
     }
-    else if (incoming == 7 && settings.enableNtripClient == true)
+    else if ((incoming == 7 + (HAS_ETHERNET ? 1 : 0)) && settings.enableNtripClient == true)
     {
       systemPrint("Enter new Caster Port: ");
 
@@ -213,36 +226,36 @@ void menuGNSS()
         restartRover = true;
       }
     }
-    else if (incoming == 8 && settings.enableNtripClient == true)
+    else if ((incoming == 8 + (HAS_ETHERNET ? 1 : 0)) && settings.enableNtripClient == true)
     {
       systemPrintf("Enter user name for %s: ", settings.ntripClient_CasterHost);
       getString(settings.ntripClient_CasterUser, sizeof(settings.ntripClient_CasterUser));
       restartRover = true;
     }
-    else if (incoming == 9 && settings.enableNtripClient == true)
+    else if ((incoming == 9 + (HAS_ETHERNET ? 1 : 0))  && settings.enableNtripClient == true)
     {
       systemPrintf("Enter user password for %s: ", settings.ntripClient_CasterHost);
       getString(settings.ntripClient_CasterUserPW, sizeof(settings.ntripClient_CasterUserPW));
       restartRover = true;
     }
-    else if (incoming == 10 && settings.enableNtripClient == true)
+    else if ((incoming == 10 + (HAS_ETHERNET ? 1 : 0))  && settings.enableNtripClient == true)
     {
       systemPrint("Enter new Mount Point: ");
       getString(settings.ntripClient_MountPoint, sizeof(settings.ntripClient_MountPoint));
       restartRover = true;
     }
-    else if (incoming == 11 && settings.enableNtripClient == true)
+    else if ((incoming == 11 + (HAS_ETHERNET ? 1 : 0))  && settings.enableNtripClient == true)
     {
       systemPrintf("Enter password for Mount Point %s: ", settings.ntripClient_MountPoint);
       getString(settings.ntripClient_MountPointPW, sizeof(settings.ntripClient_MountPointPW));
       restartRover = true;
     }
-    else if (incoming == 12 && settings.enableNtripClient == true)
+    else if ((incoming == 12 + (HAS_ETHERNET ? 1 : 0))  && settings.enableNtripClient == true)
     {
       settings.ntripClient_TransmitGGA ^= 1;
       restartRover = true;
     }
-    else if ( (incoming == 13 && settings.enableNtripClient == true)
+    else if ( ((incoming == 13 + (HAS_ETHERNET ? 1 : 0)) && settings.enableNtripClient == true)
               || incoming == 6 && settings.enableNtripClient == false)
     {
       systemPrint("Enter minimum elevation in degrees: ");
@@ -261,7 +274,7 @@ void menuGNSS()
         restartRover = true;
       }
     }
-    else if ( (incoming == 14 && settings.enableNtripClient == true)
+    else if ( ((incoming == 14 + (HAS_ETHERNET ? 1 : 0)) && settings.enableNtripClient == true)
               || incoming == 7 && settings.enableNtripClient == false)
     {
       systemPrint("Enter minimum satellite signal level for navigation in dBHz: ");

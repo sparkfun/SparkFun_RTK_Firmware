@@ -82,23 +82,31 @@ void menuBase()
 
     if (settings.enableNtripServer == true)
     {
-      systemPrint("8) Set Caster Address: ");
+      int menuEntry = 8;
+      if (HAS_ETHERNET)
+      {
+        systemPrintf("%d) Use WiFi (not Ethernet) for NTRIP: ", menuEntry++);
+        if (settings.ntripUseWiFiNotEthernet == true) systemPrintln("Enabled");
+        else systemPrintln("Disabled");
+      }
+
+      systemPrintf("%d) Set Caster Address: ", menuEntry++);
       systemPrintln(settings.ntripServer_CasterHost);
 
-      systemPrint("9) Set Caster Port: ");
+      systemPrintf("%d) Set Caster Port: ", menuEntry++);
       systemPrintln(settings.ntripServer_CasterPort);
 
-      systemPrint("10) Set Mountpoint: ");
+      systemPrintf("%d) Set Mountpoint: ", menuEntry++);
       systemPrintln(settings.ntripServer_MountPoint);
 
-      systemPrint("11) Set Mountpoint PW: ");
+      systemPrintf("%d) Set Mountpoint PW: ", menuEntry++);
       systemPrintln(settings.ntripServer_MountPointPW);
 
-      systemPrintln("12) Set RTCM Message Rates");
+      systemPrintf("%d) Set RTCM Message Rates\r\n", menuEntry++);
 
       if (settings.fixedBase == false) //Survey-in
       {
-        systemPrint("13) Select survey-in radio: ");
+        systemPrintf("%d) Select survey-in radio: ", menuEntry++);
         systemPrintf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
       }
     }
@@ -262,13 +270,19 @@ void menuBase()
       settings.enableNtripServer ^= 1;
       restartBase = true;
     }
-    else if (incoming == 8 && settings.enableNtripServer == true)
+    
+    else if (incoming == 8 && settings.enableNtripServer == true && HAS_ETHERNET)
+    {
+      settings.ntripUseWiFiNotEthernet ^= 1;
+      restartBase = true;
+    }
+    else if ((incoming == 8 + (HAS_ETHERNET ? 1 : 0)) && settings.enableNtripServer == true)
     {
       systemPrint("Enter new Caster Address: ");
       getString(settings.ntripServer_CasterHost, sizeof(settings.ntripServer_CasterHost));
       restartBase = true;
     }
-    else if (incoming == 9 && settings.enableNtripServer == true)
+    else if ((incoming == 9 + (HAS_ETHERNET ? 1 : 0)) && settings.enableNtripServer == true)
     {
       systemPrint("Enter new Caster Port: ");
 
@@ -282,25 +296,25 @@ void menuBase()
         restartBase = true;
       }
     }
-    else if (incoming == 10 && settings.enableNtripServer == true)
+    else if ((incoming == 10 + (HAS_ETHERNET ? 1 : 0)) && settings.enableNtripServer == true)
     {
       systemPrint("Enter new Mount Point: ");
       getString(settings.ntripServer_MountPoint, sizeof(settings.ntripServer_MountPoint));
       restartBase = true;
     }
-    else if (incoming == 11 && settings.enableNtripServer == true)
+    else if ((incoming == 11 + (HAS_ETHERNET ? 1 : 0)) && settings.enableNtripServer == true)
     {
       systemPrintf("Enter password for Mount Point %s: ", settings.ntripServer_MountPoint);
       getString(settings.ntripServer_MountPointPW, sizeof(settings.ntripServer_MountPointPW));
       restartBase = true;
     }
-    else if ( ((settings.enableNtripServer == true) && (incoming == 12))
+    else if ( ((settings.enableNtripServer == true) && ((incoming == 12 + (HAS_ETHERNET ? 1 : 0))))
               || ((settings.enableNtripServer == false) && (incoming == 8))
             )
     {
       menuMessagesBaseRTCM(); //Set rates for RTCM during Base mode
     }
-    else if ( ((settings.enableNtripServer == true) && (settings.fixedBase == false) && (incoming == 13))
+    else if ( ((settings.enableNtripServer == true) && (settings.fixedBase == false) && ((incoming == 13 + (HAS_ETHERNET ? 1 : 0))))
               || ((settings.enableNtripServer == false) && (settings.fixedBase == false) && (incoming == 9))
             )
     {

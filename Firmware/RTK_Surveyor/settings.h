@@ -724,6 +724,10 @@ typedef struct {
   char ntripClient_MountPointPW[50] = "";
   bool ntripClient_TransmitGGA = true;
 
+  //Products that have Ethernet will always use Ethernet for NTRIP Server and Client, unless ntripUseWiFiNotEthernet is set to true.
+  //Setting ntripUseWiFiNotEthernet to true will make Ethernet-enabled products use WiFi for NTRIP instead.
+  bool ntripUseWiFiNotEthernet = false;
+
   int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
 
   char pointPerfectDeviceProfileToken[40] = "";

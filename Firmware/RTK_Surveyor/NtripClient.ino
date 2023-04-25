@@ -371,7 +371,7 @@ void ntripClientUpdate()
     //Start WiFi
     case NTRIP_CLIENT_ON:
       {
-        if (HAS_ETHERNET)
+        if (HAS_ETHERNET && !settings.ntripUseWiFiNotEthernet)
         {
           if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
           {
@@ -412,7 +412,7 @@ void ntripClientUpdate()
       break;
 
     case NTRIP_CLIENT_WIFI_ETHERNET_STARTED:
-      if (HAS_ETHERNET)
+      if (HAS_ETHERNET && !settings.ntripUseWiFiNotEthernet)
       {
         if (online.ethernetStatus == ETH_CONNECTED)
           ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED);

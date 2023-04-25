@@ -713,6 +713,9 @@ typedef struct {
   char ntripServer_CasterUserPW[50] = "";
   char ntripServer_MountPoint[50] = "bldr_dwntwn2"; //NTRIP Server
   char ntripServer_MountPointPW[50] = "WR5wRo4H";
+  //Products that have Ethernet will always use Ethernet for NTRIP Server and Client, unless ntripServerUseWiFiNotEthernet is set to true.
+  //Setting ntripServerUseWiFiNotEthernet to true will make Ethernet-enabled products use WiFi for NTRIP Server instead.
+  bool ntripServerUseWiFiNotEthernet = false;
 
   //NTRIP Client
   bool enableNtripClient = false;
@@ -723,10 +726,8 @@ typedef struct {
   char ntripClient_MountPoint[50] = "bldr_SparkFun1";
   char ntripClient_MountPointPW[50] = "";
   bool ntripClient_TransmitGGA = true;
-
-  //Products that have Ethernet will always use Ethernet for NTRIP Server and Client, unless ntripUseWiFiNotEthernet is set to true.
-  //Setting ntripUseWiFiNotEthernet to true will make Ethernet-enabled products use WiFi for NTRIP instead.
-  bool ntripUseWiFiNotEthernet = false;
+  //Setting ntripClientUseWiFiNotEthernet to true will make Ethernet-enabled products use WiFi for NTRIP Client instead.
+  bool ntripClientUseWiFiNotEthernet = false;
 
   int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
 

@@ -85,8 +85,8 @@ void menuBase()
       int menuEntry = 8;
       if (HAS_ETHERNET)
       {
-        systemPrintf("%d) Use WiFi (not Ethernet) for NTRIP: ", menuEntry++);
-        if (settings.ntripUseWiFiNotEthernet == true) systemPrintln("Enabled");
+        systemPrintf("%d) Use WiFi (not Ethernet) for NTRIP Server: ", menuEntry++);
+        if (settings.ntripServerUseWiFiNotEthernet == true) systemPrintln("Enabled");
         else systemPrintln("Disabled");
       }
 
@@ -273,7 +273,7 @@ void menuBase()
     
     else if (incoming == 8 && settings.enableNtripServer == true && HAS_ETHERNET)
     {
-      settings.ntripUseWiFiNotEthernet ^= 1;
+      settings.ntripServerUseWiFiNotEthernet ^= 1;
       restartBase = true;
     }
     else if ((incoming == 8 + (HAS_ETHERNET ? 1 : 0)) && settings.enableNtripServer == true)

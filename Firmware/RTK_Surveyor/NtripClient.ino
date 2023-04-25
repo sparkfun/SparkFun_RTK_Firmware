@@ -268,7 +268,7 @@ void ntripClientStart()
     systemPrintln("NTRIP Client start");
 
     //Allocate the ntripClient structure
-    ntripClient = new NTRIPClient();
+    ntripClient = new NTRIPClient(settings.ntripClientUseWiFiNotEthernet);
 
     //Startup WiFi and the NTRIP client
     if (ntripClient)
@@ -297,7 +297,7 @@ void ntripClientStop(bool wifiClientAllocated)
 
     //Allocate the NTRIP client structure if not done
     if (wifiClientAllocated == false)
-      ntripClient = new NTRIPClient();
+      ntripClient = new NTRIPClient(settings.ntripClientUseWiFiNotEthernet);
   }
 
   //Increase timeouts if we started WiFi
@@ -371,7 +371,7 @@ void ntripClientUpdate()
     //Start WiFi
     case NTRIP_CLIENT_ON:
       {
-        if (HAS_ETHERNET && !settings.ntripUseWiFiNotEthernet)
+        if (HAS_ETHERNET && !settings.ntripClientUseWiFiNotEthernet)
         {
           if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
           {
@@ -412,7 +412,7 @@ void ntripClientUpdate()
       break;
 
     case NTRIP_CLIENT_WIFI_ETHERNET_STARTED:
-      if (HAS_ETHERNET && !settings.ntripUseWiFiNotEthernet)
+      if (HAS_ETHERNET && !settings.ntripClientUseWiFiNotEthernet)
       {
         if (online.ethernetStatus == ETH_CONNECTED)
           ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED);

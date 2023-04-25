@@ -373,7 +373,12 @@ void ntripClientUpdate()
       {
         if (HAS_ETHERNET && !settings.ntripClientUseWiFiNotEthernet)
         {
-          if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
+          if (online.ethernetStatus == ETH_NOT_STARTED)
+          {
+            systemPrintln("Ethernet not started. Can not start NTRIP Client");
+            ntripClientStop(false); //Do allocate new WiFi / Ethernet Client
+          }
+          else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
           {
             //Pause until connection timeout has passed
             if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)

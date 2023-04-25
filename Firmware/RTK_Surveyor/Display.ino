@@ -137,7 +137,9 @@ void displayBatteryVsEthernet()
     icons |= ICON_BATTERY; //Top right
   else //if (HAS_ETHERNET)
   {
-    if (online.ethernetStatus == ETH_CONNECTED)
+    if (online.ethernetStatus == ETH_NOT_STARTED)
+      blinking_icons &= ~ICON_ETHERNET; //If Ethernet has not stated because not needed, don't display the icon
+    else if (online.ethernetStatus == ETH_CONNECTED)
       blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
     else
       blinking_icons ^= ICON_ETHERNET;

@@ -3277,14 +3277,14 @@ const uint8_t * getMacAddress()
 #ifdef COMPILE_BT
   if (bluetoothState != BT_OFF)
     return btMACAddress;
+#endif
 #ifdef COMPILE_WIFI
-  else if (wifiState != WIFI_OFF)
+  if (wifiState != WIFI_OFF)
     return wifiMACAddress;
 #endif
 #ifdef COMPILE_ETHERNET
-  else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
+  if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
     return ethernetMACAddress;
-#endif
 #endif
   return zero;
 }

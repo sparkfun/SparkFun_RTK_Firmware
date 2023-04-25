@@ -1,5 +1,29 @@
 //Ethernet
 
+//Determine if Ethernet is needed. Saves RAM...
+bool ethernetIsNeeded()
+{
+  //Does NTP need Ethernet?
+  if (HAS_ETHERNET && systemState >= STATE_NTPSERVER_NOT_STARTED && systemState <= STATE_NTPSERVER_SYNC)
+    return true;
+
+  //Does Base mode NTRIP Server need Ethernet?
+  if (HAS_ETHERNET
+      && settings.enableNtripServer == true
+      && (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+      && !settings.ntripServerUseWiFiNotEthernet)
+     return true;
+
+  //Does Base mode NTRIP Server need Ethernet?
+  if (HAS_ETHERNET
+      && settings.enableNtripClient == true
+      && (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX)
+      && !settings.ntripClientUseWiFiNotEthernet)
+     return true;
+
+   return false;
+}
+
 //Regularly called to update the Ethernet status
 void beginEthernet()
 {
@@ -14,6 +38,9 @@ void beginEthernet()
   }
 
 #ifdef COMPILE_ETHERNET
+
+  if (!ethernetIsNeeded())
+    return;
 
   switch (online.ethernetStatus)
   {

@@ -1811,6 +1811,10 @@ void paintIPAddress()
 
   static uint8_t ipAddressPosition = 0;
 
+  //Check if IP address is all single digits and can be printed without scrolling
+  if (strlen(ipAddress) <= 21)
+    ipAddressPosition = 7;
+
   //Print seven characters of IP address
   char printThis[9];
   snprintf(printThis, sizeof(printThis), "%c%c%c%c%c%c%c",
@@ -3246,6 +3250,13 @@ void displayConfigViaEthernet()
 
     //Print ten characters of IP address
     char printThis[12];
+
+    //Check if the IP address is <= 10 chars and will fit without scrolling
+    if (strlen(ipAddress) <= 28)
+      ipAddressPosition = 9;
+    else if (strlen(ipAddress) <= 30)
+      ipAddressPosition = 10;
+    
     snprintf(printThis, sizeof(printThis), "%c%c%c%c%c%c%c%c%c%c",
              ipAddress[ipAddressPosition + 0], ipAddress[ipAddressPosition + 1],
              ipAddress[ipAddressPosition + 2], ipAddress[ipAddressPosition + 3],

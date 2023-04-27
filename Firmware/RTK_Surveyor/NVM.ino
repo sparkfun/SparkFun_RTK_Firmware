@@ -383,6 +383,10 @@ void recordSystemSettingsToFile(File * settingsFile)
     settingsFile->printf("%s=%d\r\n", "ethernetNtpPort", settings.ethernetNtpPort);
     settingsFile->printf("%s=%d\r\n", "ethernetDHCP", settings.ethernetDHCP);
     settingsFile->printf("%s=%d\r\n", "enableNTPFile", settings.enableNTPFile);
+    settingsFile->printf("%s=%d\r\n", "enableTcpClientEthernet", settings.enableTcpClientEthernet);
+    settingsFile->printf("%s=%d\r\n", "enableTcpServerEthernet", settings.enableTcpServerEthernet);
+    settingsFile->printf("%s=%d\r\n", "ethernetTcpPort", settings.ethernetTcpPort);
+    settingsFile->printf("%s=%s\r\n", "hostForTCPClient", settings.hostForTCPClient);
   }
 
   //NTP
@@ -1209,6 +1213,14 @@ bool parseLine(char* str, Settings *settings)
     String addr = String(settingValue);
     settings->ethernetSubnet.fromString(addr);
   }
+  else if (strcmp(settingName, "enableTcpClientEthernet") == 0)
+    settings->enableTcpClientEthernet = d;
+  else if (strcmp(settingName, "enableTcpServerEthernet") == 0)
+    settings->enableTcpServerEthernet = d;
+  else if (strcmp(settingName, "ethernetTcpPort") == 0)
+    settings->ethernetTcpPort = d;
+  else if (strcmp(settingName, "hostForTCPClient") == 0)
+    strcpy(settings->hostForTCPClient, settingValue);
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list

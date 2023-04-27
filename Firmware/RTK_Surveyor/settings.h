@@ -825,6 +825,10 @@ typedef struct {
   uint16_t ethernetNtpPort = 123;
   bool ethernetDHCP = true;
   bool enableNTPFile = false; //Log NTP requests to file
+  bool enableTcpServerEthernet = false;
+  bool enableTcpClientEthernet = false;
+  uint16_t ethernetTcpPort = 2947; //TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
+  char hostForTCPClient[50] = "";
 
   //NTP
   uint8_t ntpPollExponent = 6; //NTPpacket::defaultPollExponent 2^6 = 64 seconds
@@ -859,6 +863,8 @@ struct struct_online {
   bool i2c = false;
   bool tcpClient = false;
   bool tcpServer = false;
+  bool tcpClientEthernet = false;
+  bool tcpServerEthernet = false;
   ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
   bool ethernetNTPServer = false; //EthernetUDP
 } online;

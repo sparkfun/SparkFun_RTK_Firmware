@@ -520,13 +520,13 @@ void wifiSendTcpData(uint8_t * data, uint16_t length)
       ipAddress[0] = WiFi.gatewayIP();
       if (settings.enablePrintTcpStatus)
       {
-        systemPrint("Trying to connect TCP client to ");
+        systemPrint("Trying to connect WiFi TCP client to ");
         systemPrintln(ipAddress[0]);
       }
       if (wifiTcpClient[0].connect(ipAddress[0], settings.wifiTcpPort))
       {
         online.tcpClient = true;
-        systemPrint("TCP client connected to ");
+        systemPrint("WiFi TCP client connected to ");
         systemPrintln(ipAddress[0]);
         wifiTcpConnected |= 1 << index;
       }
@@ -551,7 +551,7 @@ void wifiSendTcpData(uint8_t * data, uint16_t length)
           if (!wifiTcpClient[index])
             break;
           ipAddress[index] = wifiTcpClient[index].remoteIP();
-          systemPrintf("Connected TCP client %d to ", index);
+          systemPrintf("Connected WiFi TCP client %d to ", index);
           systemPrintln(ipAddress[index]);
           wifiTcpConnected |= 1 << index;
         }
@@ -573,13 +573,13 @@ void wifiSendTcpData(uint8_t * data, uint16_t length)
                && ((!length) || (wifiTcpClient[index].write(data, length) == length)))
       {
         if (settings.enablePrintTcpStatus && length)
-          systemPrintf("%d bytes written over TCP\r\n", length);
+          systemPrintf("%d bytes written over WiFi TCP\r\n", length);
         continue;
       }
 
       //Failed to write the data
       else
-        systemPrintf("Breaking TCP client %d connection to ", index);
+        systemPrintf("Breaking WiFi TCP client %d connection to ", index);
 
       //Done with this client connection
       systemPrintln(ipAddress[index]);
@@ -601,7 +601,7 @@ bool wifiTcpServerActive()
   if ((settings.enableTcpServer && online.tcpServer) || wifiTcpConnected)
     return true;
 
-  log_d("Stopping TCP Server");
+  log_d("Stopping WiFi TCP Server");
 
   //Shutdown the TCP server
   online.tcpServer = false;
@@ -675,7 +675,7 @@ void tcpUpdate()
      )
   {
     online.tcpClient = true;
-    systemPrint("TCP client online, local IP ");
+    systemPrint("WiFi TCP client online, local IP ");
     systemPrint(WiFi.localIP());
     systemPrint(", gateway IP ");
     systemPrintln(WiFi.gatewayIP());
@@ -692,7 +692,7 @@ void tcpUpdate()
 
     wifiTcpServer->begin();
     online.tcpServer = true;
-    systemPrint("TCP Server online, IP Address ");
+    systemPrint("WiFi TCP Server online, IP Address ");
     systemPrintln(WiFi.localIP());
   }
 #endif

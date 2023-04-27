@@ -95,6 +95,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
+                hide("allowWiFiOverEthernetClient")
+                hide("allowWiFiOverEthernetServer")
 
                 hide("dataPortChannelDropdown");
             }
@@ -104,6 +106,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
+                hide("allowWiFiOverEthernetClient")
+                hide("allowWiFiOverEthernetServer")
             }
             else if (platformPrefix == "Express Plus") {
                 hide("baseConfig");
@@ -111,6 +115,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
+                hide("allowWiFiOverEthernetClient")
+                hide("allowWiFiOverEthernetServer")
 
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
             }
@@ -120,6 +126,8 @@ function parseIncoming(msg) {
                 show("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
+                hide("allowWiFiOverEthernetClient")
+                hide("allowWiFiOverEthernetServer")
             }
             else if (platformPrefix == "Reference Station") {
                 show("baseConfig");
@@ -127,6 +135,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 show("ethernetConfig");
                 show("ntpConfig");
+                show("allowWiFiOverEthernetClient")
+                show("allowWiFiOverEthernetServer")
             }
         }
         else if (id.includes("zedFirmwareVersionInt")) {
@@ -339,6 +349,7 @@ function parseIncoming(msg) {
         updateECEFList();
         updateGeodeticList();
         tcpBoxes();
+        tcpBoxesEthernet();
         updateLatLong();
     }
 
@@ -599,6 +610,12 @@ function validateFields() {
         checkElementIPAddress("ethernetSubnet", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
         checkElementValue("ethernetHttpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
         checkElementValue("ethernetNtpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
+        if (ge("enableTcpClientEthernet").checked || ge("enableTcpServerEthernet").checked) {
+            checkElementString("ethernetTcpPort", 1, 65535, "Must be 1 to 65535", "collapseEthernetConfig");
+        }
+        if (ge("enableTcpClientEthernet").checked) {
+            checkElementString("hostForTCPClient", 0, 50, "Must be 0 to 50 characters", "collapseEthernetConfig");
+        }
         //}
         //else {
         //    clearElement("ethernetIP", "192.168.0.123");
@@ -1514,6 +1531,23 @@ function tcpBoxes() {
     else {
         hide("tcpSettingsConfig");
         ge("wifiTcpPort").value = 2947;
+    }
+}
+
+function tcpBoxesEthernet() {
+    if (ge("enableTcpClientEthernet").checked || ge("enableTcpServerEthernet").checked) {
+        show("tcpSettingsConfigEthernet");
+    }
+    else {
+        hide("tcpSettingsConfigEthernet");
+        //ge("ethernetTcpPort").value = 2947;
+    }
+
+    if (ge("enableTcpClientEthernet").checked) {
+        show("tcpSettingsHostForClient");
+    }
+    else {
+        hide("tcpSettingsHostForClient");
     }
 }
 

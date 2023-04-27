@@ -652,7 +652,11 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "ethernetSubnet", ipAddressChar);
   stringRecord(newSettings, "ethernetHttpPort", settings.ethernetHttpPort);
   stringRecord(newSettings, "ethernetNtpPort", settings.ethernetNtpPort);
-
+  stringRecord(newSettings, "enableTcpClientEthernet", settings.enableTcpClientEthernet);
+  stringRecord(newSettings, "enableTcpServerEthernet", settings.enableTcpServerEthernet);
+  stringRecord(newSettings, "ethernetTcpPort", settings.ethernetTcpPort);
+  stringRecord(newSettings, "hostForTCPClient", settings.hostForTCPClient);
+  
   //NTP
   stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
   stringRecord(newSettings, "ntpPrecision", settings.ntpPrecision);
@@ -1212,6 +1216,14 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.ethernetHttpPort = settingValue;
   else if (strcmp(settingName, "ethernetNtpPort") == 0)
     settings.ethernetNtpPort = settingValue;
+  else if (strcmp(settingName, "enableTcpClientEthernet") == 0)
+    settings.enableTcpClientEthernet = settingValueBool;
+  else if (strcmp(settingName, "enableTcpServerEthernet") == 0)
+    settings.enableTcpServerEthernet = settingValueBool;
+  else if (strcmp(settingName, "ethernetTcpPort") == 0)
+    settings.ethernetTcpPort = settingValue;
+  else if (strcmp(settingName, "hostForTCPClient") == 0)
+    strcpy(settings.hostForTCPClient, settingValueStr);
 
   //NTP
   else if (strcmp(settingName, "ntpPollExponent") == 0)

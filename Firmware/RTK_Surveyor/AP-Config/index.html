@@ -425,13 +425,15 @@
                             </span>
                         </div>
 
-                        <div class="form-check mt-1 box-margin20">
-                            <label class="form-check-label" for="ntripClientUseWiFiNotEthernet">Use WiFi for NTRIP Client - not Ethernet</label>
-                            <input class="form-check-input" type="checkbox" value="" id="ntripClientUseWiFiNotEthernet">
-                            <span class="tt" data-bs-placement="right"
-                                title="On RTK products which have Ethernet connectivity, you can use WiFi instead of Ethernet for NTRIP Client by enabling this option. Default: Disabled">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
+                        <div id="allowWiFiOverEthernetClient">
+                            <div class="form-check mt-1 box-margin20">
+                                <label class="form-check-label" for="ntripClientUseWiFiNotEthernet">Use WiFi for NTRIP Client - not Ethernet</label>
+                                <input class="form-check-input" type="checkbox" value="" id="ntripClientUseWiFiNotEthernet">
+                                <span class="tt" data-bs-placement="right"
+                                    title="On RTK products which have Ethernet connectivity, you can use WiFi instead of Ethernet for NTRIP Client by enabling this option. Default: Disabled">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -885,13 +887,15 @@
                             </div>
                         </div>
 
-                        <div class="form-check mt-1 box-margin20">
-                            <label class="form-check-label" for="ntripUseWiFiNotEthernet">Use WiFi for NTRIP Server - not Ethernet</label>
-                            <input class="form-check-input" type="checkbox" value="" id="ntripServerUseWiFiNotEthernet">
-                            <span class="tt" data-bs-placement="right"
-                                title="On RTK products which have Ethernet connectivity, you can use WiFi instead of Ethernet for NTRIP Server by enabling this option. Default: Disabled">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
+                        <div id="allowWiFiOverEthernetServer">
+                            <div class="form-check mt-1 box-margin20">
+                                <label class="form-check-label" for="ntripUseWiFiNotEthernet">Use WiFi for NTRIP Server - not Ethernet</label>
+                                <input class="form-check-input" type="checkbox" value="" id="ntripServerUseWiFiNotEthernet">
+                                <span class="tt" data-bs-placement="right"
+                                    title="On RTK products which have Ethernet connectivity, you can use WiFi instead of Ethernet for NTRIP Server by enabling this option. Default: Disabled">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -1594,7 +1598,7 @@
             <div class="collapse" id="collapseEthernetConfig">
                 <div class="card card-body">
 
-                    <div class="form-check mt-1 box-margin20">
+                    <div class="form-check mt-3">
                         <label class="form-check-label" for="ethernetDHCP">Ethernet uses DHCP</label>
                         <input class="form-check-input" type="checkbox" value="" id="ethernetDHCP" checked>
                         <span class="tt" data-bs-placement="right"
@@ -1679,6 +1683,55 @@
                         </div>
                     </div>
 
+                    <br>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="enableTcpClientEthernet">TCP Client</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enableTcpClientEthernet"
+                            onClick="tcpBoxesEthernet()">
+                        <span class="tt" data-bs-placement="right"
+                            title="If enabled, device will connect to Ethernet and push NMEA over the given TCP port.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="enableTcpServerEthernet">TCP Server</label>
+                        <input class="form-check-input" type="checkbox" value="" id="enableTcpServerEthernet"
+                            onClick="tcpBoxesEthernet()">
+                        <span class="tt" data-bs-placement="right"
+                            title="If enabled, device will allow inbound TCP connections and push NMEA when a client is connected.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div id="tcpSettingsConfigEthernet">
+                        <div class="form-group row">
+                            <label for="ethernetTcpPort" class="box-margin20 col-sm-3 col-4 col-form-label">Port:
+                                <span class="tt" data-bs-placement="right" title="TCP port to use. Default: 2947">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="ethernetTcpPort">
+                                <p id="ethernetTcpPortError" class="inlineError"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tcpSettingsHostForClient">
+                        <div class="form-group row">
+                            <label for="hostForTCPClient" class="box-margin20 col-sm-3 col-4 col-form-label">Host for TCP Client:
+                                <span class="tt" data-bs-placement="right" title="The name or address of the host which the TCP client data will be pushed to.">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
+                            <div class="col-sm-8 col-7">
+                                <input type="text" class="form-control" id="hostForTCPClient" value="test">
+                                <p id="hostForTCPClientError" class="inlineError"></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

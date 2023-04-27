@@ -201,7 +201,7 @@ char logFileName[sizeof("SFE_Facet_L-Band_230101_120101.ubx_plusExtraSpace")] = 
 static int ntripClientConnectionAttempts = 0; //Count the number of connection attempts between restarts
 static int ntripServerConnectionAttempts = 0; //Count the number of connection attempts between restarts
 
-volatile uint8_t wifiTcpConnected;
+volatile uint8_t wifiTcpConnected = 0;
 
 //NTRIP client timer usage:
 // * Measure the connection response time
@@ -495,6 +495,7 @@ bool ntpLogIncreasing = false;
 #endif
 
 unsigned long lastEthernetCheck = 0; //Prevents cable checking from continually happening
+volatile uint8_t ethernetTcpConnected = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "NTRIPClient.h" //Define a hybrid class which can support both WiFiClient and EthernetClient
@@ -801,6 +802,8 @@ void loop()
   updateEthernet(); //Maintain the ethernet connection
 
   updateEthernetNTPServer(); //Process any received NTP requests
+
+  tcpUpdateEthernet(); //Turn on TCP Client or Server as needed
 
   printPosition(); //Periodically print GNSS coordinates if enabled
 

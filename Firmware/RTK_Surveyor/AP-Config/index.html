@@ -1600,7 +1600,7 @@
 
                     <div class="form-check mt-3">
                         <label class="form-check-label" for="ethernetDHCP">Ethernet uses DHCP</label>
-                        <input class="form-check-input" type="checkbox" value="" id="ethernetDHCP" checked>
+                        <input class="form-check-input" type="checkbox" value="" id="ethernetDHCP" onClick="dhcpEthernet()" checked>
                         <span class="tt" data-bs-placement="right"
                             title="If enabled, Ethernet will use DHCP. Disable to use a fixed IP Address, DNS, Gateway and Subnet Mask. Default: Enabled">
                             <span class="icon-info-circle text-primary ms-2"></span>
@@ -1609,52 +1609,54 @@
 
                     <br>
 
-                    <div class="form-group row">
-                        <label for="ethernetIP" class="col-5 col-form-label">Fixed IP Address:
-                            <span class="tt" data-bs-placement="right"
-                                title="If DHCP is disabled, Ethernet will use this fixed IP Address">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
-                        </label>
-                        <div class="col-sm-5">
-                            <input type="text" class="form-control" id="ethernetIP">
-                            <p id="ethernetIPError" class="inlineError"></p>
+                    <div id="fixedIPSettingsConfigEthernet">
+                        <div class="form-group row">
+                            <label for="ethernetIP" class="col-5 col-form-label">Fixed IP Address:
+                                <span class="tt" data-bs-placement="right"
+                                    title="If DHCP is disabled, Ethernet will use this fixed IP Address">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
+                            <div class="col-sm-5">
+                                <input type="text" class="form-control" id="ethernetIP">
+                                <p id="ethernetIPError" class="inlineError"></p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="ethernetDNS" class="col-5 col-form-label">DNS:
-                            <span class="tt" data-bs-placement="right"
-                                title="If DHCP is disabled, Ethernet will use this DNS">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
-                        </label>
-                        <div class="col-sm-5">
-                            <input type="text" class="form-control" id="ethernetDNS">
-                            <p id="ethernetDNSError" class="inlineError"></p>
+                        <div class="form-group row">
+                            <label for="ethernetDNS" class="col-5 col-form-label">DNS:
+                                <span class="tt" data-bs-placement="right"
+                                    title="If DHCP is disabled, Ethernet will use this DNS">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
+                            <div class="col-sm-5">
+                                <input type="text" class="form-control" id="ethernetDNS">
+                                <p id="ethernetDNSError" class="inlineError"></p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="ethernetGateway" class="col-5 col-form-label">Gateway:
-                            <span class="tt" data-bs-placement="right"
-                                title="If DHCP is disabled, Ethernet will use this Gateway">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
-                        </label>
-                        <div class="col-sm-5">
-                            <input type="text" class="form-control" id="ethernetGateway">
-                            <p id="ethernetGatewayError" class="inlineError"></p>
+                        <div class="form-group row">
+                            <label for="ethernetGateway" class="col-5 col-form-label">Gateway:
+                                <span class="tt" data-bs-placement="right"
+                                    title="If DHCP is disabled, Ethernet will use this Gateway">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
+                            <div class="col-sm-5">
+                                <input type="text" class="form-control" id="ethernetGateway">
+                                <p id="ethernetGatewayError" class="inlineError"></p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="ethernetSubnet" class="col-5 col-form-label">Subnet Mask:
-                            <span class="tt" data-bs-placement="right"
-                                title="If DHCP is disabled, Ethernet will use this subnet mask">
-                                <span class="icon-info-circle text-primary ms-2"></span>
-                            </span>
-                        </label>
-                        <div class="col-sm-5">
-                            <input type="text" class="form-control" id="ethernetSubnet">
-                            <p id="ethernetSubnetError" class="inlineError"></p>
+                        <div class="form-group row">
+                            <label for="ethernetSubnet" class="col-5 col-form-label">Subnet Mask:
+                                <span class="tt" data-bs-placement="right"
+                                    title="If DHCP is disabled, Ethernet will use this subnet mask">
+                                    <span class="icon-info-circle text-primary ms-2"></span>
+                                </span>
+                            </label>
+                            <div class="col-sm-5">
+                                <input type="text" class="form-control" id="ethernetSubnet">
+                                <p id="ethernetSubnetError" class="inlineError"></p>
+                            </div>
                         </div>
                     </div>
 

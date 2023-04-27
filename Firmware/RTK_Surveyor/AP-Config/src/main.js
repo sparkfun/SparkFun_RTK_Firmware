@@ -350,6 +350,7 @@ function parseIncoming(msg) {
         updateGeodeticList();
         tcpBoxes();
         tcpBoxesEthernet();
+        dhcpEthernet();
         updateLatLong();
     }
 
@@ -1548,6 +1549,15 @@ function tcpBoxesEthernet() {
     }
     else {
         hide("tcpSettingsHostForClient");
+    }
+}
+
+function dhcpEthernet() {
+    if (ge("ethernetDHCP").checked) {
+        hide("fixedIPSettingsConfigEthernet");
+    }
+    else {
+        show("fixedIPSettingsConfigEthernet");
     }
 }
 

@@ -651,6 +651,7 @@ typedef struct {
   bool enableSD = true;
   bool enableDisplay = true;
   int maxLogTime_minutes = 60 * 24; //Default to 24 hours
+  int maxLogLength_minutes = 60 * 24; //Default to 24 hours
   int observationSeconds = 60; //Default survey in time of 60 seconds
   float observationPositionAccuracy = 5.0; //Default survey in pos accy of 5m
   bool fixedBase = false; //Use survey-in by default
@@ -701,7 +702,6 @@ typedef struct {
     {UBLOX_CFG_SIGNAL_GLO_ENA, SFE_UBLOX_GNSS_ID_GLONASS, true, "GLONASS"},
   };
 
-  int maxLogLength_minutes = 60 * 24; //Default to 24 hours
   char profileName[50] = "";
 
   //NTRIP Server

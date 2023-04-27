@@ -21,10 +21,13 @@ try:
             conn, addr = s.accept()
             with conn:
                 print(f"Connection from {addr}:")
-                while True:
-                    data = conn.recv(1024)
-                    if data:
-                        print("{}".format(data.decode()))
+                try:
+                    while True:
+                        data = conn.recv(1024)
+                        if data:
+                            print("{}".format(data.decode()))
+                except KeyboardInterrupt:
+                    break
         except socket.timeout:
             pass
         except KeyboardInterrupt:

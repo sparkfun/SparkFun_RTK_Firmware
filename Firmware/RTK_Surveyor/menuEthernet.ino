@@ -378,7 +378,7 @@ void ethernetSendTcpData(uint8_t * data, uint16_t length)
           strcpy(settings.hostForTCPClient, token);
       }
           
-      if (settings.enablePrintTcpStatus)
+      if (settings.enablePrintTcpStatus && (!inMainMenu))
       {
         systemPrint("Trying to connect Ethernet TCP client to ");
         systemPrintln(settings.hostForTCPClient);
@@ -386,9 +386,12 @@ void ethernetSendTcpData(uint8_t * data, uint16_t length)
       if (ethernetTcpClient[0].connect(settings.hostForTCPClient, settings.ethernetTcpPort))
       {
         online.tcpClientEthernet = true;
-        systemPrint("Ethernet TCP client connected to ");
-        systemPrintln(settings.hostForTCPClient);
         ethernetTcpConnected |= 1 << index;
+        if (!inMainMenu)
+        {
+          systemPrint("Ethernet TCP client connected to ");
+          systemPrintln(settings.hostForTCPClient);
+        }
       }
       else
       {
@@ -411,9 +414,12 @@ void ethernetSendTcpData(uint8_t * data, uint16_t length)
           if (!ethernetTcpClient[index])
             break;
           ipAddressEthernet[index] = ethernetTcpClient[index].remoteIP();
-          systemPrintf("Connected Ethernet TCP client %d to ", index);
-          systemPrintln(ipAddressEthernet[index]);
           ethernetTcpConnected |= 1 << index;
+          if (!inMainMenu)
+          {
+            systemPrintf("Connected Ethernet TCP client %d to ", index);
+            systemPrintln(ipAddressEthernet[index]);
+          }
         }
       }
   }
@@ -425,24 +431,36 @@ void ethernetSendTcpData(uint8_t * data, uint16_t length)
     {
       //Check for a broken connection
       if ((!ethernetTcpClient[index]) || (!ethernetTcpClient[index].connected()))
-        systemPrintf("Disconnected TCP client %d from ", index);
-
+      {
+        if (!inMainMenu)
+        {
+          systemPrintf("Disconnected TCP client %d from ", index);
+        }
+      }
       //Send the data to the connected clients
       else if (((settings.enableTcpServerEthernet && online.tcpServerEthernet)
                 || (settings.enableTcpClientEthernet && online.tcpClientEthernet))
                && ((!length) || (ethernetTcpClient[index].write(data, length) == length)))
       {
-        if (settings.enablePrintTcpStatus && length)
+        if (settings.enablePrintTcpStatus && length && (!inMainMenu))
           systemPrintf("%d bytes written over Ethernet TCP\r\n", length);
         continue;
       }
 
       //Failed to write the data
       else
-        systemPrintf("Breaking Ethernet TCP client %d connection to ", index);
+      {
+        if (!inMainMenu)
+        {
+          systemPrintf("Breaking Ethernet TCP client %d connection to ", index);
+        }
+      }
 
       //Done with this client connection
-      systemPrintln(ipAddressEthernet[index]);
+      if (!inMainMenu)
+      {
+        systemPrintln(ipAddressEthernet[index]);
+      }
       ethernetTcpClient[index].stop();
       ethernetTcpConnected &= ~(1 << index);
 
@@ -522,12 +540,14 @@ void tcpUpdateEthernet()
       && (online.ethernetStatus == ETH_CONNECTED)
      )
   {
-    ethernetTcpServer = new EthernetServer((uint16_t)settings.ethernetTcpPort);
+    ethernetTcpServer = new EthernetServer(settings.ethernetTcpPort);
 
     ethernetTcpServer->begin();
     online.tcpServerEthernet = true;
     systemPrint("Ethernet TCP Server online, IP Address ");
-    systemPrintln(Ethernet.localIP());
+    systemPrint(Ethernet.localIP());
+    systemPrint(" Port ");
+    systemPrintln(settings.ethernetTcpPort);
   }
 #endif
 }

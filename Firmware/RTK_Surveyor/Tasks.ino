@@ -412,7 +412,7 @@ void handleGNSSDataTask(void *e)
           if ((sdTail + sliceToRecord) > settings.gnssHandlerBufferSize)
             sliceToRecord = settings.gnssHandlerBufferSize - sdTail;
 
-          if (settings.enablePrintSDBuffers && !inMainMenu)
+          if (settings.enablePrintSDBuffers && (!inMainMenu))
           {
             int bufferAvailable;
             if (USE_I2C_GNSS)

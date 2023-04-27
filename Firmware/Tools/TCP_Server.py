@@ -10,9 +10,10 @@ PORT = 2947
 print("Listening {}:{}".format(HOST,PORT))
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.bind((HOST, PORT))
 s.listen()
-s.settimeout(1)
+s.settimeout(2)
 
 try:
     while True:
@@ -22,13 +23,12 @@ try:
                 print(f"Connection from {addr}:")
                 while True:
                     data = conn.recv(1024)
-                    if not data:
-                        break
-                    print("{}".format(data.decode()))
+                    if data:
+                        print("{}".format(data.decode()))
         except socket.timeout:
             pass
         except KeyboardInterrupt:
-            pass
+            break
 
 except KeyboardInterrupt:
     pass

@@ -21,18 +21,17 @@ if HOST == "": HOST = defaultHOST
 
 print("Connecting to {}:{}".format(HOST,PORT))
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.settimeout(2)
+
+s.connect((HOST, PORT))
+
+while True:
     try:
-        s.connect((HOST, PORT))
-        while True:
-            try:
-                data = s.recv(1024)
-                if not data:
-                    break
-                print("{}".format(data.decode()))
-            except KeyboardInterrupt:
-                break
+        data = s.recv(1024)
+        if data:
+            print("{}".format(data.decode()))
     except KeyboardInterrupt:
-        pass
-    except:
-        print("Could not connect!")
+        break
+
+s.close()

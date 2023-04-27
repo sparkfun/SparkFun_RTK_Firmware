@@ -505,7 +505,7 @@ void tcpUpdateEthernet()
   if (settings.enableTcpClientEthernet
       && (!online.tcpClientEthernet)
       && (!settings.enableTcpServerEthernet)
-      && (online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED) //TODO: Maybe just online.ethernetStatus == ETH_CONNECTED ?
+      && (online.ethernetStatus == ETH_CONNECTED)
      )
   {
     online.tcpClientEthernet = true;
@@ -519,7 +519,7 @@ void tcpUpdateEthernet()
   if (settings.enableTcpServerEthernet
       && (ethernetTcpServer == nullptr)
       && (!settings.enableTcpClientEthernet)
-      && (online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED) //TODO: Maybe just online.ethernetStatus == ETH_CONNECTED ?
+      && (online.ethernetStatus == ETH_CONNECTED)
      )
   {
     ethernetTcpServer = new EthernetServer((uint16_t)settings.ethernetTcpPort);

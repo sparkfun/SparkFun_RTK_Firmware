@@ -194,8 +194,10 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%s\r\n", "rtkFirmwareVersion", firmwareVersion);
 
   settingsFile->printf("%s=%s\r\n", "zedFirmwareVersion", zedFirmwareVersion);
+  
   if (productVariant == RTK_FACET_LBAND)
     settingsFile->printf("%s=%s\r\n", "neoFirmwareVersion", neoFirmwareVersion);
+    
   settingsFile->printf("%s=%d\r\n", "printDebugMessages", settings.printDebugMessages);
   settingsFile->printf("%s=%d\r\n", "enableSD", settings.enableSD);
   settingsFile->printf("%s=%d\r\n", "enableDisplay", settings.enableDisplay);
@@ -242,6 +244,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%s\r\n", "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
   settingsFile->printf("%s=%s\r\n", "ntripServer_MountPoint", settings.ntripServer_MountPoint);
   settingsFile->printf("%s=%s\r\n", "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
+  settingsFile->printf("%s=%d\r\n", "ntripServerUseWiFiNotEthernet", settings.ntripServerUseWiFiNotEthernet);
   settingsFile->printf("%s=%d\r\n", "enableNtripClient", settings.enableNtripClient);
   settingsFile->printf("%s=%s\r\n", "ntripClient_CasterHost", settings.ntripClient_CasterHost);
   settingsFile->printf("%s=%d\r\n", "ntripClient_CasterPort", settings.ntripClient_CasterPort);
@@ -250,7 +253,6 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%s\r\n", "ntripClient_MountPoint", settings.ntripClient_MountPoint);
   settingsFile->printf("%s=%s\r\n", "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
   settingsFile->printf("%s=%d\r\n", "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
-  settingsFile->printf("%s=%d\r\n", "ntripServerUseWiFiNotEthernet", settings.ntripServerUseWiFiNotEthernet);
   settingsFile->printf("%s=%d\r\n", "ntripClientUseWiFiNotEthernet", settings.ntripClientUseWiFiNotEthernet);
   settingsFile->printf("%s=%d\r\n", "serialTimeoutGNSS", settings.serialTimeoutGNSS);
   settingsFile->printf("%s=%s\r\n", "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
@@ -278,6 +280,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "enablePrintNtripClientState", settings.enablePrintNtripClientState);
   settingsFile->printf("%s=%d\r\n", "enablePrintNtripServerState", settings.enablePrintNtripServerState);
   settingsFile->printf("%s=%d\r\n", "enablePrintPosition", settings.enablePrintPosition);
+  settingsFile->printf("%s=%d\r\n", "enablePrintIdleTime", settings.enablePrintIdleTime);
   settingsFile->printf("%s=%d\r\n", "enableMarksFile", settings.enableMarksFile);
   settingsFile->printf("%s=%d\r\n", "enablePrintBatteryMessages", settings.enablePrintBatteryMessages);
   settingsFile->printf("%s=%d\r\n", "enablePrintRoverAccuracy", settings.enablePrintRoverAccuracy);
@@ -313,6 +316,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "bluetoothRadioType", settings.bluetoothRadioType);
   settingsFile->printf("%s=%d\r\n", "enableTcpClient", settings.enableTcpClient);
   settingsFile->printf("%s=%d\r\n", "enableTcpServer", settings.enableTcpServer);
+  settingsFile->printf("%s=%d\r\n", "enablePrintTcpStatus", settings.enablePrintTcpStatus);
   settingsFile->printf("%s=%d\r\n", "espnowBroadcast", settings.espnowBroadcast);
   settingsFile->printf("%s=%d\r\n", "antennaHeight", settings.antennaHeight);
   settingsFile->printf("%s=%0.2f\r\n", "antennaReferencePoint", settings.antennaReferencePoint);
@@ -320,6 +324,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "uartReceiveBufferSize", settings.uartReceiveBufferSize);
   settingsFile->printf("%s=%d\r\n", "gnssHandlerBufferSize", settings.gnssHandlerBufferSize);
   settingsFile->printf("%s=%d\r\n", "enablePrintBufferOverrun", settings.enablePrintBufferOverrun);
+  settingsFile->printf("%s=%d\r\n", "enablePrintSDBuffers", settings.enablePrintSDBuffers);
   settingsFile->printf("%s=%d\r\n", "forceResetOnSDFail", settings.forceResetOnSDFail);
 
   //Record WiFi credential table
@@ -951,6 +956,8 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->ntripServer_MountPoint, settingValue);
   else if (strcmp(settingName, "ntripServer_MountPointPW") == 0)
     strcpy(settings->ntripServer_MountPointPW, settingValue);
+  else if (strcmp(settingName, "ntripServerUseWiFiNotEthernet") == 0)
+    settings->ntripServerUseWiFiNotEthernet = d;
   else if (strcmp(settingName, "enableNtripClient") == 0)
     settings->enableNtripClient = d;
   else if (strcmp(settingName, "ntripClient_CasterHost") == 0)
@@ -967,8 +974,6 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->ntripClient_MountPointPW, settingValue);
   else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
     settings->ntripClient_TransmitGGA = d;
-  else if (strcmp(settingName, "ntripServerUseWiFiNotEthernet") == 0)
-    settings->ntripServerUseWiFiNotEthernet = d;
   else if (strcmp(settingName, "ntripClientUseWiFiNotEthernet") == 0)
     settings->ntripClientUseWiFiNotEthernet = d;
   else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
@@ -1027,6 +1032,8 @@ bool parseLine(char* str, Settings *settings)
     settings->enablePrintNtripServerState = d;
   else if (strcmp(settingName, "enablePrintPosition") == 0)
     settings->enablePrintPosition = d;
+  else if (strcmp(settingName, "enablePrintIdleTime") == 0)
+    settings->enablePrintIdleTime = d;
   else if (strcmp(settingName, "enablePrintBatteryMessages") == 0)
     settings->enablePrintBatteryMessages = d;
   else if (strcmp(settingName, "enablePrintRoverAccuracy") == 0)
@@ -1067,6 +1074,8 @@ bool parseLine(char* str, Settings *settings)
     settings->enableTcpClient = d;
   else if (strcmp(settingName, "enableTcpServer") == 0)
     settings->enableTcpServer = d;
+  else if (strcmp(settingName, "enablePrintTcpStatus") == 0)
+    settings->enablePrintTcpStatus = d;
   else if (strcmp(settingName, "espnowBroadcast") == 0)
     settings->espnowBroadcast = d;
   else if (strcmp(settingName, "antennaHeight") == 0)
@@ -1081,6 +1090,8 @@ bool parseLine(char* str, Settings *settings)
     settings->gnssHandlerBufferSize = d;
   else if (strcmp(settingName, "enablePrintBufferOverrun") == 0)
     settings->enablePrintBufferOverrun = d;
+  else if (strcmp(settingName, "enablePrintSDBuffers") == 0)
+    settings->enablePrintSDBuffers = d;
   else if (strcmp(settingName, "forceResetOnSDFail") == 0)
     settings->forceResetOnSDFail = d;
   else if (strcmp(settingName, "wifiConfigOverAP") == 0)
@@ -1152,12 +1163,40 @@ bool parseLine(char* str, Settings *settings)
     }
   }
   //Ethernet
+  else if (strcmp(settingName, "ethernetIP") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetIP.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetDNS") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetDNS.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetGateway") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetGateway.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetSubnet") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetSubnet.fromString(addr);
+  }
   else if (strcmp(settingName, "ethernetHttpPort") == 0)
     settings->ethernetHttpPort = d;
   else if (strcmp(settingName, "ethernetNtpPort") == 0)
     settings->ethernetNtpPort = d;
   else if (strcmp(settingName, "ethernetDHCP") == 0)
     settings->ethernetDHCP = d;
+  else if (strcmp(settingName, "enableTcpServerEthernet") == 0)
+    settings->enableTcpServerEthernet = d;
+  else if (strcmp(settingName, "enableTcpClientEthernet") == 0)
+    settings->enableTcpClientEthernet = d;
+  else if (strcmp(settingName, "ethernetTcpPort") == 0)
+    settings->ethernetTcpPort = d;
+  else if (strcmp(settingName, "hostForTCPClient") == 0)
+    strcpy(settings->hostForTCPClient, settingValue);
   //NTP
   else if (strcmp(settingName, "ntpPollExponent") == 0)
     settings->ntpPollExponent = d;
@@ -1193,34 +1232,6 @@ bool parseLine(char* str, Settings *settings)
       settings->updateZEDSettings = true;
     }
   }
-  else if (strcmp(settingName, "ethernetIP") == 0)
-  {
-    String addr = String(settingValue);
-    settings->ethernetIP.fromString(addr);
-  }
-  else if (strcmp(settingName, "ethernetDNS") == 0)
-  {
-    String addr = String(settingValue);
-    settings->ethernetDNS.fromString(addr);
-  }
-  else if (strcmp(settingName, "ethernetGateway") == 0)
-  {
-    String addr = String(settingValue);
-    settings->ethernetGateway.fromString(addr);
-  }
-  else if (strcmp(settingName, "ethernetSubnet") == 0)
-  {
-    String addr = String(settingValue);
-    settings->ethernetSubnet.fromString(addr);
-  }
-  else if (strcmp(settingName, "enableTcpClientEthernet") == 0)
-    settings->enableTcpClientEthernet = d;
-  else if (strcmp(settingName, "enableTcpServerEthernet") == 0)
-    settings->enableTcpServerEthernet = d;
-  else if (strcmp(settingName, "ethernetTcpPort") == 0)
-    settings->ethernetTcpPort = d;
-  else if (strcmp(settingName, "hostForTCPClient") == 0)
-    strcpy(settings->hostForTCPClient, settingValue);
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list

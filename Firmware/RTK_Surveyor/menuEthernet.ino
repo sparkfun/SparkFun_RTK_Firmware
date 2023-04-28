@@ -1,12 +1,5 @@
 //Ethernet
 
-//TCP server
-#define ETHERNET_MAX_TCP_CLIENTS 4
-#ifdef COMPILE_ETHERNET
-static EthernetServer *ethernetTcpServer = nullptr;
-static EthernetClient ethernetTcpClient[ETHERNET_MAX_TCP_CLIENTS];
-#endif
-
 //Determine if Ethernet is needed. Saves RAM...
 bool ethernetIsNeeded()
 {
@@ -30,7 +23,7 @@ bool ethernetIsNeeded()
 
   //Does TCP need Ethernet?
   if (HAS_ETHERNET
-      && (settings.enableTcpServerEthernet || settings.enableTcpClientEthernet))
+      && settings.enableTcpClientEthernet)
      return true;
 
    return false;
@@ -151,7 +144,8 @@ void beginEthernetNTPServer()
 #ifdef COMPILE_ETHERNET
   if ((online.ethernetStatus == ETH_CONNECTED) && (online.ethernetNTPServer == false))
   {
-    ethernetNTPServer = new derivedEthernetUDP;
+    if (ethernetNTPServer == nullptr)
+      ethernetNTPServer = new derivedEthernetUDP;
     ethernetNTPServer->begin(settings.ethernetNtpPort);
     ntpSockIndex = ethernetNTPServer->getSockIndex(); //Get the socket index
     w5500ClearSocketInterrupts(); // Clear all interrupts
@@ -159,6 +153,11 @@ void beginEthernetNTPServer()
     online.ethernetNTPServer = true;
   }
 #endif
+}
+
+void endEthernetNTPServer()
+{
+  
 }
 
 void updateEthernet()
@@ -351,18 +350,72 @@ void updateEthernetNTPServer()
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-// Send data to the Ethernet TCP clients
+// Send data to the Ethernet TCP server as client
 void ethernetSendTcpData(uint8_t * data, uint16_t length)
 {
 #ifdef COMPILE_ETHERNET
-  static IPAddress ipAddressEthernet[ETHERNET_MAX_TCP_CLIENTS];
-  int index = 0;
-  static uint32_t lastTcpConnectAttempt;
+
+  if (!length) //Nothing to write
+    return;
+
+  if (online.tcpClientEthernet && ethernetTcpConnected)
+  {
+    if (ethernetTcpClient->write(data, length) == length)
+    {
+      if (settings.enablePrintTcpStatus && (!inMainMenu))
+        systemPrintf("%d bytes written over Ethernet TCP\r\n", length);
+    }
+    //Failed to write the data
+    else
+    {
+      if (!inMainMenu)
+      {
+        systemPrintln("Breaking Ethernet TCP client connection to host");
+      }
+  
+      //Done with this client connection
+      ethernetTcpClient->stop();
+      ethernetTcpConnected = false;
+    }
+  }
+
+#endif  //COMPILE_ETHERNET
+}
+
+void tcpUpdateEthernet()
+{
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping tcpUpdateEthernet");
+    return;
+  }
+
+  if (!HAS_ETHERNET)
+    return;
+    
+#ifdef COMPILE_ETHERNET
+  //Start the TCP client if enabled
+  if (settings.enableTcpClientEthernet
+      && (!online.tcpClientEthernet)
+      && (online.ethernetStatus == ETH_CONNECTED)
+     )
+  {
+    if (ethernetTcpClient == nullptr)
+      ethernetTcpClient = new EthernetClient;
+
+    online.tcpClientEthernet = true;
+    ethernetTcpConnected = false;
+    systemPrint("Ethernet TCP client online: Local IP: ");
+    systemPrintln(Ethernet.localIP());
+  }
+
+  static unsigned long lastTcpConnectAttempt = 0;
 
   if (online.tcpClientEthernet)
   {
-    //Start the TCP client if enabled
-    if (((!ethernetTcpClient[0]) || (!ethernetTcpClient[0].connected()))
+    //Try to connect to the TCP Host
+    if (((!ethernetTcpClient) || (!ethernetTcpClient->connected()))
         && ((millis() - lastTcpConnectAttempt) >= 1000))
     {
       lastTcpConnectAttempt = millis();
@@ -381,174 +434,59 @@ void ethernetSendTcpData(uint8_t * data, uint16_t length)
       if (settings.enablePrintTcpStatus && (!inMainMenu))
       {
         systemPrint("Trying to connect Ethernet TCP client to ");
-        systemPrintln(settings.hostForTCPClient);
+        systemPrint(settings.hostForTCPClient);
+        systemPrint(" on port ");
+        systemPrintln(settings.ethernetTcpPort);
       }
-      if (ethernetTcpClient[0].connect(settings.hostForTCPClient, settings.ethernetTcpPort))
+      
+      if (ethernetTcpClient->connect(settings.hostForTCPClient, settings.ethernetTcpPort))
       {
         online.tcpClientEthernet = true;
-        ethernetTcpConnected |= 1 << index;
+        ethernetTcpConnected = true;
         if (!inMainMenu)
         {
           systemPrint("Ethernet TCP client connected to ");
-          systemPrintln(settings.hostForTCPClient);
+          systemPrintln(ethernetTcpClient->remoteIP());
         }
       }
       else
       {
         //Release any allocated resources
-        //if (ethernetTcpClient[0])
-        ethernetTcpClient[0].stop();
+        //if (ethernetTcpClient)
+        ethernetTcpClient->stop();
+        ethernetTcpConnected = false;
       }
     }
   }
 
-  if (online.tcpServerEthernet)
+  if (ethernetTcpConnected)
   {
-    //Check for another client
-    for (index = 0; index < ETHERNET_MAX_TCP_CLIENTS; index++)
-      if (!(ethernetTcpConnected & (1 << index)))
-      {
-        if ((!ethernetTcpClient[index]) || (!ethernetTcpClient[index].connected()))
-        {
-          ethernetTcpClient[index] = ethernetTcpServer->available();
-          if (!ethernetTcpClient[index])
-            break;
-          ipAddressEthernet[index] = ethernetTcpClient[index].remoteIP();
-          ethernetTcpConnected |= 1 << index;
-          if (!inMainMenu)
-          {
-            systemPrintf("Connected Ethernet TCP client %d to ", index);
-            systemPrintln(ipAddressEthernet[index]);
-          }
-        }
-      }
-  }
-
-  //Walk the list of TCP clients
-  for (index = 0; index < ETHERNET_MAX_TCP_CLIENTS; index++)
-  {
-    if (ethernetTcpConnected & (1 << index))
+    //Check for a broken connection
+    if ((!ethernetTcpClient) || (!ethernetTcpClient->connected()))
     {
-      //Check for a broken connection
-      if ((!ethernetTcpClient[index]) || (!ethernetTcpClient[index].connected()))
+      if (!inMainMenu)
       {
-        if (!inMainMenu)
-        {
-          systemPrintf("Disconnected TCP client %d from ", index);
-        }
-      }
-      //Send the data to the connected clients
-      else if (((settings.enableTcpServerEthernet && online.tcpServerEthernet)
-                || (settings.enableTcpClientEthernet && online.tcpClientEthernet))
-               && ((!length) || (ethernetTcpClient[index].write(data, length) == length)))
-      {
-        if (settings.enablePrintTcpStatus && length && (!inMainMenu))
-          systemPrintf("%d bytes written over Ethernet TCP\r\n", length);
-        continue;
-      }
-
-      //Failed to write the data
-      else
-      {
-        if (!inMainMenu)
-        {
-          systemPrintf("Breaking Ethernet TCP client %d connection to ", index);
-        }
+        systemPrintln("TCP client disconnected from host");
       }
 
       //Done with this client connection
-      if (!inMainMenu)
-      {
-        systemPrintln(ipAddressEthernet[index]);
-      }
-      ethernetTcpClient[index].stop();
-      ethernetTcpConnected &= ~(1 << index);
-
-      //Shutdown the TCP server if necessary
-      if (settings.enableTcpServerEthernet || online.tcpServerEthernet)
-        ethernetTcpServerActive();
+      ethernetTcpClient->stop();
+      ethernetTcpConnected = false;
     }
   }
-#endif  //COMPILE_ETHERNET
-}
 
-//Check for TCP server active
-bool ethernetTcpServerActive()
-{
-#ifdef COMPILE_ETHERNET
-  if ((settings.enableTcpServerEthernet && online.tcpServerEthernet) || ethernetTcpConnected)
-    return true;
-
-  log_d("Stopping Ethernet TCP Server");
-
-  //Shutdown the TCP server
-  online.tcpServerEthernet = false;
-
-  //Stop the TCP server
-  //ethernetTcpServer->stop();
-
-  if (ethernetTcpServer != nullptr)
-    delete ethernetTcpServer;
-#endif  //COMPILE_ETHERNET
-  return false;
-}
-
-void tcpUpdateEthernet()
-{
-  // Skip if in configure-via-ethernet mode
-  if (configureViaEthernet)
+  if (ethernetTcpConnected && (online.ethernetStatus < ETH_CONNECTED))
   {
-    //log_d("configureViaEthernet: skipping tcpUpdateEthernet");
-    return;
-  }
-
-  if (!HAS_ETHERNET)
-    return;
-    
-#ifdef COMPILE_ETHERNET
-
-  if (settings.enableTcpClientEthernet == false && settings.enableTcpServerEthernet == false) return; //Nothing to do
-
-  if (settings.enableTcpClientEthernet == true || settings.enableTcpServerEthernet == true)
-  {
-    //Verify ETHERNET_MAX_TCP_CLIENTS
-    if ((sizeof(ethernetTcpConnected) * 8) < ETHERNET_MAX_TCP_CLIENTS)
+    //Check for Ethernet disconnection
+    if (!inMainMenu)
     {
-      systemPrintf("Please set ETHERNET_MAX_TCP_CLIENTS <= %d or increase size of ethernetTcpConnected\r\n", sizeof(ethernetTcpConnected) * 8);
-      while (true) ; //Freeze
+      systemPrintln("Ethernet is disconnected. TCP client offline");
     }
+    ethernetTcpClient->stop();
+    ethernetTcpConnected = false;
+    online.tcpClientEthernet = false;
   }
 
-  //Start the TCP client if enabled
-  if (settings.enableTcpClientEthernet
-      && (!online.tcpClientEthernet)
-      && (!settings.enableTcpServerEthernet)
-      && (online.ethernetStatus == ETH_CONNECTED)
-     )
-  {
-    online.tcpClientEthernet = true;
-    systemPrint("Ethernet TCP client online, local IP ");
-    systemPrint(Ethernet.localIP());
-    systemPrint(", Host ");
-    systemPrintln(settings.hostForTCPClient);
-  }
-
-  //Start the TCP server if enabled
-  if (settings.enableTcpServerEthernet
-      && (ethernetTcpServer == nullptr)
-      && (!settings.enableTcpClientEthernet)
-      && (online.ethernetStatus == ETH_CONNECTED)
-     )
-  {
-    ethernetTcpServer = new EthernetServer(settings.ethernetTcpPort);
-
-    ethernetTcpServer->begin();
-    online.tcpServerEthernet = true;
-    systemPrint("Ethernet TCP Server online, IP Address ");
-    systemPrint(Ethernet.localIP());
-    systemPrint(" Port ");
-    systemPrintln(settings.ethernetTcpPort);
-  }
 #endif
 }
 
@@ -635,16 +573,11 @@ void menuEthernet()
     systemPrint("c) Ethernet TCP Client: ");
     systemPrintf("%s\r\n", settings.enableTcpClientEthernet ? "Enabled" : "Disabled");
 
-    systemPrint("s) Ethernet TCP Server: ");
-    systemPrintf("%s\r\n", settings.enableTcpServerEthernet ? "Enabled" : "Disabled");
-
-    if (settings.enableTcpServerEthernet == true || settings.enableTcpClientEthernet == true)
-      systemPrintf("p) Ethernet TCP Port: %ld\r\n", settings.ethernetTcpPort);
-
     if (settings.enableTcpClientEthernet == true)
     {
-     systemPrint("h) Host for Ethernet TCP: ");
-     systemPrintln(settings.hostForTCPClient);
+      systemPrintf("p) Ethernet TCP Port: %ld\r\n", settings.ethernetTcpPort);
+      systemPrint("h) Host for Ethernet TCP: ");
+      systemPrintln(settings.hostForTCPClient);
     }
 
     systemPrintln("x) Exit");
@@ -714,23 +647,7 @@ void menuEthernet()
       settings.enableTcpClientEthernet ^= 1;
       restartEthernet = true;
     }
-    else if (incoming == 's')
-    {
-      //Toggle TCP server
-      settings.enableTcpServerEthernet ^= 1;
-      if ((!settings.enableTcpServerEthernet) && online.tcpServerEthernet)
-      {
-        //Tell the UART2 tasks that the TCP server is shutting down
-        online.tcpServerEthernet = false;
-
-        //Wait for the UART2 tasks to close the TCP client connections
-        while (ethernetTcpServerActive())
-          delay(5);
-        systemPrintln("TCP Server offline");
-      }
-      restartEthernet = true;
-    }
-    else if ((incoming == 'p') && (settings.enableTcpServerEthernet == true || settings.enableTcpClientEthernet == true))
+    else if ((incoming == 'p') && (settings.enableTcpClientEthernet == true))
     {
       systemPrint("Enter the TCP port to use (0 to 65535): ");
       int ethernetTcpPort = getNumber(); //Returns EXIT, TIMEOUT, or long
@@ -762,11 +679,28 @@ void menuEthernet()
 
   clearBuffer(); //Empty buffer of any newline chars
 
-  if (restartEthernet) //Restart the ESP to use the new ethernet settings
+  if (restartEthernet) //Restart Ethernet to use the new ethernet settings
   {
-    recordSystemSettings();
-    ESP.restart();
+    ethernetRestart();
   }
 
 #endif  //COMPILE_ETHERNET
+}
+
+void ethernetRestart()
+{
+  //Reset online.ethernetStatus so beginEthernet will call Ethernet.begin to use the new settings
+  online.ethernetStatus = ETH_NOT_STARTED;
+
+  //Ethernet TCP Client
+  ethernetTcpClient->stop();
+  ethernetTcpConnected = false;
+  online.tcpClientEthernet = false;
+
+  //NTP Server
+  if (ethernetNTPServer)
+    ethernetNTPServer->stop();
+  online.ethernetNTPServer = false;
+
+  //NTRIP?
 }

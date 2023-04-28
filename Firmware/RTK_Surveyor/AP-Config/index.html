@@ -1697,16 +1697,6 @@
                         </span>
                     </div>
 
-                    <div class="form-check mt-3">
-                        <label class="form-check-label" for="enableTcpServerEthernet">TCP Server</label>
-                        <input class="form-check-input" type="checkbox" value="" id="enableTcpServerEthernet"
-                            onClick="tcpBoxesEthernet()">
-                        <span class="tt" data-bs-placement="right"
-                            title="If enabled, device will allow inbound TCP connections and push NMEA when a client is connected.">
-                            <span class="icon-info-circle text-primary ms-2"></span>
-                        </span>
-                    </div>
-
                     <div id="tcpSettingsConfigEthernet">
                         <div class="form-group row">
                             <label for="ethernetTcpPort" class="box-margin20 col-sm-3 col-4 col-form-label">Port:
@@ -1719,9 +1709,7 @@
                                 <p id="ethernetTcpPortError" class="inlineError"></p>
                             </div>
                         </div>
-                    </div>
 
-                    <div id="tcpSettingsHostForClient">
                         <div class="form-group row">
                             <label for="hostForTCPClient" class="box-margin20 col-sm-3 col-4 col-form-label">Host for TCP Client:
                                 <span class="tt" data-bs-placement="right" title="The name or address of the host which the TCP client data will be pushed to.">

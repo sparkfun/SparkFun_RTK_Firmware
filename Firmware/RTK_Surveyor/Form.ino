@@ -653,7 +653,6 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "ethernetHttpPort", settings.ethernetHttpPort);
   stringRecord(newSettings, "ethernetNtpPort", settings.ethernetNtpPort);
   stringRecord(newSettings, "enableTcpClientEthernet", settings.enableTcpClientEthernet);
-  stringRecord(newSettings, "enableTcpServerEthernet", settings.enableTcpServerEthernet);
   stringRecord(newSettings, "ethernetTcpPort", settings.ethernetTcpPort);
   stringRecord(newSettings, "hostForTCPClient", settings.hostForTCPClient);
   
@@ -1218,8 +1217,6 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.ethernetNtpPort = settingValue;
   else if (strcmp(settingName, "enableTcpClientEthernet") == 0)
     settings.enableTcpClientEthernet = settingValueBool;
-  else if (strcmp(settingName, "enableTcpServerEthernet") == 0)
-    settings.enableTcpServerEthernet = settingValueBool;
   else if (strcmp(settingName, "ethernetTcpPort") == 0)
     settings.ethernetTcpPort = settingValue;
   else if (strcmp(settingName, "hostForTCPClient") == 0)

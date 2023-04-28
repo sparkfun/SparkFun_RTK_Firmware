@@ -7,7 +7,7 @@ import socket
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 2947
 
-print("Listening {}:{}".format(HOST,PORT))
+print("Listening on {}:{}".format(HOST,PORT))
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -20,7 +20,7 @@ try:
         try:
             conn, addr = s.accept()
             with conn:
-                print(f"Connection from {addr}:")
+                print("Connection from {}:".format(addr[0]))
                 try:
                     while True:
                         data = conn.recv(1024)
@@ -28,10 +28,10 @@ try:
                             print("{}".format(data.decode()))
                 except KeyboardInterrupt:
                     break
-        except socket.timeout:
-            pass
         except KeyboardInterrupt:
             break
+        except socket.timeout:
+            pass
 
 except KeyboardInterrupt:
     pass

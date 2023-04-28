@@ -611,10 +611,8 @@ function validateFields() {
         checkElementIPAddress("ethernetSubnet", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
         checkElementValue("ethernetHttpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
         checkElementValue("ethernetNtpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
-        if (ge("enableTcpClientEthernet").checked || ge("enableTcpServerEthernet").checked) {
-            checkElementString("ethernetTcpPort", 1, 65535, "Must be 1 to 65535", "collapseEthernetConfig");
-        }
         if (ge("enableTcpClientEthernet").checked) {
+            checkElementString("ethernetTcpPort", 1, 65535, "Must be 1 to 65535", "collapseEthernetConfig");
             checkElementString("hostForTCPClient", 0, 50, "Must be 0 to 50 characters", "collapseEthernetConfig");
         }
         //}
@@ -1536,19 +1534,12 @@ function tcpBoxes() {
 }
 
 function tcpBoxesEthernet() {
-    if (ge("enableTcpClientEthernet").checked || ge("enableTcpServerEthernet").checked) {
+    if (ge("enableTcpClientEthernet").checked) {
         show("tcpSettingsConfigEthernet");
     }
     else {
         hide("tcpSettingsConfigEthernet");
         //ge("ethernetTcpPort").value = 2947;
-    }
-
-    if (ge("enableTcpClientEthernet").checked) {
-        show("tcpSettingsHostForClient");
-    }
-    else {
-        hide("tcpSettingsHostForClient");
     }
 }
 

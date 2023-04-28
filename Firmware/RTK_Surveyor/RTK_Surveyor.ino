@@ -478,6 +478,10 @@ IPAddress ethernetIPAddress;
 IPAddress ethernetDNS;
 IPAddress ethernetGateway;
 IPAddress ethernetSubnetMask;
+
+//Client for Ethernet TCP host
+EthernetClient *ethernetTcpClient = nullptr;
+
 class derivedEthernetUDP : public EthernetUDP
 {
   public:
@@ -495,7 +499,7 @@ bool ntpLogIncreasing = false;
 #endif
 
 unsigned long lastEthernetCheck = 0; //Prevents cable checking from continually happening
-volatile uint8_t ethernetTcpConnected = 0;
+volatile bool ethernetTcpConnected = false;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "NTRIPClient.h" //Define a hybrid class which can support both WiFiClient and EthernetClient
@@ -803,7 +807,7 @@ void loop()
 
   updateEthernetNTPServer(); //Process any received NTP requests
 
-  tcpUpdateEthernet(); //Turn on TCP Client or Server as needed
+  tcpUpdateEthernet(); //Turn on TCP Client as needed
 
   printPosition(); //Periodically print GNSS coordinates if enabled
 

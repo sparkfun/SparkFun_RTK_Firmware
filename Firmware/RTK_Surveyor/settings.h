@@ -651,7 +651,6 @@ typedef struct {
   bool enableSD = true;
   bool enableDisplay = true;
   int maxLogTime_minutes = 60 * 24; //Default to 24 hours
-  int maxLogLength_minutes = 60 * 24; //Default to 24 hours
   int observationSeconds = 60; //Default survey in time of 60 seconds
   float observationPositionAccuracy = 5.0; //Default survey in pos accy of 5m
   bool fixedBase = false; //Use survey-in by default
@@ -702,6 +701,7 @@ typedef struct {
     {UBLOX_CFG_SIGNAL_GLO_ENA, SFE_UBLOX_GNSS_ID_GLONASS, true, "GLONASS"},
   };
 
+  int maxLogLength_minutes = 60 * 24; //Default to 24 hours
   char profileName[50] = "";
 
   //NTRIP Server
@@ -825,9 +825,8 @@ typedef struct {
   uint16_t ethernetNtpPort = 123;
   bool ethernetDHCP = true;
   bool enableNTPFile = false; //Log NTP requests to file
-  bool enableTcpServerEthernet = false;
   bool enableTcpClientEthernet = false;
-  uint16_t ethernetTcpPort = 2947; //TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
+  uint16_t ethernetTcpPort = 2947; //TCP port to use in Client mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
   char hostForTCPClient[50] = "";
 
   //NTP
@@ -864,7 +863,6 @@ struct struct_online {
   bool tcpClient = false;
   bool tcpServer = false;
   bool tcpClientEthernet = false;
-  bool tcpServerEthernet = false;
   ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
   bool ethernetNTPServer = false; //EthernetUDP
 } online;

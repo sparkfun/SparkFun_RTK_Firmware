@@ -297,8 +297,9 @@ void handleGNSSDataTask(void *e)
       if (tcpBytesToSendWiFi < 0)
         tcpBytesToSendWiFi += settings.gnssHandlerBufferSize;
     }
+    
     tcpBytesToSendEthernet = 0;
-    if (settings.enableTcpServerEthernet || settings.enableTcpClientEthernet)
+    if (settings.enableTcpClientEthernet)
     {
       tcpBytesToSendEthernet = dataHead - tcpTailEthernet;
       if (tcpBytesToSendEthernet < 0)
@@ -352,7 +353,7 @@ void handleGNSSDataTask(void *e)
     //Send data to the TCP clients
     //----------------------------------------------------------------------
 
-    if ((!settings.enableTcpServer) && (!settings.enableTcpClient) && (!wifiTcpConnected))
+    if ((!online.tcpServer) && (!online.tcpClient) && (!wifiTcpConnected))
       tcpTailWiFi = dataHead;
     else if (tcpBytesToSendWiFi > 0)
     {
@@ -370,7 +371,7 @@ void handleGNSSDataTask(void *e)
         tcpTailWiFi -= settings.gnssHandlerBufferSize;
     }
 
-    if ((!settings.enableTcpServerEthernet) && (!settings.enableTcpClientEthernet) && (!ethernetTcpConnected))
+    if ((!online.tcpClientEthernet) || (!ethernetTcpConnected))
       tcpTailEthernet = dataHead;
     else if (tcpBytesToSendEthernet > 0)
     {

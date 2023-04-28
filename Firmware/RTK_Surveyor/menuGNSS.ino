@@ -162,22 +162,30 @@ void menuGNSS()
       systemPrintln("7) Airborne 2g");
       systemPrintln("8) Airborne 4g");
       systemPrintln("9) Wrist");
-      systemPrintln("10) Bike");
-      //F9R versions starting at 1.21 have Mower and E-Scooter dynamic models
-      if (zedFirmwareVersionInt >= 121)
+      if (zedModuleType == PLATFORM_F9R)
       {
-        systemPrintln("11) Mower");
-        systemPrintln("12) E-Scooter");
+        systemPrintln("10) Bike");
+        //F9R versions starting at 1.21 have Mower and E-Scooter dynamic models
+        if (zedFirmwareVersionInt >= 121)
+        {
+          systemPrintln("11) Mower");
+          systemPrintln("12) E-Scooter");
 
+        }
       }
 
       int dynamicModel = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((dynamicModel != INPUT_RESPONSE_GETNUMBER_EXIT) && (dynamicModel != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        uint8_t maxModel = DYN_MODEL_BIKE;
-        //F9R versions starting at 1.21 have Mower and E-Scooter dynamic models
-        if (zedFirmwareVersionInt >= 121)
-          maxModel = DYN_MODEL_ESCOOTER;
+        uint8_t maxModel = DYN_MODEL_WRIST;
+
+        if (zedModuleType == PLATFORM_F9R)
+        {
+          maxModel = DYN_MODEL_BIKE;
+          //F9R versions starting at 1.21 have Mower and E-Scooter dynamic models
+          if (zedFirmwareVersionInt >= 121)
+            maxModel = DYN_MODEL_ESCOOTER;
+        }
 
         if (dynamicModel < 1 || dynamicModel > maxModel)
           systemPrintln("Error: Dynamic model out of range");

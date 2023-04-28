@@ -46,7 +46,9 @@ bool configureUbloxModuleBase()
     if (commandSupported(UBLOX_CFG_TMODE_MODE) == true)
       response &= theGNSS.addCfgValset(UBLOX_CFG_TMODE_MODE, 0); //Disable survey-in mode
 
-    response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
+    //Note that using UBX-CFG-TMODE3 to set the receiver mode to Survey In or to Fixed Mode, will set
+    //automatically the dynamic platform model (CFG-NAVSPG-DYNMODEL) to Stationary.
+    //response &= theGNSS.addCfgValset(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Not needed
 
     //RTCM is only available on ZED-F9P modules
     //

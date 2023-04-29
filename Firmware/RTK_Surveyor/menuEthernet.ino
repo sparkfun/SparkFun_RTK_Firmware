@@ -689,6 +689,7 @@ void menuEthernet()
 
 void ethernetRestart()
 {
+#ifdef COMPILE_ETHERNET
   //Reset online.ethernetStatus so beginEthernet will call Ethernet.begin to use the new settings
   online.ethernetStatus = ETH_NOT_STARTED;
 
@@ -703,4 +704,5 @@ void ethernetRestart()
   online.ethernetNTPServer = false;
 
   //NTRIP?
+#endif  //COMPILE_ETHERNET
 }

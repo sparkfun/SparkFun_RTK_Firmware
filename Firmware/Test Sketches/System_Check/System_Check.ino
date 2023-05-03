@@ -336,6 +336,19 @@ void setup()
     oled.display();
   }
 
+  //Select port 0 on MUX so UART1 is connected to ZED if bootloading is needed
+  if(pin_muxA >= 0)
+  {
+    pinMode(pin_muxA, OUTPUT);
+    digitalWrite(pin_muxA, LOW);
+  }
+  if(pin_muxB >= 0)
+  {
+    pinMode(pin_muxB, OUTPUT);
+    digitalWrite(pin_muxB, LOW);
+    Serial.println("MUX should now be UART");
+  }
+  
   menuSystem();
 }
 

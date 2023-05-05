@@ -6,9 +6,13 @@ Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported]
 
 Because of the nature of these controls, the AP config page is different than the terminal menu.
 
-![System Config Menu on WiFi AP Config Page](img/SparkFun%20RTK%20System%20and%20Data%20Logging%20Configuration.png)
+![System Config Menu on WiFi Config Page](img/SparkFun%20RTK%20WiFi%20Config%20System.png)
 
-*System Config Menu on WiFi AP Config Page*
+*System Config Menu on WiFi Config Page*
+
+### Check for New Firmware
+
+This feature allows over-the-air updates of the RTK device's firmware. Please see [Updating RTK Firmware](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/) for more information.
 
 ### System Initial State
 
@@ -28,7 +32,7 @@ Every 'max long length' amount of time the current log will be closed and a new 
 
 ### Start New Log
 
-Pressing the 'Start New Log' button will close the current log. A new log will be opened when the AP Config page is closed and the unit restarts. This can be helpful in the field when a certain set of coordinates or feature marks need to be recorded in close proximity to one another. By dividing up the logs, the work can be more easily identified.
+Pressing the 'Start New Log' button will close the current log. A new log will be opened immediately and the file name will be shown. This can be helpful in the field when a certain set of coordinates or feature marks need to be recorded in close proximity to one another. By dividing up the logs, the work can be more easily identified.
 
 ### Bluetooth Protocol
 
@@ -38,7 +42,7 @@ By default, the RTK products use Bluetooth v2.0 SPP (Serial Port Profile) to con
 
 ### Enable Factory Defaults
 
-Factory Defaults will erase any user settings and reset the internal receiver to stock settings. Any logs on SD are maintained. To prevent accidental reset the checkbox must first be checked before the button is pressed.
+See [Factory Reset](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system/#factory-reset).
 
 ### SD Card
 
@@ -82,8 +86,18 @@ The WiFi Config page also allows various aspects of the system to be configured 
 
 ## Factory Reset
 
+If a device gets into an unknown state it can be returned to default settings using the WiFi or Serial interfaces. 
+
+![Factory Default button](img/SparkFun%20RTK%20WiFi%20Factory%20Defaults.png)
+
+*Enabling and Starting a Factory Reset*
+
+Factory Defaults will erase any user settings and reset the internal receiver to stock settings. To prevent accidental reset the checkbox must first be checked before the button is pressed. Any logs on SD are maintained. Any settings file and commonly used coordinate files on the SD card associated with the current profile will be removed.
+
 ![Issuing a factory reset](img/SparkFun%20RTK%20System%20Menu%20-%20Factory%20Reset.png)
 
 *Issuing and confirming a Factory Reset*
 
-If a device gets into an unknown state it can be returned to default settings. Press 'r' then 'y' to confirm. The device settings will be reset to defaults. Any settings file and commonly used coordinate files on the SD card associated with the current profile will be removed.
+If a device gets into an unknown state it can be returned to default settings. Press 'r' then 'y' to confirm. Factory Default will erase any user settings and reset the internal receiver to stock settings. Any settings file and commonly used coordinate files on the SD card associated with the current profile will be removed.
+
+**Note:** Log files and any other files on the SD card are *not* removed or modified.

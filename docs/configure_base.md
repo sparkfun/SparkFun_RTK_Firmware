@@ -112,6 +112,16 @@ Note: During NTRIP transmission WiFi is turned on and Bluetooth is turned off. Y
 
 For users who return to the same base position or monument, the coordinates can be saved to a 'Commonly Used Coordinates' list. A nickname and the X/Y/Z positions are saved to the list. Any record on the list can be loaded from the list into the X/Y/Z fields allowing quick switching without the need to hand record or re-enter coordinates from day-to-day repositioning of the base.
 
+## RTCM Message Rates
+
+![The RTCM Menu under Base](img/SparkFun%20RTK%20Base%20Survey%20In.png)
+
+When the device is in Base mode, the fix rate is set to 1Hz. This will override any Rover setting. 
+
+![The list of supported RTCM messages](img/SparkFun%20RTK%20-%20Base%20RTCM%20Rates%20Menu.png)
+
+Additionally, RTCM messages are generated at a rate of 1Hz. If lower RTCM rates are desired the RTCM Rates menu can be used to modify the rates of any supported RTCM message. This can be helpful when using longer-range radios that have lower bandwidth.
+
 ## Supported Lat/Long Coordinate Formats
 
 ![Entering coordinates in alternate formats](img/SparkFun%20RTK%20-%20Alternate%20Coordinate%20Types%20for%20Fixed%20Base.png)

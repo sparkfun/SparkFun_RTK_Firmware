@@ -47,93 +47,53 @@ Each message rate input controls which messages are disabled (0) and how often t
 
 **Note:** The message report rate is the *number of fixes* between message reports. In the image above, with GSV set to 4, the NMEA GSV message will be produced once every 4 fixes. Because the device defaults to a 4Hz fix rate, the GSV message will appear once per second.
 
-The following 67 messages are supported for Bluetooth output and logging:
+The following 120 messages are supported for Bluetooth output and logging:
 
 <table class="table">
  <table>
   <COLGROUP><COL WIDTH=200><COL WIDTH=200><COL WIDTH=200></COLGROUP>
   <tr>
-	<td>&#8226; NMEA-GSA</td>
-	<td>&#8226; NMEA-GST</td>
-	<td>&#8226; NMEA-GSV</td>
+  	<td>&#8226; NMEA-DTM</td>
+	  <td>&#8226; NMEA-GBS</td>
+	  <td>&#8226; NMEA-GGA</td>
   </tr>
   <tr>
-	<td>&#8226; NMEA-RMC</td>
-	<td>&#8226; NMEA-VLW</td>
-	<td>&#8226; NMEA-VTG</td>
+	  <td>&#8226; NMEA-GLL</td>
+	  <td>&#8226; NMEA-GNS</td>
+	  <td>&#8226; NMEA-GRS</td>
   </tr>
   <tr>
+	  <td>&#8226; NMEA-GSA</td>
+	  <td>&#8226; NMEA-GST</td>
+	  <td>&#8226; NMEA-GSV</td>
+  </tr>
+  <tr>
+	  <td>&#8226; NMEA-RLM</td>
+	  <td>&#8226; NMEA-RMC</td>
+	  <td>&#8226; NMEA-THS</td>
+  </tr>
+  <tr>
+	  <td>&#8226; NMEA-VLW</td>
+	  <td>&#8226; NMEA-VTG</td>
     <td>&#8226; NMEA-ZDA</td>
-    <td>&#8226; NAV-CLOCK</td>
-    <td>&#8226; NAV-DOP</td>
   </tr>
   <tr>
-    <td>&#8226; NAV-EOE</td>
-    <td>&#8226; NAV-GEOFENCE</td>
-    <td>&#8226; NAV-HPPOSECEF</td>
+	  <td>&#8226; NMEA-NAV2-GGA</td>
+	  <td>&#8226; NMEA-NAV2-GLL</td>
+	  <td>&#8226; NMEA-NAV2-GNS</td>
   </tr>
   <tr>
-    <td>&#8226; NAV-HPPOSLLH</td>
-    <td>&#8226; NAV-ODO</td>
-    <td>&#8226; NAV-ORB</td>
+	  <td>&#8226; NMEA-NAV2-GSA</td>
+	  <td>&#8226; NMEA-NAV2-RMC</td>
+	  <td>&#8226; NMEA-NAV2-VTG</td>
   </tr>
   <tr>
-    <td>&#8226; NAV-POSECEF</td>
-    <td>&#8226; NAV-POSLLH</td>
-    <td>&#8226; NAV-PVT</td>
+    <td>&#8226; NMEA-NAV2-ZDA</td>
+    <td>&#8226; PUBX-POLYP</td>
+    <td>&#8226; PUBX-POLYS</td>
   </tr>
   <tr>
-    <td>&#8226; NAV-RELPOSNED</td>
-    <td>&#8226; NAV-SAT</td>
-    <td>&#8226; NAV-SIG</td>
-  </tr>
-  <tr>
-    <td>&#8226; NAV-STATUS</td>
-    <td>&#8226; NAV-SVIN</td>
-    <td>&#8226; NAV-TIMEBDS</td>
-  </tr>
-  <tr>
-    <td>&#8226; NAV-TIMEGAL</td>
-    <td>&#8226; NAV-TIMEGLO</td>
-    <td>&#8226; NAV-TIMEGPS</td>
-  </tr>
-  <tr>
-    <td>&#8226; NAV-TIMELS</td>
-    <td>&#8226; NAV-TIMEUTC</td>
-    <td>&#8226; NAV-VELECEF</td>
-  </tr>
-  <tr>
-    <td>&#8226; NAV-VELNED</td>
-    <td>&#8226; RXM-MEASX</td>
-    <td>&#8226; RXM-RAWX</td>
-  </tr>
-  <tr>
-    <td>&#8226; RXM-RLM</td>
-    <td>&#8226; RXM-RTCM</td>
-    <td>&#8226; RXM-SFRBX</td>
-  </tr>
-  <tr>
-    <td>&#8226; MON-COMMS</td>
-    <td>&#8226; MON-HW2</td>
-    <td>&#8226; MON-HW3</td>
-  </tr>
-  <tr>
-    <td>&#8226; MON-HW</td>
-    <td>&#8226; MON-IO</td>
-    <td>&#8226; MON-MSGPP</td>
-  </tr>
-  <tr>
-    <td>&#8226; MON-RF</td>
-    <td>&#8226; MON-RXBUF</td>
-    <td>&#8226; MON-RXR</td>
-  </tr>
-  <tr>
-    <td>&#8226; MON-TXBUF</td>
-    <td>&#8226; TIM-TM2</td>
-    <td>&#8226; TIM-TP</td>
-  </tr>
-  <tr>
-    <td>&#8226; TIM-VRFY</td>
+    <td>&#8226; PUBX-POLYT</td>
     <td>&#8226; RTCM3x-1005</td>
     <td>&#8226; RTCM3x-1074</td>
   </tr>
@@ -154,9 +114,145 @@ The following 67 messages are supported for Bluetooth output and logging:
   </tr>
   <tr>
     <td>&#8226; RTCM3x-4072-1</td>
+    <td>&#8226; ESF-ALG</td>
+    <td>&#8226; ESF-INS</td>
+  </tr>
+  <tr>
+    <td>&#8226; ESF-MEAS</td>
+    <td>&#8226; ESF-RAW</td>
+    <td>&#8226; ESF-STATUS</td>
+  </tr>
+  <tr>
+    <td>&#8226; MON-COMMS</td>
+    <td>&#8226; MON-HW2</td>
+    <td>&#8226; MON-HW3</td>
+  </tr>
+  <tr>
+    <td>&#8226; MON-HW</td>
+    <td>&#8226; MON-IO</td>
+    <td>&#8226; MON-MSGPP</td>
+  </tr>
+  <tr>
+    <td>&#8226; MON-RF</td>
+    <td>&#8226; MON-RXBUF</td>
+    <td>&#8226; MON-RXR</td>
+  </tr>
+  <tr>
+    <td>&#8226; MON-SPAN</td>
+    <td>&#8226; MON-SYS</td>
+    <td>&#8226; MON-TXBUF</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV2-CLOCK</td>
+    <td>&#8226; NAV2-COV</td>
+    <td>&#8226; NAV2-DOP</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV2-EELL</td>
+    <td>&#8226; NAV2-EOE</td>
+    <td>&#8226; NAV2-POSECEF</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV2-POSLLH</td>
+    <td>&#8226; NAV2-PVAT</td>
+    <td>&#8226; NAV2-PVT</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV2-SAT</td>
+    <td>&#8226; NAV2-SBAS</td>
+    <td>&#8226; NAV2-SIG</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV2-STATUS</td>
+    <td>&#8226; NAV2-TIMEBDS</td>
+    <td>&#8226; NAV2-TIMEGAL</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV2-TIMEGLO</td>
+    <td>&#8226; NAV2-TIMEGPS</td>
+    <td>&#8226; NAV2-TIMELS</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV2-TIMEQZSS</td>
+    <td>&#8226; NAV2-TIMEUTC</td>
+    <td>&#8226; NAV2-VELECEF</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV2-VELNED</td>
+    <td>&#8226; NAV-ATT</td>
+    <td>&#8226; NAV-CLOCK</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-COV</td>
+    <td>&#8226; NAV-DOP</td>
+    <td>&#8226; NAV-EELL</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-EOE</td>
+    <td>&#8226; NAV-GEOFENCE</td>
+    <td>&#8226; NAV-HPPOSECEF</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-HPPOSLLH</td>
+    <td>&#8226; NAV-ODO</td>
+    <td>&#8226; NAV-ORB</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-PL</td>
+    <td>&#8226; NAV-POSECEF</td>
+    <td>&#8226; NAV-POSLLH</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-PVAT</td>
+    <td>&#8226; NAV-PVT</td>
+    <td>&#8226; NAV-RELPOSNED</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-SAT</td>
+    <td>&#8226; NAV-SBAS</td>
+    <td>&#8226; NAV-SIG</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-SLAS</td>
+    <td>&#8226; NAV-STATUS</td>
+    <td>&#8226; NAV-SVIN</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-TIMEBDS</td>
+    <td>&#8226; NAV-TIMEGAL</td>
+    <td>&#8226; NAV-TIMEGLO</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-TIMEGPS</td>
+    <td>&#8226; NAV-TIMELS</td>
+    <td>&#8226; NAV-TIMEQZSS</td>
+  </tr>
+  <tr>
+    <td>&#8226; NAV-TIMEUTC</td>
+    <td>&#8226; NAV-VELECEF</td>
+    <td>&#8226; NAV-VELNED</td>
+  </tr>
+  <tr>
+    <td>&#8226; RXM-COR</td>
+    <td>&#8226; RXM-MEASX</td>
+    <td>&#8226; RXM-RAWX</td>
+  </tr>
+  <tr>
+    <td>&#8226; RXM-RLM</td>
+    <td>&#8226; RXM-RTCM</td>
+    <td>&#8226; RXM-SFRBX</td>
+  </tr>
+  <tr>
+    <td>&#8226; RXM-SPARTN</td>
+    <td>&#8226; TIM-TM2</td>
+    <td>&#8226; TIM-TP</td>
+  </tr>
+  <tr>
+    <td>&#8226; TIM-VRFY</td>
     <td></td>
     <td></td>
   </tr>
+
 </table></table>
 
 ## Turn off all messages

@@ -6,7 +6,7 @@ The ZED-F9P is immensely configurable. The RTK device will, by default, put the 
 
 The GNSS Configuration menu allows a user to change the report rate, dynamic model, and select which constellations should be used for fix calculations.
 
-[![GNSS Configuration menu](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config.jpg)
+![GNSS Configuration menu](img/SparkFun%20RTK%20-%20GNSS%20Menu.png)
 
 *The most common settings on the RTK Device WiFi AP Config*
 
@@ -27,6 +27,16 @@ Note: When in **Base** mode, the measurement frequency is set to 1Hz. This is be
 ## Dynamic Model
 
 The Dynamic Model can be changed but it is recommended to leave it as *Portable*. For more information, please refer to the [ZED-F9P Integration Manual](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/ZED-F9P_IntegrationManual__UBX-18010802_.pdf).
+
+## Min SV Elevation and C/N0:
+
+![Elevation and C/N0](img/SparkFun%20RTK%20-%20GNSS%20Menu.png)
+
+* GNSS menu showing Minimum SV Elevation and C/N0
+
+A minimum elevation is set in degrees. If a satellite is detected that is below this elevation, it will be *excluded* from any GNSS position calculation.
+
+A minimum C/N0 is set in dB. If a satellite is detected that is below this signal strength, it will be *excluded* from any GNSS position calculation.
 
 ## Constellations Menu
 

@@ -740,6 +740,11 @@ void updateSystemState()
           else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
           {
             log_d("L_Band Keys starting WiFi");
+
+            //Temporarily limit WiFi connection attempts
+            wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts;
+            wifiMaxConnectionAttempts = 0; //Override setting during key retrieval. Give up after single failure.
+
             wifiStart();
             changeState(STATE_KEYS_PROVISION_WIFI_STARTED);
           }
@@ -775,6 +780,11 @@ void updateSystemState()
           if (online.rtc == false)
           {
             log_d("Keys Needed RTC off starting WiFi");
+
+            //Temporarily limit WiFi connection attempts
+            wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts;
+            wifiMaxConnectionAttempts = 0; //Override setting during key retrieval. Give up after single failure.
+
             wifiStart();
             changeState(STATE_KEYS_WIFI_STARTED); //If we can't check the RTC, continue
           }

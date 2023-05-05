@@ -2,6 +2,58 @@
 
 Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
 
+## WiFi Interface
+
+Because of the nature of these controls, the AP config page is different than the terminal menu.
+
+![System Config Menu on WiFi AP Config Page](img/SparkFun%20RTK%20System%20and%20Data%20Logging%20Configuration.png)
+
+*System Config Menu on WiFi AP Config Page*
+
+### System Initial State
+
+At power on, the device will enter either Rover or Base state.
+
+### Log to SD
+
+If a microSD card is detected, all messages will be logged. 
+
+### Max Log Time
+
+Once the max log time is achieved, logging will cease. This is useful for limiting long-term, overnight, static surveys to a certain length of time. Default: 1440 minutes (24 hours). Limit: 1 to 2880 minutes.
+
+### Max Log Length
+
+Every 'max long length' amount of time the current log will be closed and a new log will be started. This is known as cyclic logging and is convenient on *very* long surveys (ie, months or years) to prevent logs from getting too unwieldy and helps limit the risk of log corruption. This will continue until the unit is powered down or the *max logging time* is reached.
+
+### Start New Log
+
+Pressing the 'Start New Log' button will close the current log. A new log will be opened when the AP Config page is closed and the unit restarts. This can be helpful in the field when a certain set of coordinates or feature marks need to be recorded in close proximity to one another. By dividing up the logs, the work can be more easily identified.
+
+### Bluetooth Protocol
+
+By default, the RTK products use Bluetooth v2.0 SPP (Serial Port Profile) to connect to data collectors. Nearly all data collectors support this protocol. The RTK product line also supports BLE (Bluetooth Low Energy). The BLE protocol has a variety of improvements but very few data collectors support it.
+
+**Note:** Bluetooth SPP cannot operate concurrently with ESP-Now radio transmissions. Therefore, if you plan to use the ESP-Now radio system to connect RTK products, the BLE protocol must be used to communicate over Bluetooth to data collectors. Alternatively, ESP-Now works concurrently with WiFi so connecting to a data collector over WiFi can be used.
+
+### Enable Factory Defaults
+
+Factory Defaults will erase any user settings and reset the internal receiver to stock settings. Any logs on SD are maintained. To prevent accidental reset the checkbox must first be checked before the button is pressed.
+
+### SD Card
+
+Various stats for the SD card are shown. 
+
+### Update Firmware
+
+New firmware may be uploaded via WiFi to the unit. See [Updating Firmware from WiFi](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-wifi) for more information.
+
+### Reset Counter
+
+A counter is displayed indicating the number of non-power-on-resets since the last power-on.
+
+## Serial Interface
+
 ![System menu](img/SparkFun%20RTK%20System%20Menu.png)
 
 *Menu showing various attributes of the system*

@@ -714,6 +714,9 @@ typedef struct {
   char ntripServer_CasterUserPW[50] = "";
   char ntripServer_MountPoint[50] = "bldr_dwntwn2"; //NTRIP Server
   char ntripServer_MountPointPW[50] = "WR5wRo4H";
+  //Products that have Ethernet will always use Ethernet for NTRIP Server and Client, unless ntripServerUseWiFiNotEthernet is set to true.
+  //Setting ntripServerUseWiFiNotEthernet to true will make Ethernet-enabled products use WiFi for NTRIP Server instead.
+  bool ntripServerUseWiFiNotEthernet = false;
 
   //NTRIP Client
   bool enableNtripClient = false;
@@ -724,6 +727,8 @@ typedef struct {
   char ntripClient_MountPoint[50] = "bldr_SparkFun1";
   char ntripClient_MountPointPW[50] = "";
   bool ntripClient_TransmitGGA = true;
+  //Setting ntripClientUseWiFiNotEthernet to true will make Ethernet-enabled products use WiFi for NTRIP Client instead.
+  bool ntripClientUseWiFiNotEthernet = false;
 
   int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
 
@@ -821,6 +826,9 @@ typedef struct {
   uint16_t ethernetNtpPort = 123;
   bool ethernetDHCP = true;
   bool enableNTPFile = false; //Log NTP requests to file
+  bool enableTcpClientEthernet = false;
+  uint16_t ethernetTcpPort = 2947; //TCP port to use in Client mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
+  char hostForTCPClient[50] = "";
 
   //NTP
   uint8_t ntpPollExponent = 6; //NTPpacket::defaultPollExponent 2^6 = 64 seconds
@@ -855,6 +863,7 @@ struct struct_online {
   bool i2c = false;
   bool tcpClient = false;
   bool tcpServer = false;
+  bool tcpClientEthernet = false;
   ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
   bool ethernetNTPServer = false; //EthernetUDP
 } online;

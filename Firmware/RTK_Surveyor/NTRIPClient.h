@@ -24,25 +24,35 @@ class NTRIPClient : public WiFiClient
 {
   public:
 
-    NTRIPClient()
+    NTRIPClient(bool useWiFiNotEthernet)
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (HAS_ETHERNET && !useWiFiNotEthernet)
+      {
         _ntripClientEthernet = new EthernetClient;
+        _useWiFiNotEthernet = false;
+      }
       else
+      {
         _ntripClientWiFi = new WiFiClient;
+        _useWiFiNotEthernet = true;
+      }
 #elif defined(COMPILE_ETHERNET)
       if (HAS_ETHERNET)
+      {
         _ntripClientEthernet = new EthernetClient;
+      }
 #elif defined(COMPILE_WIFI)
-      _ntripClientWiFi = new WiFiClient;
+      {
+        _ntripClientWiFi = new WiFiClient;
+      }
 #endif
     };
 
     ~NTRIPClient()
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (!_useWiFiNotEthernet)
       {
         _ntripClientEthernet->stop();
         delete _ntripClientEthernet;
@@ -71,7 +81,7 @@ class NTRIPClient : public WiFiClient
     operator bool()
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (!_useWiFiNotEthernet)
         return _ntripClientEthernet;
       else
         return _ntripClientWiFi;
@@ -88,7 +98,7 @@ class NTRIPClient : public WiFiClient
     int connect(const char *host, uint16_t port)
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (!_useWiFiNotEthernet)
         return _ntripClientEthernet->connect(host, port);
       else
         return _ntripClientWiFi->connect(host, port);
@@ -105,7 +115,7 @@ class NTRIPClient : public WiFiClient
     size_t write(uint8_t b)
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (!_useWiFiNotEthernet)
         return _ntripClientEthernet->write(b);
       else
         return _ntripClientWiFi->write(b);
@@ -122,7 +132,7 @@ class NTRIPClient : public WiFiClient
     size_t write(const uint8_t *buf, size_t size)
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (!_useWiFiNotEthernet)
         return _ntripClientEthernet->write(buf, size);
       else
         return _ntripClientWiFi->write(buf, size);
@@ -139,7 +149,7 @@ class NTRIPClient : public WiFiClient
     int available()
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (!_useWiFiNotEthernet)
         return _ntripClientEthernet->available();
       else
         return _ntripClientWiFi->available();
@@ -156,7 +166,7 @@ class NTRIPClient : public WiFiClient
     int read(uint8_t *buf, size_t size)
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (!_useWiFiNotEthernet)
         return _ntripClientEthernet->read();
       else
         return _ntripClientWiFi->read();
@@ -173,7 +183,7 @@ class NTRIPClient : public WiFiClient
     int read()
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (!_useWiFiNotEthernet)
         return _ntripClientEthernet->read();
       else
         return _ntripClientWiFi->read();
@@ -190,7 +200,7 @@ class NTRIPClient : public WiFiClient
     void stop()
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (!_useWiFiNotEthernet)
         _ntripClientEthernet->stop();
       else
         _ntripClientWiFi->stop();
@@ -207,7 +217,7 @@ class NTRIPClient : public WiFiClient
     uint8_t connected()
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (!_useWiFiNotEthernet)
         return _ntripClientEthernet->connected();
       else
         return _ntripClientWiFi->connected();
@@ -224,7 +234,7 @@ class NTRIPClient : public WiFiClient
     size_t print(const char *printMe)
     {
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
-      if (HAS_ETHERNET)
+      if (!_useWiFiNotEthernet)
         return _ntripClientEthernet->print(printMe);
       else
         return _ntripClientWiFi->print(printMe);
@@ -239,6 +249,7 @@ class NTRIPClient : public WiFiClient
     };
 
   protected:
+    bool _useWiFiNotEthernet;
 #if defined(COMPILE_WIFI)
     WiFiClient * _ntripClientWiFi;
 #endif

@@ -617,6 +617,9 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
   stringRecord(newSettings, "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
 
+  stringRecord(newSettings, "ntripServerUseWiFiNotEthernet", settings.ntripServerUseWiFiNotEthernet);
+  stringRecord(newSettings, "ntripClientUseWiFiNotEthernet", settings.ntripClientUseWiFiNotEthernet);
+
   //Sensor Fusion Config
   stringRecord(newSettings, "enableSensorFusion", settings.enableSensorFusion);
   stringRecord(newSettings, "autoIMUmountAlignment", settings.autoIMUmountAlignment);
@@ -649,7 +652,10 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "ethernetSubnet", ipAddressChar);
   stringRecord(newSettings, "ethernetHttpPort", settings.ethernetHttpPort);
   stringRecord(newSettings, "ethernetNtpPort", settings.ethernetNtpPort);
-
+  stringRecord(newSettings, "enableTcpClientEthernet", settings.enableTcpClientEthernet);
+  stringRecord(newSettings, "ethernetTcpPort", settings.ethernetTcpPort);
+  stringRecord(newSettings, "hostForTCPClient", settings.hostForTCPClient);
+  
   //NTP
   stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
   stringRecord(newSettings, "ntpPrecision", settings.ntpPrecision);
@@ -1100,6 +1106,12 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     strcpy(settings.ntripClient_MountPointPW, settingValueStr);
   else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
     settings.ntripClient_TransmitGGA = settingValueBool;
+    
+  else if (strcmp(settingName, "ntripServerUseWiFiNotEthernet") == 0)
+    settings.ntripServerUseWiFiNotEthernet = settingValueBool;
+  else if (strcmp(settingName, "ntripClientUseWiFiNotEthernet") == 0)
+    settings.ntripClientUseWiFiNotEthernet = settingValueBool;
+    
   else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
     settings.serialTimeoutGNSS = settingValue;
   else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)
@@ -1203,6 +1215,12 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.ethernetHttpPort = settingValue;
   else if (strcmp(settingName, "ethernetNtpPort") == 0)
     settings.ethernetNtpPort = settingValue;
+  else if (strcmp(settingName, "enableTcpClientEthernet") == 0)
+    settings.enableTcpClientEthernet = settingValueBool;
+  else if (strcmp(settingName, "ethernetTcpPort") == 0)
+    settings.ethernetTcpPort = settingValue;
+  else if (strcmp(settingName, "hostForTCPClient") == 0)
+    strcpy(settings.hostForTCPClient, settingValueStr);
 
   //NTP
   else if (strcmp(settingName, "ntpPollExponent") == 0)

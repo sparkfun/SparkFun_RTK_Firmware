@@ -1,5 +1,34 @@
 //Ethernet
 
+//Determine if Ethernet is needed. Saves RAM...
+bool ethernetIsNeeded()
+{
+  //Does NTP need Ethernet?
+  if (HAS_ETHERNET && systemState >= STATE_NTPSERVER_NOT_STARTED && systemState <= STATE_NTPSERVER_SYNC)
+    return true;
+
+  //Does Base mode NTRIP Server need Ethernet?
+  if (HAS_ETHERNET
+      && settings.enableNtripServer == true
+      && (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+      && !settings.ntripServerUseWiFiNotEthernet)
+     return true;
+
+  //Does Base mode NTRIP Server need Ethernet?
+  if (HAS_ETHERNET
+      && settings.enableNtripClient == true
+      && (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX)
+      && !settings.ntripClientUseWiFiNotEthernet)
+     return true;
+
+  //Does TCP need Ethernet?
+  if (HAS_ETHERNET
+      && settings.enableTcpClientEthernet)
+     return true;
+
+   return false;
+}
+
 //Regularly called to update the Ethernet status
 void beginEthernet()
 {
@@ -14,6 +43,9 @@ void beginEthernet()
   }
 
 #ifdef COMPILE_ETHERNET
+
+  if (!ethernetIsNeeded())
+    return;
 
   switch (online.ethernetStatus)
   {
@@ -112,7 +144,8 @@ void beginEthernetNTPServer()
 #ifdef COMPILE_ETHERNET
   if ((online.ethernetStatus == ETH_CONNECTED) && (online.ethernetNTPServer == false))
   {
-    ethernetNTPServer = new derivedEthernetUDP;
+    if (ethernetNTPServer == nullptr)
+      ethernetNTPServer = new derivedEthernetUDP;
     ethernetNTPServer->begin(settings.ethernetNtpPort);
     ntpSockIndex = ethernetNTPServer->getSockIndex(); //Get the socket index
     w5500ClearSocketInterrupts(); // Clear all interrupts
@@ -120,6 +153,11 @@ void beginEthernetNTPServer()
     online.ethernetNTPServer = true;
   }
 #endif
+}
+
+void endEthernetNTPServer()
+{
+  
 }
 
 void updateEthernet()
@@ -311,6 +349,148 @@ void updateEthernetNTPServer()
 #endif
 }
 
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+// Send data to the Ethernet TCP server as client
+void ethernetSendTcpData(uint8_t * data, uint16_t length)
+{
+#ifdef COMPILE_ETHERNET
+
+  if (!length) //Nothing to write
+    return;
+
+  if (online.tcpClientEthernet && ethernetTcpConnected)
+  {
+    if (ethernetTcpClient->write(data, length) == length)
+    {
+      if (settings.enablePrintTcpStatus && (!inMainMenu))
+        systemPrintf("%d bytes written over Ethernet TCP\r\n", length);
+    }
+    //Failed to write the data
+    else
+    {
+      if (!inMainMenu)
+      {
+        systemPrintln("Breaking Ethernet TCP client connection to host");
+      }
+  
+      //Done with this client connection
+      ethernetTcpClient->stop();
+      ethernetTcpConnected = false;
+    }
+  }
+
+#endif  //COMPILE_ETHERNET
+}
+
+void tcpUpdateEthernet()
+{
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping tcpUpdateEthernet");
+    return;
+  }
+
+  if (!HAS_ETHERNET)
+    return;
+    
+#ifdef COMPILE_ETHERNET
+  //Start the TCP client if enabled
+  if (settings.enableTcpClientEthernet
+      && (!online.tcpClientEthernet)
+      && (online.ethernetStatus == ETH_CONNECTED)
+     )
+  {
+    if (ethernetTcpClient == nullptr)
+      ethernetTcpClient = new EthernetClient;
+
+    online.tcpClientEthernet = true;
+    ethernetTcpConnected = false;
+    systemPrint("Ethernet TCP client online: Local IP: ");
+    systemPrintln(Ethernet.localIP());
+  }
+
+  static unsigned long lastTcpConnectAttempt = 0;
+
+  if (online.tcpClientEthernet)
+  {
+    //Try to connect to the TCP Host
+    if (((!ethernetTcpClient) || (!ethernetTcpClient->connected()))
+        && ((millis() - lastTcpConnectAttempt) >= 1000))
+    {
+      lastTcpConnectAttempt = millis();
+
+      //Remove any http:// or https:// prefix from host name
+      char hostname[51];
+      strncpy(hostname, settings.hostForTCPClient, sizeof(hostname) - 1); //strtok modifies string to be parsed so we create a copy
+      char *token = strtok(hostname, "//");
+      if (token != nullptr)
+      {
+        token = strtok(nullptr, "//"); //Advance to data after //
+        if (token != nullptr)
+          strcpy(settings.hostForTCPClient, token);
+      }
+          
+      if (settings.enablePrintTcpStatus && (!inMainMenu))
+      {
+        systemPrint("Trying to connect Ethernet TCP client to ");
+        systemPrint(settings.hostForTCPClient);
+        systemPrint(" on port ");
+        systemPrintln(settings.ethernetTcpPort);
+      }
+      
+      if (ethernetTcpClient->connect(settings.hostForTCPClient, settings.ethernetTcpPort))
+      {
+        online.tcpClientEthernet = true;
+        ethernetTcpConnected = true;
+        if (!inMainMenu)
+        {
+          systemPrint("Ethernet TCP client connected to ");
+          systemPrintln(ethernetTcpClient->remoteIP());
+        }
+      }
+      else
+      {
+        //Release any allocated resources
+        //if (ethernetTcpClient)
+        ethernetTcpClient->stop();
+        ethernetTcpConnected = false;
+      }
+    }
+  }
+
+  if (ethernetTcpConnected)
+  {
+    //Check for a broken connection
+    if ((!ethernetTcpClient) || (!ethernetTcpClient->connected()))
+    {
+      if (!inMainMenu)
+      {
+        systemPrintln("TCP client disconnected from host");
+      }
+
+      //Done with this client connection
+      ethernetTcpClient->stop();
+      ethernetTcpConnected = false;
+    }
+  }
+
+  if (ethernetTcpConnected && (online.ethernetStatus < ETH_CONNECTED))
+  {
+    //Check for Ethernet disconnection
+    if (!inMainMenu)
+    {
+      systemPrintln("Ethernet is disconnected. TCP client offline");
+    }
+    ethernetTcpClient->stop();
+    ethernetTcpConnected = false;
+    online.tcpClientEthernet = false;
+  }
+
+#endif
+}
+
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 //Start Ethernet WebServer ESP32 W5500 - needs exclusive access to WiFi, SPI and Interrupts
 void startEthernerWebServerESP32W5500()
 {
@@ -390,6 +570,16 @@ void menuEthernet()
       systemPrintln(settings.ethernetSubnet.toString().c_str());
     }
 
+    systemPrint("c) Ethernet TCP Client: ");
+    systemPrintf("%s\r\n", settings.enableTcpClientEthernet ? "Enabled" : "Disabled");
+
+    if (settings.enableTcpClientEthernet == true)
+    {
+      systemPrintf("p) Ethernet TCP Port: %ld\r\n", settings.ethernetTcpPort);
+      systemPrint("h) Host for Ethernet TCP: ");
+      systemPrintln(settings.hostForTCPClient);
+    }
+
     systemPrintln("x) Exit");
 
     byte incoming = getCharacterNumber();
@@ -451,6 +641,32 @@ void menuEthernet()
       else
         systemPrint("Error: invalid Subnet Mask");
     }
+    else if (incoming == 'c')
+    {
+      //Toggle TCP client
+      settings.enableTcpClientEthernet ^= 1;
+      restartEthernet = true;
+    }
+    else if ((incoming == 'p') && (settings.enableTcpClientEthernet == true))
+    {
+      systemPrint("Enter the TCP port to use (0 to 65535): ");
+      int ethernetTcpPort = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((ethernetTcpPort != INPUT_RESPONSE_GETNUMBER_EXIT) && (ethernetTcpPort != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (ethernetTcpPort < 0 || ethernetTcpPort > 65535)
+          systemPrintln("Error: TCP Port out of range");
+        else
+        {
+          settings.ethernetTcpPort = ethernetTcpPort; //Recorded to NVM and file at main menu exit
+          restartEthernet = true;
+        }
+      }
+    }
+    else if ((incoming == 'h') && (settings.enableTcpClientEthernet == true))
+    {
+      systemPrint("Enter new host name / address: ");
+      getString(settings.hostForTCPClient, sizeof(settings.hostForTCPClient));
+    }
     else if (incoming == 'x')
       break;
     else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
@@ -463,11 +679,30 @@ void menuEthernet()
 
   clearBuffer(); //Empty buffer of any newline chars
 
-  if (restartEthernet) //Restart the ESP to use the new ethernet settings
+  if (restartEthernet) //Restart Ethernet to use the new ethernet settings
   {
-    recordSystemSettings();
-    ESP.restart();
+    ethernetRestart();
   }
 
+#endif  //COMPILE_ETHERNET
+}
+
+void ethernetRestart()
+{
+#ifdef COMPILE_ETHERNET
+  //Reset online.ethernetStatus so beginEthernet will call Ethernet.begin to use the new settings
+  online.ethernetStatus = ETH_NOT_STARTED;
+
+  //Ethernet TCP Client
+  ethernetTcpClient->stop();
+  ethernetTcpConnected = false;
+  online.tcpClientEthernet = false;
+
+  //NTP Server
+  if (ethernetNTPServer)
+    ethernetNTPServer->stop();
+  online.ethernetNTPServer = false;
+
+  //NTRIP?
 #endif  //COMPILE_ETHERNET
 }

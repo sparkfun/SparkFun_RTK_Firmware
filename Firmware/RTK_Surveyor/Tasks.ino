@@ -261,11 +261,13 @@ void processUart1Message(PARSE_STATE * parse, uint8_t type)
 void handleGNSSDataTask(void *e)
 {
   volatile static uint16_t btTail = 0; //BT Tail advances as it is sent over BT
-  volatile static uint16_t tcpTail = 0; //TCP client tail
+  volatile static uint16_t tcpTailWiFi = 0; //TCP client tail
+  volatile static uint16_t tcpTailEthernet = 0; //TCP client tail
   volatile static uint16_t sdTail = 0; //SD Tail advances as it is recorded to SD
 
   int btBytesToSend; //Amount of buffered Bluetooth data
-  int tcpBytesToSend; //Amount of buffered TCP data
+  int tcpBytesToSendWiFi; //Amount of buffered TCP data
+  int tcpBytesToSendEthernet; //Amount of buffered TCP data
   int sdBytesToRecord; //Amount of buffered microSD card logging data
 
   int btConnected; //Is the device in a state to send Bluetooth data?
@@ -288,12 +290,20 @@ void handleGNSSDataTask(void *e)
     }
 
     //Determine the amount of TCP data in the buffer
-    tcpBytesToSend = 0;
+    tcpBytesToSendWiFi = 0;
     if (settings.enableTcpServer || settings.enableTcpClient)
     {
-      tcpBytesToSend = dataHead - tcpTail;
-      if (tcpBytesToSend < 0)
-        tcpBytesToSend += settings.gnssHandlerBufferSize;
+      tcpBytesToSendWiFi = dataHead - tcpTailWiFi;
+      if (tcpBytesToSendWiFi < 0)
+        tcpBytesToSendWiFi += settings.gnssHandlerBufferSize;
+    }
+    
+    tcpBytesToSendEthernet = 0;
+    if (settings.enableTcpClientEthernet)
+    {
+      tcpBytesToSendEthernet = dataHead - tcpTailEthernet;
+      if (tcpBytesToSendEthernet < 0)
+        tcpBytesToSendEthernet += settings.gnssHandlerBufferSize;
     }
 
     //Determine the amount of microSD card logging data in the buffer
@@ -343,22 +353,48 @@ void handleGNSSDataTask(void *e)
     //Send data to the TCP clients
     //----------------------------------------------------------------------
 
+    //TODO: consider changing this to:
+    //if ((!online.tcpServer) && (!online.tcpClient) && (!wifiTcpConnected))
+    //as this would prevent wifiSendTcpData from trying to send bytes after a WiFiStop
+    //Note: it would be even better if it were changed to:
+    //if (((!online.tcpServer) && (!online.tcpClient)) || (!wifiTcpConnected))
+    //but you cannot do that as wifiTcpConnected is configured _inside_ wifiSendTcpData
+    //When time permits, we could move the code that configures wifiTcpConnected into tcpUpdate
+    //leaving only the actual transmit code in wifiSendTcpData
     if ((!settings.enableTcpServer) && (!settings.enableTcpClient) && (!wifiTcpConnected))
-      tcpTail = dataHead;
-    else if (tcpBytesToSend > 0)
+      tcpTailWiFi = dataHead;
+    else if (tcpBytesToSendWiFi > 0)
     {
       //Reduce bytes to send if we have more to send then the end of the buffer
       //We'll wrap next loop
-      if ((tcpTail + tcpBytesToSend) > settings.gnssHandlerBufferSize)
-        tcpBytesToSend = settings.gnssHandlerBufferSize - tcpTail;
+      if ((tcpTailWiFi + tcpBytesToSendWiFi) > settings.gnssHandlerBufferSize)
+        tcpBytesToSendWiFi = settings.gnssHandlerBufferSize - tcpTailWiFi;
 
       //Send the data to the TCP clients
-      wifiSendTcpData(&ringBuffer[tcpTail], tcpBytesToSend);
+      wifiSendTcpData(&ringBuffer[tcpTailWiFi], tcpBytesToSendWiFi);
 
       //Assume all data was sent, wrap the buffer pointer
-      tcpTail += tcpBytesToSend;
-      if (tcpTail >= settings.gnssHandlerBufferSize)
-        tcpTail -= settings.gnssHandlerBufferSize;
+      tcpTailWiFi += tcpBytesToSendWiFi;
+      if (tcpTailWiFi >= settings.gnssHandlerBufferSize)
+        tcpTailWiFi -= settings.gnssHandlerBufferSize;
+    }
+
+    if ((!online.tcpClientEthernet) || (!ethernetTcpConnected))
+      tcpTailEthernet = dataHead;
+    else if (tcpBytesToSendEthernet > 0)
+    {
+      //Reduce bytes to send if we have more to send then the end of the buffer
+      //We'll wrap next loop
+      if ((tcpTailEthernet + tcpBytesToSendEthernet) > settings.gnssHandlerBufferSize)
+        tcpBytesToSendEthernet = settings.gnssHandlerBufferSize - tcpTailEthernet;
+
+      //Send the data to the TCP clients
+      ethernetSendTcpData(&ringBuffer[tcpTailEthernet], tcpBytesToSendEthernet);
+
+      //Assume all data was sent, wrap the buffer pointer
+      tcpTailEthernet += tcpBytesToSendEthernet;
+      if (tcpTailEthernet >= settings.gnssHandlerBufferSize)
+        tcpTailEthernet -= settings.gnssHandlerBufferSize;
     }
 
     //----------------------------------------------------------------------
@@ -385,7 +421,7 @@ void handleGNSSDataTask(void *e)
           if ((sdTail + sliceToRecord) > settings.gnssHandlerBufferSize)
             sliceToRecord = settings.gnssHandlerBufferSize - sdTail;
 
-          if (settings.enablePrintSDBuffers && !inMainMenu)
+          if (settings.enablePrintSDBuffers && (!inMainMenu))
           {
             int bufferAvailable;
             if (USE_I2C_GNSS)
@@ -472,9 +508,13 @@ void handleGNSSDataTask(void *e)
     if (btBytesToSend < 0)
       btBytesToSend += settings.gnssHandlerBufferSize;
 
-    tcpBytesToSend = dataHead - tcpTail;
-    if (tcpBytesToSend < 0)
-      tcpBytesToSend += settings.gnssHandlerBufferSize;
+    tcpBytesToSendWiFi = dataHead - tcpTailWiFi;
+    if (tcpBytesToSendWiFi < 0)
+      tcpBytesToSendWiFi += settings.gnssHandlerBufferSize;
+
+    tcpBytesToSendEthernet = dataHead - tcpTailEthernet;
+    if (tcpBytesToSendEthernet < 0)
+      tcpBytesToSendEthernet += settings.gnssHandlerBufferSize;
 
     sdBytesToRecord = dataHead - sdTail;
     if (sdBytesToRecord < 0)
@@ -482,9 +522,11 @@ void handleGNSSDataTask(void *e)
 
     //Determine the inteface that is most behind: SD writing, SPP transmission, or TCP transmission
     int usedSpace = 0;
-    if (tcpBytesToSend >= btBytesToSend && tcpBytesToSend >= sdBytesToRecord)
-      usedSpace = tcpBytesToSend;
-    else if (btBytesToSend >= sdBytesToRecord && btBytesToSend >= tcpBytesToSend)
+    if (tcpBytesToSendWiFi >= btBytesToSend && tcpBytesToSendWiFi >= sdBytesToRecord && tcpBytesToSendWiFi >= tcpBytesToSendEthernet)
+      usedSpace = tcpBytesToSendWiFi;
+    else if (tcpBytesToSendEthernet >= btBytesToSend && tcpBytesToSendEthernet >= sdBytesToRecord && tcpBytesToSendEthernet >= tcpBytesToSendWiFi)
+      usedSpace = tcpBytesToSendEthernet;
+    else if (btBytesToSend >= sdBytesToRecord && btBytesToSend >= tcpBytesToSendWiFi && btBytesToSend >= tcpBytesToSendEthernet)
       usedSpace = btBytesToSend;
     else
       usedSpace = sdBytesToRecord;

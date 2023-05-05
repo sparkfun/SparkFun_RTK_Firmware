@@ -247,7 +247,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
     //If we have not gotten new RTCM bytes for a period of time, assume end of frame
     if (millis() - ntripServerTimer > 100 && ntripServerBytesSent > 0)
     {
-      if (!inMainMenu && settings.enablePrintNtripServerState)
+      if ((!inMainMenu) && settings.enablePrintNtripServerState)
         systemPrintf("NTRIP Server transmitted %d RTCM bytes to Caster\r\n", ntripServerBytesSent);
 
       ntripServerBytesSent = 0;
@@ -286,7 +286,7 @@ void ntripServerStart()
     reportHeapNow();
 
     //Allocate the ntripServer structure
-    ntripServer = new NTRIPClient();
+    ntripServer = new NTRIPClient(settings.ntripServerUseWiFiNotEthernet);
 
     //Restart WiFi and the NTRIP server if possible
     if (ntripServer)
@@ -315,7 +315,7 @@ void ntripServerStop(bool wifiClientAllocated)
 
     //Allocate the NTRIP server structure if not done
     if (wifiClientAllocated == false)
-      ntripServer = new NTRIPClient();
+      ntripServer = new NTRIPClient(settings.ntripServerUseWiFiNotEthernet);
   }
 
   //Increase timeouts if we started WiFi
@@ -371,9 +371,14 @@ void ntripServerUpdate()
 
     //Start WiFi
     case NTRIP_SERVER_ON:
-      if (HAS_ETHERNET)
+      if (HAS_ETHERNET && !settings.ntripServerUseWiFiNotEthernet)
       {
-        if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
+        if (online.ethernetStatus == ETH_NOT_STARTED)
+        {
+          systemPrintln("Ethernet not started. Can not start NTRIP Server");
+          ntripServerStop(false); //Do allocate new WiFi / Ethernet Client
+        }
+        else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
         {
           //Pause until connection timeout has passed
           if (millis() - ntripServerLastConnectionAttempt > ntripServerConnectionAttemptTimeout)
@@ -412,7 +417,7 @@ void ntripServerUpdate()
 
     //Wait for connection to an access point
     case NTRIP_SERVER_WIFI_ETHERNET_STARTED:
-      if (HAS_ETHERNET)
+      if (HAS_ETHERNET && !settings.ntripServerUseWiFiNotEthernet)
       {
         if (online.ethernetStatus == ETH_CONNECTED)
           ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_CONNECTED);

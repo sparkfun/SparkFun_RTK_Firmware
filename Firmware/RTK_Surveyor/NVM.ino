@@ -97,7 +97,7 @@ void recordSystemSettingsToFileSD(char *fileName)
           log_d("Removing from SD: %s", fileName);
           sd->remove(fileName);
         }
-  
+
         SdFile settingsFile; //FAT32
         if (settingsFile.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
         {
@@ -106,11 +106,11 @@ void recordSystemSettingsToFileSD(char *fileName)
         }
 
         updateDataFileCreate(&settingsFile); //Update the file to create time & date
-  
+
         recordSystemSettingsToFile((File *)&settingsFile); //Record all the settings via strings to file
-  
+
         updateDataFileAccess(&settingsFile); //Update the file access time & date
-  
+
         settingsFile.close();
       }
 #ifdef COMPILE_SD_MMC
@@ -121,9 +121,9 @@ void recordSystemSettingsToFileSD(char *fileName)
           log_d("Removing from SD: %s", fileName);
           SD_MMC.remove(fileName);
         }
-  
+
         File settingsFile = SD_MMC.open(fileName, FILE_WRITE);
-        
+
         if (!settingsFile)
         {
           systemPrintln("Failed to create settings file");
@@ -131,7 +131,7 @@ void recordSystemSettingsToFileSD(char *fileName)
         }
 
         recordSystemSettingsToFile(&settingsFile); //Record all the settings via strings to file
-  
+
         settingsFile.close();
       }
 #endif
@@ -287,6 +287,9 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "enablePrintNtripClientRtcm", settings.enablePrintNtripClientRtcm);
   settingsFile->printf("%s=%d\r\n", "enablePrintStates", settings.enablePrintStates);
   settingsFile->printf("%s=%d\r\n", "enablePrintDuplicateStates", settings.enablePrintDuplicateStates);
+  settingsFile->printf("%s=%d\r\n", "enablePrintRtcSync", settings.enablePrintRtcSync);
+  settingsFile->printf("%s=%d\r\n", "enablePrintNTPDiag", settings.enablePrintNTPDiag);
+  settingsFile->printf("%s=%d\r\n", "enablePrintEthernetDiag", settings.enablePrintEthernetDiag);
   settingsFile->printf("%s=%d\r\n", "radioType", settings.radioType);
 
   //Record peer MAC addresses
@@ -294,13 +297,13 @@ void recordSystemSettingsToFile(File * settingsFile)
   {
     char tempString[50]; //espnowPeers.1=B4,C1,33,42,DE,01,
     snprintf(tempString, sizeof(tempString), "espnowPeers.%d=%02X,%02X,%02X,%02X,%02X,%02X,", x,
-            settings.espnowPeers[x][0],
-            settings.espnowPeers[x][1],
-            settings.espnowPeers[x][2],
-            settings.espnowPeers[x][3],
-            settings.espnowPeers[x][4],
-            settings.espnowPeers[x][5]
-           );
+             settings.espnowPeers[x][0],
+             settings.espnowPeers[x][1],
+             settings.espnowPeers[x][2],
+             settings.espnowPeers[x][3],
+             settings.espnowPeers[x][4],
+             settings.espnowPeers[x][5]
+            );
     settingsFile->println(tempString);
   }
   settingsFile->printf("%s=%d\r\n", "espnowPeerCount", settings.espnowPeerCount);
@@ -329,6 +332,19 @@ void recordSystemSettingsToFile(File * settingsFile)
 
   settingsFile->printf("%s=%d\r\n", "wifiConfigOverAP", settings.wifiConfigOverAP);
   settingsFile->printf("%s=%d\r\n", "wifiTcpPort", settings.wifiTcpPort);
+  settingsFile->printf("%s=%d\r\n", "minElev", settings.minElev);
+
+  settingsFile->printf("%s=%d\r\n", "imuYaw", settings.imuYaw);
+  settingsFile->printf("%s=%d\r\n", "imuPitch", settings.imuPitch);
+  settingsFile->printf("%s=%d\r\n", "imuRoll", settings.imuRoll);
+  settingsFile->printf("%s=%d\r\n", "sfDisableWheelDirection", settings.sfDisableWheelDirection);
+  settingsFile->printf("%s=%d\r\n", "sfCombineWheelTicks", settings.sfCombineWheelTicks);
+  settingsFile->printf("%s=%d\r\n", "rateNavPrio", settings.rateNavPrio);
+  settingsFile->printf("%s=%d\r\n", "sfUseSpeed", settings.sfUseSpeed);
+  settingsFile->printf("%s=%d\r\n", "coordinateInputType", settings.coordinateInputType);
+  settingsFile->printf("%s=%d\r\n", "lbandFixTimeout_seconds", settings.lbandFixTimeout_seconds);
+  settingsFile->printf("%s=%d\r\n", "minCNO_F9R", settings.minCNO_F9R);
+  settingsFile->printf("%s=%d\r\n", "minCNO_F9P", settings.minCNO_F9P);
 
   //Record constellation settings
   for (int x = 0 ; x < MAX_CONSTELLATIONS ; x++)
@@ -342,8 +358,38 @@ void recordSystemSettingsToFile(File * settingsFile)
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
     char tempString[50]; //message.nmea_dtm.msgRate=5
-    snprintf(tempString, sizeof(tempString), "message.%s.msgRate=%d", settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
+    snprintf(tempString, sizeof(tempString), "message.%s.msgRate=%d", ubxMessages[x].msgTextName, settings.ubxMessageRates[x]);
     settingsFile->println(tempString);
+  }
+
+  //Record Base RTCM message settings
+  int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+  for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+  {
+    char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
+    snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate=%d", ubxMessages[firstRTCMRecord + x].msgTextName, settings.ubxMessageRatesBase[x]);
+    settingsFile->println(tempString);
+  }
+
+  //Ethernet
+  {
+    settingsFile->printf("%s=%s\r\n", "ethernetIP", settings.ethernetIP.toString().c_str());
+    settingsFile->printf("%s=%s\r\n", "ethernetDNS", settings.ethernetDNS.toString().c_str());
+    settingsFile->printf("%s=%s\r\n", "ethernetGateway", settings.ethernetGateway.toString().c_str());
+    settingsFile->printf("%s=%s\r\n", "ethernetSubnet", settings.ethernetSubnet.toString().c_str());
+    settingsFile->printf("%s=%d\r\n", "ethernetHttpPort", settings.ethernetHttpPort);
+    settingsFile->printf("%s=%d\r\n", "ethernetNtpPort", settings.ethernetNtpPort);
+    settingsFile->printf("%s=%d\r\n", "ethernetDHCP", settings.ethernetDHCP);
+    settingsFile->printf("%s=%d\r\n", "enableNTPFile", settings.enableNTPFile);
+  }
+
+  //NTP
+  {
+    settingsFile->printf("%s=%d\r\n", "ntpPollExponent", settings.ntpPollExponent);
+    settingsFile->printf("%s=%d\r\n", "ntpPrecision", settings.ntpPrecision);
+    settingsFile->printf("%s=%d\r\n", "ntpRootDelay", settings.ntpRootDelay);
+    settingsFile->printf("%s=%d\r\n", "ntpRootDispersion", settings.ntpRootDispersion);
+    settingsFile->printf("%s=%s\r\n", "ntpReferenceId", settings.ntpReferenceId);
   }
 }
 
@@ -377,7 +423,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
           log_d("File %s not found", fileName);
           break;
         }
-        
+
         SdFile settingsFile; //FAT32
         if (settingsFile.open(fileName, O_READ) == false)
         {
@@ -430,7 +476,7 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
           log_d("File %s not found", fileName);
           break;
         }
-        
+
         File settingsFile = SD_MMC.open(fileName, FILE_READ);
 
         if (!settingsFile)
@@ -504,10 +550,12 @@ bool loadSystemSettingsFromFileSD(char* fileName, Settings *settings)
 //Returns false if a file was not opened/loaded
 bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
 {
+  //log_d("reading setting fileName: %s", fileName);
+
   File settingsFile = LittleFS.open(fileName, FILE_READ);
   if (!settingsFile)
   {
-    systemPrintf("settingsFile not found in LittleFS\r\n");
+    //log_d("settingsFile not found in LittleFS\r\n");
     return (false);
   }
 
@@ -518,12 +566,8 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
   {
     //Get the next line from the file
     int n;
-    if (USE_SPI_MICROSD)
-      n = getLine(&settingsFile, line, sizeof(line));
-#ifdef COMPILE_SD_MMC
-    else
-      n = getLine(&settingsFile, line, sizeof(line));
-#endif
+    n = getLine(&settingsFile, line, sizeof(line));
+
     if (n <= 0) {
       systemPrintf("Failed to read line %d from settings file\r\n", lineNumber);
     }
@@ -547,6 +591,11 @@ bool loadSystemSettingsFromFileLFS(char* fileName, Settings *settings)
     }
 
     lineNumber++;
+    if (lineNumber > 400) //Arbitrary limit. Catch corrupt files.
+    {
+      log_d("Giving up reading file: %s", fileName);
+      break;
+    }
   }
 
   settingsFile.close();
@@ -650,6 +699,7 @@ bool parseLine(char* str, Settings *settings)
       systemPrintf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\r\n", (int)d, sizeof(Settings));
 
   }
+
   else if (strcmp(settingName, "rtkIdentifier") == 0)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "rtkFirmwareVersion") == 0)
@@ -658,6 +708,7 @@ bool parseLine(char* str, Settings *settings)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
   else if (strcmp(settingName, "neoFirmwareVersion") == 0)
   {} //Do nothing. Just read it to avoid 'Unknown setting' error
+
   else if (strcmp(settingName, "printDebugMessages") == 0)
     settings->printDebugMessages = d;
   else if (strcmp(settingName, "enableSD") == 0)
@@ -796,6 +847,8 @@ bool parseLine(char* str, Settings *settings)
     settings->enableLogging = d;
   else if (strcmp(settingName, "enableMarksFile") == 0)
     settings->enableMarksFile = d;
+  else if (strcmp(settingName, "enableNTPFile") == 0)
+    settings->enableNTPFile = d;
   else if (strcmp(settingName, "sppRxQueueSize") == 0)
     settings->sppRxQueueSize = d;
   else if (strcmp(settingName, "sppTxQueueSize") == 0)
@@ -984,6 +1037,12 @@ bool parseLine(char* str, Settings *settings)
     settings->enablePrintStates = d;
   else if (strcmp(settingName, "enablePrintDuplicateStates") == 0)
     settings->enablePrintDuplicateStates = d;
+  else if (strcmp(settingName, "enablePrintRtcSync") == 0)
+    settings->enablePrintRtcSync = d;
+  else if (strcmp(settingName, "enablePrintNTPDiag") == 0)
+    settings->enablePrintNTPDiag = d;
+  else if (strcmp(settingName, "enablePrintEthernetDiag") == 0)
+    settings->enablePrintEthernetDiag = d;
   else if (strcmp(settingName, "radioType") == 0)
     settings->radioType = (RadioType_e)d;
   else if (strcmp(settingName, "espnowPeerCount") == 0)
@@ -1018,6 +1077,132 @@ bool parseLine(char* str, Settings *settings)
     settings->wifiConfigOverAP = d;
   else if (strcmp(settingName, "wifiTcpPort") == 0)
     settings->wifiTcpPort = d;
+  else if (strcmp(settingName, "minElev") == 0)
+  {
+    if (settings->minElev != d)
+    {
+      settings->minElev = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "imuYaw") == 0)
+  {
+    if (settings->imuYaw != d)
+    {
+      settings->imuYaw = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "imuPitch") == 0)
+  {
+    if (settings->imuPitch != d)
+    {
+      settings->imuPitch = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "imuRoll") == 0)
+  {
+    if (settings->imuRoll != d)
+    {
+      settings->imuRoll = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "sfDisableWheelDirection") == 0)
+  {
+    if (settings->sfDisableWheelDirection != d)
+    {
+      settings->sfDisableWheelDirection = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "sfCombineWheelTicks") == 0)
+  {
+    if (settings->sfCombineWheelTicks != d)
+    {
+      settings->sfCombineWheelTicks = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "rateNavPrio") == 0)
+  {
+    if (settings->rateNavPrio != d)
+    {
+      settings->rateNavPrio = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "sfUseSpeed") == 0)
+  {
+    if (settings->sfUseSpeed != d)
+    {
+      settings->sfUseSpeed = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  //Ethernet
+  else if (strcmp(settingName, "ethernetHttpPort") == 0)
+    settings->ethernetHttpPort = d;
+  else if (strcmp(settingName, "ethernetNtpPort") == 0)
+    settings->ethernetNtpPort = d;
+  else if (strcmp(settingName, "ethernetDHCP") == 0)
+    settings->ethernetDHCP = d;
+  //NTP
+  else if (strcmp(settingName, "ntpPollExponent") == 0)
+    settings->ntpPollExponent = d;
+  else if (strcmp(settingName, "ntpPrecision") == 0)
+    settings->ntpPrecision = d;
+  else if (strcmp(settingName, "ntpRootDelay") == 0)
+    settings->ntpRootDelay = d;
+  else if (strcmp(settingName, "ntpRootDispersion") == 0)
+    settings->ntpRootDispersion = d;
+  else if (strcmp(settingName, "ntpReferenceId") == 0)
+  {
+    strcpy(settings->ntpReferenceId, settingValue);
+    for (int i = strlen(settingValue); i < 5; i++)
+      settings->ntpReferenceId[i] = 0;
+  }
+  else if (strcmp(settingName, "coordinateInputType") == 0)
+    settings->coordinateInputType = (CoordinateInputType)d;
+  else if (strcmp(settingName, "lbandFixTimeout_seconds") == 0)
+    settings->lbandFixTimeout_seconds = d;
+  else if (strcmp(settingName, "minCNO_F9R") == 0)
+  {
+    if (settings->minCNO_F9R != d)
+    {
+      settings->minCNO_F9R = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "minCNO_F9P") == 0)
+  {
+    if (settings->minCNO_F9P != d)
+    {
+      settings->minCNO_F9P = d;
+      settings->updateZEDSettings = true;
+    }
+  }
+  else if (strcmp(settingName, "ethernetIP") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetIP.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetDNS") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetDNS.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetGateway") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetGateway.fromString(addr);
+  }
+  else if (strcmp(settingName, "ethernetSubnet") == 0)
+  {
+    String addr = String(settingValue);
+    settings->ethernetSubnet.fromString(addr);
+  }
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list
@@ -1079,13 +1264,38 @@ bool parseLine(char* str, Settings *settings)
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
         char tempString[50]; //message.nmea_dtm.msgRate=5
-        snprintf(tempString, sizeof(tempString), "message.%s.msgRate", settings->ubxMessages[x].msgTextName);
+        snprintf(tempString, sizeof(tempString), "message.%s.msgRate", ubxMessages[x].msgTextName);
 
         if (strcmp(settingName, tempString) == 0)
         {
-          if (settings->ubxMessages[x].msgRate != d)
+          if (settings->ubxMessageRates[x] != d)
           {
-            settings->ubxMessages[x].msgRate = d;
+            settings->ubxMessageRates[x] = d;
+            settings->updateZEDSettings = true;
+          }
+
+          knownSetting = true;
+          break;
+        }
+      }
+    }
+
+    //Scan for Base RTCM message settings
+    if (knownSetting == false)
+    {
+      int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+
+      for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+      {
+        char tempString[50]; //messageBase.UBX_RTCM_1094.msgRate=5
+
+        snprintf(tempString, sizeof(tempString), "messageBase.%s.msgRate", ubxMessages[firstRTCMRecord + x].msgTextName);
+
+        if (strcmp(settingName, tempString) == 0)
+        {
+          if (settings->ubxMessageRatesBase[x] != d)
+          {
+            settings->ubxMessageRatesBase[x] = d;
             settings->updateZEDSettings = true;
           }
 

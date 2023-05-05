@@ -59,6 +59,13 @@ void menuLog()
     if (settings.forceResetOnSDFail == true) systemPrintln("Enabled");
     else systemPrintln("Disabled");
 
+    if (HAS_ETHERNET)
+    {
+      systemPrint("7) Write NTP requests to microSD: ");
+      if (settings.enableNTPFile == true) systemPrintln("Enabled");
+      else systemPrintln("Disabled");
+    }
+
     systemPrintln("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
@@ -111,6 +118,10 @@ void menuLog()
     {
       settings.forceResetOnSDFail ^= 1;
     }
+    else if ((HAS_ETHERNET) && (incoming == 7))
+    {
+      settings.enableNTPFile ^= 1;
+    }
     else if (incoming == 'x')
       break;
     else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
@@ -141,34 +152,44 @@ void menuMessages()
       systemPrintln("2) Set ESF Messages");
     systemPrintln("3) Set RXM Messages");
     systemPrintln("4) Set NAV Messages");
-    systemPrintln("5) Set MON Messages");
-    systemPrintln("6) Set TIM Messages");
-    systemPrintln("7) Reset to Surveying Defaults (NMEAx5)");
-    systemPrintln("8) Reset to PPP Logging Defaults (NMEAx5 + RXMx2)");
-    systemPrintln("9) Turn off all messages");
-    systemPrintln("10) Turn on all messages");
+    systemPrintln("5) Set NAV2 Messages");
+    systemPrintln("6) Set NMEA NAV2 Messages");
+    systemPrintln("7) Set MON Messages");
+    systemPrintln("8) Set TIM Messages");
+    systemPrintln("9) Set PUBX Messages");
+
+    systemPrintln("10) Reset to Surveying Defaults (NMEAx5)");
+    systemPrintln("11) Reset to PPP Logging Defaults (NMEAx5 + RXMx2)");
+    systemPrintln("12) Turn off all messages");
+    systemPrintln("13) Turn on all messages");
 
     systemPrintln("x) Exit");
 
     int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (incoming == 1)
-      menuMessagesSubtype("NMEA");
+      menuMessagesSubtype(settings.ubxMessageRates, "NMEA_"); //The following _ avoids listing NMEANAV2 messages
     else if (incoming == 2 && zedModuleType == PLATFORM_F9P)
-      menuMessagesSubtype("RTCM");
+      menuMessagesSubtype(settings.ubxMessageRates, "RTCM");
     else if (incoming == 2 && zedModuleType == PLATFORM_F9R)
-      menuMessagesSubtype("ESF");
+      menuMessagesSubtype(settings.ubxMessageRates, "ESF");
     else if (incoming == 3)
-      menuMessagesSubtype("RXM");
+      menuMessagesSubtype(settings.ubxMessageRates, "RXM");
     else if (incoming == 4)
-      menuMessagesSubtype("NAV");
+      menuMessagesSubtype(settings.ubxMessageRates, "NAV_"); //The following _ avoids listing NAV2 messages
     else if (incoming == 5)
-      menuMessagesSubtype("MON");
+      menuMessagesSubtype(settings.ubxMessageRates, "NAV2");
     else if (incoming == 6)
-      menuMessagesSubtype("TIM");
+      menuMessagesSubtype(settings.ubxMessageRates, "NMEANAV2");
     else if (incoming == 7)
+      menuMessagesSubtype(settings.ubxMessageRates, "MON");
+    else if (incoming == 8)
+      menuMessagesSubtype(settings.ubxMessageRates, "TIM");
+    else if (incoming == 9)
+      menuMessagesSubtype(settings.ubxMessageRates, "PUBX");
+    else if (incoming == 10)
     {
-      setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
+      setGNSSMessageRates(settings.ubxMessageRates, 0); //Turn off all messages
       setMessageRateByName("UBX_NMEA_GGA", 1);
       setMessageRateByName("UBX_NMEA_GSA", 1);
       setMessageRateByName("UBX_NMEA_GST", 1);
@@ -181,9 +202,9 @@ void menuMessages()
       setMessageRateByName("UBX_NMEA_RMC", 1);
       systemPrintln("Reset to Surveying Defaults (NMEAx5)");
     }
-    else if (incoming == 8)
+    else if (incoming == 11)
     {
-      setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
+      setGNSSMessageRates(settings.ubxMessageRates, 0); //Turn off all messages
       setMessageRateByName("UBX_NMEA_GGA", 1);
       setMessageRateByName("UBX_NMEA_GSA", 1);
       setMessageRateByName("UBX_NMEA_GST", 1);
@@ -199,14 +220,14 @@ void menuMessages()
       setMessageRateByName("UBX_RXM_SFRBX", 1);
       systemPrintln("Reset to PPP Logging Defaults (NMEAx5 + RXMx2)");
     }
-    else if (incoming == 9)
+    else if (incoming == 12)
     {
-      setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
+      setGNSSMessageRates(settings.ubxMessageRates, 0); //Turn off all messages
       systemPrintln("All messages disabled");
     }
-    else if (incoming == 10)
+    else if (incoming == 13)
     {
-      setGNSSMessageRates(settings.ubxMessages, 1); //Turn on all messages to report once per fix
+      setGNSSMessageRates(settings.ubxMessageRates, 1); //Turn on all messages to report once per fix
       systemPrintln("All messages enabled");
     }
     else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
@@ -220,29 +241,90 @@ void menuMessages()
   clearBuffer(); //Empty buffer of any newline chars
 
   //Make sure the appropriate messages are enabled
-  bool response = setMessages(); //Does a complete open/closed val set
+  bool response = setMessages(MAX_SET_MESSAGES_RETRIES); //Does a complete open/closed val set
   if (response == false)
-  {
-    systemPrintln("menuMessages: Failed to enable messages - Try 1");
-
-    response = setMessages(); //Does a complete open/closed val set
-
-    if (response == false)
-      systemPrintln("menuMessages: Failed to enable messages - Try 2");
-    else
-      systemPrintln("menuMessages: Messages successfully enabled");
-  }
+    systemPrintf("menuMessages: Failed to enable messages - after %d tries", MAX_SET_MESSAGES_RETRIES);
   else
-  {
     systemPrintln("menuMessages: Messages successfully enabled");
-  }
 
   setLoggingType(); //Update Standard, PPP, or custom for icon selection
 }
 
+//Control the RTCM message rates when in Base mode
+void menuMessagesBaseRTCM()
+{
+  while (1)
+  {
+    systemPrintln();
+    systemPrintln("Menu: GNSS Messages - Base RTCM");
+
+    systemPrintln("1) Set RXM Messages for Base Mode");
+    systemPrintln("2) Reset to Defaults (1005/74/84/94/124 1Hz & 1230 0.1Hz)");
+    systemPrintln("3) Reset to Low Bandwidth Link (1074/84/94/124 0.5Hz & 1005/230 0.1Hz)");
+
+    systemPrintln("x) Exit");
+
+    int incoming = getNumber(); //Returns EXIT, TIMEOUT, or long
+
+    if (incoming == 1)
+    {
+      menuMessagesSubtype(settings.ubxMessageRatesBase, "RTCM-Base");
+      restartBase = true;
+    }
+    else if (incoming == 2)
+    {
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005")] = 1; //1105
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074")] = 1; //1074
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077")] = 0; //1077
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084")] = 1; //1084
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087")] = 0; //1087
+
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094")] = 1; //1094
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097")] = 0; //1097
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124")] = 1; //1124
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127")] = 0; //1127
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230")] = 10; //1230
+
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0")] = 0; //4072_0
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1")] = 0; //4072_1
+
+      systemPrintln("Reset to Defaults (1005/74/84/94/124 1Hz & 1230 0.1Hz)");
+      restartBase = true;
+    }
+    else if (incoming == 3)
+    {
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005")] = 10; //1105 0.1Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074")] = 2; //1074 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077")] = 0; //1077
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084")] = 2; //1084 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087")] = 0; //1087
+
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094")] = 2; //1094 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097")] = 0; //1097
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124")] = 2; //1124 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127")] = 0; //1127
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230")] = 10; //1230 0.1Hz
+
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0")] = 0; //4072_0
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1")] = 0; //4072_1
+
+      systemPrintln("Reset to Low Bandwidth Link (1074/84/94/124 0.5Hz & 1005/230 0.1Hz)");
+      restartBase = true;
+    }
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
+      break;
+    else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
+      break;
+    else
+      printUnknown(incoming);
+  }
+
+  clearBuffer(); //Empty buffer of any newline chars
+}
+
 //Given a sub type (ie "RTCM", "NMEA") present menu showing messages with this subtype
 //Controls the messages that get broadcast over Bluetooth and logged (if enabled)
-void menuMessagesSubtype(const char* messageType)
+void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
 {
   while (1)
   {
@@ -251,14 +333,24 @@ void menuMessagesSubtype(const char* messageType)
 
     int startOfBlock = 0;
     int endOfBlock = 0;
-    setMessageOffsets(messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
+    int rtcmOffset = 0; //Used to offset messageSupported lookup
+
+    if (strcmp(messageType, "RTCM-Base") == 0) //The ubxMessageRatesBase array is 0 to MAX_UBX_MSG_RTCM - 1
+    {
+      startOfBlock = 0;
+      endOfBlock = MAX_UBX_MSG_RTCM;
+      rtcmOffset = getMessageNumberByName("UBX_RTCM_1005");
+    }
+    else
+      setMessageOffsets(ubxMessages, messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
+
     for (int x = 0 ; x < (endOfBlock - startOfBlock) ; x++)
     {
       //Check to see if this ZED platform supports this message
-      if (settings.ubxMessages[x + startOfBlock].supported & zedModuleType)
+      if (messageSupported(x + startOfBlock + rtcmOffset) == true)
       {
-        systemPrintf("%d) Message %s: ", x + 1, settings.ubxMessages[x + startOfBlock].msgTextName);
-        systemPrintln(settings.ubxMessages[x + startOfBlock].msgRate);
+        systemPrintf("%d) Message %s: ", x + 1, ubxMessages[x + startOfBlock + rtcmOffset].msgTextName);
+        systemPrintln(localMessageRate[x + startOfBlock]);
       }
     }
 
@@ -269,8 +361,10 @@ void menuMessagesSubtype(const char* messageType)
     if (incoming >= 1 && incoming <= (endOfBlock - startOfBlock))
     {
       //Check to see if this ZED platform supports this message
-      if (settings.ubxMessages[(incoming - 1) + startOfBlock].supported & zedModuleType)
-        inputMessageRate(settings.ubxMessages[(incoming - 1) + startOfBlock]);
+      int msgNumber = (incoming - 1) + startOfBlock;
+
+      if (messageSupported(msgNumber) == true)
+        inputMessageRate(localMessageRate[msgNumber], msgNumber);
       else
         printUnknown(incoming);
     }
@@ -285,11 +379,11 @@ void menuMessagesSubtype(const char* messageType)
   clearBuffer(); //Empty buffer of any newline chars
 }
 
-//Prompt the user to enter the message rate for a given ID
+//Prompt the user to enter the message rate for a given message ID
 //Assign the given value to the message
-void inputMessageRate(ubxMsg &localMessage)
+void inputMessageRate(uint8_t &localMessageRate, uint8_t messageNumber)
 {
-  systemPrintf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
+  systemPrintf("Enter %s message rate (0 to disable): ", ubxMessages[messageNumber].msgTextName);
   int rate = getNumber(); //Returns EXIT, TIMEOUT, or long
 
   if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
@@ -298,24 +392,24 @@ void inputMessageRate(ubxMsg &localMessage)
   while (rate < 0 || rate > 255) //8 bit limit
   {
     systemPrintln("Error: Message rate out of range");
-    systemPrintf("Enter %s message rate (0 to disable): ", localMessage.msgTextName);
+    systemPrintf("Enter %s message rate (0 to disable): ", ubxMessages[messageNumber].msgTextName);
     rate = getNumber(); //Returns EXIT, TIMEOUT, or long
 
     if (rate == INPUT_RESPONSE_GETNUMBER_TIMEOUT || rate == INPUT_RESPONSE_GETNUMBER_EXIT)
       return; //Give up
   }
 
-  localMessage.msgRate = rate;
+  localMessageRate = rate;
 }
 
 //Set all GNSS message report rates to one value
 //Useful for turning on or off all messages for resetting and testing
 //We pass in the message array by reference so that we can modify a temp struct
 //like a dummy struct for USB message changes (all on/off) for testing
-void setGNSSMessageRates(ubxMsg *localMessage, uint8_t msgRate)
+void setGNSSMessageRates(uint8_t *localMessageRate, uint8_t msgRate)
 {
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    localMessage[x].msgRate = msgRate;
+    localMessageRate[x] = msgRate;
 }
 
 //Creates a log if logging is enabled, and SD is detected
@@ -355,10 +449,10 @@ void beginLogging(const char *customFileName)
         if (strlen(logFileName) == 0)
         {
           snprintf(logFileName, sizeof(logFileName), "/%s_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
-                  platformFilePrefix,
-                  rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
-                  rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
-                 );
+                   platformFilePrefix,
+                   rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
+                   rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
+                  );
         }
       }
       else
@@ -445,6 +539,15 @@ void beginLogging(const char *customFileName)
         createNMEASentence(CUSTOM_NMEA_TYPE_DEVICE_BT_ID, nmeaMessage, sizeof(nmeaMessage), macAddress); //textID, buffer, sizeOfBuffer, text
         ubxFile->println(nmeaMessage);
 
+        //Record today's time/date into log. This is in case a log is restarted. See issue 440: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/440
+        char currentDate[sizeof("230101,120101")];
+        snprintf(currentDate, sizeof(currentDate), "%02d%02d%02d,%02d%02d%02d",
+                 rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
+                 rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
+                );
+        createNMEASentence(CUSTOM_NMEA_TYPE_CURRENT_DATE, nmeaMessage, sizeof(nmeaMessage), currentDate); //textID, buffer, sizeOfBuffer, text
+        ubxFile->println(nmeaMessage);
+
         if (reuseLastLog == true)
         {
           systemPrintln("Appending last available log");
@@ -482,9 +585,9 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
       char parserStats[50];
 
       snprintf(parserStats, sizeof(parserStats), "%d,%d,%d,",
-              failedParserMessages_NMEA,
-              failedParserMessages_RTCM,
-              failedParserMessages_UBX);
+               failedParserMessages_NMEA,
+               failedParserMessages_RTCM,
+               failedParserMessages_UBX);
 
       char nmeaMessage[82]; //Max NMEA sentence length is 82
       createNMEASentence(CUSTOM_NMEA_TYPE_PARSER_STATS, nmeaMessage, sizeof(nmeaMessage), parserStats); //textID, buffer, sizeOfBuffer, text
@@ -615,7 +718,7 @@ bool findLastLog(char *lastLogName)
 }
 
 //Given a unique string, find first and last records containing that string in message array
-void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlock)
+void setMessageOffsets(ubxMsg *localMessage, const char* messageType, int& startOfBlock, int& endOfBlock)
 {
   char messageNamePiece[40]; //UBX_RTCM
   snprintf(messageNamePiece, sizeof(messageNamePiece), "UBX_%s", messageType); //Put UBX_ infront of type
@@ -623,7 +726,7 @@ void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlo
   //Find the first occurrence
   for (startOfBlock = 0 ; startOfBlock < MAX_UBX_MSG ; startOfBlock++)
   {
-    if (strstr(settings.ubxMessages[startOfBlock].msgTextName, messageNamePiece) != nullptr) break;
+    if (strstr(localMessage[startOfBlock].msgTextName, messageNamePiece) != nullptr) break;
   }
   if (startOfBlock == MAX_UBX_MSG)
   {
@@ -636,7 +739,7 @@ void setMessageOffsets(const char* messageType, int& startOfBlock, int& endOfBlo
   //Find the last occurrence
   for (endOfBlock = startOfBlock + 1 ; endOfBlock < MAX_UBX_MSG ; endOfBlock++)
   {
-    if (strstr(settings.ubxMessages[endOfBlock].msgTextName, messageNamePiece) == nullptr) break;
+    if (strstr(localMessage[endOfBlock].msgTextName, messageNamePiece) == nullptr) break;
   }
 }
 
@@ -645,7 +748,7 @@ uint8_t getActiveMessageCount()
 {
   uint8_t count = 0;
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    if (settings.ubxMessages[x].msgRate > 0) count++;
+    if (settings.ubxMessageRates[x] > 0) count++;
   return (count);
 }
 
@@ -654,9 +757,9 @@ bool setMessageRateByName(const char *msgName, uint8_t msgRate)
 {
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
-    if (strcmp(settings.ubxMessages[x].msgTextName, msgName) == 0)
+    if (strcmp(ubxMessages[x].msgTextName, msgName) == 0)
     {
-      settings.ubxMessages[x].msgRate = msgRate;
+      settings.ubxMessageRates[x] = msgRate;
       return (true);
     }
   }
@@ -668,14 +771,44 @@ bool setMessageRateByName(const char *msgName, uint8_t msgRate)
 //Given the name of a message, find it, and return the rate
 uint8_t getMessageRateByName(const char *msgName)
 {
+  return (settings.ubxMessageRates[getMessageNumberByName(msgName)]);
+}
+
+//Given the name of a message, return the array number
+uint8_t getMessageNumberByName(const char *msgName)
+{
   for (int x = 0 ; x < MAX_UBX_MSG ; x++)
   {
-    if (strcmp(settings.ubxMessages[x].msgTextName, msgName) == 0)
-      return (settings.ubxMessages[x].msgRate);
+    if (strcmp(ubxMessages[x].msgTextName, msgName) == 0)
+      return (x);
   }
 
-  systemPrintf("getMessageRateByName: %s not found\r\n", msgName);
+  systemPrintf("getMessageNumberByName: %s not found\r\n", msgName);
   return (0);
+}
+
+//Check rates to see if they need to be reset to defaults
+void checkMessageRates()
+{
+  if (settings.ubxMessageRates[0] == 254)
+  {
+    //Reset rates to defaults
+    for (int x = 0 ; x < MAX_UBX_MSG ; x++)
+    {
+      if (ubxMessages[x].msgClass == UBX_RTCM_MSB)
+        settings.ubxMessageRates[x] = 0; //For general rover messages, RTCM should be zero by default. ubxMessageRatesBase will have the proper defaults.
+      else
+        settings.ubxMessageRates[x] = ubxMessages[x].msgDefaultRate;
+    }
+  }
+
+  if (settings.ubxMessageRatesBase[0] == 254)
+  {
+    //Reset Base rates to defaults
+    int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+    for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+      settings.ubxMessageRatesBase[x] = ubxMessages[firstRTCMRecord + x].msgDefaultRate;
+  }
 }
 
 //Determine logging type
@@ -712,7 +845,7 @@ void setLogTestFrequencyMessages(int rate, int messages)
   setRate(1.0 / rate); //Convert Hz to seconds. This will set settings.measurementRate, settings.navigationRate, and GSV message
 
   //Set messages
-  setGNSSMessageRates(settings.ubxMessages, 0); //Turn off all messages
+  setGNSSMessageRates(settings.ubxMessageRates, 0); //Turn off all messages
   if (messages == 5)
   {
     setMessageRateByName("UBX_NMEA_GGA", 1);
@@ -740,8 +873,8 @@ void setLogTestFrequencyMessages(int rate, int messages)
 
 
   //Apply these message rates to both UART1 / SPI and USB
-  setMessages(); //Does a complete open/closed val set
-  setMessagesUSB();
+  setMessages(MAX_SET_MESSAGES_RETRIES); //Does a complete open/closed val set
+  setMessagesUSB(MAX_SET_MESSAGES_RETRIES);
 }
 
 //The log test allows us to record a series of different system configurations into
@@ -765,10 +898,10 @@ void updateLogTest()
       reuseLastLog = false;
       char fileName[100];
       snprintf(fileName, sizeof(fileName), "/%s_LogTest_%02d%02d%02d_%02d%02d%02d.ubx", //SdFat library
-              platformFilePrefix,
-              rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
-              rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
-             );
+               platformFilePrefix,
+               rtc.getYear() - 2000, rtc.getMonth() + 1, rtc.getDay(), //ESP32Time returns month:0-11
+               rtc.getHour(true), rtc.getMinute(), rtc.getSecond() //ESP32Time getHour(true) returns hour:0-23
+              );
       endSD(false, true); //End previous log
 
       beginLogging(fileName);

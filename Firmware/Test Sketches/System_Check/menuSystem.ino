@@ -30,10 +30,10 @@ void menuSystem()
     }
     else
     {
-      Serial.print("I think this is a RTK Surveyor because there is no accelerometer detected. ");
-      Serial.printf("Board ADC ID: %d", idValue);
+      Serial.print("I don't know what board this is. No ADC value matches.");
     }
     Serial.println();
+    Serial.printf("Board ADC ID: %d\r\n", idValue);
 
     if (online.i2c == false)
     {
@@ -59,7 +59,7 @@ void menuSystem()
       else Serial.println(F("Offline"));
 
       Serial.print(F("Accelerometer: "));
-      if (online.display == true) Serial.println(F("Online"));
+      if (online.accelerometer == true) Serial.println(F("Online"));
       else Serial.println(F("Offline"));
 
       Serial.print(F("Fuel Gauge: "));
@@ -105,39 +105,6 @@ void menuSystem()
     Serial.print(F("Bluetooth ("));
     Serial.print(macAddress);
     Serial.print(F("): "));
-
-    //Verify the ESP UART2 can communicate TX/RX to ZED UART1
-    if (online.gnss == true)
-    {
-      if (zedUartPassed == false)
-      {
-        //stopUART2Tasks(); //Stop absoring ZED serial via task
-
-        i2cGNSS.setSerialRate(460800, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
-        serialGNSS.begin(460800); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-
-        SFE_UBLOX_GNSS myGNSS;
-        if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
-        {
-          zedUartPassed = true;
-          Serial.print(F("Online"));
-        }
-        else
-          Serial.print(F("Offline"));
-
-        i2cGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
-        serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-
-        //startUART2Tasks(); //Return to normal operation
-      }
-      else
-        Serial.print(F("Online"));
-    }
-    else
-    {
-      Serial.print("Can't check (GNSS offline)");
-    }
-    Serial.println();
 
     Serial.println(F("s) Scan I2C"));
     Serial.println(F("S) Verbose scan of I2C"));
@@ -297,4 +264,41 @@ void printCurrentConditions()
 
     Serial.println();
   }
+}
+
+void testGNSS()
+{
+  //The following ZED test blocks the usage of UART1 for bootloading.
+  //Verify the ESP UART2 can communicate TX/RX to ZED UART1
+  if (online.gnss == true)
+  {
+    if (zedUartPassed == false)
+    {
+      //stopUART2Tasks(); //Stop absoring ZED serial via task
+
+      theGNSS.setSerialRate(460800, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
+      serialGNSS.begin(460800); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+
+      SFE_UBLOX_GNSS myGNSS;
+      if (myGNSS.begin(serialGNSS) == true) //begin() attempts 3 connections
+      {
+        zedUartPassed = true;
+        Serial.print(F("Online"));
+      }
+      else
+        Serial.print(F("Offline"));
+
+      theGNSS.setSerialRate(settings.dataPortBaud, COM_PORT_UART1); //Defaults to 460800 to maximize message output support
+      serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
+
+      //startUART2Tasks(); //Return to normal operation
+    }
+    else
+      Serial.print(F("Online"));
+  }
+  else
+  {
+    Serial.print("Can't check (GNSS offline)");
+  }
+  Serial.println();
 }

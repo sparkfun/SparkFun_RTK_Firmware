@@ -25,6 +25,7 @@
 #define COMPILE_BT //Comment out to remove Bluetooth functionality
 #define COMPILE_L_BAND //Comment out to remove L-Band functionality
 #define COMPILE_SD_MMC //Comment out to remove REFERENCE_STATION microSD SD_MMC support
+#define COMPILE_ETHERNET //Comment out to remove REFERENCE_STATION Ethernet (W5500) support
 //#define REF_STN_GNSS_DEBUG //Uncomment this line to output GNSS library debug messages on serialGNSS. Ref Stn only. Needs ENABLE_DEVELOPER
 
 //Always define ENABLE_DEVELOPER to enable its use in conditional statements
@@ -95,6 +96,10 @@ int pin_Ethernet_Interrupt = -1;
 int pin_GNSS_CS = -1;
 int pin_GNSS_TimePulse = -1;
 int pin_microSD_CardDetect = -1;
+
+int pin_PICO = 23;
+int pin_POCI = 19;
+int pin_SCK = 18;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
@@ -124,6 +129,7 @@ const int COMMON_COORDINATES_MAX_STATIONS = 50; //Record upto 50 ECEF and Geodet
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <ESP32Time.h> //http://librarymanager/All#ESP32Time by FBiego v2.0.0
 ESP32Time rtc;
+unsigned long syncRTCInterval = 1000; //To begin, sync RTC every second. Interval can be increased once sync'd.
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //microSD Interface
@@ -183,17 +189,17 @@ char logFileName[sizeof("SFE_Facet_L-Band_230101_120101.ubx_plusExtraSpace")] = 
 #include <HTTPClient.h> //Built-in. Needed for ThingStream API for ZTP
 #include <ArduinoJson.h> //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 #include <WiFiClientSecure.h> //Built-in.
-#include <PubSubClient.h> //http://librarymanager/All#PubSubClient_MQTT_Lightweight v2.8.0 Used for MQTT obtaining of keys
+#include <PubSubClient.h> //http://librarymanager/All#PubSubClient_MQTT_Lightweight by Nick O'Leary v2.8.0 Used for MQTT obtaining of keys
 #include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting latest firmware OTA
 
 #include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
+
+#endif
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
 static int ntripClientConnectionAttempts = 0; //Count the number of connection attempts between restarts
 static int ntripServerConnectionAttempts = 0; //Count the number of connection attempts between restarts
-
-#endif
 
 volatile uint8_t wifiTcpConnected;
 
@@ -217,11 +223,16 @@ static int ntripServerConnectionAttemptsTotal; //Count the number of connection 
 bool apConfigFirmwareUpdateInProcess = false; //Goes true once WiFi is connected and OTA pull begins
 bool enableRCFirmware = false; //Goes true from AP config page
 bool currentlyParsingData = false; //Goes true when we hit 750ms timeout with new data
+
+//Give up connecting after this number of attempts
+//Connection attempts are throttled to increase the time between attempts
+int wifiMaxConnectionAttempts = 500;
+int wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts; //Modified during L-Band WiFi connect attempt
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //GNSS configuration
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3 v3.0.2
+#include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3 v3.0.5
 
 #define SENTENCE_TYPE_NMEA              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NMEA
 #define SENTENCE_TYPE_NONE              DevUBLOXGNSS::SFE_UBLOX_SENTENCE_TYPE_NONE
@@ -237,30 +248,36 @@ uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported an
 //Also prevents pushRawData from being called too.
 class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 {
-public:
-  volatile bool _iAmLocked = false;
-  bool lock(void)
-  {
-    if (_iAmLocked)
+  public:
+    SemaphoreHandle_t gnssSemaphore = nullptr;
+    bool createLock(void)
     {
-      unsigned long startTime = millis();
-      while (_iAmLocked && (millis() < (startTime + 2100)))
-        delay(1); //YIELD
-      if (_iAmLocked)
-        return false;
+      if (gnssSemaphore == nullptr)
+        gnssSemaphore = xSemaphoreCreateMutex();
+      return gnssSemaphore;
     }
-    _iAmLocked = true;
-    return true;
-  }
-  void unlock(void)
-  {
-    _iAmLocked = false;  
-  }
+    bool lock(void)
+    {
+      return (xSemaphoreTake(gnssSemaphore, 2100) == pdPASS);
+    }
+    void unlock(void)
+    {
+      xSemaphoreGive(gnssSemaphore);
+    }
+    void deleteLock(void)
+    {
+      vSemaphoreDelete(gnssSemaphore);
+      gnssSemaphore = nullptr;
+    }
 };
 
 SFE_UBLOX_GNSS_SUPER_DERIVED theGNSS;
 
+volatile struct timeval gnssSyncTv; //This holds the time the RTC was sync'd to GNSS time via Time Pulse interrupt - used by NTP
+struct timeval previousGnssSyncTv; //This holds the time of the previous RTC sync
+
 //These globals are updated regularly via the storePVTdata callback
+unsigned long pvtArrivalMillis = 0;
 bool pvtUpdated = false;
 double latitude;
 double longitude;
@@ -270,16 +287,26 @@ bool validDate;
 bool validTime;
 bool confirmedDate;
 bool confirmedTime;
+bool fullyResolved;
+uint32_t tAcc;
 uint8_t gnssDay;
 uint8_t gnssMonth;
 uint16_t gnssYear;
 uint8_t gnssHour;
 uint8_t gnssMinute;
 uint8_t gnssSecond;
+int32_t gnssNano;
 uint16_t mseconds;
 uint8_t numSV;
 uint8_t fixType;
 uint8_t carrSoln;
+
+unsigned long timTpArrivalMillis = 0;
+bool timTpUpdated = false;
+uint32_t timTpEpoch;
+uint32_t timTpMicros;
+
+uint8_t aStatus = SFE_UBLOX_ANTENNA_STATUS_DONTKNOW;
 
 const byte haeNumberOfDecimals = 8; //Used for printing and transmitting lat/lon
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -443,7 +470,34 @@ unsigned long lastEspnowRssiUpdate = 0;
 int espnowRSSI = 0;
 const uint8_t ESPNOW_MAX_PEERS = 5; //Maximum of 5 rovers
 
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+//Ethernet
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#ifdef COMPILE_ETHERNET
+#include <Ethernet.h> // http://librarymanager/All#Arduino_Ethernet
+IPAddress ethernetIPAddress;
+IPAddress ethernetDNS;
+IPAddress ethernetGateway;
+IPAddress ethernetSubnetMask;
+class derivedEthernetUDP : public EthernetUDP
+{
+  public:
+    uint8_t getSockIndex() {
+      return sockindex;  // sockindex is protected in EthernetUDP. A derived class can access it.
+    }
+};
+derivedEthernetUDP *ethernetNTPServer = nullptr; //This will be instantiated when we know the NTP port
+volatile uint8_t ntpSockIndex;                   //The W5500 socket index for NTP - so we can enable and read the correct interrupt
+volatile struct timeval ethernetNtpTv;           //This will hold the time the Ethernet NTP packet arrived
+uint32_t lastLoggedNTPRequest = 0;
+bool ntpLogIncreasing = false;
+
+#include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.5
+#endif
+
+unsigned long lastEthernetCheck = 0; //Prevents cable checking from continually happening
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+#include "NTRIPClient.h" //Define a hybrid class which can support both WiFiClient and EthernetClient
 
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -473,6 +527,8 @@ uint32_t lastHeapReport = 0; //Report heap every 1s if option enabled
 uint32_t lastTaskHeapReport = 0; //Report task heap every 1s if option enabled
 uint32_t lastCasterLEDupdate = 0; //Controls the cycling of position LEDs during casting
 uint32_t lastRTCAttempt = 0; //Wait 1000ms between checking GNSS for current date/time
+uint32_t lastRTCSync = 0; //Time in millis when the RTC was last sync'd
+bool rtcSyncd = false; //Set to true when the RTC has been sync'd via TP pulse
 uint32_t lastPrintPosition = 0; //For periodic display of the position
 
 uint32_t lastBaseIconUpdate = 0;
@@ -545,6 +601,16 @@ const long btMinEscapeTime = 2000; //Bluetooth serial traffic must stop this amo
 uint8_t btEscapeCharsReceived = 0; //Used to enter command mode
 
 bool externalPowerConnected = false; //Goes true when a high voltage is seen on power control pin
+
+//configureViaEthernet:
+// Set to true if configureViaEthernet.txt exists in LittleFS.
+// Causes setup and loop to skip any code which would cause SPI or interrupts to be initialized.
+// This is to allow SparkFun_WebServer_ESP32_W5500 to have _exclusive_ access to WiFi, SPI and Interrupts.
+bool configureViaEthernet = false;
+
+unsigned long lbandStartTimer = 0; //Monitors the ZED during L-Band reception if a fix takes too long
+int lbandRestarts = 0;
+unsigned long lbandTimeToFix = 0;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
@@ -619,9 +685,26 @@ bool externalPowerConnected = false; //Goes true when a high voltage is seen on 
                                   +-------+
 */
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+//Initialize any globals that can't easily be given default values
+
+void initializeGlobals()
+{
+  gnssSyncTv.tv_sec = 0;
+  gnssSyncTv.tv_usec = 0;
+  previousGnssSyncTv.tv_sec = 0;
+  previousGnssSyncTv.tv_usec = 0;
+#ifdef COMPILE_ETHERNET
+  ethernetNtpTv.tv_sec = 0;
+  ethernetNtpTv.tv_usec = 0;
+#endif
+}
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 void setup()
 {
+  initializeGlobals(); //Initialize any global variables that can't be given default values
+
   Serial.begin(115200); //UART0 for programming and debugging
 
   identifyBoard(); //Determine what hardware platform we are running on
@@ -632,9 +715,11 @@ void setup()
 
   beginDisplay(); //Start display to be able to display any errors
 
-  beginGNSS(); //Connect to GNSS to get module type
+  beginFS(); //Start LittleFS file system for settings
 
-  beginFS(); //Start file system for settings
+  configureViaEthernet = checkConfigureViaEthernet(); //Check if going into dedicated configureViaEthernet (STATE_CONFIG_VIA_ETH) mode
+
+  beginGNSS(); //Connect to GNSS to get module type
 
   beginBoard(); //Now finish settup up the board and check the on button
 
@@ -654,11 +739,17 @@ void setup()
 
   configureGNSS(); //Configure ZED module
 
+  beginEthernet(); //Start-up the Ethernet connection
+
+  beginEthernetNTPServer(); //Start the NTP server
+
   beginAccelerometer();
 
-  beginLBand();
+  beginLBand(); //Begin L-Band
 
   beginExternalTriggers(); //Configure the time pulse output and TM2 input
+
+  beginInterrupts(); //Begin the TP and W5500 interrupts
 
   beginSystemState(); //Determine initial system state. Start task for button monitoring.
 
@@ -707,6 +798,10 @@ void loop()
 
   tcpUpdate(); //Turn on TCP Client or Server as needed
 
+  updateEthernet(); //Maintain the ethernet connection
+
+  updateEthernetNTPServer(); //Process any received NTP requests
+
   printPosition(); //Periodically print GNSS coordinates if enabled
 
   //A small delay prevents panic if no other I2C or functions are called
@@ -746,6 +841,13 @@ void updateSD()
 
   if (sdSizeCheckTaskComplete == true)
     deleteSDSizeCheckTask();
+
+  //Check if SD card is still present
+  if (productVariant == REFERENCE_STATION)
+  {
+    if (sdPresent() == false)
+      endSD(false, true); //(alreadyHaveSemaphore, releaseSemaphore) Close down SD.
+  }
 }
 
 //Create or close files as needed (startup or as user changes settings)
@@ -864,48 +966,43 @@ void updateLogs()
 //All SD writes will use the system date/time
 void updateRTC()
 {
-  if (online.rtc == false)
+  if (online.rtc == false) //Only do this if the rtc has not been sync'd previously
   {
-    if (online.gnss == true)
+    if (online.gnss == true) //Only do this if the GNSS is online
     {
-      if (millis() - lastRTCAttempt > 1000)
+      if (millis() - lastRTCAttempt > syncRTCInterval) //Only attempt this once per second
       {
         lastRTCAttempt = millis();
 
-        theGNSS.checkUblox(); //Regularly poll to get latest data and any RTCM
-        theGNSS.checkCallbacks(); //Process any callbacks: ie, eventTriggerReceived
+        //theGNSS.checkUblox and theGNSS.checkCallbacks are called in the loop but updateRTC
+        //can also be called duing begin. To be safe, check for fresh PVT data here.
+        theGNSS.checkUblox(); //Poll to get latest data
+        theGNSS.checkCallbacks(); //Process any callbacks: ie, storePVTdata
 
         bool timeValid = false;
         if (validTime == true && validDate == true) //Will pass if ZED's RTC is reporting (regardless of GNSS fix)
           timeValid = true;
         if (confirmedTime == true && confirmedDate == true) //Requires GNSS fix
           timeValid = true;
+        if (timeValid && (millis() - pvtArrivalMillis > 999)) //If the GNSS time is over a second old, don't use it
+          timeValid = false;
 
         if (timeValid == true)
         {
-          int hour;
-          int minute;
-          int second;
-
-          //Get the latest time in the GNSS
-          theGNSS.checkUblox();
-
-          //Get the time values
-          hour = theGNSS.getHour();     //Range: 0 - 23
-          minute = theGNSS.getMinute(); //Range: 0 - 59
-          second = theGNSS.getSecond(); //Range: 0 - 59
-
-          //Perform time zone adjustment
-          second += settings.timeZoneSeconds;
-          minute += settings.timeZoneMinutes;
-          hour += settings.timeZoneHours;
+          //To perform the time zone adjustment correctly, it's easiest if we convert the GNSS time and date
+          //into Unix epoch first and then apply the timeZone offset
+          uint32_t epochSecs;
+          uint32_t epochMicros;
+          convertGnssTimeToEpoch(&epochSecs, &epochMicros);
+          epochSecs += settings.timeZoneSeconds;
+          epochSecs += settings.timeZoneMinutes * 60;
+          epochSecs += settings.timeZoneHours * 60 * 60;
 
           //Set the internal system time
-          //This is normally set with WiFi NTP but we will rarely have WiFi
-          //rtc.setTime(gnssSecond, gnssMinute, gnssHour, gnssDay, gnssMonth, gnssYear);
-          rtc.setTime(second, minute, hour, theGNSS.getDay(), theGNSS.getMonth(), theGNSS.getYear());
+          rtc.setTime(epochSecs, epochMicros);
 
           online.rtc = true;
+          lastRTCSync = millis();
 
           systemPrint("System time set to: ");
           systemPrintln(rtc.getDateTime(true));
@@ -919,6 +1016,25 @@ void updateRTC()
       } //End lastRTCAttempt
     } //End online.gnss
   } //End online.rtc
+
+  //Print TP time sync information here. Trying to do it in the ISR would be a bad idea....
+  if (settings.enablePrintRtcSync == true)
+  {
+    if ((previousGnssSyncTv.tv_sec != gnssSyncTv.tv_sec) || (previousGnssSyncTv.tv_usec != gnssSyncTv.tv_usec))
+    {
+      time_t nowtime;
+      struct tm *nowtm;
+      char tmbuf[64], buf[64];
+
+      nowtime = gnssSyncTv.tv_sec;
+      nowtm = localtime(&nowtime);
+      strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
+      systemPrintf("RTC resync took place at: %s.%03d\r\n",  tmbuf, gnssSyncTv.tv_usec / 1000);
+
+      previousGnssSyncTv.tv_sec = gnssSyncTv.tv_sec;
+      previousGnssSyncTv.tv_usec = gnssSyncTv.tv_usec;
+    }
+  }
 }
 
 //Called from main loop
@@ -1054,6 +1170,9 @@ void getSemaphoreFunction(char* functionName)
       break;
     case FUNCTION_LOG_CLOSURE:
       strcpy(functionName, "Log Closure");
+      break;
+    case FUNCTION_NTPEVENT:
+      strcpy(functionName, "NTP Event");
       break;
   }
 }

@@ -34,7 +34,13 @@ uint8_t getByteChoice(int numberOfSeconds)
   {
     delay(10); //Yield to processor
     if (online.gnss == true)
-      i2cGNSS.checkUblox(); //Regularly poll to get latest data
+      theGNSS.checkUblox(); //Regularly poll to get latest data
+
+    if (pin_powerSenseAndControl >= 0)
+    {
+      if (digitalRead(pin_powerSenseAndControl) == LOW)
+        ESP.restart(); //Use the power button as a reset
+    }
 
     if (Serial.available() > 0)
     {
@@ -72,7 +78,7 @@ int64_t getNumber(int numberOfSeconds)
     {
       delay(10); //Yield to processor
       if (online.gnss == true)
-        i2cGNSS.checkUblox(); //Regularly poll to get latest data
+        theGNSS.checkUblox(); //Regularly poll to get latest data
 
       if ( (millis() - startTime) / 1000 >= numberOfSeconds)
       {

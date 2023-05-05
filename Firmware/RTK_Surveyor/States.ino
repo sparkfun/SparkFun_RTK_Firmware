@@ -102,7 +102,9 @@ void updateSystemState()
           }
 
           if (productVariant == REFERENCE_STATION)
+          {
             digitalWrite(pin_baseStatusLED, LOW);
+          }
 
           //Configure for rover mode
           displayRoverStart(0);
@@ -241,7 +243,7 @@ void updateSystemState()
           displayBaseStart(0); //Show 'Base'
 
           //Allow WiFi to continue running if NTRIP Client is needed for assisted survey in
-          if(wifiIsNeeded() == false)
+          if (wifiIsNeeded() == false)
             wifiStop();
 
           bluetoothStop();
@@ -345,7 +347,18 @@ void updateSystemState()
             {
               systemPrintf("Survey-In took more than %d minutes. Returning to rover mode.\r\n", maxSurveyInWait_s / 60);
 
-              surveyInReset();
+              if (surveyInReset() == false)
+              {
+                systemPrintln("Survey reset failed - attempt 1/3");
+                if (surveyInReset() == false)
+                {
+                  systemPrintln("Survey reset failed - attempt 2/3");
+                  if (surveyInReset() == false)
+                  {
+                    systemPrintln("Survey reset failed - attempt 3/3");
+                  }
+                }
+              }
 
               changeState(STATE_ROVER_NOT_STARTED);
             }
@@ -459,7 +472,7 @@ void updateSystemState()
               day = rtc.getDay();
 
               //Build the file name
-              snprintf(fileName, sizeof(fileName), "Marks_%04d_%02d_%02d.csv", year, month, day);
+              snprintf(fileName, sizeof(fileName), "/Marks_%04d_%02d_%02d.csv", year, month, day);
 
               //Try to gain access the SD card
               sdCardWasOnline = online.microSD;
@@ -480,7 +493,7 @@ void updateSystemState()
                   marksFileExists = SD_MMC.exists(fileName);
                 }
 #endif
-                
+
                 //Open the marks file
                 FileSdFatMMC marksFile;
 
@@ -498,7 +511,7 @@ void updateSystemState()
                   {
                     fileOpen = true;
                     marksFile.updateFileAccessTimestamp();
-  
+
                     //Add the column headers
                     //YYYYMMDDHHMMSS, Lat: xxxx, Long: xxxx, Alt: xxxx, SIV: xx, HPA: xxxx, Batt: xxx
                     //                           1         2         3         4         5         6         7         8         9
@@ -516,24 +529,24 @@ void updateSystemState()
                   //YYYY-MM-DD, HH:MM:SS, ---Latitude---, --Longitude---, --Alt--,SIV, --HPA---,Level,Volts\n
                   if (horizontalAccuracy >= 100.)
                     snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.0f, %3d%%, %4.2f\n",
-                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
-                             latitude, longitude, altitude, numSV, horizontalAccuracy,
-                             battLevel, battVoltage);
+                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                              latitude, longitude, altitude, numSV, horizontalAccuracy,
+                              battLevel, battVoltage);
                   else if (horizontalAccuracy >= 10.)
                     snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.1f, %3d%%, %4.2f\n",
-                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
-                             latitude, longitude, altitude, numSV, horizontalAccuracy,
-                             battLevel, battVoltage);
+                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                              latitude, longitude, altitude, numSV, horizontalAccuracy,
+                              battLevel, battVoltage);
                   else if (horizontalAccuracy >= 1.)
                     snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.2f, %3d%%, %4.2f\n",
-                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
-                             latitude, longitude, altitude, numSV, horizontalAccuracy,
-                             battLevel, battVoltage);
+                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                              latitude, longitude, altitude, numSV, horizontalAccuracy,
+                              battLevel, battVoltage);
                   else
                     snprintf (markBuffer, sizeof(markBuffer), "%04d-%02d-%02d, %02d:%02d:%02d, %14.9f, %14.9f, %7.1f, %2d, %8.3f, %3d%%, %4.2f\n",
-                             year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
-                             latitude, longitude, altitude, numSV, horizontalAccuracy,
-                             battLevel, battVoltage);
+                              year, month, day, rtc.getHour(true), rtc.getMinute(), rtc.getSecond(),
+                              latitude, longitude, altitude, numSV, horizontalAccuracy,
+                              battLevel, battVoltage);
 
                   //Write the mark to the file
                   marksFile.write((const uint8_t *)markBuffer, strlen(markBuffer));
@@ -603,20 +616,20 @@ void updateSystemState()
 
       case (STATE_WIFI_CONFIG_NOT_STARTED):
         {
-          if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
+          if (productVariant == RTK_SURVEYOR)
           {
             //Start BT LED Fade to indicate start of WiFi
             btLEDTask.detach(); //Increase BT LED blinker task rate
             btLEDTask.attach(btLEDTaskPace33Hz, updateBTled); //Rate in seconds, callback
 
             digitalWrite(pin_baseStatusLED, LOW);
-            if (productVariant == RTK_SURVEYOR)
-            {
-              digitalWrite(pin_positionAccuracyLED_1cm, LOW);
-              digitalWrite(pin_positionAccuracyLED_10cm, LOW);
-              digitalWrite(pin_positionAccuracyLED_100cm, LOW);
-            }
+            digitalWrite(pin_positionAccuracyLED_1cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_10cm, LOW);
+            digitalWrite(pin_positionAccuracyLED_100cm, LOW);
           }
+
+          if (productVariant == REFERENCE_STATION)
+            digitalWrite(pin_baseStatusLED, LOW);
 
           displayWiFiConfigNotStarted(); //Display immediately during SD cluster pause
 
@@ -629,6 +642,7 @@ void updateSystemState()
           changeState(STATE_WIFI_CONFIG);
         }
         break;
+
       case (STATE_WIFI_CONFIG):
         {
           if (incomingSettingsSpot > 0)
@@ -637,7 +651,7 @@ void updateSystemState()
             if (millis() - timeSinceLastIncomingSetting > 750)
             {
               currentlyParsingData = true; //Disallow new data to flow from websocket while we are parsing the current data
-              
+
               systemPrint("Parsing: ");
               for (int x = 0 ; x < incomingSettingsSpot ; x++)
                 systemWrite(incomingSettings[x]);
@@ -688,7 +702,7 @@ void updateSystemState()
             theGNSS.newCfgValset(); //Create a new Configuration Item VALSET message
             theGNSS.addCfgValset(UBLOX_CFG_MSGOUT_RTCM_3X_TYPE1230_UART2, 1); //Enable message 1230 every second
             theGNSS.sendCfgValset(); //Send the VALSET
-            
+
 
             changeState(STATE_TESTING);
           }
@@ -726,6 +740,11 @@ void updateSystemState()
           else if (strlen(settings.pointPerfectCurrentKey) == 0 || strlen(settings.pointPerfectNextKey) == 0)
           {
             log_d("L_Band Keys starting WiFi");
+
+            //Temporarily limit WiFi connection attempts
+            wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts;
+            wifiMaxConnectionAttempts = 0; //Override setting during key retrieval. Give up after single failure.
+
             wifiStart();
             changeState(STATE_KEYS_PROVISION_WIFI_STARTED);
           }
@@ -743,7 +762,7 @@ void updateSystemState()
           else
           {
             //Determine days until next key expires
-            uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+            int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
             log_d("Days until keys expire: %d", daysRemaining);
 
             if (daysRemaining >= 28 && daysRemaining <= 56)
@@ -761,6 +780,11 @@ void updateSystemState()
           if (online.rtc == false)
           {
             log_d("Keys Needed RTC off starting WiFi");
+
+            //Temporarily limit WiFi connection attempts
+            wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts;
+            wifiMaxConnectionAttempts = 0; //Override setting during key retrieval. Give up after single failure.
+
             wifiStart();
             changeState(STATE_KEYS_WIFI_STARTED); //If we can't check the RTC, continue
           }
@@ -771,7 +795,12 @@ void updateSystemState()
             settings.lastKeyAttempt = rtc.getEpoch(); //Mark it
             recordSystemSettings(); //Record these settings to unit
 
-            log_d("Keys Needed starting WiFi");
+            log_d("Keys Needed. Starting WiFi");
+
+            //Temporarily limit WiFi connection attempts
+            wifiOriginalMaxConnectionAttempts = wifiMaxConnectionAttempts;
+            wifiMaxConnectionAttempts = 0; //Override setting during key retrieval. Give up after single failure.
+
             wifiStart(); //Starts WiFi state machine
             changeState(STATE_KEYS_WIFI_STARTED);
           }
@@ -788,7 +817,10 @@ void updateSystemState()
           if (wifiIsConnected())
             changeState(STATE_KEYS_WIFI_CONNECTED);
           else if (wifiState == WIFI_OFF)
+          {
+            wifiMaxConnectionAttempts = wifiOriginalMaxConnectionAttempts; //Override setting to 2 attemps during keys
             changeState(STATE_KEYS_WIFI_TIMEOUT);
+          }
         }
         break;
 
@@ -810,9 +842,16 @@ void updateSystemState()
           {
             if (settings.pointPerfectNextKeyStart > 0)
             {
-              uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+              int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
               systemPrintf("Days until PointPerfect keys expire: %d\r\n", daysRemaining);
-              paintKeyDaysRemaining(daysRemaining, 2000);
+              if (daysRemaining >= 0)
+              {
+                paintKeyDaysRemaining(daysRemaining, 2000);
+              }
+              else
+              {
+                paintKeysExpired();
+              }
             }
           }
           paintLBandConfigure();
@@ -938,6 +977,164 @@ void updateSystemState()
           }
         }
         break;
+
+#ifdef COMPILE_ETHERNET
+      case (STATE_NTPSERVER_NOT_STARTED):
+        {
+          firstRoverStart = false; //If NTP is starting, no test menu, normal button use.
+
+          if (online.gnss == false)
+            return;
+
+          displayNtpStart(500); //Show 'NTP'
+
+          tasksStartUART2(); //Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+
+          if (configureUbloxModuleNTP() == true)
+          {
+            settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+            settings.lastState = STATE_NTPSERVER_NOT_STARTED; //Record this state for next POR
+            recordSystemSettings();
+
+            if (online.ethernetNTPServer)
+            {
+              displayNtpStarted(500); //Show 'NTP Started'
+              changeState(STATE_NTPSERVER_NO_SYNC);
+            }
+            else
+            {
+              displayNtpNotReady(1000); //Show 'Ethernet Not Ready'
+              changeState(STATE_NTPSERVER_NO_SYNC);
+            }
+          }
+          else
+          {
+            displayNTPFail(1000); //Show 'NTP Failed'
+            //Do we stay in STATE_NTPSERVER_NOT_STARTED? Or should we reset?
+          }
+        }
+        break;
+
+      case (STATE_NTPSERVER_NO_SYNC):
+        {
+          if (rtcSyncd)
+          {
+            changeState(STATE_NTPSERVER_SYNC);
+          }
+        }
+        break;
+
+      case (STATE_NTPSERVER_SYNC):
+        {
+          //Do nothing - display only
+        }
+        break;
+
+      case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
+        {
+          displayConfigViaEthNotStarted(1500);
+
+          settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+          settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Record the _next_ state for POR
+          recordSystemSettings();
+
+          forceConfigureViaEthernet(); //Create a file in LittleFS to force code into configure-via-ethernet mode
+
+          ESP.restart(); //Restart to go into the dedicated configure-via-ethernet mode
+        }
+        break;
+
+      case (STATE_CONFIG_VIA_ETH_STARTED):
+        {
+          //The code should only be able to enter this state if configureViaEthernet is true.
+          //If configureViaEthernet is not true, we need to restart again.
+          //(If we continue, startEthernerWebServerESP32W5500 will fail as it won't have exclusive access to SPI and ints).
+          if (!configureViaEthernet)
+          {
+            displayConfigViaEthNotStarted(1500);
+            settings.lastState = STATE_CONFIG_VIA_ETH_STARTED; //Re-record this state for POR
+            recordSystemSettings();
+
+            forceConfigureViaEthernet(); //Create a file in LittleFS to force code into configure-via-ethernet mode
+
+            ESP.restart(); //Restart to go into the dedicated configure-via-ethernet mode
+          }
+
+          displayConfigViaEthStarted(1500);
+
+          bluetoothStop(); //Should be redundant - but just in case
+          espnowStop(); //Should be redundant - but just in case
+          tasksStopUART2(); //Delete F9 serial tasks if running
+
+          startEthernerWebServerESP32W5500(); //Start Ethernet in dedicated configure-via-ethernet mode
+
+          startWebServer(false, settings.ethernetHttpPort); //Start the async web server
+
+          changeState(STATE_CONFIG_VIA_ETH);
+        }
+        break;
+
+      case (STATE_CONFIG_VIA_ETH):
+        {
+          //Display will show the IP address (displayConfigViaEthernet)
+
+          if (incomingSettingsSpot > 0)
+          {
+            //Allow for 750ms before we parse buffer for all data to arrive
+            if (millis() - timeSinceLastIncomingSetting > 750)
+            {
+              currentlyParsingData = true; //Disallow new data to flow from websocket while we are parsing the current data
+
+              systemPrint("Parsing: ");
+              for (int x = 0 ; x < incomingSettingsSpot ; x++)
+                systemWrite(incomingSettings[x]);
+              systemPrintln();
+
+              parseIncomingSettings();
+              settings.updateZEDSettings = true; //When this profile is loaded next, force system to update ZED settings.
+              recordSystemSettings(); //Record these settings to unit
+
+              //Clear buffer
+              incomingSettingsSpot = 0;
+              memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
+
+              currentlyParsingData = false; //Allow new data from websocket
+            }
+          }
+
+#ifdef COMPILE_WIFI
+#ifdef COMPILE_AP
+          //Dynamically update the coordinates on the AP page
+          if (websocketConnected == true)
+          {
+            if (millis() - lastDynamicDataUpdate > 1000)
+            {
+              lastDynamicDataUpdate = millis();
+              createDynamicDataString(settingsCSV);
+
+              //log_d("Sending coordinates: %s", settingsCSV);
+              websocket->textAll(settingsCSV);
+            }
+          }
+#endif
+#endif
+        }
+        break;
+
+      case (STATE_CONFIG_VIA_ETH_RESTART_BASE):
+        {
+          displayConfigViaEthNotStarted(1000);
+
+          endEthernerWebServerESP32W5500();
+
+          settings.updateZEDSettings = false; //On the next boot, no need to update the ZED on this profile
+          settings.lastState = STATE_BASE_NOT_STARTED; //Record the _next_ state for POR
+          recordSystemSettings();
+
+          ESP.restart();
+        }
+        break;
+#endif
 
       case (STATE_SHUTDOWN):
         {
@@ -1088,8 +1285,34 @@ void changeState(SystemState newState)
         systemPrint("State: ESP-Now Pairing");
         break;
 
+      case (STATE_NTPSERVER_NOT_STARTED):
+        systemPrint("State: NTP Server - Not Started");
+        break;
+      case (STATE_NTPSERVER_NO_SYNC):
+        systemPrint("State: NTP Server - No Sync");
+        break;
+      case (STATE_NTPSERVER_SYNC):
+        systemPrint("State: NTP Server - Sync");
+        break;
+
+      case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
+        systemPrint("State: Configure Via Ethernet - Not Started");
+        break;
+      case (STATE_CONFIG_VIA_ETH_STARTED):
+        systemPrint("State: Configure Via Ethernet - Started");
+        break;
+      case (STATE_CONFIG_VIA_ETH):
+        systemPrint("State: Configure Via Ethernet");
+        break;
+      case (STATE_CONFIG_VIA_ETH_RESTART_BASE):
+        systemPrint("State: Configure Via Ethernet - Restarting Base");
+        break;
+
       case (STATE_SHUTDOWN):
         systemPrint("State: Shut Down");
+        break;
+      case (STATE_NOT_SET):
+        systemPrint("State: Not Set");
         break;
       default:
         systemPrintf("Change State Unknown: %d", systemState);

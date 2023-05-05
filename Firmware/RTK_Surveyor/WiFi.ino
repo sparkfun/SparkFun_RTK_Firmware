@@ -36,10 +36,6 @@
 //Interval to use when displaying the IP address
 static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000;  //Milliseconds
 
-//Give up connecting after this number of attempts
-//Connection attempts are throttled to increase the time between attempts
-static const int MAX_WIFI_CONNECTION_ATTEMPTS = 500;
-
 #define WIFI_MAX_TCP_CLIENTS     4
 
 //Throttle the time between connection attempts
@@ -181,7 +177,10 @@ bool wifiStartAP()
     if (x == maxTries)
     {
       displayNoWiFi(2000);
-      requestChangeState(STATE_ROVER_NOT_STARTED);
+      if (productVariant == REFERENCE_STATION)
+        requestChangeState(STATE_BASE_NOT_STARTED); //If WiFi failed, return to Base mode.
+      else
+        requestChangeState(STATE_ROVER_NOT_STARTED); //If WiFi failed, return to Rover mode.
       return (false);
     }
   }
@@ -199,6 +198,13 @@ bool wifiStartAP()
 //Throttle connection attempts as needed
 void wifiUpdate()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping wifiUpdate");
+    return;
+  }
+
 #ifdef COMPILE_WIFI
 
   //Periodically display the WiFi state
@@ -614,7 +620,7 @@ bool wifiConnectLimitReached()
 {
   //Retry the connection a few times
   bool limitReached = false;
-  if (wifiConnectionAttempts++ >= MAX_WIFI_CONNECTION_ATTEMPTS) limitReached = true;
+  if (wifiConnectionAttempts++ >= wifiMaxConnectionAttempts) limitReached = true;
 
   wifiConnectionAttemptsTotal++;
 
@@ -634,6 +640,13 @@ bool wifiConnectLimitReached()
 
 void tcpUpdate()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping tcpUpdate");
+    return;
+  }
+
 #ifdef COMPILE_WIFI
 
   if (settings.enableTcpClient == false && settings.enableTcpServer == false) return; //Nothing to do

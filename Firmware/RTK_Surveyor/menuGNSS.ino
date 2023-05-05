@@ -6,10 +6,14 @@ void menuGNSS()
 
   while (1)
   {
+    int minCNO = settings.minCNO_F9P;
+    if (zedModuleType == PLATFORM_F9R)
+      minCNO = settings.minCNO_F9R;
+
     systemPrintln();
     systemPrintln("Menu: GNSS Receiver");
 
-    //Because we may be in base mode (always 1Hz), do not get freq from module, use settings instead
+    //Because we may be in base mode, do not get freq from module, use settings instead
     float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
 
     systemPrint("1) Set measurement rate in Hz: ");
@@ -17,6 +21,8 @@ void menuGNSS()
 
     systemPrint("2) Set measurement rate in seconds between measurements: ");
     systemPrintln(1 / measurementFrequency, 5);
+
+    systemPrintln("\tNote: The measurement rate is overridden to 1Hz when in Base mode.");
 
     systemPrint("3) Set dynamic model: ");
     switch (settings.dynamicModel)
@@ -50,6 +56,12 @@ void menuGNSS()
         break;
       case DYN_MODEL_BIKE:
         systemPrint("Bike");
+        break;
+      case DYN_MODEL_MOWER:
+        systemPrint("Mower");
+        break;
+      case DYN_MODEL_ESCOOTER:
+        systemPrint("E-Scooter");
         break;
       default:
         systemPrint("Unknown");
@@ -86,6 +98,16 @@ void menuGNSS()
       systemPrint("12) Toggle sending GGA Location to Caster: ");
       if (settings.ntripClient_TransmitGGA == true) systemPrintln("Enabled");
       else systemPrintln("Disabled");
+
+      systemPrintf("13) Minimum elevation for a GNSS satellite to be used in fix (degrees): %d\r\n", settings.minElev);
+
+      systemPrintf("14) Minimum satellite signal level for navigation (dBHz): %d\r\n", minCNO);
+    }
+    else
+    {
+      systemPrintf("6) Minimum elevation for a GNSS satellite to be used in fix (degrees): %d\r\n", settings.minElev);
+
+      systemPrintf("7) Minimum satellite signal level for navigation (dBHz): %d\r\n", minCNO);
     }
 
     systemPrintln("x) Exit");
@@ -132,12 +154,32 @@ void menuGNSS()
       systemPrintln("7) Airborne 2g");
       systemPrintln("8) Airborne 4g");
       systemPrintln("9) Wrist");
-      systemPrintln("10) Bike");
+      if (zedModuleType == PLATFORM_F9R)
+      {
+        systemPrintln("10) Bike");
+        //F9R versions starting at 1.21 have Mower and E-Scooter dynamic models
+        if (zedFirmwareVersionInt >= 121)
+        {
+          systemPrintln("11) Mower");
+          systemPrintln("12) E-Scooter");
+
+        }
+      }
 
       int dynamicModel = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((dynamicModel != INPUT_RESPONSE_GETNUMBER_EXIT) && (dynamicModel != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (dynamicModel < 1 || dynamicModel > DYN_MODEL_BIKE)
+        uint8_t maxModel = DYN_MODEL_WRIST;
+
+        if (zedModuleType == PLATFORM_F9R)
+        {
+          maxModel = DYN_MODEL_BIKE;
+          //F9R versions starting at 1.21 have Mower and E-Scooter dynamic models
+          if (zedFirmwareVersionInt >= 121)
+            maxModel = DYN_MODEL_ESCOOTER;
+        }
+
+        if (dynamicModel < 1 || dynamicModel > maxModel)
           systemPrintln("Error: Dynamic model out of range");
         else
         {
@@ -145,6 +187,8 @@ void menuGNSS()
             settings.dynamicModel = DYN_MODEL_PORTABLE; //The enum starts at 0 and skips 1.
           else
             settings.dynamicModel = dynamicModel; //Recorded to NVM and file at main menu exit
+
+          theGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
         }
       }
     }
@@ -206,6 +250,47 @@ void menuGNSS()
       settings.ntripClient_TransmitGGA ^= 1;
       restartRover = true;
     }
+    else if ( (incoming == 13 && settings.enableNtripClient == true)
+              || incoming == 6 && settings.enableNtripClient == false)
+    {
+      systemPrint("Enter minimum elevation in degrees: ");
+
+      int minElev = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((minElev != INPUT_RESPONSE_GETNUMBER_EXIT) && (minElev != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (minElev <= 0 || minElev > 90) //Arbitrary 90 degree max
+          systemPrintln("Error: Minimum elevation out of range");
+        else
+        {
+          settings.minElev = minElev; //Recorded to NVM and file at main menu exit
+
+          theGNSS.setVal8(UBLOX_CFG_NAVSPG_INFIL_MINELEV, settings.minElev); //Set minimum elevation
+        }
+        restartRover = true;
+      }
+    }
+    else if ( (incoming == 14 && settings.enableNtripClient == true)
+              || incoming == 7 && settings.enableNtripClient == false)
+    {
+      systemPrint("Enter minimum satellite signal level for navigation in dBHz: ");
+
+      int newMinCNO = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((newMinCNO != INPUT_RESPONSE_GETNUMBER_EXIT) && (newMinCNO != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (newMinCNO <= 0 || newMinCNO > 90) //Arbitrary 90 dBHz max
+          systemPrintln("Error: Minimum dBHz out of range");
+        else
+        {
+          if (zedModuleType == PLATFORM_F9R)
+            settings.minCNO_F9R = newMinCNO; //Recorded to NVM and file at main menu exit
+          else
+            settings.minCNO_F9P = newMinCNO;
+
+          theGNSS.setVal8(UBLOX_CFG_NAVSPG_INFIL_MINCNO, newMinCNO); //Update minCNO
+        }
+        restartRover = true;
+      }
+    }
     else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
       break;
     else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)
@@ -236,9 +321,6 @@ void menuGNSS()
       delay(2000);
     }
   }
-
-  //Set dynamic model
-  theGNSS.setVal8(UBLOX_CFG_NAVSPG_DYNMODEL, (dynModel)settings.dynamicModel); //Set dynamic model
 
   clearBuffer(); //Empty buffer of any newline chars
 }
@@ -330,17 +412,20 @@ bool setRate(double secondsBetweenSolutions)
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_MEAS, measRate);
   response &= theGNSS.addCfgValset(UBLOX_CFG_RATE_NAV, navRate);
 
+  int gsvRecordNumber = getMessageNumberByName("UBX_NMEA_GSV");
+
   //If enabled, adjust GSV NMEA to be reported at 1Hz to avoid swamping SPP connection
-  if (settings.ubxMessages[8].msgRate > 0)
+  if (settings.ubxMessageRates[gsvRecordNumber] > 0)
   {
-    float measurementFrequency = (1000.0 / settings.measurementRate) / settings.navigationRate;
+    float measurementFrequency = (1000.0 / measRate) / navRate;
     if (measurementFrequency < 1.0) measurementFrequency = 1.0;
 
     log_d("Adjusting GSV setting to %f", measurementFrequency);
 
     setMessageRateByName("UBX_NMEA_GSV", measurementFrequency); //Update GSV setting in file
-    response &= theGNSS.addCfgValset(settings.ubxMessages[8].msgConfigKey, settings.ubxMessages[8].msgRate); //Update rate on module
+    response &= theGNSS.addCfgValset(ubxMessages[gsvRecordNumber].msgConfigKey, settings.ubxMessageRates[gsvRecordNumber]); //Update rate on module
   }
+
   response &= theGNSS.sendCfgValset(); //Closing value - max 4 pairs
 
   //If we successfully set rates, only then record to settings

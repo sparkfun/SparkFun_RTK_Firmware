@@ -252,9 +252,23 @@ InputResponse getString(char *userString, uint8_t stringSize)
   {
     delay(1); //Yield to processor
 
-    //Regularly poll to get latest data
+    //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    //Keep doing these important things while waiting for the user to enter data
+
+    //Regularly poll GNSS to get latest data. Keep the GNSS time updated.
     if (online.gnss == true)
+    {
       theGNSS.checkUblox();
+      theGNSS.checkCallbacks();
+    }
+
+    //Keep processing NTP requests
+    if (online.ethernetNTPServer)
+    {
+      updateEthernetNTPServer();
+    }
+
+    //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
     if (btPrintEchoExit) //User has disconnect from BT. Force exit all menus.
       return INPUT_RESPONSE_TIMEOUT;
@@ -279,8 +293,8 @@ InputResponse getString(char *userString, uint8_t stringSize)
         if (settings.echoUserInput == true && spot > 0)
         {
           systemWrite('\b'); //Move back one space
-          systemPrint(" "); //Put a blank there to erase the letter from the terminal
-          systemPrint('\b'); //Move back again
+          systemWrite(' '); //Put a blank there to erase the letter from the terminal
+          systemWrite('\b'); //Move back again
           spot--;
         }
       }
@@ -289,13 +303,31 @@ InputResponse getString(char *userString, uint8_t stringSize)
         if (settings.echoUserInput) systemWrite(incoming); //Echo if needed
 
         userString[spot++] = incoming;
-        if (spot == (stringSize - 1)) //Leave room for termination
+        if (spot == stringSize) //Leave room for termination
           return INPUT_RESPONSE_OVERFLOW;
       }
     }
   }
 
   return INPUT_RESPONSE_TIMEOUT;
+}
+
+//Get a valid IP Address (nnn.nnn.nnn.nnn) using getString
+//Returns INPUT_RESPONSE_TIMEOUT, INPUT_RESPONSE_OVERFLOW, INPUT_RESPONSE_EMPTY, INPUT_RESPONSE_INVALID or INPUT_RESPONSE_VALID
+InputResponse getIPAddress(char *userString, uint8_t stringSize)
+{
+  InputResponse result = getString(userString, stringSize);
+  if (result != INPUT_RESPONSE_VALID)
+    return result;
+  int dummy[4];
+  if (sscanf(userString, "%d.%d.%d.%d", &dummy[0], &dummy[1], &dummy[2], &dummy[3]) != 4) //Check that the user has entered nnn.nnn.nnn.nnn
+    return INPUT_RESPONSE_INVALID;
+  for (int i = 0; i <= 3; i++)
+  {
+    if ((dummy[i] < 0) || (dummy[i] > 255)) //Check each value is 0-255
+      return INPUT_RESPONSE_INVALID;
+  }
+  return INPUT_RESPONSE_VALID;
 }
 
 //Gets a single character or number (0-32) from the user. Negative numbers become the positive equivalent.

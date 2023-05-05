@@ -42,6 +42,9 @@
 #define ICON_UP_ARROW_RIGHT              (1<<27) // center,  0
 #define ICON_BLANK_RIGHT                 (1<<28) // center,  0
 
+//Left + Center Radio spot
+#define ICON_IP_ADDRESS                  (1<<29)
+
 //Right top
 #define ICON_BATTERY                     (1<<0) // 45,  0
 
@@ -58,6 +61,20 @@
 
 //Right bottom
 #define ICON_LOGGING                     (1<<6) // right, bottom
+
+//Left center
+#define ICON_CLOCK                       (1<<7)
+#define ICON_CLOCK_ACCURACY              (1<<8)
+
+//Right top
+#define ICON_ETHERNET                    (1<<9)
+
+//Right bottom
+#define ICON_LOGGING_NTP                 (1<<10)
+
+//Left bottom
+#define ICON_ANTENNA_SHORT               (1<<11)
+#define ICON_ANTENNA_OPEN                (1<<12)
 
 //----------------------------------------
 //Locals
@@ -112,6 +129,46 @@ void beginDisplay()
 
   systemPrintln("Display not detected");
 }
+
+//Avoid code repetition
+void displayBatteryVsEthernet()
+{
+  if (HAS_BATTERY)
+    icons |= ICON_BATTERY; //Top right
+  else //if (HAS_ETHERNET)
+  {
+    if (online.ethernetStatus == ETH_CONNECTED)
+      blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+    else
+      blinking_icons ^= ICON_ETHERNET;
+    icons |= (blinking_icons & ICON_ETHERNET); //Top Right
+  }
+}
+void displaySivVsOpenShort()
+{
+  if (!HAS_ANTENNA_SHORT_OPEN)
+    icons |= paintSIV();
+  else
+  {
+    if (aStatus == SFE_UBLOX_ANTENNA_STATUS_SHORT)
+    {
+      blinking_icons ^= ICON_ANTENNA_SHORT;
+      icons |= (blinking_icons & ICON_ANTENNA_SHORT);
+    }
+    else if (aStatus == SFE_UBLOX_ANTENNA_STATUS_OPEN)
+    {
+      blinking_icons ^= ICON_ANTENNA_OPEN;
+      icons |= (blinking_icons & ICON_ANTENNA_OPEN);
+    }
+    else
+    {
+      blinking_icons &= ~ICON_ANTENNA_SHORT;
+      blinking_icons &= ~ICON_ANTENNA_OPEN;
+      icons |= paintSIV();
+    }
+  }
+}
+
 
 //Given the system state, display the appropriate information
 void updateDisplay()
@@ -188,44 +245,44 @@ void updateDisplay()
         */
 
         case (STATE_ROVER_NOT_STARTED):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_CROSS_HAIR     //Center left
+          icons =   ICON_CROSS_HAIR     //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_NO_FIX):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_CROSS_HAIR     //Center left
+          icons =   ICON_CROSS_HAIR     //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_FIX):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_CROSS_HAIR     //Center left
+          icons =   ICON_CROSS_HAIR     //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_RTK_FLOAT):
           blinking_icons ^= ICON_CROSS_HAIR_DUAL;
-          icons =   ICON_BATTERY        //Top right
-                    | (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
+          icons =   (blinking_icons & ICON_CROSS_HAIR_DUAL)  //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_ROVER_RTK_FIX):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_CROSS_HAIR_DUAL//Center left
+          icons =   ICON_CROSS_HAIR_DUAL//Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
 
@@ -238,35 +295,74 @@ void updateDisplay()
         //Blink crosshair icon until we have we have horz accuracy < user defined level
         case (STATE_BASE_TEMP_SETTLE):
           blinking_icons ^= ICON_CROSS_HAIR;
-          icons =   ICON_BATTERY        //Top right
-                    | (blinking_icons & ICON_CROSS_HAIR)  //Center left
+          icons =   (blinking_icons & ICON_CROSS_HAIR)  //Center left
                     | ICON_HORIZONTAL_ACCURACY //Center right
-                    | paintSIV()          //Bottom left
                     | ICON_LOGGING;       //Bottom right
+          displaySivVsOpenShort(); //Bottom left
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_BASE_TEMP_SURVEY_STARTED):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_LOGGING;       //Bottom right
+          icons =   ICON_LOGGING;       //Bottom right
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           paintBaseTempSurveyStarted();
           break;
         case (STATE_BASE_TEMP_TRANSMITTING):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_LOGGING;       //Bottom right
+          icons =   ICON_LOGGING;       //Bottom right
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
           break;
         case (STATE_BASE_FIXED_NOT_STARTED):
-          icons =   ICON_BATTERY;       //Top right
+          icons = 0;       //Top right
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           break;
         case (STATE_BASE_FIXED_TRANSMITTING):
-          icons =   ICON_BATTERY        //Top right
-                    | ICON_LOGGING;       //Bottom right
+          icons =   ICON_LOGGING;       //Bottom right
+          displayBatteryVsEthernet(); //Top right
           iconsRadio = setRadioIcons(); //Top left
           paintRTCM();
           break;
+
+        case (STATE_NTPSERVER_NOT_STARTED):
+        case (STATE_NTPSERVER_NO_SYNC):
+          blinking_icons ^= ICON_CLOCK;
+          icons =   (blinking_icons & ICON_CLOCK) //Center left
+                    | ICON_CLOCK_ACCURACY; //Center right
+          displaySivVsOpenShort(); //Bottom left
+          if (online.ethernetStatus == ETH_CONNECTED)
+            blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+          else
+            blinking_icons ^= ICON_ETHERNET;
+          icons |= (blinking_icons & ICON_ETHERNET); //Top Right
+          iconsRadio = ICON_IP_ADDRESS;   //Top left
+          break;
+
+        case (STATE_NTPSERVER_SYNC):
+          icons =   ICON_CLOCK            //Center left
+                    | ICON_CLOCK_ACCURACY //Center right
+                    | ICON_LOGGING_NTP;   //Bottom right
+          displaySivVsOpenShort(); //Bottom left
+          if (online.ethernetStatus == ETH_CONNECTED)
+            blinking_icons |= ICON_ETHERNET; //Don't blink if link is up
+          else
+            blinking_icons ^= ICON_ETHERNET;
+          icons |= (blinking_icons & ICON_ETHERNET); //Top Right
+          iconsRadio = ICON_IP_ADDRESS;   //Top left
+          break;
+
+        case (STATE_CONFIG_VIA_ETH_NOT_STARTED):
+          break;
+        case (STATE_CONFIG_VIA_ETH_STARTED):
+          break;
+        case (STATE_CONFIG_VIA_ETH):
+          displayConfigViaEthernet();
+          break;
+        case (STATE_CONFIG_VIA_ETH_RESTART_BASE):
+          break;
+
         case (STATE_BUBBLE_LEVEL):
           paintBubbleLevel();
           break;
@@ -443,29 +539,45 @@ void updateDisplay()
         ;
       }
 
+      //Left + center spot
+      if (iconsRadio & ICON_IP_ADDRESS)
+        paintIPAddress();
+
       //Top right corner
-      if ((icons & ICON_BATTERY) && (productVariant != REFERENCE_STATION))
+      if (icons & ICON_BATTERY)
         paintBatteryLevel();
+      else if (icons & ICON_ETHERNET)
+        displayBitmap(45, 0, Ethernet_Icon_Width, Ethernet_Icon_Height, Ethernet_Icon);
 
       //Center left
       if (icons & ICON_CROSS_HAIR)
         displayBitmap(0, 18, CrossHair_Width, CrossHair_Height, CrossHair);
       else if (icons & ICON_CROSS_HAIR_DUAL)
         displayBitmap(0, 18, CrossHairDual_Width, CrossHairDual_Height, CrossHairDual);
+      else if (icons & ICON_CLOCK)
+        paintClock();
 
       //Center right
       if (icons & ICON_HORIZONTAL_ACCURACY)
         paintHorizontalAccuracy();
+      else if (icons & ICON_CLOCK_ACCURACY)
+        paintClockAccuracy();
 
       //Bottom left corner
       if (icons & ICON_SIV_ANTENNA)
         displayBitmap(2, 35, SIV_Antenna_Width, SIV_Antenna_Height, SIV_Antenna);
       else if (icons & ICON_SIV_ANTENNA_LBAND)
         displayBitmap(2, 35, SIV_Antenna_LBand_Width, SIV_Antenna_LBand_Height, SIV_Antenna_LBand);
+      else if (icons & ICON_ANTENNA_SHORT)
+        displayBitmap(2, 35, Antenna_Short_Width, Antenna_Short_Height, Antenna_Short);
+      else if (icons & ICON_ANTENNA_OPEN)
+        displayBitmap(2, 35, Antenna_Open_Width, Antenna_Open_Height, Antenna_Open);
 
       //Bottom right corner
       if (icons & ICON_LOGGING)
         paintLogging();
+      else if (icons & ICON_LOGGING_NTP)
+        paintLoggingNTP(true); //NTP, no pulse
 
       oled.display(); //Push internal buffer to display
     }
@@ -1121,6 +1233,11 @@ uint32_t setModeIcon()
       icons |= ICON_BASE_FIXED;
       break;
 
+    case (STATE_NTPSERVER_NOT_STARTED):
+    case (STATE_NTPSERVER_NO_SYNC):
+    case (STATE_NTPSERVER_SYNC):
+      break;
+
     default:
       break;
   }
@@ -1195,6 +1312,71 @@ void paintHorizontalAccuracy()
   {
     oled.print("."); //Remove leading zero
     oled.printf("%03d", (int)(horizontalAccuracy * 1000)); //Print down to millimeter
+  }
+}
+
+//Display clock with moving hands
+void paintClock()
+{
+  //Animate icon to show system running
+  static uint8_t clockIconDisplayed = 3;
+  clockIconDisplayed++; //Goto next icon
+  clockIconDisplayed %= 4; //Wrap
+
+  if (clockIconDisplayed == 0)
+    displayBitmap(0, 18, Clock_Icon_Width, Clock_Icon_Height, Clock_Icon_1);
+  else if (clockIconDisplayed == 1)
+    displayBitmap(0, 18, Clock_Icon_Width, Clock_Icon_Height, Clock_Icon_2);
+  else if (clockIconDisplayed == 2)
+    displayBitmap(0, 18, Clock_Icon_Width, Clock_Icon_Height, Clock_Icon_3);
+  else
+    displayBitmap(0, 18, Clock_Icon_Width, Clock_Icon_Height, Clock_Icon_4);
+}
+
+//Display clock accuracy tAcc
+void paintClockAccuracy()
+{
+  oled.setFont(QW_FONT_8X16); //Set font to type 1: 8x16
+  oled.setCursor(16, 20); //x, y
+  oled.print(":");
+
+  if (online.gnss == false)
+  {
+    oled.print(" N/A");
+  }
+  else if (tAcc < 10) // 9 or less : show as 9ns
+  {
+    oled.print(tAcc);
+    displayBitmap(36, 20, Millis_Icon_Width, Millis_Icon_Height, Nanos_Icon);
+  }
+  else if (tAcc < 100) // 99 or less : show as 99ns
+  {
+    oled.print(tAcc);
+    displayBitmap(44, 20, Millis_Icon_Width, Millis_Icon_Height, Nanos_Icon);
+  }
+  else if (tAcc < 10000) // 9999 or less : show as 9.9μs
+  {
+    oled.print(tAcc / 1000);
+    oled.print(".");
+    oled.print((tAcc / 100) % 10);
+    displayBitmap(52, 20, Millis_Icon_Width, Millis_Icon_Height, Micros_Icon);
+  }
+  else if (tAcc < 100000) // 99999 or less : show as 99μs
+  {
+    oled.print(tAcc / 1000);
+    displayBitmap(44, 20, Millis_Icon_Width, Millis_Icon_Height, Micros_Icon);
+  }
+  else if (tAcc < 10000000) // 9999999 or less : show as 9.9ms
+  {
+    oled.print(tAcc / 1000000);
+    oled.print(".");
+    oled.print((tAcc / 100000) % 10);
+    displayBitmap(52, 20, Millis_Icon_Width, Millis_Icon_Height, Millis_Icon);
+  }
+  else //if (tAcc >= 100000)
+  {
+    oled.print(">10");
+    displayBitmap(52, 20, Millis_Icon_Width, Millis_Icon_Height, Millis_Icon);
   }
 }
 
@@ -1287,6 +1469,12 @@ void paintDynamicModel()
       break;
     case (DYN_MODEL_BIKE):
       displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_10_Bike);
+      break;
+    case (DYN_MODEL_MOWER):
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_11_Mower);
+      break;
+    case (DYN_MODEL_ESCOOTER):
+      displayBitmap(28, 0, DynamicModel_Width, DynamicModel_Height, DynamicModel_12_EScooter);
       break;
   }
 }
@@ -1386,7 +1574,11 @@ void paintLogging()
   //Animate icon to show system running
   loggingIconDisplayed++; //Goto next icon
   loggingIconDisplayed %= 4; //Wrap
-  if (online.logging == true && logIncreasing == true)
+#ifdef COMPILE_ETHERNET
+  if ((online.logging == true) && (logIncreasing || ntpLogIncreasing))
+#else
+  if ((online.logging == true) && (logIncreasing))
+#endif
   {
     if (loggingType == LOGGING_STANDARD)
     {
@@ -1438,6 +1630,42 @@ void paintLogging()
   }
 }
 
+void paintLoggingNTP(bool noPulse)
+{
+  //Animate icon to show system running
+  loggingIconDisplayed++; //Goto next icon
+  loggingIconDisplayed %= 4; //Wrap
+#ifdef COMPILE_ETHERNET //Some redundancy here. paintLoggingNTP should only be called if Ethernet is present
+  if ((online.logging == true) && (logIncreasing || ntpLogIncreasing))
+#else
+  if ((online.logging == true) && (logIncreasing))
+#endif
+  {
+    if (loggingIconDisplayed == 0)
+      displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
+    else if (loggingIconDisplayed == 1)
+      displayBitmap(64 - Logging_1_Width, 48 - Logging_1_Height, Logging_1_Width, Logging_1_Height, Logging_NTP_1);
+    else if (loggingIconDisplayed == 2)
+      displayBitmap(64 - Logging_2_Width, 48 - Logging_2_Height, Logging_2_Width, Logging_2_Height, Logging_NTP_2);
+    else if (loggingIconDisplayed == 3)
+      displayBitmap(64 - Logging_3_Width, 48 - Logging_3_Height, Logging_3_Width, Logging_3_Height, Logging_NTP_3);
+  }
+  else if (!noPulse)
+  {
+    const int pulseX = 64 - 4;
+    const int pulseY = oled.getHeight();
+    int height;
+
+    //Paint pulse to show system activity
+    height = loggingIconDisplayed << 2;
+    if (height)
+    {
+      oled.line(pulseX, pulseY, pulseX, pulseY - height);
+      oled.line(pulseX - 1, pulseY, pulseX - 1, pulseY - height);
+    }
+  }
+}
+
 //Survey in is running. Show 3D Mean and elapsed time.
 void paintBaseTempSurveyStarted()
 {
@@ -1452,9 +1680,37 @@ void paintBaseTempSurveyStarted()
   else
     oled.print(">10");
 
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("Time:");
+  if (!HAS_ANTENNA_SHORT_OPEN)
+  {
+    oled.setCursor(0, 39); //x, y
+    oled.setFont(QW_FONT_5X7);
+    oled.print("Time:");
+  }
+  else
+  {
+    static uint32_t blinkers = 0;
+    if (aStatus == SFE_UBLOX_ANTENNA_STATUS_SHORT)
+    {
+      blinkers ^= ICON_ANTENNA_SHORT;
+      if (blinkers & ICON_ANTENNA_SHORT)
+        displayBitmap(2, 35, Antenna_Short_Width, Antenna_Short_Height, Antenna_Short);
+    }
+    else if (aStatus == SFE_UBLOX_ANTENNA_STATUS_OPEN)
+    {
+      blinkers ^= ICON_ANTENNA_OPEN;
+      if (blinkers & ICON_ANTENNA_OPEN)
+        displayBitmap(2, 35, Antenna_Open_Width, Antenna_Open_Height, Antenna_Open);
+    }
+    else
+    {
+      blinkers &= ~ICON_ANTENNA_SHORT;
+      blinkers &= ~ICON_ANTENNA_OPEN;
+      oled.setCursor(0, 39); //x, y
+      oled.setFont(QW_FONT_5X7);
+      oled.print("Time:");
+    }
+  }
+
 
   oled.setCursor(30, 36); //x, y
   oled.setFont(QW_FONT_8X16);
@@ -1485,9 +1741,37 @@ void paintRTCM()
   else
     printTextCenter("Xmitting", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
 
-  oled.setCursor(0, 39); //x, y
-  oled.setFont(QW_FONT_5X7);
-  oled.print("RTCM:");
+
+  if (!HAS_ANTENNA_SHORT_OPEN)
+  {
+    oled.setCursor(0, 39); //x, y
+    oled.setFont(QW_FONT_5X7);
+    oled.print("RTCM:");
+  }
+  else
+  {
+    static uint32_t blinkers = 0;
+    if (aStatus == SFE_UBLOX_ANTENNA_STATUS_SHORT)
+    {
+      blinkers ^= ICON_ANTENNA_SHORT;
+      if (blinkers & ICON_ANTENNA_SHORT)
+        displayBitmap(2, 35, Antenna_Short_Width, Antenna_Short_Height, Antenna_Short);
+    }
+    else if (aStatus == SFE_UBLOX_ANTENNA_STATUS_OPEN)
+    {
+      blinkers ^= ICON_ANTENNA_OPEN;
+      if (blinkers & ICON_ANTENNA_OPEN)
+        displayBitmap(2, 35, Antenna_Open_Width, Antenna_Open_Height, Antenna_Open);
+    }
+    else
+    {
+      blinkers &= ~ICON_ANTENNA_SHORT;
+      blinkers &= ~ICON_ANTENNA_OPEN;
+      oled.setCursor(0, 39); //x, y
+      oled.setFont(QW_FONT_5X7);
+      oled.print("RTCM:");      
+    }
+  }
 
   if (rtcmPacketsSent < 100)
     oled.setCursor(30, 36); //x, y - Give space for two digits
@@ -1512,6 +1796,36 @@ void paintConnectingToNtripCaster()
   oled.setFont(QW_FONT_8X16);
 
   printTextwithKerning("Connecting", textX, textY, textKerning);
+}
+
+//Scroll through IP address. Wipe with spaces both ends.
+void paintIPAddress()
+{
+  char ipAddress[32];
+  snprintf(ipAddress, sizeof(ipAddress), "       %d.%d.%d.%d       ",
+#ifdef COMPILE_ETHERNET
+           Ethernet.localIP()[0], Ethernet.localIP()[1], Ethernet.localIP()[2], Ethernet.localIP()[3]);
+#else
+           0, 0, 0, 0);
+#endif
+
+  static uint8_t ipAddressPosition = 0;
+
+  //Print seven characters of IP address
+  char printThis[9];
+  snprintf(printThis, sizeof(printThis), "%c%c%c%c%c%c%c",
+           ipAddress[ipAddressPosition + 0], ipAddress[ipAddressPosition + 1],
+           ipAddress[ipAddressPosition + 2], ipAddress[ipAddressPosition + 3],
+           ipAddress[ipAddressPosition + 4], ipAddress[ipAddressPosition + 5],
+           ipAddress[ipAddressPosition + 6]);
+
+  oled.setFont(QW_FONT_5X7); //Set font to smallest
+  oled.setCursor(0, 3);
+  oled.print(printThis);
+
+  ipAddressPosition++; //Increment the print position
+  if (ipAddress[ipAddressPosition + 7] == 0) //Wrap
+    ipAddressPosition = 0;
 }
 
 void displayBaseStart(uint16_t displayTime)
@@ -1960,12 +2274,15 @@ void paintSystemTest()
           oled.print("FAIL");
       }
 
-      oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
-      oled.print("Batt:");
-      if (online.battery == true)
-        oled.print("OK");
-      else
-        oled.print("FAIL");
+      if (productVariant != REFERENCE_STATION)
+      {
+        oled.setCursor(xOffset, yOffset + (2 * charHeight) ); //x, y
+        oled.print("Batt:");
+        if (online.battery == true)
+          oled.print("OK");
+        else
+          oled.print("FAIL");
+      }
 
       oled.setCursor(xOffset, yOffset + (3 * charHeight) ); //x, y
       oled.print("GNSS:");
@@ -2225,7 +2542,16 @@ void paintDisplaySetup()
   {
     if (setupState == STATE_MARK_EVENT)
     {
-      if (online.accelerometer)
+      if (productVariant == REFERENCE_STATION)
+      {
+        //setupState defaults to STATE_MARK_EVENT, which is not a valid state for the Ref Stn.
+        //It will be corrected by ButtonCheckTask. Until then, display but don't highlight an option.
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("NTP", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else if (online.accelerometer)
       {
         printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
         printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
@@ -2242,7 +2568,14 @@ void paintDisplaySetup()
     }
     else if (setupState == STATE_ROVER_NOT_STARTED)
     {
-      if (online.accelerometer)
+      if (productVariant == REFERENCE_STATION)
+      {
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
+        printTextCenter("NTP", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else if (online.accelerometer)
       {
         printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false);
         printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, true);
@@ -2259,7 +2592,14 @@ void paintDisplaySetup()
     }
     else if (setupState == STATE_BASE_NOT_STARTED)
     {
-      if (online.accelerometer)
+      if (productVariant == REFERENCE_STATION)
+      {
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, true); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("NTP", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+      else if (online.accelerometer)
       {
         printTextCenter("Mark", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
         printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
@@ -2272,6 +2612,15 @@ void paintDisplaySetup()
         printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
         printTextCenter("Base", 12 * 2, QW_FONT_8X16, 1, true);
         printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, false);
+      }
+    }
+    else if (setupState == STATE_NTPSERVER_NOT_STARTED)
+    {
+      {
+        printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("NTP", 12 * 2, QW_FONT_8X16, 1, true);
+        printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, false);
       }
     }
     else if (setupState == STATE_BUBBLE_LEVEL)
@@ -2292,9 +2641,23 @@ void paintDisplaySetup()
         printTextCenter("Config", 12 * 3, QW_FONT_8X16, 1, true);
       }
     }
+    else if (setupState == STATE_CONFIG_VIA_ETH_NOT_STARTED)
+    {
+      printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+      printTextCenter("Rover", 12 * 1, QW_FONT_8X16, 1, false);
+      printTextCenter("NTP", 12 * 2, QW_FONT_8X16, 1, false);
+      printTextCenter("Cfg Eth", 12 * 3, QW_FONT_8X16, 1, true);
+    }
     else if (setupState == STATE_WIFI_CONFIG_NOT_STARTED)
     {
-      if (online.accelerometer)
+      if (productVariant == REFERENCE_STATION)
+      {
+        printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("NTP", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("Cfg Eth", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("CfgWiFi", 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else if (online.accelerometer)
       {
         printTextCenter("Rover", 12 * 0, QW_FONT_8X16, 1, false);
         printTextCenter("Base", 12 * 1, QW_FONT_8X16, 1, false);
@@ -2311,7 +2674,14 @@ void paintDisplaySetup()
     }
     else if (setupState == STATE_ESPNOW_PAIRING_NOT_STARTED)
     {
-      if (online.accelerometer)
+      if (productVariant == REFERENCE_STATION)
+      {
+        printTextCenter("NTP", 12 * 0, QW_FONT_8X16, 1, false); //string, y, font type, kerning, inverted
+        printTextCenter("Cfg Eth", 12 * 1, QW_FONT_8X16, 1, false);
+        printTextCenter("CfgWiFi", 12 * 2, QW_FONT_8X16, 1, false);
+        printTextCenter("E-Pair", 12 * 3, QW_FONT_8X16, 1, true);
+      }
+      else if (online.accelerometer)
       {
         printTextCenter("Base", 12 * 0, QW_FONT_8X16, 1, false);
         printTextCenter("Bubble", 12 * 1, QW_FONT_8X16, 1, false);
@@ -2662,6 +3032,11 @@ void paintGettingKeys()
   displayMessage("Getting Keys", 0);
 }
 
+void paintGettingEthernetIP()
+{
+  displayMessage("Getting IP", 0);
+}
+
 //If an L-Band is indoors without reception, we have a ~2s wait for the RTC to come online
 //Display something while we wait
 void paintRTCWait()
@@ -2723,6 +3098,178 @@ void paintEspNowPaired()
   displayMessage("ESP-Now Paired", 2000);
 }
 
+void displayNtpStart(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 15;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+
+    printTextCenter("NTP", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayNtpStarted(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 15;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+
+    printTextCenter("NTP", yPos, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Started", yPos + fontHeight, QW_FONT_8X16, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayNtpNotReady(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 8;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+
+    printTextCenter("Ethernet", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Not Ready", yPos + fontHeight, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayNTPFail(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 8;
+    uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+
+    printTextCenter("NTP", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    printTextCenter("Failed", yPos + fontHeight, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayConfigViaEthNotStarted(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 8;
+    uint8_t yPos = fontHeight;
+
+    printTextCenter("Configure", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Via", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Ethernet", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Restart", yPos, QW_FONT_5X7, 1, true);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayConfigViaEthStarted(uint16_t displayTime)
+{
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t fontHeight = 8;
+    uint8_t yPos = fontHeight;
+
+    printTextCenter("Configure", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Via", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Ethernet", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+    yPos += fontHeight;
+    printTextCenter("Started", yPos, QW_FONT_5X7, 1, false);  //text, y, font type, kerning, inverted
+
+    oled.display();
+
+    delay(displayTime);
+  }
+}
+
+void displayConfigViaEthernet()
+{
+#ifdef COMPILE_ETHERNET
+
+  if (online.display == true)
+  {
+    oled.erase();
+
+    uint8_t xPos = (oled.getWidth() / 2) - (Ethernet_Icon_Width / 2);
+    uint8_t yPos = Ethernet_Icon_Height / 2;
+
+    static bool blink = 0;
+    blink ^= 1;
+
+    if (ETH.linkUp() || blink)
+      displayBitmap(xPos, yPos, Ethernet_Icon_Width, Ethernet_Icon_Height, Ethernet_Icon);
+
+    yPos += Ethernet_Icon_Height * 1.5;
+
+    printTextCenter("IP:", yPos, QW_FONT_5X7, 1, false); //text, y, font type, kerning, inverted
+    yPos += 8;
+
+    char ipAddress[40];
+    IPAddress localIP =  ETH.localIP();
+    snprintf(ipAddress, sizeof(ipAddress), "          %d.%d.%d.%d          ",
+             localIP[0], localIP[1], localIP[2], localIP[3]);
+
+    static uint8_t ipAddressPosition = 0;
+
+    //Print ten characters of IP address
+    char printThis[12];
+    snprintf(printThis, sizeof(printThis), "%c%c%c%c%c%c%c%c%c%c",
+             ipAddress[ipAddressPosition + 0], ipAddress[ipAddressPosition + 1],
+             ipAddress[ipAddressPosition + 2], ipAddress[ipAddressPosition + 3],
+             ipAddress[ipAddressPosition + 4], ipAddress[ipAddressPosition + 5],
+             ipAddress[ipAddressPosition + 6], ipAddress[ipAddressPosition + 7],
+             ipAddress[ipAddressPosition + 8], ipAddress[ipAddressPosition + 9]);
+
+    oled.setCursor(0, yPos);
+    oled.print(printThis);
+
+    ipAddressPosition++; //Increment the print position
+    if (ipAddress[ipAddressPosition + 10] == 0) //Wrap
+      ipAddressPosition = 0;
+
+    oled.display();
+  }
+
+#else
+  uint8_t fontHeight = 15;
+  uint8_t yPos = oled.getHeight() / 2 - fontHeight;
+  printTextCenter("!Compiled", yPos, QW_FONT_5X7, 1, false);
+#endif
+}
+
 const uint8_t * getMacAddress()
 {
   static const uint8_t zero[6] = {0, 0, 0, 0, 0, 0};
@@ -2733,6 +3280,10 @@ const uint8_t * getMacAddress()
 #ifdef COMPILE_WIFI
   else if (wifiState != WIFI_OFF)
     return wifiMACAddress;
+#endif
+#ifdef COMPILE_ETHERNET
+  else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
+    return ethernetMACAddress;
 #endif
 #endif
   return zero;

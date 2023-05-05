@@ -4,7 +4,8 @@
 bool websocketConnected = false;
 
 //Start webserver in AP mode
-void startWebServer()
+void startWebServer(bool startWiFi = true, int httpPort = 80); //Header
+void startWebServer(bool startWiFi, int httpPort)
 {
 #ifdef COMPILE_WIFI
 #ifdef COMPILE_AP
@@ -12,8 +13,9 @@ void startWebServer()
   ntripClientStop(true); //Do not allocate new wifiClient
   ntripServerStop(true); //Do not allocate new wifiClient
 
-  if (wifiStartAP() == false) //Exits calling wifiConnect()
-    return;
+  if (startWiFi)
+    if (wifiStartAP() == false) //Exits calling wifiConnect()
+      return;
 
   incomingSettings = (char*)malloc(AP_CONFIG_SETTING_SIZE);
   memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
@@ -22,7 +24,7 @@ void startWebServer()
   settingsCSV = (char*)malloc(AP_CONFIG_SETTING_SIZE);
   createSettingsString(settingsCSV);
 
-  webserver = new AsyncWebServer(80);
+  webserver = new AsyncWebServer(httpPort);
   websocket = new AsyncWebSocket("/ws");
 
   websocket->onEvent(onWsEvent);
@@ -45,6 +47,8 @@ void startWebServer()
   // * /src/fonts/icomoon.woof
 
   // * /listfiles responds with a CSV of files and sizes in root
+  // * /listMessages responds with a CSV of messages supported by this platform
+  // * /listMessagesBase responds with a CSV of RTCM Base messages supported by this platform
   // * /file allows the download or deletion of a file
 
   webserver->onNotFound(notFound);
@@ -52,7 +56,9 @@ void startWebServer()
   webserver->onFileUpload(handleUpload); //Run handleUpload function when any file is uploaded. Must be before server.on() calls.
 
   webserver->on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send_P(200, "text/html", index_html);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html, sizeof(index_html));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
   });
 
   webserver->on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {
@@ -86,11 +92,17 @@ void startWebServer()
   });
 
   webserver->on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send_P(200, "text/javascript", main_js);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", main_js, sizeof(main_js));
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
   });
 
   webserver->on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest * request) {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
+    AsyncWebServerResponse *response;
+    if (productVariant == REFERENCE_STATION)
+      response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
+    else
+      response = request->beginResponse_P(200, "image/png", rtkSetupWiFi_png, sizeof(rtkSetupWiFi_png));
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   });
@@ -179,12 +191,28 @@ void startWebServer()
     request->send(200);
   }, handleFirmwareFileUpload);
 
-  //Handlers for file manager
+  //Handler for file manager
   webserver->on("/listfiles", HTTP_GET, [](AsyncWebServerRequest * request)
   {
     String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
     systemPrintln(logmessage);
     request->send(200, "text/plain", getFileList());
+  });
+
+  //Handler for supported messages list
+  webserver->on("/listMessages", HTTP_GET, [](AsyncWebServerRequest * request)
+  {
+    String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+    systemPrintln(logmessage);
+    request->send(200, "text/plain", createMessageList());
+  });
+
+  //Handler for supported RTCM/Base messages list
+  webserver->on("/listMessagesBase", HTTP_GET, [](AsyncWebServerRequest * request)
+  {
+    String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+    systemPrintln(logmessage);
+    request->send(200, "text/plain", createMessageListBase());
   });
 
   //Handler for file manager
@@ -263,15 +291,18 @@ static void handleFileManager(AsyncWebServerRequest *request)
 
     logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
 
+    char slashFileName[50];
+    snprintf(slashFileName, sizeof(slashFileName), "/%s", request->getParam("name")->value().c_str());
+
     bool fileExists;
     if (USE_SPI_MICROSD)
     {
-      fileExists = sd->exists(fileName);
+      fileExists = sd->exists(slashFileName);
     }
 #ifdef COMPILE_SD_MMC
     else
     {
-      fileExists = SD_MMC.exists(fileName);
+      fileExists = SD_MMC.exists(slashFileName);
     }
 #endif
 
@@ -301,7 +332,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
             }
           }
 
-          if (managerTempFile->open(fileName, O_READ) == true)
+          if (managerTempFile->open(slashFileName, O_READ) == true)
             managerFileOpen = true;
           else
             systemPrintln("Error: File Manager failed to open file");
@@ -348,10 +379,10 @@ static void handleFileManager(AsyncWebServerRequest *request)
       {
         logmessage += " deleted";
         if (USE_SPI_MICROSD)
-          sd->remove(fileName);
+          sd->remove(slashFileName);
 #ifdef COMPILE_SD_MMC
         else
-          SD_MMC.remove(fileName);
+          SD_MMC.remove(slashFileName);
 #endif
         request->send(200, "text/plain", "Deleted File: " + String(fileName));
       }
@@ -382,9 +413,10 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest * request, String fil
     const char* BIN_EXT = "bin";
     const char* BIN_HEADER = "RTK_Surveyor_Firmware";
 
-    char fname[50]; //Handle long file names
-    fileName.toCharArray(fname, sizeof(fname));
-    fname[fileName.length()] = '\0'; //Terminate array
+    int fnameLen = fileName.length();
+    char fname[fnameLen + 2] = { '/' }; //Filename must start with / or VERY bad things happen on SD_MMC
+    fileName.toCharArray(&fname[1], fnameLen + 1);
+    fname[fnameLen + 1] = '\0'; //Terminate array
 
     //Check 'bin' extension
     if (strcmp(BIN_EXT, &fname[strlen(fname) - strlen(BIN_EXT)]) == 0)
@@ -489,6 +521,8 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       timeSinceLastIncomingSetting = millis();
     }
   }
+  else
+    log_d("onWsEvent: unrecognised AwsEventType %d", type);
 }
 #endif
 #endif
@@ -509,15 +543,25 @@ void createSettingsString(char* newSettings)
   snprintf(apRtkFirmwareVersion, sizeof(apRtkFirmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
   stringRecord(newSettings, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
-  char apZedPlatform[50];
-  if (zedModuleType == PLATFORM_F9P)
-    strcpy(apZedPlatform, "ZED-F9P");
-  else if (zedModuleType == PLATFORM_F9R)
-    strcpy(apZedPlatform, "ZED-F9R");
+  if (!configureViaEthernet) //ZED type is unknown if we are in configure-via-ethernet mode
+  {
+    char apZedPlatform[50];
+    if (zedModuleType == PLATFORM_F9P)
+      strcpy(apZedPlatform, "ZED-F9P");
+    else if (zedModuleType == PLATFORM_F9R)
+      strcpy(apZedPlatform, "ZED-F9R");
 
-  char apZedFirmwareVersion[80];
-  snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
-  stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
+    char apZedFirmwareVersion[80];
+    snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform, zedFirmwareVersion);
+    stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
+    stringRecord(newSettings, "zedFirmwareVersionInt", zedFirmwareVersionInt);
+  }
+  else
+  {
+    char apZedFirmwareVersion[80];
+    snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "ZED-F9: Unknown");
+    stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
+  }
 
   char apDeviceBTID[30];
   snprintf(apDeviceBTID, sizeof(apDeviceBTID), "Device Bluetooth ID: %02X%02X", btMACAddress[4], btMACAddress[5]);
@@ -531,8 +575,6 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "ubxConstellationsGalileo", settings.ubxConstellations[2].enabled); //Galileo
   stringRecord(newSettings, "ubxConstellationsBeiDou", settings.ubxConstellations[3].enabled); //BeiDou
   stringRecord(newSettings, "ubxConstellationsGLONASS", settings.ubxConstellations[5].enabled); //GLONASS
-  for (int x = 0 ; x < MAX_UBX_MSG ; x++)
-    stringRecord(newSettings, settings.ubxMessages[x].msgTextName, settings.ubxMessages[x].msgRate);
 
   //Base Config
   stringRecord(newSettings, "baseTypeSurveyIn", !settings.fixedBase);
@@ -594,6 +636,30 @@ void createSettingsString(char* newSettings)
 
   stringRecord(newSettings, "enableResetDisplay", settings.enableResetDisplay);
 
+  //Ethernet
+  stringRecord(newSettings, "ethernetDHCP", settings.ethernetDHCP);
+  char ipAddressChar[20];
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetIP.toString().c_str());
+  stringRecord(newSettings, "ethernetIP", ipAddressChar);
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetDNS.toString().c_str());
+  stringRecord(newSettings, "ethernetDNS", ipAddressChar);
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetGateway.toString().c_str());
+  stringRecord(newSettings, "ethernetGateway", ipAddressChar);
+  snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetSubnet.toString().c_str());
+  stringRecord(newSettings, "ethernetSubnet", ipAddressChar);
+  stringRecord(newSettings, "ethernetHttpPort", settings.ethernetHttpPort);
+  stringRecord(newSettings, "ethernetNtpPort", settings.ethernetNtpPort);
+
+  //NTP
+  stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
+  stringRecord(newSettings, "ntpPrecision", settings.ntpPrecision);
+  stringRecord(newSettings, "ntpRootDelay", settings.ntpRootDelay);
+  stringRecord(newSettings, "ntpRootDispersion", settings.ntpRootDispersion);
+  stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
+  char ntpRefId[5];
+  snprintf(ntpRefId, sizeof(ntpRefId), "%s", settings.ntpReferenceId);
+  stringRecord(newSettings, "ntpReferenceId", ntpRefId);
+
   //Turn on SD display block last
   stringRecord(newSettings, "sdMounted", online.microSD);
 
@@ -611,7 +677,7 @@ void createSettingsString(char* newSettings)
   if (strlen(settings.pointPerfectCurrentKey) > 0)
   {
 #ifdef COMPILE_L_BAND
-    uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+    int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
     snprintf(apDaysRemaining, sizeof(apDaysRemaining), "%d", daysRemaining);
 #endif
   }
@@ -642,9 +708,19 @@ void createSettingsString(char* newSettings)
   }
   //stringRecord(newSettings, "activeProfiles", activeProfiles);
 
-  //System state at power on. Convert various system states to either Rover or Base.
-  int lastState = 0; //0 = Rover, 1 = Base
-  if (settings.lastState >= STATE_BASE_NOT_STARTED && settings.lastState <= STATE_BASE_FIXED_TRANSMITTING) lastState = 1;
+  //System state at power on. Convert various system states to either Rover or Base or NTP.
+  int lastState; //0 = Rover, 1 = Base, 2 = NTP
+  if (productVariant == REFERENCE_STATION)
+  {
+    lastState = 1; //Default Base
+    if (settings.lastState >= STATE_ROVER_NOT_STARTED && settings.lastState <= STATE_ROVER_RTK_FIX) lastState = 0;
+    if (settings.lastState >= STATE_NTPSERVER_NOT_STARTED && settings.lastState <= STATE_NTPSERVER_SYNC) lastState = 2;
+  }
+  else
+  {
+    lastState = 0; //Default Rover
+    if (settings.lastState >= STATE_BASE_NOT_STARTED && settings.lastState <= STATE_BASE_FIXED_TRANSMITTING) lastState = 1;
+  }
   stringRecord(newSettings, "baseRoverSetup", lastState);
 
   //Bluetooth radio type
@@ -672,13 +748,13 @@ void createSettingsString(char* newSettings)
   //Radio / ESP-Now settings
   char radioMAC[18];   //Send radio MAC
   snprintf(radioMAC, sizeof(radioMAC), "%02X:%02X:%02X:%02X:%02X:%02X",
-          wifiMACAddress[0],
-          wifiMACAddress[1],
-          wifiMACAddress[2],
-          wifiMACAddress[3],
-          wifiMACAddress[4],
-          wifiMACAddress[5]
-         );
+           wifiMACAddress[0],
+           wifiMACAddress[1],
+           wifiMACAddress[2],
+           wifiMACAddress[3],
+           wifiMACAddress[4],
+           wifiMACAddress[5]
+          );
   stringRecord(newSettings, "radioMAC", radioMAC);
   stringRecord(newSettings, "radioType", settings.radioType);
   stringRecord(newSettings, "espnowPeerCount", settings.espnowPeerCount);
@@ -686,51 +762,75 @@ void createSettingsString(char* newSettings)
   {
     snprintf(tagText, sizeof(tagText), "peerMAC%d", index);
     snprintf(nameText, sizeof(nameText), "%02X:%02X:%02X:%02X:%02X:%02X",
-            settings.espnowPeers[index][0],
-            settings.espnowPeers[index][1],
-            settings.espnowPeers[index][2],
-            settings.espnowPeers[index][3],
-            settings.espnowPeers[index][4],
-            settings.espnowPeers[index][5]
-           );
+             settings.espnowPeers[index][0],
+             settings.espnowPeers[index][1],
+             settings.espnowPeers[index][2],
+             settings.espnowPeers[index][3],
+             settings.espnowPeers[index][4],
+             settings.espnowPeers[index][5]
+            );
     stringRecord(newSettings, tagText, nameText);
   }
   stringRecord(newSettings, "espnowBroadcast", settings.espnowBroadcast);
 
   stringRecord(newSettings, "logFileName", logFileName);
 
-  //Determine battery icon
-  int iconLevel = 0;
-  if (battLevel < 25)
-    iconLevel = 0;
-  else if (battLevel < 50)
-    iconLevel = 1;
-  else if (battLevel < 75)
-    iconLevel = 2;
-  else //batt level > 75
-    iconLevel = 3;
-
-  char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
-
-  if (externalPowerConnected)
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
+  if (HAS_NO_BATTERY) //Ref Stn does not have a battery
+  {
+    stringRecord(newSettings, "batteryIconFileName", (char *)"src/BatteryBlank.png");
+    stringRecord(newSettings, "batteryPercent", (char *)" ");
+  }
   else
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
+  {
+    //Determine battery icon
+    int iconLevel = 0;
+    if (battLevel < 25)
+      iconLevel = 0;
+    else if (battLevel < 50)
+      iconLevel = 1;
+    else if (battLevel < 75)
+      iconLevel = 2;
+    else //batt level > 75
+      iconLevel = 3;
 
-  stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
+    char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
 
-  //Determine battery percent
-  char batteryPercent[sizeof("+100%")];
-  int tempLevel = battLevel;
-  if(tempLevel > 100) tempLevel = 100;
+    if (externalPowerConnected)
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
+    else
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
 
-  if (externalPowerConnected)
-    snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", tempLevel);
+    stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
+
+    //Determine battery percent
+    char batteryPercent[sizeof("+100%")];
+    int tempLevel = battLevel;
+    if (tempLevel > 100) tempLevel = 100;
+
+    if (externalPowerConnected)
+      snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", tempLevel);
+    else
+      snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", tempLevel);
+    stringRecord(newSettings, "batteryPercent", batteryPercent);
+  }
+
+  stringRecord(newSettings, "minElev", settings.minElev);
+  stringRecord(newSettings, "imuYaw", settings.imuYaw);
+  stringRecord(newSettings, "imuPitch", settings.imuPitch);
+  stringRecord(newSettings, "imuRoll", settings.imuRoll);
+  stringRecord(newSettings, "sfDisableWheelDirection", settings.sfDisableWheelDirection);
+  stringRecord(newSettings, "sfCombineWheelTicks", settings.sfCombineWheelTicks);
+  stringRecord(newSettings, "rateNavPrio", settings.rateNavPrio);
+  stringRecord(newSettings, "sfUseSpeed", settings.sfUseSpeed);
+  stringRecord(newSettings, "coordinateInputType", settings.coordinateInputType);
+  //stringRecord(newSettings, "lbandFixTimeout_seconds", settings.lbandFixTimeout_seconds);
+
+  if (zedModuleType == PLATFORM_F9R)
+    stringRecord(newSettings, "minCNO", settings.minCNO_F9R);
   else
-    snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", tempLevel);
-  stringRecord(newSettings, "batteryPercent", batteryPercent);
+    stringRecord(newSettings, "minCNO", settings.minCNO_F9P);
 
-  //Add ECEF and Geodetic station data
+  //Add ECEF and Geodetic station data to the end of settings
   for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
   {
     //stationInfo example: LocationA,-1280206.568,-4716804.403,4086665.484
@@ -838,33 +938,41 @@ void createDynamicDataString(char* settingsCSV)
   stringRecord(settingsCSV, "ecefY", ecefY, 3);
   stringRecord(settingsCSV, "ecefZ", ecefZ, 3);
 
-  //Determine battery icon
-  int iconLevel = 0;
-  if (battLevel < 25)
-    iconLevel = 0;
-  else if (battLevel < 50)
-    iconLevel = 1;
-  else if (battLevel < 75)
-    iconLevel = 2;
-  else //batt level > 75
-    iconLevel = 3;
-
-  char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
-
-  if (externalPowerConnected)
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
+  if (HAS_NO_BATTERY) //Ref Stn does not have a battery
+  {
+    stringRecord(settingsCSV, "batteryIconFileName", (char *)"src/BatteryBlank.png");
+    stringRecord(settingsCSV, "batteryPercent", (char *)" ");
+  }
   else
-    snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
+  {
+    //Determine battery icon
+    int iconLevel = 0;
+    if (battLevel < 25)
+      iconLevel = 0;
+    else if (battLevel < 50)
+      iconLevel = 1;
+    else if (battLevel < 75)
+      iconLevel = 2;
+    else //batt level > 75
+      iconLevel = 3;
 
-  stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
+    char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
 
-  //Determine battery percent
-  char batteryPercent[sizeof("+100%")];
-  if (externalPowerConnected)
-    snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", battLevel);
-  else
-    snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", battLevel);
-  stringRecord(settingsCSV, "batteryPercent", batteryPercent);
+    if (externalPowerConnected)
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
+    else
+      snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d.png", iconLevel);
+
+    stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
+
+    //Determine battery percent
+    char batteryPercent[sizeof("+100%")];
+    if (externalPowerConnected)
+      snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", battLevel);
+    else
+      snprintf(batteryPercent, sizeof(batteryPercent), "%d%%", battLevel);
+    stringRecord(settingsCSV, "batteryPercent", batteryPercent);
+  }
 
   strcat(settingsCSV, "\0");
 #endif
@@ -909,10 +1017,26 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.fixedEcefY = settingValue;
   else if (strcmp(settingName, "fixedEcefZ") == 0)
     settings.fixedEcefZ = settingValue;
-  else if (strcmp(settingName, "fixedLat") == 0)
-    settings.fixedLat = settingValue;
-  else if (strcmp(settingName, "fixedLong") == 0)
-    settings.fixedLong = settingValue;
+  else if (strcmp(settingName, "fixedLatText") == 0)
+  {
+    double newCoordinate = 0.0;
+    CoordinateInputType newCoordinateInputType = identifyInputType((char *)settingValueStr, &newCoordinate);
+    if (newCoordinateInputType == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+      settings.fixedLat = 0.0;
+    else
+    {
+      settings.fixedLat = newCoordinate;
+      settings.coordinateInputType = newCoordinateInputType;
+    }
+  }
+  else if (strcmp(settingName, "fixedLongText") == 0)
+  {
+    double newCoordinate = 0.0;
+    if (identifyInputType((char *)settingValueStr, &newCoordinate) == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+      settings.fixedLong = 0.0;
+    else
+      settings.fixedLong = newCoordinate;
+  }
   else if (strcmp(settingName, "fixedAltitude") == 0)
     settings.fixedAltitude = settingValue;
   else if (strcmp(settingName, "dataPortBaud") == 0)
@@ -996,8 +1120,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.radioType = (RadioType_e)settingValue; //0 = Radio off, 1 = ESP-Now
   else if (strcmp(settingName, "baseRoverSetup") == 0)
   {
+    //0 = Rover, 1 = Base, 2 = NTP
     settings.lastState = STATE_ROVER_NOT_STARTED; //Default
     if (settingValue == 1) settings.lastState = STATE_BASE_NOT_STARTED;
+    if (settingValue == 2) settings.lastState = STATE_NTPSERVER_NOT_STARTED;
   }
   else if (strstr(settingName, "stationECEF") != nullptr)
   {
@@ -1029,6 +1155,70 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.enableTcpServer = settingValueBool;
   else if (strcmp(settingName, "enableRCFirmware") == 0)
     enableRCFirmware = settingValueBool;
+  else if (strcmp(settingName, "minElev") == 0)
+    settings.minElev = settingValue;
+  else if (strcmp(settingName, "imuYaw") == 0)
+    settings.imuYaw = settingValue * 100; //Comes in as 0 to 360.0 but stored as 0 to 36,000
+  else if (strcmp(settingName, "imuPitch") == 0)
+    settings.imuPitch = settingValue * 100; //Comes in as -90 to 90.0 but stored as -9000 to 9000
+  else if (strcmp(settingName, "imuRoll") == 0)
+    settings.imuRoll = settingValue * 100; //Comes in as -180 to 180.0 but stored as -18000 to 18000
+  else if (strcmp(settingName, "sfDisableWheelDirection") == 0)
+    settings.sfDisableWheelDirection = settingValueBool;
+  else if (strcmp(settingName, "sfCombineWheelTicks") == 0)
+    settings.sfCombineWheelTicks = settingValueBool;
+  else if (strcmp(settingName, "rateNavPrio") == 0)
+    settings.rateNavPrio = settingValue;
+  else if (strcmp(settingName, "minCNO") == 0)
+  {
+    if (zedModuleType == PLATFORM_F9R)
+      settings.minCNO_F9R = settingValue;
+    else
+      settings.minCNO_F9P = settingValue;
+  }
+
+  else if (strcmp(settingName, "ethernetDHCP") == 0)
+    settings.ethernetDHCP = settingValueBool;
+  else if (strcmp(settingName, "ethernetIP") == 0)
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetIP.fromString(settingValueStr);
+  }
+  else if (strcmp(settingName, "ethernetDNS") == 0)
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetDNS.fromString(settingValueStr);
+  }
+  else if (strcmp(settingName, "ethernetGateway") == 0)
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetGateway.fromString(settingValueStr);
+  }
+  else if (strcmp(settingName, "ethernetSubnet") == 0)
+  {
+    String tempString = String(settingValueStr);
+    settings.ethernetSubnet.fromString(settingValueStr);
+  }
+  else if (strcmp(settingName, "ethernetHttpPort") == 0)
+    settings.ethernetHttpPort = settingValue;
+  else if (strcmp(settingName, "ethernetNtpPort") == 0)
+    settings.ethernetNtpPort = settingValue;
+
+  //NTP
+  else if (strcmp(settingName, "ntpPollExponent") == 0)
+    settings.ntpPollExponent = settingValue;
+  else if (strcmp(settingName, "ntpPrecision") == 0)
+    settings.ntpPrecision = settingValue;
+  else if (strcmp(settingName, "ntpRootDelay") == 0)
+    settings.ntpRootDelay = settingValue;
+  else if (strcmp(settingName, "ntpRootDispersion") == 0)
+    settings.ntpRootDispersion = settingValue;
+  else if (strcmp(settingName, "ntpReferenceId") == 0)
+  {
+    strcpy(settings.ntpReferenceId, settingValueStr);
+    for (int i = strlen(settingValueStr); i < 5; i++)
+      settings.ntpReferenceId[i] = 0;
+  }
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}
@@ -1042,6 +1232,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "nicknameGeodetic") == 0) {}
   else if (strcmp(settingName, "fileSelectAll") == 0) {}
   else if (strcmp(settingName, "fixedHAE_APC") == 0) {}
+  else if (strcmp(settingName, "measurementRateSecBase") == 0) {}
 
   //Special actions
   else if (strcmp(settingName, "firmwareFileName") == 0)
@@ -1050,25 +1241,47 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     //If update is successful, it will force system reset and not get here.
 
-    requestChangeState(STATE_ROVER_NOT_STARTED); //If update failed, return to Rover mode.
+    if (productVariant == REFERENCE_STATION)
+      requestChangeState(STATE_BASE_NOT_STARTED); //If update failed, return to Base mode.
+    else
+      requestChangeState(STATE_ROVER_NOT_STARTED); //If update failed, return to Rover mode.
   }
   else if (strcmp(settingName, "factoryDefaultReset") == 0)
     factoryReset();
   else if (strcmp(settingName, "exitAndReset") == 0)
   {
     //Confirm receipt
-    Serial.println("Sending reset confirmation");
+    log_d("Sending reset confirmation");
     websocket->textAll("confirmReset,1,");
     delay(500); //Allow for delivery
 
-    systemPrintln("Reset after AP Config");
+    if (configureViaEthernet)
+      systemPrintln("Reset after Configure-Via-Ethernet");
+    else
+      systemPrintln("Reset after AP Config");
+
+    if (configureViaEthernet)
+    {
+      endEthernerWebServerESP32W5500();
+
+      //We need to exit configure-via-ethernet mode.
+      //But if the settings have not been saved then lastState will still be STATE_CONFIG_VIA_ETH_STARTED.
+      //If that is true, then force exit to Base mode. I think it is the best we can do.
+      //(If the settings have been saved, then the code will restart in NTP, Base or Rover mode as desired.)
+      if (settings.lastState == STATE_CONFIG_VIA_ETH_STARTED)
+      {
+        systemPrintln("Settings were not saved. Resetting into Base mode.");
+        settings.lastState = STATE_BASE_NOT_STARTED;
+        recordSystemSettings();
+      }
+    }
 
     ESP.restart();
   }
   else if (strcmp(settingName, "setProfile") == 0)
   {
     //Change to new profile
-    Serial.printf("Changing to profile number %d\r\n", settingValue);
+    log_d("Changing to profile number %d\r\n", settingValue);
     changeProfileNumber(settingValue);
 
     //Load new profile into system
@@ -1082,7 +1295,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    Serial.printf("Sending profile %d\r\n", settingValue);
+    log_d("Sending profile %d\r\n", settingValue);
     log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
@@ -1103,7 +1316,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
 
     createSettingsString(settingsCSV);
 
-    Serial.printf("Sending reset profile %d\r\n", settingValue);
+    log_d("Sending reset profile %d\r\n", settingValue);
     log_d("Profile contents: %s", settingsCSV);
     websocket->textAll(settingsCSV);
   }
@@ -1232,17 +1445,37 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     //Scan for message settings
     if (knownSetting == false)
     {
+      char tempString[50];
+
       for (int x = 0 ; x < MAX_UBX_MSG ; x++)
       {
-        if (strcmp(settingName, settings.ubxMessages[x].msgTextName) == 0)
+        snprintf(tempString, sizeof(tempString), "%s", ubxMessages[x].msgTextName); //UBX_RTCM_1074
+        if (strcmp(settingName, tempString) == 0)
         {
-          settings.ubxMessages[x].msgRate = settingValue;
+          settings.ubxMessageRates[x] = settingValue;
           knownSetting = true;
           break;
         }
       }
     }
 
+    //Scan for Base RTCM message settings
+    if (knownSetting == false)
+    {
+      int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+
+      char tempString[50];
+      for (int x = 0 ; x < MAX_UBX_MSG_RTCM ; x++)
+      {
+        snprintf(tempString, sizeof(tempString), "%sBase", ubxMessages[firstRTCMRecord + x].msgTextName); //UBX_RTCM_1074Base
+        if (strcmp(settingName, tempString) == 0)
+        {
+          settings.ubxMessageRatesBase[x] = settingValue;
+          knownSetting = true;
+          break;
+        }
+      }
+    }
     //Last catch
     if (knownSetting == false)
     {
@@ -1323,7 +1556,7 @@ bool parseIncomingSettings()
   char* headPtr = incomingSettings;
 
   int counter = 0;
-  int maxAttempts = 200;
+  int maxAttempts = 500;
   while (*headPtr) //Check if we've reached the end of the string
   {
     //Spin to first comma
@@ -1357,7 +1590,7 @@ bool parseIncomingSettings()
   if (counter < maxAttempts)
   {
     //Confirm receipt
-    Serial.println("Sending receipt confirmation of settings");
+    log_d("Sending receipt confirmation of settings");
 #ifdef COMPILE_AP
     websocket->textAll("confirmDataReceipt,1,");
 #endif
@@ -1445,6 +1678,43 @@ String getFileList()
   return returnText;
 }
 
+//When called, responds with the messages supported on this platform
+//Message name and current rate are formatted in CSV, formatted to html by JS
+String createMessageList()
+{
+  String returnText = "";
+
+  char tempString[50];
+  for (int messageNumber = 0 ; messageNumber < MAX_UBX_MSG ; messageNumber++)
+  {
+    if (messageSupported(messageNumber) == true)
+      returnText += String(ubxMessages[messageNumber].msgTextName) + "," + String(settings.ubxMessageRates[messageNumber]) + ","; //UBX_RTCM_1074,4,
+  }
+
+  log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
+
+  return returnText;
+}
+
+//When called, responds with the RTCM/Base messages supported on this platform
+//Message name and current rate are formatted in CSV, formatted to html by JS
+String createMessageListBase()
+{
+  String returnText = "";
+
+  int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+
+  for (int messageNumber = 0 ; messageNumber < MAX_UBX_MSG_RTCM ; messageNumber++)
+  {
+    if (messageSupported(firstRTCMRecord + messageNumber) == true)
+      returnText += String(ubxMessages[messageNumber + firstRTCMRecord].msgTextName) + "Base," + String(settings.ubxMessageRatesBase[messageNumber]) + ","; //UBX_RTCM_1074Base,4,
+  }
+
+  log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
+
+  return returnText;
+}
+
 //Make size of files human readable
 String stringHumanReadableSize(uint64_t bytes)
 {
@@ -1486,8 +1756,10 @@ void handleUpload(AsyncWebServerRequest * request, String filename, size_t index
   {
     logmessage = "Upload Start: " + String(filename);
 
-    char tempFileName[50];
-    filename.toCharArray(tempFileName, sizeof(tempFileName));
+    int fileNameLen = filename.length();
+    char tempFileName[fileNameLen + 2] = { '/' }; //Filename must start with / or VERY bad things happen on SD_MMC
+    filename.toCharArray(&tempFileName[1], fileNameLen + 1);
+    tempFileName[fileNameLen + 1] = '\0'; //Terminate array
 
     //Allocate the managerTempFile
     if (!managerTempFile)

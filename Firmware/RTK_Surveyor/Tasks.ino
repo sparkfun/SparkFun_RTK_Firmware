@@ -145,15 +145,15 @@ void F9PSerialReadTask(void *e)
       {
         //Read the data from UART1
         incomingData = serialGNSS.read();
-  
+
         //Save the data byte
         parse.buffer[parse.length++] = incomingData;
         parse.length %= PARSE_BUFFER_LENGTH;
-  
+
         //Compute the CRC value for the message
         if (parse.computeCrc)
           parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
-  
+
         //Update the parser state based on the incoming byte
         parse.state(&parse, incomingData);
       }
@@ -165,15 +165,15 @@ void F9PSerialReadTask(void *e)
       {
         //Read the data from the logging buffer
         theGNSS.extractFileBufferData(&incomingData, 1); //TODO: make this more efficient by reading multiple bytes?
-  
+
         //Save the data byte
         parse.buffer[parse.length++] = incomingData;
         parse.length %= PARSE_BUFFER_LENGTH;
-  
+
         //Compute the CRC value for the message
         if (parse.computeCrc)
           parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
-  
+
         //Update the parser state based on the incoming byte
         parse.state(&parse, incomingData);
       }
@@ -407,7 +407,8 @@ void handleGNSSDataTask(void *e)
           //Write the data to the file
           long startTime = millis();
 
-          sdBytesToRecord = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+          int sdBytesRecorded = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+
           static unsigned long lastFlush = 0;
           if (USE_MMC_MICROSD)
           {
@@ -419,18 +420,18 @@ void handleGNSSDataTask(void *e)
           }
           fileSize = ubxFile->fileSize(); //Update file size
 
-          sdFreeSpace -= sliceToRecord; //Update remaining space on SD
+          sdFreeSpace -= sdBytesRecorded; //Update remaining space on SD
 
           //Force file sync every 60s
           if (millis() - lastUBXLogSyncTime > 60000)
           {
-            if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
+            if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Blink LED to indicate logging activity
 
             ubxFile->sync();
             ubxFile->updateFileAccessTimestamp(); //Update the file access time & date
 
-            if ((productVariant == RTK_SURVEYOR) || (productVariant == REFERENCE_STATION))
+            if (productVariant == RTK_SURVEYOR)
               digitalWrite(pin_baseStatusLED, !digitalRead(pin_baseStatusLED)); //Return LED to previous state
 
             lastUBXLogSyncTime = millis();
@@ -441,15 +442,15 @@ void handleGNSSDataTask(void *e)
           if (settings.enablePrintBufferOverrun)
           {
             if (endTime - startTime > 150)
-              systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\r\n", endTime - startTime, fileSize, sdBytesToRecord, combinedSpaceRemaining);
+              systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / spaceRemaining %d bytes\r\n", endTime - startTime, fileSize, sdBytesRecorded, combinedSpaceRemaining);
           }
 
           xSemaphoreGive(sdCardSemaphore);
 
           //Account for the sent data or dropped
-          if (sdBytesToRecord > 0)
+          if (sdBytesRecorded > 0)
           {
-            sdTail += sdBytesToRecord;
+            sdTail += sdBytesRecorded;
             if (sdTail >= settings.gnssHandlerBufferSize)
               sdTail -= settings.gnssHandlerBufferSize;
           }
@@ -459,6 +460,9 @@ void handleGNSSDataTask(void *e)
           char semaphoreHolder[50];
           getSemaphoreFunction(semaphoreHolder);
           log_w("sdCardSemaphore failed to yield for SD write, held by %s, Tasks.ino line %d", semaphoreHolder, __LINE__);
+
+          delay(1); //Needed to prevent WDT resets during long Record Settings locks
+          taskYIELD();
         }
       } //End maxLogTime
     } //End logging
@@ -893,7 +897,7 @@ void ButtonCheckTask(void *e)
 
         if (inMainMenu) powerDown(true); //State machine is not updated while in menu system so go straight to power down as needed
       }
-      else if (setupBtn != nullptr && systemState == STATE_ROVER_NOT_STARTED && firstRoverStart == true && setupBtn->pressedFor(500))
+      else if (setupBtn != nullptr && systemState == STATE_BASE_NOT_STARTED && firstRoverStart == true && setupBtn->pressedFor(500))
       {
         forceSystemStateUpdate = true;
         requestChangeState(STATE_TEST);
@@ -904,31 +908,35 @@ void ButtonCheckTask(void *e)
         switch (systemState)
         {
           //If we are in any running state, change to STATE_DISPLAY_SETUP
-          case STATE_ROVER_NOT_STARTED:
-          case STATE_ROVER_NO_FIX:
-          case STATE_ROVER_FIX:
-          case STATE_ROVER_RTK_FLOAT:
-          case STATE_ROVER_RTK_FIX:
           case STATE_BASE_NOT_STARTED:
           case STATE_BASE_TEMP_SETTLE:
           case STATE_BASE_TEMP_SURVEY_STARTED:
           case STATE_BASE_TEMP_TRANSMITTING:
           case STATE_BASE_FIXED_NOT_STARTED:
           case STATE_BASE_FIXED_TRANSMITTING:
-          case STATE_BUBBLE_LEVEL:
+          case STATE_ROVER_NOT_STARTED:
+          case STATE_ROVER_NO_FIX:
+          case STATE_ROVER_FIX:
+          case STATE_ROVER_RTK_FLOAT:
+          case STATE_ROVER_RTK_FIX:
+          case STATE_NTPSERVER_NOT_STARTED:
+          case STATE_NTPSERVER_NO_SYNC:
+          case STATE_NTPSERVER_SYNC:
           case STATE_WIFI_CONFIG_NOT_STARTED:
           case STATE_WIFI_CONFIG:
+          case STATE_CONFIG_VIA_ETH_NOT_STARTED:
           case STATE_ESPNOW_PAIRING_NOT_STARTED:
           case STATE_ESPNOW_PAIRING:
-            lastSystemState = systemState; //Remember this state to return after we mark an event or ESP-Now pair
+            lastSystemState = systemState; //Remember this state to return after ESP-Now pair
             requestChangeState(STATE_DISPLAY_SETUP);
-            setupState = STATE_MARK_EVENT;
+            setupState = STATE_BASE_NOT_STARTED;
             lastSetupMenuChange = millis();
             break;
 
-          case STATE_MARK_EVENT:
-            //If the user presses the setup button during a mark event, do nothing
-            //Allow system to return to lastSystemState
+          case STATE_CONFIG_VIA_ETH_STARTED:
+          case STATE_CONFIG_VIA_ETH:
+            //If the user presses the button during configure-via-ethernet, then do a complete restart into Base mode
+            requestChangeState(STATE_CONFIG_VIA_ETH_RESTART_BASE);
             break;
 
           case STATE_PROFILE:
@@ -941,8 +949,8 @@ void ButtonCheckTask(void *e)
             break;
 
           case STATE_TESTING:
-            //If we are in testing, return to Rover Not Started
-            requestChangeState(STATE_ROVER_NOT_STARTED);
+            //If we are in testing, return to Base Not Started
+            requestChangeState(STATE_BASE_NOT_STARTED);
             break;
 
           case STATE_DISPLAY_SETUP:
@@ -954,17 +962,16 @@ void ButtonCheckTask(void *e)
 
             switch (setupState)
             {
-              case STATE_MARK_EVENT:
+              case STATE_BASE_NOT_STARTED:
                 setupState = STATE_ROVER_NOT_STARTED;
                 break;
               case STATE_ROVER_NOT_STARTED:
-                //If F9R, skip base state
-                if (zedModuleType == PLATFORM_F9R)
-                  setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                else
-                  setupState = STATE_BASE_NOT_STARTED;
+                setupState = STATE_NTPSERVER_NOT_STARTED;
                 break;
-              case STATE_BASE_NOT_STARTED:
+              case STATE_NTPSERVER_NOT_STARTED:
+                setupState = STATE_CONFIG_VIA_ETH_NOT_STARTED;
+                break;
+              case STATE_CONFIG_VIA_ETH_NOT_STARTED:
                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
                 break;
               case STATE_WIFI_CONFIG_NOT_STARTED:
@@ -974,25 +981,28 @@ void ButtonCheckTask(void *e)
                 //If only one active profile do not show any profiles
                 index = getProfileNumberFromUnit(0);
                 displayProfile = getProfileNumberFromUnit(1);
-                setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
+                setupState = (index >= displayProfile) ? STATE_BASE_NOT_STARTED : STATE_PROFILE;
                 displayProfile = 0;
                 break;
               case STATE_PROFILE:
                 //Done when no more active profiles
                 displayProfile++;
                 if (!getProfileNumberFromUnit(displayProfile))
-                  setupState = STATE_MARK_EVENT;
+                  setupState = STATE_BASE_NOT_STARTED;
+                break;
+              case STATE_MARK_EVENT: //Skip the warning message if setupState is still in the default Mark Event state
+                setupState = STATE_BASE_NOT_STARTED;
                 break;
               default:
                 systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
-                setupState = STATE_MARK_EVENT;
+                setupState = STATE_BASE_NOT_STARTED;
                 break;
             }
             break;
 
           default:
             systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
-            requestChangeState(STATE_ROVER_NOT_STARTED);
+            requestChangeState(STATE_BASE_NOT_STARTED);
             break;
         }
       }
@@ -1131,9 +1141,9 @@ void sdSizeCheckTask(void *e)
           csd_t csd;
           sd->card()->readCSD(&csd); //Card Specific Data
           sdCardSize = (uint64_t)512 * sd->card()->sectorCount();
-  
+
           sd->volumeBegin();
-  
+
           //Find available cluster/space
           sdFreeSpace = sd->vol()->freeClusterCount(); //This takes a few seconds to complete
           sdFreeSpace *= sd->vol()->sectorsPerCluster();

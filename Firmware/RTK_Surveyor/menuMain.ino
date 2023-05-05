@@ -60,6 +60,14 @@ void menuMain()
     systemPrintln("6) **WiFi Not Compiled**");
 #endif
 
+#ifdef COMPILE_ETHERNET
+    if (HAS_ETHERNET)
+    {
+      systemPrintln("e) Configure Ethernet");
+      systemPrintln("n) Configure NTP");
+    }
+#endif
+
     systemPrintln("p) Configure User Profiles");
 
 #ifdef COMPILE_ESPNOW
@@ -96,6 +104,10 @@ void menuMain()
       menuLog();
     else if (incoming == 6)
       menuWiFi();
+    else if (incoming == 'e' && (HAS_ETHERNET))
+      menuEthernet();
+    else if (incoming == 'n' && (HAS_ETHERNET))
+      menuNTP();
     else if (incoming == 's')
       menuSystem();
     else if (incoming == 'p')
@@ -355,7 +367,7 @@ void factoryReset()
     }
   }
 
-  systemPrintln("Formatting file system...");
+  systemPrintln("Formatting internal file system...");
   LittleFS.format();
 
   if (online.gnss == true)

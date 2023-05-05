@@ -186,13 +186,13 @@ void beginBoard()
 //Connect to ZED module and identify particulars
 void beginGNSS()
 {
-  if (i2cGNSS.begin() == false)
+  if (theGNSS.begin() == false)
   {
     log_d("GNSS Failed to begin. Trying again.");
 
     //Try again with power on delay
     delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
-    if (i2cGNSS.begin() == false)
+    if (theGNSS.begin() == false)
     {
       //displayGNSSFail(1000);
       online.gnss = false;
@@ -201,48 +201,48 @@ void beginGNSS()
   }
 
   //Increase transactions to reduce transfer time
-  i2cGNSS.i2cTransactionSize = 128;
+  theGNSS.i2cTransactionSize = 128;
+
+  //Auto-send Valset messages before the buffer is completely full
+  theGNSS.autoSendCfgValsetAtSpaceRemaining(16);
 
   //Check the firmware version of the ZED-F9P. Based on Example21_ModuleInfo.
-  if (i2cGNSS.getModuleInfo(1100) == true) // Try to get the module info
+  if (theGNSS.getModuleInfo(1100) == true) //Try to get the module info
   {
-    //i2cGNSS.minfo.extension[1] looks like 'FWVER=HPG 1.12'
-    strcpy(zedFirmwareVersion, i2cGNSS.minfo.extension[1]);
+    //Reconstruct the firmware version
+    snprintf(zedFirmwareVersion, sizeof(zedFirmwareVersion), "%s %d.%02d", theGNSS.getFirmwareType(), theGNSS.getFirmwareVersionHigh(), theGNSS.getFirmwareVersionLow());
 
-    //Remove 'FWVER='. It's extraneous and = causes settings file parsing issues
-    char *ptr = strstr(zedFirmwareVersion, "FWVER=");
-    if (ptr != NULL)
-      strcpy(zedFirmwareVersion, ptr + strlen("FWVER="));
+    //Construct the firmware version as uint8_t. Note: will fail above 2.55!
+    zedFirmwareVersionInt = (theGNSS.getFirmwareVersionHigh() * 100) + theGNSS.getFirmwareVersionLow();
 
-    //Convert version to a uint8_t
-    if (strstr(zedFirmwareVersion, "1.00") != NULL)
-      zedFirmwareVersionInt = 100;
-    else if (strstr(zedFirmwareVersion, "1.12") != NULL)
-      zedFirmwareVersionInt = 112;
-    else if (strstr(zedFirmwareVersion, "1.13") != NULL)
-      zedFirmwareVersionInt = 113;
-    else if (strstr(zedFirmwareVersion, "1.20") != NULL) //Mostly for F9R HPS 1.20, but also F9P HPG v1.20 Spartan future support
-      zedFirmwareVersionInt = 120;
-    else if (strstr(zedFirmwareVersion, "1.21") != NULL) //Future F9R HPS v1.21
-      zedFirmwareVersionInt = 121;
-    else if (strstr(zedFirmwareVersion, "1.30") != NULL) //ZED-F9P released Dec, 2021
-      zedFirmwareVersionInt = 130;
-    else if (strstr(zedFirmwareVersion, "1.32") != NULL) //ZED-F9P released May, 2022
-      zedFirmwareVersionInt = 132;
-    else
+    //Check this is known firmware
+    //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20
+    //"1.21" - F9R HPS v1.21
+    //"1.30" - ZED-F9P (HPG) released Dec, 2021. Also ZED-F9R (HPS) released Sept, 2022
+    //"1.32" - ZED-F9P released May, 2022
+
+    const uint8_t knownFirmwareVersions[] = { 100, 112, 113, 120, 121, 130, 132 };
+    bool knownFirmware = false;
+    for (uint8_t i = 0; i < (sizeof(knownFirmwareVersions) / sizeof(uint8_t)); i++)
     {
-      Serial.printf("Unknown firmware version: %s\n\r", zedFirmwareVersion);
+      if (zedFirmwareVersionInt == knownFirmwareVersions[i])
+        knownFirmware = true;
+    }
+
+    if (!knownFirmware)
+    {
+      Serial.printf("Unknown firmware version: %s\r\n", zedFirmwareVersion);
       zedFirmwareVersionInt = 99; //0.99 invalid firmware version
     }
 
     //Determine if we have a ZED-F9P (Express/Facet) or an ZED-F9R (Express Plus/Facet Plus)
-    if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9P") != NULL)
+    if (strstr(theGNSS.getModuleName(), "ZED-F9P") != nullptr)
       zedModuleType = PLATFORM_F9P;
-    else if (strstr(i2cGNSS.minfo.extension[3], "ZED-F9R") != NULL)
+    else if (strstr(theGNSS.getModuleName(), "ZED-F9R") != nullptr)
       zedModuleType = PLATFORM_F9R;
     else
     {
-      Serial.printf("Unknown ZED module: %s\n\r", i2cGNSS.minfo.extension[3]);
+      Serial.printf("Unknown ZED module: %s\r\n", theGNSS.getModuleName());
       zedModuleType = PLATFORM_F9P;
     }
 
@@ -373,4 +373,23 @@ void beginSD()
   //Free the semaphore
   if (sdCardSemaphore && gotSemaphore)
     xSemaphoreGive(sdCardSemaphore);  //Make the file system available for use
+}
+
+//Begin accelerometer if available
+void beginAccelerometer()
+{
+  if (accel.begin() == false)
+  {
+    online.accelerometer = false;
+
+    return;
+  }
+
+  //The larger the avgAmount the faster we should read the sensor
+  //accel.setDataRate(LIS2DH12_ODR_100Hz); //6 measurements a second
+  accel.setDataRate(LIS2DH12_ODR_400Hz); //25 measurements a second
+
+  Serial.println("Accelerometer configuration complete");
+
+  online.accelerometer = true;
 }

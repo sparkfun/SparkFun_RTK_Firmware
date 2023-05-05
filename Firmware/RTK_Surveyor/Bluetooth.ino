@@ -47,7 +47,7 @@ void bluetoothCallback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
 
   if (event == ESP_SPP_CLOSE_EVT ) {
     systemPrintln("BT client disconnected");
-    
+
     btPrintEcho = false;
     btPrintEchoExit = true; //Force exit all config menus
     printEndpoint = PRINT_ENDPOINT_SERIAL;
@@ -110,7 +110,7 @@ int bluetoothWrite(const uint8_t *buffer, int length)
 {
 #ifdef COMPILE_BT
   //BLE write does not handle 0 length requests correctly
-  if(length > 0)
+  if (length > 0)
     return bluetoothSerial->write(buffer, length);
   else
     return 0;

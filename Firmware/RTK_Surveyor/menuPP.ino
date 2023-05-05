@@ -822,6 +822,13 @@ void checkRXMCOR(UBX_RXM_COR_data_t *ubxDataStruct)
 //Check if NEO-D9S is connected. Configure if available.
 void beginLBand()
 {
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginLBand");
+    return;
+  }
+
 #ifdef COMPILE_L_BAND
   if (i2cLBand.begin(Wire, 0x43) == false) //Connect to the u-blox NEO-D9S using Wire port. The D9S default I2C address is 0x43 (not 0x42)
   {
@@ -895,6 +902,8 @@ void beginLBand()
 
   theGNSS.setRXMCORcallbackPtr(&checkRXMCOR); //Check if the PMP data is being decrypted successfully
 
+  lbandStartTimer = millis();
+
   log_d("L-Band online");
 
   online.lband = true;
@@ -916,11 +925,17 @@ void menuPointPerfect()
     snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
     systemPrintf("Device ID: %s\r\n", hardwareID);
 
+    log_d("Time to first L-Band fix: %ds", lbandTimeToFix / 1000);
+
     systemPrint("Days until keys expire: ");
     if (strlen(settings.pointPerfectCurrentKey) > 0)
     {
-      uint8_t daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
-      systemPrintln(daysRemaining);
+      int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+
+      if (daysRemaining < 0)
+        systemPrintln("Expired");
+      else
+        systemPrintln(daysRemaining);
     }
     else
       systemPrintln("No keys");
@@ -1009,17 +1024,44 @@ void menuPointPerfect()
 }
 
 //Process any new L-Band from I2C
-//If a certain amount of time has elapsed between last decryption, turn off L-Band icon
 void updateLBand()
 {
+  // Skip if in configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    //log_d("configureViaEthernet: skipping updateLBand");
+    return;
+  }
+
 #ifdef COMPILE_L_BAND
   if (online.lbandCorrections == true)
   {
     i2cLBand.checkUblox(); //Check for the arrival of new PMP data and process it.
     i2cLBand.checkCallbacks(); //Check if any L-Band callbacks are waiting to be processed.
 
+    //If a certain amount of time has elapsed between last decryption, turn off L-Band icon
     if (lbandCorrectionsReceived == true && millis() - lastLBandDecryption > 5000)
       lbandCorrectionsReceived = false;
+
+    //If we don't get an L-Band fix within Timeout, hot-start ZED-F9x
+    if (carrSoln == 1) //RTK Float
+    {
+      if ( (millis() - lbandStartTimer) > (settings.lbandFixTimeout_seconds * 1000L))
+      {
+        lbandStartTimer = millis(); //Reset timer
+        lbandRestarts++;
+
+        //Hotstart ZED to try to get RTK lock
+        theGNSS.softwareResetGNSSOnly();
+
+        log_d("Restarting ZED. Number of L-Band restarts: %d", lbandRestarts);
+      }
+    }
+    else if (carrSoln == 2 && lbandTimeToFix == 0)
+    {
+      lbandTimeToFix = millis();
+      log_d("Time to first L-Band fix: %ds", lbandTimeToFix / 1000);
+    }
   }
 #endif  //COMPILE_L_BAND
 }

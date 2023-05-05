@@ -37,7 +37,6 @@ void identifyBoard()
 //E.g. turn on power for the display before beginDisplay
 void initializePowerPins()
 {
-#ifdef COMPILE_SD_MMC
   if (productVariant == REFERENCE_STATION)
   {
     //v10
@@ -92,7 +91,6 @@ void initializePowerPins()
     digitalWrite(pin_peripheralPowerControl, HIGH); //Turn on SD, W5500, etc
     delay(100);
   }
-#endif
 }
 
 //Based on hardware features, determine if this is RTK Surveyor or RTK Express hardware
@@ -217,7 +215,6 @@ void beginBoard()
       strncpy(platformPrefix, "Facet L-Band", sizeof(platformPrefix) - 1);
     }
   }
-#ifdef COMPILE_SD_MMC
   else if (productVariant == REFERENCE_STATION)
   {
     //No powerOnCheck
@@ -227,7 +224,6 @@ void beginBoard()
     strncpy(platformFilePrefix, "SFE_Reference_Station", sizeof(platformFilePrefix) - 1);
     strncpy(platformPrefix, "Reference Station", sizeof(platformPrefix) - 1);
   }
-#endif
 
   systemPrintf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, __DATE__);
 
@@ -304,7 +300,7 @@ void beginSD()
     if (USE_SPI_MICROSD)
     {
       log_d("Initializing microSD - using SPI, SdFat and SdFile");
-      
+
       pinMode(pin_microSD_CS, OUTPUT);
       digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
       resetSPI(); //Re-initialize the SPI/SD interface
@@ -316,7 +312,7 @@ void beginSD()
       {
         if (sdPresent() == true) break;
         //log_d("SD present failed. Trying again %d out of %d", tries + 1, maxTries);
-  
+
         //Max power up time is 250ms: https://www.kingston.com/datasheets/SDCIT-specsheet-64gb_en.pdf
         //Max current is 200mA average across 1s, peak 300mA
         delay(10);
@@ -337,15 +333,15 @@ void beginSD()
           break;
         }
       }
-  
+
       if (settings.spiFrequency > 16)
       {
         systemPrintln("Error: SPI Frequency out of range. Default to 16MHz");
         settings.spiFrequency = 16;
       }
-  
+
       resetSPI(); //Re-initialize the SPI/SD interface
-  
+
       if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == false)
       {
         tries = 0;
@@ -353,16 +349,16 @@ void beginSD()
         for ( ; tries < maxTries ; tries++)
         {
           log_d("SD init failed - using SPI and SdFat. Trying again %d out of %d", tries + 1, maxTries);
-  
+
           delay(250); //Give SD more time to power up, then try again
           if (sd->begin(SdSpiConfig(pin_microSD_CS, SHARED_SPI, SD_SCK_MHZ(settings.spiFrequency))) == true) break;
         }
-  
+
         if (tries == maxTries)
         {
           systemPrintln("SD init failed - using SPI and SdFat. Is card formatted?");
           digitalWrite(pin_microSD_CS, HIGH); //Be sure SD is deselected
-  
+
           //Check reset count and prevent rolling reboot
           if (settings.resetCount < 5)
           {
@@ -372,7 +368,7 @@ void beginSD()
           break;
         }
       }
-  
+
       //Change to root directory. All new file creation will be in root.
       if (sd->chdir() == false)
       {
@@ -383,10 +379,11 @@ void beginSD()
 #ifdef COMPILE_SD_MMC
     else
     {
+      //Check to see if a card is present
+      if (sdPresent() == false) break; //Give up on loop
+
       systemPrintln("Initializing microSD - using SDIO, SD_MMC and File");
 
-      //TODO: add Card Detect input and check hot insertion
-      
       //SDIO MMC
       if (SD_MMC.begin() == false)
       {
@@ -395,15 +392,15 @@ void beginSD()
         for ( ; tries < maxTries ; tries++)
         {
           log_d("SD init failed - using SD_MMC. Trying again %d out of %d", tries + 1, maxTries);
-  
+
           delay(250); //Give SD more time to power up, then try again
           if (SD_MMC.begin() == true) break;
         }
-  
+
         if (tries == maxTries)
         {
           systemPrintln("SD init failed - using SD_MMC. Is card formatted?");
-  
+
           //Check reset count and prevent rolling reboot
           if (settings.resetCount < 5)
           {
@@ -411,8 +408,14 @@ void beginSD()
               ESP.restart();
           }
           break;
-        }        
+        }
       }
+    }
+#else
+    else
+    {
+      log_d("SD_MMC not compiled");
+      break; //No SD available.
     }
 #endif
 
@@ -450,6 +453,11 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
   {
     if (USE_SPI_MICROSD)
       sd->end();
+#ifdef COMPILE_SD_MMC
+    else
+      SD_MMC.end();
+#endif
+
     online.microSD = false;
     systemPrintln("microSD: Offline");
   }
@@ -477,7 +485,7 @@ void resetSPI()
   {
     pinMode(pin_microSD_CS, OUTPUT);
     digitalWrite(pin_microSD_CS, HIGH); //De-select SD card
-  
+
     //Flush SPI interface
     SPI.begin();
     SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
@@ -485,9 +493,9 @@ void resetSPI()
       SPI.transfer(0XFF);
     SPI.endTransaction();
     SPI.end();
-  
+
     digitalWrite(pin_microSD_CS, LOW); //Select SD card
-  
+
     //Flush SD interface
     SPI.begin();
     SPI.beginTransaction(SPISettings(400000, MSBFIRST, SPI_MODE0));
@@ -495,7 +503,7 @@ void resetSPI()
       SPI.transfer(0XFF);
     SPI.endTransaction();
     SPI.end();
-  
+
     digitalWrite(pin_microSD_CS, HIGH); //Deselet SD card
   }
 }
@@ -524,19 +532,19 @@ void beginUART2()
 //Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
 void pinUART2Task( void *pvParameters )
 {
-//Note: ESP32 2.0.6 does some strange auto-bauding thing here which takes 20s to complete if there is no data for it to auto-baud.
-//      That's fine for most RTK products, but causes the Ref Stn to stall for 20s. However, it doesn't stall with ESP32 2.0.2...
-//      Uncomment these lines to prevent the stall if/when we upgrade to ESP32 ~2.0.6.
-//#if defined(REF_STN_GNSS_DEBUG)
-//  if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
-//#else
-//  if (USE_I2C_GNSS)
-//#endif
+  //Note: ESP32 2.0.6 does some strange auto-bauding thing here which takes 20s to complete if there is no data for it to auto-baud.
+  //      That's fine for most RTK products, but causes the Ref Stn to stall for 20s. However, it doesn't stall with ESP32 2.0.2...
+  //      Uncomment these lines to prevent the stall if/when we upgrade to ESP32 ~2.0.6.
+  //#if defined(REF_STN_GNSS_DEBUG)
+  //  if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
+  //#else
+  //  if (USE_I2C_GNSS)
+  //#endif
   {
     serialGNSS.setRxBufferSize(settings.uartReceiveBufferSize); //TODO: work out if we can reduce or skip this when using SPI GNSS
     serialGNSS.setTimeout(settings.serialTimeoutGNSS); //Requires serial traffic on the UART pins for detection
     serialGNSS.begin(settings.dataPortBaud); //UART2 on pins 16/17 for SPP. The ZED-F9P will be configured to output NMEA over its UART1 at the same rate.
-  
+
     //Reduce threshold value above which RX FIFO full interrupt is generated
     //Allows more time between when the UART interrupt occurs and when the FIFO buffer overruns
     //serialGNSS.setRxFIFOFull(50); //Available in >v2.0.5
@@ -564,9 +572,56 @@ void beginFS()
   }
 }
 
+//Check if configureViaEthernet.txt exists
+//Used to indicate if SparkFun_WebServer_ESP32_W5500 needs _exclusive_ access to SPI and interrupts
+bool checkConfigureViaEthernet()
+{
+  if (online.fs == false)
+    return false;
+
+  if (LittleFS.exists("/configureViaEthernet.txt"))
+  {
+    log_d("LittleFS configureViaEthernet.txt exists");
+    LittleFS.remove("/configureViaEthernet.txt");
+    return true;
+  }
+
+  return false;
+}
+
+//Force configure-via-ethernet mode by creating configureViaEthernet.txt in LittleFS
+//Used to indicate if SparkFun_WebServer_ESP32_W5500 needs _exclusive_ access to SPI and interrupts
+bool forceConfigureViaEthernet()
+{
+  if (online.fs == false)
+    return false;
+
+  if (LittleFS.exists("/configureViaEthernet.txt"))
+  {
+    log_d("LittleFS configureViaEthernet.txt already exists");
+    return true;
+  }
+
+  File cveFile = LittleFS.open("/configureViaEthernet.txt", FILE_WRITE);
+  cveFile.close();
+
+  if (LittleFS.exists("/configureViaEthernet.txt"))
+    return true;
+
+  log_d("Unable to create configureViaEthernet.txt on LittleFS");
+  return false;
+}
+
 //Connect to ZED module and identify particulars
 void beginGNSS()
 {
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginGNSS");
+    return;
+  }
+
   //If we're using SPI, then increase the logging buffer
   if (USE_SPI_GNSS)
   {
@@ -576,6 +631,7 @@ void beginGNSS()
     //Use gnssHandlerBufferSize for now. TODO: work out if the SPI GNSS needs its own buffer size setting
     //Also used by Tasks.ino
     theGNSS.setFileBufferSize(settings.gnssHandlerBufferSize);
+    theGNSS.setRTCMBufferSize(settings.gnssHandlerBufferSize);
   }
 
   if (USE_I2C_GNSS)
@@ -583,7 +639,7 @@ void beginGNSS()
     if (theGNSS.begin() == false)
     {
       log_d("GNSS Failed to begin. Trying again.");
-  
+
       //Try again with power on delay
       delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
       if (theGNSS.begin() == false)
@@ -599,7 +655,7 @@ void beginGNSS()
     if (theGNSS.begin(SPI, pin_GNSS_CS) == false)
     {
       log_d("GNSS Failed to begin. Trying again.");
-  
+
       //Try again with power on delay
       delay(1000); //Wait for ZED-F9P to power up before it can respond to ACK
       if (theGNSS.begin(SPI, pin_GNSS_CS) == false)
@@ -609,13 +665,20 @@ void beginGNSS()
         return;
       }
     }
+
     if (theGNSS.getFileBufferSize() != settings.gnssHandlerBufferSize) //Need to call getFileBufferSize after begin
     {
       log_d("GNSS offline - no RAM for file buffer");
       displayGNSSFail(1000);
       return;
     }
-  }  
+    if (theGNSS.getRTCMBufferSize() != settings.gnssHandlerBufferSize) //Need to call getRTCMBufferSize after begin
+    {
+      log_d("GNSS offline - no RAM for RTCM buffer");
+      displayGNSSFail(1000);
+      return;
+    }
+  }
 
   //Increase transactions to reduce transfer time
   if (USE_I2C_GNSS)
@@ -634,8 +697,8 @@ void beginGNSS()
     zedFirmwareVersionInt = (theGNSS.getFirmwareVersionHigh() * 100) + theGNSS.getFirmwareVersionLow();
 
     //Check this is known firmware
-    //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20 Spartan future support
-    //"1.21" - Future F9R HPS v1.21
+    //"1.20" - Mostly for F9R HPS 1.20, but also F9P HPG v1.20
+    //"1.21" - F9R HPS v1.21
     //"1.30" - ZED-F9P (HPG) released Dec, 2021. Also ZED-F9R (HPS) released Sept, 2022
     //"1.32" - ZED-F9P released May, 2022
 
@@ -673,11 +736,41 @@ void beginGNSS()
 //Configuration can take >1s so configure during splash
 void configureGNSS()
 {
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping configureGNSS");
+    return;
+  }
+
   if (online.gnss == false) return;
+
+  //Check if the ubxMessageRates or ubxMessageRatesBase need to be defaulted
+  checkMessageRates();
 
   theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
   theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); //Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
+
+  if (HAS_GNSS_TP_INT)
+    theGNSS.setAutoTIMTPcallbackPtr(&storeTIMTPdata); //Enable automatic TIM TP messages with callback to storeTIMTPdata
+
+  if (HAS_ANTENNA_SHORT_OPEN)
+  {
+    theGNSS.newCfgValset();
   
+    theGNSS.addCfgValset(UBLOX_CFG_HW_ANT_CFG_SHORTDET, 1); // Enable antenna short detection
+    theGNSS.addCfgValset(UBLOX_CFG_HW_ANT_CFG_OPENDET, 1); // Enable antenna open detection
+  
+    if (theGNSS.sendCfgValset())
+    {
+      theGNSS.setAutoMONHWcallbackPtr(&storeMONHWdata); //Enable automatic MON HW messages with callback to storeMONHWdata
+    }
+    else
+    {
+      systemPrintln("Failed to configure GNSS antenna detection");
+    }
+  }
+
   //Configuring the ZED can take more than 2000ms. We save configuration to
   //ZED so there is no need to update settings unless user has modified
   //the settings file or internal settings.
@@ -705,6 +798,31 @@ void configureGNSS()
   }
 
   systemPrintln("GNSS configuration complete");
+}
+
+//Begin interrupts
+void beginInterrupts()
+{
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginInterrupts");
+    return;
+  }
+
+  if (HAS_GNSS_TP_INT) //If the GNSS Time Pulse is connected, use it as an interrupt to set the clock accurately
+  {
+    pinMode(pin_GNSS_TimePulse, INPUT);
+    attachInterrupt(pin_GNSS_TimePulse, tpISR, RISING);
+  }
+
+#ifdef COMPILE_ETHERNET
+  if (HAS_ETHERNET)
+  {
+    pinMode(pin_Ethernet_Interrupt, INPUT_PULLUP); //Prepare the interrupt pin
+    attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); //Attach the interrupt
+  }
+#endif
 }
 
 //Set LEDs for output and configure PWM
@@ -747,6 +865,9 @@ void beginLEDs()
 //Configure the on board MAX17048 fuel gauge
 void beginFuelGauge()
 {
+  if (HAS_NO_BATTERY)
+    return; //Reference station does not have a battery
+
   //Set up the MAX17048 LiPo fuel gauge
   if (lipo.begin() == false)
   {
@@ -760,7 +881,7 @@ void beginFuelGauge()
   if (lipo.getHIBRTActThr() < 0xFF) lipo.setHIBRTActThr((uint8_t)0xFF);
   if (lipo.getHIBRTHibThr() < 0xFF) lipo.setHIBRTHibThr((uint8_t)0xFF);
 
-  systemPrintln("MAX17048 configuration complete");
+  systemPrintln("Fuel gauge configuration complete");
 
   checkBatteryLevels(); //Force check so you see battery level immediately at power on
 
@@ -801,48 +922,57 @@ void beginAccelerometer()
 //Depending on platform and previous power down state, set system state
 void beginSystemState()
 {
+  if (systemState > STATE_NOT_SET)
+  {
+    systemPrintln("Unknown state - factory reset");
+    factoryReset();
+  }
+
   if (productVariant == RTK_SURVEYOR)
   {
+    if (settings.lastState == STATE_NOT_SET) //Default
+    {
+      systemState = STATE_ROVER_NOT_STARTED;
+      settings.lastState = systemState;
+    }
+
     //If the rocker switch was moved while off, force module settings
     //When switch is set to '1' = BASE, pin will be shorted to ground
     if (settings.lastState == STATE_ROVER_NOT_STARTED && digitalRead(pin_setupButton) == LOW) settings.updateZEDSettings = true;
     else if (settings.lastState == STATE_BASE_NOT_STARTED && digitalRead(pin_setupButton) == HIGH) settings.updateZEDSettings = true;
 
-    if (online.lband == false)
-      systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask() will correct as needed.
-    else
-      systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
+    systemState = STATE_ROVER_NOT_STARTED; //Assume Rover. ButtonCheckTask() will correct as needed.
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
   else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
   {
+    if (settings.lastState == STATE_NOT_SET) //Default
+    {
+      systemState = STATE_ROVER_NOT_STARTED;
+      settings.lastState = systemState;
+    }
+
     if (online.lband == false)
       systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
     else
       systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
-
-    if (systemState > STATE_SHUTDOWN)
-    {
-      systemPrintln("Unknown state - factory reset");
-      factoryReset();
-    }
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
     powerBtn = new Button(pin_powerSenseAndControl); //Create the button in memory
   }
   else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
   {
+    if (settings.lastState == STATE_NOT_SET) //Default
+    {
+      systemState = STATE_ROVER_NOT_STARTED;
+      settings.lastState = systemState;
+    }
+
     if (online.lband == false)
       systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
     else
       systemState = STATE_KEYS_STARTED; //Begin process for getting new keys
-
-    if (systemState > STATE_SHUTDOWN)
-    {
-      systemPrintln("Unknown state - factory reset");
-      factoryReset();
-    }
 
     firstRoverStart = true; //Allow user to enter test screen during first rover start
     if (systemState == STATE_BASE_NOT_STARTED)
@@ -852,17 +982,13 @@ void beginSystemState()
   }
   else if (productVariant == REFERENCE_STATION)
   {
-    systemState = settings.lastState; //Return to either Rover or Base Not Started. The last state previous to power down.
-
-    if (systemState > STATE_SHUTDOWN)
+    if (settings.lastState == STATE_NOT_SET) //Default
     {
-      systemPrintln("Unknown state - factory reset");
-      factoryReset();
+      systemState = STATE_BASE_NOT_STARTED;
+      settings.lastState = systemState;
     }
 
-    firstRoverStart = true; //Allow user to enter test screen during first rover start
-    if (systemState == STATE_BASE_NOT_STARTED)
-      firstRoverStart = false;
+    systemState = settings.lastState; //Return to either NTP, Base or Rover Not Started. The last state previous to power down.
 
     setupBtn = new Button(pin_setupButton); //Create the button in memory
   }
@@ -882,6 +1008,13 @@ void beginSystemState()
 //Setup TM2 time stamp input as need
 bool beginExternalTriggers()
 {
+  // Skip if going into configure-via-ethernet mode
+  if (configureViaEthernet)
+  {
+    log_d("configureViaEthernet: skipping beginExternalTriggers");
+    return (false);
+  }
+
   if (online.gnss == false) return (false);
 
   //If our settings haven't changed, trust ZED's settings
@@ -897,17 +1030,17 @@ bool beginExternalTriggers()
   bool response = true;
 
   response &= theGNSS.newCfgValset();
-  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
-  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, settings.enableExternalPulse); //Enable/disable timepulse
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_DEF, 0); //Time pulse definition is a period (in us)
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PULSE_LENGTH_DEF, 1); //Define timepulse by length (not ratio)
-  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = raising edge
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_USE_LOCKED_TP1, 1); //Use CFG-TP-PERIOD_LOCK_TP1 and CFG-TP-LEN_LOCK_TP1 as soon as GNSS time is valid
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_TP1_ENA, settings.enableExternalPulse); //Enable/disable timepulse
+  response &= theGNSS.addCfgValset(UBLOX_CFG_TP_POL_TP1, settings.externalPulsePolarity); //0 = falling, 1 = rising edge
 
   //While the module is _locking_ to GNSS time, turn off pulse
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_TP1, 1000000); //Set the period between pulses in us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_TP1, 0); //Set the pulse length in us
 
-  //When the module is _locked_ to GNSS time, make it generate 1kHz
+  //When the module is _locked_ to GNSS time, make it generate 1Hz (Default is 100ms high, 900ms low)
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_PERIOD_LOCK_TP1, settings.externalPulseTimeBetweenPulse_us); //Set the period between pulses is us
   response &= theGNSS.addCfgValset(UBLOX_CFG_TP_LEN_LOCK_TP1, settings.externalPulseLength_us); //Set the pulse length in us
   response &= theGNSS.sendCfgValset();
@@ -1006,5 +1139,55 @@ void deleteSDSizeCheckTask()
     sdSizeCheckTaskHandle = nullptr;
     sdSizeCheckTaskComplete = false;
     log_d("sdSizeCheck Task deleted");
+  }
+}
+
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+// Time Pulse ISR
+// Triggered by the rising edge of the time pulse signal, indicates the top-of-second.
+// Set the ESP32 RTC to UTC
+
+void tpISR()
+{
+  unsigned long millisNow = millis();
+  if (!inMainMenu) //Skip this if the menu is open
+  {
+    if (online.rtc) //Only sync if the RTC has been set via PVT first
+    {
+      if (timTpUpdated) // Only sync if timTpUpdated is true
+      {
+        if (millisNow - lastRTCSync > syncRTCInterval) // Only sync if it is more than syncRTCInterval since the last sync
+        {
+          if (millisNow < (timTpArrivalMillis + 999)) // Only sync if the GNSS time is not stale
+          {
+            if (fullyResolved) // Only sync if GNSS time is fully resolved
+            {
+              if (tAcc < 5000) // Only sync if the tAcc is better than 5000ns
+              {
+                //To perform the time zone adjustment correctly, it's easiest if we convert the GNSS time and date
+                //into Unix epoch first and then apply the timeZone offset
+                uint32_t epochSecs = timTpEpoch;
+                uint32_t epochMicros = timTpMicros;
+                epochSecs += settings.timeZoneSeconds;
+                epochSecs += settings.timeZoneMinutes * 60;
+                epochSecs += settings.timeZoneHours * 60 * 60;
+
+                //Set the internal system time
+                rtc.setTime(epochSecs, epochMicros);
+
+                lastRTCSync = millis();
+                rtcSyncd = true;
+
+                gnssSyncTv.tv_sec = epochSecs; // Store the timeval of the sync
+                gnssSyncTv.tv_usec = epochMicros;
+
+                if (syncRTCInterval < 59000) //From now on, sync every minute
+                  syncRTCInterval = 59000;
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }

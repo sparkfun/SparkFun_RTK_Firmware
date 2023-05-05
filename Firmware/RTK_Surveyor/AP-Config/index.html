@@ -70,10 +70,24 @@
         .box-margin40 {
             margin-left: 40px;
         }
+
+        .battery {
+            position: absolute;
+            z-index: 1000;
+            right: 10px;
+            max-width: 600px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 
 <body>
+    <div class="container" id="batteryIcon">
+        <div align="right" class="battery">
+            <img id="batteryIconFileName" src="src/Battery2_Charging.png" alt="Battery level"> <span id="batteryPercent"
+                class="small" style="display:inline;">+67</span>
+        </div>
+    </div>
 
     <div class="container" style="display:none; margin-top:20px;max-width:600px;" id="resetInProcess">
         <b>Resetting</b><br><br>RTK device is rebooting. Please wait...
@@ -87,14 +101,17 @@
         <b>Done</b><br><br>Firmware update complete. RTK device is now rebooting.
     </div>
 
-    <div class="container" style="margin-top:20px;max-width:600px;" id="mainPage">
-        <h2>
-            <div align="center"><img src="src/rtk-setup.png" alt="SparkFun RTK WiFi Setup">
-            </div>
-        </h2>
-        <!-- <div class="col-sm-12 mt-3"> -->
-        <div class="row">
-            <div align="center" class="small coulm left">
+    <div class="container">
+
+        <div align="center" class="col-sm-12"><img src="src/rtk-setup.png" alt="SparkFun RTK WiFi Setup"></div>
+
+    </div>
+
+    <div class="container" style="margin-top:10px;max-width:600px;" id="mainPage">
+
+        <div align="center" class="row" style="display:block;">
+
+            <div align="center" class="small left">
                 RTK Firmware: <span id="rtkFirmwareVersion" style="display:inline;">v0.0</span><br>
                 <span id="zedFirmwareVersion" style="display:inline;">ZED-F9P Firmware: v0.0</span> <br>
                 <span id="deviceBTID" style="display:inline;">Device Bluetooth ID: 0000</span> <br>
@@ -109,10 +126,7 @@
                     <span id="ecefZ" style="display:inline;">4086665.484</span>
                 </span><br>
             </div>
-            <div class="column right">
-                <img id="batteryIconFileName" src="src/BatteryBlank.png" alt="Battery level">
-                <span id="batteryPercent" style="display:inline;"></span>
-            </div>
+
         </div>
 
         <hr class="mt-0">
@@ -219,6 +233,7 @@
             </div>
             <div class="collapse" id="collapseGNSSConfig">
                 <div class="card card-body pt-1">
+
                     <div id="measurementRateInput">
                         Measurement Rate:
                         <div class="row">
@@ -226,7 +241,7 @@
                                 <label for="measurementRateHz" class="col-form-label">In
                                     Hz:
                                     <span class="tt" data-bs-placement="right"
-                                        title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Default: 4Hz. Limit: 0.000122 to 10Hz.">
+                                        title="The number of solutions or location ‘fixes’ per second. Anything above 4Hz may cause Bluetooth congestion and/or logging discrepancies. Note: The measurement rate is overridden to 1Hz when in Base mode. Default: 4Hz. Limit: 0.000122 to 10Hz.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -241,7 +256,7 @@
                             <div class="col-sm-2 col-12 ms-3 form-group">
                                 <label for="measurementRateSec">Seconds between measurements:
                                     <span class="tt" data-bs-placement="right"
-                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when taking a measurement every few seconds across a long survey (24+ hours). Limit: 0.1 to 8196 seconds."><span
+                                        title="The number of seconds between measurements. This input is the inverse of the measurement rate and is useful when taking a measurement every few seconds across a long survey (24+ hours). Note: The measurement rate is overridden to 1Hz when in Base mode.Limit: 0.1 to 8196 seconds."><span
                                             class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -252,6 +267,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div id="dynamicModelDropdown">
                         <label for="dynamicModel">Dynamic Model:</label>
                         <select name="dynamicModel" id="dynamicModel" class="form-dropdown mb-2">
@@ -272,6 +288,32 @@
                         </span>
                         <p id="dynamicModelSensorFusionError" class="inlineError"></p>
                         <br>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="minElev" class="col-sm-4 col-6 col-form-label">Min SV Elevation:
+                            <span class="tt" data-bs-placement="right"
+                                title="Minimum elevation in degrees for a GNSS satellite to be used in a fix.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="minElev">
+                            <p id="minElevError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="minCNO" class="col-sm-4 col-6 col-form-label">Min C/N0:
+                            <span class="tt" data-bs-placement="right"
+                                title="Minimum satellite signal level to be used in a fix. Default: 6dBHz for ZED-F9P and 20dBHz for ZED-F9R.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="minCNO">
+                            <p id="minCNOError" class="inlineError"></p>
+                        </div>
                     </div>
 
                     <div id="constellationCheckBoxes">
@@ -385,9 +427,9 @@
                     </div>
 
                     <div id="messageRateButton">
-                        <button class="btn btn-md btn-outline-primary mt-3 toggle-btn" type="button"
-                            data-toggle="collapse" data-target="#collapseGNSSConfigMsg" aria-expanded="false"
-                            aria-controls="collapseGNSSConfigMsg">
+                        <button onClick="getMessageList()" class="btn btn-md btn-outline-primary mt-3 toggle-btn"
+                            type="button" data-toggle="collapse" data-target="#collapseGNSSConfigMsg"
+                            aria-expanded="false" aria-controls="collapseGNSSConfigMsg">
                             Message Rates <i id="gnssMsgCaret" class="caret-icon bi icon-caret-down"></i>
                         </button>
                         <span class="tt" data-bs-placement="right"
@@ -411,538 +453,23 @@
                             </div>
 
 
-                            <div class="form-group row" id="msgUBX_NMEA_DTM">
-                                <label for="UBX_NMEA_DTM" class="col-sm-3 col-5 col-form-label">NMEA_DTM:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_DTM"
-                                        value="0">
-                                    <p id="UBX_NMEA_DTMError" class="inlineError"></p>
+                            <div id="messageList">
+                                <div class="form-group row" id="msgUBX_NMEA_DTM">
+                                    <label for="UBX_NMEA_DTM" class="col-sm-3 col-5 col-form-label">NMEA_DTM:</label>
+                                    <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                            id="UBX_NMEA_DTM" value="0">
+                                        <p id="UBX_NMEA_DTMError" class="inlineError"></p>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="form-group row" id="msgUBX_NAV_ATT">
+                                    <label for="UBX_NAV_ATT" class="col-sm-3 col-5 col-form-label">NAV_ATT:</label>
+                                    <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                            id="UBX_NAV_ATT" value="0">
+                                        <p id="UBX_NAV_ATTError" class="inlineError"></p>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="form-group row" id="msgUBX_NMEA_GBS">
-                                <label for="UBX_NMEA_GBS" class="col-sm-3 col-5 col-form-label">NMEA_GBS:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_GBS"
-                                        value="0">
-                                    <p id="UBX_NMEA_GBSError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NMEA_GGA">
-                                <label for="UBX_NMEA_GGA" class="col-sm-3 col-5 col-form-label">NMEA_GGA:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_GGA"
-                                        value="1">
-                                    <p id="UBX_NMEA_GGAError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NMEA_GLL">
-                                <label for="UBX_NMEA_GLL" class="col-sm-3 col-5 col-form-label">NMEA_GLL:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_GLL"
-                                        value="0">
-                                    <p id="UBX_NMEA_GLLError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NMEA_GNS">
-                                <label for="UBX_NMEA_GNS" class="col-sm-3 col-5 col-form-label">NMEA_GNS:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_GNS"
-                                        value="0">
-                                    <p id="UBX_NMEA_GNSError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NMEA_GRS">
-                                <label for="UBX_NMEA_GRS" class="col-sm-3 col-5 col-form-label">NMEA_GRS:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_GRS"
-                                        value="0">
-                                    <p id="UBX_NMEA_GRSError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NMEA_GSA">
-                                <label for="UBX_NMEA_GSA" class="col-sm-3 col-5 col-form-label">NMEA_GSA:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_GSA"
-                                        value="1">
-                                    <p id="UBX_NMEA_GSAError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NMEA_GST">
-                                <label for="UBX_NMEA_GST" class="col-sm-3 col-5 col-form-label">NMEA_GST:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_GST"
-                                        value="1">
-                                    <p id="UBX_NMEA_GSTError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NMEA_GSV">
-                                <label for="UBX_NMEA_GSV" class="col-sm-3 col-5 col-form-label">NMEA_GSV:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_GSV"
-                                        value="4">
-                                    <p id="UBX_NMEA_GSVError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NMEA_RMC">
-                                <label for="UBX_NMEA_RMC" class="col-sm-3 col-5 col-form-label">NMEA_RMC:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_RMC"
-                                        value="1">
-                                    <p id="UBX_NMEA_RMCError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NMEA_VLW">
-                                <label for="UBX_NMEA_VLW" class="col-sm-3 col-5 col-form-label">NMEA_VLW:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_VLW"
-                                        value="0">
-                                    <p id="UBX_NMEA_VLWError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NMEA_VTG">
-                                <label for="UBX_NMEA_VTG" class="col-sm-3 col-5 col-form-label">NMEA_VTG:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_VTG"
-                                        value="0">
-                                    <p id="UBX_NMEA_VTGError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NMEA_ZDA">
-                                <label for="UBX_NMEA_ZDA" class="col-sm-3 col-5 col-form-label">NMEA_ZDA:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NMEA_ZDA"
-                                        value="0">
-                                    <p id="UBX_NMEA_ZDAError" class="inlineError"></p>
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <div class="form-group row" id="msgUBX_NAV_ATT">
-                                <label for="UBX_NAV_ATT" class="col-sm-3 col-5 col-form-label">NAV_ATT:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NAV_ATT"
-                                        value="0">
-                                    <p id="UBX_NAV_ATTError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_CLOCK">
-                                <label for="UBX_NAV_CLOCK" class="col-sm-3 col-5 col-form-label">NAV_CLOCK:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NAV_CLOCK"
-                                        value="0">
-                                    <p id="UBX_NAV_CLOCKError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_DOP">
-                                <label for="UBX_NAV_DOP" class="col-sm-3 col-5 col-form-label">NAV_DOP:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NAV_DOP"
-                                        value="0">
-                                    <p id="UBX_NAV_DOPError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_EOE">
-                                <label for="UBX_NAV_EOE" class="col-sm-3 col-5 col-form-label">NAV_EOE:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NAV_EOE"
-                                        value="0">
-                                    <p id="UBX_NAV_EOEError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_GEOFENCE">
-                                <label for="UBX_NAV_GEOFENCE"
-                                    class="col-sm-6 col-7 col-form-label">NAV_GEOFENCE:</label>
-                                <div class="col-sm-5 col-5"><input type="number" class="form-control"
-                                        id="UBX_NAV_GEOFENCE" value="0">
-                                    <p id="UBX_NAV_GEOFENCEError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_HPPOSECEF">
-                                <label for="UBX_NAV_HPPOSECEF"
-                                    class="col-sm-4 col-7 col-form-label">NAV_HPPOSECEF:</label>
-                                <div class="col-sm-7 col-5"><input type="number" class="form-control"
-                                        id="UBX_NAV_HPPOSECEF" value="0">
-                                    <p id="UBX_NAV_HPPOSECEFError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_HPPOSLLH">
-                                <label for="UBX_NAV_HPPOSLLH"
-                                    class="col-sm-4 col-7 col-form-label">NAV_HPPOSLLH:</label>
-                                <div class="col-sm-7 col-5"><input type="number" class="form-control"
-                                        id="UBX_NAV_HPPOSLLH" value="0">
-                                    <p id="UBX_NAV_HPPOSLLHError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_ODO">
-                                <label for="UBX_NAV_ODO" class="col-sm-3 col-5 col-form-label">NAV_ODO:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NAV_ODO"
-                                        value="0">
-                                    <p id="UBX_NAV_ODOError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_ORB">
-                                <label for="UBX_NAV_ORB" class="col-sm-3 col-5 col-form-label">NAV_ORB:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NAV_ORB"
-                                        value="0">
-                                    <p id="UBX_NAV_ORBError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_POSECEF">
-                                <label for="UBX_NAV_POSECEF" class="col-sm-4 col-6 col-form-label">NAV_POSECEF:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_NAV_POSECEF" value="0">
-                                    <p id="UBX_NAV_POSECEFError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_POSLLH">
-                                <label for="UBX_NAV_POSLLH" class="col-sm-4 col-6 col-form-label">NAV_POSLLH:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_NAV_POSLLH" value="0">
-                                    <p id="UBX_NAV_POSLLHError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_PVT">
-                                <label for="UBX_NAV_PVT" class="col-sm-3 col-5 col-form-label">NAV_PVT:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NAV_PVT"
-                                        value="0">
-                                    <p id="UBX_NAV_PVTError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_RELPOSNED">
-                                <label for="UBX_NAV_RELPOSNED"
-                                    class="col-sm-4 col-7 col-form-label">NAV_RELPOSNED:</label>
-                                <div class="col-sm-7 col-5"><input type="number" class="form-control"
-                                        id="UBX_NAV_RELPOSNED" value="0">
-                                    <p id="UBX_NAV_RELPOSNEDError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_SAT">
-                                <label for="UBX_NAV_SAT" class="col-sm-3 col-5 col-form-label">NAV_SAT:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NAV_SAT"
-                                        value="0">
-                                    <p id="UBX_NAV_SATError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_SIG">
-                                <label for="UBX_NAV_SIG" class="col-sm-3 col-5 col-form-label">NAV_SIG:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NAV_SIG"
-                                        value="0">
-                                    <p id="UBX_NAV_SIGError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_STATUS">
-                                <label for="UBX_NAV_STATUS" class="col-sm-3 col-6 col-form-label">NAV_STATUS:</label>
-                                <div class="col-sm-8 col-6"><input type="number" class="form-control"
-                                        id="UBX_NAV_STATUS" value="0">
-                                    <p id="UBX_NAV_STATUSError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_SVIN">
-                                <label for="UBX_NAV_SVIN" class="col-sm-3 col-5 col-form-label">NAV_SVIN:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_NAV_SVIN"
-                                        value="0">
-                                    <p id="UBX_NAV_SVINError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_TIMEBDS">
-                                <label for="UBX_NAV_TIMEBDS" class="col-sm-4 col-6 col-form-label">NAV_TIMEBDS:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_NAV_TIMEBDS" value="0">
-                                    <p id="UBX_NAV_TIMEBDSError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_TIMEGAL">
-                                <label for="UBX_NAV_TIMEGAL" class="col-sm-4 col-6 col-form-label">NAV_TIMEGAL:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_NAV_TIMEGAL" value="0">
-                                    <p id="UBX_NAV_TIMEGALError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_TIMEGLO">
-                                <label for="UBX_NAV_TIMEGLO" class="col-sm-4 col-6 col-form-label">NAV_TIMEGLO:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_NAV_TIMEGLO" value="0">
-                                    <p id="UBX_NAV_TIMEGLOError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_TIMEGPS">
-                                <label for="UBX_NAV_TIMEGPS" class="col-sm-4 col-6 col-form-label">NAV_TIMEGPS:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_NAV_TIMEGPS" value="0">
-                                    <p id="UBX_NAV_TIMEGPSError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_TIMELS">
-                                <label for="UBX_NAV_TIMELS" class="col-sm-3 col-6 col-form-label">NAV_TIMELS:</label>
-                                <div class="col-sm-8 col-6"><input type="number" class="form-control"
-                                        id="UBX_NAV_TIMELS" value="0">
-                                    <p id="UBX_NAV_TIMELSError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_TIMEUTC">
-                                <label for="UBX_NAV_TIMEUTC" class="col-sm-4 col-6 col-form-label">NAV_TIMEUTC:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_NAV_TIMEUTC" value="0">
-                                    <p id="UBX_NAV_TIMEUTCError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_VELECEF">
-                                <label for="UBX_NAV_VELECEF" class="col-sm-4 col-6 col-form-label">NAV_VELECEF:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_NAV_VELECEF" value="0">
-                                    <p id="UBX_NAV_VELECEFError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_NAV_VELNED">
-                                <label for="UBX_NAV_VELNED" class="col-sm-4 col-6 col-form-label">NAV_VELNED:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_NAV_VELNED" value="0">
-                                    <p id="UBX_NAV_VELNEDError" class="inlineError"></p>
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <div class="form-group row" id="msgUBX_RXM_MEASX">
-                                <label for="UBX_RXM_MEASX" class="col-sm-3 col-6 col-form-label">RXM_MEASX:</label>
-                                <div class="col-sm-8 col-6"><input type="number" class="form-control" id="UBX_RXM_MEASX"
-                                        value="0">
-                                    <p id="UBX_RXM_MEASXError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RXM_RAWX">
-                                <label for="UBX_RXM_RAWX" class="col-sm-3 col-5 col-form-label">RXM_RAWX:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RXM_RAWX"
-                                        value="0">
-                                    <p id="UBX_RXM_RAWXError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RXM_RLM">
-                                <label for="UBX_RXM_RLM" class="col-sm-3 col-5 col-form-label">RXM_RLM:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RXM_RLM"
-                                        value="0">
-                                    <p id="UBX_RXM_RLMError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RXM_RTCM">
-                                <label for="UBX_RXM_RTCM" class="col-sm-3 col-5 col-form-label">RXM_RTCM:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RXM_RTCM"
-                                        value="0">
-                                    <p id="UBX_RXM_RTCMError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RXM_SFRBX">
-                                <label for="UBX_RXM_SFRBX" class="col-sm-3 col-5 col-form-label">RXM_SFRBX:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RXM_SFRBX"
-                                        value="0">
-                                    <p id="UBX_RXM_SFRBXError" class="inlineError"></p>
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <div class="form-group row" id="msgUBX_MON_COMMS">
-                                <label for="UBX_MON_COMMS" class="col-sm-4 col-6 col-form-label">MON_COMMS:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control" id="UBX_MON_COMMS"
-                                        value="0">
-                                    <p id="UBX_MON_COMMSError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_MON_HW2">
-                                <label for="UBX_MON_HW2" class="col-sm-3 col-5 col-form-label">MON_HW2:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_MON_HW2"
-                                        value="0">
-                                    <p id="UBX_MON_HW2Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_MON_HW3">
-                                <label for="UBX_MON_HW3" class="col-sm-3 col-5 col-form-label">MON_HW3:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_MON_HW3"
-                                        value="0">
-                                    <p id="UBX_MON_HW3Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_MON_HW">
-                                <label for="UBX_MON_HW" class="col-sm-3 col-5 col-form-label">MON_HW:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_MON_HW"
-                                        value="0">
-                                    <p id="UBX_MON_HWError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_MON_IO">
-                                <label for="UBX_MON_IO" class="col-sm-3 col-5 col-form-label">MON_IO:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_MON_IO"
-                                        value="0">
-                                    <p id="UBX_MON_IOError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_MON_MSGPP">
-                                <label for="UBX_MON_MSGPP" class="col-sm-4 col-6 col-form-label">MON_MSGPP:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control" id="UBX_MON_MSGPP"
-                                        value="0">
-                                    <p id="UBX_MON_MSGPPError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_MON_RF">
-                                <label for="UBX_MON_RF" class="col-sm-3 col-5 col-form-label">MON_RF:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_MON_RF"
-                                        value="0">
-                                    <p id="UBX_MON_RFError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_MON_RXBUF">
-                                <label for="UBX_MON_RXBUF" class="col-sm-3 col-6 col-form-label">MON_RXBUF:</label>
-                                <div class="col-sm-8 col-6"><input type="number" class="form-control" id="UBX_MON_RXBUF"
-                                        value="0">
-                                    <p id="UBX_MON_RXBUFError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_MON_RXR">
-                                <label for="UBX_MON_RXR" class="col-sm-3 col-5 col-form-label">MON_RXR:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_MON_RXR"
-                                        value="0">
-                                    <p id="UBX_MON_RXRError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_MON_TXBUF">
-                                <label for="UBX_MON_TXBUF" class="col-sm-3 col-6 col-form-label">MON_TXBUF:</label>
-                                <div class="col-sm-8 col-6"><input type="number" class="form-control" id="UBX_MON_TXBUF"
-                                        value="0">
-                                    <p id="UBX_MON_TXBUFError" class="inlineError"></p>
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <div class="form-group row" id="msgUBX_TIM_TM2">
-                                <label for="UBX_TIM_TM2" class="col-sm-3 col-5 col-form-label">TIM_TM2:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_TIM_TM2"
-                                        value="0">
-                                    <p id="UBX_TIM_TM2Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_TIM_TP">
-                                <label for="UBX_TIM_TP" class="col-sm-3 col-5 col-form-label">TIM_TP:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_TIM_TP"
-                                        value="0">
-                                    <p id="UBX_TIM_TPError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_TIM_VRFY">
-                                <label for="UBX_TIM_VRFY" class="col-sm-3 col-5 col-form-label">TIM_VRFY:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_TIM_VRFY"
-                                        value="0">
-                                    <p id="UBX_TIM_VRFYError" class="inlineError"></p>
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <div class="form-group row" id="msgUBX_RTCM_1005">
-                                <label for="UBX_RTCM_1005" class="col-sm-3 col-5 col-form-label">RTCM_1005:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1005"
-                                        value="0">
-                                    <p id="UBX_RTCM_1005Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RTCM_1074">
-                                <label for="UBX_RTCM_1074" class="col-sm-3 col-5 col-form-label">RTCM_1074:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1074"
-                                        value="0">
-                                    <p id="UBX_RTCM_1074Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RTCM_1077">
-                                <label for="UBX_RTCM_1077" class="col-sm-3 col-5 col-form-label">RTCM_1077:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1077"
-                                        value="0">
-                                    <p id="UBX_RTCM_1077Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RTCM_1084">
-                                <label for="UBX_RTCM_1084" class="col-sm-3 col-5 col-form-label">RTCM_1084:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1084"
-                                        value="0">
-                                    <p id="UBX_RTCM_1084Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RTCM_1087">
-                                <label for="UBX_RTCM_1087" class="col-sm-3 col-5 col-form-label">RTCM_1087:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1087"
-                                        value="0">
-                                    <p id="UBX_RTCM_1087Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RTCM_1094">
-                                <label for="UBX_RTCM_1094" class="col-sm-3 col-5 col-form-label">RTCM_1094:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1094"
-                                        value="0">
-                                    <p id="UBX_RTCM_1094Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RTCM_1097">
-                                <label for="UBX_RTCM_1097" class="col-sm-3 col-5 col-form-label">RTCM_1097:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1097"
-                                        value="0">
-                                    <p id="UBX_RTCM_1097Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RTCM_1124">
-                                <label for="UBX_RTCM_1124" class="col-sm-3 col-5 col-form-label">RTCM_1124:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1124"
-                                        value="0">
-                                    <p id="UBX_RTCM_1124Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RTCM_1127">
-                                <label for="UBX_RTCM_1127" class="col-sm-3 col-5 col-form-label">RTCM_1127:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1127"
-                                        value="0">
-                                    <p id="UBX_RTCM_1127Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RTCM_1230">
-                                <label for="UBX_RTCM_1230" class="col-sm-3 col-5 col-form-label">RTCM_1230:</label>
-                                <div class="col-sm-8 col-7"><input type="number" class="form-control" id="UBX_RTCM_1230"
-                                        value="0">
-                                    <p id="UBX_RTCM_1230Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RTCM_4072_0">
-                                <label for="UBX_RTCM_4072_0" class="col-sm-4 col-6 col-form-label">RTCM_4072_0:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_RTCM_4072_0" value="0">
-                                    <p id="UBX_RTCM_4072_0Error" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row" id="msgUBX_RTCM_4072_1">
-                                <label for="UBX_RTCM_4072_1" class="col-sm-4 col-6 col-form-label">RTCM_4072_1:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_RTCM_4072_1" value="0">
-                                    <p id="UBX_RTCM_4072_1Error" class="inlineError"></p>
-                                </div>
-                            </div>
-
-                            <div class="form-group row collapse" id="msgUBX_ESF_MEAS">
-                                <label for="UBX_ESF_MEAS" class="col-sm-4 col-6 col-form-label">ESF_MEAS:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control" id="UBX_ESF_MEAS"
-                                        value="0">
-                                    <p id="UBX_ESF_MEASError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row collapse" id="msgUBX_ESF_RAW">
-                                <label for="UBX_ESF_RAW" class="col-sm-4 col-6 col-form-label">ESF_RAW:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control" id="UBX_ESF_RAW"
-                                        value="0">
-                                    <p id="UBX_ESF_RAWError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row collapse" id="msgUBX_ESF_STATUS">
-                                <label for="UBX_ESF_STATUS" class="col-sm-4 col-6 col-form-label">ESF_STATUS:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control"
-                                        id="UBX_ESF_STATUS" value="0">
-                                    <p id="UBX_ESF_STATUSError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row collapse" id="msgUBX_ESF_ALG">
-                                <label for="UBX_ESF_ALG" class="col-sm-4 col-6 col-form-label">ESF_ALG:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control" id="UBX_ESF_ALG"
-                                        value="0">
-                                    <p id="UBX_ESF_ALGError" class="inlineError"></p>
-                                </div>
-                            </div>
-                            <div class="form-group row collapse" id="msgUBX_ESF_INS">
-                                <label for="UBX_ESF_INS" class="col-sm-4 col-6 col-form-label">ESF_INS:</label>
-                                <div class="col-sm-7 col-6"><input type="number" class="form-control" id="UBX_ESF_INS"
-                                        value="0">
-                                    <p id="UBX_ESF_INSError" class="inlineError"></p>
-                                </div>
-                            </div>
-
                         </div>
                     </div>
                 </div>
@@ -1120,20 +647,27 @@
                             </div>
 
                             <div class="form-group row">
-                                <label for="fixedLat"
+                                <label for="fixedLatText"
                                     class="box-margin40 col-sm-3 col-4 col-form-label">Latitude:</label>
                                 <div class="col-sm-4 col-6">
-                                    <input type="number" class="form-control" id="fixedLat">
-                                    <p id="fixedLatError" class="inlineError"></p>
+                                    <input type="text" class="form-control" id="fixedLatText">
+                                    <p id="fixedLatTextError" class="inlineError"></p>
                                 </div>
                             </div>
 
                             <div class="form-group row">
-                                <label for="fixedLong"
+                                <label for="fixedLongText"
                                     class="box-margin40 col-sm-3 col-4 col-form-label">Longitude:</label>
                                 <div class="col-sm-4 col-6">
-                                    <input type="number" class="form-control" id="fixedLong">
-                                    <p id="fixedLongError" class="inlineError"></p>
+                                    <input type="text" class="form-control" id="fixedLongText">
+                                    <p id="fixedLongTextError" class="inlineError"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div id="detectedFormat" class="box-margin40">
+                                    <label class="form-check-label">Detected Format:</label>
+                                    <span id="detectedFormatText" style="display:inline;"></span>
                                 </div>
                             </div>
 
@@ -1194,7 +728,7 @@
                                 <label for="antennaReferencePoint" class="box-margin40 col-5 col-form-label">Antenna
                                     Reference Point(mm):
                                     <span class="tt" data-bs-placement="right"
-                                        title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration. Amount is added to HAE before starting fixed base. Common ARPs: Facet(61.4mm) Facet L-Band (69mm) TOP106(52.9)">
+                                        title="ARP is the distance from the base of the antenna to the antenna phase center. This is usually printed on the side of the antenna and is calculated during antenna calibration. Amount is added to HAE before starting fixed base. Common ARPs: Facet(71.8mm) Facet L-Band (69mm) TOP106(52.9)">
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
@@ -1342,6 +876,51 @@
                             </div>
                         </div>
                     </div>
+
+                    <div>
+                        <button  onClick="getMessageListBase()" class="btn btn-md btn-outline-primary mt-3 toggle-btn" type="button"
+                            data-toggle="collapse" data-target="#collapseGNSSConfigMsgBase" aria-expanded="false"
+                            aria-controls="collapseGNSSConfigMsgBase">
+                            RTCM Rates <i class="caret-icon bi icon-caret-down"></i>
+                        </button>
+                        <span class="tt" data-bs-placement="right"
+                            title="RTCM is transmitted by the base at a default of 1Hz for messages 1005, 1074, 1084, 1094, 1124, and 0.1Hz for 1230. This can be lowered for radios with low bandwidth or tailored to transmit any/all RTCM messages. Limits: 0 to 20. Note: The measurement rate is overridden to 1Hz when in Base mode.">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="collapse" id="collapseGNSSConfigMsgBase">
+                        <div class="card card-body" style="margin-top:5px;">
+
+                            <div style="margin-bottom:5px;">
+                                <button type="button" class="btn btn-primary" onClick="resetToRTCMDefaults()">Reset to
+                                    Defaults</button>
+                            </div>
+                            <div style="margin-bottom:5px;">
+                                <button type="button" class="btn btn-primary" onClick="resetToLowBandwidthRTCM()">Reset
+                                    to Low Bandwidth Link</button>
+                            </div>
+
+                            <div id="messageListBase">
+                                <div class="form-group row" id="msgUBX_NMEA_DTM">
+                                    <label for="UBX_NMEA_DTM" class="col-sm-3 col-5 col-form-label">RTCM_1005:</label>
+                                    <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                            id="UBX_NMEA_DTM" value="0">
+                                        <p id="UBX_NMEA_DTMError" class="inlineError"></p>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="form-group row" id="msgUBX_NAV_ATT">
+                                    <label for="UBX_NAV_ATT" class="col-sm-3 col-5 col-form-label">RTCM_1074:</label>
+                                    <div class="col-sm-8 col-7"><input type="number" class="form-control"
+                                            id="UBX_NAV_ATT" value="0">
+                                        <p id="UBX_NAV_ATTError" class="inlineError"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1358,7 +937,7 @@
                     <div class="form-check mt-3">
                         <label class="form-check-label" for="enableSensorFusion">Sensor Fusion</label>
                         <input class="form-check-input" type="checkbox" value="" id="enableSensorFusion">
-                        <span class="tt" data-bs-placement="right"
+                        <span clas1127="tt" data-bs-placement="right"
                             title="Use the onboard IMU to maintain position when GNSS is unavailable. Only applicable to automotive installations. Will degrade positional accuracy in non-automotive applications. Default: Disabled">
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
@@ -1371,6 +950,62 @@
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
+
+                    <div class="form-group row">
+                        <label for="imuYaw" class="col-sm-4 col-6 col-form-label">Yaw Angle:
+                            <span class="tt" data-bs-placement="right" title="User defined IMU mount angle for yaw.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="imuYaw">
+                            <p id="imuYawError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="imuPitch" class="col-sm-4 col-6 col-form-label">Pitch Angle:
+                            <span class="tt" data-bs-placement="right" title="User defined IMU mount angle for pitch.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="imuPitch">
+                            <p id="imuPitchError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="imuRoll" class="col-sm-4 col-6 col-form-label">Roll Angle:
+                            <span class="tt" data-bs-placement="right" title="User defined IMU mount angle for roll.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-4 col-6">
+                            <input type="number" class="form-control" id="imuRoll">
+                            <p id="imuRollError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="sfDisableWheelDirection">Disable Wheel Tick Direction
+                            Detection</label>
+                        <input class="form-check-input" type="checkbox" value="" id="sfDisableWheelDirection">
+                        <span class="tt" data-bs-placement="right"
+                            title="Automatically identify the wheel tick direction using GNSS heading. Default: False">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <label class="form-check-label" for="sfCombineWheelTicks">Combine Wheel Ticks</label>
+                        <input class="form-check-input" type="checkbox" value="" id="sfCombineWheelTicks">
+                        <span class="tt" data-bs-placement="right" title="Use combined rear wheel ticks instead of the
+                            single tick. Default: False">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
                 </div>
             </div>
 
@@ -1826,9 +1461,10 @@
                         <select name="baseRoverSetup" id="baseRoverSetup" class="form-dropdown">
                             <option value="0">Rover</option>
                             <option value="1">Base</option>
+                            <option value="2">NTP</option>
                         </select>
                         <span class="tt" data-bs-placement="right"
-                            title="Put the system into rover or base mode at next Power On or Reset.">
+                            title="Put the system into rover, base or NTP mode at next Power On or Reset.">
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
@@ -1926,6 +1562,180 @@
                             <span class="icon-info-circle text-primary ms-2"></span>
                         </span>
                     </div>
+                </div>
+            </div>
+
+            <!-- --------- Ethernet Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary mt-3 toggle-btn" id="ethernetConfig" type="button" data-toggle="collapse"
+                    data-target="#collapseEthernetConfig" aria-expanded="false" aria-controls="collapseEthernetConfig">
+                    <!-- style="display:none"> -->
+                    Ethernet Configuration <i id="ethernetCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="collapseEthernetConfig">
+                <div class="card card-body">
+
+                    <div class="form-check mt-1 box-margin20">
+                        <label class="form-check-label" for="ethernetDHCP">Ethernet uses DHCP</label>
+                        <input class="form-check-input" type="checkbox" value="" id="ethernetDHCP" checked>
+                        <span class="tt" data-bs-placement="right"
+                            title="If enabled, Ethernet will use DHCP. Disable to use a fixed IP Address, DNS, Gateway and Subnet Mask. Default: Enabled">
+                            <span class="icon-info-circle text-primary ms-2"></span>
+                        </span>
+                    </div>
+
+                    <br>
+
+                    <div class="form-group row">
+                        <label for="ethernetIP" class="col-5 col-form-label">Fixed IP Address:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this fixed IP Address">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetIP">
+                            <p id="ethernetIPError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetDNS" class="col-5 col-form-label">DNS:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this DNS">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetDNS">
+                            <p id="ethernetDNSError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetGateway" class="col-5 col-form-label">Gateway:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this Gateway">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetGateway">
+                            <p id="ethernetGatewayError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetSubnet" class="col-5 col-form-label">Subnet Mask:
+                            <span class="tt" data-bs-placement="right"
+                                title="If DHCP is disabled, Ethernet will use this subnet mask">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetSubnet">
+                            <p id="ethernetSubnetError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                    <br>
+
+                    <div class="form-group row">
+                        <label for="ethernetHttpPort" class="col-5 col-form-label">Ethernet HTTP Port:
+                            <span class="tt" data-bs-placement="right" title="Ethernet HTTP Port. Default is 80">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetHttpPort">
+                            <p id="ethernetHttpPortError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ethernetNtpPort" class="col-5 col-form-label">Ethernet NTP Port:
+                            <span class="tt" data-bs-placement="right" title="Ethernet NTP Port. Default is 123">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ethernetNtpPort">
+                            <p id="ethernetNtpPortError" class="inlineError"></p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- --------- NTP Config --------- -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary mt-3 toggle-btn" id="ntpConfig" type="button" data-toggle="collapse"
+                    data-target="#collapseNTPConfig" aria-expanded="false" aria-controls="collapseNTPConfig">
+                    <!-- style="display:none"> -->
+                    NTP Configuration <i id="ntpCaret" class="caret-icon bi icon-caret-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="collapseNTPConfig">
+                <div class="card card-body">
+
+                    <div class="form-group row">
+                        <label for="ntpPollExponent" class="col-5 col-form-label">Poll Exponent:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the maximum interval between successive messages. E.g. the default value of 6 sets the interval to 2^6 = 64s">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpPollExponent">
+                            <p id="ntpPollExponentError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpPrecision" class="col-5 col-form-label">Precision:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the precision of the system clock. E.g. the default value of -20 sets the precision to 2^-20 = ~1us">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpPrecision">
+                            <p id="ntpPrecisionError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpRootDelay" class="col-5 col-form-label">Root Delay:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the total round-trip delay to the reference clock in us. Default: 0">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpRootDelay">
+                            <p id="ntpRootDelayError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpRootDispersion" class="col-5 col-form-label">Root Dispersion:
+                            <span class="tt" data-bs-placement="right"
+                                title="This indicates the maximum error relative to the reference clock in us. Default: 1000">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpRootDispersion">
+                            <p id="ntpRootDispersionError" class="inlineError"></p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="ntpReferenceId" class="col-5 col-form-label">Reference ID:
+                            <span class="tt" data-bs-placement="right"
+                                title="This code identifies the reference clock. Default: GPS. Limit: 1-4 characters">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </label>
+                        <div class="col-sm-5">
+                            <input type="text" class="form-control" id="ntpReferenceId">
+                            <p id="ntpReferenceIdError" class="inlineError"></p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

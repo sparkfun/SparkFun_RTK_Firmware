@@ -112,6 +112,26 @@ Note: During NTRIP transmission WiFi is turned on and Bluetooth is turned off. Y
 
 For users who return to the same base position or monument, the coordinates can be saved to a 'Commonly Used Coordinates' list. A nickname and the X/Y/Z positions are saved to the list. Any record on the list can be loaded from the list into the X/Y/Z fields allowing quick switching without the need to hand record or re-enter coordinates from day-to-day repositioning of the base.
 
+## Supported Lat/Long Coordinate Formats
+
+![Entering coordinates in alternate formats](img/SparkFun%20RTK%20-%20Alternate%20Coordinate%20Types%20for%20Fixed%20Base.png)
+
+When entering coordinates for a fixed Base in Geodetic format, the following formats are supported:
+
+* DD.ddddddddd (ie -105.184774720, 40.090335429)
+* DDMM.mmmmmmm (ie -10511.0864832)
+* DD MM.mmmmmmm (ie 40 05.42013)
+* DD-MM.mmmmmmm (40-05.42013)
+* DDMMSS.ssssss (-1051105.188992)
+* DD MM SS.ssssss (-105 11 05.188992)
+* DD-MM-SS.ssssss (40-05-25.2075)
+
+![Coordinate formats in the Base serial menu](img/SparkFun%20RTK%20-%20Alternate%20Coordinate%20Types%20for%20Fixed%20Base%20Serial.png)
+
+These coordinate formats are automatically detected and converted as needed. The coordinates are displayed in the format they are entered. If a different format is desired, the coordinate display format can be changed via the serial Base menu.
+
+For more information about coordinate formats, check out this [online converter](https://www.earthpoint.us/convert.aspx).
+
 ## Assisted Base
 
 An Assisted Base is where a temporary base is set up to Survey-In its location but is simultaneously provided RTCM corrections so that its Survey-In is done with very precise readings. An assisted base running a Survey-In removes much of the relative inaccuracies from a Rover-Base system. We've found an Assisted Base varies as little as 50mm RMS between intra-day tests, with accuracy within 65mm of a PPP of the same location, same day.

@@ -694,7 +694,8 @@ void ethernetRestart()
   online.ethernetStatus = ETH_NOT_STARTED;
 
   //Ethernet TCP Client
-  ethernetTcpClient->stop();
+  if (ethernetTcpClient)
+    ethernetTcpClient->stop();
   ethernetTcpConnected = false;
   online.tcpClientEthernet = false;
 

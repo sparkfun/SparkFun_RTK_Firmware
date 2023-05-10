@@ -602,6 +602,13 @@ function validateFields() {
         clearElement("maxLogLength_minutes", 60 * 24);
     }
 
+    if (ge("enableARPLogging").checked) {
+        checkElementValue("ARPLoggingInterval", 1, 600, "Must be 1 to 600", "collapseSystemConfig");
+    }
+    else {
+        clearElement("ARPLoggingInterval", 10);
+    }
+
     //Ethernet
     if (platformPrefix == "Reference Station") {
         //if (ge("ethernetDHCP").checked == false) {
@@ -1148,6 +1155,15 @@ document.addEventListener("DOMContentLoaded", (event) => {
         }
         else {
             hide("enableLoggingDetails");
+        }
+    });
+
+    ge("enableARPLogging").addEventListener("change", function () {
+        if (ge("enableARPLogging").checked) {
+            show("enableARPLoggingDetails");
+        }
+        else {
+            hide("enableARPLoggingDetails");
         }
     });
 

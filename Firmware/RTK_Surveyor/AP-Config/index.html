@@ -510,7 +510,7 @@
                     <div id="surveyInConfig" class="collapse mb-2">
                         <div class="form-group row">
                             <label for="observationSeconds" class="box-margin20 col-sm-12 col-form-label">Minimum
-                                observation time(s):</label>
+                                observation time (s):</label>
                             <div class="col-sm-4 col-5 ms-3 mb-2">
                                 <input type="number" class="form-control" id="observationSeconds">
                                 <p id="observationSecondsError" class="inlineError"></p>
@@ -1545,6 +1545,29 @@
                             </div>
                         </div>
 
+                        <div class="form-check mt-1 box-margin20">
+                            <label class="form-check-label" for="enableARPLogging">Enable ARP Logging</label>
+                            <input class="form-check-input" type="checkbox" value="" id="enableARPLogging" unchecked>
+                            <span class="tt" data-bs-placement="right"
+                                title="If enabled, the Antenna Reference Position from RTCM 1005/1006 will be added to the log.">
+                                <span class="icon-info-circle text-primary ms-2"></span>
+                            </span>
+                        </div>
+
+                        <div id="enableARPLoggingDetails" class="collapse mb-2">
+                            <div class="form-group row">
+                                <label for="ARPLoggingInterval" class="box-margin40 col-sm-3 col-7 col-form-label">ARP Logging Interval (s):
+                                    <span class="tt" data-bs-placement="right"
+                                        title="If ARP logging is enabled, the Antenna Reference Position will be logged at intervals of this many seconds.">
+                                        <span class="icon-info-circle text-primary ms-2"></span>
+                                    </span>
+                                </label>
+                                <div class="col-sm-5">
+                                    <input type="text" class="form-control" id="ARPLoggingInterval">
+                                    <p id="ARPLoggingIntervalError" class="inlineError"></p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="bluetoothRadioTypeDropdown" class="mb-2 mt-3">

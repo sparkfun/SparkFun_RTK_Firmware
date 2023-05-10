@@ -132,6 +132,7 @@ typedef enum
   CUSTOM_NMEA_TYPE_DEVICE_BT_ID,
   CUSTOM_NMEA_TYPE_PARSER_STATS,
   CUSTOM_NMEA_TYPE_CURRENT_DATE,
+  CUSTOM_NMEA_TYPE_ARP_ECEF_XYZH,
 } customNmeaType_e;
 
 //Freeze and blink LEDs if we hit a bad error
@@ -673,6 +674,8 @@ typedef struct {
   muxConnectionType_e dataPortChannel = MUX_UBLOX_NMEA; //Mux default to ublox UART1
   uint16_t spiFrequency = 16; //By default, use 16MHz SPI
   bool enableLogging = true; //If an SD card is present, log default sentences
+  bool enableARPLogging = false; //Log the Antenna Reference Position from RTCM 1005/1006 - if available
+  uint16_t ARPLoggingInterval_s = 10; //Log the ARP every 10 seconds - if available
   uint16_t sppRxQueueSize = 2048;
   uint16_t sppTxQueueSize = 512;
   uint8_t dynamicModel = DYN_MODEL_PORTABLE;

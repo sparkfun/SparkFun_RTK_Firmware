@@ -48,20 +48,32 @@ void menuLog()
       systemPrint(settings.maxLogLength_minutes);
       systemPrintln(" minutes");
 
-      if (online.logging == true) systemPrintln("4) Start new log");
+      if (online.logging == true)
+        systemPrintln("4) Start new log");
+
+      systemPrint("5) Log Antenna Reference Position from RTCM 1005/1006: ");
+      if (settings.enableARPLogging == true) systemPrintln("Enabled");
+      else systemPrintln("Disabled");
+
+      if (settings.enableARPLogging == true)
+      {
+        systemPrint("6) Set ARP logging interval: ");
+        systemPrint(settings.ARPLoggingInterval_s);
+        systemPrintln(" seconds");
+      }
     }
 
-    systemPrint("5) Write Marks_date.csv file to microSD: ");
+    systemPrint("7) Write Marks_date.csv file to microSD: ");
     if (settings.enableMarksFile == true) systemPrintln("Enabled");
     else systemPrintln("Disabled");
 
-    systemPrint("6) Reset system if the SD card is detected but fails to initialize: ");
+    systemPrint("8) Reset system if the SD card is detected but fails to initialize: ");
     if (settings.forceResetOnSDFail == true) systemPrintln("Enabled");
     else systemPrintln("Disabled");
 
     if (HAS_ETHERNET)
     {
-      systemPrint("7) Write NTP requests to microSD: ");
+      systemPrint("9) Write NTP requests to microSD: ");
       if (settings.enableNTPFile == true) systemPrintln("Enabled");
       else systemPrintln("Disabled");
     }
@@ -110,15 +122,31 @@ void menuLog()
       beginLogging(); //Create new file based on current RTC.
       setLoggingType(); //Determine if we are standard, PPP, or custom. Changes logging icon accordingly.
     }
-    else if (incoming == 5)
+    else if (incoming == 5 && settings.enableLogging == true && online.logging == true)
+    {
+      settings.enableARPLogging ^= 1;
+    }
+    else if (incoming == 6 && settings.enableLogging == true && settings.enableARPLogging == true)
+    {
+      systemPrint("Enter the ARP logging interval in seconds: ");
+      int logSecs = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((logSecs != INPUT_RESPONSE_GETNUMBER_EXIT) && (logSecs != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (logSecs < 1 || logSecs > 600) //Arbitrary 10 minute limit
+          systemPrintln("Error: Logging interval out of range");
+        else
+          settings.ARPLoggingInterval_s = logSecs; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 7)
     {
       settings.enableMarksFile ^= 1;
     }
-    else if (incoming == 6)
+    else if (incoming == 8)
     {
       settings.forceResetOnSDFail ^= 1;
     }
-    else if ((HAS_ETHERNET) && (incoming == 7))
+    else if ((HAS_ETHERNET) && (incoming == 9))
     {
       settings.enableNTPFile ^= 1;
     }

@@ -626,6 +626,8 @@ void createSettingsString(char* newSettings)
 
   //System Config
   stringRecord(newSettings, "enableLogging", settings.enableLogging);
+  stringRecord(newSettings, "enableARPLogging", settings.enableARPLogging);
+  stringRecord(newSettings, "ARPLoggingInterval", settings.ARPLoggingInterval_s);
   stringRecord(newSettings, "maxLogTime_minutes", settings.maxLogTime_minutes);
   stringRecord(newSettings, "maxLogLength_minutes", settings.maxLogLength_minutes);
 
@@ -1051,6 +1053,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.radioPortBaud = settingValue;
   else if (strcmp(settingName, "enableLogging") == 0)
     settings.enableLogging = settingValueBool;
+  else if (strcmp(settingName, "enableARPLogging") == 0)
+    settings.enableARPLogging = settingValueBool;
+  else if (strcmp(settingName, "ARPLoggingInterval") == 0)
+    settings.ARPLoggingInterval_s = settingValue;
   else if (strcmp(settingName, "dataPortChannel") == 0)
     settings.dataPortChannel = (muxConnectionType_e)settingValue;
   else if (strcmp(settingName, "autoIMUmountAlignment") == 0)

@@ -271,6 +271,8 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "updateZEDSettings", settings.updateZEDSettings);
   settingsFile->printf("%s=%d\r\n", "LBandFreq", settings.LBandFreq);
   settingsFile->printf("%s=%d\r\n", "enableLogging", settings.enableLogging);
+  settingsFile->printf("%s=%d\r\n", "enableARPLogging", settings.enableARPLogging);
+  settingsFile->printf("%s=%d\r\n", "ARPLoggingInterval_s", settings.ARPLoggingInterval_s);
   settingsFile->printf("%s=%d\r\n", "timeZoneHours", settings.timeZoneHours);
   settingsFile->printf("%s=%d\r\n", "timeZoneMinutes", settings.timeZoneMinutes);
   settingsFile->printf("%s=%d\r\n", "timeZoneSeconds", settings.timeZoneSeconds);
@@ -855,6 +857,10 @@ bool parseLine(char* str, Settings *settings)
     settings->spiFrequency = d;
   else if (strcmp(settingName, "enableLogging") == 0)
     settings->enableLogging = d;
+  else if (strcmp(settingName, "enableARPLogging") == 0)
+    settings->enableARPLogging = d;
+  else if (strcmp(settingName, "ARPLoggingInterval_s") == 0)
+    settings->ARPLoggingInterval_s = d;
   else if (strcmp(settingName, "enableMarksFile") == 0)
     settings->enableMarksFile = d;
   else if (strcmp(settingName, "enableNTPFile") == 0)

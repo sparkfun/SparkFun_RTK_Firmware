@@ -393,7 +393,7 @@ void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
       //Check to see if this ZED platform supports this message
       int msgNumber = (incoming - 1) + startOfBlock;
 
-      if (messageSupported(msgNumber) == true)
+      if (messageSupported(msgNumber + rtcmOffset) == true)
         inputMessageRate(localMessageRate[msgNumber], msgNumber + rtcmOffset);
       else
         printUnknown(incoming);

@@ -1562,10 +1562,8 @@
                                         <span class="icon-info-circle text-primary ms-2"></span>
                                     </span>
                                 </label>
-                                <div class="col-sm-5">
-                                    <input type="text" class="form-control" id="ARPLoggingInterval">
-                                    <p id="ARPLoggingIntervalError" class="inlineError"></p>
-                                </div>
+                                <input type="number" class="form-control box-small" id="ARPLoggingInterval">
+                                <p id="ARPLoggingIntervalError" class="inlineError"></p>
                             </div>
                         </div>
                     </div>
@@ -1692,7 +1690,7 @@
                             </span>
                         </label>
                         <div class="col-sm-5">
-                            <input type="text" class="form-control" id="ethernetHttpPort">
+                            <input type="number" class="form-control box-small" id="ethernetHttpPort">
                             <p id="ethernetHttpPortError" class="inlineError"></p>
                         </div>
                     </div>
@@ -1703,7 +1701,7 @@
                             </span>
                         </label>
                         <div class="col-sm-5">
-                            <input type="text" class="form-control" id="ethernetNtpPort">
+                            <input type="number" class="form-control box-small" id="ethernetNtpPort">
                             <p id="ethernetNtpPortError" class="inlineError"></p>
                         </div>
                     </div>
@@ -1727,8 +1725,8 @@
                                     <span class="icon-info-circle text-primary ms-2"></span>
                                 </span>
                             </label>
-                            <div class="col-sm-8 col-7">
-                                <input type="text" class="form-control" id="ethernetTcpPort">
+                            <div class="col-sm-5">
+                                <input type="number" class="form-control" id="ethernetTcpPort">
                                 <p id="ethernetTcpPortError" class="inlineError"></p>
                             </div>
                         </div>
@@ -1739,7 +1737,7 @@
                                     <span class="icon-info-circle text-primary ms-2"></span>
                                 </span>
                             </label>
-                            <div class="col-sm-8 col-7">
+                            <div class="col-sm-5">
                                 <input type="text" class="form-control" id="hostForTCPClient" value="test">
                                 <p id="hostForTCPClientError" class="inlineError"></p>
                             </div>
@@ -1767,7 +1765,7 @@
                             </span>
                         </label>
                         <div class="col-sm-5">
-                            <input type="text" class="form-control" id="ntpPollExponent">
+                            <input type="number" class="form-control" id="ntpPollExponent">
                             <p id="ntpPollExponentError" class="inlineError"></p>
                         </div>
                     </div>
@@ -1779,7 +1777,7 @@
                             </span>
                         </label>
                         <div class="col-sm-5">
-                            <input type="text" class="form-control" id="ntpPrecision">
+                            <input type="number" class="form-control" id="ntpPrecision">
                             <p id="ntpPrecisionError" class="inlineError"></p>
                         </div>
                     </div>
@@ -1791,7 +1789,7 @@
                             </span>
                         </label>
                         <div class="col-sm-5">
-                            <input type="text" class="form-control" id="ntpRootDelay">
+                            <input type="number" class="form-control" id="ntpRootDelay">
                             <p id="ntpRootDelayError" class="inlineError"></p>
                         </div>
                     </div>
@@ -1803,7 +1801,7 @@
                             </span>
                         </label>
                         <div class="col-sm-5">
-                            <input type="text" class="form-control" id="ntpRootDispersion">
+                            <input type="number" class="form-control" id="ntpRootDispersion">
                             <p id="ntpRootDispersionError" class="inlineError"></p>
                         </div>
                     </div>

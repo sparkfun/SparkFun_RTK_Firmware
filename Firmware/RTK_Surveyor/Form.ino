@@ -1638,6 +1638,15 @@ bool parseIncomingSettings()
 void getFileList(String &returnText)
 {
   returnText = "";
+
+  //Update the SD Size and Free Space
+  String cardSize; 
+  stringHumanReadableSize(cardSize, sdCardSize);
+  returnText += "sdSize," + cardSize + ",";
+  String freeSpace;
+  stringHumanReadableSize(freeSpace, sdFreeSpace);
+  returnText += "sdFreeSpace," + freeSpace + ",";
+  
   char fileName[50]; //Handle long file names
 
   //Attempt to gain access to the SD card

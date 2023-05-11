@@ -11,9 +11,13 @@ void menuLog()
     if (settings.enableSD && online.microSD)
     {
       char sdCardSizeChar[20];
-      stringHumanReadableSize(sdCardSize).toCharArray(sdCardSizeChar, sizeof(sdCardSizeChar));
+      String cardSize;
+      stringHumanReadableSize(cardSize, sdCardSize);
+      cardSize.toCharArray(sdCardSizeChar, sizeof(sdCardSizeChar));
       char sdFreeSpaceChar[20];
-      stringHumanReadableSize(sdFreeSpace).toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
+      String freeSpace;
+      stringHumanReadableSize(freeSpace, sdFreeSpace);
+      freeSpace.toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
 
       char myString[200];
       snprintf(myString, sizeof(myString),

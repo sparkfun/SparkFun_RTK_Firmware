@@ -1203,9 +1203,13 @@ void sdSizeCheckTask(void *e)
 
         //uint64_t sdUsedSpace = sdCardSize - sdFreeSpace; //Don't think of it as used, think of it as unusable
 
+        String cardSize;
+        stringHumanReadableSize(cardSize, sdCardSize);
+        String freeSpace;
+        stringHumanReadableSize(freeSpace, sdFreeSpace);
         systemPrintf("SD card size: %s / Free space: %s\r\n",
-                     stringHumanReadableSize(sdCardSize),
-                     stringHumanReadableSize(sdFreeSpace)
+                     cardSize,
+                     freeSpace
                     );
 
         outOfSDSpace = false;

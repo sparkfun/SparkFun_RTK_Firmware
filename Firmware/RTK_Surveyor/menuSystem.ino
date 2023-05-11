@@ -1031,7 +1031,9 @@ void printFileList()
                     );
 
             char fileSizeChar[20];
-            stringHumanReadableSize(tempFile.fileSize()).toCharArray(fileSizeChar, sizeof(fileSizeChar));
+            String fileSize;
+            stringHumanReadableSize(fileSize, tempFile.fileSize());
+            fileSize.toCharArray(fileSizeChar, sizeof(fileSizeChar));
 
             char fileName[50]; //Handle long file names
             tempFile.getName(fileName, sizeof(fileName));
@@ -1081,7 +1083,9 @@ void printFileList()
                       );
 
               char fileSizeChar[20];
-              stringHumanReadableSize(tempFile.size()).toCharArray(fileSizeChar, sizeof(fileSizeChar));
+              String fileSize;
+              stringHumanReadableSize(fileSize, tempFile.size());
+              fileSize.toCharArray(fileSizeChar, sizeof(fileSizeChar));
 
               char fileName[50]; //Handle long file names
               snprintf(fileName, sizeof(fileName), "%s", tempFile.name());

@@ -26,6 +26,9 @@ void identifyBoard()
   else if (idValue > (3300 * 1 / 3 * 0.9) && idValue < (3300 * 1 / 3 * 1.1))
   {
     productVariant = REFERENCE_STATION;
+    //We can't auto-detect the ZED version if the firmware is in configViaEthernet mode,
+    //so fake it here - otherwise messageSupported always returns false
+    zedFirmwareVersionInt = 112;
   }
   else
   {

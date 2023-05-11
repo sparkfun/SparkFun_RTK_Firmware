@@ -301,40 +301,42 @@ void menuMessagesBaseRTCM()
     }
     else if (incoming == 2)
     {
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005")] = 1; //1105
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074")] = 1; //1074
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077")] = 0; //1077
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084")] = 1; //1084
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087")] = 0; //1087
+      int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005") - firstRTCMRecord] = 1; //1105
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074") - firstRTCMRecord] = 1; //1074
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077") - firstRTCMRecord] = 0; //1077
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084") - firstRTCMRecord] = 1; //1084
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087") - firstRTCMRecord] = 0; //1087
 
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094")] = 1; //1094
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097")] = 0; //1097
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124")] = 1; //1124
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127")] = 0; //1127
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230")] = 10; //1230
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094") - firstRTCMRecord] = 1; //1094
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097") - firstRTCMRecord] = 0; //1097
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124") - firstRTCMRecord] = 1; //1124
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127") - firstRTCMRecord] = 0; //1127
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230") - firstRTCMRecord] = 10; //1230
 
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0")] = 0; //4072_0
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1")] = 0; //4072_1
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0") - firstRTCMRecord] = 0; //4072_0
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1") - firstRTCMRecord] = 0; //4072_1
 
       systemPrintln("Reset to Defaults (1005/74/84/94/124 1Hz & 1230 0.1Hz)");
       restartBase = true;
     }
     else if (incoming == 3)
     {
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005")] = 10; //1105 0.1Hz
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074")] = 2; //1074 0.5Hz
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077")] = 0; //1077
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084")] = 2; //1084 0.5Hz
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087")] = 0; //1087
+      int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005") - firstRTCMRecord] = 10; //1105 0.1Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074") - firstRTCMRecord] = 2; //1074 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077") - firstRTCMRecord] = 0; //1077
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084") - firstRTCMRecord] = 2; //1084 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087") - firstRTCMRecord] = 0; //1087
 
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094")] = 2; //1094 0.5Hz
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097")] = 0; //1097
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124")] = 2; //1124 0.5Hz
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127")] = 0; //1127
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230")] = 10; //1230 0.1Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094") - firstRTCMRecord] = 2; //1094 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097") - firstRTCMRecord] = 0; //1097
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124") - firstRTCMRecord] = 2; //1124 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127") - firstRTCMRecord] = 0; //1127
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230") - firstRTCMRecord] = 10; //1230 0.1Hz
 
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0")] = 0; //4072_0
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1")] = 0; //4072_1
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0") - firstRTCMRecord] = 0; //4072_0
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1") - firstRTCMRecord] = 0; //4072_1
 
       systemPrintln("Reset to Low Bandwidth Link (1074/84/94/124 0.5Hz & 1005/230 0.1Hz)");
       restartBase = true;
@@ -392,7 +394,7 @@ void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
       int msgNumber = (incoming - 1) + startOfBlock;
 
       if (messageSupported(msgNumber) == true)
-        inputMessageRate(localMessageRate[msgNumber], msgNumber);
+        inputMessageRate(localMessageRate[msgNumber], msgNumber + rtcmOffset);
       else
         printUnknown(incoming);
     }

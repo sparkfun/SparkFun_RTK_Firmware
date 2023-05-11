@@ -345,6 +345,7 @@ function parseIncoming(msg) {
         ge("radioType").dispatchEvent(new CustomEvent('change'));
         ge("antennaReferencePoint").dispatchEvent(new CustomEvent('change'));
         ge("autoIMUmountAlignment").dispatchEvent(new CustomEvent('change'));
+        ge("enableARPLogging").dispatchEvent(new CustomEvent('change'));
 
         updateECEFList();
         updateGeodeticList();

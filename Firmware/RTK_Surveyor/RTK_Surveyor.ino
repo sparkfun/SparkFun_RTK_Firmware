@@ -252,6 +252,7 @@ class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
     //SemaphoreHandle_t gnssSemaphore = nullptr;
 
     //Revert to a simple bool lock. The Mutex was causing occasional panics caused by vTaskPriorityDisinheritAfterTimeout in lock()
+    //(I think possibly / probably caused by the GNSS not being pinned to one core?
     bool iAmLocked = false;
     
     bool createLock(void)

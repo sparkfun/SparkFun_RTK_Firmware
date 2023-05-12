@@ -147,7 +147,7 @@ void bluetoothStart()
 #ifdef COMPILE_BT
   if (bluetoothState == BT_OFF)
   {
-    char stateName[11];
+    char stateName[11] = { 0 };
     if (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX)
       strncpy(stateName, "Rover-", sizeof(stateName) - 1);
     else if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)

@@ -249,25 +249,51 @@ uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported an
 class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 {
   public:
-    SemaphoreHandle_t gnssSemaphore = nullptr;
+    //SemaphoreHandle_t gnssSemaphore = nullptr;
+
+    //Revert to a simple bool lock. The Mutex was causing occasional panics caused by vTaskPriorityDisinheritAfterTimeout in lock()
+    bool iAmLocked = false;
+    
     bool createLock(void)
     {
-      if (gnssSemaphore == nullptr)
-        gnssSemaphore = xSemaphoreCreateMutex();
-      return gnssSemaphore;
+      //if (gnssSemaphore == nullptr)
+      //  gnssSemaphore = xSemaphoreCreateMutex();
+      //return gnssSemaphore;
+      
+      return true;
     }
     bool lock(void)
     {
-      return (xSemaphoreTake(gnssSemaphore, 2100) == pdPASS);
+      //return (xSemaphoreTake(gnssSemaphore, 2100) == pdPASS);
+      
+      if (!iAmLocked)
+      {
+        iAmLocked = true;
+        return true;
+      }
+      
+      unsigned long startTime = millis();
+      while (((millis() - startTime) < 2100) && (iAmLocked))
+        delay(1); //Yield
+
+      if (!iAmLocked)
+      {
+        iAmLocked = true;
+        return true;
+      }
+
+      return false;
     }
     void unlock(void)
     {
-      xSemaphoreGive(gnssSemaphore);
+      //xSemaphoreGive(gnssSemaphore);
+
+      iAmLocked = false;
     }
     void deleteLock(void)
     {
-      vSemaphoreDelete(gnssSemaphore);
-      gnssSemaphore = nullptr;
+      //vSemaphoreDelete(gnssSemaphore);
+      //gnssSemaphore = nullptr;
     }
 };
 

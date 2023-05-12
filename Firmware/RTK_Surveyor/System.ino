@@ -381,7 +381,7 @@ bool createTestFile()
 {
   FileSdFatMMC testFile;
 
-  //TODO: double-check that SdFat tollerates preceeding slashes
+  //TODO: double-check that SdFat tollerates preceding slashes
   char testFileName[40] = "/testfile.txt";
 
   //Attempt to write to the file system

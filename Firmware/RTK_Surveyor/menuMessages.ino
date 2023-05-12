@@ -450,7 +450,7 @@ void setGNSSMessageRates(uint8_t *localMessageRate, uint8_t msgRate)
 //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
 void beginLogging()
 {
-  beginLogging("");
+  beginLogging(nullptr);
 }
 
 void beginLogging(const char *customFileName)
@@ -462,22 +462,29 @@ void beginLogging(const char *customFileName)
   {
     if (online.microSD == true && settings.enableLogging == true && online.rtc == true) //We can't create a file until we have date/time
     {
-      if (strlen(customFileName) == 0)
+      if (customFileName == nullptr)
       {
         //Generate a standard log file name
         if (reuseLastLog == true) //attempt to use previous log
         {
-          reuseLastLog = false;
+          reuseLastLog = false; //Don't reuse the file a second time
 
-          if (findLastLog(logFileName) == false)
+          //findLastLog does not add the preceding slash. We need to do it manually
+          logFileName[0] = '/'; //Erase any existing file name
+          logFileName[1] = 0;
+
+          if (findLastLog(&logFileName[1], sizeof(logFileName) - 1) == false)
+          {
+            logFileName[0] = 0; //No file found. Erase the slash
             log_d("Failed to find last log. Making new one.");
+          }
           else
             log_d("Using last log file.");
         }
         else
         {
           //We are not reusing the last log, so erase the global/original filename
-          strcpy(logFileName, "");
+          logFileName[0] = 0;
         }
 
         if (strlen(logFileName) == 0)
@@ -491,7 +498,7 @@ void beginLogging(const char *customFileName)
       }
       else
       {
-        strncpy(logFileName, customFileName, sizeof(logFileName) - 1);
+        strncpy(logFileName, customFileName, sizeof(logFileName) - 1); //customFileName already has the preceding slash added
       }
 
       //Allocate the ubxFile
@@ -658,8 +665,9 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
 }
 
 //Finds last log
-//Returns true if succesful
-bool findLastLog(char *lastLogName)
+//Returns true if successful
+//lastLogName will contain the name of the last log file on return - ** but without the preceding slash **
+bool findLastLog(char *lastLogName, size_t lastLogNameLen)
 {
   bool foundAFile = false;
 
@@ -678,7 +686,7 @@ bool findLastLog(char *lastLogName)
         SdFile dir;
         const char* LOG_EXTENSION = "ubx";
         const char* LOG_PREFIX = platformFilePrefix;
-        char fname[50]; //Handle long file names
+        char fname[100]; //Handle long file names
 
         dir.open("/"); //Open root
 
@@ -693,7 +701,7 @@ bool findLastLog(char *lastLogName)
             {
               if (strstr(fname, LOG_PREFIX) != nullptr)
               {
-                strncpy(lastLogName, fname, sizeof(lastLogName) - 1); //Store this file as last known log file
+                strncpy(lastLogName, fname, lastLogNameLen - 1); //Store this file as last known log file
                 foundAFile = true;
               }
             }
@@ -708,7 +716,7 @@ bool findLastLog(char *lastLogName)
         File dir;
         const char* LOG_EXTENSION = "ubx";
         const char* LOG_PREFIX = platformFilePrefix;
-        char fname[50]; //Handle long file names
+        char fname[100]; //Handle long file names
 
         dir = SD_MMC.open("/"); //Open root
 
@@ -726,7 +734,7 @@ bool findLastLog(char *lastLogName)
               {
                 if (strstr(fname, LOG_PREFIX) != nullptr)
                 {
-                  strncpy(lastLogName, fname, sizeof(lastLogName) - 1); //Store this file as last known log file
+                  strncpy(lastLogName, fname, lastLogNameLen - 1); //Store this file as last known log file
                   foundAFile = true;
                 }
               }

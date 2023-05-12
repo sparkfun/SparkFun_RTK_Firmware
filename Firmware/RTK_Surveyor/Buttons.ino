@@ -28,11 +28,18 @@ void powerDown(bool displayInfo)
   //Prevent other tasks from logging, even if access to the microSD card was denied
   online.logging = false;
 
+  //If we are in configureViaEthernet mode, we need to shut down the async web server
+  //otherwise it causes a core panic and badness at the restart
+  if (configureViaEthernet)
+    endEthernerWebServerESP32W5500();
+      
   if (displayInfo == true)
   {
     displayShutdown();
     delay(2000);
   }
+
+  beginLEDs(); //Turn LEDs off
 
   if (pin_powerSenseAndControl >= 0)
   {

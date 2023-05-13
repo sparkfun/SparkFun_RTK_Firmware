@@ -97,7 +97,7 @@ typedef enum
 ButtonState buttonPreviousState = BUTTON_ROVER;
 
 //Data port mux (RTK Express) can enter one of four different connections
-typedef enum muxConnectionType_e
+typedef enum
 {
   MUX_UBLOX_NMEA = 0,
   MUX_PPS_EVENTTRIGGER,
@@ -351,7 +351,7 @@ typedef enum
 #include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3
 
 //Each constellation will have its config key, enable, and a visible name
-typedef struct ubxConstellation
+typedef struct
 {
   uint32_t configKey;
   uint8_t gnssID;
@@ -365,7 +365,7 @@ typedef struct ubxConstellation
 
 //Different ZED modules support different messages (F9P vs F9R vs F9T)
 //Create binary packed struct for different platforms
-typedef enum ubxPlatform
+typedef enum
 {
   PLATFORM_F9P = 0b0001,
   PLATFORM_F9R = 0b0010,
@@ -395,7 +395,7 @@ typedef enum
 //Struct to describe the necessary info for each type of UBX message
 //Each message will have a key, ID, class, visible name, and various info about which platforms the message is supported on
 //Message rates are store within NVM
-typedef struct ubxMsg
+typedef struct
 {
   const uint32_t msgConfigKey;
   const uint8_t msgID;
@@ -614,14 +614,14 @@ const ubxMsg ubxMessages[] =
 //Each command will have a key, and minimum F9P/F9R versions that support that command
 typedef struct
 {
-  uint32_t cmdKey;
-  const char* cmdTextName;
-  uint16_t f9pFirmwareVersionSupported; //The minimum version this message is supported. 0 = all versions. 9999 = Not supported
-  uint16_t f9rFirmwareVersionSupported;
+  const uint32_t cmdKey;
+  const char cmdTextName[30];
+  const uint16_t f9pFirmwareVersionSupported; //The minimum version this message is supported. 0 = all versions. 9999 = Not supported
+  const uint16_t f9rFirmwareVersionSupported;
 } ubxCmd;
 
 //Static array containing all the compatible commands
-ubxCmd ubxCommands[] =
+const ubxCmd ubxCommands[] =
 {
   {UBLOX_CFG_TMODE_MODE, "CFG_TMODE_MODE", 0, 9999}, //Survey mode is only available on ZED-F9P modules
 

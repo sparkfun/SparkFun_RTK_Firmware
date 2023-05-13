@@ -1036,7 +1036,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "fixedLatText") == 0)
   {
     double newCoordinate = 0.0;
-    CoordinateInputType newCoordinateInputType = identifyInputType((char *)settingValueStr, &newCoordinate);
+    CoordinateInputType newCoordinateInputType = coordinateIdentifyInputType((char *)settingValueStr, &newCoordinate);
     if (newCoordinateInputType == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
       settings.fixedLat = 0.0;
     else
@@ -1048,7 +1048,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "fixedLongText") == 0)
   {
     double newCoordinate = 0.0;
-    if (identifyInputType((char *)settingValueStr, &newCoordinate) == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+    if (coordinateIdentifyInputType((char *)settingValueStr, &newCoordinate) == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
       settings.fixedLong = 0.0;
     else
       settings.fixedLong = newCoordinate;

@@ -19,13 +19,13 @@
   Settings are loaded from microSD if available otherwise settings are pulled from ESP32's file system LittleFS.
 */
 
-#define COMPILE_WIFI //Comment out to remove WiFi functionality
-#define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
-#define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
-#define COMPILE_BT //Comment out to remove Bluetooth functionality
-#define COMPILE_L_BAND //Comment out to remove L-Band functionality
-#define COMPILE_SD_MMC //Comment out to remove REFERENCE_STATION microSD SD_MMC support
-#define COMPILE_ETHERNET //Comment out to remove REFERENCE_STATION Ethernet (W5500) support
+//#define COMPILE_WIFI //Comment out to remove WiFi functionality
+//#define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
+//#define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
+//#define COMPILE_BT //Comment out to remove Bluetooth functionality
+//#define COMPILE_L_BAND //Comment out to remove L-Band functionality
+//#define COMPILE_SD_MMC //Comment out to remove REFERENCE_STATION microSD SD_MMC support
+//#define COMPILE_ETHERNET //Comment out to remove REFERENCE_STATION Ethernet (W5500) support
 //#define REF_STN_GNSS_DEBUG //Uncomment this line to output GNSS library debug messages on serialGNSS. Ref Stn only. Needs ENABLE_DEVELOPER
 
 //Always define ENABLE_DEVELOPER to enable its use in conditional statements

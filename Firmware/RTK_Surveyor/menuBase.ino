@@ -40,12 +40,12 @@ void menuBase()
         systemPrint("3) Set Lat/Long/Altitude coordinates: ");
 
         char coordinatePrintable[50];
-        convertInput(settings.fixedLat, settings.coordinateInputType, coordinatePrintable, sizeof(coordinatePrintable));
+        coordinateConvertInput(settings.fixedLat, settings.coordinateInputType, coordinatePrintable, sizeof(coordinatePrintable));
         systemPrint(coordinatePrintable);
 
         systemPrint(", ");
 
-        convertInput(settings.fixedLong, settings.coordinateInputType, coordinatePrintable, sizeof(coordinatePrintable));
+        coordinateConvertInput(settings.fixedLong, settings.coordinateInputType, coordinatePrintable, sizeof(coordinatePrintable));
         systemPrint(coordinatePrintable);
 
         systemPrint(", ");
@@ -54,7 +54,7 @@ void menuBase()
         systemPrintln();
 
         systemPrint("4) Set coordinate display format: ");
-        systemPrintln(printableInputType(settings.coordinateInputType));
+        systemPrintln(coordinatePrintableInputType(settings.coordinateInputType));
 
         systemPrintf("5) Set Antenna Height: %dmm\r\n", settings.antennaHeight);
 
@@ -176,7 +176,7 @@ void menuBase()
         {
           double fixedLat = 0.0;
           //Identify which type of method they used
-          if (identifyInputType(userEntry, &fixedLat) != COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+          if (coordinateIdentifyInputType(userEntry, &fixedLat) != COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
           {
             settings.fixedLat = fixedLat;
 
@@ -187,10 +187,10 @@ void menuBase()
               double fixedLong = 0.0;
 
               //Identify which type of method they used
-              if (identifyInputType(userEntry, &fixedLong) != COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+              if (coordinateIdentifyInputType(userEntry, &fixedLong) != COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
               {
                 settings.fixedLong = fixedLong;
-                settings.coordinateInputType = identifyInputType(userEntry, &fixedLong);
+                settings.coordinateInputType = coordinateIdentifyInputType(userEntry, &fixedLong);
 
                 systemPrint("\nAltitude in meters (ex: 1560.2284): ");
                 double fixedAltitude = getDouble();
@@ -343,10 +343,10 @@ void menuBaseCoordinateType()
     systemPrintln("The coordinate type is autodetected during entry but can be changed here.");
 
     systemPrint("Current display format: ");
-    systemPrintln(printableInputType(settings.coordinateInputType));
+    systemPrintln(coordinatePrintableInputType(settings.coordinateInputType));
 
     for (int x = 0 ; x < COORDINATE_INPUT_TYPE_INVALID_UNKNOWN ; x++)
-      systemPrintf("%d) %s\r\n", x + 1, printableInputType( (CoordinateInputType)x ));
+      systemPrintf("%d) %s\r\n", x + 1, coordinatePrintableInputType( (CoordinateInputType)x ));
 
     systemPrintln("x) Exit");
 

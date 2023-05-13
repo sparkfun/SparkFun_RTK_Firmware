@@ -175,7 +175,7 @@ bool managerFileOpen = false;
 
 TaskHandle_t sdSizeCheckTaskHandle = nullptr; //Store handles so that we can kill the task once size is found
 const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being the lowest
-const int sdSizeCheckStackSize = 2000;
+const int sdSizeCheckStackSize = 3000;
 bool sdSizeCheckTaskComplete = false;
 
 char logFileName[sizeof("SFE_Facet_L-Band_230101_120101.ubx_plusExtraSpace")] = "";

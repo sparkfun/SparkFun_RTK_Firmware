@@ -334,7 +334,7 @@ void checkBatteryLevels()
       snprintf(tempStr, sizeof(tempStr), "Red");
     else if (battLevel < 50)
       snprintf(tempStr, sizeof(tempStr), "Yellow");
-    else if (battLevel >= 50)
+    else if (battLevel <= 110)
       snprintf(tempStr, sizeof(tempStr), "Green");
     else
       snprintf(tempStr, sizeof(tempStr), "No batt");

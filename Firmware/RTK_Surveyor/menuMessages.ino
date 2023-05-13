@@ -376,7 +376,7 @@ void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
       rtcmOffset = getMessageNumberByName("UBX_RTCM_1005");
     }
     else
-      setMessageOffsets(ubxMessages, messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
+      setMessageOffsets(&ubxMessages[0], messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
 
     for (int x = 0 ; x < (endOfBlock - startOfBlock) ; x++)
     {
@@ -760,7 +760,7 @@ bool findLastLog(char *lastLogName, size_t lastLogNameLen)
 }
 
 //Given a unique string, find first and last records containing that string in message array
-void setMessageOffsets(ubxMsg *localMessage, const char* messageType, int& startOfBlock, int& endOfBlock)
+void setMessageOffsets(const ubxMsg *localMessage, const char* messageType, int& startOfBlock, int& endOfBlock)
 {
   char messageNamePiece[40]; //UBX_RTCM
   snprintf(messageNamePiece, sizeof(messageNamePiece), "UBX_%s", messageType); //Put UBX_ infront of type

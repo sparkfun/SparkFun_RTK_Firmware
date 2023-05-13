@@ -397,18 +397,18 @@ typedef enum
 //Message rates are store within NVM
 typedef struct ubxMsg
 {
-  uint32_t msgConfigKey;
-  uint8_t msgID;
-  uint8_t msgClass;
-  uint8_t msgDefaultRate;
-  const char* msgTextName;
-  uint32_t filterMask;
-  uint16_t f9pFirmwareVersionSupported; //The minimum version this message is supported. 0 = all versions. 9999 = Not supported
-  uint16_t f9rFirmwareVersionSupported;
+  const uint32_t msgConfigKey;
+  const uint8_t msgID;
+  const uint8_t msgClass;
+  const uint8_t msgDefaultRate;
+  const char msgTextName[20];
+  const uint32_t filterMask;
+  const uint16_t f9pFirmwareVersionSupported; //The minimum version this message is supported. 0 = all versions. 9999 = Not supported
+  const uint16_t f9rFirmwareVersionSupported;
 } ubxMsg;
 
 //Static array containing all the compatible messages
-ubxMsg ubxMessages[] =
+const ubxMsg ubxMessages[] =
 {
   //NMEA
   {UBLOX_CFG_MSGOUT_NMEA_ID_DTM_UART1, UBX_NMEA_DTM, UBX_CLASS_NMEA, 0, "UBX_NMEA_DTM", SFE_UBLOX_FILTER_NMEA_DTM, 112, 120},

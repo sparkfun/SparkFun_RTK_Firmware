@@ -612,7 +612,7 @@ ubxMsg ubxMessages[] =
 
 //Struct to describe the necessary info for each UBX command
 //Each command will have a key, and minimum F9P/F9R versions that support that command
-typedef struct ubxCmd
+typedef struct
 {
   uint32_t cmdKey;
   const char* cmdTextName;
@@ -847,7 +847,6 @@ typedef struct {
   int16_t minCNO_F9R = 20; //Minimum satellite signal level for navigation. ZED-F9R default is 20 dBHz
 } Settings;
 Settings settings;
-const Settings defaultSettings = Settings();
 
 //Monitor which devices on the device are on or offline.
 struct struct_online {

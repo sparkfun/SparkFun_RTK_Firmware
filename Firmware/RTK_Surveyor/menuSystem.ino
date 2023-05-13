@@ -1076,7 +1076,7 @@ void printFileList()
               struct tm *timeinfo = localtime(&lastWrite);
 
               char fileDateChar[20];
-              snprintf(fileDateChar, 20, "%.0f-%02.0f-%02.0f",
+              snprintf(fileDateChar, sizeof(fileDateChar), "%.0f-%02.0f-%02.0f",
                        (float)timeinfo->tm_year + 1900, //Year - ESP32 2.0.2 starts the year at 1900...
                        (float)timeinfo->tm_mon + 1,     //Month
                        (float)timeinfo->tm_mday         //Day

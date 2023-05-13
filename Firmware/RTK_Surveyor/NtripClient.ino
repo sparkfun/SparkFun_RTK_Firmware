@@ -219,7 +219,7 @@ void ntripClientResponse(char * response, size_t maxLength)
 }
 
 //Update the state of the NTRIP client state machine
-void ntripClientSetState(byte newState)
+void ntripClientSetState(NTRIPClientState newState)
 {
   if (ntripClientState == newState)
     systemPrint("*");

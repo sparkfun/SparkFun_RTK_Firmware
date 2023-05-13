@@ -154,7 +154,7 @@ enum WiFiState
 };
 volatile byte wifiState = WIFI_OFF;
 
-typedef enum ESPNOWState
+typedef enum
 {
   ESPNOW_OFF,
   ESPNOW_ON,
@@ -164,7 +164,7 @@ typedef enum ESPNOWState
 } ESPNOWState;
 volatile ESPNOWState espnowState = ESPNOW_OFF;
 
-enum NTRIPClientState
+typedef enum
 {
   NTRIP_CLIENT_OFF = 0,         //Using Bluetooth or NTRIP server
   NTRIP_CLIENT_ON,              //WIFI_START state
@@ -172,10 +172,10 @@ enum NTRIPClientState
   NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED, //Connected to an access point or Ethernet
   NTRIP_CLIENT_CONNECTING,      //Attempting a connection to the NTRIP caster
   NTRIP_CLIENT_CONNECTED,       //Connected to the NTRIP caster
-};
-volatile byte ntripClientState = NTRIP_CLIENT_OFF;
+} NTRIPClientState;
+volatile NTRIPClientState ntripClientState = NTRIP_CLIENT_OFF;
 
-enum NTRIPServerState
+typedef enum
 {
   NTRIP_SERVER_OFF = 0,         //Using Bluetooth or NTRIP client
   NTRIP_SERVER_ON,              //WIFI_START state
@@ -185,10 +185,10 @@ enum NTRIPServerState
   NTRIP_SERVER_CONNECTING,      //Attempting a connection to the NTRIP caster
   NTRIP_SERVER_AUTHORIZATION,   //Validate the credentials
   NTRIP_SERVER_CASTING,         //Sending correction data to the NTRIP caster
-};
-volatile byte ntripServerState = NTRIP_SERVER_OFF;
+} NTRIPServerState;
+volatile NTRIPServerState ntripServerState = NTRIP_SERVER_OFF;
 
-enum RtcmTransportState
+typedef enum
 {
   RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3 = 0,
   RTCM_TRANSPORT_STATE_READ_LENGTH_1,
@@ -200,21 +200,23 @@ enum RtcmTransportState
   RTCM_TRANSPORT_STATE_READ_CRC_2,
   RTCM_TRANSPORT_STATE_READ_CRC_3,
   RTCM_TRANSPORT_STATE_CHECK_CRC
-};
+} RtcmTransportState;
 
-typedef enum RadioType_e
+typedef enum
 {
   RADIO_EXTERNAL = 0,
   RADIO_ESPNOW,
 } RadioType_e;
 
-typedef enum BluetoothRadioType_e
+typedef enum
 {
   BLUETOOTH_RADIO_SPP = 0,
   BLUETOOTH_RADIO_BLE,
   BLUETOOTH_RADIO_OFF,
 } BluetoothRadioType_e;
 
+//Don't make this a typedef enum as logTestState
+//can be incremented beyond LOGTEST_END
 enum LogTestState
 {
   LOGTEST_START = 0,
@@ -230,9 +232,8 @@ enum LogTestState
   LOGTEST_4HZ_7MSG_50MS,
   LOGTEST_10HZ_5MSG_50MS,
   LOGTEST_10HZ_7MSG_50MS,
-
   LOGTEST_END,
-} ;
+};
 uint8_t logTestState = LOGTEST_END;
 
 typedef struct WiFiNetwork
@@ -286,12 +287,12 @@ typedef enum
 } ethernetStatus_e;
 
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
-enum BTState
+typedef enum
 {
   BT_OFF = 0,
   BT_NOTCONNECTED,
   BT_CONNECTED,
-};
+} BTState;
 
 //Return values for getString()
 typedef enum

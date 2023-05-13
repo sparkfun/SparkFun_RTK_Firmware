@@ -1459,7 +1459,7 @@ uint8_t loadProfileNames()
   //Check LittleFS and SD for profile names
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
   {
-    char fileName[56];
+    char fileName[60];
     snprintf(fileName, sizeof(fileName), "/%s_Settings_%d.txt", platformFilePrefix, x);
 
     if (getProfileName(fileName, profileNames[x], sizeof(profileNames[x])) == true)

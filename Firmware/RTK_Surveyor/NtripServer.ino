@@ -173,7 +173,7 @@ void ntripServerResponse(char * response, size_t maxLength)
 }
 
 //Update the state of the NTRIP server state machine
-void ntripServerSetState(byte newState)
+void ntripServerSetState(NTRIPServerState newState)
 {
   if (ntripServerState == newState)
     systemPrint("*");

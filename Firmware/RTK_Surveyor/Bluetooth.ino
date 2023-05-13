@@ -29,7 +29,7 @@
 
 #ifdef COMPILE_BT
 BTSerialInterface *bluetoothSerial;
-static volatile byte bluetoothState = BT_OFF;
+static volatile BTState bluetoothState = BT_OFF;
 
 //----------------------------------------
 //Bluetooth Routines - compiled out

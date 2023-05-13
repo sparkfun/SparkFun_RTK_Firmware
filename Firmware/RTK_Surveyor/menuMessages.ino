@@ -19,7 +19,7 @@ void menuLog()
       stringHumanReadableSize(freeSpace, sdFreeSpace);
       freeSpace.toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
 
-      char myString[200];
+      char myString[60];
       snprintf(myString, sizeof(myString),
                "SD card size: %s / Free space: %s",
                sdCardSizeChar,
@@ -931,10 +931,19 @@ void updateLogTest()
   int messages = 5;
   int semaphoreWait = 10;
 
-  logTestState++; //Advance to next state
+  //Advance to next state
+  //Note: logTestState is LOGTEST_END by default.
+  //      The increment causes the default switch case to be executed, resetting logTestState to LOGTEST_END.
+  //      The test is started via the debug menu, setting logTestState to LOGTEST_START.
+  logTestState++;
 
   switch (logTestState)
   {
+    default:
+      logTestState = LOGTEST_END;
+      settings.runLogTest = false;
+      break;
+
     case (LOGTEST_4HZ_5MSG_10MS):
       //During the first test, create the log file
       reuseLastLog = false;
@@ -1017,11 +1026,6 @@ void updateLogTest()
       semaphoreWait = 10;
       setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 / SPI and USB ports
       log_d("Log Test Complete");
-      break;
-
-    default:
-      logTestState = LOGTEST_END;
-      settings.runLogTest = false;
       break;
   }
 

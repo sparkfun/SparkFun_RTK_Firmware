@@ -297,7 +297,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
 
     logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
 
-    char slashFileName[50];
+    char slashFileName[60];
     snprintf(slashFileName, sizeof(slashFileName), "/%s", request->getParam("name")->value().c_str());
 
     bool fileExists;
@@ -811,7 +811,7 @@ void createSettingsString(char* newSettings)
     else //batt level > 75
       iconLevel = 3;
 
-    char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+    char batteryIconFileName[sizeof("src/Battery2_Charging.png__")]; //sizeof() includes 1 for \0 termination
 
     if (externalPowerConnected)
       snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
@@ -821,7 +821,7 @@ void createSettingsString(char* newSettings)
     stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
 
     //Determine battery percent
-    char batteryPercent[sizeof("+100%")];
+    char batteryPercent[sizeof("+100%__")];
     int tempLevel = battLevel;
     if (tempLevel > 100) tempLevel = 100;
 
@@ -974,7 +974,7 @@ void createDynamicDataString(char* settingsCSV)
     else //batt level > 75
       iconLevel = 3;
 
-    char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+    char batteryIconFileName[sizeof("src/Battery2_Charging.png__")]; //sizeof() includes 1 for \0 termination
 
     if (externalPowerConnected)
       snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
@@ -984,7 +984,7 @@ void createDynamicDataString(char* settingsCSV)
     stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
 
     //Determine battery percent
-    char batteryPercent[sizeof("+100%")];
+    char batteryPercent[sizeof("+100%__")];
     if (externalPowerConnected)
       snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", battLevel);
     else

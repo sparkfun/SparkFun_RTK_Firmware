@@ -304,13 +304,13 @@ Using the library manager in the Arduino IDE, for each of the libraries below:
     4. Click on the Install button in the lower right
 
 The RTK firmware requires the following libraries:
-    * [Arduino JSON](https://github.com/bblanchon/ArduinoJson)
+    * [ArduinoJson](https://github.com/bblanchon/ArduinoJson)
     * [ESP32Time](https://github.com/fbiego/ESP32Time)
-    * [ESP32 BleSerial](https://github.com/avinabmalla/ESP32_BleSerial)
+    * [ESP32_BleSerial](https://github.com/avinabmalla/ESP32_BleSerial)
     * [ESP32-OTA-Pull](https://github.com/mikalhart/ESP32-OTA-Pull)
     * Ethernet
     * [JC_Button](https://github.com/JChristensen/JC_Button)
-    * [PubSub Client for MQTT](https://github.com/knolleary/pubsubclient)
+    * [PubSubClient](https://github.com/knolleary/pubsubclient)
     * [SdFat](https://github.com/greiman/SdFat)
     * [SparkFun LIS2DH12 Arduino Library](https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library)
     * [SparkFun MAX1704x Fuel Gauge Arduino Library](https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library)

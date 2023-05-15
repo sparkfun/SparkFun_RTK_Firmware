@@ -67,9 +67,9 @@ jobs:
         run: arduino-cli lib install
           ESP32Time@2.0.0
           JC_Button@2.1.2
-          sdFat@2.1.1
+          "SdFat"@2.1.1
           ArduinoJson@6.19.4
-          pubsubclient@2.8.0
+          PubSubClient@2.8.0
           ESP32_BleSerial@1.0.4
           "SparkFun u-blox GNSS v3"@3.0.9
           "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4

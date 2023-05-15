@@ -1,7 +1,7 @@
 name: Build RTK Firmware
-on: 
+on:
   workflow_dispatch:
-    branches: 
+    branches:
 
 env:
   FILENAME_PREFIX: RTK_Surveyor_Firmware
@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    
+
     name: Build
     runs-on: ubuntu-latest
 
@@ -84,9 +84,9 @@ jobs:
       - name: Get Libraries
         run: arduino-cli lib install --git-url
           https://github.com/sparkfun/SparkFun_Qwiic_OLED_Arduino_Library.git
-          https://github.com/me-no-dev/ESPAsyncWebServer.git 
+          https://github.com/me-no-dev/ESPAsyncWebServer.git
           https://github.com/me-no-dev/AsyncTCP.git
-          
+
       #Incorporate ESP-Now patch into core: https://github.com/espressif/arduino-esp32/pull/7044/files
       #- name: Patch ESP32 Core
       #  run: |
@@ -94,7 +94,7 @@ jobs:
       #    cp WiFiGeneric.cpp /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/libraries/WiFi/src/WiFiGeneric.cpp
 
       #Patch Server.h to avoid https://github.com/arduino-libraries/Ethernet/issues/88#issuecomment-455498941
-      #Note: this patch can be removed if/when we upgrade to ESP32 core >= v2.0.6 
+      #Note: this patch can be removed if/when we upgrade to ESP32 core >= v2.0.6
       - name: Patch ESP32 Server.h for Ethernet
         run: |
           cd Firmware/RTK_Surveyor/Patch/
@@ -103,7 +103,7 @@ jobs:
       - name: Compile Sketch
         run: arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${{ env.DEBUG_LEVEL }} ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
           --build-property build.partitions=partitions
-          --build-property upload.maximum_size=3145728 
+          --build-property upload.maximum_size=3145728
           --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\" \"-DFIRMWARE_VERSION_MAJOR=$FIRMWARE_VERSION_MAJOR\" \"-DFIRMWARE_VERSION_MINOR=$FIRMWARE_VERSION_MINOR\" \"-DENABLE_DEVELOPER=${{ env.ENABLE_DEVELOPER }}\""
           --export-binaries
 
@@ -114,7 +114,7 @@ jobs:
 
       - name: Upload binary to action
         uses: actions/upload-artifact@v3
-        with: 
+        with:
           name: ${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}
           path: ./Firmware/RTK_Surveyor/build/esp32.esp32.esp32/${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}.bin
 

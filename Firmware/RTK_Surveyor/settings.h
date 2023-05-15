@@ -385,6 +385,9 @@ typedef enum
   COORDINATE_INPUT_TYPE_DD_MM_SS, //DD MM SS.ssssss
   COORDINATE_INPUT_TYPE_DD_MM_SS_DASH, //DD-MM-SS.ssssss
   COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL, //DD°MM'SS.ssssss"
+  COORDINATE_INPUT_TYPE_DDMMSS_NO_DECIMAL, //DDMMSS - No decimal
+  COORDINATE_INPUT_TYPE_DD_MM_SS_NO_DECIMAL, //DD MM SS - No decimal
+  COORDINATE_INPUT_TYPE_DD_MM_SS_DASH_NO_DECIMAL, //DD-MM-SS - No decimal
   COORDINATE_INPUT_TYPE_INVALID_UNKNOWN,
 } CoordinateInputType;
 
@@ -845,6 +848,7 @@ typedef struct {
   uint16_t lbandFixTimeout_seconds = 180; //Number of seconds of no L-Band fix before resetting ZED
   int16_t minCNO_F9P = 6; //Minimum satellite signal level for navigation. ZED-F9P default is 6 dBHz
   int16_t minCNO_F9R = 20; //Minimum satellite signal level for navigation. ZED-F9R default is 20 dBHz
+  bool mdnsEnable = false; //Allows locating of device from browser address 'rtk.local'
 } Settings;
 Settings settings;
 

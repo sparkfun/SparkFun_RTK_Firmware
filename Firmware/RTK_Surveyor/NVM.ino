@@ -403,6 +403,9 @@ void recordSystemSettingsToFile(File * settingsFile)
     settingsFile->printf("%s=%d\r\n", "ntpRootDispersion", settings.ntpRootDispersion);
     settingsFile->printf("%s=%s\r\n", "ntpReferenceId", settings.ntpReferenceId);
   }
+
+  settingsFile->printf("%s=%d\r\n", "mdnsEnable", settings.mdnsEnable);
+
 }
 
 //Given a fileName, parse the file and load the given settings struct
@@ -1235,6 +1238,8 @@ bool parseLine(char* str, Settings *settings)
       settings->updateZEDSettings = true;
     }
   }
+  else if (strcmp(settingName, "mdnsEnable") == 0)
+      settings->mdnsEnable = d;
 
   //Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
   //Must be last on else list

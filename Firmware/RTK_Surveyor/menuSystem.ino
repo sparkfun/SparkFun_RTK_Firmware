@@ -409,6 +409,9 @@ void menuWiFi()
     if (settings.enableTcpServer == true || settings.enableTcpClient == true)
       systemPrintf("p) WiFi TCP Port: %ld\r\n", settings.wifiTcpPort);
 
+    systemPrint("m) MDNS: ");
+    systemPrintf("%s\r\n", settings.mdnsEnable ? "Enabled" : "Disabled");
+
     systemPrintln("x) Exit");
 
     byte incoming = getCharacterNumber();
@@ -472,6 +475,10 @@ void menuWiFi()
           restartWiFi = true;
         }
       }
+    }
+    else if (incoming == 'm')
+    {
+      settings.mdnsEnable ^= 1;
     }
     else if (incoming == 'x')
       break;

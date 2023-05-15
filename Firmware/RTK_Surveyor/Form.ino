@@ -17,6 +17,14 @@ void startWebServer(bool startWiFi, int httpPort)
     if (wifiStartAP() == false) //Exits calling wifiConnect()
       return;
 
+  if (settings.mdnsEnable == true)
+  {
+    if (MDNS.begin("rtk") == false) //This should make the module findable from 'rtk.local' in browser
+      log_d("Error setting up MDNS responder!");
+    else
+      MDNS.addService("http", "tcp", 80); //Add service to MDNS-SD
+  }
+
   incomingSettings = (char*)malloc(AP_CONFIG_SETTING_SIZE);
   memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
 
@@ -848,6 +856,8 @@ void createSettingsString(char* newSettings)
   else
     stringRecord(newSettings, "minCNO", settings.minCNO_F9P);
 
+  stringRecord(newSettings, "mdnsEnable", settings.mdnsEnable);
+
   //Add ECEF and Geodetic station data to the end of settings
   for (int index = 0; index < COMMON_COORDINATES_MAX_STATIONS ; index++) //Arbitrary 50 station limit
   {
@@ -1038,7 +1048,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "fixedLatText") == 0)
   {
     double newCoordinate = 0.0;
-    CoordinateInputType newCoordinateInputType = identifyInputType((char *)settingValueStr, &newCoordinate);
+    CoordinateInputType newCoordinateInputType = coordinateIdentifyInputType((char *)settingValueStr, &newCoordinate);
     if (newCoordinateInputType == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
       settings.fixedLat = 0.0;
     else
@@ -1050,7 +1060,7 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "fixedLongText") == 0)
   {
     double newCoordinate = 0.0;
-    if (identifyInputType((char *)settingValueStr, &newCoordinate) == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
+    if (coordinateIdentifyInputType((char *)settingValueStr, &newCoordinate) == COORDINATE_INPUT_TYPE_INVALID_UNKNOWN)
       settings.fixedLong = 0.0;
     else
       settings.fixedLong = newCoordinate;
@@ -1253,6 +1263,8 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     for (int i = strlen(settingValueStr); i < 5; i++)
       settings.ntpReferenceId[i] = 0;
   }
+  else if (strcmp(settingName, "mdnsEnable") == 0)
+    settings.mdnsEnable = settingValueBool;
 
   //Unused variables - read to avoid errors
   else if (strcmp(settingName, "measurementRateSec") == 0) {}

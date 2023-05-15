@@ -336,10 +336,12 @@ void wifiStop()
     systemPrintln("TCP Server offline");
   }
 
+  if (settings.mdnsEnable == true)
+    MDNS.end();
+
   wifiSetState(WIFI_OFF);
 
   wifiConnectionAttempts = 0; //Reset the timeout
-
 
   //If ESP-Now is active, change protocol to only Long Range and re-start WiFi
   if (espnowState > ESPNOW_OFF)
@@ -435,6 +437,17 @@ bool wifiConnect(unsigned long timeout)
   int wifiResponse = wifiMulti.run(timeout);
   if (wifiResponse == WL_CONNECTED)
   {
+    if (settings.enableTcpClient == true || settings.enableTcpServer == true)
+    {
+      if (settings.mdnsEnable == true)
+      {
+        if (MDNS.begin("rtk") == false) //This should make the module findable from 'rtk.local' in browser
+          log_d("Error setting up MDNS responder!");
+        else
+          MDNS.addService("http", "tcp", settings.wifiTcpPort); //Add service to MDNS
+      }
+    }
+
     systemPrintln();
     return true;
   }

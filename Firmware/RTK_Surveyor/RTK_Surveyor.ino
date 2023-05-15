@@ -19,13 +19,13 @@
   Settings are loaded from microSD if available otherwise settings are pulled from ESP32's file system LittleFS.
 */
 
-#define COMPILE_WIFI //Comment out to remove WiFi functionality
-#define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
-#define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
-#define COMPILE_BT //Comment out to remove Bluetooth functionality
-#define COMPILE_L_BAND //Comment out to remove L-Band functionality
-#define COMPILE_SD_MMC //Comment out to remove REFERENCE_STATION microSD SD_MMC support
-#define COMPILE_ETHERNET //Comment out to remove REFERENCE_STATION Ethernet (W5500) support
+//#define COMPILE_WIFI //Comment out to remove WiFi functionality
+//#define COMPILE_AP //Requires WiFi. Comment out to remove Access Point functionality
+//#define COMPILE_ESPNOW //Requires WiFi. Comment out to remove ESP-Now functionality.
+//#define COMPILE_BT //Comment out to remove Bluetooth functionality
+//#define COMPILE_L_BAND //Comment out to remove L-Band functionality
+//#define COMPILE_SD_MMC //Comment out to remove REFERENCE_STATION microSD SD_MMC support
+//#define COMPILE_ETHERNET //Comment out to remove REFERENCE_STATION Ethernet (W5500) support
 //#define REF_STN_GNSS_DEBUG //Uncomment this line to output GNSS library debug messages on serialGNSS. Ref Stn only. Needs ENABLE_DEVELOPER
 
 //Always define ENABLE_DEVELOPER to enable its use in conditional statements
@@ -175,7 +175,7 @@ bool managerFileOpen = false;
 
 TaskHandle_t sdSizeCheckTaskHandle = nullptr; //Store handles so that we can kill the task once size is found
 const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being the lowest
-const int sdSizeCheckStackSize = 2000;
+const int sdSizeCheckStackSize = 3000;
 bool sdSizeCheckTaskComplete = false;
 
 char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace")] = { 0 };
@@ -191,6 +191,7 @@ char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace"
 #include <WiFiClientSecure.h> //Built-in.
 #include <PubSubClient.h> //http://librarymanager/All#PubSubClient_MQTT_Lightweight by Nick O'Leary v2.8.0 Used for MQTT obtaining of keys
 #include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting latest firmware OTA
+#include <ESPmDNS.h> //Built-in.
 
 #include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
 

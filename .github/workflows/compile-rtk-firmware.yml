@@ -1,7 +1,7 @@
 name: Build RTK Firmware
-on:
+on: 
   workflow_dispatch:
-    branches:
+    branches: 
 
 env:
   FILENAME_PREFIX: RTK_Surveyor_Firmware
@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-
+    
     name: Build
     runs-on: ubuntu-latest
 
@@ -65,28 +65,28 @@ jobs:
 
       - name: Get Known Libraries
         run: arduino-cli lib install
-          ESP32Time@2.0.0
-          JC_Button@2.1.2
-          sdFat@2.1.1
           ArduinoJson@6.19.4
-          pubsubclient@2.8.0
+          ESP32Time@2.0.0
           ESP32_BleSerial@1.0.4
-          "SparkFun u-blox GNSS v3"@3.0.9
-          "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
-          "SparkFun LIS2DH12 Arduino Library"@1.0.3
           "ESP32-OTA-Pull"@1.0.0
-          SparkFun_WebServer_ESP32_W5500@1.5.5
           Ethernet@2.0.2
+          JC_Button@2.1.2
+          PubSubClient@2.8.0
+          "SdFat"@2.1.1
+          "SparkFun LIS2DH12 Arduino Library"@1.0.3
+          "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
+          "SparkFun Micro OLED Breakout"@1.3.4
+          "SparkFun u-blox GNSS v3"@3.0.9
+          SparkFun_WebServer_ESP32_W5500@1.5.5
 
       - name: Enable external libs
         run: arduino-cli config set library.enable_unsafe_install true
 
       - name: Get Libraries
         run: arduino-cli lib install --git-url
-          https://github.com/sparkfun/SparkFun_Qwiic_OLED_Arduino_Library.git
-          https://github.com/me-no-dev/ESPAsyncWebServer.git
+          https://github.com/me-no-dev/ESPAsyncWebServer.git 
           https://github.com/me-no-dev/AsyncTCP.git
-
+          
       #Incorporate ESP-Now patch into core: https://github.com/espressif/arduino-esp32/pull/7044/files
       #- name: Patch ESP32 Core
       #  run: |
@@ -94,7 +94,7 @@ jobs:
       #    cp WiFiGeneric.cpp /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/libraries/WiFi/src/WiFiGeneric.cpp
 
       #Patch Server.h to avoid https://github.com/arduino-libraries/Ethernet/issues/88#issuecomment-455498941
-      #Note: this patch can be removed if/when we upgrade to ESP32 core >= v2.0.6
+      #Note: this patch can be removed if/when we upgrade to ESP32 core >= v2.0.6 
       - name: Patch ESP32 Server.h for Ethernet
         run: |
           cd Firmware/RTK_Surveyor/Patch/
@@ -103,7 +103,7 @@ jobs:
       - name: Compile Sketch
         run: arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${{ env.DEBUG_LEVEL }} ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
           --build-property build.partitions=partitions
-          --build-property upload.maximum_size=3145728
+          --build-property upload.maximum_size=3145728 
           --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\" \"-DFIRMWARE_VERSION_MAJOR=$FIRMWARE_VERSION_MAJOR\" \"-DFIRMWARE_VERSION_MINOR=$FIRMWARE_VERSION_MINOR\" \"-DENABLE_DEVELOPER=${{ env.ENABLE_DEVELOPER }}\""
           --export-binaries
 
@@ -114,7 +114,7 @@ jobs:
 
       - name: Upload binary to action
         uses: actions/upload-artifact@v3
-        with:
+        with: 
           name: ${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}
           path: ./Firmware/RTK_Surveyor/build/esp32.esp32.esp32/${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}.bin
 

@@ -4,7 +4,7 @@
 //Locals - compiled out
 //----------------------------------------
 
-#define CONTENT_SIZE 2000
+#define MQTT_CERT_SIZE 2000
 
 static SFE_UBLOX_GNSS_SUPER i2cLBand; //NEO-D9S
 static const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
@@ -313,16 +313,16 @@ bool pointperfectUpdateKeys()
 #ifdef COMPILE_WIFI
   bluetoothStop(); //Release available heap to allow room for TLS
 
-  char * certificateContents = nullptr; //Holds the contents of the keys prior to MQTT connection
-  char * keyContents = nullptr;
+  char *certificateContents = nullptr; //Holds the contents of the keys prior to MQTT connection
+  char *keyContents = nullptr;
   WiFiClientSecure secureClient;
   bool gotKeys = false;
 
   do
   {
     //Allocate the buffers
-    certificateContents = (char*)malloc(CONTENT_SIZE);
-    keyContents = (char*)malloc(CONTENT_SIZE);
+    certificateContents = (char*)malloc(MQTT_CERT_SIZE);
+    keyContents = (char*)malloc(MQTT_CERT_SIZE);
     if ((!certificateContents) || (!keyContents))
     {
       systemPrintln("Failed to allocate content buffers!");
@@ -330,12 +330,12 @@ bool pointperfectUpdateKeys()
     }
 
     //Get the certificate
-    memset(certificateContents, 0, CONTENT_SIZE);
+    memset(certificateContents, 0, MQTT_CERT_SIZE);
     loadFile("certificate", certificateContents);
     secureClient.setCertificate(certificateContents);
 
     //Get the private key
-    memset(keyContents, 0, CONTENT_SIZE);
+    memset(keyContents, 0, MQTT_CERT_SIZE);
     loadFile("privateKey", keyContents);
     secureClient.setPrivateKey(keyContents);
 

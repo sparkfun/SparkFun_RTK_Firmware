@@ -435,7 +435,7 @@ void beginLogging(const char *customFileName)
         {
           reuseLastLog = false;
 
-          if (findLastLog(logFileName) == false)
+          if (findLastLog(logFileName, sizeof(logFileName)) == false)
             log_d("Failed to find last log. Making new one.");
           else
             log_d("Using last log file.");
@@ -625,7 +625,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
 
 //Finds last log
 //Returns true if succesful
-bool findLastLog(char *lastLogName)
+bool findLastLog(char *lastLogNamePrt, int lastLogNameSize)
 {
   bool foundAFile = false;
 
@@ -659,7 +659,7 @@ bool findLastLog(char *lastLogName)
             {
               if (strstr(fname, LOG_PREFIX) != nullptr)
               {
-                strncpy(lastLogName, fname, sizeof(lastLogName) - 1); //Store this file as last known log file
+                strncpy(lastLogNamePrt, fname, lastLogNameSize - 1); //Store this file as last known log file
                 foundAFile = true;
               }
             }
@@ -692,7 +692,7 @@ bool findLastLog(char *lastLogName)
               {
                 if (strstr(fname, LOG_PREFIX) != nullptr)
                 {
-                  strncpy(lastLogName, fname, sizeof(lastLogName) - 1); //Store this file as last known log file
+                  strncpy(lastLogNamePrt, fname, lastLogNameSize - 1); //Store this file as last known log file
                   foundAFile = true;
                 }
               }

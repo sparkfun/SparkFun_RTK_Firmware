@@ -171,7 +171,7 @@ bool pointperfectProvisionDevice()
   bluetoothStop(); //Free heap before starting secure client (requires ~70KB)
 
   DynamicJsonDocument * jsonZtp = nullptr;
-  char * tempHolder = nullptr;
+  char * tempHolderPtr = nullptr;
   bool retVal = false;
 
   do
@@ -257,21 +257,22 @@ bool pointperfectProvisionDevice()
       }
       else
       {
-        tempHolder = (char *)malloc(2000);
-        if (!tempHolder)
+        const int tempHolderSize = 2000;
+        tempHolderPtr = (char *)malloc(tempHolderSize);
+        if (!tempHolderPtr)
         {
-          systemPrintln("ERROR - Failed to allocate tempHolder buffer!\r\n");
+          systemPrintln("ERROR - Failed to allocate tempHolderPtr buffer!\r\n");
           break;
         }
-        strncpy(tempHolder, (const char*)((*jsonZtp)["certificate"]), sizeof(tempHolder) - 1);
-        //      systemPrintf("len of PrivateCert: %d\r\n", strlen(tempHolder));
-        //      systemPrintf("privateCert: %s\r\n", tempHolder);
-        recordFile("certificate", tempHolder, strlen(tempHolder));
+        strncpy(tempHolderPtr, (const char*)((*jsonZtp)["certificate"]), tempHolderSize - 1);
+        //log_d("len of PrivateCert: %d", strlen(tempHolderPtr));
+        //log_d("privateCert: %s", tempHolderPtr);
+        recordFile("certificate", tempHolderPtr, strlen(tempHolderPtr));
 
-        strncpy(tempHolder, (const char*)((*jsonZtp)["privateKey"]), sizeof(tempHolder) - 1);
-        //      systemPrintf("len of privateKey: %d\r\n", strlen(tempHolder));
-        //      systemPrintf("privateKey: %s\r\n", tempHolder);
-        recordFile("privateKey", tempHolder, strlen(tempHolder));
+        strncpy(tempHolderPtr, (const char*)((*jsonZtp)["privateKey"]), tempHolderSize - 1);
+        //log_d("len of privateKey: %d", strlen(tempHolderPtr));
+        //log_d("privateKey: %s", tempHolderPtr);
+        recordFile("privateKey", tempHolderPtr, strlen(tempHolderPtr));
 
         strcpy(settings.pointPerfectClientID, (const char*)((*jsonZtp)["clientId"]));
         strcpy(settings.pointPerfectBrokerHost, (const char*)((*jsonZtp)["brokerHost"]));
@@ -294,8 +295,8 @@ bool pointperfectProvisionDevice()
   } while (0);
 
   //Free the allocated buffers
-  if (tempHolder)
-    free (tempHolder);
+  if (tempHolderPtr)
+    free (tempHolderPtr);
   if (jsonZtp)
     delete jsonZtp;
 

@@ -921,10 +921,6 @@ void menuPointPerfect()
     systemPrintln();
     systemPrintln("Menu: PointPerfect Corrections");
 
-    char hardwareID[13];
-    snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
-    systemPrintf("Device ID: %s\r\n", hardwareID);
-
     log_d("Time to first L-Band fix: %ds", lbandTimeToFix / 1000);
 
     systemPrint("Days until keys expire: ");
@@ -952,6 +948,8 @@ void menuPointPerfect()
       systemPrintln("3) Provision Device");
     else
       systemPrintln("3) Update Keys");
+
+    systemPrintln("4) Show device ID");
 
     systemPrintln("k) Manual Key Entry");
 
@@ -999,6 +997,12 @@ void menuPointPerfect()
       }
 
       wifiStop();
+    }
+    else if (incoming == 4)
+    {
+      char hardwareID[13];
+      snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]);
+      systemPrintf("Device ID: %s\r\n", hardwareID);
     }
     else if (incoming == 'k')
     {

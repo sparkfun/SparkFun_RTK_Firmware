@@ -7,7 +7,6 @@
 #define MQTT_CERT_SIZE 2000
 
 static SFE_UBLOX_GNSS_SUPER i2cLBand; //NEO-D9S
-static const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 
 //The PointPerfect token is provided at compile time via build flags
 #ifndef POINTPERFECT_TOKEN
@@ -359,8 +358,9 @@ bool pointperfectUpdateKeys()
       {
         //Successful connection
         systemPrintln("connected");
-        //mqttClient.subscribe(settings.pointPerfectLBandTopic); //The /pp/key/Lb channel fails to respond with keys
-        mqttClient.subscribe("/pp/ubx/0236/Lb"); //Alternate channel for L-Band keys
+
+        //Originally the provisioning process reported the '/pp/key/Lb' channel which fails to respond with keys. Looks like they fixed it to /pp/ubx/0236/Lb.
+        mqttClient.subscribe(settings.pointPerfectLBandTopic);
         break;
       }
 
@@ -442,7 +442,7 @@ char *ltrim(char *s)
 //Called when a subscribed to message arrives
 void mqttCallback(char* topic, byte* message, unsigned int length)
 {
-  if (String(topic) == pointPerfectKeyTopic)
+  if (String(topic) == settings.pointPerfectLBandTopic)
   {
     //Separate the UBX message into its constituent Key/ToW/Week parts
     //Obtained from SparkFun u-blox Arduino library - setDynamicSPARTNKeys()

@@ -923,6 +923,8 @@ void menuPointPerfect()
 
     log_d("Time to first L-Band fix: %ds", lbandTimeToFix / 1000);
 
+    log_d("settings.pointPerfectLBandTopic: %s", settings.pointPerfectLBandTopic);
+
     systemPrint("Days until keys expire: ");
     if (strlen(settings.pointPerfectCurrentKey) > 0)
     {

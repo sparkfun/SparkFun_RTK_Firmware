@@ -11,14 +11,16 @@ bool ethernetIsNeeded()
   if (HAS_ETHERNET
       && settings.enableNtripServer == true
       && (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
-      && !settings.ntripServerUseWiFiNotEthernet)
+      //&& !settings.ntripServerUseWiFiNotEthernet //For future expansion
+      )
      return true;
 
   //Does Base mode NTRIP Server need Ethernet?
   if (HAS_ETHERNET
       && settings.enableNtripClient == true
       && (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX)
-      && !settings.ntripClientUseWiFiNotEthernet)
+      //&& !settings.ntripClientUseWiFiNotEthernet //For future expansion
+      )
      return true;
 
   //Does TCP need Ethernet?

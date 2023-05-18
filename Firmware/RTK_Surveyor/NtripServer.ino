@@ -286,7 +286,7 @@ void ntripServerStart()
     reportHeapNow();
 
     //Allocate the ntripServer structure
-    ntripServer = new NTRIPClient(settings.ntripServerUseWiFiNotEthernet);
+    ntripServer = new NTRIPClient(false); //(settings.ntripServerUseWiFiNotEthernet); //For future expansion
 
     //Restart WiFi and the NTRIP server if possible
     if (ntripServer)
@@ -315,7 +315,7 @@ void ntripServerStop(bool wifiClientAllocated)
 
     //Allocate the NTRIP server structure if not done
     if (wifiClientAllocated == false)
-      ntripServer = new NTRIPClient(settings.ntripServerUseWiFiNotEthernet);
+      ntripServer = new NTRIPClient(false); //(settings.ntripServerUseWiFiNotEthernet); //For future expansion
   }
 
   //Increase timeouts if we started WiFi
@@ -371,7 +371,7 @@ void ntripServerUpdate()
 
     //Start WiFi
     case NTRIP_SERVER_ON:
-      if (HAS_ETHERNET && !settings.ntripServerUseWiFiNotEthernet)
+      if (HAS_ETHERNET) // && !settings.ntripServerUseWiFiNotEthernet) //For future expansion
       {
         if (online.ethernetStatus == ETH_NOT_STARTED)
         {
@@ -417,7 +417,7 @@ void ntripServerUpdate()
 
     //Wait for connection to an access point
     case NTRIP_SERVER_WIFI_ETHERNET_STARTED:
-      if (HAS_ETHERNET && !settings.ntripServerUseWiFiNotEthernet)
+      if (HAS_ETHERNET) // && !settings.ntripServerUseWiFiNotEthernet) //For future expansion
       {
         if (online.ethernetStatus == ETH_CONNECTED)
           ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_CONNECTED);

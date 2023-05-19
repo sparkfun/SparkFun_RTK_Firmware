@@ -95,8 +95,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
-                hide("allowWiFiOverEthernetClient");
-                hide("allowWiFiOverEthernetServer");
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
 
                 hide("dataPortChannelDropdown");
             }
@@ -106,8 +106,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
-                hide("allowWiFiOverEthernetClient");
-                hide("allowWiFiOverEthernetServer");
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
             }
             else if (platformPrefix == "Express Plus") {
                 hide("baseConfig");
@@ -115,8 +115,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
-                hide("allowWiFiOverEthernetClient");
-                hide("allowWiFiOverEthernetServer");
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
 
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
             }
@@ -126,8 +126,8 @@ function parseIncoming(msg) {
                 show("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
-                hide("allowWiFiOverEthernetClient");
-                hide("allowWiFiOverEthernetServer");
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
             }
             else if (platformPrefix == "Reference Station") {
                 show("baseConfig");
@@ -135,8 +135,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 show("ethernetConfig");
                 show("ntpConfig");
-                hide("allowWiFiOverEthernetClient"); //For future expansion
-                hide("allowWiFiOverEthernetServer"); //For future expansion
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
             }
         }
         else if (id.includes("zedFirmwareVersionInt")) {

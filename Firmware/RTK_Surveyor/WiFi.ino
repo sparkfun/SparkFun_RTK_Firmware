@@ -519,89 +519,41 @@ int wifiNetworkCount()
 void wifiSendTcpData(uint8_t * data, uint16_t length)
 {
 #ifdef COMPILE_WIFI
-  static IPAddress ipAddress[WIFI_MAX_TCP_CLIENTS];
-  int index = 0;
-  static uint32_t lastTcpConnectAttempt;
 
-  if (online.tcpClient)
+  if (!length)
+    return;
+    
+  //Send the data to the connected clients
+  if ((settings.enableTcpServer && online.tcpServer)
+   || (settings.enableTcpClient && online.tcpClient))
   {
-    //Start the TCP client if enabled
-    if (((!wifiTcpClient[0]) || (!wifiTcpClient[0].connected()))
-        && ((millis() - lastTcpConnectAttempt) >= 1000))
+    //Walk the list of TCP clients
+    for (int index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
     {
-      lastTcpConnectAttempt = millis();
-      ipAddress[0] = WiFi.gatewayIP();
-      if (settings.enablePrintTcpStatus)
+      if (wifiTcpConnected & (1 << index))
       {
-        systemPrint("Trying to connect WiFi TCP client to ");
-        systemPrintln(ipAddress[0]);
-      }
-      if (wifiTcpClient[0].connect(ipAddress[0], settings.wifiTcpPort))
-      {
-        online.tcpClient = true;
-        systemPrint("WiFi TCP client connected to ");
-        systemPrintln(ipAddress[0]);
-        wifiTcpConnected |= 1 << index;
-      }
-      else
-      {
-        //Release any allocated resources
-        //if (wifiTcpClient[0])
-        wifiTcpClient[0].stop();
-      }
-    }
-  }
-
-  if (online.tcpServer)
-  {
-    //Check for another client
-    for (index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
-      if (!(wifiTcpConnected & (1 << index)))
-      {
-        if ((!wifiTcpClient[index]) || (!wifiTcpClient[index].connected()))
+        if (wifiTcpClient[index].write(data, length) == length)
         {
-          wifiTcpClient[index] = wifiTcpServer->available();
-          if (!wifiTcpClient[index])
-            break;
-          ipAddress[index] = wifiTcpClient[index].remoteIP();
-          systemPrintf("Connected WiFi TCP client %d to ", index);
-          systemPrintln(ipAddress[index]);
-          wifiTcpConnected |= 1 << index;
+          if ((settings.enablePrintTcpStatus) && (!inMainMenu))
+            systemPrintf("%d bytes written over WiFi TCP\r\n", length);
+        }
+        //Failed to write the data
+        else
+        {
+          //Done with this client connection
+          if (!inMainMenu)
+          {
+            systemPrintf("Breaking WiFi TCP client %d connection\r\n", index);
+          }
+
+          wifiTcpClient[index].stop();
+          wifiTcpConnected &= ~(1 << index);
+    
+          //Shutdown the TCP server if necessary
+          if (settings.enableTcpServer || online.tcpServer)
+            wifiTcpServerActive();
         }
       }
-  }
-
-  //Walk the list of TCP clients
-  for (index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
-  {
-    if (wifiTcpConnected & (1 << index))
-    {
-      //Check for a broken connection
-      if ((!wifiTcpClient[index]) || (!wifiTcpClient[index].connected()))
-        systemPrintf("Disconnected TCP client %d from ", index);
-
-      //Send the data to the connected clients
-      else if (((settings.enableTcpServer && online.tcpServer)
-                || (settings.enableTcpClient && online.tcpClient))
-               && ((!length) || (wifiTcpClient[index].write(data, length) == length)))
-      {
-        if (settings.enablePrintTcpStatus && length)
-          systemPrintf("%d bytes written over WiFi TCP\r\n", length);
-        continue;
-      }
-
-      //Failed to write the data
-      else
-        systemPrintf("Breaking WiFi TCP client %d connection to ", index);
-
-      //Done with this client connection
-      systemPrintln(ipAddress[index]);
-      wifiTcpClient[index].stop();
-      wifiTcpConnected &= ~(1 << index);
-
-      //Shutdown the TCP server if necessary
-      if (settings.enableTcpServer || online.tcpServer)
-        wifiTcpServerActive();
     }
   }
 #endif  //COMPILE_WIFI
@@ -662,6 +614,9 @@ void tcpUpdate()
 
 #ifdef COMPILE_WIFI
 
+  static IPAddress ipAddress[WIFI_MAX_TCP_CLIENTS];
+  static uint32_t lastTcpConnectAttempt;
+
   if (settings.enableTcpClient == false && settings.enableTcpServer == false) return; //Nothing to do
 
   if (wifiInConfigMode()) return; //Do not service TCP during WiFi config
@@ -708,6 +663,82 @@ void tcpUpdate()
     systemPrint("WiFi TCP Server online, IP Address ");
     systemPrintln(WiFi.localIP());
   }
+
+  int index = 0;
+
+  //Connect the TCP client if enabled
+  if (online.tcpClient)
+  {
+    if (((!wifiTcpClient[0]) || (!wifiTcpClient[0].connected()))
+        && ((millis() - lastTcpConnectAttempt) >= 1000))
+    {
+      lastTcpConnectAttempt = millis();
+      ipAddress[0] = WiFi.gatewayIP();
+      if (settings.enablePrintTcpStatus)
+      {
+        systemPrint("Trying to connect WiFi TCP client to ");
+        systemPrintln(ipAddress[0]);
+      }
+      if (wifiTcpClient[0].connect(ipAddress[0], settings.wifiTcpPort))
+      {
+        online.tcpClient = true;
+        systemPrint("WiFi TCP client connected to ");
+        systemPrintln(ipAddress[0]);
+        wifiTcpConnected |= 1 << index;
+      }
+      else
+      {
+        //Release any allocated resources
+        //if (wifiTcpClient[0])
+        wifiTcpClient[0].stop();
+      }
+    }
+  }
+
+  //Check for another client
+  if (online.tcpServer)
+  {
+    for (index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
+      if (!(wifiTcpConnected & (1 << index)))
+      {
+        if ((!wifiTcpClient[index]) || (!wifiTcpClient[index].connected()))
+        {
+          wifiTcpClient[index] = wifiTcpServer->available();
+          if (!wifiTcpClient[index])
+            break;
+          ipAddress[index] = wifiTcpClient[index].remoteIP();
+          systemPrintf("Connected WiFi TCP client %d to ", index);
+          systemPrintln(ipAddress[index]);
+          wifiTcpConnected |= 1 << index;
+        }
+      }
+  }
+
+  //Walk the list of TCP clients
+  for (index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
+  {
+    if (wifiTcpConnected & (1 << index))
+    {
+      //Check for a broken connection
+      if ((!wifiTcpClient[index]) || (!wifiTcpClient[index].connected()))
+      {
+        //Done with this client connection
+        if (!inMainMenu)
+        {
+          systemPrintf("Disconnected TCP client %d from ", index);
+          systemPrintln(ipAddress[index]);
+        }
+        
+        wifiTcpClient[index].stop();
+        wifiTcpConnected &= ~(1 << index);
+  
+        //Shutdown the TCP server if necessary
+        if (settings.enableTcpServer || online.tcpServer)
+          wifiTcpServerActive();
+      }
+    }
+  }
+  
 #endif
 }
 

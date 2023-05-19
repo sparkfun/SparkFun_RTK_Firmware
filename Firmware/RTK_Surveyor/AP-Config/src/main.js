@@ -592,6 +592,7 @@ function validateFields() {
     if (ge("enableTcpClient").checked || ge("enableTcpServer").checked) {
         checkElementString("wifiTcpPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
     }
+    checkCheckboxMutex("enableTcpClient", "enableTcpServer", "enableTcpError", "TCP Client and Server can not be enabled at the same time", "collapseWiFiConfig");
 
     //System Config
     if (ge("enableLogging").checked) {
@@ -844,6 +845,16 @@ function checkElementCasterUser(id, badUserName, errorText, collapseID) {
     }
     else
         clearError(id);
+}
+
+function checkCheckboxMutex(id1, id2, ide, errorText, collapseID) {
+    if ((ge(id1).checked) && (ge(id2).checked)) {
+        ge(ide).innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else
+        clearError(ide);
 }
 
 function clearElement(id, value) {

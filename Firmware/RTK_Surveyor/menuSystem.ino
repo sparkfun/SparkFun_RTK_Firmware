@@ -401,10 +401,18 @@ void menuWiFi()
     systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "WiFi");
 
     systemPrint("c) WiFi TCP Client (connect to phone): ");
-    systemPrintf("%s\r\n", settings.enableTcpClient ? "Enabled" : "Disabled");
+    systemPrintf("%s", settings.enableTcpClient ? "Enabled" : "Disabled");
+    if (settings.enableTcpClient && settings.enableTcpServer)
+      systemPrintln(" **");
+    else
+      systemPrintln("");
 
     systemPrint("s) WiFi TCP Server: ");
-    systemPrintf("%s\r\n", settings.enableTcpServer ? "Enabled" : "Disabled");
+    systemPrintf("%s", settings.enableTcpServer ? "Enabled" : "Disabled");
+    if (settings.enableTcpClient && settings.enableTcpServer)
+      systemPrintln(" **");
+    else
+      systemPrintln("");
 
     if (settings.enableTcpServer == true || settings.enableTcpClient == true)
       systemPrintf("p) WiFi TCP Port: %ld\r\n", settings.wifiTcpPort);
@@ -413,6 +421,9 @@ void menuWiFi()
     systemPrintf("%s\r\n", settings.mdnsEnable ? "Enabled" : "Disabled");
 
     systemPrintln("x) Exit");
+
+    if (settings.enableTcpClient && settings.enableTcpServer)
+      systemPrintln("\r\n** TCP Server and Client can not be enabled at the same time. Please disable one of them");
 
     byte incoming = getCharacterNumber();
 

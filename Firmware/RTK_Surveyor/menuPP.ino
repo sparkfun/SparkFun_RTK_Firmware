@@ -4,10 +4,9 @@
 //Locals - compiled out
 //----------------------------------------
 
-#define CONTENT_SIZE 2000
+#define MQTT_CERT_SIZE 2000
 
 static SFE_UBLOX_GNSS_SUPER i2cLBand; //NEO-D9S
-static const char* pointPerfectKeyTopic = "/pp/ubx/0236/Lb";
 
 //The PointPerfect token is provided at compile time via build flags
 #ifndef POINTPERFECT_TOKEN
@@ -171,7 +170,7 @@ bool pointperfectProvisionDevice()
   bluetoothStop(); //Free heap before starting secure client (requires ~70KB)
 
   DynamicJsonDocument * jsonZtp = nullptr;
-  char * tempHolderPtr = nullptr;
+  char *tempHolderPtr = nullptr;
   bool retVal = false;
 
   do
@@ -249,6 +248,7 @@ bool pointperfectProvisionDevice()
         systemPrintln("ERROR - Failed to allocate jsonZtp!\r\n");
         break;
       }
+
       DeserializationError error = deserializeJson(*jsonZtp, response);
       if (DeserializationError::Ok != error)
       {
@@ -314,16 +314,16 @@ bool pointperfectUpdateKeys()
 #ifdef COMPILE_WIFI
   bluetoothStop(); //Release available heap to allow room for TLS
 
-  char * certificateContents = nullptr; //Holds the contents of the keys prior to MQTT connection
-  char * keyContents = nullptr;
+  char *certificateContents = nullptr; //Holds the contents of the keys prior to MQTT connection
+  char *keyContents = nullptr;
   WiFiClientSecure secureClient;
   bool gotKeys = false;
 
   do
   {
     //Allocate the buffers
-    certificateContents = (char*)malloc(CONTENT_SIZE);
-    keyContents = (char*)malloc(CONTENT_SIZE);
+    certificateContents = (char*)malloc(MQTT_CERT_SIZE);
+    keyContents = (char*)malloc(MQTT_CERT_SIZE);
     if ((!certificateContents) || (!keyContents))
     {
       systemPrintln("Failed to allocate content buffers!");
@@ -331,12 +331,12 @@ bool pointperfectUpdateKeys()
     }
 
     //Get the certificate
-    memset(certificateContents, 0, CONTENT_SIZE);
+    memset(certificateContents, 0, MQTT_CERT_SIZE);
     loadFile("certificate", certificateContents);
     secureClient.setCertificate(certificateContents);
 
     //Get the private key
-    memset(keyContents, 0, CONTENT_SIZE);
+    memset(keyContents, 0, MQTT_CERT_SIZE);
     loadFile("privateKey", keyContents);
     secureClient.setPrivateKey(keyContents);
 
@@ -360,8 +360,9 @@ bool pointperfectUpdateKeys()
       {
         //Successful connection
         systemPrintln("connected");
-        //mqttClient.subscribe(settings.pointPerfectLBandTopic); //The /pp/key/Lb channel fails to respond with keys
-        mqttClient.subscribe("/pp/ubx/0236/Lb"); //Alternate channel for L-Band keys
+
+        //Originally the provisioning process reported the '/pp/key/Lb' channel which fails to respond with keys. Looks like they fixed it to /pp/ubx/0236/Lb.
+        mqttClient.subscribe(settings.pointPerfectLBandTopic);
         break;
       }
 
@@ -443,7 +444,7 @@ char *ltrim(char *s)
 //Called when a subscribed to message arrives
 void mqttCallback(char* topic, byte* message, unsigned int length)
 {
-  if (String(topic) == pointPerfectKeyTopic)
+  if (String(topic) == settings.pointPerfectLBandTopic)
   {
     //Separate the UBX message into its constituent Key/ToW/Week parts
     //Obtained from SparkFun u-blox Arduino library - setDynamicSPARTNKeys()
@@ -922,11 +923,9 @@ void menuPointPerfect()
     systemPrintln();
     systemPrintln("Menu: PointPerfect Corrections");
 
-    char hardwareID[13];
-    snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
-    systemPrintf("Device ID: %s\r\n", hardwareID);
-
     log_d("Time to first L-Band fix: %ds", lbandTimeToFix / 1000);
+
+    log_d("settings.pointPerfectLBandTopic: %s", settings.pointPerfectLBandTopic);
 
     systemPrint("Days until keys expire: ");
     if (strlen(settings.pointPerfectCurrentKey) > 0)
@@ -953,6 +952,8 @@ void menuPointPerfect()
       systemPrintln("3) Provision Device");
     else
       systemPrintln("3) Update Keys");
+
+    systemPrintln("4) Show device ID");
 
     systemPrintln("k) Manual Key Entry");
 
@@ -1000,6 +1001,12 @@ void menuPointPerfect()
       }
 
       wifiStop();
+    }
+    else if (incoming == 4)
+    {
+      char hardwareID[13];
+      snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]);
+      systemPrintf("Device ID: %s\r\n", hardwareID);
     }
     else if (incoming == 'k')
     {

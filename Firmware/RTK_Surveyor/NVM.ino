@@ -1582,6 +1582,7 @@ void recordFile(const char* fileID, char* fileContents, uint32_t fileSize)
   }
 }
 
+//Read file into given char array
 void loadFile(const char* fileID, char* fileContents)
 {
   char fileName[80];

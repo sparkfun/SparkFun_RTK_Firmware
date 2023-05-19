@@ -696,7 +696,7 @@ void createSettingsString(char* newSettings)
 
   //L-Band
   char hardwareID[13];
-  snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]); //Get ready for JSON
+  snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", lbandMACAddress[0], lbandMACAddress[1], lbandMACAddress[2], lbandMACAddress[3], lbandMACAddress[4], lbandMACAddress[5]);
   stringRecord(newSettings, "hardwareID", hardwareID);
 
   char apDaysRemaining[20];

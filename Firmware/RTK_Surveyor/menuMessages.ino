@@ -667,7 +667,7 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
 //Finds last log
 //Returns true if successful
 //lastLogName will contain the name of the last log file on return - ** but without the preceding slash **
-bool findLastLog(char *lastLogName, size_t lastLogNameLen)
+bool findLastLog(char *lastLogNamePrt, size_t lastLogNameSize)
 {
   bool foundAFile = false;
 
@@ -701,7 +701,7 @@ bool findLastLog(char *lastLogName, size_t lastLogNameLen)
             {
               if (strstr(fname, LOG_PREFIX) != nullptr)
               {
-                strncpy(lastLogName, fname, lastLogNameLen - 1); //Store this file as last known log file
+                strncpy(lastLogNamePrt, fname, lastLogNameSize - 1); //Store this file as last known log file
                 foundAFile = true;
               }
             }
@@ -734,7 +734,7 @@ bool findLastLog(char *lastLogName, size_t lastLogNameLen)
               {
                 if (strstr(fname, LOG_PREFIX) != nullptr)
                 {
-                  strncpy(lastLogName, fname, lastLogNameLen - 1); //Store this file as last known log file
+                  strncpy(lastLogNamePrt, fname, lastLogNameSize - 1); //Store this file as last known log file
                   foundAFile = true;
                 }
               }

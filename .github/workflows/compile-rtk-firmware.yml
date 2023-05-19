@@ -65,18 +65,18 @@ jobs:
 
       - name: Get Known Libraries
         run: arduino-cli lib install
-          ESP32Time@2.0.0
-          JC_Button@2.1.2
-          sdFat@2.1.1
           ArduinoJson@6.19.4
-          pubsubclient@2.8.0
+          ESP32Time@2.0.0
           ESP32_BleSerial@1.0.4
-          "SparkFun u-blox GNSS v3"@3.0.12
-          "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
-          "SparkFun LIS2DH12 Arduino Library"@1.0.3
           "ESP32-OTA-Pull"@1.0.0
-          SparkFun_WebServer_ESP32_W5500@1.5.5
           Ethernet@2.0.2
+          JC_Button@2.1.2
+          PubSubClient@2.8.0
+          "SdFat"@2.1.1
+          "SparkFun LIS2DH12 Arduino Library"@1.0.3
+          "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
+          "SparkFun u-blox GNSS v3"@3.0.12
+          SparkFun_WebServer_ESP32_W5500@1.5.5
 
       - name: Enable external libs
         run: arduino-cli config set library.enable_unsafe_install true

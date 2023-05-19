@@ -617,6 +617,7 @@ bool configureViaEthernet = false;
 unsigned long lbandStartTimer = 0; //Monitors the ZED during L-Band reception if a fix takes too long
 int lbandRestarts = 0;
 unsigned long lbandTimeToFix = 0;
+unsigned long lbandLastReport = 0;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*

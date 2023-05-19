@@ -859,6 +859,7 @@ void menuDebug()
     }
     else if (incoming == 34)
     {
+      systemPrintln("Warning: changing the Receive Buffer Size will restart the RTK. Enter 0 to abort");
       systemPrint("Enter UART Receive Buffer Size in Bytes (32 to 16384): ");
       int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
@@ -866,11 +867,16 @@ void menuDebug()
         if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
           systemPrintln("Error: Queue size out of range");
         else
-          settings.uartReceiveBufferSize = queSize; //Recorded to NVM and file at main menu exit
+        {
+          settings.uartReceiveBufferSize = queSize; //Recorded to NVM and file
+          recordSystemSettings();    
+          ESP.restart();
+        }
       }
     }
     else if (incoming == 35)
     {
+      systemPrintln("Warning: changing the Handler Buffer Size will restart the RTK. Enter 0 to abort");
       systemPrint("Enter GNSS Handler Buffer Size in Bytes (32 to 16384): ");
       int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
@@ -878,7 +884,11 @@ void menuDebug()
         if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
           systemPrintln("Error: Queue size out of range");
         else
-          settings.gnssHandlerBufferSize = queSize; //Recorded to NVM and file at main menu exit
+        {
+          settings.gnssHandlerBufferSize = queSize; //Recorded to NVM and file
+          recordSystemSettings();    
+          ESP.restart();
+        }
       }
     }
     else if (incoming == 36)

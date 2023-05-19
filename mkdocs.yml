@@ -22,6 +22,9 @@ theme:
     # - navigation.tabs.sticky
     # - navigation.tabs    
 
+  # Icon in Browser Tab (must be square img - i.e. 32x32 pixels)
+  favicon: img/sfe_logo_sq.png
+  
   icon:
     repo: fontawesome/brands/github
     admonition:

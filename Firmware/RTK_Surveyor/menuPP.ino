@@ -923,7 +923,7 @@ void menuPointPerfect()
     systemPrintln();
     systemPrintln("Menu: PointPerfect Corrections");
 
-    log_d("Time to first L-Band fix: %ds", lbandTimeToFix / 1000);
+    log_d("Time to first L-Band fix: %ds Restarts: %d", lbandTimeToFix / 1000, lbandRestarts);
 
     log_d("settings.pointPerfectLBandTopic: %s", settings.pointPerfectLBandTopic);
 
@@ -1054,6 +1054,12 @@ void updateLBand()
     //If we don't get an L-Band fix within Timeout, hot-start ZED-F9x
     if (carrSoln == 1) //RTK Float
     {
+      if(millis() - lbandLastReport > 1000)
+      {
+        lbandLastReport = millis();
+        log_d("ZED restarts: %d Time remaining before L-Band forced restart: %ds", lbandRestarts, settings.lbandFixTimeout_seconds - ((millis() - lbandStartTimer)  / 1000));
+      }
+
       if ( (millis() - lbandStartTimer) > (settings.lbandFixTimeout_seconds * 1000L))
       {
         lbandStartTimer = millis(); //Reset timer

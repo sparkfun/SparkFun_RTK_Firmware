@@ -888,11 +888,11 @@ void menuDebug()
     else if (incoming == 35)
     {
       systemPrintln("Warning: changing the Handler Buffer Size will restart the RTK. Enter 0 to abort");
-      systemPrint("Enter GNSS Handler Buffer Size in Bytes (32 to 16384): ");
+      systemPrint("Enter GNSS Handler Buffer Size in Bytes (32 to 65535): ");
       int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+        if (queSize < 32 || queSize > 65535) //Arbitrary 64k limit
           systemPrintln("Error: Queue size out of range");
         else
         {

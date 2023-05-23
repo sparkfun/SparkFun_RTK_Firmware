@@ -122,6 +122,9 @@ jobs:
       - name: Downgrade git HTTP version
         run: git config --global http.version HTTP/1.1
 
+      - name: Increase HTTP post buffer size
+        run: git config --global http.postBuffer 157286400
+
       - name: Push binary to Binaries Repo
         uses: dmnemec/copy_file_to_another_repo_action@main
         env:

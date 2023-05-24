@@ -6,7 +6,7 @@ on:
 env:
   FILENAME_PREFIX: RTK_Surveyor_Firmware
   FIRMWARE_VERSION_MAJOR: 3
-  FIRMWARE_VERSION_MINOR: 3
+  FIRMWARE_VERSION_MINOR: 4
   POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
 
 jobs:
@@ -125,6 +125,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           directory: ./Firmware/RTK_Surveyor
+          branch: $BRANCH
 
       - name: Compile Sketch
         run: arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${{ env.DEBUG_LEVEL }} ./Firmware/RTK_Surveyor/RTK_Surveyor.ino

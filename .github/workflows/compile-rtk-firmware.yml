@@ -121,7 +121,7 @@ jobs:
       
       - name: Push binary to Binaries Repo
         # uses: dmnemec/copy_file_to_another_repo_action #Workaround for Issue: https://github.com/orgs/community/discussions/55820#discussioncomment-5946136
-        uses: Jason2866/copy_file_to_another_repo_action@main
+        uses: Jason2866/copy_file_to_another_repo_action@http408_fix
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_GITHUB_RTK_FILE_TOKEN }}
         with:
@@ -142,7 +142,7 @@ jobs:
 
       - name: Push JSON to Binaries Repo
         # uses: dmnemec/copy_file_to_another_repo_action #Workaround for Issue: https://github.com/orgs/community/discussions/55820#discussioncomment-5946136
-        uses: Jason2866/copy_file_to_another_repo_action@main
+        uses: Jason2866/copy_file_to_another_repo_action@http408_fix
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_GITHUB_RTK_FILE_TOKEN }}
         with:

@@ -75,7 +75,7 @@ jobs:
           "SdFat"@2.1.1
           "SparkFun LIS2DH12 Arduino Library"@1.0.3
           "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
-          "SparkFun u-blox GNSS v3"@3.0.9
+          "SparkFun u-blox GNSS v3"@3.0.12
           SparkFun_WebServer_ESP32_W5500@1.5.5
 
       - name: Enable external libs
@@ -99,6 +99,32 @@ jobs:
         run: |
           cd Firmware/RTK_Surveyor/Patch/
           cp Server.h /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/cores/esp32/Server.h
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # Configure Python - now we have Python installed, we need to provide everything needed by esptool otherwise the compile fails
+      - name: Configure Python
+        run: |
+          pip3 install pyserial
+
+      - name: Update index_html
+        run: |
+          cd Firmware/Tools
+          python index_html_zipper.py ../RTK_Surveyor/AP-Config/index.html ../RTK_Surveyor/form.h
+
+      - name: Update main_js
+        run: |
+          cd Firmware/Tools
+          python main_js_zipper.py ../RTK_Surveyor/AP-Config/src/main.js ../RTK_Surveyor/form.h
+
+      - name: Commit and push form.h
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          directory: ./Firmware/RTK_Surveyor
 
       - name: Compile Sketch
         run: arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${{ env.DEBUG_LEVEL }} ./Firmware/RTK_Surveyor/RTK_Surveyor.ino

@@ -401,10 +401,18 @@ void menuWiFi()
     systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "WiFi");
 
     systemPrint("c) WiFi TCP Client (connect to phone): ");
-    systemPrintf("%s\r\n", settings.enableTcpClient ? "Enabled" : "Disabled");
+    systemPrintf("%s", settings.enableTcpClient ? "Enabled" : "Disabled");
+    if (settings.enableTcpClient && settings.enableTcpServer)
+      systemPrintln(" **");
+    else
+      systemPrintln("");
 
     systemPrint("s) WiFi TCP Server: ");
-    systemPrintf("%s\r\n", settings.enableTcpServer ? "Enabled" : "Disabled");
+    systemPrintf("%s", settings.enableTcpServer ? "Enabled" : "Disabled");
+    if (settings.enableTcpClient && settings.enableTcpServer)
+      systemPrintln(" **");
+    else
+      systemPrintln("");
 
     if (settings.enableTcpServer == true || settings.enableTcpClient == true)
       systemPrintf("p) WiFi TCP Port: %ld\r\n", settings.wifiTcpPort);
@@ -413,6 +421,9 @@ void menuWiFi()
     systemPrintf("%s\r\n", settings.mdnsEnable ? "Enabled" : "Disabled");
 
     systemPrintln("x) Exit");
+
+    if (settings.enableTcpClient && settings.enableTcpServer)
+      systemPrintln("\r\n** TCP Server and Client can not be enabled at the same time. Please disable one of them");
 
     byte incoming = getCharacterNumber();
 
@@ -859,6 +870,7 @@ void menuDebug()
     }
     else if (incoming == 34)
     {
+      systemPrintln("Warning: changing the Receive Buffer Size will restart the RTK. Enter 0 to abort");
       systemPrint("Enter UART Receive Buffer Size in Bytes (32 to 16384): ");
       int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
@@ -866,19 +878,28 @@ void menuDebug()
         if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
           systemPrintln("Error: Queue size out of range");
         else
-          settings.uartReceiveBufferSize = queSize; //Recorded to NVM and file at main menu exit
+        {
+          settings.uartReceiveBufferSize = queSize; //Recorded to NVM and file
+          recordSystemSettings();    
+          ESP.restart();
+        }
       }
     }
     else if (incoming == 35)
     {
-      systemPrint("Enter GNSS Handler Buffer Size in Bytes (32 to 16384): ");
+      systemPrintln("Warning: changing the Handler Buffer Size will restart the RTK. Enter 0 to abort");
+      systemPrint("Enter GNSS Handler Buffer Size in Bytes (32 to 65535): ");
       int queSize = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((queSize != INPUT_RESPONSE_GETNUMBER_EXIT) && (queSize != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (queSize < 32 || queSize > 16384) //Arbitrary 16k limit
+        if (queSize < 32 || queSize > 65535) //Arbitrary 64k limit
           systemPrintln("Error: Queue size out of range");
         else
-          settings.gnssHandlerBufferSize = queSize; //Recorded to NVM and file at main menu exit
+        {
+          settings.gnssHandlerBufferSize = queSize; //Recorded to NVM and file
+          recordSystemSettings();    
+          ESP.restart();
+        }
       }
     }
     else if (incoming == 36)
@@ -1038,7 +1059,9 @@ void printFileList()
                     );
 
             char fileSizeChar[20];
-            stringHumanReadableSize(tempFile.fileSize()).toCharArray(fileSizeChar, sizeof(fileSizeChar));
+            String fileSize;
+            stringHumanReadableSize(fileSize, tempFile.fileSize());
+            fileSize.toCharArray(fileSizeChar, sizeof(fileSizeChar));
 
             char fileName[50]; //Handle long file names
             tempFile.getName(fileName, sizeof(fileName));
@@ -1081,14 +1104,16 @@ void printFileList()
               struct tm *timeinfo = localtime(&lastWrite);
 
               char fileDateChar[20];
-              snprintf(fileDateChar, 20, "%.0f-%02.0f-%02.0f",
+              snprintf(fileDateChar, sizeof(fileDateChar), "%.0f-%02.0f-%02.0f",
                        (float)timeinfo->tm_year + 1900, //Year - ESP32 2.0.2 starts the year at 1900...
                        (float)timeinfo->tm_mon + 1,     //Month
                        (float)timeinfo->tm_mday         //Day
                       );
 
               char fileSizeChar[20];
-              stringHumanReadableSize(tempFile.size()).toCharArray(fileSizeChar, sizeof(fileSizeChar));
+              String fileSize;
+              stringHumanReadableSize(fileSize, tempFile.size());
+              fileSize.toCharArray(fileSizeChar, sizeof(fileSizeChar));
 
               char fileName[50]; //Handle long file names
               snprintf(fileName, sizeof(fileName), "%s", tempFile.name());

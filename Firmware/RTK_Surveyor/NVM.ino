@@ -244,7 +244,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%s\r\n", "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
   settingsFile->printf("%s=%s\r\n", "ntripServer_MountPoint", settings.ntripServer_MountPoint);
   settingsFile->printf("%s=%s\r\n", "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
-  settingsFile->printf("%s=%d\r\n", "ntripServerUseWiFiNotEthernet", settings.ntripServerUseWiFiNotEthernet);
+  //settingsFile->printf("%s=%d\r\n", "ntripServerUseWiFiNotEthernet", settings.ntripServerUseWiFiNotEthernet); //For future expansion
   settingsFile->printf("%s=%d\r\n", "enableNtripClient", settings.enableNtripClient);
   settingsFile->printf("%s=%s\r\n", "ntripClient_CasterHost", settings.ntripClient_CasterHost);
   settingsFile->printf("%s=%d\r\n", "ntripClient_CasterPort", settings.ntripClient_CasterPort);
@@ -253,7 +253,7 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%s\r\n", "ntripClient_MountPoint", settings.ntripClient_MountPoint);
   settingsFile->printf("%s=%s\r\n", "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
   settingsFile->printf("%s=%d\r\n", "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
-  settingsFile->printf("%s=%d\r\n", "ntripClientUseWiFiNotEthernet", settings.ntripClientUseWiFiNotEthernet);
+  //settingsFile->printf("%s=%d\r\n", "ntripClientUseWiFiNotEthernet", settings.ntripClientUseWiFiNotEthernet); //For future expansion
   settingsFile->printf("%s=%d\r\n", "serialTimeoutGNSS", settings.serialTimeoutGNSS);
   settingsFile->printf("%s=%s\r\n", "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
   settingsFile->printf("%s=%d\r\n", "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
@@ -271,6 +271,8 @@ void recordSystemSettingsToFile(File * settingsFile)
   settingsFile->printf("%s=%d\r\n", "updateZEDSettings", settings.updateZEDSettings);
   settingsFile->printf("%s=%d\r\n", "LBandFreq", settings.LBandFreq);
   settingsFile->printf("%s=%d\r\n", "enableLogging", settings.enableLogging);
+  settingsFile->printf("%s=%d\r\n", "enableARPLogging", settings.enableARPLogging);
+  settingsFile->printf("%s=%d\r\n", "ARPLoggingInterval_s", settings.ARPLoggingInterval_s);
   settingsFile->printf("%s=%d\r\n", "timeZoneHours", settings.timeZoneHours);
   settingsFile->printf("%s=%d\r\n", "timeZoneMinutes", settings.timeZoneMinutes);
   settingsFile->printf("%s=%d\r\n", "timeZoneSeconds", settings.timeZoneSeconds);
@@ -858,6 +860,10 @@ bool parseLine(char* str, Settings *settings)
     settings->spiFrequency = d;
   else if (strcmp(settingName, "enableLogging") == 0)
     settings->enableLogging = d;
+  else if (strcmp(settingName, "enableARPLogging") == 0)
+    settings->enableARPLogging = d;
+  else if (strcmp(settingName, "ARPLoggingInterval_s") == 0)
+    settings->ARPLoggingInterval_s = d;
   else if (strcmp(settingName, "enableMarksFile") == 0)
     settings->enableMarksFile = d;
   else if (strcmp(settingName, "enableNTPFile") == 0)
@@ -958,8 +964,9 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->ntripServer_MountPoint, settingValue);
   else if (strcmp(settingName, "ntripServer_MountPointPW") == 0)
     strcpy(settings->ntripServer_MountPointPW, settingValue);
-  else if (strcmp(settingName, "ntripServerUseWiFiNotEthernet") == 0)
-    settings->ntripServerUseWiFiNotEthernet = d;
+  //For future expansion
+  //else if (strcmp(settingName, "ntripServerUseWiFiNotEthernet") == 0)
+  //  settings->ntripServerUseWiFiNotEthernet = d;
   else if (strcmp(settingName, "enableNtripClient") == 0)
     settings->enableNtripClient = d;
   else if (strcmp(settingName, "ntripClient_CasterHost") == 0)
@@ -976,8 +983,9 @@ bool parseLine(char* str, Settings *settings)
     strcpy(settings->ntripClient_MountPointPW, settingValue);
   else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
     settings->ntripClient_TransmitGGA = d;
-  else if (strcmp(settingName, "ntripClientUseWiFiNotEthernet") == 0)
-    settings->ntripClientUseWiFiNotEthernet = d;
+  //For future expansion
+  //else if (strcmp(settingName, "ntripClientUseWiFiNotEthernet") == 0)
+  //  settings->ntripClientUseWiFiNotEthernet = d;
   else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
     settings->serialTimeoutGNSS = d;
   else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)
@@ -1458,7 +1466,7 @@ uint8_t loadProfileNames()
   //Check LittleFS and SD for profile names
   for (int x = 0 ; x < MAX_PROFILE_COUNT ; x++)
   {
-    char fileName[56];
+    char fileName[60];
     snprintf(fileName, sizeof(fileName), "/%s_Settings_%d.txt", platformFilePrefix, x);
 
     if (getProfileName(fileName, profileNames[x], sizeof(profileNames[x])) == true)

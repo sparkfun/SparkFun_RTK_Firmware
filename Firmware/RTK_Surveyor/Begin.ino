@@ -26,6 +26,9 @@ void identifyBoard()
   else if (idValue > (3300 * 1 / 3 * 0.9) && idValue < (3300 * 1 / 3 * 1.1))
   {
     productVariant = REFERENCE_STATION;
+    //We can't auto-detect the ZED version if the firmware is in configViaEthernet mode,
+    //so fake it here - otherwise messageSupported always returns false
+    zedFirmwareVersionInt = 112;
   }
   else
   {
@@ -750,6 +753,8 @@ void configureGNSS()
 
   theGNSS.setAutoPVTcallbackPtr(&storePVTdata); //Enable automatic NAV PVT messages with callback to storePVTdata
   theGNSS.setAutoHPPOSLLHcallbackPtr(&storeHPdata); //Enable automatic NAV HPPOSLLH messages with callback to storeHPdata
+  theGNSS.setRTCM1005InputcallbackPtr(&storeRTCM1005data); //Configure a callback for RTCM 1005 - parsed from pushRawData
+  theGNSS.setRTCM1006InputcallbackPtr(&storeRTCM1006data); //Configure a callback for RTCM 1006 - parsed from pushRawData
 
   if (HAS_GNSS_TP_INT)
     theGNSS.setAutoTIMTPcallbackPtr(&storeTIMTPdata); //Enable automatic TIM TP messages with callback to storeTIMTPdata

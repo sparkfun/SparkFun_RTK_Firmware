@@ -97,7 +97,7 @@ typedef enum
 ButtonState buttonPreviousState = BUTTON_ROVER;
 
 //Data port mux (RTK Express) can enter one of four different connections
-typedef enum muxConnectionType_e
+typedef enum
 {
   MUX_UBLOX_NMEA = 0,
   MUX_PPS_EVENTTRIGGER,
@@ -132,6 +132,7 @@ typedef enum
   CUSTOM_NMEA_TYPE_DEVICE_BT_ID,
   CUSTOM_NMEA_TYPE_PARSER_STATS,
   CUSTOM_NMEA_TYPE_CURRENT_DATE,
+  CUSTOM_NMEA_TYPE_ARP_ECEF_XYZH,
 } customNmeaType_e;
 
 //Freeze and blink LEDs if we hit a bad error
@@ -153,7 +154,7 @@ enum WiFiState
 };
 volatile byte wifiState = WIFI_OFF;
 
-typedef enum ESPNOWState
+typedef enum
 {
   ESPNOW_OFF,
   ESPNOW_ON,
@@ -163,7 +164,7 @@ typedef enum ESPNOWState
 } ESPNOWState;
 volatile ESPNOWState espnowState = ESPNOW_OFF;
 
-enum NTRIPClientState
+typedef enum
 {
   NTRIP_CLIENT_OFF = 0,         //Using Bluetooth or NTRIP server
   NTRIP_CLIENT_ON,              //WIFI_START state
@@ -171,10 +172,10 @@ enum NTRIPClientState
   NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED, //Connected to an access point or Ethernet
   NTRIP_CLIENT_CONNECTING,      //Attempting a connection to the NTRIP caster
   NTRIP_CLIENT_CONNECTED,       //Connected to the NTRIP caster
-};
-volatile byte ntripClientState = NTRIP_CLIENT_OFF;
+} NTRIPClientState;
+volatile NTRIPClientState ntripClientState = NTRIP_CLIENT_OFF;
 
-enum NTRIPServerState
+typedef enum
 {
   NTRIP_SERVER_OFF = 0,         //Using Bluetooth or NTRIP client
   NTRIP_SERVER_ON,              //WIFI_START state
@@ -184,10 +185,10 @@ enum NTRIPServerState
   NTRIP_SERVER_CONNECTING,      //Attempting a connection to the NTRIP caster
   NTRIP_SERVER_AUTHORIZATION,   //Validate the credentials
   NTRIP_SERVER_CASTING,         //Sending correction data to the NTRIP caster
-};
-volatile byte ntripServerState = NTRIP_SERVER_OFF;
+} NTRIPServerState;
+volatile NTRIPServerState ntripServerState = NTRIP_SERVER_OFF;
 
-enum RtcmTransportState
+typedef enum
 {
   RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3 = 0,
   RTCM_TRANSPORT_STATE_READ_LENGTH_1,
@@ -199,21 +200,23 @@ enum RtcmTransportState
   RTCM_TRANSPORT_STATE_READ_CRC_2,
   RTCM_TRANSPORT_STATE_READ_CRC_3,
   RTCM_TRANSPORT_STATE_CHECK_CRC
-};
+} RtcmTransportState;
 
-typedef enum RadioType_e
+typedef enum
 {
   RADIO_EXTERNAL = 0,
   RADIO_ESPNOW,
 } RadioType_e;
 
-typedef enum BluetoothRadioType_e
+typedef enum
 {
   BLUETOOTH_RADIO_SPP = 0,
   BLUETOOTH_RADIO_BLE,
   BLUETOOTH_RADIO_OFF,
 } BluetoothRadioType_e;
 
+//Don't make this a typedef enum as logTestState
+//can be incremented beyond LOGTEST_END
 enum LogTestState
 {
   LOGTEST_START = 0,
@@ -229,9 +232,8 @@ enum LogTestState
   LOGTEST_4HZ_7MSG_50MS,
   LOGTEST_10HZ_5MSG_50MS,
   LOGTEST_10HZ_7MSG_50MS,
-
   LOGTEST_END,
-} ;
+};
 uint8_t logTestState = LOGTEST_END;
 
 typedef struct WiFiNetwork
@@ -285,12 +287,12 @@ typedef enum
 } ethernetStatus_e;
 
 //Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
-enum BTState
+typedef enum
 {
   BT_OFF = 0,
   BT_NOTCONNECTED,
   BT_CONNECTED,
-};
+} BTState;
 
 //Return values for getString()
 typedef enum
@@ -349,7 +351,7 @@ typedef enum
 #include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3
 
 //Each constellation will have its config key, enable, and a visible name
-typedef struct ubxConstellation
+typedef struct
 {
   uint32_t configKey;
   uint8_t gnssID;
@@ -363,7 +365,7 @@ typedef struct ubxConstellation
 
 //Different ZED modules support different messages (F9P vs F9R vs F9T)
 //Create binary packed struct for different platforms
-typedef enum ubxPlatform
+typedef enum
 {
   PLATFORM_F9P = 0b0001,
   PLATFORM_F9R = 0b0010,
@@ -396,20 +398,20 @@ typedef enum
 //Struct to describe the necessary info for each type of UBX message
 //Each message will have a key, ID, class, visible name, and various info about which platforms the message is supported on
 //Message rates are store within NVM
-typedef struct ubxMsg
+typedef struct
 {
-  uint32_t msgConfigKey;
-  uint8_t msgID;
-  uint8_t msgClass;
-  uint8_t msgDefaultRate;
-  const char* msgTextName;
-  uint32_t filterMask;
-  uint16_t f9pFirmwareVersionSupported; //The minimum version this message is supported. 0 = all versions. 9999 = Not supported
-  uint16_t f9rFirmwareVersionSupported;
+  const uint32_t msgConfigKey;
+  const uint8_t msgID;
+  const uint8_t msgClass;
+  const uint8_t msgDefaultRate;
+  const char msgTextName[20];
+  const uint32_t filterMask;
+  const uint16_t f9pFirmwareVersionSupported; //The minimum version this message is supported. 0 = all versions. 9999 = Not supported
+  const uint16_t f9rFirmwareVersionSupported;
 } ubxMsg;
 
 //Static array containing all the compatible messages
-ubxMsg ubxMessages[] =
+const ubxMsg ubxMessages[] =
 {
   //NMEA
   {UBLOX_CFG_MSGOUT_NMEA_ID_DTM_UART1, UBX_NMEA_DTM, UBX_CLASS_NMEA, 0, "UBX_NMEA_DTM", SFE_UBLOX_FILTER_NMEA_DTM, 112, 120},
@@ -613,16 +615,16 @@ ubxMsg ubxMessages[] =
 
 //Struct to describe the necessary info for each UBX command
 //Each command will have a key, and minimum F9P/F9R versions that support that command
-typedef struct ubxCmd
+typedef struct
 {
-  uint32_t cmdKey;
-  const char* cmdTextName;
-  uint16_t f9pFirmwareVersionSupported; //The minimum version this message is supported. 0 = all versions. 9999 = Not supported
-  uint16_t f9rFirmwareVersionSupported;
+  const uint32_t cmdKey;
+  const char cmdTextName[30];
+  const uint16_t f9pFirmwareVersionSupported; //The minimum version this message is supported. 0 = all versions. 9999 = Not supported
+  const uint16_t f9rFirmwareVersionSupported;
 } ubxCmd;
 
 //Static array containing all the compatible commands
-ubxCmd ubxCommands[] =
+const ubxCmd ubxCommands[] =
 {
   {UBLOX_CFG_TMODE_MODE, "CFG_TMODE_MODE", 0, 9999}, //Survey mode is only available on ZED-F9P modules
 
@@ -676,6 +678,8 @@ typedef struct {
   muxConnectionType_e dataPortChannel = MUX_UBLOX_NMEA; //Mux default to ublox UART1
   uint16_t spiFrequency = 16; //By default, use 16MHz SPI
   bool enableLogging = true; //If an SD card is present, log default sentences
+  bool enableARPLogging = false; //Log the Antenna Reference Position from RTCM 1005/1006 - if available
+  uint16_t ARPLoggingInterval_s = 10; //Log the ARP every 10 seconds - if available
   uint16_t sppRxQueueSize = 2048;
   uint16_t sppTxQueueSize = 512;
   uint8_t dynamicModel = DYN_MODEL_PORTABLE;
@@ -719,7 +723,7 @@ typedef struct {
   char ntripServer_MountPointPW[50] = "WR5wRo4H";
   //Products that have Ethernet will always use Ethernet for NTRIP Server and Client, unless ntripServerUseWiFiNotEthernet is set to true.
   //Setting ntripServerUseWiFiNotEthernet to true will make Ethernet-enabled products use WiFi for NTRIP Server instead.
-  bool ntripServerUseWiFiNotEthernet = false;
+  //bool ntripServerUseWiFiNotEthernet = false; //For future expansion
 
   //NTRIP Client
   bool enableNtripClient = false;
@@ -731,7 +735,7 @@ typedef struct {
   char ntripClient_MountPointPW[50] = "";
   bool ntripClient_TransmitGGA = true;
   //Setting ntripClientUseWiFiNotEthernet to true will make Ethernet-enabled products use WiFi for NTRIP Client instead.
-  bool ntripClientUseWiFiNotEthernet = false;
+  //bool ntripClientUseWiFiNotEthernet = false; //For future expansion
 
   int16_t serialTimeoutGNSS = 1; //In ms - used during SerialGNSS.begin. Number of ms to pass of no data before hardware serial reports data available.
 
@@ -847,7 +851,6 @@ typedef struct {
   bool mdnsEnable = false; //Allows locating of device from browser address 'rtk.local'
 } Settings;
 Settings settings;
-const Settings defaultSettings = Settings();
 
 //Monitor which devices on the device are on or offline.
 struct struct_online {

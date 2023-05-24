@@ -11,11 +11,15 @@ void menuLog()
     if (settings.enableSD && online.microSD)
     {
       char sdCardSizeChar[20];
-      stringHumanReadableSize(sdCardSize).toCharArray(sdCardSizeChar, sizeof(sdCardSizeChar));
+      String cardSize;
+      stringHumanReadableSize(cardSize, sdCardSize);
+      cardSize.toCharArray(sdCardSizeChar, sizeof(sdCardSizeChar));
       char sdFreeSpaceChar[20];
-      stringHumanReadableSize(sdFreeSpace).toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
+      String freeSpace;
+      stringHumanReadableSize(freeSpace, sdFreeSpace);
+      freeSpace.toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
 
-      char myString[200];
+      char myString[60];
       snprintf(myString, sizeof(myString),
                "SD card size: %s / Free space: %s",
                sdCardSizeChar,
@@ -48,20 +52,32 @@ void menuLog()
       systemPrint(settings.maxLogLength_minutes);
       systemPrintln(" minutes");
 
-      if (online.logging == true) systemPrintln("4) Start new log");
+      if (online.logging == true)
+        systemPrintln("4) Start new log");
+
+      systemPrint("5) Log Antenna Reference Position from RTCM 1005/1006: ");
+      if (settings.enableARPLogging == true) systemPrintln("Enabled");
+      else systemPrintln("Disabled");
+
+      if (settings.enableARPLogging == true)
+      {
+        systemPrint("6) Set ARP logging interval: ");
+        systemPrint(settings.ARPLoggingInterval_s);
+        systemPrintln(" seconds");
+      }
     }
 
-    systemPrint("5) Write Marks_date.csv file to microSD: ");
+    systemPrint("7) Write Marks_date.csv file to microSD: ");
     if (settings.enableMarksFile == true) systemPrintln("Enabled");
     else systemPrintln("Disabled");
 
-    systemPrint("6) Reset system if the SD card is detected but fails to initialize: ");
+    systemPrint("8) Reset system if the SD card is detected but fails to initialize: ");
     if (settings.forceResetOnSDFail == true) systemPrintln("Enabled");
     else systemPrintln("Disabled");
 
     if (HAS_ETHERNET)
     {
-      systemPrint("7) Write NTP requests to microSD: ");
+      systemPrint("9) Write NTP requests to microSD: ");
       if (settings.enableNTPFile == true) systemPrintln("Enabled");
       else systemPrintln("Disabled");
     }
@@ -110,15 +126,31 @@ void menuLog()
       beginLogging(); //Create new file based on current RTC.
       setLoggingType(); //Determine if we are standard, PPP, or custom. Changes logging icon accordingly.
     }
-    else if (incoming == 5)
+    else if (incoming == 5 && settings.enableLogging == true && online.logging == true)
+    {
+      settings.enableARPLogging ^= 1;
+    }
+    else if (incoming == 6 && settings.enableLogging == true && settings.enableARPLogging == true)
+    {
+      systemPrint("Enter the ARP logging interval in seconds: ");
+      int logSecs = getNumber(); //Returns EXIT, TIMEOUT, or long
+      if ((logSecs != INPUT_RESPONSE_GETNUMBER_EXIT) && (logSecs != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+      {
+        if (logSecs < 1 || logSecs > 600) //Arbitrary 10 minute limit
+          systemPrintln("Error: Logging interval out of range");
+        else
+          settings.ARPLoggingInterval_s = logSecs; //Recorded to NVM and file at main menu exit
+      }
+    }
+    else if (incoming == 7)
     {
       settings.enableMarksFile ^= 1;
     }
-    else if (incoming == 6)
+    else if (incoming == 8)
     {
       settings.forceResetOnSDFail ^= 1;
     }
-    else if ((HAS_ETHERNET) && (incoming == 7))
+    else if ((HAS_ETHERNET) && (incoming == 9))
     {
       settings.enableNTPFile ^= 1;
     }
@@ -273,40 +305,42 @@ void menuMessagesBaseRTCM()
     }
     else if (incoming == 2)
     {
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005")] = 1; //1105
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074")] = 1; //1074
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077")] = 0; //1077
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084")] = 1; //1084
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087")] = 0; //1087
+      int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005") - firstRTCMRecord] = 1; //1105
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074") - firstRTCMRecord] = 1; //1074
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077") - firstRTCMRecord] = 0; //1077
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084") - firstRTCMRecord] = 1; //1084
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087") - firstRTCMRecord] = 0; //1087
 
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094")] = 1; //1094
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097")] = 0; //1097
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124")] = 1; //1124
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127")] = 0; //1127
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230")] = 10; //1230
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094") - firstRTCMRecord] = 1; //1094
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097") - firstRTCMRecord] = 0; //1097
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124") - firstRTCMRecord] = 1; //1124
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127") - firstRTCMRecord] = 0; //1127
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230") - firstRTCMRecord] = 10; //1230
 
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0")] = 0; //4072_0
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1")] = 0; //4072_1
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0") - firstRTCMRecord] = 0; //4072_0
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1") - firstRTCMRecord] = 0; //4072_1
 
       systemPrintln("Reset to Defaults (1005/74/84/94/124 1Hz & 1230 0.1Hz)");
       restartBase = true;
     }
     else if (incoming == 3)
     {
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005")] = 10; //1105 0.1Hz
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074")] = 2; //1074 0.5Hz
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077")] = 0; //1077
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084")] = 2; //1084 0.5Hz
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087")] = 0; //1087
+      int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1005") - firstRTCMRecord] = 10; //1105 0.1Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1074") - firstRTCMRecord] = 2; //1074 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1077") - firstRTCMRecord] = 0; //1077
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1084") - firstRTCMRecord] = 2; //1084 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1087") - firstRTCMRecord] = 0; //1087
 
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094")] = 2; //1094 0.5Hz
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097")] = 0; //1097
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124")] = 2; //1124 0.5Hz
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127")] = 0; //1127
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230")] = 10; //1230 0.1Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1094") - firstRTCMRecord] = 2; //1094 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1097") - firstRTCMRecord] = 0; //1097
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1124") - firstRTCMRecord] = 2; //1124 0.5Hz
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1127") - firstRTCMRecord] = 0; //1127
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_1230") - firstRTCMRecord] = 10; //1230 0.1Hz
 
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0")] = 0; //4072_0
-      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1")] = 0; //4072_1
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_0") - firstRTCMRecord] = 0; //4072_0
+      settings.ubxMessageRatesBase[getMessageNumberByName("UBX_RTCM_4072_1") - firstRTCMRecord] = 0; //4072_1
 
       systemPrintln("Reset to Low Bandwidth Link (1074/84/94/124 0.5Hz & 1005/230 0.1Hz)");
       restartBase = true;
@@ -342,7 +376,7 @@ void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
       rtcmOffset = getMessageNumberByName("UBX_RTCM_1005");
     }
     else
-      setMessageOffsets(ubxMessages, messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
+      setMessageOffsets(&ubxMessages[0], messageType, startOfBlock, endOfBlock); //Find start and stop of given messageType in message array
 
     for (int x = 0 ; x < (endOfBlock - startOfBlock) ; x++)
     {
@@ -363,8 +397,8 @@ void menuMessagesSubtype(uint8_t *localMessageRate, const char* messageType)
       //Check to see if this ZED platform supports this message
       int msgNumber = (incoming - 1) + startOfBlock;
 
-      if (messageSupported(msgNumber) == true)
-        inputMessageRate(localMessageRate[msgNumber], msgNumber);
+      if (messageSupported(msgNumber + rtcmOffset) == true)
+        inputMessageRate(localMessageRate[msgNumber], msgNumber + rtcmOffset);
       else
         printUnknown(incoming);
     }
@@ -416,7 +450,7 @@ void setGNSSMessageRates(uint8_t *localMessageRate, uint8_t msgRate)
 //Based on GPS data/time, create a log file in the format SFE_Surveyor_YYMMDD_HHMMSS.ubx
 void beginLogging()
 {
-  beginLogging("");
+  beginLogging(nullptr);
 }
 
 void beginLogging(const char *customFileName)
@@ -428,22 +462,29 @@ void beginLogging(const char *customFileName)
   {
     if (online.microSD == true && settings.enableLogging == true && online.rtc == true) //We can't create a file until we have date/time
     {
-      if (strlen(customFileName) == 0)
+      if (customFileName == nullptr)
       {
         //Generate a standard log file name
         if (reuseLastLog == true) //attempt to use previous log
         {
-          reuseLastLog = false;
+          reuseLastLog = false; //Don't reuse the file a second time
 
-          if (findLastLog(logFileName, sizeof(logFileName)) == false)
+          //findLastLog does not add the preceding slash. We need to do it manually
+          logFileName[0] = '/'; //Erase any existing file name
+          logFileName[1] = 0;
+
+          if (findLastLog(&logFileName[1], sizeof(logFileName) - 1) == false)
+          {
+            logFileName[0] = 0; //No file found. Erase the slash
             log_d("Failed to find last log. Making new one.");
+          }
           else
             log_d("Using last log file.");
         }
         else
         {
           //We are not reusing the last log, so erase the global/original filename
-          strcpy(logFileName, "");
+          logFileName[0] = 0;
         }
 
         if (strlen(logFileName) == 0)
@@ -457,7 +498,7 @@ void beginLogging(const char *customFileName)
       }
       else
       {
-        strncpy(logFileName, customFileName, sizeof(logFileName) - 1);
+        strncpy(logFileName, customFileName, sizeof(logFileName) - 1); //customFileName already has the preceding slash added
       }
 
       //Allocate the ubxFile
@@ -624,8 +665,9 @@ void endLogging(bool gotSemaphore, bool releaseSemaphore)
 }
 
 //Finds last log
-//Returns true if succesful
-bool findLastLog(char *lastLogNamePrt, int lastLogNameSize)
+//Returns true if successful
+//lastLogName will contain the name of the last log file on return - ** but without the preceding slash **
+bool findLastLog(char *lastLogNamePrt, size_t lastLogNameSize)
 {
   bool foundAFile = false;
 
@@ -644,7 +686,7 @@ bool findLastLog(char *lastLogNamePrt, int lastLogNameSize)
         SdFile dir;
         const char* LOG_EXTENSION = "ubx";
         const char* LOG_PREFIX = platformFilePrefix;
-        char fname[50]; //Handle long file names
+        char fname[100]; //Handle long file names
 
         dir.open("/"); //Open root
 
@@ -674,7 +716,7 @@ bool findLastLog(char *lastLogNamePrt, int lastLogNameSize)
         File dir;
         const char* LOG_EXTENSION = "ubx";
         const char* LOG_PREFIX = platformFilePrefix;
-        char fname[50]; //Handle long file names
+        char fname[100]; //Handle long file names
 
         dir = SD_MMC.open("/"); //Open root
 
@@ -718,7 +760,7 @@ bool findLastLog(char *lastLogNamePrt, int lastLogNameSize)
 }
 
 //Given a unique string, find first and last records containing that string in message array
-void setMessageOffsets(ubxMsg *localMessage, const char* messageType, int& startOfBlock, int& endOfBlock)
+void setMessageOffsets(const ubxMsg *localMessage, const char* messageType, int& startOfBlock, int& endOfBlock)
 {
   char messageNamePiece[40]; //UBX_RTCM
   snprintf(messageNamePiece, sizeof(messageNamePiece), "UBX_%s", messageType); //Put UBX_ infront of type
@@ -889,10 +931,19 @@ void updateLogTest()
   int messages = 5;
   int semaphoreWait = 10;
 
-  logTestState++; //Advance to next state
+  //Advance to next state
+  //Note: logTestState is LOGTEST_END by default.
+  //      The increment causes the default switch case to be executed, resetting logTestState to LOGTEST_END.
+  //      The test is started via the debug menu, setting logTestState to LOGTEST_START.
+  logTestState++;
 
   switch (logTestState)
   {
+    default:
+      logTestState = LOGTEST_END;
+      settings.runLogTest = false;
+      break;
+
     case (LOGTEST_4HZ_5MSG_10MS):
       //During the first test, create the log file
       reuseLastLog = false;
@@ -975,11 +1026,6 @@ void updateLogTest()
       semaphoreWait = 10;
       setLogTestFrequencyMessages(rate, messages); //Set messages and rate for both UART1 / SPI and USB ports
       log_d("Log Test Complete");
-      break;
-
-    default:
-      logTestState = LOGTEST_END;
-      settings.runLogTest = false;
       break;
   }
 

@@ -353,15 +353,7 @@ void handleGNSSDataTask(void *e)
     //Send data to the TCP clients
     //----------------------------------------------------------------------
 
-    //TODO: consider changing this to:
-    //if ((!online.tcpServer) && (!online.tcpClient) && (!wifiTcpConnected))
-    //as this would prevent wifiSendTcpData from trying to send bytes after a WiFiStop
-    //Note: it would be even better if it were changed to:
-    //if (((!online.tcpServer) && (!online.tcpClient)) || (!wifiTcpConnected))
-    //but you cannot do that as wifiTcpConnected is configured _inside_ wifiSendTcpData
-    //When time permits, we could move the code that configures wifiTcpConnected into tcpUpdate
-    //leaving only the actual transmit code in wifiSendTcpData
-    if ((!settings.enableTcpServer) && (!settings.enableTcpClient) && (!wifiTcpConnected))
+    if (((!online.tcpServer) && (!online.tcpClient)) || (!wifiTcpConnected))
       tcpTailWiFi = dataHead;
     else if (tcpBytesToSendWiFi > 0)
     {
@@ -1203,9 +1195,13 @@ void sdSizeCheckTask(void *e)
 
         //uint64_t sdUsedSpace = sdCardSize - sdFreeSpace; //Don't think of it as used, think of it as unusable
 
+        String cardSize;
+        stringHumanReadableSize(cardSize, sdCardSize);
+        String freeSpace;
+        stringHumanReadableSize(freeSpace, sdFreeSpace);
         systemPrintf("SD card size: %s / Free space: %s\r\n",
-                     stringHumanReadableSize(sdCardSize),
-                     stringHumanReadableSize(sdFreeSpace)
+                     cardSize,
+                     freeSpace
                     );
 
         outOfSDSpace = false;

@@ -178,7 +178,7 @@ const uint8_t sdSizeCheckTaskPriority = 0; //3 being the highest, and 0 being th
 const int sdSizeCheckStackSize = 3000;
 bool sdSizeCheckTaskComplete = false;
 
-char logFileName[sizeof("SFE_Facet_L-Band_230101_120101.ubx_plusExtraSpace")] = "";
+char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace")] = { 0 };
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Connection settings to NTRIP Caster
@@ -250,25 +250,52 @@ uint8_t zedModuleType = PLATFORM_F9P; //Controls which messages are supported an
 class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 {
   public:
-    SemaphoreHandle_t gnssSemaphore = nullptr;
+    //SemaphoreHandle_t gnssSemaphore = nullptr;
+
+    //Revert to a simple bool lock. The Mutex was causing occasional panics caused by vTaskPriorityDisinheritAfterTimeout in lock()
+    //(I think possibly / probably caused by the GNSS not being pinned to one core?
+    bool iAmLocked = false;
+    
     bool createLock(void)
     {
-      if (gnssSemaphore == nullptr)
-        gnssSemaphore = xSemaphoreCreateMutex();
-      return gnssSemaphore;
+      //if (gnssSemaphore == nullptr)
+      //  gnssSemaphore = xSemaphoreCreateMutex();
+      //return gnssSemaphore;
+      
+      return true;
     }
     bool lock(void)
     {
-      return (xSemaphoreTake(gnssSemaphore, 2100) == pdPASS);
+      //return (xSemaphoreTake(gnssSemaphore, 2100) == pdPASS);
+      
+      if (!iAmLocked)
+      {
+        iAmLocked = true;
+        return true;
+      }
+      
+      unsigned long startTime = millis();
+      while (((millis() - startTime) < 2100) && (iAmLocked))
+        delay(1); //Yield
+
+      if (!iAmLocked)
+      {
+        iAmLocked = true;
+        return true;
+      }
+
+      return false;
     }
     void unlock(void)
     {
-      xSemaphoreGive(gnssSemaphore);
+      //xSemaphoreGive(gnssSemaphore);
+
+      iAmLocked = false;
     }
     void deleteLock(void)
     {
-      vSemaphoreDelete(gnssSemaphore);
-      gnssSemaphore = nullptr;
+      //vSemaphoreDelete(gnssSemaphore);
+      //gnssSemaphore = nullptr;
     }
 };
 
@@ -308,6 +335,13 @@ uint32_t timTpEpoch;
 uint32_t timTpMicros;
 
 uint8_t aStatus = SFE_UBLOX_ANTENNA_STATUS_DONTKNOW;
+
+unsigned long lastARPLog = 0; //Time of the last ARP log event
+bool newARPAvailable = false;
+int64_t ARPECEFX = 0; //ARP ECEF is 38-bit signed
+int64_t ARPECEFY = 0;
+int64_t ARPECEFZ = 0;
+uint16_t ARPECEFH = 0;
 
 const byte haeNumberOfDecimals = 8; //Used for printing and transmitting lat/lon
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -597,7 +631,7 @@ bool wifiOutgoingRTCM = false;
 bool espnowIncomingRTCM = false;
 bool espnowOutgoingRTCM = false;
 
-static byte rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
+static RtcmTransportState rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
 uint16_t failedParserMessages_UBX = 0;
 uint16_t failedParserMessages_RTCM = 0;
 uint16_t failedParserMessages_NMEA = 0;
@@ -926,6 +960,45 @@ void updateLogs()
         //While a retry does occur during the next loop, it is possible to loose
         //trigger events if they occur too rapidly or if the log file is closed
         //before the trigger event is written!
+        log_w("sdCardSemaphore failed to yield, held by %s, RTK_Surveyor.ino line %d", semaphoreHolder, __LINE__);
+      }
+    }
+
+    //Record the Antenna Reference Position - if available
+    if (newARPAvailable == true && settings.enableARPLogging && ((millis() - lastARPLog) > (settings.ARPLoggingInterval_s * 1000)))
+    {
+      systemPrintln("Recording Antenna Reference Position");
+
+      lastARPLog = millis();
+      newARPAvailable = false;
+
+      double x = ARPECEFX;
+      x /= 10000.0; //Convert to m
+      double y = ARPECEFY;
+      y /= 10000.0; //Convert to m
+      double z = ARPECEFZ;
+      z /= 10000.0; //Convert to m
+      double h = ARPECEFH;
+      h /= 10000.0; //Convert to m
+      char ARPData[82]; //Max NMEA sentence length is 82
+      snprintf(ARPData, sizeof(ARPData), "%.4f,%.4f,%.4f,%.4f", x, y, z, h);
+
+      char nmeaMessage[82]; //Max NMEA sentence length is 82
+      createNMEASentence(CUSTOM_NMEA_TYPE_ARP_ECEF_XYZH, nmeaMessage, sizeof(nmeaMessage), ARPData); //textID, buffer, sizeOfBuffer, text
+
+      if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_shortWait_ms) == pdPASS)
+      {
+        markSemaphore(FUNCTION_EVENT);
+
+        ubxFile->println(nmeaMessage);
+
+        xSemaphoreGive(sdCardSemaphore);
+        newEventToRecord = false;
+      }
+      else
+      {
+        char semaphoreHolder[50];
+        getSemaphoreFunction(semaphoreHolder);
         log_w("sdCardSemaphore failed to yield, held by %s, RTK_Surveyor.ino line %d", semaphoreHolder, __LINE__);
       }
     }

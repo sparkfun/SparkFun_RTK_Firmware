@@ -381,7 +381,7 @@ bool createTestFile()
 {
   FileSdFatMMC testFile;
 
-  //TODO: double-check that SdFat tollerates preceeding slashes
+  //TODO: double-check that SdFat tollerates preceding slashes
   char testFileName[40] = "/testfile.txt";
 
   //Attempt to write to the file system
@@ -524,7 +524,9 @@ void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, size_t sizeO
 //Reset settings struct to default initializers
 void settingsToDefaults()
 {
-  settings = defaultSettings;
+  Settings *defaultSettings = new Settings;
+  memcpy(&settings, defaultSettings, sizeof(Settings));
+  delete defaultSettings;
 }
 
 //Given a spot in the ubxMsg array, return true if this message is supported on this platform and firmware version

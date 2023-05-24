@@ -253,6 +253,24 @@ void storeMONHWdata(UBX_MON_HW_data_t *ubxDataStruct)
   aStatus = ubxDataStruct->aStatus;
 }
 
+void storeRTCM1005data(RTCM_1005_data_t *rtcmData1005)
+{
+  ARPECEFX = rtcmData1005->AntennaReferencePointECEFX;
+  ARPECEFY = rtcmData1005->AntennaReferencePointECEFY;
+  ARPECEFZ = rtcmData1005->AntennaReferencePointECEFZ;
+  ARPECEFH = 0;
+  newARPAvailable = true;
+}
+
+void storeRTCM1006data(RTCM_1006_data_t *rtcmData1006)
+{
+  ARPECEFX = rtcmData1006->AntennaReferencePointECEFX;
+  ARPECEFY = rtcmData1006->AntennaReferencePointECEFY;
+  ARPECEFZ = rtcmData1006->AntennaReferencePointECEFZ;
+  ARPECEFH = rtcmData1006->AntennaHeight;
+  newARPAvailable = true;
+}
+
 //Helper method to convert GNSS time and date into Unix Epoch
 void convertGnssTimeToEpoch(uint32_t *epochSecs, uint32_t *epochMicros)
 {

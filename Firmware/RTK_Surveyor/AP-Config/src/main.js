@@ -95,8 +95,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
-                hide("allowWiFiOverEthernetClient")
-                hide("allowWiFiOverEthernetServer")
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
 
                 hide("dataPortChannelDropdown");
             }
@@ -106,8 +106,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
-                hide("allowWiFiOverEthernetClient")
-                hide("allowWiFiOverEthernetServer")
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
             }
             else if (platformPrefix == "Express Plus") {
                 hide("baseConfig");
@@ -115,8 +115,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
-                hide("allowWiFiOverEthernetClient")
-                hide("allowWiFiOverEthernetServer")
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
 
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
             }
@@ -126,8 +126,8 @@ function parseIncoming(msg) {
                 show("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
-                hide("allowWiFiOverEthernetClient")
-                hide("allowWiFiOverEthernetServer")
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
             }
             else if (platformPrefix == "Reference Station") {
                 show("baseConfig");
@@ -135,8 +135,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 show("ethernetConfig");
                 show("ntpConfig");
-                show("allowWiFiOverEthernetClient")
-                show("allowWiFiOverEthernetServer")
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
             }
         }
         else if (id.includes("zedFirmwareVersionInt")) {
@@ -345,6 +345,7 @@ function parseIncoming(msg) {
         ge("radioType").dispatchEvent(new CustomEvent('change'));
         ge("antennaReferencePoint").dispatchEvent(new CustomEvent('change'));
         ge("autoIMUmountAlignment").dispatchEvent(new CustomEvent('change'));
+        ge("enableARPLogging").dispatchEvent(new CustomEvent('change'));
 
         updateECEFList();
         updateGeodeticList();
@@ -591,6 +592,7 @@ function validateFields() {
     if (ge("enableTcpClient").checked || ge("enableTcpServer").checked) {
         checkElementString("wifiTcpPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
     }
+    checkCheckboxMutex("enableTcpClient", "enableTcpServer", "TCP Client and Server can not be enabled at the same time", "collapseWiFiConfig");
 
     //System Config
     if (ge("enableLogging").checked) {
@@ -600,6 +602,13 @@ function validateFields() {
     else {
         clearElement("maxLogTime_minutes", 60 * 24);
         clearElement("maxLogLength_minutes", 60 * 24);
+    }
+
+    if (ge("enableARPLogging").checked) {
+        checkElementValue("ARPLoggingInterval", 1, 600, "Must be 1 to 600", "collapseSystemConfig");
+    }
+    else {
+        clearElement("ARPLoggingInterval", 10);
     }
 
     //Ethernet
@@ -836,6 +845,19 @@ function checkElementCasterUser(id, badUserName, errorText, collapseID) {
     }
     else
         clearError(id);
+}
+
+function checkCheckboxMutex(id1, id2, errorText, collapseID) {
+    if ((ge(id1).checked) && (ge(id2).checked)) {
+        ge(id1 + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(id2 + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else {
+        clearError(id1);
+        clearError(id2);
+    }
 }
 
 function clearElement(id, value) {
@@ -1148,6 +1170,15 @@ document.addEventListener("DOMContentLoaded", (event) => {
         }
         else {
             hide("enableLoggingDetails");
+        }
+    });
+
+    ge("enableARPLogging").addEventListener("change", function () {
+        if (ge("enableARPLogging").checked) {
+            show("enableARPLoggingDetails");
+        }
+        else {
+            hide("enableARPLoggingDetails");
         }
     });
 

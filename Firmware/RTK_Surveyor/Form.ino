@@ -204,7 +204,9 @@ void startWebServer(bool startWiFi, int httpPort)
   {
     String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
     systemPrintln(logmessage);
-    request->send(200, "text/plain", getFileList());
+    String files;
+    getFileList(files);
+    request->send(200, "text/plain", files);
   });
 
   //Handler for supported messages list
@@ -212,7 +214,9 @@ void startWebServer(bool startWiFi, int httpPort)
   {
     String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
     systemPrintln(logmessage);
-    request->send(200, "text/plain", createMessageList());
+    String messages;
+    createMessageList(messages);
+    request->send(200, "text/plain", messages);
   });
 
   //Handler for supported RTCM/Base messages list
@@ -220,7 +224,9 @@ void startWebServer(bool startWiFi, int httpPort)
   {
     String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
     systemPrintln(logmessage);
-    request->send(200, "text/plain", createMessageListBase());
+    String messageList;
+    createMessageListBase(messageList);
+    request->send(200, "text/plain", messageList);
   });
 
   //Handler for file manager
@@ -299,7 +305,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
 
     logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url() + "?name=" + String(fileName) + "&action=" + String(fileAction);
 
-    char slashFileName[50];
+    char slashFileName[60];
     snprintf(slashFileName, sizeof(slashFileName), "/%s", request->getParam("name")->value().c_str());
 
     bool fileExists;
@@ -625,8 +631,8 @@ void createSettingsString(char* newSettings)
   stringRecord(newSettings, "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
   stringRecord(newSettings, "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
 
-  stringRecord(newSettings, "ntripServerUseWiFiNotEthernet", settings.ntripServerUseWiFiNotEthernet);
-  stringRecord(newSettings, "ntripClientUseWiFiNotEthernet", settings.ntripClientUseWiFiNotEthernet);
+  //stringRecord(newSettings, "ntripServerUseWiFiNotEthernet", settings.ntripServerUseWiFiNotEthernet); //For future expansion
+  //stringRecord(newSettings, "ntripClientUseWiFiNotEthernet", settings.ntripClientUseWiFiNotEthernet); //For future expansion
 
   //Sensor Fusion Config
   stringRecord(newSettings, "enableSensorFusion", settings.enableSensorFusion);
@@ -634,13 +640,19 @@ void createSettingsString(char* newSettings)
 
   //System Config
   stringRecord(newSettings, "enableLogging", settings.enableLogging);
+  stringRecord(newSettings, "enableARPLogging", settings.enableARPLogging);
+  stringRecord(newSettings, "ARPLoggingInterval", settings.ARPLoggingInterval_s);
   stringRecord(newSettings, "maxLogTime_minutes", settings.maxLogTime_minutes);
   stringRecord(newSettings, "maxLogLength_minutes", settings.maxLogLength_minutes);
 
   char sdCardSizeChar[20];
-  stringHumanReadableSize(sdCardSize).toCharArray(sdCardSizeChar, sizeof(sdCardSizeChar));
+  String cardSize; 
+  stringHumanReadableSize(cardSize, sdCardSize);
+  cardSize.toCharArray(sdCardSizeChar, sizeof(sdCardSizeChar));
   char sdFreeSpaceChar[20];
-  stringHumanReadableSize(sdFreeSpace).toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
+  String freeSpace;
+  stringHumanReadableSize(freeSpace, sdFreeSpace);
+  freeSpace.toCharArray(sdFreeSpaceChar, sizeof(sdFreeSpaceChar));
 
   stringRecord(newSettings, "sdFreeSpace", sdFreeSpaceChar);
   stringRecord(newSettings, "sdSize", sdCardSizeChar);
@@ -807,7 +819,7 @@ void createSettingsString(char* newSettings)
     else //batt level > 75
       iconLevel = 3;
 
-    char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+    char batteryIconFileName[sizeof("src/Battery2_Charging.png__")]; //sizeof() includes 1 for \0 termination
 
     if (externalPowerConnected)
       snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
@@ -817,7 +829,7 @@ void createSettingsString(char* newSettings)
     stringRecord(newSettings, "batteryIconFileName", batteryIconFileName);
 
     //Determine battery percent
-    char batteryPercent[sizeof("+100%")];
+    char batteryPercent[sizeof("+100%__")];
     int tempLevel = battLevel;
     if (tempLevel > 100) tempLevel = 100;
 
@@ -972,7 +984,7 @@ void createDynamicDataString(char* settingsCSV)
     else //batt level > 75
       iconLevel = 3;
 
-    char batteryIconFileName[sizeof("src/Battery2_Charging.png")]; //sizeof() includes 1 for \0 termination
+    char batteryIconFileName[sizeof("src/Battery2_Charging.png__")]; //sizeof() includes 1 for \0 termination
 
     if (externalPowerConnected)
       snprintf(batteryIconFileName, sizeof(batteryIconFileName), "src/Battery%d_Charging.png", iconLevel);
@@ -982,7 +994,7 @@ void createDynamicDataString(char* settingsCSV)
     stringRecord(settingsCSV, "batteryIconFileName", batteryIconFileName);
 
     //Determine battery percent
-    char batteryPercent[sizeof("+100%")];
+    char batteryPercent[sizeof("+100%__")];
     if (externalPowerConnected)
       snprintf(batteryPercent, sizeof(batteryPercent), "+%d%%", battLevel);
     else
@@ -1061,6 +1073,10 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
     settings.radioPortBaud = settingValue;
   else if (strcmp(settingName, "enableLogging") == 0)
     settings.enableLogging = settingValueBool;
+  else if (strcmp(settingName, "enableARPLogging") == 0)
+    settings.enableARPLogging = settingValueBool;
+  else if (strcmp(settingName, "ARPLoggingInterval") == 0)
+    settings.ARPLoggingInterval_s = settingValue;
   else if (strcmp(settingName, "dataPortChannel") == 0)
     settings.dataPortChannel = (muxConnectionType_e)settingValue;
   else if (strcmp(settingName, "autoIMUmountAlignment") == 0)
@@ -1117,10 +1133,11 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
     settings.ntripClient_TransmitGGA = settingValueBool;
     
-  else if (strcmp(settingName, "ntripServerUseWiFiNotEthernet") == 0)
-    settings.ntripServerUseWiFiNotEthernet = settingValueBool;
-  else if (strcmp(settingName, "ntripClientUseWiFiNotEthernet") == 0)
-    settings.ntripClientUseWiFiNotEthernet = settingValueBool;
+  //For future expansion
+  //else if (strcmp(settingName, "ntripServerUseWiFiNotEthernet") == 0)
+  //  settings.ntripServerUseWiFiNotEthernet = settingValueBool;
+  //else if (strcmp(settingName, "ntripClientUseWiFiNotEthernet") == 0)
+  //  settings.ntripClientUseWiFiNotEthernet = settingValueBool;
     
   else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
     settings.serialTimeoutGNSS = settingValue;
@@ -1204,22 +1221,22 @@ void updateSettingWithValue(const char *settingName, const char* settingValueStr
   else if (strcmp(settingName, "ethernetIP") == 0)
   {
     String tempString = String(settingValueStr);
-    settings.ethernetIP.fromString(settingValueStr);
+    settings.ethernetIP.fromString(tempString);
   }
   else if (strcmp(settingName, "ethernetDNS") == 0)
   {
     String tempString = String(settingValueStr);
-    settings.ethernetDNS.fromString(settingValueStr);
+    settings.ethernetDNS.fromString(tempString);
   }
   else if (strcmp(settingName, "ethernetGateway") == 0)
   {
     String tempString = String(settingValueStr);
-    settings.ethernetGateway.fromString(settingValueStr);
+    settings.ethernetGateway.fromString(tempString);
   }
   else if (strcmp(settingName, "ethernetSubnet") == 0)
   {
     String tempString = String(settingValueStr);
-    settings.ethernetSubnet.fromString(settingValueStr);
+    settings.ethernetSubnet.fromString(tempString);
   }
   else if (strcmp(settingName, "ethernetHttpPort") == 0)
     settings.ethernetHttpPort = settingValue;
@@ -1631,10 +1648,18 @@ bool parseIncomingSettings()
 
 //When called, responds with the root folder list of files on SD card
 //Name and size are formatted in CSV, formatted to html by JS
-String getFileList()
+void getFileList(String &returnText)
 {
-  //settingsCSV[0] = '\'0; //Clear array
-  String returnText = "";
+  returnText = "";
+
+  //Update the SD Size and Free Space
+  String cardSize; 
+  stringHumanReadableSize(cardSize, sdCardSize);
+  returnText += "sdSize," + cardSize + ",";
+  String freeSpace;
+  stringHumanReadableSize(freeSpace, sdFreeSpace);
+  returnText += "sdFreeSpace," + freeSpace + ",";
+  
   char fileName[50]; //Handle long file names
 
   //Attempt to gain access to the SD card
@@ -1657,7 +1682,9 @@ String getFileList()
 
           file.getName(fileName, sizeof(fileName));
 
-          returnText += "fmName," + String(fileName) + ",fmSize," + stringHumanReadableSize(file.fileSize()) + ",";
+          String fileSize;
+          stringHumanReadableSize(fileSize, file.fileSize());
+          returnText += "fmName," + String(fileName) + ",fmSize," + fileSize + ",";
         }
       }
 
@@ -1680,7 +1707,9 @@ String getFileList()
           {
             fileCount++;
 
-            returnText += "fmName," + String(file.name()) + ",fmSize," + stringHumanReadableSize(file.size()) + ",";
+            String fileSize;
+            stringHumanReadableSize(fileSize, file.size());
+            returnText += "fmName," + String(file.name()) + ",fmSize," + fileSize + ",";
           }
 
           file = root.openNextFile();
@@ -1704,17 +1733,14 @@ String getFileList()
   }
 
   log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
-
-  return returnText;
 }
 
 //When called, responds with the messages supported on this platform
 //Message name and current rate are formatted in CSV, formatted to html by JS
-String createMessageList()
+void createMessageList(String &returnText)
 {
-  String returnText = "";
+  returnText = "";
 
-  char tempString[50];
   for (int messageNumber = 0 ; messageNumber < MAX_UBX_MSG ; messageNumber++)
   {
     if (messageSupported(messageNumber) == true)
@@ -1722,15 +1748,13 @@ String createMessageList()
   }
 
   log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
-
-  return returnText;
 }
 
 //When called, responds with the RTCM/Base messages supported on this platform
 //Message name and current rate are formatted in CSV, formatted to html by JS
-String createMessageListBase()
+void createMessageListBase(String &returnText)
 {
-  String returnText = "";
+  returnText = "";
 
   int firstRTCMRecord = getMessageNumberByName("UBX_RTCM_1005");
 
@@ -1741,12 +1765,10 @@ String createMessageListBase()
   }
 
   log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
-
-  return returnText;
 }
 
 //Make size of files human readable
-String stringHumanReadableSize(uint64_t bytes)
+void stringHumanReadableSize(String &returnText, uint64_t bytes)
 {
   char suffix[5] = {'\0'};
   char readableSize[50] = {'\0'};
@@ -1771,7 +1793,7 @@ String stringHumanReadableSize(uint64_t bytes)
   else
     snprintf(readableSize, sizeof(readableSize), "%.0f %s", cardSize, suffix); //Don't print decimal portion
 
-  return String(readableSize);
+  returnText = String(readableSize);
 }
 
 #ifdef COMPILE_WIFI

@@ -118,15 +118,10 @@ jobs:
           name: ${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}
           path: ./Firmware/RTK_Surveyor/build/esp32.esp32.esp32/${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}.bin
 
-      #Workaround for Issue: https://github.com/orgs/community/discussions/55820#discussioncomment-5946136
-      - name: Downgrade git HTTP version
-        run: git config --global http.version HTTP/1.1
-
-      - name: Increase HTTP post buffer size
-        run: git config --global http.postBuffer 157286400
-
+      
       - name: Push binary to Binaries Repo
-        uses: dmnemec/copy_file_to_another_repo_action@main
+        # uses: dmnemec/copy_file_to_another_repo_action #Workaround for Issue: https://github.com/orgs/community/discussions/55820#discussioncomment-5946136
+        uses: Jason2866/copy_file_to_another_repo_action@main
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_GITHUB_RTK_FILE_TOKEN }}
         with:
@@ -146,7 +141,8 @@ jobs:
             {"Configurations": [{"Version":"${{ env.FIRMWARE_VERSION_MAJOR }}.${{ env.FIRMWARE_VERSION_MINOR }}${{ env.JSON_ENDING }}", "URL":"https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/${{ env.FILENAME_PREFIX }}${{ env.FILE_ENDING_UNDERSCORE }}.bin"}]}
 
       - name: Push JSON to Binaries Repo
-        uses: dmnemec/copy_file_to_another_repo_action@main
+        # uses: dmnemec/copy_file_to_another_repo_action #Workaround for Issue: https://github.com/orgs/community/discussions/55820#discussioncomment-5946136
+        uses: Jason2866/copy_file_to_another_repo_action@main
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_GITHUB_RTK_FILE_TOKEN }}
         with:

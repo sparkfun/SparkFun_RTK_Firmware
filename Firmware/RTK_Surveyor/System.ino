@@ -476,11 +476,28 @@ void cyclePositionLEDs()
   }
 }
 
+//Determine MUX pins for this platform and set MUX to ADC/DAC to avoid I2C bus failure
+void beginMux()
+{
+  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
+  {
+    pin_muxA = 2;
+    pin_muxB = 4;
+  }
+  else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
+  {
+    pin_muxA = 2;
+    pin_muxB = 0;
+  }
+
+  setMuxport(MUX_ADC_DAC); //Set mux to user's choice: NMEA, I2C, PPS, or DAC
+}
+
 //Set the port of the 1:4 dual channel analog mux
 //This allows NMEA, I2C, PPS/Event, and ADC/DAC to be routed through data port via software select
 void setMuxport(int channelNumber)
 {
-  if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
+  if (pin_muxA >= 0 && pin_muxB >= 0)
   {
     pinMode(pin_muxA, OUTPUT);
     pinMode(pin_muxB, OUTPUT);

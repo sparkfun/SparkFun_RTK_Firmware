@@ -752,6 +752,8 @@ void setup()
 
   initializePowerPins(); //Initialize any essential power pins - e.g. enable power for the Display
 
+  beginMux(); //Must come before I2C activity to avoid external devices from corrupting the bus. See issue #474: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/474
+
   beginI2C();
 
   beginDisplay(); //Start display to be able to display any errors

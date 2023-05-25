@@ -669,7 +669,10 @@ void menuDebug()
     systemPrintf("%s\r\n", settings.enablePrintEthernetDiag ? "Enabled" : "Disabled");
 
     systemPrint("40) Set L-Band RTK Fix Timeout (seconds): ");
-    systemPrintln(settings.lbandFixTimeout_seconds);
+    if(settings.lbandFixTimeout_seconds > 0)
+      systemPrintln(settings.lbandFixTimeout_seconds);
+    else
+      systemPrintln("Disabled - no resets");
 
     systemPrintln("t) Enter Test Screen");
 
@@ -920,11 +923,11 @@ void menuDebug()
     }
     else if (incoming == 40)
     {
-      systemPrint("Enter number of seconds in RTK float before hot-start (30 to 1200): ");
+      systemPrint("Enter number of seconds in RTK float before hot-start (0-disable to 3600): ");
       int timeout = getNumber(); //Returns EXIT, TIMEOUT, or long
       if ((timeout != INPUT_RESPONSE_GETNUMBER_EXIT) && (timeout != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
       {
-        if (timeout < 30 || timeout > 1200) //Arbitrary 20 minute limit
+        if (timeout < 0 || timeout > 3600) //Arbitrary 60 minute limit
           systemPrintln("Error: Timeout out of range");
         else
           settings.lbandFixTimeout_seconds = timeout; //Recorded to NVM and file at main menu exit

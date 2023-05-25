@@ -1060,15 +1060,18 @@ void updateLBand()
         log_d("ZED restarts: %d Time remaining before L-Band forced restart: %ds", lbandRestarts, settings.lbandFixTimeout_seconds - ((millis() - lbandStartTimer)  / 1000));
       }
 
-      if ( (millis() - lbandStartTimer) > (settings.lbandFixTimeout_seconds * 1000L))
+      if(settings.lbandFixTimeout_seconds > 0)
       {
-        lbandStartTimer = millis(); //Reset timer
-        lbandRestarts++;
+        if ( (millis() - lbandStartTimer) > (settings.lbandFixTimeout_seconds * 1000L))
+        {
+          lbandStartTimer = millis(); //Reset timer
+          lbandRestarts++;
 
-        //Hotstart ZED to try to get RTK lock
-        theGNSS.softwareResetGNSSOnly();
+          //Hotstart ZED to try to get RTK lock
+          theGNSS.softwareResetGNSSOnly();
 
-        log_d("Restarting ZED. Number of L-Band restarts: %d", lbandRestarts);
+          log_d("Restarting ZED. Number of L-Band restarts: %d", lbandRestarts);
+        }
       }
     }
     else if (carrSoln == 2 && lbandTimeToFix == 0)

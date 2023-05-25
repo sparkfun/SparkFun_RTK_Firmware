@@ -64,9 +64,9 @@ void beginBoard()
     pin_dac26 = 26;
     pin_powerFastOff = 27;
     pin_adc39 = 39;
-    //
-    //    pinMode(pin_powerSenseAndControl, INPUT_PULLUP);
-    //    pinMode(pin_powerFastOff, INPUT);
+
+    pinMode(pin_powerSenseAndControl, INPUT_PULLUP);
+    pinMode(pin_powerFastOff, INPUT);
     //
     //    if (esp_reset_reason() == ESP_RST_POWERON)
     //    {
@@ -106,10 +106,10 @@ void beginBoard()
     pin_radio_pwr = 4;
     pin_radio_cts = 5;
     //pin_radio_rts = 255; //Not implemented
-    //
-    //    pinMode(pin_powerSenseAndControl, INPUT_PULLUP);
-    //    pinMode(pin_powerFastOff, INPUT);
-    //
+
+    pinMode(pin_powerSenseAndControl, INPUT_PULLUP);
+    pinMode(pin_powerFastOff, INPUT);
+
     //    if (esp_reset_reason() == ESP_RST_POWERON)
     //    {
     //      powerOnCheck(); //Only do check if we POR start

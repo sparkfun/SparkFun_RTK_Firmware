@@ -1,4 +1,5 @@
 tokens.h
+.vscode/*
 
 # Windows image file caches
 Thumbs.db

@@ -162,7 +162,15 @@ bool configureUbloxModule()
   }
 
   if (commandSupported(UBLOX_CFG_NAV2_OUT_ENABLED) == true)
-    response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, 1); //Enable NAV2 messages no matter what
+  {
+    //Count NAV2 messages and enable NAV2 as needed. 
+    if(getNAV2MessageCount() > 0)
+    {
+      response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, 1); //Enable NAV2 messages. This has the side effect of causing RTCM to generate twice as fast.
+    }
+    else
+      response &= theGNSS.addCfgValset(UBLOX_CFG_NAV2_OUT_ENABLED, 0); //Disable NAV2 messages
+  }
 
   response &= theGNSS.sendCfgValset();
 

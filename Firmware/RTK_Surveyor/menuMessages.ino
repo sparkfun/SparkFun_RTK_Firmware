@@ -794,6 +794,31 @@ uint8_t getActiveMessageCount()
   return (count);
 }
 
+//Count the number of NAV2 messages with rates more than 0. Used for determining if we need the enable 
+//the global NAV2 feature.
+uint8_t getNAV2MessageCount()
+{
+  int enabledMessages = 0;
+  int startOfBlock = 0;
+  int endOfBlock = 0;
+
+  setMessageOffsets(&ubxMessages[0], "NAV2", startOfBlock, endOfBlock); // Find start and stop of given messageType in message array
+
+  for (int x = 0 ; x < (endOfBlock - startOfBlock) ; x++)
+  {
+      if (settings.ubxMessageRates[x + startOfBlock] > 0) enabledMessages++;
+  }
+
+  setMessageOffsets(&ubxMessages[0], "NMEANAV2", startOfBlock, endOfBlock); // Find start and stop of given messageType in message array
+
+  for (int x = 0 ; x < (endOfBlock - startOfBlock) ; x++)
+  {
+      if (settings.ubxMessageRates[x + startOfBlock] > 0) enabledMessages++;
+  }
+
+  return (enabledMessages);
+}
+
 //Given the name of a message, find it, and set the rate
 bool setMessageRateByName(const char *msgName, uint8_t msgRate)
 {

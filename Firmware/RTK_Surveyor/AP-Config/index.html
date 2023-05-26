@@ -902,9 +902,9 @@
                     </div>
 
                     <div>
-                        <button  onClick="getMessageListBase()" class="btn btn-md btn-outline-primary mt-3 toggle-btn" type="button"
-                            data-toggle="collapse" data-target="#collapseGNSSConfigMsgBase" aria-expanded="false"
-                            aria-controls="collapseGNSSConfigMsgBase">
+                        <button onClick="getMessageListBase()" class="btn btn-md btn-outline-primary mt-3 toggle-btn"
+                            type="button" data-toggle="collapse" data-target="#collapseGNSSConfigMsgBase"
+                            aria-expanded="false" aria-controls="collapseGNSSConfigMsgBase">
                             RTCM Rates <i class="caret-icon bi icon-caret-down"></i>
                         </button>
                         <span class="tt" data-bs-placement="right"
@@ -1564,7 +1564,8 @@
 
                         <div id="enableARPLoggingDetails" class="collapse mb-2">
                             <div class="form-group row">
-                                <label for="ARPLoggingInterval" class="box-margin40 col-sm-3 col-7 col-form-label">ARP Logging Interval (s):
+                                <label for="ARPLoggingInterval" class="box-margin40 col-sm-3 col-7 col-form-label">ARP
+                                    Logging Interval (s):
                                     <span class="tt" data-bs-placement="right"
                                         title="If ARP logging is enabled, the Antenna Reference Position will be logged at intervals of this many seconds.">
                                         <span class="icon-info-circle text-primary ms-2"></span>
@@ -1619,8 +1620,8 @@
             <!-- --------- Ethernet Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="ethernetConfig" type="button" data-toggle="collapse"
-                    data-target="#collapseEthernetConfig" aria-expanded="false" aria-controls="collapseEthernetConfig">
-                    <!-- style="display:none"> -->
+                    data-target="#collapseEthernetConfig" aria-expanded="false" aria-controls="collapseEthernetConfig"
+                    style="display:none">
                     Ethernet Configuration <i id="ethernetCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>
@@ -1629,7 +1630,8 @@
 
                     <div class="form-check mt-3">
                         <label class="form-check-label" for="ethernetDHCP">Ethernet uses DHCP</label>
-                        <input class="form-check-input" type="checkbox" value="" id="ethernetDHCP" onClick="dhcpEthernet()" checked>
+                        <input class="form-check-input" type="checkbox" value="" id="ethernetDHCP"
+                            onClick="dhcpEthernet()" checked>
                         <span class="tt" data-bs-placement="right"
                             title="If enabled, Ethernet will use DHCP. Disable to use a fixed IP Address, DNS, Gateway and Subnet Mask. Default: Enabled">
                             <span class="icon-info-circle text-primary ms-2"></span>
@@ -1740,8 +1742,10 @@
                         </div>
 
                         <div class="form-group row">
-                            <label for="hostForTCPClient" class="box-margin20 col-sm-3 col-4 col-form-label">Host for TCP Client:
-                                <span class="tt" data-bs-placement="right" title="The name or address of the host which the TCP client data will be pushed to.">
+                            <label for="hostForTCPClient" class="box-margin20 col-sm-3 col-4 col-form-label">Host for
+                                TCP Client:
+                                <span class="tt" data-bs-placement="right"
+                                    title="The name or address of the host which the TCP client data will be pushed to.">
                                     <span class="icon-info-circle text-primary ms-2"></span>
                                 </span>
                             </label>
@@ -1757,8 +1761,8 @@
             <!-- --------- NTP Config --------- -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary mt-3 toggle-btn" id="ntpConfig" type="button" data-toggle="collapse"
-                    data-target="#collapseNTPConfig" aria-expanded="false" aria-controls="collapseNTPConfig">
-                    <!-- style="display:none"> -->
+                    data-target="#collapseNTPConfig" aria-expanded="false" aria-controls="collapseNTPConfig"
+                    style="display:none">
                     NTP Configuration <i id="ntpCaret" class="caret-icon bi icon-caret-down"></i>
                 </button>
             </div>

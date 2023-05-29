@@ -615,6 +615,11 @@ void beginLogging(const char *customFileName)
                                    zedFirmwareVersion); // textID, buffer, sizeOfBuffer, text
                 ubxFile->println(nmeaMessage);
 
+                // ZED-F9 unique chip ID
+                createNMEASentence(CUSTOM_NMEA_TYPE_ZED_UNIQUE_ID, nmeaMessage, sizeof(nmeaMessage),
+                                   zedUniqueId); // textID, buffer, sizeOfBuffer, text
+                ubxFile->println(nmeaMessage);
+
                 // Device BT MAC. See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/346
                 char macAddress[5];
                 snprintf(macAddress, sizeof(macAddress), "%02X%02X", btMACAddress[4], btMACAddress[5]);

@@ -586,8 +586,8 @@ void createSettingsString(char *newSettings)
             strcpy(apZedPlatform, "ZED-F9R");
 
         char apZedFirmwareVersion[80];
-        snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s", apZedPlatform,
-                 zedFirmwareVersion);
+        snprintf(apZedFirmwareVersion, sizeof(apZedFirmwareVersion), "%s Firmware: %s ID: %s", apZedPlatform,
+                 zedFirmwareVersion, zedUniqueId);
         stringRecord(newSettings, "zedFirmwareVersion", apZedFirmwareVersion);
         stringRecord(newSettings, "zedFirmwareVersionInt", zedFirmwareVersionInt);
     }

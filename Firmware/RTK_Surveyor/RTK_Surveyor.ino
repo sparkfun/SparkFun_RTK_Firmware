@@ -252,6 +252,7 @@ char neoFirmwareVersion[20];       // Output to system status menu.
 uint8_t zedFirmwareVersionInt = 0; // Controls which features (constellations) can be configured (v1.12 doesn't support
                                    // SBAS). Note: will fail above 2.55!
 uint8_t zedModuleType = PLATFORM_F9P; // Controls which messages are supported and configured
+char zedUniqueId[11] = { '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', 0 }; // Output to system status menu and log file.
 
 // Use Michael's lock/unlock methods to prevent the UART2 task from calling checkUblox during a sendCommand and
 // waitForResponse. Also prevents pushRawData from being called too.

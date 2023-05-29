@@ -134,6 +134,7 @@ typedef enum
     CUSTOM_NMEA_TYPE_PARSER_STATS,
     CUSTOM_NMEA_TYPE_CURRENT_DATE,
     CUSTOM_NMEA_TYPE_ARP_ECEF_XYZH,
+    CUSTOM_NMEA_TYPE_ZED_UNIQUE_ID,
 } customNmeaType_e;
 
 // Freeze and blink LEDs if we hit a bad error

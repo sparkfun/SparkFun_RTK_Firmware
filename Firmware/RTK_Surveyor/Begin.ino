@@ -769,6 +769,12 @@ void beginGNSS()
         printZEDInfo(); // Print module type and firmware version
     }
 
+    UBX_SEC_UNIQID_data_t chipID;
+    if (theGNSS.getUniqueChipId(&chipID))
+    {
+        snprintf(zedUniqueId, sizeof(zedUniqueId), "%s", theGNSS.getUniqueChipIdStr(&chipID));
+    }
+
     online.gnss = true;
 }
 

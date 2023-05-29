@@ -17,6 +17,8 @@ void menuSystem()
 
             printZEDInfo();
 
+            systemPrintf("Module unique chip ID: %s\r\n", zedUniqueId);
+
             printCurrentConditions();
         }
         else

@@ -199,6 +199,8 @@ void recordSystemSettingsToFile(File *settingsFile)
 
     settingsFile->printf("%s=%s\r\n", "zedFirmwareVersion", zedFirmwareVersion);
 
+    settingsFile->printf("%s=%s\r\n", "zedUniqueId", zedUniqueId);
+
     if (productVariant == RTK_FACET_LBAND)
         settingsFile->printf("%s=%s\r\n", "neoFirmwareVersion", neoFirmwareVersion);
 
@@ -742,6 +744,9 @@ bool parseLine(char *str, Settings *settings)
     {
     } // Do nothing. Just read it to avoid 'Unknown setting' error
     else if (strcmp(settingName, "zedFirmwareVersion") == 0)
+    {
+    } // Do nothing. Just read it to avoid 'Unknown setting' error
+    else if (strcmp(settingName, "zedUniqueId") == 0)
     {
     } // Do nothing. Just read it to avoid 'Unknown setting' error
     else if (strcmp(settingName, "neoFirmwareVersion") == 0)

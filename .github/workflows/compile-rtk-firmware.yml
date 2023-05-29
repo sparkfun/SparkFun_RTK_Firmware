@@ -75,7 +75,7 @@ jobs:
           "SdFat"@2.1.1
           "SparkFun LIS2DH12 Arduino Library"@1.0.3
           "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
-          "SparkFun u-blox GNSS v3"@3.0.12
+          "SparkFun u-blox GNSS v3"@3.0.14
           SparkFun_WebServer_ESP32_W5500@1.5.5
 
       - name: Enable external libs

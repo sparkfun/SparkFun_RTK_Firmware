@@ -767,6 +767,7 @@ typedef struct
     pulseEdgeType_e externalPulsePolarity = PULSE_RISING_EDGE; // Pulse rises for pulse length, then falls
     bool enableExternalHardwareEventLogging = false;           // Log when INT/TM2 pin goes low
     bool enableMarksFile = false;                              // Log marks to the marks file
+    bool enableUART2UBXIn = false;                             // UBX Protocol In on UART2
 
     uint8_t ubxMessageRates[MAX_UBX_MSG] = {254}; // Mark first record with key so defaults will be applied.
 

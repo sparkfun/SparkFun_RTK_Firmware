@@ -293,6 +293,7 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "enablePrintPosition", settings.enablePrintPosition);
     settingsFile->printf("%s=%d\r\n", "enablePrintIdleTime", settings.enablePrintIdleTime);
     settingsFile->printf("%s=%d\r\n", "enableMarksFile", settings.enableMarksFile);
+    settingsFile->printf("%s=%d\r\n", "enableUART2UBXIn", settings.enableUART2UBXIn);
     settingsFile->printf("%s=%d\r\n", "enablePrintBatteryMessages", settings.enablePrintBatteryMessages);
     settingsFile->printf("%s=%d\r\n", "enablePrintRoverAccuracy", settings.enablePrintRoverAccuracy);
     settingsFile->printf("%s=%d\r\n", "enablePrintBadMessages", settings.enablePrintBadMessages);
@@ -898,6 +899,8 @@ bool parseLine(char *str, Settings *settings)
         settings->enableMarksFile = d;
     else if (strcmp(settingName, "enableNTPFile") == 0)
         settings->enableNTPFile = d;
+    else if (strcmp(settingName, "enableUART2UBXIn") == 0)
+        settings->enableUART2UBXIn = d;
     else if (strcmp(settingName, "sppRxQueueSize") == 0)
         settings->sppRxQueueSize = d;
     else if (strcmp(settingName, "sppTxQueueSize") == 0)

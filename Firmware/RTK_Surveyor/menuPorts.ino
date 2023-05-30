@@ -1,6 +1,6 @@
 void menuPorts()
 {
-    if (productVariant == RTK_SURVEYOR)
+    if (productVariant == RTK_SURVEYOR || productVariant == REFERENCE_STATION)
         menuPortsSurveyor();
     else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET ||
              productVariant == RTK_FACET_LBAND)
@@ -22,6 +22,12 @@ void menuPortsSurveyor()
         systemPrint("2) Set serial baud rate for Data Port: ");
         systemPrint(theGNSS.getVal32(UBLOX_CFG_UART1_BAUDRATE));
         systemPrintln(" bps");
+
+        systemPrint("3) GNSS UART2 UBX Protocol In: ");
+        if (settings.enableUART2UBXIn == true)
+            systemPrintln("Enabled");
+        else
+            systemPrintln("Disabled");
 
         systemPrintln("x) Exit");
 
@@ -64,6 +70,11 @@ void menuPortsSurveyor()
                     systemPrintln("Error: Baud rate out of range");
                 }
             }
+        }
+        else if (incoming == 3)
+        {
+            settings.enableUART2UBXIn ^= 1;
+            systemPrintln("UART2 Protocol In updated. Changes will be applied at next restart");
         }
 
         else if (incoming == 'x')
@@ -116,6 +127,12 @@ void menuPortsMultiplexed()
         {
             systemPrintln("3) Configure External Triggers");
         }
+
+        systemPrint("4) GNSS UART2 UBX Protocol In: ");
+        if (settings.enableUART2UBXIn == true)
+            systemPrintln("Enabled");
+        else
+            systemPrintln("Disabled");
 
         systemPrintln("x) Exit");
 
@@ -184,6 +201,11 @@ void menuPortsMultiplexed()
         else if (incoming == 3 && settings.dataPortChannel == MUX_PPS_EVENTTRIGGER)
         {
             menuPortHardwareTriggers();
+        }
+        else if (incoming == 4)
+        {
+            settings.enableUART2UBXIn ^= 1;
+            systemPrintln("UART2 Protocol In updated. Changes will be applied at next restart");
         }
         else if (incoming == 'x')
             break;

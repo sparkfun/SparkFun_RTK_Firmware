@@ -661,6 +661,7 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "autoIMUmountAlignment", settings.autoIMUmountAlignment);
 
     // System Config
+    stringRecord(newSettings, "enableUART2UBXIn", settings.enableUART2UBXIn);
     stringRecord(newSettings, "enableLogging", settings.enableLogging);
     stringRecord(newSettings, "enableARPLogging", settings.enableARPLogging);
     stringRecord(newSettings, "ARPLoggingInterval", settings.ARPLoggingInterval_s);
@@ -1097,6 +1098,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         settings.dataPortBaud = settingValue;
     else if (strcmp(settingName, "radioPortBaud") == 0)
         settings.radioPortBaud = settingValue;
+    else if (strcmp(settingName, "enableUART2UBXIn") == 0)
+        settings.enableUART2UBXIn = settingValueBool;
     else if (strcmp(settingName, "enableLogging") == 0)
         settings.enableLogging = settingValueBool;
     else if (strcmp(settingName, "enableARPLogging") == 0)

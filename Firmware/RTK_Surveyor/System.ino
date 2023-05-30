@@ -118,7 +118,7 @@ bool configureUbloxModule()
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_NMEA, 0);
     if (commandSupported(UBLOX_CFG_UART2OUTPROT_RTCM3X) == true)
         response &= theGNSS.addCfgValset(UBLOX_CFG_UART2OUTPROT_RTCM3X, 1);
-    response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_UBX, 0);
+    response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_UBX, settings.enableUART2UBXIn);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_NMEA, 0);
     response &= theGNSS.addCfgValset(UBLOX_CFG_UART2INPROT_RTCM3X, 1);
     if (commandSupported(UBLOX_CFG_UART2INPROT_SPARTN) == true)

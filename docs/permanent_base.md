@@ -265,7 +265,7 @@ Once WiFi connects the device will attempt to connect to the NTRIP mount point. 
 
 Your RTK device can both serve RTCM correction data (aka Server) to an NTRIP Caster and get RTCM correction data (aka Client) from an NTRIP Caster. But how does one get an NTRIP Caster?
 
-There are a variety of Windows applications out there that claim to be an NTRIP caster. We found them to be generally terrible. The easiest solutions we've found are [RTK2GO](rtk2go.com) or [Emlid Caster](caster.emlid.com). Both are free and available to the public.
+There are a variety of Windows applications out there that claim to be an NTRIP caster. We found them to be generally terrible. The easiest solutions we've found are [RTK2GO](http://rtk2go.com) or [Emlid Caster](https://emlid.com/ntrip-caster/). Both are free and available to the public.
 
 ### RTK2Go
 
@@ -305,7 +305,7 @@ To verify that your RTK product is correctly broadcasting RTCM data, you can acc
 
 ### Emlid Caster
 
-[Emlid Caster](caster.emlid.com) is also very easy to set up and has a bit more user-friendly-looking website. Creating an account is very straightforward.
+[Emlid Caster](https://emlid.com/ntrip-caster/) is also very easy to set up and has a bit more user-friendly-looking website. Creating an account is very straightforward.
 
 ![Emlid Mount Points](img/SparkFun%20RTK%20Emlid%20Mount%20Points.png)
 

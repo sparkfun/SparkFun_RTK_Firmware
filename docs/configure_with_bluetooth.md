@@ -8,7 +8,7 @@ Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported]
 
 Starting with firmware v3.0, Bluetooth-based configuration is supported. For more information about updating the firmware on your device, please see [Updating RTK Firmware](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/).
 
-The RTK device will be a discoverable Bluetooth device (both BT SPP and BLE are supported). For information about Bluetooth pairing, please see [Connecting Bluetooth](/docs/connecting_bluetooth.md).
+The RTK device will be a discoverable Bluetooth device (both BT SPP and BLE are supported). For information about Bluetooth pairing, please see [Connecting Bluetooth](connecting_bluetooth.md).
 
 ## Entering Bluetooth Echo Mode
 
@@ -24,7 +24,7 @@ Once connected, the RTK device will report a large amount of NMEA data over the 
 
 Once in Bluetooth Echo Mode, any character sent from the RTK unit will be shown in the Bluetooth app, and any character sent from the connected device (cell phone, laptop, etc) will be received by the RTK device. This allows the opening of the config menu as well as the viewing of all regular system output.
 
-For more information about the Serial Config menu please see [Configure with Serial](/docs/configure_with_serial.md).
+For more information about the Serial Config menu please see [Configure with Serial](configure_with_serial.md).
 
 ![System output over Bluetooth](img/Bluetooth/SparkFun%20RTK%20BEM%20-%20System%20Output.png)
 

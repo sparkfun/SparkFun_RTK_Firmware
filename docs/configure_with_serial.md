@@ -2,7 +2,7 @@
 
 Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
 
-**Note:** Starting with v3.0 of the firmware any serial menu that is shown can also be accessed over Bluetooth. This makes any configuration of a device much easier in the field. Please see [Configure With Bluetooth](docs\configure_with_bluetooth.md) for more information.
+**Note:** Starting with v3.0 of the firmware any serial menu that is shown can also be accessed over Bluetooth. This makes any configuration of a device much easier in the field. Please see [Configure With Bluetooth](configure_with_bluetooth.md) for more information.
 
 To configure an RTK device using serial attach a [USB C cable](https://www.sparkfun.com/products/15425) to the device. The device can be on or off.
 
@@ -56,5 +56,5 @@ The menus will timeout after 10 minutes of inactivity, so if you do not press a 
 
 *Configuration menu via Bluetooth*
 
-**Note:** Starting with firmware v3.0, Bluetooth-based configuration is supported. Please see [Configure With Bluetooth](docs\configure_with_bluetooth.md) for more information.
+**Note:** Starting with firmware v3.0, Bluetooth-based configuration is supported. Please see [Configure With Bluetooth](configure_with_bluetooth.md) for more information.
 

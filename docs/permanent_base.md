@@ -301,7 +301,7 @@ The differences between Server and Client are small. The Server needs to know th
 
 *The SparkFun Mount Point 'bldr_SparkFun1'*
 
-To verify that your RTK product is correctly broadcasting RTCM data, you can access RTK2Go from a browser on Port 2101. This link [RTK2Go.com:2101](RTK2go.com:2101) will show a list of all current NTRIP Servers that are pushing data to the RTK2Go caster, and are available to be accessed, free of charge, by any NTRIP Client in the world.
+To verify that your RTK product is correctly broadcasting RTCM data, you can access RTK2Go from a browser on Port 2101. This link [RTK2Go.com:2101](http://www.rtk2go.com:2101/) will show a list of all current NTRIP Servers that are pushing data to the RTK2Go caster, and are available to be accessed, free of charge, by any NTRIP Client in the world.
 
 ### Emlid Caster
 

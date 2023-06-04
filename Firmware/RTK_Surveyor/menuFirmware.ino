@@ -291,7 +291,7 @@ void scanForFirmware()
             tempFile = dir.openNextFile();
         }
     }
-#endif
+#endif  // COMPILE_SD_MMC
 }
 
 // Look for firmware file on SD card and update as needed
@@ -343,7 +343,7 @@ void updateFromSD(const char *firmwareFileName)
             return;
         }
     }
-#endif
+#endif  // COMPILE_SD_MMC
 
     FileSdFatMMC firmwareFile;
     firmwareFile.open(firmwareFileName, O_READ);
@@ -438,7 +438,7 @@ void updateFromSD(const char *firmwareFileName)
 #ifdef COMPILE_SD_MMC
                 else
                     SD_MMC.remove(firmwareFileName);
-#endif
+#endif  // COMPILE_SD_MMC
 
                 theGNSS.factoryDefault(); // Reset everything: baud rate, I2C address, update rate, everything. And save
                                           // to BBR.
@@ -533,7 +533,7 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
     if (gotVersion == true)
         log_d("Available OTA firmware version: %s\r\n", versionAvailable);
 
-#endif
+#endif  // COMPILE_WIFI
     return (gotVersion);
 }
 
@@ -571,7 +571,7 @@ void otaUpdate()
 #ifdef COMPILE_AP
                 // Tell AP page to display reset info
                 websocket->textAll("confirmReset,1,");
-#endif
+#endif  // COMPILE_AP
             }
             ESP.restart();
         }
@@ -597,7 +597,7 @@ void otaUpdate()
     if (previouslyConnected == false)
         wifiStop();
 
-#endif
+#endif  // COMPILE_WIFI
 }
 
 // Called while the OTA Pull update is happening
@@ -628,7 +628,7 @@ void otaPullCallback(int bytesWritten, int totalLength)
             char myProgress[50];
             snprintf(myProgress, sizeof(myProgress), "otaFirmwareStatus,%d,", percent);
             websocket->textAll(myProgress);
-#endif
+#endif  // COMPILE_AP
         }
 
         previousPercent = percent;
@@ -661,7 +661,7 @@ const char *otaPullErrorText(int code)
             return "Unexpected HTTP response code";
         break;
     }
-#endif
+#endif  // COMPILE_WIFI
     return "Unknown error";
 }
 

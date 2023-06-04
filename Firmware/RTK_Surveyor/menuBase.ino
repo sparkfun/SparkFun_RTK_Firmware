@@ -750,7 +750,7 @@ bool getFileLineSD(const char *fileName, int lineToFind, char *lineData, int lin
 
                 file.close();
             }
-#endif
+#endif  // COMPILE_SD_MMC
             break;
         } // End Semaphore check
         else
@@ -821,7 +821,7 @@ bool removeFileSD(const char *fileName)
                     removed = true;
                 }
             }
-#endif
+#endif  // COMPILE_SD_MMC
 
             break;
         } // End Semaphore check

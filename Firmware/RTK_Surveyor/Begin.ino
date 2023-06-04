@@ -445,13 +445,13 @@ void beginSD()
                 }
             }
         }
-#else
+#else   // COMPILE_SD_MMC
         else
         {
             log_d("SD_MMC not compiled");
             break; // No SD available.
         }
-#endif
+#endif  // COMPILE_SD_MMC
 
         if (createTestFile() == false)
         {
@@ -490,7 +490,7 @@ void endSD(bool alreadyHaveSemaphore, bool releaseSemaphore)
 #ifdef COMPILE_SD_MMC
         else
             SD_MMC.end();
-#endif
+#endif  // COMPILE_SD_MMC
 
         online.microSD = false;
         systemPrintln("microSD: Offline");
@@ -573,9 +573,9 @@ void pinUART2Task(void *pvParameters)
     //       ESP32 2.0.2... Uncomment these lines to prevent the stall if/when we upgrade to ESP32 ~2.0.6.
     // #if defined(REF_STN_GNSS_DEBUG)
     //   if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
-    // #else
+    // #else   // REF_STN_GNSS_DEBUG
     //   if (USE_I2C_GNSS)
-    // #endif
+    // #endif  // REF_STN_GNSS_DEBUG
     {
         serialGNSS.setRxBufferSize(
             settings.uartReceiveBufferSize); // TODO: work out if we can reduce or skip this when using SPI GNSS
@@ -875,7 +875,7 @@ void beginInterrupts()
         pinMode(pin_Ethernet_Interrupt, INPUT_PULLUP);                 // Prepare the interrupt pin
         attachInterrupt(pin_Ethernet_Interrupt, ethernetISR, FALLING); // Attach the interrupt
     }
-#endif
+#endif  // COMPILE_ETHERNET
 }
 
 // Set LEDs for output and configure PWM

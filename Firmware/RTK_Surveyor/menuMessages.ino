@@ -796,7 +796,7 @@ bool findLastLog(char *lastLogNamePrt, size_t lastLogNameSize)
                     }
                 }
             }
-#endif
+#endif  // COMPILE_SD_MMC
 
             xSemaphoreGive(sdCardSemaphore);
         }

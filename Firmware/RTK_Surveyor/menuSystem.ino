@@ -82,7 +82,7 @@ void menuSystem()
                      wifiMACAddress[3], wifiMACAddress[4], wifiMACAddress[5]);
         if (wifiState == WIFI_CONNECTED)
             wifiDisplayIpAddress();
-#endif
+#endif  // COMPILE_WIFI
 
 #ifdef COMPILE_ETHERNET
         if (HAS_ETHERNET)
@@ -107,7 +107,7 @@ void menuSystem()
                 systemPrintf("%s\r\n", settings.ethernetSubnet.toString());
             }
         }
-#endif
+#endif  // COMPILE_ETHERNET
 
         // Display the uptime
         uint64_t uptimeMilliseconds = millis();
@@ -714,7 +714,7 @@ void menuDebug()
                 if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
                     theGNSS.enableDebugging(serialGNSS); // Output all debug messages over serialGNSS
                 else
-#endif
+#endif  // REF_STN_GNSS_DEBUG
                     theGNSS.enableDebugging(Serial, true); // Enable only the critical debug messages over Serial
             }
             else
@@ -1298,7 +1298,7 @@ void printFileList()
                 if (fileCount == 0)
                     systemPrintln("No files found");
             }
-#endif
+#endif  // COMPILE_SD_MMC
         }
         else
         {

@@ -162,4 +162,4 @@ class BTLESerial : public virtual BTSerialInterface, public BleSerial
     esp_spp_cb_t *connectionCallback;
 };
 
-#endif
+#endif  // COMPILE_BT

@@ -137,7 +137,7 @@ void recordSystemSettingsToFileSD(char *fileName)
 
                 settingsFile.close();
             }
-#endif
+#endif  // COMPILE_SD_MMC
 
             log_d("Settings recorded to SD: %s", fileName);
         }
@@ -561,7 +561,7 @@ bool loadSystemSettingsFromFileSD(char *fileName, Settings *settings)
                 status = true;
                 break;
             }
-#endif
+#endif  // COMPILE_SD_MMC
         } // End Semaphore check
         else
         {

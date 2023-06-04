@@ -379,9 +379,9 @@ bool wifiIsConnected()
         wifiPeriodicallyDisplayIpAddress();
 
     return isConnected;
-#else
+#else   // COMPILE_WIFI
     return false;
-#endif
+#endif  // COMPILE_WIFI
 }
 
 // Attempts a connection to all provided SSIDs
@@ -463,7 +463,7 @@ bool wifiConnect(unsigned long timeout)
     else
         systemPrintf("WiFi failed to connect: error #%d. ", wifiResponse);
 
-#endif
+#endif  // COMPILE_WIFI
 
     return false;
 }
@@ -741,7 +741,7 @@ void tcpUpdate()
         }
     }
 
-#endif
+#endif  // COMPILE_WIFI
 }
 
 void wifiPrintNetworkInfo()
@@ -771,7 +771,7 @@ void wifiPrintNetworkInfo()
     systemPrint("        DNS 3: ");
     systemPrintln(WiFi.dnsIP(2));
     systemPrintln();
-#endif
+#endif  // COMPILE_WIFI
 }
 
 // Returns true if unit is in config mode

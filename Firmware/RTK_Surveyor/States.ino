@@ -483,7 +483,7 @@ void updateSystemState()
                         {
                             marksFileExists = SD_MMC.exists(fileName);
                         }
-#endif
+#endif  // COMPILE_SD_MMC
 
                         // Open the marks file
                         FileSdFatMMC marksFile;
@@ -678,8 +678,8 @@ void updateSystemState()
                     websocket->textAll(settingsCSV);
                 }
             }
-#endif
-#endif
+#endif  // COMPILE_AP
+#endif  // COMPILE_WIFI
         }
         break;
 
@@ -941,9 +941,9 @@ void updateSystemState()
             espnowBeginPairing();
 
             changeState(STATE_ESPNOW_PAIRING);
-#else
+#else   // COMPILE_ESPNOW
             changeState(STATE_ROVER_NOT_STARTED);
-#endif
+#endif  // COMPILE_ESPNOW
         }
         break;
 
@@ -1098,8 +1098,8 @@ void updateSystemState()
                     websocket->textAll(settingsCSV);
                 }
             }
-#endif
-#endif
+#endif  // COMPILE_AP
+#endif  // COMPILE_WIFI
         }
         break;
 
@@ -1115,7 +1115,7 @@ void updateSystemState()
             ESP.restart();
         }
         break;
-#endif
+#endif  // COMPILE_ETHERNET
 
         case (STATE_SHUTDOWN): {
             forceDisplayUpdate = true;

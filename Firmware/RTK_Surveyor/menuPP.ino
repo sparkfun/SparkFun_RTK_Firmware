@@ -12,7 +12,7 @@ static SFE_UBLOX_GNSS_SUPER i2cLBand; // NEO-D9S
 #ifndef POINTPERFECT_TOKEN
 #define POINTPERFECT_TOKEN                                                                                             \
     0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03
-#endif
+#endif  // POINTPERFECT_TOKEN
 
 static uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; // Token in HEX form
 
@@ -196,7 +196,7 @@ bool pointperfectProvisionDevice()
         // Override ID with testing ID
         snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1],
                  whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
-#endif
+#endif  // WHITELISTED_ID
 
         char givenName[100];
         snprintf(givenName, sizeof(givenName), "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR,
@@ -317,9 +317,9 @@ bool pointperfectProvisionDevice()
     bluetoothStart();
 
     return (retVal);
-#else
+#else   // COMPILE_WIFI
     return (false);
-#endif
+#endif  // COMPILE_WIFI
 }
 
 // Subscribe to MQTT channel, grab keys, then stop
@@ -445,9 +445,9 @@ bool pointperfectUpdateKeys()
 
     // Return the key status
     return (gotKeys);
-#else
+#else   // COMPILE_WIFI
     return (false);
-#endif
+#endif  // COMPILE_WIFI
 }
 
 char *ltrim(char *s)

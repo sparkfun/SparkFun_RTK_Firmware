@@ -152,7 +152,7 @@ void beginEthernetNTPServer()
         w5500EnableSocketInterrupt(ntpSockIndex);         // Enable the RECV interrupt for the desired socket index
         online.ethernetNTPServer = true;
     }
-#endif
+#endif  // COMPILE_ETHERNET
 }
 
 void endEthernetNTPServer()
@@ -218,7 +218,7 @@ void updateEthernet()
         // nothing happened
         break;
     }
-#endif
+#endif  // COMPILE_ETHERNET
 }
 
 void updateEthernetNTPServer()
@@ -295,7 +295,7 @@ void updateEthernetNTPServer()
                     {
                         ntpFileExists = SD_MMC.exists(fileName);
                     }
-#endif
+#endif  // COMPILE_SD_MMC
 
                     // Open the NTP file
                     FileSdFatMMC ntpFile;
@@ -348,7 +348,7 @@ void updateEthernetNTPServer()
     if (millis() > (lastLoggedNTPRequest + 5000))
         ntpLogIncreasing = false;
 
-#endif
+#endif  // COMPILE_ETHERNET
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -486,7 +486,7 @@ void tcpUpdateEthernet()
         online.tcpClientEthernet = false;
     }
 
-#endif
+#endif  // COMPILE_ETHERNET
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -509,14 +509,14 @@ void startEthernerWebServerESP32W5500()
 
     if (ETH.linkUp())
         ESP32_W5500_waitForConnect();
-#endif
+#endif  // COMPILE_ETHERNET
 }
 
 void endEthernerWebServerESP32W5500()
 {
 #ifdef COMPILE_ETHERNET
     ETH.end(); // This is _really_ important. It undoes the low-level changes to SPI and interrupts
-#endif
+#endif  // COMPILE_ETHERNET
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -532,7 +532,7 @@ void ethernetISR()
     // Do it in updateEthernet
     gettimeofday((timeval *)&ethernetNtpTv, NULL); // Record the time of the NTP interrupt
 }
-#endif
+#endif  // COMPILE_ETHERNET
 
 void menuEthernet()
 {

@@ -280,19 +280,7 @@ The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To comp
 
     B. Set the 'Flash Size' to 16MB (128mbit)
 
-5. Obtain all the required libraries. **Note:** You should click on the link next to each of the #includes at the top of RTK_Surveyor.ino within the Arduino IDE to open the library manager and download them. Getting them directly from Github also works but may not be 'official' releases:
-    * [ESP32Time](https://github.com/fbiego/ESP32Time)
-    * [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) (not available via library manager)
-    * [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) (not available via library manager)
-    * [JC_Button](https://github.com/JChristensen/JC_Button)
-    * [SdFat](https://github.com/greiman/SdFat)
-    * [SparkFun u-blox GNSS Arduino Library](https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library)
-    * [SparkFun MAX1704x Fuel Gauge Arduino Library](https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library)
-    * [SparkFun Micro OLED Arduino Library](https://github.com/sparkfun/SparkFun_Micro_OLED_Arduino_Library) -  Note the Arduino Library manager lists this as 'SparkFun Micro OLED Breakout'
-    * [SparkFun LIS2DH12 Accelerometer Arduino Library](https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library)
-    * [Arduino JSON](https://github.com/bblanchon/ArduinoJson)
-    * [PubSub Client for MQTT](https://github.com/knolleary/pubsubclient)
-    * [ESP32 BleSerial](https://github.com/avinabmalla/ESP32_BleSerial)
+5. Obtain all the [required libraries](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#Required-Libraries).
 
 Once compiled, firmware can be uploaded directly to a unit when the RTK unit is on and the correct COM port is selected under the Arduino IDE Tools->Port menu.
 
@@ -303,6 +291,35 @@ If you are seeing the error:
 You have not replaced the partition file correctly. See the 'Change Partition table' step inside the [Windows instructions](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#windows_1).
 
 **Note:** There are a variety of compile guards (COMPILE_WIFI, COMPILE_AP, etc) at the top of RTK_Surveyor.ino that can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on these features (serial menus, system configuration, logging, etc).
+
+#### Required Libraries
+
+**Note:** You should click on the link next to each of the #includes at the top of RTK_Surveyor.ino within the Arduino IDE to open the library manager and download them. Getting them directly from Github also works but may not be 'official' releases.
+
+Using the library manager in the Arduino IDE, for each of the libraries below:
+    1. Locate the library by typing the libary name into the search box
+    2. Click on the library
+    3. Select the version listed in the compile-rtk-firmware.yml file for the [main](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml) or the [release_candidate](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/.github/workflows/compile-rtk-firmware.yml) branch
+    4. Click on the Install button in the lower right
+
+The RTK firmware requires the following libraries:
+    * [Arduino JSON](https://github.com/bblanchon/ArduinoJson)
+    * [ESP32Time](https://github.com/fbiego/ESP32Time)
+    * [ESP32 BleSerial](https://github.com/avinabmalla/ESP32_BleSerial)
+    * [ESP32-OTA-Pull](https://github.com/mikalhart/ESP32-OTA-Pull)
+    * Ethernet
+    * [JC_Button](https://github.com/JChristensen/JC_Button)
+    * [PubSub Client for MQTT](https://github.com/knolleary/pubsubclient)
+    * [SdFat](https://github.com/greiman/SdFat)
+    * [SparkFun LIS2DH12 Arduino Library](https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library)
+    * [SparkFun MAX1704x Fuel Gauge Arduino Library](https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library)
+    * [SparkFun u-blox GNSS v3](https://github.com/sparkfun/SparkFun_u-blox_GNSS_v3)
+    * [SparkFun_WebServer_ESP32_W5500](https://github.com/SparkFun/SparkFun_WebServer_ESP32_W5500)
+
+The following libraries are only available via GitHub:
+    * [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) (not available via library manager)
+    * [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) (not available via library manager)
+    * [SparkFun Micro OLED Breakout](https://github.com/sparkfun/SparkFun_Micro_OLED_Arduino_Library)
 
 ### Ubuntu 20.04
 
@@ -504,21 +521,25 @@ Enable the libraries in the Arduino IDE
     17. For each of the following libraries:
         1. Locate the library
         2. Click on the library
-        3. Click on the Install button in the lower right
+        3. Select the version listed in the compile-rtk-firmware.yml file for the [main](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml) or the [release_candidate](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/.github/workflows/compile-rtk-firmware.yml) branch
+        4. Click on the Install button in the lower right
 
         Library List:
 
         * ArduinoJson
         * ESP32Time
+        * ESP32-OTA-Pull
         * ESP32_BleSerial
+        * Ethernet
         * JC_Button
         * MAX17048 - Used for “Test Sketch/Batt_Monitor”
         * PubSubClient
         * SdFat
-        * SparkFun LIS2DH12 Accelerometer Arduino Library
+        * SparkFun LIS2DH12 Arduino Library
         * SparkFun MAX1704x Fuel Gauge Arduino Library
         * SparkFun Qwiic OLED Graphics Library
-        * SparkFun u-blox GNSS Arduino Library
+        * SparkFun u-blox GNSS v3
+        * SparkFun_WebServer_ESP32_W5500
 
     18. Click on the Close button
 

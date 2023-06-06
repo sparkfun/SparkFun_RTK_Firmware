@@ -348,7 +348,7 @@ void setup()
     digitalWrite(pin_muxB, LOW);
     Serial.println("MUX should now be UART");
   }
-  
+
   menuSystem();
 }
 
@@ -359,6 +359,10 @@ void loop()
   if(pin_powerSenseAndControl >= 0)
   {
     if(digitalRead(pin_powerSenseAndControl) == LOW)
+    {
+      Serial.println("Power button pressed");
       ESP.restart(); //Use the power button as a reset
+    }
+    
   }
 }

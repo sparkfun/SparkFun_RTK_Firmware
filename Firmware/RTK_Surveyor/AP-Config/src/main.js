@@ -59,7 +59,10 @@ const CoordinateTypes = {
     COORDINATE_INPUT_TYPE_DD_MM_SS: 6, //DD MM SS.ssssss
     COORDINATE_INPUT_TYPE_DD_MM_SS_DASH: 7, //DD-MM-SS.ssssss
     COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL: 8, //DD°MM'SS.ssssss"
-    COORDINATE_INPUT_TYPE_INVALID_UNKNOWN: 9,
+    COORDINATE_INPUT_TYPE_DDMMSS_NO_DECIMAL: 9, //DDMMSS - No decimal
+    COORDINATE_INPUT_TYPE_DD_MM_SS_NO_DECIMAL: 10, //DD MM SS - No decimal
+    COORDINATE_INPUT_TYPE_DD_MM_SS_DASH_NO_DECIMAL: 11, //DD-MM-SS - No decimal
+    COORDINATE_INPUT_TYPE_INVALID_UNKNOWN: 12,
 }
 
 var convertedCoordinate = 0.0;
@@ -95,6 +98,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
 
                 hide("dataPortChannelDropdown");
             }
@@ -104,6 +109,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
             }
             else if (platformPrefix == "Express Plus") {
                 hide("baseConfig");
@@ -111,6 +118,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
 
                 ge("muxChannel2").innerHTML = "Wheel/Dir Encoder";
             }
@@ -120,6 +129,8 @@ function parseIncoming(msg) {
                 show("ppConfig");
                 hide("ethernetConfig");
                 hide("ntpConfig");
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
             }
             else if (platformPrefix == "Reference Station") {
                 show("baseConfig");
@@ -127,6 +138,8 @@ function parseIncoming(msg) {
                 hide("ppConfig");
                 show("ethernetConfig");
                 show("ntpConfig");
+                //hide("allowWiFiOverEthernetClient"); //For future expansion
+                //hide("allowWiFiOverEthernetServer"); //For future expansion
             }
         }
         else if (id.includes("zedFirmwareVersionInt")) {
@@ -335,10 +348,13 @@ function parseIncoming(msg) {
         ge("radioType").dispatchEvent(new CustomEvent('change'));
         ge("antennaReferencePoint").dispatchEvent(new CustomEvent('change'));
         ge("autoIMUmountAlignment").dispatchEvent(new CustomEvent('change'));
+        ge("enableARPLogging").dispatchEvent(new CustomEvent('change'));
 
         updateECEFList();
         updateGeodeticList();
         tcpBoxes();
+        tcpBoxesEthernet();
+        dhcpEthernet();
         updateLatLong();
     }
 
@@ -579,6 +595,7 @@ function validateFields() {
     if (ge("enableTcpClient").checked || ge("enableTcpServer").checked) {
         checkElementString("wifiTcpPort", 1, 65535, "Must be 1 to 65535", "collapseWiFiConfig");
     }
+    checkCheckboxMutex("enableTcpClient", "enableTcpServer", "TCP Client and Server can not be enabled at the same time", "collapseWiFiConfig");
 
     //System Config
     if (ge("enableLogging").checked) {
@@ -590,6 +607,13 @@ function validateFields() {
         clearElement("maxLogLength_minutes", 60 * 24);
     }
 
+    if (ge("enableARPLogging").checked) {
+        checkElementValue("ARPLoggingInterval", 1, 600, "Must be 1 to 600", "collapseSystemConfig");
+    }
+    else {
+        clearElement("ARPLoggingInterval", 10);
+    }
+
     //Ethernet
     if (platformPrefix == "Reference Station") {
         //if (ge("ethernetDHCP").checked == false) {
@@ -599,6 +623,10 @@ function validateFields() {
         checkElementIPAddress("ethernetSubnet", "Must be nnn.nnn.nnn.nnn", "collapseEthernetConfig");
         checkElementValue("ethernetHttpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
         checkElementValue("ethernetNtpPort", 0, 65535, "Must be 0 to 65535", "collapseEthernetConfig");
+        if (ge("enableTcpClientEthernet").checked) {
+            checkElementString("ethernetTcpPort", 1, 65535, "Must be 1 to 65535", "collapseEthernetConfig");
+            checkElementString("hostForTCPClient", 0, 50, "Must be 0 to 50 characters", "collapseEthernetConfig");
+        }
         //}
         //else {
         //    clearElement("ethernetIP", "192.168.0.123");
@@ -820,6 +848,19 @@ function checkElementCasterUser(id, badUserName, errorText, collapseID) {
     }
     else
         clearError(id);
+}
+
+function checkCheckboxMutex(id1, id2, errorText, collapseID) {
+    if ((ge(id1).checked) && (ge(id2).checked)) {
+        ge(id1 + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(id2 + 'Error').innerHTML = 'Error: ' + errorText;
+        ge(collapseID).classList.add('show');
+        errorCount++;
+    }
+    else {
+        clearError(id1);
+        clearError(id2);
+    }
 }
 
 function clearElement(id, value) {
@@ -1135,6 +1176,15 @@ document.addEventListener("DOMContentLoaded", (event) => {
         }
     });
 
+    ge("enableARPLogging").addEventListener("change", function () {
+        if (ge("enableARPLogging").checked) {
+            show("enableARPLoggingDetails");
+        }
+        else {
+            hide("enableARPLoggingDetails");
+        }
+    });
+
     ge("fixedAltitude").addEventListener("change", function () {
         adjustHAE();
     });
@@ -1268,12 +1318,12 @@ function addGeodetic() {
         for (; index < recordsGeodetic.length; ++index) {
             var parts = recordsGeodetic[index].split(' ');
             if (ge("nicknameGeodetic").value == parts[0]) {
-                recordsGeodetic[index] = nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLongText.value + ' ' + fixedAltitude.value + ' ' + antennaHeight.value + ' ' + antennaReferencePoint.value;
+                recordsGeodetic[index] = nicknameGeodetic.value + ' ' + fixedLatText.value + ' ' + fixedLongText.value + ' ' + fixedAltitude.value + ' ' + antennaHeight.value + ' ' + antennaReferencePoint.value;
                 break;
             }
         }
         if (index == recordsGeodetic.length)
-            recordsGeodetic.push(nicknameGeodetic.value + ' ' + fixedLat.value + ' ' + fixedLongText.value + ' ' + fixedAltitude.value + ' ' + antennaHeight.value + ' ' + antennaReferencePoint.value);
+            recordsGeodetic.push(nicknameGeodetic.value + ' ' + fixedLatText.value + ' ' + fixedLongText.value + ' ' + fixedAltitude.value + ' ' + antennaHeight.value + ' ' + antennaReferencePoint.value);
     }
 
     updateGeodeticList();
@@ -1361,7 +1411,16 @@ function updateGeodeticList() {
     $("#StationCoordinatesGeodetic option").each(function () {
         var parts = $(this).text().split(' ');
         var nickname = parts[0].substring(0, 15);
-        $(this).text(nickname + ': ' + parts[1] + ' ' + parts[2] + ' ' + parts[3]).text;
+
+        if (parts.length >= 7) {
+            $(this).text(nickname + ': ' + parts[1] + ' ' + parts[2] + ' ' + parts[3]
+                + ' ' + parts[4] + ' ' + parts[5] + ' ' + parts[6]
+                + ' ' + parts[7]).text;
+        }
+        else {
+            $(this).text(nickname + ': ' + parts[1] + ' ' + parts[2] + ' ' + parts[3]).text;
+        }
+
     });
 }
 
@@ -1517,6 +1576,25 @@ function tcpBoxes() {
     }
 }
 
+function tcpBoxesEthernet() {
+    if (ge("enableTcpClientEthernet").checked) {
+        show("tcpSettingsConfigEthernet");
+    }
+    else {
+        hide("tcpSettingsConfigEthernet");
+        //ge("ethernetTcpPort").value = 2947;
+    }
+}
+
+function dhcpEthernet() {
+    if (ge("ethernetDHCP").checked) {
+        hide("fixedIPSettingsConfigEthernet");
+    }
+    else {
+        show("fixedIPSettingsConfigEthernet");
+    }
+}
+
 function networkCount() {
     var count = 0;
 
@@ -1669,7 +1747,7 @@ function identifyInputType(userEntry) {
     // DD MM SS.ssssss
     // DD-MM-SS.ssssss
 
-    if (decimalCount != 1) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Just no. 40.09033470 is valid.
+    if (decimalCount > 1) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Just no. 40.09033470 is valid.
     if (spaceCount > 2) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 0, 1, or 2 allowed. 40 05 25.2049 is valid.
     if (dashCount > 3) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 0, 1, 2, or 3 allowed. -105-11-05.1629 is valid.
     if (lengthOfLeadingNumber > 7) return (CoordinateTypes.COORDINATE_INPUT_TYPE_INVALID_UNKNOWN); //Only 7 or fewer. -1051105.188992 (DDDMMSS or DDMMSS) is valid
@@ -1689,6 +1767,11 @@ function identifyInputType(userEntry) {
         var decimal = Math.trunc(intPortion / 10000); //Get DDD
         intPortion -= (decimal * 10000);
         var minutes = Math.trunc(intPortion / 100); //Get MM
+
+        //Find '.'
+        if (userEntry.indexOf('.') == -1)
+            coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DDMMSS_NO_DECIMAL;
+
         var seconds = userEntry; //Get DDDMMSS.ssssss
         seconds -= (decimal * 10000); //Remove DDD
         seconds -= (minutes * 100); //Remove MM
@@ -1725,6 +1808,11 @@ function identifyInputType(userEntry) {
         var data = userEntry.split('-');
         var decimal = Number(data[0]); //Get DD
         var minutes = Number(data[1]); //Get MM
+
+        //Find '.'
+        if (userEntry.indexOf('.') == -1)
+            coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH_NO_DECIMAL;
+
         var seconds = Number(data[2]); //Get SS.ssssss
         convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
         if (negativeSign) convertedCoordinate *= -1;
@@ -1752,6 +1840,11 @@ function identifyInputType(userEntry) {
         var data = userEntry.split(' ');
         var decimal = Number(data[0]); //Get DD
         var minutes = Number(data[1]); //Get MM
+
+        //Find '.'
+        if (userEntry.indexOf('.') == -1)
+            coordinateInputType = CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_NO_DECIMAL;
+
         var seconds = Number(data[2]); //Get SS.ssssss
         convertedCoordinate = decimal + (minutes / 60.0) + (seconds / 3600.0);
         if (negativeSign) convertedCoordinate *= -1;
@@ -1796,6 +1889,9 @@ function convertInput(coordinate, coordinateInputType) {
         || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DDMMSS
         || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH
         || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL
+        || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DDMMSS_NO_DECIMAL
+        || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_NO_DECIMAL
+        || coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH_NO_DECIMAL
     ) {
         var longitudeDegrees = Math.trunc(coordinate);
         coordinate -= longitudeDegrees;
@@ -1815,8 +1911,14 @@ function convertInput(coordinate, coordinateInputType) {
             coordinateString = longitudeDegrees + "-" + longitudeMinutes + "-" + coordinate;
         else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_SYMBOL)
             coordinateString = longitudeDegrees + "°" + longitudeMinutes + "'" + coordinate + "\"";
-        else
+        else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS)
             coordinateString = longitudeDegrees + " " + longitudeMinutes + " " + coordinate;
+        else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DDMMSS_NO_DECIMAL)
+            coordinateString = longitudeDegrees + "" + longitudeMinutes + "" + Math.round(coordinate);
+        else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_NO_DECIMAL)
+            coordinateString = longitudeDegrees + " " + longitudeMinutes + " " + Math.round(coordinate);
+        else if (coordinateInputType == CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH_NO_DECIMAL)
+            coordinateString = longitudeDegrees + "-" + longitudeMinutes + "-" + Math.round(coordinate);
     }
 
     return (coordinateString);
@@ -1853,8 +1955,14 @@ function printableInputType(coordinateInputType) {
         case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS):
             return ("DD MM SS.ssssss");
             break;
-        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH):
-            return ("DD-MM-SS.ssssss");
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DDMMSS_NO_DECIMAL):
+            return ("DDMMSS");
+            break;
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_NO_DECIMAL):
+            return ("DD MM SS");
+            break;
+        case (CoordinateTypes.COORDINATE_INPUT_TYPE_DD_MM_SS_DASH_NO_DECIMAL):
+            return ("DD-MM-SS");
             break;
     }
     return ("Unknown");

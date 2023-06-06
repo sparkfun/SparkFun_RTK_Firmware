@@ -6,7 +6,7 @@ on:
 env:
   FILENAME_PREFIX: RTK_Surveyor_Firmware
   FIRMWARE_VERSION_MAJOR: 3
-  FIRMWARE_VERSION_MINOR: 3
+  FIRMWARE_VERSION_MINOR: 4
   POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
 
 jobs:
@@ -75,7 +75,7 @@ jobs:
           "SdFat"@2.1.1
           "SparkFun LIS2DH12 Arduino Library"@1.0.3
           "SparkFun MAX1704x Fuel Gauge Arduino Library"@1.0.4
-          "SparkFun u-blox GNSS v3"@3.0.9
+          "SparkFun u-blox GNSS v3"@3.0.14
           SparkFun_WebServer_ESP32_W5500@1.5.5
 
       - name: Enable external libs
@@ -100,9 +100,41 @@ jobs:
           cd Firmware/RTK_Surveyor/Patch/
           cp Server.h /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/cores/esp32/Server.h
 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # Configure Python - now we have Python installed, we need to provide everything needed by esptool otherwise the compile fails
+      - name: Configure Python
+        run: |
+          pip3 install pyserial
+
+      - name: Update index_html
+        run: |
+          cd Firmware/Tools
+          python index_html_zipper.py ../RTK_Surveyor/AP-Config/index.html ../RTK_Surveyor/form.h
+
+      - name: Update main_js
+        run: |
+          cd Firmware/Tools
+          python main_js_zipper.py ../RTK_Surveyor/AP-Config/src/main.js ../RTK_Surveyor/form.h
+
+      - name: Commit and push form.h
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          directory: ./Firmware/RTK_Surveyor
+          branch: ${{ env.BRANCH }}
+          message: 'Update form.h via Python ${date}'
+
+      - name: Copy custom app3M_fat9M_16MB.csv
+        run:
+          cp Firmware/app3M_fat9M_16MB.csv /home/runner/.arduino15/packages/esp32/hardware/esp32/2.0.2/tools/partitions/app3M_fat9M_16MB.csv
+
       - name: Compile Sketch
         run: arduino-cli compile --fqbn "esp32:esp32:esp32":DebugLevel=${{ env.DEBUG_LEVEL }} ./Firmware/RTK_Surveyor/RTK_Surveyor.ino
-          --build-property build.partitions=partitions
+          --build-property build.partitions=app3M_fat9M_16MB
           --build-property upload.maximum_size=3145728 
           --build-property "compiler.cpp.extra_flags=\"-DPOINTPERFECT_TOKEN=$POINTPERFECT_TOKEN\" \"-DFIRMWARE_VERSION_MAJOR=$FIRMWARE_VERSION_MAJOR\" \"-DFIRMWARE_VERSION_MINOR=$FIRMWARE_VERSION_MINOR\" \"-DENABLE_DEVELOPER=${{ env.ENABLE_DEVELOPER }}\""
           --export-binaries

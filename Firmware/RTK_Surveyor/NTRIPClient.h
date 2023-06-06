@@ -22,9 +22,71 @@ class NTRIPClient : public WiFiClient
 #endif  // COMPILE_WIFI || COMPILE_ETHERNET
 
 {
+    /*
+      Support fail over between Ethernet and WiFi and back again.  Network starts
+      using the default state specified by xxxUseWiFiNotEthernet.  When a network
+      failure occurs, if fail over is disabled all further attempts are made using
+      the default network.
+
+      When the network fails and fail over is enabled the connection is attempted
+      on the other network.  If or when that network fails the next connection
+      attempt is made on the original default network. The fail over state diagram
+      is shown below.
+
+                        Wait Network needed <----------------.
+                                 |                           |
+                                 V                           |
+             .------------ HAS_ETHERNET                      |
+             |          No       | Yes                       |
+             V                   V                           |
+             +<------- xxxUseWiFiNotEthernet                 |
+             |     Yes           | No                        |
+             |                   V                           |
+             |       .---------->+<--------------------------)-------.
+             |       |           | UseWiFi=false             |       |
+             |       |           V                           |       |
+             |       |        Link Up ---------------.       |       |
+             |       |       Yes |    No             |       |       |
+             |       |           V                   |       |       |
+             |       |     Use Ethernet              |       |       |
+             |       |           | Failure or Off    |       |       |
+             |       |           V                   |       |       |
+             |       |           +<------------------'       |       |
+             |       |           V                           |       |
+             |       |     Is Network Off ------------------>+       |
+             |       |           | No     Yes                ^       |
+             |       |           V                           |       |
+             |       '---- enableFailOver                    |       |
+             |          No       | Yes                       |       |
+             V                   V                           |       |
+             +------------------>+                           |       |
+             ^                   | UseWifi=true              |       |
+             |                   V                           |       |
+             |       .--- WiFi Configured                    |       |
+             |       | No        | Yes                       |       |
+             |       |           V                           |       |
+             |       |        Use WiFi                       |       |
+             |       |           | Failure or Off            |       |
+             |       |           V                           |       |
+             |       '---------->+                           |       |
+             |                   V                           |       |
+             |             Is Network Off -------------------'       |
+             |                   | No     Yes                        |
+             |                   V                                   |
+             +<----------- HAS_ETHERNET                              |
+             ^          No       | Yes                               |
+             |                   V                                   |
+             '------------ enableFailOver ---------------------------'
+                        No                Yes
+    */
+
   public:
-    NTRIPClient(bool useWiFiNotEthernet)
+    bool _enableFailOver;
+    bool _useWiFiNotEthernet;
+
+    NTRIPClient(bool useWiFiNotEthernet, bool enableFailOver)
     {
+        _enableFailOver = enableFailOver;
 #if defined(COMPILE_ETHERNET) && defined(COMPILE_WIFI)
         if (HAS_ETHERNET && !useWiFiNotEthernet)
         {
@@ -248,7 +310,6 @@ class NTRIPClient : public WiFiClient
     };
 
   protected:
-    bool _useWiFiNotEthernet;
 #if defined(COMPILE_WIFI)
     WiFiClient *_ntripClientWiFi;
 #endif  // COMPILE_WIFI

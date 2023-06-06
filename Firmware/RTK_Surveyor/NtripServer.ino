@@ -281,7 +281,7 @@ void ntripServerStart()
         reportHeapNow();
 
         // Allocate the ntripServer structure
-        ntripServer = new NTRIPClient(settings.ntripServerUseWiFiNotEthernet);
+        ntripServer = new NTRIPClient(settings.ntripServerUseWiFiNotEthernet, settings.ntripClientEnableNetworkFailOver);
 
         // Restart WiFi and the NTRIP server if possible
         if (ntripServer)
@@ -310,7 +310,7 @@ void ntripServerStop(bool wifiClientAllocated)
 
         // Allocate the NTRIP server structure if not done
         if (wifiClientAllocated == false)
-            ntripServer = new NTRIPClient(settings.ntripServerUseWiFiNotEthernet);
+            ntripServer = new NTRIPClient(settings.ntripServerUseWiFiNotEthernet, settings.ntripClientEnableNetworkFailOver);
     }
 
     // Increase timeouts if we started WiFi

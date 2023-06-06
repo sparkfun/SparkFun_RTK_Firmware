@@ -652,7 +652,9 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
 
     stringRecord(newSettings, "ntripServerUseWiFiNotEthernet", settings.ntripServerUseWiFiNotEthernet);
+    stringRecord(newSettings, "ntripServerEnableNetworkFailOver", settings.ntripServerEnableNetworkFailOver);
     stringRecord(newSettings, "ntripClientUseWiFiNotEthernet", settings.ntripClientUseWiFiNotEthernet);
+    stringRecord(newSettings, "ntripClientEnableNetworkFailOver", settings.ntripClientEnableNetworkFailOver);
 
     // Sensor Fusion Config
     stringRecord(newSettings, "enableSensorFusion", settings.enableSensorFusion);
@@ -1163,8 +1165,12 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
 
     else if (strcmp(settingName, "ntripServerUseWiFiNotEthernet") == 0)
         settings.ntripServerUseWiFiNotEthernet = settingValueBool;
+    else if (strcmp(settingName, "ntripServerEnableNetworkFailOver") == 0)
+        settings.ntripServerEnableNetworkFailOver = settingValueBool;
     else if (strcmp(settingName, "ntripClientUseWiFiNotEthernet") == 0)
         settings.ntripClientUseWiFiNotEthernet = settingValueBool;
+    else if (strcmp(settingName, "ntripClientEnableNetworkFailOver") == 0)
+        settings.ntripClientEnableNetworkFailOver = settingValueBool;
 
     else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
         settings.serialTimeoutGNSS = settingValue;

@@ -19,7 +19,7 @@ From the Main Menu, pressing 5 will enter the Logging Menu. This menu will repor
 * Option 3 allows a user to set the max logging length in minutes. Every 'max long length' amount of time the current log will be closed and a new log will be started. This is known as cyclic logging and is convenient on *very* long surveys (ie, months or years) to prevent logs from getting too unwieldy and helps limit the risk of log corruption. This will continue until the unit is powered down or the *max logging time* is reached.
 * Option 4 will close the current log and start a new log.
 
-* Option 5 will record the coordinates of the base antenna to a custom NMEA message within the log if the RTCM1005 or RTCM1006 message is received. This can be helpful when doing field work and the location of the base is needed; the log on the roving device will contain the location of the base preventing the user from needing to record the base location separately.
+* Option 5 will record the coordinates of the base antenna to a custom NMEA message within the log if the RTCM1005 or RTCM1006 message is received. This can be helpful when doing field work and the location of the base is needed; the log on the roving device will contain the location of the base preventing the user from needing to record the base location separately. The ARP is logged in a custom GNTXT,01,01,10 message as ECEF-X, ECEF-Y, ECEF-Z, Antenna Height. The Antenna Height will be zero if the data was extracted from RTCM1005.
 
 * Option 7 will enable/disable creating a comma separated file (Marks_date.csv) that is written each time the mark state is selected with the setup button on the RTK Surveyor, RTK Express or RTK Express Plus, or the power button on the RTK Facet.
 

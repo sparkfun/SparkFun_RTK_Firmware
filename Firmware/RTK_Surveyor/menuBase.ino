@@ -112,8 +112,14 @@ void menuBase()
 
             if (HAS_ETHERNET)
             {
-                systemPrintf("14) Use WiFi (not Ethernet) for NTRIP Server: ");
+                systemPrintf("14) Default to WiFi (not Ethernet) for NTRIP Server: ");
                 if (settings.ntripServerUseWiFiNotEthernet == true)
+                    systemPrintln("Enabled");
+                else
+                    systemPrintln("Disabled");
+
+                systemPrintf("15) Enable fail over between Ethernet and WiFi for NTRIP Server: ");
+                if (settings.ntripServerEnableNetworkFailOver == true)
                     systemPrintln("Enabled");
                 else
                     systemPrintln("Disabled");
@@ -338,6 +344,10 @@ void menuBase()
         {
             settings.ntripServerUseWiFiNotEthernet ^= 1;
             restartBase = true;
+        }
+        else if (incoming == 15 && settings.enableNtripServer == true && HAS_ETHERNET)
+        {
+            settings.ntripServerEnableNetworkFailOver ^= 1;
         }
         else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
             break;

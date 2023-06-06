@@ -475,11 +475,7 @@ void ntripClientUpdate()
             {
                 // NTRIP web service did not respond
                 if (ntripClientConnectLimitReached()) // Updates ntripClientConnectionAttemptTimeout
-                {
                     systemPrintln("NTRIP Caster failed to respond. Do you have your caster address and port correct?");
-
-                    // Stop NTRIP client operations
-                    ntripClientStop(true); // Do not allocate new ntripClient
                 }
                 else
                 {
@@ -489,9 +485,6 @@ void ntripClientUpdate()
                     else
                         systemPrintf("NTRIP Client failed to connect to caster. Trying again in %d minutes.\r\n",
                                      ntripClientConnectionAttemptTimeout / 1000 / 60);
-
-                    // Restart network operation after delay
-                    ntripClientStop(false);
                 }
             }
         }

@@ -497,9 +497,6 @@ void ntripServerUpdate()
                     else
                         systemPrintf("NTRIP caster failed to respond. Trying again in %d minutes.\r\n",
                                      ntripServerConnectionAttemptTimeout / 1000 / 60);
-
-                    // Restart network operation after delay
-                    ntripServerStop(false);
                 }
             }
         }

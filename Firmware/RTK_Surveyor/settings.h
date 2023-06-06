@@ -800,6 +800,7 @@ typedef struct
     // ntripServerUseWiFiNotEthernet is set to true. Setting ntripServerUseWiFiNotEthernet to true will make
     // Ethernet-enabled products use WiFi for NTRIP Server instead.
     bool ntripServerUseWiFiNotEthernet = false;
+    bool ntripServerEnableNetworkFailOver = false; //When true enables fail over between Ethernet and WiFi if both networks are supported
 
     // NTRIP Client
     bool enableNtripClient = false;
@@ -814,6 +815,7 @@ typedef struct
     // Setting ntripClientUseWiFiNotEthernet to true will make Ethernet-enabled products use WiFi for NTRIP Client
     // instead.
     bool ntripClientUseWiFiNotEthernet = false;
+    bool ntripClientEnableNetworkFailOver = false; //When true enables fail over between Ethernet and WiFi if both networks are supported
 
     int16_t serialTimeoutGNSS = 1; // In ms - used during SerialGNSS.begin. Number of ms to pass of no data before
                                    // hardware serial reports data available.

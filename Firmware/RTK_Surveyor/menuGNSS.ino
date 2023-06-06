@@ -110,8 +110,14 @@ void menuGNSS()
 
             if (HAS_ETHERNET)
             {
-                systemPrintf("15) Use WiFi (not Ethernet) for NTRIP Client: ");
+                systemPrintf("15) Default to WiFi (not Ethernet) for NTRIP Client: ");
                 if (settings.ntripClientUseWiFiNotEthernet == true)
+                    systemPrintln("Enabled");
+                else
+                    systemPrintln("Disabled");
+
+                systemPrintf("16) Enable fail over between Ethernet and WiFi for NTRIP Client: ");
+                if (settings.ntripClientEnableNetworkFailOver == true)
                     systemPrintln("Enabled");
                 else
                     systemPrintln("Disabled");
@@ -313,6 +319,10 @@ void menuGNSS()
         {
             settings.ntripClientUseWiFiNotEthernet ^= 1;
             restartRover = true;
+        }
+        else if (HAS_ETHERNET && (incoming == 16) && (settings.enableNtripClient == true))
+        {
+            settings.ntripClientEnableNetworkFailOver ^= 1;
         }
         else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
             break;

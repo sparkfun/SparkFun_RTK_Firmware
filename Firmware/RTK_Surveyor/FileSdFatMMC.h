@@ -7,11 +7,11 @@
 
 class FileSdFatMMC : public SdFile, public File
 
-#else
+#else   // COMPILE_SD_MMC
 
 class FileSdFatMMC : public SdFile
 
-#endif
+#endif  // COMPILE_SD_MMC
 
 {
   public:
@@ -22,7 +22,7 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
         else
             _file = new File;
-#endif
+#endif  // COMPILE_SD_MMC
     };
 
     ~FileSdFatMMC()
@@ -40,7 +40,7 @@ class FileSdFatMMC : public SdFile
             // if (_file) //operator bool
             //   delete _file;
         }
-#endif
+#endif  // COMPILE_SD_MMC
     };
 
     operator bool()
@@ -50,7 +50,7 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
         else
             return _file;
-#endif
+#endif  // COMPILE_SD_MMC
         return false; // Keep the compiler happy
     };
 
@@ -61,7 +61,7 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
         else
             return _file->println(printMe);
-#endif
+#endif  // COMPILE_SD_MMC
         return 0; // Keep the compiler happy
     };
 
@@ -86,7 +86,7 @@ class FileSdFatMMC : public SdFile
                 return true;
             return false;
         }
-#endif
+#endif  // COMPILE_SD_MMC
         return false; // Keep the compiler happy
     };
 
@@ -97,7 +97,7 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
         else
             return _file->size();
-#endif
+#endif  // COMPILE_SD_MMC
         return 0; // Keep the compiler happy
     };
 
@@ -108,7 +108,7 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
         else
             return _file->position();
-#endif
+#endif  // COMPILE_SD_MMC
         return 0; // Keep the compiler happy
     };
 
@@ -119,7 +119,7 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
         else
             return _file->available();
-#endif
+#endif  // COMPILE_SD_MMC
         return 0; // Keep the compiler happy
     };
 
@@ -130,7 +130,7 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
         else
             return _file->read(buf, nbyte);
-#endif
+#endif  // COMPILE_SD_MMC
         return 0; // Keep the compiler happy
     };
 
@@ -141,7 +141,7 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
         else
             return _file->write(buf, size);
-#endif
+#endif  // COMPILE_SD_MMC
         return 0; // Keep the compiler happy
     };
 
@@ -152,7 +152,7 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
         else
             _file->close();
-#endif
+#endif  // COMPILE_SD_MMC
     };
 
     void flush()
@@ -162,7 +162,7 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
         else
             _file->flush();
-#endif
+#endif  // COMPILE_SD_MMC
     };
 
     void updateFileAccessTimestamp()
@@ -205,7 +205,7 @@ class FileSdFatMMC : public SdFile
 #ifdef COMPILE_SD_MMC
         else
             return _file->size();
-#endif
+#endif  // COMPILE_SD_MMC
         return 0; // Keep the compiler happy
     };
 
@@ -213,7 +213,7 @@ class FileSdFatMMC : public SdFile
     SdFile *_sdFile;
 #ifdef COMPILE_SD_MMC
     File *_file;
-#endif
+#endif  // COMPILE_SD_MMC
 };
 
 // Update the file access and write time with date and time obtained from GNSS

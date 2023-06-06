@@ -988,5 +988,5 @@ o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
 rqXRfboQnoZsG4q5WTP468SQvvG5
 -----END CERTIFICATE-----
 )=====";
-#endif
-#endif
+#endif  // COMPILE_L_BAND
+#endif  // COMPILE_WIFI

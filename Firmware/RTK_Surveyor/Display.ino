@@ -1016,9 +1016,9 @@ uint32_t setWiFiIcon_TwoRadios()
         {
 #ifdef COMPILE_WIFI
             int wifiRSSI = WiFi.RSSI();
-#else
+#else   // COMPILE_WIFI
             int wifiRSSI = -40;     // Dummy
-#endif
+#endif  // COMPILE_WIFI
             // Based on RSSI, select icon
             if (wifiRSSI >= -40)
                 icons |= ICON_WIFI_SYMBOL_3_LEFT;
@@ -1046,9 +1046,9 @@ uint32_t setWiFiIcon_TwoRadios()
             {
 #ifdef COMPILE_WIFI
                 int wifiRSSI = WiFi.RSSI();
-#else
+#else   // COMPILE_WIFI
                 int wifiRSSI = -40; // Dummy
-#endif
+#endif  // COMPILE_WIFI
                 // Based on RSSI, select icon
                 if (wifiRSSI >= -40)
                     icons |= ICON_WIFI_SYMBOL_3_LEFT;
@@ -1103,9 +1103,9 @@ uint32_t setWiFiIcon_ThreeRadios()
         {
 #ifdef COMPILE_WIFI
             int wifiRSSI = WiFi.RSSI();
-#else
+#else   // COMPILE_WIFI
             int wifiRSSI = -40;     // Dummy
-#endif
+#endif  // COMPILE_WIFI
             // Based on RSSI, select icon
             if (wifiRSSI >= -40)
                 icons |= ICON_WIFI_SYMBOL_3_RIGHT;
@@ -1133,9 +1133,9 @@ uint32_t setWiFiIcon_ThreeRadios()
             {
 #ifdef COMPILE_WIFI
                 int wifiRSSI = WiFi.RSSI();
-#else
+#else   // COMPILE_WIFI
                 int wifiRSSI = -40; // Dummy
-#endif
+#endif  // COMPILE_WIFI
                 // Based on RSSI, select icon
                 if (wifiRSSI >= -40)
                     icons |= ICON_WIFI_SYMBOL_3_RIGHT;
@@ -1583,9 +1583,9 @@ void paintLogging()
     loggingIconDisplayed %= 4; // Wrap
 #ifdef COMPILE_ETHERNET
     if ((online.logging == true) && (logIncreasing || ntpLogIncreasing))
-#else
+#else   // COMPILE_ETHERNET
     if ((online.logging == true) && (logIncreasing))
-#endif
+#endif  // COMPILE_ETHERNET
     {
         if (loggingType == LOGGING_STANDARD)
         {
@@ -1656,9 +1656,9 @@ void paintLoggingNTP(bool noPulse)
     loggingIconDisplayed %= 4; // Wrap
 #ifdef COMPILE_ETHERNET        // Some redundancy here. paintLoggingNTP should only be called if Ethernet is present
     if ((online.logging == true) && (logIncreasing || ntpLogIncreasing))
-#else
+#else   // COMPILE_ETHERNET
     if ((online.logging == true) && (logIncreasing))
-#endif
+#endif  // COMPILE_ETHERNET
     {
         if (loggingIconDisplayed == 0)
             displayBitmap(64 - Logging_0_Width, 48 - Logging_0_Height, Logging_0_Width, Logging_0_Height, Logging_0);
@@ -1825,9 +1825,9 @@ void paintIPAddress()
     snprintf(ipAddress, sizeof(ipAddress), "       %d.%d.%d.%d       ",
 #ifdef COMPILE_ETHERNET
              Ethernet.localIP()[0], Ethernet.localIP()[1], Ethernet.localIP()[2], Ethernet.localIP()[3]);
-#else
+#else   // COMPILE_ETHERNET
              0, 0, 0, 0);
-#endif
+#endif  // COMPILE_ETHERNET
 
     static uint8_t ipAddressPosition = 0;
 
@@ -2037,9 +2037,9 @@ void displayWiFiConfig()
         snprintf(mySSID, sizeof(mySSID), "%s", "RTK Config");
     else
         snprintf(mySSID, sizeof(mySSID), "%s", WiFi.SSID().c_str());
-#else
+#else   // COMPILE_WIFI
     snprintf(mySSID, sizeof(mySSID), "%s", "!Compiled");
-#endif
+#endif  // COMPILE_WIFI
 
     char mySSIDFront[displayMaxCharacters + 1]; // 1 for null terminator
     char mySSIDBack[displayMaxCharacters + 1];  // 1 for null terminator
@@ -2094,9 +2094,9 @@ void displayWiFiConfig()
     else
         printTextCenter(myIPBack, yPos, QW_FONT_5X7, 1, false);
 
-#else
+#else   // COMPILE_AP
     printTextCenter("!Compiled", yPos, QW_FONT_5X7, 1, false);
-#endif
+#endif  // COMPILE_AP
 }
 
 // When user does a factory reset, let us know
@@ -3307,11 +3307,11 @@ void displayConfigViaEthernet()
         oled.display();
     }
 
-#else
+#else   // COMPILE_ETHERNET
     uint8_t fontHeight = 15;
     uint8_t yPos = oled.getHeight() / 2 - fontHeight;
     printTextCenter("!Compiled", yPos, QW_FONT_5X7, 1, false);
-#endif
+#endif  // COMPILE_ETHERNET
 }
 
 const uint8_t *getMacAddress()
@@ -3321,14 +3321,14 @@ const uint8_t *getMacAddress()
 #ifdef COMPILE_BT
     if (bluetoothState != BT_OFF)
         return btMACAddress;
-#endif
+#endif  // COMPILE_BT
 #ifdef COMPILE_WIFI
     if (wifiState != WIFI_OFF)
         return wifiMACAddress;
-#endif
+#endif  // COMPILE_WIFI
 #ifdef COMPILE_ETHERNET
     if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
         return ethernetMACAddress;
-#endif
+#endif  // COMPILE_ETHERNET
     return zero;
 }

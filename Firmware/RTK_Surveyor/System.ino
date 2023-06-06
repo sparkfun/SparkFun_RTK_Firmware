@@ -15,7 +15,7 @@ bool configureUbloxModule()
         if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
             theGNSS.enableDebugging(serialGNSS); // Output all debug messages over serialGNSS
         else
-#endif
+#endif  // REF_STN_GNSS_DEBUG
             theGNSS.enableDebugging(Serial, true); // Enable only the critical debug messages over Serial
     }
     else
@@ -430,7 +430,7 @@ bool createTestFile()
             SD_MMC.remove(testFileName);
         return (!SD_MMC.exists(testFileName));
     }
-#endif
+#endif  // COMPILE_SD_MMC
 
     return (false);
 }

@@ -33,13 +33,13 @@
 #ifndef ENABLE_DEVELOPER
 #define ENABLE_DEVELOPER                                                                                               \
     true // This enable specials developer modes (don't check power button at startup). Passed in from compiler flags.
-#endif
+#endif  // ENABLE_DEVELOPER
 
 // This is passed in from compiler extra flags
 #ifndef POINTPERFECT_TOKEN
 #define FIRMWARE_VERSION_MAJOR 99
 #define FIRMWARE_VERSION_MINOR 99
-#endif
+#endif  // POINTPERFECT_TOKEN
 
 // Define the RTK board identifier:
 //  This is an int which is unique to this variant of the RTK Surveyor hardware which allows us
@@ -200,7 +200,7 @@ char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace"
 
 #include "esp_wifi.h" //Needed for esp_wifi_set_protocol()
 
-#endif
+#endif  // COMPILE_WIFI
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
@@ -382,7 +382,7 @@ float battChangeRate = 0.0;
 #ifdef COMPILE_BT
 // See bluetoothSelect.h for implemenation
 #include "bluetoothSelect.h"
-#endif
+#endif  // COMPILE_BT
 
 char platformPrefix[55] = "Surveyor"; // Sets the prefix for broadcast names
 
@@ -479,8 +479,8 @@ AsyncWebSocket *websocket = nullptr;
 
 char *settingsCSV = nullptr; // Push large array onto heap
 
-#endif
-#endif
+#endif  // COMPILE_AP
+#endif  // COMPILE_WIFI
 
 // Because the incoming string is longer than max len, there are multiple callbacks so we
 // use a global to combine the incoming
@@ -495,7 +495,7 @@ unsigned long lastDynamicDataUpdate = 0;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #if __has_include("tokens.h")
 #include "tokens.h"
-#endif
+#endif  // __has_include("tokens.h")
 
 float lBandEBNO = 0.0; // Used on system status menu
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -515,7 +515,7 @@ uint8_t receivedMAC[6];         // Holds the broadcast MAC during pairing
 int packetRSSI = 0;
 unsigned long lastEspnowRssiUpdate = 0;
 
-#endif
+#endif  // COMPILE_ESPNOW
 
 int espnowRSSI = 0;
 const uint8_t ESPNOW_MAX_PEERS = 5; // Maximum of 5 rovers
@@ -547,7 +547,7 @@ uint32_t lastLoggedNTPRequest = 0;
 bool ntpLogIncreasing = false;
 
 #include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.5
-#endif
+#endif  // COMPILE_ETHERNET
 
 unsigned long lastEthernetCheck = 0; // Prevents cable checking from continually happening
 volatile bool ethernetTcpConnected = false;
@@ -753,7 +753,7 @@ void initializeGlobals()
 #ifdef COMPILE_ETHERNET
     ethernetNtpTv.tv_sec = 0;
     ethernetNtpTv.tv_usec = 0;
-#endif
+#endif  // COMPILE_ETHERNET
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -1195,7 +1195,7 @@ void updateRadio()
                 espnowRSSI = -255;
         }
     }
-#endif
+#endif  // COMPILE_ESPNOW
 }
 
 // Record who is holding the semaphore

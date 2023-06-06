@@ -62,7 +62,7 @@ static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 30;
 // WiFi connection used to push RTCM to NTRIP caster over WiFi
 #if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
 static NTRIPClient *ntripServer;
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 
 // Count of bytes sent by the NTRIP server to the NTRIP caster
 uint32_t ntripServerBytesSent = 0;
@@ -118,9 +118,9 @@ bool ntripServerConnectCaster()
     // Send the authorization credentials to the NTRIP caster
     ntripServer->write((const uint8_t *)serverBuffer, strlen(serverBuffer));
     return true;
-#else
+#else   // COMPILE_WIFI || COMPILE_ETHERNET
     return false;
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 }
 
 // Determine if the connection limit has been reached
@@ -164,7 +164,7 @@ void ntripServerResponse(char *response, size_t maxLength)
     // Read bytes from the caster and store them
     while ((response < responseEnd) && ntripServer->available())
         *response++ = ntripServer->read();
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 
     // Zero terminate the response
     *response = '\0';
@@ -264,7 +264,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
         ntripServerSetState(NTRIP_SERVER_CONNECTING);
         rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
     }
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 }
 
 // Start the NTRIP server
@@ -289,9 +289,9 @@ void ntripServerStart()
     }
 
     ntripServerConnectionAttempts = 0;
-#else
+#else   // COMPILE_WIFI || COMPILE_ETHERNET
     systemPrintln("NTRIP Server not available: Ethernet and WiFi not compiled");
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 }
 
 // Stop the NTRIP server
@@ -324,7 +324,7 @@ void ntripServerStop(bool wifiClientAllocated)
 
     // Determine the next NTRIP server state
     ntripServerSetState((ntripServer && (wifiClientAllocated == false)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 
     online.ntripServer = false;
 }
@@ -552,7 +552,7 @@ void ntripServerUpdate()
                 ntripServerSetState(NTRIP_SERVER_CASTING);
             }
         }
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
         break;
     // NTRIP server authorized to send RTCM correction data to NTRIP caster
     case NTRIP_SERVER_CASTING:
@@ -575,7 +575,7 @@ void ntripServerUpdate()
             // All is well
             cyclePositionLEDs();
         }
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
         break;
     }
 }

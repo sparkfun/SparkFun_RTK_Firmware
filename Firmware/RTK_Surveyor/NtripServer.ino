@@ -304,8 +304,64 @@ void ntripServerStart()
 // Stop the NTRIP server
 void ntripServerStop(bool clientAllocated)
 {
+    /*
+                        Wait Network needed <----------------.
+                                 |                           |
+                                 V                           |
+             .------------ HAS_ETHERNET                      |
+             |          No       | Yes                       |
+             V                   V                           |
+             +<------- xxxUseWiFiNotEthernet                 |
+             |     Yes           | No                        |
+             |                   V                           |
+             |       .---------->+<--------------------------)-------.
+             |       |           | UseWiFi=false             |       |
+             |       |           V                           |       |
+             |       |        Link Up ---------------.       |       |
+             |       |       Yes |    No             |       |       |
+             |       |           V                   |       |       |
+             |       |     Use Ethernet              |       |       |
+             |       |           | Failure or Off    |       |       |
+             |       |           V                   |       |       |
+             |       |           +<------------------'       |       |
+             |       |           V                           |       |
+             |       |     Is Network Off ------------------>+       |
+             |       |           | No     Yes                ^       |
+             |       |           V                           |       |
+             |       '---- enableFailOver                    |       |
+             |          No       | Yes                       |       |
+             V                   V                           |       |
+             +------------------>+                           |       |
+             ^                   | UseWifi=true              |       |
+             |                   V                           |       |
+             |       .--- WiFi Configured                    |       |
+             |       | No        | Yes                       |       |
+             |       |           V                           |       |
+             |       |        Use WiFi                       |       |
+             |       |           | Failure or Off            |       |
+             |       |           V                           |       |
+             |       '---------->+                           |       |
+             |                   V                           |       |
+             |             Is Network Off -------------------'       |
+             |                   | No     Yes                        |
+             |                   V                                   |
+             +<----------- HAS_ETHERNET                              |
+             ^          No       | Yes                               |
+             |                   V                                   |
+             '------------ enableFailOver ---------------------------'
+                        No                Yes
+    */
+
+#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
+    bool enableFailOver;
+    bool useWiFiNotEthernet;
+
     if (ntripServer)
     {
+        //Save the previous network state
+        enableFailOver = ntripServer->_enableFailOver;
+        useWiFiNotEthernet = ntripServer->_useWiFiNotEthernet;
+
         // Break the NTRIP server connection if necessary
         if (ntripServer->connected())
             ntripServer->stop();
@@ -314,9 +370,25 @@ void ntripServerStop(bool clientAllocated)
         delete ntripServer;
         ntripServer = nullptr;
 
-        // Allocate the ntripServer structure if not done
-        if (clientAllocated == false)
-            ntripServer = new NetworkClient(false);
+#if defined(COMPILE_WIFI) && defined(COMPILE_ETHERNET)
+        //Determine the next network adapter to use
+        if ((!useWiFiNotEthernet) && enableFailOver) //Was using Ethernet, switch to WiFi
+        {
+            if (settings.enablePrintEthernetDiag)
+              systemPrintln("Failing over from Ethernet to WiFi");
+            useWiFiNotEthernet = true;
+        }
+        else if (useWiFiNotEthernet && HAS_ETHERNET && enableFailOver) //Was using WiFi, switch to Ethernet
+        {
+            if (settings.enablePrintEthernetDiag)
+              systemPrintln("Failing over from WiFi to Ethernet");
+            useWiFiNotEthernet = false;
+        }
+#endif //COMPILE_WIFI && COMPILE_ETHERNET
+
+        // Allocate the NTRIP server structure if not done
+        if (wifiClientAllocated == false)
+            ntripServer = new NTRIPClient(useWiFiNotEthernet, enableFailOver);
     }
 
     // Increase timeouts if we started the network
@@ -373,7 +445,7 @@ void ntripServerUpdate()
 
     // Start the network
     case NTRIP_SERVER_ON:
-        if (HAS_ETHERNET&& (!settings.ntripServerUseWiFiNotEthernet))
+        if (HAS_ETHERNET && (!ntripServer->_useWiFiNotEthernet))
         {
             if (online.ethernetStatus == ETH_NOT_STARTED)
             {
@@ -424,7 +496,7 @@ void ntripServerUpdate()
         if ((millis() - ntripServerTimer) > (1 * 60 * 1000))
             // Failed to connect to to the network, attempt to restart the network
             ntripServerStop(false);
-        else if (HAS_ETHERNET) // && !settings.ntripServerUseWiFiNotEthernet) //For future expansion
+        else if (HAS_ETHERNET && (!ntripServer->_useWiFiNotEthernet))
         {
             if (online.ethernetStatus == ETH_CONNECTED)
                 ntripServerSetState(NTRIP_SERVER_NETWORK_CONNECTED);

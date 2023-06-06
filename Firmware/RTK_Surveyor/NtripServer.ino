@@ -373,7 +373,7 @@ void ntripServerUpdate()
 
     // Start the network
     case NTRIP_SERVER_ON:
-        if (HAS_ETHERNET) // && !settings.ntripServerUseWiFiNotEthernet) //For future expansion
+        if (HAS_ETHERNET&& (!settings.ntripServerUseWiFiNotEthernet))
         {
             if (online.ethernetStatus == ETH_NOT_STARTED)
             {

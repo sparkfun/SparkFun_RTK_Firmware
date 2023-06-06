@@ -40,7 +40,11 @@ On the RTK Facet, RTK Facet L-Band, and RTK Express press the **SETUP** button u
 
 *Note:* Base mode is not possible on the RTK Express Plus.
 
-Once the survey is complete the device will begin producing RTCM correction data. If you are using a serial radio, you can verify this by viewing the LEDs on the radio (a small red LED will blink when serial data is received from the RTK Express). RTK devices are designed to follow the u-blox recommended survey-in of 60 seconds and a mean 3D standard deviation of 5m of all fixes. If a survey fails to achieve these requirements it will auto-restart after 10 minutes.
+![External Serial Radio attached to the back of the RTK Express](img/SparkFun_RTK_Surveyor_-_Radio.jpg)
+
+*External Serial Radio attached to the back of the RTK Express*
+
+Once the survey is complete the device will begin producing RTCM correction data. If you are using a serial radio, data should start flowing across the link. RTK devices are designed to follow the u-blox recommended survey-in of 60 seconds and a mean 3D standard deviation of 5m of all fixes. If a survey fails to achieve these requirements it will auto-restart after 10 minutes.
 
 More expensive surveyor bases have a ⅝” 11-TPI thread but the top of the surveyor base will often interfere with the antenna’s TNC connector. If you chose to use a surveyor’s ‘stick’ (often called a Prism Pole) be sure to obtain an extension to raise the antenna at least an inch.
 

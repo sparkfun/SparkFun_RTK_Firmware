@@ -294,7 +294,7 @@ To verify the NMEA sentences are being delivered correctly, Survey Master has a 
 
 [Vespucci](https://play.google.com/store/apps/details?id=de.blau.android&hl=en_US&gl=US) is an Open Street Map editor for Android.
 
-This software requires the RTK device to connect over TCP. Be sure you have a local WiFi network entered into the [WiFi Config menu](docs\menu_wifi.md), have a TCP Client or Server enabled, and have noted the TCP port (it's 2947 by default).
+This software requires the RTK device to connect over TCP. Be sure you have a local WiFi network entered into the [WiFi Config menu](menu_wifi.md), have a TCP Client or Server enabled, and have noted the TCP port (it's 2947 by default).
 
 ![Vespucci Gear Button](img/Vespucci/SparkFun%20RTK%20Vespucci%20-%20Main%20Gear.png)
 
@@ -314,7 +314,7 @@ Select **GPS/GNSS source**. Select **NMEA from TCP client**. TCP server is also 
 
 ![Vespucci NMEA network source menu](img/Vespucci/SparkFun%20RTK%20Vespucci%20-%20NMEA%20Network%20Source.png)
 
-Select **NMEA network source**. Enter the IP address and TCP port of the RTK device. The IP address can be found by opening a serial terminal while connected to WiFi (it is reported every few seconds). The TCP port is entered into the [WiFi Config menu](docs\menu_wifi.md).
+Select **NMEA network source**. Enter the IP address and TCP port of the RTK device. The IP address can be found by opening a serial terminal while connected to WiFi (it is reported every few seconds). The TCP port is entered into the [WiFi Config menu](menu_wifi.md).
 
 ![Vespucci showing location on map](img/Vespucci/SparkFun%20RTK%20Vespucci%20-%20Point%20on%20Map.png)
 
@@ -334,7 +334,7 @@ Open the View Menu, then look for the 'Panels' submenu.
 
 From the Panels submenu, enable 'GPS Information'. This will show a new panel on the left side.
 
-At this point, you will need to enable *TCP Server* mode on your RTK device from the [WiFi Config menu](docs\menu_wifi.md). Once the RTK device is connected to local WiFi QGIS will be able to connect to the given IP address and TCP port.
+At this point, you will need to enable *TCP Server* mode on your RTK device from the [WiFi Config menu](menu_wifi.md). Once the RTK device is connected to local WiFi QGIS will be able to connect to the given IP address and TCP port.
 
 ![Select GPSD](img/QGIS/SparkFun%20RTK%20QGIS%20-%20GPS%20Panel.png)
 
@@ -431,3 +431,89 @@ The software options for Apple iOS are much more limited because Apple products 
 We recommend SWMaps for iOS. SWMaps is available for iOS [here](https://apps.apple.com/us/app/sw-maps/id6444248083).  
 
 More information is available on the [System Menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system/) for switching between Bluetooth SPP and BLE.
+
+To begin:
+
+Make sure your RTK device is switched on, in Rover mode and operating in Bluetooth BLE mode.
+
+Make sure Bluetooth is enabled on your iOS device Settings.
+
+The RTK device will not appear in the _OTHER DEVICES_ list. That is OK.
+
+![iOS Settings Bluetooth](img/iOS/Screenshot1.PNG)
+
+*iOS Settings Bluetooth*
+
+Open SWMaps.
+
+Open or continue a Project if desired.
+
+SWMaps will show your approximate location based on your iOS device's location.
+
+![iOS SWMaps Initial Location](img/iOS/Screenshot2.PNG)
+
+*iOS SWMaps Initial Location*
+
+Press the 'SWMaps' icon at the top left of the screen to open the menu.
+
+![iOS SWMaps Menu](img/iOS/Screenshot3.PNG)
+
+*iOS SWMaps Menu*
+
+Select Bluetooth GNSS.
+
+![iOS SWMaps Bluetooth Connection](img/iOS/Screenshot4.PNG)
+
+*iOS SWMaps Bluetooth Connection*
+
+Set the **Instrument Model** to **Generic NMEA (Bluetooth LE)**.
+
+![iOS SWMaps Instrument Model](img/iOS/Screenshot5.PNG)
+
+*iOS SWMaps Instrument Model*
+
+Press 'Scan' and your RTK device should appear.
+
+![iOS SWMaps Bluetooth Scan](img/iOS/Screenshot6.PNG)
+
+*iOS SWMaps Bluetooth Scan*
+
+Select (tick) the RTK device and press 'Connect'.
+
+![iOS SWMaps Bluetooth Connected](img/iOS/Screenshot7.PNG)
+
+*iOS SWMaps Bluetooth Connected*
+
+Close the menu and your RTK location will be displayed on the map.
+
+You can now use the other features of SWMaps, including the built-in NTRIP Client.
+
+Re-open the menu and select 'NTRIP Client'.
+
+Enter the details for your NTRIP Caster - as shown in the [SWMaps section above](#sw-maps).
+
+![iOS SWMaps NTRIP Client](img/iOS/Screenshot8.PNG)
+
+*iOS SWMaps NTRIP Client*
+
+Click 'Connect'
+
+At this point, you should see a Bluetooth Pairing Request. Select 'Pair' to pair your RTK with your iOS device.
+
+![iOS Bluetooth Pairing](img/iOS/Screenshot9.PNG)
+
+*iOS Bluetooth Pairing*
+
+SWMaps will now receive NTRIP correction data from the caster and push it to your RTK over Bluetooth BLE.
+
+From the SWMaps menu, open 'GNSS Status' to see your position, fix type and accuracy.
+
+![iOS SWMaps GNSS Status](img/iOS/Screenshot10.PNG)
+
+*iOS SWMaps GNSS Status*
+
+If you return to the iOS Bluetooth Settings, you will see that your iOS and RTK devices are now paired.
+
+![iOS Settings Bluetooth Paired](img/iOS/Screenshot11.PNG)
+
+*iOS Settings Bluetooth - Paired*

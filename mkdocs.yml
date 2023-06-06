@@ -3,6 +3,8 @@ site_name: SparkFun RTK Product Manual
 site_description: A guide to the SparkFun RTK hardware, firmware, and features
 site_url: https://sparkfun.github.io/SparkFun_RTK_Firmware
 
+repo_name: sparkfun/SparkFun_RTK_Firmware
+repo_url: https://github.com/sparkfun/SparkFun_RTK_Firmware
 edit_uri: edit/main/docs/
 
 theme:
@@ -16,10 +18,13 @@ theme:
     code: Roboto Mono
   features:
     - content.code.annotate
-    - navigation.tracking
-    - navigation.tabs.sticky
-    - navigation.tabs    
+    # - navigation.tracking
+    # - navigation.tabs.sticky
+    # - navigation.tabs    
 
+  # Icon in Browser Tab (must be square img - i.e. 32x32 pixels)
+  favicon: img/sfe_logo_sq.png
+  
   icon:
     repo: fontawesome/brands/github
     admonition:
@@ -39,9 +44,6 @@ theme:
 plugins:
   - search
   - monorepo
-
-repo_url: https://github.com/sparkfun/SparkFun_RTK_Firmware
-repo_name: sparkfun/SparkFun_RTK_Firmware
 
 copyright: Copyright 2023 SparkFun Electronics (6333 Dry Creek Parkway, Niwot, Colorado 80503)
 
@@ -74,36 +76,35 @@ extra:
       link: https://twitter.com/sparkfun
   
 nav:
-  - Software Specifics:
-    - intro.md
-    - connecting_bluetooth.md
-    - gis_software.md
-    - firmware_update.md
-    - displays.md
-    - system_configuration.md
-    - configure_with_wifi.md
-    - configure_with_bluetooth.md
-    - configure_with_serial.md
-    - configure_gnss.md
-    - configure_messages.md
-    - configure_base.md
-    - menu_wifi.md
-    - configure_ports.md
-    - configure_data_logging.md
-    - configure_profiles.md
-    - configure_pointperfect.md
-    - configure_sensor.md
-    - menu_radios.md
-    - menu_sensor.md
-    - menu_system.md
-    - menu_debug.md
-    - system_status_report.md
-    - correction_sources.md
-    - correction_transport.md
-    - permanent_base.md
-    - repair.md
-    - accuracy_verification.md
-    - embeddedsystem_connection.md
-    - configure_with_settings_file.md
-    - configure_ucenter.md
-    - contribute.md
+  - Introduction: index.md
+  - connecting_bluetooth.md
+  - gis_software.md
+  - firmware_update.md
+  - displays.md
+  - system_configuration.md
+  - configure_with_wifi.md
+  - configure_with_bluetooth.md
+  - configure_with_serial.md
+  - configure_gnss.md
+  - configure_messages.md
+  - configure_base.md
+  - menu_wifi.md
+  - configure_ports.md
+  - configure_data_logging.md
+  - configure_profiles.md
+  - configure_pointperfect.md
+  - configure_sensor.md
+  - menu_radios.md
+  - menu_sensor.md
+  - menu_system.md
+  - menu_debug.md
+  - system_status_report.md
+  - correction_sources.md
+  - correction_transport.md
+  - permanent_base.md
+  - repair.md
+  - accuracy_verification.md
+  - embeddedsystem_connection.md
+  - configure_with_settings_file.md
+  - configure_ucenter.md
+  - contribute.md

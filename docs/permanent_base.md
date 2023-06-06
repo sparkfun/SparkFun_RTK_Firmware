@@ -265,7 +265,7 @@ Once WiFi connects the device will attempt to connect to the NTRIP mount point. 
 
 Your RTK device can both serve RTCM correction data (aka Server) to an NTRIP Caster and get RTCM correction data (aka Client) from an NTRIP Caster. But how does one get an NTRIP Caster?
 
-There are a variety of Windows applications out there that claim to be an NTRIP caster. We found them to be generally terrible. The easiest solutions we've found are [RTK2GO](rtk2go.com) or [Emlid Caster](caster.emlid.com). Both are free and available to the public.
+There are a variety of Windows applications out there that claim to be an NTRIP caster. We found them to be generally terrible. The easiest solutions we've found are [RTK2GO](http://rtk2go.com) or [Emlid Caster](https://emlid.com/ntrip-caster/). Both are free and available to the public.
 
 ### RTK2Go
 
@@ -301,11 +301,11 @@ The differences between Server and Client are small. The Server needs to know th
 
 *The SparkFun Mount Point 'bldr_SparkFun1'*
 
-To verify that your RTK product is correctly broadcasting RTCM data, you can access RTK2Go from a browser on Port 2101. This link [RTK2Go.com:2101](RTK2go.com:2101) will show a list of all current NTRIP Servers that are pushing data to the RTK2Go caster, and are available to be accessed, free of charge, by any NTRIP Client in the world.
+To verify that your RTK product is correctly broadcasting RTCM data, you can access RTK2Go from a browser on Port 2101. This link [RTK2Go.com:2101](http://www.rtk2go.com:2101/) will show a list of all current NTRIP Servers that are pushing data to the RTK2Go caster, and are available to be accessed, free of charge, by any NTRIP Client in the world.
 
 ### Emlid Caster
 
-[Emlid Caster](caster.emlid.com) is also very easy to set up and has a bit more user-friendly-looking website. Creating an account is very straightforward.
+[Emlid Caster](https://emlid.com/ntrip-caster/) is also very easy to set up and has a bit more user-friendly-looking website. Creating an account is very straightforward.
 
 ![Emlid Mount Points](img/SparkFun%20RTK%20Emlid%20Mount%20Points.png)
 

@@ -123,8 +123,8 @@ char profileNames[MAX_PROFILE_COUNT][50];  // Populated based on names found in 
 char settingsFileName[60];                 // Contains the %s_Settings_%d.txt with current profile number set
 
 char stationCoordinateECEFFileName[60]; // Contains the /StationCoordinates-ECEF_%d.csv with current profile number set
-char stationCoordinateGeodeticFileName[60]; // Contains the /StationCoordinates-Geodetic_%d.csv with current profile
-                                            // number set
+char stationCoordinateGeodeticFileName[60];     // Contains the /StationCoordinates-Geodetic_%d.csv with current profile
+                                                // number set
 const int COMMON_COORDINATES_MAX_STATIONS = 50; // Record upto 50 ECEF and Geodetic commonly used stations
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -252,7 +252,8 @@ char neoFirmwareVersion[20];       // Output to system status menu.
 uint8_t zedFirmwareVersionInt = 0; // Controls which features (constellations) can be configured (v1.12 doesn't support
                                    // SBAS). Note: will fail above 2.55!
 uint8_t zedModuleType = PLATFORM_F9P; // Controls which messages are supported and configured
-char zedUniqueId[11] = { '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', 0 }; // Output to system status menu and log file.
+char zedUniqueId[11] = {'0', '0', '0', '0', '0', '0',
+                        '0', '0', '0', '0', 0}; // Output to system status menu and log file.
 
 // Use Michael's lock/unlock methods to prevent the UART2 task from calling checkUblox during a sendCommand and
 // waitForResponse. Also prevents pushRawData from being called too.
@@ -263,7 +264,7 @@ class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 
     // Revert to a simple bool lock. The Mutex was causing occasional panics caused by
     // vTaskPriorityDisinheritAfterTimeout in lock() (I think possibly / probably caused by the GNSS not being pinned to
-    //one core?
+    // one core?
     bool iAmLocked = false;
 
     bool createLock(void)

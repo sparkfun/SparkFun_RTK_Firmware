@@ -156,6 +156,8 @@ void updateAccuracyLEDs()
                 {
                     systemPrint("Rover Accuracy (m): ");
                     systemPrint(horizontalAccuracy, 4); // Print the accuracy with 4 decimal places
+                    systemPrint(", SIV: ");
+                    systemPrint(numSV);
                     systemPrintln();
                 }
 

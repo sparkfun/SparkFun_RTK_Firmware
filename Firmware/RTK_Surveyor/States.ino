@@ -278,8 +278,8 @@ void updateSystemState()
             }
 
             // Check for <1m horz accuracy before starting surveyIn
-            systemPrintf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\r\n", settings.surveyInStartingAccuracy,
-                         horizontalAccuracy);
+            systemPrintf("Waiting for Horz Accuracy < %0.2f meters: %0.2f, SIV: %d\r\n", settings.surveyInStartingAccuracy,
+                         horizontalAccuracy, numSV);
 
             if (horizontalAccuracy > 0.0 && horizontalAccuracy < settings.surveyInStartingAccuracy)
             {

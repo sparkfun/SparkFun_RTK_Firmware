@@ -151,18 +151,22 @@ void gnssReadTask(void *e)
             while (serialGNSS.available())
             {
                 // Read the data from UART1
-                incomingData = serialGNSS.read();
+                uint8_t incomingData[500];
+                int bytesIncoming = serialGNSS.read(incomingData, sizeof(incomingData));
 
-                // Save the data byte
-                parse.buffer[parse.length++] = incomingData;
-                parse.length %= PARSE_BUFFER_LENGTH;
+                for (int x = 0; x < bytesIncoming; x++)
+                {
+                    // Save the data byte
+                    parse.buffer[parse.length++] = incomingData[x];
+                    parse.length %= PARSE_BUFFER_LENGTH;
 
-                // Compute the CRC value for the message
-                if (parse.computeCrc)
-                    parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
+                    // Compute the CRC value for the message
+                    if (parse.computeCrc)
+                        parse.crc = COMPUTE_CRC24Q(&parse, incomingData[x]);
 
-                // Update the parser state based on the incoming byte
-                parse.state(&parse, incomingData);
+                    // Update the parser state based on the incoming byte
+                    parse.state(&parse, incomingData[x]);
+                }
             }
         }
         else // SPI GNSS
@@ -663,8 +667,8 @@ void ButtonCheckTask(void *e)
                     if (millis() - lastRockerSwitchChange < 500)
                     {
                         if (systemState == STATE_ROVER_NOT_STARTED && online.display == true) // Catch during Power On
-                            requestChangeState(STATE_TEST);                                   // If RTK Surveyor, with display attached, during Rover not
-                                                                                              // started, then enter test mode
+                            requestChangeState(STATE_TEST); // If RTK Surveyor, with display attached, during Rover not
+                                                            // started, then enter test mode
                         else
                             requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
                     }

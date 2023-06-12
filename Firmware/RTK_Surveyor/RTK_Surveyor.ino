@@ -400,7 +400,7 @@ uint8_t *ringBuffer; // Buffer for reading from F9P. At 230400bps, 23040 bytes/s
                      // * 0.25 = 5760 bytes worst case.
 TaskHandle_t gnssReadTaskHandle =
     nullptr; // Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
-const int gnssReadTaskStackSize = 2000;
+const int gnssReadTaskStackSize = 2500;
 
 TaskHandle_t handleGnssDataTaskHandle = nullptr;
 const int handleGnssDataTaskStackSize = 3000;

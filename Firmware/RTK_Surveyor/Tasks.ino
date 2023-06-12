@@ -39,7 +39,10 @@ void btReadTask(void *e)
                     {
                         // Ignore this escape character, passing along to output
                         if (USE_I2C_GNSS)
-                            serialGNSS.write(incoming);
+                        {
+                            // serialGNSS.write(incoming);
+                            theGNSS.pushRawData(&incoming, 1);
+                        }
                         else
                             theGNSS.pushRawData(&incoming, 1);
                     }
@@ -50,7 +53,11 @@ void btReadTask(void *e)
                     while (btEscapeCharsReceived-- > 0)
                     {
                         if (USE_I2C_GNSS)
-                            serialGNSS.write(btEscapeCharacter);
+                        {
+                            // serialGNSS.write(btEscapeCharacter);
+                            uint8_t escChar = btEscapeCharacter;
+                            theGNSS.pushRawData(&escChar, 1);
+                        }
                         else
                         {
                             uint8_t escChar = btEscapeCharacter;
@@ -61,7 +68,12 @@ void btReadTask(void *e)
                     // Pass byte to GNSS receiver or to system
                     // TODO - control if this RTCM source should be listened to or not
                     if (USE_I2C_GNSS)
-                        serialGNSS.write(incoming);
+                    {
+                        // UART RX can be corrupted by UART TX
+                        // See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/469
+                        // serialGNSS.write(incoming);
+                        theGNSS.pushRawData(&incoming, 1);
+                    }
                     else
                         theGNSS.pushRawData(&incoming, 1);
 

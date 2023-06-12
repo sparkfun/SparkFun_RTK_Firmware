@@ -78,9 +78,15 @@ void btReadTask(void *e)
         if (settings.enableTaskReports == true)
             systemPrintf("SerialWriteTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(nullptr));
 
-        delay(1); // Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
+        feedWdt();
         taskYIELD();
     } // End while(true)
+}
+
+// Normally a delay(1) will feed the WDT but if we don't want to wait that long, this feeds the WDT without delay
+void feedWdt()
+{
+    vTaskDelay(1);
 }
 
 //----------------------------------------------------------------------
@@ -181,7 +187,7 @@ void gnssReadTask(void *e)
             }
         }
 
-        delay(1);
+        feedWdt();
         taskYIELD();
     }
 }

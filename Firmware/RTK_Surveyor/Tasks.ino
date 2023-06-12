@@ -6,7 +6,7 @@ volatile int availableHandlerSpace = 0; // settings.gnssHandlerBufferSize - used
 
 // If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
 // Scan for escape characters to enter config menu
-void F9PSerialWriteTask(void *e)
+void btReadTask(void *e)
 {
     while (true)
     {
@@ -126,7 +126,7 @@ void F9PSerialWriteTask(void *e)
 // The ESP32 Arduino FIFO is ~120 bytes by default but overridden to 50 bytes (see pinUART2Task() and
 // uart_set_rx_full_threshold()). We use this task to harvest from FIFO into circular buffer during SD write blocking
 // time.
-void F9PSerialReadTask(void *e)
+void gnssReadTask(void *e)
 {
     static PARSE_STATE parse = {waitForPreamble, processUart1Message, "Log"};
 
@@ -258,7 +258,7 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
 
 // If new data is in the ringBuffer, dole it out to appropriate interface
 // Send data out Bluetooth, record to SD, or send over TCP
-void handleGNSSDataTask(void *e)
+void handleGnssDataTask(void *e)
 {
     volatile static uint16_t btTail = 0;          // BT Tail advances as it is sent over BT
     volatile static uint16_t tcpTailWiFi = 0;     // TCP client tail
@@ -657,8 +657,8 @@ void ButtonCheckTask(void *e)
                     if (millis() - lastRockerSwitchChange < 500)
                     {
                         if (systemState == STATE_ROVER_NOT_STARTED && online.display == true) // Catch during Power On
-                            requestChangeState(STATE_TEST); // If RTK Surveyor, with display attached, during Rover not
-                                                            // started, then enter test mode
+                            requestChangeState(STATE_TEST);                                   // If RTK Surveyor, with display attached, during Rover not
+                                                                                              // started, then enter test mode
                         else
                             requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
                     }
@@ -1137,51 +1137,54 @@ void idleTask(void *e)
 void tasksStartUART2()
 {
     // Reads data from ZED and stores data into circular buffer
-    if (F9PSerialReadTaskHandle == nullptr)
-        xTaskCreate(F9PSerialReadTask,         // Function to call
-                    "F9Read",                  // Just for humans
-                    readTaskStackSize,         // Stack Size
-                    nullptr,                   // Task input parameter
-                    F9PSerialReadTaskPriority, // Priority
-                    &F9PSerialReadTaskHandle); // Task handle
+    if (gnssReadTaskHandle == nullptr)
+        xTaskCreatePinnedToCore(gnssReadTask,                  // Function to call
+                                "gnssRead",                    // Just for humans
+                                gnssReadTaskStackSize,         // Stack Size
+                                nullptr,                       // Task input parameter
+                                settings.gnssReadTaskPriority, // Priority
+                                &gnssReadTaskHandle,           // Task handle
+                                settings.gnssReadTaskCore);    // Core where task should run, 0=core, 1=Arduino
 
     // Reads data from circular buffer and sends data to SD, SPP, or TCP
-    if (handleGNSSDataTaskHandle == nullptr)
-        xTaskCreate(handleGNSSDataTask,          // Function to call
-                    "handleGNSSData",            // Just for humans
-                    handleGNSSDataTaskStackSize, // Stack Size
-                    nullptr,                     // Task input parameter
-                    handleGNSSDataTaskPriority,  // Priority
-                    &handleGNSSDataTaskHandle);  // Task handle
+    if (handleGnssDataTaskHandle == nullptr)
+        xTaskCreatePinnedToCore(handleGnssDataTask,                  // Function to call
+                                "handleGNSSData",                    // Just for humans
+                                handleGnssDataTaskStackSize,         // Stack Size
+                                nullptr,                             // Task input parameter
+                                settings.handleGnssDataTaskPriority, // Priority
+                                &handleGnssDataTaskHandle,           // Task handle
+                                settings.handleGnssDataTaskCore);    // Core where task should run, 0=core, 1=Arduino
 
     // Reads data from BT and sends to ZED
-    if (F9PSerialWriteTaskHandle == nullptr)
-        xTaskCreate(F9PSerialWriteTask,         // Function to call
-                    "F9Write",                  // Just for humans
-                    writeTaskStackSize,         // Stack Size
-                    nullptr,                    // Task input parameter
-                    F9PSerialWriteTaskPriority, // Priority
-                    &F9PSerialWriteTaskHandle); // Task handle
+    if (btReadTaskHandle == nullptr)
+        xTaskCreatePinnedToCore(btReadTask,                  // Function to call
+                                "btRead",                    // Just for humans
+                                btReadTaskStackSize,         // Stack Size
+                                nullptr,                     // Task input parameter
+                                settings.btReadTaskPriority, // Priority
+                                &btReadTaskHandle,           // Task handle
+                                settings.btReadTaskCore);    // Core where task should run, 0=core, 1=Arduino
 }
 
 // Stop tasks - useful when running firmware update or WiFi AP is running
 void tasksStopUART2()
 {
     // Delete tasks if running
-    if (F9PSerialReadTaskHandle != nullptr)
+    if (gnssReadTaskHandle != nullptr)
     {
-        vTaskDelete(F9PSerialReadTaskHandle);
-        F9PSerialReadTaskHandle = nullptr;
+        vTaskDelete(gnssReadTaskHandle);
+        gnssReadTaskHandle = nullptr;
     }
-    if (handleGNSSDataTaskHandle != nullptr)
+    if (handleGnssDataTaskHandle != nullptr)
     {
-        vTaskDelete(handleGNSSDataTaskHandle);
-        handleGNSSDataTaskHandle = nullptr;
+        vTaskDelete(handleGnssDataTaskHandle);
+        handleGnssDataTaskHandle = nullptr;
     }
-    if (F9PSerialWriteTaskHandle != nullptr)
+    if (btReadTaskHandle != nullptr)
     {
-        vTaskDelete(F9PSerialWriteTaskHandle);
-        F9PSerialWriteTaskHandle = nullptr;
+        vTaskDelete(btReadTaskHandle);
+        btReadTaskHandle = nullptr;
     }
 
     // Give the other CPU time to finish

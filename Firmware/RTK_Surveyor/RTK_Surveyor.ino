@@ -14,7 +14,7 @@
 
   The RTK Surveyor implements classic Bluetooth SPP to transfer data from the
   ZED-F9P to the phone and receive any RTCM from the phone and feed it back
-  to the ZED-F9P to achieve RTK: F9PSerialWriteTask(), F9PSerialReadTask().
+  to the ZED-F9P to achieve RTK: btReadTask(), gnssReadTask().
 
   Settings are loaded from microSD if available otherwise settings are pulled from ESP32's file system LittleFS.
 */
@@ -392,21 +392,19 @@ HardwareSerial serialGNSS(2); // TX on 17, RX on 16
 
 #define SERIAL_SIZE_TX 512
 uint8_t wBuffer[SERIAL_SIZE_TX]; // Buffer for writing from incoming SPP to F9P
-TaskHandle_t F9PSerialWriteTaskHandle =
+TaskHandle_t btReadTaskHandle =
     nullptr; // Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
-const uint8_t F9PSerialWriteTaskPriority = 1; // 3 being the highest, and 0 being the lowest
-const int writeTaskStackSize = 2000;
+const uint8_t btReadTaskPriority = 1; // 3 being the highest, and 0 being the lowest
+const int btReadTaskStackSize = 2000;
 
 uint8_t *ringBuffer; // Buffer for reading from F9P. At 230400bps, 23040 bytes/s. If SD blocks for 250ms, we need 23040
                      // * 0.25 = 5760 bytes worst case.
-TaskHandle_t F9PSerialReadTaskHandle =
+TaskHandle_t gnssReadTaskHandle =
     nullptr; // Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
-const uint8_t F9PSerialReadTaskPriority = 1; // 3 being the highest, and 0 being the lowest
-const int readTaskStackSize = 2000;
+const int gnssReadTaskStackSize = 2000;
 
-TaskHandle_t handleGNSSDataTaskHandle = nullptr;
-const uint8_t handleGNSSDataTaskPriority = 1; // 3 being the highest, and 0 being the lowest
-const int handleGNSSDataTaskStackSize = 3000;
+TaskHandle_t handleGnssDataTaskHandle = nullptr;
+const int handleGnssDataTaskStackSize = 3000;
 
 TaskHandle_t pinUART2TaskHandle = nullptr; // Dummy task to start UART2 on core 0.
 volatile bool uart2pinned = false; // This variable is touched by core 0 but checked by core 1. Must be volatile.

@@ -586,7 +586,7 @@ void pinUART2Task(void *pvParameters)
         // Reduce threshold value above which RX FIFO full interrupt is generated
         // Allows more time between when the UART interrupt occurs and when the FIFO buffer overruns
         // serialGNSS.setRxFIFOFull(50); //Available in >v2.0.5
-        uart_set_rx_full_threshold(2, 50); // uart_num, threshold
+        uart_set_rx_full_threshold(2, settings.serialGNSSRxFullThreshold); // uart_num, threshold
     }
 
     uart2pinned = true;

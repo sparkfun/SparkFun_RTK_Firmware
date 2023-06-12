@@ -743,8 +743,7 @@ bool parseLine(char *str, Settings *settings)
 
         // Check to see if this setting file is compatible with this version of RTK Surveyor
         if (d != sizeof(Settings))
-            systemPrintf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings "
-                         "from file.\r\n",
+            log_d("Settings size is %d but current firmware expects %d. Attempting to use settings from file.",
                          (int)d, sizeof(Settings));
     }
 

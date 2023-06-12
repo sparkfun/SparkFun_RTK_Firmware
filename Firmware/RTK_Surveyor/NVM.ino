@@ -413,6 +413,13 @@ void recordSystemSettingsToFile(File *settingsFile)
     }
 
     settingsFile->printf("%s=%d\r\n", "mdnsEnable", settings.mdnsEnable);
+    settingsFile->printf("%s=%d\r\n", "serialGNSSRxFullThreshold", settings.serialGNSSRxFullThreshold);
+    settingsFile->printf("%s=%d\r\n", "btReadTaskPriority", settings.btReadTaskPriority);
+    settingsFile->printf("%s=%d\r\n", "gnssReadTaskPriority", settings.gnssReadTaskPriority);
+    settingsFile->printf("%s=%d\r\n", "handleGnssDataTaskPriority", settings.handleGnssDataTaskPriority);
+    settingsFile->printf("%s=%d\r\n", "btReadTaskCore", settings.btReadTaskCore);
+    settingsFile->printf("%s=%d\r\n", "gnssReadTaskCore", settings.gnssReadTaskCore);
+    settingsFile->printf("%s=%d\r\n", "handleGnssDataTaskCore", settings.handleGnssDataTaskCore);
 }
 
 // Given a fileName, parse the file and load the given settings struct
@@ -1275,6 +1282,20 @@ bool parseLine(char *str, Settings *settings)
     }
     else if (strcmp(settingName, "mdnsEnable") == 0)
         settings->mdnsEnable = d;
+    else if (strcmp(settingName, "serialGNSSRxFullThreshold") == 0)
+        settings->serialGNSSRxFullThreshold = d;
+    else if (strcmp(settingName, "btReadTaskPriority") == 0)
+        settings->btReadTaskPriority = d;
+    else if (strcmp(settingName, "gnssReadTaskPriority") == 0)
+        settings->gnssReadTaskPriority = d;
+    else if (strcmp(settingName, "handleGnssDataTaskPriority") == 0)
+        settings->handleGnssDataTaskPriority = d;
+    else if (strcmp(settingName, "btReadTaskCore") == 0)
+        settings->btReadTaskCore = d;
+    else if (strcmp(settingName, "gnssReadTaskCore") == 0)
+        settings->gnssReadTaskCore = d;
+    else if (strcmp(settingName, "handleGnssDataTaskCore") == 0)
+        settings->handleGnssDataTaskCore = d;
 
     // Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
     // Must be last on else list

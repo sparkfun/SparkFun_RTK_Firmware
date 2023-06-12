@@ -664,6 +664,27 @@ void menuDebug()
         else
             systemPrintln("Disabled - no resets");
 
+        systemPrint("41) Set BT Read Task Priority: ");
+        systemPrintln(settings.btReadTaskPriority);
+
+        systemPrint("42) Set GNSS Read Task Priority: ");
+        systemPrintln(settings.gnssReadTaskPriority);
+
+        systemPrint("43) Set GNSS Data Handler Task Priority: ");
+        systemPrintln(settings.handleGnssDataTaskPriority);
+
+        systemPrint("44) Set BT Read Task Core: ");
+        systemPrintln(settings.btReadTaskCore);
+
+        systemPrint("45) Set GNSS Read Task Core: ");
+        systemPrintln(settings.gnssReadTaskCore);
+
+        systemPrint("46) Set GNSS Data Handler Core: ");
+        systemPrintln(settings.handleGnssDataTaskCore);
+
+        systemPrint("47) Set Serial GNSS RX Full Threshold: ");
+        systemPrintln(settings.serialGNSSRxFullThreshold);
+
         systemPrintln("t) Enter Test Screen");
 
         systemPrintln("e) Erase LittleFS");

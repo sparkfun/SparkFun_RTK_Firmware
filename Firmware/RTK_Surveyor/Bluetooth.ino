@@ -166,21 +166,28 @@ void bluetoothStart()
         else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
             bluetoothSerial = new BTLESerial();
 
-    if (pinBluetoothTaskHandle == nullptr)
-        xTaskCreatePinnedToCore(
-            pinBluetoothTask,
-            "BluetoothStart", // Just for humans
-            2000,        // Stack Size
-            nullptr,     // Task input parameter
-            0,           // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
-            &pinBluetoothTaskHandle,              // Task handle
-            settings.bluetoothInterruptsCore); // Core where task should run, 0=core, 1=Arduino
+        // Not yet implemented
+        //  if (pinBluetoothTaskHandle == nullptr)
+        //      xTaskCreatePinnedToCore(
+        //          pinBluetoothTask,
+        //          "BluetoothStart", // Just for humans
+        //          2000,        // Stack Size
+        //          nullptr,     // Task input parameter
+        //          0,           // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the
+        //          lowest &pinBluetoothTaskHandle,              // Task handle settings.bluetoothInterruptsCore); //
+        //          Core where task should run, 0=core, 1=Arduino
 
-    while (bluetoothPinned == false) // Wait for task to run once
-        delay(1);
+        // while (bluetoothPinned == false) // Wait for task to run once
+        //     delay(1);
 
+        if (bluetoothSerial->begin(deviceName) == false)
+        {
+            systemPrintln("An error occurred initializing Bluetooth");
 
-
+            if (productVariant == RTK_SURVEYOR)
+                digitalWrite(pin_bluetoothStatusLED, LOW);
+            return;
+        }
 
         // Set PIN to 1234 so we can connect to older BT devices, but not require a PIN for modern device pairing
         // See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/5
@@ -227,14 +234,13 @@ void bluetoothStart()
 // https://github.com/espressif/arduino-esp32/issues/3386
 void pinBluetoothTask(void *pvParameters)
 {
+    if (bluetoothSerial->begin(deviceName) == false)
+    {
+        systemPrintln("An error occurred initializing Bluetooth");
 
-        if (bluetoothSerial->begin(deviceName) == false)
-        {
-            systemPrintln("An error occurred initializing Bluetooth");
-
-            if (productVariant == RTK_SURVEYOR)
-                digitalWrite(pin_bluetoothStatusLED, LOW);
-        }
+        if (productVariant == RTK_SURVEYOR)
+            digitalWrite(pin_bluetoothStatusLED, LOW);
+    }
 
     bluetoothPinned = true;
 
@@ -252,7 +258,7 @@ void bluetoothStop()
         bluetoothSerial->flush();      // Complete any transfers
         bluetoothSerial->disconnect(); // Drop any clients
         bluetoothSerial->end();        // bluetoothSerial->end() will release significant RAM (~100k!) but a
-                                // bluetoothSerial->start will crash.
+                                       // bluetoothSerial->start will crash.
 
         log_d("Bluetooth turned off");
 

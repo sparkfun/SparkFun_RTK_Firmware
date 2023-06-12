@@ -420,6 +420,9 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "btReadTaskCore", settings.btReadTaskCore);
     settingsFile->printf("%s=%d\r\n", "gnssReadTaskCore", settings.gnssReadTaskCore);
     settingsFile->printf("%s=%d\r\n", "handleGnssDataTaskCore", settings.handleGnssDataTaskCore);
+    settingsFile->printf("%s=%d\r\n", "gnssUartInterruptsCore", settings.gnssUartInterruptsCore);
+    settingsFile->printf("%s=%d\r\n", "bluetoothInterruptsCore", settings.bluetoothInterruptsCore);
+    settingsFile->printf("%s=%d\r\n", "i2cInterruptsCore", settings.i2cInterruptsCore);
 }
 
 // Given a fileName, parse the file and load the given settings struct
@@ -1296,6 +1299,12 @@ bool parseLine(char *str, Settings *settings)
         settings->gnssReadTaskCore = d;
     else if (strcmp(settingName, "handleGnssDataTaskCore") == 0)
         settings->handleGnssDataTaskCore = d;
+    else if (strcmp(settingName, "gnssUartInterruptsCore") == 0)
+        settings->gnssUartInterruptsCore = d;
+    else if (strcmp(settingName, "bluetoothInterruptsCore") == 0)
+        settings->bluetoothInterruptsCore = d;
+    else if (strcmp(settingName, "i2cInterruptsCore") == 0)
+        settings->i2cInterruptsCore = d;
 
     // Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
     // Must be last on else list

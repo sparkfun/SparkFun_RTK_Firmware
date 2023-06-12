@@ -557,14 +557,15 @@ void beginUART2()
             2000,        // Stack Size
             nullptr,     // Task input parameter
             0,           // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
-            &pinUART2TaskHandle, // Task handle
-            0);                  // Core where task should run, 0=core, 1=Arduino
+            &pinUART2TaskHandle,              // Task handle
+            settings.gnssUartInterruptsCore); // Core where task should run, 0=core, 1=Arduino
 
     while (uart2pinned == false) // Wait for task to run once
         delay(1);
 }
 
-// Assign UART2 interrupts to the core 0. See: https://github.com/espressif/arduino-esp32/issues/3386
+// Assign UART2 interrupts to the core that started the task. See:
+// https://github.com/espressif/arduino-esp32/issues/3386
 void pinUART2Task(void *pvParameters)
 {
     // Note: ESP32 2.0.6 does some strange auto-bauding thing here which takes 20s to complete if there is no data for
@@ -1150,7 +1151,24 @@ void beginIdleTasks()
 
 void beginI2C()
 {
-    Wire.begin(); // Start I2C on core 1
+    if (pinI2CTaskHandle == nullptr)
+        xTaskCreatePinnedToCore(
+            pinI2CTask,
+            "I2CStart",        // Just for humans
+            2000,              // Stack Size
+            nullptr,           // Task input parameter
+            0,                 // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+            &pinI2CTaskHandle, // Task handle
+            settings.i2cInterruptsCore); // Core where task should run, 0=core, 1=Arduino
+
+    while (i2cPinned == false) // Wait for task to run once
+        delay(1);
+}
+
+// Assign I2C interrupts to the core that started the task. See: https://github.com/espressif/arduino-esp32/issues/3386
+void pinI2CTask(void *pvParameters)
+{
+    Wire.begin(); // Start I2C on core the core that was chosen when the task was started
     // Wire.setClock(400000);
 
     // begin/end wire transmission to see if bus is responding correctly
@@ -1166,6 +1184,10 @@ void beginI2C()
         online.i2c = true;
     else
         systemPrintln("Error: I2C Bus Not Responding");
+
+    i2cPinned = true;
+
+    vTaskDelete(nullptr); // Delete task once it has run once
 }
 
 // Depending on radio selection, begin hardware

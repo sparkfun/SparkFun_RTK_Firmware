@@ -166,14 +166,21 @@ void bluetoothStart()
         else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
             bluetoothSerial = new BTLESerial();
 
-        if (bluetoothSerial->begin(deviceName) == false)
-        {
-            systemPrintln("An error occurred initializing Bluetooth");
+    if (pinBluetoothTaskHandle == nullptr)
+        xTaskCreatePinnedToCore(
+            pinBluetoothTask,
+            "BluetoothStart", // Just for humans
+            2000,        // Stack Size
+            nullptr,     // Task input parameter
+            0,           // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+            &pinBluetoothTaskHandle,              // Task handle
+            settings.bluetoothInterruptsCore); // Core where task should run, 0=core, 1=Arduino
 
-            if (productVariant == RTK_SURVEYOR)
-                digitalWrite(pin_bluetoothStatusLED, LOW);
-            return;
-        }
+    while (bluetoothPinned == false) // Wait for task to run once
+        delay(1);
+
+
+
 
         // Set PIN to 1234 so we can connect to older BT devices, but not require a PIN for modern device pairing
         // See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/5
@@ -214,6 +221,24 @@ void bluetoothStart()
         reportHeapNow();
     }
 #endif // COMPILE_BT
+}
+
+// Assign Bluetooth interrupts to the core that started the task. See:
+// https://github.com/espressif/arduino-esp32/issues/3386
+void pinBluetoothTask(void *pvParameters)
+{
+
+        if (bluetoothSerial->begin(deviceName) == false)
+        {
+            systemPrintln("An error occurred initializing Bluetooth");
+
+            if (productVariant == RTK_SURVEYOR)
+                digitalWrite(pin_bluetoothStatusLED, LOW);
+        }
+
+    bluetoothPinned = true;
+
+    vTaskDelete(nullptr); // Delete task once it has run once
 }
 
 // This function stops BT so that it can be restarted later

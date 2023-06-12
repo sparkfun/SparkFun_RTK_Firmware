@@ -713,7 +713,7 @@ const ubxCmd ubxCommands[] = {
     {UBLOX_CFG_USBINPROT_SPARTN, "CFG_USBINPROT_SPARTN", 120, 9999}, //
 
     {UBLOX_CFG_NAV2_OUT_ENABLED, "CFG_NAV2_OUT_ENABLED", 130,
-     130},                                                            // Supported on F9P 130 and up. Supported on F9R 130 and up.
+     130}, // Supported on F9P 130 and up. Supported on F9R 130 and up.
     {UBLOX_CFG_NAVSPG_INFIL_MINCNO, "CFG_NAVSPG_INFIL_MINCNO", 0, 0}, //
 };
 
@@ -739,26 +739,26 @@ typedef struct
     double fixedLong = -105.18505761;
     double fixedAltitude = 1560.089;
     uint32_t dataPortBaud =
-        (115200 * 2);                     // Default to 230400bps. This limits GNSS fixes at 4Hz but allows SD buffer to be reduced to 6k.
+        (115200 * 2); // Default to 230400bps. This limits GNSS fixes at 4Hz but allows SD buffer to be reduced to 6k.
     uint32_t radioPortBaud = 57600;       // Default to 57600bps to support connection to SiK1000 type telemetry radios
     float surveyInStartingAccuracy = 1.0; // Wait for 1m horizontal positional accuracy before starting survey in
     uint16_t measurementRate = 250;       // Elapsed ms between GNSS measurements. 25ms to 65535ms. Default 4Hz.
     uint16_t navigationRate =
-        1;                                                // Ratio between number of measurements and navigation solutions. Default 1 for 4Hz (with measurementRate).
+        1; // Ratio between number of measurements and navigation solutions. Default 1 for 4Hz (with measurementRate).
     bool enableI2Cdebug = false;                          // Turn on to display GNSS library debug messages
     bool enableHeapReport = false;                        // Turn on to display free heap
     bool enableTaskReports = false;                       // Turn on to display task high water marks
     muxConnectionType_e dataPortChannel = MUX_UBLOX_NMEA; // Mux default to ublox UART1
     uint16_t spiFrequency = 16;                           // By default, use 16MHz SPI
     bool enableLogging = true;                            // If an SD card is present, log default sentences
-    bool enableARPLogging = false;                        // Log the Antenna Reference Position from RTCM 1005/1006 - if available
-    uint16_t ARPLoggingInterval_s = 10;                   // Log the ARP every 10 seconds - if available
+    bool enableARPLogging = false;      // Log the Antenna Reference Position from RTCM 1005/1006 - if available
+    uint16_t ARPLoggingInterval_s = 10; // Log the ARP every 10 seconds - if available
     uint16_t sppRxQueueSize = 2048;
     uint16_t sppTxQueueSize = 512;
     uint8_t dynamicModel = DYN_MODEL_PORTABLE;
     SystemState lastState = STATE_NOT_SET; // Start unit in last known state
-    bool enableSensorFusion = false;       // If IMU is available, avoid using it unless user specifically selects automotive
-    bool autoIMUmountAlignment = true;     // Allows unit to automatically establish device orientation in vehicle
+    bool enableSensorFusion = false; // If IMU is available, avoid using it unless user specifically selects automotive
+    bool autoIMUmountAlignment = true; // Allows unit to automatically establish device orientation in vehicle
     bool enableResetDisplay = false;
     uint8_t resetCount = 0;
     bool enableExternalPulse = true;                           // Send pulse once lock is achieved
@@ -892,14 +892,14 @@ typedef struct
 
     bool wifiConfigOverAP = true; // Configure device over Access Point or have it connect to WiFi
     uint16_t wifiTcpPort =
-        2947;             // TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
+        2947; // TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
     uint8_t minElev = 10; // Minimum elevation (in deg) for a GNSS satellite to be used in NAV
     uint8_t ubxMessageRatesBase[MAX_UBX_MSG_RTCM] = {
-        254};                             // Mark first record with key so defaults will be applied. Int value for each supported message - Report
-                                          // rates for RTCM Base. Default to u-blox recommended rates.
-    uint32_t imuYaw = 0;                  // User defined IMU mount yaw angle (0 to 36,000) CFG-SFIMU-IMU_MNTALG_YAW
-    int16_t imuPitch = 0;                 // User defined IMU mount pitch angle (-9000 to 9000) CFG-SFIMU-IMU_MNTALG_PITCH
-    int16_t imuRoll = 0;                  // User defined IMU mount roll angle (-18000 to 18000) CFG-SFIMU-IMU_MNTALG_ROLL
+        254}; // Mark first record with key so defaults will be applied. Int value for each supported message - Report
+              // rates for RTCM Base. Default to u-blox recommended rates.
+    uint32_t imuYaw = 0;  // User defined IMU mount yaw angle (0 to 36,000) CFG-SFIMU-IMU_MNTALG_YAW
+    int16_t imuPitch = 0; // User defined IMU mount pitch angle (-9000 to 9000) CFG-SFIMU-IMU_MNTALG_PITCH
+    int16_t imuRoll = 0;  // User defined IMU mount roll angle (-18000 to 18000) CFG-SFIMU-IMU_MNTALG_ROLL
     bool sfDisableWheelDirection = false; // CFG-SFODO-DIS_AUTODIRPINPOL
     bool sfCombineWheelTicks = false;     // CFG-SFODO-COMBINE_TICKS
     uint8_t rateNavPrio = 0;              // Output rate of priority nav mode message - CFG-RATE-NAV_PRIO
@@ -932,18 +932,22 @@ typedef struct
                               0}; // NTPpacket::defaultReferenceId. Ref ID is 4 chars. Add one extra for a NULL.
 
     CoordinateInputType coordinateInputType = COORDINATE_INPUT_TYPE_DD; // Default DD.ddddddddd
-    uint16_t lbandFixTimeout_seconds = 180;                             // Number of seconds of no L-Band fix before resetting ZED
-    int16_t minCNO_F9P = 6;                                             // Minimum satellite signal level for navigation. ZED-F9P default is 6 dBHz
-    int16_t minCNO_F9R = 20;                                            // Minimum satellite signal level for navigation. ZED-F9R default is 20 dBHz
-    bool mdnsEnable = false;                                            // Allows locating of device from browser address 'rtk.local'
-    uint16_t serialGNSSRxFullThreshold = 50;                            // RX FIFO full interrupt. Max of ~128. See pinUART2Task().
-
-    uint8_t btReadTaskPriority = 1;             // Read from BT SPP and Write to GNSS. 3 being the highest, and 0 being the lowest
-    uint8_t gnssReadTaskPriority = 1;           // Read from ZED-F9x and Write to circular buffer (SD, TCP, BT). 3 being the highest, and 0 being the lowest
+    uint16_t lbandFixTimeout_seconds = 180; // Number of seconds of no L-Band fix before resetting ZED
+    int16_t minCNO_F9P = 6;                 // Minimum satellite signal level for navigation. ZED-F9P default is 6 dBHz
+    int16_t minCNO_F9R = 20;                // Minimum satellite signal level for navigation. ZED-F9R default is 20 dBHz
+    bool mdnsEnable = false;                // Allows locating of device from browser address 'rtk.local'
+    uint16_t serialGNSSRxFullThreshold = 50; // RX FIFO full interrupt. Max of ~128. See pinUART2Task().
+    uint8_t btReadTaskPriority = 1; // Read from BT SPP and Write to GNSS. 3 being the highest, and 0 being the lowest
+    uint8_t gnssReadTaskPriority =
+        1; // Read from ZED-F9x and Write to circular buffer (SD, TCP, BT). 3 being the highest, and 0 being the lowest
     uint8_t handleGnssDataTaskPriority = 1; // Read from the cicular buffer and dole out to end points (SD, TCP, BT).
-    uint8_t btReadTaskCore = 1;                 // Core where task should run, 0=core, 1=Arduino
-    uint8_t gnssReadTaskCore = 1;               // Core where task should run, 0=core, 1=Arduino
-    uint8_t handleGnssDataTaskCore = 1;         // Core where task should run, 0=core, 1=Arduino
+    uint8_t btReadTaskCore = 1;             // Core where task should run, 0=core, 1=Arduino
+    uint8_t gnssReadTaskCore = 1;           // Core where task should run, 0=core, 1=Arduino
+    uint8_t handleGnssDataTaskCore = 1;     // Core where task should run, 0=core, 1=Arduino
+    uint8_t gnssUartInterruptsCore =
+        1;                         // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
+    uint8_t bluetoothInterruptsCore = 1;  // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
+    uint8_t i2cInterruptsCore = 1; // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
 
 } Settings;
 Settings settings;

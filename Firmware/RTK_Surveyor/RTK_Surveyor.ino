@@ -394,7 +394,6 @@ HardwareSerial serialGNSS(2); // TX on 17, RX on 16
 uint8_t wBuffer[SERIAL_SIZE_TX]; // Buffer for writing from incoming SPP to F9P
 TaskHandle_t btReadTaskHandle =
     nullptr; // Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
-const uint8_t btReadTaskPriority = 1; // 3 being the highest, and 0 being the lowest
 const int btReadTaskStackSize = 2000;
 
 uint8_t *ringBuffer; // Buffer for reading from F9P. At 230400bps, 23040 bytes/s. If SD blocks for 250ms, we need 23040
@@ -406,8 +405,14 @@ const int gnssReadTaskStackSize = 2000;
 TaskHandle_t handleGnssDataTaskHandle = nullptr;
 const int handleGnssDataTaskStackSize = 3000;
 
-TaskHandle_t pinUART2TaskHandle = nullptr; // Dummy task to start UART2 on core 0.
+TaskHandle_t pinUART2TaskHandle = nullptr; // Dummy task to start hardware on an assigned core
 volatile bool uart2pinned = false; // This variable is touched by core 0 but checked by core 1. Must be volatile.
+
+TaskHandle_t pinI2CTaskHandle = nullptr; // Dummy task to start hardware on an assigned core
+volatile bool i2cPinned = false; // This variable is touched by core 0 but checked by core 1. Must be volatile.
+
+TaskHandle_t pinBluetoothTaskHandle = nullptr; // Dummy task to start hardware on an assigned core
+volatile bool bluetoothPinned = false; // This variable is touched by core 0 but checked by core 1. Must be volatile.
 
 volatile static int combinedSpaceRemaining = 0; // Overrun indicator
 volatile static long fileSize = 0;              // Updated with each write

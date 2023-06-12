@@ -685,6 +685,15 @@ void menuDebug()
         systemPrint("47) Set Serial GNSS RX Full Threshold: ");
         systemPrintln(settings.serialGNSSRxFullThreshold);
 
+        systemPrint("48) Set Core used for GNSS UART Interrupts: ");
+        systemPrintln(settings.gnssUartInterruptsCore);
+
+        systemPrint("49) Set Core used for Bluetooth Interrupts: ");
+        systemPrintln(settings.bluetoothInterruptsCore);
+
+        systemPrint("50) Set Core used for I2C Interrupts: ");
+        systemPrintln(settings.i2cInterruptsCore);
+
         systemPrintln("t) Enter Test Screen");
 
         systemPrintln("e) Erase LittleFS");

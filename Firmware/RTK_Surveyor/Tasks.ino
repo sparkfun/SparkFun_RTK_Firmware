@@ -4,6 +4,11 @@
 volatile static uint16_t dataHead = 0;  // Head advances as data comes in from GNSS's UART
 volatile int availableHandlerSpace = 0; // settings.gnssHandlerBufferSize - usedSpace
 
+// Buffer the incoming Bluetooth stream so that it can be passed in bulk over I2C
+uint8_t bluetoothOutgoingToZed[100];
+uint16_t bluetoothOutgoingToZedHead = 0;
+unsigned long lastZedI2CSend = 0; // Timestamp of the last time we sent RTCM ZED over I2C
+
 // If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
 // Scan for escape characters to enter config menu
 void btReadTask(void *e)
@@ -41,7 +46,7 @@ void btReadTask(void *e)
                         if (USE_I2C_GNSS)
                         {
                             // serialGNSS.write(incoming);
-                            theGNSS.pushRawData(&incoming, 1);
+                            addToZedI2CBuffer(btEscapeCharacter);
                         }
                         else
                             theGNSS.pushRawData(&incoming, 1);
@@ -55,8 +60,7 @@ void btReadTask(void *e)
                         if (USE_I2C_GNSS)
                         {
                             // serialGNSS.write(btEscapeCharacter);
-                            uint8_t escChar = btEscapeCharacter;
-                            theGNSS.pushRawData(&escChar, 1);
+                            addToZedI2CBuffer(btEscapeCharacter);
                         }
                         else
                         {
@@ -72,7 +76,7 @@ void btReadTask(void *e)
                         // UART RX can be corrupted by UART TX
                         // See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/469
                         // serialGNSS.write(incoming);
-                        theGNSS.pushRawData(&incoming, 1);
+                        addToZedI2CBuffer(incoming);
                     }
                     else
                         theGNSS.pushRawData(&incoming, 1);
@@ -87,12 +91,46 @@ void btReadTask(void *e)
 
         } // End bluetoothGetState() == BT_CONNECTED
 
+        if (bluetoothOutgoingToZedHead > 0 && ((millis() - lastZedI2CSend) > 100))
+        {
+            sendZedI2CBuffer(); // Send any outstanding RTCM
+        }
+
         if (settings.enableTaskReports == true)
             systemPrintf("SerialWriteTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(nullptr));
 
         feedWdt();
         taskYIELD();
     } // End while(true)
+}
+
+// Add byte to buffer that will be sent to ZED
+// We cannot write single characters to the ZED over I2C (as this will change the address pointer)
+void addToZedI2CBuffer(uint8_t incoming)
+{
+    bluetoothOutgoingToZed[bluetoothOutgoingToZedHead] = incoming;
+
+    bluetoothOutgoingToZedHead++;
+    if (bluetoothOutgoingToZedHead == sizeof(bluetoothOutgoingToZed))
+    {
+        sendZedI2CBuffer();
+    }
+}
+
+// Push the buffered data in bulk to the GNSS over I2C
+bool sendZedI2CBuffer()
+{
+    bool response = theGNSS.pushRawData(bluetoothOutgoingToZed, bluetoothOutgoingToZedHead);
+
+    if (response == true)
+    {
+        // log_d("Pushed %d bytes RTCM to ZED", bluetoothOutgoingToZedHead);
+    }
+
+    // No matter the response, wrap the head and reset the timer
+    bluetoothOutgoingToZedHead = 0;
+    lastZedI2CSend = millis();
+    return (response);
 }
 
 // Normally a delay(1) will feed the WDT but if we don't want to wait that long, this feeds the WDT without delay
@@ -1247,7 +1285,7 @@ void sdSizeCheckTask(void *e)
                     sdCardSize = SD_MMC.cardSize();
                     sdFreeSpace = SD_MMC.totalBytes() - SD_MMC.usedBytes();
                 }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
                 xSemaphoreGive(sdCardSemaphore);
 

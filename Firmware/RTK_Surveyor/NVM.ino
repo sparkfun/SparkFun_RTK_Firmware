@@ -1485,7 +1485,7 @@ void loadProfileNumber()
     File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_READ);
     if (!fileProfileNumber)
     {
-        systemPrintln("profileNumber.txt not found");
+        log_d("profileNumber.txt not found");
         settings.updateZEDSettings = true; // Force module update
         recordProfileNumber(0);            // Record profile
     }
@@ -1498,7 +1498,7 @@ void loadProfileNumber()
     // We have arbitrary limit of user profiles
     if (profileNumber >= MAX_PROFILE_COUNT)
     {
-        systemPrintln("ProfileNumber invalid. Going to zero.");
+        log_d("ProfileNumber invalid. Going to zero.");
         settings.updateZEDSettings = true; // Force module update
         recordProfileNumber(0);            // Record profile
     }

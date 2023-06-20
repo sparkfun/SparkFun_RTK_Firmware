@@ -169,10 +169,9 @@ bool ntripClientConnectLimitReached()
     ntripClientStop(false); // Allocate new wifiClient
 
     // Retry the connection a few times
-    bool limitReached = false;
-    if (ntripClientConnectionAttempts++ >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS)
-        limitReached = true;
+    bool limitReached = (ntripClientConnectionAttempts >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
 
+    ntripClientConnectionAttempts++;
     ntripClientConnectionAttemptsTotal++;
 
     if (limitReached == false)
@@ -434,6 +433,12 @@ void ntripClientUpdate()
             else
             {
                 // Wait for ethernet to connect
+                static unsigned long lastDebug = millis();
+                if (millis() > (lastDebug + 5000))
+                {
+                    lastDebug = millis();
+                    log_d("NTRIP Client: Ethernet not connected. Waiting to retry.");
+                }
             }
         }
         else

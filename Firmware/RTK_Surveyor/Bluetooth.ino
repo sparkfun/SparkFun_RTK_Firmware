@@ -166,6 +166,20 @@ void bluetoothStart()
         else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
             bluetoothSerial = new BTLESerial();
 
+        // Not yet implemented
+        //  if (pinBluetoothTaskHandle == nullptr)
+        //      xTaskCreatePinnedToCore(
+        //          pinBluetoothTask,
+        //          "BluetoothStart", // Just for humans
+        //          2000,        // Stack Size
+        //          nullptr,     // Task input parameter
+        //          0,           // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the
+        //          lowest &pinBluetoothTaskHandle,              // Task handle settings.bluetoothInterruptsCore); //
+        //          Core where task should run, 0=core, 1=Arduino
+
+        // while (bluetoothPinned == false) // Wait for task to run once
+        //     delay(1);
+
         if (bluetoothSerial->begin(deviceName) == false)
         {
             systemPrintln("An error occurred initializing Bluetooth");
@@ -216,6 +230,25 @@ void bluetoothStart()
 #endif // COMPILE_BT
 }
 
+// Assign Bluetooth interrupts to the core that started the task. See:
+// https://github.com/espressif/arduino-esp32/issues/3386
+void pinBluetoothTask(void *pvParameters)
+{
+#ifdef COMPILE_BT
+    if (bluetoothSerial->begin(deviceName) == false)
+    {
+        systemPrintln("An error occurred initializing Bluetooth");
+
+        if (productVariant == RTK_SURVEYOR)
+            digitalWrite(pin_bluetoothStatusLED, LOW);
+    }
+
+    bluetoothPinned = true;
+
+    vTaskDelete(nullptr); // Delete task once it has run once
+#endif // COMPILE_BT
+}
+
 // This function stops BT so that it can be restarted later
 // It also releases as much system resources as possible so that WiFi/caster is more stable
 void bluetoothStop()
@@ -227,7 +260,7 @@ void bluetoothStop()
         bluetoothSerial->flush();      // Complete any transfers
         bluetoothSerial->disconnect(); // Drop any clients
         bluetoothSerial->end();        // bluetoothSerial->end() will release significant RAM (~100k!) but a
-                                // bluetoothSerial->start will crash.
+                                       // bluetoothSerial->start will crash.
 
         log_d("Bluetooth turned off");
 

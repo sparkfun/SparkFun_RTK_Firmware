@@ -4,9 +4,14 @@
 volatile static uint16_t dataHead = 0;  // Head advances as data comes in from GNSS's UART
 volatile int availableHandlerSpace = 0; // settings.gnssHandlerBufferSize - usedSpace
 
+// Buffer the incoming Bluetooth stream so that it can be passed in bulk over I2C
+uint8_t bluetoothOutgoingToZed[100];
+uint16_t bluetoothOutgoingToZedHead = 0;
+unsigned long lastZedI2CSend = 0; // Timestamp of the last time we sent RTCM ZED over I2C
+
 // If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
 // Scan for escape characters to enter config menu
-void F9PSerialWriteTask(void *e)
+void btReadTask(void *e)
 {
     while (true)
     {
@@ -39,7 +44,10 @@ void F9PSerialWriteTask(void *e)
                     {
                         // Ignore this escape character, passing along to output
                         if (USE_I2C_GNSS)
-                            serialGNSS.write(incoming);
+                        {
+                            // serialGNSS.write(incoming);
+                            addToZedI2CBuffer(btEscapeCharacter);
+                        }
                         else
                             theGNSS.pushRawData(&incoming, 1);
                     }
@@ -50,7 +58,10 @@ void F9PSerialWriteTask(void *e)
                     while (btEscapeCharsReceived-- > 0)
                     {
                         if (USE_I2C_GNSS)
-                            serialGNSS.write(btEscapeCharacter);
+                        {
+                            // serialGNSS.write(btEscapeCharacter);
+                            addToZedI2CBuffer(btEscapeCharacter);
+                        }
                         else
                         {
                             uint8_t escChar = btEscapeCharacter;
@@ -61,7 +72,12 @@ void F9PSerialWriteTask(void *e)
                     // Pass byte to GNSS receiver or to system
                     // TODO - control if this RTCM source should be listened to or not
                     if (USE_I2C_GNSS)
-                        serialGNSS.write(incoming);
+                    {
+                        // UART RX can be corrupted by UART TX
+                        // See issue: https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/469
+                        // serialGNSS.write(incoming);
+                        addToZedI2CBuffer(incoming);
+                    }
                     else
                         theGNSS.pushRawData(&incoming, 1);
 
@@ -75,12 +91,52 @@ void F9PSerialWriteTask(void *e)
 
         } // End bluetoothGetState() == BT_CONNECTED
 
+        if (bluetoothOutgoingToZedHead > 0 && ((millis() - lastZedI2CSend) > 100))
+        {
+            sendZedI2CBuffer(); // Send any outstanding RTCM
+        }
+
         if (settings.enableTaskReports == true)
             systemPrintf("SerialWriteTask High watermark: %d\r\n", uxTaskGetStackHighWaterMark(nullptr));
 
-        delay(1); // Poor man's way of feeding WDT. Required to prevent Priority 1 tasks from causing WDT reset
+        feedWdt();
         taskYIELD();
     } // End while(true)
+}
+
+// Add byte to buffer that will be sent to ZED
+// We cannot write single characters to the ZED over I2C (as this will change the address pointer)
+void addToZedI2CBuffer(uint8_t incoming)
+{
+    bluetoothOutgoingToZed[bluetoothOutgoingToZedHead] = incoming;
+
+    bluetoothOutgoingToZedHead++;
+    if (bluetoothOutgoingToZedHead == sizeof(bluetoothOutgoingToZed))
+    {
+        sendZedI2CBuffer();
+    }
+}
+
+// Push the buffered data in bulk to the GNSS over I2C
+bool sendZedI2CBuffer()
+{
+    bool response = theGNSS.pushRawData(bluetoothOutgoingToZed, bluetoothOutgoingToZedHead);
+
+    if (response == true)
+    {
+        // log_d("Pushed %d bytes RTCM to ZED", bluetoothOutgoingToZedHead);
+    }
+
+    // No matter the response, wrap the head and reset the timer
+    bluetoothOutgoingToZedHead = 0;
+    lastZedI2CSend = millis();
+    return (response);
+}
+
+// Normally a delay(1) will feed the WDT but if we don't want to wait that long, this feeds the WDT without delay
+void feedWdt()
+{
+    vTaskDelay(1);
 }
 
 //----------------------------------------------------------------------
@@ -126,7 +182,7 @@ void F9PSerialWriteTask(void *e)
 // The ESP32 Arduino FIFO is ~120 bytes by default but overridden to 50 bytes (see pinUART2Task() and
 // uart_set_rx_full_threshold()). We use this task to harvest from FIFO into circular buffer during SD write blocking
 // time.
-void F9PSerialReadTask(void *e)
+void gnssReadTask(void *e)
 {
     static PARSE_STATE parse = {waitForPreamble, processUart1Message, "Log"};
 
@@ -145,18 +201,22 @@ void F9PSerialReadTask(void *e)
             while (serialGNSS.available())
             {
                 // Read the data from UART1
-                incomingData = serialGNSS.read();
+                uint8_t incomingData[500];
+                int bytesIncoming = serialGNSS.read(incomingData, sizeof(incomingData));
 
-                // Save the data byte
-                parse.buffer[parse.length++] = incomingData;
-                parse.length %= PARSE_BUFFER_LENGTH;
+                for (int x = 0; x < bytesIncoming; x++)
+                {
+                    // Save the data byte
+                    parse.buffer[parse.length++] = incomingData[x];
+                    parse.length %= PARSE_BUFFER_LENGTH;
 
-                // Compute the CRC value for the message
-                if (parse.computeCrc)
-                    parse.crc = COMPUTE_CRC24Q(&parse, incomingData);
+                    // Compute the CRC value for the message
+                    if (parse.computeCrc)
+                        parse.crc = COMPUTE_CRC24Q(&parse, incomingData[x]);
 
-                // Update the parser state based on the incoming byte
-                parse.state(&parse, incomingData);
+                    // Update the parser state based on the incoming byte
+                    parse.state(&parse, incomingData[x]);
+                }
             }
         }
         else // SPI GNSS
@@ -181,7 +241,7 @@ void F9PSerialReadTask(void *e)
             }
         }
 
-        delay(1);
+        feedWdt();
         taskYIELD();
     }
 }
@@ -258,7 +318,7 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
 
 // If new data is in the ringBuffer, dole it out to appropriate interface
 // Send data out Bluetooth, record to SD, or send over TCP
-void handleGNSSDataTask(void *e)
+void handleGnssDataTask(void *e)
 {
     volatile static uint16_t btTail = 0;          // BT Tail advances as it is sent over BT
     volatile static uint16_t tcpTailWiFi = 0;     // TCP client tail
@@ -1137,51 +1197,54 @@ void idleTask(void *e)
 void tasksStartUART2()
 {
     // Reads data from ZED and stores data into circular buffer
-    if (F9PSerialReadTaskHandle == nullptr)
-        xTaskCreate(F9PSerialReadTask,         // Function to call
-                    "F9Read",                  // Just for humans
-                    readTaskStackSize,         // Stack Size
-                    nullptr,                   // Task input parameter
-                    F9PSerialReadTaskPriority, // Priority
-                    &F9PSerialReadTaskHandle); // Task handle
+    if (gnssReadTaskHandle == nullptr)
+        xTaskCreatePinnedToCore(gnssReadTask,                  // Function to call
+                                "gnssRead",                    // Just for humans
+                                gnssReadTaskStackSize,         // Stack Size
+                                nullptr,                       // Task input parameter
+                                settings.gnssReadTaskPriority, // Priority
+                                &gnssReadTaskHandle,           // Task handle
+                                settings.gnssReadTaskCore);    // Core where task should run, 0=core, 1=Arduino
 
     // Reads data from circular buffer and sends data to SD, SPP, or TCP
-    if (handleGNSSDataTaskHandle == nullptr)
-        xTaskCreate(handleGNSSDataTask,          // Function to call
-                    "handleGNSSData",            // Just for humans
-                    handleGNSSDataTaskStackSize, // Stack Size
-                    nullptr,                     // Task input parameter
-                    handleGNSSDataTaskPriority,  // Priority
-                    &handleGNSSDataTaskHandle);  // Task handle
+    if (handleGnssDataTaskHandle == nullptr)
+        xTaskCreatePinnedToCore(handleGnssDataTask,                  // Function to call
+                                "handleGNSSData",                    // Just for humans
+                                handleGnssDataTaskStackSize,         // Stack Size
+                                nullptr,                             // Task input parameter
+                                settings.handleGnssDataTaskPriority, // Priority
+                                &handleGnssDataTaskHandle,           // Task handle
+                                settings.handleGnssDataTaskCore);    // Core where task should run, 0=core, 1=Arduino
 
     // Reads data from BT and sends to ZED
-    if (F9PSerialWriteTaskHandle == nullptr)
-        xTaskCreate(F9PSerialWriteTask,         // Function to call
-                    "F9Write",                  // Just for humans
-                    writeTaskStackSize,         // Stack Size
-                    nullptr,                    // Task input parameter
-                    F9PSerialWriteTaskPriority, // Priority
-                    &F9PSerialWriteTaskHandle); // Task handle
+    if (btReadTaskHandle == nullptr)
+        xTaskCreatePinnedToCore(btReadTask,                  // Function to call
+                                "btRead",                    // Just for humans
+                                btReadTaskStackSize,         // Stack Size
+                                nullptr,                     // Task input parameter
+                                settings.btReadTaskPriority, // Priority
+                                &btReadTaskHandle,           // Task handle
+                                settings.btReadTaskCore);    // Core where task should run, 0=core, 1=Arduino
 }
 
 // Stop tasks - useful when running firmware update or WiFi AP is running
 void tasksStopUART2()
 {
     // Delete tasks if running
-    if (F9PSerialReadTaskHandle != nullptr)
+    if (gnssReadTaskHandle != nullptr)
     {
-        vTaskDelete(F9PSerialReadTaskHandle);
-        F9PSerialReadTaskHandle = nullptr;
+        vTaskDelete(gnssReadTaskHandle);
+        gnssReadTaskHandle = nullptr;
     }
-    if (handleGNSSDataTaskHandle != nullptr)
+    if (handleGnssDataTaskHandle != nullptr)
     {
-        vTaskDelete(handleGNSSDataTaskHandle);
-        handleGNSSDataTaskHandle = nullptr;
+        vTaskDelete(handleGnssDataTaskHandle);
+        handleGnssDataTaskHandle = nullptr;
     }
-    if (F9PSerialWriteTaskHandle != nullptr)
+    if (btReadTaskHandle != nullptr)
     {
-        vTaskDelete(F9PSerialWriteTaskHandle);
-        F9PSerialWriteTaskHandle = nullptr;
+        vTaskDelete(btReadTaskHandle);
+        btReadTaskHandle = nullptr;
     }
 
     // Give the other CPU time to finish

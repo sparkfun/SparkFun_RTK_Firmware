@@ -664,6 +664,36 @@ void menuDebug()
         else
             systemPrintln("Disabled - no resets");
 
+        systemPrint("41) Set BT Read Task Priority: ");
+        systemPrintln(settings.btReadTaskPriority);
+
+        systemPrint("42) Set GNSS Read Task Priority: ");
+        systemPrintln(settings.gnssReadTaskPriority);
+
+        systemPrint("43) Set GNSS Data Handler Task Priority: ");
+        systemPrintln(settings.handleGnssDataTaskPriority);
+
+        systemPrint("44) Set BT Read Task Core: ");
+        systemPrintln(settings.btReadTaskCore);
+
+        systemPrint("45) Set GNSS Read Task Core: ");
+        systemPrintln(settings.gnssReadTaskCore);
+
+        systemPrint("46) Set GNSS Data Handler Core: ");
+        systemPrintln(settings.handleGnssDataTaskCore);
+
+        systemPrint("47) Set Serial GNSS RX Full Threshold: ");
+        systemPrintln(settings.serialGNSSRxFullThreshold);
+
+        systemPrint("48) Set Core used for GNSS UART Interrupts: ");
+        systemPrintln(settings.gnssUartInterruptsCore);
+
+        systemPrint("49) Set Core used for Bluetooth Interrupts: ");
+        systemPrintln(settings.bluetoothInterruptsCore);
+
+        systemPrint("50) Set Core used for I2C Interrupts: ");
+        systemPrintln(settings.i2cInterruptsCore);
+
         systemPrintln("t) Enter Test Screen");
 
         systemPrintln("e) Erase LittleFS");
@@ -922,6 +952,147 @@ void menuDebug()
                     systemPrintln("Error: Timeout out of range");
                 else
                     settings.lbandFixTimeout_seconds = timeout; // Recorded to NVM and file at main menu exit
+            }
+        }
+
+        else if (incoming == 41)
+        {
+            systemPrint("Enter BT Read Task Priority (0 to 3): ");
+            int btReadTaskPriority = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((btReadTaskPriority != INPUT_RESPONSE_GETNUMBER_EXIT) && (btReadTaskPriority != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (btReadTaskPriority < 0 || btReadTaskPriority > 3)
+                    systemPrintln("Error: Task priority out of range");
+                else
+                {
+                    settings.btReadTaskPriority = btReadTaskPriority; // Recorded to NVM and file
+                }
+            }
+        }
+        else if (incoming == 42)
+        {
+            systemPrint("Enter GNSS Read Task Priority (0 to 3): ");
+            int gnssReadTaskPriority = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((gnssReadTaskPriority != INPUT_RESPONSE_GETNUMBER_EXIT) && (gnssReadTaskPriority != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (gnssReadTaskPriority < 0 || gnssReadTaskPriority > 3)
+                    systemPrintln("Error: Task priority out of range");
+                else
+                {
+                    settings.gnssReadTaskPriority = gnssReadTaskPriority; // Recorded to NVM and file
+                }
+            }
+        }
+        else if (incoming == 43)
+        {
+            systemPrint("Enter GNSS Data Handle Task Priority (0 to 3): ");
+            int handleGnssDataTaskPriority = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((handleGnssDataTaskPriority != INPUT_RESPONSE_GETNUMBER_EXIT) && (handleGnssDataTaskPriority != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (handleGnssDataTaskPriority < 0 || handleGnssDataTaskPriority > 3)
+                    systemPrintln("Error: Task priority out of range");
+                else
+                {
+                    settings.handleGnssDataTaskPriority = handleGnssDataTaskPriority; // Recorded to NVM and file
+                }
+            }
+        }
+        else if (incoming == 44)
+        {
+            systemPrint("Enter BT Read Task Core (0 or 1): ");
+            int btReadTaskCore = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((btReadTaskCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (btReadTaskCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (btReadTaskCore < 0 || btReadTaskCore > 1)
+                    systemPrintln("Error: Core out of range");
+                else
+                {
+                    settings.btReadTaskCore = btReadTaskCore; // Recorded to NVM and file
+                }
+            }
+        }
+        else if (incoming == 45)
+        {
+            systemPrint("Enter GNSS Read Task Core (0 or 1): ");
+            int gnssReadTaskCore = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((gnssReadTaskCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (gnssReadTaskCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (gnssReadTaskCore < 0 || gnssReadTaskCore > 1)
+                    systemPrintln("Error: Core out of range");
+                else
+                {
+                    settings.gnssReadTaskCore = gnssReadTaskCore; // Recorded to NVM and file
+                }
+            }
+        }
+        else if (incoming == 46)
+        {
+            systemPrint("Enter GNSS Data Handler Task Core (0 or 1): ");
+            int handleGnssDataTaskCore = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((handleGnssDataTaskCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (handleGnssDataTaskCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (handleGnssDataTaskCore < 0 || handleGnssDataTaskCore > 1)
+                    systemPrintln("Error: Core out of range");
+                else
+                {
+                    settings.handleGnssDataTaskCore = handleGnssDataTaskCore; // Recorded to NVM and file
+                }
+            }
+        }
+        else if (incoming == 47)
+        {
+            systemPrint("Enter Serial GNSS RX Full Threshold (1 to 127): ");
+            int serialGNSSRxFullThreshold = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((serialGNSSRxFullThreshold != INPUT_RESPONSE_GETNUMBER_EXIT) && (serialGNSSRxFullThreshold != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (serialGNSSRxFullThreshold < 1 || serialGNSSRxFullThreshold > 127)
+                    systemPrintln("Error: Core out of range");
+                else
+                {
+                    settings.serialGNSSRxFullThreshold = serialGNSSRxFullThreshold; // Recorded to NVM and file
+                }
+            }
+        }
+        else if (incoming == 48)
+        {
+            systemPrint("Enter Core used for GNSS UART Interrupts (0 or 1): ");
+            int gnssUartInterruptsCore = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((gnssUartInterruptsCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (gnssUartInterruptsCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (gnssUartInterruptsCore < 0 || gnssUartInterruptsCore > 1)
+                    systemPrintln("Error: Core out of range");
+                else
+                {
+                    settings.gnssUartInterruptsCore = gnssUartInterruptsCore; // Recorded to NVM and file
+                }
+            }
+        }
+        else if (incoming == 49)
+        {
+            systemPrint("Not yet implemented! - Enter Core used for Bluetooth Interrupts (0 or 1): ");
+            int bluetoothInterruptsCore = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((bluetoothInterruptsCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (bluetoothInterruptsCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (bluetoothInterruptsCore < 0 || bluetoothInterruptsCore > 1)
+                    systemPrintln("Error: Core out of range");
+                else
+                {
+                    settings.bluetoothInterruptsCore = bluetoothInterruptsCore; // Recorded to NVM and file
+                }
+            }
+        }
+        else if (incoming == 50)
+        {
+            systemPrint("Enter Core used for I2C Interrupts (0 or 1): ");
+            int i2cInterruptsCore = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((i2cInterruptsCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (i2cInterruptsCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (i2cInterruptsCore < 0 || i2cInterruptsCore > 1)
+                    systemPrintln("Error: Core out of range");
+                else
+                {
+                    settings.i2cInterruptsCore = i2cInterruptsCore; // Recorded to NVM and file
+                }
             }
         }
         else if (incoming == 'e')

@@ -413,6 +413,16 @@ void recordSystemSettingsToFile(File *settingsFile)
     }
 
     settingsFile->printf("%s=%d\r\n", "mdnsEnable", settings.mdnsEnable);
+    settingsFile->printf("%s=%d\r\n", "serialGNSSRxFullThreshold", settings.serialGNSSRxFullThreshold);
+    settingsFile->printf("%s=%d\r\n", "btReadTaskPriority", settings.btReadTaskPriority);
+    settingsFile->printf("%s=%d\r\n", "gnssReadTaskPriority", settings.gnssReadTaskPriority);
+    settingsFile->printf("%s=%d\r\n", "handleGnssDataTaskPriority", settings.handleGnssDataTaskPriority);
+    settingsFile->printf("%s=%d\r\n", "btReadTaskCore", settings.btReadTaskCore);
+    settingsFile->printf("%s=%d\r\n", "gnssReadTaskCore", settings.gnssReadTaskCore);
+    settingsFile->printf("%s=%d\r\n", "handleGnssDataTaskCore", settings.handleGnssDataTaskCore);
+    settingsFile->printf("%s=%d\r\n", "gnssUartInterruptsCore", settings.gnssUartInterruptsCore);
+    settingsFile->printf("%s=%d\r\n", "bluetoothInterruptsCore", settings.bluetoothInterruptsCore);
+    settingsFile->printf("%s=%d\r\n", "i2cInterruptsCore", settings.i2cInterruptsCore);
 }
 
 // Given a fileName, parse the file and load the given settings struct
@@ -733,8 +743,7 @@ bool parseLine(char *str, Settings *settings)
 
         // Check to see if this setting file is compatible with this version of RTK Surveyor
         if (d != sizeof(Settings))
-            systemPrintf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings "
-                         "from file.\r\n",
+            log_d("Settings size is %d but current firmware expects %d. Attempting to use settings from file.",
                          (int)d, sizeof(Settings));
     }
 
@@ -1275,6 +1284,26 @@ bool parseLine(char *str, Settings *settings)
     }
     else if (strcmp(settingName, "mdnsEnable") == 0)
         settings->mdnsEnable = d;
+    else if (strcmp(settingName, "serialGNSSRxFullThreshold") == 0)
+        settings->serialGNSSRxFullThreshold = d;
+    else if (strcmp(settingName, "btReadTaskPriority") == 0)
+        settings->btReadTaskPriority = d;
+    else if (strcmp(settingName, "gnssReadTaskPriority") == 0)
+        settings->gnssReadTaskPriority = d;
+    else if (strcmp(settingName, "handleGnssDataTaskPriority") == 0)
+        settings->handleGnssDataTaskPriority = d;
+    else if (strcmp(settingName, "btReadTaskCore") == 0)
+        settings->btReadTaskCore = d;
+    else if (strcmp(settingName, "gnssReadTaskCore") == 0)
+        settings->gnssReadTaskCore = d;
+    else if (strcmp(settingName, "handleGnssDataTaskCore") == 0)
+        settings->handleGnssDataTaskCore = d;
+    else if (strcmp(settingName, "gnssUartInterruptsCore") == 0)
+        settings->gnssUartInterruptsCore = d;
+    else if (strcmp(settingName, "bluetoothInterruptsCore") == 0)
+        settings->bluetoothInterruptsCore = d;
+    else if (strcmp(settingName, "i2cInterruptsCore") == 0)
+        settings->i2cInterruptsCore = d;
 
     // Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
     // Must be last on else list
@@ -1456,7 +1485,7 @@ void loadProfileNumber()
     File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_READ);
     if (!fileProfileNumber)
     {
-        systemPrintln("profileNumber.txt not found");
+        log_d("profileNumber.txt not found");
         settings.updateZEDSettings = true; // Force module update
         recordProfileNumber(0);            // Record profile
     }
@@ -1469,7 +1498,7 @@ void loadProfileNumber()
     // We have arbitrary limit of user profiles
     if (profileNumber >= MAX_PROFILE_COUNT)
     {
-        systemPrintln("ProfileNumber invalid. Going to zero.");
+        log_d("ProfileNumber invalid. Going to zero.");
         settings.updateZEDSettings = true; // Force module update
         recordProfileNumber(0);            // Record profile
     }

@@ -14,7 +14,7 @@
 
   The RTK Surveyor implements classic Bluetooth SPP to transfer data from the
   ZED-F9P to the phone and receive any RTCM from the phone and feed it back
-  to the ZED-F9P to achieve RTK: F9PSerialWriteTask(), F9PSerialReadTask().
+  to the ZED-F9P to achieve RTK: btReadTask(), gnssReadTask().
 
   Settings are loaded from microSD if available otherwise settings are pulled from ESP32's file system LittleFS.
 */
@@ -123,8 +123,8 @@ char profileNames[MAX_PROFILE_COUNT][50];  // Populated based on names found in 
 char settingsFileName[60];                 // Contains the %s_Settings_%d.txt with current profile number set
 
 char stationCoordinateECEFFileName[60]; // Contains the /StationCoordinates-ECEF_%d.csv with current profile number set
-char stationCoordinateGeodeticFileName[60]; // Contains the /StationCoordinates-Geodetic_%d.csv with current profile
-                                            // number set
+char stationCoordinateGeodeticFileName[60];     // Contains the /StationCoordinates-Geodetic_%d.csv with current profile
+                                                // number set
 const int COMMON_COORDINATES_MAX_STATIONS = 50; // Record upto 50 ECEF and Geodetic commonly used stations
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -252,7 +252,8 @@ char neoFirmwareVersion[20];       // Output to system status menu.
 uint8_t zedFirmwareVersionInt = 0; // Controls which features (constellations) can be configured (v1.12 doesn't support
                                    // SBAS). Note: will fail above 2.55!
 uint8_t zedModuleType = PLATFORM_F9P; // Controls which messages are supported and configured
-char zedUniqueId[11] = { '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', 0 }; // Output to system status menu and log file.
+char zedUniqueId[11] = {'0', '0', '0', '0', '0', '0',
+                        '0', '0', '0', '0', 0}; // Output to system status menu and log file.
 
 // Use Michael's lock/unlock methods to prevent the UART2 task from calling checkUblox during a sendCommand and
 // waitForResponse. Also prevents pushRawData from being called too.
@@ -263,7 +264,7 @@ class SFE_UBLOX_GNSS_SUPER_DERIVED : public SFE_UBLOX_GNSS_SUPER
 
     // Revert to a simple bool lock. The Mutex was causing occasional panics caused by
     // vTaskPriorityDisinheritAfterTimeout in lock() (I think possibly / probably caused by the GNSS not being pinned to
-    //one core?
+    // one core?
     bool iAmLocked = false;
 
     bool createLock(void)
@@ -391,24 +392,27 @@ HardwareSerial serialGNSS(2); // TX on 17, RX on 16
 
 #define SERIAL_SIZE_TX 512
 uint8_t wBuffer[SERIAL_SIZE_TX]; // Buffer for writing from incoming SPP to F9P
-TaskHandle_t F9PSerialWriteTaskHandle =
+TaskHandle_t btReadTaskHandle =
     nullptr; // Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
-const uint8_t F9PSerialWriteTaskPriority = 1; // 3 being the highest, and 0 being the lowest
-const int writeTaskStackSize = 2000;
+const int btReadTaskStackSize = 2000;
 
 uint8_t *ringBuffer; // Buffer for reading from F9P. At 230400bps, 23040 bytes/s. If SD blocks for 250ms, we need 23040
                      // * 0.25 = 5760 bytes worst case.
-TaskHandle_t F9PSerialReadTaskHandle =
+TaskHandle_t gnssReadTaskHandle =
     nullptr; // Store handles so that we can kill them if user goes into WiFi NTRIP Server mode
-const uint8_t F9PSerialReadTaskPriority = 1; // 3 being the highest, and 0 being the lowest
-const int readTaskStackSize = 2000;
+const int gnssReadTaskStackSize = 2500;
 
-TaskHandle_t handleGNSSDataTaskHandle = nullptr;
-const uint8_t handleGNSSDataTaskPriority = 1; // 3 being the highest, and 0 being the lowest
-const int handleGNSSDataTaskStackSize = 3000;
+TaskHandle_t handleGnssDataTaskHandle = nullptr;
+const int handleGnssDataTaskStackSize = 3000;
 
-TaskHandle_t pinUART2TaskHandle = nullptr; // Dummy task to start UART2 on core 0.
+TaskHandle_t pinUART2TaskHandle = nullptr; // Dummy task to start hardware on an assigned core
 volatile bool uart2pinned = false; // This variable is touched by core 0 but checked by core 1. Must be volatile.
+
+TaskHandle_t pinI2CTaskHandle = nullptr; // Dummy task to start hardware on an assigned core
+volatile bool i2cPinned = false; // This variable is touched by core 0 but checked by core 1. Must be volatile.
+
+TaskHandle_t pinBluetoothTaskHandle = nullptr; // Dummy task to start hardware on an assigned core
+volatile bool bluetoothPinned = false; // This variable is touched by core 0 but checked by core 1. Must be volatile.
 
 volatile static int combinedSpaceRemaining = 0; // Overrun indicator
 volatile static long fileSize = 0;              // Updated with each write

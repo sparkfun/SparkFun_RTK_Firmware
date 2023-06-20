@@ -48,3 +48,8 @@ Configuring over WiFi allows the device to be configured from any desktop comput
 
 When the device enters WiFi config mode it will display the WiFi network it is connected to as well as its assigned IP address.
 
+## MDNS
+
+![Access using rtk.local](img/SparkFun%20RTK%20WiFi%20MDNS.png)
+
+Multicast DNS or MDNS allows the RTK device to be discovered over wireless networks without needing to know the IP. For example, when MDNS is enabled, simply type 'rtk.local' into a browser to connect to the RTK Config page. This feature works both for 'WiFi Access Point' or direct WiFi config. Note: When using WiFi config, you must be on the same subdomain (in other words, the same WiFi or Ethernet network) as the RTK device.

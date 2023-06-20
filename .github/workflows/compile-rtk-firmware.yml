@@ -6,7 +6,7 @@ on:
 env:
   FILENAME_PREFIX: RTK_Surveyor_Firmware
   FIRMWARE_VERSION_MAJOR: 3
-  FIRMWARE_VERSION_MINOR: 4
+  FIRMWARE_VERSION_MINOR: 5
   POINTPERFECT_TOKEN: ${{ secrets.POINTPERFECT_TOKEN }}
 
 jobs:
@@ -126,7 +126,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           directory: ./Firmware/RTK_Surveyor
           branch: ${{ env.BRANCH }}
-          message: 'Update form.h via Python ${date}'
+          message: 'Update form.h via Python'
 
       - name: Copy custom app3M_fat9M_16MB.csv
         run:

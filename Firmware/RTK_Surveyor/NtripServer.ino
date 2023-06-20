@@ -130,16 +130,24 @@ bool ntripServerConnectLimitReached()
     ntripServerStop(false); // Allocate new wifiClient
 
     // Retry the connection a few times
-    bool limitReached = false;
-    if (ntripServerConnectionAttempts++ >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS)
-        limitReached = true;
+    bool limitReached = (ntripServerConnectionAttempts >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS);
 
+    ntripServerConnectionAttempts++;
     ntripServerConnectionAttemptsTotal++;
 
     if (limitReached == false)
     {
-        ntripServerConnectionAttemptTimeout =
-            ntripServerConnectionAttempts * 5 * 60 * 1000L; // Wait 5, 10, 15, etc minutes between attempts
+        if (ntripServerConnectionAttempts == 1)
+            ntripServerConnectionAttemptTimeout = 15 * 1000L; // Wait 15s
+        else if (ntripServerConnectionAttempts == 2)
+            ntripServerConnectionAttemptTimeout = 30 * 1000L; // Wait 30s    
+        else if (ntripServerConnectionAttempts == 3)
+            ntripServerConnectionAttemptTimeout = 1 * 60 * 1000L; // Wait 1 minute
+        else if (ntripServerConnectionAttempts == 4)
+            ntripServerConnectionAttemptTimeout = 2 * 60 * 1000L; // Wait 2 minutes        
+        else 
+            ntripServerConnectionAttemptTimeout =
+                (ntripServerConnectionAttempts - 4) * 5 * 60 * 1000L; // Wait 5, 10, 15, etc minutes between attempts
 
         reportHeapNow();
     }
@@ -419,8 +427,18 @@ void ntripServerUpdate()
         {
             if (online.ethernetStatus == ETH_CONNECTED)
                 ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_CONNECTED);
-            else
+            else if (online.ethernetStatus == ETH_CAN_NOT_BEGIN) // Ethernet hardware failure or not available
                 ntripServerSetState(NTRIP_SERVER_OFF);
+            else
+            {
+                // Wait for ethernet to connect
+                static unsigned long lastDebug = millis();
+                if (millis() > (lastDebug + 5000))
+                {
+                    lastDebug = millis();
+                    log_d("NTRIP Server: Ethernet not connected. Waiting to retry.");
+                }
+            }
         }
         else
         {
@@ -456,17 +474,19 @@ void ntripServerUpdate()
         // Attempt a connection to the NTRIP caster
         if (!ntripServerConnectCaster())
         {
-            if (ntripServerConnectionAttemptTimeout / 1000 < 120)
-                systemPrintf("NTRIP Server failed to connect to caster. Trying again in %d seconds.\r\n",
-                             ntripServerConnectionAttemptTimeout / 1000);
-            else
-                systemPrintf("NTRIP Server failed to connect to caster. Trying again in %d minutes.\r\n",
-                             ntripServerConnectionAttemptTimeout / 1000 / 60);
-
             // Assume service not available
-            if (ntripServerConnectLimitReached())
+            if (ntripServerConnectLimitReached()) // Update ntripServerConnectionAttemptTimeout
             {
                 systemPrintln("NTRIP Server failed to connect! Do you have your caster address and port correct?");
+            }
+            else            
+            {
+                if (ntripServerConnectionAttemptTimeout / 1000 < 120)
+                    systemPrintf("NTRIP Server failed to connect to caster. Trying again in %d seconds.\r\n",
+                                 ntripServerConnectionAttemptTimeout / 1000);
+                else
+                    systemPrintf("NTRIP Server failed to connect to caster. Trying again in %d minutes.\r\n",
+                                 ntripServerConnectionAttemptTimeout / 1000 / 60);
             }
         }
         else

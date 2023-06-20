@@ -14,7 +14,7 @@ bool ethernetIsNeeded()
     )
         return true;
 
-    // Does Base mode NTRIP Server need Ethernet?
+    // Does Rover mode NTRIP Client need Ethernet?
     if (HAS_ETHERNET && settings.enableNtripClient == true &&
         (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX)
         //&& !settings.ntripClientUseWiFiNotEthernet //For future expansion
@@ -56,7 +56,7 @@ void beginEthernet()
         Ethernet.begin(ethernetMACAddress, settings.ethernetIP, settings.ethernetDNS, settings.ethernetGateway,
                        settings.ethernetSubnet);
 
-        if (Ethernet.hardwareStatus() == EthernetNoHardware)
+        if (Ethernet.hardwareStatus() == EthernetNoHardware) // Check that a W5n00 has been detected
         {
             log_d("Ethernet hardware not found");
             online.ethernetStatus = ETH_CAN_NOT_BEGIN;
@@ -64,10 +64,12 @@ void beginEthernet()
         }
 
         online.ethernetStatus = ETH_STARTED_CHECK_CABLE;
+        lastEthernetCheck = millis(); // Wait a full second before checking the cable
+        
         break;
 
     case (ETH_STARTED_CHECK_CABLE):
-        if (millis() - lastEthernetCheck > 1000) // Don't check for cable but once a second
+        if (millis() - lastEthernetCheck > 1000) // Check for cable every second
         {
             lastEthernetCheck = millis();
 
@@ -94,17 +96,16 @@ void beginEthernet()
         break;
 
     case (ETH_STARTED_START_DHCP):
-        Ethernet.begin(ethernetMACAddress);
-
-        if (Ethernet.hardwareStatus() == EthernetNoHardware)
+        if (millis() - lastEthernetCheck > 1000) // Try DHCP every second
         {
-            log_d("Ethernet hardware not found");
-            online.ethernetStatus = ETH_CAN_NOT_BEGIN;
-            return;
-        }
+            lastEthernetCheck = millis();
 
-        log_d("Ethernet started with DHCP");
-        online.ethernetStatus = ETH_CONNECTED;
+            if (Ethernet.begin(ethernetMACAddress, 20000)) // Restart Ethernet with DHCP. Use 20s timeout
+            {
+              log_d("Ethernet started with DHCP");
+              online.ethernetStatus = ETH_CONNECTED;
+            }
+        }
         break;
 
     case (ETH_CONNECTED):

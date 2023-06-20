@@ -140,12 +140,12 @@ bool ntripServerConnectLimitReached()
         if (ntripServerConnectionAttempts == 1)
             ntripServerConnectionAttemptTimeout = 15 * 1000L; // Wait 15s
         else if (ntripServerConnectionAttempts == 2)
-            ntripServerConnectionAttemptTimeout = 30 * 1000L; // Wait 30s    
+            ntripServerConnectionAttemptTimeout = 30 * 1000L; // Wait 30s
         else if (ntripServerConnectionAttempts == 3)
             ntripServerConnectionAttemptTimeout = 1 * 60 * 1000L; // Wait 1 minute
         else if (ntripServerConnectionAttempts == 4)
-            ntripServerConnectionAttemptTimeout = 2 * 60 * 1000L; // Wait 2 minutes        
-        else 
+            ntripServerConnectionAttemptTimeout = 2 * 60 * 1000L; // Wait 2 minutes
+        else
             ntripServerConnectionAttemptTimeout =
                 (ntripServerConnectionAttempts - 4) * 5 * 60 * 1000L; // Wait 5, 10, 15, etc minutes between attempts
 
@@ -464,10 +464,8 @@ void ntripServerUpdate()
         {
             // Assume service not available
             if (ntripServerConnectLimitReached()) // Update ntripServerConnectionAttemptTimeout
-            {
                 systemPrintln("NTRIP Server failed to connect! Do you have your caster address and port correct?");
-            }
-            else            
+            else
             {
                 if (ntripServerConnectionAttemptTimeout / 1000 < 120)
                     systemPrintf("NTRIP Server failed to connect to caster. Trying again in %d seconds.\r\n",
@@ -495,12 +493,7 @@ void ntripServerUpdate()
             if (millis() - ntripServerTimer > 10000)
             {
                 if (ntripServerConnectLimitReached())
-                {
                     systemPrintln("Caster failed to respond. Do you have your caster address and port correct?");
-
-                    // Give up - Shutdown NTRIP server, no further retries
-                    ntripServerStop(true);
-                }
                 else
                 {
                     if (ntripServerConnectionAttemptTimeout / 1000 < 120)
@@ -563,12 +556,7 @@ void ntripServerUpdate()
 
                 // Check for connection limit
                 if (ntripServerConnectLimitReached())
-                {
                     systemPrintln("NTRIP Server retry limit reached; do you have your caster address and port correct?");
-
-                    // Give up - Shutdown NTRIP server, no further retries
-                    ntripServerStop(true);
-                }
 
                 // Attempt to reconnect after throttle controlled timeout
                 else
@@ -579,9 +567,6 @@ void ntripServerUpdate()
                     else
                         systemPrintf("NTRIP Server attempting connection in %d minutes.\r\n",
                                      ntripServerConnectionAttemptTimeout / 1000 / 60);
-
-                    // Restart network operation after delay
-                    ntripServerStop(false);
                 }
             }
         }

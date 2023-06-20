@@ -1285,7 +1285,7 @@ void sdSizeCheckTask(void *e)
                     sdCardSize = SD_MMC.cardSize();
                     sdFreeSpace = SD_MMC.totalBytes() - SD_MMC.usedBytes();
                 }
-#endif // COMPILE_SD_MMC
+#endif  // COMPILE_SD_MMC
 
                 xSemaphoreGive(sdCardSemaphore);
 

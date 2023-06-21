@@ -278,8 +278,8 @@ void updateSystemState()
             }
 
             // Check for <1m horz accuracy before starting surveyIn
-            systemPrintf("Waiting for Horz Accuracy < %0.2f meters: %0.2f\r\n", settings.surveyInStartingAccuracy,
-                         horizontalAccuracy);
+            systemPrintf("Waiting for Horz Accuracy < %0.2f meters: %0.2f, SIV: %d\r\n",
+                         settings.surveyInStartingAccuracy, horizontalAccuracy, numSV);
 
             if (horizontalAccuracy > 0.0 && horizontalAccuracy < settings.surveyInStartingAccuracy)
             {
@@ -483,7 +483,7 @@ void updateSystemState()
                         {
                             marksFileExists = SD_MMC.exists(fileName);
                         }
-#endif
+#endif // COMPILE_SD_MMC
 
                         // Open the marks file
                         FileSdFatMMC marksFile;
@@ -678,8 +678,8 @@ void updateSystemState()
                     websocket->textAll(settingsCSV);
                 }
             }
-#endif
-#endif
+#endif // COMPILE_AP
+#endif // COMPILE_WIFI
         }
         break;
 
@@ -818,8 +818,23 @@ void updateSystemState()
         break;
 
         case (STATE_KEYS_WIFI_CONNECTED): {
-            if (pointperfectUpdateKeys() == true) // Connect to ThingStream MQTT and get PointPerfect key UBX packet
-                displayKeysUpdated();
+
+            // Check that the certs are valid
+            if (checkCertificates() == true)
+            {
+                // Update the keys
+                if (pointperfectUpdateKeys() == true) // Connect to ThingStream MQTT and get PointPerfect key UBX packet
+                    displayKeysUpdated();
+            }
+            else
+            {
+                // Erase keys
+                erasePointperfectCredentials();
+
+                // Provision device
+                if(pointperfectProvisionDevice() == true) // Connect to ThingStream API and get keys
+                    displayKeysUpdated();
+            }
 
             // WiFi will be turned off once we exit this state, if no other service needs it
 
@@ -941,9 +956,9 @@ void updateSystemState()
             espnowBeginPairing();
 
             changeState(STATE_ESPNOW_PAIRING);
-#else
+#else  // COMPILE_ESPNOW
             changeState(STATE_ROVER_NOT_STARTED);
-#endif
+#endif // COMPILE_ESPNOW
         }
         break;
 
@@ -1029,7 +1044,7 @@ void updateSystemState()
             // The code should only be able to enter this state if configureViaEthernet is true.
             // If configureViaEthernet is not true, we need to restart again.
             //(If we continue, startEthernerWebServerESP32W5500 will fail as it won't have exclusive access to SPI and
-            //ints).
+            // ints).
             if (!configureViaEthernet)
             {
                 displayConfigViaEthNotStarted(1500);
@@ -1098,8 +1113,8 @@ void updateSystemState()
                     websocket->textAll(settingsCSV);
                 }
             }
-#endif
-#endif
+#endif // COMPILE_AP
+#endif // COMPILE_WIFI
         }
         break;
 
@@ -1115,7 +1130,7 @@ void updateSystemState()
             ESP.restart();
         }
         break;
-#endif
+#endif // COMPILE_ETHERNET
 
         case (STATE_SHUTDOWN): {
             forceDisplayUpdate = true;

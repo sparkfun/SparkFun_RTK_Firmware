@@ -126,7 +126,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           directory: ./Firmware/RTK_Surveyor
           branch: ${{ env.BRANCH }}
-          message: 'Update form.h via Python ${date}'
+          message: 'Update form.h via Python'
 
       - name: Copy custom app3M_fat9M_16MB.csv
         run:

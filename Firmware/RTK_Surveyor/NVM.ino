@@ -137,7 +137,7 @@ void recordSystemSettingsToFileSD(char *fileName)
 
                 settingsFile.close();
             }
-#endif
+#endif  // COMPILE_SD_MMC
 
             log_d("Settings recorded to SD: %s", fileName);
         }
@@ -561,7 +561,7 @@ bool loadSystemSettingsFromFileSD(char *fileName, Settings *settings)
                 status = true;
                 break;
             }
-#endif
+#endif  // COMPILE_SD_MMC
         } // End Semaphore check
         else
         {
@@ -743,8 +743,7 @@ bool parseLine(char *str, Settings *settings)
 
         // Check to see if this setting file is compatible with this version of RTK Surveyor
         if (d != sizeof(Settings))
-            systemPrintf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings "
-                         "from file.\r\n",
+            log_d("Settings size is %d but current firmware expects %d. Attempting to use settings from file.",
                          (int)d, sizeof(Settings));
     }
 
@@ -1486,7 +1485,7 @@ void loadProfileNumber()
     File fileProfileNumber = LittleFS.open("/profileNumber.txt", FILE_READ);
     if (!fileProfileNumber)
     {
-        systemPrintln("profileNumber.txt not found");
+        log_d("profileNumber.txt not found");
         settings.updateZEDSettings = true; // Force module update
         recordProfileNumber(0);            // Record profile
     }
@@ -1499,7 +1498,7 @@ void loadProfileNumber()
     // We have arbitrary limit of user profiles
     if (profileNumber >= MAX_PROFILE_COUNT)
     {
-        systemPrintln("ProfileNumber invalid. Going to zero.");
+        log_d("ProfileNumber invalid. Going to zero.");
         settings.updateZEDSettings = true; // Force module update
         recordProfileNumber(0);            // Record profile
     }

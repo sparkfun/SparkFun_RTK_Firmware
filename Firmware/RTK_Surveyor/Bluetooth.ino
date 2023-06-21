@@ -234,6 +234,7 @@ void bluetoothStart()
 // https://github.com/espressif/arduino-esp32/issues/3386
 void pinBluetoothTask(void *pvParameters)
 {
+#ifdef COMPILE_BT
     if (bluetoothSerial->begin(deviceName) == false)
     {
         systemPrintln("An error occurred initializing Bluetooth");
@@ -245,6 +246,7 @@ void pinBluetoothTask(void *pvParameters)
     bluetoothPinned = true;
 
     vTaskDelete(nullptr); // Delete task once it has run once
+#endif // COMPILE_BT
 }
 
 // This function stops BT so that it can be restarted later

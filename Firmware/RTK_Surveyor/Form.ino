@@ -288,8 +288,8 @@ void stopWebServer()
     log_d("Web Server Stopped");
     reportHeapNow();
 
-#endif
-#endif
+#endif  // COMPILE_AP
+#endif  // COMPILE_WIFI
 }
 
 #ifdef COMPILE_WIFI
@@ -300,8 +300,8 @@ void notFound(AsyncWebServerRequest *request)
     systemPrintln(logmessage);
     request->send(404, "text/plain", "Not found");
 }
-#endif
-#endif
+#endif  // COMPILE_AP
+#endif  // COMPILE_WIFI
 
 // Handler for firmware file downloads
 #ifdef COMPILE_WIFI
@@ -332,7 +332,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
         {
             fileExists = SD_MMC.exists(slashFileName);
         }
-#endif
+#endif  // COMPILE_SD_MMC
 
         if (fileExists == false)
         {
@@ -410,7 +410,7 @@ static void handleFileManager(AsyncWebServerRequest *request)
 #ifdef COMPILE_SD_MMC
                 else
                     SD_MMC.remove(slashFileName);
-#endif
+#endif  // COMPILE_SD_MMC
                 request->send(200, "text/plain", "Deleted File: " + String(fileName));
             }
             else
@@ -426,8 +426,8 @@ static void handleFileManager(AsyncWebServerRequest *request)
         request->send(400, "text/plain", "ERROR: name and action params required");
     }
 }
-#endif
-#endif
+#endif  // COMPILE_AP
+#endif  // COMPILE_WIFI
 
 // Handler for firmware file upload
 #ifdef COMPILE_WIFI
@@ -517,8 +517,8 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
         }
     }
 }
-#endif
-#endif
+#endif  // COMPILE_AP
+#endif  // COMPILE_WIFI
 
 // Events triggered by web sockets
 #ifdef COMPILE_WIFI
@@ -557,8 +557,8 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     else
         log_d("onWsEvent: unrecognised AwsEventType %d", type);
 }
-#endif
-#endif
+#endif  // COMPILE_AP
+#endif  // COMPILE_WIFI
 
 // Create a csv string with current settings
 void createSettingsString(char *newSettings)
@@ -729,7 +729,7 @@ void createSettingsString(char *newSettings)
 #ifdef COMPILE_L_BAND
         int daysRemaining = daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
         snprintf(apDaysRemaining, sizeof(apDaysRemaining), "%d", daysRemaining);
-#endif
+#endif  // COMPILE_L_BAND
     }
     else
         snprintf(apDaysRemaining, sizeof(apDaysRemaining), "No Keys");
@@ -965,7 +965,7 @@ void createSettingsString(char *newSettings)
     strcat(newSettings, "\0");
     systemPrintf("newSettings len: %d\r\n", strlen(newSettings));
     systemPrintf("newSettings: %s\r\n", newSettings);
-#endif
+#endif  // COMPILE_AP
 }
 
 // Create a csv string with the dynamic data to update (current coordinates, battery level, etc)
@@ -1026,7 +1026,7 @@ void createDynamicDataString(char *settingsCSV)
     }
 
     strcat(settingsCSV, "\0");
-#endif
+#endif  // COMPILE_AP
 }
 
 // Given a settingName, and string value, update a given setting
@@ -1588,7 +1588,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             systemPrintf("Unknown '%s': %0.3lf\r\n", settingName, settingValue);
         }
     } // End last strcpy catch
-#endif
+#endif  // COMPILE_AP
 }
 
 // Add record with int
@@ -1702,7 +1702,7 @@ bool parseIncomingSettings()
         log_d("Sending receipt confirmation of settings");
 #ifdef COMPILE_AP
         websocket->textAll("confirmDataReceipt,1,");
-#endif
+#endif  // COMPILE_AP
     }
 
     return (true);
@@ -1780,7 +1780,7 @@ void getFileList(String &returnText)
 
             root.close();
         }
-#endif
+#endif  // COMPILE_SD_MMC
 
         xSemaphoreGive(sdCardSemaphore);
     }
@@ -1942,5 +1942,5 @@ void handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
     }
 }
 
-#endif
-#endif
+#endif  // COMPILE_AP
+#endif  // COMPILE_WIFI

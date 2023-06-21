@@ -37,9 +37,9 @@ void menuMain()
         systemPrint("** Bluetooth broadcasting as: ");
         systemPrint(deviceName);
         systemPrintln(" **");
-#else
+#else   // COMPILE_BT
         systemPrintln("** Bluetooth Not Compiled **");
-#endif
+#endif  // COMPILE_BT
 
         systemPrintln("Menu: Main");
 
@@ -58,9 +58,9 @@ void menuMain()
 
 #ifdef COMPILE_WIFI
         systemPrintln("6) Configure WiFi");
-#else
+#else   // COMPILE_WIFI
         systemPrintln("6) **WiFi Not Compiled**");
-#endif
+#endif  // COMPILE_WIFI
 
 #ifdef COMPILE_ETHERNET
         if (HAS_ETHERNET)
@@ -68,15 +68,15 @@ void menuMain()
             systemPrintln("e) Configure Ethernet");
             systemPrintln("n) Configure NTP");
         }
-#endif
+#endif  // COMPILE_ETHERNET
 
         systemPrintln("p) Configure User Profiles");
 
 #ifdef COMPILE_ESPNOW
         systemPrintln("r) Configure Radios");
-#else
+#else   // COMPILE_ESPNOW
         systemPrintln("r) **ESP-Now Not Compiled**");
-#endif
+#endif  // COMPILE_ESPNOW
 
         if (online.lband == true)
             systemPrintln("P) Configure PointPerfect");
@@ -119,7 +119,7 @@ void menuMain()
 #ifdef COMPILE_ESPNOW
         else if (incoming == 'r')
             menuRadio();
-#endif
+#endif  // COMPILE_ESPNOW
         else if (incoming == 'f')
             menuFirmware();
         else if (incoming == 'b')
@@ -262,7 +262,7 @@ void menuUserProfiles()
                         if (SD_MMC.exists(settingsFileName))
                             SD_MMC.remove(settingsFileName);
                     }
-#endif
+#endif  // COMPILE_SD_MMC
                 }
 
                 recordProfileNumber(0); // Move to Profile1
@@ -363,7 +363,7 @@ void factoryReset()
                 SD_MMC.remove(stationCoordinateECEFFileName); // Remove station files
                 SD_MMC.remove(stationCoordinateGeodeticFileName);
             }
-#endif
+#endif  // COMPILE_SD_MMC
 
             xSemaphoreGive(sdCardSemaphore);
         } // End sdCardSemaphore
@@ -512,5 +512,5 @@ void menuRadio()
     radioStart();
 
     clearBuffer(); // Empty buffer of any newline chars
-#endif
+#endif  // COMPILE_ESPNOW
 }

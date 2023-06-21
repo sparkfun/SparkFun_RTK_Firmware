@@ -10,6 +10,7 @@
 
 EXECUTABLES  = Compare
 EXECUTABLES += NMEA_Client
+EXECUTABLES += RTK_Reset
 EXECUTABLES += Split_Messages
 
 INCLUDES  = crc24q.h

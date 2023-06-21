@@ -1,5 +1,7 @@
 #ifdef COMPILE_L_BAND
 
+#include "mbedtls/ssl.h" //Needed for certificate validation
+
 //----------------------------------------
 // Locals - compiled out
 //----------------------------------------
@@ -12,7 +14,7 @@ static SFE_UBLOX_GNSS_SUPER i2cLBand; // NEO-D9S
 #ifndef POINTPERFECT_TOKEN
 #define POINTPERFECT_TOKEN                                                                                             \
     0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x11, 0x22, 0x33, 0x0A, 0x0B, 0x0C, 0x0D, 0x00, 0x01, 0x02, 0x03
-#endif
+#endif // POINTPERFECT_TOKEN
 
 static uint8_t pointPerfectTokenArray[16] = {POINTPERFECT_TOKEN}; // Token in HEX form
 
@@ -196,7 +198,7 @@ bool pointperfectProvisionDevice()
         // Override ID with testing ID
         snprintf(hardwareID, sizeof(hardwareID), "%02X%02X%02X%02X%02X%02X", whitelistID[0], whitelistID[1],
                  whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
-#endif
+#endif // WHITELISTED_ID
 
         char givenName[100];
         snprintf(givenName, sizeof(givenName), "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR,
@@ -317,9 +319,94 @@ bool pointperfectProvisionDevice()
     bluetoothStart();
 
     return (retVal);
-#else
+#else  // COMPILE_WIFI
     return (false);
-#endif
+#endif // COMPILE_WIFI
+}
+
+// Check certificate and privatekey for valid formatting
+// Return false if improperly formatted
+bool checkCertificates()
+{
+    bool validCertificates = true;
+    char *certificateContents = nullptr; // Holds the contents of the keys prior to MQTT connection
+    char *keyContents = nullptr;
+
+    // Allocate the buffers
+    certificateContents = (char *)malloc(MQTT_CERT_SIZE);
+    keyContents = (char *)malloc(MQTT_CERT_SIZE);
+    if ((!certificateContents) || (!keyContents))
+    {
+        systemPrintln("Failed to allocate content buffers!");
+        return (false);
+    }
+
+    // Load the certificate
+    memset(certificateContents, 0, MQTT_CERT_SIZE);
+    loadFile("certificate", certificateContents);
+
+    if (checkCertificateValidity(certificateContents, strlen(certificateContents)) == false)
+    {
+        log_d("Certificate is corrupt.");
+        validCertificates = false;
+    }
+
+    // Load the private key
+    memset(keyContents, 0, MQTT_CERT_SIZE);
+    loadFile("privateKey", keyContents);
+
+    if (checkCertificateValidity(keyContents, strlen(keyContents)) == false)
+    {
+        log_d("PrivateKey is corrupt.");
+        validCertificates = false;
+    }
+
+    // Free the content buffers
+    if (certificateContents)
+        free(certificateContents);
+    if (keyContents)
+        free(keyContents);
+
+    return (validCertificates);
+}
+
+// Check if a given certificate is in a valid format
+// This was created to detect corrupt or invalid certificates caused by bugs in v3.0 to and including v3.3.
+bool checkCertificateValidity(char *certificateContent, int certificateContentSize)
+{
+    // Check for valid format of certificate
+    // From ssl_client.cpp
+    // https://stackoverflow.com/questions/70670070/mbedtls-cannot-parse-valid-x509-certificate
+    mbedtls_x509_crt certificate;
+    mbedtls_x509_crt_init(&certificate);
+
+    int result_code =
+        mbedtls_x509_crt_parse(&certificate, (unsigned char *)certificateContent, certificateContentSize + 1);
+
+    mbedtls_x509_crt_free(&certificate);
+
+    if (result_code < 0)
+    {
+        log_d("Cert formatting invalid");
+        return (false);
+    }
+
+    return (true);
+}
+
+// When called, removes the files used for SSL to PointPerfect obtained during provisioning
+// Also deletes keys so the user can immediately re-provision
+void erasePointperfectCredentials()
+{
+    char fileName[80];
+
+    snprintf(fileName, sizeof(fileName), "/%s_%s_%d.txt", platformFilePrefix, "certificate", profileNumber);
+    LittleFS.remove(fileName);
+
+    snprintf(fileName, sizeof(fileName), "/%s_%s_%d.txt", platformFilePrefix, "privateKey", profileNumber);
+    LittleFS.remove(fileName);
+    strcpy(settings.pointPerfectCurrentKey, ""); // Clear contents
+    strcpy(settings.pointPerfectNextKey, "");    // Clear contents
 }
 
 // Subscribe to MQTT channel, grab keys, then stop
@@ -445,9 +532,9 @@ bool pointperfectUpdateKeys()
 
     // Return the key status
     return (gotKeys);
-#else
+#else  // COMPILE_WIFI
     return (false);
-#endif
+#endif // COMPILE_WIFI
 }
 
 char *ltrim(char *s)
@@ -564,6 +651,13 @@ bool getDate(uint8_t &dd, uint8_t &mm, uint16_t &yy)
 int daysFromEpoch(long long endEpoch)
 {
     endEpoch /= 1000; // Convert PointPerfect ms Epoch to s
+
+    if (online.rtc == false)
+    {
+        // If we don't have RTC we can't calculate days to expire
+        log_d("No RTC available");
+        return (0);
+    }
 
     long localEpoch = rtc.getEpoch();
 
@@ -954,13 +1048,22 @@ void menuPointPerfect()
         systemPrint("Days until keys expire: ");
         if (strlen(settings.pointPerfectCurrentKey) > 0)
         {
-            int daysRemaining =
-                daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
-
-            if (daysRemaining < 0)
-                systemPrintln("Expired");
+            if (online.rtc == false)
+            {
+                // If we don't have RTC we can't calculate days to expire
+                systemPrintln("No RTC");
+            }
             else
-                systemPrintln(daysRemaining);
+            {
+
+                int daysRemaining =
+                    daysFromEpoch(settings.pointPerfectNextKeyStart + settings.pointPerfectNextKeyDuration + 1);
+
+                if (daysRemaining < 0)
+                    systemPrintln("Expired");
+                else
+                    systemPrintln(daysRemaining);
+            }
         }
         else
             systemPrintln("No keys");
@@ -1021,8 +1124,23 @@ void menuPointPerfect()
                     {
                         pointperfectProvisionDevice(); // Connect to ThingStream API and get keys
                     }
-                    else
-                        pointperfectUpdateKeys();
+                    else // We have certs and keys
+                    {
+                        // Check that the certs are valid
+                        if (checkCertificates() == true)
+                        {
+                            // Update the keys
+                            pointperfectUpdateKeys();
+                        }
+                        else
+                        {
+                            // Erase keys
+                            erasePointperfectCredentials();
+
+                            // Provision device
+                            pointperfectProvisionDevice(); // Connect to ThingStream API and get keys
+                        }
+                    }
                 }
                 else
                 {

@@ -62,7 +62,7 @@ static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 30;
 // WiFi connection used to push RTCM to NTRIP caster over WiFi
 #if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
 static NTRIPClient *ntripServer;
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 
 // Count of bytes sent by the NTRIP server to the NTRIP caster
 uint32_t ntripServerBytesSent = 0;
@@ -118,9 +118,9 @@ bool ntripServerConnectCaster()
     // Send the authorization credentials to the NTRIP caster
     ntripServer->write((const uint8_t *)serverBuffer, strlen(serverBuffer));
     return true;
-#else
+#else   // COMPILE_WIFI || COMPILE_ETHERNET
     return false;
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 }
 
 // Determine if the connection limit has been reached
@@ -130,16 +130,24 @@ bool ntripServerConnectLimitReached()
     ntripServerStop(false); // Allocate new wifiClient
 
     // Retry the connection a few times
-    bool limitReached = false;
-    if (ntripServerConnectionAttempts++ >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS)
-        limitReached = true;
+    bool limitReached = (ntripServerConnectionAttempts >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS);
 
+    ntripServerConnectionAttempts++;
     ntripServerConnectionAttemptsTotal++;
 
     if (limitReached == false)
     {
-        ntripServerConnectionAttemptTimeout =
-            ntripServerConnectionAttempts * 5 * 60 * 1000L; // Wait 5, 10, 15, etc minutes between attempts
+        if (ntripServerConnectionAttempts == 1)
+            ntripServerConnectionAttemptTimeout = 15 * 1000L; // Wait 15s
+        else if (ntripServerConnectionAttempts == 2)
+            ntripServerConnectionAttemptTimeout = 30 * 1000L; // Wait 30s    
+        else if (ntripServerConnectionAttempts == 3)
+            ntripServerConnectionAttemptTimeout = 1 * 60 * 1000L; // Wait 1 minute
+        else if (ntripServerConnectionAttempts == 4)
+            ntripServerConnectionAttemptTimeout = 2 * 60 * 1000L; // Wait 2 minutes        
+        else 
+            ntripServerConnectionAttemptTimeout =
+                (ntripServerConnectionAttempts - 4) * 5 * 60 * 1000L; // Wait 5, 10, 15, etc minutes between attempts
 
         reportHeapNow();
     }
@@ -164,7 +172,7 @@ void ntripServerResponse(char *response, size_t maxLength)
     // Read bytes from the caster and store them
     while ((response < responseEnd) && ntripServer->available())
         *response++ = ntripServer->read();
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 
     // Zero terminate the response
     *response = '\0';
@@ -264,7 +272,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
         ntripServerSetState(NTRIP_SERVER_CONNECTING);
         rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
     }
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 }
 
 // Start the NTRIP server
@@ -289,9 +297,9 @@ void ntripServerStart()
     }
 
     ntripServerConnectionAttempts = 0;
-#else
+#else   // COMPILE_WIFI || COMPILE_ETHERNET
     systemPrintln("NTRIP Server not available: Ethernet and WiFi not compiled");
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 }
 
 // Stop the NTRIP server
@@ -324,7 +332,7 @@ void ntripServerStop(bool wifiClientAllocated)
 
     // Determine the next NTRIP server state
     ntripServerSetState((ntripServer && (wifiClientAllocated == false)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 
     online.ntripServer = false;
 }
@@ -419,8 +427,18 @@ void ntripServerUpdate()
         {
             if (online.ethernetStatus == ETH_CONNECTED)
                 ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_CONNECTED);
-            else
+            else if (online.ethernetStatus == ETH_CAN_NOT_BEGIN) // Ethernet hardware failure or not available
                 ntripServerSetState(NTRIP_SERVER_OFF);
+            else
+            {
+                // Wait for ethernet to connect
+                static unsigned long lastDebug = millis();
+                if (millis() > (lastDebug + 5000))
+                {
+                    lastDebug = millis();
+                    log_d("NTRIP Server: Ethernet not connected. Waiting to retry.");
+                }
+            }
         }
         else
         {
@@ -456,17 +474,19 @@ void ntripServerUpdate()
         // Attempt a connection to the NTRIP caster
         if (!ntripServerConnectCaster())
         {
-            if (ntripServerConnectionAttemptTimeout / 1000 < 120)
-                systemPrintf("NTRIP Server failed to connect to caster. Trying again in %d seconds.\r\n",
-                             ntripServerConnectionAttemptTimeout / 1000);
-            else
-                systemPrintf("NTRIP Server failed to connect to caster. Trying again in %d minutes.\r\n",
-                             ntripServerConnectionAttemptTimeout / 1000 / 60);
-
             // Assume service not available
-            if (ntripServerConnectLimitReached())
+            if (ntripServerConnectLimitReached()) // Update ntripServerConnectionAttemptTimeout
             {
                 systemPrintln("NTRIP Server failed to connect! Do you have your caster address and port correct?");
+            }
+            else            
+            {
+                if (ntripServerConnectionAttemptTimeout / 1000 < 120)
+                    systemPrintf("NTRIP Server failed to connect to caster. Trying again in %d seconds.\r\n",
+                                 ntripServerConnectionAttemptTimeout / 1000);
+                else
+                    systemPrintf("NTRIP Server failed to connect to caster. Trying again in %d minutes.\r\n",
+                                 ntripServerConnectionAttemptTimeout / 1000 / 60);
             }
         }
         else
@@ -552,7 +572,7 @@ void ntripServerUpdate()
                 ntripServerSetState(NTRIP_SERVER_CASTING);
             }
         }
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
         break;
     // NTRIP server authorized to send RTCM correction data to NTRIP caster
     case NTRIP_SERVER_CASTING:
@@ -575,7 +595,7 @@ void ntripServerUpdate()
             // All is well
             cyclePositionLEDs();
         }
-#endif
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
         break;
     }
 }

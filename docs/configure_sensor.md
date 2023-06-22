@@ -14,6 +14,6 @@ Enable 'Sensor Fusion' to begin using the onboard IMU when GNSS is avaialble. Se
 
 'Automatic IMU-Mount Alignment' will allow the device to automatically determine how the product is mounted within the vehicle's frame of reference.
 
-Additionally, wheel ticks should be provided to the unit to enhance the positional fixes. Please see [Mux Channel](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_ports/#mux-channel) of the Ports Menu for more information.
+Additionally, wheel ticks should be provided to the unit to enhance the positional fixes. Please see [Mux Channel](configure_ports.md/#mux-channel) of the Ports Menu for more information.
 
 

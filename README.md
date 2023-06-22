@@ -40,7 +40,7 @@ This repo houses the [RTK Product Manual](https://docs.sparkfun.com/SparkFun_RTK
 
 * [SparkFun RTK Facet L-Band](https://www.sparkfun.com/products/20000)
 * [SparkFun RTK Facet](https://www.sparkfun.com/products/19029)
-* [SparkFun Reference Station](https://www.sparkfun.com/products/22429)
+* [SparkFun RTK Reference Station](https://www.sparkfun.com/products/22429)
 * [SparkFun RTK Express Plus](https://www.sparkfun.com/products/18590)
 * [SparkFun RTK Express](https://www.sparkfun.com/products/18442)
 * [SparkFun RTK Surveyor](https://www.sparkfun.com/products/18443)
@@ -51,7 +51,7 @@ If you're interested in the PCB, enclosure, or overlay on each product please se
 
 * [SparkFun RTK Facet L-Band Hardware](https://github.com/sparkfun/SparkFun_RTK_Facet)
 * [SparkFun RTK Facet Hardware](https://github.com/sparkfun/SparkFun_RTK_Facet)
-* [SparkFun Reference Station Hardware](https://github.com/sparkfun/SparkFun_RTK_Reference_Station)
+* [SparkFun RTK Reference Station Hardware](https://github.com/sparkfun/SparkFun_RTK_Reference_Station)
 * [SparkFun RTK Express Plus Hardware](https://github.com/sparkfun/SparkFun_RTK_Express_Plus)
 * [SparkFun RTK Express Hardware](https://github.com/sparkfun/SparkFun_RTK_Express)
 * [SparkFun RTK Surveyor Hardware](https://github.com/sparkfun/SparkFun_RTK_Surveyor)

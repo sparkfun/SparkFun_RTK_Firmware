@@ -1,6 +1,6 @@
 # Ports Menu
 
-Surveyor: ![Feature Partially Supported](img/YellowDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Partially Supported](img/YellowDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png) / Reference Station: ![Feature Partially Supported](img/YellowDot.png)
 
 [![Setting the baud rate of the ports](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/RTK_Surveyor_-_WiFi_Config_-_Express_Ports_Config.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/RTK_Surveyor_-_WiFi_Config_-_Express_Ports_Config.jpg)
 

@@ -1,6 +1,6 @@
 # Connecting Bluetooth
 
-Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png) / Reference Station: ![Feature Supported](img/GreenDot.png)
 
 SparkFun RTK products transmit full NMEA sentences over Bluetooth serial port profile (SPP) at 4Hz and 115200bps. This means that nearly any GIS application that can receive NMEA data over a serial port (almost all do) can be used with the RTK Express. As long as your device can open a serial port over Bluetooth (also known as SPP) your device can retrieve industry-standard NMEA positional data. The following steps show how to connect an external tablet, or cell phone to the RTK device so that any serial port-based GIS application can be used.
 

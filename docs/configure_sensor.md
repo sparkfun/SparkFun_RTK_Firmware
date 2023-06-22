@@ -1,6 +1,6 @@
 # Sensor Menu
 
-Surveyor: ![Feature Not Supported](img/RedDot.png) / Express: ![Feature Not Supported](img/RedDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Not Supported](img/RedDot.png) / Facet L-Band: ![Feature Not Supported](img/RedDot.png)
+Surveyor: ![Feature Not Supported](img/RedDot.png) / Express: ![Feature Not Supported](img/RedDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Not Supported](img/RedDot.png) / Facet L-Band: ![Feature Not Supported](img/RedDot.png) / Reference Station: ![Feature Not Supported](img/RedDot.png)
 
 ![Sensor menu is shown in WiFi config](img/SparkFun%20RTK%20Sensor%20Menu%20WiFi%20Config.png)
 

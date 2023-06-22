@@ -55,8 +55,6 @@ If desired, you can log all NTP requests to a file on the microSD card, and/or p
 
 [![NTP requests log](https://cdn.sparkfun.com/assets/learn_tutorials/3/2/1/0/NTP_Log.png)](https://cdn.sparkfun.com/assets/learn_tutorials/3/2/1/0/NTP_Log.png)
 
-*Logged NTP Requests*
-
 NTP uses its own epoch - midnight January 1st 1900. This is different to the standard Unix epoch - midnight January 1st 1970 - and the GPS epoch - midnight January 6th 1980. The times shown in the log and diagnostic messages use the NTP epoch. You can use online calculators to convert between the different epochs:
 
 * [https://weirdo.cloud/](https://weirdo.cloud/)
@@ -73,8 +71,8 @@ If you want to synchronise your Windows PC to a Reference Station NTP Server, he
 
 ![Meinberg NTP initial configuration](img/NTP_Install_1.png)
 
-    * During the install, select "Create an initial configuration file" and select the NTP Pool server for your location
-    * Select "Use fast initial sync mode" for faster first synchronisation
+* During the install, select "Create an initial configuration file" and select the NTP Pool server for your location
+* Select "Use fast initial sync mode" for faster first synchronisation
 
 ![Meinberg NTP service settings](img/NTP_Install_2.png)
 
@@ -84,9 +82,9 @@ If you want to synchronise your Windows PC to a Reference Station NTP Server, he
 
 [![Meinberg NTP configuration](img/NTP_Config_1_small.png)](img/NTP_Config_1.png)
 
-    * Comment the lines in *ntp.conf* which name the pool.ntp servers
-    * Add an extra *server* line and include the IP Address for your Reference Station. It helps to give your Reference Station a fixed IP Address first - see [Menu Ethernet](menu_ethernet.md)
-    * Save the file
+* Comment the lines in *ntp.conf* which name the pool.ntp servers
+* Add an extra *server* line and include the IP Address for your Reference Station. It helps to give your Reference Station a fixed IP Address first - see [Menu Ethernet](menu_ethernet.md)
+* Save the file
 
 [![Meinberg NTP configuration](img/NTP_Config_2_small.png)](img/NTP_Config_2.png)
 
@@ -96,7 +94,7 @@ If you want to synchronise your Windows PC to a Reference Station NTP Server, he
 
 [![Meinberg NTP configuration](img/NTP_Config_3_small.png)](img/NTP_Config_3.png)
 
-    * Right-click on the *Restart NTP Service* and select *Run as administrator*
+* Right-click on the *Restart NTP Service* and select *Run as administrator*
 
 ![Meinberg NTP configuration](img/NTP_Config_4.png)
 

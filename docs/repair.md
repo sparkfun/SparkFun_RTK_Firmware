@@ -194,11 +194,11 @@ Taking the Reference Station apart is really easy:
 * Disconnect all cables
 
 * Unplug the green 10-way 3.5mm I/O connector
-  * This makes it easy to remove the main PCB from the enclosure
-  * The connector is a firm fit. You may need to rock it from side to side as you unplug it
+    * This makes it easy to remove the main PCB from the enclosure
+    * The connector is a firm fit. You may need to rock it from side to side as you unplug it
   
 * Unscrew the four screws holding the front panel in place
-  * We recommend removing the front panel first, so you can unplug the OLED display
+    * We recommend removing the front panel first, so you can unplug the OLED display
   
 * Remove the front panel
 

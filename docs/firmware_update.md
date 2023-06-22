@@ -272,12 +272,15 @@ As of writing, no additional releases of the NEO-D9S firmware have been made.
 The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To compile:
 
 1. Install [Arduino](https://www.arduino.cc/en/software).
+
 2. Install ESP32 for Arduino. [Here](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide#installing-via-arduino-ide-boards-manager) are some good instructions for installing it via the Arduino Boards Manager. **Note**: Use v2.0.2 of the core. **Note:** We use the 'ESP32 Dev Module' for pin numbering. Select the correct board under Tools->Board->ESP32 Arduino->ESP32 Dev Module.
+
 3. Change the Partition table. Replace
 
     ```C:\Users\\[user name]\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.2\tools\partitions\app3M_fat9M_16MB.csv```
 
     with the app3M_fat9M_16MB.csv [file](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/Firmware/app3M_fat9M_16MB.csv?raw=true) found in the [Firmware folder](https://github.com/sparkfun/SparkFun_RTK_Firmware/tree/main/Firmware). This will increase the program partition from a maximum of 1.9MB to 3MB.
+
 4. From the Arduino IDE, set the core settings from the **Tools** menu:
 
     A. Set the 'Partition Scheme' to *16M Flash (3MB APP/9MB FATFS)*. This will use the 'app3M_fat9M_16MB.csv' updated partition table.
@@ -301,28 +304,47 @@ You have not replaced the partition file correctly. See the 'Change Partition ta
 **Note:** You should click on the link next to each of the #includes at the top of RTK_Surveyor.ino within the Arduino IDE to open the library manager and download them. Getting them directly from Github also works but may not be 'official' releases.
 
 Using the library manager in the Arduino IDE, for each of the libraries below:
+
     1. Locate the library by typing the libary name into the search box
+
     2. Click on the library
+
     3. Select the version listed in the compile-rtk-firmware.yml file for the [main](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml) or the [release_candidate](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/.github/workflows/compile-rtk-firmware.yml) branch
+
     4. Click on the Install button in the lower right
 
 The RTK firmware requires the following libraries:
+
     * [Arduino JSON](https://github.com/bblanchon/ArduinoJson)
+
     * [ESP32Time](https://github.com/fbiego/ESP32Time)
+
     * [ESP32 BleSerial](https://github.com/avinabmalla/ESP32_BleSerial)
+
     * [ESP32-OTA-Pull](https://github.com/mikalhart/ESP32-OTA-Pull)
+
     * Ethernet
+
     * [JC_Button](https://github.com/JChristensen/JC_Button)
+
     * [PubSub Client for MQTT](https://github.com/knolleary/pubsubclient)
+
     * [SdFat](https://github.com/greiman/SdFat)
+
     * [SparkFun LIS2DH12 Arduino Library](https://github.com/sparkfun/SparkFun_LIS2DH12_Arduino_Library)
+
     * [SparkFun MAX1704x Fuel Gauge Arduino Library](https://github.com/sparkfun/SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library)
+
     * [SparkFun u-blox GNSS v3](https://github.com/sparkfun/SparkFun_u-blox_GNSS_v3)
+
     * [SparkFun_WebServer_ESP32_W5500](https://github.com/SparkFun/SparkFun_WebServer_ESP32_W5500)
 
 The following libraries are only available via GitHub:
+
     * [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) (not available via library manager)
+
     * [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) (not available via library manager)
+
     * [SparkFun Micro OLED Breakout](https://github.com/sparkfun/SparkFun_Micro_OLED_Arduino_Library)
 
 ### Ubuntu 20.04
@@ -332,7 +354,9 @@ The following libraries are only available via GitHub:
 Execute the following commands to create the Linux virtual machine:
 
 1. Using a browser, download the Ubuntu 20.04 Desktop image
+
 2. virtualbox
+
     1. Click on the new button
     2. Specify the machine Name, e.g.: Sparkfun_RTK_20.04
     3. Select Type: Linux
@@ -358,11 +382,17 @@ Execute the following commands to create the Linux virtual machine:
     23. Under 'Attached to:' select Bridged Adapter
     24. Click the OK button
     25. Click the Start button
-2. Install Ubuntu 20.04
-3. Log into Ubuntu
-4. Click on Activities
-5. Type terminal into the search box
-6. Optionally install the SSH server
+
+3. Install Ubuntu 20.04
+
+4. Log into Ubuntu
+
+5. Click on Activities
+
+6. Type terminal into the search box
+
+7. Optionally install the SSH server
+
     1. In the terminal window
         1. sudo apt install -y net-tools openssh-server
         2. ifconfig
@@ -381,7 +411,7 @@ Execute the following commands to create the build environment for the SparkFun 
 1. sudo adduser $USER dialout
 2. sudo shutdown -r 0
 
-Reboot to ensure that the dialout privilege is available to the user
+    Reboot to ensure that the dialout privilege is available to the user
 
 3. sudo apt update
 4. sudo apt install -y  git  gitk  git-cola  minicom  python3-pip
@@ -393,8 +423,9 @@ Reboot to ensure that the dialout privilege is available to the user
 10. cd ~/SparkFun
 11. nano serial-port.sh
 
-Insert the following text into the file:
+    Insert the following text into the file:
 
+    ```C++
     #!/bin/bash
     #   serial-port.sh
     #
@@ -404,12 +435,14 @@ Insert the following text into the file:
     #       1:  ttyUSBn
     #
     sudo minicom -b 115200 -8 -D /dev/$1 < /dev/tty
+    ```
 
 12. chmod +x serial-port.sh
 13. nano new-firmware.sh
 
-Insert the following text into the file:
+    Insert the following text into the file:
 
+    ```C++
     #!/bin/bash
     #   new-firmware.sh
     #
@@ -424,12 +457,14 @@ Insert the following text into the file:
     0x8000   ~/SparkFun/RTK_Binaries/bin/RTK_Surveyor_Partitions_16MB.bin \
     0xe000   ~/SparkFun/RTK_Binaries/bin/boot_app0.bin \
     0x10000  $2
+    ```
 
 14. chmod +x new-firmware.sh
 15. nano new-firmware-4mb.sh
 
-Insert the following text into the file:
+    Insert the following text into the file:
 
+    ```C++
     #!/bin/bash
     #   new-firmware-4mb.sh
     #
@@ -444,22 +479,23 @@ Insert the following text into the file:
     0x8000   ~/SparkFun/RTK_Binaries/bin/RTK_Surveyor_Partitions_4MB.bin \
     0xe000   ~/SparkFun/RTK_Binaries/bin/boot_app0.bin \
     0x10000  $2
+    ```
 
 16. chmod +x new-firmware-4mb.sh
 
-Get the SparkFun RTK Firmware sources
+    Get the SparkFun RTK Firmware sources
 
 17. mkdir ~/SparkFun/RTK
 18. cd ~/SparkFun/RTK
 19. git clone https://github.com/sparkfun/SparkFun_RTK_Firmware .
 
-Get the SparkFun RTK binaries
+    Get the SparkFun RTK binaries
 
 20. mkdir ~/SparkFun/RTK_Binaries
 21. cd ~/SparkFun/RTK_Binaries
 22. git clone https://github.com/sparkfun/SparkFun_RTK_Firmware_Binaries.git .
 
-Install the Arduino IDE
+    Install the Arduino IDE
 
 23. mkdir ~/SparkFun/arduino
 24. cd ~/SparkFun/arduino
@@ -468,9 +504,10 @@ Install the Arduino IDE
 27. cd arduino-1.8.15/
 28. sudo ./install.sh
 
-Add the ESP32 support
+    Add the ESP32 support
 
-29. arduino
+29. Arduino
+
     1. Click on File in the menu bar
     2. Click on Preferences
     3. Go down to the Additional Boards Manager URLs text box
@@ -481,7 +518,7 @@ Add the ESP32 support
     8. Click on File in the menu bar
     9. Click on Quit
 
-Get the required external libraries, then add to the Sketchbook location from above
+    Get the required external libraries, then add to the Sketchbook location from above
 
 30. cd   ~/Arduino/libraries
 31. mkdir AsyncTCP
@@ -492,13 +529,14 @@ Get the required external libraries, then add to the Sketchbook location from ab
 36. cd ESPAsyncWebServer
 37. git clone https://github.com/me-no-dev/ESPAsyncWebServer .
 
-Connect the Config ESP32 port of the RTK to a USB port on the computer
+    Connect the Config ESP32 port of the RTK to a USB port on the computer
 
 38. ls /dev/ttyUSB*
 
-Enable the libraries in the Arduino IDE
+    Enable the libraries in the Arduino IDE
 
-39. arduino
+39. Arduino
+
     1. From the menu, click on File
     2. Click on Open...
     3. Select the ~/SparkFun/RTK/Firmware/RTK_Surveyor/RTK_Surveyor.ino file
@@ -520,9 +558,10 @@ Enable the libraries in the Arduino IDE
 
     Load the required libraries
 
-    15. From the menu, click on Tools
-    16. Click on Manage Libraries…
-    17. For each of the following libraries:
+    16. From the menu, click on Tools
+    17. Click on Manage Libraries…
+    18. For each of the following libraries:
+
         1. Locate the library
         2. Click on the library
         3. Select the version listed in the compile-rtk-firmware.yml file for the [main](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/.github/workflows/compile-rtk-firmware.yml) or the [release_candidate](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/release_candidate/.github/workflows/compile-rtk-firmware.yml) branch
@@ -545,26 +584,26 @@ Enable the libraries in the Arduino IDE
         * SparkFun u-blox GNSS v3
         * SparkFun_WebServer_ESP32_W5500
 
-    18. Click on the Close button
+    19. Click on the Close button
 
     Select the terminal port
 
-    19. From the menu, click on Tools
-    20. Click on Port, Select the port that was displayed in step 38 above
-    21. Select /dev/ttyUSB0
-    22. Click on Upload Speed
-    23. Select 230400
+    20. From the menu, click on Tools
+    21. Click on Port, Select the port that was displayed in step 38 above
+    22. Select /dev/ttyUSB0
+    23. Click on Upload Speed
+    24. Select 230400
 
     Setup the partitions for the 16 MB flash
 
-    24. From the menu, click on Tools
-    25. Click on Flash Size
-    26. Select 16MB
-    27. From the menu, click on Tools
-    28. Click on Partition Scheme
-    29. Click on 16M Flash (3MB APP/9MB FATFS)
-    30. From the menu click on File
-    31. Click on Quit
+    25. From the menu, click on Tools
+    26. Click on Flash Size
+    27. Select 16MB
+    28. From the menu, click on Tools
+    29. Click on Partition Scheme
+    30. Click on 16M Flash (3MB APP/9MB FATFS)
+    31. From the menu click on File
+    32. Click on Quit
 
 40. cd ~/SparkFun/RTK/
 41. cp  Firmware/app3M_fat9M_16MB.csv  ~/.arduino15/packages/esp32/hardware/esp32/2.0.2/tools/partitions/app3M_fat9M_16MB.csv

@@ -4,7 +4,7 @@ Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported]
 
 ## WiFi Interface
 
-Please see the System Menu [WiFi Interface](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system/#wifi-interface).
+Please see the System Menu [WiFi Interface](menu_system.md/#wifi-interface).
 
 ## Serial Interface
 

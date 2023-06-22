@@ -9,9 +9,9 @@ By default, the Reference Station will use DHCP to request an IP Address from th
 
 ![Reference Station in DHCP mode](img/Ethernet_DHCP.png)
 
-**The Reference Station Ethernet menu - with DHCP selected**
+*The Reference Station Ethernet menu - with DHCP selected*
 
 ![Reference Station in fixed IP address mode](img/Ethernet_Fixed_IP.png)
 
-**The Reference Station Ethernet menu - with a fixed IP address selected**
+*The Reference Station Ethernet menu - with a fixed IP address selected*
 

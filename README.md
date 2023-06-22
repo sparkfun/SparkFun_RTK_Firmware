@@ -34,7 +34,7 @@ SparkFun RTK Firmware
   </tr>
 </table>
 
-The [SparkFun RTK Surveyor](https://www.sparkfun.com/products/18443), [SparkFun RTK Express](https://www.sparkfun.com/products/18442), [SparkFun RTK Express Plus](https://www.sparkfun.com/products/18590), [SparkFun RTK Facet](https://www.sparkfun.com/products/19029), and [SparkFun RTK Facet L-Band](https://www.sparkfun.com/products/20000) are centimeter-level GNSS receivers. With RTK enabled, these devices can output your location with 14mm horizontal and vertical [*accuracy*](https://docs.sparkfun.com/SparkFun_RTK_Firmware/accuracy_verification/) at up to 20Hz!
+The [SparkFun RTK Surveyor](https://www.sparkfun.com/products/18443), [SparkFun RTK Express](https://www.sparkfun.com/products/18442), [SparkFun RTK Express Plus](https://www.sparkfun.com/products/18590), [SparkFun RTK Facet](https://www.sparkfun.com/products/19029), [SparkFun RTK Facet L-Band](https://www.sparkfun.com/products/20000) and [SparkFun RTK Reference Station](https://www.sparkfun.com/products/22429) are centimeter-level GNSS receivers. With RTK enabled, these devices can output your location with 14mm horizontal and vertical [*accuracy*](https://docs.sparkfun.com/SparkFun_RTK_Firmware/accuracy_verification/) at up to 20Hz!
 
 This repo houses the [RTK Product Manual](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/) and the firmware that runs on the SparkFun RTK product line including:
 

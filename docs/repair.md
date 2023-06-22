@@ -1,8 +1,8 @@
 # Disassembly / Repair
 
-Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png) / Reference Station: ![Feature Supported](img/GreenDot.png)
 
-The RTK product line is fully open-source hardware. This allows users to view schematics, code, and repair manuals. This section documents how to safely disassemble the RTK Facet. 
+The RTK product line is fully open-source hardware. This allows users to view schematics, code, and repair manuals. This section documents how to safely disassemble the RTK Facet and [Reference Station](#reference-station).
 
 Tools Needed:
 
@@ -186,3 +186,25 @@ Secure the dome in place using four *small* screws.
 Replace the silicone boot around the device.
 
 Power on the RTK Facet and take outside to confirm SIV reaches above ~20 satellites and HPA is below ~1.0m.
+
+## Reference Station
+
+Taking the Reference Station apart is really easy:
+
+* Disconnect all cables
+
+* Unplug the green 10-way 3.5mm I/O connector
+  * This makes it easy to remove the main PCB from the enclosure
+  * The connector is a firm fit. You may need to rock it from side to side as you unplug it
+  
+* Unscrew the four screws holding the front panel in place
+  * We recommend removing the front panel first, so you can unplug the OLED display
+  
+* Remove the front panel
+
+![Image of the Reference Station with the front panel removed](img/Ref_Station_Disassembly.png)
+
+* Unplug the OLED Qwiic cable
+
+* Slide out the main PCB
+

@@ -2,7 +2,7 @@
 
 ## ESP-Now
 
-Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png) / Reference Station: ![Feature Partially Supported](img/YellowDot.png)
 
 ![Radio menu during AP-Config](img/SparkFun%20RTK%20Radio%20Config.png)
 
@@ -45,3 +45,15 @@ The radio system can be configured over WiFi. The radios subsystem is disabled b
 ![Serial Radio menu](img/SparkFun%20RTK%20Radio%20Menu.png)
 
 A serial menu is also available. This menu allows users to enter pairing mode, view the unit's current Radio MAC, the MAC addresses of any paired radios, as well as the ability to remove all paired radios from memory.
+
+## Reference Station
+
+There is not enough RAM available on the Reference Station to run ESP-Now and Bluetooth simultaneously. ESP-Now does work on the Reference Station but you need to disable Bluetooth in order to use it.
+
+* Disable Bluetooth via the System Menu. Select "b" twice to: first select BLE mode; and then to disable Bluetooth completely
+
+* Restart the system using the System Menu \ Debug Menu: enter "s" followed by "d" followed by "r" to restart the Reference Station. This ensures the RAM used by Bluetooth is released
+
+* Select the E-Pair option by pressing the MODE button until "E-Pair" is displayed
+
+* Pair the Reference Station Base with an RTK Rover and the Rover will achieve RTK-Fix

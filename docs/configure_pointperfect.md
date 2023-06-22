@@ -1,6 +1,6 @@
 # PointPerfect Menu
 
-Surveyor: ![Feature Not Supported](img/RedDot.png) / Express: ![Feature Not Supported](img/RedDot.png) / Express Plus: ![Feature Not Supported](img/RedDot.png) / Facet: ![Feature Not Supported](img/RedDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Not Supported](img/RedDot.png) / Express: ![Feature Not Supported](img/RedDot.png) / Express Plus: ![Feature Not Supported](img/RedDot.png) / Facet: ![Feature Not Supported](img/RedDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png) / Reference Station: ![Feature Not Supported](img/RedDot.png)
 
 **Note:** This section only applies to RTK Facet *L-Band* products. Regular RTK Facet, Surveyor, Express, and Express Plus products do not have L-Band antennas or receivers built-in.
 

@@ -95,8 +95,9 @@ nav:
   - configure_pointperfect.md
   - configure_sensor.md
   - menu_radios.md
-  - menu_sensor.md
   - menu_system.md
+  - menu_ethernet.md
+  - ntp.md
   - menu_debug.md
   - system_status_report.md
   - correction_sources.md

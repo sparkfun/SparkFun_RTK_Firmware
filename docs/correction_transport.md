@@ -1,6 +1,6 @@
 # Correction Transport
 
-Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Not Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/YellowDot.png)
+Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Not Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/YellowDot.png) / Reference Station: ![Feature Supported](img/GreenDot.png)
 
 Once a [correction source](https://docs.sparkfun.com/SparkFun_RTK_Firmware/correction_sources/) is chosen, the correction data must be transported from the base to the rover. The RTCM serial data is approximately 530 bytes per second and is transmitted at 57600bps out of the **RADIO** port on a SparkFun RTK device.
 
@@ -59,3 +59,9 @@ These radios attach nicely to the back or bottom of an RTK device.
 The benefit of a serial telemetry radio link is that you do not need to configure anything; simply plug two radios onto two RTK devices and turn them on. 
 
 The downside to serial telemetry radios is that they generally have a much shorter range (often slightly more than a 1-kilometer functional range) than a cellular link can provide.
+
+## Ethernet
+
+The Reference Station send and receive correction data via Ethernet. (Note: it cannot currently send or receive correction data via WiFi)
+
+Please see [Ethernet Menu](menu_ethernet.md) for more details.

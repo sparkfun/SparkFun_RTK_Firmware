@@ -1,6 +1,6 @@
 # Output to an Embedded System
 
-Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png) / Reference Station: ![Feature Supported](img/GreenDot.png)
 
 Many applications using the RTK products will use a 3rd party GIS application or mobile app like SW Maps and receive the data over Bluetooth. Alternatively, for embedded applications, a user can obtain the NMEA data over serial directly.
 
@@ -32,3 +32,15 @@ The Data connector on all RTK products is a 4-pin locking 1.25mm JST SMD connect
 **Warning!** All data in and out of RTK products is **3.3V**. Exposing these pins to **5V** or higher voltage logic will damage the device.
 
 The parsing of NMEA sentences is straightforward and left to the reader. There are ample NMEA parsing libraries available in C++, Arduino, Python, and many more languages.
+
+## Reference Station
+
+The Reference Station provides direct access the the u-blox GNSS TX and RX signals via the 3.5mm screw terminal I/O header:
+
+[![Reference Station I/O screw terminals](https://cdn.sparkfun.com/assets/learn_tutorials/3/2/1/0/SparkFun_GNSS_RTK_Reference_Station_IO.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/3/2/1/0/SparkFun_GNSS_RTK_Reference_Station_IO.jpg)
+
+* TX2 : u-blox ZED-F9P UART2 transmit: 3.3V OUTPUT
+  
+* RX2 : u-blox ZED-F9P UART2 receive: 3.3V INPUT
+
+Please see the [Reference Station Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-reference-station-hookup-guide#hardware-overview) for more details.

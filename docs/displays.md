@@ -1,6 +1,6 @@
 # Displays
 
-Surveyor: ![Feature Partially Supported](img/YellowDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Partially Supported](img/YellowDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png) / Reference Station: ![Feature Supported](img/GreenDot.png)
 
 The RTK Facet, Facet L-Band, Express, and Express Plus utilize a 0.96" high-contrast OLED display. While small, it packs various situational data that can be helpful in the field. We will walk you through each display.
 
@@ -85,6 +85,24 @@ The unit will display various messages to aid the user in obtaining keys as need
 *Three-pronged satellite dish indicating L-Band reception*
 
 Upon successful reception and decryption of L-Band corrections, the satellite dish icon will increase to a three-pronged icon. As the unit's fix increases the cross-hair will indicate a basic 3D solution, a double blinking cross-hair will indicate a floating RTK solution, and a solid double cross-hair will indicate a fixed RTK solution.
+
+## Reference Station
+
+The Reference Station is able to detect an open circuit or a short circuit on the GNSS antenna connection.
+
+[![Reference Station indicating antenna open circuit](img/Antenna_Open.png)](img/Antenna_Open.png)
+
+*Reference Station with the GNSS antenna disconnected (open circuit)*
+
+[![Reference Station indicating antenna short circuit](img/Antenna_Short.png)](img/Antenna_Short.png)
+
+*Reference Station with a GNSS antenna cable fault (short circuit)*
+
+When the Reference Station is in Network Time Protocol (NTP) mode, the display also shows a clock symbol - as shown above.
+The value next to the clock symbol is the Time Accuract Estimate (tAcc) from the UBX-NAV-PVT message.
+
+Note: this figure is the time accuracy estimate for the navigation position solution. The timing accuracy of the TP pulse is significantly better than this.
+We show the tAcc as we believe it is more meaningful than the TIM-TP time pulse quantization error (qErr) - which is generally zero.
 
 ## Adding a Display to the RTK Surveyor
 

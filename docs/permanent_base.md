@@ -1,6 +1,6 @@
 # Creating a Permanent Base
 
-Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Not Supported](img/RedDot.png) / Facet: ![Feature Partially Supported](img/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](img/YellowDot.png)
+Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Not Supported](img/RedDot.png) / Facet: ![Feature Partially Supported](img/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](img/YellowDot.png) / Reference Station: ![Feature Supported](img/GreenDot.png)
 
 This section goes into depth on how to gather the data using an RTK product to create a permanent fixed base.
 

@@ -4,7 +4,7 @@
 
 import socket
 
-HOST = socket.gethostbyname(socket.gethostname())
+HOST = "192.168.0.41" # Replace this with your local IP address
 PORT = 2947
 
 print("Listening on {}:{}".format(HOST,PORT))

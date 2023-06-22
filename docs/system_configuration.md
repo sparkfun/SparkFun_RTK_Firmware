@@ -23,7 +23,7 @@ Device configuration options include:
 * [Ports](configure_ports.md)
 * [Profiles](configure_profiles.md)
 * [Radio](menu_radios.md)
-* [Sensor](menu_sensor.md)
+* [Sensor](configure_sensor.md)
 * [WiFi](menu_wifi.md)
 * [Ethernet](menu_ethernet.md)
 * [NTP](ntp.md)

@@ -4,7 +4,7 @@ Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported]
 
 ## WiFi Interface
 
-Please see the System Menu [WiFi Interface](menu_system.md/#wifi-interface).
+Please see the System Menu [WiFi Interface](menu_system.md#wifi-interface).
 
 ## Serial Interface
 

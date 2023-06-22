@@ -65,7 +65,7 @@ For PPS, only the Black and Green wires are needed. If you need to provide 3.3V 
 * **Orange** - RX (input into the RTK device)
 * **Black** - GND
 
-Similarly, the RX pin of the DATA port can be used for event logging. See [External Event Logging](configure_ports.md/#external-event-logging) for more information.
+Similarly, the RX pin of the DATA port can be used for event logging. See [External Event Logging](configure_ports.md#external-event-logging) for more information.
 
 ### External Event Logging
 

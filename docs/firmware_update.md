@@ -8,6 +8,7 @@ The device has two primary firmwares:
 * Firmware on the u-blox ZED-F9P, ZED-F9P, or NEO-D9S Receiver. [See below](firmware_update.md#updating-u-blox-firmware).
 
 The device firmware is displayed in a variety of places:
+
 * Power On
 * Serial Config Menu
 * WiFi Config
@@ -295,7 +296,7 @@ If you are seeing the error:
 
 > text section exceeds available space ...
 
-You have not replaced the partition file correctly. See the 'Change Partition table' step inside the [Windows instructions](firmware_update.md#windows-1).
+You have not replaced the partition file correctly. See the 'Change Partition table' step inside the [Windows instructions](firmware_update.md#windows_1).
 
 **Note:** There are a variety of compile guards (COMPILE_WIFI, COMPILE_AP, etc) at the top of RTK_Surveyor.ino that can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on these features (serial menus, system configuration, logging, etc).
 

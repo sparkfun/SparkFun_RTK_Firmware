@@ -15,3 +15,16 @@ By default, the Reference Station will use DHCP to request an IP Address from th
 
 *The Reference Station Ethernet menu - with a fixed IP address selected*
 
+### Ethernet TCP Client
+
+The Reference Station can act as an Ethernet TCP Client, sending NMEA and / or UBX data to a remote TCP Server.
+
+This is similar to the WiFi TCP Client mode on our other RTK products, but the data can be sent to any server based on its IP Address or URL.
+
+E.g. to connect to a local machine via its IP Address, select option "c" and then enter the IP Address using option "h"
+
+![Ethernet TCP Client configuration](img/Ethernet_TCP_Client_1.png)
+
+![Ethernet TCP Client connection](img/TCP_Client.gif)
+
+The above animation was generated using [TCP_Server.py](https://github.com/sparkfun/SparkFun_RTK_Firmware/blob/main/Firmware/Tools/TCP_Server.py).

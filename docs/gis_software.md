@@ -352,7 +352,7 @@ The device location will be shown on the map. To see a map, be sure to enable Op
 
 ![Connecting over Serial](img/QGIS/SparkFun%20RTK%20QGIS%20-%20Direct%20Serial%20Connection.png)
 
-Alternatively, a direct serial connection to the RTK device can be obtained. Use a USB cable to connect to the 'CONFIG UBLOX' port on RTK Surveyor/Express/Plus and the single USB C port on the RTK Facet/L-Band. Be sure you have the u-blox driver installed. Then select the appropriate COM port for the u-blox module. See [Configure with Serial](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_with_serial/) for more information.
+Alternatively, a direct serial connection to the RTK device can be obtained. Use a USB cable to connect to the 'CONFIG UBLOX' port on RTK Surveyor/Express/Plus and the single USB C port on the RTK Facet/L-Band. Be sure you have the u-blox driver installed. Then select the appropriate COM port for the u-blox module. See [Configure with Serial](configure_with_serial.md) for more information.
 
 ## QField
 
@@ -366,7 +366,7 @@ Alternatively, a direct serial connection to the RTK device can be obtained. Use
 
 First, configure the RTK device to output *only* NMEA messages. QField currently does not correctly parse other messages such as RAWX or RTCM so these will interfere with communication if they are enabled.
 
-These RTK device settings can be found under the [Messages menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_messages/) through the [WiFi config page](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_with_wifi/) or through the [Serial Config menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_with_serial/).
+These RTK device settings can be found under the [Messages menu](configure_messages.md) through the [WiFi config page](configure_with_wifi.md) or through the [Serial Config menu](configure_with_serial.md).
 
 ![Alt text](img/QField/SparkFun%20RTK%20QField%20-%20Create%20Project.png)
 
@@ -400,7 +400,7 @@ From the submenu, select 'Settings'.
 
 *Positioning Menu*
 
-Select the Positioning Menu. Then, with your RTK device on and in normal mode (not AP Config) press the Scan button in the QField app to update the dropdown list of available Bluetooth devices. If your device is not detected, be sure you've [paired your cellphone or laptop with Bluetooth](https://docs.sparkfun.com/SparkFun_RTK_Firmware/connecting_bluetooth/).
+Select the Positioning Menu. Then, with your RTK device on and in normal mode (not AP Config) press the Scan button in the QField app to update the dropdown list of available Bluetooth devices. If your device is not detected, be sure you've [paired your cellphone or laptop with Bluetooth](connecting_bluetooth.md).
 
 Once connected exit out of the menus and see position information within your project.
 
@@ -430,7 +430,7 @@ The software options for Apple iOS are much more limited because Apple products 
 
 We recommend SWMaps for iOS. SWMaps is available for iOS [here](https://apps.apple.com/us/app/sw-maps/id6444248083).  
 
-More information is available on the [System Menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system/) for switching between Bluetooth SPP and BLE.
+More information is available on the [System Menu](menu_system.md) for switching between Bluetooth SPP and BLE.
 
 To begin:
 

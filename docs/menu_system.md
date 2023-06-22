@@ -12,7 +12,7 @@ Because of the nature of these controls, the AP config page is different than th
 
 ### Check for New Firmware
 
-This feature allows over-the-air updates of the RTK device's firmware. Please see [Updating RTK Firmware](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/) for more information.
+This feature allows over-the-air updates of the RTK device's firmware. Please see [Updating RTK Firmware](firmware_update.md) for more information.
 
 ### System Initial State
 
@@ -42,7 +42,7 @@ By default, the RTK products use Bluetooth v2.0 SPP (Serial Port Profile) to con
 
 ### Enable Factory Defaults
 
-See [Factory Reset](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system/#factory-reset).
+See [Factory Reset](menu_system.md#factory-reset).
 
 ### SD Card
 
@@ -50,7 +50,7 @@ Various stats for the SD card are shown.
 
 ### Update Firmware
 
-New firmware may be uploaded via WiFi to the unit. See [Updating Firmware from WiFi](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-wifi) for more information.
+New firmware may be uploaded via WiFi to the unit. See [Updating Firmware from WiFi](firmware_update.md#updating-firmware-from-wifi) for more information.
 
 ### Reset Counter
 

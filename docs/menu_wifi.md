@@ -24,7 +24,7 @@ WiFi is used for the following features:
 
 ## TCP Client and Server
 
-The RTK device supports connection over TCP. Some Data Collector software (such as [Vespucci](https://docs.sparkfun.com/SparkFun_RTK_Firmware/gis_software/#vespucci)) requires that the SparkFun RTK device connect as a TCP Client. Other software (such as [QGIS](https://docs.sparkfun.com/SparkFun_RTK_Firmware/gis_software/#qgis)) requires that the SparkFun RTK device acts as a TCP Server. Both are supported.
+The RTK device supports connection over TCP. Some Data Collector software (such as [Vespucci](gis_software.md#vespucci)) requires that the SparkFun RTK device connect as a TCP Client. Other software (such as [QGIS](gis_software.md#qgis)) requires that the SparkFun RTK device acts as a TCP Server. Both are supported.
 
 **Note:** Currently TCP is only supported while connected to local WiFi, not AP mode. This means the device will need to be connected to a WiFi network, such as a mobile hotspot, before TCP connections can occur.
 

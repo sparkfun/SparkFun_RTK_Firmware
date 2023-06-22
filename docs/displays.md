@@ -28,7 +28,7 @@ Upon power up the device will enter either Rover mode or Base mode. Above, the R
 * **Model:** This icon will change depending on the selected dynamic model: Portable (default) Pedestrian, Sea, Bike, Stationary, etc.
 * **Log:** This icon will remain animated while the log file is increasing. This is a good visual indication that you have an SD card inserted and RTK Facet can successfully record to it. There are three logging icons ![Logging icons](img/Radios/SparkFun%20RTK%20Logging%20Types.png)
     * Standard (three lines) is shown when the standard 5 NMEA messages are being logged
-    * PPP (capital P) is shown when the standard 5 NMEA + RAWX and SFRBX messages are recorded. This is most often used for post process positioning (PPP) and 12 to 24-hour logs for [fixed permanent bases](https://docs.sparkfun.com/SparkFun_RTK_Firmware/permanent_base/).
+    * PPP (capital P) is shown when the standard 5 NMEA + RAWX and SFRBX messages are recorded. This is most often used for post process positioning (PPP) and 12 to 24-hour logs for [fixed permanent bases](permanent_base.md).
     * Custom (capital C) is shown when a custom set of messages are being recorded (not standard, and not PPP).
 
 ## Rover RTK Fix

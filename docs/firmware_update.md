@@ -5,7 +5,7 @@ Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported]
 The device has two primary firmwares:
 
 * Firmware on the ESP32 microcontroller. Keep reading.
-* Firmware on the u-blox ZED-F9P, ZED-F9P, or NEO-D9S Receiver. [See below](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-u-blox-firmware).
+* Firmware on the u-blox ZED-F9P, ZED-F9P, or NEO-D9S Receiver. [See below](firmware_update.md#updating-u-blox-firmware).
 
 The device firmware is displayed in a variety of places:
 * Power On
@@ -32,13 +32,13 @@ The firmware is shown at the top of the WiFi config page.
 
 From time to time SparkFun will release new firmware for the RTK product line to add and improve functionality. For most users, firmware can be upgraded over WiFi using the OTA method.
 
-* [OTA Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-over-the-air): Connect over WiFi to SparkFun to download the latest firmware *over-the-air*. This can be done using the serial menu or while in WiFi AP Config Mode. Requires a local WiFi network.
-* [GUI Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui): Use the [Windows, Linux, MacOS or Python GUI](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader) and a USB cable. (The Python package has been tested on Raspberry Pi)
-* [SD Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-the-sd-card): Load the firmware on an SD card, then use a serial terminal with the *Firmware Upgrade* menu
-* [WiFi Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-wifi): Load the firmware over WiFi when the device is in WiFi AP Config Mode
-* [CLI Method](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli): Use the command line *batch_program.bat*
+* [OTA Method](firmware_update.md#updating-firmware-over-the-air): Connect over WiFi to SparkFun to download the latest firmware *over-the-air*. This can be done using the serial menu or while in WiFi AP Config Mode. Requires a local WiFi network.
+* [GUI Method](firmware_update.md#updating-firmware-using-windows-gui): Use the [Windows, Linux, MacOS or Python GUI](https://github.com/sparkfun/SparkFun_RTK_Firmware_Uploader) and a USB cable. (The Python package has been tested on Raspberry Pi)
+* [SD Method](firmware_update.md#updating-firmware-from-the-sd-card): Load the firmware on an SD card, then use a serial terminal with the *Firmware Upgrade* menu
+* [WiFi Method](firmware_update.md#updating-firmware-from-wifi): Load the firmware over WiFi when the device is in WiFi AP Config Mode
+* [CLI Method](firmware_update.md#updating-firmware-from-cli): Use the command line *batch_program.bat*
 
-The OTA method is generally recommended. For more information see [here](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-over-the-air).
+The OTA method is generally recommended. For more information see [here](firmware_update.md#updating-firmware-over-the-air).
 
 Remember, all SparkFun RTK devices are open source hardware meaning you have total access to the [firmware](https://github.com/sparkfun/SparkFun_RTK_Firmware) and [hardware](https://github.com/sparkfun/SparkFun_RTK_Facet). Be sure to check out each repo for the latest firmware and hardware information.
 
@@ -56,7 +56,7 @@ Introduced with version 3.0, firmware can be updated by pressing a button in the
 
 Additionally, users may opt into checking for Beta firmware. This is the latest firmware that may have new features and is meant for testing. Beta firmware is not recommended for units deployed into the field as it may not be stable.
 
-If you have a device with firmware lower than v3.0, you will need to use the [GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-the-uploader-gui) or a method listed below to get to v3.x.
+If you have a device with firmware lower than v3.0, you will need to use the [GUI](firmware_update.md#updating-firmware-using-the-uploader-gui) or a method listed below to get to v3.x.
 
 ## Updating Firmware Using The Uploader GUI
 
@@ -104,13 +104,13 @@ The firmware upgrade menu will only display files that have the "RTK_Surveyor_Fi
 
 ### Force Firmware Loading
 
-In the rare event that a unit is not staying on long enough for new firmware to be loaded into a COM port, the RTK Firmware (as of version 1.2) has an override function. If a file named *RTK_Surveyor_Firmware_Force.bin* is detected on the SD card at boot that file will be used to overwrite the current firmware, and then be deleted. This update path is generally not recommended. Use the [GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui) or [WiFi OTA](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-wifi) methods as the first resort.
+In the rare event that a unit is not staying on long enough for new firmware to be loaded into a COM port, the RTK Firmware (as of version 1.2) has an override function. If a file named *RTK_Surveyor_Firmware_Force.bin* is detected on the SD card at boot that file will be used to overwrite the current firmware, and then be deleted. This update path is generally not recommended. Use the [GUI](firmware_update.md#updating-firmware-using-windows-gui) or [WiFi OTA](firmware_update.md#updating-firmware-from-wifi) methods as the first resort.
 
 ## Updating Firmware From WiFi
 
 ![Advanced system settings](img/SparkFun%20RTK%20System%20Config%20Upload%20BIN.png)
 
-**Note:** Firmware versions 1.1 to 1.9 have an issue that severely limits firmware upload over WiFi and is not recommended; use the [GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-the-uploader-gui) method instead. Firmware versions v1.10 and beyond support direct firmware updates via WiFi.
+**Note:** Firmware versions 1.1 to 1.9 have an issue that severely limits firmware upload over WiFi and is not recommended; use the [GUI](firmware_update.md#updating-firmware-using-the-uploader-gui) method instead. Firmware versions v1.10 and beyond support direct firmware updates via WiFi.
 
 Firmware may be uploaded to the unit by clicking on 'Upload BIN', selecting the binary such as 'RTK_Surveyor_Firmware_v3_x.bin' and pressing upload. The unit will automatically reset once the firmware upload is complete.
 
@@ -164,7 +164,7 @@ Upon completion, your RTK device will reset and power down.
 
 RTK Surveyors sold before September 2021 may have an ESP32 WROOM module with 4MB flash instead of 16MB flash. These units still support all the functionality of other RTK products with the following limitations:
 
-* There is not enough flash space for OTA. Upgrading the firmware must be done via [CLI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-from-cli) or [GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-firmware-using-windows-gui). OTA, WiFi, or SD update paths are not possible.
+* There is not enough flash space for OTA. Upgrading the firmware must be done via [CLI](firmware_update.md#updating-firmware-from-cli) or [GUI](firmware_update.md#updating-firmware-using-windows-gui). OTA, WiFi, or SD update paths are not possible.
 
 The GUI (as of v1.3) will autodetect the ESP32's flash size and load the appropriate partition file. No user interaction is required.
 
@@ -195,9 +195,9 @@ The following products contain the following u-blox receivers:
 
 The firmware loaded onto the ZED-F9P, ZED-F9R, and NEO-D9S receivers is written by u-blox and can vary depending on the manufacture date. The RTK Firmware (that runs on the ESP32) is designed to flexibly work with any u-blox firmware. Upgrading the ZED-F9x/NEO-D9S is a good thing to consider but is not crucial to the use of RTK products.
 
-Not sure what firmware is loaded onto your RTK product? Open the [System Status Menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system/) to display the module's current firmware version.
+Not sure what firmware is loaded onto your RTK product? Open the [System Status Menu](menu_system.md) to display the module's current firmware version.
 
-The firmware on u-blox devices can be updated using a [Windows-based GUI](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-using-windows-gui) or [u-center](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#updating-using-u-center). A CLI method is also possible using the `ubxfwupdate.exe` tool provided with u-center. Additionally, u-blox offers the source for the ubxfwupdate tool that is written in C. It is currently released only under an NDA so contact your local u-blox Field Applications Engineer if you need a different method.
+The firmware on u-blox devices can be updated using a [Windows-based GUI](firmware_update.md#updating-using-windows-gui) or [u-center](firmware_update.md#updating-using-u-center). A CLI method is also possible using the `ubxfwupdate.exe` tool provided with u-center. Additionally, u-blox offers the source for the ubxfwupdate tool that is written in C. It is currently released only under an NDA so contact your local u-blox Field Applications Engineer if you need a different method.
 
 ## Updating Using Windows GUI
 
@@ -280,7 +280,7 @@ The SparkFun RTK firmware is compiled using Arduino (currently v1.8.15). To comp
 
     B. Set the 'Flash Size' to 16MB (128mbit)
 
-5. Obtain all the [required libraries](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#Required-Libraries).
+5. Obtain all the [required libraries](firmware_update.md#Required-Libraries).
 
 Once compiled, firmware can be uploaded directly to a unit when the RTK unit is on and the correct COM port is selected under the Arduino IDE Tools->Port menu.
 
@@ -288,7 +288,7 @@ If you are seeing the error:
 
 > text section exceeds available space ...
 
-You have not replaced the partition file correctly. See the 'Change Partition table' step inside the [Windows instructions](https://docs.sparkfun.com/SparkFun_RTK_Firmware/firmware_update/#windows_1).
+You have not replaced the partition file correctly. See the 'Change Partition table' step inside the [Windows instructions](firmware_update.md#windows).
 
 **Note:** There are a variety of compile guards (COMPILE_WIFI, COMPILE_AP, etc) at the top of RTK_Surveyor.ino that can be commented out to remove them from compilation. This will greatly reduce the firmware size and allow for faster development of functions that do not rely on these features (serial menus, system configuration, logging, etc).
 

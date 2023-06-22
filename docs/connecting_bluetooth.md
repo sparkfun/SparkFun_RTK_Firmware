@@ -64,4 +64,4 @@ If necessary, you can open a terminal connection to one of the COM ports. Becaus
 
 Apple products do not support Bluetooth SPP. That's ok! The SparkFun RTK devices support Bluetooth Low Energy (BLE) which does work with iOS.
 
-More information is available on the [System Menu](https://docs.sparkfun.com/SparkFun_RTK_Firmware/menu_system/) for switching between Bluetooth SPP and BLE.
+More information is available on the [System Menu](menu_system.md) for switching between Bluetooth SPP and BLE.

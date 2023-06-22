@@ -2,7 +2,7 @@
 
 Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Not Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/YellowDot.png) / Reference Station: ![Feature Supported](img/GreenDot.png)
 
-Once a [correction source](https://docs.sparkfun.com/SparkFun_RTK_Firmware/correction_sources/) is chosen, the correction data must be transported from the base to the rover. The RTCM serial data is approximately 530 bytes per second and is transmitted at 57600bps out of the **RADIO** port on a SparkFun RTK device.
+Once a [correction source](correction_sources.md) is chosen, the correction data must be transported from the base to the rover. The RTCM serial data is approximately 530 bytes per second and is transmitted at 57600bps out of the **RADIO** port on a SparkFun RTK device.
 
 There are a variety of ways to move data from a base to a rover. We will cover the most common below. 
 
@@ -14,13 +14,13 @@ Note: RTK calculations require RTCM data to be delivered approximately once per 
 
 ![NTRIP Server setup](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Base_Config2.jpg)
 
-Any SparkFun RTK device can be set up as an [NTRIP Server](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_base/#ntrip-server). This means the device will connect to local WiFi and broadcast its correction data to the internet. The data is delivered to something called an NTRIP Caster. Any number of rovers can then access this data using something called an NTRIP Client. Nearly *every* GIS application has an NTRIP Client built into it so this makes it very handy.
+Any SparkFun RTK device can be set up as an [NTRIP Server](configure_base.md#ntrip-server). This means the device will connect to local WiFi and broadcast its correction data to the internet. The data is delivered to something called an NTRIP Caster. Any number of rovers can then access this data using something called an NTRIP Client. Nearly *every* GIS application has an NTRIP Client built into it so this makes it very handy.
 
 WiFi broadcasting is the most common transport method of getting RTCM correction data to the internet and to rovers via NTRIP Clients.
 
 ![RTK product in NTRIP Client mode](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Rover_NTRIP_Client_Connection.png)
 
-Similarly, any SparkFun RTK device can be set up as an [NTRIP Client](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_gnss/#ntrip-client). The RTK device will connect to the local WiFi and begin downloading the RTCM data from the given NTRIP Caster and RTK Fix will be achieved. This is useful only if the Rover remains in RF range of the WiFi access point. Because of the limited range, we recommend using a cellphone rather than WiFi for NTRIP Clients.
+Similarly, any SparkFun RTK device can be set up as an [NTRIP Client](configure_gnss.md#ntrip-client). The RTK device will connect to the local WiFi and begin downloading the RTCM data from the given NTRIP Caster and RTK Fix will be achieved. This is useful only if the Rover remains in RF range of the WiFi access point. Because of the limited range, we recommend using a cellphone rather than WiFi for NTRIP Clients.
 
 ## Cellular
 

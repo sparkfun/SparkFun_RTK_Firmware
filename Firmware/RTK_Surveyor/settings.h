@@ -753,8 +753,8 @@ typedef struct
     bool enableLogging = true;                            // If an SD card is present, log default sentences
     bool enableARPLogging = false;      // Log the Antenna Reference Position from RTCM 1005/1006 - if available
     uint16_t ARPLoggingInterval_s = 10; // Log the ARP every 10 seconds - if available
-    uint16_t sppRxQueueSize = 2048;
-    uint16_t sppTxQueueSize = 512;
+    uint16_t sppRxQueueSize = 512 * 2;
+    uint16_t sppTxQueueSize = 32;
     uint8_t dynamicModel = DYN_MODEL_PORTABLE;
     SystemState lastState = STATE_NOT_SET; // Start unit in last known state
     bool enableSensorFusion = false; // If IMU is available, avoid using it unless user specifically selects automotive

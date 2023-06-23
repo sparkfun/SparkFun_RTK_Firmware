@@ -1,12 +1,16 @@
 #ifdef COMPILE_BT
 
-#include "BluetoothSerial.h"
+//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issues: 
+//https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/23
+//https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/469
+#include "src/BluetoothSerial/BluetoothSerial.h"
+
 #include <BleSerial.h> //Click here to get the library: http://librarymanager/All#ESP32_BleSerial v1.0.4 by Avinab Malla
 
 class BTSerialInterface
 {
   public:
-    virtual bool begin(String deviceName) = 0;
+    virtual bool begin(String deviceName, bool isMaster, uint16_t rxQueueSize, uint16_t txQueueSize) = 0;
     virtual void disconnect() = 0;
     virtual void end() = 0;
     virtual esp_err_t register_callback(esp_spp_cb_t *callback) = 0;
@@ -27,9 +31,9 @@ class BTClassicSerial : public virtual BTSerialInterface, public BluetoothSerial
     // Everything is already implemented in BluetoothSerial since the code was
     // originally written using that class
   public:
-    bool begin(String deviceName)
+    bool begin(String deviceName, bool isMaster, uint16_t rxQueueSize, uint16_t txQueueSize)
     {
-        return BluetoothSerial::begin(deviceName);
+        return BluetoothSerial::begin(deviceName, isMaster, rxQueueSize, txQueueSize);
     }
 
     void disconnect()
@@ -87,7 +91,7 @@ class BTLESerial : public virtual BTSerialInterface, public BleSerial
 {
   public:
     // Missing from BleSerial
-    bool begin(String deviceName)
+    bool begin(String deviceName, bool isMaster, uint16_t rxQueueSize, uint16_t txQueueSize)
     {
         BleSerial::begin(deviceName.c_str());
         return true;

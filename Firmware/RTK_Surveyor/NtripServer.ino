@@ -249,7 +249,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
         }
 
         // If we have not gotten new RTCM bytes for a period of time, assume end of frame
-        if (millis() - ntripServerTimer > 100 && ntripServerBytesSent > 0)
+        if (((millis() - ntripServerTimer) > 100) && (ntripServerBytesSent > 0))
         {
             if ((!inMainMenu) && settings.enablePrintNtripServerState)
                 systemPrintf("NTRIP Server transmitted %d RTCM bytes to Caster\r\n", ntripServerBytesSent);
@@ -391,6 +391,7 @@ void ntripServerUpdate()
                 {
                     ntripServerLastConnectionAttempt = millis();
                     log_d("NTRIP Server starting on Ethernet");
+                    ntripServerTimer = millis();
                     ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_STARTED);
                 }
             }
@@ -543,7 +544,7 @@ void ntripServerUpdate()
             // Look for banned IP information
             else if (strstr(response, "banned") != nullptr) //'Banned' found
             {
-                systemPrintf("NTRIP Server connected to caster but caster responded with problem: %s", response);
+                systemPrintf("NTRIP Server connected to caster but caster responded with problem: %s\r\n", response);
 
                 // Give up - Shutdown NTRIP server, no further retries
                 ntripServerStop(true);
@@ -552,7 +553,7 @@ void ntripServerUpdate()
             // Other errors returned by the caster
             else
             {
-                systemPrintf("NTRIP Server connected but caster responded with problem: %s", response);
+                systemPrintf("NTRIP Server connected but caster responded with problem: %s\r\n", response);
 
                 // Check for connection limit
                 if (ntripServerConnectLimitReached())

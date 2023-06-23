@@ -392,6 +392,7 @@ void ntripClientUpdate()
                 {
                     ntripClientLastConnectionAttempt = millis();
                     log_d("NTRIP Client starting on Ethernet");
+                    ntripClientTimer = millis();
                     ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_STARTED);
                 }
             }
@@ -416,6 +417,7 @@ void ntripClientUpdate()
                     ntripClientLastConnectionAttempt = millis();
                     log_d("NTRIP Client starting WiFi");
                     wifiStart();
+                    ntripClientTimer = millis();
                     ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_STARTED);
                 }
             }
@@ -424,32 +426,18 @@ void ntripClientUpdate()
     break;
 
     case NTRIP_CLIENT_WIFI_ETHERNET_STARTED:
-        if (HAS_ETHERNET) // && !settings.ntripClientUseWiFiNotEthernet) //For future expansion
+        if ((millis() - ntripClientTimer) > (1 * 60 * 1000))
+            // Failed to connect to to the network, attempt to restart the network
+            ntripClientStop(false);
+        else if (HAS_ETHERNET) // && !settings.ntripClientUseWiFiNotEthernet) //For future expansion
         {
             if (online.ethernetStatus == ETH_CONNECTED)
                 ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED);
-            else if (online.ethernetStatus == ETH_CAN_NOT_BEGIN) // Ethernet hardware failure or not available
-                ntripClientSetState(NTRIP_CLIENT_OFF);
-            else
-            {
-                // Wait for ethernet to connect
-                static unsigned long lastDebug = millis();
-                if (millis() > (lastDebug + 5000))
-                {
-                    lastDebug = millis();
-                    log_d("NTRIP Client: Ethernet not connected. Waiting to retry.");
-                }
-            }
         }
         else
         {
             if (wifiIsConnected())
                 ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED);
-            else if (wifiState == WIFI_OFF)
-            {
-                // WiFi failed to connect. Restart Client which will restart WiFi.
-                ntripClientSetState(NTRIP_CLIENT_ON);
-            }
         }
         break;
 
@@ -492,7 +480,12 @@ void ntripClientUpdate()
             {
                 // NTRIP web service did not respond
                 if (ntripClientConnectLimitReached()) // Updates ntripClientConnectionAttemptTimeout
+                {
                     systemPrintln("NTRIP Caster failed to respond. Do you have your caster address and port correct?");
+
+                    // Stop WiFi operations
+                    ntripClientStop(true); // Do not allocate new wifiClient
+                }
                 else
                 {
                     if (ntripClientConnectionAttemptTimeout / 1000 < 120)
@@ -501,6 +494,9 @@ void ntripClientUpdate()
                     else
                         systemPrintf("NTRIP Client failed to connect to caster. Trying again in %d minutes.\r\n",
                                      ntripClientConnectionAttemptTimeout / 1000 / 60);
+
+                    // Restart network operation after delay
+                    ntripClientStop(false);
                 }
             }
         }
@@ -510,37 +506,10 @@ void ntripClientUpdate()
             char response[512];
             ntripClientResponse(&response[0], sizeof(response));
 
-            log_d("Caster Response: %s", response);
+            //log_d("Caster Response: %s", response);
 
             // Look for various responses
-            if (strstr(response, "401") != nullptr)
-            {
-                // Look for '401 Unauthorized'
-                systemPrintf(
-                    "NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n",
-                    response);
-
-                // Stop WiFi operations
-                ntripClientStop(true); // Do not allocate new wifiClient
-            }
-            else if (strstr(response, "banned") != nullptr)
-            {
-                // Look for 'HTTP/1.1 200 OK' and banned IP information
-                systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n", response);
-
-                // Stop WiFi operations
-                ntripClientStop(true); // Do not allocate new wifiClient
-            }
-            else if (strstr(response, "SOURCETABLE") != nullptr)
-            {
-                // Look for 'SOURCETABLE 200 OK'
-                systemPrintf("Caster may not have mountpoint %s. Caster responded with problem: %s\r\n",
-                             settings.ntripClient_MountPoint, response);
-
-                // Stop WiFi operations
-                ntripClientStop(true); // Do not allocate new wifiClient
-            }
-            else if (strstr(response, "200") != nullptr)
+            if (strstr(response, "200") != nullptr)
             {
                 log_d("NTRIP Client connected to caster");
 
@@ -569,6 +538,61 @@ void ntripClientUpdate()
                 ntripClientStartTime = millis();
                 ntripClientConnectionAttempts = 0;
                 ntripClientSetState(NTRIP_CLIENT_CONNECTED);
+            }
+            else if (strstr(response, "401") != nullptr)
+            {
+                // Look for '401 Unauthorized'
+                systemPrintf(
+                    "NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n",
+                    response);
+
+                // Stop WiFi operations
+                ntripClientStop(true); // Do not allocate new wifiClient
+            }
+            else if (strstr(response, "banned") != nullptr)
+            {
+                // Look for 'HTTP/1.1 200 OK' and banned IP information
+                systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n", response);
+
+                // Stop WiFi operations
+                ntripClientStop(true); // Do not allocate new wifiClient
+            }
+            else if (strstr(response, "SOURCETABLE") != nullptr)
+            {
+                // Look for 'SOURCETABLE 200 OK'
+                systemPrintf("Caster may not have mountpoint %s. Caster responded with problem: %s\r\n",
+                             settings.ntripClient_MountPoint, response);
+
+                // Stop WiFi operations
+                ntripClientStop(true); // Do not allocate new wifiClient
+            }
+            // Other errors returned by the caster
+            else
+            {
+                systemPrintf("NTRIP Client connected but caster responded with problem: %s\r\n", response);
+
+                // Check for connection limit
+                if (ntripClientConnectLimitReached())
+                {
+                    systemPrintln("NTRIP Client retry limit reached; do you have your caster address and port correct?");
+
+                    // Give up - Shutdown NTRIP client, no further retries
+                    ntripClientStop(true);
+                }
+
+                // Attempt to reconnect after throttle controlled timeout
+                else
+                {
+                    if (ntripClientConnectionAttemptTimeout / 1000 < 120)
+                        systemPrintf("NTRIP Client attempting connection in %d seconds.\r\n",
+                                     ntripClientConnectionAttemptTimeout / 1000);
+                    else
+                        systemPrintf("NTRIP Client attempting connection in %d minutes.\r\n",
+                                     ntripClientConnectionAttemptTimeout / 1000 / 60);
+
+                    // Restart network operation after delay
+                    ntripClientStop(false);
+                }
             }
         }
 #endif  // COMPILE_WIFI || COMPILE_ETHERNET

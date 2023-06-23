@@ -99,9 +99,9 @@ The Reference Station is able to detect an open circuit or a short circuit on th
 *Reference Station with a GNSS antenna cable fault (short circuit)*
 
 When the Reference Station is in Network Time Protocol (NTP) mode, the display also shows a clock symbol - as shown above.
-The value next to the clock symbol is the Time Accuract Estimate (tAcc) from the UBX-NAV-PVT message.
+The value next to the clock symbol is the Time Accuracy Estimate (tAcc) from the UBX-NAV-PVT message.
 
-Note: this figure is the time accuracy estimate for the navigation position solution. The timing accuracy of the TP pulse is significantly better than this.
+Note: tAcc is the time accuracy estimate for the navigation position solution. The timing accuracy of the TP pulse is significantly better than this.
 We show the tAcc as we believe it is more meaningful than the TIM-TP time pulse quantization error (qErr) - which is generally zero.
 
 ## Adding a Display to the RTK Surveyor

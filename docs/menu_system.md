@@ -68,7 +68,7 @@ This menu is helpful when reporting technical issues or requesting support as it
 
 * **z** - A local timezone in hours, minutes and seconds may be set by pressing 'z'. The timezone values change the RTC clock setting and the file system's timestamps for new files.
 
-* **d** - Enters the [debug menu](https://sparkfun.github.io/SparkFun_RTK_Firmware/menu_debug/) that is for advanced users.
+* **d** - Enters the [debug menu](menu_debug.md) that is for advanced users.
 
 * **f** - Show any files on the microSD card (if present).
 

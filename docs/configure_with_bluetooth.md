@@ -6,7 +6,7 @@ Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported]
 
 *Configuration menu via Bluetooth*
 
-Starting with firmware v3.0, Bluetooth-based configuration is supported. For more information about updating the firmware on your device, please see [Updating RTK Firmware](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/).
+Starting with firmware v3.0, Bluetooth-based configuration is supported. For more information about updating the firmware on your device, please see [Updating RTK Firmware](firmware_update.md).
 
 The RTK device will be a discoverable Bluetooth device (both BT SPP and BLE are supported). For information about Bluetooth pairing, please see [Connecting Bluetooth](connecting_bluetooth.md).
 

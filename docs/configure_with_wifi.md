@@ -6,7 +6,7 @@ Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported]
 
 *Configuration page via WiFi*
 
-Starting with firmware v1.7, WiFi-based configuration is supported. For more information about updating the firmware on your device, please see [Updating RTK Firmware](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/).
+Starting with firmware v1.7, WiFi-based configuration is supported. For more information about updating the firmware on your device, please see [Updating RTK Firmware](firmware_update.md).
 
 The RTK device will present a webpage that is viewable from either a desktop/laptop with WiFi or a cell phone. For advanced configurations, a desktop is recommended. For quick in-field changes, a cell phone works great.
 

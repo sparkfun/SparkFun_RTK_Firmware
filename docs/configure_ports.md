@@ -118,5 +118,5 @@ The event timestamps can be analyzed to precisely coordinate or triangulate a pa
 
 By default, the Data port is set to 460800bps and can be configured from 4800bps to 921600bps. 
 
-Note: The Data port does not output NMEA by default. The unit must be opened and the *Serial NMEA Connection* switch must be moved to 'Ext Connector'. See [Hardware Overview - Advanced Features](https://sparkfun.github.io/SparkFun_RTK_Firmware/hardware_rtk_surveyor/#advanced-features) for the location of the switch.
+Note: The Data port does not output NMEA by default. The unit must be opened and the *Serial NMEA Connection* switch must be moved to 'Ext Connector'. See [Hardware Overview - Advanced Features](hardware_rtk_surveyor.md#advanced-features) for the location of the switch.
 

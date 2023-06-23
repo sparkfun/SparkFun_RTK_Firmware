@@ -99,7 +99,7 @@ You will need a microSD card that is 1GB up to 32GB formatted for FAT16 or FAT32
 
 ### Enable RAWX and SFRBX
 
-Power on the unit and using the [serial](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_serial/) or [WiFi method](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_wifi/), connect to the device.
+Power on the unit and using the [serial](configure_with_serial.md) or [WiFi method](configure_with_wifi.md), connect to the device.
 
 #### Config via WiFi
 
@@ -111,7 +111,7 @@ Expand the Message Rates sub-menu under the GNSS Config menu. Pressing the NMEAx
 
 These seven sentences are commonly used when logging and doing Precise Point Positioning (PPP) or Post Processed Kinematics (PPK). 
 
-Press the 'Save and Exit' button. Upon reset, the unit should begin displaying a gradually increasing [logging icon](https://sparkfun.github.io/SparkFun_RTK_Firmware/displays/#rover-fix) indicating successful logging.
+Press the 'Save and Exit' button. Upon reset, the unit should begin displaying a gradually increasing [logging icon](displays.md#rover-fix) indicating successful logging.
 
 #### Config via Serial
 
@@ -223,7 +223,7 @@ Select **Fixed** and **ECEF Coordinates** then enter the coordinates obtained fr
 
 *Configuring NTRIP Server settings via WiFi Config AP*
 
-If your RTK product has access to a WiFi network, consider enabling the NTRIP Server. This will allow the RTK device to automatically begin transmitting its RTCM data to an NTRIP Caster once it has entered Fixed Base mode. See [Creating NTRIP Caster](https://sparkfun.github.io/SparkFun_RTK_Firmware/permanent_base/#creating-ntrip-caster) for more information.
+If your RTK product has access to a WiFi network, consider enabling the NTRIP Server. This will allow the RTK device to automatically begin transmitting its RTCM data to an NTRIP Caster once it has entered Fixed Base mode. See [Creating NTRIP Caster](permanent_base.md#creating-ntrip-caster) for more information.
 
 Save the settings to the RTK unit and exit. 
 
@@ -239,7 +239,7 @@ To configure over serial, press 3 to open the Base menu, then 1 to toggle the Ba
 
 *Settings for the NTRIP Server*
 
-If your RTK product has access to a WiFi network, consider enabling the NTRIP Server. This will allow the RTK device to automatically begin transmitting its RTCM data to an NTRIP Caster once it has entered Fixed Base mode. See [Creating NTRIP Caster](https://sparkfun.github.io/SparkFun_RTK_Firmware/permanent_base/#creating-ntrip-caster) for more information.
+If your RTK product has access to a WiFi network, consider enabling the NTRIP Server. This will allow the RTK device to automatically begin transmitting its RTCM data to an NTRIP Caster once it has entered Fixed Base mode. See [Creating NTRIP Caster](permanent_base.md#creating-ntrip-caster) for more information.
 
 Press x multiple times to exit the serial menu.
 

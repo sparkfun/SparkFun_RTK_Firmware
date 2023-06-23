@@ -39,10 +39,10 @@ The line of RTK products offered by SparkFun all run identical firmware. The [RT
 
 Depending on the hardware platform different features may or may not be supported. We will denote each product in each section so that you know what is supported.
 
-[Configuring](https://sparkfun.github.io/SparkFun_RTK_Firmware/system_configuration/) the RTK device
-may be done using [WiFi](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_wifi/),
-[serial](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_serial/)
-or modifying a [setup file](https://sparkfun.github.io/SparkFun_RTK_Firmware/configure_with_settings_file/).
+[Configuring](system_configuration.md) the RTK device
+may be done using [WiFi](configure_with_wifi.md),
+[serial](configure_with_serial.md)
+or modifying a [setup file](configure_with_settings_file.md).
 
 If you have an issue, feature request, bug report, or a general question about the RTK firmware specifically we encourage you to post your comments on the [firmware's repository](https://github.com/sparkfun/SparkFun_RTK_Firmware/issues). If you feel like bragging or showing off what you did with your RTK product, we'd be thrilled to hear about it on the issues list as well!
 

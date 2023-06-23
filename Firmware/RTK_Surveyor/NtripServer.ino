@@ -497,6 +497,9 @@ void ntripServerUpdate()
                 if (ntripServerConnectLimitReached())
                 {
                     systemPrintln("Caster failed to respond. Do you have your caster address and port correct?");
+
+                    // Give up - Shutdown NTRIP server, no further retries
+                    ntripServerStop(true);
                 }
                 else
                 {
@@ -506,6 +509,9 @@ void ntripServerUpdate()
                     else
                         systemPrintf("NTRIP caster failed to respond. Trying again in %d minutes.\r\n",
                                      ntripServerConnectionAttemptTimeout / 1000 / 60);
+
+                    // Restart network operation after delay
+                    ntripServerStop(false);
                 }
             }
         }

@@ -509,7 +509,7 @@ void ntripClientUpdate()
             //log_d("Caster Response: %s", response);
 
             // Look for various responses
-            if (strstr(response, "200") != nullptr)
+            if (strstr(response, "200") != nullptr) //'200' found
             {
                 log_d("NTRIP Client connected to caster");
 
@@ -573,12 +573,7 @@ void ntripClientUpdate()
 
                 // Check for connection limit
                 if (ntripClientConnectLimitReached())
-                {
                     systemPrintln("NTRIP Client retry limit reached; do you have your caster address and port correct?");
-
-                    // Give up - Shutdown NTRIP client, no further retries
-                    ntripClientStop(true);
-                }
 
                 // Attempt to reconnect after throttle controlled timeout
                 else
@@ -589,9 +584,6 @@ void ntripClientUpdate()
                     else
                         systemPrintf("NTRIP Client attempting connection in %d minutes.\r\n",
                                      ntripClientConnectionAttemptTimeout / 1000 / 60);
-
-                    // Restart network operation after delay
-                    ntripClientStop(false);
                 }
             }
         }

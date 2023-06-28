@@ -12,7 +12,7 @@ All system configuration can be done by editing the *SFE_[Platform]_Settings_0.t
 
 Keep in mind: 
 
-* The settings file contains hundreds of 300 settings.
+* The settings file contains hundreds of settings.
 * The SD card file "SFE_Express_Settings_0.txt" is used for Profile 1, SD card file "SFE_Express_Settings_1.txt" is used for Profile 2, etc. (note that setting 0 is for profile 1, ...)
 * When switching to a new profile, the settings file on the SD card with all settings will be created or updated. The internal settings will not be updated until you switch to the profile. Additionally, the file for a particular profile will not be created on the SD card until you switch to that profile.
 * It is not necessary that the settings file on the SD card have all of the settings.

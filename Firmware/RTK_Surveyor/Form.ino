@@ -1350,7 +1350,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             requestChangeState(STATE_ROVER_NOT_STARTED); // If update failed, return to Rover mode.
     }
     else if (strcmp(settingName, "factoryDefaultReset") == 0)
-        factoryReset();
+        factoryReset(false); //We do not have the sdSemaphore
     else if (strcmp(settingName, "exitAndReset") == 0)
     {
         // Confirm receipt

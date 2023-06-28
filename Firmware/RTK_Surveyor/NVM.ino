@@ -738,7 +738,8 @@ bool parseLine(char *str, Settings *settings)
         // If user sets sizeOfSettings to -1 in config file, RTK Surveyor will factory reset
         if (d == -1)
         {
-            factoryReset(); // Erase file system, erase settings file, reset u-blox module, display message on OLED
+            // Erase file system, erase settings file, reset u-blox module, display message on OLED
+            factoryReset(true); //We already have the SD semaphore
         }
 
         // Check to see if this setting file is compatible with this version of RTK Surveyor

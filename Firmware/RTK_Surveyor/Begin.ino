@@ -980,7 +980,7 @@ void beginSystemState()
     if (systemState > STATE_NOT_SET)
     {
         systemPrintln("Unknown state - factory reset");
-        factoryReset();
+        factoryReset(false); //We do not have the SD semaphore
     }
 
     if (productVariant == RTK_SURVEYOR)

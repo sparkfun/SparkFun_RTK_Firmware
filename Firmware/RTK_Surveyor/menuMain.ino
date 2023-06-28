@@ -37,9 +37,9 @@ void menuMain()
         systemPrint("** Bluetooth broadcasting as: ");
         systemPrint(deviceName);
         systemPrintln(" **");
-#else   // COMPILE_BT
+#else  // COMPILE_BT
         systemPrintln("** Bluetooth Not Compiled **");
-#endif  // COMPILE_BT
+#endif // COMPILE_BT
 
         systemPrintln("Menu: Main");
 
@@ -58,9 +58,9 @@ void menuMain()
 
 #ifdef COMPILE_WIFI
         systemPrintln("6) Configure WiFi");
-#else   // COMPILE_WIFI
+#else  // COMPILE_WIFI
         systemPrintln("6) **WiFi Not Compiled**");
-#endif  // COMPILE_WIFI
+#endif // COMPILE_WIFI
 
 #ifdef COMPILE_ETHERNET
         if (HAS_ETHERNET)
@@ -68,15 +68,15 @@ void menuMain()
             systemPrintln("e) Configure Ethernet");
             systemPrintln("n) Configure NTP");
         }
-#endif  // COMPILE_ETHERNET
+#endif // COMPILE_ETHERNET
 
         systemPrintln("p) Configure User Profiles");
 
 #ifdef COMPILE_ESPNOW
         systemPrintln("r) Configure Radios");
-#else   // COMPILE_ESPNOW
+#else  // COMPILE_ESPNOW
         systemPrintln("r) **ESP-Now Not Compiled**");
-#endif  // COMPILE_ESPNOW
+#endif // COMPILE_ESPNOW
 
         if (online.lband == true)
             systemPrintln("P) Configure PointPerfect");
@@ -119,7 +119,7 @@ void menuMain()
 #ifdef COMPILE_ESPNOW
         else if (incoming == 'r')
             menuRadio();
-#endif  // COMPILE_ESPNOW
+#endif // COMPILE_ESPNOW
         else if (incoming == 'f')
             menuFirmware();
         else if (incoming == 'b')
@@ -262,7 +262,7 @@ void menuUserProfiles()
                         if (SD_MMC.exists(settingsFileName))
                             SD_MMC.remove(settingsFileName);
                     }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
                 }
 
                 recordProfileNumber(0); // Move to Profile1
@@ -334,18 +334,22 @@ void changeProfileNumber(byte newProfileNumber)
 }
 
 // Erase all settings. Upon restart, unit will use defaults
-void factoryReset()
+void factoryReset(bool alreadyHasSemaphore)
 {
     displaySytemReset(); // Display friendly message on OLED
 
     tasksStopUART2();
 
+    Serial.println("remove old files");
+
     // Attempt to write to file system. This avoids collisions with file writing from other functions like
-    // recordSystemSettingsToFile() and F9PSerialReadTask() if (settings.enableSD && online.microSD) //Don't check
-    // settings.enableSD - it could be corrupt
+    // recordSystemSettingsToFile() and F9PSerialReadTask() if (settings.enableSD && online.microSD) 
+    //Don't check settings.enableSD - it could be corrupt
     if (online.microSD)
     {
-        if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
+    Serial.println("2 - remove old files");
+
+        if (alreadyHasSemaphore == true || xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
         {
             if (USE_SPI_MICROSD)
             {
@@ -363,16 +367,20 @@ void factoryReset()
                 SD_MMC.remove(stationCoordinateECEFFileName); // Remove station files
                 SD_MMC.remove(stationCoordinateGeodeticFileName);
             }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
             xSemaphoreGive(sdCardSemaphore);
         } // End sdCardSemaphore
         else
         {
+            char semaphoreHolder[50];
+            getSemaphoreFunction(semaphoreHolder);
+
             // An error occurs when a settings file is on the microSD card and it is not
             // deleted, as such the settings on the microSD card will be loaded when the
             // RTK reboots, resulting in failure to achieve the factory reset condition
-            systemPrintf("sdCardSemaphore failed to yield, menuMain.ino line %d\r\n", __LINE__);
+            log_d("sdCardSemaphore failed to yield, held by %s, menuMain.ino line %d\r\n", semaphoreHolder,
+                  __LINE__);
         }
     }
 
@@ -512,5 +520,5 @@ void menuRadio()
     radioStart();
 
     clearBuffer(); // Empty buffer of any newline chars
-#endif  // COMPILE_ESPNOW
+#endif             // COMPILE_ESPNOW
 }

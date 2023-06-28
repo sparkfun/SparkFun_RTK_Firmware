@@ -327,7 +327,7 @@ void menuSystem()
             byte bContinue = getCharacterNumber();
             if (bContinue == 'y')
             {
-                factoryReset();
+                factoryReset(false); //We do not have the SD semaphore 
             }
             else
                 systemPrintln("Reset aborted");

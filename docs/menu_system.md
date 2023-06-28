@@ -101,3 +101,5 @@ Factory Defaults will erase any user settings and reset the internal receiver to
 If a device gets into an unknown state it can be returned to default settings. Press 'r' then 'y' to confirm. Factory Default will erase any user settings and reset the internal receiver to stock settings. Any settings file and commonly used coordinate files on the SD card associated with the current profile will be removed.
 
 **Note:** Log files and any other files on the SD card are *not* removed or modified.
+
+Note: A factory reset can also be accomplished by editing the settings files. See Force a [Factory Reset](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_with_settings_file/#forcing-a-factory-reset) for more information. 

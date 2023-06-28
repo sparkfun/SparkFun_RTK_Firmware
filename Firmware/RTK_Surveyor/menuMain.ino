@@ -340,15 +340,11 @@ void factoryReset(bool alreadyHasSemaphore)
 
     tasksStopUART2();
 
-    Serial.println("remove old files");
-
     // Attempt to write to file system. This avoids collisions with file writing from other functions like
     // recordSystemSettingsToFile() and F9PSerialReadTask() if (settings.enableSD && online.microSD) 
     //Don't check settings.enableSD - it could be corrupt
     if (online.microSD)
     {
-    Serial.println("2 - remove old files");
-
         if (alreadyHasSemaphore == true || xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
         {
             if (USE_SPI_MICROSD)

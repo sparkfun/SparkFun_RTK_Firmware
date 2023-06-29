@@ -40,7 +40,7 @@ The line of RTK products offered by SparkFun all run identical firmware. The [RT
 Depending on the hardware platform different features may or may not be supported. We will denote each product in each section so that you know what is supported.
 
 [Configuring](system_configuration.md) the RTK device
-may be done using [WiFi](configure_with_wifi.md),
+may be done using [WiFi](configure_with_wifi.md), [Bluetooth](configure_with_bluetooth.md), 
 [serial](configure_with_serial.md)
 or modifying a [setup file](configure_with_settings_file.md).
 

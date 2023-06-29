@@ -4,6 +4,8 @@ Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported]
 
 This quick start guide will get you started in 10 minutes or less. For the full product manual, please proceed to the [**Introduction**](index.md).
 
+Are you using [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#android) or [iOS](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#apple)?
+
 ## Android
 
 ![Download SW Maps](<img/SparkFun RTK SW Maps for Android QR Code.png>)
@@ -12,28 +14,31 @@ This quick start guide will get you started in 10 minutes or less. For the full 
 
 1. Download [SW Maps](https://play.google.com/store/apps/details?id=np.com.softwel.swmaps). This may not be the GIS software you intend to do your data collection, but SW Maps is free and makes sure everything is working correctly out of the box.
 
-![RTK Boot Display](<img/SparkFun RTK Facet Boot Display.png>)
+    ![RTK Boot Display](<img/SparkFun RTK Facet Boot Display.png>)
 
 2. Turn on your RTK device by pressing the POWER button until the display shows ‘SparkFun RTK’ then you can release it. 
-Please note the four-digit code in the top left corner of the display. This is the MAC address you will want to pair with.
 
-![List of Bluetooth devices on Android](<img/SparkFun RTK Bluetooth List Connect.png>)
+    ![Display showing MAC address](<SparkFun RTK Rover Display.png>)
 
-3. From your cell phone, open Bluetooth settings and pair with a new device. You will see a list of available Bluetooth devices. Select the ‘Facet Rover-3AF1’ where 'Facet' is the type of device you have (Surveyor, Express, Facet, etc) and 3AF1 is the MAC address you see on the device’s display.
+3. Please note the four-digit code in the top left corner of the display (**B022** in the above example). This is the MAC address you will want to pair with.
 
-4. Once paired, open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Test’. 
+    ![List of Bluetooth devices on Android](<img/SparkFun RTK Bluetooth List Connect.png>)
 
-![SW Map list of Bluetooth devices](<img/SparkFun RTK SWMaps Bluetooth Connect.png>)
+4. From your cell phone, open Bluetooth settings and pair with a new device. You will see a list of available Bluetooth devices. Select the ‘Facet Rover-3AF1’ where 'Facet' is the type of device you have (Surveyor, Express, Facet, etc) and 3AF1 is the MAC address you see on the device’s display.
 
-5. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. You should see the ‘Facet Rover-3AF1’ in the list. Select it then press the ‘Connect’ button in the bottom left corner.
+5. Once paired, open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Test’. 
 
-6. SW Maps will show a warning that the instrument height is 0m. That’s ok. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
+    ![SW Map list of Bluetooth devices](<img/SparkFun RTK SWMaps Bluetooth Connect.png>)
 
-7. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. If you wait a few moments, this will drop dramatically to around 0.3 meters (300mm = 1ft) or better. 
+6. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. You should see the ‘Facet Rover-3AF1’ in the list. Select it then press the ‘Connect’ button in the bottom left corner.
+
+7. SW Maps will show a warning that the instrument height is 0m. That’s ok. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
+
+8. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. If you wait a few moments, this will drop dramatically to around 0.3 meters (300mm = 1ft) or better. 
 
 Now you use your RTK device to begin measuring points. If you need extreme accuracy (down to 10mm) continue reading the ‘RTK Crash Course’.
 
-## Apple
+## iOS
 
 The software options for Apple iOS are much more limited because Apple products do not support Bluetooth SPP. That's ok! The SparkFun RTK products support Bluetooth Low Energy (BLE) which *does* work with iOS.
 
@@ -43,7 +48,7 @@ The software options for Apple iOS are much more limited because Apple products 
 
 1. Download [SW Maps for iOS](https://apps.apple.com/us/app/sw-maps/id6444248083). This may not be the GIS software you intend to do your data collection, but SW Maps is free and makes sure everything is working correctly out of the box.
 
-![RTK Facet Boot Display](<img/SparkFun RTK Facet Boot Display.png>)
+    ![RTK Facet Boot Display](<img/SparkFun RTK Facet Boot Display.png>)
 
 2. Turn on your RTK device by pressing the POWER button until the display shows ‘SparkFun RTK' then you can release it. 
 
@@ -53,11 +58,11 @@ The software options for Apple iOS are much more limited because Apple products 
 
 5. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
 
-![Configure Bluetooth Protocol in WiFi Config](<img/SparkFun RTK Change Bluetooth to BLE.png>)
+    ![Configure Bluetooth Protocol in WiFi Config](<img/SparkFun RTK Change Bluetooth to BLE.png>)
 
 6. Under the System Configuration menu, change the Bluetooth Protocol to BLE. Then click Save and then Exit. The unit will now reboot.
 
-![iOS Bluetooth settings](<img/iOS/SparkFun RTK iOS Bluetooth Devices.png>)
+    ![iOS Bluetooth settings](<img/iOS/SparkFun RTK iOS Bluetooth Devices.png>)
 
 7. From your cell phone, disconnect from the *RTK Config* WiFi network and make sure Bluetooth is enabled on your iOS device Settings. The RTK device will not appear in the OTHER DEVICES list. That is OK.
 
@@ -65,11 +70,11 @@ The software options for Apple iOS are much more limited because Apple products 
 
 9. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. Set the Instrument Model to Generic NMEA (Bluetooth LE). Press 'Scan' and your RTK device should appear. Select it then press the ‘Connect’ button in the bottom left corner.
 
-![Display showing Bluetooth connection](<img/SparkFun RTK Display - Bluetooth.png>)
+    ![Display showing Bluetooth connection](<img/SparkFun RTK Display - Bluetooth.png>)
 
 10. SW Maps will show a warning that the instrument height is 0m. That’s ok. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
 
-![RTK Display Explanation](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
+    ![RTK Display Explanation](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
 
 11. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. If you wait a few moments, this will drop dramatically to around 0.3 meters (300mm = 1ft) or better. 
 

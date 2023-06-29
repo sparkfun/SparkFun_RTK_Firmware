@@ -4,7 +4,7 @@ Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported]
 
 This quick start guide will get you started in 10 minutes or less. For the full product manual, please proceed to the [**Introduction**](index.md).
 
-Are you using [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#android) or [iOS](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#apple)?
+Are you using [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#android) or [iOS](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#ios)?
 
 ## Android
 
@@ -30,11 +30,11 @@ Are you using [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#a
 
     ![SW Map list of Bluetooth devices](<img/SparkFun RTK SWMaps Bluetooth Connect.png>)
 
-6. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. You should see the ‘Facet Rover-3AF1’ in the list. Select it then press the ‘Connect’ button in the bottom left corner.
+6. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. You should see the ‘Facet Rover-3AF1’ in the list. Select it then press the ‘Connect’ button in the bottom left corner. SW Maps will show a warning that the instrument height is 0m. That’s ok. 
 
     ![Display showing Bluetooth connection](<img/SparkFun RTK Display - Bluetooth.png>)
 
-7. SW Maps will show a warning that the instrument height is 0m. That’s ok. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
+7. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
 
     ![RTK Display Explanation](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
 
@@ -58,7 +58,7 @@ The software options for Apple iOS are much more limited because Apple products 
 
     ![Config menu highlighted on display](<SparkFun RTK Config Display.png>)
 
-3. Put the RTK device into configuration mode by pressing the POWER button until the Config menu is highlighted.
+3. Put the RTK device into configuration mode by pressing the POWER or SETUP button until the Config menu is highlighted.
 
 4. From your phone, connect to the WiFi network *RTK Config*.
 
@@ -66,7 +66,7 @@ The software options for Apple iOS are much more limited because Apple products 
 
     ![Configure Bluetooth Protocol in WiFi Config](<img/SparkFun RTK Change Bluetooth to BLE.png>)
 
-6. Under the System Configuration menu, change the Bluetooth Protocol to BLE. Then click Save and then Exit. The unit will now reboot.
+6. Under the *System Configuration* menu, change the **Bluetooth Protocol** to **BLE**. Then click *Save* and then *Exit*. The unit will now reboot.
 
     ![iOS Bluetooth settings](<img/iOS/SparkFun RTK iOS Bluetooth Devices.png>)
 
@@ -74,11 +74,11 @@ The software options for Apple iOS are much more limited because Apple products 
 
 8. Open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
 
-9. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. Set the *Instrument Model* to **Generic NMEA (Bluetooth LE)**. Press 'Scan' and your RTK device should appear. Select it then press the ‘Connect’ button in the bottom left corner.
+9. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. Set the *Instrument Model* to **Generic NMEA (Bluetooth LE)**. Press 'Scan' and your RTK device should appear. Select it then press the ‘Connect’ button in the bottom left corner. SW Maps will show a warning that the instrument height is 0m. That’s ok.
 
     ![Display showing Bluetooth connection](<img/SparkFun RTK Display - Bluetooth.png>)
 
-10. SW Maps will show a warning that the instrument height is 0m. That’s ok. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
+10. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
 
     ![RTK Display Explanation](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
 
@@ -104,11 +104,15 @@ These services cover entire countries and regions but charge a monthly fee. Easy
 
 ![Wisconsin network of CORS](<SparkFun NTRIP 7 - Wisconsin Map.png>) 
 
-*State Wide Network of Continuously Operating Stations (CORS)*
+*State Wide Network of Continuously Operating Reference Stations (CORS)*
 
 Be sure to check if your state or country provides corrections for free. Many do! Currently, there are 21 states in the USA that provide this for free as a department of transportation service. Search ‘Wisconsin CORS’ as an example. Similarly, in France, check out [CentipedeRTK](https://docs.centipede.fr/). There are several public networks across the globe, be sure to google around!
 
 **Civilian Base Station**
+
+![Wisconsin network of CORS](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/3/6/3/Roof_Enclosure.jpg)
+
+*The base station at SparkFun*
 
 You can set up your own correction source. This is done with a 2nd GNSS receiver that is stationary, often called a Base Station. There is just the one-time upfront cost of the Base Station hardware. See the [Creating a Permanent Base](https://docs.sparkfun.com/SparkFun_RTK_Firmware/permanent_base/) document for more information.
 
@@ -116,13 +120,13 @@ You can set up your own correction source. This is done with a 2nd GNSS receiver
 
 Once you have decided on a correction source we need to feed that data into your SparkFun RTK device. In this example, we will use PointOneNav and SW Maps.
 
-1. Create an account on PointOneNav.
+1. Create an account on [PointOneNav](https://app.pointonenav.com/trial?src=sparkfun).
 
 2. Open SW Maps and connect to the RTK device over Bluetooth.
-![NTRIP credentials in SW Maps](<SparkFun RTK SW Maps - NTRIP Credentials.png>)
-
 
 3. Once connected, open the SW Maps menu again (top left corner) and you will see a new option; click on ‘NTRIP Connection’.
+
+    ![NTRIP credentials in SW Maps](<SparkFun RTK SW Maps - NTRIP Credentials.png>)
 
 4. Enter the credentials provided by PointOneNav and click Connect.
 
@@ -130,7 +134,7 @@ Once you have decided on a correction source we need to feed that data into your
 
 ![Double crosshair indicating RTK Fix](<img/SparkFun RTK Display - Double Crosshair.png>)
 
-You will see the Crosshair icon become double and begin flashing. Once RTK Fix is achieved (usually under 30 seconds) the double crosshairs will become solid and the HPA will be below 20mm. You can now take positional readings with millimeter accuracy!
+As soon as corrections are sent to the device, the Crosshair icon will become double and begin flashing. Once RTK Fix is achieved (usually under 30 seconds) the double crosshairs will become solid and the HPA will be below 20mm. You can now take positional readings with millimeter accuracy!
 
 ![Green bubble indicating RTK Fix](<SparkFun RTK SW Maps - Green Bubble-1.png>)
 
@@ -143,6 +147,8 @@ RTK Fix will be maintained as long as there is a clear view of the sky and corre
 * High-precision GNSS only works with dual frequency L1/L2 antennas. This means that GPS antenna you got in the early 2000s with your TomTom is not going to work. Please use the L1/L2 antennas provided by SparkFun.
 
 * High-precision GNSS works best with a clear view of the sky; it does not work indoors or near a window. GNSS performance is generally *not* affected by clouds or storms. Trees and buildings *can* degrade performance but usually only in very thick canopies or very near tall building walls. GNSS reception is very possible in dense urban centers with skyscrapers but high-precision RTK may be impossible.
+
+* The location reported by the RTK device is the location of the antenna element; it's *not* the location of the pointy end of the stick. Lat and Long are fairly easy to obtain but if you're capturing altitude be sure to do additional reading on ARPs (antenna reference points) and how to account for the antenna height.
 
 * An internet connection is required for most types of RTK. RTCM corrections can be transmitted over other types of connections (such as serial telemetry radios).
 

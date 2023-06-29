@@ -26,17 +26,21 @@ Are you using [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#a
 
 4. From your cell phone, open Bluetooth settings and pair with a new device. You will see a list of available Bluetooth devices. Select the ‘Facet Rover-3AF1’ where 'Facet' is the type of device you have (Surveyor, Express, Facet, etc) and 3AF1 is the MAC address you see on the device’s display.
 
-5. Once paired, open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Test’. 
+5. Once paired, open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
 
     ![SW Map list of Bluetooth devices](<img/SparkFun RTK SWMaps Bluetooth Connect.png>)
 
 6. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. You should see the ‘Facet Rover-3AF1’ in the list. Select it then press the ‘Connect’ button in the bottom left corner.
 
+    ![Display showing Bluetooth connection](<img/SparkFun RTK Display - Bluetooth.png>)
+
 7. SW Maps will show a warning that the instrument height is 0m. That’s ok. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
+
+    ![RTK Display Explanation](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
 
 8. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. If you wait a few moments, this will drop dramatically to around 0.3 meters (300mm = 1ft) or better. 
 
-Now you use your RTK device to begin measuring points. If you need extreme accuracy (down to 10mm) continue reading the ‘RTK Crash Course’.
+Now you use your RTK device to begin measuring points. If you need extreme accuracy (down to 10mm) continue reading the [RTK Crash Course](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#rtk-crash-course).
 
 ## iOS
 
@@ -52,6 +56,8 @@ The software options for Apple iOS are much more limited because Apple products 
 
 2. Turn on your RTK device by pressing the POWER button until the display shows ‘SparkFun RTK' then you can release it. 
 
+    ![Config menu highlighted on display](<SparkFun RTK Config Display.png>)
+
 3. Put the RTK device into configuration mode by pressing the POWER button until the Config menu is highlighted.
 
 4. From your phone, connect to the WiFi network *RTK Config*.
@@ -66,9 +72,9 @@ The software options for Apple iOS are much more limited because Apple products 
 
 7. From your cell phone, disconnect from the *RTK Config* WiFi network and make sure Bluetooth is enabled on your iOS device Settings. The RTK device will not appear in the OTHER DEVICES list. That is OK.
 
-8. Open SWMaps. Select ‘New Project’ and give your project a name like ‘RTK Test’. 
+8. Open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
 
-9. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. Set the Instrument Model to Generic NMEA (Bluetooth LE). Press 'Scan' and your RTK device should appear. Select it then press the ‘Connect’ button in the bottom left corner.
+9. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. Set the *Instrument Model* to **Generic NMEA (Bluetooth LE)**. Press 'Scan' and your RTK device should appear. Select it then press the ‘Connect’ button in the bottom left corner.
 
     ![Display showing Bluetooth connection](<img/SparkFun RTK Display - Bluetooth.png>)
 
@@ -78,11 +84,11 @@ The software options for Apple iOS are much more limited because Apple products 
 
 11. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. If you wait a few moments, this will drop dramatically to around 0.3 meters (300mm = 1ft) or better. 
 
-Now you use your RTK device to begin measuring points. If you need extreme accuracy (down to 10mm) continue reading the ‘RTK Crash Course’.
+Now you use your RTK device to begin measuring points. If you need extreme accuracy (down to 10mm) continue reading the [RTK Crash Course](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#rtk-crash-course).
 
 ## RTK Crash Course
 
-To get millimeter accuracy we need to provide the RTK unit with correction values. Corrections, often called RTCM, help the RTK unit refine its position calculations. Corrections can be obtained from a variety of sources:
+To get millimeter accuracy we need to provide the RTK unit with correction values. Corrections, often called RTCM, help the RTK unit refine its position calculations. Corrections can be obtained from a variety of sources but they fall into three buckets: Paid, Free by the Government, and Free by Me.
 
 **Paid Services**
 
@@ -94,15 +100,15 @@ These services cover entire countries and regions but charge a monthly fee. Easy
 * [SensorCloud RTK](https://rtk.sensorcloud.com/pricing/) ($100/month) partial US, EU
 * [Hexagon/Leica](https://hxgnsmartnet.com/en-US) ($500/month) - partial US, EU
 
-**Free Options**
+**Government Provided Corrections**
 
 ![Wisconsin network of CORS](<SparkFun NTRIP 7 - Wisconsin Map.png>) 
 
 *State Wide Network of Continuously Operating Stations (CORS)*
 
-Be sure to check if your state or country provides corrections for free. Many do! Currently, there are 21 states in the USA that provide this for free as a department of transportation service. Search ‘Wisconsin CORS’ as an example. Similarly, in France, check out [CentipedeRTK](https://docs.centipede.fr/).
+Be sure to check if your state or country provides corrections for free. Many do! Currently, there are 21 states in the USA that provide this for free as a department of transportation service. Search ‘Wisconsin CORS’ as an example. Similarly, in France, check out [CentipedeRTK](https://docs.centipede.fr/). There are several public networks across the globe, be sure to google around!
 
-**No-Monthly-Fee Options**
+**Civilian Base Station**
 
 You can set up your own correction source. This is done with a 2nd GNSS receiver that is stationary, often called a Base Station. There is just the one-time upfront cost of the Base Station hardware. See the [Creating a Permanent Base](https://docs.sparkfun.com/SparkFun_RTK_Firmware/permanent_base/) document for more information.
 

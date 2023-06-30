@@ -508,6 +508,8 @@ In a nutshell, it's a server that is sending out correction data every second. T
 
 ## Where do I get RTK Corrections?
 
+Be sure to see [Correction Sources](correction_sources.md). 
+
 Don't have access to an NTRIP Caster or other RTCM correction source? There are a few options.
 
 The [SparkFun RTK Facet L-Band](https://www.sparkfun.com/products/20000) gets corrections via an encrypted signal from geosynchronous satellites. This device gets RTK Fix without the need for a WiFi or cellular connection.

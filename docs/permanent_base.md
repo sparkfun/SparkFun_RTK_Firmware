@@ -22,7 +22,7 @@ While a survey-in is easy to set up and fine for an in-the-field way to establis
 
 *From Gary Miller’s [PPP HOWTO](https://gpsd.gitlab.io/gpsd/ppp-howto.html)*
 
-[![L1/L2 antenna attached to the roof](img/Corrections/Antenna_Semi-Fixed_to_roof.jpg)](img/Corrections/Antenna_Semi-Fixed_to_roof.jpg)
+[![L1/L2 antenna attached to the roof](img/Corrections/Antenna_Semi-Fixed_to_roof.jpg)](img/Corrections/Antenna_Semi-Fixed_to_roof - Big.jpg)
 
 *[L1/L2 antenna](https://www.sparkfun.com/products/21801) semi-fixed to a flat roof*
 

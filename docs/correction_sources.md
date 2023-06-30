@@ -16,7 +16,7 @@ A permanent base is a user-owned and operated base station. See [Creating a Perm
 
 ## Temporary Base
 
-[![Temporary RTK Express Base setup](img/Corrections/SparkFun_RTK_Express_-_Base_Radio.jpg)](img/Corrections/SparkFun_RTK_Express_-_Base_Radio.jpg)
+[![Temporary RTK Express Base setup](img/Corrections/SparkFun_RTK_Express_-_Base_Radio.jpg)](img/Corrections/SparkFun_RTK_Express_-_Base_Radio - Big.jpg)
 
 *Temporary RTK Express Base setup with serial radio*
 

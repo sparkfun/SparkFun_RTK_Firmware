@@ -29,7 +29,7 @@ Before we can consider doing anything in the field, we need to get really comfor
 
 ## Locate GPS Monument
 
-![A common metal surveyor's mark](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2017%20Surveyor%20Monument.jpg)
+[![A common metal surveyor's mark](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2017%20Surveyor%20Monument.jpg)](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2017%20Surveyor%20Monument - Big.jpg)
 
 *A common metal surveyor's mark*
 

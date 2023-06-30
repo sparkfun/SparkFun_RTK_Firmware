@@ -1,6 +1,6 @@
 # Updating RTK Firmware
 
-Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png) / Reference Station: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Supported](img/Icons/GreenDot.png) / Express: ![Feature Supported](img/Icons/GreenDot.png) / Express Plus: ![Feature Supported](img/Icons/GreenDot.png) / Facet: ![Feature Supported](img/Icons/GreenDot.png) / Facet L-Band: ![Feature Supported](img/Icons/GreenDot.png) / Reference Station: ![Feature Supported](img/Icons/GreenDot.png)
 
 The device has two primary firmwares:
 
@@ -13,19 +13,19 @@ The device firmware is displayed in a variety of places:
 * Serial Config Menu
 * WiFi Config
 
-![RTK Express with firmware v3.0](img/SparkFun%20RTK%20Boot%20Screen%20Version%20Number.png)
+![RTK Express with firmware v3.0](img/Displays/SparkFun%20RTK%20Boot%20Screen%20Version%20Number.png)
 
 *RTK Express with firmware v3.0*
 
 During power-on, the display will show the current device Firmware.
 
-![Main Menu showing RTK Firmware v3.0-Jan 19 2023](img/SparkFun%20RTK%20Main%20Menu.png)
+![Main Menu showing RTK Firmware v3.0-Jan 19 2023](img/Terminal/SparkFun%20RTK%20Main%20Menu.png)
 
 *Main Menu showing RTK Firmware v3.0-Jan 19 2023*
 
 The firmware is displayed when the main menu is opened over a serial connection.
 
-![WiFi Config page showing device firmware v2.7](img/SparkFun%20RTK%20WiFi%20Config%20Screen%20Version%20Number.png)
+![WiFi Config page showing device firmware v2.7](img/WiFi Config/SparkFun%20RTK%20WiFi%20Config%20Screen%20Version%20Number.png)
 
 *WiFi Config page showing device firmware v2.7 and ZED-F9P firmware HPG 1.32*
 
@@ -45,11 +45,11 @@ Remember, all SparkFun RTK devices are open source hardware meaning you have tot
 
 ## Updating Firmware Over-The-Air
 
-![Updating Firmware from WiFi config page](img/SparkFun%20RTK%20OTA%20Firmware%20Update.gif)
+![Updating Firmware from WiFi config page](img/WiFi Config/SparkFun%20RTK%20OTA%20Firmware%20Update.gif)
 
 *Updating the firmware via WiFi config page*
 
-![Alt text](img/SparkFun%20RTK%20Firmware%20Update%20Menu.png)
+![Updating the firmware via Firmware serial menu](img/Terminal/SparkFun%20RTK%20Firmware%20Update%20Menu.png)
 
 *Updating the firmware via Firmware serial menu*
 
@@ -61,7 +61,7 @@ If you have a device with firmware lower than v3.0, you will need to use the [GU
 
 ## Updating Firmware Using The Uploader GUI
 
-![RTK Firmware GUI](./img/RTK_Uploader_Windows.png)
+![RTK Firmware GUI](img/RTK_Uploader_Windows.png)
 
 *RTK Firmware GUI*
 
@@ -77,7 +77,7 @@ Download the latest RTK firmware binary file located on the [releases page](http
 * Turn the RTK device on.
 * On Windows, open the Device Manager to confirm which COM port the device is operating on. On other platforms, check ```/dev```.
 
-![Device Manager showing USB-Serial CH340 port on COM27](img/SparkFun%20RTK%20Firmware%20Uploader%20COM%20Port.jpg)
+![Device Manager showing USB-Serial CH340 port on COM27](img/Serial/SparkFun%20RTK%20Firmware%20Uploader%20COM%20Port.jpg)
 
 *Device Manager showing 'USB-Serial CH340' port on COM27*
 
@@ -93,7 +93,7 @@ If your RTK 'freezes' after the update, press ```Reset ESP32``` to get it going 
 
 ## Updating Firmware From the SD Card
 
-[![Firmware update menu](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Firmware_Update.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Firmware_Update.jpg)
+![Firmware update menu](img/Terminal/SparkFun_RTK_Firmware_Update-ProgressBar.jpg)
 
 *Firmware update taking place*
 
@@ -109,7 +109,7 @@ In the rare event that a unit is not staying on long enough for new firmware to 
 
 ## Updating Firmware From WiFi
 
-![Advanced system settings](img/SparkFun%20RTK%20System%20Config%20Upload%20BIN.png)
+![Advanced system settings](img/WiFi Config/SparkFun%20RTK%20System%20Config%20Upload%20BIN.png)
 
 **Note:** Firmware versions 1.1 to 1.9 have an issue that severely limits firmware upload over WiFi and is not recommended; use the [GUI](firmware_update.md#updating-firmware-using-the-uploader-gui) method instead. Firmware versions v1.10 and beyond support direct firmware updates via WiFi.
 
@@ -123,13 +123,13 @@ The command-line interface is also available. You’ll need to download the [RTK
 
 Connect a USB A to C cable from your computer to the ESP32 port on the RTK device. Turn the unit on. Now identify the COM port the RTK enumerated at. The easiest way to do this is to open the Device Manager:
 
-[![CH340 is on COM6 as shown in Device Manager](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_COM_Port.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_Firmware_Update_COM_Port.jpg)
+![CH340 is on COM6 as shown in Device Manager](img/Serial/RTK_Surveyor_-_Firmware_Update_COM_Port.jpg)
 
 *CH340 is on COM6 as shown in Device Manager*
 
 If the COM port is not showing be sure the unit is turned **On**. If an unknown device is appearing, you’ll need to [install drivers for the CH340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Once you know the COM port, open a command prompt (Windows button + r then type ‘cmd’).
 
-![batch_program.bat running esptool](img/SparkFun%20RTK%20Firmware%20Update%20CLI.png)
+![batch_program.bat running esptool](img/Terminal/SparkFun%20RTK%20Firmware%20Update%20CLI.png)
 
 *batch_program.bat running esptool*
 
@@ -196,7 +196,7 @@ The following products contain the following u-blox receivers:
 
 The firmware loaded onto the ZED-F9P, ZED-F9R, and NEO-D9S receivers is written by u-blox and can vary depending on the manufacture date. The RTK Firmware (that runs on the ESP32) is designed to flexibly work with any u-blox firmware. Upgrading the ZED-F9x/NEO-D9S is a good thing to consider but is not crucial to the use of RTK products.
 
-Not sure what firmware is loaded onto your RTK product? Open the [System Status Menu](menu_system.md) to display the module's current firmware version.
+Not sure what firmware is loaded onto your RTK product? Open the [System Menu](menu_system.md) to display the module's current firmware version.
 
 The firmware on u-blox devices can be updated using a [Windows-based GUI](firmware_update.md#updating-using-windows-gui) or [u-center](firmware_update.md#updating-using-u-center). A CLI method is also possible using the `ubxfwupdate.exe` tool provided with u-center. Additionally, u-blox offers the source for the ubxfwupdate tool that is written in C. It is currently released only under an NDA so contact your local u-blox Field Applications Engineer if you need a different method.
 

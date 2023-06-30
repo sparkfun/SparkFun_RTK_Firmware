@@ -1,8 +1,8 @@
 # Configure with Settings File
 
-Surveyor: ![Feature Partially Supported](img/YellowDot.png) / Express: ![Feature Partially Supported](img/YellowDot.png) / Express Plus: ![Feature Partially Supported](img/YellowDot.png) / Facet: ![Feature Partially Supported](img/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](img/YellowDot.png) / Reference Station: ![Feature Partially Supported](img/YellowDot.png)
+Surveyor: ![Feature Partially Supported](img/Icons/YellowDot.png) / Express: ![Feature Partially Supported](img/Icons/YellowDot.png) / Express Plus: ![Feature Partially Supported](img/Icons/YellowDot.png) / Facet: ![Feature Partially Supported](img/Icons/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](img/Icons/YellowDot.png) / Reference Station: ![Feature Partially Supported](img/Icons/YellowDot.png)
 
-[![SparkFun RTK Facet Settings File](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Settings_File.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Settings_File.jpg)
+![SparkFun RTK Facet Settings File](img/SparkFun_RTK_Express_-_Settings_File.jpg)
 
 *SparkFun RTK Settings File*
 

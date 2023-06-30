@@ -6,9 +6,9 @@ The line of RTK products offered by SparkFun all run identical firmware. The [RT
 
 <table class="table table-hover table-striped table-bordered">
   <tr align="center">
-   <td><a href="https://www.sparkfun.com/products/20000"><img src="https://cdn.sparkfun.com//assets/parts/1/9/7/4/6/20000-SparkFun_RTK_Facet_L-Band-01.jpg"></a></td>
-   <td><a href="https://www.sparkfun.com/products/19029"><img src="https://cdn.sparkfun.com//assets/parts/1/8/6/3/0/RTK_Facet_Photos-01.jpg"></a></td>
-   <td><a href="https://www.sparkfun.com/products/22429"><img src="https://cdn.sparkfun.com/assets/parts/2/2/5/2/3/SparkFun_GNSS_RTK_Reference_Station_-_05.jpg"></a></td>
+   <td><a href="https://www.sparkfun.com/products/20000"><img src="img/SparkFun%20RTK%20Facet%20L-Band.png"></a></td>
+   <td><a href="https://www.sparkfun.com/products/19029"><img src="img/SparkFun%20RTK%20Facet.png"></a></td>
+   <td><a href="https://www.sparkfun.com/products/22429"><img src="img/SparkFun%20RTK%20Reference%20Station.png"></a></td>
   </tr>
   <tr align="center">
     <td><a href="https://www.sparkfun.com/products/20000">SparkFun RTK Facet L-Band (GPS-20000)</a></td>
@@ -21,9 +21,9 @@ The line of RTK products offered by SparkFun all run identical firmware. The [RT
     <td><a href="https://learn.sparkfun.com/tutorials/sparkfun-rtk-reference-station-hookup-guide">Hookup Guide</a></td>
   </tr>
   <tr align="center">
-   <td><a href="https://www.sparkfun.com/products/18590"><img src="https://cdn.sparkfun.com//assets/parts/1/8/0/7/5/18590-SparkFun_RTK_Express_Plus-04.jpg"></a></td>
-   <td><a href="https://www.sparkfun.com/products/18442"><img src="https://cdn.sparkfun.com//assets/parts/1/7/2/4/1/18019-SparkFun_RTK_Express-09.jpg"></a></td>
-   <td><a href="https://www.sparkfun.com/products/18443"><img src="https://cdn.sparkfun.com//assets/parts/1/6/4/0/1/17369-SparkFun_RTK_Surveyor-14.jpg"></a></td>
+   <td><a href="https://www.sparkfun.com/products/18590"><img src="img/SparkFun%20RTK%20Express%20Plus.png"></a></td>
+   <td><a href="https://www.sparkfun.com/products/18442"><img src="img/SparkFun%20RTK%20Express.png"></a></td>
+   <td><a href="https://www.sparkfun.com/products/18443"><img src="img/SparkFun%20RTK%20Surveyor.png"></a></td>
   </tr>
   <tr align="center">
     <td><a href="https://www.sparkfun.com/products/18590">SparkFun RTK Express Plus (GPS-18590)</a></td>
@@ -39,13 +39,15 @@ The line of RTK products offered by SparkFun all run identical firmware. The [RT
 
 Depending on the hardware platform different features may or may not be supported. We will denote each product in each section so that you know what is supported.
 
-[Configuring](system_configuration.md) the RTK device
-may be done using [WiFi](configure_with_wifi.md), [Bluetooth](configure_with_bluetooth.md), 
-[serial](configure_with_serial.md)
-or modifying a [setup file](configure_with_settings_file.md).
+There are multiple ways to configure an RTK product:
+
+* [Bluetooth](configure_with_bluetooth.md) - Good for in-field changes
+* [WiFi](configure_with_wifi.md) - Good for in-field changes
+* [Serial Terminal](configure_with_serial.md) - Requires a computer but allows for all configuration settings
+* [Settings File](configure_with_settings_file.md) - Error-Prone; for very advanced users only.
+
+The Bluetooth or Serial Terminal methods are recommended for most advanced configurations. Most, but not all settings are also available over WiFi but can be tricky to input via mobile phone.
 
 If you have an issue, feature request, bug report, or a general question about the RTK firmware specifically we encourage you to post your comments on the [firmware's repository](https://github.com/sparkfun/SparkFun_RTK_Firmware/issues). If you feel like bragging or showing off what you did with your RTK product, we'd be thrilled to hear about it on the issues list as well!
 
 Things like how to attach an antenna or other hardware-specific topics are best read on the Hookup Guides for the individual products.
-
-<!-- tutorials_by_id(1463, 1857, 2188) -->

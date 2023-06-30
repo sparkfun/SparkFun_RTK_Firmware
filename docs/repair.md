@@ -1,6 +1,6 @@
 # Disassembly / Repair
 
-Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png) / Reference Station: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Supported](img/Icons/GreenDot.png) / Express: ![Feature Supported](img/Icons/GreenDot.png) / Express Plus: ![Feature Supported](img/Icons/GreenDot.png) / Facet: ![Feature Supported](img/Icons/GreenDot.png) / Facet L-Band: ![Feature Supported](img/Icons/GreenDot.png) / Reference Station: ![Feature Supported](img/Icons/GreenDot.png)
 
 The RTK product line is fully open-source hardware. This allows users to view schematics, code, and repair manuals. This section documents how to safely disassemble the RTK Facet and [Reference Station](#reference-station).
 
@@ -202,7 +202,7 @@ Taking the Reference Station apart is really easy:
   
 * Remove the front panel
 
-![Image of the Reference Station with the front panel removed](img/Ref_Station_Disassembly.png)
+![Image of the Reference Station with the front panel removed](img/Repair/Ref_Station_Disassembly.png)
 
 * Unplug the OLED Qwiic cable
 

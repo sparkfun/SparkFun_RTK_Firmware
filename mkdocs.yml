@@ -1,7 +1,7 @@
 
 site_name: SparkFun RTK Product Manual
-site_description: A guide to the SparkFun RTK hardware, firmware, and features
-site_url: https://sparkfun.github.io/SparkFun_RTK_Firmware
+site_description: A guide to the SparkFun RTK hardware, firmware, and features.
+site_url: https://docs.sparkfun.com/SparkFun_RTK_Firmware/
 
 repo_name: sparkfun/SparkFun_RTK_Firmware
 repo_url: https://github.com/sparkfun/SparkFun_RTK_Firmware
@@ -9,7 +9,8 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
-  logo: img/sfe_logo_sm.png
+  custom_dir: docs/overrides
+  logo: img/Icons/sfe_logo_sm.png
   palette:
     primary: grey
     accent: red
@@ -18,15 +19,37 @@ theme:
     code: Roboto Mono
   features:
     - content.code.annotate
-    # - navigation.tracking
-    # - navigation.tabs.sticky
-    # - navigation.tabs    
+
+    # Enable "view source" and "edit this page" buttons
+    - content.action.edit
+
+    # Enables anchor tracking (updates page url with the section user is on)
+    # i.e. https://docs.sparkfun.com/<page link>/#<sub-section>
+    - navigation.tracking
+    - navigation.tabs.sticky
+      
+    # Enables tabs for navigating the website
+    # - navigation.tabs
+    # Keeps tabs visible in the header when scrolling
+    #- navigation.tabs.sticky
+    
+    # Adds pop-up button just below the header (when the user starts to scroll up)
+    # Allows users to easily jump to the beginning of the page
+    - navigation.top
+
+    # Renders path for page navigation at top of the page (makes page navigation more mobile friendly)
+    - navigation.path
+
 
   # Icon in Browser Tab (must be square img - i.e. 32x32 pixels)
-  favicon: img/sfe_logo_sq.png
+  favicon: img/Icons/sfe_logo_sq.png
   
   icon:
     repo: fontawesome/brands/github
+
+    # Sets icon for "edit this page" buttons
+    edit: material/file-document-edit-outline
+    
     admonition:
       note: octicons/tag-16
       abstract: octicons/checklist-16
@@ -45,7 +68,33 @@ plugins:
   - search
   - monorepo
 
-copyright: Copyright 2023 SparkFun Electronics (6333 Dry Creek Parkway, Niwot, Colorado 80503)
+  #Generates PDF
+  - with-pdf:
+      copyright: SparkFun Electronics - 2023
+      cover_subtitle: Simple and Cost Effective High-Precision Navigation
+      output_path: pdf/SparkFun_RTK_User_Manual.pdf
+      author:  
+      toc_title: Table Of Contents
+      #cover_title: TITLE TEXT
+      #heading_shift: false
+      #toc_level: 3
+      #ordered_chapter_level: 2
+      #exclude_pages:
+      #    - 'bugs/'
+      #    - 'appendix/contribute/'
+      #convert_iframe:
+      #    - src: IFRAME SRC
+      #      img: POSTER IMAGE URL
+      #      text: ALTERNATE TEXT
+      #    - src: ...
+      #two_columns_level: 3
+      #debug_html: true
+      #show_anchors: true
+      #verbose: true
+
+copyright: 
+    Copyright 2023 - <a href="https://www.sparkfun.com/" target="_blank" rel="noopener">SparkFun Electronics&#174;<br>
+    <a href="https://goo.gl/maps/vkstCpQZW6jZMjzYA" target="_blank" rel="noopener">6333 Dry Creek Parkway, Niwot, Colorado 80503</a>
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -80,33 +129,35 @@ nav:
   - intro.md
   - connecting_bluetooth.md
   - gis_software.md
-  - firmware_update.md
-  - displays.md
-  - system_configuration.md
-  - configure_with_wifi.md
-  - configure_with_bluetooth.md
-  - configure_with_serial.md
-  - configure_gnss.md
-  - configure_messages.md
-  - configure_base.md
-  - menu_wifi.md
-  - configure_ports.md
-  - configure_data_logging.md
-  - configure_profiles.md
-  - configure_pointperfect.md
-  - configure_sensor.md
-  - menu_radios.md
-  - menu_system.md
-  - menu_ethernet.md
-  - ntp.md
-  - menu_debug.md
-  - system_status_report.md
-  - correction_sources.md
-  - correction_transport.md
-  - permanent_base.md
-  - repair.md
-  - accuracy_verification.md
-  - embeddedsystem_connection.md
-  - configure_with_settings_file.md
-  - configure_ucenter.md
+  - Configuration Methods:
+      - configure_with_wifi.md
+      - configure_with_bluetooth.md
+      - configure_with_serial.md
+      - configure_with_settings_file.md
+      - configure_with_ucenter.md
+  - Configuration Menus:
+      - menu_gnss.md
+      - menu_messages.md
+      - menu_base.md
+      - menu_wifi.md
+      - menu_ports.md
+      - menu_data_logging.md
+      - menu_profiles.md
+      - menu_pointperfect.md
+      - menu_sensor.md
+      - menu_radios.md
+      - menu_system.md
+      - menu_ethernet.md
+      - menu_ntp.md
+      - menu_debug.md
+  - Hardware:
+      - firmware_update.md
+      - displays.md
+      - embeddedsystem_connection.md
+      - repair.md
+  - RTK Corrections:
+      - correction_sources.md
+      - correction_transport.md
+      - permanent_base.md
+      - accuracy_verification.md
   - contribute.md

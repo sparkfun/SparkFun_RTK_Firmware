@@ -1,6 +1,6 @@
 # Accuracy Verification
 
-Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png) / Reference Station: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Supported](img/Icons/GreenDot.png) / Express: ![Feature Supported](img/Icons/GreenDot.png) / Express Plus: ![Feature Supported](img/Icons/GreenDot.png) / Facet: ![Feature Supported](img/Icons/GreenDot.png) / Facet L-Band: ![Feature Supported](img/Icons/GreenDot.png) / Reference Station: ![Feature Supported](img/Icons/GreenDot.png)
 
 ![Facet in the field](img/VerifyAccuracy/SparkFun%20Verify%20RTK%20-%2016%20Facet%20in%20the%20Field.jpg)
 
@@ -21,7 +21,7 @@ The process goes like this:
 
 ## Get Used to RTK
 
-![RTK Fix Mode](https://cdn.sparkfun.com/assets/learn_tutorials/1/8/5/7/SparkFun_RTK_Express_-_Display_-_Rover_RTK_Fixed.jpg)
+![RTK Fix Mode](img/Displays/SparkFun_RTK_Express_-_Display_-_Rover_RTK_Fixed.jpg)
 
 *RTK Fix Mode*
 
@@ -129,7 +129,7 @@ You will need to decide how cheap you want your setup to be. I went too cheap; m
 
 Find the monument and locate your Facet (or RTK Surveyor, Express, Express Plus, Facet L-Band, etc) over the monument. Using a tape measure or other tool, measure the distance from the top of the monument to the bottom of the Facet. In this example, it was 45 ¾” or 1162mm. Obviously, millimeters matter here but don't let 'perfection' be the enemy of 'done'.
 
-![L-Band Facet ARP](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/5/8/3/SparkFun_RTK_Facet_L-Band_ARP.jpg)
+![L-Band Facet ARP](img/SparkFun_RTK_Facet_L-Band_ARP.jpg)
 
 *L-Band Facet ARP*
 

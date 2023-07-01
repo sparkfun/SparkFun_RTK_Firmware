@@ -573,8 +573,7 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "platformPrefix", platformPrefix);
 
     char apRtkFirmwareVersion[86];
-    snprintf(apRtkFirmwareVersion, sizeof(apRtkFirmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR,
-             FIRMWARE_VERSION_MINOR, __DATE__);
+    getFirmwareVersion(apRtkFirmwareVersion, sizeof(apRtkFirmwareVersion), true);
     stringRecord(newSettings, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
     if (!configureViaEthernet) // ZED type is unknown if we are in configure-via-ethernet mode
@@ -1457,14 +1456,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
         {
             // We got a version number, now determine if it's newer or not
-            char currentVersion[20];
-            if (enableRCFirmware == false)
-                snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR,
-                         FIRMWARE_VERSION_MINOR);
-            else
-                snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR,
-                         FIRMWARE_VERSION_MINOR, __DATE__);
-
+            char currentVersion[21];
+            getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
             if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
             {
                 log_d("New version detected");

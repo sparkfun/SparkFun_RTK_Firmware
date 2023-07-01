@@ -26,12 +26,9 @@ void menuMain()
     while (1)
     {
         systemPrintln();
-        if (ENABLE_DEVELOPER)
-            systemPrintf("SparkFun RTK %s v%d.%d-RC-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR,
-                         FIRMWARE_VERSION_MINOR, __DATE__);
-        else
-            systemPrintf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR,
-                         FIRMWARE_VERSION_MINOR, __DATE__);
+        char versionString[21];
+        getFirmwareVersion(versionString, sizeof(versionString), true);
+        systemPrintf("SparkFun RTK %s %s\r\n", platformPrefix, versionString);
 
 #ifdef COMPILE_BT
         systemPrint("** Bluetooth broadcasting as: ");
@@ -341,7 +338,7 @@ void factoryReset(bool alreadyHasSemaphore)
     tasksStopUART2();
 
     // Attempt to write to file system. This avoids collisions with file writing from other functions like
-    // recordSystemSettingsToFile() and F9PSerialReadTask() if (settings.enableSD && online.microSD) 
+    // recordSystemSettingsToFile() and F9PSerialReadTask() if (settings.enableSD && online.microSD)
     //Don't check settings.enableSD - it could be corrupt
     if (online.microSD)
     {

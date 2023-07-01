@@ -104,8 +104,6 @@ int pin_POCI = 19;
 int pin_SCK = 18;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-#include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
-
 // I2C for GNSS, battery gauge, display, accelerometer
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <Wire.h>
@@ -186,10 +184,26 @@ bool sdSizeCheckTaskComplete = false;
 char logFileName[sizeof("SFE_Reference_Station_230101_120101.ubx_plusExtraSpace")] = {0};
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+// Over-the-Air (OTA) update support
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+#include "esp_ota_ops.h" //Needed for partition counting and updateFromSD
+
+#ifdef COMPILE_WIFI
+#include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting
+#endif  // COMPILE_WIFI
+
+#define OTA_FIRMWARE_JSON_URL                                                                                          \
+    "https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-Firmware.json"
+#define OTA_RC_FIRMWARE_JSON_URL                                                                                       \
+    "https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-RC-Firmware.json"
+bool apConfigFirmwareUpdateInProcess = false; // Goes true once WiFi is connected and OTA pull begins
+unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi OTA update via AP config.
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 // Connection settings to NTRIP Caster
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #ifdef COMPILE_WIFI
-#include "ESP32OTAPull.h" //http://librarymanager/All#ESP-OTA-Pull Used for getting latest firmware OTA
 #include <ArduinoJson.h>  //http://librarymanager/All#Arduino_JSON_messagepack v6.19.4
 #include <ESPmDNS.h>      //Built-in.
 #include <HTTPClient.h>   //Built-in. Needed for ThingStream API for ZTP
@@ -224,11 +238,6 @@ static uint32_t ntripServerTimer;
 static uint32_t ntripServerStartTime;
 static int ntripServerConnectionAttemptsTotal; // Count the number of connection attempts absolutely
 
-#define OTA_FIRMWARE_JSON_URL                                                                                          \
-    "https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-Firmware.json"
-#define OTA_RC_FIRMWARE_JSON_URL                                                                                       \
-    "https://raw.githubusercontent.com/sparkfun/SparkFun_RTK_Firmware_Binaries/main/RTK-RC-Firmware.json"
-bool apConfigFirmwareUpdateInProcess = false; // Goes true once WiFi is connected and OTA pull begins
 bool enableRCFirmware = false;                // Goes true from AP config page
 bool currentlyParsingData = false;            // Goes true when we hit 750ms timeout with new data
 
@@ -437,7 +446,6 @@ const int maxBinFiles = 10;
 char binFileNames[maxBinFiles][50];
 const char *forceFirmwareFileName =
     "RTK_Surveyor_Firmware_Force.bin"; // File that will be loaded at startup regardless of user input
-unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi OTA update via AP config.
 int binBytesLastUpdate = 0;            // Allows websocket notification to be sent every 100k bytes
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

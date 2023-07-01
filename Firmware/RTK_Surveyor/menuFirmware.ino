@@ -479,6 +479,12 @@ void getFirmwareVersion(char * buffer, int bufferLength, bool includeDate)
     formatFirmwareVersion(FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, buffer, bufferLength, includeDate);
 }
 
+const char * otaGetUrl()
+{
+    // Select the URL for the over-the-air (OTA) updates
+    return enableRCFirmware ? OTA_RC_FIRMWARE_JSON_URL : OTA_FIRMWARE_JSON_URL;
+}
+
 // Returns true if we successfully got the versionAvailable
 // Modifies versionAvailable with OTA getVersion response
 // Connects to WiFi as needed
@@ -494,18 +500,12 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
         getFirmwareVersion(versionString, sizeof(versionString), enableRCFirmware);
         systemPrintf("Current firmware version: v%s\r\n", versionString);
 
-        if (enableRCFirmware == false)
-            systemPrintf("Checking to see if an update is available from %s\r\n", OTA_FIRMWARE_JSON_URL);
-        else
-            systemPrintf("Checking to see if an update is available from %s\r\n", OTA_RC_FIRMWARE_JSON_URL);
+        const char * url = otaGetUrl();
+        systemPrintf("Checking to see if an update is available from %s\r\n", url);
 
         ESP32OTAPull ota;
 
-        int response;
-        if (enableRCFirmware == false)
-            response = ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
-        else
-            response = ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+        int response = ota.CheckForOTAUpdate(url, versionString, ESP32OTAPull::DONT_DO_UPDATE);
 
         // We don't care if the library thinks the available firmware is newer, we just need a successful JSON parse
         if (response == ESP32OTAPull::UPDATE_AVAILABLE || response == ESP32OTAPull::NO_UPDATE_AVAILABLE)
@@ -562,7 +562,7 @@ void otaUpdate()
         ESP32OTAPull ota;
 
         int response;
-        const char * url = enableRCFirmware ? OTA_RC_FIRMWARE_JSON_URL : OTA_FIRMWARE_JSON_URL;
+        const char * url = otaGetUrl();
         response = ota.CheckForOTAUpdate(url, &versionString[1], ESP32OTAPull::DONT_DO_UPDATE);
 
         if (response == ESP32OTAPull::UPDATE_AVAILABLE)
@@ -570,9 +570,7 @@ void otaUpdate()
             systemPrintln("Installing new firmware");
             ota.SetCallback(otaPullCallback);
             if (enableRCFirmware == false)
-                ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString); // Install new firmware, no reset
-            else
-                ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString); // Install new firmware, no reset
+            ota.CheckForOTAUpdate(url, versionString); // Install new firmware, no reset
 
             if (apConfigFirmwareUpdateInProcess)
             {

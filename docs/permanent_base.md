@@ -97,11 +97,11 @@ You will need a microSD card that is 1GB up to 32GB formatted for FAT16 or FAT32
 
 *The microSD slot on the bottom of the RTK Facet*
 
-### Enable RAWX and SFRBX
+**Enable RAWX and SFRBX**
 
 Power on the unit and using the [serial](configure_with_serial.md) or [WiFi method](configure_with_wifi.md), connect to the device.
 
-#### Config via WiFi
+**Configure via WiFi**
 
 ![Enable the RAWX message](img/WiFi Config/RTK_Surveyor_-_WiFi_Config_-_GNSS_Config_Messages.jpg)
 
@@ -113,7 +113,7 @@ These seven sentences are commonly used when logging and doing Precise Point Pos
 
 Press the 'Save and Exit' button. Upon reset, the unit should begin displaying a gradually increasing [logging icon](displays.md#rover-fix) indicating successful logging.
 
-#### Config via Serial
+**Configure via Serial**
 
 ![Press 2 and then 8 to enable the PPP logging defaults](img/Terminal/SparkFun_RTK_Express_-_Messages_Menu.jpg)
 
@@ -121,15 +121,13 @@ Press the 'Save and Exit' button. Upon reset, the unit should begin displaying a
 
 After enabling the NMEA and RXM messages, exit from the serial menu by pressing x repeatedly. The system will save and apply the settings.
 
-### Deploy Unit
-
 Once the RTK product is configured, power it up with microSD inserted, and leave the unit in **Rover** mode. This will record all the data (NMEA, UBX, and RAWX) from the receiver to a *.ubx file. We do not yet know the location of the antenna so we stay in Rover mode to allow it to compile a large amount of satellite data. Only after we have confirmed its location should you enter **Base** mode.
 
 ![The logging icon will remain animated while the log file is increasing](img/Displays/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
 
 *The logging icon will remain animated while the log file is increasing*
 
-#### Confirm Recording
+**Confirm Recording**
 
 Before leaving the unit for 6 to 24 hours, it is recommended that you capture a few minutes of RAWX log data, with the antenna located with a clear view of the sky, and then inspect the log to confirm everything is working correctly. 
 
@@ -167,7 +165,7 @@ Open the Packet Console and verify the UBX RXM-RAWX and SFRBX packets are logged
 
 Capturing 6 hours is good, 24 is slightly better (note the logarithmic scale for position error in the graph above). Most PPP analysis services will accept more than 24 hours of data but they may truncate it to 24 hours. If you capture 30 hours of RAWX data, that’s ok, we will show you how to trim a file that is too long. 
 
-### Converting UBX to RINEX
+## Converting UBX to RINEX
 
 ![RTKLIB conversion of ubx to obs](img/Corrections/Convert_UBX_to_OBS_with_time_22_hour_window.jpg)
 
@@ -189,15 +187,15 @@ The RTK products can log fix rates up to 20Hz. Why not get RAWX data at greater 
 
 We now need to pass the raw GNSS satellite data in RINEX format (*\*.obs*) through a post-processing center to try to get the actual location of the antenna. There are a handful of services but we’ve had great luck using the Canadian [CSRS-PPP service](https://webapp.geod.nrcan.gc.ca/geod/tools-outils/ppp.php?locale=en). The US National Geodetic Service provides a service called [OPUS](https://www.ngs.noaa.gov/OPUS/) but we found it to be frustratingly limited by file size and format issues. Your mileage may vary. 
 
-[![Selecting ITRF upload on CSRS for PPP](img/Corrections/Uploading_file_to_CSRS.jpg)
+![Selecting ITRF upload on CSRS for PPP](img/Corrections/Uploading_file_to_CSRS.jpg)
 
 Zip your obs file then create an account with [CSRS](https://webapp.geod.nrcan.gc.ca/geod/tools-outils/ppp.php?locale=en). Select ITRF then upload your file. Twiddle your thumbs for a few hours and you should receive an email that looks like this:
 
-[![Email from CSRS Summary](img/Corrections/Email_from_CSRS_Summary_.jpg)
+![Email from CSRS Summary](img/Corrections/Email_from_CSRS_Summary_.jpg)
 
 Click the 'Summary' link to open a summary of results. This summary contains the coordinates of your antenna in Geodetic, UTM, and Cartesian formats. 
 
-[![Output from CSRS](img/Corrections/SparkFun_PPP_Results.png)
+![Output from CSRS](img/Corrections/SparkFun_PPP_Results.png)
 
 *The SparkFun antenna with +/-2mm of accuracy! :O*
 
@@ -205,11 +203,11 @@ The email will also include a [fancy PDF report](img/Corrections/SparkFun-PPP.pd
 
 If all goes well you should have a very precise location for your antenna. For SparkFun RTK products we are most interested in ECEF coordinates. [ECEF](https://en.wikipedia.org/wiki/ECEF) is *fascinating*. Rather than lat and long, ECEF is the number of meters from the internationally agreed-upon reference frame of the center of mass of the Earth. Basically, your ECEF coordinates are the distance you are from the *center of the Earth*. Neat.
 
-## Configuring Fixed Location
+## Setting Fixed Location
 
 Now that you’ve got the ECEF position of your antenna, let’s tell the RTK product where its antenna is located with a few millimeters of accuracy. 
 
-### Config via WiFi
+**Configure via WiFi**
 
 Enter the WiFi AP config page or connect over Serial.
 
@@ -227,7 +225,7 @@ If your RTK product has access to a WiFi network, consider enabling the NTRIP Se
 
 Save the settings to the RTK unit and exit. 
 
-### Config via Serial
+**Configure via Serial**
 
 ![Base Menu Options](img/Terminal/SparkFun_RTK_Express_-_Base_Menu.jpg) 
 
@@ -243,7 +241,7 @@ If your RTK product has access to a WiFi network, consider enabling the NTRIP Se
 
 Press x multiple times to exit the serial menu.
 
-## Beginning Base Mode
+**Beginning Base Mode**
 
 Power cycle the unit to load the Fixed ECEF coordinates. After boot, use the **Setup** button to enter **Base** mode.
 
@@ -267,13 +265,12 @@ Your RTK device can both serve RTCM correction data (aka Server) to an NTRIP Cas
 
 There are a variety of Windows applications out there that claim to be an NTRIP caster. We found them to be generally terrible. The easiest solutions we've found are [RTK2GO](http://rtk2go.com) or [Emlid Caster](https://emlid.com/ntrip-caster/). Both are free and available to the public.
 
-### RTK2Go
+**RTK2Go**
 
 [RTK2Go](http://rtk2go.com/) seems to be a pet project of SNIP. We recommend creating a mount point and a password through RTK2GO.com. Yes, the RTK2go website looks spammy but the service works well and is used widely. Please see [RTK2Go](http://rtk2go.com/) for details about creating an account. It's free and takes only a few minutes. Once activated you will be provided with your Mount Point name and Mount Point PW. These two credentials are used in an NTRIP Server setup:
 
 **NTRIP Server:**
 
-* WiFi SSID/PW - These are your local WiFi credentials
 * Caster Host: rtk2go.com
 * Caster Port: 2101
 * Caster User Name: Not needed
@@ -283,7 +280,6 @@ There are a variety of Windows applications out there that claim to be an NTRIP 
 
 **NTRIP Client:**
 
-* WiFi SSID/PW - These are your local WiFi credentials
 * Caster Host: rtk2go.com
 * Caster Port: 2101
 * Caster User Name: **Your Valid Email Address**
@@ -303,7 +299,7 @@ The differences between Server and Client are small. The Server needs to know th
 
 To verify that your RTK product is correctly broadcasting RTCM data, you can access RTK2Go from a browser on Port 2101. This link [RTK2Go.com:2101](http://www.rtk2go.com:2101/) will show a list of all current NTRIP Servers that are pushing data to the RTK2Go caster, and are available to be accessed, free of charge, by any NTRIP Client in the world.
 
-### Emlid Caster
+**Emlid Caster**
 
 [Emlid Caster](https://emlid.com/ntrip-caster/) is also very easy to set up and has a bit more user-friendly-looking website. Creating an account is very straightforward.
 
@@ -315,7 +311,6 @@ Once your account is created, you'll be presented with Mount Points and Rovers.
 
 **NTRIP Server:**
 
-* WiFi SSID/PW - These are your local WiFi credentials
 * Caster Host: caster.emlid.com
 * Caster Port: 2101
 * Caster User Name: Not needed
@@ -325,7 +320,6 @@ Once your account is created, you'll be presented with Mount Points and Rovers.
 
 **NTRIP Client:**
 
-* WiFi SSID/PW - These are your local WiFi credentials
 * Caster Host: caster.emlid.com
 * Caster Port: 2101
 * Caster User Name: Required. Shown in your rover dashboard.

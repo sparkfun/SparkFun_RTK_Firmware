@@ -320,7 +320,7 @@ void ntripClientStop(bool wifiClientAllocated)
     // Determine the next NTRIP client state
     ntripClientSetState((ntripClient && (wifiClientAllocated == false)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
     online.ntripClient = false;
-    wifiIncomingRTCM = false;
+    netIncomingRTCM = false;
 }
 
 // Determine if NTRIP Client is needed
@@ -623,7 +623,7 @@ void ntripClientUpdate()
 
                 // Push RTCM to GNSS module over I2C / SPI
                 theGNSS.pushRawData(rtcmData, rtcmCount);
-                wifiIncomingRTCM = true;
+                netIncomingRTCM = true;
 
                 if (!inMainMenu && settings.enablePrintNtripClientState)
                     systemPrintf("NTRIP Client received %d RTCM bytes, pushed to ZED\r\n", rtcmCount);

@@ -571,7 +571,7 @@ unsigned long lastEthernetCheck = 0; // Prevents cable checking from continually
 volatile bool ethernetTcpConnected = false;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-#include "NTRIPClient.h" //Define a hybrid class which can support both WiFiClient and EthernetClient
+#include "NetworkClient.h" //Supports both WiFiClient and EthernetClient
 
 // Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

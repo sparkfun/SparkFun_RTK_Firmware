@@ -73,7 +73,7 @@ static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; // 5s between transmission o
 //----------------------------------------
 
 // The WiFi / Ethernet connection to the NTRIP caster to obtain RTCM data.
-static NTRIPClient *ntripClient;
+static NetworkClient *ntripClient;
 
 // Throttle the time between connection attempts
 // ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
@@ -273,7 +273,7 @@ void ntripClientStart()
         systemPrintln("NTRIP Client start");
 
         // Allocate the ntripClient structure
-        ntripClient = new NTRIPClient(false); //(settings.ntripClientUseWiFiNotEthernet); //For future expansion
+        ntripClient = new NetworkClient(false);
 
         // Startup WiFi and the NTRIP client
         if (ntripClient)
@@ -296,9 +296,9 @@ void ntripClientStop(bool wifiClientAllocated)
         delete ntripClient;
         ntripClient = nullptr;
 
-        // Allocate the NTRIP client structure if not done
+        // Allocate the ntripClient structure if not done
         if (wifiClientAllocated == false)
-            ntripClient = new NTRIPClient(false); // settings.ntripClientUseWiFiNotEthernet); //For future expansion
+            ntripClient = new NetworkClient(false);
     }
 
     // Increase timeouts if we started WiFi

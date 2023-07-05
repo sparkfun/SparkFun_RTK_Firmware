@@ -2,6 +2,10 @@
 
 Surveyor: ![Feature Supported](img/Icons/GreenDot.png) / Express: ![Feature Supported](img/Icons/GreenDot.png) / Express Plus: ![Feature Not Supported](img/Icons/RedDot.png) / Facet: ![Feature Partially Supported](img/Icons/YellowDot.png) / Facet L-Band: ![Feature Partially Supported](img/Icons/YellowDot.png) / Reference Station: ![Feature Supported](img/Icons/GreenDot.png)
 
+![SparkFun Base Station Enclosure](img/Corrections/Roof_Enclosure.jpg)
+
+*The base station at SparkFun*
+
 This section goes into depth on how to gather the data using an RTK product to create a permanent fixed base.
 
 **Note:** The RTK Facet and RTK Facet L-Band are rated IP53 - Protected from limited dust ingress and water spray. As such it is not recommended for permanent outdoor deployment. Use the RTK Surveyor or Express with a fully sealed [TOP106 antenna](https://www.sparkfun.com/products/21801).

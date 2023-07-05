@@ -4,11 +4,11 @@ Surveyor: ![Feature Supported](img/Icons/GreenDot.png) / Express: ![Feature Supp
 
 To achieve an RTK Fix, SparkFun RTK products must be provided with a correction source. This correction data, sometimes called RTCM (see [What is RTCM?](https://learn.sparkfun.com/tutorials/what-is-gps-rtk/all#what-is-rtcm)), can be produced from a variety of sources.
 
-**Note:** The RTK Facet L-Band is capable of receiving RTCM corrections from a terrestrial source but because it has a built-in L-Band receiver, we recommend using the satellite-based corrections.
-
 * [Paid Services](correction_sources.md#paid-services)
 * [Government Provided Corrections](correction_sources.md#government-provided-corrections)
 * [Permanent Base](correction_sources.md#permanent-base)
+
+**Note:** The RTK Facet L-Band is capable of receiving RTCM corrections from a terrestrial source but because it has a built-in L-Band receiver, we recommend using the satellite-based corrections.
 
 ## Paid Services
 
@@ -20,6 +20,8 @@ These services cover entire countries and regions but charge a monthly fee. Easy
 * [SensorCloud RTK](https://rtk.sensorcloud.com/pricing/) ($100/month) partial US, EU
 * [KeyNetGPS](https://www.keypre.com/KeynetGPS) ($375/month) North Eastern US
 * [Hexagon/Leica](https://hxgnsmartnet.com/en-US) ($500/month) - partial US, EU
+
+Using PointOneNav is discussed in the [Quick Start guide](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#ntrip-example). We'll discuss using Skylark below. All services have the same basic interface: as long as the service has NTRIP, the SparkFun RTK product can use it.
 
 **Skylark**
 
@@ -50,7 +52,6 @@ One downside is that with a 'regional' provider such as Skylark the distance to 
 ![PointPerfacet Coverage Map](img/Corrections/SparkFun_RTK_Facet_L-Band_Coverage_Area.jpg)
 
 PointPerfect is a correction service run by u-blox. The service runs about $44 per month and covers the contiguous USA and Europe. Unfortunately, it does not have NTRIP access at the time of writing. Instead, they use an API and encrypted packets in a format called SPARTN. SparkFun uses the PointPerfect service to provide satellite-based corrections to the [RTK Facet L-Band](https://www.sparkfun.com/products/20000). This service works very well for the RTK Facet L-Band, but because no 3rd party GIS software is known to exist that can communicate with PointPerfect, we don't currently recommend using PointPerfect with SW Maps, Lefebure, Field Genius, SurvPC, Survey Master, etc.
-
 
 ## Government Provided Corrections
 

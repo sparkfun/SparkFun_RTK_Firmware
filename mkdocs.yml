@@ -73,7 +73,7 @@ plugins:
       copyright: SparkFun Electronics - 2023
       cover_subtitle: Simple and Cost Effective High-Precision Navigation
       output_path: pdf/SparkFun_RTK_User_Manual.pdf
-      author:  
+      author: This PDF is automatically generated. See https://docs.sparkfun.com/SparkFun_RTK_Firmware/ for the latest version.
       toc_title: Table Of Contents
       #cover_title: TITLE TEXT
       #heading_shift: false

@@ -44,7 +44,7 @@ There are multiple ways to configure an RTK product:
 * [Bluetooth](configure_with_bluetooth.md) - Good for in-field changes
 * [WiFi](configure_with_wifi.md) - Good for in-field changes
 * [Serial Terminal](configure_with_serial.md) - Requires a computer but allows for all configuration settings
-* [Settings File](configure_with_settings_file.md) - Error-Prone; for very advanced users only.
+* [Settings File](configure_with_settings_file.md) - Used for configuring multiple RTK devices identically
 
 The Bluetooth or Serial Terminal methods are recommended for most advanced configurations. Most, but not all settings are also available over WiFi but can be tricky to input via mobile phone.
 

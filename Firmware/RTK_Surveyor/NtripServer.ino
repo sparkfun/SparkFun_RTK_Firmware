@@ -12,10 +12,10 @@ void ntripServerUpdate() {}
 
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   NTRIP Server States:
-    NTRIP_SERVER_OFF: WiFi off or using NTRIP Client
+    NTRIP_SERVER_OFF: Network off or using NTRIP Client
     NTRIP_SERVER_ON: WIFI_START state
-    NTRIP_SERVER_WIFI_ETHERNET_STARTED: Connecting to WiFi access point
-    NTRIP_SERVER_WIFI_ETHERNET_CONNECTED: WiFi connected to an access point
+    NTRIP_SERVER_NETWORK_STARTED: Connecting to the network
+    NTRIP_SERVER_NETWORK_CONNECTED: Connected to the network
     NTRIP_SERVER_WAIT_GNSS_DATA: Waiting for correction data from GNSS
     NTRIP_SERVER_CONNECTING: Attempting a connection to the NTRIP caster
     NTRIP_SERVER_AUTHORIZATION: Validate the credentials
@@ -29,25 +29,25 @@ void ntripServerUpdate() {}
                     |                  |                            |
                     |                  |                            | ntripServerStop(false)
                     |                  v                      Fail  |
-                    |    NTRIP_SERVER_WIFI_ETHERNET_STARTED ------->+
+                    |    NTRIP_SERVER_NETWORK_STARTED ------------->+
                     |                  |                            ^
                     |                  |                            |
                     |                  v                      Fail  |
-                    |    NTRIP_SERVER_WIFI_ETHERNET_CONNECTED ----->+
+                    |    NTRIP_SERVER_NETWORK_CONNECTED ----------->+
                     |                  |                            ^
-                    |                  |                      WiFi  |
+                    |                  |                   Network  |
                     |                  v                      Fail  |
                     |    NTRIP_SERVER_WAIT_GNSS_DATA -------------->+
                     |                  |                            ^
-                    |                  | Discard Data         WiFi  |
+                    |                  | Discard Data      Network  |
                     |                  v                      Fail  |
                     |      NTRIP_SERVER_CONNECTING ---------------->+
                     |                  |                            ^
-                    |                  | Discard Data         WiFi  |
+                    |                  | Discard Data      Network  |
                     |                  v                      Fail  |
                     |     NTRIP_SERVER_AUTHORIZATION -------------->+
                     |                  |                            ^
-                    |                  | Discard Data         WiFi  |
+                    |                  | Discard Data      Network  |
                     |                  v                      Fail  |
                     |         NTRIP_SERVER_CASTING -----------------'
                     |                  |
@@ -71,7 +71,7 @@ static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 30;
 // Locals - compiled out
 //----------------------------------------
 
-// WiFi connection used to push RTCM to NTRIP caster over WiFi
+// Network connection used to push RTCM to NTRIP caster
 static NetworkClient *ntripServer;
 
 // Count of bytes sent by the NTRIP server to the NTRIP caster
@@ -134,7 +134,7 @@ bool ntripServerConnectCaster()
 bool ntripServerConnectLimitReached()
 {
     // Shutdown the NTRIP server
-    ntripServerStop(false); // Allocate new wifiClient
+    ntripServerStop(false); // Allocate new ntripServer
 
     // Retry the connection a few times
     bool limitReached = (ntripServerConnectionAttempts >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS);
@@ -162,7 +162,7 @@ bool ntripServerConnectLimitReached()
     {
         // No more connection attempts
         systemPrintln("NTRIP Server connection attempts exceeded!");
-        ntripServerStop(true); // Don't allocate new wifiClient
+        ntripServerStop(true); // Don't allocate new ntripServer
     }
     return limitReached;
 }
@@ -200,11 +200,11 @@ void ntripServerSetState(NTRIPServerState newState)
     case NTRIP_SERVER_ON:
         systemPrintln("NTRIP_SERVER_ON");
         break;
-    case NTRIP_SERVER_WIFI_ETHERNET_STARTED:
-        systemPrintln("NTRIP_SERVER_WIFI_ETHERNET_STARTED");
+    case NTRIP_SERVER_NETWORK_STARTED:
+        systemPrintln("NTRIP_SERVER_NETWORK_STARTED");
         break;
-    case NTRIP_SERVER_WIFI_ETHERNET_CONNECTED:
-        systemPrintln("NTRIP_SERVER_WIFI_ETHERNET_CONNECTED");
+    case NTRIP_SERVER_NETWORK_CONNECTED:
+        systemPrintln("NTRIP_SERVER_NETWORK_CONNECTED");
         break;
     case NTRIP_SERVER_WAIT_GNSS_DATA:
         systemPrintln("NTRIP_SERVER_WAIT_GNSS_DATA");
@@ -281,8 +281,8 @@ void ntripServerProcessRTCM(uint8_t incoming)
 // Start the NTRIP server
 void ntripServerStart()
 {
-    // Stop NTRIP server and WiFi
-    ntripServerStop(true); // Don't allocate new wifiClient
+    // Stop the NTRIP server and network
+    ntripServerStop(true); // Don't allocate new ntripServer
 
     // Start the NTRIP server if enabled
     if ((settings.ntripServer_StartAtSurveyIn == true) || (settings.enableNtripServer == true))
@@ -291,9 +291,9 @@ void ntripServerStart()
         reportHeapNow();
 
         // Allocate the ntripServer structure
-        ntripServer = new NetworkClient(false); //(settings.ntripServerUseWiFiNotEthernet); //For future expansion
+        ntripServer = new NetworkClient(false);
 
-        // Restart WiFi and the NTRIP server if possible
+        // Restart the network and the NTRIP server if possible
         if (ntripServer)
             ntripServerSetState(NTRIP_SERVER_ON);
     }
@@ -302,7 +302,7 @@ void ntripServerStart()
 }
 
 // Stop the NTRIP server
-void ntripServerStop(bool wifiClientAllocated)
+void ntripServerStop(bool clientAllocated)
 {
     if (ntripServer)
     {
@@ -315,11 +315,11 @@ void ntripServerStop(bool wifiClientAllocated)
         ntripServer = nullptr;
 
         // Allocate the ntripServer structure if not done
-        if (wifiClientAllocated == false)
-            ntripServer = new NetworkClient(false); //(settings.ntripServerUseWiFiNotEthernet); //For future expansion
+        if (clientAllocated == false)
+            ntripServer = new NetworkClient(false);
     }
 
-    // Increase timeouts if we started WiFi
+    // Increase timeouts if we started the network
     if (ntripServerState > NTRIP_SERVER_ON)
     {
         ntripServerLastConnectionAttempt =
@@ -329,7 +329,7 @@ void ntripServerStop(bool wifiClientAllocated)
     }
 
     // Determine the next NTRIP server state
-    ntripServerSetState((ntripServer && (wifiClientAllocated == false)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
+    ntripServerSetState((ntripServer && (clientAllocated == false)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
     online.ntripServer = false;
 }
 
@@ -351,7 +351,7 @@ void ntripServerUpdate()
     {
         // If user turns off NTRIP Server via settings, stop server
         if (ntripServerState > NTRIP_SERVER_OFF)
-            ntripServerStop(true); // Don't allocate new wifiClient
+            ntripServerStop(true); // Don't allocate new ntripServer
         return;
     }
 
@@ -365,20 +365,20 @@ void ntripServerUpdate()
         ntripServerStateLastDisplayed = millis();
     }
 
-    // Enable WiFi and the NTRIP server if requested
+    // Enable the network and the NTRIP server if requested
     switch (ntripServerState)
     {
     case NTRIP_SERVER_OFF:
         break;
 
-    // Start WiFi
+    // Start the network
     case NTRIP_SERVER_ON:
         if (HAS_ETHERNET) // && !settings.ntripServerUseWiFiNotEthernet) //For future expansion
         {
             if (online.ethernetStatus == ETH_NOT_STARTED)
             {
                 systemPrintln("Ethernet not started. Can not start NTRIP Server");
-                ntripServerStop(false); // Do allocate new WiFi / Ethernet Client
+                ntripServerStop(false); // Allocate a new ntripServer
             }
             else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
             {
@@ -388,13 +388,13 @@ void ntripServerUpdate()
                     ntripServerLastConnectionAttempt = millis();
                     log_d("NTRIP Server starting on Ethernet");
                     ntripServerTimer = millis();
-                    ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_STARTED);
+                    ntripServerSetState(NTRIP_SERVER_NETWORK_STARTED);
                 }
             }
             else
             {
                 systemPrintln("Error: Please connect Ethernet before starting NTRIP Server");
-                ntripServerStop(true); // Do not allocate new wifiClient
+                ntripServerStop(true); // Do not allocate new ntripServer
             }
         }
         else
@@ -402,7 +402,7 @@ void ntripServerUpdate()
             if (wifiNetworkCount() == 0)
             {
                 systemPrintln("Error: Please enter at least one SSID before starting NTRIP Server");
-                ntripServerStop(true); // Do not allocate new wifiClient
+                ntripServerStop(true); // Do not allocate new ntripServer
             }
             else
             {
@@ -413,31 +413,31 @@ void ntripServerUpdate()
                     log_d("NTRIP Server starting WiFi");
                     wifiStart();
                     ntripServerTimer = millis();
-                    ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_STARTED);
+                    ntripServerSetState(NTRIP_SERVER_NETWORK_STARTED);
                 }
             }
         }
         break;
 
     // Wait for connection to an access point
-    case NTRIP_SERVER_WIFI_ETHERNET_STARTED:
+    case NTRIP_SERVER_NETWORK_STARTED:
         if ((millis() - ntripServerTimer) > (1 * 60 * 1000))
             // Failed to connect to to the network, attempt to restart the network
             ntripServerStop(false);
         else if (HAS_ETHERNET) // && !settings.ntripServerUseWiFiNotEthernet) //For future expansion
         {
             if (online.ethernetStatus == ETH_CONNECTED)
-                ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_CONNECTED);
+                ntripServerSetState(NTRIP_SERVER_NETWORK_CONNECTED);
         }
         else
         {
             if (wifiIsConnected())
-                ntripServerSetState(NTRIP_SERVER_WIFI_ETHERNET_CONNECTED);
+                ntripServerSetState(NTRIP_SERVER_NETWORK_CONNECTED);
         }
         break;
 
-    // WiFi connected to an access point
-    case NTRIP_SERVER_WIFI_ETHERNET_CONNECTED:
+    // Network available
+    case NTRIP_SERVER_NETWORK_CONNECTED:
         if (settings.enableNtripServer)
         {
             // No RTCM correction data sent yet
@@ -573,13 +573,13 @@ void ntripServerUpdate()
         {
             // Broken connection, retry the NTRIP connection
             systemPrintln("Connection to NTRIP Caster was lost");
-            ntripServerStop(false); // Allocate new wifiClient
+            ntripServerStop(false); // Allocate a new ntripServer
         }
         else if ((millis() - ntripServerTimer) > (3 * 1000))
         {
             // GNSS stopped sending RTCM correction data
             systemPrintln("NTRIP Server breaking connection to caster due to lack of RTCM data!");
-            ntripServerStop(false); // Allocate new wifiClient
+            ntripServerStop(false); // Allocate a new ntripServer
         }
         else
         {

@@ -29,6 +29,12 @@
 // #define REF_STN_GNSS_DEBUG //Uncomment this line to output GNSS library debug messages on serialGNSS. Ref Stn only.
 // Needs ENABLE_DEVELOPER
 
+#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
+#define COMPILE_NETWORK         true
+#else   // COMPILE_WIFI || COMPILE_ETHERNET
+#define COMPILE_NETWORK         false
+#endif  // COMPILE_WIFI || COMPILE_ETHERNET
+
 // Always define ENABLE_DEVELOPER to enable its use in conditional statements
 #ifndef ENABLE_DEVELOPER
 #define ENABLE_DEVELOPER                                                                                               \

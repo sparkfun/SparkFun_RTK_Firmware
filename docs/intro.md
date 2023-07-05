@@ -61,45 +61,52 @@ The software options for Apple iOS are much more limited because Apple products 
 
     ![RTK Facet Boot Display](<img/Displays/SparkFun RTK Facet Boot Display.png>)
 
-2. Turn on your RTK device by pressing the POWER button until the display shows ‘SparkFun RTK' then you can release it. 
+2. Mount the hardware:
+
+    * For RTK Surveyor/Express/Express Plus: Attach the included [L1/L1 antenna](https://www.sparkfun.com/products/17751) to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included ¼” camera thread to [⅝” 11-TPI adapter](https://www.sparkfun.com/products/17546). [Clamp](https://www.amazon.com/gp/product/B072DSRF3J) the RTK device to the monopole. Use the included [TNC to SMA cable](https://www.sparkfun.com/products/21739) to connect the antenna to the RTK Surveyor/Express/Express Plus.
+    * For RTK Facet/Facet L-Band: Attach the Facet to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included ¼” camera thread to [⅝” 11-TPI adapter](https://www.sparkfun.com/products/17546).
+
+    ![RTK devices attached to a monopole](<img/SparkFun RTK Device Attached to Monopole.png>)
+
+3. Turn on your RTK device by pressing the POWER button until the display shows ‘SparkFun RTK' then you can release it. 
 
     ![Config menu highlighted on display](<img/Displays/SparkFun RTK Config Display.png>)
 
-3. Put the RTK device into configuration mode by pressing the POWER or SETUP button until the Config menu is highlighted.
+4. Put the RTK device into configuration mode by pressing the POWER or SETUP button until the Config menu is highlighted.
 
-4. From your phone, connect to the WiFi network *RTK Config*.
+5. From your phone, connect to the WiFi network *RTK Config*.
 
-5. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
+6. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
 
     ![Configure Bluetooth Protocol in WiFi Config](<img/WiFi Config/SparkFun RTK Change Bluetooth to BLE.png>)
 
-6. Under the *System Configuration* menu, change the **Bluetooth Protocol** to **BLE**. Then click *Save* and then *Exit*. The unit will now reboot.
+7. Under the *System Configuration* menu, change the **Bluetooth Protocol** to **BLE**. Then click *Save* and then *Exit*. The unit will now reboot.
 
     ![iOS Bluetooth settings](<img/iOS/SparkFun RTK iOS Bluetooth Devices.png>)
 
-7. From your cell phone, disconnect from the *RTK Config* WiFi network and make sure Bluetooth is enabled on your iOS device Settings. The RTK device will not appear in the OTHER DEVICES list. That is OK.
+8. From your cell phone, disconnect from the *RTK Config* WiFi network and make sure Bluetooth is enabled on your iOS device Settings. The RTK device will not appear in the OTHER DEVICES list. That is OK.
 
-8. Open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
+9. Open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
 
-9. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. Set the *Instrument Model* to **Generic NMEA (Bluetooth LE)**. Press 'Scan' and your RTK device should appear. Select it then press the ‘Connect’ button in the bottom left corner. SW Maps will show a warning that the instrument height is 0m. That’s ok.
+10. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. Set the *Instrument Model* to **Generic NMEA (Bluetooth LE)**. Press 'Scan' and your RTK device should appear. Select it then press the ‘Connect’ button in the bottom left corner. SW Maps will show a warning that the instrument height is 0m. That’s ok.
 
     ![Display showing Bluetooth connection](<img/Displays/SparkFun RTK Display - Bluetooth.png>)
 
-10. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
+11. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
 
     ![RTK Display Explanation](img/Displays/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
 
-11. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. If you wait a few moments, this will drop dramatically to around 0.3 meters (300mm = 1ft) or better. 
+12. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. If you wait a few moments, this will drop dramatically to around 0.3 meters (300mm = 1ft) or better. 
 
 Now you use your RTK device to begin measuring points. If you need extreme accuracy (down to 10mm) continue reading the [RTK Crash Course](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#rtk-crash-course).
 
 ## RTK Crash Course
 
-To get millimeter accuracy we need to provide the RTK unit with correction values. Corrections, often called RTCM, help the RTK unit refine its position calculations. Corrections can be obtained from a variety of sources but they fall into three buckets: Paid, Free by the Government, and Free by Me.
+To get millimeter accuracy we need to provide the RTK unit with correction values. Corrections, often called RTCM, help the RTK unit refine its position calculations. Corrections can be obtained from a variety of sources but they fall into three buckets: Commercial, Public, and Civilian Reference Stations.
 
-**Paid Services**
+**Commercial Reference Networks**
 
-These services cover entire countries and regions but charge a monthly fee. Easy to use, but the most expensive.
+These companies set up a large number of reference stations that cover entire regions and countries, but charge a monthly fee. They are often easy to use but can be expensive.
 
 * [PointOneNav](https://app.pointonenav.com/trial?src=sparkfun) ($50/month) - US, EU
 * [Skylark](https://www.swiftnav.com/skylark) ($29 to $69/month) - US, EU, Japan, Australia
@@ -108,7 +115,7 @@ These services cover entire countries and regions but charge a monthly fee. Easy
 * [KeyNetGPS](https://www.keypre.com/KeynetGPS) ($375/month) North Eastern US
 * [Hexagon/Leica](https://hxgnsmartnet.com/en-US) ($500/month) - partial US, EU
 
-**Government Provided Corrections**
+**Public Reference Stations**
 
 ![Wisconsin network of CORS](<img/Corrections/SparkFun NTRIP 7 - Wisconsin Map.png>) 
 
@@ -116,7 +123,7 @@ These services cover entire countries and regions but charge a monthly fee. Easy
 
 Be sure to check if your state or country provides corrections for free. Many do! Currently, there are 21 states in the USA that provide this for free as a department of transportation service. Search ‘Wisconsin CORS’ as an example. Similarly, in France, check out [CentipedeRTK](https://docs.centipede.fr/). There are several public networks across the globe, be sure to google around!
 
-**Civilian Base Station**
+**Civilian Reference Stations**
 
 ![SparkFun Base Station Enclosure](img/Corrections/Roof_Enclosure.jpg)
 

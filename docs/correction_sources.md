@@ -6,11 +6,75 @@ To achieve an RTK Fix, SparkFun RTK products must be provided with a correction 
 
 **Note:** The RTK Facet L-Band is capable of receiving RTCM corrections from a terrestrial source but because it has a built-in L-Band receiver, we recommend using the satellite-based corrections.
 
+* [Paid Services](correction_sources.md#paid-services)
+* [Government Provided Corrections](correction_sources.md#government-provided-corrections)
+* [Permanent Base](correction_sources.md#permanent-base)
+
+## Paid Services
+
+These services cover entire countries and regions but charge a monthly fee. Easy to use, but the most expensive.
+
+* [PointOneNav](https://app.pointonenav.com/trial?src=sparkfun) ($50/month) - US, EU
+* [Skylark](https://www.swiftnav.com/skylark) ($29 to $69/month) - US, EU, Japan, Australia
+* [Vector RTK](https://vectorrtk.com/) ($115/month) - UK
+* [SensorCloud RTK](https://rtk.sensorcloud.com/pricing/) ($100/month) partial US, EU
+* [KeyNetGPS](https://www.keypre.com/KeynetGPS) ($375/month) North Eastern US
+* [Hexagon/Leica](https://hxgnsmartnet.com/en-US) ($500/month) - partial US, EU
+
+**Skylark**
+
+![Skylark coverage area](img/Corrections/Skylark-Coverage.png)
+
+*Skylark Coverage Area*
+
+A company called SwiftNav offers a service called [Skylark](https://www.swiftnav.com/skylark). As of writing, for $29 to $69 per month, you will get corrections covering North America, Europe, and the Asia Pacific. This is a very simple method for obtaining NTRIP corrections.
+
+![Skylark website showing credentials](img/Corrections/SparkFun%20NTRIP%20Skylark%201%20-%20Credentials.png)
+
+Upon creating an account, you'll be issued NTRIP credentials that can immediately be used with Lefebure, SW Maps, or any GIS app that supports NTRIP. 
+
+![Entering credentials into SW maps](img/SWMaps/SparkFun%20NTRIP%20Skylark%202%20-%20SW%20Maps%20Credentials.png)
+
+*Entering credentials into SW maps*
+
+The most difficult part of using Skylark for corrections is entering the auto-generated NTRIP Password. While we understand security is important, it's not trivial manually entering these types of credentials into a GIS application.
+
+![GNSS Status showing positional accuracy](img/SWMaps/SparkFun%20NTRIP%20Skylark%202%20-%20SW%20Maps%20HPA.png)
+
+*SW Maps showing Positional Accuracy*
+
+One downside is that with a 'regional' provider such as Skylark the distance to the correction station may be larger than 10km. While we've always gotten an RTK fix, we often see horizontal positional accuracy of ~30mm instead of the 14mm when using our fixed GNSS reference station. Your mileage may vary.
+
+**PointPerfect**
+
+![PointPerfacet Coverage Map](img/Corrections/SparkFun_RTK_Facet_L-Band_Coverage_Area.jpg)
+
+PointPerfect is a correction service run by u-blox. The service runs about $44 per month and covers the contiguous USA and Europe. Unfortunately, it does not have NTRIP access at the time of writing. Instead, they use an API and encrypted packets in a format called SPARTN. SparkFun uses the PointPerfect service to provide satellite-based corrections to the [RTK Facet L-Band](https://www.sparkfun.com/products/20000). This service works very well for the RTK Facet L-Band, but because no 3rd party GIS software is known to exist that can communicate with PointPerfect, we don't currently recommend using PointPerfect with SW Maps, Lefebure, Field Genius, SurvPC, Survey Master, etc.
+
+
+## Government Provided Corrections
+
+![Wisconsin network of CORS](<img/Corrections/SparkFun NTRIP 7 - Wisconsin Map.png>) 
+
+*State Wide Network of Continuously Operating Reference Stations (CORS)*
+
+Be sure to check if your state or country provides corrections for free. Many do! Currently, there are 21 states in the USA that provide this for free as a department of transportation service. Search ‘Wisconsin CORS’ as an example. Similarly, in France, check out [CentipedeRTK](https://docs.centipede.fr/). 
+
+[![UNAVO map](img/Corrections/SparkFun%20NTRIP%204%20-%20UNAVCO%20Map.png)](https://www.unavco.org/instrumentation/networks/status/all/realtime)
+
+[UNAVCO](https://www.unavco.org/) is a US-based governmental organization that runs a [network of publicly available NTRIP sources](https://www.unavco.org/instrumentation/networks/status/all/realtime). If you're lucky there's a station within 10km (6 miles) of you.
+
+![Map of European stations](img/Corrections/SparkFun%20NTRIP%206%20-%20EUREF%20Map.png)
+
+[EUREF](http://www.epncb.oma.be/_networkdata/data_access/real_time/map.php) is a permanent GNSS network in the EU.
+
+There are several public networks across the globe, be sure to google around!
+
 ## Permanent Base
 
-![SparkFun permanent base antenna](img/Corrections/Antenna_Semi-Fixed_to_roof.jpg)
+![SparkFun Base Station Enclosure](img/Corrections/Roof_Enclosure.jpg)
 
-*An [L1/L2 GNSS antenna](https://www.sparkfun.com/products/21801) permanently affixed to a cinder block*
+*The base station at SparkFun*
 
 A permanent base is a user-owned and operated base station. See [Creating a Permanent Base](permanent_base.md) for more information. A permanent base has the benefit of being the most accurate, with relatively low cost, but requires at least 24 hours of initial logging and some mechanical setup time (attaching the antenna, connecting a device to the internet, etc).
 
@@ -52,53 +116,11 @@ If you’re shopping for a cell phone clamp be sure to get one that is compatibl
 
 Note: A mobile base station works well for quick trips to the field. However, the survey-in method is not recommended for the highest accuracy measurements because the positional accuracy of the base will directly translate to the accuracy of the rover. Said differently, if your base's calculated position is off by 100cm, so will every reading your rover makes. For many applications, such as surveying, this is acceptable since the Surveyor may only be concerned with measuring the lengths of property lines or features. If you’re looking for maximum accuracy consider installing a [permanent static base with a fixed antenna](permanent_base.md). We were able to pinpoint the antenna on the top of SparkFun with an incredible accuracy [+/-2mm of accuracy](img/Corrections/SparkFun_PPP_Results.png) using PPP!
 
-## Skylark
 
-![Skylark coverage area](img/Corrections/Skylark-Coverage.png)
-
-*Skylark Coverage Area*
-
-A company called SwiftNav offers a service called [Skylark](https://www.swiftnav.com/skylark). As of writing, for $49 per month, you will get corrections covering North America, Europe, and the Asia Pacific. This is a very simple method for obtaining NTRIP corrections.
-
-![Skylark website showing credentials](img/Corrections/SparkFun%20NTRIP%20Skylark%201%20-%20Credentials.png)
-
-Upon creating an account, you'll be issued NTRIP credentials that can immediately be used with Lefebure, SW Maps, or any GIS app that supports NTRIP. 
-
-![Entering credentials into SW maps](img/SWMaps/SparkFun%20NTRIP%20Skylark%202%20-%20SW%20Maps%20Credentials.png)
-
-*Entering credentials into SW maps*
-
-The most difficult part of using Skylark for corrections is entering the auto-generated NTRIP Password. While we understand security is important, it's not trivial manually entering these types of credentials into a GIS application.
-
-![GNSS Status showing positional accuracy](img/SWMaps/SparkFun%20NTRIP%20Skylark%202%20-%20SW%20Maps%20HPA.png)
-
-*SW Maps showing Positional Accuracy*
-
-One downside is that with a 'regional' provider such as Skylark the distance to the correction station may be larger than 10km. While we've always gotten an RTK fix, we often see horizontal positional accuracy of ~30mm instead of the 14mm when using our fixed GNSS reference station. Your mileage may vary.
-
-## UNAVCO
-
-[![UNAVO map](img/Corrections/SparkFun%20NTRIP%204%20-%20UNAVCO%20Map.png)](https://www.unavco.org/instrumentation/networks/status/all/realtime)
-
-[UNAVCO](https://www.unavco.org/) is a US-based governmental organization that runs a [network of publicly available NTRIP sources](https://www.unavco.org/instrumentation/networks/status/all/realtime). If you're lucky there's a station within 10km (6 miles) of you.
-
-## PointPerfect
-
-![PointPerfacet Coverage Map](img/Corrections/SparkFun_RTK_Facet_L-Band_Coverage_Area.jpg)
-
-PointPerfect is a correction service run by u-blox. The service runs about $44 per month and covers the contiguous USA and Europe. Unfortunately, it does not have NTRIP access at the time of writing. Instead, they use an API and encrypted packets in a format called SPARTN. SparkFun uses the PointPerfect service to provide satellite-based corrections to the [RTK Facet L-Band](https://www.sparkfun.com/products/20000). This service works very well for the RTK Facet L-Band, but because no 3rd party GIS software is known to exist that can communicate with PointPerfect, we don't currently recommend using PointPerfect with SW Maps, Lefebure, Field Genius, SurvPC, Survey Master, etc.
 
 ## Other Sources
 
 There are a large number of networks run throughout the world. Be sure to dig a bit to find a local correction source near you.
-
-![Map of Wisconsin stations](img/Corrections/SparkFun%20NTRIP%207%20-%20Wisconsin%20Map.png)
-
-* Many US states operate their own CORS (continuously operating reference station) networks for the benefit of the state's Department of Transportation and/or Agriculture. For example, [WISCORS](https://wisconsindot.gov/Pages/doing-bus/eng-consultants/cnslt-rsrces/tools/wiscors/default.aspx) covers the state of Wisconsin, free of charge.
-
-![Map of European stations](img/Corrections/SparkFun%20NTRIP%206%20-%20EUREF%20Map.png)
-
-* [EUREF](http://www.epncb.oma.be/_networkdata/data_access/real_time/map.php) Permanent GNSS Network
 
 [![Map of RTK2Go Stations](img/Corrections/SparkFun%20NTRIP%205%20-%20RTK2Go%20Map.png)](http://monitor.use-snip.com/?hostUrl=rtk2go.com&port=2101)
 

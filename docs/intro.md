@@ -98,6 +98,7 @@ These services cover entire countries and regions but charge a monthly fee. Easy
 * [Skylark](https://www.swiftnav.com/skylark) ($29 to $69/month) - US, EU, Japan, Australia
 * [Vector RTK](https://vectorrtk.com/) ($115/month) - UK
 * [SensorCloud RTK](https://rtk.sensorcloud.com/pricing/) ($100/month) partial US, EU
+* [KeyNetGPS](https://www.keypre.com/KeynetGPS) ($375/month) North Eastern US
 * [Hexagon/Leica](https://hxgnsmartnet.com/en-US) ($500/month) - partial US, EU
 
 **Government Provided Corrections**

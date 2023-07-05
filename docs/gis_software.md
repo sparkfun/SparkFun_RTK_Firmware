@@ -368,7 +368,7 @@ First, configure the RTK device to output *only* NMEA messages. QField currently
 
 These RTK device settings can be found under the [Messages menu](menu_messages.md) through the [WiFi config page](configure_with_wifi.md) or through the [Serial Config menu](configure_with_serial.md).
 
-![Alt text](img/QField/SparkFun%20RTK%20QField%20-%20Create%20Project.png)
+![QField creating a project](img/QField/SparkFun%20RTK%20QField%20-%20Create%20Project.png)
 
 Create an account and project on [QFieldCloud](https://qfield.cloud/). This project will be synchronized and viewable on the QField app.
 

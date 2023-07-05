@@ -16,29 +16,36 @@ Are you using [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#a
 
     ![RTK Boot Display](<img/Displays/SparkFun RTK Facet Boot Display.png>)
 
-2. Turn on your RTK device by pressing the POWER button until the display shows ‘SparkFun RTK’ then you can release it. 
+2. Mount the hardware:
+
+    * For RTK Surveyor/Express/Express Plus: Attach the included [L1/L1 antenna](https://www.sparkfun.com/products/17751) to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included ¼” camera thread to [⅝” 11-TPI adapter](https://www.sparkfun.com/products/17546). [Clamp](https://www.amazon.com/gp/product/B072DSRF3J) the RTK device to the monopole. Use the included [TNC to SMA cable](https://www.sparkfun.com/products/21739) to connect the antenna to the RTK Surveyor/Express/Express Plus.
+    * For RTK Facet/Facet L-Band: Attach the Facet to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included ¼” camera thread to [⅝” 11-TPI adapter](https://www.sparkfun.com/products/17546).
+
+    ![RTK devices attached to a monopole](<img/SparkFun RTK Device Attached to Monopole.png>)
+
+3. Turn on your RTK device by pressing the POWER button until the display shows ‘SparkFun RTK’ then you can release it. 
 
     ![Display showing MAC address](<img/Displays/SparkFun RTK Rover Display.png>)
 
-3. Please note the four-digit code in the top left corner of the display (**B022** in the above example). This is the MAC address you will want to pair with.
+4. Please note the four-digit code in the top left corner of the display (**B022** in the above example). This is the MAC address you will want to pair with.
 
     ![List of Bluetooth devices on Android](<img/Bluetooth/SparkFun RTK Bluetooth List Connect.png>)
 
-4. From your cell phone, open Bluetooth settings and pair with a new device. You will see a list of available Bluetooth devices. Select the ‘Facet Rover-3AF1’ where 'Facet' is the type of device you have (Surveyor, Express, Facet, etc) and 3AF1 is the MAC address you see on the device’s display.
+5. From your cell phone, open Bluetooth settings and pair with a new device. You will see a list of available Bluetooth devices. Select the ‘Facet Rover-3AF1’ where 'Facet' is the type of device you have (Surveyor, Express, Facet, etc) and 3AF1 is the MAC address you see on the device’s display.
 
-5. Once paired, open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
+6. Once paired, open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
 
     ![SW Map list of Bluetooth devices](<img/SWMaps/SparkFun RTK SWMaps Bluetooth Connect.png>)
 
-6. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. You should see the ‘Facet Rover-3AF1’ in the list. Select it then press the ‘Connect’ button in the bottom left corner. SW Maps will show a warning that the instrument height is 0m. That’s ok. 
+7. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. You should see the ‘Facet Rover-3AF1’ in the list. Select it then press the ‘Connect’ button in the bottom left corner. SW Maps will show a warning that the instrument height is 0m. That’s ok. 
 
     ![Display showing Bluetooth connection](<img/Displays/SparkFun RTK Display - Bluetooth.png>)
 
-7. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
+8. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
 
     ![RTK Display Explanation](img/Displays/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
 
-8. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. If you wait a few moments, this will drop dramatically to around 0.3 meters (300mm = 1ft) or better. 
+9. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. If you wait a few moments, this will drop dramatically to around 0.3 meters (300mm = 1ft) or better. 
 
 Now you use your RTK device to begin measuring points. If you need extreme accuracy (down to 10mm) continue reading the [RTK Crash Course](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#rtk-crash-course).
 

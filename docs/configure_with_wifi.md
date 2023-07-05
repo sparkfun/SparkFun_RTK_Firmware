@@ -58,7 +58,7 @@ Please note that the firmware for the RTK device and the firmware for the ZED re
 
 ## File Manager
 
-![Alt text](img/WiFi Config/SparkFun%20RTK%20WiFi%20Config%20File%20Manager.png)
+![List of files in file manager](img/WiFi Config/SparkFun%20RTK%20WiFi%20Config%20File%20Manager.png)
 
 Added in v3.0 firmware, a file manager is shown if an SD card is detected. This is a handy way to download files to a local device (cell phone or laptop) as well as delete any unneeded files. The SD size and free space are shown. And files may be uploaded to the SD card if needed.
 

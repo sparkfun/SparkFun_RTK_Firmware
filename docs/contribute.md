@@ -2,7 +2,7 @@
 
 All of this documentation can be modified by you! Please help us make it better.
 
-![Alt text](<img/Edit Page.png>)
+![Edit button on page](<img/Edit Page.png>)
 
 *The edit button at the top of every page*
 

@@ -265,7 +265,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
             ntripServer->write(incoming); // Send this byte to socket
             ntripServerBytesSent++;
             ntripServerTimer = millis();
-            wifiOutgoingRTCM = true;
+            netOutgoingRTCM = true;
         }
     }
 

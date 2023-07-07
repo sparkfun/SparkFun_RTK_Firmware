@@ -352,7 +352,6 @@ void ntripServerStop(bool clientAllocated)
                         No                Yes
     */
 
-#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
     bool enableFailOver;
     bool useWiFiNotEthernet;
 
@@ -387,7 +386,7 @@ void ntripServerStop(bool clientAllocated)
 #endif //COMPILE_WIFI && COMPILE_ETHERNET
 
         // Allocate the NTRIP server structure if not done
-        if (wifiClientAllocated == false)
+        if (clientAllocated == false)
             ntripServer = new NTRIPClient(useWiFiNotEthernet, enableFailOver);
     }
 

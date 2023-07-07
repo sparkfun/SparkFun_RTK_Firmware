@@ -660,8 +660,8 @@ unsigned long thirdRadioSpotTimer = 0;
 
 bool bluetoothIncomingRTCM = false;
 bool bluetoothOutgoingRTCM = false;
-bool wifiIncomingRTCM = false;
-bool wifiOutgoingRTCM = false;
+bool netIncomingRTCM = false;
+bool netOutgoingRTCM = false;
 bool espnowIncomingRTCM = false;
 bool espnowOutgoingRTCM = false;
 

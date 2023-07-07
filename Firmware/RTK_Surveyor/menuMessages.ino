@@ -604,8 +604,8 @@ void beginLogging(const char *customFileName)
 
                 // SparkFun RTK Express v1.10-Feb 11 2022
                 char firmwareVersion[30]; // v1.3 December 31 2021
-                snprintf(firmwareVersion, sizeof(firmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR,
-                         FIRMWARE_VERSION_MINOR, __DATE__);
+                firmwareVersion[0] = 'v';
+                getFirmwareVersion(&firmwareVersion[1], sizeof(firmwareVersion) -1, true);
                 createNMEASentence(CUSTOM_NMEA_TYPE_SYSTEM_VERSION, nmeaMessage, sizeof(nmeaMessage),
                                    firmwareVersion); // textID, buffer, sizeOfBuffer, text
                 ubxFile->println(nmeaMessage);

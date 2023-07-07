@@ -636,11 +636,7 @@ void displaySplash()
 
         yPos = yPos + fontHeight + 7;
         char unitFirmware[50];
-        if (ENABLE_DEVELOPER)
-            snprintf(unitFirmware, sizeof(unitFirmware), "v%d.%d-DEV", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-        else
-            snprintf(unitFirmware, sizeof(unitFirmware), "v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-
+        getFirmwareVersion(unitFirmware, sizeof(unitFirmware), false);
         printTextCenter(unitFirmware, yPos, QW_FONT_5X7, 1, false);
 
         oled.display();

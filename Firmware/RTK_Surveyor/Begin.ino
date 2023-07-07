@@ -230,8 +230,9 @@ void beginBoard()
         strncpy(platformPrefix, "Reference Station", sizeof(platformPrefix) - 1);
     }
 
-    systemPrintf("SparkFun RTK %s v%d.%d-%s\r\n", platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR,
-                 __DATE__);
+    char versionString[21];
+    getFirmwareVersion(versionString, sizeof(versionString), true);
+    systemPrintf("SparkFun RTK %s %s\r\n", platformPrefix, versionString);
 
     // Get unit MAC address
     esp_read_mac(wifiMACAddress, ESP_MAC_WIFI_STA);

@@ -193,8 +193,7 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "rtkIdentifier", settings.rtkIdentifier);
 
     char firmwareVersion[30]; // v1.3 December 31 2021
-    snprintf(firmwareVersion, sizeof(firmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR,
-             __DATE__);
+    getFirmwareVersion(firmwareVersion, sizeof(firmwareVersion), true);
     settingsFile->printf("%s=%s\r\n", "rtkFirmwareVersion", firmwareVersion);
 
     settingsFile->printf("%s=%s\r\n", "zedFirmwareVersion", zedFirmwareVersion);

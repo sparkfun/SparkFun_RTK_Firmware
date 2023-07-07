@@ -201,8 +201,9 @@ bool pointperfectProvisionDevice()
 #endif // WHITELISTED_ID
 
         char givenName[100];
-        snprintf(givenName, sizeof(givenName), "SparkFun RTK %s v%d.%d - %s", platformPrefix, FIRMWARE_VERSION_MAJOR,
-                 FIRMWARE_VERSION_MINOR, hardwareID); // Get ready for JSON
+        char versionString[9];
+        getFirmwareVersion(versionString, sizeof(versionString), false);
+        snprintf(givenName, sizeof(givenName), "SparkFun RTK %s %s - %s", platformPrefix, versionString, hardwareID); // Get ready for JSON
 
         StaticJsonDocument<256> pointPerfectAPIPost;
 

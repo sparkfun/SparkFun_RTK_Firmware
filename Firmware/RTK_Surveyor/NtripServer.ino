@@ -111,9 +111,10 @@ bool ntripServerConnectCaster()
     //  * Mount point
     //  * Password
     //  * Agent
-    snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/v%d.%d\r\n\r\n",
-             settings.ntripServer_MountPointPW, settings.ntripServer_MountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR,
-             FIRMWARE_VERSION_MINOR);
+    snprintf(serverBuffer, SERVER_BUFFER_SIZE, "SOURCE %s /%s\r\nSource-Agent: NTRIP SparkFun_RTK_%s/\r\n\r\n",
+             settings.ntripServer_MountPointPW, settings.ntripServer_MountPoint, platformPrefix);
+    int length = strlen(serverBuffer);
+    getFirmwareVersion(&serverBuffer[length], sizeof(serverBuffer) - length, false);
 
     // Send the authorization credentials to the NTRIP caster
     ntripServer->write((const uint8_t *)serverBuffer, strlen(serverBuffer));

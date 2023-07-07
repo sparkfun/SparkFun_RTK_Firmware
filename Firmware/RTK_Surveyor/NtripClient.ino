@@ -547,7 +547,6 @@ void ntripClientUpdate()
                 // NTRIP web service did not respond
                 if (ntripClientConnectLimitReached()) // Updates ntripClientConnectionAttemptTimeout
                     systemPrintln("NTRIP Caster failed to respond. Do you have your caster address and port correct?");
-                }
                 else
                 {
                     if (ntripClientConnectionAttemptTimeout / 1000 < 120)

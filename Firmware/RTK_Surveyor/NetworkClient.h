@@ -169,10 +169,12 @@ class NetworkClient : public Client
         return 0;
     }
 
-  protected:
-
     bool _useWiFiNotEthernet;
-    Client * _client; // Ethernet or WiFi client
+    bool _enableFailOver;
+
+  protected:
+    
+    Client *_client; // Ethernet or WiFi client
 
     //------------------------------
     // Return the IP address

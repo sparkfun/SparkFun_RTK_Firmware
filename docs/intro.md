@@ -31,7 +31,7 @@ Are you using [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#a
 
     ![List of Bluetooth devices on Android](<img/Bluetooth/SparkFun RTK Bluetooth List Connect.png>)
 
-5. From your cell phone, open Bluetooth settings and pair with a new device. You will see a list of available Bluetooth devices. Select the ‘Facet Rover-3AF1’ where 'Facet' is the type of device you have (Surveyor, Express, Facet, etc) and 3AF1 is the MAC address you see on the device’s display.
+5. From your cell phone, open Bluetooth settings and pair it with a new device. You will see a list of available Bluetooth devices. Select the ‘Facet Rover-3AF1’ where 'Facet' is the type of device you have (Surveyor, Express, Facet, etc) and 3AF1 is the MAC address you see on the device’s display.
 
 6. Once paired, open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
 
@@ -70,7 +70,7 @@ The software options for Apple iOS are much more limited because Apple products 
 
 3. Turn on your RTK device by pressing the POWER button until the display shows ‘SparkFun RTK' then you can release it. 
 
-    ![Config menu highlighted on display](<img/Displays/SparkFun RTK Config Display.png>)
+    ![Config menu highlighted on the display](<img/Displays/SparkFun RTK Config Display.png>)
 
 4. Put the RTK device into configuration mode by pressing the POWER or SETUP button until the Config menu is highlighted.
 
@@ -78,13 +78,13 @@ The software options for Apple iOS are much more limited because Apple products 
 
 6. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
 
-    ![Configure Bluetooth Protocol in WiFi Config](<img/WiFi Config/SparkFun RTK Change Bluetooth to BLE.png>)
-
 7. Under the *System Configuration* menu, change the **Bluetooth Protocol** to **BLE**. Then click *Save* and then *Exit*. The unit will now reboot.
 
-    ![iOS Bluetooth settings](<img/iOS/SparkFun RTK iOS Bluetooth Devices.png>)
+    ![Configure Bluetooth Protocol in WiFi Config](<img/WiFi Config/SparkFun RTK Change Bluetooth to BLE.png>)
 
 8. From your cell phone, disconnect from the *RTK Config* WiFi network and make sure Bluetooth is enabled on your iOS device Settings. The RTK device will not appear in the OTHER DEVICES list. That is OK.
+
+    ![iOS Bluetooth settings](<img/iOS/SparkFun RTK iOS Bluetooth Devices.png>)
 
 9. Open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
 
@@ -153,7 +153,7 @@ As soon as corrections are sent to the device, the Crosshair icon will become do
 
 ![Green bubble indicating RTK Fix](<img/SWMaps/SparkFun RTK SW Maps - Green Bubble-1.png>)
 
-In SW Maps, the position bubble will turn from Blue (regular GNSS fix), to Orange (RTK Float), to Green (RTK Fix).
+In SW Maps, the position bubble will turn from Blue (regular GNSS fix), then to Orange (RTK Float), then to Green (RTK Fix).
 
 RTK Fix will be maintained as long as there is a clear view of the sky and corrections are delivered to the device every few seconds.
 
@@ -166,6 +166,42 @@ RTK Fix will be maintained as long as there is a clear view of the sky and corre
 * The location reported by the RTK device is the location of the antenna element; it's *not* the location of the pointy end of the stick. Lat and Long are fairly easy to obtain but if you're capturing altitude be sure to do additional reading on ARPs (antenna reference points) and how to account for the antenna height in your data collection software.
 
 * An internet connection is required for most types of RTK. RTCM corrections can be transmitted over other types of connections (such as serial telemetry radios). See [Correction Transport](correction_transport.md) for more details.
+
+## RTK Facet L-Band Keys
+
+The RTK Facet L-Band is unique in that it must obtain keys to decrypt the signal from a geosynchronous satellite. Here are the steps to do so:
+
+1. Turn on your RTK Facet L-Band by pressing the POWER button until the display shows ‘SparkFun RTK' then you can release it. 
+
+    ![Config menu highlighted on the display](<img/Displays/SparkFun RTK Config Display.png>)
+
+2. Put the RTK device into configuration mode by pressing the POWER or SETUP button until the Config menu is highlighted.
+
+3. From your phone or laptop, connect to the WiFi network *RTK Config*.
+
+4. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
+
+5. Under the *WiFi Configuration* menu, enter the SSID and password for your local WiFi network. You can enter up to four. This can be a home,   office, cellular hotspot, or any other WiFi network. The unit will attempt to connect to the internet periodically (once every 26 days) to obtain new keys, including this first day. Then click *Save* and then *Exit*. The unit will now reboot.
+
+    ![WiFi settings](<img/WiFi%20Config/SparkFun%20RTK%20AP%20WiFi%20Menu.png>)
+
+6. After reboot, the device will connect to WiFi and obtain keys.
+
+    ![Days until L-Band keys expire](<img/Displays/SparkFun_RTK_LBand_DayToExpire.jpg>)
+
+    You should see a series of displays indicating the automatic process.
+
+    Keys are valid for a minimum of 29 days and a maximum of 60. The device will automatically attempt to connect to WiFi on a daily basis to obtain new keys. If WiFi is not available during that period the keys will expire. The device will continue to operate with expired keys, with ~0.3m accuracy but not be able to obtain RTK Fix mode.
+
+7. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. 
+
+    ![Days until L-Band keys expire](<img/Displays/SparkFun_RTK_LBand_Indicator.jpg>)
+
+    *Three-pronged satellite dish indicating L-Band reception*
+
+    Upon successful reception and decryption of L-Band corrections, the satellite dish icon will increase to a three-pronged icon. As the unit's accuracy increases a double blinking cross-hair will indicate a floating RTK solution, and a solid double cross-hair will indicate a fixed RTK solution. The HPA will be below 0.030 (30mm) or better.
+
+You can now use your RTK device to measure points with millimeter accuracy. Please see [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#android) or [iOS](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#ios) for guidance on getting the RTK device connected to GIS software over Bluetooth.
 
 ## RTK Reference Station
 

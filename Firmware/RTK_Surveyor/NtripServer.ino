@@ -72,7 +72,7 @@ static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 30;
 //----------------------------------------
 
 // WiFi connection used to push RTCM to NTRIP caster over WiFi
-static NTRIPClient *ntripServer;
+static NetworkClient *ntripServer;
 
 // Count of bytes sent by the NTRIP server to the NTRIP caster
 uint32_t ntripServerBytesSent = 0;
@@ -291,7 +291,7 @@ void ntripServerStart()
         reportHeapNow();
 
         // Allocate the ntripServer structure
-        ntripServer = new NTRIPClient(false); //(settings.ntripServerUseWiFiNotEthernet); //For future expansion
+        ntripServer = new NetworkClient(false); //(settings.ntripServerUseWiFiNotEthernet); //For future expansion
 
         // Restart WiFi and the NTRIP server if possible
         if (ntripServer)
@@ -314,9 +314,9 @@ void ntripServerStop(bool wifiClientAllocated)
         delete ntripServer;
         ntripServer = nullptr;
 
-        // Allocate the NTRIP server structure if not done
+        // Allocate the ntripServer structure if not done
         if (wifiClientAllocated == false)
-            ntripServer = new NTRIPClient(false); //(settings.ntripServerUseWiFiNotEthernet); //For future expansion
+            ntripServer = new NetworkClient(false); //(settings.ntripServerUseWiFiNotEthernet); //For future expansion
     }
 
     // Increase timeouts if we started WiFi

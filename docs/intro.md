@@ -8,13 +8,11 @@ Are you using [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#a
 
 ## Android
 
-![Download SW Maps](<img/SWMaps/SparkFun RTK SW Maps for Android QR Code.png>)
-
-*Download SW Maps for Android*
-
 1. Download [SW Maps](https://play.google.com/store/apps/details?id=np.com.softwel.swmaps). This may not be the GIS software you intend to do your data collection, but SW Maps is free and makes sure everything is working correctly out of the box.
 
-    ![RTK Boot Display](<img/Displays/SparkFun RTK Facet Boot Display.png>)
+    ![Download SW Maps](<img/SWMaps/SparkFun RTK SW Maps for Android QR Code.png>)
+
+    *Download SW Maps for Android*
 
 2. Mount the hardware:
 
@@ -25,27 +23,29 @@ Are you using [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#a
 
 3. Turn on your RTK device by pressing the POWER button until the display shows ‘SparkFun RTK’ then you can release it. 
 
+    ![RTK Boot Display](<img/Displays/SparkFun RTK Facet Boot Display.png>)
+
+4. Please note the four-digit code in the top left corner of the display (**B022** in the picture below). This is the MAC address you will want to pair with.
+
     ![Display showing MAC address](<img/Displays/SparkFun RTK Rover Display.png>)
-
-4. Please note the four-digit code in the top left corner of the display (**B022** in the above example). This is the MAC address you will want to pair with.
-
-    ![List of Bluetooth devices on Android](<img/Bluetooth/SparkFun RTK Bluetooth List Connect.png>)
 
 5. From your cell phone, open Bluetooth settings and pair it with a new device. You will see a list of available Bluetooth devices. Select the ‘Facet Rover-3AF1’ where 'Facet' is the type of device you have (Surveyor, Express, Facet, etc) and 3AF1 is the MAC address you see on the device’s display.
 
-6. Once paired, open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
+    ![List of Bluetooth devices on Android](<img/Bluetooth/SparkFun RTK Bluetooth List Connect.png>)
 
-    ![SW Map list of Bluetooth devices](<img/SWMaps/SparkFun RTK SWMaps Bluetooth Connect.png>)
+6. Once paired, open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
 
 7. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. You should see the ‘Facet Rover-3AF1’ in the list. Select it then press the ‘Connect’ button in the bottom left corner. SW Maps will show a warning that the instrument height is 0m. That’s ok. 
 
-    ![Display showing Bluetooth connection](<img/Displays/SparkFun RTK Display - Bluetooth.png>)
+    ![SW Map list of Bluetooth devices](<img/SWMaps/SparkFun RTK SWMaps Bluetooth Connect.png>)
 
 8. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
 
-    ![RTK Display Explanation](img/Displays/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
+    ![Display showing Bluetooth connection](<img/Displays/SparkFun RTK Display - Bluetooth.png>)
 
 9. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. If you wait a few moments, this will drop dramatically to around 0.3 meters (300mm = 1ft) or better. 
+
+    ![RTK Display Explanation](img/Displays/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
 
 You can now use your RTK device to measure points with very good (sub-meter) accuracy. If you need extreme accuracy (down to 10mm) continue reading the [RTK Crash Course](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#rtk-crash-course).
 
@@ -53,13 +53,11 @@ You can now use your RTK device to measure points with very good (sub-meter) acc
 
 The software options for Apple iOS are much more limited because Apple products do not support Bluetooth SPP. That's ok! The SparkFun RTK products support Bluetooth Low Energy (BLE) which *does* work with iOS.
 
-![SW Maps for Apple](<img/SWMaps/SparkFun RTK SW Maps for Apple QR Code.png>)
-
-*Download SW Maps for iOS*
-
 1. Download [SW Maps for iOS](https://apps.apple.com/us/app/sw-maps/id6444248083). This may not be the GIS software you intend to do your data collection, but SW Maps is free and makes sure everything is working correctly out of the box.
 
-    ![RTK Facet Boot Display](<img/Displays/SparkFun RTK Facet Boot Display.png>)
+    ![SW Maps for Apple](<img/SWMaps/SparkFun RTK SW Maps for Apple QR Code.png>)
+
+    *Download SW Maps for iOS*
 
 2. Mount the hardware:
 
@@ -70,9 +68,11 @@ The software options for Apple iOS are much more limited because Apple products 
 
 3. Turn on your RTK device by pressing the POWER button until the display shows ‘SparkFun RTK' then you can release it. 
 
-    ![Config menu highlighted on the display](<img/Displays/SparkFun RTK Config Display.png>)
+    ![RTK Facet Boot Display](<img/Displays/SparkFun RTK Facet Boot Display.png>)
 
 4. Put the RTK device into configuration mode by pressing the POWER or SETUP button until the Config menu is highlighted.
+
+    ![Config menu highlighted on the display](<img/Displays/SparkFun RTK Config Display.png>)
 
 5. From your phone, connect to the WiFi network *RTK Config*.
 
@@ -90,13 +90,13 @@ The software options for Apple iOS are much more limited because Apple products 
 
 10. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. Set the *Instrument Model* to **Generic NMEA (Bluetooth LE)**. Press 'Scan' and your RTK device should appear. Select it then press the ‘Connect’ button in the bottom left corner. SW Maps will show a warning that the instrument height is 0m. That’s ok.
 
-    ![Display showing Bluetooth connection](<img/Displays/SparkFun RTK Display - Bluetooth.png>)
-
 11. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
 
-    ![RTK Display Explanation](img/Displays/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
+    ![Display showing Bluetooth connection](<img/Displays/SparkFun RTK Display - Bluetooth.png>)
 
 12. Now put the device outside with a clear view of the sky. GNSS doesn’t work indoors or near windows. Within about 30 seconds you should see 10 or more satellites in view (SIV). More SIV is better. We regularly see 30 or more SIV. The horizontal positional accuracy (HPA) will start at around 10 meters and begin to decrease. The lower the HPA the more accurate your position. If you wait a few moments, this will drop dramatically to around 0.3 meters (300mm = 1ft) or better. 
+
+    ![RTK Display Explanation](img/Displays/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)
 
 You can now use your RTK device to measure points with very good (sub-meter) accuracy. If you need extreme accuracy (down to 10mm) continue reading the [RTK Crash Course](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#rtk-crash-course).
 
@@ -147,13 +147,13 @@ Once you have decided on a correction source we need to feed that data into your
 
 5. Corrections will be downloaded every second from PointOneNav using your phone’s cellular connection and then sent down to the RTK device over Bluetooth. You don't need a very fast internet connection or a lot of data; it's only about 530 bytes per second.
 
-![Double crosshair indicating RTK Fix](<img/Displays/SparkFun RTK Display - Double Crosshair.png>)
-
 As soon as corrections are sent to the device, the Crosshair icon will become double and begin flashing. Once RTK Fix is achieved (usually under 30 seconds) the double crosshairs will become solid and the HPA will be below 20mm. You can now take positional readings with millimeter accuracy!
 
-![Green bubble indicating RTK Fix](<img/SWMaps/SparkFun RTK SW Maps - Green Bubble-1.png>)
+![Double crosshair indicating RTK Fix](<img/Displays/SparkFun RTK Display - Double Crosshair.png>)
 
 In SW Maps, the position bubble will turn from Blue (regular GNSS fix), then to Orange (RTK Float), then to Green (RTK Fix).
+
+![Green bubble indicating RTK Fix](<img/SWMaps/SparkFun RTK SW Maps - Green Bubble-1.png>)
 
 RTK Fix will be maintained as long as there is a clear view of the sky and corrections are delivered to the device every few seconds.
 
@@ -173,9 +173,11 @@ The RTK Facet L-Band is unique in that it must obtain keys to decrypt the signal
 
 1. Turn on your RTK Facet L-Band by pressing the POWER button until the display shows ‘SparkFun RTK' then you can release it. 
 
-    ![Config menu highlighted on the display](<img/Displays/SparkFun RTK Config Display.png>)
+    ![RTK Boot Display](<img/Displays/SparkFun RTK Facet Boot Display.png>)
 
 2. Put the RTK device into configuration mode by pressing the POWER or SETUP button until the Config menu is highlighted.
+
+    ![Config menu highlighted on the display](<img/Displays/SparkFun RTK Config Display.png>)
 
 3. From your phone or laptop, connect to the WiFi network *RTK Config*.
 
@@ -205,4 +207,4 @@ You can now use your RTK device to measure points with millimeter accuracy. Plea
 
 ## RTK Reference Station
 
-While most of this Quick Start guide applies to the [RTK Reference Station](https://www.sparkfun.com/products/22429), the [Reference Station Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-reference-station-hookup-guide) is the best place to get started.
+While most of this Quick Start guide can be used with the [RTK Reference Station](https://www.sparkfun.com/products/22429), the [Reference Station Hookup Guide](https://learn.sparkfun.com/tutorials/sparkfun-rtk-reference-station-hookup-guide) is the best place to get started.

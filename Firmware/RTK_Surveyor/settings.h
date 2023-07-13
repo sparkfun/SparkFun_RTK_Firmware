@@ -76,7 +76,11 @@ ProductVariant productVariant = RTK_SURVEYOR;
 #define USE_SPI_MICROSD (!USE_MMC_MICROSD)
 
 // Macro to show if the the RTK variant has Ethernet
+#ifdef COMPILE_ETHERNET
 #define HAS_ETHERNET (productVariant == REFERENCE_STATION)
+#else //COMPILE_ETHERNET
+#define HAS_ETHERNET false
+#endif //COMPILE_ETHERNET
 
 // Macro to show if the the RTK variant has a GNSS TP interrupt - for accurate clock setting
 // The GNSS UBX PVT message is sent ahead of the top-of-second
@@ -954,6 +958,11 @@ typedef struct
         {"", ""},
         {"", ""},
     };
+
+    // Network layer
+    uint8_t defaultNetworkType = NETWORK_TYPE_USE_DEFAULT;
+    bool debugNetworkLayer = false; // Enable debugging of the network layer
+    bool printNetworkStatus = true; // Print network status (delays, failovers, IP address)
 
     // Multicast DNS Server
     bool mdnsEnable = true;      // Allows locating of device from browser address 'rtk.local'

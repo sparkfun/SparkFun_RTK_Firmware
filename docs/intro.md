@@ -16,8 +16,8 @@ Are you using [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#a
 
 2. Mount the hardware:
 
-    * For RTK Surveyor/Express/Express Plus: Attach the included [L1/L1 antenna](https://www.sparkfun.com/products/17751) to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included ¼” camera thread to [⅝” 11-TPI adapter](https://www.sparkfun.com/products/17546). [Clamp](https://www.amazon.com/gp/product/B072DSRF3J) the RTK device to the monopole. Use the included [TNC to SMA cable](https://www.sparkfun.com/products/21739) to connect the antenna to the RTK Surveyor/Express/Express Plus.
-    * For RTK Facet/Facet L-Band: Attach the Facet to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included ¼” camera thread to [⅝” 11-TPI adapter](https://www.sparkfun.com/products/17546).
+    * For RTK Surveyor/Express/Express Plus: Attach the included [antenna](https://www.sparkfun.com/products/17751) to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included [thread adapter](https://www.sparkfun.com/products/17546). [Clamp](https://www.amazon.com/gp/product/B072DSRF3J) the RTK device to the monopole. Use the included [cable](https://www.sparkfun.com/products/21739) to connect the antenna to the RTK Surveyor/Express/Express Plus.
+    * For RTK Facet/Facet L-Band: Attach the Facet to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included [thread adapter](https://www.sparkfun.com/products/17546).
 
     ![RTK devices attached to a monopole](<img/SparkFun RTK Device Attached to Monopole.png>)
 
@@ -61,8 +61,8 @@ The software options for Apple iOS are much more limited because Apple products 
 
 2. Mount the hardware:
 
-    * For RTK Surveyor/Express/Express Plus: Attach the included [L1/L1 antenna](https://www.sparkfun.com/products/17751) to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included ¼” camera thread to [⅝” 11-TPI adapter](https://www.sparkfun.com/products/17546). [Clamp](https://www.amazon.com/gp/product/B072DSRF3J) the RTK device to the monopole. Use the included [TNC to SMA cable](https://www.sparkfun.com/products/21739) to connect the antenna to the RTK Surveyor/Express/Express Plus.
-    * For RTK Facet/Facet L-Band: Attach the Facet to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included ¼” camera thread to [⅝” 11-TPI adapter](https://www.sparkfun.com/products/17546).
+    * For RTK Surveyor/Express/Express Plus: Attach the included [antenna](https://www.sparkfun.com/products/17751) to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included [thread adapter](https://www.sparkfun.com/products/17546). [Clamp](https://www.amazon.com/gp/product/B072DSRF3J) the RTK device to the monopole. Use the included [cable](https://www.sparkfun.com/products/21739) to connect the antenna to the RTK Surveyor/Express/Express Plus.
+    * For RTK Facet/Facet L-Band: Attach the Facet to a [monopole](https://www.amazon.com/AmazonBasics-WT1003-67-Inch-Monopod/dp/B00FAYL1YU) using the included [thread adapter](https://www.sparkfun.com/products/17546).
 
     ![RTK devices attached to a monopole](<img/SparkFun RTK Device Attached to Monopole.png>)
 

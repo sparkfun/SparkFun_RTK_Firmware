@@ -35,7 +35,7 @@ Are you using [Android](https://docs.sparkfun.com/SparkFun_RTK_Firmware/intro/#a
 
 6. Once paired, open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
 
-7. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. You should see the ‘Facet Rover-3AF1’ in the list. Select it then press the ‘Connect’ button in the bottom left corner. SW Maps will show a warning that the instrument height is 0m. That’s ok. 
+7. Press the SW Maps icon in the top left corner of the home screen and select Bluetooth GNSS. You should see the ‘Facet Rover-3AF1’ in the list. Select it then press the ‘Connect’ button in the bottom left corner. SW Maps will show a warning that the instrument height is 0m. That’s ok. 
 
     ![SW Map list of Bluetooth devices](<img/SWMaps/SparkFun RTK SWMaps Bluetooth Connect.png>)
 
@@ -70,25 +70,25 @@ The software options for Apple iOS are much more limited because Apple products 
 
     ![RTK Facet Boot Display](<img/Displays/SparkFun RTK Facet Boot Display.png>)
 
-4. Put the RTK device into configuration mode by pressing the POWER or SETUP button until the Config menu is highlighted.
+4. Put the RTK device into configuration mode by tapping the POWER or SETUP button multiple times until the Config menu is highlighted.
 
     ![Config menu highlighted on the display](<img/Displays/SparkFun RTK Config Display.png>)
 
 5. From your phone, connect to the WiFi network *RTK Config*.
 
-6. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
+6. Open a browser (Chrome is preferred) and type **rtk.local** into the address bar. Note: Devices with older firmware may still need to enter **192.168.4.1**.
 
-7. Under the *System Configuration* menu, change the **Bluetooth Protocol** to **BLE**. Then click *Save* and then *Exit*. The unit will now reboot.
+7. Under the *System Configuration* menu, change the **Bluetooth Protocol** to **BLE**. Then click **Save Configuration** and then **Exit and Reset**. The unit will now reboot.
 
     ![Configure Bluetooth Protocol in WiFi Config](<img/WiFi Config/SparkFun RTK Change Bluetooth to BLE.png>)
 
-8. From your cell phone, disconnect from the *RTK Config* WiFi network and make sure Bluetooth is enabled on your iOS device Settings. The RTK device will not appear in the OTHER DEVICES list. That is OK.
+8. You should now be disconnected from the *RTK Config* WiFi network. Make sure Bluetooth is enabled on your iOS device Settings. The RTK device will not appear in the OTHER DEVICES list. That is OK.
 
     ![iOS Bluetooth settings](<img/iOS/SparkFun RTK iOS Bluetooth Devices.png>)
 
 9. Open SW Maps. Select ‘New Project’ and give your project a name like ‘RTK Project’. 
 
-10. Press the SW Maps icon in the top left corner and select Bluetooth GNSS. Set the *Instrument Model* to **Generic NMEA (Bluetooth LE)**. Press 'Scan' and your RTK device should appear. Select it then press the ‘Connect’ button in the bottom left corner. SW Maps will show a warning that the instrument height is 0m. That’s ok.
+10. Press the SW Maps icon in the top left corner of the home screen and select Bluetooth GNSS. You will need to agree to allow a Bluetooth connection. Set the *Instrument Model* to **Generic NMEA (Bluetooth LE)**. Press 'Scan' and your RTK device should appear. Select it then press the ‘Connect’ button in the bottom left corner.
 
 11. Once connected, have a look at the display on the RTK device. You should see the MAC address disappear and be replaced by the Bluetooth icon. You’re connected!
 
@@ -175,15 +175,15 @@ The RTK Facet L-Band is unique in that it must obtain keys to decrypt the signal
 
     ![RTK Boot Display](<img/Displays/SparkFun RTK Facet Boot Display.png>)
 
-2. Put the RTK device into configuration mode by pressing the POWER or SETUP button until the Config menu is highlighted.
+2. Put the RTK device into configuration mode by tapping the POWER button multiple times until the Config menu is highlighted.
 
     ![Config menu highlighted on the display](<img/Displays/SparkFun RTK Config Display.png>)
 
 3. From your phone or laptop, connect to the WiFi network *RTK Config*.
 
-4. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
+4. Open a browser (Chrome is preferred) and type **rtk.local** into the address bar. Note: Devices with older firmware may still need to enter **192.168.4.1**.
 
-5. Under the *WiFi Configuration* menu, enter the SSID and password for your local WiFi network. You can enter up to four. This can be a home,   office, cellular hotspot, or any other WiFi network. The unit will attempt to connect to the internet periodically (once every 26 days) to obtain new keys, including this first day. Then click *Save* and then *Exit*. The unit will now reboot.
+5. Under the *WiFi Configuration* menu, enter the SSID and password for your local WiFi network. You can enter up to four. This can be a home,   office, cellular hotspot, or any other WiFi network. The unit will attempt to connect to the internet periodically (once every 26 days) to obtain new keys, including this first day. Then click **Save Configuration** and then **Exit and Reset**. The unit will now reboot.
 
     ![WiFi settings](<img/WiFi%20Config/SparkFun%20RTK%20AP%20WiFi%20Menu.png>)
 

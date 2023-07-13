@@ -1151,3 +1151,15 @@ const char *coordinatePrintableInputType(CoordinateInputType coordinateInputType
     }
     return ("Unknown");
 }
+
+// Print the error message every 15 seconds
+void reportFatalError(const char * errorMsg)
+{
+    while (1)
+    {
+        systemPrint("ERROR: ");
+        systemPrint(errorMsg);
+        systemPrintln();
+        sleep(15);
+    }
+}

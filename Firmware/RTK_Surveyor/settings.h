@@ -935,7 +935,7 @@ typedef struct
     uint16_t lbandFixTimeout_seconds = 180; // Number of seconds of no L-Band fix before resetting ZED
     int16_t minCNO_F9P = 6;                 // Minimum satellite signal level for navigation. ZED-F9P default is 6 dBHz
     int16_t minCNO_F9R = 20;                // Minimum satellite signal level for navigation. ZED-F9R default is 20 dBHz
-    bool mdnsEnable = false;                // Allows locating of device from browser address 'rtk.local'
+    bool mdnsEnable = true;                // Allows locating of device from browser address 'rtk.local'
     uint16_t serialGNSSRxFullThreshold = 50; // RX FIFO full interrupt. Max of ~128. See pinUART2Task().
     uint8_t btReadTaskPriority = 1; // Read from BT SPP and Write to GNSS. 3 being the highest, and 0 being the lowest
     uint8_t gnssReadTaskPriority =

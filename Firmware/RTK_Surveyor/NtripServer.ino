@@ -373,7 +373,7 @@ void ntripServerUpdate()
 
     // Start the network
     case NTRIP_SERVER_ON:
-        if (HAS_ETHERNET) // && !settings.ntripServerUseWiFiNotEthernet) //For future expansion
+        if (HAS_ETHERNET)
         {
             if (online.ethernetStatus == ETH_NOT_STARTED)
             {
@@ -424,7 +424,7 @@ void ntripServerUpdate()
         if ((millis() - ntripServerTimer) > (1 * 60 * 1000))
             // Failed to connect to to the network, attempt to restart the network
             ntripServerStop(false);
-        else if (HAS_ETHERNET) // && !settings.ntripServerUseWiFiNotEthernet) //For future expansion
+        else if (HAS_ETHERNET)
         {
             if (online.ethernetStatus == ETH_CONNECTED)
                 ntripServerSetState(NTRIP_SERVER_NETWORK_CONNECTED);

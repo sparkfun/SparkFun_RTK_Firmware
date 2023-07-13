@@ -651,10 +651,6 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
     stringRecord(newSettings, "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
 
-    // stringRecord(newSettings, "ntripServerUseWiFiNotEthernet", settings.ntripServerUseWiFiNotEthernet); //For future
-    // expansion stringRecord(newSettings, "ntripClientUseWiFiNotEthernet", settings.ntripClientUseWiFiNotEthernet);
-    // //For future expansion
-
     // Sensor Fusion Config
     stringRecord(newSettings, "enableSensorFusion", settings.enableSensorFusion);
     stringRecord(newSettings, "autoIMUmountAlignment", settings.autoIMUmountAlignment);
@@ -1161,12 +1157,6 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         strcpy(settings.ntripClient_MountPointPW, settingValueStr);
     else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
         settings.ntripClient_TransmitGGA = settingValueBool;
-
-    // For future expansion
-    // else if (strcmp(settingName, "ntripServerUseWiFiNotEthernet") == 0)
-    //   settings.ntripServerUseWiFiNotEthernet = settingValueBool;
-    // else if (strcmp(settingName, "ntripClientUseWiFiNotEthernet") == 0)
-    //   settings.ntripClientUseWiFiNotEthernet = settingValueBool;
 
     else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
         settings.serialTimeoutGNSS = settingValue;

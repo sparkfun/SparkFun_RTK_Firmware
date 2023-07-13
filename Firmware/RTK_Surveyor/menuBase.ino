@@ -109,14 +109,6 @@ void menuBase()
                 systemPrint("13) Select survey-in radio: ");
                 systemPrintf("%s\r\n", settings.ntripServer_StartAtSurveyIn ? "WiFi" : "Bluetooth");
             }
-
-            // For future expansion
-            // if (HAS_ETHERNET)
-            //{
-            //   systemPrintf("14) Use WiFi (not Ethernet) for NTRIP Server: ", menuEntry++);
-            //   if (settings.ntripServerUseWiFiNotEthernet == true) systemPrintln("Enabled");
-            //   else systemPrintln("Disabled");
-            // }
         }
         else
         {
@@ -333,12 +325,6 @@ void menuBase()
             settings.ntripServer_StartAtSurveyIn ^= 1;
             restartBase = true;
         }
-        // For future expansion
-        // else if (incoming == 14 && settings.enableNtripServer == true && HAS_ETHERNET)
-        //{
-        //   settings.ntripServerUseWiFiNotEthernet ^= 1;
-        //   restartBase = true;
-        // }
         else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
             break;
         else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)

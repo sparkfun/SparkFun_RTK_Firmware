@@ -167,11 +167,11 @@ bool ntripClientConnect()
 // Determine if another connection is possible or if the limit has been reached
 bool ntripClientConnectLimitReached()
 {
-    // Shutdown the NTRIP client
-    ntripClientStop(false);
-
     // Retry the connection a few times
     bool limitReached = (ntripClientConnectionAttempts >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
+
+    // Restart the NTRIP client
+    ntripClientStop(limitReached);
 
     ntripClientConnectionAttempts++;
     ntripClientConnectionAttemptsTotal++;
@@ -184,13 +184,8 @@ bool ntripClientConnectLimitReached()
         reportHeapNow();
     }
     else
-    {
         // No more connection attempts, switching to Bluetooth
         systemPrintln("NTRIP Client connection attempts exceeded!");
-
-        // Stop NTRIP client operations
-        ntripClientStop(true);
-    }
     return limitReached;
 }
 

@@ -126,11 +126,11 @@ bool ntripServerConnectCaster()
 // Determine if the connection limit has been reached
 bool ntripServerConnectLimitReached()
 {
-    // Shutdown the NTRIP server
-    ntripServerStop(false);
-
     // Retry the connection a few times
     bool limitReached = (ntripServerConnectionAttempts >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS);
+
+    // Shutdown the NTRIP server
+    ntripServerStop(limitReached);
 
     ntripServerConnectionAttempts++;
     ntripServerConnectionAttemptsTotal++;
@@ -152,11 +152,8 @@ bool ntripServerConnectLimitReached()
         reportHeapNow();
     }
     else
-    {
         // No more connection attempts
         systemPrintln("NTRIP Server connection attempts exceeded!");
-        ntripServerStop(true);
-    }
     return limitReached;
 }
 

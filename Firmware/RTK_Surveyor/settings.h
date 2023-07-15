@@ -144,6 +144,18 @@ typedef enum
     ERROR_GPS_CONFIG_FAIL,
 } t_errorNumber;
 
+// Define the types of network
+enum NetworkTypes
+{
+    NETWORK_TYPE_WIFI = 0,
+    NETWORK_TYPE_ETHERNET,
+    // Last hardware network type
+    NETWORK_TYPE_MAX,
+
+    // Special cases
+    NETWORK_TYPE_USE_DEFAULT = NETWORK_TYPE_MAX,
+};
+
 // Even though WiFi and ESP-Now operate on the same radio, we treat
 // then as different states so that we can leave the radio on if
 // either WiFi or ESP-Now are active

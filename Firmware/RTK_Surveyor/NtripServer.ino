@@ -124,7 +124,7 @@ bool ntripServerConnectCaster()
 bool ntripServerConnectLimitReached()
 {
     // Shutdown the NTRIP server
-    ntripServerStop(false); // Allocate new ntripServer
+    ntripServerStop(false);
 
     // Retry the connection a few times
     bool limitReached = (ntripServerConnectionAttempts >= MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS);
@@ -152,7 +152,7 @@ bool ntripServerConnectLimitReached()
     {
         // No more connection attempts
         systemPrintln("NTRIP Server connection attempts exceeded!");
-        ntripServerStop(true); // Don't allocate new ntripServer
+        ntripServerStop(true);
     }
     return limitReached;
 }
@@ -272,7 +272,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
 void ntripServerStart()
 {
     // Stop the NTRIP server and network
-    ntripServerStop(true); // Don't allocate new ntripServer
+    ntripServerStop(true);
 
     // Start the NTRIP server if enabled
     if ((settings.ntripServer_StartAtSurveyIn == true) || (settings.enableNtripServer == true))
@@ -292,7 +292,7 @@ void ntripServerStart()
 }
 
 // Stop the NTRIP server
-void ntripServerStop(bool clientAllocated)
+void ntripServerStop(bool shutdown)
 {
     if (ntripServer)
     {
@@ -305,7 +305,7 @@ void ntripServerStop(bool clientAllocated)
         ntripServer = nullptr;
 
         // Allocate the ntripServer structure if not done
-        if (clientAllocated == false)
+        if (shutdown == false)
             ntripServer = new NetworkClient(false);
     }
 
@@ -319,7 +319,7 @@ void ntripServerStop(bool clientAllocated)
     }
 
     // Determine the next NTRIP server state
-    ntripServerSetState((ntripServer && (clientAllocated == false)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
+    ntripServerSetState((ntripServer && (shutdown == false)) ? NTRIP_SERVER_ON : NTRIP_SERVER_OFF);
     online.ntripServer = false;
 }
 
@@ -341,7 +341,7 @@ void ntripServerUpdate()
     {
         // If user turns off NTRIP Server via settings, stop server
         if (ntripServerState > NTRIP_SERVER_OFF)
-            ntripServerStop(true); // Don't allocate new ntripServer
+            ntripServerStop(true);
         return;
     }
 
@@ -368,7 +368,7 @@ void ntripServerUpdate()
             if (online.ethernetStatus == ETH_NOT_STARTED)
             {
                 systemPrintln("Ethernet not started. Can not start NTRIP Server");
-                ntripServerStop(false); // Allocate a new ntripServer
+                ntripServerStop(false);
             }
             else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
             {
@@ -384,7 +384,7 @@ void ntripServerUpdate()
             else
             {
                 systemPrintln("Error: Please connect Ethernet before starting NTRIP Server");
-                ntripServerStop(true); // Do not allocate new ntripServer
+                ntripServerStop(true);
             }
         }
         else
@@ -392,7 +392,7 @@ void ntripServerUpdate()
             if (wifiNetworkCount() == 0)
             {
                 systemPrintln("Error: Please enter at least one SSID before starting NTRIP Server");
-                ntripServerStop(true); // Do not allocate new ntripServer
+                ntripServerStop(true);
             }
             else
             {
@@ -563,13 +563,13 @@ void ntripServerUpdate()
         {
             // Broken connection, retry the NTRIP connection
             systemPrintln("Connection to NTRIP Caster was lost");
-            ntripServerStop(false); // Allocate a new ntripServer
+            ntripServerStop(false);
         }
         else if ((millis() - ntripServerTimer) > (3 * 1000))
         {
             // GNSS stopped sending RTCM correction data
             systemPrintln("NTRIP Server breaking connection to caster due to lack of RTCM data!");
-            ntripServerStop(false); // Allocate a new ntripServer
+            ntripServerStop(false);
         }
         else
         {

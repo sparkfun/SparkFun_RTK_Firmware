@@ -137,24 +137,7 @@ void menuSystem()
             (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX))
         {
             systemPrint("NTRIP Client ");
-            switch (ntripClientState)
-            {
-            case NTRIP_CLIENT_OFF:
-                systemPrint("Disconnected");
-                break;
-            case NTRIP_CLIENT_ON:
-            case NTRIP_CLIENT_NETWORK_STARTED:
-            case NTRIP_CLIENT_NETWORK_CONNECTED:
-            case NTRIP_CLIENT_CONNECTING:
-                systemPrint("Connecting");
-                break;
-            case NTRIP_CLIENT_CONNECTED:
-                systemPrint("Connected");
-                break;
-            default:
-                systemPrintf("Unknown: %d", ntripClientState);
-                break;
-            }
+            ntripClientPrintStateSummary();
             systemPrintf(" - %s/%s:%d", settings.ntripClient_CasterHost, settings.ntripClient_MountPoint,
                          settings.ntripClient_CasterPort);
 

@@ -200,6 +200,28 @@ int ntripClientReceiveDataAvailable()
     return ntripClient->available();
 }
 
+void ntripClientPrintStateSummary()
+{
+    switch (ntripClientState)
+    {
+    default:
+        systemPrintf("Unknown: %d", ntripClientState);
+        break;
+    case NTRIP_CLIENT_OFF:
+        systemPrint("Disconnected");
+        break;
+    case NTRIP_CLIENT_ON:
+    case NTRIP_CLIENT_NETWORK_STARTED:
+    case NTRIP_CLIENT_NETWORK_CONNECTED:
+    case NTRIP_CLIENT_CONNECTING:
+        systemPrint("Connecting");
+        break;
+    case NTRIP_CLIENT_CONNECTED:
+        systemPrint("Connected");
+        break;
+    }
+}
+
 // Read the response from the NTRIP client
 void ntripClientResponse(char *response, size_t maxLength)
 {

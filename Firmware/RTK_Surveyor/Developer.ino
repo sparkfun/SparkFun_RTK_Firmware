@@ -41,6 +41,7 @@ void ntripClientUpdate() {}
 // NTRIP server
 //----------------------------------------
 
+void ntripServerPrintStateSummary() {systemPrint("NOT compiled");}
 void ntripServerProcessRTCM(uint8_t incoming) {}
 void ntripServerStart()
 {

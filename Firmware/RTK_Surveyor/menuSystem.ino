@@ -182,26 +182,7 @@ void menuSystem()
             (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING))
         {
             systemPrint("NTRIP Server ");
-            switch (ntripServerState)
-            {
-            case NTRIP_SERVER_OFF:
-                systemPrint("Disconnected");
-                break;
-            case NTRIP_SERVER_ON:
-            case NTRIP_SERVER_NETWORK_STARTED:
-            case NTRIP_SERVER_NETWORK_CONNECTED:
-            case NTRIP_SERVER_WAIT_GNSS_DATA:
-            case NTRIP_SERVER_CONNECTING:
-            case NTRIP_SERVER_AUTHORIZATION:
-                systemPrint("Connecting");
-                break;
-            case NTRIP_SERVER_CASTING:
-                systemPrint("Connected");
-                break;
-            default:
-                systemPrintf("Unknown: %d", ntripServerState);
-                break;
-            }
+            ntripServerPrintStateSummary();
             systemPrintf(" - %s/%s:%d", settings.ntripServer_CasterHost, settings.ntripServer_MountPoint,
                          settings.ntripServer_CasterPort);
 

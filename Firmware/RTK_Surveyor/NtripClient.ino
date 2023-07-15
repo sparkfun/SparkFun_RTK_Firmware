@@ -306,13 +306,7 @@ void ntripClientStart()
         // Display the heap state
         reportHeapNow();
         systemPrintln("NTRIP Client start");
-
-        // Allocate the ntripClient structure
-        ntripClient = new NetworkClient(false);
-
-        // Startup the network and the NTRIP client
-        if (ntripClient)
-            ntripClientSetState(NTRIP_CLIENT_ON);
+        ntripClientSetState(NTRIP_CLIENT_ON);
     }
 
     ntripClientConnectionAttempts = 0;
@@ -330,10 +324,6 @@ void ntripClientStop(bool shutdown)
         // Free the NTRIP client resources
         delete ntripClient;
         ntripClient = nullptr;
-
-        // Allocate the ntripClient structure if not done
-        if (shutdown == false)
-            ntripClient = new NetworkClient(false);
     }
 
     // Increase timeouts if we started the network
@@ -353,7 +343,7 @@ void ntripClientStop(bool shutdown)
     }
 
     // Determine the next NTRIP client state
-    ntripClientSetState((ntripClient && (shutdown == false)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
+    ntripClientSetState(shutdown ? NTRIP_CLIENT_OFF : NTRIP_CLIENT_ON);
     online.ntripClient = false;
     netIncomingRTCM = false;
 }
@@ -421,17 +411,28 @@ void ntripClientUpdate()
 
     case NTRIP_CLIENT_NETWORK_STARTED:
         if ((millis() - ntripClientTimer) > (1 * 60 * 1000))
+        {
             // Failed to connect to to the network, attempt to restart the network
             ntripClientStop(false);
-        else if (HAS_ETHERNET)
-        {
-            if (online.ethernetStatus == ETH_CONNECTED)
-                ntripClientSetState(NTRIP_CLIENT_NETWORK_CONNECTED);
+            break;
         }
+        if (HAS_ETHERNET)
+        {
+            if (online.ethernetStatus != ETH_CONNECTED)
+                break;
+        }
+        else if (!wifiIsConnected())
+            break;
+
+        // Allocate the ntripClient structure
+        ntripClient = new NetworkClient(false);
+        if (ntripClient)
+            ntripClientSetState(NTRIP_CLIENT_NETWORK_CONNECTED);
         else
         {
-            if (wifiIsConnected())
-                ntripClientSetState(NTRIP_CLIENT_NETWORK_CONNECTED);
+            // Failed to allocate the ntripClient structure
+            systemPrintln("ERROR: Failed to allocate the ntripClient structure!");
+            ntripClientSetState(NTRIP_CLIENT_OFF);
         }
         break;
 

@@ -552,4 +552,9 @@ IPAddress wifiGetIpAddress()
     return WiFi.localIP();
 }
 
+int wifiGetRssi()
+{
+    return WiFi.RSSI();
+}
+
 #endif // COMPILE_WIFI

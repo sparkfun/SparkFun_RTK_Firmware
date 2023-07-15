@@ -3,6 +3,11 @@
 
 class NetworkClient : public Client
 {
+  protected:
+
+    Client * _client; // Ethernet or WiFi client
+    bool _useWiFiNotEthernet;
+
   public:
 
     //------------------------------
@@ -170,9 +175,6 @@ class NetworkClient : public Client
     }
 
   protected:
-
-    bool _useWiFiNotEthernet;
-    Client * _client; // Ethernet or WiFi client
 
     //------------------------------
     // Return the IP address

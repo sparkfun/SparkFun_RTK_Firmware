@@ -98,15 +98,15 @@ bool ntripClientConnect()
             strcpy(settings.ntripClient_CasterHost, token);
     }
 
-    systemPrintf("NTRIP Client connecting to %s:%d\r\n", settings.ntripClient_CasterHost,
-                 settings.ntripClient_CasterPort);
+    if (settings.enablePrintNtripClientState)
+        systemPrintf("NTRIP Client connecting to %s:%d\r\n",
+                     settings.ntripClient_CasterHost,
+                     settings.ntripClient_CasterPort);
 
     int connectResponse = ntripClient->connect(settings.ntripClient_CasterHost, settings.ntripClient_CasterPort);
 
     if (connectResponse < 1)
         return false;
-
-    systemPrintln("NTRIP Client connected");
 
     // Set up the server request (GET)
     char serverRequest[SERVER_BUFFER_SIZE];
@@ -130,8 +130,11 @@ bool ntripClientConnect()
         snprintf(userCredentials, sizeof(userCredentials), "%s:%s", settings.ntripClient_CasterUser,
                  settings.ntripClient_CasterUserPW);
 
-        systemPrint("NTRIP Client sending credentials: ");
-        systemPrintln(userCredentials);
+        if (settings.enablePrintNtripClientState)
+        {
+            systemPrint("NTRIP Client sending credentials: ");
+            systemPrintln(userCredentials);
+        }
 
         // Encode with ESP32 built-in library
         base64 b;
@@ -147,15 +150,18 @@ bool ntripClientConnect()
     strncat(serverRequest, credentials, SERVER_BUFFER_SIZE - 1);
     strncat(serverRequest, "\r\n", SERVER_BUFFER_SIZE - 1);
 
-    systemPrint("NTRIP Client serverRequest size: ");
-    systemPrint(strlen(serverRequest));
-    systemPrint(" of ");
-    systemPrint(sizeof(serverRequest));
-    systemPrintln(" bytes available");
+    if (settings.enablePrintNtripClientState)
+    {
+        systemPrint("NTRIP Client serverRequest size: ");
+        systemPrint(strlen(serverRequest));
+        systemPrint(" of ");
+        systemPrint(sizeof(serverRequest));
+        systemPrintln(" bytes available");
+        systemPrintln("NTRIP Client sending server request: ");
+        systemPrintln(serverRequest);
+    }
 
     // Send the server request
-    systemPrintln("NTRIP Client sending server request: ");
-    systemPrintln(serverRequest);
     ntripClient->write((const uint8_t *)serverRequest, strlen(serverRequest));
     ntripClientTimer = millis();
     return true;
@@ -218,32 +224,35 @@ void ntripClientResponse(char *response, size_t maxLength)
 // Update the state of the NTRIP client state machine
 void ntripClientSetState(NTRIPClientState newState)
 {
-    if (ntripClientState == newState)
+    if (settings.enablePrintNtripClientState && (ntripClientState == newState))
         systemPrint("*");
     ntripClientState = newState;
-    switch (newState)
+    if (settings.enablePrintNtripClientState)
     {
-    default:
-        systemPrintf("Unknown NTRIP Client state: %d\r\n", newState);
-        break;
-    case NTRIP_CLIENT_OFF:
-        systemPrintln("NTRIP_CLIENT_OFF");
-        break;
-    case NTRIP_CLIENT_ON:
-        systemPrintln("NTRIP_CLIENT_ON");
-        break;
-    case NTRIP_CLIENT_NETWORK_STARTED:
-        systemPrintln("NTRIP_CLIENT_NETWORK_STARTED");
-        break;
-    case NTRIP_CLIENT_NETWORK_CONNECTED:
-        systemPrintln("NTRIP_CLIENT_NETWORK_CONNECTED");
-        break;
-    case NTRIP_CLIENT_CONNECTING:
-        systemPrintln("NTRIP_CLIENT_CONNECTING");
-        break;
-    case NTRIP_CLIENT_CONNECTED:
-        systemPrintln("NTRIP_CLIENT_CONNECTED");
-        break;
+        switch (newState)
+        {
+        default:
+            systemPrintf("Unknown NTRIP Client state: %d\r\n", newState);
+            break;
+        case NTRIP_CLIENT_OFF:
+            systemPrintln("NTRIP_CLIENT_OFF");
+            break;
+        case NTRIP_CLIENT_ON:
+            systemPrintln("NTRIP_CLIENT_ON");
+            break;
+        case NTRIP_CLIENT_NETWORK_STARTED:
+            systemPrintln("NTRIP_CLIENT_NETWORK_STARTED");
+            break;
+        case NTRIP_CLIENT_NETWORK_CONNECTED:
+            systemPrintln("NTRIP_CLIENT_NETWORK_CONNECTED");
+            break;
+        case NTRIP_CLIENT_CONNECTING:
+            systemPrintln("NTRIP_CLIENT_CONNECTING");
+            break;
+        case NTRIP_CLIENT_CONNECTED:
+            systemPrintln("NTRIP_CLIENT_CONNECTED");
+            break;
+        }
     }
 }
 
@@ -497,7 +506,9 @@ void ntripClientUpdate()
             // Look for various responses
             if (strstr(response, "200") != nullptr) //'200' found
             {
-                log_d("NTRIP Client connected to caster");
+                systemPrintf("NTRIP Client connected to %s:%d\r\n",
+                             settings.ntripClient_CasterHost,
+                             settings.ntripClient_CasterPort);
 
                 // Connection is now open, start the NTRIP receive data timer
                 ntripClientTimer = millis();
@@ -616,7 +627,7 @@ void ntripClientUpdate()
                 theGNSS.pushRawData(rtcmData, rtcmCount);
                 netIncomingRTCM = true;
 
-                if (!inMainMenu && settings.enablePrintNtripClientState)
+                if (!inMainMenu && settings.enablePrintNtripClientRtcm)
                     systemPrintf("NTRIP Client received %d RTCM bytes, pushed to ZED\r\n", rtcmCount);
             }
         }

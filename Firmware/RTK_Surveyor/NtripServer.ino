@@ -97,14 +97,17 @@ bool ntripServerConnectCaster()
             strcpy(settings.ntripServer_CasterHost, token);
     }
 
-    systemPrintf("NTRIP Server connecting to %s:%d\r\n", settings.ntripServer_CasterHost,
-                 settings.ntripServer_CasterPort);
+    if (settings.enablePrintNtripServerState)
+        systemPrintf("NTRIP Server connecting to %s:%d\r\n",
+                     settings.ntripServer_CasterHost,
+                     settings.ntripServer_CasterPort);
 
     // Attempt a connection to the NTRIP caster
     if (!ntripServer->connect(settings.ntripServer_CasterHost, settings.ntripServer_CasterPort))
         return false;
 
-    systemPrintln("NTRIP Server connected");
+    if (settings.enablePrintNtripServerState)
+        systemPrintln("NTRIP Server sending authorization credentials");
 
     // Build the authorization credentials message
     //  * Mount point
@@ -176,38 +179,41 @@ void ntripServerResponse(char *response, size_t maxLength)
 // Update the state of the NTRIP server state machine
 void ntripServerSetState(NTRIPServerState newState)
 {
-    if (ntripServerState == newState)
+    if (settings.enablePrintNtripServerState && (ntripServerState == newState))
         systemPrint("*");
     ntripServerState = newState;
-    switch (newState)
+    if (settings.enablePrintNtripServerState)
     {
-    default:
-        systemPrintf("Unknown NTRIP Server state: %d\r\n", newState);
-        break;
-    case NTRIP_SERVER_OFF:
-        systemPrintln("NTRIP_SERVER_OFF");
-        break;
-    case NTRIP_SERVER_ON:
-        systemPrintln("NTRIP_SERVER_ON");
-        break;
-    case NTRIP_SERVER_NETWORK_STARTED:
-        systemPrintln("NTRIP_SERVER_NETWORK_STARTED");
-        break;
-    case NTRIP_SERVER_NETWORK_CONNECTED:
-        systemPrintln("NTRIP_SERVER_NETWORK_CONNECTED");
-        break;
-    case NTRIP_SERVER_WAIT_GNSS_DATA:
-        systemPrintln("NTRIP_SERVER_WAIT_GNSS_DATA");
-        break;
-    case NTRIP_SERVER_CONNECTING:
-        systemPrintln("NTRIP_SERVER_CONNECTING");
-        break;
-    case NTRIP_SERVER_AUTHORIZATION:
-        systemPrintln("NTRIP_SERVER_AUTHORIZATION");
-        break;
-    case NTRIP_SERVER_CASTING:
-        systemPrintln("NTRIP_SERVER_CASTING");
-        break;
+        switch (newState)
+        {
+        default:
+            systemPrintf("Unknown NTRIP Server state: %d\r\n", newState);
+            break;
+        case NTRIP_SERVER_OFF:
+            systemPrintln("NTRIP_SERVER_OFF");
+            break;
+        case NTRIP_SERVER_ON:
+            systemPrintln("NTRIP_SERVER_ON");
+            break;
+        case NTRIP_SERVER_NETWORK_STARTED:
+            systemPrintln("NTRIP_SERVER_NETWORK_STARTED");
+            break;
+        case NTRIP_SERVER_NETWORK_CONNECTED:
+            systemPrintln("NTRIP_SERVER_NETWORK_CONNECTED");
+            break;
+        case NTRIP_SERVER_WAIT_GNSS_DATA:
+            systemPrintln("NTRIP_SERVER_WAIT_GNSS_DATA");
+            break;
+        case NTRIP_SERVER_CONNECTING:
+            systemPrintln("NTRIP_SERVER_CONNECTING");
+            break;
+        case NTRIP_SERVER_AUTHORIZATION:
+            systemPrintln("NTRIP_SERVER_AUTHORIZATION");
+            break;
+        case NTRIP_SERVER_CASTING:
+            systemPrintln("NTRIP_SERVER_CASTING");
+            break;
+        }
     }
 }
 

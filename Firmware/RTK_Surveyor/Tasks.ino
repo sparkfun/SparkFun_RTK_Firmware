@@ -404,43 +404,12 @@ void handleGnssDataTask(void *e)
         // Send data to the WiFi TCP clients
         //----------------------------------------------------------------------
 
-        static uint16_t tcpTailWiFi = 0;     // TCP client tail
-
-        // Determine if the device is connected
-        connected = (online.tcpServer || online.tcpClient) && wifiTcpConnected;
-        if (!connected)
-            tcpTailWiFi = dataHead;
-        else
+        // Update space available for use in UART task
+        bytesToSend = pvtSendData(dataHead);
+        if (usedSpace < bytesToSend)
         {
-            // Determine the amount of TCP data in the buffer
-            bytesToSend = dataHead - tcpTailWiFi;
-            if (bytesToSend < 0)
-                bytesToSend += settings.gnssHandlerBufferSize;
-            if (bytesToSend > 0)
-            {
-                // Reduce bytes to send if we have more to send then the end of the buffer
-                // We'll wrap next loop
-                if ((tcpTailWiFi + bytesToSend) > settings.gnssHandlerBufferSize)
-                    bytesToSend = settings.gnssHandlerBufferSize - tcpTailWiFi;
-
-                // Send the data to the TCP clients
-                wifiSendTcpData(&ringBuffer[tcpTailWiFi], bytesToSend);
-
-                // Assume all data was sent, wrap the buffer pointer
-                tcpTailWiFi += bytesToSend;
-                if (tcpTailWiFi >= settings.gnssHandlerBufferSize)
-                    tcpTailWiFi -= settings.gnssHandlerBufferSize;
-
-                // Update space available for use in UART task
-                bytesToSend = dataHead - tcpTailWiFi;
-                if (bytesToSend < 0)
-                    bytesToSend += settings.gnssHandlerBufferSize;
-                if (usedSpace < bytesToSend)
-                {
-                    usedSpace = bytesToSend;
-                    slowConsumer = "WiFi";
-                }
-            }
+            usedSpace = bytesToSend;
+            slowConsumer = "WiFi";
         }
 
         //----------------------------------------------------------------------

@@ -318,148 +318,175 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
 
 // If new data is in the ringBuffer, dole it out to appropriate interface
 // Send data out Bluetooth, record to SD, or send over TCP
+// Each device (Bluetooth, SD and network client) gets its own tail.  If the
+// device is running too slowly then data for that device is dropped.
+// The usedSpace variable tracks the total space in use in the buffer.
 void handleGnssDataTask(void *e)
 {
-    volatile static uint16_t btTail = 0;          // BT Tail advances as it is sent over BT
-    volatile static uint16_t tcpTailWiFi = 0;     // TCP client tail
-    volatile static uint16_t tcpTailEthernet = 0; // TCP client tail
-    volatile static uint16_t sdTail = 0;          // SD Tail advances as it is recorded to SD
-
-    int btBytesToSend;          // Amount of buffered Bluetooth data
-    int tcpBytesToSendWiFi;     // Amount of buffered TCP data
-    int tcpBytesToSendEthernet; // Amount of buffered TCP data
-    int sdBytesToRecord;        // Amount of buffered microSD card logging data
-
-    int btConnected; // Is the device in a state to send Bluetooth data?
+    int bytesToSend;
+    bool connected;
+    int freeSpace;
+    int usedSpace;
 
     while (true)
     {
-        // Determine the amount of Bluetooth data in the buffer
-        btBytesToSend = 0;
-
-        // Determine BT connection state
-        btConnected = (bluetoothGetState() == BT_CONNECTED) && (systemState != STATE_BASE_TEMP_SETTLE) &&
-                      (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
-
-        if (btConnected)
-        {
-            btBytesToSend = dataHead - btTail;
-            if (btBytesToSend < 0)
-                btBytesToSend += settings.gnssHandlerBufferSize;
-        }
-
-        // Determine the amount of TCP data in the buffer
-        tcpBytesToSendWiFi = 0;
-        if (settings.enableTcpServer || settings.enableTcpClient)
-        {
-            tcpBytesToSendWiFi = dataHead - tcpTailWiFi;
-            if (tcpBytesToSendWiFi < 0)
-                tcpBytesToSendWiFi += settings.gnssHandlerBufferSize;
-        }
-
-        tcpBytesToSendEthernet = 0;
-        if (settings.enableTcpClientEthernet)
-        {
-            tcpBytesToSendEthernet = dataHead - tcpTailEthernet;
-            if (tcpBytesToSendEthernet < 0)
-                tcpBytesToSendEthernet += settings.gnssHandlerBufferSize;
-        }
-
-        // Determine the amount of microSD card logging data in the buffer
-        sdBytesToRecord = 0;
-        if (online.logging)
-        {
-            sdBytesToRecord = dataHead - sdTail;
-            if (sdBytesToRecord < 0)
-                sdBytesToRecord += settings.gnssHandlerBufferSize;
-        }
+        usedSpace = 0;
 
         //----------------------------------------------------------------------
         // Send data over Bluetooth
         //----------------------------------------------------------------------
 
-        if (!btConnected)
+        static uint16_t btTail = 0; // BT Tail advances as it is sent over BT
+
+        // Determine BT connection state
+        bool connected = (bluetoothGetState() == BT_CONNECTED)
+                         && (systemState != STATE_BASE_TEMP_SETTLE)
+                         && (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
+        if (!connected)
             // Discard the data
             btTail = dataHead;
-        else if (btBytesToSend > 0)
+        else
         {
-            // Reduce bytes to send if we have more to send then the end of the buffer
-            // We'll wrap next loop
-            if ((btTail + btBytesToSend) > settings.gnssHandlerBufferSize)
-                btBytesToSend = settings.gnssHandlerBufferSize - btTail;
-
-            // If we are in the config menu, supress data flowing from ZED to cell phone
-            if (btPrintEcho == false)
-                // Push new data to BT SPP
-                btBytesToSend = bluetoothWrite(&ringBuffer[btTail], btBytesToSend);
-
-            if (btBytesToSend > 0)
+            // Determine the amount of Bluetooth data in the buffer
+            bytesToSend = dataHead - btTail;
+            if (bytesToSend < 0)
+                bytesToSend += settings.gnssHandlerBufferSize;
+            if (bytesToSend > 0)
             {
-                // If we are in base mode, assume part of the outgoing data is RTCM
-                if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
-                    bluetoothOutgoingRTCM = true;
+                // Reduce bytes to send if we have more to send then the end of
+                // the buffer, we'll wrap next loop
+                if ((btTail + bytesToSend) > settings.gnssHandlerBufferSize)
+                    bytesToSend = settings.gnssHandlerBufferSize - btTail;
 
-                // Account for the sent or dropped data
-                btTail += btBytesToSend;
-                if (btTail >= settings.gnssHandlerBufferSize)
-                    btTail -= settings.gnssHandlerBufferSize;
+                // If we are in the config menu, supress data flowing from ZED to cell phone
+                if (btPrintEcho == false)
+                    // Push new data to BT SPP
+                    bytesToSend = bluetoothWrite(&ringBuffer[btTail], bytesToSend);
+
+                // Account for the data that was sent
+                if (bytesToSend > 0)
+                {
+                    // If we are in base mode, assume part of the outgoing data is RTCM
+                    if (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
+                        bluetoothOutgoingRTCM = true;
+
+                    // Account for the sent or dropped data
+                    btTail += bytesToSend;
+                    if (btTail >= settings.gnssHandlerBufferSize)
+                        btTail -= settings.gnssHandlerBufferSize;
+                }
+                else
+                    log_w("BT failed to send");
+
+                // Determine the amount of data that remains in the buffer
+                bytesToSend = dataHead - btTail;
+                if (bytesToSend < 0)
+                    bytesToSend += settings.gnssHandlerBufferSize;
+                if (usedSpace < bytesToSend)
+                    usedSpace = bytesToSend;
             }
-            else
-                log_w("BT failed to send");
         }
 
         //----------------------------------------------------------------------
-        // Send data to the TCP clients
+        // Send data to the WiFi TCP clients
         //----------------------------------------------------------------------
 
-        if (((!online.tcpServer) && (!online.tcpClient)) || (!wifiTcpConnected))
+        static uint16_t tcpTailWiFi = 0;     // TCP client tail
+
+        // Determine if the device is connected
+        connected = (online.tcpServer || online.tcpClient) && wifiTcpConnected;
+        if (!connected)
             tcpTailWiFi = dataHead;
-        else if (tcpBytesToSendWiFi > 0)
+        else
         {
-            // Reduce bytes to send if we have more to send then the end of the buffer
-            // We'll wrap next loop
-            if ((tcpTailWiFi + tcpBytesToSendWiFi) > settings.gnssHandlerBufferSize)
-                tcpBytesToSendWiFi = settings.gnssHandlerBufferSize - tcpTailWiFi;
+            // Determine the amount of TCP data in the buffer
+            bytesToSend = dataHead - tcpTailWiFi;
+            if (bytesToSend < 0)
+                bytesToSend += settings.gnssHandlerBufferSize;
+            if (bytesToSend > 0)
+            {
+                // Reduce bytes to send if we have more to send then the end of the buffer
+                // We'll wrap next loop
+                if ((tcpTailWiFi + bytesToSend) > settings.gnssHandlerBufferSize)
+                    bytesToSend = settings.gnssHandlerBufferSize - tcpTailWiFi;
 
-            // Send the data to the TCP clients
-            wifiSendTcpData(&ringBuffer[tcpTailWiFi], tcpBytesToSendWiFi);
+                // Send the data to the TCP clients
+                wifiSendTcpData(&ringBuffer[tcpTailWiFi], bytesToSend);
 
-            // Assume all data was sent, wrap the buffer pointer
-            tcpTailWiFi += tcpBytesToSendWiFi;
-            if (tcpTailWiFi >= settings.gnssHandlerBufferSize)
-                tcpTailWiFi -= settings.gnssHandlerBufferSize;
+                // Assume all data was sent, wrap the buffer pointer
+                tcpTailWiFi += bytesToSend;
+                if (tcpTailWiFi >= settings.gnssHandlerBufferSize)
+                    tcpTailWiFi -= settings.gnssHandlerBufferSize;
+
+                // Update space available for use in UART task
+                bytesToSend = dataHead - tcpTailWiFi;
+                if (bytesToSend < 0)
+                    bytesToSend += settings.gnssHandlerBufferSize;
+                if (usedSpace < bytesToSend)
+                    usedSpace = bytesToSend;
+            }
         }
 
-        if ((!online.tcpClientEthernet) || (!ethernetTcpConnected))
+        //----------------------------------------------------------------------
+        // Send data to the Ethernet TCP clients
+        //----------------------------------------------------------------------
+
+        static uint16_t tcpTailEthernet = 0; // TCP client tail
+
+        connected = online.tcpClientEthernet && ethernetTcpConnected;
+        if (!connected)
             tcpTailEthernet = dataHead;
-        else if (tcpBytesToSendEthernet > 0)
+        else
         {
-            // Reduce bytes to send if we have more to send then the end of the buffer
-            // We'll wrap next loop
-            if ((tcpTailEthernet + tcpBytesToSendEthernet) > settings.gnssHandlerBufferSize)
-                tcpBytesToSendEthernet = settings.gnssHandlerBufferSize - tcpTailEthernet;
+            // Determine the amount of TCP data in the buffer
+            bytesToSend = dataHead - tcpTailEthernet;
+            if (bytesToSend < 0)
+                bytesToSend += settings.gnssHandlerBufferSize;
+            if (bytesToSend > 0)
+            {
+                // Reduce bytes to send if we have more to send then the end of the buffer
+                // We'll wrap next loop
+                if ((tcpTailEthernet + bytesToSend) > settings.gnssHandlerBufferSize)
+                    bytesToSend = settings.gnssHandlerBufferSize - tcpTailEthernet;
 
-            // Send the data to the TCP clients
-            ethernetSendTcpData(&ringBuffer[tcpTailEthernet], tcpBytesToSendEthernet);
+                // Send the data to the TCP clients
+                ethernetSendTcpData(&ringBuffer[tcpTailEthernet], bytesToSend);
 
-            // Assume all data was sent, wrap the buffer pointer
-            tcpTailEthernet += tcpBytesToSendEthernet;
-            if (tcpTailEthernet >= settings.gnssHandlerBufferSize)
-                tcpTailEthernet -= settings.gnssHandlerBufferSize;
+                // Assume all data was sent, wrap the buffer pointer
+                tcpTailEthernet += bytesToSend;
+                if (tcpTailEthernet >= settings.gnssHandlerBufferSize)
+                    tcpTailEthernet -= settings.gnssHandlerBufferSize;
+
+                // Update space available for use in UART task
+                bytesToSend = dataHead - tcpTailEthernet;
+                if (bytesToSend < 0)
+                    bytesToSend += settings.gnssHandlerBufferSize;
+                if (usedSpace < bytesToSend)
+                    usedSpace = bytesToSend;
+            }
         }
 
         //----------------------------------------------------------------------
         // Log data to the SD card
         //----------------------------------------------------------------------
 
+        static uint16_t sdTail = 0;          // SD Tail advances as it is recorded to SD
+
+        // Determine if the SD card is enabled for logging
+        connected = online.logging
+                    && ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes);
+
         // If user wants to log, record to SD
-        if (!online.logging)
+        if (!connected)
             // Discard the data
             sdTail = dataHead;
-        else if (sdBytesToRecord > 0)
+        else
         {
-            // Check if we are inside the max time window for logging
-            if ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes)
+            // Determine the amount of microSD card logging data in the buffer
+            bytesToSend = dataHead - sdTail;
+            if (bytesToSend < 0)
+                bytesToSend += settings.gnssHandlerBufferSize;
+            if (bytesToSend > 0)
             {
                 // Attempt to gain access to the SD card, avoids collisions with file
                 // writing from other functions like recordSystemSettingsToFile()
@@ -468,9 +495,8 @@ void handleGnssDataTask(void *e)
                     markSemaphore(FUNCTION_WRITESD);
 
                     // Reduce bytes to record if we have more then the end of the buffer
-                    int sliceToRecord = sdBytesToRecord;
-                    if ((sdTail + sliceToRecord) > settings.gnssHandlerBufferSize)
-                        sliceToRecord = settings.gnssHandlerBufferSize - sdTail;
+                    if ((sdTail + bytesToSend) > settings.gnssHandlerBufferSize)
+                        bytesToSend = settings.gnssHandlerBufferSize - sdTail;
 
                     if (settings.enablePrintSDBuffers && (!inMainMenu))
                     {
@@ -491,14 +517,14 @@ void handleGnssDataTask(void *e)
                             availableUARTSpace = settings.gnssHandlerBufferSize - bufferAvailable;
                         systemPrintf("SD Incoming Serial: %04d\tToRead: %04d\tMovedToBuffer: %04d\tavailableUARTSpace: "
                                      "%04d\tavailableHandlerSpace: %04d\tToRecord: %04d\tRecorded: %04d\tBO: %d\r\n",
-                                     bufferAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, sliceToRecord, 0,
+                                     bufferAvailable, 0, 0, availableUARTSpace, availableHandlerSpace, bytesToSend, 0,
                                      bufferOverruns);
                     }
 
                     // Write the data to the file
                     long startTime = millis();
 
-                    int sdBytesRecorded = ubxFile->write(&ringBuffer[sdTail], sliceToRecord);
+                    bytesToSend = ubxFile->write(&ringBuffer[sdTail], bytesToSend);
 
                     static unsigned long lastFlush = 0;
                     if (USE_MMC_MICROSD)
@@ -511,7 +537,7 @@ void handleGnssDataTask(void *e)
                     }
                     fileSize = ubxFile->fileSize(); // Update file size
 
-                    sdFreeSpace -= sdBytesRecorded; // Update remaining space on SD
+                    sdFreeSpace -= bytesToSend; // Update remaining space on SD
 
                     // Force file sync every 60s
                     if (millis() - lastUBXLogSyncTime > 60000)
@@ -537,15 +563,15 @@ void handleGnssDataTask(void *e)
                         if (endTime - startTime > 150)
                             systemPrintf("Long Write! Time: %ld ms / Location: %ld / Recorded %d bytes / "
                                          "spaceRemaining %d bytes\r\n",
-                                         endTime - startTime, fileSize, sdBytesRecorded, combinedSpaceRemaining);
+                                         endTime - startTime, fileSize, bytesToSend, combinedSpaceRemaining);
                     }
 
                     xSemaphoreGive(sdCardSemaphore);
 
                     // Account for the sent data or dropped
-                    if (sdBytesRecorded > 0)
+                    if (bytesToSend > 0)
                     {
-                        sdTail += sdBytesRecorded;
+                        sdTail += bytesToSend;
                         if (sdTail >= settings.gnssHandlerBufferSize)
                             sdTail -= settings.gnssHandlerBufferSize;
                     }
@@ -560,45 +586,26 @@ void handleGnssDataTask(void *e)
                     delay(1); // Needed to prevent WDT resets during long Record Settings locks
                     taskYIELD();
                 }
-            } // End maxLogTime
-        }     // End logging
 
-        // Update space available for use in UART task
-        btBytesToSend = dataHead - btTail;
-        if (btBytesToSend < 0)
-            btBytesToSend += settings.gnssHandlerBufferSize;
+                // Update space available for use in UART task
+                bytesToSend = dataHead - sdTail;
+                if (bytesToSend < 0)
+                    bytesToSend += settings.gnssHandlerBufferSize;
+                if (usedSpace < bytesToSend)
+                    usedSpace = bytesToSend;
+            } // bytesToSend
+        } // End connected
 
-        tcpBytesToSendWiFi = dataHead - tcpTailWiFi;
-        if (tcpBytesToSendWiFi < 0)
-            tcpBytesToSendWiFi += settings.gnssHandlerBufferSize;
+        //----------------------------------------------------------------------
+        // Update the available space in the ring buffer
+        //----------------------------------------------------------------------
 
-        tcpBytesToSendEthernet = dataHead - tcpTailEthernet;
-        if (tcpBytesToSendEthernet < 0)
-            tcpBytesToSendEthernet += settings.gnssHandlerBufferSize;
-
-        sdBytesToRecord = dataHead - sdTail;
-        if (sdBytesToRecord < 0)
-            sdBytesToRecord += settings.gnssHandlerBufferSize;
-
-        // Determine the inteface that is most behind: SD writing, SPP transmission, or TCP transmission
-        int usedSpace = 0;
-        if (tcpBytesToSendWiFi >= btBytesToSend && tcpBytesToSendWiFi >= sdBytesToRecord &&
-            tcpBytesToSendWiFi >= tcpBytesToSendEthernet)
-            usedSpace = tcpBytesToSendWiFi;
-        else if (tcpBytesToSendEthernet >= btBytesToSend && tcpBytesToSendEthernet >= sdBytesToRecord &&
-                 tcpBytesToSendEthernet >= tcpBytesToSendWiFi)
-            usedSpace = tcpBytesToSendEthernet;
-        else if (btBytesToSend >= sdBytesToRecord && btBytesToSend >= tcpBytesToSendWiFi &&
-                 btBytesToSend >= tcpBytesToSendEthernet)
-            usedSpace = btBytesToSend;
-        else
-            usedSpace = sdBytesToRecord;
-
-        availableHandlerSpace = settings.gnssHandlerBufferSize - usedSpace;
+        freeSpace = settings.gnssHandlerBufferSize - usedSpace;
 
         // Don't fill the last byte to prevent buffer overflow
-        if (availableHandlerSpace)
-            availableHandlerSpace -= 1;
+        if (freeSpace)
+            freeSpace -= 1;
+        availableHandlerSpace = freeSpace;
 
         //----------------------------------------------------------------------
         // Let other tasks run, prevent watch dog timer (WDT) resets

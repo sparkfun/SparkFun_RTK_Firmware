@@ -452,13 +452,13 @@ void menuWiFi()
         {
             // Toggle WiFi NEMA server
             settings.enableTcpServer ^= 1;
-            if ((!settings.enableTcpServer) && online.tcpServer)
+            if ((!settings.enableTcpServer) && online.pvtServer)
             {
                 // Tell the UART2 tasks that the TCP server is shutting down
-                online.tcpServer = false;
+                online.pvtServer = false;
 
                 // Wait for the UART2 tasks to close the TCP client connections
-                while (wifiTcpServerActive())
+                while (pvtServerActive())
                     delay(5);
                 systemPrintln("TCP Server offline");
             }

@@ -227,8 +227,6 @@ unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi O
 static int ntripClientConnectionAttempts = 0; // Count the number of connection attempts between restarts
 static int ntripServerConnectionAttempts = 0; // Count the number of connection attempts between restarts
 
-volatile uint8_t wifiTcpConnected = 0;
-
 // NTRIP client timer usage:
 //  * Measure the connection response time
 //  * Receive NTRIP data timeout
@@ -875,7 +873,8 @@ void loop()
 
     ntripServerUpdate(); // Check the NTRIP server connection and move data ZED --> NTRIP
 
-    tcpUpdate(); // Turn on TCP Client or Server as needed
+    pvtClientUpdate(); // Turn on the PVT client as needed
+    pvtServerUpdate(); // Turn on the PVT Server as needed
 
     updateEthernet(); // Maintain the ethernet connection
 

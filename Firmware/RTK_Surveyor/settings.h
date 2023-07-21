@@ -969,8 +969,8 @@ struct struct_online
     bool lband = false;
     bool lbandCorrections = false;
     bool i2c = false;
-    bool tcpClient = false;
-    bool tcpServer = false;
+    bool pvtClient = false;
+    bool pvtServer = false;
     bool tcpClientEthernet = false;
     ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
     bool ethernetNTPServer = false; // EthernetUDP

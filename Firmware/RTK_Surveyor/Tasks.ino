@@ -283,17 +283,16 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
     space = availableHandlerSpace;
     use = settings.gnssHandlerBufferSize - space;
     consumer = (char *)slowConsumer;
-    if ((bytesToCopy > space) && (!inMainMenu))
+
+    // Account for this message
+    if (bytesToCopy <= space)
+        availableHandlerSpace -= bytesToCopy;
+    else if (!inMainMenu)
     {
         if (consumer)
             systemPrintf("%s is slow, ", consumer);
-        systemPrintf("%d bytes of %d in use\r\n", use, settings.gnssHandlerBufferSize);
-        systemPrintf("Ring buffer full: discarding %d bytes\r\n", bytesToCopy);
-        return;
+        systemPrintf("%d bytes of %d in use, discarding data!\r\n", use, settings.gnssHandlerBufferSize);
     }
-
-    // Account for this message
-    availableHandlerSpace -= bytesToCopy;
 
     // Fill the buffer to the end and then start at the beginning
     if ((dataHead + bytesToCopy) > settings.gnssHandlerBufferSize)

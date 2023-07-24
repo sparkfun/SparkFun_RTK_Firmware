@@ -30,35 +30,40 @@
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
 //----------------------------------------
+// Globals
+//----------------------------------------
+
+int wifiConnectionAttempts; // Count the number of connection attempts between restarts
+
+#ifdef COMPILE_WIFI
+
+//----------------------------------------
 // Constants
 //----------------------------------------
 
 // Interval to use when displaying the IP address
 static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000; // Milliseconds
 
+//----------------------------------------
+// Locals
+//----------------------------------------
+
+static uint32_t wifiLastConnectionAttempt;
+
 // Throttle the time between connection attempts
 // ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
-static int wifiConnectionAttempts = 0;       // Count the number of connection attempts between restarts
 static uint32_t wifiConnectionAttemptsTotal; // Count the number of connection attempts absolutely
-static uint32_t wifiConnectionAttemptTimeout = 0;
-
-//----------------------------------------
-// Locals - compiled out
-//----------------------------------------
-
-#ifdef COMPILE_WIFI
-
-static uint32_t wifiLastConnectionAttempt = 0;
+static uint32_t wifiConnectionAttemptTimeout;
 
 // WiFi Timer usage:
 //  * Measure interval to display IP address
-static unsigned long wifiDisplayTimer = 0;
+static unsigned long wifiDisplayTimer;
 
 // Last time the WiFi state was displayed
-static uint32_t lastWifiState = 0;
+static uint32_t lastWifiState;
 
 //----------------------------------------
-// WiFi Routines - compiled out
+// WiFi Routines
 //----------------------------------------
 
 void wifiDisplayIpAddress()
@@ -183,8 +188,6 @@ bool wifiStartAP()
     return (true);
 }
 
-#endif // COMPILE_WIFI
-
 //----------------------------------------
 // Global WiFi Routines
 //----------------------------------------
@@ -199,8 +202,6 @@ void wifiUpdate()
         // log_d("configureViaEthernet: skipping wifiUpdate");
         return;
     }
-
-#ifdef COMPILE_WIFI
 
     // Periodically display the WiFi state
     if (settings.enablePrintWifiState && ((millis() - lastWifiState) > 15000))
@@ -271,8 +272,6 @@ void wifiUpdate()
         }
         break;
     }
-
-#endif // COMPILE_WIFI
 }
 
 // Starts the WiFi connection state machine (moves from WIFI_OFF to WIFI_CONNECTING)
@@ -281,7 +280,6 @@ void wifiUpdate()
 // If ESP-Now is active, only add the LR protocol
 void wifiStart()
 {
-#ifdef COMPILE_WIFI
     if (wifiNetworkCount() == 0)
     {
         systemPrintln("Error: Please enter at least one SSID before using WiFi");
@@ -302,14 +300,12 @@ void wifiStart()
 
     // Display the heap state
     reportHeapNow();
-#endif // COMPILE_WIFI
 }
 
 // Stop WiFi and release all resources
 // If ESP NOW is active, leave WiFi on enough for ESP NOW
 void wifiStop()
 {
-#ifdef COMPILE_WIFI
     stopWebServer();
 
     // Shutdown the PVT client
@@ -362,20 +358,15 @@ void wifiStop()
 
     // Display the heap state
     reportHeapNow();
-#endif // COMPILE_WIFI
 }
 
 bool wifiIsConnected()
 {
-#ifdef COMPILE_WIFI
     bool isConnected = (wifiGetStatus() == WL_CONNECTED);
     if (isConnected)
         wifiPeriodicallyDisplayIpAddress();
 
     return isConnected;
-#else   // COMPILE_WIFI
-    return false;
-#endif  // COMPILE_WIFI
 }
 
 // Attempts a connection to all provided SSIDs
@@ -383,8 +374,6 @@ bool wifiIsConnected()
 // Gives up if no SSID detected or connection times out
 bool wifiConnect(unsigned long timeout)
 {
-#ifdef COMPILE_WIFI
-
     if (wifiIsConnected())
         return (true); // Nothing to do
 
@@ -456,8 +445,6 @@ bool wifiConnect(unsigned long timeout)
         systemPrint("No friendly WiFi networks detected. ");
     else
         systemPrintf("WiFi failed to connect: error #%d. ", wifiResponse);
-
-#endif  // COMPILE_WIFI
 
     return false;
 }
@@ -542,7 +529,6 @@ bool wifiConnectLimitReached()
 
 void wifiPrintNetworkInfo()
 {
-#ifdef COMPILE_WIFI
     systemPrintln("\nNetwork Configuration:");
     systemPrintln("----------------------");
     systemPrint("         SSID: ");
@@ -567,7 +553,6 @@ void wifiPrintNetworkInfo()
     systemPrint("        DNS 3: ");
     systemPrintln(WiFi.dnsIP(2));
     systemPrintln();
-#endif  // COMPILE_WIFI
 }
 
 // Returns true if unit is in config mode
@@ -578,3 +563,5 @@ bool wifiInConfigMode()
         return true;
     return false;
 }
+
+#endif // COMPILE_WIFI

@@ -1,3 +1,5 @@
+#ifdef COMPILE_ETHERNET
+
 // Ethernet
 
 // Determine if Ethernet is needed. Saves RAM...
@@ -38,8 +40,6 @@ void beginEthernet()
         log_d("configureViaEthernet: skipping beginEthernet");
         return;
     }
-
-#ifdef COMPILE_ETHERNET
 
     if (!ethernetIsNeeded())
         return;
@@ -121,7 +121,6 @@ void beginEthernet()
         log_d("Unknown status");
         break;
     }
-#endif /// COMPILE_ETHERNET
 }
 
 void beginEthernetNTPServer()
@@ -140,7 +139,6 @@ void beginEthernetNTPServer()
     if (systemState < STATE_NTPSERVER_NOT_STARTED || systemState > STATE_NTPSERVER_SYNC)
         return;
 
-#ifdef COMPILE_ETHERNET
     if ((online.ethernetStatus == ETH_CONNECTED) && (online.ethernetNTPServer == false))
     {
         if (ethernetNTPServer == nullptr)
@@ -151,7 +149,6 @@ void beginEthernetNTPServer()
         w5500EnableSocketInterrupt(ntpSockIndex);         // Enable the RECV interrupt for the desired socket index
         online.ethernetNTPServer = true;
     }
-#endif  // COMPILE_ETHERNET
 }
 
 void endEthernetNTPServer()
@@ -169,8 +166,6 @@ void updateEthernet()
 
     if (!HAS_ETHERNET)
         return;
-
-#ifdef COMPILE_ETHERNET
 
     if (online.ethernetStatus == ETH_CAN_NOT_BEGIN)
         return;
@@ -220,7 +215,6 @@ void updateEthernet()
             // nothing happened
             break;
         }
-#endif  // COMPILE_ETHERNET
 }
 
 void updateEthernetNTPServer()
@@ -234,8 +228,6 @@ void updateEthernetNTPServer()
 
     if (!HAS_ETHERNET)
         return;
-
-#ifdef COMPILE_ETHERNET
 
     if (online.ethernetNTPServer == false)
         beginEthernetNTPServer();
@@ -349,16 +341,12 @@ void updateEthernetNTPServer()
 
     if (millis() > (lastLoggedNTPRequest + 5000))
         ntpLogIncreasing = false;
-
-#endif  // COMPILE_ETHERNET
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 // Send data to the Ethernet TCP server as client
 void ethernetSendTcpData(uint8_t *data, uint16_t length)
 {
-#ifdef COMPILE_ETHERNET
-
     if (!length) // Nothing to write
         return;
 
@@ -382,8 +370,6 @@ void ethernetSendTcpData(uint8_t *data, uint16_t length)
             ethernetTcpConnected = false;
         }
     }
-
-#endif // COMPILE_ETHERNET
 }
 
 void tcpUpdateEthernet()
@@ -398,7 +384,6 @@ void tcpUpdateEthernet()
     if (!HAS_ETHERNET)
         return;
 
-#ifdef COMPILE_ETHERNET
     // Start the TCP client if enabled
     if (settings.enableTcpClientEthernet && (!online.tcpClientEthernet) && (online.ethernetStatus == ETH_CONNECTED))
     {
@@ -487,15 +472,12 @@ void tcpUpdateEthernet()
         ethernetTcpConnected = false;
         online.tcpClientEthernet = false;
     }
-
-#endif  // COMPILE_ETHERNET
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 // Start Ethernet WebServer ESP32 W5500 - needs exclusive access to WiFi, SPI and Interrupts
 void startEthernerWebServerESP32W5500()
 {
-#ifdef COMPILE_ETHERNET
     // Configure the W5500
     // To be called before ETH.begin()
     ESP32_W5500_onEvent();
@@ -511,14 +493,11 @@ void startEthernerWebServerESP32W5500()
 
     if (ETH.linkUp())
         ESP32_W5500_waitForConnect();
-#endif  // COMPILE_ETHERNET
 }
 
 void endEthernerWebServerESP32W5500()
 {
-#ifdef COMPILE_ETHERNET
     ETH.end(); // This is _really_ important. It undoes the low-level changes to SPI and interrupts
-#endif  // COMPILE_ETHERNET
 }
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -526,7 +505,6 @@ void endEthernerWebServerESP32W5500()
 // Triggered by the falling edge of the W5500 interrupt signal - indicates the arrival of a packet
 // Record the time the packet arrived
 
-#ifdef COMPILE_ETHERNET
 void ethernetISR()
 {
     // Don't check or clear the interrupt here -
@@ -534,11 +512,9 @@ void ethernetISR()
     // Do it in updateEthernet
     gettimeofday((timeval *)&ethernetNtpTv, NULL); // Record the time of the NTP interrupt
 }
-#endif  // COMPILE_ETHERNET
 
 void menuEthernet()
 {
-#ifdef COMPILE_ETHERNET
     if (!HAS_ETHERNET)
     {
         clearBuffer(); // Empty buffer of any newline chars
@@ -685,13 +661,10 @@ void menuEthernet()
     {
         ethernetRestart();
     }
-
-#endif // COMPILE_ETHERNET
 }
 
 void ethernetRestart()
 {
-#ifdef COMPILE_ETHERNET
     // Reset online.ethernetStatus so beginEthernet will call Ethernet.begin to use the new settings
     online.ethernetStatus = ETH_NOT_STARTED;
 
@@ -707,5 +680,6 @@ void ethernetRestart()
     online.ethernetNTPServer = false;
 
     // NTRIP?
-#endif // COMPILE_ETHERNET
 }
+
+#endif // COMPILE_ETHERNET

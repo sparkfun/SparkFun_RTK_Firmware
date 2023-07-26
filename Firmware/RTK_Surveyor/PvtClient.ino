@@ -77,8 +77,11 @@ uint16_t pvtClientSendData(uint16_t dataHead)
             bytesToSend = pvtClient.write(&ringBuffer[tail], bytesToSend);
             if (bytesToSend >= 0)
             {
-                if ((settings.enablePrintTcpStatus) && (!inMainMenu))
+                if ((settings.enablePrintTcpStatus || PERIODIC_DISPLAY(PD_PVT_CLIENT_DATA)) && (!inMainMenu))
+                {
+                    PERIODIC_CLEAR(PD_PVT_CLIENT_DATA);
                     systemPrintf("PVT client sent %d bytes\r\n", bytesToSend);
+                }
 
                 // Assume all data was sent, wrap the buffer pointer
                 tail += bytesToSend;

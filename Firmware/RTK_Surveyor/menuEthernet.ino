@@ -28,6 +28,16 @@ bool ethernetIsNeeded()
     return false;
 }
 
+void ethernetDisplayState()
+{
+    if (ethernetStateEntries != ETH_MAX_STATE)
+        reportFatalError("Please fix ethernetStates table to match ethernetStatus_e");
+    if (online.ethernetStatus >= ethernetStateEntries)
+        systemPrint("UNKNOWN");
+    else
+        systemPrint(ethernetStates[online.ethernetStatus]);
+}
+
 // Regularly called to update the Ethernet status
 void beginEthernet()
 {
@@ -44,6 +54,12 @@ void beginEthernet()
     if (!ethernetIsNeeded())
         return;
 
+    if (PERIODIC_DISPLAY(PD_ETHERNET_STATE))
+    {
+        PERIODIC_CLEAR(PD_ETHERNET_STATE);
+        ethernetDisplayState();
+        systemPrintln();
+    }
     switch (online.ethernetStatus)
     {
     case (ETH_NOT_STARTED):

@@ -41,8 +41,6 @@ int wifiConnectionAttempts; // Count the number of connection attempts between r
 // Constants
 //----------------------------------------
 
-// Interval to use when displaying the IP address
-static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000; // Milliseconds
 
 //----------------------------------------
 // Locals
@@ -80,22 +78,17 @@ byte wifiGetStatus()
     return WiFi.status();
 }
 
-void wifiPeriodicallyDisplayIpAddress()
-{
-    if (settings.enablePrintWifiIpAddress && (wifiGetStatus() == WL_CONNECTED))
-        if ((millis() - wifiDisplayTimer) >= WIFI_IP_ADDRESS_DISPLAY_INTERVAL)
-            wifiDisplayIpAddress();
-}
-
 // Update the state of the WiFi state machine
 void wifiSetState(byte newState)
 {
-    if (settings.enablePrintWifiState && (wifiState == newState))
+    if ((settings.enablePrintWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE))
+        && (wifiState == newState))
         systemPrint("*");
     wifiState = newState;
 
-    if (settings.enablePrintWifiState)
+    if (settings.enablePrintWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE))
     {
+        PERIODIC_CLEAR(PD_WIFI_STATE);
         switch (newState)
         {
         default:
@@ -260,14 +253,10 @@ void wifiUpdate()
             wifiConnectionAttempts = 0; // Reset the timeout
             wifiSetState(WIFI_CONNECTING);
         }
-        else
-        {
-            wifiPeriodicallyDisplayIpAddress(); // Periodically display the IP address
 
-            // If WiFi is connected, and no services require WiFi, shut it off
-            if (wifiIsNeeded() == false)
-                wifiStop();
-        }
+        // If WiFi is connected, and no services require WiFi, shut it off
+        else if (wifiIsNeeded() == false)
+            wifiStop();
         break;
     }
 }
@@ -360,11 +349,7 @@ void wifiStop()
 
 bool wifiIsConnected()
 {
-    bool isConnected = (wifiGetStatus() == WL_CONNECTED);
-    if (isConnected)
-        wifiPeriodicallyDisplayIpAddress();
-
-    return isConnected;
+    return (wifiGetStatus() == WL_CONNECTED);
 }
 
 // Attempts a connection to all provided SSIDs

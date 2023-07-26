@@ -14,15 +14,19 @@ unsigned long lastZedI2CSend = 0; // Timestamp of the last time we sent RTCM ZED
 // Scan for escape characters to enter config menu
 void btReadTask(void *e)
 {
+    int rxBytes;
+
     while (true)
     {
         // Receive RTCM corrections or UBX config messages over bluetooth and pass along to ZED
+        rxBytes = 0;
         if (bluetoothGetState() == BT_CONNECTED)
         {
             while (btPrintEcho == false && bluetoothRxDataAvailable())
             {
                 // Check stream for command characters
                 byte incoming = bluetoothRead();
+                rxBytes += 1;
 
                 if (incoming == btEscapeCharacter)
                 {
@@ -90,6 +94,11 @@ void btReadTask(void *e)
 
             } // End btPrintEcho == false && bluetoothRxDataAvailable()
 
+            if (PERIODIC_DISPLAY(PD_BLUETOOTH_DATA_RX))
+            {
+                PERIODIC_CLEAR(PD_BLUETOOTH_DATA_RX);
+                systemPrintf("Bluetooth received %d bytes\r\n", rxBytes);
+            }
         } // End bluetoothGetState() == BT_CONNECTED
 
         if (bluetoothOutgoingToZedHead > 0 && ((millis() - lastZedI2CSend) > 100))
@@ -125,6 +134,11 @@ bool sendZedI2CBuffer()
 
     if (response == true)
     {
+        if (PERIODIC_DISPLAY(PD_ZED_DATA_TX))
+        {
+            PERIODIC_CLEAR(PD_ZED_DATA_TX);
+            systemPrintf("ZED TX: Sending %d bytes from I2C\r\n", bluetoothOutgoingToZedHead);
+        }
         // log_d("Pushed %d bytes RTCM to ZED", bluetoothOutgoingToZedHead);
     }
 
@@ -258,21 +272,29 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
     int use;
 
     // Display the message
-    if (settings.enablePrintLogFileMessages && (!parse->crc) && (!inMainMenu))
+    if ((settings.enablePrintLogFileMessages || PERIODIC_DISPLAY(PD_ZED_DATA_RX))
+        && (!parse->crc) && (!inMainMenu))
     {
-        printTimeStamp();
+        PERIODIC_CLEAR(PD_ZED_DATA_RX);
+        if (settings.enablePrintLogFileMessages)
+        {
+            printTimeStamp();
+            systemPrint("    ");
+        }
+        else
+            systemPrint("ZED RX: ");
         switch (type)
         {
         case SENTENCE_TYPE_NMEA:
-            systemPrintf("    %s NMEA %s, %2d bytes\r\n", parse->parserName, parse->nmeaMessageName, parse->length);
+            systemPrintf("%s NMEA %s, %2d bytes\r\n", parse->parserName, parse->nmeaMessageName, parse->length);
             break;
 
         case SENTENCE_TYPE_RTCM:
-            systemPrintf("    %s RTCM %d, %2d bytes\r\n", parse->parserName, parse->message, parse->length);
+            systemPrintf("%s RTCM %d, %2d bytes\r\n", parse->parserName, parse->message, parse->length);
             break;
 
         case SENTENCE_TYPE_UBX:
-            systemPrintf("    %s UBX %d.%d, %2d bytes\r\n", parse->parserName, parse->message >> 8,
+            systemPrintf("%s UBX %d.%d, %2d bytes\r\n", parse->parserName, parse->message >> 8,
                          parse->message & 0xff, parse->length);
             break;
         }
@@ -384,6 +406,13 @@ void handleGnssDataTask(void *e)
                     btTail += bytesToSend;
                     if (btTail >= settings.gnssHandlerBufferSize)
                         btTail -= settings.gnssHandlerBufferSize;
+
+                    // Display the data movement
+                    if (PERIODIC_DISPLAY(PD_BLUETOOTH_DATA_TX))
+                    {
+                        PERIODIC_CLEAR(PD_BLUETOOTH_DATA_TX);
+                        systemPrintf("Bluetooth: %d bytes written\r\n", bytesToSend);
+                    }
                 }
                 else
                     log_w("BT failed to send");
@@ -521,6 +550,11 @@ void handleGnssDataTask(void *e)
                     long startTime = millis();
 
                     bytesToSend = ubxFile->write(&ringBuffer[sdTail], bytesToSend);
+                    if (PERIODIC_DISPLAY(PD_SD_LOG_WRITE) && (bytesToSend > 0))
+                    {
+                        PERIODIC_CLEAR(PD_SD_LOG_WRITE);
+                        systemPrintf("SD %d bytes written to log file\r\n", bytesToSend);
+                    }
 
                     static unsigned long lastFlush = 0;
                     if (USE_MMC_MICROSD)

@@ -183,6 +183,7 @@ const char * const networkUser[] =
 {
     "NTRIP Client",
     "NTRIP Server",
+    "PVT Client",
 };
 const int networkUserEntries = sizeof(networkUser) / sizeof(networkUser[0]);
 

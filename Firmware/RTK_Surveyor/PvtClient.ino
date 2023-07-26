@@ -30,18 +30,129 @@ PvtClient.ino
            '------------> Cell Phone <-------------------------------'
                           for display
 
+  PVT Client Testing:
+
+     Using Ethernet on RTK Reference Station and specifying a PVT Client host:
+
+        1. Network failure - Disconnect Ethernet cable at RTK Reference Station,
+           expecting retry PVT client connection after network restarts
+
+        2. Internet link failure - Disconnect Ethernet cable between Ethernet
+           switch and the firewall to simulate an internet failure, expecting
+           retry PVT client connection after delay
+
+        3. Internet outage - Disconnect Ethernet cable between Ethernet
+           switch and the firewall to simulate an internet failure, expecting
+           PVT client retry interval to increase from 5 seconds to 5 minutes
+           and 20 seconds, and the PVT client to reconnect following the outage.
+
+     Using WiFi on RTK Express or RTK Reference Station, no PVT Client host
+     specified, running Vespucci on the cell phone:
+
+        Vespucci Setup:
+            * Click on the gear icon
+            * Scroll down and click on Advanced preferences
+            * Click on Location settings
+            * Click on GPS/GNSS source
+            * Set to NMEA from TCP server
+            * Click on NMEA network source
+            * Set IP address to 127.0.0.1:1958
+            * Uncheck Leave GPS/GNSS turned off
+            * Check Fallback to network location
+            * Click on Stale location after
+            * Set the value 5 seconds
+            * Exit the menus
+
+        1. Verify connection to the Vespucci application on the cell phone
+           (gateway IP address).
+
+        2. Vespucci not running: Stop the Vespucci application, expecting PVT
+           client retry interval to increase from 5 seconds to 5 minutes and
+           20 seconds.  The PVT client connects once the Vespucci application
+           is restarted on the phone.
+
+  Test Setups:
+
+          RTK Express     RTK Reference Station
+               ^           ^                 ^
+          WiFi |      WiFi |                 | Ethernet cable
+               v           v                 v
+            WiFi Access Point <-----------> Ethernet Switch
+                                Ethernet     ^
+                                 Cable       | Ethernet cable
+                                             v
+                                     Internet Firewall
+                                             ^
+                                             | Ethernet cable
+                                             v
+                                           Modem
+                                             ^
+                                             |
+                                             v
+                                         Internet
+                                             ^
+                                             |
+                                             v
+                                       NMEA Server
+                                       NTRIP Caster
+
+
+          RTK Express     RTK Reference Station
+               ^            ^
+          WiFi |       WiFi |
+               \            /
+                \          /
+                 v        v
+          Cell Phone (NMEA Server)
+                      ^
+                      |
+                      v
+                NTRIP Caster
+
+  Possible NTRIP Casters
+
+    * https://emlid.com/ntrip-caster/
+    * http://rtk2go.com/
+    * private SNIP NTRIP caster
 */
 
 #ifdef COMPILE_WIFI
 
 //----------------------------------------
+// Constants
+//----------------------------------------
+
+#define PVT_MAX_CONNECTIONS             6
+#define PVT_DELAY_BETWEEN_CONNECTIONS   (5 * 1000)
+
+// Define the PVT client states
+enum PvtClientStates
+{
+    PVT_CLIENT_STATE_OFF = 0,
+    PVT_CLIENT_STATE_NETWORK_STARTED,
+    PVT_CLIENT_STATE_CONNECTED,
+    // Insert new states here
+    PVT_CLIENT_STATE_MAX            // Last entry in the state list
+};
+
+const char * const pvtClientStateName[] =
+{
+    "PVT_CLIENT_STATE_OFF",
+    "PVT_CLIENT_STATE_NETWORK_STARTED",
+    "PVT_CLIENT_STATE_CONNECTED"
+};
+
+const int pvtClientStateNameEntries = sizeof(pvtClientStateName) / sizeof(pvtClientStateName[0]);
+
+//----------------------------------------
 // Locals
 //----------------------------------------
 
-WiFiClient pvtClient;
-bool pvtClientConnected;
-IPAddress pvtClientIpAddress;
+static NetworkClient * pvtClient;
+static IPAddress pvtClientIpAddress;
+static uint8_t pvtClientState;
 static volatile uint16_t pvtClientTail;
+static volatile bool pvtClientWriteError;
 
 //----------------------------------------
 // PVT Client Routines
@@ -56,10 +167,10 @@ int32_t pvtClientSendData(uint16_t dataHead)
 
     // Determine if a client is connected
     bytesToSend = 0;
-    connected = settings.enablePvtClient && online.pvtClient && pvtClientConnected;
+    connected = settings.enablePvtClient && online.pvtClient;
 
     // Determine if the client is connected
-    if ((!connected) || (!pvtClientConnected))
+    if ((!connected) || (!online.pvtClient))
         pvtClientTail = dataHead;
     else
     {
@@ -75,7 +186,7 @@ int32_t pvtClientSendData(uint16_t dataHead)
                 bytesToSend = settings.gnssHandlerBufferSize - pvtClientTail;
 
             // Send the data to the NMEA server
-            bytesSent = pvtClient.write(&ringBuffer[pvtClientTail], bytesToSend);
+            bytesSent = pvtClient->write(&ringBuffer[pvtClientTail], bytesToSend);
             if (bytesSent >= 0)
             {
                 if ((settings.debugPvtClient || PERIODIC_DISPLAY(PD_PVT_CLIENT_DATA)) && (!inMainMenu))
@@ -103,8 +214,7 @@ int32_t pvtClientSendData(uint16_t dataHead)
                     systemPrintf("PVT client breaking connection with %s:%d\r\n",
                          pvtClientIpAddress.toString().c_str(), settings.pvtClientPort);
 
-                pvtClient.stop();
-                pvtClientConnected = false;
+                pvtClientWriteError = true;
                 bytesToSend = 0;
             }
         }
@@ -114,91 +224,229 @@ int32_t pvtClientSendData(uint16_t dataHead)
     return bytesToSend;
 }
 
+// Update the state of the NTRIP client state machine
+void pvtClientSetState(uint8_t newState)
+{
+    if ((settings.debugPvtClient || PERIODIC_DISPLAY(PD_PVT_CLIENT_STATE)) && (!inMainMenu))
+    {
+        if (pvtClientState == newState)
+            systemPrint("*");
+        else
+            systemPrintf("%s --> ", pvtClientStateName[pvtClientState]);
+    }
+    pvtClientState = newState;
+    if ((settings.debugPvtClient || PERIODIC_DISPLAY(PD_PVT_CLIENT_STATE)) && (!inMainMenu))
+    {
+        PERIODIC_CLEAR(PD_PVT_CLIENT_STATE);
+        if (newState >= PVT_CLIENT_STATE_MAX)
+        {
+            systemPrintf("Unknown PVT Client state: %d\r\n", pvtClientState);
+            reportFatalError("Unknown PVT Client state");
+        }
+        else
+            systemPrintln(pvtClientStateName[pvtClientState]);
+    }
+}
+
+// Start the PVT client
+bool pvtClientStart()
+{
+    NetworkClient * client;
+
+    // Allocate the PVT client
+    client = new NetworkClient(NETWORK_USER_PVT_CLIENT);
+    if (client)
+    {
+        // Get the host name
+        char hostname[sizeof(settings.pvtClientHost)];
+        strcpy(hostname, settings.pvtClientHost);
+        if (!strlen(hostname))
+        {
+            // No host was specified, assume we are using WiFi and using a phone
+            // running the application and a WiFi hot spot.  The IP address of
+            // the phone is provided to the RTK during the DHCP handshake as the
+            // gateway IP address.
+
+            // Attempt the PVT client connection
+            pvtClientIpAddress = wifiGetGatewayIpAddress();
+            sprintf(hostname, "%s", pvtClientIpAddress.toString().c_str());
+        }
+
+        // Display the PVT client connection attempt
+        if (settings.debugPvtClient)
+            systemPrintf("PVT client connecting to %s:%d\r\n", hostname, settings.pvtClientPort);
+
+        // Attempt the PVT client connection
+        if (client->connect(pvtClientIpAddress, settings.pvtClientPort))
+        {
+            // Get the client IP address
+            pvtClientIpAddress = client->remoteIP();
+
+            // Display the PVT client connection
+            systemPrintf("PVT client connected to %s:%d\r\n",
+                         pvtClientIpAddress.toString().c_str(), settings.pvtClientPort);
+
+            // The PVT client is connected
+            pvtClient = client;
+            pvtClientWriteError = false;
+            online.pvtClient = true;
+            return true;
+        }
+        else
+        {
+            // Release any allocated resources
+            client->stop();
+            delete client;
+        }
+    }
+    return false;
+}
+
+// Stop the PVT client
+void pvtClientStop()
+{
+    NetworkClient * client;
+    IPAddress ipAddress;
+
+    client = pvtClient;
+    if (client)
+    {
+        // Delay to allow the UART task to finish with the pvtClient
+        online.pvtClient = false;
+        delay(5);
+
+        // Done with the PVT client connection
+        ipAddress = pvtClientIpAddress;
+        pvtClientIpAddress = IPAddress((uint32_t)0);
+        pvtClient->stop();
+        delete pvtClient;
+        pvtClient = nullptr;
+
+        // Notify the user of the PVT client shutdown
+        if (!inMainMenu)
+            systemPrintf("PVT client disconnected from %s:%d\r\n",
+                         ipAddress.toString().c_str(), settings.pvtClientPort);
+    }
+
+    // Done with the network
+    if (pvtClientState != PVT_CLIENT_STATE_OFF)
+        networkUserClose(NETWORK_USER_PVT_CLIENT);
+
+    // Initialize the PVT client
+    pvtClientWriteError = false;
+    if (settings.debugPvtClient)
+        systemPrintln("PVT client offline");
+    pvtClientSetState(PVT_CLIENT_STATE_OFF);
+}
+
 // Update the PVT client state
 void pvtClientUpdate()
 {
-    static uint32_t lastConnectAttempt;
+    static uint8_t connectionAttempt;
+    static uint32_t connectionDelay;
+    uint32_t days;
+    byte hours;
+    uint64_t milliseconds;
+    byte minutes;
+    byte seconds;
 
-    // Skip if in configure-via-ethernet mode
-    if (configureViaEthernet)
+    static uint32_t timer;
+
+    switch (pvtClientState)
     {
-        // log_d("configureViaEthernet: skipping pvtClientUpdate");
-        return;
-    }
+    default:
+        systemPrintf("PVT client state: %d\r\n", pvtClientState);
+        reportFatalError("Invalid PVT client state");
+        break;
 
-    if (settings.enablePvtClient == false)
-        return; // Nothing to do
-
-    if (wifiInConfigMode())
-        return; // Do not service the PVT client during WiFi config
-
-    // If the PVT client is enabled, but WiFi is not connected, start WiFi
-    if (settings.enablePvtClient && (!wifiIsConnected()))
-    {
-        log_d("tpcUpdate starting WiFi");
-        wifiStart();
-    }
-
-    // Start the PVT client if enabled
-    if (settings.enablePvtClient && (!online.pvtClient) && wifiIsConnected())
-    {
-        online.pvtClient = true;
-        pvtClientIpAddress = wifiGetGatewayIpAddress();
-        systemPrint("PVT client connecting to ");
-        systemPrint(pvtClientIpAddress);
-        systemPrint(":");
-        systemPrintln(settings.pvtClientPort);
-    }
-
-    // Connect the PVT client to the NMEA server if enabled
-    if (online.pvtClient)
-    {
-        if (((!pvtClient) || (!pvtClient.connected())) && ((millis() - lastConnectAttempt) >= 1000))
+    // Wait until the PVT client is enabled
+    case PVT_CLIENT_STATE_OFF:
+        // Determine if the PVT client should be running
+        if (settings.enablePvtClient)
         {
-            lastConnectAttempt = millis();
-            if (settings.debugPvtClient)
+            if (networkUserOpen(NETWORK_USER_PVT_CLIENT, NETWORK_TYPE_WIFI))
             {
-                systemPrint("PVT client connecting to ");
-                systemPrint(pvtClientIpAddress);
-                systemPrint(":");
-                systemPrintln(settings.pvtClientPort);
-            }
-            if (pvtClient.connect(pvtClientIpAddress, settings.pvtClientPort))
-            {
-                online.pvtClient = true;
-                systemPrint("PVT client connected to ");
-                systemPrint(pvtClientIpAddress);
-                systemPrint(":");
-                systemPrintln(settings.pvtClientPort);
-                pvtClientConnected = true;
-            }
-            else
-            {
-                // Release any allocated resources
-                // if (pvtClient)
-                pvtClient.stop();
+                timer = millis();
+                pvtClientSetState(PVT_CLIENT_STATE_NETWORK_STARTED);
             }
         }
-    }
+        break;
 
-    // Check for a broken connection
-    if (pvtClientConnected)
-    {
-        if ((!pvtClient) || (!pvtClient.connected()))
+    // Wait until the network is connected
+    case PVT_CLIENT_STATE_NETWORK_STARTED:
+        // Determine if the network has failed
+        if (networkIsShuttingDown(NETWORK_USER_PVT_CLIENT))
+            // Failed to connect to to the network, attempt to restart the network
+            pvtClientStop();
+
+        // Wait for the network to connect to the media
+        if (networkUserConnected(NETWORK_USER_PVT_CLIENT))
         {
-            // Done with this client connection
-            if (!inMainMenu)
+            if ((millis() - timer) >= connectionDelay)
             {
-                systemPrintf("PVT client disconnected from ");
-                systemPrint(pvtClientIpAddress);
-                systemPrint(":");
-                systemPrintln(settings.pvtClientPort);
-            }
+                // Start the PVT client
+                if (!pvtClientStart())
+                {
+                    // Connection failure
+                    if (settings.debugPvtClient)
+                        systemPrintln("PVT Client connection failed");
+                    connectionDelay = PVT_DELAY_BETWEEN_CONNECTIONS <<connectionAttempt;
+                    if (connectionAttempt < PVT_MAX_CONNECTIONS)
+                        connectionAttempt += 1;
+                    timer = millis();
 
-            pvtClient.stop();
-            pvtClientConnected = false;
+                    // Display the uptime
+                    milliseconds = connectionDelay;
+                    days = milliseconds / MILLISECONDS_IN_A_DAY;
+                    milliseconds %= MILLISECONDS_IN_A_DAY;
+                    hours = milliseconds / MILLISECONDS_IN_AN_HOUR;
+                    milliseconds %= MILLISECONDS_IN_AN_HOUR;
+                    minutes = milliseconds / MILLISECONDS_IN_A_MINUTE;
+                    milliseconds %= MILLISECONDS_IN_A_MINUTE;
+                    seconds = milliseconds / MILLISECONDS_IN_A_SECOND;
+                    milliseconds %= MILLISECONDS_IN_A_SECOND;
+                    if (settings.debugPvtClient)
+                        systemPrintf("PVT Client delaying %d %02d:%02d:%02d.%03lld\r\n",
+                                     days, hours, minutes, seconds, milliseconds);
+                }
+                else
+                {
+                    // Successful connection
+                    connectionAttempt = 0;
+                    pvtClientSetState(PVT_CLIENT_STATE_CONNECTED);
+                }
+            }
         }
+        break;
+
+    // Wait for the PVT client to shutdown or a PVT client link failure
+    case PVT_CLIENT_STATE_CONNECTED:
+        // Determine if the network has failed
+        if (networkIsShuttingDown(NETWORK_USER_PVT_CLIENT))
+            // Failed to connect to to the network, attempt to restart the network
+            pvtClientStop();
+
+        // Determine if the PVT client link is broken
+        else if ((!*pvtClient) || (!pvtClient->connected()) || pvtClientWriteError)
+        {
+            // Stop the PVT client
+            pvtClientStop();
+            pvtClientSetState(PVT_CLIENT_STATE_OFF);
+            timer = millis();
+        }
+        break;
     }
+
+    // Periodically display the PVT client state
+    if (PERIODIC_DISPLAY(PD_PVT_CLIENT_STATE))
+        pvtClientSetState(pvtClientState);
+}
+
+// Verify the PVT client tables
+void pvtClientValidateTables()
+{
+    if (pvtClientStateNameEntries != PVT_CLIENT_STATE_MAX)
+        reportFatalError("Fix pvtClientStateNameEntries to match PvtClientStates");
 }
 
 // Zero the PVT client tail

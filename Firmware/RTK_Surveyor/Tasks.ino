@@ -3,6 +3,7 @@
 
 volatile static uint16_t dataHead = 0;  // Head advances as data comes in from GNSS's UART
 volatile int availableHandlerSpace = 0; // settings.gnssHandlerBufferSize - usedSpace
+volatile const char * slowConsumer;
 
 // Buffer the incoming Bluetooth stream so that it can be passed in bulk over I2C
 uint8_t bluetoothOutgoingToZed[100];
@@ -250,8 +251,11 @@ void gnssReadTask(void *e)
 // If we get a complete NMEA/UBX/RTCM sentence, pass on to SD/BT/TCP interfaces
 void processUart1Message(PARSE_STATE *parse, uint8_t type)
 {
-    uint16_t bytesToCopy;
+    int bytesToCopy;
+    const char * consumer;
     uint16_t remainingBytes;
+    int space;
+    int use;
 
     // Display the message
     if (settings.enablePrintLogFileMessages && (!parse->crc) && (!inMainMenu))
@@ -276,10 +280,15 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
 
     // Determine if this message will fit into the ring buffer
     bytesToCopy = parse->length;
-    if ((bytesToCopy > availableHandlerSpace) && (!inMainMenu))
+    space = availableHandlerSpace;
+    use = settings.gnssHandlerBufferSize - space;
+    consumer = (char *)slowConsumer;
+    if ((bytesToCopy > space) && (!inMainMenu))
     {
-        systemPrintf("Ring buffer full: discarding %d bytes (availableHandlerSpace is %d / %d)\r\n", bytesToCopy,
-                     availableHandlerSpace, settings.gnssHandlerBufferSize);
+        if (consumer)
+            systemPrintf("%s is slow, ", consumer);
+        systemPrintf("%d bytes of %d in use\r\n", use, settings.gnssHandlerBufferSize);
+        systemPrintf("Ring buffer full: discarding %d bytes\r\n", bytesToCopy);
         return;
     }
 
@@ -331,6 +340,7 @@ void handleGnssDataTask(void *e)
     while (true)
     {
         usedSpace = 0;
+        slowConsumer = nullptr;
 
         //----------------------------------------------------------------------
         // Send data over Bluetooth
@@ -383,7 +393,10 @@ void handleGnssDataTask(void *e)
                 if (bytesToSend < 0)
                     bytesToSend += settings.gnssHandlerBufferSize;
                 if (usedSpace < bytesToSend)
+                {
                     usedSpace = bytesToSend;
+                    slowConsumer = "Bluetooth";
+                }
             }
         }
 
@@ -423,7 +436,10 @@ void handleGnssDataTask(void *e)
                 if (bytesToSend < 0)
                     bytesToSend += settings.gnssHandlerBufferSize;
                 if (usedSpace < bytesToSend)
+                {
                     usedSpace = bytesToSend;
+                    slowConsumer = "WiFi";
+                }
             }
         }
 
@@ -462,7 +478,10 @@ void handleGnssDataTask(void *e)
                 if (bytesToSend < 0)
                     bytesToSend += settings.gnssHandlerBufferSize;
                 if (usedSpace < bytesToSend)
+                {
                     usedSpace = bytesToSend;
+                    slowConsumer = "Ethernet TCP clients";
+                }
             }
         }
 
@@ -592,7 +611,10 @@ void handleGnssDataTask(void *e)
                 if (bytesToSend < 0)
                     bytesToSend += settings.gnssHandlerBufferSize;
                 if (usedSpace < bytesToSend)
+                {
                     usedSpace = bytesToSend;
+                    slowConsumer = "SD card";
+                }
             } // bytesToSend
         } // End connected
 

@@ -32,15 +32,15 @@ PvtClient.ino
 
 */
 
+#ifdef COMPILE_WIFI
+
 //----------------------------------------
 // Locals
 //----------------------------------------
 
-#ifdef COMPILE_WIFI
 WiFiClient pvtClient;
 bool pvtClientConnected;
 IPAddress pvtClientIpAddress;
-#endif // COMPILE_WIFI
 
 //----------------------------------------
 // PVT Client Routines
@@ -53,7 +53,6 @@ uint16_t pvtClientSendData(uint16_t dataHead)
     int bytesToSend;
     static uint16_t tail;
 
-#ifdef COMPILE_WIFI
     // Determine if a client is connected
     bytesToSend = 0;
     connected = settings.enableTcpClient && online.pvtClient && pvtClientConnected;
@@ -110,7 +109,6 @@ uint16_t pvtClientSendData(uint16_t dataHead)
             }
         }
     }
-#endif // COMPILE_WIFI
 
     // Return the amount of space that WiFi is using in the buffer
     return bytesToSend;
@@ -128,7 +126,6 @@ void pvtClientUpdate()
         return;
     }
 
-#ifdef COMPILE_WIFI
     if (settings.enableTcpClient == false)
         return; // Nothing to do
 
@@ -202,6 +199,6 @@ void pvtClientUpdate()
             pvtClientConnected = false;
         }
     }
+}
 
 #endif  // COMPILE_WIFI
-}

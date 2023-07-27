@@ -1,15 +1,3 @@
-#if     !COMPILE_NETWORK
-
-void ntripServerProcessRTCM(uint8_t incoming) {}
-void ntripServerStart()
-{
-    systemPrintln("NTRIP Server not available: Ethernet and WiFi not compiled");
-}
-void ntripServerStop(bool clientAllocated) {online.ntripServer = false;}
-void ntripServerUpdate() {}
-
-#else   // COMPILE_NETWORK
-
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   NTRIP Server States:
     NTRIP_SERVER_OFF: Network off or using NTRIP Client
@@ -57,6 +45,8 @@ void ntripServerUpdate() {}
                     '------------------'
 
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+
+#if COMPILE_NETWORK
 
 //----------------------------------------
 // Constants - compiled out

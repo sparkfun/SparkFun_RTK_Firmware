@@ -31,17 +31,7 @@ pvtServer.ino
 
 */
 
-//----------------------------------------
-// PVT Server Routines - Compiled out
-//----------------------------------------
-
 #ifdef COMPILE_WIFI
-
-bool pvtServerActive() {return false;}
-int pvtServerSendData(uint16_t dataHead) {return 0;}
-void pvtServerUpdate() {}
-
-#else // COMPILE_WIFI
 
 //----------------------------------------
 // Constants

@@ -143,8 +143,8 @@ void menuSystem()
                 systemPrint("Disconnected");
                 break;
             case NTRIP_CLIENT_ON:
-            case NTRIP_CLIENT_WIFI_ETHERNET_STARTED:
-            case NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED:
+            case NTRIP_CLIENT_NETWORK_STARTED:
+            case NTRIP_CLIENT_NETWORK_CONNECTED:
             case NTRIP_CLIENT_CONNECTING:
                 systemPrint("Connecting");
                 break;
@@ -188,8 +188,8 @@ void menuSystem()
                 systemPrint("Disconnected");
                 break;
             case NTRIP_SERVER_ON:
-            case NTRIP_SERVER_WIFI_ETHERNET_STARTED:
-            case NTRIP_SERVER_WIFI_ETHERNET_CONNECTED:
+            case NTRIP_SERVER_NETWORK_STARTED:
+            case NTRIP_SERVER_NETWORK_CONNECTED:
             case NTRIP_SERVER_WAIT_GNSS_DATA:
             case NTRIP_SERVER_CONNECTING:
             case NTRIP_SERVER_AUTHORIZATION:
@@ -327,7 +327,7 @@ void menuSystem()
             byte bContinue = getCharacterNumber();
             if (bContinue == 'y')
             {
-                factoryReset();
+                factoryReset(false); //We do not have the SD semaphore
             }
             else
                 systemPrintln("Reset aborted");

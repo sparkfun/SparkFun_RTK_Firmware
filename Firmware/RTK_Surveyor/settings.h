@@ -168,25 +168,25 @@ volatile ESPNOWState espnowState = ESPNOW_OFF;
 
 typedef enum
 {
-    NTRIP_CLIENT_OFF = 0,                 // Using Bluetooth or NTRIP server
-    NTRIP_CLIENT_ON,                      // WIFI_START state
-    NTRIP_CLIENT_WIFI_ETHERNET_STARTED,   // Connecting to WiFi access point or Ethernet
-    NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED, // Connected to an access point or Ethernet
-    NTRIP_CLIENT_CONNECTING,              // Attempting a connection to the NTRIP caster
-    NTRIP_CLIENT_CONNECTED,               // Connected to the NTRIP caster
+    NTRIP_CLIENT_OFF = 0,           // Using Bluetooth or NTRIP server
+    NTRIP_CLIENT_ON,                // WIFI_START state
+    NTRIP_CLIENT_NETWORK_STARTED,   // Connecting to WiFi access point or Ethernet
+    NTRIP_CLIENT_NETWORK_CONNECTED, // Connected to an access point or Ethernet
+    NTRIP_CLIENT_CONNECTING,        // Attempting a connection to the NTRIP caster
+    NTRIP_CLIENT_CONNECTED,         // Connected to the NTRIP caster
 } NTRIPClientState;
 volatile NTRIPClientState ntripClientState = NTRIP_CLIENT_OFF;
 
 typedef enum
 {
-    NTRIP_SERVER_OFF = 0,                 // Using Bluetooth or NTRIP client
-    NTRIP_SERVER_ON,                      // WIFI_START state
-    NTRIP_SERVER_WIFI_ETHERNET_STARTED,   // Connecting to WiFi access point
-    NTRIP_SERVER_WIFI_ETHERNET_CONNECTED, // WiFi connected to an access point
-    NTRIP_SERVER_WAIT_GNSS_DATA,          // Waiting for correction data from GNSS
-    NTRIP_SERVER_CONNECTING,              // Attempting a connection to the NTRIP caster
-    NTRIP_SERVER_AUTHORIZATION,           // Validate the credentials
-    NTRIP_SERVER_CASTING,                 // Sending correction data to the NTRIP caster
+    NTRIP_SERVER_OFF = 0,           // Using Bluetooth or NTRIP client
+    NTRIP_SERVER_ON,                // WIFI_START state
+    NTRIP_SERVER_NETWORK_STARTED,   // Connecting to WiFi access point
+    NTRIP_SERVER_NETWORK_CONNECTED, // WiFi connected to an access point
+    NTRIP_SERVER_WAIT_GNSS_DATA,    // Waiting for correction data from GNSS
+    NTRIP_SERVER_CONNECTING,        // Attempting a connection to the NTRIP caster
+    NTRIP_SERVER_AUTHORIZATION,     // Validate the credentials
+    NTRIP_SERVER_CASTING,           // Sending correction data to the NTRIP caster
 } NTRIPServerState;
 volatile NTRIPServerState ntripServerState = NTRIP_SERVER_OFF;
 
@@ -753,8 +753,8 @@ typedef struct
     bool enableLogging = true;                            // If an SD card is present, log default sentences
     bool enableARPLogging = false;      // Log the Antenna Reference Position from RTCM 1005/1006 - if available
     uint16_t ARPLoggingInterval_s = 10; // Log the ARP every 10 seconds - if available
-    uint16_t sppRxQueueSize = 2048;
-    uint16_t sppTxQueueSize = 512;
+    uint16_t sppRxQueueSize = 512 * 2;
+    uint16_t sppTxQueueSize = 32;
     uint8_t dynamicModel = DYN_MODEL_PORTABLE;
     SystemState lastState = STATE_NOT_SET; // Start unit in last known state
     bool enableSensorFusion = false; // If IMU is available, avoid using it unless user specifically selects automotive
@@ -786,34 +786,6 @@ typedef struct
     int maxLogLength_minutes = 60 * 24; // Default to 24 hours
     char profileName[50] = "";
 
-    // NTRIP Server
-    bool enableNtripServer = false;
-    bool ntripServer_StartAtSurveyIn = false;       // true = Start WiFi instead of Bluetooth at Survey-In
-    char ntripServer_CasterHost[50] = "rtk2go.com"; // It's free...
-    uint16_t ntripServer_CasterPort = 2101;
-    char ntripServer_CasterUser[50] =
-        "test@test.com"; // Some free casters require auth. User must provide their own email address to use RTK2Go
-    char ntripServer_CasterUserPW[50] = "";
-    char ntripServer_MountPoint[50] = "bldr_dwntwn2"; // NTRIP Server
-    char ntripServer_MountPointPW[50] = "WR5wRo4H";
-    // Products that have Ethernet will always use Ethernet for NTRIP Server and Client, unless
-    // ntripServerUseWiFiNotEthernet is set to true. Setting ntripServerUseWiFiNotEthernet to true will make
-    // Ethernet-enabled products use WiFi for NTRIP Server instead. bool ntripServerUseWiFiNotEthernet = false; //For
-    // future expansion
-
-    // NTRIP Client
-    bool enableNtripClient = false;
-    char ntripClient_CasterHost[50] = "rtk2go.com"; // It's free...
-    uint16_t ntripClient_CasterPort = 2101;
-    char ntripClient_CasterUser[50] =
-        "test@test.com"; // Some free casters require auth. User must provide their own email address to use RTK2Go
-    char ntripClient_CasterUserPW[50] = "";
-    char ntripClient_MountPoint[50] = "bldr_SparkFun1";
-    char ntripClient_MountPointPW[50] = "";
-    bool ntripClient_TransmitGGA = true;
-    // Setting ntripClientUseWiFiNotEthernet to true will make Ethernet-enabled products use WiFi for NTRIP Client
-    // instead. bool ntripClientUseWiFiNotEthernet = false; //For future expansion
-
     int16_t serialTimeoutGNSS = 1; // In ms - used during SerialGNSS.begin. Number of ms to pass of no data before
                                    // hardware serial reports data available.
 
@@ -842,11 +814,7 @@ typedef struct
     int8_t timeZoneSeconds = 0;
 
     // Debug settings
-    bool enablePrintWifiIpAddress = true;
     bool enablePrintState = false;
-    bool enablePrintWifiState = false;
-    bool enablePrintNtripClientState = false;
-    bool enablePrintNtripServerState = false;
     bool enablePrintPosition = false;
     bool enablePrintIdleTime = false;
     bool enablePrintBatteryMessages = true;
@@ -855,22 +823,15 @@ typedef struct
     bool enablePrintLogFileMessages = false;
     bool enablePrintLogFileStatus = true;
     bool enablePrintRingBufferOffsets = false;
-    bool enablePrintNtripServerRtcm = false;
-    bool enablePrintNtripClientRtcm = false;
     bool enablePrintStates = true;
     bool enablePrintDuplicateStates = false;
     bool enablePrintRtcSync = false;
-    bool enablePrintNTPDiag = false;
-    bool enablePrintEthernetDiag = false;
     RadioType_e radioType = RADIO_EXTERNAL;
     uint8_t espnowPeers[5][6]; // Max of 5 peers. Contains the MAC addresses (6 bytes) of paired units
     uint8_t espnowPeerCount = 0;
     bool enableRtcmMessageChecking = false;
     BluetoothRadioType_e bluetoothRadioType = BLUETOOTH_RADIO_SPP;
     bool runLogTest = false; // When set to true, device will create a series of test logs
-    bool enableTcpClient = false;
-    bool enableTcpServer = false;
-    bool enablePrintTcpStatus = false;
     bool espnowBroadcast = true;       // When true, overrides peers and sends all data via broadcast
     int16_t antennaHeight = 0;         // in mm
     float antennaReferencePoint = 0.0; // in mm
@@ -883,16 +844,6 @@ typedef struct
     bool enablePrintSDBuffers = false;
     bool forceResetOnSDFail = false; // Set to true to reset system if SD is detected but fails to start.
 
-    WiFiNetwork wifiNetworks[MAX_WIFI_NETWORKS] = {
-        {"", ""},
-        {"", ""},
-        {"", ""},
-        {"", ""},
-    };
-
-    bool wifiConfigOverAP = true; // Configure device over Access Point or have it connect to WiFi
-    uint16_t wifiTcpPort =
-        2947; // TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
     uint8_t minElev = 10; // Minimum elevation (in deg) for a GNSS satellite to be used in NAV
     uint8_t ubxMessageRatesBase[MAX_UBX_MSG_RTCM] = {
         254}; // Mark first record with key so defaults will be applied. Int value for each supported message - Report
@@ -906,36 +857,10 @@ typedef struct
     // CFG-SFIMU-AUTO_MNTALG_ENA 0 = autoIMUmountAlignment
     bool sfUseSpeed = false; // CFG-SFODO-USE_SPEED
 
-    // Ethernet
-    IPAddress ethernetIP = {192, 168, 0, 123};
-    IPAddress ethernetDNS = {194, 168, 4, 100};
-    IPAddress ethernetGateway = {192, 168, 0, 1};
-    IPAddress ethernetSubnet = {255, 255, 255, 0};
-    uint16_t ethernetHttpPort = 80;
-    uint16_t ethernetNtpPort = 123;
-    bool ethernetDHCP = true;
-    bool enableNTPFile = false; // Log NTP requests to file
-    bool enableTcpClientEthernet = false;
-    uint16_t ethernetTcpPort =
-        2947; // TCP port to use in Client mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
-    char hostForTCPClient[50] = "";
-
-    // NTP
-    uint8_t ntpPollExponent = 6; // NTPpacket::defaultPollExponent 2^6 = 64 seconds
-    int8_t ntpPrecision = -20;   // NTPpacket::defaultPrecision 2^-20 = 0.95us
-    uint32_t ntpRootDelay = 0;   // NTPpacket::defaultRootDelay = 0. ntpRootDelay is defined in microseconds.
-                                 // processOneNTPRequest will convert it to seconds and fraction.
-    uint32_t ntpRootDispersion =
-        1000; // NTPpacket::defaultRootDispersion 1007us = 2^-16 * 66. ntpRootDispersion is defined in microseconds.
-              // processOneNTPRequest will convert it to seconds and fraction.
-    char ntpReferenceId[5] = {'G', 'P', 'S', 0,
-                              0}; // NTPpacket::defaultReferenceId. Ref ID is 4 chars. Add one extra for a NULL.
-
     CoordinateInputType coordinateInputType = COORDINATE_INPUT_TYPE_DD; // Default DD.ddddddddd
     uint16_t lbandFixTimeout_seconds = 180; // Number of seconds of no L-Band fix before resetting ZED
     int16_t minCNO_F9P = 6;                 // Minimum satellite signal level for navigation. ZED-F9P default is 6 dBHz
     int16_t minCNO_F9R = 20;                // Minimum satellite signal level for navigation. ZED-F9R default is 20 dBHz
-    bool mdnsEnable = false;                // Allows locating of device from browser address 'rtk.local'
     uint16_t serialGNSSRxFullThreshold = 50; // RX FIFO full interrupt. Max of ~128. See pinUART2Task().
     uint8_t btReadTaskPriority = 1; // Read from BT SPP and Write to GNSS. 3 being the highest, and 0 being the lowest
     uint8_t gnssReadTaskPriority =
@@ -949,6 +874,81 @@ typedef struct
     uint8_t bluetoothInterruptsCore = 1;  // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
     uint8_t i2cInterruptsCore = 1; // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
 
+    // Ethernet
+    bool enablePrintEthernetDiag = false;
+    bool ethernetDHCP = true;
+    IPAddress ethernetIP = {192, 168, 0, 123};
+    IPAddress ethernetDNS = {194, 168, 4, 100};
+    IPAddress ethernetGateway = {192, 168, 0, 1};
+    IPAddress ethernetSubnet = {255, 255, 255, 0};
+    uint16_t ethernetHttpPort = 80;
+
+    // WiFi
+    bool enablePrintWifiIpAddress = true;
+    bool enablePrintWifiState = false;
+    bool wifiConfigOverAP = true; // Configure device over Access Point or have it connect to WiFi
+    uint16_t wifiTcpPort =
+        2947; // TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
+    WiFiNetwork wifiNetworks[MAX_WIFI_NETWORKS] = {
+        {"", ""},
+        {"", ""},
+        {"", ""},
+        {"", ""},
+    };
+
+    // Multicast DNS Server
+    bool mdnsEnable = true;      // Allows locating of device from browser address 'rtk.local'
+
+    // NTP
+    uint16_t ethernetNtpPort = 123;
+    bool enableNTPFile = false;  // Log NTP requests to file
+    bool enablePrintNTPDiag = false;
+    uint8_t ntpPollExponent = 6; // NTPpacket::defaultPollExponent 2^6 = 64 seconds
+    int8_t ntpPrecision = -20;   // NTPpacket::defaultPrecision 2^-20 = 0.95us
+    uint32_t ntpRootDelay = 0;   // NTPpacket::defaultRootDelay = 0. ntpRootDelay is defined in microseconds.
+                                 // processOneNTPRequest will convert it to seconds and fraction.
+    uint32_t ntpRootDispersion =
+        1000; // NTPpacket::defaultRootDispersion 1007us = 2^-16 * 66. ntpRootDispersion is defined in microseconds.
+              // processOneNTPRequest will convert it to seconds and fraction.
+    char ntpReferenceId[5] = {'G', 'P', 'S', 0,
+                              0}; // NTPpacket::defaultReferenceId. Ref ID is 4 chars. Add one extra for a NULL.
+
+    // NTRIP Client
+    bool enablePrintNtripClientRtcm = false;
+    bool enablePrintNtripClientState = false;
+    bool enableNtripClient = false;
+    char ntripClient_CasterHost[50] = "rtk2go.com"; // It's free...
+    uint16_t ntripClient_CasterPort = 2101;
+    char ntripClient_CasterUser[50] =
+        "test@test.com"; // Some free casters require auth. User must provide their own email address to use RTK2Go
+    char ntripClient_CasterUserPW[50] = "";
+    char ntripClient_MountPoint[50] = "bldr_SparkFun1";
+    char ntripClient_MountPointPW[50] = "";
+    bool ntripClient_TransmitGGA = true;
+
+    // NTRIP Server
+    bool enablePrintNtripServerRtcm = false;
+    bool enablePrintNtripServerState = false;
+    bool enableNtripServer = false;
+    bool ntripServer_StartAtSurveyIn = false;       // true = Start WiFi instead of Bluetooth at Survey-In
+    char ntripServer_CasterHost[50] = "rtk2go.com"; // It's free...
+    uint16_t ntripServer_CasterPort = 2101;
+    char ntripServer_CasterUser[50] =
+        "test@test.com"; // Some free casters require auth. User must provide their own email address to use RTK2Go
+    char ntripServer_CasterUserPW[50] = "";
+    char ntripServer_MountPoint[50] = "bldr_dwntwn2"; // NTRIP Server
+    char ntripServer_MountPointPW[50] = "WR5wRo4H";
+
+    // TCP Client
+    bool enablePrintTcpStatus = false;
+    bool enableTcpClient = false;
+    bool enableTcpClientEthernet = false;
+    uint16_t ethernetTcpPort =
+        2947; // TCP port to use in Client mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
+    char hostForTCPClient[50] = "";
+
+    // TCP Server
+    bool enableTcpServer = false;
 } Settings;
 Settings settings;
 

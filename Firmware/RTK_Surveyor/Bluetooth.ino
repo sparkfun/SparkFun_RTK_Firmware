@@ -180,7 +180,8 @@ void bluetoothStart()
         // while (bluetoothPinned == false) // Wait for task to run once
         //     delay(1);
 
-        if (bluetoothSerial->begin(deviceName) == false)
+        if (bluetoothSerial->begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) ==
+            false) // localName, isMaster, rxBufferSize, txBufferSize
         {
             systemPrintln("An error occurred initializing Bluetooth");
 
@@ -235,7 +236,8 @@ void bluetoothStart()
 void pinBluetoothTask(void *pvParameters)
 {
 #ifdef COMPILE_BT
-    if (bluetoothSerial->begin(deviceName) == false)
+    if (bluetoothSerial->begin(deviceName, false, settings.sppRxQueueSize, settings.sppTxQueueSize) ==
+        false) // localName, isMaster, rxBufferSize,
     {
         systemPrintln("An error occurred initializing Bluetooth");
 
@@ -246,7 +248,7 @@ void pinBluetoothTask(void *pvParameters)
     bluetoothPinned = true;
 
     vTaskDelete(nullptr); // Delete task once it has run once
-#endif // COMPILE_BT
+#endif                    // COMPILE_BT
 }
 
 // This function stops BT so that it can be restarted later

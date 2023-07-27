@@ -10,14 +10,12 @@ bool ethernetIsNeeded()
     // Does Base mode NTRIP Server need Ethernet?
     if (HAS_ETHERNET && settings.enableNtripServer == true &&
         (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING)
-        //&& !settings.ntripServerUseWiFiNotEthernet //For future expansion
     )
         return true;
 
     // Does Rover mode NTRIP Client need Ethernet?
     if (HAS_ETHERNET && settings.enableNtripClient == true &&
         (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX)
-        //&& !settings.ntripClientUseWiFiNotEthernet //For future expansion
     )
         return true;
 
@@ -65,7 +63,7 @@ void beginEthernet()
 
         online.ethernetStatus = ETH_STARTED_CHECK_CABLE;
         lastEthernetCheck = millis(); // Wait a full second before checking the cable
-        
+
         break;
 
     case (ETH_STARTED_CHECK_CABLE):
@@ -183,42 +181,45 @@ void updateEthernet()
         w5500ClearSocketInterrupt(ntpSockIndex); // Clear the socket interrupt here
 
     // Maintain the ethernet connection
-    switch (Ethernet.maintain())
-    {
-    case 1:
-        // renewed fail
-        if (settings.enablePrintEthernetDiag && (!inMainMenu))
-            systemPrintln("Ethernet: Error: renewed fail");
-        break;
-
-    case 2:
-        // renewed success
-        if (settings.enablePrintEthernetDiag && (!inMainMenu))
+    if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
+        switch (Ethernet.maintain())
         {
-            systemPrint("Ethernet: Renewed success. IP address: ");
-            systemPrintln(Ethernet.localIP());
+        case 1:
+            // renewed fail
+            if (settings.enablePrintEthernetDiag && (!inMainMenu))
+                systemPrintln("Ethernet: Error: renewed fail");
+            ethernetRestart(); // Restart Ethernet
+            break;
+
+        case 2:
+            // renewed success
+            if (settings.enablePrintEthernetDiag && (!inMainMenu))
+            {
+                systemPrint("Ethernet: Renewed success. IP address: ");
+                systemPrintln(Ethernet.localIP());
+            }
+            break;
+
+        case 3:
+            // rebind fail
+            if (settings.enablePrintEthernetDiag && (!inMainMenu))
+                systemPrintln("Ethernet: Error: rebind fail");
+            ethernetRestart(); // Restart Ethernet
+            break;
+
+        case 4:
+            // rebind success
+            if (settings.enablePrintEthernetDiag && (!inMainMenu))
+            {
+                systemPrint("Ethernet: Rebind success. IP address: ");
+                systemPrintln(Ethernet.localIP());
+            }
+            break;
+
+        default:
+            // nothing happened
+            break;
         }
-        break;
-
-    case 3:
-        // rebind fail
-        if (settings.enablePrintEthernetDiag && (!inMainMenu))
-            systemPrintln("Ethernet: Error: rebind fail");
-        break;
-
-    case 4:
-        // rebind success
-        if (settings.enablePrintEthernetDiag && (!inMainMenu))
-        {
-            systemPrint("Ethernet: Rebind success. IP address: ");
-            systemPrintln(Ethernet.localIP());
-        }
-        break;
-
-    default:
-        // nothing happened
-        break;
-    }
 #endif  // COMPILE_ETHERNET
 }
 

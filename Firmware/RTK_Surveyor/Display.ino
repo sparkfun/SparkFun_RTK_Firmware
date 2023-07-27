@@ -636,11 +636,7 @@ void displaySplash()
 
         yPos = yPos + fontHeight + 7;
         char unitFirmware[50];
-        if (ENABLE_DEVELOPER)
-            snprintf(unitFirmware, sizeof(unitFirmware), "v%d.%d-DEV", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-        else
-            snprintf(unitFirmware, sizeof(unitFirmware), "v%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-
+        getFirmwareVersion(unitFirmware, sizeof(unitFirmware), false);
         printTextCenter(unitFirmware, yPos, QW_FONT_5X7, 1, false);
 
         oled.display();
@@ -1006,7 +1002,7 @@ uint32_t setWiFiIcon_TwoRadios()
         {
             firstRadioSpotTimer = millis();
 
-            if (wifiIncomingRTCM == true || wifiOutgoingRTCM == true)
+            if (netIncomingRTCM == true || netOutgoingRTCM == true)
                 firstRadioSpotBlink ^= 1; // Share the spot
             else
                 firstRadioSpotBlink = false;
@@ -1032,15 +1028,15 @@ uint32_t setWiFiIcon_TwoRadios()
         else
         {
             // Share the spot. Determine if we need to indicate Up, or Down
-            if (wifiIncomingRTCM == true)
+            if (netIncomingRTCM == true)
             {
                 icons |= ICON_DOWN_ARROW_LEFT;
-                wifiIncomingRTCM = false; // Reset, set during NTRIP Client
+                netIncomingRTCM = false; // Reset, set during NTRIP Client
             }
-            else if (wifiOutgoingRTCM == true)
+            else if (netOutgoingRTCM == true)
             {
                 icons |= ICON_UP_ARROW_LEFT;
-                wifiOutgoingRTCM = false; // Reset, set during NTRIP Server
+                netOutgoingRTCM = false; // Reset, set during NTRIP Server
             }
             else
             {
@@ -1093,7 +1089,7 @@ uint32_t setWiFiIcon_ThreeRadios()
         {
             thirdRadioSpotTimer = millis();
 
-            if (wifiIncomingRTCM == true || wifiOutgoingRTCM == true)
+            if (netIncomingRTCM == true || netOutgoingRTCM == true)
                 thirdRadioSpotBlink ^= 1; // Share the spot
             else
                 thirdRadioSpotBlink = false;
@@ -1119,15 +1115,15 @@ uint32_t setWiFiIcon_ThreeRadios()
         else
         {
             // Share the spot. Determine if we need to indicate Up, or Down
-            if (wifiIncomingRTCM == true)
+            if (netIncomingRTCM == true)
             {
                 icons |= ICON_DOWN_ARROW_RIGHT;
-                wifiIncomingRTCM = false; // Reset, set during NTRIP Client
+                netIncomingRTCM = false; // Reset, set during NTRIP Client
             }
-            else if (wifiOutgoingRTCM == true)
+            else if (netOutgoingRTCM == true)
             {
                 icons |= ICON_UP_ARROW_RIGHT;
-                wifiOutgoingRTCM = false; // Reset, set during NTRIP Server
+                netOutgoingRTCM = false; // Reset, set during NTRIP Server
             }
             else
             {

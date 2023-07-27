@@ -107,14 +107,6 @@ void menuGNSS()
                          settings.minElev);
 
             systemPrintf("14) Minimum satellite signal level for navigation (dBHz): %d\r\n", minCNO);
-
-            // For future expansion
-            // if (HAS_ETHERNET)
-            //{
-            //   systemPrintf("15) Use WiFi (not Ethernet) for NTRIP Client: ", menuEntry++);
-            //   if (settings.ntripClientUseWiFiNotEthernet == true) systemPrintln("Enabled");
-            //   else systemPrintln("Disabled");
-            // }
         }
         else
         {
@@ -307,12 +299,6 @@ void menuGNSS()
                 restartRover = true;
             }
         }
-        // For future expansion
-        // else if (incoming == 15 && settings.enableNtripClient == true && HAS_ETHERNET)
-        //{
-        //   settings.ntripClientUseWiFiNotEthernet ^= 1;
-        //   restartRover = true;
-        // }
         else if (incoming == INPUT_RESPONSE_GETNUMBER_EXIT)
             break;
         else if (incoming == INPUT_RESPONSE_GETNUMBER_TIMEOUT)

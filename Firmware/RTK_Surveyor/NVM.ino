@@ -193,8 +193,7 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "rtkIdentifier", settings.rtkIdentifier);
 
     char firmwareVersion[30]; // v1.3 December 31 2021
-    snprintf(firmwareVersion, sizeof(firmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR,
-             __DATE__);
+    getFirmwareVersion(firmwareVersion, sizeof(firmwareVersion), true);
     settingsFile->printf("%s=%s\r\n", "rtkFirmwareVersion", firmwareVersion);
 
     settingsFile->printf("%s=%s\r\n", "zedFirmwareVersion", zedFirmwareVersion);
@@ -251,8 +250,6 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%s\r\n", "ntripServer_CasterUserPW", settings.ntripServer_CasterUserPW);
     settingsFile->printf("%s=%s\r\n", "ntripServer_MountPoint", settings.ntripServer_MountPoint);
     settingsFile->printf("%s=%s\r\n", "ntripServer_MountPointPW", settings.ntripServer_MountPointPW);
-    // settingsFile->printf("%s=%d\r\n", "ntripServerUseWiFiNotEthernet", settings.ntripServerUseWiFiNotEthernet); //For
-    // future expansion
     settingsFile->printf("%s=%d\r\n", "enableNtripClient", settings.enableNtripClient);
     settingsFile->printf("%s=%s\r\n", "ntripClient_CasterHost", settings.ntripClient_CasterHost);
     settingsFile->printf("%s=%d\r\n", "ntripClient_CasterPort", settings.ntripClient_CasterPort);
@@ -261,8 +258,6 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%s\r\n", "ntripClient_MountPoint", settings.ntripClient_MountPoint);
     settingsFile->printf("%s=%s\r\n", "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
     settingsFile->printf("%s=%d\r\n", "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
-    // settingsFile->printf("%s=%d\r\n", "ntripClientUseWiFiNotEthernet", settings.ntripClientUseWiFiNotEthernet); //For
-    // future expansion
     settingsFile->printf("%s=%d\r\n", "serialTimeoutGNSS", settings.serialTimeoutGNSS);
     settingsFile->printf("%s=%s\r\n", "pointPerfectDeviceProfileToken", settings.pointPerfectDeviceProfileToken);
     settingsFile->printf("%s=%d\r\n", "enablePointPerfectCorrections", settings.enablePointPerfectCorrections);
@@ -738,7 +733,8 @@ bool parseLine(char *str, Settings *settings)
         // If user sets sizeOfSettings to -1 in config file, RTK Surveyor will factory reset
         if (d == -1)
         {
-            factoryReset(); // Erase file system, erase settings file, reset u-blox module, display message on OLED
+            // Erase file system, erase settings file, reset u-blox module, display message on OLED
+            factoryReset(true); //We already have the SD semaphore
         }
 
         // Check to see if this setting file is compatible with this version of RTK Surveyor
@@ -1006,9 +1002,6 @@ bool parseLine(char *str, Settings *settings)
         strcpy(settings->ntripServer_MountPoint, settingValue);
     else if (strcmp(settingName, "ntripServer_MountPointPW") == 0)
         strcpy(settings->ntripServer_MountPointPW, settingValue);
-    // For future expansion
-    // else if (strcmp(settingName, "ntripServerUseWiFiNotEthernet") == 0)
-    //   settings->ntripServerUseWiFiNotEthernet = d;
     else if (strcmp(settingName, "enableNtripClient") == 0)
         settings->enableNtripClient = d;
     else if (strcmp(settingName, "ntripClient_CasterHost") == 0)
@@ -1025,9 +1018,6 @@ bool parseLine(char *str, Settings *settings)
         strcpy(settings->ntripClient_MountPointPW, settingValue);
     else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
         settings->ntripClient_TransmitGGA = d;
-    // For future expansion
-    // else if (strcmp(settingName, "ntripClientUseWiFiNotEthernet") == 0)
-    //   settings->ntripClientUseWiFiNotEthernet = d;
     else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
         settings->serialTimeoutGNSS = d;
     else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)

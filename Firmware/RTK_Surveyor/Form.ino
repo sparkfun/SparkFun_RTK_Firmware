@@ -573,8 +573,7 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "platformPrefix", platformPrefix);
 
     char apRtkFirmwareVersion[86];
-    snprintf(apRtkFirmwareVersion, sizeof(apRtkFirmwareVersion), "v%d.%d-%s", FIRMWARE_VERSION_MAJOR,
-             FIRMWARE_VERSION_MINOR, __DATE__);
+    getFirmwareVersion(apRtkFirmwareVersion, sizeof(apRtkFirmwareVersion), true);
     stringRecord(newSettings, "rtkFirmwareVersion", apRtkFirmwareVersion);
 
     if (!configureViaEthernet) // ZED type is unknown if we are in configure-via-ethernet mode
@@ -651,10 +650,6 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "ntripClient_MountPoint", settings.ntripClient_MountPoint);
     stringRecord(newSettings, "ntripClient_MountPointPW", settings.ntripClient_MountPointPW);
     stringRecord(newSettings, "ntripClient_TransmitGGA", settings.ntripClient_TransmitGGA);
-
-    // stringRecord(newSettings, "ntripServerUseWiFiNotEthernet", settings.ntripServerUseWiFiNotEthernet); //For future
-    // expansion stringRecord(newSettings, "ntripClientUseWiFiNotEthernet", settings.ntripClientUseWiFiNotEthernet);
-    // //For future expansion
 
     // Sensor Fusion Config
     stringRecord(newSettings, "enableSensorFusion", settings.enableSensorFusion);
@@ -1163,12 +1158,6 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
     else if (strcmp(settingName, "ntripClient_TransmitGGA") == 0)
         settings.ntripClient_TransmitGGA = settingValueBool;
 
-    // For future expansion
-    // else if (strcmp(settingName, "ntripServerUseWiFiNotEthernet") == 0)
-    //   settings.ntripServerUseWiFiNotEthernet = settingValueBool;
-    // else if (strcmp(settingName, "ntripClientUseWiFiNotEthernet") == 0)
-    //   settings.ntripClientUseWiFiNotEthernet = settingValueBool;
-
     else if (strcmp(settingName, "serialTimeoutGNSS") == 0)
         settings.serialTimeoutGNSS = settingValue;
     else if (strcmp(settingName, "pointPerfectDeviceProfileToken") == 0)
@@ -1350,7 +1339,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             requestChangeState(STATE_ROVER_NOT_STARTED); // If update failed, return to Rover mode.
     }
     else if (strcmp(settingName, "factoryDefaultReset") == 0)
-        factoryReset();
+        factoryReset(false); //We do not have the sdSemaphore
     else if (strcmp(settingName, "exitAndReset") == 0)
     {
         // Confirm receipt
@@ -1457,14 +1446,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
         {
             // We got a version number, now determine if it's newer or not
-            char currentVersion[20];
-            if (enableRCFirmware == false)
-                snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR,
-                         FIRMWARE_VERSION_MINOR);
-            else
-                snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR,
-                         FIRMWARE_VERSION_MINOR, __DATE__);
-
+            char currentVersion[21];
+            getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
             if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
             {
                 log_d("New version detected");

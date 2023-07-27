@@ -1,9 +1,20 @@
+#if     !COMPILE_NETWORK
+
+void ntripClientStart()
+{
+    systemPrintln("NTRIP Client not available: Ethernet and WiFi not compiled");
+}
+void ntripClientStop(bool clientAllocated) {online.ntripClient = false;}
+void ntripClientUpdate() {}
+
+#else   // COMPILE_NETWORK
+
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   NTRIP Client States:
-    NTRIP_CLIENT_OFF: WiFi off or using NTRIP server
+    NTRIP_CLIENT_OFF: Network off or using NTRIP server
     NTRIP_CLIENT_ON: WIFI_START state
-    NTRIP_CLIENT_WIFI_ETHERNET_STARTED: Connecting to WiFi access point or Ethernet network
-    NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED: WiFi connected to an access point or network
+    NTRIP_CLIENT_NETWORK_STARTED: Connecting to the network
+    NTRIP_CLIENT_NETWORK_CONNECTED: Connected to the network
     NTRIP_CLIENT_CONNECTING: Attempting a connection to the NTRIP caster
     NTRIP_CLIENT_CONNECTED: Connected to the NTRIP caster
 
@@ -15,11 +26,11 @@
                                        |                      |
                                        |                      | ntripClientStop(false)
                                        v                Fail  |
-                     NTRIP_CLIENT_WIFI_ETHERNET_STARTED ----->+
+                         NTRIP_CLIENT_NETWORK_STARTED ------->+
                                        |                      ^
                                        |                      |
                                        v                Fail  |
-                     NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED --->+
+                        NTRIP_CLIENT_NETWORK_CONNECTED ------>+
                                        |                      ^
                                        |                      |
                                        v                Fail  |
@@ -61,10 +72,8 @@ static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; // 5s between transmission o
 // Locals - compiled out
 //----------------------------------------
 
-// The WiFi / Ethernet connection to the NTRIP caster to obtain RTCM data.
-#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
-static NTRIPClient *ntripClient;
-#endif  // COMPILE_WIFI || COMPILE_ETHERNET
+// The network connection to the NTRIP caster to obtain RTCM data.
+static NetworkClient *ntripClient;
 
 // Throttle the time between connection attempts
 // ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
@@ -83,7 +92,6 @@ unsigned long lastGGAPush = 0;
 
 bool ntripClientConnect()
 {
-#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
     if (!ntripClient)
         return false;
 
@@ -111,8 +119,11 @@ bool ntripClientConnect()
 
     // Set up the server request (GET)
     char serverRequest[SERVER_BUFFER_SIZE];
-    snprintf(serverRequest, SERVER_BUFFER_SIZE, "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun_RTK_%s_v%d.%d\r\n",
-             settings.ntripClient_MountPoint, platformPrefix, FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+    int length;
+    snprintf(serverRequest, SERVER_BUFFER_SIZE, "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun_RTK_%s_\r\n",
+             settings.ntripClient_MountPoint, platformPrefix);
+    length = strlen(serverRequest);
+    getFirmwareVersion(&serverRequest[length], SERVER_BUFFER_SIZE - length, false);
 
     // Set up the credentials
     char credentials[CREDENTIALS_BUFFER_SIZE];
@@ -157,16 +168,13 @@ bool ntripClientConnect()
     ntripClient->write((const uint8_t *)serverRequest, strlen(serverRequest));
     ntripClientTimer = millis();
     return true;
-#else   //! COMPILE_WIFI || COMPILE_ETHERNET
-    return false;
-#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 }
 
 // Determine if another connection is possible or if the limit has been reached
 bool ntripClientConnectLimitReached()
 {
     // Shutdown the NTRIP client
-    ntripClientStop(false); // Allocate new wifiClient
+    ntripClientStop(false); // Allocate new ntripClient
 
     // Retry the connection a few times
     bool limitReached = (ntripClientConnectionAttempts >= MAX_NTRIP_CLIENT_CONNECTION_ATTEMPTS);
@@ -186,8 +194,8 @@ bool ntripClientConnectLimitReached()
         // No more connection attempts, switching to Bluetooth
         systemPrintln("NTRIP Client connection attempts exceeded!");
 
-        // Stop WiFi operations
-        ntripClientStop(true); // Do not allocate new wifiClient
+        // Stop NTRIP client operations
+        ntripClientStop(true); // Do not allocate new ntripClient
     }
     return limitReached;
 }
@@ -195,17 +203,12 @@ bool ntripClientConnectLimitReached()
 // Determine if NTRIP client data is available
 int ntripClientReceiveDataAvailable()
 {
-#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
     return ntripClient->available();
-#else   //! COMPILE_WIFI || COMPILE_ETHERNET
-    return 0;
-#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 }
 
 // Read the response from the NTRIP client
 void ntripClientResponse(char *response, size_t maxLength)
 {
-#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
     char *responseEnd;
 
     // Make sure that we can zero terminate the response
@@ -216,7 +219,6 @@ void ntripClientResponse(char *response, size_t maxLength)
     {
         *response++ = ntripClient->read();
     }
-#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 
     // Zero terminate the response
     *response = '\0';
@@ -239,11 +241,11 @@ void ntripClientSetState(NTRIPClientState newState)
     case NTRIP_CLIENT_ON:
         systemPrintln("NTRIP_CLIENT_ON");
         break;
-    case NTRIP_CLIENT_WIFI_ETHERNET_STARTED:
-        systemPrintln("NTRIP_CLIENT_WIFI_ETHERNET_STARTED");
+    case NTRIP_CLIENT_NETWORK_STARTED:
+        systemPrintln("NTRIP_CLIENT_NETWORK_STARTED");
         break;
-    case NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED:
-        systemPrintln("NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED");
+    case NTRIP_CLIENT_NETWORK_CONNECTED:
+        systemPrintln("NTRIP_CLIENT_NETWORK_CONNECTED");
         break;
     case NTRIP_CLIENT_CONNECTING:
         systemPrintln("NTRIP_CLIENT_CONNECTING");
@@ -260,9 +262,8 @@ void ntripClientSetState(NTRIPClientState newState)
 
 void ntripClientStart()
 {
-#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
-    // Stop NTRIP client and WiFi
-    ntripClientStop(true); // Do not allocate new wifiClient
+    // Stop NTRIP client
+    ntripClientStop(true); // Do not allocate new ntripClient
 
     // Start the NTRIP client if enabled
     if (settings.enableNtripClient == true)
@@ -272,23 +273,19 @@ void ntripClientStart()
         systemPrintln("NTRIP Client start");
 
         // Allocate the ntripClient structure
-        ntripClient = new NTRIPClient(false); //(settings.ntripClientUseWiFiNotEthernet); //For future expansion
+        ntripClient = new NetworkClient(false);
 
-        // Startup WiFi and the NTRIP client
+        // Startup the network and the NTRIP client
         if (ntripClient)
             ntripClientSetState(NTRIP_CLIENT_ON);
     }
 
     ntripClientConnectionAttempts = 0;
-#else   //! COMPILE_WIFI || COMPILE_ETHERNET
-    systemPrintln("NTRIP Client not available: Ethernet and WiFi not compiled");
-#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 }
 
 // Stop the NTRIP client
-void ntripClientStop(bool wifiClientAllocated)
+void ntripClientStop(bool clientAllocated)
 {
-#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
     if (ntripClient)
     {
         // Break the NTRIP client connection if necessary
@@ -299,12 +296,12 @@ void ntripClientStop(bool wifiClientAllocated)
         delete ntripClient;
         ntripClient = nullptr;
 
-        // Allocate the NTRIP client structure if not done
-        if (wifiClientAllocated == false)
-            ntripClient = new NTRIPClient(false); // settings.ntripClientUseWiFiNotEthernet); //For future expansion
+        // Allocate the ntripClient structure if not done
+        if (clientAllocated == false)
+            ntripClient = new NetworkClient(false);
     }
 
-    // Increase timeouts if we started WiFi
+    // Increase timeouts if we started the network
     if (ntripClientState > NTRIP_CLIENT_ON)
     {
         ntripClientLastConnectionAttempt =
@@ -321,10 +318,9 @@ void ntripClientStop(bool wifiClientAllocated)
     }
 
     // Determine the next NTRIP client state
-    ntripClientSetState((ntripClient && (wifiClientAllocated == false)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
+    ntripClientSetState((ntripClient && (clientAllocated == false)) ? NTRIP_CLIENT_ON : NTRIP_CLIENT_OFF);
     online.ntripClient = false;
-    wifiIncomingRTCM = false;
-#endif  // COMPILE_WIFI || COMPILE_ETHERNET
+    netIncomingRTCM = false;
 }
 
 // Determine if NTRIP Client is needed
@@ -334,12 +330,12 @@ bool ntripClientIsNeeded()
     {
         // If user turns off NTRIP Client via settings, stop server
         if (ntripClientState > NTRIP_CLIENT_OFF)
-            ntripClientStop(true); // Don't allocate new wifiClient
+            ntripClientStop(true); // Don't allocate new ntripClient
         return (false);
     }
 
     if (wifiInConfigMode())
-        return (false); // Do not service NTRIP during WiFi config
+        return (false); // Do not service NTRIP during network config
 
     // Allow NTRIP Client to run during Survey-In,
     // but do not allow NTRIP Client to run during Base
@@ -370,20 +366,20 @@ void ntripClientUpdate()
         lastNtripClientState = millis();
     }
 
-    // Enable WiFi and the NTRIP client if requested
+    // Enable the network and the NTRIP client if requested
     switch (ntripClientState)
     {
     case NTRIP_CLIENT_OFF:
         break;
 
-    // Start WiFi
+    // Start the network
     case NTRIP_CLIENT_ON: {
-        if (HAS_ETHERNET) // && !settings.ntripClientUseWiFiNotEthernet) //For future expansion
+        if (HAS_ETHERNET)
         {
             if (online.ethernetStatus == ETH_NOT_STARTED)
             {
                 systemPrintln("Ethernet not started. Can not start NTRIP Client");
-                ntripClientStop(false); // Do allocate new WiFi / Ethernet Client
+                ntripClientStop(false); // Allocate a new ntripClient
             }
             else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
             {
@@ -392,13 +388,14 @@ void ntripClientUpdate()
                 {
                     ntripClientLastConnectionAttempt = millis();
                     log_d("NTRIP Client starting on Ethernet");
-                    ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_STARTED);
+                    ntripClientTimer = millis();
+                    ntripClientSetState(NTRIP_CLIENT_NETWORK_STARTED);
                 }
             }
             else
             {
                 systemPrintln("Error: Please connect Ethernet before starting NTRIP Client");
-                ntripClientStop(true); // Do not allocate new wifiClient
+                ntripClientStop(true); // Do not allocate new ntripClient
             }
         }
         else
@@ -406,7 +403,7 @@ void ntripClientUpdate()
             if (wifiNetworkCount() == 0)
             {
                 systemPrintln("Error: Please enter at least one SSID before starting NTRIP Client");
-                ntripClientStop(true); // Do not allocate new wifiClient
+                ntripClientStop(true); // Do not allocate new ntripClient
             }
             else
             {
@@ -416,44 +413,31 @@ void ntripClientUpdate()
                     ntripClientLastConnectionAttempt = millis();
                     log_d("NTRIP Client starting WiFi");
                     wifiStart();
-                    ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_STARTED);
+                    ntripClientTimer = millis();
+                    ntripClientSetState(NTRIP_CLIENT_NETWORK_STARTED);
                 }
             }
         }
     }
     break;
 
-    case NTRIP_CLIENT_WIFI_ETHERNET_STARTED:
-        if (HAS_ETHERNET) // && !settings.ntripClientUseWiFiNotEthernet) //For future expansion
+    case NTRIP_CLIENT_NETWORK_STARTED:
+        if ((millis() - ntripClientTimer) > (1 * 60 * 1000))
+            // Failed to connect to to the network, attempt to restart the network
+            ntripClientStop(false);
+        else if (HAS_ETHERNET)
         {
             if (online.ethernetStatus == ETH_CONNECTED)
-                ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED);
-            else if (online.ethernetStatus == ETH_CAN_NOT_BEGIN) // Ethernet hardware failure or not available
-                ntripClientSetState(NTRIP_CLIENT_OFF);
-            else
-            {
-                // Wait for ethernet to connect
-                static unsigned long lastDebug = millis();
-                if (millis() > (lastDebug + 5000))
-                {
-                    lastDebug = millis();
-                    log_d("NTRIP Client: Ethernet not connected. Waiting to retry.");
-                }
-            }
+                ntripClientSetState(NTRIP_CLIENT_NETWORK_CONNECTED);
         }
         else
         {
             if (wifiIsConnected())
-                ntripClientSetState(NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED);
-            else if (wifiState == WIFI_OFF)
-            {
-                // WiFi failed to connect. Restart Client which will restart WiFi.
-                ntripClientSetState(NTRIP_CLIENT_ON);
-            }
+                ntripClientSetState(NTRIP_CLIENT_NETWORK_CONNECTED);
         }
         break;
 
-    case NTRIP_CLIENT_WIFI_ETHERNET_CONNECTED: {
+    case NTRIP_CLIENT_NETWORK_CONNECTED: {
         // If GGA transmission is enabled, wait for GNSS lock before connecting to NTRIP Caster
         // If GGA transmission is not enabled, start connecting to NTRIP Caster
         if ((settings.ntripClient_TransmitGGA == true && (fixType == 3 || fixType == 4 || fixType == 5)) ||
@@ -483,7 +467,6 @@ void ntripClientUpdate()
     break;
 
     case NTRIP_CLIENT_CONNECTING:
-#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
         // Check for no response from the caster service
         if (ntripClientReceiveDataAvailable() < strlen("ICY 200 OK")) // Wait until at least a few bytes have arrived
         {
@@ -492,7 +475,12 @@ void ntripClientUpdate()
             {
                 // NTRIP web service did not respond
                 if (ntripClientConnectLimitReached()) // Updates ntripClientConnectionAttemptTimeout
+                {
                     systemPrintln("NTRIP Caster failed to respond. Do you have your caster address and port correct?");
+
+                    // Stop NTRIP client operations
+                    ntripClientStop(true); // Do not allocate new ntripClient
+                }
                 else
                 {
                     if (ntripClientConnectionAttemptTimeout / 1000 < 120)
@@ -501,6 +489,9 @@ void ntripClientUpdate()
                     else
                         systemPrintf("NTRIP Client failed to connect to caster. Trying again in %d minutes.\r\n",
                                      ntripClientConnectionAttemptTimeout / 1000 / 60);
+
+                    // Restart network operation after delay
+                    ntripClientStop(false);
                 }
             }
         }
@@ -510,37 +501,10 @@ void ntripClientUpdate()
             char response[512];
             ntripClientResponse(&response[0], sizeof(response));
 
-            log_d("Caster Response: %s", response);
+            //log_d("Caster Response: %s", response);
 
             // Look for various responses
-            if (strstr(response, "401") != nullptr)
-            {
-                // Look for '401 Unauthorized'
-                systemPrintf(
-                    "NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n",
-                    response);
-
-                // Stop WiFi operations
-                ntripClientStop(true); // Do not allocate new wifiClient
-            }
-            else if (strstr(response, "banned") != nullptr)
-            {
-                // Look for 'HTTP/1.1 200 OK' and banned IP information
-                systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n", response);
-
-                // Stop WiFi operations
-                ntripClientStop(true); // Do not allocate new wifiClient
-            }
-            else if (strstr(response, "SOURCETABLE") != nullptr)
-            {
-                // Look for 'SOURCETABLE 200 OK'
-                systemPrintf("Caster may not have mountpoint %s. Caster responded with problem: %s\r\n",
-                             settings.ntripClient_MountPoint, response);
-
-                // Stop WiFi operations
-                ntripClientStop(true); // Do not allocate new wifiClient
-            }
-            else if (strstr(response, "200") != nullptr)
+            if (strstr(response, "200") != nullptr) //'200' found
             {
                 log_d("NTRIP Client connected to caster");
 
@@ -570,18 +534,63 @@ void ntripClientUpdate()
                 ntripClientConnectionAttempts = 0;
                 ntripClientSetState(NTRIP_CLIENT_CONNECTED);
             }
+            else if (strstr(response, "401") != nullptr)
+            {
+                // Look for '401 Unauthorized'
+                systemPrintf(
+                    "NTRIP Caster responded with bad news: %s. Are you sure your caster credentials are correct?\r\n",
+                    response);
+
+                // Stop NTRIP client operations
+                ntripClientStop(true); // Do not allocate new ntripClient
+            }
+            else if (strstr(response, "banned") != nullptr)
+            {
+                // Look for 'HTTP/1.1 200 OK' and banned IP information
+                systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n", response);
+
+                // Stop NTRIP client operations
+                ntripClientStop(true); // Do not allocate new ntripClient
+            }
+            else if (strstr(response, "SOURCETABLE") != nullptr)
+            {
+                // Look for 'SOURCETABLE 200 OK'
+                systemPrintf("Caster may not have mountpoint %s. Caster responded with problem: %s\r\n",
+                             settings.ntripClient_MountPoint, response);
+
+                // Stop NTRIP client operations
+                ntripClientStop(true); // Do not allocate new ntripClient
+            }
+            // Other errors returned by the caster
+            else
+            {
+                systemPrintf("NTRIP Client connected but caster responded with problem: %s\r\n", response);
+
+                // Check for connection limit
+                if (ntripClientConnectLimitReached())
+                    systemPrintln("NTRIP Client retry limit reached; do you have your caster address and port correct?");
+
+                // Attempt to reconnect after throttle controlled timeout
+                else
+                {
+                    if (ntripClientConnectionAttemptTimeout / 1000 < 120)
+                        systemPrintf("NTRIP Client attempting connection in %d seconds.\r\n",
+                                     ntripClientConnectionAttemptTimeout / 1000);
+                    else
+                        systemPrintf("NTRIP Client attempting connection in %d minutes.\r\n",
+                                     ntripClientConnectionAttemptTimeout / 1000 / 60);
+                }
+            }
         }
-#endif  // COMPILE_WIFI || COMPILE_ETHERNET
         break;
 
     case NTRIP_CLIENT_CONNECTED:
-#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
         // Check for a broken connection
         if (!ntripClient->connected())
         {
             // Broken connection, retry the NTRIP client connection
             systemPrintln("NTRIP Client connection to caster was broken");
-            ntripClientStop(false); // Allocate new wifiClient
+            ntripClientStop(false); // Allocate new ntripClient
         }
         else
         {
@@ -592,7 +601,7 @@ void ntripClientUpdate()
                 {
                     // Timeout receiving NTRIP data, retry the NTRIP client connection
                     systemPrintln("NTRIP Client: No data received timeout");
-                    ntripClientStop(false); // Allocate new wifiClient
+                    ntripClientStop(false); // Allocate new ntripClient
                 }
             }
             else
@@ -614,20 +623,18 @@ void ntripClientUpdate()
 
                 // Push RTCM to GNSS module over I2C / SPI
                 theGNSS.pushRawData(rtcmData, rtcmCount);
-                wifiIncomingRTCM = true;
+                netIncomingRTCM = true;
 
                 if (!inMainMenu && settings.enablePrintNtripClientState)
                     systemPrintf("NTRIP Client received %d RTCM bytes, pushed to ZED\r\n", rtcmCount);
             }
         }
-#endif  // COMPILE_WIFI || COMPILE_ETHERNET
         break;
     }
 }
 
 void pushGPGGA(NMEA_GGA_data_t *nmeaData)
 {
-#if defined(COMPILE_WIFI) || defined(COMPILE_ETHERNET)
     // Provide the caster with our current position as needed
     if (ntripClient->connected() && settings.ntripClient_TransmitGGA == true)
     {
@@ -642,5 +649,6 @@ void pushGPGGA(NMEA_GGA_data_t *nmeaData)
             ntripClient->print((const char *)nmeaData->nmea);
         }
     }
-#endif  // COMPILE_WIFI || COMPILE_ETHERNET
 }
+
+#endif  // COMPILE_NETWORK

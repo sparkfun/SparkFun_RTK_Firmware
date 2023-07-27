@@ -12,14 +12,9 @@ void menuFirmware()
         if (btPrintEcho == true)
             systemPrintln("Firmware update not available while configuration over Bluetooth is active");
 
-        char currentVersion[20];
-        if (enableRCFirmware == false)
-            snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-        else
-            snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR,
-                     __DATE__);
-
-        systemPrintf("Current firmware: v%s\r\n", currentVersion);
+        char currentVersion[21];
+        getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
+        systemPrintf("Current firmware: %s\r\n", currentVersion);
 
         if (strlen(reportedVersion) > 0)
         {
@@ -60,15 +55,9 @@ void menuFirmware()
                 if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
                 {
                     // We got a version number, now determine if it's newer or not
-                    char currentVersion[20];
-                    if (enableRCFirmware == false)
-                        snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR,
-                                 FIRMWARE_VERSION_MINOR);
-                    else
-                        snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR,
-                                 FIRMWARE_VERSION_MINOR, __DATE__);
-
-                    if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
+                    char currentVersion[21];
+                    getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
+                    if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true)
                     {
                         log_d("New version detected");
                         newOTAFirmwareAvailable = true;
@@ -97,15 +86,9 @@ void menuFirmware()
                     if (otaCheckVersion(reportedVersion, sizeof(reportedVersion)))
                     {
                         // We got a version number, now determine if it's newer or not
-                        char currentVersion[20];
-                        if (enableRCFirmware == false)
-                            snprintf(currentVersion, sizeof(currentVersion), "%d.%d", FIRMWARE_VERSION_MAJOR,
-                                     FIRMWARE_VERSION_MINOR);
-                        else
-                            snprintf(currentVersion, sizeof(currentVersion), "%d.%d-%s", FIRMWARE_VERSION_MAJOR,
-                                     FIRMWARE_VERSION_MINOR, __DATE__);
-
-                        if (isReportedVersionNewer(reportedVersion, currentVersion) == true)
+                        char currentVersion[21];
+                        getFirmwareVersion(currentVersion, sizeof(currentVersion), enableRCFirmware);
+                        if (isReportedVersionNewer(reportedVersion, &currentVersion[1]) == true)
                         {
                             log_d("New version detected");
                             newOTAFirmwareAvailable = true;
@@ -463,6 +446,45 @@ void updateFromSD(const char *firmwareFileName)
     systemPrintln("Firmware update failed. Please try again.");
 }
 
+// Format the firmware version
+void formatFirmwareVersion(uint8_t major, uint8_t minor, char * buffer, int bufferLength, bool includeDate)
+{
+    char prefix;
+
+    // Construct the full or release candidate version number
+    prefix = ENABLE_DEVELOPER ? 'd' : 'v';
+    if (enableRCFirmware && (bufferLength >= 21))
+        // 123456789012345678901
+        // pxxx.yyy-dd-mmm-yyyy0
+        snprintf(buffer, bufferLength, "%c%d.%d-%s", prefix, major, minor, __DATE__);
+
+    // Construct a truncated version number
+    else if (bufferLength >= 9)
+        // 123456789
+        // pxxx.yyy0
+        snprintf(buffer, bufferLength, "%c%d.%d", prefix, major, minor);
+
+    // The buffer is too small for the version number
+    else
+    {
+        systemPrintf("ERROR: Buffer too small for version number!\r\n");
+        if (bufferLength > 0)
+            *buffer = 0;
+    }
+}
+
+// Get the current firmware version
+void getFirmwareVersion(char * buffer, int bufferLength, bool includeDate)
+{
+    formatFirmwareVersion(FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR, buffer, bufferLength, includeDate);
+}
+
+const char * otaGetUrl()
+{
+    // Select the URL for the over-the-air (OTA) updates
+    return enableRCFirmware ? OTA_RC_FIRMWARE_JSON_URL : OTA_FIRMWARE_JSON_URL;
+}
+
 // Returns true if we successfully got the versionAvailable
 // Modifies versionAvailable with OTA getVersion response
 // Connects to WiFi as needed
@@ -474,28 +496,16 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
 
     if (wifiConnect(10000) == true)
     {
-        char versionString[20];
-
-        if (enableRCFirmware == false)
-            snprintf(versionString, sizeof(versionString), "%d.%d", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
-        else
-            snprintf(versionString, sizeof(versionString), "%d.%d-%s", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR,
-                     __DATE__);
-
+        char versionString[21];
+        getFirmwareVersion(versionString, sizeof(versionString), enableRCFirmware);
         systemPrintf("Current firmware version: v%s\r\n", versionString);
 
-        if (enableRCFirmware == false)
-            systemPrintf("Checking to see if an update is available from %s\r\n", OTA_FIRMWARE_JSON_URL);
-        else
-            systemPrintf("Checking to see if an update is available from %s\r\n", OTA_RC_FIRMWARE_JSON_URL);
+        const char * url = otaGetUrl();
+        systemPrintf("Checking to see if an update is available from %s\r\n", url);
 
         ESP32OTAPull ota;
 
-        int response;
-        if (enableRCFirmware == false)
-            response = ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
-        else
-            response = ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+        int response = ota.CheckForOTAUpdate(url, versionString, ESP32OTAPull::DONT_DO_UPDATE);
 
         // We don't care if the library thinks the available firmware is newer, we just need a successful JSON parse
         if (response == ESP32OTAPull::UPDATE_AVAILABLE || response == ESP32OTAPull::NO_UPDATE_AVAILABLE)
@@ -546,25 +556,21 @@ void otaUpdate()
 
     if (wifiConnect(10000) == true)
     {
-        char versionString[20];
-        snprintf(versionString, sizeof(versionString), "%d.%d", 0, 0); // Force update with version 0.0
+        char versionString[9];
+        formatFirmwareVersion(0, 0, versionString, sizeof(versionString), false);
 
         ESP32OTAPull ota;
 
         int response;
-        if (enableRCFirmware == false)
-            response = ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
-        else
-            response = ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString, ESP32OTAPull::DONT_DO_UPDATE);
+        const char * url = otaGetUrl();
+        response = ota.CheckForOTAUpdate(url, &versionString[1], ESP32OTAPull::DONT_DO_UPDATE);
 
         if (response == ESP32OTAPull::UPDATE_AVAILABLE)
         {
             systemPrintln("Installing new firmware");
             ota.SetCallback(otaPullCallback);
             if (enableRCFirmware == false)
-                ota.CheckForOTAUpdate(OTA_FIRMWARE_JSON_URL, versionString); // Install new firmware, no reset
-            else
-                ota.CheckForOTAUpdate(OTA_RC_FIRMWARE_JSON_URL, versionString); // Install new firmware, no reset
+            ota.CheckForOTAUpdate(url, versionString); // Install new firmware, no reset
 
             if (apConfigFirmwareUpdateInProcess)
             {

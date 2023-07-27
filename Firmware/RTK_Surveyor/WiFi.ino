@@ -121,6 +121,36 @@ void wifiSetState(byte newState)
 }
 
 //----------------------------------------
+// PVT Server Routines - compiled out
+//----------------------------------------
+
+// Send data to the PVT clients
+int pvtSendClientData(int index, uint8_t *data, int bytesToSend)
+{
+    int bytesSent;
+    bytesSent = wifiTcpClient[index].write(data, bytesToSend);
+    if (bytesSent >= 0)
+    {
+        if ((settings.enablePrintTcpStatus) && (!inMainMenu))
+            systemPrintf("%d bytes written over WiFi TCP\r\n", bytesToSend);
+    }
+    // Failed to write the data
+    else
+    {
+        // Done with this client connection
+        if (!inMainMenu)
+        {
+            systemPrintf("Breaking WiFi TCP client %d connection\r\n", index);
+        }
+
+        wifiTcpClient[index].stop();
+        wifiTcpConnected &= ~(1 << index);
+        bytesSent = bytesToSend;
+    }
+    return bytesSent;
+}
+
+//----------------------------------------
 // WiFi Config Support Routines - compiled out
 //----------------------------------------
 
@@ -521,48 +551,74 @@ int wifiNetworkCount()
     return networkCount;
 }
 
-// Send data to the TCP clients
-void wifiSendTcpData(uint8_t *data, uint16_t length)
+// Send PVT data to the clients
+int pvtSendData(uint16_t dataHead)
 {
+    int usedSpace = 0;
+
 #ifdef COMPILE_WIFI
+    bool connected;
+    int bytesToSend;
+    int index;
+    static uint16_t pvtTails[WIFI_MAX_TCP_CLIENTS]; // PVT client tails
+    uint16_t tail;
 
-    if (!length)
-        return;
+    // Determine if a client is connected
+    connected = ((settings.enableTcpServer && online.tcpServer)
+                    || (settings.enableTcpClient && online.tcpClient))
+                && wifiTcpConnected;
 
-    // Send the data to the connected clients
-    if ((settings.enableTcpServer && online.tcpServer) || (settings.enableTcpClient && online.tcpClient))
+    // Update each of the clients
+    for (index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
     {
-        // Walk the list of TCP clients
-        for (int index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
+        tail = pvtTails[index];
+
+        // Determine the amount of TCP data in the buffer
+        bytesToSend = dataHead - tail;
+        if (bytesToSend < 0)
+            bytesToSend += settings.gnssHandlerBufferSize;
+
+        // Determine if the client is connected
+        if ((!connected) || ((wifiTcpConnected & (1 << index)) == 0))
+            tail = dataHead;
+        else
         {
-            if (wifiTcpConnected & (1 << index))
+            if (bytesToSend > 0)
             {
-                if (wifiTcpClient[index].write(data, length) == length)
-                {
-                    if ((settings.enablePrintTcpStatus) && (!inMainMenu))
-                        systemPrintf("%d bytes written over WiFi TCP\r\n", length);
-                }
-                // Failed to write the data
-                else
-                {
-                    // Done with this client connection
-                    if (!inMainMenu)
-                    {
-                        systemPrintf("Breaking WiFi TCP client %d connection\r\n", index);
-                    }
+                // Reduce bytes to send if we have more to send then the end of the buffer
+                // We'll wrap next loop
+                if ((tail + bytesToSend) > settings.gnssHandlerBufferSize)
+                    bytesToSend = settings.gnssHandlerBufferSize - tail;
 
-                    wifiTcpClient[index].stop();
-                    wifiTcpConnected &= ~(1 << index);
-
-                    // Shutdown the TCP server if necessary
-                    if (settings.enableTcpServer || online.tcpServer)
-                        wifiTcpServerActive();
-                }
+                // Send the data to the TCP clients
+                bytesToSend = pvtSendClientData(index, &ringBuffer[tail], bytesToSend);
             }
+
+            // Update the tail
+            tail += bytesToSend;
+            if (tail >= settings.gnssHandlerBufferSize)
+                tail -= settings.gnssHandlerBufferSize;
+
+            // Update space available for use in UART task
+            bytesToSend = dataHead - tail;
+            if (bytesToSend < 0)
+                bytesToSend += settings.gnssHandlerBufferSize;
+            if (usedSpace < bytesToSend)
+                usedSpace = bytesToSend;
         }
+        pvtTails[index] = tail;
     }
+
+    // Shutdown the TCP server if necessary
+    if (settings.enableTcpServer || online.tcpServer)
+        wifiTcpServerActive();
+
 #endif // COMPILE_WIFI
+
+    // Return the amount of space that WiFi is using in the buffer
+    return usedSpace;
 }
+
 
 // Check for TCP server active
 bool wifiTcpServerActive()

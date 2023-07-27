@@ -1,12 +1,13 @@
 # WiFi Menu
 
-Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Supported](img/Icons/GreenDot.png) / Express: ![Feature Supported](img/Icons/GreenDot.png) / Express Plus: ![Feature Supported](img/Icons/GreenDot.png) / Facet: ![Feature Supported](img/Icons/GreenDot.png) / Facet L-Band: ![Feature Supported](img/Icons/GreenDot.png) / Reference Station: ![Feature Partially Supported](img/Icons/YellowDot.png)
 
-![WiFi Menu in AP Config page](img/SparkFun%20RTK%20AP%20WiFi%20Menu.png)
+![WiFi Menu in AP Config page](img/WiFi Config/SparkFun%20RTK%20AP%20WiFi%20Menu.png)
 
 *WiFi Menu in the WiFi config page*
 
-![WiFi Network Entry](img/SparkFun%20RTK%20WiFi%20Menu%20Terminal.png)
+![WiFi Network Entry](img/Terminal/SparkFun%20RTK%20WiFi%20Menu%20Terminal.png)
+
 
 *WiFi Menu containing one network*
 
@@ -24,7 +25,7 @@ WiFi is used for the following features:
 
 ## TCP Client and Server
 
-The RTK device supports connection over TCP. Some Data Collector software (such as [Vespucci](https://docs.sparkfun.com/SparkFun_RTK_Firmware/gis_software/#vespucci)) requires that the SparkFun RTK device connect as a TCP Client. Other software (such as [QGIS](https://docs.sparkfun.com/SparkFun_RTK_Firmware/gis_software/#qgis)) requires that the SparkFun RTK device acts as a TCP Server. Both are supported.
+The RTK device supports connection over TCP. Some Data Collector software (such as [Vespucci](gis_software.md#vespucci)) requires that the SparkFun RTK device connect as a TCP Client. Other software (such as [QGIS](gis_software.md#qgis)) requires that the SparkFun RTK device acts as a TCP Server. Both are supported.
 
 **Note:** Currently TCP is only supported while connected to local WiFi, not AP mode. This means the device will need to be connected to a WiFi network, such as a mobile hotspot, before TCP connections can occur.
 
@@ -36,7 +37,7 @@ If either Client or Server is enabled, a port can be designated. By default, the
 
 ![Configure Mode in WiFi menu](img/WiFi%20Config/SparkFun%20RTK%20Config%20-%20Configure%20Mode.png)
 
-![WiFi Network Entry](img/SparkFun%20RTK%20WiFi%20Menu%20Terminal.png)
+![WiFi Network Entry](img/Terminal/SparkFun%20RTK%20WiFi%20Menu%20Terminal.png)
 
 By default, the device will become an Access Point when the user selects 'Config' from the front panel controls. This is handy for in-field device configuration. Alternatively, changing this setting to 'WiFi' will cause the device to connect to local WiFi. 
 
@@ -44,12 +45,12 @@ By default, the device will become an Access Point when the user selects 'Config
 
 Configuring over WiFi allows the device to be configured from any desktop computer that has access to the same WiFi network. This method allows for greater control from a full size keyboard and mouse.
 
-![RTK display showing local IP and SSID](img/WiFi%20Config/SparkFun%20RTK%20WiFi%20Config%20IP.png)
+![RTK display showing local IP and SSID](img/Displays/SparkFun%20RTK%20WiFi%20Config%20IP.png)
 
 When the device enters WiFi config mode it will display the WiFi network it is connected to as well as its assigned IP address.
 
 ## MDNS
 
-![Access using rtk.local](img/SparkFun%20RTK%20WiFi%20MDNS.png)
+![Access using rtk.local](img/WiFi Config/SparkFun%20RTK%20WiFi%20MDNS.png)
 
 Multicast DNS or MDNS allows the RTK device to be discovered over wireless networks without needing to know the IP. For example, when MDNS is enabled, simply type 'rtk.local' into a browser to connect to the RTK Config page. This feature works both for 'WiFi Access Point' or direct WiFi config. Note: When using WiFi config, you must be on the same subdomain (in other words, the same WiFi or Ethernet network) as the RTK device.

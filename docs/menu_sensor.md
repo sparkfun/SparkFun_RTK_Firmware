@@ -1,10 +1,10 @@
 # Sensor Menu
 
-Surveyor: ![Feature Not Supported](img/RedDot.png) / Express: ![Feature Not Supported](img/RedDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Not Supported](img/RedDot.png) / Facet L-Band: ![Feature Not Supported](img/RedDot.png)
+Surveyor: ![Feature Not Supported](img/Icons/RedDot.png) / Express: ![Feature Not Supported](img/Icons/RedDot.png) / Express Plus: ![Feature Supported](img/Icons/GreenDot.png) / Facet: ![Feature Not Supported](img/Icons/RedDot.png) / Facet L-Band: ![Feature Not Supported](img/Icons/RedDot.png) / Reference Station: ![Feature Not Supported](img/Icons/RedDot.png)
 
-![Sensor menu is shown in WiFi config](img/SparkFun%20RTK%20Sensor%20Menu%20WiFi%20Config.png)
+![Sensor menu is shown in WiFi config](img/WiFi Config/SparkFun%20RTK%20Sensor%20Menu%20WiFi%20Config.png)
 
-![Sensor menu from serial prompt](img/SparkFun%20RTK%20-%20Sensor%20Menu.png)
+![Sensor menu from serial prompt](img/Terminal/SparkFun%20RTK%20-%20Sensor%20Menu.png)
 
 *Setting the Sensor options over WiFi config and serial connections*
 
@@ -14,6 +14,6 @@ Enable 'Sensor Fusion' to begin using the onboard IMU when GNSS is avaialble. Se
 
 'Automatic IMU-Mount Alignment' will allow the device to automatically determine how the product is mounted within the vehicle's frame of reference.
 
-Additionally, wheel ticks should be provided to the unit to enhance the positional fixes. Please see [Mux Channel](https://docs.sparkfun.com/SparkFun_RTK_Firmware/configure_ports/#mux-channel) of the Ports Menu for more information.
+Additionally, wheel ticks should be provided to the unit to enhance the positional fixes. Please see [Mux Channel](menu_ports.md#mux-channel) of the Ports Menu for more information.
 
 

@@ -1,16 +1,16 @@
 # Configure with WiFi
 
-Surveyor: ![Feature Supported](img/GreenDot.png) / Express: ![Feature Supported](img/GreenDot.png) / Express Plus: ![Feature Supported](img/GreenDot.png) / Facet: ![Feature Supported](img/GreenDot.png) / Facet L-Band: ![Feature Supported](img/GreenDot.png)
+Surveyor: ![Feature Supported](img/Icons/GreenDot.png) / Express: ![Feature Supported](img/Icons/GreenDot.png) / Express Plus: ![Feature Supported](img/Icons/GreenDot.png) / Facet: ![Feature Supported](img/Icons/GreenDot.png) / Facet L-Band: ![Feature Supported](img/Icons/GreenDot.png) / Reference Station: ![Feature Supported](img/Icons/GreenDot.png)
 
-![WiFi configuration over AP](img/SparkFun%20RTK%20Header%20Information.png)
+![WiFi configuration over AP](img/WiFi Config/SparkFun%20RTK%20Header%20Information.png)
 
 *Configuration page via WiFi*
 
-Starting with firmware v1.7, WiFi-based configuration is supported. For more information about updating the firmware on your device, please see [Updating RTK Firmware](https://sparkfun.github.io/SparkFun_RTK_Firmware/firmware_update/).
+Starting with firmware v1.7, WiFi-based configuration is supported. For more information about updating the firmware on your device, please see [Updating RTK Firmware](firmware_update.md).
 
 The RTK device will present a webpage that is viewable from either a desktop/laptop with WiFi or a cell phone. For advanced configurations, a desktop is recommended. For quick in-field changes, a cell phone works great.
 
-[![Desktop vs Phone display size configuration](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Desktop_vs_Phone_Config.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Desktop_vs_Phone_Config.jpg)
+![Desktop vs Phone display size configuration](img/WiFi Config/SparkFun_RTK_Facet_-_Desktop_vs_Phone_Config.jpg)
 
 *Desktop vs Phone display size configuration*
 
@@ -23,7 +23,7 @@ To get into WiFi configuration follow these steps:
 4. Connect to WiFi network named ‘RTK Config’.
 5. Open a browser (Chrome is preferred) and type **192.168.4.1** into the address bar.
 
-[![Display showing IP address](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Display_WiFi_Config.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_Display_WiFi_Config.jpg)
+![Display showing IP address](img/Displays/SparkFun_RTK_Facet_-_Display_WiFi_Config.jpg)
 
 *Device ready for cellphone configuration*
 
@@ -38,19 +38,19 @@ To get into WiFi configuration follow these steps:
 
 ## Connecting to WiFi Network
 
-[![Discovered WiFi networks](https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Networks.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_Networks.jpg)
+![Discovered WiFi networks](img/WiFi Config/RTK_Surveyor_-_WiFi_Config_-_Networks.jpg)
 
 *The WiFi network RTK Config as seen from a cellphone*
 
 Note: Upon connecting, your phone may warn you that this WiFi network has no internet. That's ok. Stay connected to the network and open a browser. If you still have problems turn off Mobile Data so that the phone does not default to cellular for internet connectivity and instead connects to the RTK Device.
 
-[![Webpage showing the RTK Configuration options](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_WiFi_Config_Main_Page.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_WiFi_Config_Main_Page.jpg)
+![Webpage showing the RTK Configuration options](img/WiFi Config/SparkFun_RTK_Facet_-_WiFi_Config_Main_Page.jpg)
 
 *Connected to the RTK WiFi Setup Page*
 
 Clicking on the category 'carrot' will open or close that section. Clicking on an ‘i’ will give you a brief description of the options within that section.
 
-[![Firmware highlighted](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_WiFi_Config_Main_Page_-_Firmware.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/2/1/8/8/SparkFun_RTK_Facet_-_WiFi_Config_Main_Page_-_Firmware.jpg)
+![Firmware highlighted](img/WiFi Config/SparkFun_RTK_Facet_-_WiFi_Config_Main_Page_-_Firmware.jpg)
 
 *This unit has firmware version 1.8 and a ZED-F9P receiver*
 
@@ -58,7 +58,7 @@ Please note that the firmware for the RTK device and the firmware for the ZED re
 
 ## File Manager
 
-![Alt text](img/SparkFun%20RTK%20WiFi%20Config%20File%20Manager.png)
+![List of files in file manager](img/WiFi Config/SparkFun%20RTK%20WiFi%20Config%20File%20Manager.png)
 
 Added in v3.0 firmware, a file manager is shown if an SD card is detected. This is a handy way to download files to a local device (cell phone or laptop) as well as delete any unneeded files. The SD size and free space are shown. And files may be uploaded to the SD card if needed.
 
@@ -66,6 +66,6 @@ Additionally, clicking on the top checkbox will select all files for easy remova
 
 ## Saving and Exit
 
-[![Save and Exit buttons](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_System_Save_Exit.jpg)](https://cdn.sparkfun.com/assets/learn_tutorials/1/4/6/3/RTK_Surveyor_-_WiFi_Config_-_System_Save_Exit.jpg)
+![Save and Exit buttons](img/WiFi Config//RTK_Surveyor_-_WiFi_Config_-_System_Save_Exit.jpg)
 
 Once settings are input, please press ‘Save Configuration’. This will validate any settings, show any errors that need adjustment, and send the settings to the unit. The page will remain active until the user presses ‘Exit to Rover Mode’ at which point the unit will exit WiFi configuration and return to standard Rover mode.

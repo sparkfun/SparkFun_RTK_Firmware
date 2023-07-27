@@ -12,4 +12,5 @@ jobs:
         with:
           python-version: 3.x
       - run: pip install mkdocs-material mkdocs-monorepo-plugin
+      - run: pip install mkdocs-with-pdf
       - run: mkdocs gh-deploy --force

@@ -405,11 +405,19 @@ void handleGnssDataTask(void *e)
         //----------------------------------------------------------------------
 
         // Update space available for use in UART task
-        bytesToSend = pvtSendData(dataHead);
+        bytesToSend = pvtClientSendData(dataHead);
         if (usedSpace < bytesToSend)
         {
             usedSpace = bytesToSend;
-            slowConsumer = "WiFi";
+            slowConsumer = "PVT client";
+        }
+
+        // Update space available for use in UART task
+        bytesToSend = pvtServerSendData(dataHead);
+        if (usedSpace < bytesToSend)
+        {
+            usedSpace = bytesToSend;
+            slowConsumer = "PVT server";
         }
 
         //----------------------------------------------------------------------

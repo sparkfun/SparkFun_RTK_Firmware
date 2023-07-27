@@ -36,7 +36,7 @@
 // Interval to use when displaying the IP address
 static const int WIFI_IP_ADDRESS_DISPLAY_INTERVAL = 12 * 1000; // Milliseconds
 
-#define WIFI_MAX_TCP_CLIENTS 4
+#define PVT_SERVER_MAX_CLIENTS 4
 
 // Throttle the time between connection attempts
 // ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
@@ -50,6 +50,8 @@ static uint32_t wifiConnectionAttemptTimeout = 0;
 
 #ifdef COMPILE_WIFI
 
+volatile uint8_t pvtServerClientConnected = 0;
+
 static uint32_t wifiLastConnectionAttempt = 0;
 
 // WiFi Timer usage:
@@ -60,8 +62,9 @@ static unsigned long wifiDisplayTimer = 0;
 static uint32_t lastWifiState = 0;
 
 // TCP server
-static WiFiServer *wifiTcpServer = nullptr;
-static WiFiClient wifiTcpClient[WIFI_MAX_TCP_CLIENTS];
+static WiFiServer *pvtServer = nullptr;
+static WiFiClient pvtServerClient[PVT_SERVER_MAX_CLIENTS];
+static IPAddress pvtServerClientIpAddress[PVT_SERVER_MAX_CLIENTS];
 
 //----------------------------------------
 // WiFi Routines - compiled out
@@ -128,7 +131,7 @@ void wifiSetState(byte newState)
 int pvtSendClientData(int index, uint8_t *data, int bytesToSend)
 {
     int bytesSent;
-    bytesSent = wifiTcpClient[index].write(data, bytesToSend);
+    bytesSent = pvtServerClient[index].write(data, bytesToSend);
     if (bytesSent >= 0)
     {
         if ((settings.enablePrintTcpStatus) && (!inMainMenu))
@@ -143,8 +146,8 @@ int pvtSendClientData(int index, uint8_t *data, int bytesToSend)
             systemPrintf("Breaking WiFi TCP client %d connection\r\n", index);
         }
 
-        wifiTcpClient[index].stop();
-        wifiTcpConnected &= ~(1 << index);
+        pvtServerClient[index].stop();
+        pvtServerClientConnected &= ~(1 << index);
         bytesSent = bytesToSend;
     }
     return bytesSent;
@@ -348,23 +351,23 @@ void wifiStop()
 #ifdef COMPILE_WIFI
     stopWebServer();
 
-    // Shutdown the TCP client
-    if (online.tcpClient)
+    // Shutdown the PVT client
+    if (online.pvtClient)
     {
         // Tell the UART2 tasks that the TCP client is shutting down
-        online.tcpClient = false;
+        online.pvtClient = false;
         delay(5);
-        systemPrintln("TCP client offline");
+        systemPrintln("PVT client offline");
     }
 
     // Shutdown the TCP server connection
-    if (online.tcpServer)
+    if (online.pvtServer)
     {
         // Tell the UART2 tasks that the TCP server is shutting down
-        online.tcpServer = false;
+        online.pvtServer = false;
 
         // Wait for the UART2 tasks to close the TCP client connections
-        while (wifiTcpServerActive())
+        while (pvtServerActive())
             delay(5);
         systemPrintln("TCP Server offline");
     }
@@ -551,8 +554,34 @@ int wifiNetworkCount()
     return networkCount;
 }
 
+// Send data to the PVT clients
+uint16_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
+{
+
+    length = pvtServerClient[index].write(data, length);
+    if (length >= 0)
+    {
+        if ((settings.enablePrintTcpStatus) && (!inMainMenu))
+            systemPrintf("%d bytes written over WiFi TCP\r\n", length);
+    }
+    // Failed to write the data
+    else
+    {
+        // Done with this client connection
+        if (!inMainMenu)
+        {
+            systemPrintf("Breaking WiFi TCP client %d connection\r\n", index);
+        }
+
+        pvtServerClient[index].stop();
+        pvtServerClientConnected &= ~(1 << index);
+        length = 0;
+    }
+    return length;
+}
+
 // Send PVT data to the clients
-int pvtSendData(uint16_t dataHead)
+int pvtServerSendData(uint16_t dataHead)
 {
     int usedSpace = 0;
 
@@ -560,16 +589,14 @@ int pvtSendData(uint16_t dataHead)
     bool connected;
     int bytesToSend;
     int index;
-    static uint16_t pvtTails[WIFI_MAX_TCP_CLIENTS]; // PVT client tails
+    static uint16_t pvtTails[PVT_SERVER_MAX_CLIENTS]; // PVT client tails
     uint16_t tail;
 
     // Determine if a client is connected
-    connected = ((settings.enableTcpServer && online.tcpServer)
-                    || (settings.enableTcpClient && online.tcpClient))
-                && wifiTcpConnected;
+    connected = settings.enableTcpServer && online.pvtServer && pvtServerClientConnected;
 
     // Update each of the clients
-    for (index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
+    for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
     {
         tail = pvtTails[index];
 
@@ -579,7 +606,7 @@ int pvtSendData(uint16_t dataHead)
             bytesToSend += settings.gnssHandlerBufferSize;
 
         // Determine if the client is connected
-        if ((!connected) || ((wifiTcpConnected & (1 << index)) == 0))
+        if ((!connected) || ((pvtServerClientConnected & (1 << index)) == 0))
             tail = dataHead;
         else
         {
@@ -591,27 +618,27 @@ int pvtSendData(uint16_t dataHead)
                     bytesToSend = settings.gnssHandlerBufferSize - tail;
 
                 // Send the data to the TCP clients
-                bytesToSend = pvtSendClientData(index, &ringBuffer[tail], bytesToSend);
+                bytesToSend = pvtServerClientSendData(index, &ringBuffer[tail], bytesToSend);
+
+                // Assume all data was sent, wrap the buffer pointer
+                tail += bytesToSend;
+                if (tail >= settings.gnssHandlerBufferSize)
+                    tail -= settings.gnssHandlerBufferSize;
+
+                // Update space available for use in UART task
+                bytesToSend = dataHead - tail;
+                if (bytesToSend < 0)
+                    bytesToSend += settings.gnssHandlerBufferSize;
+                if (usedSpace < bytesToSend)
+                    usedSpace = bytesToSend;
             }
-
-            // Update the tail
-            tail += bytesToSend;
-            if (tail >= settings.gnssHandlerBufferSize)
-                tail -= settings.gnssHandlerBufferSize;
-
-            // Update space available for use in UART task
-            bytesToSend = dataHead - tail;
-            if (bytesToSend < 0)
-                bytesToSend += settings.gnssHandlerBufferSize;
-            if (usedSpace < bytesToSend)
-                usedSpace = bytesToSend;
         }
         pvtTails[index] = tail;
     }
 
     // Shutdown the TCP server if necessary
-    if (settings.enableTcpServer || online.tcpServer)
-        wifiTcpServerActive();
+    if (settings.enableTcpServer || online.pvtServer)
+        pvtServerActive();
 
 #endif // COMPILE_WIFI
 
@@ -619,24 +646,23 @@ int pvtSendData(uint16_t dataHead)
     return usedSpace;
 }
 
-
 // Check for TCP server active
-bool wifiTcpServerActive()
+bool pvtServerActive()
 {
 #ifdef COMPILE_WIFI
-    if ((settings.enableTcpServer && online.tcpServer) || wifiTcpConnected)
+    if ((settings.enableTcpServer && online.pvtServer) || pvtServerClientConnected)
         return true;
 
     log_d("Stopping WiFi TCP Server");
 
     // Shutdown the TCP server
-    online.tcpServer = false;
+    online.pvtServer = false;
 
     // Stop the TCP server
-    wifiTcpServer->stop();
+    pvtServer->stop();
 
-    if (wifiTcpServer != nullptr)
-        delete wifiTcpServer;
+    if (pvtServer != nullptr)
+        delete pvtServer;
 #endif // COMPILE_WIFI
     return false;
 }
@@ -666,8 +692,11 @@ bool wifiConnectLimitReached()
     return limitReached;
 }
 
-void tcpUpdate()
+// Update the PVT server state
+void pvtServerUpdate()
 {
+    int index;
+
     // Skip if in configure-via-ethernet mode
     if (configureViaEthernet)
     {
@@ -677,122 +706,79 @@ void tcpUpdate()
 
 #ifdef COMPILE_WIFI
 
-    static IPAddress ipAddress[WIFI_MAX_TCP_CLIENTS];
-    static uint32_t lastTcpConnectAttempt;
-
-    if (settings.enableTcpClient == false && settings.enableTcpServer == false)
+    if (settings.enableTcpServer == false)
         return; // Nothing to do
 
     if (wifiInConfigMode())
         return; // Do not service TCP during WiFi config
 
     // If TCP is enabled, but WiFi is not connected, start WiFi
-    if (wifiIsConnected() == false && (settings.enableTcpClient == true || settings.enableTcpServer == true))
+    if (settings.enableTcpServer && (wifiIsConnected() == false))
     {
-        // Verify WIFI_MAX_TCP_CLIENTS
-        if ((sizeof(wifiTcpConnected) * 8) < WIFI_MAX_TCP_CLIENTS)
+        // Verify PVT_SERVER_MAX_CLIENTS
+        if ((sizeof(pvtServerClientConnected) * 8) < PVT_SERVER_MAX_CLIENTS)
         {
-            systemPrintf("Please set WIFI_MAX_TCP_CLIENTS <= %d or increase size of wifiTcpConnected\r\n",
-                         sizeof(wifiTcpConnected) * 8);
+            systemPrintf("Please set PVT_SERVER_MAX_CLIENTS <= %d or increase size of pvtServerClientConnected\r\n",
+                         sizeof(pvtServerClientConnected) * 8);
             while (true)
                 ; // Freeze
         }
 
-        log_d("tpcUpdate starting WiFi");
+        log_d("PVT server starting WiFi");
         wifiStart();
     }
 
-    // Start the TCP client if enabled
-    if (settings.enableTcpClient && (!online.tcpClient) && (!settings.enableTcpServer) && wifiIsConnected())
-    {
-        online.tcpClient = true;
-        systemPrint("WiFi TCP client online, local IP ");
-        systemPrint(WiFi.localIP());
-        systemPrint(", gateway IP ");
-        systemPrintln(WiFi.gatewayIP());
-    }
-
     // Start the TCP server if enabled
-    if (settings.enableTcpServer && (wifiTcpServer == nullptr) && (!settings.enableTcpClient) && wifiIsConnected())
+    if (settings.enableTcpServer && (pvtServer == nullptr) && wifiIsConnected())
     {
-        wifiTcpServer = new WiFiServer(settings.wifiTcpPort);
+        pvtServer = new WiFiServer(settings.wifiTcpPort);
 
-        wifiTcpServer->begin();
-        online.tcpServer = true;
-        systemPrint("WiFi TCP Server online, IP Address ");
+        pvtServer->begin();
+        online.pvtServer = true;
+        systemPrint("PVT server online, IP Address ");
         systemPrintln(WiFi.localIP());
     }
 
-    int index = 0;
-
-    // Connect the TCP client if enabled
-    if (online.tcpClient)
+    // Check for another PVT server client
+    if (online.pvtServer)
     {
-        if (((!wifiTcpClient[0]) || (!wifiTcpClient[0].connected())) && ((millis() - lastTcpConnectAttempt) >= 1000))
-        {
-            lastTcpConnectAttempt = millis();
-            ipAddress[0] = WiFi.gatewayIP();
-            if (settings.enablePrintTcpStatus)
+        for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
+            if (!(pvtServerClientConnected & (1 << index)))
             {
-                systemPrint("Trying to connect WiFi TCP client to ");
-                systemPrintln(ipAddress[0]);
-            }
-            if (wifiTcpClient[0].connect(ipAddress[0], settings.wifiTcpPort))
-            {
-                online.tcpClient = true;
-                systemPrint("WiFi TCP client connected to ");
-                systemPrintln(ipAddress[0]);
-                wifiTcpConnected |= 1 << index;
-            }
-            else
-            {
-                // Release any allocated resources
-                // if (wifiTcpClient[0])
-                wifiTcpClient[0].stop();
-            }
-        }
-    }
-
-    // Check for another client
-    if (online.tcpServer)
-    {
-        for (index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
-            if (!(wifiTcpConnected & (1 << index)))
-            {
-                if ((!wifiTcpClient[index]) || (!wifiTcpClient[index].connected()))
+                if ((!pvtServerClient[index]) || (!pvtServerClient[index].connected()))
                 {
-                    wifiTcpClient[index] = wifiTcpServer->available();
-                    if (!wifiTcpClient[index])
+                    pvtServerClient[index] = pvtServer->available();
+                    if (!pvtServerClient[index])
                         break;
-                    ipAddress[index] = wifiTcpClient[index].remoteIP();
-                    systemPrintf("Connected WiFi TCP client %d to ", index);
-                    systemPrintln(ipAddress[index]);
-                    wifiTcpConnected |= 1 << index;
+                    pvtServerClientIpAddress[index] = pvtServerClient[index].remoteIP();
+                    systemPrintf("PVT server client %d connected to ", index);
+                    systemPrintln(pvtServerClientIpAddress[index]);
+                    pvtServerClientConnected |= 1 << index;
                 }
             }
     }
 
-    // Walk the list of TCP clients
-    for (index = 0; index < WIFI_MAX_TCP_CLIENTS; index++)
+    // Walk the list of PVT server clients
+    for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
     {
-        if (wifiTcpConnected & (1 << index))
+        if (pvtServerClientConnected & (1 << index))
         {
             // Check for a broken connection
-            if ((!wifiTcpClient[index]) || (!wifiTcpClient[index].connected()))
+            if ((!pvtServerClient[index]) || (!pvtServerClient[index].connected()))
             {
                 // Done with this client connection
                 if (!inMainMenu)
                 {
-                    systemPrintf("Disconnected TCP client %d from ", index);
-                    systemPrintln(ipAddress[index]);
+                    systemPrintf("PVT server client %d Disconnected from ", index);
+                    systemPrintln(pvtServerClientIpAddress[index]);
                 }
 
-                wifiTcpClient[index].stop();
-                wifiTcpConnected &= ~(1 << index);
+                pvtServerClient[index].stop();
+                pvtServerClientConnected &= ~(1 << index);
 
                 // Shutdown the TCP server if necessary
-                if (settings.enableTcpServer || online.tcpServer)
-                    wifiTcpServerActive();
+                if (settings.enableTcpServer || online.pvtServer)
+                    pvtServerActive();
             }
         }
     }

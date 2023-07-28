@@ -293,12 +293,25 @@ typedef struct _PARSE_STATE
 
 typedef enum
 {
-    ETH_NOT_STARTED,
+    ETH_NOT_STARTED = 0,
     ETH_STARTED_CHECK_CABLE,
     ETH_STARTED_START_DHCP,
     ETH_CONNECTED,
     ETH_CAN_NOT_BEGIN,
+    // Add new states here
+    ETH_MAX_STATE
 } ethernetStatus_e;
+
+const char * const ethernetStates[] =
+{
+    "ETH_NOT_STARTED",
+    "ETH_STARTED_CHECK_CABLE",
+    "ETH_STARTED_START_DHCP",
+    "ETH_CONNECTED",
+    "ETH_CAN_NOT_BEGIN",
+};
+
+const int ethernetStateEntries = sizeof(ethernetStates) / sizeof(ethernetStates[0]);
 
 // Radio status LED goes from off (LED off), no connection (blinking), to connected (solid)
 typedef enum
@@ -407,6 +420,34 @@ typedef enum
 } CoordinateInputType;
 
 #define UBX_ID_NOT_AVAILABLE 0xFF
+
+// Define the periodic display values
+typedef uint32_t PeriodicDisplay_t;
+
+#define PD_BLUETOOTH_DATA_RX        0x00000001
+#define PD_BLUETOOTH_DATA_TX        0x00000002
+#define PD_ETHERNET_IP_ADDRESS      0x00000004
+#define PD_ETHERNET_STATE           0x00000008
+#define PD_NETWORK_STATE            0x00000010
+#define PD_NTRIP_CLIENT_DATA        0x00000020
+#define PD_NTRIP_CLIENT_STATE       0x00000040
+#define PD_NTRIP_SERVER_DATA        0x00000080
+#define PD_NTRIP_SERVER_STATE       0x00000100
+#define PD_PVT_CLIENT_DATA          0x00000200
+#define PD_PVT_CLIENT_STATE         0x00000400
+#define PD_SD_LOG_WRITE             0x00004000
+#define PD_WIFI_IP_ADDRESS          0x00008000
+#define PD_WIFI_STATE               0x00010000
+#define PD_ZED_DATA_RX              0x00020000
+#define PD_ZED_DATA_TX              0x00040000
+
+#define PD_PVT_SERVER_DATA          0x00000800
+#define PD_PVT_SERVER_STATE         0x00001000
+#define PD_PVT_SERVER_CLIENT_DATA   0x00002000
+
+#define PERIODIC_DISPLAY(x) (periodicDisplay & x)
+#define PERIODIC_CLEAR(x)   periodicDisplay &= ~x
+#define PERIODIC_TOGGLE(x)  settings.periodicDisplay ^= x
 
 // These are the allowable messages to broadcast and log (if enabled)
 
@@ -854,6 +895,9 @@ typedef struct
 
     bool enablePrintBufferOverrun = false;
     bool enablePrintSDBuffers = false;
+    PeriodicDisplay_t periodicDisplay = (PeriodicDisplay_t)-1;
+    uint32_t periodicDisplayInterval = 15 * 1000;
+
     bool forceResetOnSDFail = false; // Set to true to reset system if SD is detected but fails to start.
 
     uint8_t minElev = 10; // Minimum elevation (in deg) for a GNSS satellite to be used in NAV
@@ -896,7 +940,6 @@ typedef struct
     uint16_t ethernetHttpPort = 80;
 
     // WiFi
-    bool enablePrintWifiIpAddress = true;
     bool enablePrintWifiState = false;
     bool wifiConfigOverAP = true; // Configure device over Access Point or have it connect to WiFi
     uint16_t wifiTcpPort =

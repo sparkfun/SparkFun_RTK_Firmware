@@ -179,11 +179,13 @@ void ntripServerResponse(char *response, size_t maxLength)
 // Update the state of the NTRIP server state machine
 void ntripServerSetState(NTRIPServerState newState)
 {
-    if (settings.enablePrintNtripServerState && (ntripServerState == newState))
+    if ((settings.enablePrintNtripServerState || PERIODIC_DISPLAY(PD_NTRIP_SERVER_STATE))
+        && (ntripServerState == newState))
         systemPrint("*");
     ntripServerState = newState;
-    if (settings.enablePrintNtripServerState)
+    if (settings.enablePrintNtripServerState || PERIODIC_DISPLAY(PD_NTRIP_SERVER_STATE))
     {
+        PERIODIC_CLEAR(PD_NTRIP_SERVER_STATE);
         switch (newState)
         {
         default:
@@ -233,9 +235,11 @@ void ntripServerProcessRTCM(uint8_t incoming)
         {
             // Timestamp the RTCM messages
             currentMilliseconds = millis();
-            if (settings.enablePrintNtripServerRtcm && (!settings.enableRtcmMessageChecking) && (!inMainMenu) &&
-                ((currentMilliseconds - previousMilliseconds) > 5))
+            if (((settings.enablePrintNtripServerRtcm && ((currentMilliseconds - previousMilliseconds) > 5))
+                || PERIODIC_DISPLAY(PD_NTRIP_SERVER_DATA)) && (!settings.enableRtcmMessageChecking)
+                && (!inMainMenu) && ntripServerBytesSent)
             {
+                PERIODIC_CLEAR(PD_NTRIP_SERVER_DATA);
                 printTimeStamp();
                 //         1         2         3
                 // 123456789012345678901234567890
@@ -243,7 +247,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
                 struct tm timeinfo = rtc.getTimeStruct();
                 char timestamp[30];
                 strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
-                systemPrintf("    Tx RTCM: %s.%03ld\r\n", timestamp, rtc.getMillis());
+                systemPrintf("    Tx RTCM: %s.%03ld, %d bytes sent\r\n", timestamp, rtc.getMillis(), ntripServerBytesSent);
             }
             previousMilliseconds = currentMilliseconds;
         }
@@ -577,6 +581,10 @@ void ntripServerUpdate()
         }
         break;
     }
+
+    // Periodically display the state
+    if (PERIODIC_DISPLAY(PD_NTRIP_SERVER_STATE))
+        ntripServerSetState(ntripServerState);
 }
 
 #endif  // COMPILE_NETWORK

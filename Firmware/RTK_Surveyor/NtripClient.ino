@@ -71,9 +71,6 @@ static NetworkClient *ntripClient;
 static uint32_t ntripClientConnectionAttemptTimeout = 0;
 static uint32_t ntripClientLastConnectionAttempt = 0;
 
-// Last time the NTRIP client state was displayed
-static uint32_t lastNtripClientState = 0;
-
 // Throttle GGA transmission to Caster to 1 report every 5 seconds
 unsigned long lastGGAPush = 0;
 
@@ -224,11 +221,13 @@ void ntripClientResponse(char *response, size_t maxLength)
 // Update the state of the NTRIP client state machine
 void ntripClientSetState(NTRIPClientState newState)
 {
-    if (settings.enablePrintNtripClientState && (ntripClientState == newState))
+    if ((settings.enablePrintNtripClientState || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_STATE))
+        && (ntripClientState == newState))
         systemPrint("*");
     ntripClientState = newState;
-    if (settings.enablePrintNtripClientState)
+    if (settings.enablePrintNtripClientState || PD_NTRIP_CLIENT_STATE)
     {
+        PERIODIC_CLEAR(PD_NTRIP_CLIENT_STATE);
         switch (newState)
         {
         default:
@@ -351,13 +350,6 @@ void ntripClientUpdate()
 {
     if (ntripClientIsNeeded() == false)
         return;
-
-    // Periodically display the NTRIP client state
-    if (settings.enablePrintNtripClientState && ((millis() - lastNtripClientState) > 15000))
-    {
-        ntripClientSetState(ntripClientState);
-        lastNtripClientState = millis();
-    }
 
     // Enable the network and the NTRIP client if requested
     switch (ntripClientState)
@@ -620,12 +612,20 @@ void ntripClientUpdate()
                 theGNSS.pushRawData(rtcmData, rtcmCount);
                 netIncomingRTCM = true;
 
-                if (!inMainMenu && settings.enablePrintNtripClientRtcm)
+                if ((settings.enablePrintNtripClientRtcm || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_DATA))
+                    && (!inMainMenu))
+                {
+                    PERIODIC_CLEAR(PD_NTRIP_CLIENT_DATA);
                     systemPrintf("NTRIP Client received %d RTCM bytes, pushed to ZED\r\n", rtcmCount);
+                }
             }
         }
         break;
     }
+
+    // Periodically display the NTRIP client state
+    if (PERIODIC_DISPLAY(PD_NTRIP_CLIENT_STATE))
+        ntripClientSetState(ntripClientState);
 }
 
 void pushGPGGA(NMEA_GGA_data_t *nmeaData)

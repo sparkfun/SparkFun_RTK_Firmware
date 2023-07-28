@@ -689,6 +689,8 @@ int lbandRestarts = 0;
 unsigned long lbandTimeToFix = 0;
 unsigned long lbandLastReport = 0;
 
+volatile PeriodicDisplay_t periodicDisplay;
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
                      +---------------------------------------+      +----------+
@@ -845,6 +847,15 @@ void setup()
 
 void loop()
 {
+    static uint32_t lastPeriodicDisplay;
+
+    // Determine which items are periodically displayed
+    if ((millis() - lastPeriodicDisplay) >= settings.periodicDisplayInterval)
+    {
+        lastPeriodicDisplay = millis();
+        periodicDisplay = settings.periodicDisplay;
+    }
+
     if (online.gnss == true)
     {
         theGNSS.checkUblox();     // Regularly poll to get latest data and any RTCM

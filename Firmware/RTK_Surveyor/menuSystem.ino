@@ -571,7 +571,7 @@ void menuDebug()
         systemPrintln(settings.serialTimeoutGNSS);
 
         systemPrint("10) Periodically print WiFi IP Address: ");
-        systemPrintf("%s\r\n", settings.enablePrintWifiIpAddress ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_DISPLAY(PD_WIFI_IP_ADDRESS) ? "Enabled" : "Disabled");
 
         systemPrint("11) Periodically print state: ");
         systemPrintf("%s\r\n", settings.enablePrintState ? "Enabled" : "Disabled");
@@ -788,7 +788,7 @@ void menuDebug()
         }
         else if (incoming == 10)
         {
-            settings.enablePrintWifiIpAddress ^= 1;
+            PERIODIC_TOGGLE(PD_WIFI_IP_ADDRESS);
         }
         else if (incoming == 11)
         {

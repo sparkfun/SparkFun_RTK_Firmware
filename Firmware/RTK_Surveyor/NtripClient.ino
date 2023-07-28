@@ -9,11 +9,11 @@
 
                                NTRIP_CLIENT_OFF
                                        |   ^
-                      ntripClientStart |   | ntripClientStop(true)
+                      ntripClientStart |   | ntripClientShutdown()
                                        v   |
                                NTRIP_CLIENT_ON <--------------.
                                        |                      |
-                                       |                      | ntripClientStop(false)
+                                       |                      | ntripClientRestart()
                                        v                Fail  |
                          NTRIP_CLIENT_NETWORK_STARTED ------->+
                                        |                      ^
@@ -196,7 +196,7 @@ bool ntripClientIsNeeded()
     {
         // If user turns off NTRIP Client via settings, stop server
         if (ntripClientState > NTRIP_CLIENT_OFF)
-            ntripClientStop(true);
+            ntripClientShutdown();
         return (false);
     }
 
@@ -258,6 +258,12 @@ void ntripClientResponse(char *response, size_t maxLength)
     *response = '\0';
 }
 
+// Restart the NTRIP client
+void ntripClientRestart()
+{
+    ntripClientStop(false);
+}
+
 // Update the state of the NTRIP client state machine
 void ntripClientSetState(NTRIPClientState newState)
 {
@@ -295,10 +301,17 @@ void ntripClientSetState(NTRIPClientState newState)
     }
 }
 
+// Shutdown the NTRIP client
+void ntripClientShutdown()
+{
+    ntripClientStop(true);
+}
+
+// Start the NTRIP client
 void ntripClientStart()
 {
     // Stop NTRIP client
-    ntripClientStop(true);
+    ntripClientShutdown();
 
     // Start the NTRIP client if enabled
     if (settings.enableNtripClient == true)
@@ -312,7 +325,7 @@ void ntripClientStart()
     ntripClientConnectionAttempts = 0;
 }
 
-// Stop the NTRIP client
+// Shutdown or restart the NTRIP client
 void ntripClientStop(bool shutdown)
 {
     if (ntripClient)
@@ -368,7 +381,7 @@ void ntripClientUpdate()
             if (online.ethernetStatus == ETH_NOT_STARTED)
             {
                 systemPrintln("Ethernet not started. Can not start NTRIP Client");
-                ntripClientStop(false);
+                ntripClientRestart();
             }
             else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
             {
@@ -384,7 +397,7 @@ void ntripClientUpdate()
             else
             {
                 systemPrintln("Error: Please connect Ethernet before starting NTRIP Client");
-                ntripClientStop(true);
+                ntripClientShutdown();
             }
         }
         else
@@ -392,7 +405,7 @@ void ntripClientUpdate()
             if (wifiNetworkCount() == 0)
             {
                 systemPrintln("Error: Please enter at least one SSID before starting NTRIP Client");
-                ntripClientStop(true);
+                ntripClientShutdown();
             }
             else
             {
@@ -413,7 +426,7 @@ void ntripClientUpdate()
         if ((millis() - ntripClientTimer) > (1 * 60 * 1000))
         {
             // Failed to connect to to the network, attempt to restart the network
-            ntripClientStop(false);
+            ntripClientRestart();
             break;
         }
         if (HAS_ETHERNET)
@@ -477,7 +490,7 @@ void ntripClientUpdate()
                     systemPrintln("NTRIP Caster failed to respond. Do you have your caster address and port correct?");
 
                     // Stop NTRIP client operations
-                    ntripClientStop(true);
+                    ntripClientShutdown();
                 }
                 else
                 {
@@ -489,7 +502,7 @@ void ntripClientUpdate()
                                      ntripClientConnectionAttemptTimeout / 1000 / 60);
 
                     // Restart network operation after delay
-                    ntripClientStop(false);
+                    ntripClientRestart();
                 }
             }
         }
@@ -542,7 +555,7 @@ void ntripClientUpdate()
                     response);
 
                 // Stop NTRIP client operations
-                ntripClientStop(true);
+                ntripClientShutdown();
             }
             else if (strstr(response, "banned") != nullptr)
             {
@@ -550,7 +563,7 @@ void ntripClientUpdate()
                 systemPrintf("NTRIP Client connected to caster but caster responded with problem: %s\r\n", response);
 
                 // Stop NTRIP client operations
-                ntripClientStop(true);
+                ntripClientShutdown();
             }
             else if (strstr(response, "SOURCETABLE") != nullptr)
             {
@@ -559,7 +572,7 @@ void ntripClientUpdate()
                              settings.ntripClient_MountPoint, response);
 
                 // Stop NTRIP client operations
-                ntripClientStop(true);
+                ntripClientShutdown();
             }
             // Other errors returned by the caster
             else
@@ -590,7 +603,7 @@ void ntripClientUpdate()
         {
             // Broken connection, retry the NTRIP client connection
             systemPrintln("NTRIP Client connection to caster was broken");
-            ntripClientStop(false);
+            ntripClientRestart();
         }
         else
         {
@@ -601,7 +614,7 @@ void ntripClientUpdate()
                 {
                     // Timeout receiving NTRIP data, retry the NTRIP client connection
                     systemPrintln("NTRIP Client: No data received timeout");
-                    ntripClientStop(false);
+                    ntripClientRestart();
                 }
             }
             else

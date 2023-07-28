@@ -11,11 +11,11 @@
 
                                NTRIP_SERVER_OFF
                                        |   ^
-                      ntripServerStart |   | ntripServerStop(true)
+                      ntripServerStart |   | ntripServerShutdown()
                                        v   |
                     .---------> NTRIP_SERVER_ON <-------------------.
                     |                  |                            |
-                    |                  |                            | ntripServerStop(false)
+                    |                  |                            | ntripServerRestart()
                     |                  v                      Fail  |
                     |    NTRIP_SERVER_NETWORK_STARTED ------------->+
                     |                  |                            ^
@@ -253,6 +253,12 @@ void ntripServerResponse(char *response, size_t maxLength)
     *response = '\0';
 }
 
+// Restart the NTRIP server
+void ntripServerRestart()
+{
+    ntripServerStop(false);
+}
+
 // Update the state of the NTRIP server state machine
 void ntripServerSetState(NTRIPServerState newState)
 {
@@ -296,11 +302,17 @@ void ntripServerSetState(NTRIPServerState newState)
     }
 }
 
+// Shutdown the NTRIP server
+void ntripServerShutdown()
+{
+    ntripServerStop(true);
+}
+
 // Start the NTRIP server
 void ntripServerStart()
 {
     // Stop the NTRIP server and network
-    ntripServerStop(true);
+    ntripServerShutdown();
 
     // Start the NTRIP server if enabled
     if ((settings.ntripServer_StartAtSurveyIn == true) || (settings.enableNtripServer == true))
@@ -353,7 +365,7 @@ void ntripServerUpdate()
     {
         // If user turns off NTRIP Server via settings, stop server
         if (ntripServerState > NTRIP_SERVER_OFF)
-            ntripServerStop(true);
+            ntripServerShutdown();
         return;
     }
 
@@ -380,7 +392,7 @@ void ntripServerUpdate()
             if (online.ethernetStatus == ETH_NOT_STARTED)
             {
                 systemPrintln("Ethernet not started. Can not start NTRIP Server");
-                ntripServerStop(false);
+                ntripServerRestart();
             }
             else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
             {
@@ -396,7 +408,7 @@ void ntripServerUpdate()
             else
             {
                 systemPrintln("Error: Please connect Ethernet before starting NTRIP Server");
-                ntripServerStop(true);
+                ntripServerShutdown();
             }
         }
         else
@@ -404,7 +416,7 @@ void ntripServerUpdate()
             if (wifiNetworkCount() == 0)
             {
                 systemPrintln("Error: Please enter at least one SSID before starting NTRIP Server");
-                ntripServerStop(true);
+                ntripServerShutdown();
             }
             else
             {
@@ -426,7 +438,7 @@ void ntripServerUpdate()
         if ((millis() - ntripServerTimer) > (1 * 60 * 1000))
         {
             // Failed to connect to to the network, attempt to restart the network
-            ntripServerStop(false);
+            ntripServerRestart();
             break;
         }
         if (HAS_ETHERNET)
@@ -512,7 +524,7 @@ void ntripServerUpdate()
                                      ntripServerConnectionAttemptTimeout / 1000 / 60);
 
                     // Restart network operation after delay
-                    ntripServerStop(false);
+                    ntripServerRestart();
                 }
             }
         }
@@ -545,7 +557,7 @@ void ntripServerUpdate()
                     response);
 
                 // Give up - Shutdown NTRIP server, no further retries
-                ntripServerStop(true);
+                ntripServerShutdown();
             }
 
             // Look for banned IP information
@@ -554,7 +566,7 @@ void ntripServerUpdate()
                 systemPrintf("NTRIP Server connected to caster but caster responded with problem: %s\r\n", response);
 
                 // Give up - Shutdown NTRIP server, no further retries
-                ntripServerStop(true);
+                ntripServerShutdown();
             }
 
             // Other errors returned by the caster
@@ -587,13 +599,13 @@ void ntripServerUpdate()
         {
             // Broken connection, retry the NTRIP connection
             systemPrintln("Connection to NTRIP Caster was lost");
-            ntripServerStop(false);
+            ntripServerRestart();
         }
         else if ((millis() - ntripServerTimer) > (3 * 1000))
         {
             // GNSS stopped sending RTCM correction data
             systemPrintln("NTRIP Server breaking connection to caster due to lack of RTCM data!");
-            ntripServerStop(false);
+            ntripServerRestart();
         }
         else
         {

@@ -326,13 +326,6 @@ void ntripServerStop(bool shutdown)
 // Update the NTRIP server state machine
 void ntripServerUpdate()
 {
-    // Skip if in configure-via-ethernet mode
-    if (configureViaEthernet)
-    {
-        // log_d("configureViaEthernet: skipping ntripServerUpdate");
-        return;
-    }
-
     // For Ref Stn, process any RTCM data waiting in the u-blox library RTCM Buffer
     // This causes the state change from NTRIP_SERVER_WAIT_GNSS_DATA to NTRIP_SERVER_CONNECTING
     processRTCMBuffer();

@@ -374,13 +374,6 @@ void ethernetSendTcpData(uint8_t *data, uint16_t length)
 
 void tcpUpdateEthernet()
 {
-    // Skip if in configure-via-ethernet mode
-    if (configureViaEthernet)
-    {
-        // log_d("configureViaEthernet: skipping tcpUpdateEthernet");
-        return;
-    }
-
     if (!HAS_ETHERNET)
         return;
 

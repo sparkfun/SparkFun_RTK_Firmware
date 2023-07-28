@@ -867,24 +867,11 @@ void loop()
 
     updateSerial(); // Menu system via ESP32 USB connection
 
-    wifiUpdate(); // Bring up WiFi when services need it
+    networkUpdate(); // Maintain the network connections
 
     updateLBand(); // Check if we've recently received PointPerfect corrections or not
 
     updateRadio(); // Check if we need to finish sending any RTCM over link radio
-
-    ntripClientUpdate(); // Check the NTRIP client connection and move data NTRIP --> ZED
-
-    ntripServerUpdate(); // Check the NTRIP server connection and move data ZED --> NTRIP
-
-    pvtClientUpdate(); // Turn on the PVT client as needed
-    pvtServerUpdate(); // Turn on the PVT Server as needed
-
-    updateEthernet(); // Maintain the ethernet connection
-
-    updateEthernetNTPServer(); // Process any received NTP requests
-
-    tcpUpdateEthernet(); // Turn on TCP Client as needed
 
     printPosition(); // Periodically print GNSS coordinates if enabled
 

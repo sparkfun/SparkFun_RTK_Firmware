@@ -682,4 +682,9 @@ void ethernetRestart()
     // NTRIP?
 }
 
+IPAddress ethernetGetIpAddress()
+{
+    return Ethernet.localIP();
+}
+
 #endif // COMPILE_ETHERNET

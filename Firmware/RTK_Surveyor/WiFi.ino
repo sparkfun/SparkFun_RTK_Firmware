@@ -75,11 +75,6 @@ void wifiDisplayIpAddress()
     wifiDisplayTimer = millis();
 }
 
-IPAddress wifiGetIpAddress()
-{
-    return WiFi.localIP();
-}
-
 byte wifiGetStatus()
 {
     return WiFi.status();
@@ -562,6 +557,11 @@ bool wifiInConfigMode()
     if (systemState >= STATE_WIFI_CONFIG_NOT_STARTED && systemState <= STATE_WIFI_CONFIG)
         return true;
     return false;
+}
+
+IPAddress wifiGetIpAddress()
+{
+    return WiFi.localIP();
 }
 
 #endif // COMPILE_WIFI

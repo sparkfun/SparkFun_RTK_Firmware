@@ -34,7 +34,7 @@
 #if COMPILE_NETWORK
 
 //----------------------------------------
-// Constants - compiled out
+// Constants
 //----------------------------------------
 
 // Size of the credentials buffer in bytes
@@ -60,7 +60,7 @@ static const int SERVER_BUFFER_SIZE = CREDENTIALS_BUFFER_SIZE + 3;
 static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; // 5s between transmission of GGA messages, if enabled
 
 //----------------------------------------
-// Locals - compiled out
+// Locals
 //----------------------------------------
 
 // The network connection to the NTRIP caster to obtain RTCM data.
@@ -75,7 +75,7 @@ static uint32_t ntripClientLastConnectionAttempt = 0;
 unsigned long lastGGAPush = 0;
 
 //----------------------------------------
-// NTRIP Client Routines - compiled out
+// NTRIP Client Routines
 //----------------------------------------
 
 bool ntripClientConnect()
@@ -189,12 +189,29 @@ bool ntripClientConnectLimitReached()
     return limitReached;
 }
 
-// Determine if NTRIP client data is available
-int ntripClientReceiveDataAvailable()
+// Determine if NTRIP Client is needed
+bool ntripClientIsNeeded()
 {
-    return ntripClient->available();
+    if (settings.enableNtripClient == false)
+    {
+        // If user turns off NTRIP Client via settings, stop server
+        if (ntripClientState > NTRIP_CLIENT_OFF)
+            ntripClientStop(true);
+        return (false);
+    }
+
+    if (wifiInConfigMode())
+        return (false); // Do not service NTRIP during network config
+
+    // Allow NTRIP Client to run during Survey-In,
+    // but do not allow NTRIP Client to run during Base
+    if (systemState == STATE_BASE_TEMP_TRANSMITTING)
+        return (false);
+
+    return (true);
 }
 
+// Print the NTRIP client state summary
 void ntripClientPrintStateSummary()
 {
     switch (ntripClientState)
@@ -215,6 +232,12 @@ void ntripClientPrintStateSummary()
         systemPrint("Connected");
         break;
     }
+}
+
+// Determine if NTRIP client data is available
+int ntripClientReceiveDataAvailable()
+{
+    return ntripClient->available();
 }
 
 // Read the response from the NTRIP client
@@ -271,10 +294,6 @@ void ntripClientSetState(NTRIPClientState newState)
         }
     }
 }
-
-//----------------------------------------
-// Global NTRIP Client Routines
-//----------------------------------------
 
 void ntripClientStart()
 {
@@ -339,28 +358,6 @@ void ntripClientStop(bool shutdown)
     netIncomingRTCM = false;
 }
 
-// Determine if NTRIP Client is needed
-bool ntripClientIsNeeded()
-{
-    if (settings.enableNtripClient == false)
-    {
-        // If user turns off NTRIP Client via settings, stop server
-        if (ntripClientState > NTRIP_CLIENT_OFF)
-            ntripClientStop(true);
-        return (false);
-    }
-
-    if (wifiInConfigMode())
-        return (false); // Do not service NTRIP during network config
-
-    // Allow NTRIP Client to run during Survey-In,
-    // but do not allow NTRIP Client to run during Base
-    if (systemState == STATE_BASE_TEMP_TRANSMITTING)
-        return (false);
-
-    return (true);
-}
-
 // Check for the arrival of any correction data. Push it to the GNSS.
 // Stop task if the connection has dropped or if we receive no data for maxTimeBeforeHangup_ms
 void ntripClientUpdate()
@@ -375,7 +372,7 @@ void ntripClientUpdate()
         break;
 
     // Start the network
-    case NTRIP_CLIENT_ON: {
+    case NTRIP_CLIENT_ON:
         if (HAS_ETHERNET)
         {
             if (online.ethernetStatus == ETH_NOT_STARTED)
@@ -420,8 +417,7 @@ void ntripClientUpdate()
                 }
             }
         }
-    }
-    break;
+        break;
 
     case NTRIP_CLIENT_NETWORK_STARTED:
         if ((millis() - ntripClientTimer) > (1 * 60 * 1000))
@@ -439,7 +435,7 @@ void ntripClientUpdate()
         }
         break;
 
-    case NTRIP_CLIENT_NETWORK_CONNECTED: {
+    case NTRIP_CLIENT_NETWORK_CONNECTED:
         // If GGA transmission is enabled, wait for GNSS lock before connecting to NTRIP Caster
         // If GGA transmission is not enabled, start connecting to NTRIP Caster
         if ((settings.ntripClient_TransmitGGA == true && (fixType == 3 || fixType == 4 || fixType == 5)) ||
@@ -465,8 +461,7 @@ void ntripClientUpdate()
                 // Socket opened to NTRIP system
                 ntripClientSetState(NTRIP_CLIENT_CONNECTING);
         }
-    }
-    break;
+        break;
 
     case NTRIP_CLIENT_CONNECTING:
         // Check for no response from the caster service

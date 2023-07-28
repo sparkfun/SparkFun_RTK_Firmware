@@ -49,7 +49,7 @@
 #if COMPILE_NETWORK
 
 //----------------------------------------
-// Constants - compiled out
+// Constants
 //----------------------------------------
 
 // Give up connecting after this number of attempts
@@ -58,7 +58,7 @@
 static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 30;
 
 //----------------------------------------
-// Locals - compiled out
+// Locals
 //----------------------------------------
 
 // Network connection used to push RTCM to NTRIP caster
@@ -76,7 +76,7 @@ static uint32_t ntripServerLastConnectionAttempt = 0;
 static uint32_t ntripServerStateLastDisplayed = 0;
 
 //----------------------------------------
-// NTRIP Server Routines - compiled out
+// NTRIP Server Routines
 //----------------------------------------
 
 // Initiate a connection to the NTRIP caster
@@ -157,6 +157,7 @@ bool ntripServerConnectLimitReached()
     return limitReached;
 }
 
+// Print the NTRIP server state summary
 void ntripServerPrintStateSummary()
 {
     switch (ntripServerState)
@@ -178,6 +179,61 @@ void ntripServerPrintStateSummary()
     case NTRIP_SERVER_CASTING:
         systemPrint("Connected");
         break;
+    }
+}
+
+// This function gets called as each RTCM byte comes in
+void ntripServerProcessRTCM(uint8_t incoming)
+{
+    if (ntripServerState == NTRIP_SERVER_CASTING)
+    {
+        // Generate and print timestamp if needed
+        uint32_t currentMilliseconds;
+        static uint32_t previousMilliseconds = 0;
+        if (online.rtc)
+        {
+            // Timestamp the RTCM messages
+            currentMilliseconds = millis();
+            if (((settings.enablePrintNtripServerRtcm && ((currentMilliseconds - previousMilliseconds) > 5))
+                || PERIODIC_DISPLAY(PD_NTRIP_SERVER_DATA)) && (!settings.enableRtcmMessageChecking)
+                && (!inMainMenu) && ntripServerBytesSent)
+            {
+                PERIODIC_CLEAR(PD_NTRIP_SERVER_DATA);
+                printTimeStamp();
+                //         1         2         3
+                // 123456789012345678901234567890
+                // YYYY-mm-dd HH:MM:SS.xxxrn0
+                struct tm timeinfo = rtc.getTimeStruct();
+                char timestamp[30];
+                strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
+                systemPrintf("    Tx RTCM: %s.%03ld, %d bytes sent\r\n", timestamp, rtc.getMillis(), ntripServerBytesSent);
+            }
+            previousMilliseconds = currentMilliseconds;
+        }
+
+        // If we have not gotten new RTCM bytes for a period of time, assume end of frame
+        if (((millis() - ntripServerTimer) > 100) && (ntripServerBytesSent > 0))
+        {
+            if ((!inMainMenu) && settings.enablePrintNtripServerState)
+                systemPrintf("NTRIP Server transmitted %d RTCM bytes to Caster\r\n", ntripServerBytesSent);
+
+            ntripServerBytesSent = 0;
+        }
+
+        if (ntripServer->connected())
+        {
+            ntripServer->write(incoming); // Send this byte to socket
+            ntripServerBytesSent++;
+            ntripServerTimer = millis();
+            netOutgoingRTCM = true;
+        }
+    }
+
+    // Indicate that the GNSS is providing correction data
+    else if (ntripServerState == NTRIP_SERVER_WAIT_GNSS_DATA)
+    {
+        ntripServerSetState(NTRIP_SERVER_CONNECTING);
+        rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
     }
 }
 
@@ -237,65 +293,6 @@ void ntripServerSetState(NTRIPServerState newState)
             systemPrintln("NTRIP_SERVER_CASTING");
             break;
         }
-    }
-}
-
-//----------------------------------------
-// Global NTRIP Server Routines
-//----------------------------------------
-
-// This function gets called as each RTCM byte comes in
-void ntripServerProcessRTCM(uint8_t incoming)
-{
-    if (ntripServerState == NTRIP_SERVER_CASTING)
-    {
-        // Generate and print timestamp if needed
-        uint32_t currentMilliseconds;
-        static uint32_t previousMilliseconds = 0;
-        if (online.rtc)
-        {
-            // Timestamp the RTCM messages
-            currentMilliseconds = millis();
-            if (((settings.enablePrintNtripServerRtcm && ((currentMilliseconds - previousMilliseconds) > 5))
-                || PERIODIC_DISPLAY(PD_NTRIP_SERVER_DATA)) && (!settings.enableRtcmMessageChecking)
-                && (!inMainMenu) && ntripServerBytesSent)
-            {
-                PERIODIC_CLEAR(PD_NTRIP_SERVER_DATA);
-                printTimeStamp();
-                //         1         2         3
-                // 123456789012345678901234567890
-                // YYYY-mm-dd HH:MM:SS.xxxrn0
-                struct tm timeinfo = rtc.getTimeStruct();
-                char timestamp[30];
-                strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
-                systemPrintf("    Tx RTCM: %s.%03ld, %d bytes sent\r\n", timestamp, rtc.getMillis(), ntripServerBytesSent);
-            }
-            previousMilliseconds = currentMilliseconds;
-        }
-
-        // If we have not gotten new RTCM bytes for a period of time, assume end of frame
-        if (((millis() - ntripServerTimer) > 100) && (ntripServerBytesSent > 0))
-        {
-            if ((!inMainMenu) && settings.enablePrintNtripServerState)
-                systemPrintf("NTRIP Server transmitted %d RTCM bytes to Caster\r\n", ntripServerBytesSent);
-
-            ntripServerBytesSent = 0;
-        }
-
-        if (ntripServer->connected())
-        {
-            ntripServer->write(incoming); // Send this byte to socket
-            ntripServerBytesSent++;
-            ntripServerTimer = millis();
-            netOutgoingRTCM = true;
-        }
-    }
-
-    // Indicate that the GNSS is providing correction data
-    else if (ntripServerState == NTRIP_SERVER_WAIT_GNSS_DATA)
-    {
-        ntripServerSetState(NTRIP_SERVER_CONNECTING);
-        rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
     }
 }
 
@@ -580,6 +577,7 @@ void ntripServerUpdate()
             }
         }
         break;
+
     // NTRIP server authorized to send RTCM correction data to NTRIP caster
     case NTRIP_SERVER_CASTING:
         // Check for a broken connection

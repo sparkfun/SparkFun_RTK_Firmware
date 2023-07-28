@@ -90,27 +90,30 @@ void wifiPeriodicallyDisplayIpAddress()
 // Update the state of the WiFi state machine
 void wifiSetState(byte newState)
 {
-    if (wifiState == newState)
+    if (settings.enablePrintWifiState && (wifiState == newState))
         systemPrint("*");
     wifiState = newState;
 
-    switch (newState)
+    if (settings.enablePrintWifiState)
     {
-    default:
-        systemPrintf("Unknown WiFi state: %d\r\n", newState);
-        break;
-    case WIFI_OFF:
-        systemPrintln("WIFI_OFF");
-        break;
-    case WIFI_START:
-        systemPrintln("WIFI_START");
-        break;
-    case WIFI_CONNECTING:
-        systemPrintln("WIFI_CONNECTING");
-        break;
-    case WIFI_CONNECTED:
-        systemPrintln("WIFI_CONNECTED");
-        break;
+        switch (newState)
+        {
+        default:
+            systemPrintf("Unknown WiFi state: %d\r\n", newState);
+            break;
+        case WIFI_OFF:
+            systemPrintln("WIFI_OFF");
+            break;
+        case WIFI_START:
+            systemPrintln("WIFI_START");
+            break;
+        case WIFI_CONNECTING:
+            systemPrintln("WIFI_CONNECTING");
+            break;
+        case WIFI_CONNECTED:
+            systemPrintln("WIFI_CONNECTED");
+            break;
+        }
     }
 }
 

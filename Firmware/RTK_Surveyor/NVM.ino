@@ -326,6 +326,8 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "gnssHandlerBufferSize", settings.gnssHandlerBufferSize);
     settingsFile->printf("%s=%d\r\n", "enablePrintBufferOverrun", settings.enablePrintBufferOverrun);
     settingsFile->printf("%s=%d\r\n", "enablePrintSDBuffers", settings.enablePrintSDBuffers);
+    settingsFile->printf("%s=%d\r\n", "periodicDisplay", settings.periodicDisplay);
+    settingsFile->printf("%s=%d\r\n", "periodicDisplayInterval", settings.periodicDisplayInterval);
     settingsFile->printf("%s=%d\r\n", "forceResetOnSDFail", settings.forceResetOnSDFail);
 
     // Record WiFi credential table
@@ -1131,6 +1133,10 @@ bool parseLine(char *str, Settings *settings)
         settings->enablePrintBufferOverrun = d;
     else if (strcmp(settingName, "enablePrintSDBuffers") == 0)
         settings->enablePrintSDBuffers = d;
+    else if (strcmp(settingName, "periodicDisplay") == 0)
+        settings->periodicDisplay = d;
+    else if (strcmp(settingName, "periodicDisplayInterval") == 0)
+        settings->periodicDisplayInterval = d;
     else if (strcmp(settingName, "forceResetOnSDFail") == 0)
         settings->forceResetOnSDFail = d;
     else if (strcmp(settingName, "wifiConfigOverAP") == 0)

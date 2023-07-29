@@ -1,22 +1,25 @@
 #ifndef __NETWORK_CLIENT_H__
 #define __NETWORK_CLIENT_H__
 
+extern uint8_t networkGetType(uint8_t user);
+
 class NetworkClient : public Client
 {
   protected:
 
     Client * _client; // Ethernet or WiFi client
-    bool _useWiFiNotEthernet;
+    uint8_t _networkType;
 
   public:
 
     //------------------------------
     // Create the network client
     //------------------------------
-    NetworkClient(bool useWiFiNotEthernet)
+    NetworkClient(uint8_t user)
     {
+        _networkType = networkGetType(user);
 #if defined(COMPILE_ETHERNET)
-        if (HAS_ETHERNET && (!useWiFiNotEthernet))
+        if (_networkType == NETWORK_TYPE_ETHERNET)
             _client = new EthernetClient;
         else
 #endif // COMPILE_ETHERNET

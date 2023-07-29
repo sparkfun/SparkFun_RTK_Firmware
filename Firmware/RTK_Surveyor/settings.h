@@ -424,30 +424,35 @@ typedef enum
 // Define the periodic display values
 typedef uint32_t PeriodicDisplay_t;
 
-#define PD_BLUETOOTH_DATA_RX        0x00000001
-#define PD_BLUETOOTH_DATA_TX        0x00000002
-#define PD_ETHERNET_IP_ADDRESS      0x00000004
-#define PD_ETHERNET_STATE           0x00000008
-#define PD_NETWORK_STATE            0x00000010
-#define PD_NTRIP_CLIENT_DATA        0x00000020
-#define PD_NTRIP_CLIENT_STATE       0x00000040
-#define PD_NTRIP_SERVER_DATA        0x00000080
-#define PD_NTRIP_SERVER_STATE       0x00000100
-#define PD_PVT_CLIENT_DATA          0x00000200
-#define PD_PVT_CLIENT_STATE         0x00000400
-#define PD_SD_LOG_WRITE             0x00004000
-#define PD_WIFI_IP_ADDRESS          0x00008000
-#define PD_WIFI_STATE               0x00010000
-#define PD_ZED_DATA_RX              0x00020000
-#define PD_ZED_DATA_TX              0x00040000
+enum PeriodDisplayValues
+{
+    PD_BLUETOOTH_DATA_RX = 0,
+    PD_BLUETOOTH_DATA_TX,
+    PD_ETHERNET_IP_ADDRESS,
+    PD_ETHERNET_STATE,
+    PD_NETWORK_STATE,
+    PD_NTRIP_CLIENT_DATA,
+    PD_NTRIP_CLIENT_STATE,
+    PD_NTRIP_SERVER_DATA,
+    PD_NTRIP_SERVER_STATE,
+    PD_PVT_CLIENT_DATA,
+    PD_PVT_CLIENT_STATE,
 
-#define PD_PVT_SERVER_DATA          0x00000800
-#define PD_PVT_SERVER_STATE         0x00001000
-#define PD_PVT_SERVER_CLIENT_DATA   0x00002000
+    PD_PVT_SERVER_DATA,
+    PD_PVT_SERVER_STATE,
+    PD_PVT_SERVER_CLIENT_DATA,
 
-#define PERIODIC_DISPLAY(x) (periodicDisplay & x)
-#define PERIODIC_CLEAR(x)   periodicDisplay &= ~x
-#define PERIODIC_TOGGLE(x)  settings.periodicDisplay ^= x
+    PD_SD_LOG_WRITE,
+    PD_WIFI_IP_ADDRESS,
+    PD_WIFI_STATE,
+    PD_ZED_DATA_RX,
+    PD_ZED_DATA_TX,
+};
+
+#define PERIODIC_MASK(x)    (1 << x)
+#define PERIODIC_DISPLAY(x) (periodicDisplay & PERIODIC_MASK(x))
+#define PERIODIC_CLEAR(x)   periodicDisplay &= ~PERIODIC_MASK(x)
+#define PERIODIC_TOGGLE(x)  settings.periodicDisplay ^= PERIODIC_MASK(x)
 
 // These are the allowable messages to broadcast and log (if enabled)
 

@@ -228,16 +228,7 @@ unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi O
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
-static int ntripClientConnectionAttempts = 0; // Count the number of connection attempts between restarts
 static int ntripServerConnectionAttempts = 0; // Count the number of connection attempts between restarts
-
-// NTRIP client timer usage:
-//  * Reconnection delay
-//  * Measure the connection response time
-//  * Receive NTRIP data timeout
-static uint32_t ntripClientTimer;
-static uint32_t ntripClientStartTime;          // For calculating uptime
-static int ntripClientConnectionAttemptsTotal; // Count the number of connection attempts absolutely
 
 // NTRIP server timer usage:
 //  * Measure the connection response time

@@ -78,6 +78,18 @@ Network.ino
         * Progressive delay maxes out at 8 minutes
         * After a valid SSID is set, the NTRIP client restarts
 
+  Network testing on Reference Station using NTRIP server:
+
+    1. Network retries using Ethernet, no WiFi setup:
+        * Remove Ethernet cable, expecting retry Ethernet after delay
+        * Progressive delay maxes out at 8 minutes
+        * After cable is plugged in NTRIP server restarts
+
+    2. Network retries using WiFi, use an invalid SSID, default network is WiFi:
+        * WiFi fails to connect, expecting retry WiFi after delay
+        * Progressive delay maxes out at 8 minutes
+        * After cable is plugged in NTRIP server restarts
+
   Test Setup:
 
                           RTK Reference Station

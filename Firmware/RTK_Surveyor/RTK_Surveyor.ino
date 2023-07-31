@@ -232,6 +232,7 @@ static int ntripClientConnectionAttempts = 0; // Count the number of connection 
 static int ntripServerConnectionAttempts = 0; // Count the number of connection attempts between restarts
 
 // NTRIP client timer usage:
+//  * Reconnection delay
 //  * Measure the connection response time
 //  * Receive NTRIP data timeout
 static uint32_t ntripClientTimer;

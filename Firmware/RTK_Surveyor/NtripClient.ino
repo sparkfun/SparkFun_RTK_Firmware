@@ -69,7 +69,6 @@ static NetworkClient *ntripClient;
 // Throttle the time between connection attempts
 // ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
 static uint32_t ntripClientConnectionAttemptTimeout = 0;
-static uint32_t ntripClientLastConnectionAttempt = 0;
 
 // Throttle GGA transmission to Caster to 1 report every 5 seconds
 unsigned long lastGGAPush = 0;
@@ -342,8 +341,8 @@ void ntripClientStop(bool shutdown)
     // Increase timeouts if we started the network
     if (ntripClientState > NTRIP_CLIENT_ON)
     {
-        ntripClientLastConnectionAttempt =
-            millis(); // Mark the Client stop so that we don't immediately attempt re-connect to Caster
+        // Mark the Client stop so that we don't immediately attempt re-connect to Caster
+        ntripClientTimer = millis();
         ntripClientConnectionAttemptTimeout =
             15 * 1000L; // Wait 15s between stopping and the first re-connection attempt.
     }
@@ -386,9 +385,9 @@ void ntripClientUpdate()
             else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
             {
                 // Pause until connection timeout has passed
-                if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)
+                if (millis() - ntripClientTimer > ntripClientConnectionAttemptTimeout)
                 {
-                    ntripClientLastConnectionAttempt = millis();
+                    ntripClientTimer = millis();
                     log_d("NTRIP Client starting on Ethernet");
                     ntripClientTimer = millis();
                     ntripClientSetState(NTRIP_CLIENT_NETWORK_STARTED);
@@ -410,9 +409,9 @@ void ntripClientUpdate()
             else
             {
                 // Pause until connection timeout has passed
-                if (millis() - ntripClientLastConnectionAttempt > ntripClientConnectionAttemptTimeout)
+                if (millis() - ntripClientTimer > ntripClientConnectionAttemptTimeout)
                 {
-                    ntripClientLastConnectionAttempt = millis();
+                    ntripClientTimer = millis();
                     log_d("NTRIP Client starting WiFi");
                     wifiStart();
                     ntripClientTimer = millis();

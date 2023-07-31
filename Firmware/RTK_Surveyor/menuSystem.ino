@@ -716,6 +716,9 @@ void menuDebug()
         systemPrint("70) Periodically print ZED TX data: ");
         systemPrintf("%s\r\n", PERIODIC_MASK(PD_ZED_DATA_TX) ? "Enabled" : "Disabled");
 
+        systemPrint("71) Periodically print NTRIP client GGA writes: ");
+        systemPrintf("%s\r\n", PERIODIC_MASK(PD_NTRIP_CLIENT_GGA) ? "Enabled" : "Disabled");
+
         systemPrintln("t) Enter Test Screen");
 
         systemPrintln("e) Erase LittleFS");
@@ -1200,6 +1203,10 @@ void menuDebug()
         else if (incoming == 70)
         {
             settings.periodicDisplay ^= PERIODIC_MASK(PD_ZED_DATA_TX);
+        }
+        else if (incoming == 71)
+        {
+            settings.periodicDisplay ^= PERIODIC_MASK(PD_NTRIP_CLIENT_GGA);
         }
         else if (incoming == 'e')
         {

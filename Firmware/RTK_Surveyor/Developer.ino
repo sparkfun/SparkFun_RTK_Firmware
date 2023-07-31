@@ -30,7 +30,7 @@ void updateEthernetNTPServer() {}
 // NTRIP client
 //----------------------------------------
 
-void ntripClientPrintStateSummary() {systemPrint("NOT compiled");}
+void ntripClientPrintStatus() {systemPrint("NOT compiled");}
 void ntripClientStart()
 {
     systemPrintln("NTRIP Client not available: Ethernet and WiFi not compiled");

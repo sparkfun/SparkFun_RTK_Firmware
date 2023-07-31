@@ -133,32 +133,7 @@ void menuSystem()
                      uptimeMilliseconds, settings.resetCount);
 
         // Display NTRIP Client status and uptime
-        if (settings.enableNtripClient == true &&
-            (systemState >= STATE_ROVER_NOT_STARTED && systemState <= STATE_ROVER_RTK_FIX))
-        {
-            systemPrint("NTRIP Client ");
-            ntripClientPrintStateSummary();
-            systemPrintf(" - %s/%s:%d", settings.ntripClient_CasterHost, settings.ntripClient_MountPoint,
-                         settings.ntripClient_CasterPort);
-
-            uptimeMilliseconds = ntripClientTimer - ntripClientStartTime;
-
-            uptimeDays = uptimeMilliseconds / MILLISECONDS_IN_A_DAY;
-            uptimeMilliseconds %= MILLISECONDS_IN_A_DAY;
-
-            uptimeHours = uptimeMilliseconds / MILLISECONDS_IN_AN_HOUR;
-            uptimeMilliseconds %= MILLISECONDS_IN_AN_HOUR;
-
-            uptimeMinutes = uptimeMilliseconds / MILLISECONDS_IN_A_MINUTE;
-            uptimeMilliseconds %= MILLISECONDS_IN_A_MINUTE;
-
-            uptimeSeconds = uptimeMilliseconds / MILLISECONDS_IN_A_SECOND;
-            uptimeMilliseconds %= MILLISECONDS_IN_A_SECOND;
-
-            systemPrint(" Uptime: ");
-            systemPrintf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n", uptimeDays, uptimeHours, uptimeMinutes,
-                         uptimeSeconds, uptimeMilliseconds, ntripClientConnectionAttemptsTotal);
-        }
+        ntripClientPrintStatus();
 
         // Display NTRIP Server status and uptime
         if (settings.enableNtripServer == true &&

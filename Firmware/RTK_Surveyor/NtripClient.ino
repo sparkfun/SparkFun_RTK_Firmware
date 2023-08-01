@@ -108,10 +108,14 @@ bool ntripClientConnect()
     // Set up the server request (GET)
     char serverRequest[SERVER_BUFFER_SIZE];
     int length;
-    snprintf(serverRequest, SERVER_BUFFER_SIZE, "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun_RTK_%s_\r\n",
+    snprintf(serverRequest, SERVER_BUFFER_SIZE, "GET /%s HTTP/1.0\r\nUser-Agent: NTRIP SparkFun_RTK_%s_",
              settings.ntripClient_MountPoint, platformPrefix);
     length = strlen(serverRequest);
-    getFirmwareVersion(&serverRequest[length], SERVER_BUFFER_SIZE - length, false);
+    getFirmwareVersion(&serverRequest[length], SERVER_BUFFER_SIZE - 2 - length, false);
+    length = strlen(serverRequest);
+    serverRequest[length++] = '\r';
+    serverRequest[length++] = '\n';
+    serverRequest[length++] = 0;
 
     // Set up the credentials
     char credentials[CREDENTIALS_BUFFER_SIZE];

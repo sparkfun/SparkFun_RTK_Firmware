@@ -160,6 +160,30 @@ bool ntripServerConnectLimitReached()
     return limitReached;
 }
 
+void ntripServerPrintStateSummary()
+{
+    switch (ntripServerState)
+    {
+    default:
+        systemPrintf("Unknown: %d", ntripServerState);
+        break;
+    case NTRIP_SERVER_OFF:
+        systemPrint("Disconnected");
+        break;
+    case NTRIP_SERVER_ON:
+    case NTRIP_SERVER_NETWORK_STARTED:
+    case NTRIP_SERVER_NETWORK_CONNECTED:
+    case NTRIP_SERVER_WAIT_GNSS_DATA:
+    case NTRIP_SERVER_CONNECTING:
+    case NTRIP_SERVER_AUTHORIZATION:
+        systemPrint("Connecting");
+        break;
+    case NTRIP_SERVER_CASTING:
+        systemPrint("Connected");
+        break;
+    }
+}
+
 // Read the authorization response from the NTRIP caster
 void ntripServerResponse(char *response, size_t maxLength)
 {

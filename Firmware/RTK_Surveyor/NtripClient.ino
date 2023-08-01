@@ -275,7 +275,7 @@ void ntripClientSetState(NTRIPClientState newState)
         && (ntripClientState == newState))
         systemPrint("*");
     ntripClientState = newState;
-    if (settings.enablePrintNtripClientState || PD_NTRIP_CLIENT_STATE)
+    if (settings.enablePrintNtripClientState || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_STATE))
     {
         PERIODIC_CLEAR(PD_NTRIP_CLIENT_STATE);
         switch (newState)

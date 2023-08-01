@@ -68,10 +68,19 @@ static NetworkClient *ntripClient;
 
 // Throttle the time between connection attempts
 // ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
-static uint32_t ntripClientConnectionAttemptTimeout = 0;
+static int ntripClientConnectionAttempts; // Count the number of connection attempts between restarts
+static uint32_t ntripClientConnectionAttemptTimeout;
+static int ntripClientConnectionAttemptsTotal; // Count the number of connection attempts absolutely
+
+// NTRIP client timer usage:
+//  * Reconnection delay
+//  * Measure the connection response time
+//  * Receive NTRIP data timeout
+static uint32_t ntripClientTimer;
+static uint32_t ntripClientStartTime;          // For calculating uptime
 
 // Throttle GGA transmission to Caster to 1 report every 5 seconds
-unsigned long lastGGAPush = 0;
+unsigned long lastGGAPush;
 
 //----------------------------------------
 // NTRIP Client Routines
@@ -237,6 +246,53 @@ void ntripClientPrintStateSummary()
     }
 }
 
+// Print the NTRIP Client status
+void ntripClientPrintStatus()
+{
+    uint64_t milliseconds;
+    uint32_t days;
+    byte hours;
+    byte minutes;
+    byte seconds;
+
+    // Display NTRIP Client status and uptime
+    if (settings.enableNtripClient &&
+        ((systemState >= STATE_ROVER_NOT_STARTED) && (systemState <= STATE_ROVER_RTK_FIX)))
+    {
+        systemPrint("NTRIP Client ");
+        ntripClientPrintStateSummary();
+        systemPrintf(" - %s/%s:%d", settings.ntripClient_CasterHost,
+                     settings.ntripClient_MountPoint, settings.ntripClient_CasterPort);
+
+        if (ntripClientState == NTRIP_CLIENT_CONNECTED)
+            // Use ntripClientTimer since it gets reset after each successful data
+            // receiption from the NTRIP caster
+            milliseconds = ntripClientTimer - ntripClientStartTime;
+        else
+        {
+            milliseconds = ntripClientStartTime;
+            systemPrint(" Last");
+        }
+
+        // Display the uptime
+        days = milliseconds / MILLISECONDS_IN_A_DAY;
+        milliseconds %= MILLISECONDS_IN_A_DAY;
+
+        hours = milliseconds / MILLISECONDS_IN_AN_HOUR;
+        milliseconds %= MILLISECONDS_IN_AN_HOUR;
+
+        minutes = milliseconds / MILLISECONDS_IN_A_MINUTE;
+        milliseconds %= MILLISECONDS_IN_A_MINUTE;
+
+        seconds = milliseconds / MILLISECONDS_IN_A_SECOND;
+        milliseconds %= MILLISECONDS_IN_A_SECOND;
+
+        systemPrint(" Uptime: ");
+        systemPrintf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n",
+                     days, hours, minutes, seconds, milliseconds, ntripClientConnectionAttemptsTotal);
+    }
+}
+
 // Determine if NTRIP client data is available
 int ntripClientReceiveDataAvailable()
 {
@@ -264,6 +320,9 @@ void ntripClientResponse(char *response, size_t maxLength)
 // Restart the NTRIP client
 void ntripClientRestart()
 {
+    // Save the previous uptime value
+    if (ntripClientState == NTRIP_CLIENT_CONNECTED)
+        ntripClientStartTime = ntripClientTimer - ntripClientStartTime;
     ntripClientStop(false);
 }
 

@@ -65,15 +65,24 @@ static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 30;
 static NetworkClient *ntripServer;
 
 // Count of bytes sent by the NTRIP server to the NTRIP caster
-uint32_t ntripServerBytesSent = 0;
+uint32_t ntripServerBytesSent;
 
 // Throttle the time between connection attempts
 // ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
-static uint32_t ntripServerConnectionAttemptTimeout = 0;
-static uint32_t ntripServerLastConnectionAttempt = 0;
+static uint32_t ntripServerConnectionAttemptTimeout;
+static uint32_t ntripServerLastConnectionAttempt;
+static int ntripServerConnectionAttempts; // Count the number of connection attempts between restarts
 
 // Last time the NTRIP server state was displayed
-static uint32_t ntripServerStateLastDisplayed = 0;
+static uint32_t ntripServerStateLastDisplayed;
+
+// NTRIP server timer usage:
+//  * Measure the connection response time
+//  * Receive RTCM correction data timeout
+//  * Monitor last RTCM byte received for frame counting
+static uint32_t ntripServerTimer;
+static uint32_t ntripServerStartTime;
+static int ntripServerConnectionAttemptsTotal; // Count the number of connection attempts absolutely
 
 //----------------------------------------
 // NTRIP Server Routines
@@ -182,6 +191,52 @@ void ntripServerPrintStateSummary()
     }
 }
 
+// Print the NTRIP server status
+void ntripServerPrintStatus ()
+{
+    uint64_t milliseconds;
+    uint32_t days;
+    byte hours;
+    byte minutes;
+    byte seconds;
+
+    if (settings.enableNtripServer == true &&
+        (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING))
+    {
+        systemPrint("NTRIP Server ");
+        ntripServerPrintStateSummary();
+        systemPrintf(" - %s/%s:%d", settings.ntripServer_CasterHost, settings.ntripServer_MountPoint,
+                     settings.ntripServer_CasterPort);
+
+        if (ntripServerState == NTRIP_SERVER_CASTING)
+            // Use ntripServerTimer since it gets reset after each successful data
+            // receiption from the NTRIP caster
+            milliseconds = ntripServerTimer - ntripServerStartTime;
+        else
+        {
+            milliseconds = ntripServerStartTime;
+            systemPrint(" Last");
+        }
+
+        // Display the uptime
+        days = milliseconds / MILLISECONDS_IN_A_DAY;
+        milliseconds %= MILLISECONDS_IN_A_DAY;
+
+        hours = milliseconds / MILLISECONDS_IN_AN_HOUR;
+        milliseconds %= MILLISECONDS_IN_AN_HOUR;
+
+        minutes = milliseconds / MILLISECONDS_IN_A_MINUTE;
+        milliseconds %= MILLISECONDS_IN_A_MINUTE;
+
+        seconds = milliseconds / MILLISECONDS_IN_A_SECOND;
+        milliseconds %= MILLISECONDS_IN_A_SECOND;
+
+        systemPrint(" Uptime: ");
+        systemPrintf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n",
+                     days, hours, minutes, seconds, milliseconds, ntripServerConnectionAttemptsTotal);
+    }
+}
+
 // This function gets called as each RTCM byte comes in
 void ntripServerProcessRTCM(uint8_t incoming)
 {
@@ -256,6 +311,9 @@ void ntripServerResponse(char *response, size_t maxLength)
 // Restart the NTRIP server
 void ntripServerRestart()
 {
+    // Save the previous uptime value
+    if (ntripServerState == NTRIP_SERVER_CASTING)
+        ntripServerStartTime = ntripServerTimer - ntripServerStartTime;
     ntripServerStop(false);
 }
 
@@ -343,8 +401,8 @@ void ntripServerStop(bool shutdown)
     // Increase timeouts if we started the network
     if (ntripServerState > NTRIP_SERVER_ON)
     {
-        ntripServerLastConnectionAttempt =
-            millis(); // Mark the Server stop so that we don't immediately attempt re-connect to Caster
+        // Mark the Server stop so that we don't immediately attempt re-connect to Caster
+        ntripServerTimer = millis();
         ntripServerConnectionAttemptTimeout =
             15 * 1000L; // Wait 15s between stopping and the first re-connection attempt. 5 is too short for Emlid.
     }
@@ -397,9 +455,8 @@ void ntripServerUpdate()
             else if ((online.ethernetStatus >= ETH_STARTED_CHECK_CABLE) && (online.ethernetStatus <= ETH_CONNECTED))
             {
                 // Pause until connection timeout has passed
-                if (millis() - ntripServerLastConnectionAttempt > ntripServerConnectionAttemptTimeout)
+                if ((millis() - ntripServerTimer) > ntripServerConnectionAttemptTimeout)
                 {
-                    ntripServerLastConnectionAttempt = millis();
                     log_d("NTRIP Server starting on Ethernet");
                     ntripServerTimer = millis();
                     ntripServerSetState(NTRIP_SERVER_NETWORK_STARTED);
@@ -421,9 +478,8 @@ void ntripServerUpdate()
             else
             {
                 // Pause until connection timeout has passed
-                if (millis() - ntripServerLastConnectionAttempt > ntripServerConnectionAttemptTimeout)
+                if ((millis() - ntripServerLastConnectionAttempt) > ntripServerConnectionAttemptTimeout)
                 {
-                    ntripServerLastConnectionAttempt = millis();
                     log_d("NTRIP Server starting WiFi");
                     wifiStart();
                     ntripServerTimer = millis();

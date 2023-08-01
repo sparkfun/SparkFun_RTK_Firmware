@@ -136,32 +136,7 @@ void menuSystem()
         ntripClientPrintStatus();
 
         // Display NTRIP Server status and uptime
-        if (settings.enableNtripServer == true &&
-            (systemState >= STATE_BASE_NOT_STARTED && systemState <= STATE_BASE_FIXED_TRANSMITTING))
-        {
-            systemPrint("NTRIP Server ");
-            ntripServerPrintStateSummary();
-            systemPrintf(" - %s/%s:%d", settings.ntripServer_CasterHost, settings.ntripServer_MountPoint,
-                         settings.ntripServer_CasterPort);
-
-            uptimeMilliseconds = ntripServerTimer - ntripServerStartTime;
-
-            uptimeDays = uptimeMilliseconds / MILLISECONDS_IN_A_DAY;
-            uptimeMilliseconds %= MILLISECONDS_IN_A_DAY;
-
-            uptimeHours = uptimeMilliseconds / MILLISECONDS_IN_AN_HOUR;
-            uptimeMilliseconds %= MILLISECONDS_IN_AN_HOUR;
-
-            uptimeMinutes = uptimeMilliseconds / MILLISECONDS_IN_A_MINUTE;
-            uptimeMilliseconds %= MILLISECONDS_IN_A_MINUTE;
-
-            uptimeSeconds = uptimeMilliseconds / MILLISECONDS_IN_A_SECOND;
-            uptimeMilliseconds %= MILLISECONDS_IN_A_SECOND;
-
-            systemPrint(" Uptime: ");
-            systemPrintf("%d %02d:%02d:%02d.%03lld (Reconnects: %d)\r\n", uptimeDays, uptimeHours, uptimeMinutes,
-                         uptimeSeconds, uptimeMilliseconds, ntripServerConnectionAttemptsTotal);
-        }
+        ntripServerPrintStatus();
 
         if (settings.enableSD == true && online.microSD == true)
         {

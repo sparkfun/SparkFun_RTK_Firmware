@@ -228,16 +228,6 @@ unsigned int binBytesSent = 0;         // Tracks firmware bytes sent over WiFi O
 
 #include "base64.h" //Built-in. Needed for NTRIP Client credential encoding.
 
-static int ntripServerConnectionAttempts = 0; // Count the number of connection attempts between restarts
-
-// NTRIP server timer usage:
-//  * Measure the connection response time
-//  * Receive RTCM correction data timeout
-//  * Monitor last RTCM byte received for frame counting
-static uint32_t ntripServerTimer;
-static uint32_t ntripServerStartTime;
-static int ntripServerConnectionAttemptsTotal; // Count the number of connection attempts absolutely
-
 bool enableRCFirmware = false;                // Goes true from AP config page
 bool currentlyParsingData = false;            // Goes true when we hit 750ms timeout with new data
 

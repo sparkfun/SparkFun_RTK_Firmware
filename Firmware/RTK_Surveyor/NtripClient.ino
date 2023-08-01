@@ -427,29 +427,27 @@ void ntripClientUpdate()
         break;
 
     case NTRIP_CLIENT_NETWORK_STARTED:
+        // Determine if the RTK timed out connecting to the network
         if ((millis() - ntripClientTimer) > (1 * 60 * 1000))
         {
             // Failed to connect to to the network, attempt to restart the network
             ntripClientRestart();
             break;
         }
-        if (HAS_ETHERNET)
-        {
-            if (online.ethernetStatus != ETH_CONNECTED)
-                break;
-        }
-        else if (!wifiIsConnected())
-            break;
 
-        // Allocate the ntripClient structure
-        ntripClient = new NetworkClient(false);
-        if (ntripClient)
-            ntripClientSetState(NTRIP_CLIENT_NETWORK_CONNECTED);
-        else
+        // Determine if the RTK has connected to the network
+        if (wifiIsConnected() || (HAS_ETHERNET && (online.ethernetStatus != ETH_CONNECTED)))
         {
-            // Failed to allocate the ntripClient structure
-            systemPrintln("ERROR: Failed to allocate the ntripClient structure!");
-            ntripClientSetState(NTRIP_CLIENT_OFF);
+            // Allocate the ntripClient structure
+            ntripClient = new NetworkClient(false);
+            if (ntripClient)
+                ntripClientSetState(NTRIP_CLIENT_NETWORK_CONNECTED);
+            else
+            {
+                // Failed to allocate the ntripClient structure
+                systemPrintln("ERROR: Failed to allocate the ntripClient structure!");
+                ntripClientShutdown();
+            }
         }
         break;
 

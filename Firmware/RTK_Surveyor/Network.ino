@@ -28,7 +28,7 @@ static uint32_t networkLastIpAddressDisplayMillis[NETWORK_TYPE_MAX];
 //----------------------------------------
 void networkDisplayIpAddress(uint8_t networkType)
 {
-    if (settings.debugNetworkLayer || settings.printNetworkStatus)
+//    if (settings.debugNetworkLayer || settings.printNetworkStatus)
     {
         systemPrintf("%s IP address: ", networkName[networkType]);
         systemPrint(networkGetIpAddress(networkType));

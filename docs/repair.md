@@ -214,7 +214,7 @@ Disassembly of the RTK Surveyor is achieved by removing two Philips head screws 
 
 ![Internal Surveyor Switches](img/Repair/RTK_Surveyor_Internal_-_NMEA_Switches.jpg)
 
-Within the RTK Surveyor, two internal slide switches control the flow of NMEA data over Bluetooth. If these switches get moved, the device will fail to correctly push NMEA data over Bluetooth. If the switches get moved or knocked out of place, placing a bit of tape over top can help keep them in place.
+Within the RTK Surveyor, two internal slide switches control the flow of NMEA data over Bluetooth. If these switches get moved, the device will fail to correctly push NMEA data over Bluetooth. If the switches get moved or knocked out of place, placing a bit of tape over top can help keep them in place. 
 
 
 

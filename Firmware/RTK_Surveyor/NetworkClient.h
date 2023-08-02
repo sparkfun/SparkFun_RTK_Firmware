@@ -8,6 +8,11 @@ class NetworkClient : public Client
     //------------------------------
     // Create the network client
     //------------------------------
+    NetworkClient(Client * client)
+    {
+        _client = client;
+    }
+
     NetworkClient(bool useWiFiNotEthernet)
     {
 #if defined(COMPILE_ETHERNET)

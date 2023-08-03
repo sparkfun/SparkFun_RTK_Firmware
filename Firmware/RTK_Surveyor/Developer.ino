@@ -16,7 +16,7 @@ void beginEthernetNTPServer() {}
 void endEthernerWebServerESP32W5500() {}
 IPAddress ethernetGetIpAddress() {return IPAddress((uint32_t)0);}
 void ethernetSendTcpData(uint8_t *data, uint16_t length) {}
-void menuEthernet() {}
+void menuEthernet() {"NOT compiled"}
 void startEthernerWebServerESP32W5500() {}
 void tcpUpdateEthernet() {}
 void updateEthernet() {}
@@ -74,6 +74,7 @@ void pvtServerUpdate() {}
 // WiFi
 //----------------------------------------
 
+void menuWiFi() {systemPrintln("NOT compiled");};
 bool wifiConnect(unsigned long timeout) {return false;}
 IPAddress wifiGetGatewayIpAddress() {return IPAddress((uint32_t)0);}
 IPAddress wifiGetIpAddress() {return IPAddress((uint32_t)0);}

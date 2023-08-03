@@ -59,6 +59,11 @@ void menuMain()
         systemPrintln("6) **WiFi Not Compiled**");
 #endif // COMPILE_WIFI
 
+#if COMPILE_NETWORK
+        systemPrintln("7) Configure Network");
+#else  // COMPILE_NETWORK
+        systemPrintln("7) **Network Not Compiled**");
+#endif // COMPILE_NETWORK
 #ifdef COMPILE_ETHERNET
         if (HAS_ETHERNET)
         {
@@ -103,6 +108,8 @@ void menuMain()
             menuLog();
         else if (incoming == 6)
             menuWiFi();
+        else if (incoming == 7)
+            menuNetwork();
         else if (incoming == 'e' && (HAS_ETHERNET))
             menuEthernet();
         else if (incoming == 'n' && (HAS_ETHERNET))

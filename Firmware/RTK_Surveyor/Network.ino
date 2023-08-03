@@ -4,6 +4,8 @@ Network.ino
  This module implements the network layer.
 ------------------------------------------------------------------------------*/
 
+#if COMPILE_NETWORK
+
 //----------------------------------------
 // Constants
 //----------------------------------------
@@ -22,6 +24,79 @@ const int networkNameEntries = sizeof(networkName) / sizeof(networkName[0]);
 //----------------------------------------
 
 static uint32_t networkLastIpAddressDisplayMillis[NETWORK_TYPE_MAX];
+
+//----------------------------------------
+// Menu to get the common network settings
+//----------------------------------------
+void menuNetwork()
+{
+    while (1)
+    {
+        systemPrintln();
+        systemPrintln("Menu: Network");
+        systemPrintln();
+
+        //------------------------------
+        // Display the PVT client menu items
+        //------------------------------
+
+        systemPrintf("1) PVT Client: %s\r\n", settings.enableTcpClientEthernet ? "Enabled" : "Disabled");
+        systemPrintf("2) Host for Ethernet TCP: %s\r\n", settings.hostForTCPClient);
+        systemPrintf("3) Ethernet TCP Port: %ld\r\n", settings.ethernetTcpPort);
+
+        //------------------------------
+        // Finish the menu and get the input
+        //------------------------------
+
+        systemPrintln("x) Exit");
+        byte incoming = getCharacterNumber();
+
+        //------------------------------
+        // Get the PVT client parameters
+        //------------------------------
+
+        // Toggle PVT client enable
+        if (incoming == 1)
+            settings.enableTcpClientEthernet ^= 1;
+
+        // Get the PVT client host
+        else if ((incoming == 2) && settings.enableTcpClientEthernet)
+        {
+            systemPrint("Enter PVT client host name / address: ");
+            getString(settings.hostForTCPClient, sizeof(settings.hostForTCPClient));
+        }
+
+        // Get the PVT client port number
+        else if ((incoming == 3) && settings.enableTcpClientEthernet)
+        {
+            systemPrint("Enter the PVT client port number to use (0 to 65535): ");
+            int portNumber = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((portNumber != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (portNumber != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if ((portNumber < 0) || (portNumber > 65535))
+                    systemPrintln("Error: Port number out of range");
+                else
+                {
+                    settings.ethernetTcpPort = portNumber; // Recorded to NVM and file at main menu exit
+                }
+            }
+        }
+
+        //------------------------------
+        // Handle exit and invalid input
+        //------------------------------
+
+        else if (incoming == 'x')
+            break;
+        else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
+            break;
+        else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+            break;
+        else
+            printUnknown(incoming);
+    }
+}
 
 //----------------------------------------
 // Display the IP address
@@ -128,3 +203,5 @@ void networkUpdate()
     // Display the IP addresses
     networkPeriodicallyDisplayIpAddress();
 }
+
+#endif  // COMPILE_NETWORK

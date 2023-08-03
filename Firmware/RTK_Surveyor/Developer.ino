@@ -30,6 +30,13 @@ void ethernetWebServerStopESP32W5500() {}
 #if !COMPILE_NETWORK
 
 //----------------------------------------
+// Network layer
+//----------------------------------------
+
+void menuNetwork() {systemPrint("NOT compiled");}
+void networkUpdate() {}
+
+//----------------------------------------
 // NTRIP client
 //----------------------------------------
 

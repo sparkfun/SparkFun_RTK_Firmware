@@ -31,7 +31,7 @@ void powerDown(bool displayInfo)
     // If we are in configureViaEthernet mode, we need to shut down the async web server
     // otherwise it causes a core panic and badness at the restart
     if (configureViaEthernet)
-        endEthernerWebServerESP32W5500();
+        ethernetWebServerStopESP32W5500();
 
     if (displayInfo == true)
     {

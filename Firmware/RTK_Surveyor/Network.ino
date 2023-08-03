@@ -96,7 +96,7 @@ void networkTypeUpdate(uint8_t networkType)
             break;
 
         case NETWORK_TYPE_ETHERNET:
-            updateEthernet();
+            ethernetUpdate();
             break;
     }
 }
@@ -119,11 +119,11 @@ void networkUpdate()
         ntripServerUpdate(); // Check the NTRIP server connection and move data ZED --> NTRIP
         pvtClientUpdate();   // Turn on the PVT Client as needed
         pvtServerUpdate();   // Turn on the PVT Server as needed
-        tcpUpdateEthernet(); // Turn on TCP Client as needed
+        ethernetPvtClientUpdate(); // Turn on TCP Client as needed
     }
 
     // Update the network applicaiton connections
-    updateEthernetNTPServer(); // Process any received NTP requests
+    ethernetNTPServerUpdate(); // Process any received NTP requests
 
     // Display the IP addresses
     networkPeriodicallyDisplayIpAddress();

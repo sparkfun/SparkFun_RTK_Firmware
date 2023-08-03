@@ -1354,7 +1354,7 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
 
         if (configureViaEthernet)
         {
-            endEthernerWebServerESP32W5500();
+            ethernetWebServerStopESP32W5500();
 
             // We need to exit configure-via-ethernet mode.
             // But if the settings have not been saved then lastState will still be STATE_CONFIG_VIA_ETH_STARTED.

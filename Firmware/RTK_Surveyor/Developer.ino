@@ -11,16 +11,19 @@ pvtServer.ino
 // Ethernet
 //----------------------------------------
 
-void beginEthernet() {}
-void beginEthernetNTPServer() {}
-void endEthernerWebServerESP32W5500() {}
+void menuEthernet() {systemPrintln("NOT compiled");}
+void ethernetBegin() {}
 IPAddress ethernetGetIpAddress() {return IPAddress((uint32_t)0);}
-void ethernetSendTcpData(uint8_t *data, uint16_t length) {}
-void menuEthernet() {"NOT compiled"}
-void startEthernerWebServerESP32W5500() {}
-void tcpUpdateEthernet() {}
-void updateEthernet() {}
-void updateEthernetNTPServer() {}
+void ethernetUpdate() {}
+
+void ethernetNTPServerBegin() {}
+void ethernetNTPServerUpdate() {}
+
+void ethernetPvtClientSendData(uint8_t *data, uint16_t length) {}
+void ethernetPvtClientUpdate() {}
+
+void ethernetWebServerStartESP32W5500() {}
+void ethernetWebServerStopESP32W5500() {}
 
 #endif // COMPILE_ETHERNET
 

@@ -804,9 +804,9 @@ void setup()
 
     configureGNSS(); // Configure ZED module
 
-    beginEthernet(); // Start-up the Ethernet connection
+    ethernetBegin(); // Start-up the Ethernet connection
 
-    beginEthernetNTPServer(); // Start the NTP server
+    ethernetNTPServerBegin(); // Start the NTP server
 
     beginAccelerometer();
 

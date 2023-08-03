@@ -688,7 +688,7 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "ethernetGateway", ipAddressChar);
     snprintf(ipAddressChar, sizeof(ipAddressChar), "%s", settings.ethernetSubnet.toString().c_str());
     stringRecord(newSettings, "ethernetSubnet", ipAddressChar);
-    stringRecord(newSettings, "ethernetHttpPort", settings.ethernetHttpPort);
+    stringRecord(newSettings, "httpPort", settings.httpPort);
     stringRecord(newSettings, "ethernetNtpPort", settings.ethernetNtpPort);
     stringRecord(newSettings, "enableTcpClientEthernet", settings.enableTcpClientEthernet);
     stringRecord(newSettings, "ethernetTcpPort", settings.ethernetTcpPort);
@@ -1259,8 +1259,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         String tempString = String(settingValueStr);
         settings.ethernetSubnet.fromString(tempString);
     }
-    else if (strcmp(settingName, "ethernetHttpPort") == 0)
-        settings.ethernetHttpPort = settingValue;
+    else if (strcmp(settingName, "httpPort") == 0)
+        settings.httpPort = settingValue;
     else if (strcmp(settingName, "ethernetNtpPort") == 0)
         settings.ethernetNtpPort = settingValue;
     else if (strcmp(settingName, "enableTcpClientEthernet") == 0)

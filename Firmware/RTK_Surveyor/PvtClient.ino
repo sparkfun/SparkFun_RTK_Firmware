@@ -146,7 +146,7 @@ void pvtClientUpdate()
     if (settings.enableTcpClient && (!online.pvtClient) && wifiIsConnected())
     {
         online.pvtClient = true;
-        pvtClientIpAddress = WiFi.gatewayIP();
+        pvtClientIpAddress = wifiGetGatewayIpAddress();
         systemPrint("PVT client connecting to ");
         systemPrint(pvtClientIpAddress);
         systemPrint(":");

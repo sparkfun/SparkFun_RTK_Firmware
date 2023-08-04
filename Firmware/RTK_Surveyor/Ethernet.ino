@@ -222,8 +222,6 @@ void ethernetBegin()
 // Display the Ethernet state
 void ethernetDisplayState()
 {
-    if (ethernetStateEntries != ETH_MAX_STATE)
-        reportFatalError("Please fix ethernetStates table to match ethernetStatus_e");
     if (online.ethernetStatus >= ethernetStateEntries)
         systemPrint("UNKNOWN");
     else
@@ -354,6 +352,14 @@ void ethernetUpdate()
             // nothing happened
             break;
         }
+}
+
+// Verify the Ethernet tables
+void ethernetVerifyTables()
+{
+    // Verify the table lengths
+    if (ethernetStateEntries != ETH_MAX_STATE)
+        reportFatalError("Please fix ethernetStates table to match ethernetStatus_e");
 }
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

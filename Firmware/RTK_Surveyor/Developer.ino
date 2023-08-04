@@ -15,6 +15,7 @@ void menuEthernet() {systemPrintln("NOT compiled");}
 void ethernetBegin() {}
 IPAddress ethernetGetIpAddress() {return IPAddress((uint32_t)0);}
 void ethernetUpdate() {}
+void ethernetVerifyTables() {}
 
 void ethernetNTPServerBegin() {}
 void ethernetNTPServerUpdate() {}
@@ -35,6 +36,7 @@ void ethernetWebServerStopESP32W5500() {}
 
 void menuNetwork() {systemPrint("NOT compiled");}
 void networkUpdate() {}
+void networkVerifyTables() {}
 
 //----------------------------------------
 // NTRIP client

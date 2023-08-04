@@ -390,7 +390,7 @@ void recordSystemSettingsToFile(File *settingsFile)
         settingsFile->printf("%s=%s\r\n", "ethernetDNS", settings.ethernetDNS.toString().c_str());
         settingsFile->printf("%s=%s\r\n", "ethernetGateway", settings.ethernetGateway.toString().c_str());
         settingsFile->printf("%s=%s\r\n", "ethernetSubnet", settings.ethernetSubnet.toString().c_str());
-        settingsFile->printf("%s=%d\r\n", "ethernetHttpPort", settings.ethernetHttpPort);
+        settingsFile->printf("%s=%d\r\n", "httpPort", settings.httpPort);
         settingsFile->printf("%s=%d\r\n", "ethernetNtpPort", settings.ethernetNtpPort);
         settingsFile->printf("%s=%d\r\n", "ethernetDHCP", settings.ethernetDHCP);
         settingsFile->printf("%s=%d\r\n", "enableNTPFile", settings.enableNTPFile);
@@ -1228,8 +1228,8 @@ bool parseLine(char *str, Settings *settings)
         String addr = String(settingValue);
         settings->ethernetSubnet.fromString(addr);
     }
-    else if (strcmp(settingName, "ethernetHttpPort") == 0)
-        settings->ethernetHttpPort = d;
+    else if (strcmp(settingName, "httpPort") == 0)
+        settings->httpPort = d;
     else if (strcmp(settingName, "ethernetNtpPort") == 0)
         settings->ethernetNtpPort = d;
     else if (strcmp(settingName, "ethernetDHCP") == 0)

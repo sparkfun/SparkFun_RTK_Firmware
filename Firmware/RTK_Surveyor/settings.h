@@ -943,7 +943,7 @@ typedef struct
     IPAddress ethernetDNS = {194, 168, 4, 100};
     IPAddress ethernetGateway = {192, 168, 0, 1};
     IPAddress ethernetSubnet = {255, 255, 255, 0};
-    uint16_t ethernetHttpPort = 80;
+    uint16_t httpPort = 80;
 
     // WiFi
     bool enablePrintWifiState = false;

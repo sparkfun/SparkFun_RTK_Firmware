@@ -1064,7 +1064,7 @@ void updateSystemState()
 
             startEthernerWebServerESP32W5500(); // Start Ethernet in dedicated configure-via-ethernet mode
 
-            startWebServer(false, settings.ethernetHttpPort); // Start the async web server
+            startWebServer(false, settings.httpPort); // Start the async web server
 
             changeState(STATE_CONFIG_VIA_ETH);
         }

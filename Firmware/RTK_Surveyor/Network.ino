@@ -69,8 +69,25 @@ void menuNetwork()
         // Get the PVT client host
         else if ((incoming == 2) && (settings.enablePvtClient || settings.enableTcpClientEthernet))
         {
+            char hostname[sizeof(settings.pvtClientHost)];
+
             systemPrint("Enter PVT client host name / address: ");
-            getString(settings.pvtClientHost, sizeof(settings.pvtClientHost));
+
+            // Get the host name or IP address
+            memset(hostname, 0, sizeof(hostname));
+            getString(hostname, sizeof(hostname) - 1);
+            strcpy(settings.pvtClientHost, hostname);
+
+            // Remove any http:// or https:// prefix from host name
+            // strtok modifies string to be parsed so we create a copy
+            strncpy(hostname, settings.pvtClientHost, sizeof(hostname) - 1);
+            char *token = strtok(hostname, "//");
+            if (token != nullptr)
+            {
+                token = strtok(nullptr, "//"); // Advance to data after //
+                if (token != nullptr)
+                    strcpy(settings.pvtClientHost, token);
+            }
         }
 
         // Get the PVT client port number

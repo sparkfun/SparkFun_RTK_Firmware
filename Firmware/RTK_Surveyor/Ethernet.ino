@@ -579,18 +579,6 @@ void ethernetPvtClientUpdate()
         {
             lastTcpConnectAttempt = millis();
 
-            // Remove any http:// or https:// prefix from host name
-            char hostname[51];
-            strncpy(hostname, settings.pvtClientHost,
-                    sizeof(hostname) - 1); // strtok modifies string to be parsed so we create a copy
-            char *token = strtok(hostname, "//");
-            if (token != nullptr)
-            {
-                token = strtok(nullptr, "//"); // Advance to data after //
-                if (token != nullptr)
-                    strcpy(settings.pvtClientHost, token);
-            }
-
             if (settings.debugPvtClient && (!inMainMenu))
             {
                 systemPrint("Trying to connect Ethernet TCP client to ");

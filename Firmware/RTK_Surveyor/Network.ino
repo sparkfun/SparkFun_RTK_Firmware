@@ -42,8 +42,11 @@ void menuNetwork()
 
         // Display the menu
         systemPrintf("1) PVT Client: %s\r\n", settings.enablePvtClient ? "Enabled" : "Disabled");
-        systemPrintf("2) PVT Client Host: %s\r\n", settings.pvtClientHost);
-        systemPrintf("3) PVT Client Port: %ld\r\n", settings.pvtClientPort);
+        if (settings.enablePvtClient || settings.enableTcpClientEthernet)
+        {
+            systemPrintf("2) PVT Client Host: %s\r\n", settings.pvtClientHost);
+            systemPrintf("3) PVT Client Port: %ld\r\n", settings.pvtClientPort);
+        }
 
         //------------------------------
         // Display the PVT server menu items
@@ -51,14 +54,28 @@ void menuNetwork()
 
         systemPrintf("4) PVT Server: %s\r\n", settings.enablePvtServer ? "Enabled" : "Disabled");
 
-        if (settings.enablePvtServer == true || settings.enablePvtClient == true)
+        if (settings.enablePvtServer)
             systemPrintf("5) PVT Server Port: %ld\r\n", settings.pvtServerPort);
 
-        //------------------------------
-        // Display the Ethernet PVT client menu items
-        //------------------------------
+        if (HAS_ETHERNET)
+        {
+            //------------------------------
+            // Display the Ethernet PVT client menu items
+            //------------------------------
 
-        systemPrintf("6) PVT Client (Ethernet): %s\r\n", settings.enableTcpClientEthernet ? "Enabled" : "Disabled");
+            systemPrintf("6) PVT Client (Ethernet): %s\r\n", settings.enableTcpClientEthernet ? "Enabled" : "Disabled");
+
+            //------------------------------
+            // Display the network layer menu items
+            //------------------------------
+
+            systemPrint("d) Default network: ");
+            networkPrintName(settings.defaultNetworkType);
+            systemPrintln();
+
+            systemPrint("f) Ethernet / WiFi Failover: ");
+            systemPrintf("%s\r\n", settings.enableNetworkFailover ? "Enabled" : "Disabled");
+        }
 
         //------------------------------
         // Finish the menu and get the input
@@ -153,8 +170,25 @@ void menuNetwork()
         //------------------------------
 
         // Toggle PVT client (Ethernet) enable
-        else if (incoming == 6)
+        else if ((incoming == 6) && HAS_ETHERNET)
             settings.enableTcpClientEthernet ^= 1;
+
+        //------------------------------
+        // Get the network layer parameters
+        //------------------------------
+
+        else if ((incoming == 'd') && HAS_ETHERNET)
+        {
+            // Toggle the network type
+            settings.defaultNetworkType += 1;
+            if (settings.defaultNetworkType > NETWORK_TYPE_USE_DEFAULT)
+                settings.defaultNetworkType = 0;
+        }
+        else if ((incoming == 'f') && HAS_ETHERNET)
+        {
+            // Toggle failover support
+            settings.enableNetworkFailover ^= 1;
+        }
 
         //------------------------------
         // Handle exit and invalid input

@@ -316,8 +316,9 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "enableRtcmMessageChecking", settings.enableRtcmMessageChecking);
     settingsFile->printf("%s=%d\r\n", "bluetoothRadioType", settings.bluetoothRadioType);
     settingsFile->printf("%s=%d\r\n", "enablePvtClient", settings.enablePvtClient);
-    settingsFile->printf("%s=%d\r\n", "enableTcpServer", settings.enableTcpServer);
+    settingsFile->printf("%s=%d\r\n", "enablePvtServer", settings.enablePvtServer);
     settingsFile->printf("%s=%d\r\n", "debugPvtClient", settings.debugPvtClient);
+    settingsFile->printf("%s=%d\r\n", "debugPvtServer", settings.debugPvtServer);
     settingsFile->printf("%s=%d\r\n", "espnowBroadcast", settings.espnowBroadcast);
     settingsFile->printf("%s=%d\r\n", "antennaHeight", settings.antennaHeight);
     settingsFile->printf("%s=%0.2f\r\n", "antennaReferencePoint", settings.antennaReferencePoint);
@@ -341,7 +342,7 @@ void recordSystemSettingsToFile(File *settingsFile)
     }
 
     settingsFile->printf("%s=%d\r\n", "wifiConfigOverAP", settings.wifiConfigOverAP);
-    settingsFile->printf("%s=%d\r\n", "wifiTcpPort", settings.wifiTcpPort);
+    settingsFile->printf("%s=%d\r\n", "pvtServerPort", settings.pvtServerPort);
     settingsFile->printf("%s=%d\r\n", "minElev", settings.minElev);
 
     settingsFile->printf("%s=%d\r\n", "imuYaw", settings.imuYaw);
@@ -1113,10 +1114,12 @@ bool parseLine(char *str, Settings *settings)
         settings->bluetoothRadioType = (BluetoothRadioType_e)d;
     else if (strcmp(settingName, "enablePvtClient") == 0)
         settings->enablePvtClient = d;
-    else if (strcmp(settingName, "enableTcpServer") == 0)
-        settings->enableTcpServer = d;
+    else if (strcmp(settingName, "enablePvtServer") == 0)
+        settings->enablePvtServer = d;
     else if (strcmp(settingName, "debugPvtClient") == 0)
         settings->debugPvtClient = d;
+    else if (strcmp(settingName, "debugPvtServer") == 0)
+        settings->debugPvtServer = d;
     else if (strcmp(settingName, "espnowBroadcast") == 0)
         settings->espnowBroadcast = d;
     else if (strcmp(settingName, "antennaHeight") == 0)
@@ -1141,8 +1144,8 @@ bool parseLine(char *str, Settings *settings)
         settings->forceResetOnSDFail = d;
     else if (strcmp(settingName, "wifiConfigOverAP") == 0)
         settings->wifiConfigOverAP = d;
-    else if (strcmp(settingName, "wifiTcpPort") == 0)
-        settings->wifiTcpPort = d;
+    else if (strcmp(settingName, "pvtServerPort") == 0)
+        settings->pvtServerPort = d;
     else if (strcmp(settingName, "minElev") == 0)
     {
         if (settings->minElev != d)

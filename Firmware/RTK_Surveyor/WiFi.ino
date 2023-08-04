@@ -84,12 +84,6 @@ void menuWiFi()
         systemPrint("a) Configure device via WiFi Access Point or connect to WiFi: ");
         systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "WiFi");
 
-        systemPrint("s) WiFi TCP Server: ");
-        systemPrintf("%s\r\n", settings.enableTcpServer ? "Enabled" : "Disabled");
-
-        if (settings.enableTcpServer == true || settings.enablePvtClient == true)
-            systemPrintf("p) WiFi TCP Port: %ld\r\n", settings.wifiTcpPort);
-
         systemPrint("m) MDNS: ");
         systemPrintf("%s\r\n", settings.mdnsEnable ? "Enabled" : "Disabled");
 
@@ -120,37 +114,6 @@ void menuWiFi()
             restartWiFi = true;
         }
 
-        else if (incoming == 's')
-        {
-            // Toggle WiFi NEMA server
-            settings.enableTcpServer ^= 1;
-            if ((!settings.enableTcpServer) && online.pvtServer)
-            {
-                // Tell the UART2 tasks that the TCP server is shutting down
-                online.pvtServer = false;
-
-                // Wait for the UART2 tasks to close the TCP client connections
-                while (pvtServerActive())
-                    delay(5);
-                systemPrintln("TCP Server offline");
-            }
-            restartWiFi = true;
-        }
-        else if (incoming == 'p')
-        {
-            systemPrint("Enter the TCP port to use (0 to 65535): ");
-            int wifiTcpPort = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((wifiTcpPort != INPUT_RESPONSE_GETNUMBER_EXIT) && (wifiTcpPort != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
-            {
-                if (wifiTcpPort < 0 || wifiTcpPort > 65535)
-                    systemPrintln("Error: TCP Port out of range");
-                else
-                {
-                    settings.wifiTcpPort = wifiTcpPort; // Recorded to NVM and file at main menu exit
-                    restartWiFi = true;
-                }
-            }
-        }
         else if (incoming == 'm')
         {
             settings.mdnsEnable ^= 1;
@@ -542,14 +505,14 @@ bool wifiConnect(unsigned long timeout)
     int wifiResponse = wifiMulti.run(timeout);
     if (wifiResponse == WL_CONNECTED)
     {
-        if (settings.enablePvtClient == true || settings.enableTcpServer == true)
+        if (settings.enablePvtClient == true || settings.enablePvtServer == true)
         {
             if (settings.mdnsEnable == true)
             {
                 if (MDNS.begin("rtk") == false) // This should make the module findable from 'rtk.local' in browser
                     log_d("Error setting up MDNS responder!");
                 else
-                    MDNS.addService("http", "tcp", settings.wifiTcpPort); // Add service to MDNS
+                    MDNS.addService("http", "tcp", settings.httpPort); // Add service to MDNS
             }
         }
 
@@ -573,7 +536,7 @@ bool wifiIsNeeded()
 
     if (settings.enablePvtClient == true)
         needed = true;
-    if (settings.enableTcpServer == true)
+    if (settings.enablePvtServer == true)
         needed = true;
 
     // Handle WiFi within systemStates

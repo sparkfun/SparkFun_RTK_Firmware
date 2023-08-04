@@ -694,6 +694,9 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "pvtClientPort", settings.pvtClientPort);
     stringRecord(newSettings, "pvtClientHost", settings.pvtClientHost);
 
+    // Network layer
+    stringRecord(newSettings, "defaultNetworkType", settings.defaultNetworkType);
+
     // NTP
     stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
     stringRecord(newSettings, "ntpPrecision", settings.ntpPrecision);
@@ -1269,6 +1272,10 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         settings.pvtClientPort = settingValue;
     else if (strcmp(settingName, "pvtClientHost") == 0)
         strcpy(settings.pvtClientHost, settingValueStr);
+
+    // Network layer
+    else if (strcmp(settingName, "defaultNetworkType") == 0)
+        settings.defaultNetworkType = settingValue;
 
     // NTP
     else if (strcmp(settingName, "ntpPollExponent") == 0)

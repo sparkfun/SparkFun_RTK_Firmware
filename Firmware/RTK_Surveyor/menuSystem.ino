@@ -521,6 +521,12 @@ void menuDebug()
         systemPrint("72) Debug PVT server: ");
         systemPrintf("%s\r\n", settings.debugPvtServer ? "Enabled" : "Disabled");
 
+        systemPrint("73) Debug network layer: ");
+        systemPrintf("%s\r\n", settings.debugNetworkLayer ? "Enabled" : "Disabled");
+
+        systemPrint("74) Print network layer status: ");
+        systemPrintf("%s\r\n", settings.printNetworkStatus ? "Enabled" : "Disabled");
+
         systemPrintln("t) Enter Test Screen");
 
         systemPrintln("e) Erase LittleFS");
@@ -1013,6 +1019,14 @@ void menuDebug()
         else if (incoming == 72)
         {
             settings.debugPvtServer ^= 1;
+        }
+        else if (incoming == 73)
+        {
+            settings.debugNetworkLayer ^= 1;
+        }
+        else if (incoming == 74)
+        {
+            settings.printNetworkStatus ^= 1;
         }
         else if (incoming == 'e')
         {

@@ -303,6 +303,11 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "enablePrintEthernetDiag", settings.enablePrintEthernetDiag);
     settingsFile->printf("%s=%d\r\n", "radioType", settings.radioType);
 
+    // Network layer
+    settingsFile->printf("%s=%d\r\n", "defaultNetworkType", settings.defaultNetworkType);
+    settingsFile->printf("%s=%d\r\n", "debugNetworkLayer", settings.debugNetworkLayer);
+    settingsFile->printf("%s=%d\r\n", "printNetworkStatus", settings.printNetworkStatus);
+
     // Record peer MAC addresses
     for (int x = 0; x < settings.espnowPeerCount; x++)
     {
@@ -1300,6 +1305,14 @@ bool parseLine(char *str, Settings *settings)
         settings->bluetoothInterruptsCore = d;
     else if (strcmp(settingName, "i2cInterruptsCore") == 0)
         settings->i2cInterruptsCore = d;
+
+    // Network layer
+    else if (strcmp(settingName, "defaultNetworkType") == 0)
+        settings->defaultNetworkType = d;
+    else if (strcmp(settingName, "debugNetworkLayer") == 0)
+        settings->debugNetworkLayer = d;
+    else if (strcmp(settingName, "printNetworkStatus") == 0)
+        settings->printNetworkStatus = d;
 
     // Check for bulk settings (WiFi credentials, constellations, message rates, ESPNOW Peers)
     // Must be last on else list

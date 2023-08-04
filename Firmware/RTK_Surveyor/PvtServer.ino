@@ -62,7 +62,7 @@ uint16_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
     length = pvtServerClient[index].write(data, length);
     if (length >= 0)
     {
-        if ((settings.enablePrintTcpStatus) && (!inMainMenu))
+        if ((settings.debugPvtClient) && (!inMainMenu))
             systemPrintf("%d bytes written over WiFi TCP\r\n", length);
     }
     // Failed to write the data

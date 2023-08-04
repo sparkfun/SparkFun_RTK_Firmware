@@ -55,7 +55,7 @@ uint16_t pvtClientSendData(uint16_t dataHead)
 
     // Determine if a client is connected
     bytesToSend = 0;
-    connected = settings.enableTcpClient && online.pvtClient && pvtClientConnected;
+    connected = settings.enablePvtClient && online.pvtClient && pvtClientConnected;
 
     // Determine if the client is connected
     if ((!connected) || (!pvtClientConnected))
@@ -77,7 +77,7 @@ uint16_t pvtClientSendData(uint16_t dataHead)
             bytesToSend = pvtClient.write(&ringBuffer[tail], bytesToSend);
             if (bytesToSend >= 0)
             {
-                if ((settings.enablePrintTcpStatus || PERIODIC_DISPLAY(PD_PVT_CLIENT_DATA)) && (!inMainMenu))
+                if ((settings.debugPvtClient || PERIODIC_DISPLAY(PD_PVT_CLIENT_DATA)) && (!inMainMenu))
                 {
                     PERIODIC_CLEAR(PD_PVT_CLIENT_DATA);
                     systemPrintf("PVT client sent %d bytes\r\n", bytesToSend);
@@ -103,7 +103,7 @@ uint16_t pvtClientSendData(uint16_t dataHead)
                     systemPrint("PVT client breaking connection with ");
                     systemPrint(pvtClientIpAddress);
                     systemPrint(":");
-                    systemPrintln(settings.wifiTcpPort);
+                    systemPrintln(settings.pvtClientPort);
                 }
 
                 pvtClient.stop();
@@ -129,28 +129,28 @@ void pvtClientUpdate()
         return;
     }
 
-    if (settings.enableTcpClient == false)
+    if (settings.enablePvtClient == false)
         return; // Nothing to do
 
     if (wifiInConfigMode())
         return; // Do not service the PVT client during WiFi config
 
     // If the PVT client is enabled, but WiFi is not connected, start WiFi
-    if (settings.enableTcpClient && (!wifiIsConnected()))
+    if (settings.enablePvtClient && (!wifiIsConnected()))
     {
         log_d("tpcUpdate starting WiFi");
         wifiStart();
     }
 
     // Start the PVT client if enabled
-    if (settings.enableTcpClient && (!online.pvtClient) && wifiIsConnected())
+    if (settings.enablePvtClient && (!online.pvtClient) && wifiIsConnected())
     {
         online.pvtClient = true;
         pvtClientIpAddress = wifiGetGatewayIpAddress();
         systemPrint("PVT client connecting to ");
         systemPrint(pvtClientIpAddress);
         systemPrint(":");
-        systemPrintln(settings.wifiTcpPort);
+        systemPrintln(settings.pvtClientPort);
     }
 
     // Connect the PVT client to the NMEA server if enabled
@@ -159,20 +159,20 @@ void pvtClientUpdate()
         if (((!pvtClient) || (!pvtClient.connected())) && ((millis() - lastConnectAttempt) >= 1000))
         {
             lastConnectAttempt = millis();
-            if (settings.enablePrintTcpStatus)
+            if (settings.debugPvtClient)
             {
                 systemPrint("PVT client connecting to ");
                 systemPrint(pvtClientIpAddress);
                 systemPrint(":");
-                systemPrintln(settings.wifiTcpPort);
+                systemPrintln(settings.pvtClientPort);
             }
-            if (pvtClient.connect(pvtClientIpAddress, settings.wifiTcpPort))
+            if (pvtClient.connect(pvtClientIpAddress, settings.pvtClientPort))
             {
                 online.pvtClient = true;
                 systemPrint("PVT client connected to ");
                 systemPrint(pvtClientIpAddress);
                 systemPrint(":");
-                systemPrintln(settings.wifiTcpPort);
+                systemPrintln(settings.pvtClientPort);
                 pvtClientConnected = true;
             }
             else
@@ -195,7 +195,7 @@ void pvtClientUpdate()
                 systemPrintf("PVT client disconnected from ");
                 systemPrint(pvtClientIpAddress);
                 systemPrint(":");
-                systemPrintln(settings.wifiTcpPort);
+                systemPrintln(settings.pvtClientPort);
             }
 
             pvtClient.stop();

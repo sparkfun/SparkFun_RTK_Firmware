@@ -40,9 +40,16 @@ void menuNetwork()
         // Display the PVT client menu items
         //------------------------------
 
-        systemPrintf("1) PVT Client: %s\r\n", settings.enableTcpClientEthernet ? "Enabled" : "Disabled");
-        systemPrintf("2) Host for Ethernet TCP: %s\r\n", settings.hostForTCPClient);
-        systemPrintf("3) Ethernet TCP Port: %ld\r\n", settings.ethernetTcpPort);
+        // Display the menu
+        systemPrintf("1) PVT Client: %s\r\n", settings.enablePvtClient ? "Enabled" : "Disabled");
+        systemPrintf("2) PVT Client Host: %s\r\n", settings.pvtClientHost);
+        systemPrintf("3) PVT Client Port: %ld\r\n", settings.pvtClientPort);
+
+        //------------------------------
+        // Display the Ethernet PVT client menu items
+        //------------------------------
+
+        systemPrintf("6) PVT Client (Ethernet): %s\r\n", settings.enableTcpClientEthernet ? "Enabled" : "Disabled");
 
         //------------------------------
         // Finish the menu and get the input
@@ -57,17 +64,17 @@ void menuNetwork()
 
         // Toggle PVT client enable
         if (incoming == 1)
-            settings.enableTcpClientEthernet ^= 1;
+            settings.enablePvtClient ^= 1;
 
         // Get the PVT client host
-        else if ((incoming == 2) && settings.enableTcpClientEthernet)
+        else if ((incoming == 2) && (settings.enablePvtClient || settings.enableTcpClientEthernet))
         {
             systemPrint("Enter PVT client host name / address: ");
-            getString(settings.hostForTCPClient, sizeof(settings.hostForTCPClient));
+            getString(settings.pvtClientHost, sizeof(settings.pvtClientHost));
         }
 
         // Get the PVT client port number
-        else if ((incoming == 3) && settings.enableTcpClientEthernet)
+        else if ((incoming == 3) && (settings.enablePvtClient || settings.enableTcpClientEthernet))
         {
             systemPrint("Enter the PVT client port number to use (0 to 65535): ");
             int portNumber = getNumber(); // Returns EXIT, TIMEOUT, or long
@@ -78,10 +85,18 @@ void menuNetwork()
                     systemPrintln("Error: Port number out of range");
                 else
                 {
-                    settings.ethernetTcpPort = portNumber; // Recorded to NVM and file at main menu exit
+                    settings.pvtClientPort = portNumber; // Recorded to NVM and file at main menu exit
                 }
             }
         }
+
+        //------------------------------
+        // Get the Ethernet PVT client parameters
+        //------------------------------
+
+        // Toggle PVT client (Ethernet) enable
+        else if (incoming == 6)
+            settings.enableTcpClientEthernet ^= 1;
 
         //------------------------------
         // Handle exit and invalid input

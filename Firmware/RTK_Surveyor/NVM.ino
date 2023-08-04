@@ -315,9 +315,9 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "espnowPeerCount", settings.espnowPeerCount);
     settingsFile->printf("%s=%d\r\n", "enableRtcmMessageChecking", settings.enableRtcmMessageChecking);
     settingsFile->printf("%s=%d\r\n", "bluetoothRadioType", settings.bluetoothRadioType);
-    settingsFile->printf("%s=%d\r\n", "enableTcpClient", settings.enableTcpClient);
+    settingsFile->printf("%s=%d\r\n", "enablePvtClient", settings.enablePvtClient);
     settingsFile->printf("%s=%d\r\n", "enableTcpServer", settings.enableTcpServer);
-    settingsFile->printf("%s=%d\r\n", "enablePrintTcpStatus", settings.enablePrintTcpStatus);
+    settingsFile->printf("%s=%d\r\n", "debugPvtClient", settings.debugPvtClient);
     settingsFile->printf("%s=%d\r\n", "espnowBroadcast", settings.espnowBroadcast);
     settingsFile->printf("%s=%d\r\n", "antennaHeight", settings.antennaHeight);
     settingsFile->printf("%s=%0.2f\r\n", "antennaReferencePoint", settings.antennaReferencePoint);
@@ -395,8 +395,8 @@ void recordSystemSettingsToFile(File *settingsFile)
         settingsFile->printf("%s=%d\r\n", "ethernetDHCP", settings.ethernetDHCP);
         settingsFile->printf("%s=%d\r\n", "enableNTPFile", settings.enableNTPFile);
         settingsFile->printf("%s=%d\r\n", "enableTcpClientEthernet", settings.enableTcpClientEthernet);
-        settingsFile->printf("%s=%d\r\n", "ethernetTcpPort", settings.ethernetTcpPort);
-        settingsFile->printf("%s=%s\r\n", "hostForTCPClient", settings.hostForTCPClient);
+        settingsFile->printf("%s=%d\r\n", "pvtClientPort", settings.pvtClientPort);
+        settingsFile->printf("%s=%s\r\n", "pvtClientHost", settings.pvtClientHost);
     }
 
     // NTP
@@ -1111,12 +1111,12 @@ bool parseLine(char *str, Settings *settings)
         settings->radioType = (RadioType_e)d;
     else if (strcmp(settingName, "bluetoothRadioType") == 0)
         settings->bluetoothRadioType = (BluetoothRadioType_e)d;
-    else if (strcmp(settingName, "enableTcpClient") == 0)
-        settings->enableTcpClient = d;
+    else if (strcmp(settingName, "enablePvtClient") == 0)
+        settings->enablePvtClient = d;
     else if (strcmp(settingName, "enableTcpServer") == 0)
         settings->enableTcpServer = d;
-    else if (strcmp(settingName, "enablePrintTcpStatus") == 0)
-        settings->enablePrintTcpStatus = d;
+    else if (strcmp(settingName, "debugPvtClient") == 0)
+        settings->debugPvtClient = d;
     else if (strcmp(settingName, "espnowBroadcast") == 0)
         settings->espnowBroadcast = d;
     else if (strcmp(settingName, "antennaHeight") == 0)
@@ -1236,10 +1236,10 @@ bool parseLine(char *str, Settings *settings)
         settings->ethernetDHCP = d;
     else if (strcmp(settingName, "enableTcpClientEthernet") == 0)
         settings->enableTcpClientEthernet = d;
-    else if (strcmp(settingName, "ethernetTcpPort") == 0)
-        settings->ethernetTcpPort = d;
-    else if (strcmp(settingName, "hostForTCPClient") == 0)
-        strcpy(settings->hostForTCPClient, settingValue);
+    else if (strcmp(settingName, "pvtClientPort") == 0)
+        settings->pvtClientPort = d;
+    else if (strcmp(settingName, "pvtClientHost") == 0)
+        strcpy(settings->pvtClientHost, settingValue);
     // NTP
     else if (strcmp(settingName, "ntpPollExponent") == 0)
         settings->ntpPollExponent = d;

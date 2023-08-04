@@ -394,8 +394,8 @@ void menuDebug()
 
         systemPrintln("30) Run Bluetooth Test");
 
-        systemPrint("31) Print TCP status: ");
-        systemPrintf("%s\r\n", settings.enablePrintTcpStatus ? "Enabled" : "Disabled");
+        systemPrint("31) Debug PVT client: ");
+        systemPrintf("%s\r\n", settings.debugPvtClient ? "Enabled" : "Disabled");
 
         systemPrint("32) ESP-Now Broadcast Override: ");
         systemPrintf("%s\r\n", settings.espnowBroadcast ? "Enabled" : "Disabled");
@@ -706,7 +706,7 @@ void menuDebug()
         }
         else if (incoming == 31)
         {
-            settings.enablePrintTcpStatus ^= 1;
+            settings.debugPvtClient ^= 1;
         }
         else if (incoming == 32)
         {

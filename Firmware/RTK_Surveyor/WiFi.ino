@@ -84,31 +84,16 @@ void menuWiFi()
         systemPrint("a) Configure device via WiFi Access Point or connect to WiFi: ");
         systemPrintf("%s\r\n", settings.wifiConfigOverAP ? "AP" : "WiFi");
 
-        systemPrint("c) WiFi TCP Client (connect to phone): ");
-        systemPrintf("%s", settings.enableTcpClient ? "Enabled" : "Disabled");
-        if (settings.enableTcpClient && settings.enableTcpServer)
-            systemPrintln(" **");
-        else
-            systemPrintln("");
-
         systemPrint("s) WiFi TCP Server: ");
-        systemPrintf("%s", settings.enableTcpServer ? "Enabled" : "Disabled");
-        if (settings.enableTcpClient && settings.enableTcpServer)
-            systemPrintln(" **");
-        else
-            systemPrintln("");
+        systemPrintf("%s\r\n", settings.enableTcpServer ? "Enabled" : "Disabled");
 
-        if (settings.enableTcpServer == true || settings.enableTcpClient == true)
+        if (settings.enableTcpServer == true || settings.enablePvtClient == true)
             systemPrintf("p) WiFi TCP Port: %ld\r\n", settings.wifiTcpPort);
 
         systemPrint("m) MDNS: ");
         systemPrintf("%s\r\n", settings.mdnsEnable ? "Enabled" : "Disabled");
 
         systemPrintln("x) Exit");
-
-        if (settings.enableTcpClient && settings.enableTcpServer)
-            systemPrintln(
-                "\r\n** TCP Server and Client can not be enabled at the same time. Please disable one of them");
 
         byte incoming = getCharacterNumber();
 
@@ -135,12 +120,6 @@ void menuWiFi()
             restartWiFi = true;
         }
 
-        else if (incoming == 'c')
-        {
-            // Toggle WiFi NEMA client (connect to phone)
-            settings.enableTcpClient ^= 1;
-            restartWiFi = true;
-        }
         else if (incoming == 's')
         {
             // Toggle WiFi NEMA server
@@ -563,7 +542,7 @@ bool wifiConnect(unsigned long timeout)
     int wifiResponse = wifiMulti.run(timeout);
     if (wifiResponse == WL_CONNECTED)
     {
-        if (settings.enableTcpClient == true || settings.enableTcpServer == true)
+        if (settings.enablePvtClient == true || settings.enableTcpServer == true)
         {
             if (settings.mdnsEnable == true)
             {
@@ -592,7 +571,7 @@ bool wifiIsNeeded()
 {
     bool needed = false;
 
-    if (settings.enableTcpClient == true)
+    if (settings.enablePvtClient == true)
         needed = true;
     if (settings.enableTcpServer == true)
         needed = true;

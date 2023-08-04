@@ -691,8 +691,8 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "httpPort", settings.httpPort);
     stringRecord(newSettings, "ethernetNtpPort", settings.ethernetNtpPort);
     stringRecord(newSettings, "enableTcpClientEthernet", settings.enableTcpClientEthernet);
-    stringRecord(newSettings, "ethernetTcpPort", settings.ethernetTcpPort);
-    stringRecord(newSettings, "hostForTCPClient", settings.hostForTCPClient);
+    stringRecord(newSettings, "pvtClientPort", settings.pvtClientPort);
+    stringRecord(newSettings, "pvtClientHost", settings.pvtClientHost);
 
     // NTP
     stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
@@ -1209,8 +1209,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             settings.wifiConfigOverAP = false;
     }
 
-    else if (strcmp(settingName, "enableTcpClient") == 0)
-        settings.enableTcpClient = settingValueBool;
+    else if (strcmp(settingName, "enablePvtClient") == 0)
+        settings.enablePvtClient = settingValueBool;
     else if (strcmp(settingName, "enableTcpServer") == 0)
         settings.enableTcpServer = settingValueBool;
     else if (strcmp(settingName, "enableRCFirmware") == 0)
@@ -1265,10 +1265,10 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         settings.ethernetNtpPort = settingValue;
     else if (strcmp(settingName, "enableTcpClientEthernet") == 0)
         settings.enableTcpClientEthernet = settingValueBool;
-    else if (strcmp(settingName, "ethernetTcpPort") == 0)
-        settings.ethernetTcpPort = settingValue;
-    else if (strcmp(settingName, "hostForTCPClient") == 0)
-        strcpy(settings.hostForTCPClient, settingValueStr);
+    else if (strcmp(settingName, "pvtClientPort") == 0)
+        settings.pvtClientPort = settingValue;
+    else if (strcmp(settingName, "pvtClientHost") == 0)
+        strcpy(settings.pvtClientHost, settingValueStr);
 
     // NTP
     else if (strcmp(settingName, "ntpPollExponent") == 0)

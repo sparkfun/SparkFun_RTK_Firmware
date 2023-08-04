@@ -1001,12 +1001,11 @@ typedef struct
     char ntripServer_MountPointPW[50] = "WR5wRo4H";
 
     // TCP Client
-    bool enablePrintTcpStatus = false;
-    bool enableTcpClient = false;
+    bool debugPvtClient = false;
+    bool enablePvtClient = false;
     bool enableTcpClientEthernet = false;
-    uint16_t ethernetTcpPort =
-        2947; // TCP port to use in Client mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
-    char hostForTCPClient[50] = "";
+    uint16_t pvtClientPort = 2948; // PVT client port. 2948 is GPS Daemon: http://tcp-udp-ports.com/port-2948.htm
+    char pvtClientHost[50] = "";
 
     // TCP Server
     bool enableTcpServer = false;

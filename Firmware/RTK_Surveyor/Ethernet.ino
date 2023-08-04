@@ -35,16 +35,6 @@ void menuEthernet()
             systemPrintln(settings.ethernetSubnet.toString().c_str());
         }
 
-        systemPrint("c) Ethernet TCP Client: ");
-        systemPrintf("%s\r\n", settings.enableTcpClientEthernet ? "Enabled" : "Disabled");
-
-        if (settings.enableTcpClientEthernet == true)
-        {
-            systemPrintf("p) Ethernet TCP Port: %ld\r\n", settings.ethernetTcpPort);
-            systemPrint("h) Host for Ethernet TCP: ");
-            systemPrintln(settings.hostForTCPClient);
-        }
-
         systemPrintln("x) Exit");
 
         byte incoming = getCharacterNumber();
@@ -105,33 +95,6 @@ void menuEthernet()
             }
             else
                 systemPrint("Error: invalid Subnet Mask");
-        }
-        else if (incoming == 'c')
-        {
-            // Toggle TCP client
-            settings.enableTcpClientEthernet ^= 1;
-            restartEthernet = true;
-        }
-        else if ((incoming == 'p') && (settings.enableTcpClientEthernet == true))
-        {
-            systemPrint("Enter the TCP port to use (0 to 65535): ");
-            int ethernetTcpPort = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((ethernetTcpPort != INPUT_RESPONSE_GETNUMBER_EXIT) &&
-                (ethernetTcpPort != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
-            {
-                if (ethernetTcpPort < 0 || ethernetTcpPort > 65535)
-                    systemPrintln("Error: TCP Port out of range");
-                else
-                {
-                    settings.ethernetTcpPort = ethernetTcpPort; // Recorded to NVM and file at main menu exit
-                    restartEthernet = true;
-                }
-            }
-        }
-        else if ((incoming == 'h') && (settings.enableTcpClientEthernet == true))
-        {
-            systemPrint("Enter new host name / address: ");
-            getString(settings.hostForTCPClient, sizeof(settings.hostForTCPClient));
         }
         else if (incoming == 'x')
             break;
@@ -572,7 +535,7 @@ void ethernetPvtClientSendData(uint8_t *data, uint16_t length)
     {
         if (ethernetTcpClient->write(data, length) == length)
         {
-            if (settings.enablePrintTcpStatus && (!inMainMenu))
+            if (settings.debugPvtClient && (!inMainMenu))
                 systemPrintf("%d bytes written over Ethernet TCP\r\n", length);
         }
         // Failed to write the data
@@ -618,25 +581,25 @@ void ethernetPvtClientUpdate()
 
             // Remove any http:// or https:// prefix from host name
             char hostname[51];
-            strncpy(hostname, settings.hostForTCPClient,
+            strncpy(hostname, settings.pvtClientHost,
                     sizeof(hostname) - 1); // strtok modifies string to be parsed so we create a copy
             char *token = strtok(hostname, "//");
             if (token != nullptr)
             {
                 token = strtok(nullptr, "//"); // Advance to data after //
                 if (token != nullptr)
-                    strcpy(settings.hostForTCPClient, token);
+                    strcpy(settings.pvtClientHost, token);
             }
 
-            if (settings.enablePrintTcpStatus && (!inMainMenu))
+            if (settings.debugPvtClient && (!inMainMenu))
             {
                 systemPrint("Trying to connect Ethernet TCP client to ");
-                systemPrint(settings.hostForTCPClient);
+                systemPrint(settings.pvtClientHost);
                 systemPrint(" on port ");
-                systemPrintln(settings.ethernetTcpPort);
+                systemPrintln(settings.pvtClientPort);
             }
 
-            if (ethernetTcpClient->connect(settings.hostForTCPClient, settings.ethernetTcpPort))
+            if (ethernetTcpClient->connect(settings.pvtClientHost, settings.pvtClientPort))
             {
                 online.tcpClientEthernet = true;
                 ethernetTcpConnected = true;

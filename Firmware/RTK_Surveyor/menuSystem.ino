@@ -518,6 +518,9 @@ void menuDebug()
         systemPrint("71) Periodically print NTRIP client GGA writes: ");
         systemPrintf("%s\r\n", PERIODIC_MASK(PD_NTRIP_CLIENT_GGA) ? "Enabled" : "Disabled");
 
+        systemPrint("72) Debug PVT server: ");
+        systemPrintf("%s\r\n", settings.debugPvtServer ? "Enabled" : "Disabled");
+
         systemPrintln("t) Enter Test Screen");
 
         systemPrintln("e) Erase LittleFS");
@@ -1006,6 +1009,10 @@ void menuDebug()
         else if (incoming == 71)
         {
             settings.periodicDisplay ^= PERIODIC_MASK(PD_NTRIP_CLIENT_GGA);
+        }
+        else if (incoming == 72)
+        {
+            settings.debugPvtServer ^= 1;
         }
         else if (incoming == 'e')
         {

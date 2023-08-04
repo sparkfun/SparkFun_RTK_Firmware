@@ -46,6 +46,15 @@ void menuNetwork()
         systemPrintf("3) PVT Client Port: %ld\r\n", settings.pvtClientPort);
 
         //------------------------------
+        // Display the PVT server menu items
+        //------------------------------
+
+        systemPrintf("4) PVT Server: %s\r\n", settings.enablePvtServer ? "Enabled" : "Disabled");
+
+        if (settings.enablePvtServer == true || settings.enablePvtClient == true)
+            systemPrintf("5) PVT Server Port: %ld\r\n", settings.pvtServerPort);
+
+        //------------------------------
         // Display the Ethernet PVT client menu items
         //------------------------------
 
@@ -104,6 +113,38 @@ void menuNetwork()
                 {
                     settings.pvtClientPort = portNumber; // Recorded to NVM and file at main menu exit
                 }
+            }
+        }
+
+        //------------------------------
+        // Get the PVT server parameters
+        //------------------------------
+
+        else if (incoming == 4)
+        {
+            // Toggle WiFi NEMA server
+            settings.enablePvtServer ^= 1;
+            if ((!settings.enablePvtServer) && online.pvtServer)
+            {
+                // Tell the UART2 tasks that the TCP server is shutting down
+                online.pvtServer = false;
+
+                // Wait for the UART2 tasks to close the TCP client connections
+                while (pvtServerActive())
+                    delay(5);
+                systemPrintln("TCP Server offline");
+            }
+        }
+        else if (incoming == 5)
+        {
+            systemPrint("Enter the TCP port to use (0 to 65535): ");
+            int portNumber = getNumber(); // Returns EXIT, TIMEOUT, or long
+            if ((portNumber != INPUT_RESPONSE_GETNUMBER_EXIT) && (portNumber != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            {
+                if (portNumber < 0 || portNumber > 65535)
+                    systemPrintln("Error: TCP Port out of range");
+                else
+                    settings.pvtServerPort = portNumber; // Recorded to NVM and file at main menu exit
             }
         }
 

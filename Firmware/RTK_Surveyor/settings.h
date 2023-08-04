@@ -948,8 +948,6 @@ typedef struct
     // WiFi
     bool enablePrintWifiState = false;
     bool wifiConfigOverAP = true; // Configure device over Access Point or have it connect to WiFi
-    uint16_t wifiTcpPort =
-        2947; // TCP port to use in Client/Server mode. 2947 is GPS Daemon: http://tcp-udp-ports.com/port-2947.htm
     WiFiNetwork wifiNetworks[MAX_WIFI_NETWORKS] = {
         {"", ""},
         {"", ""},
@@ -1008,7 +1006,9 @@ typedef struct
     char pvtClientHost[50] = "";
 
     // TCP Server
-    bool enableTcpServer = false;
+    bool debugPvtServer = false;
+    bool enablePvtServer = false;
+    uint16_t pvtServerPort = 2948; // PVT server port, 2948 is GPS Daemon: http://tcp-udp-ports.com/port-2948.htm
 } Settings;
 Settings settings;
 

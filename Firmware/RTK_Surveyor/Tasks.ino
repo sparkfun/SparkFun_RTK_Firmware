@@ -472,7 +472,7 @@ void handleGnssDataTask(void *e)
                     bytesToSend = settings.gnssHandlerBufferSize - tcpTailEthernet;
 
                 // Send the data to the TCP clients
-                ethernetSendTcpData(&ringBuffer[tcpTailEthernet], bytesToSend);
+                ethernetPvtClientSendData(&ringBuffer[tcpTailEthernet], bytesToSend);
 
                 // Assume all data was sent, wrap the buffer pointer
                 tcpTailEthernet += bytesToSend;

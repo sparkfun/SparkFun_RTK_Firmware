@@ -1062,7 +1062,7 @@ void updateSystemState()
             espnowStop();     // Should be redundant - but just in case
             tasksStopUART2(); // Delete F9 serial tasks if running
 
-            startEthernerWebServerESP32W5500(); // Start Ethernet in dedicated configure-via-ethernet mode
+            ethernetWebServerStartESP32W5500(); // Start Ethernet in dedicated configure-via-ethernet mode
 
             startWebServer(false, settings.httpPort); // Start the async web server
 
@@ -1121,7 +1121,7 @@ void updateSystemState()
         case (STATE_CONFIG_VIA_ETH_RESTART_BASE): {
             displayConfigViaEthNotStarted(1000);
 
-            endEthernerWebServerESP32W5500();
+            ethernetWebServerStopESP32W5500();
 
             settings.updateZEDSettings = false;          // On the next boot, no need to update the ZED on this profile
             settings.lastState = STATE_BASE_NOT_STARTED; // Record the _next_ state for POR

@@ -547,6 +547,11 @@ bool wifiInConfigMode()
     return false;
 }
 
+IPAddress wifiGetGatewayIpAddress()
+{
+    return WiFi.gatewayIP();
+}
+
 IPAddress wifiGetIpAddress()
 {
     return WiFi.localIP();

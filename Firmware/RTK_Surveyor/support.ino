@@ -1123,3 +1123,10 @@ uint8_t waitForPreamble(PARSE_STATE *parse, uint8_t data)
     parse->state = waitForPreamble;
     return SENTENCE_TYPE_NONE;
 }
+
+void verifyTables ()
+{
+    // Verify the consistency of the internal tables
+    ethernetVerifyTables();
+    networkVerifyTables();
+}

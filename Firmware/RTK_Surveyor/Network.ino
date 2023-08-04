@@ -277,4 +277,9 @@ void networkUpdate()
     networkPeriodicallyDisplayIpAddress();
 }
 
+// Verify the network layer tables
+void networkVerifyTables()
+{
+}
+
 #endif  // COMPILE_NETWORK

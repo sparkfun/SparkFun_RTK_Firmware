@@ -786,11 +786,13 @@ void setup()
 
     beginGNSS(); // Connect to GNSS to get module type
 
-    beginBoard(); // Now finish settup up the board and check the on button
+    beginBoard(); // Now finish setting up the board and check the on button
 
     displaySplash(); // Display the RTK product name and firmware version
 
     beginLEDs(); // LED and PWM setup
+
+    verifyTables (); // Verify the consistency of the internal tables
 
     beginSD(); // Test if SD is present
 

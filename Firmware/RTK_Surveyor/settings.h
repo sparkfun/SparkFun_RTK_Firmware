@@ -184,17 +184,6 @@ volatile ESPNOWState espnowState = ESPNOW_OFF;
 
 typedef enum
 {
-    NTRIP_CLIENT_OFF = 0,           // Using Bluetooth or NTRIP server
-    NTRIP_CLIENT_ON,                // WIFI_START state
-    NTRIP_CLIENT_NETWORK_STARTED,   // Connecting to WiFi access point or Ethernet
-    NTRIP_CLIENT_NETWORK_CONNECTED, // Connected to an access point or Ethernet
-    NTRIP_CLIENT_CONNECTING,        // Attempting a connection to the NTRIP caster
-    NTRIP_CLIENT_CONNECTED,         // Connected to the NTRIP caster
-} NTRIPClientState;
-volatile NTRIPClientState ntripClientState = NTRIP_CLIENT_OFF;
-
-typedef enum
-{
     NTRIP_SERVER_OFF = 0,           // Using Bluetooth or NTRIP client
     NTRIP_SERVER_ON,                // WIFI_START state
     NTRIP_SERVER_NETWORK_STARTED,   // Connecting to WiFi access point

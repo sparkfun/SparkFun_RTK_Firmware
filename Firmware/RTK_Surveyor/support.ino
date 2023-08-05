@@ -1129,4 +1129,5 @@ void verifyTables ()
     // Verify the consistency of the internal tables
     ethernetVerifyTables();
     networkVerifyTables();
+    ntripClientValidateTables();
 }

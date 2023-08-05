@@ -55,6 +55,7 @@ void ntripClientValidateTables() {}
 // NTRIP server
 //----------------------------------------
 
+bool ntripServerIsCasting() {return false;}
 void ntripServerPrintStatus() {systemPrint("NOT compiled");}
 void ntripServerProcessRTCM(uint8_t incoming) {}
 void ntripServerStart()
@@ -63,6 +64,7 @@ void ntripServerStart()
 }
 void ntripServerStop(bool clientAllocated) {online.ntripServer = false;}
 void ntripServerUpdate() {}
+void ntripServerValidateTables() {}
 
 #endif // COMPILE_NETWORK
 

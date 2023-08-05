@@ -1130,4 +1130,5 @@ void verifyTables ()
     ethernetVerifyTables();
     networkVerifyTables();
     ntripClientValidateTables();
+    ntripServerValidateTables();
 }

@@ -184,19 +184,6 @@ volatile ESPNOWState espnowState = ESPNOW_OFF;
 
 typedef enum
 {
-    NTRIP_SERVER_OFF = 0,           // Using Bluetooth or NTRIP client
-    NTRIP_SERVER_ON,                // WIFI_START state
-    NTRIP_SERVER_NETWORK_STARTED,   // Connecting to WiFi access point
-    NTRIP_SERVER_NETWORK_CONNECTED, // WiFi connected to an access point
-    NTRIP_SERVER_WAIT_GNSS_DATA,    // Waiting for correction data from GNSS
-    NTRIP_SERVER_CONNECTING,        // Attempting a connection to the NTRIP caster
-    NTRIP_SERVER_AUTHORIZATION,     // Validate the credentials
-    NTRIP_SERVER_CASTING,           // Sending correction data to the NTRIP caster
-} NTRIPServerState;
-volatile NTRIPServerState ntripServerState = NTRIP_SERVER_OFF;
-
-typedef enum
-{
     RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3 = 0,
     RTCM_TRANSPORT_STATE_READ_LENGTH_1,
     RTCM_TRANSPORT_STATE_READ_LENGTH_2,

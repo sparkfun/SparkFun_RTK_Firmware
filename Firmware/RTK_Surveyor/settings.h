@@ -406,33 +406,34 @@ typedef uint32_t PeriodicDisplay_t;
 
 enum PeriodDisplayValues
 {
-    PD_BLUETOOTH_DATA_RX = 0,
-    PD_BLUETOOTH_DATA_TX,
-    PD_ETHERNET_IP_ADDRESS,
-    PD_ETHERNET_STATE,
-    PD_NETWORK_STATE,
-    PD_NTRIP_CLIENT_DATA,
-    PD_NTRIP_CLIENT_GGA,
-    PD_NTRIP_CLIENT_STATE,
-    PD_NTRIP_SERVER_DATA,
-    PD_NTRIP_SERVER_STATE,
-    PD_PVT_CLIENT_DATA,
-    PD_PVT_CLIENT_STATE,
+    PD_BLUETOOTH_DATA_RX = 0,   // 0
+    PD_BLUETOOTH_DATA_TX,       // 1
+    PD_ETHERNET_IP_ADDRESS,     // 2
+    PD_ETHERNET_STATE,          // 3
+    PD_NETWORK_STATE,           // 4
+    PD_NTRIP_CLIENT_DATA,       // 5
+    PD_NTRIP_CLIENT_GGA,        // 6
+    PD_NTRIP_CLIENT_STATE,      // 7
+    PD_NTRIP_SERVER_DATA,       // 8
+    PD_NTRIP_SERVER_STATE,      // 9
+    PD_PVT_CLIENT_DATA,         //10
+    PD_PVT_CLIENT_STATE,        //11
 
-    PD_PVT_SERVER_DATA,
-    PD_PVT_SERVER_STATE,
-    PD_PVT_SERVER_CLIENT_DATA,
+    PD_PVT_SERVER_DATA,         //12
+    PD_PVT_SERVER_STATE,        //13
+    PD_PVT_SERVER_CLIENT_DATA,  //14
 
-    PD_SD_LOG_WRITE,
-    PD_WIFI_IP_ADDRESS,
-    PD_WIFI_STATE,
-    PD_ZED_DATA_RX,
-    PD_ZED_DATA_TX,
+    PD_SD_LOG_WRITE,            //15
+    PD_WIFI_IP_ADDRESS,         //16
+    PD_WIFI_STATE,              //17
+    PD_ZED_DATA_RX,             //18
+    PD_ZED_DATA_TX,             //19
 };
 
 #define PERIODIC_MASK(x)    (1 << x)
 #define PERIODIC_DISPLAY(x) (periodicDisplay & PERIODIC_MASK(x))
 #define PERIODIC_CLEAR(x)   periodicDisplay &= ~PERIODIC_MASK(x)
+#define PERIODIC_SETTING(x) (settings.periodicDisplay & PERIODIC_MASK(x))
 #define PERIODIC_TOGGLE(x)  settings.periodicDisplay ^= PERIODIC_MASK(x)
 
 // These are the allowable messages to broadcast and log (if enabled)

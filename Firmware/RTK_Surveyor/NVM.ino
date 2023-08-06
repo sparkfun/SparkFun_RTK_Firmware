@@ -281,7 +281,7 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "timeZoneMinutes", settings.timeZoneMinutes);
     settingsFile->printf("%s=%d\r\n", "timeZoneSeconds", settings.timeZoneSeconds);
     settingsFile->printf("%s=%d\r\n", "enablePrintState", settings.enablePrintState);
-    settingsFile->printf("%s=%d\r\n", "enablePrintWifiState", settings.enablePrintWifiState);
+    settingsFile->printf("%s=%d\r\n", "debugWifiState", settings.debugWifiState);
     settingsFile->printf("%s=%d\r\n", "debugNtripClientState", settings.debugNtripClientState);
     settingsFile->printf("%s=%d\r\n", "debugNtripServerState", settings.debugNtripServerState);
     settingsFile->printf("%s=%d\r\n", "enablePrintPosition", settings.enablePrintPosition);
@@ -1072,8 +1072,8 @@ bool parseLine(char *str, Settings *settings)
         settings->timeZoneSeconds = d;
     else if (strcmp(settingName, "enablePrintState") == 0)
         settings->enablePrintState = d;
-    else if (strcmp(settingName, "enablePrintWifiState") == 0)
-        settings->enablePrintWifiState = d;
+    else if (strcmp(settingName, "debugWifiState") == 0)
+        settings->debugWifiState = d;
     else if (strcmp(settingName, "debugNtripClientState") == 0)
         settings->debugNtripClientState = d;
     else if (strcmp(settingName, "debugNtripServerState") == 0)

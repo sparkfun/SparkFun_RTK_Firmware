@@ -927,7 +927,7 @@ typedef struct
     uint16_t httpPort = 80;
 
     // WiFi
-    bool enablePrintWifiState = false;
+    bool debugWifiState = false;
     bool wifiConfigOverAP = true; // Configure device over Access Point or have it connect to WiFi
     WiFiNetwork wifiNetworks[MAX_WIFI_NETWORKS] = {
         {"", ""},

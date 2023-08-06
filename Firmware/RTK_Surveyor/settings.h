@@ -960,8 +960,8 @@ typedef struct
                               0}; // NTPpacket::defaultReferenceId. Ref ID is 4 chars. Add one extra for a NULL.
 
     // NTRIP Client
-    bool enablePrintNtripClientRtcm = false;
-    bool enablePrintNtripClientState = false;
+    bool debugNtripClientRtcm = false;
+    bool debugNtripClientState = false;
     bool enableNtripClient = false;
     char ntripClient_CasterHost[50] = "rtk2go.com"; // It's free...
     uint16_t ntripClient_CasterPort = 2101;

@@ -131,7 +131,7 @@ bool ntripClientConnect()
             strcpy(settings.ntripClient_CasterHost, token);
     }
 
-    if (settings.enablePrintNtripClientState)
+    if (settings.debugNtripClientState)
         systemPrintf("NTRIP Client connecting to %s:%d\r\n",
                      settings.ntripClient_CasterHost,
                      settings.ntripClient_CasterPort);
@@ -167,7 +167,7 @@ bool ntripClientConnect()
         snprintf(userCredentials, sizeof(userCredentials), "%s:%s", settings.ntripClient_CasterUser,
                  settings.ntripClient_CasterUserPW);
 
-        if (settings.enablePrintNtripClientState)
+        if (settings.debugNtripClientState)
         {
             systemPrint("NTRIP Client sending credentials: ");
             systemPrintln(userCredentials);
@@ -187,7 +187,7 @@ bool ntripClientConnect()
     strncat(serverRequest, credentials, SERVER_BUFFER_SIZE - 1);
     strncat(serverRequest, "\r\n", SERVER_BUFFER_SIZE - 1);
 
-    if (settings.enablePrintNtripClientState)
+    if (settings.debugNtripClientState)
     {
         systemPrint("NTRIP Client serverRequest size: ");
         systemPrint(strlen(serverRequest));
@@ -357,7 +357,7 @@ void ntripClientRestart()
 // Update the state of the NTRIP client state machine
 void ntripClientSetState(uint8_t newState)
 {
-    if (settings.enablePrintNtripClientState || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_STATE))
+    if (settings.debugNtripClientState || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_STATE))
     {
         if (ntripClientState == newState)
             systemPrint("*");
@@ -365,7 +365,7 @@ void ntripClientSetState(uint8_t newState)
             systemPrintf("%s --> ", ntripClientStateName[ntripClientState]);
     }
     ntripClientState = newState;
-    if (settings.enablePrintNtripClientState || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_STATE))
+    if (settings.debugNtripClientState || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_STATE))
     {
         PERIODIC_CLEAR(PD_NTRIP_CLIENT_STATE);
         if (newState >= NTRIP_CLIENT_STATE_MAX)
@@ -713,7 +713,7 @@ void ntripClientUpdate()
                 theGNSS.pushRawData(rtcmData, rtcmCount);
                 netIncomingRTCM = true;
 
-                if ((settings.enablePrintNtripClientRtcm || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_DATA))
+                if ((settings.debugNtripClientRtcm || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_DATA))
                     && (!inMainMenu))
                 {
                     PERIODIC_CLEAR(PD_NTRIP_CLIENT_DATA);
@@ -745,7 +745,7 @@ void pushGPGGA(NMEA_GGA_data_t *nmeaData)
         {
             lastGGAPush = millis();
 
-            if (settings.enablePrintNtripClientRtcm || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_GGA))
+            if (settings.debugNtripClientRtcm || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_GGA))
             {
                 PERIODIC_CLEAR(PD_NTRIP_CLIENT_GGA);
                 systemPrintf("NTRIP Client pushing GGA to server: %s", (const char *)nmeaData->nmea);

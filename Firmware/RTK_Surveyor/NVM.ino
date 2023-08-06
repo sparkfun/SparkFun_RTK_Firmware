@@ -282,7 +282,7 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "timeZoneSeconds", settings.timeZoneSeconds);
     settingsFile->printf("%s=%d\r\n", "enablePrintState", settings.enablePrintState);
     settingsFile->printf("%s=%d\r\n", "enablePrintWifiState", settings.enablePrintWifiState);
-    settingsFile->printf("%s=%d\r\n", "enablePrintNtripClientState", settings.enablePrintNtripClientState);
+    settingsFile->printf("%s=%d\r\n", "debugNtripClientState", settings.debugNtripClientState);
     settingsFile->printf("%s=%d\r\n", "enablePrintNtripServerState", settings.enablePrintNtripServerState);
     settingsFile->printf("%s=%d\r\n", "enablePrintPosition", settings.enablePrintPosition);
     settingsFile->printf("%s=%d\r\n", "enablePrintIdleTime", settings.enablePrintIdleTime);
@@ -295,7 +295,7 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "enablePrintLogFileStatus", settings.enablePrintLogFileStatus);
     settingsFile->printf("%s=%d\r\n", "enablePrintRingBufferOffsets", settings.enablePrintRingBufferOffsets);
     settingsFile->printf("%s=%d\r\n", "enablePrintNtripServerRtcm", settings.enablePrintNtripServerRtcm);
-    settingsFile->printf("%s=%d\r\n", "enablePrintNtripClientRtcm", settings.enablePrintNtripClientRtcm);
+    settingsFile->printf("%s=%d\r\n", "debugNtripClientRtcm", settings.debugNtripClientRtcm);
     settingsFile->printf("%s=%d\r\n", "enablePrintStates", settings.enablePrintStates);
     settingsFile->printf("%s=%d\r\n", "enablePrintDuplicateStates", settings.enablePrintDuplicateStates);
     settingsFile->printf("%s=%d\r\n", "enablePrintRtcSync", settings.enablePrintRtcSync);
@@ -1074,8 +1074,8 @@ bool parseLine(char *str, Settings *settings)
         settings->enablePrintState = d;
     else if (strcmp(settingName, "enablePrintWifiState") == 0)
         settings->enablePrintWifiState = d;
-    else if (strcmp(settingName, "enablePrintNtripClientState") == 0)
-        settings->enablePrintNtripClientState = d;
+    else if (strcmp(settingName, "debugNtripClientState") == 0)
+        settings->debugNtripClientState = d;
     else if (strcmp(settingName, "enablePrintNtripServerState") == 0)
         settings->enablePrintNtripServerState = d;
     else if (strcmp(settingName, "enablePrintPosition") == 0)
@@ -1096,8 +1096,8 @@ bool parseLine(char *str, Settings *settings)
         settings->enablePrintRingBufferOffsets = d;
     else if (strcmp(settingName, "enablePrintNtripServerRtcm") == 0)
         settings->enablePrintNtripServerRtcm = d;
-    else if (strcmp(settingName, "enablePrintNtripClientRtcm") == 0)
-        settings->enablePrintNtripClientRtcm = d;
+    else if (strcmp(settingName, "debugNtripClientRtcm") == 0)
+        settings->debugNtripClientRtcm = d;
     else if (strcmp(settingName, "enablePrintStates") == 0)
         settings->enablePrintStates = d;
     else if (strcmp(settingName, "enablePrintDuplicateStates") == 0)

@@ -136,7 +136,7 @@ bool ntripServerConnectCaster()
             strcpy(settings.ntripServer_CasterHost, token);
     }
 
-    if (settings.enablePrintNtripServerState)
+    if (settings.debugNtripServerState)
         systemPrintf("NTRIP Server connecting to %s:%d\r\n",
                      settings.ntripServer_CasterHost,
                      settings.ntripServer_CasterPort);
@@ -145,7 +145,7 @@ bool ntripServerConnectCaster()
     if (!ntripServer->connect(settings.ntripServer_CasterHost, settings.ntripServer_CasterPort))
         return false;
 
-    if (settings.enablePrintNtripServerState)
+    if (settings.debugNtripServerState)
         systemPrintln("NTRIP Server sending authorization credentials");
 
     // Build the authorization credentials message
@@ -285,7 +285,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
         {
             // Timestamp the RTCM messages
             currentMilliseconds = millis();
-            if (((settings.enablePrintNtripServerRtcm && ((currentMilliseconds - previousMilliseconds) > 5))
+            if (((settings.debugNtripServerRtcm && ((currentMilliseconds - previousMilliseconds) > 5))
                 || PERIODIC_DISPLAY(PD_NTRIP_SERVER_DATA)) && (!settings.enableRtcmMessageChecking)
                 && (!inMainMenu) && ntripServerBytesSent)
             {
@@ -305,7 +305,7 @@ void ntripServerProcessRTCM(uint8_t incoming)
         // If we have not gotten new RTCM bytes for a period of time, assume end of frame
         if (((millis() - ntripServerTimer) > 100) && (ntripServerBytesSent > 0))
         {
-            if ((!inMainMenu) && settings.enablePrintNtripServerState)
+            if ((!inMainMenu) && settings.debugNtripServerState)
                 systemPrintf("NTRIP Server transmitted %d RTCM bytes to Caster\r\n", ntripServerBytesSent);
 
             ntripServerBytesSent = 0;
@@ -356,7 +356,7 @@ void ntripServerRestart()
 // Update the state of the NTRIP server state machine
 void ntripServerSetState(uint8_t newState)
 {
-    if (settings.enablePrintNtripServerState || PERIODIC_DISPLAY(PD_NTRIP_SERVER_STATE))
+    if (settings.debugNtripServerState || PERIODIC_DISPLAY(PD_NTRIP_SERVER_STATE))
     {
         if (ntripServerState == newState)
             systemPrint("*");
@@ -364,7 +364,7 @@ void ntripServerSetState(uint8_t newState)
             systemPrintf("%s --> ", ntripServerStateName[ntripServerState]);
     }
     ntripServerState = newState;
-    if (settings.enablePrintNtripServerState || PERIODIC_DISPLAY(PD_NTRIP_SERVER_STATE))
+    if (settings.debugNtripServerState || PERIODIC_DISPLAY(PD_NTRIP_SERVER_STATE))
     {
         PERIODIC_CLEAR(PD_NTRIP_SERVER_STATE);
         if (newState >= NTRIP_SERVER_STATE_MAX)
@@ -448,7 +448,7 @@ void ntripServerUpdate()
         return; // Do not service NTRIP during WiFi config
 
     // Periodically display the NTRIP server state
-    if (settings.enablePrintNtripServerState && ((millis() - ntripServerStateLastDisplayed) > 15000))
+    if (settings.debugNtripServerState && ((millis() - ntripServerStateLastDisplayed) > 15000))
     {
         ntripServerSetState(ntripServerState);
         ntripServerStateLastDisplayed = millis();

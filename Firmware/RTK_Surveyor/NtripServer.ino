@@ -188,7 +188,7 @@ bool ntripServerConnectLimitReached()
             ntripServerConnectionAttemptTimeout =
                 (ntripServerConnectionAttempts - 4) * 5 * 60 * 1000L; // Wait 5, 10, 15, etc minutes between attempts
 
-        reportHeapNow();
+        reportHeapNow(settings.debugNtripServerState);
     }
     else
         // No more connection attempts
@@ -389,11 +389,12 @@ void ntripServerStart()
     // Stop the NTRIP server and network
     ntripServerShutdown();
 
+    // Display the heap state
+    reportHeapNow(settings.debugNtripServerState);
+
     // Start the NTRIP server if enabled
     if ((settings.ntripServer_StartAtSurveyIn == true) || (settings.enableNtripServer == true))
     {
-        // Display the heap state
-        reportHeapNow();
         systemPrintln ("NTRIP Server start");
         ntripServerSetState(NTRIP_SERVER_ON);
     }
@@ -413,6 +414,7 @@ void ntripServerStop(bool shutdown)
         // Free the NTRIP server resources
         delete ntripServer;
         ntripServer = nullptr;
+        reportHeapNow(settings.debugNtripServerState);
     }
 
     // Increase timeouts if we started the network
@@ -522,7 +524,12 @@ void ntripServerUpdate()
             // Allocate the ntripServer structure
             ntripServer = new NetworkClient(false);
             if (ntripServer)
+            {
+                reportHeapNow(settings.debugNtripServerState);
+
+                // The network is available for the NTRIP server
                 ntripServerSetState(NTRIP_SERVER_NETWORK_CONNECTED);
+            }
             else
             {
                 // Failed to allocate the ntripServer structure

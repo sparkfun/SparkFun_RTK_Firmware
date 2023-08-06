@@ -381,7 +381,7 @@ void wifiStart()
     wifiSetState(WIFI_CONNECTING); // This starts the state machine running
 
     // Display the heap state
-    reportHeapNow();
+    reportHeapNow(settings.debugWifiState);
 }
 
 // Stop WiFi and release all resources
@@ -439,7 +439,7 @@ void wifiStop()
     }
 
     // Display the heap state
-    reportHeapNow();
+    reportHeapNow(settings.debugWifiState);
 }
 
 bool wifiIsConnected()
@@ -595,7 +595,7 @@ bool wifiConnectLimitReached()
         wifiConnectionAttemptTimeout =
             wifiConnectionAttempts * 15 * 1000L; // Wait 15, 30, 45, etc seconds between attempts
 
-        reportHeapNow();
+        reportHeapNow(settings.debugWifiState);
     }
     else
     {

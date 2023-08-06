@@ -226,7 +226,7 @@ void bluetoothStart()
         }
 
         bluetoothState = BT_NOTCONNECTED;
-        reportHeapNow();
+        reportHeapNow(false);
     }
 #endif // COMPILE_BT
 }
@@ -267,7 +267,7 @@ void bluetoothStop()
         log_d("Bluetooth turned off");
 
         bluetoothState = BT_OFF;
-        reportHeapNow();
+        reportHeapNow(false);
     }
 #endif // COMPILE_BT
     bluetoothIncomingRTCM = false;

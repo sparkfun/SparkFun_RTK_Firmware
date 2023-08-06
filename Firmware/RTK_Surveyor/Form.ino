@@ -249,7 +249,7 @@ void startWebServer(bool startWiFi, int httpPort)
     webserver->begin();
 
     log_d("Web Server Started");
-    reportHeapNow();
+    reportHeapNow(false);
 
 #endif // COMPILE_AP
 #endif // COMPILE_WIFI
@@ -286,7 +286,7 @@ void stopWebServer()
     }
 
     log_d("Web Server Stopped");
-    reportHeapNow();
+    reportHeapNow(false);
 
 #endif  // COMPILE_AP
 #endif  // COMPILE_WIFI

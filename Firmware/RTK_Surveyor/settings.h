@@ -180,6 +180,7 @@ enum NetworkUsers
 {
     NETWORK_USER_NTRIP_CLIENT = 0, // NTRIP client
     NETWORK_USER_NTRIP_SERVER,     // NTRIP server
+    NETWORK_USER_PVT_CLIENT,       // PVT client
     // Last network user
     NETWORK_USER_MAX
 };

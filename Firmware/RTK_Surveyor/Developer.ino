@@ -76,6 +76,7 @@ void ntripServerValidateTables() {}
 
 uint16_t pvtClientSendData(uint16_t dataHead) {return 0;};
 void pvtClientUpdate() {}
+void pvtClientValidateTables() {}
 void pvtClientZeroTail() {}
 
 //----------------------------------------

@@ -146,6 +146,40 @@ class NetworkClient : public Client
     }
 
     //------------------------------
+    // Get the remote IP address
+    //------------------------------
+
+	IPAddress remoteIP()
+    {
+#if defined(COMPILE_ETHERNET)
+        if (_networkType == NETWORK_TYPE_ETHERNET)
+            return ((EthernetClient *)_client)->remoteIP();
+#endif // COMPILE_ETHERNET
+#if defined(COMPILE_WIFI)
+        if (_networkType == NETWORK_TYPE_WIFI)
+            return ((WiFiClient *)_client)->remoteIP();
+#endif  // COMPILE_WIFI
+        return IPAddress((uint32_t)0);
+    }
+
+    //------------------------------
+    // Get the remote port number
+    //------------------------------
+
+	uint16_t remotePort()
+    {
+#if defined(COMPILE_ETHERNET)
+        if (_networkType == NETWORK_TYPE_ETHERNET)
+            return ((EthernetClient *)_client)->remotePort();
+#endif // COMPILE_ETHERNET
+#if defined(COMPILE_WIFI)
+        if (_networkType == NETWORK_TYPE_WIFI)
+            return ((WiFiClient *)_client)->remotePort();
+#endif  // COMPILE_WIFI
+        return 0;
+    }
+
+    //------------------------------
     // Stop the network client
     //------------------------------
 

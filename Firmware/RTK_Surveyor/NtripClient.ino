@@ -221,7 +221,7 @@ bool ntripClientConnectLimitReached()
         ntripClientConnectionAttemptTimeout =
             ntripClientConnectionAttempts * 15 * 1000L; // Wait 15, 30, 45, etc seconds between attempts
 
-        reportHeapNow();
+        reportHeapNow(settings.debugNtripClientState);
     }
     else
         // No more connection attempts, switching to Bluetooth
@@ -390,11 +390,12 @@ void ntripClientStart()
     // Stop NTRIP client
     ntripClientShutdown();
 
+    // Display the heap state
+    reportHeapNow(settings.debugNtripClientState);
+
     // Start the NTRIP client if enabled
     if (settings.enableNtripClient == true)
     {
-        // Display the heap state
-        reportHeapNow();
         systemPrintln("NTRIP Client start");
         ntripClientSetState(NTRIP_CLIENT_ON);
     }
@@ -414,6 +415,7 @@ void ntripClientStop(bool shutdown)
         // Free the NTRIP client resources
         delete ntripClient;
         ntripClient = nullptr;
+        reportHeapNow(settings.debugNtripClientState);
     }
 
     // Increase timeouts if we started the network
@@ -514,7 +516,12 @@ void ntripClientUpdate()
             // Allocate the ntripClient structure
             ntripClient = new NetworkClient(false);
             if (ntripClient)
+            {
+                reportHeapNow(settings.debugNtripClientState);
+
+                // The network is available for the NTRIP client
                 ntripClientSetState(NTRIP_CLIENT_NETWORK_CONNECTED);
+            }
             else
             {
                 // Failed to allocate the ntripClient structure

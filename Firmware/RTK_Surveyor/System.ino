@@ -436,9 +436,9 @@ bool createTestFile()
 }
 
 // If debug option is on, print available heap
-void reportHeapNow()
+void reportHeapNow(bool alwaysPrint)
 {
-    if (settings.enableHeapReport == true)
+    if (alwaysPrint || (settings.enableHeapReport == true))
     {
         lastHeapReport = millis();
         systemPrintf("FreeHeap: %d / HeapLowestPoint: %d / LargestBlock: %d\r\n", ESP.getFreeHeap(),
@@ -453,7 +453,7 @@ void reportHeap()
     {
         if (millis() - lastHeapReport > 1000)
         {
-            reportHeapNow();
+            reportHeapNow(false);
         }
     }
 }

@@ -1160,7 +1160,7 @@ void requestChangeState(SystemState requestedState)
 void changeState(SystemState newState)
 {
     // Log the heap size at the state change
-    reportHeapNow();
+    reportHeapNow(false);
 
     // Debug print of new state, add leading asterisk for repeated states
     if ((!settings.enablePrintDuplicateStates) && (newState == systemState))

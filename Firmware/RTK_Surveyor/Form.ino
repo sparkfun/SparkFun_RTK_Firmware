@@ -696,6 +696,7 @@ void createSettingsString(char *newSettings)
 
     // Network layer
     stringRecord(newSettings, "defaultNetworkType", settings.defaultNetworkType);
+    stringRecord(newSettings, "enableNetworkFailover", settings.enableNetworkFailover);
 
     // NTP
     stringRecord(newSettings, "ntpPollExponent", settings.ntpPollExponent);
@@ -1276,6 +1277,8 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
     // Network layer
     else if (strcmp(settingName, "defaultNetworkType") == 0)
         settings.defaultNetworkType = settingValue;
+    else if (strcmp(settingName, "enableNetworkFailover") == 0)
+        settings.enableNetworkFailover = settingValue;
 
     // NTP
     else if (strcmp(settingName, "ntpPollExponent") == 0)

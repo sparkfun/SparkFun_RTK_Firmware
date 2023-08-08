@@ -306,6 +306,7 @@ void recordSystemSettingsToFile(File *settingsFile)
     // Network layer
     settingsFile->printf("%s=%d\r\n", "defaultNetworkType", settings.defaultNetworkType);
     settingsFile->printf("%s=%d\r\n", "debugNetworkLayer", settings.debugNetworkLayer);
+    settingsFile->printf("%s=%d\r\n", "enableNetworkFailover", settings.enableNetworkFailover);
     settingsFile->printf("%s=%d\r\n", "printNetworkStatus", settings.printNetworkStatus);
 
     // Record peer MAC addresses
@@ -1311,6 +1312,8 @@ bool parseLine(char *str, Settings *settings)
         settings->defaultNetworkType = d;
     else if (strcmp(settingName, "debugNetworkLayer") == 0)
         settings->debugNetworkLayer = d;
+    else if (strcmp(settingName, "enableNetworkFailover") == 0)
+        settings->enableNetworkFailover = d;
     else if (strcmp(settingName, "printNetworkStatus") == 0)
         settings->printNetworkStatus = d;
 

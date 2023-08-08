@@ -962,6 +962,7 @@ typedef struct
     // Network layer
     uint8_t defaultNetworkType = NETWORK_TYPE_USE_DEFAULT;
     bool debugNetworkLayer = false; // Enable debugging of the network layer
+    bool enableNetworkFailover = true; // Enable failover between Ethernet / WiFi
     bool printNetworkStatus = true; // Print network status (delays, failovers, IP address)
 
     // Multicast DNS Server

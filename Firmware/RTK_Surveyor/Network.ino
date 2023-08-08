@@ -66,6 +66,47 @@ Network.ino
         |                             V                 |         &&
         '-------------------NETWORK_WAIT_NO_USERS-------' activeUsers != 0
 
+  Network testing on an RTK Reference Station using NTRIP client:
+
+    1. Network retries using Ethernet, no WiFi setup:
+        * Remove Ethernet cable, expecting retry Ethernet after delay
+        * Progressive delay maxes out at 8 minutes
+        * After cable is plugged in NTRIP client restarts
+
+    2. Network retries using WiFi, use an invalid SSID, default network is WiFi:
+        * WiFi fails to connect, expecting retry WiFi after delay
+        * Progressive delay maxes out at 8 minutes
+        * After a valid SSID is set, the NTRIP client restarts
+
+  Test Setup:
+
+                          RTK Reference Station
+                           ^                 ^
+                      WiFi |                 | Ethernet cable
+                           v                 v
+            WiFi Access Point <-----------> Ethernet Switch
+                                Ethernet     ^
+                                 Cable       | Ethernet cable
+                                             v
+                                     Internet Firewall
+                                             ^
+                                             | Ethernet cable
+                                             v
+                                           Modem
+                                             ^
+                                             |
+                                             v
+                                         Internet
+                                             ^
+                                             |
+                                             v
+                                       NTRIP Caster
+
+  Possible NTRIP Casters
+
+    * https://emlid.com/ntrip-caster/
+    * http://rtk2go.com/
+    * private SNIP NTRIP caster
 ------------------------------------------------------------------------------*/
 
 #if COMPILE_NETWORK

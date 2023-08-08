@@ -59,12 +59,40 @@ static const int SERVER_BUFFER_SIZE = CREDENTIALS_BUFFER_SIZE + 3;
 
 static const int NTRIPCLIENT_MS_BETWEEN_GGA = 5000; // 5s between transmission of GGA messages, if enabled
 
+// Define the NTRIP client states
+enum NTRIPClientState
+{
+    NTRIP_CLIENT_OFF = 0,           // Using Bluetooth or NTRIP server
+    NTRIP_CLIENT_ON,                // WIFI_START state
+    NTRIP_CLIENT_NETWORK_STARTED,   // Connecting to WiFi access point or Ethernet
+    NTRIP_CLIENT_NETWORK_CONNECTED, // Connected to an access point or Ethernet
+    NTRIP_CLIENT_CONNECTING,        // Attempting a connection to the NTRIP caster
+    NTRIP_CLIENT_WAIT_RESPONSE,     // Wait for a response from the NTRIP caster
+    NTRIP_CLIENT_CONNECTED,         // Connected to the NTRIP caster
+    // Insert new states here
+    NTRIP_CLIENT_STATE_MAX          // Last entry in the state list
+};
+
+const char * const ntripClientStateName[] =
+{
+    "NTRIP_CLIENT_OFF",
+    "NTRIP_CLIENT_ON",
+    "NTRIP_CLIENT_NETWORK_STARTED",
+    "NTRIP_CLIENT_NETWORK_CONNECTED",
+    "NTRIP_CLIENT_CONNECTING",
+    "NTRIP_CLIENT_WAIT_RESPONSE",
+    "NTRIP_CLIENT_CONNECTED"
+};
+
+const int ntripClientStateNameEntries = sizeof(ntripClientStateName) / sizeof(ntripClientStateName[0]);
+
 //----------------------------------------
 // Locals
 //----------------------------------------
 
 // The network connection to the NTRIP caster to obtain RTCM data.
 static NetworkClient *ntripClient;
+static volatile uint8_t ntripClientState = NTRIP_CLIENT_OFF;
 
 // Throttle the time between connection attempts
 // ms - Max of 4,294,967,295 or 4.3M seconds or 71,000 minutes or 1193 hours or 49 days between attempts
@@ -327,39 +355,26 @@ void ntripClientRestart()
 }
 
 // Update the state of the NTRIP client state machine
-void ntripClientSetState(NTRIPClientState newState)
+void ntripClientSetState(uint8_t newState)
 {
-    if ((settings.enablePrintNtripClientState || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_STATE))
-        && (ntripClientState == newState))
-        systemPrint("*");
+    if (settings.enablePrintNtripClientState || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_STATE))
+    {
+        if (ntripClientState == newState)
+            systemPrint("*");
+        else
+            systemPrintf("%s --> ", ntripClientStateName[ntripClientState]);
+    }
     ntripClientState = newState;
     if (settings.enablePrintNtripClientState || PERIODIC_DISPLAY(PD_NTRIP_CLIENT_STATE))
     {
         PERIODIC_CLEAR(PD_NTRIP_CLIENT_STATE);
-        switch (newState)
+        if (newState >= NTRIP_CLIENT_STATE_MAX)
         {
-        default:
             systemPrintf("Unknown NTRIP Client state: %d\r\n", newState);
-            break;
-        case NTRIP_CLIENT_OFF:
-            systemPrintln("NTRIP_CLIENT_OFF");
-            break;
-        case NTRIP_CLIENT_ON:
-            systemPrintln("NTRIP_CLIENT_ON");
-            break;
-        case NTRIP_CLIENT_NETWORK_STARTED:
-            systemPrintln("NTRIP_CLIENT_NETWORK_STARTED");
-            break;
-        case NTRIP_CLIENT_NETWORK_CONNECTED:
-            systemPrintln("NTRIP_CLIENT_NETWORK_CONNECTED");
-            break;
-        case NTRIP_CLIENT_CONNECTING:
-            systemPrintln("NTRIP_CLIENT_CONNECTING");
-            break;
-        case NTRIP_CLIENT_CONNECTED:
-            systemPrintln("NTRIP_CLIENT_CONNECTED");
-            break;
+            reportFatalError("Unknown NTRIP Client state");
         }
+        else
+            systemPrintln(ntripClientStateName[ntripClientState]);
     }
 }
 
@@ -712,6 +727,13 @@ void ntripClientUpdate()
     // Periodically display the NTRIP client state
     if (PERIODIC_DISPLAY(PD_NTRIP_CLIENT_STATE))
         ntripClientSetState(ntripClientState);
+}
+
+// Verify the NTRIP client tables
+void ntripClientValidateTables()
+{
+    if (ntripClientStateNameEntries != NTRIP_CLIENT_STATE_MAX)
+        reportFatalError("Fix ntripClientStateNameEntries to match NTRIPClientState");
 }
 
 void pushGPGGA(NMEA_GGA_data_t *nmeaData)

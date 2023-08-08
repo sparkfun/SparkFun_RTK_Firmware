@@ -49,6 +49,7 @@ void ntripClientStart()
 }
 void ntripClientStop(bool clientAllocated) {online.ntripClient = false;}
 void ntripClientUpdate() {}
+void ntripClientValidateTables() {}
 
 //----------------------------------------
 // NTRIP server

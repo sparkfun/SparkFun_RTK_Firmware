@@ -342,8 +342,8 @@ void menuDebug()
         systemPrint("12) Periodically print WiFi state: ");
         systemPrintf("%s\r\n", settings.enablePrintWifiState ? "Enabled" : "Disabled");
 
-        systemPrint("13) Periodically print NTRIP client state: ");
-        systemPrintf("%s\r\n", settings.enablePrintNtripClientState ? "Enabled" : "Disabled");
+        systemPrint("13) Debug NTRIP client state: ");
+        systemPrintf("%s\r\n", settings.debugNtripClientState ? "Enabled" : "Disabled");
 
         systemPrint("14) Periodically print NTRIP server state: ");
         systemPrintf("%s\r\n", settings.enablePrintNtripServerState ? "Enabled" : "Disabled");
@@ -377,8 +377,8 @@ void menuDebug()
         systemPrint("24) Print GNSS --> NTRIP caster messages: ");
         systemPrintf("%s\r\n", settings.enablePrintNtripServerRtcm ? "Enabled" : "Disabled");
 
-        systemPrint("25) Print NTRIP caster --> GNSS messages: ");
-        systemPrintf("%s\r\n", settings.enablePrintNtripClientRtcm ? "Enabled" : "Disabled");
+        systemPrint("25) Debug NTRIP client --> caster GGA messages: ");
+        systemPrintf("%s\r\n", settings.debugNtripClientRtcm ? "Enabled" : "Disabled");
 
         systemPrint("26) Print states: ");
         systemPrintf("%s\r\n", settings.enablePrintStates ? "Enabled" : "Disabled");
@@ -633,7 +633,7 @@ void menuDebug()
         }
         else if (incoming == 13)
         {
-            settings.enablePrintNtripClientState ^= 1;
+            settings.debugNtripClientState ^= 1;
         }
         else if (incoming == 14)
         {
@@ -686,7 +686,7 @@ void menuDebug()
         }
         else if (incoming == 25)
         {
-            settings.enablePrintNtripClientRtcm ^= 1;
+            settings.debugNtripClientRtcm ^= 1;
         }
         else if (incoming == 26)
         {

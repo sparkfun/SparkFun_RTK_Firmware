@@ -16,7 +16,7 @@ pvtServer.ino
                                V
                          NTRIP Caster
                                |
-                               | NTRIP Client receeives correction data
+                               | NTRIP Client receives correction data
                                |
                                V
             Bluetooth         RTK                 Network: PVT Client
@@ -50,13 +50,14 @@ static WiFiServer *pvtServer = nullptr;
 static volatile uint8_t pvtServerClientConnected;
 static WiFiClient pvtServerClient[PVT_SERVER_MAX_CLIENTS];
 static IPAddress pvtServerClientIpAddress[PVT_SERVER_MAX_CLIENTS];
+static volatile uint16_t pvtServerClientTails[PVT_SERVER_MAX_CLIENTS];
 
 //----------------------------------------
 // PVT Server Routines
 //----------------------------------------
 
 // Send data to the PVT clients
-uint16_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
+int32_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
 {
 
     length = pvtServerClient[index].write(data, length);
@@ -82,14 +83,13 @@ uint16_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
 }
 
 // Send PVT data to the clients
-int pvtServerSendData(uint16_t dataHead)
+int32_t pvtServerSendData(uint16_t dataHead)
 {
-    int usedSpace = 0;
+    int32_t usedSpace = 0;
 
     bool connected;
-    int bytesToSend;
+    int32_t bytesToSend;
     int index;
-    static uint16_t pvtTails[PVT_SERVER_MAX_CLIENTS]; // PVT client tails
     uint16_t tail;
 
     // Determine if a client is connected
@@ -98,7 +98,7 @@ int pvtServerSendData(uint16_t dataHead)
     // Update each of the clients
     for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
     {
-        tail = pvtTails[index];
+        tail = pvtServerClientTails[index];
 
         // Determine the amount of TCP data in the buffer
         bytesToSend = dataHead - tail;
@@ -133,7 +133,7 @@ int pvtServerSendData(uint16_t dataHead)
                     usedSpace = bytesToSend;
             }
         }
-        pvtTails[index] = tail;
+        pvtServerClientTails[index] = tail;
     }
 
     // Shutdown the TCP server if necessary
@@ -251,6 +251,15 @@ void pvtServerUpdate()
             }
         }
     }
+}
+
+// Zero the PVT server client tails
+void pvtServerZeroTail()
+{
+    int index;
+
+    for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
+        pvtServerClientTails[index] = 0;
 }
 
 #endif // COMPILE_WIFI

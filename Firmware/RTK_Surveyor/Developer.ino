@@ -76,6 +76,7 @@ void ntripServerValidateTables() {}
 
 uint16_t pvtClientSendData(uint16_t dataHead) {return 0;};
 void pvtClientUpdate() {}
+void pvtClientZeroTail() {}
 
 //----------------------------------------
 // PVT server
@@ -84,6 +85,7 @@ void pvtClientUpdate() {}
 bool pvtServerActive() {return false;}
 int pvtServerSendData(uint16_t dataHead) {return 0;}
 void pvtServerUpdate() {}
+void pvtServerZeroTail() {}
 
 //----------------------------------------
 // WiFi

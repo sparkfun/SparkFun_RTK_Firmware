@@ -17,7 +17,7 @@ PvtClient.ino
                                V
                          NTRIP Caster
                                |
-                               | NTRIP Client receeives correction data
+                               | NTRIP Client receives correction data
                                |
                                V
             Bluetooth         RTK                 Network: PVT Client
@@ -41,17 +41,18 @@ PvtClient.ino
 WiFiClient pvtClient;
 bool pvtClientConnected;
 IPAddress pvtClientIpAddress;
+static volatile uint16_t pvtClientTail;
 
 //----------------------------------------
 // PVT Client Routines
 //----------------------------------------
 
 // Send PVT data to the NMEA server
-uint16_t pvtClientSendData(uint16_t dataHead)
+int32_t pvtClientSendData(uint16_t dataHead)
 {
     bool connected;
-    int bytesToSend;
-    static uint16_t tail;
+    int32_t bytesToSend;
+    int32_t bytesSent;
 
     // Determine if a client is connected
     bytesToSend = 0;
@@ -59,37 +60,37 @@ uint16_t pvtClientSendData(uint16_t dataHead)
 
     // Determine if the client is connected
     if ((!connected) || (!pvtClientConnected))
-        tail = dataHead;
+        pvtClientTail = dataHead;
     else
     {
         // Determine the amount of data in the buffer
-        bytesToSend = dataHead - tail;
+        bytesToSend = dataHead - pvtClientTail;
         if (bytesToSend < 0)
             bytesToSend += settings.gnssHandlerBufferSize;
         if (bytesToSend > 0)
         {
             // Reduce bytes to send if we have more to send then the end of the buffer
             // We'll wrap next loop
-            if ((tail + bytesToSend) > settings.gnssHandlerBufferSize)
-                bytesToSend = settings.gnssHandlerBufferSize - tail;
+            if ((pvtClientTail + bytesToSend) > settings.gnssHandlerBufferSize)
+                bytesToSend = settings.gnssHandlerBufferSize - pvtClientTail;
 
             // Send the data to the NMEA server
-            bytesToSend = pvtClient.write(&ringBuffer[tail], bytesToSend);
-            if (bytesToSend >= 0)
+            bytesSent = pvtClient.write(&ringBuffer[pvtClientTail], bytesToSend);
+            if (bytesSent >= 0)
             {
                 if ((settings.debugPvtClient || PERIODIC_DISPLAY(PD_PVT_CLIENT_DATA)) && (!inMainMenu))
                 {
                     PERIODIC_CLEAR(PD_PVT_CLIENT_DATA);
-                    systemPrintf("PVT client sent %d bytes\r\n", bytesToSend);
+                    systemPrintf("PVT client sent %d bytes, %d remaining\r\n", bytesSent, bytesToSend - bytesSent);
                 }
 
                 // Assume all data was sent, wrap the buffer pointer
-                tail += bytesToSend;
-                if (tail >= settings.gnssHandlerBufferSize)
-                    tail -= settings.gnssHandlerBufferSize;
+                pvtClientTail += bytesSent;
+                if (pvtClientTail >= settings.gnssHandlerBufferSize)
+                    pvtClientTail -= settings.gnssHandlerBufferSize;
 
                 // Update space available for use in UART task
-                bytesToSend = dataHead - tail;
+                bytesToSend = dataHead - pvtClientTail;
                 if (bytesToSend < 0)
                     bytesToSend += settings.gnssHandlerBufferSize;
             }
@@ -99,12 +100,8 @@ uint16_t pvtClientSendData(uint16_t dataHead)
             {
                 // Done with this client connection
                 if (!inMainMenu)
-                {
-                    systemPrint("PVT client breaking connection with ");
-                    systemPrint(pvtClientIpAddress);
-                    systemPrint(":");
-                    systemPrintln(settings.pvtClientPort);
-                }
+                    systemPrintf("PVT client breaking connection with %s:%d\r\n",
+                         pvtClientIpAddress.toString().c_str(), settings.pvtClientPort);
 
                 pvtClient.stop();
                 pvtClientConnected = false;
@@ -202,6 +199,12 @@ void pvtClientUpdate()
             pvtClientConnected = false;
         }
     }
+}
+
+// Zero the PVT client tail
+void pvtClientZeroTail()
+{
+    pvtClientTail = 0;
 }
 
 #endif  // COMPILE_WIFI

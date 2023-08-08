@@ -301,11 +301,11 @@ void gnssReadTask(void *e)
 // If we get a complete NMEA/UBX/RTCM sentence, pass on to SD/BT/TCP interfaces
 void processUart1Message(PARSE_STATE *parse, uint8_t type)
 {
-    int bytesToCopy;
+    int32_t bytesToCopy;
     const char * consumer;
     uint16_t remainingBytes;
-    int space;
-    int use;
+    int32_t space;
+    int32_t use;
 
     // Display the message
     if ((settings.enablePrintLogFileMessages || PERIODIC_DISPLAY(PD_ZED_DATA_RX))
@@ -390,21 +390,29 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
 // The usedSpace variable tracks the total space in use in the buffer.
 void handleGnssDataTask(void *e)
 {
-    int bytesToSend;
+    int32_t bytesToSend;
     bool connected;
-    int freeSpace;
-    int usedSpace;
+    int32_t freeSpace;
+    int32_t usedSpace;
+
+    static uint16_t btTail; // BT Tail advances as it is sent over BT
+    static uint16_t tcpTailEthernet; // TCP client tail
+    static uint16_t sdTail;          // SD Tail advances as it is recorded to SD
+
+    // Initialize the tails
+    btTail = 0;
+    pvtClientZeroTail();
+    pvtServerZeroTail();
+    sdTail = 0;
+    tcpTailEthernet = 0;
 
     while (true)
     {
         usedSpace = 0;
-        slowConsumer = nullptr;
 
         //----------------------------------------------------------------------
         // Send data over Bluetooth
         //----------------------------------------------------------------------
-
-        static uint16_t btTail = 0; // BT Tail advances as it is sent over BT
 
         // Determine BT connection state
         bool connected = (bluetoothGetState() == BT_CONNECTED)
@@ -489,8 +497,6 @@ void handleGnssDataTask(void *e)
         // Send data to the Ethernet TCP clients
         //----------------------------------------------------------------------
 
-        static uint16_t tcpTailEthernet = 0; // TCP client tail
-
         connected = online.tcpClientEthernet && ethernetTcpConnected;
         if (!connected)
             tcpTailEthernet = dataHead;
@@ -530,8 +536,6 @@ void handleGnssDataTask(void *e)
         //----------------------------------------------------------------------
         // Log data to the SD card
         //----------------------------------------------------------------------
-
-        static uint16_t sdTail = 0;          // SD Tail advances as it is recorded to SD
 
         // Determine if the SD card is enabled for logging
         connected = online.logging

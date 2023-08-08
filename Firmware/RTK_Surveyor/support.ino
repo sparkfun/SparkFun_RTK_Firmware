@@ -565,7 +565,7 @@ bool checkRtcmMessage(uint8_t data)
         rtcmParsingState = RTCM_TRANSPORT_STATE_WAIT_FOR_PREAMBLE_D3;
 
         // Display the RTCM message header
-        if (settings.enablePrintNtripServerRtcm && (!inMainMenu))
+        if (settings.debugNtripServerRtcm && (!inMainMenu))
         {
             printTimeStamp();
             systemPrintf("    Tx RTCM %d, %2d bytes\r\n", message, 3 + length + 3);

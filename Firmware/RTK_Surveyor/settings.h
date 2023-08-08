@@ -973,8 +973,8 @@ typedef struct
     bool ntripClient_TransmitGGA = true;
 
     // NTRIP Server
-    bool enablePrintNtripServerRtcm = false;
-    bool enablePrintNtripServerState = false;
+    bool debugNtripServerRtcm = false;
+    bool debugNtripServerState = false;
     bool enableNtripServer = false;
     bool ntripServer_StartAtSurveyIn = false;       // true = Start WiFi instead of Bluetooth at Survey-In
     char ntripServer_CasterHost[50] = "rtk2go.com"; // It's free...

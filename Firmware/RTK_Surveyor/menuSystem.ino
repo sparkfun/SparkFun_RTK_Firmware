@@ -345,8 +345,8 @@ void menuDebug()
         systemPrint("13) Debug NTRIP client state: ");
         systemPrintf("%s\r\n", settings.debugNtripClientState ? "Enabled" : "Disabled");
 
-        systemPrint("14) Periodically print NTRIP server state: ");
-        systemPrintf("%s\r\n", settings.enablePrintNtripServerState ? "Enabled" : "Disabled");
+        systemPrint("14) Debug NTRIP server state: ");
+        systemPrintf("%s\r\n", settings.debugNtripServerState ? "Enabled" : "Disabled");
 
         systemPrint("15) Periodically print position: ");
         systemPrintf("%s\r\n", settings.enablePrintPosition ? "Enabled" : "Disabled");
@@ -374,8 +374,8 @@ void menuDebug()
         systemPrint("23) Print ring buffer offsets: ");
         systemPrintf("%s\r\n", settings.enablePrintRingBufferOffsets ? "Enabled" : "Disabled");
 
-        systemPrint("24) Print GNSS --> NTRIP caster messages: ");
-        systemPrintf("%s\r\n", settings.enablePrintNtripServerRtcm ? "Enabled" : "Disabled");
+        systemPrint("24) Debug caster --> NTRIP server GNSS messages: ");
+        systemPrintf("%s\r\n", settings.debugNtripServerRtcm ? "Enabled" : "Disabled");
 
         systemPrint("25) Debug NTRIP client --> caster GGA messages: ");
         systemPrintf("%s\r\n", settings.debugNtripClientRtcm ? "Enabled" : "Disabled");
@@ -637,7 +637,7 @@ void menuDebug()
         }
         else if (incoming == 14)
         {
-            settings.enablePrintNtripServerState ^= 1;
+            settings.debugNtripServerState ^= 1;
         }
         else if (incoming == 15)
         {
@@ -682,7 +682,7 @@ void menuDebug()
         }
         else if (incoming == 24)
         {
-            settings.enablePrintNtripServerRtcm ^= 1;
+            settings.debugNtripServerRtcm ^= 1;
         }
         else if (incoming == 25)
         {

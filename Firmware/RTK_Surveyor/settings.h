@@ -158,7 +158,47 @@ enum NetworkTypes
 
     // Special cases
     NETWORK_TYPE_USE_DEFAULT = NETWORK_TYPE_MAX,
+    NETWORK_TYPE_ACTIVE,
+    // Last network type
+    NETWORK_TYPE_LAST,
 };
+
+// Define the states of the network device
+enum NetworkStates
+{
+    NETWORK_STATE_OFF = 0,
+    NETWORK_STATE_DELAY,
+    NETWORK_STATE_CONNECTING,
+    NETWORK_STATE_IN_USE,
+    NETWORK_STATE_WAIT_NO_USERS,
+    // Last network state
+    NETWORK_STATE_MAX
+};
+
+// Define the network users
+enum NetworkUsers
+{
+    NETWORK_USER_NTRIP_CLIENT = 0, // NTRIP client
+    NETWORK_USER_NTRIP_SERVER,     // NTRIP server
+    // Last network user
+    NETWORK_USER_MAX
+};
+
+typedef uint8_t NETWORK_USER;
+
+typedef struct _NETWORK_DATA
+{
+    uint8_t requestedNetwork;   // Type of network requested
+    uint8_t type;               // Type of network
+    NETWORK_USER activeUsers;   // Active users of this network device
+    NETWORK_USER userOpens;     // Users requesting access to this network
+    uint8_t connectionAttempt;  // Number of previous connection attempts
+    bool restart;               // Set if restart is allowed
+    bool shutdown;              // Network is shutting down
+    uint8_t state;              // Current state of the network
+    uint32_t timeout;           // Timer timeout value
+    uint32_t timerStart;        // Starting millis for the timer
+} NETWORK_DATA;
 
 // Even though WiFi and ESP-Now operate on the same radio, we treat
 // then as different states so that we can leave the radio on if

@@ -73,7 +73,8 @@ Network.ino
         * Progressive delay maxes out at 8 minutes
         * After cable is plugged in NTRIP client restarts
 
-    2. Network retries using WiFi, use an invalid SSID, default network is WiFi:
+    2. Network retries using WiFi, use an invalid SSID, default network is WiFi,
+       failover disabled:
         * WiFi fails to connect, expecting retry WiFi after delay
         * Progressive delay maxes out at 8 minutes
         * After a valid SSID is set, the NTRIP client restarts
@@ -85,10 +86,25 @@ Network.ino
         * Progressive delay maxes out at 8 minutes
         * After cable is plugged in NTRIP server restarts
 
-    2. Network retries using WiFi, use an invalid SSID, default network is WiFi:
+    2. Network retries using WiFi, use an invalid SSID, default network is WiFi,
+       failover disabled:
         * WiFi fails to connect, expecting retry WiFi after delay
         * Progressive delay maxes out at 8 minutes
         * After cable is plugged in NTRIP server restarts
+
+  Network failover testing on Reference Station, WiFi setup, failover enabled:
+
+    1. Using NTRIP client:
+        * Remove Ethernet cable, expecting failover to WiFi with no delay and
+          NTRIP client restarts
+        * Disable WiFi at access point, expecting failover to Ethernet with no
+          delay, NTRIP client restarts
+
+    2. Using NTRIP server:
+        * Remove Ethernet cable, expecting failover to WiFi with no delay and
+          NTRIP server restarts
+        * Disable WiFi at access point, expecting failover to Ethernet with no
+          delay, NTRIP server restarts
 
   Test Setup:
 
@@ -635,7 +651,7 @@ void networkRestartNetwork(NETWORK_DATA * network)
 //----------------------------------------
 // Retry the network connection
 //----------------------------------------
-void networkRetry(NETWORK_DATA * network)
+void networkRetry(NETWORK_DATA * network, uint8_t previousNetworkType)
 {
     uint8_t networkType;
     int seconds;
@@ -649,6 +665,24 @@ void networkRetry(NETWORK_DATA * network)
 
     // Compute the delay between retries
     network->timeout = NETWORK_DELAY_BEFORE_RETRY << (network->connectionAttempt - 1);
+
+    // Determine if failover is possible
+    if (HAS_ETHERNET && (wifiNetworkCount() > 0) && settings.enableNetworkFailover
+        && (network->requestedNetwork >= NETWORK_TYPE_MAX))
+    {
+        // Get the next failover network
+        networkType = networkFailover[previousNetworkType];
+        if (settings.debugNetworkLayer || settings.printNetworkStatus)
+        {
+            systemPrint("Network failover: ");
+            systemPrint(networkName[previousNetworkType]);
+            systemPrint("-->");
+            systemPrintln(networkName[networkType]);
+        }
+
+        // Initialize the network
+        network->requestedNetwork = networkType;
+    }
 
     // Display the delay
     if ((settings.debugNetworkLayer || settings.printNetworkStatus) && network->timeout)
@@ -802,7 +836,6 @@ void networkStop(uint8_t networkType)
             //      timerStart
             network->restart = false;
             network->shutdown = false;
-            network->type = network->requestedNetwork;
             networkSetState(network, NETWORK_STATE_OFF);
 
             // Restart the network if requested
@@ -810,8 +843,11 @@ void networkStop(uint8_t networkType)
             {
                 if (settings.debugNetworkLayer)
                     systemPrintln("Network layer restarting");
-                networkRetry(network);
+                networkRetry(network, network->type);
             }
+
+            // Update the network type
+            network->type = network->requestedNetwork;
             break;
         }
 
@@ -1127,6 +1163,8 @@ bool networkUserOpen(uint8_t user, uint8_t networkType)
 void networkVerifyTables()
 {
     // Verify the table lengths
+    if (networkFailoverEntries != NETWORK_TYPE_MAX)
+        reportFatalError("Fix networkFailover table to match NetworkTypes");
     if (networkNameEntries != NETWORK_TYPE_LAST)
         reportFatalError("Fix networkName table to match NetworkTypes");
     if (networkStateEntries != NETWORK_STATE_MAX)

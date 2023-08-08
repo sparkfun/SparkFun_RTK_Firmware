@@ -339,8 +339,8 @@ void menuDebug()
         systemPrint("11) Periodically print state: ");
         systemPrintf("%s\r\n", settings.enablePrintState ? "Enabled" : "Disabled");
 
-        systemPrint("12) Periodically print WiFi state: ");
-        systemPrintf("%s\r\n", settings.enablePrintWifiState ? "Enabled" : "Disabled");
+        systemPrint("12) Debug WiFi state: ");
+        systemPrintf("%s\r\n", settings.debugWifiState ? "Enabled" : "Disabled");
 
         systemPrint("13) Debug NTRIP client state: ");
         systemPrintf("%s\r\n", settings.debugNtripClientState ? "Enabled" : "Disabled");
@@ -629,7 +629,7 @@ void menuDebug()
         }
         else if (incoming == 12)
         {
-            settings.enablePrintWifiState ^= 1;
+            settings.debugWifiState ^= 1;
         }
         else if (incoming == 13)
         {

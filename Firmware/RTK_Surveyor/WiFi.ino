@@ -176,12 +176,12 @@ byte wifiGetStatus()
 // Update the state of the WiFi state machine
 void wifiSetState(byte newState)
 {
-    if ((settings.enablePrintWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE))
+    if ((settings.debugWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE))
         && (wifiState == newState))
         systemPrint("*");
     wifiState = newState;
 
-    if (settings.enablePrintWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE))
+    if (settings.debugWifiState || PERIODIC_DISPLAY(PD_WIFI_STATE))
     {
         PERIODIC_CLEAR(PD_WIFI_STATE);
         switch (newState)
@@ -290,7 +290,7 @@ void wifiUpdate()
     }
 
     // Periodically display the WiFi state
-    if (settings.enablePrintWifiState && ((millis() - lastWifiState) > 15000))
+    if (settings.debugWifiState && ((millis() - lastWifiState) > 15000))
     {
         wifiSetState(wifiState);
         lastWifiState = millis();

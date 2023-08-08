@@ -57,12 +57,42 @@
 // 30 attempts with 5 minute increases will take over 38 hours
 static const int MAX_NTRIP_SERVER_CONNECTION_ATTEMPTS = 30;
 
+// Define the NTRIP server states
+enum NTRIPServerState
+{
+    NTRIP_SERVER_OFF = 0,           // Using Bluetooth or NTRIP client
+    NTRIP_SERVER_ON,                // WIFI_START state
+    NTRIP_SERVER_NETWORK_STARTED,   // Connecting to WiFi access point
+    NTRIP_SERVER_NETWORK_CONNECTED, // WiFi connected to an access point
+    NTRIP_SERVER_WAIT_GNSS_DATA,    // Waiting for correction data from GNSS
+    NTRIP_SERVER_CONNECTING,        // Attempting a connection to the NTRIP caster
+    NTRIP_SERVER_AUTHORIZATION,     // Validate the credentials
+    NTRIP_SERVER_CASTING,           // Sending correction data to the NTRIP caster
+    // Insert new states here
+    NTRIP_SERVER_STATE_MAX          // Last entry in the state list
+};
+
+const char * const ntripServerStateName[] =
+{
+    "NTRIP_SERVER_OFF",
+    "NTRIP_SERVER_ON",
+    "NTRIP_SERVER_NETWORK_STARTED",
+    "NTRIP_SERVER_NETWORK_CONNECTED",
+    "NTRIP_SERVER_WAIT_GNSS_DATA",
+    "NTRIP_SERVER_CONNECTING",
+    "NTRIP_SERVER_AUTHORIZATION",
+    "NTRIP_SERVER_CASTING"
+};
+
+const int ntripServerStateNameEntries = sizeof(ntripServerStateName) / sizeof(ntripServerStateName[0]);
+
 //----------------------------------------
 // Locals
 //----------------------------------------
 
 // Network connection used to push RTCM to NTRIP caster
 static NetworkClient *ntripServer;
+static volatile uint8_t ntripServerState = NTRIP_SERVER_OFF;
 
 // Count of bytes sent by the NTRIP server to the NTRIP caster
 uint32_t ntripServerBytesSent;
@@ -164,6 +194,12 @@ bool ntripServerConnectLimitReached()
         // No more connection attempts
         systemPrintln("NTRIP Server connection attempts exceeded!");
     return limitReached;
+}
+
+// Determine if the NTRIP server is casting
+bool ntripServerIsCasting()
+{
+    return (ntripServerState == NTRIP_SERVER_CASTING);
 }
 
 // Print the NTRIP server state summary
@@ -318,45 +354,26 @@ void ntripServerRestart()
 }
 
 // Update the state of the NTRIP server state machine
-void ntripServerSetState(NTRIPServerState newState)
+void ntripServerSetState(uint8_t newState)
 {
-    if ((settings.enablePrintNtripServerState || PERIODIC_DISPLAY(PD_NTRIP_SERVER_STATE))
-        && (ntripServerState == newState))
-        systemPrint("*");
+    if (settings.enablePrintNtripServerState || PERIODIC_DISPLAY(PD_NTRIP_SERVER_STATE))
+    {
+        if (ntripServerState == newState)
+            systemPrint("*");
+        else
+            systemPrintf("%s --> ", ntripServerStateName[ntripServerState]);
+    }
     ntripServerState = newState;
     if (settings.enablePrintNtripServerState || PERIODIC_DISPLAY(PD_NTRIP_SERVER_STATE))
     {
         PERIODIC_CLEAR(PD_NTRIP_SERVER_STATE);
-        switch (newState)
+        if (newState >= NTRIP_SERVER_STATE_MAX)
         {
-        default:
             systemPrintf("Unknown NTRIP Server state: %d\r\n", newState);
-            break;
-        case NTRIP_SERVER_OFF:
-            systemPrintln("NTRIP_SERVER_OFF");
-            break;
-        case NTRIP_SERVER_ON:
-            systemPrintln("NTRIP_SERVER_ON");
-            break;
-        case NTRIP_SERVER_NETWORK_STARTED:
-            systemPrintln("NTRIP_SERVER_NETWORK_STARTED");
-            break;
-        case NTRIP_SERVER_NETWORK_CONNECTED:
-            systemPrintln("NTRIP_SERVER_NETWORK_CONNECTED");
-            break;
-        case NTRIP_SERVER_WAIT_GNSS_DATA:
-            systemPrintln("NTRIP_SERVER_WAIT_GNSS_DATA");
-            break;
-        case NTRIP_SERVER_CONNECTING:
-            systemPrintln("NTRIP_SERVER_CONNECTING");
-            break;
-        case NTRIP_SERVER_AUTHORIZATION:
-            systemPrintln("NTRIP_SERVER_AUTHORIZATION");
-            break;
-        case NTRIP_SERVER_CASTING:
-            systemPrintln("NTRIP_SERVER_CASTING");
-            break;
+            reportFatalError("Unknown NTRIP Server state");
         }
+        else
+            systemPrintln(ntripServerStateName[ntripServerState]);
     }
 }
 
@@ -672,6 +689,13 @@ void ntripServerUpdate()
     // Periodically display the state
     if (PERIODIC_DISPLAY(PD_NTRIP_SERVER_STATE))
         ntripServerSetState(ntripServerState);
+}
+
+// Verify the NTRIP server tables
+void ntripServerValidateTables()
+{
+    if (ntripServerStateNameEntries != NTRIP_SERVER_STATE_MAX)
+        reportFatalError("Fix ntripServerStateNameEntries to match NTRIPServerState");
 }
 
 #endif  // COMPILE_NETWORK

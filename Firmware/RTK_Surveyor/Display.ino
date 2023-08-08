@@ -1753,7 +1753,7 @@ void printTextwithKerning(const char *newText, uint8_t xPos, uint8_t yPos, uint8
 void paintRTCM()
 {
     int yPos = 17;
-    if (ntripServerState == NTRIP_SERVER_CASTING)
+    if (ntripServerIsCasting())
         printTextCenter("Casting", yPos, QW_FONT_8X16, 1, false); // text, y, font type, kerning, inverted
     else
         printTextCenter("Xmitting", yPos, QW_FONT_8X16, 1, false); // text, y, font type, kerning, inverted

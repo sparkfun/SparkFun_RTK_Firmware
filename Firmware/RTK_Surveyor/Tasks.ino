@@ -1,14 +1,52 @@
+/*------------------------------------------------------------------------------
+Tasks.ino
+
+  This module implements the high frequency tasks made by xTaskCreate() and any
+  low frequency tasks that are called by Ticker.
+
+                          SPI       or      I2C
+                           |                 |
+                           |                 |
+                           '------->+<-------'
+                                    |
+                                    | gnssReadTask
+                                    |    waitForPreamble
+                                    |        ...
+                                    |    processUart1Message
+                                    |
+                                    v
+                               Ring Buffer
+                                    |
+                                    | handleGnssDataTask
+                                    |
+                                    v
+    .---------------+---------------+---------------+---------------.
+    |               |               |               |               |
+    |               |               |               |               |
+    v               v               v               v               v
+Bluetooth      PVT Client      PVT Server        SD Card     Ethernet PVT Client
+
+------------------------------------------------------------------------------*/
+
 // High frequency tasks made by xTaskCreate()
 // And any low frequency tasks that are called by Ticker
 
-volatile static uint16_t dataHead = 0;  // Head advances as data comes in from GNSS's UART
-volatile int availableHandlerSpace = 0; // settings.gnssHandlerBufferSize - usedSpace
+//----------------------------------------
+// Locals
+//----------------------------------------
+
+volatile static uint16_t dataHead;  // Head advances as data comes in from GNSS's UART
+volatile int32_t availableHandlerSpace; // settings.gnssHandlerBufferSize - usedSpace
 volatile const char * slowConsumer;
 
 // Buffer the incoming Bluetooth stream so that it can be passed in bulk over I2C
 uint8_t bluetoothOutgoingToZed[100];
-uint16_t bluetoothOutgoingToZedHead = 0;
-unsigned long lastZedI2CSend = 0; // Timestamp of the last time we sent RTCM ZED over I2C
+uint16_t bluetoothOutgoingToZedHead;
+unsigned long lastZedI2CSend; // Timestamp of the last time we sent RTCM ZED over I2C
+
+//----------------------------------------
+// Task routines
+//----------------------------------------
 
 // If the phone has any new data (NTRIP RTCM, etc), read it in over Bluetooth and pass along to ZED
 // Scan for escape characters to enter config menu
@@ -202,8 +240,6 @@ void gnssReadTask(void *e)
     static PARSE_STATE parse = {waitForPreamble, processUart1Message, "Log"};
 
     uint8_t incomingData = 0;
-
-    availableHandlerSpace = settings.gnssHandlerBufferSize;
 
     while (true)
     {
@@ -1236,6 +1272,8 @@ void idleTask(void *e)
 // cause reboot
 void tasksStartUART2()
 {
+    availableHandlerSpace = settings.gnssHandlerBufferSize;
+
     // Reads data from ZED and stores data into circular buffer
     if (gnssReadTaskHandle == nullptr)
         xTaskCreatePinnedToCore(gnssReadTask,                  // Function to call

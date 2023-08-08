@@ -462,61 +462,61 @@ void menuDebug()
         systemPrintf("52) Periodic print: %d (0x%08x)\r\n", settings.periodicDisplay, settings.periodicDisplay);
 
         systemPrint("53) Periodically print Bluetooth RX: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_BLUETOOTH_DATA_RX) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_BLUETOOTH_DATA_RX) ? "Enabled" : "Disabled");
 
         systemPrint("54) Periodically print Bluetooth TX: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_BLUETOOTH_DATA_TX) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_BLUETOOTH_DATA_TX) ? "Enabled" : "Disabled");
 
         systemPrint("55) Periodically print Ethernet IP address: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_ETHERNET_IP_ADDRESS) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_ETHERNET_IP_ADDRESS) ? "Enabled" : "Disabled");
 
         systemPrint("56) Periodically print Ethernet state: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_ETHERNET_STATE) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_ETHERNET_STATE) ? "Enabled" : "Disabled");
 
         systemPrint("57) Periodically print network state: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_NETWORK_STATE) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_NETWORK_STATE) ? "Enabled" : "Disabled");
 
         systemPrint("58) Periodically print NTRIP client data: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_NTRIP_CLIENT_DATA) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_NTRIP_CLIENT_DATA) ? "Enabled" : "Disabled");
 
         systemPrint("59) Periodically print NTRIP client state: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_NTRIP_CLIENT_STATE) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_NTRIP_CLIENT_STATE) ? "Enabled" : "Disabled");
 
         systemPrint("60) Periodically print NTRIP server data: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_NTRIP_SERVER_DATA) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_NTRIP_SERVER_DATA) ? "Enabled" : "Disabled");
 
         systemPrint("61) Periodically print NTRIP server state: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_NTRIP_SERVER_STATE) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_NTRIP_SERVER_STATE) ? "Enabled" : "Disabled");
 
         systemPrint("62) Periodically print PVT client data: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_PVT_CLIENT_DATA) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_PVT_CLIENT_DATA) ? "Enabled" : "Disabled");
 
         systemPrint("63) Periodically print PVT client state: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_PVT_CLIENT_STATE) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_PVT_CLIENT_STATE) ? "Enabled" : "Disabled");
 
         systemPrint("64) Periodically print PVT server data: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_PVT_SERVER_DATA) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_PVT_SERVER_DATA) ? "Enabled" : "Disabled");
 
         systemPrint("65) Periodically print PVT server state: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_PVT_SERVER_STATE) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_PVT_SERVER_STATE) ? "Enabled" : "Disabled");
 
         systemPrint("66) Periodically print PVT server client data: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_PVT_SERVER_CLIENT_DATA) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_PVT_SERVER_CLIENT_DATA) ? "Enabled" : "Disabled");
 
         systemPrint("67) Periodically print SD log write data: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_SD_LOG_WRITE) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_SD_LOG_WRITE) ? "Enabled" : "Disabled");
 
         systemPrint("68) Periodically print WiFi state: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_WIFI_STATE) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_WIFI_STATE) ? "Enabled" : "Disabled");
 
         systemPrint("69) Periodically print ZED RX data: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_ZED_DATA_RX) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_ZED_DATA_RX) ? "Enabled" : "Disabled");
 
         systemPrint("70) Periodically print ZED TX data: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_ZED_DATA_TX) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_ZED_DATA_TX) ? "Enabled" : "Disabled");
 
         systemPrint("71) Periodically print NTRIP client GGA writes: ");
-        systemPrintf("%s\r\n", PERIODIC_MASK(PD_NTRIP_CLIENT_GGA) ? "Enabled" : "Disabled");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_NTRIP_CLIENT_GGA) ? "Enabled" : "Disabled");
 
         systemPrint("72) Debug PVT server: ");
         systemPrintf("%s\r\n", settings.debugPvtServer ? "Enabled" : "Disabled");
@@ -942,79 +942,79 @@ void menuDebug()
         }
         else if (incoming == 53)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_BLUETOOTH_DATA_RX);
+            PERIODIC_TOGGLE(PD_BLUETOOTH_DATA_RX);
         }
         else if (incoming == 54)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_BLUETOOTH_DATA_TX);
+            PERIODIC_TOGGLE(PD_BLUETOOTH_DATA_TX);
         }
         else if (incoming == 55)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_ETHERNET_IP_ADDRESS);
+            PERIODIC_TOGGLE(PD_ETHERNET_IP_ADDRESS);
         }
         else if (incoming == 56)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_ETHERNET_STATE);
+            PERIODIC_TOGGLE(PD_ETHERNET_STATE);
         }
         else if (incoming == 57)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_NETWORK_STATE);
+            PERIODIC_TOGGLE(PD_NETWORK_STATE);
         }
         else if (incoming == 58)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_NTRIP_CLIENT_DATA);
+            PERIODIC_TOGGLE(PD_NTRIP_CLIENT_DATA);
         }
         else if (incoming == 59)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_NTRIP_CLIENT_STATE);
+            PERIODIC_TOGGLE(PD_NTRIP_CLIENT_STATE);
         }
         else if (incoming == 60)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_NTRIP_SERVER_DATA);
+            PERIODIC_TOGGLE(PD_NTRIP_SERVER_DATA);
         }
         else if (incoming == 61)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_NTRIP_SERVER_STATE);
+            PERIODIC_TOGGLE(PD_NTRIP_SERVER_STATE);
         }
         else if (incoming == 62)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_PVT_CLIENT_DATA);
+            PERIODIC_TOGGLE(PD_PVT_CLIENT_DATA);
         }
         else if (incoming == 63)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_PVT_CLIENT_STATE);
+            PERIODIC_TOGGLE(PD_PVT_CLIENT_STATE);
         }
         else if (incoming == 64)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_PVT_SERVER_DATA);
+            PERIODIC_TOGGLE(PD_PVT_SERVER_DATA);
         }
         else if (incoming == 65)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_PVT_SERVER_STATE);
+            PERIODIC_TOGGLE(PD_PVT_SERVER_STATE);
         }
         else if (incoming == 66)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_PVT_SERVER_CLIENT_DATA);
+            PERIODIC_TOGGLE(PD_PVT_SERVER_CLIENT_DATA);
         }
         else if (incoming == 67)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_SD_LOG_WRITE);
+            PERIODIC_TOGGLE(PD_SD_LOG_WRITE);
         }
         else if (incoming == 68)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_WIFI_STATE);
+            PERIODIC_TOGGLE(PD_WIFI_STATE);
         }
         else if (incoming == 69)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_ZED_DATA_RX);
+            PERIODIC_TOGGLE(PD_ZED_DATA_RX);
         }
         else if (incoming == 70)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_ZED_DATA_TX);
+            PERIODIC_TOGGLE(PD_ZED_DATA_TX);
         }
         else if (incoming == 71)
         {
-            settings.periodicDisplay ^= PERIODIC_MASK(PD_NTRIP_CLIENT_GGA);
+            PERIODIC_TOGGLE(PD_NTRIP_CLIENT_GGA);
         }
         else if (incoming == 72)
         {

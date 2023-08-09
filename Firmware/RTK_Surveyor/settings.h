@@ -469,6 +469,8 @@ enum PeriodDisplayValues
     PD_WIFI_STATE,              //17
     PD_ZED_DATA_RX,             //18
     PD_ZED_DATA_TX,             //19
+
+    PD_RING_BUFFER_MILLIS,      //20
 };
 
 #define PERIODIC_MASK(x)    (1 << x)

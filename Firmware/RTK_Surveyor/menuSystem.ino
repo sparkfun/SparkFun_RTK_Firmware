@@ -753,8 +753,14 @@ void menuDebug()
                     systemPrintln("Error: Queue size out of range");
                 else
                 {
+                    // Stop the UART2 tssks to prevent the system from crashing
+                    tasksStopUART2();
+
+                    // Update the buffer size
                     settings.gnssHandlerBufferSize = queSize; // Recorded to NVM and file
                     recordSystemSettings();
+
+                    // Reboot the system
                     ESP.restart();
                 }
             }

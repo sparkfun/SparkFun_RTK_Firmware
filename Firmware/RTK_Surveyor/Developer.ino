@@ -17,14 +17,19 @@ IPAddress ethernetGetIpAddress() {return IPAddress((uint32_t)0);}
 void ethernetUpdate() {}
 void ethernetVerifyTables() {}
 
-void ethernetNTPServerBegin() {}
-void ethernetNTPServerUpdate() {}
-
 void ethernetPvtClientSendData(uint8_t *data, uint16_t length) {}
 void ethernetPvtClientUpdate() {}
 
 void ethernetWebServerStartESP32W5500() {}
 void ethernetWebServerStopESP32W5500() {}
+
+//----------------------------------------
+// NTP: Network Time Protocol
+//----------------------------------------
+
+void menuNTP() {systemPrint("NOT compiled");}
+void ntpServerBegin() {}
+void ntpServerUpdate() {}
 
 #endif // COMPILE_ETHERNET
 

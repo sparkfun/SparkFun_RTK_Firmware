@@ -1,3 +1,166 @@
+/*------------------------------------------------------------------------------
+NTP.ino
+
+  This module implements the network time protocol (NTP).
+
+  NTP Testing using Ethernet:
+
+    Raspberry Pi Setup:
+        * Install Raspberry Pi OS
+        * Edit /etc/systemd/timesyncd.conf
+        * Remove '#" from in front of NTP= line
+        * Set NTP= line to:
+            NTP="your NTP server address" "addresses from FallbackNTPK= line"
+        * without the double quotes
+        * Force a time update using:
+            sudo systemctl restart systemd-timesyncd.service
+
+    NTP Testing on Raspberry Pi:
+        * Log into the Raspberry Pi system
+        * Start the terminal program
+        * Display the time server using:
+            timedatectl timesync-status
+        * Verify that the Server specifies your NTP server IP address
+        * Force a time update using:
+            sudo systemctl restart systemd-timesyncd.service
+
+  Test Setup:
+
+          RTK Reference Station          Raspberry Pi
+                    ^                     NTP Server
+                    | Ethernet cable           ^
+                    v                          |
+             Ethernet Switch <-----------------'
+                    ^
+                    | Ethernet cable
+                    v
+            Internet Firewall
+                    ^
+                    | Ethernet cable
+                    v
+                  Modem
+                    ^
+                    |
+                    v
+                Internet
+                    ^
+                    |
+                    v
+               NTP Server
+
+------------------------------------------------------------------------------*/
+
+#ifdef  COMPILE_ETHERNET
+
+//----------------------------------------
+// Locals
+//----------------------------------------
+
+static derivedEthernetUDP *ntpServer; // This will be instantiated when we know the NTP port
+static volatile uint8_t ntpSockIndex; // The W5500 socket index for NTP - so we can enable and read the correct interrupt
+static uint32_t lastLoggedNTPRequest;
+
+//----------------------------------------
+// Menu to get the NTP settings
+//----------------------------------------
+
+void menuNTP()
+{
+    if (!HAS_ETHERNET)
+    {
+        clearBuffer(); // Empty buffer of any newline chars
+        return;
+    }
+
+    while (1)
+    {
+        systemPrintln();
+        systemPrintln("Menu: NTP");
+        systemPrintln();
+
+        systemPrint("1) Poll Exponent: 2^");
+        systemPrintln(settings.ntpPollExponent);
+
+        systemPrint("2) Precision: 2^");
+        systemPrintln(settings.ntpPrecision);
+
+        systemPrint("3) Root Delay (us): ");
+        systemPrintln(settings.ntpRootDelay);
+
+        systemPrint("4) Root Dispersion (us): ");
+        systemPrintln(settings.ntpRootDispersion);
+
+        systemPrint("5) Reference ID: ");
+        systemPrintln(settings.ntpReferenceId);
+
+        systemPrintln("x) Exit");
+
+        byte incoming = getCharacterNumber();
+
+        if (incoming == 1)
+        {
+            systemPrint("Enter new poll exponent (2^, Min 3, Max 17): ");
+            long newVal = getNumber();
+            if ((newVal >= 3) && (newVal <= 17))
+                settings.ntpPollExponent = newVal;
+            else
+                systemPrintln("Error: poll exponent out of range");
+        }
+        else if (incoming == 2)
+        {
+            systemPrint("Enter new precision (2^, Min -30, Max 0): ");
+            long newVal = getNumber();
+            if ((newVal >= -30) && (newVal <= 0))
+                settings.ntpPrecision = newVal;
+            else
+                systemPrintln("Error: precision out of range");
+        }
+        else if (incoming == 3)
+        {
+            systemPrint("Enter new root delay (us): ");
+            long newVal = getNumber();
+            if ((newVal >= 0) && (newVal <= 1000000))
+                settings.ntpRootDelay = newVal;
+            else
+                systemPrintln("Error: root delay out of range");
+        }
+        else if (incoming == 4)
+        {
+            systemPrint("Enter new root dispersion (us): ");
+            long newVal = getNumber();
+            if ((newVal >= 0) && (newVal <= 1000000))
+                settings.ntpRootDispersion = newVal;
+            else
+                systemPrintln("Error: root dispersion out of range");
+        }
+        else if (incoming == 5)
+        {
+            systemPrint("Enter new Reference ID (4 Chars Max): ");
+            char newId[5];
+            if (getString(newId, 5) == INPUT_RESPONSE_VALID)
+            {
+                int i = 0;
+                for (; i < strlen(newId); i++)
+                    settings.ntpReferenceId[i] = newId[i];
+                for (; i < 5; i++)
+                    settings.ntpReferenceId[i] = 0;
+            }
+            else
+                systemPrintln("Error: invalid Reference ID");
+        }
+        else if (incoming == 'x')
+            break;
+        else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
+            break;
+        else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
+            break;
+        else
+            printUnknown(incoming);
+    }
+
+    clearBuffer(); // Empty buffer of any newline chars
+}
+
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 // NTP Packet storage and utilities
 
@@ -288,24 +451,23 @@ struct NTPpacket
 };
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-// Process one NTP request
+// NTP process one request
 // recTv contains the timeval the NTP packet was received - from the W5500 interrupt
 // syncTv contains the timeval when the RTC was last sync'd
 // ntpDiag will contain useful diagnostics
-bool processOneNTPRequest(bool process, const timeval *recTv, const timeval *syncTv, char *ntpDiag = nullptr,
+bool ntpProcessOneRequest(bool process, const timeval *recTv, const timeval *syncTv, char *ntpDiag = nullptr,
                           size_t ntpDiagSize = 0); // Header
-bool processOneNTPRequest(bool process, const timeval *recTv, const timeval *syncTv, char *ntpDiag, size_t ntpDiagSize)
+bool ntpProcessOneRequest(bool process, const timeval *recTv, const timeval *syncTv, char *ntpDiag, size_t ntpDiagSize)
 {
     bool processed = false;
 
     if (ntpDiag != nullptr)
         *ntpDiag = 0; // Clear any existing diagnostics
 
-#ifdef COMPILE_ETHERNET
-    int packetDataSize = ethernetNTPServer->parsePacket();
+    int packetDataSize = ntpServer->parsePacket();
 
-    IPAddress remoteIP = ethernetNTPServer->remoteIP();
-    uint16_t remotePort = ethernetNTPServer->remotePort();
+    IPAddress remoteIP = ntpServer->remoteIP();
+    uint16_t remotePort = ntpServer->remotePort();
 
     if (ntpDiag != nullptr) // Add the packet size and remote IP/Port to the diagnostics
     {
@@ -318,7 +480,7 @@ bool processOneNTPRequest(bool process, const timeval *recTv, const timeval *syn
         // Read the NTP packet
         NTPpacket packet;
 
-        ethernetNTPServer->read((char *)&packet.packet, NTPpacket::NTPpacketSize); // Copy the NTP data into our packet
+        ntpServer->read((char *)&packet.packet, NTPpacket::NTPpacketSize); // Copy the NTP data into our packet
 
         // If process is false, return now
         if (!process)
@@ -417,9 +579,9 @@ bool processOneNTPRequest(bool process, const timeval *recTv, const timeval *syn
         packet.insert(); // Copy the data fields back into the buffer
 
         // Now transmit the response to the client.
-        ethernetNTPServer->beginPacket(remoteIP, remotePort);
-        ethernetNTPServer->write(packet.packet, NTPpacket::NTPpacketSize);
-        int result = ethernetNTPServer->endPacket();
+        ntpServer->beginPacket(remoteIP, remotePort);
+        ntpServer->write(packet.packet, NTPpacket::NTPpacketSize);
+        int result = ntpServer->endPacket();
         processed = true;
 
         // Add our server transmit time to the diagnostics
@@ -458,9 +620,6 @@ bool processOneNTPRequest(bool process, const timeval *recTv, const timeval *syn
           }
         */
     }
-
-#endif /// COMPILE_ETHERNET
-
     return processed;
 }
 
@@ -575,101 +734,162 @@ bool configureUbloxModuleNTP()
     return (success);
 }
 
-void menuNTP()
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// NTP Server routines
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+// Start the NTP server
+void ntpServerBegin()
 {
-#ifdef COMPILE_ETHERNET
-    if (!HAS_ETHERNET)
-    {
-        clearBuffer(); // Empty buffer of any newline chars
+    // Skip if not in NTPSERVER mode
+    if (systemState < STATE_NTPSERVER_NOT_STARTED || systemState > STATE_NTPSERVER_SYNC)
         return;
-    }
 
-    while (1)
+    if ((online.ethernetStatus == ETH_CONNECTED) && (online.NTPServer == false))
     {
-        systemPrintln();
-        systemPrintln("Menu: NTP");
-        systemPrintln();
+        if (ntpServer == nullptr)
+            ntpServer = new derivedEthernetUDP;
+        ntpServer->begin(settings.ethernetNtpPort);
+        ntpSockIndex = ntpServer->getSockIndex(); // Get the socket index
+        w5500ClearSocketInterrupts();                     // Clear all interrupts
+        w5500EnableSocketInterrupt(ntpSockIndex);         // Enable the RECV interrupt for the desired socket index
+        online.NTPServer = true;
+    }
+}
 
-        systemPrint("1) Poll Exponent: 2^");
-        systemPrintln(settings.ntpPollExponent);
+// Stop the NTP server
+void ntpServerEnd()
+{
+}
 
-        systemPrint("2) Precision: 2^");
-        systemPrintln(settings.ntpPrecision);
+// Stop the NTP server
+void ntpServerStop()
+{
+    if (ntpServer)
+        ntpServer->stop();
+    online.NTPServer = false;
+}
 
-        systemPrint("3) Root Delay (us): ");
-        systemPrintln(settings.ntpRootDelay);
+// Update the NTP server state
+void ntpServerUpdate()
+{
+    char ntpDiag[512]; // Char array to hold diagnostic messages
 
-        systemPrint("4) Root Dispersion (us): ");
-        systemPrintln(settings.ntpRootDispersion);
+    if (!HAS_ETHERNET)
+        return;
 
-        systemPrint("5) Reference ID: ");
-        systemPrintln(settings.ntpReferenceId);
+    if (online.NTPServer == false)
+        ntpServerBegin();
 
-        systemPrintln("x) Exit");
+    if (online.NTPServer == false)
+        return;
 
-        byte incoming = getCharacterNumber();
+    if (w5500CheckSocketInterrupt(ntpSockIndex))
+        w5500ClearSocketInterrupt(ntpSockIndex); // Clear the socket interrupt here
 
-        if (incoming == 1)
+    // Check for new NTP requests - if the time has been sync'd
+    bool processed = ntpProcessOneRequest(systemState == STATE_NTPSERVER_SYNC, (const timeval *)&ethernetNtpTv,
+                                          (const timeval *)&gnssSyncTv, ntpDiag, sizeof(ntpDiag));
+    if (processed)
+    {
+        // Print the diagnostics - if enabled
+        if (settings.enablePrintNTPDiag && (!inMainMenu))
+            systemPrint(ntpDiag);
+
+        // Log the NTP request to file - if enabled
+        if (settings.enableNTPFile)
         {
-            systemPrint("Enter new poll exponent (2^, Min 3, Max 17): ");
-            long newVal = getNumber();
-            if ((newVal >= 3) && (newVal <= 17))
-                settings.ntpPollExponent = newVal;
-            else
-                systemPrintln("Error: poll exponent out of range");
-        }
-        else if (incoming == 2)
-        {
-            systemPrint("Enter new precision (2^, Min -30, Max 0): ");
-            long newVal = getNumber();
-            if ((newVal >= -30) && (newVal <= 0))
-                settings.ntpPrecision = newVal;
-            else
-                systemPrintln("Error: precision out of range");
-        }
-        else if (incoming == 3)
-        {
-            systemPrint("Enter new root delay (us): ");
-            long newVal = getNumber();
-            if ((newVal >= 0) && (newVal <= 1000000))
-                settings.ntpRootDelay = newVal;
-            else
-                systemPrintln("Error: root delay out of range");
-        }
-        else if (incoming == 4)
-        {
-            systemPrint("Enter new root dispersion (us): ");
-            long newVal = getNumber();
-            if ((newVal >= 0) && (newVal <= 1000000))
-                settings.ntpRootDispersion = newVal;
-            else
-                systemPrintln("Error: root dispersion out of range");
-        }
-        else if (incoming == 5)
-        {
-            systemPrint("Enter new Reference ID (4 Chars Max): ");
-            char newId[5];
-            if (getString(newId, 5) == INPUT_RESPONSE_VALID)
+            // Gain access to the SPI controller for the microSD card
+            if (xSemaphoreTake(sdCardSemaphore, fatSemaphore_longWait_ms) == pdPASS)
             {
-                int i = 0;
-                for (; i < strlen(newId); i++)
-                    settings.ntpReferenceId[i] = newId[i];
-                for (; i < 5; i++)
-                    settings.ntpReferenceId[i] = 0;
-            }
-            else
-                systemPrintln("Error: invalid Reference ID");
+                markSemaphore(FUNCTION_NTPEVENT);
+
+                // Get the marks file name
+                char fileName[32];
+                bool fileOpen = false;
+                bool sdCardWasOnline;
+                int year;
+                int month;
+                int day;
+
+                // Get the date
+                year = rtc.getYear();
+                month = rtc.getMonth() + 1;
+                day = rtc.getDay();
+
+                // Build the file name
+                snprintf(fileName, sizeof(fileName), "/NTP_Requests_%04d_%02d_%02d.txt", year, month, day);
+
+                // Try to gain access the SD card
+                sdCardWasOnline = online.microSD;
+                if (online.microSD != true)
+                    beginSD();
+
+                if (online.microSD == true)
+                {
+                    // Check if the NTP file already exists
+                    bool ntpFileExists = false;
+                    if (USE_SPI_MICROSD)
+                    {
+                        ntpFileExists = sd->exists(fileName);
+                    }
+#ifdef COMPILE_SD_MMC
+                    else
+                    {
+                        ntpFileExists = SD_MMC.exists(fileName);
+                    }
+#endif  // COMPILE_SD_MMC
+
+                    // Open the NTP file
+                    FileSdFatMMC ntpFile;
+
+                    if (ntpFileExists)
+                    {
+                        if (ntpFile && ntpFile.open(fileName, O_APPEND | O_WRITE))
+                        {
+                            fileOpen = true;
+                            ntpFile.updateFileCreateTimestamp();
+                        }
+                    }
+                    else
+                    {
+                        if (ntpFile && ntpFile.open(fileName, O_CREAT | O_WRITE))
+                        {
+                            fileOpen = true;
+                            ntpFile.updateFileAccessTimestamp();
+
+                            // If you want to add a file header, do it here
+                        }
+                    }
+
+                    if (fileOpen)
+                    {
+                        // Write the NTP request to the file
+                        ntpFile.write((const uint8_t *)ntpDiag, strlen(ntpDiag));
+
+                        // Update the file to create time & date
+                        ntpFile.updateFileCreateTimestamp();
+
+                        // Close the mark file
+                        ntpFile.close();
+                    }
+
+                    // Dismount the SD card
+                    if (!sdCardWasOnline)
+                        endSD(true, false);
+                }
+
+                // Done with the SPI controller
+                xSemaphoreGive(sdCardSemaphore);
+
+                lastLoggedNTPRequest = millis();
+                ntpLogIncreasing = true;
+            } // End sdCardSemaphore
         }
-        else if (incoming == 'x')
-            break;
-        else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_EMPTY)
-            break;
-        else if (incoming == INPUT_RESPONSE_GETCHARACTERNUMBER_TIMEOUT)
-            break;
-        else
-            printUnknown(incoming);
     }
 
-    clearBuffer(); // Empty buffer of any newline chars
-#endif             // COMPILE_ETHERNET
+    if (millis() > (lastLoggedNTPRequest + 5000))
+        ntpLogIncreasing = false;
 }
+
+#endif  // COMPILE_ETHERNET

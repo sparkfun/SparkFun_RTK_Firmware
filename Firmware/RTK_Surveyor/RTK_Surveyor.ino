@@ -539,11 +539,8 @@ class derivedEthernetUDP : public EthernetUDP
         return sockindex; // sockindex is protected in EthernetUDP. A derived class can access it.
     }
 };
-derivedEthernetUDP *ethernetNTPServer = nullptr; // This will be instantiated when we know the NTP port
-volatile uint8_t ntpSockIndex; // The W5500 socket index for NTP - so we can enable and read the correct interrupt
 volatile struct timeval ethernetNtpTv; // This will hold the time the Ethernet NTP packet arrived
-uint32_t lastLoggedNTPRequest = 0;
-bool ntpLogIncreasing = false;
+bool ntpLogIncreasing;
 
 #include "SparkFun_WebServer_ESP32_W5500.h" //http://librarymanager/All#SparkFun_WebServer_ESP32_W5500 v1.5.5
 #endif  // COMPILE_ETHERNET
@@ -750,10 +747,6 @@ void initializeGlobals()
     gnssSyncTv.tv_usec = 0;
     previousGnssSyncTv.tv_sec = 0;
     previousGnssSyncTv.tv_usec = 0;
-#ifdef COMPILE_ETHERNET
-    ethernetNtpTv.tv_sec = 0;
-    ethernetNtpTv.tv_usec = 0;
-#endif  // COMPILE_ETHERNET
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -804,7 +797,7 @@ void setup()
 
     ethernetBegin(); // Start-up the Ethernet connection
 
-    ethernetNTPServerBegin(); // Start the NTP server
+    ntpServerBegin(); // Start the NTP server
 
     beginAccelerometer();
 

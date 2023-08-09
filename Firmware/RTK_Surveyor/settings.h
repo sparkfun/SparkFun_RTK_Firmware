@@ -1031,7 +1031,6 @@ typedef struct
     // TCP Client
     bool debugPvtClient = false;
     bool enablePvtClient = false;
-    bool enableTcpClientEthernet = false;
     uint16_t pvtClientPort = 2948; // PVT client port. 2948 is GPS Daemon: http://tcp-udp-ports.com/port-2948.htm
     char pvtClientHost[50] = "";
 
@@ -1061,7 +1060,6 @@ struct struct_online
     bool i2c = false;
     bool pvtClient = false;
     bool pvtServer = false;
-    bool tcpClientEthernet = false;
     ethernetStatus_e ethernetStatus = ETH_NOT_STARTED;
     bool ethernetNTPServer = false; // EthernetUDP
 } online;

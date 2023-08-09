@@ -690,7 +690,6 @@ void createSettingsString(char *newSettings)
     stringRecord(newSettings, "ethernetSubnet", ipAddressChar);
     stringRecord(newSettings, "httpPort", settings.httpPort);
     stringRecord(newSettings, "ethernetNtpPort", settings.ethernetNtpPort);
-    stringRecord(newSettings, "enableTcpClientEthernet", settings.enableTcpClientEthernet);
     stringRecord(newSettings, "pvtClientPort", settings.pvtClientPort);
     stringRecord(newSettings, "pvtClientHost", settings.pvtClientHost);
 
@@ -1267,8 +1266,6 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         settings.httpPort = settingValue;
     else if (strcmp(settingName, "ethernetNtpPort") == 0)
         settings.ethernetNtpPort = settingValue;
-    else if (strcmp(settingName, "enableTcpClientEthernet") == 0)
-        settings.enableTcpClientEthernet = settingValueBool;
     else if (strcmp(settingName, "pvtClientPort") == 0)
         settings.pvtClientPort = settingValue;
     else if (strcmp(settingName, "pvtClientHost") == 0)

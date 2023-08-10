@@ -184,6 +184,7 @@ const char * const networkUser[] =
     "NTRIP Client",
     "NTRIP Server",
     "PVT Client",
+    "NTP Server",
 };
 const int networkUserEntries = sizeof(networkUser) / sizeof(networkUser[0]);
 
@@ -523,12 +524,19 @@ void networkInitialize(NETWORK_DATA * network)
 //----------------------------------------
 bool networkIsConnected(NETWORK_DATA * network)
 {
-    bool isConnected;
-
     // Determine the network is connected
-    if (network->state == NETWORK_STATE_IN_USE)
+    if (network && (network->state == NETWORK_STATE_IN_USE))
         return networkIsMediaConnected(network);
     return false;
+}
+
+//----------------------------------------
+// Determine if the network is connected to the media
+//----------------------------------------
+bool networkIsTypeConnected(uint8_t networkType)
+{
+    // Determine the network is connected
+    return networkIsConnected(networkGet(networkType, false));
 }
 
 //----------------------------------------

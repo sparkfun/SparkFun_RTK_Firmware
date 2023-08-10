@@ -30,6 +30,7 @@ void ethernetWebServerStopESP32W5500() {}
 void menuNTP() {systemPrint("NOT compiled");}
 void ntpServerBegin() {}
 void ntpServerUpdate() {}
+void ntpValidateTables() {}
 
 #endif // COMPILE_ETHERNET
 

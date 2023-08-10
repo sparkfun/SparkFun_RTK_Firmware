@@ -797,8 +797,6 @@ void setup()
 
     ethernetBegin(); // Start-up the Ethernet connection
 
-    ntpServerBegin(); // Start the NTP server
-
     beginAccelerometer();
 
     beginLBand(); // Begin L-Band

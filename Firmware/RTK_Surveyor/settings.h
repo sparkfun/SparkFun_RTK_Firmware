@@ -181,6 +181,7 @@ enum NetworkUsers
     NETWORK_USER_NTRIP_CLIENT = 0, // NTRIP client
     NETWORK_USER_NTRIP_SERVER,     // NTRIP server
     NETWORK_USER_PVT_CLIENT,       // PVT client
+    NETWORK_USER_NTP_SERVER,       // NTP server
     // Last network user
     NETWORK_USER_MAX
 };
@@ -471,6 +472,8 @@ enum PeriodDisplayValues
     PD_ZED_DATA_TX,             //19
 
     PD_RING_BUFFER_MILLIS,      //20
+    PD_NTP_SERVER_DATA,         //21
+    PD_NTP_SERVER_STATE,        //22
 };
 
 #define PERIODIC_MASK(x)    (1 << x)
@@ -989,9 +992,9 @@ typedef struct
     bool mdnsEnable = true;      // Allows locating of device from browser address 'rtk.local'
 
     // NTP
+    bool debugNtp = false;
     uint16_t ethernetNtpPort = 123;
     bool enableNTPFile = false;  // Log NTP requests to file
-    bool enablePrintNTPDiag = false;
     uint8_t ntpPollExponent = 6; // NTPpacket::defaultPollExponent 2^6 = 64 seconds
     int8_t ntpPrecision = -20;   // NTPpacket::defaultPrecision 2^-20 = 0.95us
     uint32_t ntpRootDelay = 0;   // NTPpacket::defaultRootDelay = 0. ntpRootDelay is defined in microseconds.

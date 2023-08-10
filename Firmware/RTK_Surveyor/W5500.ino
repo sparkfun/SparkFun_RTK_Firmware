@@ -146,4 +146,16 @@ void w5500EnableSocketInterrupt(uint8_t sockIndex)
     w5500write(SPI, pin_Ethernet_CS, w5500SIMR, w5500CommonRegister, &SIMR, 1); // Enable the socket interrupt
 }
 
+void w5500DisableSocketInterrupt(uint8_t sockIndex)
+{
+    w5500write(SPI, pin_Ethernet_CS, w5500SnIMR, w5500SocketRegisters[sockIndex], (uint8_t *)&w5500SnIMR_RECV,
+               1); // Enable the RECV interrupt for sockIndex only
+
+    // Read-Modify-Write
+    uint8_t SIMR;
+    w5500read(SPI, pin_Ethernet_CS, w5500SIMR, w5500CommonRegister, &SIMR, 1);
+    SIMR &= ~(1 << sockIndex);
+    w5500write(SPI, pin_Ethernet_CS, w5500SIMR, w5500CommonRegister, &SIMR, 1); // Disable the socket interrupt
+}
+
 #endif  // COMPILE_ETHERNET

@@ -997,17 +997,23 @@ void updateSystemState()
 
                 if (online.NTPServer)
                 {
+                    if (settings.debugNtp)
+                        systemPrintln("NTP Server started");
                     displayNtpStarted(500); // Show 'NTP Started'
                     changeState(STATE_NTPSERVER_NO_SYNC);
                 }
                 else
                 {
+                    if (settings.debugNtp)
+                        systemPrintln("NTP Server waiting for Ethernet");
                     displayNtpNotReady(1000); // Show 'Ethernet Not Ready'
                     changeState(STATE_NTPSERVER_NO_SYNC);
                 }
             }
             else
             {
+                if (settings.debugNtp)
+                    systemPrintln("NTP Server ZED configuration failed");
                 displayNTPFail(1000); // Show 'NTP Failed'
                 // Do we stay in STATE_NTPSERVER_NOT_STARTED? Or should we reset?
             }
@@ -1017,6 +1023,8 @@ void updateSystemState()
         case (STATE_NTPSERVER_NO_SYNC): {
             if (rtcSyncd)
             {
+                if (settings.debugNtp)
+                    systemPrintln("NTP Server RTC synchronized");
                 changeState(STATE_NTPSERVER_SYNC);
             }
         }

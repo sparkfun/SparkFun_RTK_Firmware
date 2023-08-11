@@ -1022,11 +1022,11 @@ void networkUpdate()
     // Skip updates if in configure-via-ethernet mode
     if (!configureViaEthernet)
     {
+        ntpServerUpdate();   // Process any received NTP requests
         ntripClientUpdate(); // Check the NTRIP client connection and move data NTRIP --> ZED
         ntripServerUpdate(); // Check the NTRIP server connection and move data ZED --> NTRIP
         pvtClientUpdate();   // Turn on the PVT client as needed
         pvtServerUpdate();   // Turn on the PVT server as needed
-        ethernetNTPServerUpdate(); // Process any received NTP requests
     }
 
     // Display the IP addresses

@@ -518,13 +518,16 @@ void menuDebug()
         systemPrint("71) Periodically print NTRIP client GGA writes: ");
         systemPrintf("%s\r\n", PERIODIC_SETTING(PD_NTRIP_CLIENT_GGA) ? "Enabled" : "Disabled");
 
-        systemPrint("72) Debug PVT server: ");
+        systemPrint("72) Periodically print ring buffer consumer times: ");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_RING_BUFFER_MILLIS) ? "Enabled" : "Disabled");
+
+        systemPrint("73) Debug PVT server: ");
         systemPrintf("%s\r\n", settings.debugPvtServer ? "Enabled" : "Disabled");
 
-        systemPrint("73) Debug network layer: ");
+        systemPrint("74) Debug network layer: ");
         systemPrintf("%s\r\n", settings.debugNetworkLayer ? "Enabled" : "Disabled");
 
-        systemPrint("74) Print network layer status: ");
+        systemPrint("75) Print network layer status: ");
         systemPrintf("%s\r\n", settings.printNetworkStatus ? "Enabled" : "Disabled");
 
         systemPrintln("t) Enter Test Screen");
@@ -1024,13 +1027,17 @@ void menuDebug()
         }
         else if (incoming == 72)
         {
-            settings.debugPvtServer ^= 1;
+            PERIODIC_TOGGLE(PD_RING_BUFFER_MILLIS);
         }
         else if (incoming == 73)
         {
-            settings.debugNetworkLayer ^= 1;
+            settings.debugPvtServer ^= 1;
         }
         else if (incoming == 74)
+        {
+            settings.debugNetworkLayer ^= 1;
+        }
+        else if (incoming == 75)
         {
             settings.printNetworkStatus ^= 1;
         }

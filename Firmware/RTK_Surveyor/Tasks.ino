@@ -28,8 +28,31 @@ Bluetooth      PVT Client      PVT Server        SD Card     Ethernet PVT Client
 
 ------------------------------------------------------------------------------*/
 
-// High frequency tasks made by xTaskCreate()
-// And any low frequency tasks that are called by Ticker
+//----------------------------------------
+// Constants
+//----------------------------------------
+
+enum RingBufferConsumers
+{
+    RBC_BLUETOOTH = 0,
+    RBC_PVT_CLIENT,
+    RBC_PVT_SERVER,
+    RBC_SD_CARD,
+    RBC_PVT_CLIENT_ETHERNET,
+    // Insert new consumers here
+    RBC_MAX
+};
+
+const char * const ringBufferConsumer[] =
+{
+    "Bluetooth",
+    "PVT Client",
+    "PVT Server",
+    "SD Card",
+    "PVT Client (Ethernet)"
+};
+
+const int ringBufferConsumerEntries = sizeof(ringBufferConsumer) / sizeof(ringBufferConsumer[0]);
 
 //----------------------------------------
 // Locals
@@ -392,7 +415,10 @@ void handleGnssDataTask(void *e)
 {
     int32_t bytesToSend;
     bool connected;
+    uint32_t deltaMillis;
     int32_t freeSpace;
+    static uint32_t maxMillis[RBC_MAX];
+    uint32_t startMillis;
     int32_t usedSpace;
 
     static uint16_t btTail; // BT Tail advances as it is sent over BT
@@ -413,6 +439,8 @@ void handleGnssDataTask(void *e)
         //----------------------------------------------------------------------
         // Send data over Bluetooth
         //----------------------------------------------------------------------
+
+        startMillis = millis();
 
         // Determine BT connection state
         bool connected = (bluetoothGetState() == BT_CONNECTED)
@@ -451,6 +479,11 @@ void handleGnssDataTask(void *e)
                     if (btTail >= settings.gnssHandlerBufferSize)
                         btTail -= settings.gnssHandlerBufferSize;
 
+                    // Remember the maximum transfer time
+                    deltaMillis = millis() - startMillis;
+                    if (maxMillis[RBC_BLUETOOTH] < deltaMillis)
+                        maxMillis[RBC_BLUETOOTH] = deltaMillis;
+
                     // Display the data movement
                     if (PERIODIC_DISPLAY(PD_BLUETOOTH_DATA_TX))
                     {
@@ -477,6 +510,8 @@ void handleGnssDataTask(void *e)
         // Send data to the WiFi TCP clients
         //----------------------------------------------------------------------
 
+        startMillis = millis();
+
         // Update space available for use in UART task
         bytesToSend = pvtClientSendData(dataHead);
         if (usedSpace < bytesToSend)
@@ -484,6 +519,13 @@ void handleGnssDataTask(void *e)
             usedSpace = bytesToSend;
             slowConsumer = "PVT client";
         }
+
+        // Remember the maximum transfer time
+        deltaMillis = millis() - startMillis;
+        if (maxMillis[RBC_PVT_CLIENT] < deltaMillis)
+            maxMillis[RBC_PVT_CLIENT] = deltaMillis;
+
+        startMillis = millis();
 
         // Update space available for use in UART task
         bytesToSend = pvtServerSendData(dataHead);
@@ -493,9 +535,16 @@ void handleGnssDataTask(void *e)
             slowConsumer = "PVT server";
         }
 
+        // Remember the maximum transfer time
+        deltaMillis = millis() - startMillis;
+        if (maxMillis[RBC_PVT_SERVER] < deltaMillis)
+            maxMillis[RBC_PVT_SERVER] = deltaMillis;
+
         //----------------------------------------------------------------------
         // Send data to the Ethernet TCP clients
         //----------------------------------------------------------------------
+
+        startMillis = millis();
 
         connected = online.tcpClientEthernet && ethernetTcpConnected;
         if (!connected)
@@ -520,6 +569,11 @@ void handleGnssDataTask(void *e)
                 tcpTailEthernet += bytesToSend;
                 if (tcpTailEthernet >= settings.gnssHandlerBufferSize)
                     tcpTailEthernet -= settings.gnssHandlerBufferSize;
+
+                // Remember the maximum transfer time
+                deltaMillis = millis() - startMillis;
+                if (maxMillis[RBC_PVT_CLIENT_ETHERNET] < deltaMillis)
+                    maxMillis[RBC_PVT_CLIENT_ETHERNET] = deltaMillis;
 
                 // Update space available for use in UART task
                 bytesToSend = dataHead - tcpTailEthernet;
@@ -588,6 +642,7 @@ void handleGnssDataTask(void *e)
 
                     // Write the data to the file
                     long startTime = millis();
+                    startMillis = millis();
 
                     bytesToSend = ubxFile->write(&ringBuffer[sdTail], bytesToSend);
                     if (PERIODIC_DISPLAY(PD_SD_LOG_WRITE) && (bytesToSend > 0))
@@ -626,6 +681,10 @@ void handleGnssDataTask(void *e)
                         lastUBXLogSyncTime = millis();
                     }
 
+                    // Remember the maximum transfer time
+                    deltaMillis = millis() - startMillis;
+                    if (maxMillis[RBC_SD_CARD] < deltaMillis)
+                        maxMillis[RBC_SD_CARD] = deltaMillis;
                     long endTime = millis();
 
                     if (settings.enablePrintBufferOverrun)
@@ -679,6 +738,28 @@ void handleGnssDataTask(void *e)
         if (freeSpace)
             freeSpace -= 1;
         availableHandlerSpace = freeSpace;
+
+        //----------------------------------------------------------------------
+        // Display the millisecond values for the different ring buffer consumers
+        //----------------------------------------------------------------------
+
+        if (PERIODIC_DISPLAY(PD_RING_BUFFER_MILLIS))
+        {
+            int milliseconds;
+            int seconds;
+
+            PERIODIC_CLEAR(PD_RING_BUFFER_MILLIS);
+            for (int index = 0; index < RBC_MAX; index++)
+            {
+                milliseconds = maxMillis[index];
+                if (milliseconds > 1)
+                {
+                    seconds = milliseconds / MILLISECONDS_IN_A_SECOND;
+                    milliseconds %= MILLISECONDS_IN_A_SECOND;
+                    systemPrintf("%s: %d:%03d Sec\r\n", ringBufferConsumer[index], seconds, milliseconds);
+                }
+            }
+        }
 
         //----------------------------------------------------------------------
         // Let other tasks run, prevent watch dog timer (WDT) resets
@@ -1394,4 +1475,11 @@ void sdSizeCheckTask(void *e)
         delay(1);
         taskYIELD(); // Let other tasks run
     }
+}
+
+// Validate the task table lengths
+void tasksValidateTables()
+{
+    if (ringBufferConsumerEntries != RBC_MAX)
+        reportFatalError("Fix ringBufferConsumer table to match RingBufferConsumers");
 }

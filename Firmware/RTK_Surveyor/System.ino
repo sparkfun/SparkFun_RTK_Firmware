@@ -565,9 +565,8 @@ void createNMEASentence(customNmeaType_e textID, char *nmeaMessage, size_t sizeO
 // Reset settings struct to default initializers
 void settingsToDefaults()
 {
-    Settings *defaultSettings = new Settings;
-    memcpy(&settings, defaultSettings, sizeof(Settings));
-    delete defaultSettings;
+    static const Settings defaultSettings;
+    memcpy(&settings, &defaultSettings, sizeof(defaultSettings));
 }
 
 // Given a spot in the ubxMsg array, return true if this message is supported on this platform and firmware version

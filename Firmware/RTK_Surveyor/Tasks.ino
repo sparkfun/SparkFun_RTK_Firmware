@@ -20,11 +20,11 @@ Tasks.ino
                                     | handleGnssDataTask
                                     |
                                     v
-    .---------------+---------------+---------------+---------------.
-    |               |               |               |               |
-    |               |               |               |               |
-    v               v               v               v               v
-Bluetooth      PVT Client      PVT Server        SD Card     Ethernet PVT Client
+            .---------------+-------+-------+---------------+
+            |               |               |               |
+            |               |               |               |
+            v               v               v               v
+        Bluetooth      PVT Client      PVT Server        SD Card
 
 ------------------------------------------------------------------------------*/
 
@@ -38,7 +38,6 @@ enum RingBufferConsumers
     RBC_PVT_CLIENT,
     RBC_PVT_SERVER,
     RBC_SD_CARD,
-    RBC_PVT_CLIENT_ETHERNET,
     // Insert new consumers here
     RBC_MAX
 };
@@ -49,7 +48,6 @@ const char * const ringBufferConsumer[] =
     "PVT Client",
     "PVT Server",
     "SD Card",
-    "PVT Client (Ethernet)"
 };
 
 const int ringBufferConsumerEntries = sizeof(ringBufferConsumer) / sizeof(ringBufferConsumer[0]);
@@ -539,53 +537,6 @@ void handleGnssDataTask(void *e)
         deltaMillis = millis() - startMillis;
         if (maxMillis[RBC_PVT_SERVER] < deltaMillis)
             maxMillis[RBC_PVT_SERVER] = deltaMillis;
-
-        //----------------------------------------------------------------------
-        // Send data to the Ethernet TCP clients
-        //----------------------------------------------------------------------
-
-        startMillis = millis();
-
-        connected = online.tcpClientEthernet && ethernetTcpConnected;
-        if (!connected)
-            tcpTailEthernet = dataHead;
-        else
-        {
-            // Determine the amount of TCP data in the buffer
-            bytesToSend = dataHead - tcpTailEthernet;
-            if (bytesToSend < 0)
-                bytesToSend += settings.gnssHandlerBufferSize;
-            if (bytesToSend > 0)
-            {
-                // Reduce bytes to send if we have more to send then the end of the buffer
-                // We'll wrap next loop
-                if ((tcpTailEthernet + bytesToSend) > settings.gnssHandlerBufferSize)
-                    bytesToSend = settings.gnssHandlerBufferSize - tcpTailEthernet;
-
-                // Send the data to the TCP clients
-                ethernetPvtClientSendData(&ringBuffer[tcpTailEthernet], bytesToSend);
-
-                // Assume all data was sent, wrap the buffer pointer
-                tcpTailEthernet += bytesToSend;
-                if (tcpTailEthernet >= settings.gnssHandlerBufferSize)
-                    tcpTailEthernet -= settings.gnssHandlerBufferSize;
-
-                // Remember the maximum transfer time
-                deltaMillis = millis() - startMillis;
-                if (maxMillis[RBC_PVT_CLIENT_ETHERNET] < deltaMillis)
-                    maxMillis[RBC_PVT_CLIENT_ETHERNET] = deltaMillis;
-
-                // Update space available for use in UART task
-                bytesToSend = dataHead - tcpTailEthernet;
-                if (bytesToSend < 0)
-                    bytesToSend += settings.gnssHandlerBufferSize;
-                if (usedSpace < bytesToSend)
-                {
-                    usedSpace = bytesToSend;
-                    slowConsumer = "Ethernet TCP clients";
-                }
-            }
-        }
 
         //----------------------------------------------------------------------
         // Log data to the SD card

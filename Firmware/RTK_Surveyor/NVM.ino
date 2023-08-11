@@ -401,7 +401,6 @@ void recordSystemSettingsToFile(File *settingsFile)
         settingsFile->printf("%s=%d\r\n", "ethernetNtpPort", settings.ethernetNtpPort);
         settingsFile->printf("%s=%d\r\n", "ethernetDHCP", settings.ethernetDHCP);
         settingsFile->printf("%s=%d\r\n", "enableNTPFile", settings.enableNTPFile);
-        settingsFile->printf("%s=%d\r\n", "enableTcpClientEthernet", settings.enableTcpClientEthernet);
         settingsFile->printf("%s=%d\r\n", "pvtClientPort", settings.pvtClientPort);
         settingsFile->printf("%s=%s\r\n", "pvtClientHost", settings.pvtClientHost);
     }
@@ -1243,8 +1242,6 @@ bool parseLine(char *str, Settings *settings)
         settings->ethernetNtpPort = d;
     else if (strcmp(settingName, "ethernetDHCP") == 0)
         settings->ethernetDHCP = d;
-    else if (strcmp(settingName, "enableTcpClientEthernet") == 0)
-        settings->enableTcpClientEthernet = d;
     else if (strcmp(settingName, "pvtClientPort") == 0)
         settings->pvtClientPort = d;
     else if (strcmp(settingName, "pvtClientHost") == 0)

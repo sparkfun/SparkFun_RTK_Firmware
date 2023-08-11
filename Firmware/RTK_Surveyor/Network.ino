@@ -211,7 +211,7 @@ void menuNetwork()
 
         // Display the menu
         systemPrintf("1) PVT Client: %s\r\n", settings.enablePvtClient ? "Enabled" : "Disabled");
-        if (settings.enablePvtClient || settings.enableTcpClientEthernet)
+        if (settings.enablePvtClient)
         {
             systemPrintf("2) PVT Client Host: %s\r\n", settings.pvtClientHost);
             systemPrintf("3) PVT Client Port: %ld\r\n", settings.pvtClientPort);
@@ -228,12 +228,6 @@ void menuNetwork()
 
         if (HAS_ETHERNET)
         {
-            //------------------------------
-            // Display the Ethernet PVT client menu items
-            //------------------------------
-
-            systemPrintf("6) PVT Client (Ethernet): %s\r\n", settings.enableTcpClientEthernet ? "Enabled" : "Disabled");
-
             //------------------------------
             // Display the network layer menu items
             //------------------------------
@@ -262,7 +256,7 @@ void menuNetwork()
             settings.enablePvtClient ^= 1;
 
         // Get the PVT client host
-        else if ((incoming == 2) && (settings.enablePvtClient || settings.enableTcpClientEthernet))
+        else if ((incoming == 2) && settings.enablePvtClient)
         {
             char hostname[sizeof(settings.pvtClientHost)];
 
@@ -286,7 +280,7 @@ void menuNetwork()
         }
 
         // Get the PVT client port number
-        else if ((incoming == 3) && (settings.enablePvtClient || settings.enableTcpClientEthernet))
+        else if ((incoming == 3) && settings.enablePvtClient)
         {
             systemPrint("Enter the PVT client port number to use (0 to 65535): ");
             int portNumber = getNumber(); // Returns EXIT, TIMEOUT, or long
@@ -333,14 +327,6 @@ void menuNetwork()
                     settings.pvtServerPort = portNumber; // Recorded to NVM and file at main menu exit
             }
         }
-
-        //------------------------------
-        // Get the Ethernet PVT client parameters
-        //------------------------------
-
-        // Toggle PVT client (Ethernet) enable
-        else if ((incoming == 6) && HAS_ETHERNET)
-            settings.enableTcpClientEthernet ^= 1;
 
         //------------------------------
         // Get the network layer parameters
@@ -1040,7 +1026,6 @@ void networkUpdate()
         ntripServerUpdate(); // Check the NTRIP server connection and move data ZED --> NTRIP
         pvtClientUpdate();   // Turn on the PVT client as needed
         pvtServerUpdate();   // Turn on the PVT server as needed
-        ethernetPvtClientUpdate(); // Turn on the PVT client as needed
         ethernetNTPServerUpdate(); // Process any received NTP requests
     }
 

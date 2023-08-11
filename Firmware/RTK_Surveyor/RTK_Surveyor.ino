@@ -531,9 +531,6 @@ IPAddress ethernetDNS;
 IPAddress ethernetGateway;
 IPAddress ethernetSubnetMask;
 
-// Client for Ethernet TCP host
-EthernetClient *ethernetTcpClient = nullptr;
-
 class derivedEthernetUDP : public EthernetUDP
 {
   public:
@@ -552,7 +549,6 @@ bool ntpLogIncreasing = false;
 #endif  // COMPILE_ETHERNET
 
 unsigned long lastEthernetCheck = 0; // Prevents cable checking from continually happening
-volatile bool ethernetTcpConnected = false;
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 #include "NetworkClient.h" //Supports both WiFiClient and EthernetClient

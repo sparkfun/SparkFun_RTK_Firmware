@@ -130,6 +130,7 @@ enum PvtClientStates
 {
     PVT_CLIENT_STATE_OFF = 0,
     PVT_CLIENT_STATE_NETWORK_STARTED,
+    PVT_CLIENT_STATE_CLIENT_STARTING,
     PVT_CLIENT_STATE_CONNECTED,
     // Insert new states here
     PVT_CLIENT_STATE_MAX            // Last entry in the state list
@@ -139,6 +140,7 @@ const char * const pvtClientStateName[] =
 {
     "PVT_CLIENT_STATE_OFF",
     "PVT_CLIENT_STATE_NETWORK_STARTED",
+    "PVT_CLIENT_STATE_CLIENT_STARTING",
     "PVT_CLIENT_STATE_CONNECTED"
 };
 
@@ -277,7 +279,7 @@ bool pvtClientStart()
             systemPrintf("PVT client connecting to %s:%d\r\n", hostname, settings.pvtClientPort);
 
         // Attempt the PVT client connection
-        if (client->connect(pvtClientIpAddress, settings.pvtClientPort))
+        if (client->connect(hostname, settings.pvtClientPort))
         {
             // Get the client IP address
             pvtClientIpAddress = client->remoteIP();
@@ -352,6 +354,27 @@ void pvtClientUpdate()
 
     static uint32_t timer;
 
+    /*
+        PVT Client state machine
+
+                .---------------->PVT_CLIENT_STATE_OFF
+                |                           |
+                | pvtClientStop             | settings.enablePvtClient
+                |                           |
+                |                           V
+                +<----------PVT_CLIENT_STATE_NETWORK_STARTED
+                ^                           |
+                |                           | networkUserConnected
+                |                           |
+                |                           V
+                +<----------PVT_CLIENT_STATE_CLIENT_STARTING
+                ^                           |
+                |                           | pvtClientStart = true
+                |                           |
+                |                           V
+                '--------------PVT_CLIENT_STATE_CONNECTED
+    */
+
     switch (pvtClientState)
     {
     default:
@@ -364,9 +387,9 @@ void pvtClientUpdate()
         // Determine if the PVT client should be running
         if (settings.enablePvtClient)
         {
-            if (networkUserOpen(NETWORK_USER_PVT_CLIENT, NETWORK_TYPE_WIFI))
+            if (networkUserOpen(NETWORK_USER_PVT_CLIENT, NETWORK_TYPE_ACTIVE))
             {
-                timer = millis();
+                timer = 0;
                 pvtClientSetState(PVT_CLIENT_STATE_NETWORK_STARTED);
             }
         }
@@ -379,42 +402,67 @@ void pvtClientUpdate()
             // Failed to connect to to the network, attempt to restart the network
             pvtClientStop();
 
-        // Wait for the network to connect to the media
-        if (networkUserConnected(NETWORK_USER_PVT_CLIENT))
+        // Determine if WiFi is required
+        else if ((!strlen(settings.pvtClientHost)) && (networkGetType(NETWORK_TYPE_ACTIVE) != NETWORK_TYPE_WIFI))
         {
-            if ((millis() - timer) >= connectionDelay)
+            // Wrong network type, WiFi is required but another network is being used
+            if ((millis() - timer) >= (15 * 1000))
             {
-                // Start the PVT client
-                if (!pvtClientStart())
-                {
-                    // Connection failure
-                    if (settings.debugPvtClient)
-                        systemPrintln("PVT Client connection failed");
-                    connectionDelay = PVT_DELAY_BETWEEN_CONNECTIONS <<connectionAttempt;
-                    if (connectionAttempt < PVT_MAX_CONNECTIONS)
-                        connectionAttempt += 1;
-                    timer = millis();
+                timer = millis();
+                systemPrintln("PVT Client must connect via WiFi when no host is specified");
+            }
+        }
 
-                    // Display the uptime
-                    milliseconds = connectionDelay;
-                    days = milliseconds / MILLISECONDS_IN_A_DAY;
-                    milliseconds %= MILLISECONDS_IN_A_DAY;
-                    hours = milliseconds / MILLISECONDS_IN_AN_HOUR;
-                    milliseconds %= MILLISECONDS_IN_AN_HOUR;
-                    minutes = milliseconds / MILLISECONDS_IN_A_MINUTE;
-                    milliseconds %= MILLISECONDS_IN_A_MINUTE;
-                    seconds = milliseconds / MILLISECONDS_IN_A_SECOND;
-                    milliseconds %= MILLISECONDS_IN_A_SECOND;
-                    if (settings.debugPvtClient)
-                        systemPrintf("PVT Client delaying %d %02d:%02d:%02d.%03lld\r\n",
-                                     days, hours, minutes, seconds, milliseconds);
-                }
-                else
-                {
-                    // Successful connection
-                    connectionAttempt = 0;
-                    pvtClientSetState(PVT_CLIENT_STATE_CONNECTED);
-                }
+        // Wait for the network to connect to the media
+        else if (networkUserConnected(NETWORK_USER_PVT_CLIENT))
+        {
+            // The network type and host provide a valid configuration
+            timer = millis();
+            pvtClientSetState(PVT_CLIENT_STATE_CLIENT_STARTING);
+        }
+        break;
+
+    // Attempt the connection ot the PVT server
+    case PVT_CLIENT_STATE_CLIENT_STARTING:
+        // Determine if the network has failed
+        if (networkIsShuttingDown(NETWORK_USER_PVT_CLIENT))
+            // Failed to connect to to the network, attempt to restart the network
+            pvtClientStop();
+
+        // Delay before connecting to the network
+        else if ((millis() - timer) >= connectionDelay)
+        {
+            timer = millis();
+
+            // Start the PVT client
+            if (!pvtClientStart())
+            {
+                // Connection failure
+                if (settings.debugPvtClient)
+                    systemPrintln("PVT Client connection failed");
+                connectionDelay = PVT_DELAY_BETWEEN_CONNECTIONS << connectionAttempt;
+                if (connectionAttempt < PVT_MAX_CONNECTIONS)
+                    connectionAttempt += 1;
+
+                // Display the uptime
+                milliseconds = connectionDelay;
+                days = milliseconds / MILLISECONDS_IN_A_DAY;
+                milliseconds %= MILLISECONDS_IN_A_DAY;
+                hours = milliseconds / MILLISECONDS_IN_AN_HOUR;
+                milliseconds %= MILLISECONDS_IN_AN_HOUR;
+                minutes = milliseconds / MILLISECONDS_IN_A_MINUTE;
+                milliseconds %= MILLISECONDS_IN_A_MINUTE;
+                seconds = milliseconds / MILLISECONDS_IN_A_SECOND;
+                milliseconds %= MILLISECONDS_IN_A_SECOND;
+                if (settings.debugPvtClient)
+                    systemPrintf("PVT Client delaying %d %02d:%02d:%02d.%03lld\r\n",
+                                 days, hours, minutes, seconds, milliseconds);
+            }
+            else
+            {
+                // Successful connection
+                connectionAttempt = 0;
+                pvtClientSetState(PVT_CLIENT_STATE_CONNECTED);
             }
         }
         break;

@@ -56,9 +56,9 @@ const int ringBufferConsumerEntries = sizeof(ringBufferConsumer) / sizeof(ringBu
 // Locals
 //----------------------------------------
 
-volatile static uint16_t dataHead;  // Head advances as data comes in from GNSS's UART
+volatile static uint16_t dataHead;      // Head advances as data comes in from GNSS's UART
 volatile int32_t availableHandlerSpace; // settings.gnssHandlerBufferSize - usedSpace
-volatile const char * slowConsumer;
+volatile const char *slowConsumer;
 
 // Buffer the incoming Bluetooth stream so that it can be passed in bulk over I2C
 uint8_t bluetoothOutgoingToZed[100];
@@ -323,14 +323,13 @@ void gnssReadTask(void *e)
 void processUart1Message(PARSE_STATE *parse, uint8_t type)
 {
     int32_t bytesToCopy;
-    const char * consumer;
+    const char *consumer;
     uint16_t remainingBytes;
     int32_t space;
     int32_t use;
 
     // Display the message
-    if ((settings.enablePrintLogFileMessages || PERIODIC_DISPLAY(PD_ZED_DATA_RX))
-        && (!parse->crc) && (!inMainMenu))
+    if ((settings.enablePrintLogFileMessages || PERIODIC_DISPLAY(PD_ZED_DATA_RX)) && (!parse->crc) && (!inMainMenu))
     {
         PERIODIC_CLEAR(PD_ZED_DATA_RX);
         if (settings.enablePrintLogFileMessages)
@@ -351,8 +350,8 @@ void processUart1Message(PARSE_STATE *parse, uint8_t type)
             break;
 
         case SENTENCE_TYPE_UBX:
-            systemPrintf("%s UBX %d.%d, %2d bytes\r\n", parse->parserName, parse->message >> 8,
-                         parse->message & 0xff, parse->length);
+            systemPrintf("%s UBX %d.%d, %2d bytes\r\n", parse->parserName, parse->message >> 8, parse->message & 0xff,
+                         parse->length);
             break;
         }
     }
@@ -419,7 +418,7 @@ void handleGnssDataTask(void *e)
     uint32_t startMillis;
     int32_t usedSpace;
 
-    static uint16_t btTail; // BT Tail advances as it is sent over BT
+    static uint16_t btTail;          // BT Tail advances as it is sent over BT
     static uint16_t tcpTailEthernet; // TCP client tail
     static uint16_t sdTail;          // SD Tail advances as it is recorded to SD
 
@@ -441,9 +440,8 @@ void handleGnssDataTask(void *e)
         startMillis = millis();
 
         // Determine BT connection state
-        bool connected = (bluetoothGetState() == BT_CONNECTED)
-                         && (systemState != STATE_BASE_TEMP_SETTLE)
-                         && (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
+        bool connected = (bluetoothGetState() == BT_CONNECTED) && (systemState != STATE_BASE_TEMP_SETTLE) &&
+                         (systemState != STATE_BASE_TEMP_SURVEY_STARTED);
         if (!connected)
             // Discard the data
             btTail = dataHead;
@@ -543,8 +541,7 @@ void handleGnssDataTask(void *e)
         //----------------------------------------------------------------------
 
         // Determine if the SD card is enabled for logging
-        connected = online.logging
-                    && ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes);
+        connected = online.logging && ((systemTime_minutes - startLogTime_minutes) < settings.maxLogTime_minutes);
 
         // If user wants to log, record to SD
         if (!connected)
@@ -677,7 +674,7 @@ void handleGnssDataTask(void *e)
                     slowConsumer = "SD card";
                 }
             } // bytesToSend
-        } // End connected
+        }     // End connected
 
         //----------------------------------------------------------------------
         // Update the available space in the ring buffer
@@ -807,36 +804,40 @@ void ButtonCheckTask(void *e)
 
         if (productVariant == RTK_SURVEYOR)
         {
-            setupBtn->read();
-
-            // When switch is set to '1' = BASE, pin will be shorted to ground
-            if (setupBtn->isPressed()) // Switch is set to base mode
+            if (settings.disableSetupButton == false) // Allow check of the setup button if not overridden by settings
             {
-                if (buttonPreviousState == BUTTON_ROVER)
-                {
-                    lastRockerSwitchChange = millis(); // Record for WiFi AP access
-                    buttonPreviousState = BUTTON_BASE;
-                    requestChangeState(STATE_BASE_NOT_STARTED);
-                }
-            }
-            else if (setupBtn->wasReleased()) // Switch is set to Rover
-            {
-                if (buttonPreviousState == BUTTON_BASE)
-                {
-                    buttonPreviousState = BUTTON_ROVER;
+                setupBtn->read();
 
-                    // If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
-                    if (millis() - lastRockerSwitchChange < 500)
+                // When switch is set to '1' = BASE, pin will be shorted to ground
+                if (setupBtn->isPressed()) // Switch is set to base mode
+                {
+                    if (buttonPreviousState == BUTTON_ROVER)
                     {
-                        if (systemState == STATE_ROVER_NOT_STARTED && online.display == true) // Catch during Power On
-                            requestChangeState(STATE_TEST); // If RTK Surveyor, with display attached, during Rover not
-                                                            // started, then enter test mode
-                        else
-                            requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
+                        lastRockerSwitchChange = millis(); // Record for WiFi AP access
+                        buttonPreviousState = BUTTON_BASE;
+                        requestChangeState(STATE_BASE_NOT_STARTED);
                     }
-                    else
+                }
+                else if (setupBtn->wasReleased()) // Switch is set to Rover
+                {
+                    if (buttonPreviousState == BUTTON_BASE)
                     {
-                        requestChangeState(STATE_ROVER_NOT_STARTED);
+                        buttonPreviousState = BUTTON_ROVER;
+
+                        // If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
+                        if (millis() - lastRockerSwitchChange < 500)
+                        {
+                            if (systemState == STATE_ROVER_NOT_STARTED &&
+                                online.display == true)         // Catch during Power On
+                                requestChangeState(STATE_TEST); // If RTK Surveyor, with display attached, during Rover
+                                                                // not started, then enter test mode
+                            else
+                                requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
+                        }
+                        else
+                        {
+                            requestChangeState(STATE_ROVER_NOT_STARTED);
+                        }
                     }
                 }
             }
@@ -871,114 +872,118 @@ void ButtonCheckTask(void *e)
             }
             else if (setupBtn != nullptr && setupBtn->wasReleased())
             {
-                switch (systemState)
+                if (settings.disableSetupButton ==
+                    false) // Allow check of the setup button if not overridden by settings
                 {
-                // If we are in any running state, change to STATE_DISPLAY_SETUP
-                case STATE_ROVER_NOT_STARTED:
-                case STATE_ROVER_NO_FIX:
-                case STATE_ROVER_FIX:
-                case STATE_ROVER_RTK_FLOAT:
-                case STATE_ROVER_RTK_FIX:
-                case STATE_BASE_NOT_STARTED:
-                case STATE_BASE_TEMP_SETTLE:
-                case STATE_BASE_TEMP_SURVEY_STARTED:
-                case STATE_BASE_TEMP_TRANSMITTING:
-                case STATE_BASE_FIXED_NOT_STARTED:
-                case STATE_BASE_FIXED_TRANSMITTING:
-                case STATE_BUBBLE_LEVEL:
-                case STATE_WIFI_CONFIG_NOT_STARTED:
-                case STATE_WIFI_CONFIG:
-                case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                case STATE_ESPNOW_PAIRING:
-                    lastSystemState =
-                        systemState; // Remember this state to return after we mark an event or ESP-Now pair
-                    requestChangeState(STATE_DISPLAY_SETUP);
-                    setupState = STATE_MARK_EVENT;
-                    lastSetupMenuChange = millis();
-                    break;
-
-                case STATE_MARK_EVENT:
-                    // If the user presses the setup button during a mark event, do nothing
-                    // Allow system to return to lastSystemState
-                    break;
-
-                case STATE_PROFILE:
-                    // If the user presses the setup button during a profile change, do nothing
-                    // Allow system to return to lastSystemState
-                    break;
-
-                case STATE_TEST:
-                    // Do nothing. User is releasing the setup button.
-                    break;
-
-                case STATE_TESTING:
-                    // If we are in testing, return to Rover Not Started
-                    requestChangeState(STATE_ROVER_NOT_STARTED);
-                    break;
-
-                case STATE_DISPLAY_SETUP:
-                    // If we are displaying the setup menu, cycle through possible system states
-                    // Exit display setup and enter new system state after ~1500ms in updateSystemState()
-                    lastSetupMenuChange = millis();
-
-                    forceDisplayUpdate = true; // User is interacting so repaint display quickly
-
-                    switch (setupState)
+                    switch (systemState)
                     {
-                    case STATE_MARK_EVENT:
-                        setupState = STATE_ROVER_NOT_STARTED;
-                        break;
+                    // If we are in any running state, change to STATE_DISPLAY_SETUP
                     case STATE_ROVER_NOT_STARTED:
-                        // If F9R, skip base state
-                        if (zedModuleType == PLATFORM_F9R)
+                    case STATE_ROVER_NO_FIX:
+                    case STATE_ROVER_FIX:
+                    case STATE_ROVER_RTK_FLOAT:
+                    case STATE_ROVER_RTK_FIX:
+                    case STATE_BASE_NOT_STARTED:
+                    case STATE_BASE_TEMP_SETTLE:
+                    case STATE_BASE_TEMP_SURVEY_STARTED:
+                    case STATE_BASE_TEMP_TRANSMITTING:
+                    case STATE_BASE_FIXED_NOT_STARTED:
+                    case STATE_BASE_FIXED_TRANSMITTING:
+                    case STATE_BUBBLE_LEVEL:
+                    case STATE_WIFI_CONFIG_NOT_STARTED:
+                    case STATE_WIFI_CONFIG:
+                    case STATE_ESPNOW_PAIRING_NOT_STARTED:
+                    case STATE_ESPNOW_PAIRING:
+                        lastSystemState =
+                            systemState; // Remember this state to return after we mark an event or ESP-Now pair
+                        requestChangeState(STATE_DISPLAY_SETUP);
+                        setupState = STATE_MARK_EVENT;
+                        lastSetupMenuChange = millis();
+                        break;
+
+                    case STATE_MARK_EVENT:
+                        // If the user presses the setup button during a mark event, do nothing
+                        // Allow system to return to lastSystemState
+                        break;
+
+                    case STATE_PROFILE:
+                        // If the user presses the setup button during a profile change, do nothing
+                        // Allow system to return to lastSystemState
+                        break;
+
+                    case STATE_TEST:
+                        // Do nothing. User is releasing the setup button.
+                        break;
+
+                    case STATE_TESTING:
+                        // If we are in testing, return to Rover Not Started
+                        requestChangeState(STATE_ROVER_NOT_STARTED);
+                        break;
+
+                    case STATE_DISPLAY_SETUP:
+                        // If we are displaying the setup menu, cycle through possible system states
+                        // Exit display setup and enter new system state after ~1500ms in updateSystemState()
+                        lastSetupMenuChange = millis();
+
+                        forceDisplayUpdate = true; // User is interacting so repaint display quickly
+
+                        switch (setupState)
                         {
+                        case STATE_MARK_EVENT:
+                            setupState = STATE_ROVER_NOT_STARTED;
+                            break;
+                        case STATE_ROVER_NOT_STARTED:
+                            // If F9R, skip base state
+                            if (zedModuleType == PLATFORM_F9R)
+                            {
+                                // If accel offline, skip bubble
+                                if (online.accelerometer == true)
+                                    setupState = STATE_BUBBLE_LEVEL;
+                                else
+                                    setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                            }
+                            else
+                                setupState = STATE_BASE_NOT_STARTED;
+                            break;
+                        case STATE_BASE_NOT_STARTED:
                             // If accel offline, skip bubble
                             if (online.accelerometer == true)
                                 setupState = STATE_BUBBLE_LEVEL;
                             else
                                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        }
-                        else
-                            setupState = STATE_BASE_NOT_STARTED;
-                        break;
-                    case STATE_BASE_NOT_STARTED:
-                        // If accel offline, skip bubble
-                        if (online.accelerometer == true)
-                            setupState = STATE_BUBBLE_LEVEL;
-                        else
+                            break;
+                        case STATE_BUBBLE_LEVEL:
                             setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        break;
-                    case STATE_BUBBLE_LEVEL:
-                        setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        break;
-                    case STATE_WIFI_CONFIG_NOT_STARTED:
-                        setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
-                        break;
-                    case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                        // If only one active profile do not show any profiles
-                        index = getProfileNumberFromUnit(0);
-                        displayProfile = getProfileNumberFromUnit(1);
-                        setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
-                        displayProfile = 0;
-                        break;
-                    case STATE_PROFILE:
-                        // Done when no more active profiles
-                        displayProfile++;
-                        if (!getProfileNumberFromUnit(displayProfile))
+                            break;
+                        case STATE_WIFI_CONFIG_NOT_STARTED:
+                            setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
+                            break;
+                        case STATE_ESPNOW_PAIRING_NOT_STARTED:
+                            // If only one active profile do not show any profiles
+                            index = getProfileNumberFromUnit(0);
+                            displayProfile = getProfileNumberFromUnit(1);
+                            setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
+                            displayProfile = 0;
+                            break;
+                        case STATE_PROFILE:
+                            // Done when no more active profiles
+                            displayProfile++;
+                            if (!getProfileNumberFromUnit(displayProfile))
+                                setupState = STATE_MARK_EVENT;
+                            break;
+                        default:
+                            systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
                             setupState = STATE_MARK_EVENT;
+                            break;
+                        }
                         break;
+
                     default:
-                        systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
-                        setupState = STATE_MARK_EVENT;
+                        systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
+                        requestChangeState(STATE_ROVER_NOT_STARTED);
                         break;
                     }
-                    break;
-
-                default:
-                    systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
-                    requestChangeState(STATE_ROVER_NOT_STARTED);
-                    break;
-                }
+                } // End disabdisableSetupButton check
             }
         }                                                                          // End Platform = RTK Express
         else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND) // Check one momentary button
@@ -1008,114 +1013,118 @@ void ButtonCheckTask(void *e)
             }
             else if (powerBtn != nullptr && powerBtn->wasReleased() && firstRoverStart == false)
             {
-                switch (systemState)
+                if (settings.disableSetupButton ==
+                    false) // Allow check of the setup button if not overridden by settings
                 {
-                // If we are in any running state, change to STATE_DISPLAY_SETUP
-                case STATE_ROVER_NOT_STARTED:
-                case STATE_ROVER_NO_FIX:
-                case STATE_ROVER_FIX:
-                case STATE_ROVER_RTK_FLOAT:
-                case STATE_ROVER_RTK_FIX:
-                case STATE_BASE_NOT_STARTED:
-                case STATE_BASE_TEMP_SETTLE:
-                case STATE_BASE_TEMP_SURVEY_STARTED:
-                case STATE_BASE_TEMP_TRANSMITTING:
-                case STATE_BASE_FIXED_NOT_STARTED:
-                case STATE_BASE_FIXED_TRANSMITTING:
-                case STATE_BUBBLE_LEVEL:
-                case STATE_WIFI_CONFIG_NOT_STARTED:
-                case STATE_WIFI_CONFIG:
-                case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                case STATE_ESPNOW_PAIRING:
-                    lastSystemState =
-                        systemState; // Remember this state to return after we mark an event or ESP-Now pair
-                    requestChangeState(STATE_DISPLAY_SETUP);
-                    setupState = STATE_MARK_EVENT;
-                    lastSetupMenuChange = millis();
-                    break;
-
-                case STATE_MARK_EVENT:
-                    // If the user presses the setup button during a mark event, do nothing
-                    // Allow system to return to lastSystemState
-                    break;
-
-                case STATE_PROFILE:
-                    // If the user presses the setup button during a profile change, do nothing
-                    // Allow system to return to lastSystemState
-                    break;
-
-                case STATE_TEST:
-                    // Do nothing. User is releasing the setup button.
-                    break;
-
-                case STATE_TESTING:
-                    // If we are in testing, return to Rover Not Started
-                    requestChangeState(STATE_ROVER_NOT_STARTED);
-                    break;
-
-                case STATE_DISPLAY_SETUP:
-                    // If we are displaying the setup menu, cycle through possible system states
-                    // Exit display setup and enter new system state after ~1500ms in updateSystemState()
-                    lastSetupMenuChange = millis();
-
-                    forceDisplayUpdate = true; // User is interacting so repaint display quickly
-
-                    switch (setupState)
+                    switch (systemState)
                     {
-                    case STATE_MARK_EVENT:
-                        setupState = STATE_ROVER_NOT_STARTED;
-                        break;
+                    // If we are in any running state, change to STATE_DISPLAY_SETUP
                     case STATE_ROVER_NOT_STARTED:
-                        // If F9R, skip base state
-                        if (zedModuleType == PLATFORM_F9R)
+                    case STATE_ROVER_NO_FIX:
+                    case STATE_ROVER_FIX:
+                    case STATE_ROVER_RTK_FLOAT:
+                    case STATE_ROVER_RTK_FIX:
+                    case STATE_BASE_NOT_STARTED:
+                    case STATE_BASE_TEMP_SETTLE:
+                    case STATE_BASE_TEMP_SURVEY_STARTED:
+                    case STATE_BASE_TEMP_TRANSMITTING:
+                    case STATE_BASE_FIXED_NOT_STARTED:
+                    case STATE_BASE_FIXED_TRANSMITTING:
+                    case STATE_BUBBLE_LEVEL:
+                    case STATE_WIFI_CONFIG_NOT_STARTED:
+                    case STATE_WIFI_CONFIG:
+                    case STATE_ESPNOW_PAIRING_NOT_STARTED:
+                    case STATE_ESPNOW_PAIRING:
+                        lastSystemState =
+                            systemState; // Remember this state to return after we mark an event or ESP-Now pair
+                        requestChangeState(STATE_DISPLAY_SETUP);
+                        setupState = STATE_MARK_EVENT;
+                        lastSetupMenuChange = millis();
+                        break;
+
+                    case STATE_MARK_EVENT:
+                        // If the user presses the setup button during a mark event, do nothing
+                        // Allow system to return to lastSystemState
+                        break;
+
+                    case STATE_PROFILE:
+                        // If the user presses the setup button during a profile change, do nothing
+                        // Allow system to return to lastSystemState
+                        break;
+
+                    case STATE_TEST:
+                        // Do nothing. User is releasing the setup button.
+                        break;
+
+                    case STATE_TESTING:
+                        // If we are in testing, return to Rover Not Started
+                        requestChangeState(STATE_ROVER_NOT_STARTED);
+                        break;
+
+                    case STATE_DISPLAY_SETUP:
+                        // If we are displaying the setup menu, cycle through possible system states
+                        // Exit display setup and enter new system state after ~1500ms in updateSystemState()
+                        lastSetupMenuChange = millis();
+
+                        forceDisplayUpdate = true; // User is interacting so repaint display quickly
+
+                        switch (setupState)
                         {
+                        case STATE_MARK_EVENT:
+                            setupState = STATE_ROVER_NOT_STARTED;
+                            break;
+                        case STATE_ROVER_NOT_STARTED:
+                            // If F9R, skip base state
+                            if (zedModuleType == PLATFORM_F9R)
+                            {
+                                // If accel offline, skip bubble
+                                if (online.accelerometer == true)
+                                    setupState = STATE_BUBBLE_LEVEL;
+                                else
+                                    setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                            }
+                            else
+                                setupState = STATE_BASE_NOT_STARTED;
+                            break;
+                        case STATE_BASE_NOT_STARTED:
                             // If accel offline, skip bubble
                             if (online.accelerometer == true)
                                 setupState = STATE_BUBBLE_LEVEL;
                             else
                                 setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        }
-                        else
-                            setupState = STATE_BASE_NOT_STARTED;
-                        break;
-                    case STATE_BASE_NOT_STARTED:
-                        // If accel offline, skip bubble
-                        if (online.accelerometer == true)
-                            setupState = STATE_BUBBLE_LEVEL;
-                        else
+                            break;
+                        case STATE_BUBBLE_LEVEL:
                             setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        break;
-                    case STATE_BUBBLE_LEVEL:
-                        setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        break;
-                    case STATE_WIFI_CONFIG_NOT_STARTED:
-                        setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
-                        break;
-                    case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                        // If only one active profile do not show any profiles
-                        index = getProfileNumberFromUnit(0);
-                        displayProfile = getProfileNumberFromUnit(1);
-                        setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
-                        displayProfile = 0;
-                        break;
-                    case STATE_PROFILE:
-                        // Done when no more active profiles
-                        displayProfile++;
-                        if (!getProfileNumberFromUnit(displayProfile))
+                            break;
+                        case STATE_WIFI_CONFIG_NOT_STARTED:
+                            setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
+                            break;
+                        case STATE_ESPNOW_PAIRING_NOT_STARTED:
+                            // If only one active profile do not show any profiles
+                            index = getProfileNumberFromUnit(0);
+                            displayProfile = getProfileNumberFromUnit(1);
+                            setupState = (index >= displayProfile) ? STATE_MARK_EVENT : STATE_PROFILE;
+                            displayProfile = 0;
+                            break;
+                        case STATE_PROFILE:
+                            // Done when no more active profiles
+                            displayProfile++;
+                            if (!getProfileNumberFromUnit(displayProfile))
+                                setupState = STATE_MARK_EVENT;
+                            break;
+                        default:
+                            systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
                             setupState = STATE_MARK_EVENT;
+                            break;
+                        }
                         break;
+
                     default:
-                        systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
-                        setupState = STATE_MARK_EVENT;
+                        systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
+                        requestChangeState(STATE_ROVER_NOT_STARTED);
                         break;
                     }
-                    break;
-
-                default:
-                    systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
-                    requestChangeState(STATE_ROVER_NOT_STARTED);
-                    break;
-                }
+                } // End disableSetupButton check
             }
         }                                             // End Platform = RTK Facet
         else if (productVariant == REFERENCE_STATION) // Check one momentary button
@@ -1145,108 +1154,113 @@ void ButtonCheckTask(void *e)
             }
             else if (setupBtn != nullptr && setupBtn->wasReleased() && firstRoverStart == false)
             {
-                switch (systemState)
+                if (settings.disableSetupButton ==
+                    false) // Allow check of the setup button if not overridden by settings
                 {
-                // If we are in any running state, change to STATE_DISPLAY_SETUP
-                case STATE_BASE_NOT_STARTED:
-                case STATE_BASE_TEMP_SETTLE:
-                case STATE_BASE_TEMP_SURVEY_STARTED:
-                case STATE_BASE_TEMP_TRANSMITTING:
-                case STATE_BASE_FIXED_NOT_STARTED:
-                case STATE_BASE_FIXED_TRANSMITTING:
-                case STATE_ROVER_NOT_STARTED:
-                case STATE_ROVER_NO_FIX:
-                case STATE_ROVER_FIX:
-                case STATE_ROVER_RTK_FLOAT:
-                case STATE_ROVER_RTK_FIX:
-                case STATE_NTPSERVER_NOT_STARTED:
-                case STATE_NTPSERVER_NO_SYNC:
-                case STATE_NTPSERVER_SYNC:
-                case STATE_WIFI_CONFIG_NOT_STARTED:
-                case STATE_WIFI_CONFIG:
-                case STATE_CONFIG_VIA_ETH_NOT_STARTED:
-                case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                case STATE_ESPNOW_PAIRING:
-                    lastSystemState = systemState; // Remember this state to return after ESP-Now pair
-                    requestChangeState(STATE_DISPLAY_SETUP);
-                    setupState = STATE_BASE_NOT_STARTED;
-                    lastSetupMenuChange = millis();
-                    break;
 
-                case STATE_CONFIG_VIA_ETH_STARTED:
-                case STATE_CONFIG_VIA_ETH:
-                    // If the user presses the button during configure-via-ethernet, then do a complete restart into
-                    // Base mode
-                    requestChangeState(STATE_CONFIG_VIA_ETH_RESTART_BASE);
-                    break;
-
-                case STATE_PROFILE:
-                    // If the user presses the setup button during a profile change, do nothing
-                    // Allow system to return to lastSystemState
-                    break;
-
-                case STATE_TEST:
-                    // Do nothing. User is releasing the setup button.
-                    break;
-
-                case STATE_TESTING:
-                    // If we are in testing, return to Base Not Started
-                    requestChangeState(STATE_BASE_NOT_STARTED);
-                    break;
-
-                case STATE_DISPLAY_SETUP:
-                    // If we are displaying the setup menu, cycle through possible system states
-                    // Exit display setup and enter new system state after ~1500ms in updateSystemState()
-                    lastSetupMenuChange = millis();
-
-                    forceDisplayUpdate = true; // User is interacting so repaint display quickly
-
-                    switch (setupState)
+                    switch (systemState)
                     {
+                    // If we are in any running state, change to STATE_DISPLAY_SETUP
                     case STATE_BASE_NOT_STARTED:
-                        setupState = STATE_ROVER_NOT_STARTED;
-                        break;
+                    case STATE_BASE_TEMP_SETTLE:
+                    case STATE_BASE_TEMP_SURVEY_STARTED:
+                    case STATE_BASE_TEMP_TRANSMITTING:
+                    case STATE_BASE_FIXED_NOT_STARTED:
+                    case STATE_BASE_FIXED_TRANSMITTING:
                     case STATE_ROVER_NOT_STARTED:
-                        setupState = STATE_NTPSERVER_NOT_STARTED;
-                        break;
+                    case STATE_ROVER_NO_FIX:
+                    case STATE_ROVER_FIX:
+                    case STATE_ROVER_RTK_FLOAT:
+                    case STATE_ROVER_RTK_FIX:
                     case STATE_NTPSERVER_NOT_STARTED:
-                        setupState = STATE_CONFIG_VIA_ETH_NOT_STARTED;
-                        break;
-                    case STATE_CONFIG_VIA_ETH_NOT_STARTED:
-                        setupState = STATE_WIFI_CONFIG_NOT_STARTED;
-                        break;
+                    case STATE_NTPSERVER_NO_SYNC:
+                    case STATE_NTPSERVER_SYNC:
                     case STATE_WIFI_CONFIG_NOT_STARTED:
-                        setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
-                        break;
+                    case STATE_WIFI_CONFIG:
+                    case STATE_CONFIG_VIA_ETH_NOT_STARTED:
                     case STATE_ESPNOW_PAIRING_NOT_STARTED:
-                        // If only one active profile do not show any profiles
-                        index = getProfileNumberFromUnit(0);
-                        displayProfile = getProfileNumberFromUnit(1);
-                        setupState = (index >= displayProfile) ? STATE_BASE_NOT_STARTED : STATE_PROFILE;
-                        displayProfile = 0;
+                    case STATE_ESPNOW_PAIRING:
+                        lastSystemState = systemState; // Remember this state to return after ESP-Now pair
+                        requestChangeState(STATE_DISPLAY_SETUP);
+                        setupState = STATE_BASE_NOT_STARTED;
+                        lastSetupMenuChange = millis();
                         break;
+
+                    case STATE_CONFIG_VIA_ETH_STARTED:
+                    case STATE_CONFIG_VIA_ETH:
+                        // If the user presses the button during configure-via-ethernet, then do a complete restart into
+                        // Base mode
+                        requestChangeState(STATE_CONFIG_VIA_ETH_RESTART_BASE);
+                        break;
+
                     case STATE_PROFILE:
-                        // Done when no more active profiles
-                        displayProfile++;
-                        if (!getProfileNumberFromUnit(displayProfile))
+                        // If the user presses the setup button during a profile change, do nothing
+                        // Allow system to return to lastSystemState
+                        break;
+
+                    case STATE_TEST:
+                        // Do nothing. User is releasing the setup button.
+                        break;
+
+                    case STATE_TESTING:
+                        // If we are in testing, return to Base Not Started
+                        requestChangeState(STATE_BASE_NOT_STARTED);
+                        break;
+
+                    case STATE_DISPLAY_SETUP:
+                        // If we are displaying the setup menu, cycle through possible system states
+                        // Exit display setup and enter new system state after ~1500ms in updateSystemState()
+                        lastSetupMenuChange = millis();
+
+                        forceDisplayUpdate = true; // User is interacting so repaint display quickly
+
+                        switch (setupState)
+                        {
+                        case STATE_BASE_NOT_STARTED:
+                            setupState = STATE_ROVER_NOT_STARTED;
+                            break;
+                        case STATE_ROVER_NOT_STARTED:
+                            setupState = STATE_NTPSERVER_NOT_STARTED;
+                            break;
+                        case STATE_NTPSERVER_NOT_STARTED:
+                            setupState = STATE_CONFIG_VIA_ETH_NOT_STARTED;
+                            break;
+                        case STATE_CONFIG_VIA_ETH_NOT_STARTED:
+                            setupState = STATE_WIFI_CONFIG_NOT_STARTED;
+                            break;
+                        case STATE_WIFI_CONFIG_NOT_STARTED:
+                            setupState = STATE_ESPNOW_PAIRING_NOT_STARTED;
+                            break;
+                        case STATE_ESPNOW_PAIRING_NOT_STARTED:
+                            // If only one active profile do not show any profiles
+                            index = getProfileNumberFromUnit(0);
+                            displayProfile = getProfileNumberFromUnit(1);
+                            setupState = (index >= displayProfile) ? STATE_BASE_NOT_STARTED : STATE_PROFILE;
+                            displayProfile = 0;
+                            break;
+                        case STATE_PROFILE:
+                            // Done when no more active profiles
+                            displayProfile++;
+                            if (!getProfileNumberFromUnit(displayProfile))
+                                setupState = STATE_BASE_NOT_STARTED;
+                            break;
+                        case STATE_MARK_EVENT: // Skip the warning message if setupState is still in the default Mark
+                                               // Event state
                             setupState = STATE_BASE_NOT_STARTED;
+                            break;
+                        default:
+                            systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
+                            setupState = STATE_BASE_NOT_STARTED;
+                            break;
+                        }
                         break;
-                    case STATE_MARK_EVENT: // Skip the warning message if setupState is still in the default Mark Event
-                                           // state
-                        setupState = STATE_BASE_NOT_STARTED;
-                        break;
+
                     default:
-                        systemPrintf("ButtonCheckTask unknown setup state: %d\r\n", setupState);
-                        setupState = STATE_BASE_NOT_STARTED;
+                        systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
+                        requestChangeState(STATE_BASE_NOT_STARTED);
                         break;
                     }
-                    break;
-
-                default:
-                    systemPrintf("ButtonCheckTask unknown system state: %d\r\n", systemState);
-                    requestChangeState(STATE_BASE_NOT_STARTED);
-                    break;
-                }
+                } //End disableSetupButton check
             }
         } // End Platform = REFERENCE_STATION
 
@@ -1399,7 +1413,7 @@ void sdSizeCheckTask(void *e)
                     sdCardSize = SD_MMC.cardSize();
                     sdFreeSpace = SD_MMC.totalBytes() - SD_MMC.usedBytes();
                 }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
                 xSemaphoreGive(sdCardSemaphore);
 

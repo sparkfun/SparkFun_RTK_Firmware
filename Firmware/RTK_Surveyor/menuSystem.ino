@@ -166,6 +166,8 @@ void menuSystem()
 
         // Support mode switching
         systemPrintln("B) Switch to Base mode");
+        if (HAS_ETHERNET)
+            systemPrintln("N) Switch to NTP Server mode");
         systemPrintln("R) Switch to Rover mode");
         systemPrintln("W) Switch to WiFi Config mode");
         systemPrintln("S) Shut down");
@@ -255,6 +257,11 @@ void menuSystem()
         {
             forceSystemStateUpdate = true; // Imediately go to this new state
             changeState(STATE_BASE_NOT_STARTED);
+        }
+        else if ((incoming == 'N') && HAS_ETHERNET)
+        {
+            forceSystemStateUpdate = true; // Imediately go to this new state
+            changeState(STATE_NTPSERVER_NOT_STARTED);
         }
         else if (incoming == 'R')
         {

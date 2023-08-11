@@ -299,7 +299,7 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "enablePrintStates", settings.enablePrintStates);
     settingsFile->printf("%s=%d\r\n", "enablePrintDuplicateStates", settings.enablePrintDuplicateStates);
     settingsFile->printf("%s=%d\r\n", "enablePrintRtcSync", settings.enablePrintRtcSync);
-    settingsFile->printf("%s=%d\r\n", "enablePrintNTPDiag", settings.enablePrintNTPDiag);
+    settingsFile->printf("%s=%d\r\n", "debugNtp", settings.debugNtp);
     settingsFile->printf("%s=%d\r\n", "enablePrintEthernetDiag", settings.enablePrintEthernetDiag);
     settingsFile->printf("%s=%d\r\n", "radioType", settings.radioType);
 
@@ -1103,8 +1103,8 @@ bool parseLine(char *str, Settings *settings)
         settings->enablePrintDuplicateStates = d;
     else if (strcmp(settingName, "enablePrintRtcSync") == 0)
         settings->enablePrintRtcSync = d;
-    else if (strcmp(settingName, "enablePrintNTPDiag") == 0)
-        settings->enablePrintNTPDiag = d;
+    else if (strcmp(settingName, "debugNtp") == 0)
+        settings->debugNtp = d;
     else if (strcmp(settingName, "enablePrintEthernetDiag") == 0)
         settings->enablePrintEthernetDiag = d;
     else if (strcmp(settingName, "radioType") == 0)

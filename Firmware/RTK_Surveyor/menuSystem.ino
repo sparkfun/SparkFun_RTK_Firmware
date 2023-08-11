@@ -422,8 +422,8 @@ void menuDebug()
         systemPrint("37) Print RTC resyncs: ");
         systemPrintf("%s\r\n", settings.enablePrintRtcSync ? "Enabled" : "Disabled");
 
-        systemPrint("38) Print NTP Request diagnostics: ");
-        systemPrintf("%s\r\n", settings.enablePrintNTPDiag ? "Enabled" : "Disabled");
+        systemPrint("38) Debug NTP: ");
+        systemPrintf("%s\r\n", settings.debugNtp ? "Enabled" : "Disabled");
 
         systemPrint("39) Print Ethernet diagnostics: ");
         systemPrintf("%s\r\n", settings.enablePrintEthernetDiag ? "Enabled" : "Disabled");
@@ -536,6 +536,12 @@ void menuDebug()
 
         systemPrint("75) Print network layer status: ");
         systemPrintf("%s\r\n", settings.printNetworkStatus ? "Enabled" : "Disabled");
+
+        systemPrint("76) Periodically print NTP server data: ");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_NTP_SERVER_DATA) ? "Enabled" : "Disabled");
+
+        systemPrint("77) Periodically print NTP server state: ");
+        systemPrintf("%s\r\n", PERIODIC_SETTING(PD_NTP_SERVER_STATE) ? "Enabled" : "Disabled");
 
         systemPrintln("t) Enter Test Screen");
 
@@ -785,7 +791,7 @@ void menuDebug()
         }
         else if (incoming == 38)
         {
-            settings.enablePrintNTPDiag ^= 1;
+            settings.debugNtp ^= 1;
         }
         else if (incoming == 39)
         {
@@ -1047,6 +1053,14 @@ void menuDebug()
         else if (incoming == 75)
         {
             settings.printNetworkStatus ^= 1;
+        }
+        else if (incoming == 76)
+        {
+            PERIODIC_TOGGLE(PD_NTP_SERVER_DATA);
+        }
+        else if (incoming == 77)
+        {
+            PERIODIC_TOGGLE(PD_NTP_SERVER_STATE);
         }
         else if (incoming == 'e')
         {

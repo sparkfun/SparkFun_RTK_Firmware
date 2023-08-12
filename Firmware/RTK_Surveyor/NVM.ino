@@ -1454,7 +1454,7 @@ bool parseLine(char *str, Settings *settings)
         // Last catch
         if (knownSetting == false)
         {
-            systemPrintf("Unknown setting %s\r\n", settingName);
+            log_d("Unknown setting %s", settingName);
         }
     }
 

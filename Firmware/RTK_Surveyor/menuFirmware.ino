@@ -498,7 +498,7 @@ bool otaCheckVersion(char *versionAvailable, uint8_t versionAvailableLength)
     {
         char versionString[21];
         getFirmwareVersion(versionString, sizeof(versionString), enableRCFirmware);
-        systemPrintf("Current firmware version: v%s\r\n", versionString);
+        systemPrintf("Current firmware version: %s\r\n", versionString);
 
         const char * url = otaGetUrl();
         systemPrintf("Checking to see if an update is available from %s\r\n", url);

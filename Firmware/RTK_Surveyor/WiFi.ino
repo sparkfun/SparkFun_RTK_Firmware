@@ -520,9 +520,9 @@ bool wifiConnect(unsigned long timeout)
         return true;
     }
     else if (wifiResponse == WL_DISCONNECTED)
-        systemPrint("No friendly WiFi networks detected. ");
+        systemPrint("No friendly WiFi networks detected.\r\n");
     else
-        systemPrintf("WiFi failed to connect: error #%d. ", wifiResponse);
+        systemPrintf("WiFi failed to connect: error #%d.\r\n", wifiResponse);
 
     return false;
 }

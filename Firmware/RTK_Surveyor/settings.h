@@ -78,9 +78,9 @@ ProductVariant productVariant = RTK_SURVEYOR;
 // Macro to show if the the RTK variant has Ethernet
 #ifdef COMPILE_ETHERNET
 #define HAS_ETHERNET (productVariant == REFERENCE_STATION)
-#else //COMPILE_ETHERNET
+#else // COMPILE_ETHERNET
 #define HAS_ETHERNET false
-#endif //COMPILE_ETHERNET
+#endif // COMPILE_ETHERNET
 
 // Macro to show if the the RTK variant has a GNSS TP interrupt - for accurate clock setting
 // The GNSS UBX PVT message is sent ahead of the top-of-second
@@ -190,16 +190,16 @@ typedef uint8_t NETWORK_USER;
 
 typedef struct _NETWORK_DATA
 {
-    uint8_t requestedNetwork;   // Type of network requested
-    uint8_t type;               // Type of network
-    NETWORK_USER activeUsers;   // Active users of this network device
-    NETWORK_USER userOpens;     // Users requesting access to this network
-    uint8_t connectionAttempt;  // Number of previous connection attempts
-    bool restart;               // Set if restart is allowed
-    bool shutdown;              // Network is shutting down
-    uint8_t state;              // Current state of the network
-    uint32_t timeout;           // Timer timeout value
-    uint32_t timerStart;        // Starting millis for the timer
+    uint8_t requestedNetwork;  // Type of network requested
+    uint8_t type;              // Type of network
+    NETWORK_USER activeUsers;  // Active users of this network device
+    NETWORK_USER userOpens;    // Users requesting access to this network
+    uint8_t connectionAttempt; // Number of previous connection attempts
+    bool restart;              // Set if restart is allowed
+    bool shutdown;             // Network is shutting down
+    uint8_t state;             // Current state of the network
+    uint32_t timeout;          // Timer timeout value
+    uint32_t timerStart;       // Starting millis for the timer
 } NETWORK_DATA;
 
 // Even though WiFi and ESP-Now operate on the same radio, we treat
@@ -324,13 +324,8 @@ typedef enum
     ETH_MAX_STATE
 } ethernetStatus_e;
 
-const char * const ethernetStates[] =
-{
-    "ETH_NOT_STARTED",
-    "ETH_STARTED_CHECK_CABLE",
-    "ETH_STARTED_START_DHCP",
-    "ETH_CONNECTED",
-    "ETH_CAN_NOT_BEGIN",
+const char *const ethernetStates[] = {
+    "ETH_NOT_STARTED", "ETH_STARTED_CHECK_CABLE", "ETH_STARTED_START_DHCP", "ETH_CONNECTED", "ETH_CAN_NOT_BEGIN",
 };
 
 const int ethernetStateEntries = sizeof(ethernetStates) / sizeof(ethernetStates[0]);
@@ -448,22 +443,22 @@ typedef uint32_t PeriodicDisplay_t;
 
 enum PeriodDisplayValues
 {
-    PD_BLUETOOTH_DATA_RX = 0,   // 0
-    PD_BLUETOOTH_DATA_TX,       // 1
-    PD_ETHERNET_IP_ADDRESS,     // 2
-    PD_ETHERNET_STATE,          // 3
-    PD_NETWORK_STATE,           // 4
-    PD_NTRIP_CLIENT_DATA,       // 5
-    PD_NTRIP_CLIENT_GGA,        // 6
-    PD_NTRIP_CLIENT_STATE,      // 7
-    PD_NTRIP_SERVER_DATA,       // 8
-    PD_NTRIP_SERVER_STATE,      // 9
-    PD_PVT_CLIENT_DATA,         //10
-    PD_PVT_CLIENT_STATE,        //11
+    PD_BLUETOOTH_DATA_RX = 0, // 0
+    PD_BLUETOOTH_DATA_TX,     // 1
+    PD_ETHERNET_IP_ADDRESS,   // 2
+    PD_ETHERNET_STATE,        // 3
+    PD_NETWORK_STATE,         // 4
+    PD_NTRIP_CLIENT_DATA,     // 5
+    PD_NTRIP_CLIENT_GGA,      // 6
+    PD_NTRIP_CLIENT_STATE,    // 7
+    PD_NTRIP_SERVER_DATA,     // 8
+    PD_NTRIP_SERVER_STATE,    // 9
+    PD_PVT_CLIENT_DATA,       // 10
+    PD_PVT_CLIENT_STATE,      // 11
 
-    PD_PVT_SERVER_DATA,         //12
-    PD_PVT_SERVER_STATE,        //13
-    PD_PVT_SERVER_CLIENT_DATA,  //14
+    PD_PVT_SERVER_DATA,        // 12
+    PD_PVT_SERVER_STATE,       // 13
+    PD_PVT_SERVER_CLIENT_DATA, // 14
 
     PD_SD_LOG_WRITE,            //15
     PD_WIFI_IP_ADDRESS,         //16
@@ -476,11 +471,11 @@ enum PeriodDisplayValues
     PD_NTP_SERVER_STATE,        //22
 };
 
-#define PERIODIC_MASK(x)    (1 << x)
+#define PERIODIC_MASK(x) (1 << x)
 #define PERIODIC_DISPLAY(x) (periodicDisplay & PERIODIC_MASK(x))
-#define PERIODIC_CLEAR(x)   periodicDisplay &= ~PERIODIC_MASK(x)
+#define PERIODIC_CLEAR(x) periodicDisplay &= ~PERIODIC_MASK(x)
 #define PERIODIC_SETTING(x) (settings.periodicDisplay & PERIODIC_MASK(x))
-#define PERIODIC_TOGGLE(x)  settings.periodicDisplay ^= PERIODIC_MASK(x)
+#define PERIODIC_TOGGLE(x) settings.periodicDisplay ^= PERIODIC_MASK(x)
 
 // These are the allowable messages to broadcast and log (if enabled)
 
@@ -917,7 +912,7 @@ typedef struct
     uint8_t espnowPeerCount = 0;
     bool enableRtcmMessageChecking = false;
     BluetoothRadioType_e bluetoothRadioType = BLUETOOTH_RADIO_SPP;
-    bool runLogTest = false; // When set to true, device will create a series of test logs
+    bool runLogTest = false;           // When set to true, device will create a series of test logs
     bool espnowBroadcast = true;       // When true, overrides peers and sends all data via broadcast
     int16_t antennaHeight = 0;         // in mm
     float antennaReferencePoint = 0.0; // in mm
@@ -959,9 +954,13 @@ typedef struct
     uint8_t gnssReadTaskCore = 1;           // Core where task should run, 0=core, 1=Arduino
     uint8_t handleGnssDataTaskCore = 1;     // Core where task should run, 0=core, 1=Arduino
     uint8_t gnssUartInterruptsCore =
+        1; // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
+    uint8_t bluetoothInterruptsCore =
         1;                         // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
-    uint8_t bluetoothInterruptsCore = 1;  // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
     uint8_t i2cInterruptsCore = 1; // Core where hardware is started and interrupts are assigned to, 0=core, 1=Arduino
+    uint32_t shutdownNoChargeTimeout_s = 0; // If > 0, shut down unit after timeout if not charging
+    bool disableSetupButton = false;                  // By default, allow setup through the overlay button(s)
+    bool powerButtonFiltering = true; //Set to false during firmware development to prevent device power down when new firmware is loaded
 
     // Ethernet
     bool enablePrintEthernetDiag = false;
@@ -984,12 +983,12 @@ typedef struct
 
     // Network layer
     uint8_t defaultNetworkType = NETWORK_TYPE_USE_DEFAULT;
-    bool debugNetworkLayer = false; // Enable debugging of the network layer
+    bool debugNetworkLayer = false;    // Enable debugging of the network layer
     bool enableNetworkFailover = true; // Enable failover between Ethernet / WiFi
-    bool printNetworkStatus = true; // Print network status (delays, failovers, IP address)
+    bool printNetworkStatus = true;    // Print network status (delays, failovers, IP address)
 
     // Multicast DNS Server
-    bool mdnsEnable = true;      // Allows locating of device from browser address 'rtk.local'
+    bool mdnsEnable = true; // Allows locating of device from browser address 'rtk.local'
 
     // NTP
     bool debugNtp = false;
@@ -1092,5 +1091,5 @@ o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
 rqXRfboQnoZsG4q5WTP468SQvvG5
 -----END CERTIFICATE-----
 )=====";
-#endif  // COMPILE_L_BAND
-#endif  // COMPILE_WIFI
+#endif // COMPILE_L_BAND
+#endif // COMPILE_WIFI

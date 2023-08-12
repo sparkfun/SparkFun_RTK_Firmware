@@ -82,7 +82,7 @@ void menuSystem()
                      wifiMACAddress[3], wifiMACAddress[4], wifiMACAddress[5]);
         if (wifiState == WIFI_CONNECTED)
             wifiDisplayIpAddress();
-#endif  // COMPILE_WIFI
+#endif // COMPILE_WIFI
 
 #ifdef COMPILE_ETHERNET
         if (HAS_ETHERNET)
@@ -107,7 +107,7 @@ void menuSystem()
                 systemPrintf("%s\r\n", settings.ethernetSubnet.toString());
             }
         }
-#endif  // COMPILE_ETHERNET
+#endif // COMPILE_ETHERNET
 
         // Display the uptime
         uint64_t uptimeMilliseconds = millis();
@@ -154,6 +154,17 @@ void menuSystem()
         systemPrintf("z) Set time zone offset: %02d:%02d:%02d\r\n", settings.timeZoneHours, settings.timeZoneMinutes,
                      settings.timeZoneSeconds);
 
+        if (settings.shutdownNoChargeTimeout_s == 0)
+            systemPrintln("C) Shutdown if not charging: Disabled");
+        else
+            systemPrintf("C) Shutdown if not charging after: %d seconds\r\n", settings.shutdownNoChargeTimeout_s);
+
+        systemPrint("~) Setup button: ");
+        if (settings.disableSetupButton == true)
+            systemPrintln("Disabled");
+        else
+            systemPrintln("Enabled");
+
         systemPrint("b) Set Bluetooth Mode: ");
         if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
             systemPrintln("Classic");
@@ -180,83 +191,103 @@ void menuSystem()
             menuDebug();
         else if (incoming == 'z')
         {
-            systemPrint("Enter time zone hour offset (-23 <= offset <= 23): ");
-            int value = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
-            {
-                if (value < -23 || value > 23)
-                    systemPrintln("Error: -24 < hours < 24");
-                else
+                systemPrint("Enter time zone hour offset (-23 <= offset <= 23): ");
+                int value = getNumber(); // Returns EXIT, TIMEOUT, or long
+                if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
                 {
-                    settings.timeZoneHours = value;
-
-                    systemPrint("Enter time zone minute offset (-59 <= offset <= 59): ");
-                    int value = getNumber(); // Returns EXIT, TIMEOUT, or long
-                    if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+                    if (value < -23 || value > 23)
+                        systemPrintln("Error: -24 < hours < 24");
+                    else
                     {
-                        if (value < -59 || value > 59)
-                            systemPrintln("Error: -60 < minutes < 60");
-                        else
-                        {
-                            settings.timeZoneMinutes = value;
+                        settings.timeZoneHours = value;
 
-                            systemPrint("Enter time zone second offset (-59 <= offset <= 59): ");
-                            int value = getNumber(); // Returns EXIT, TIMEOUT, or long
-                            if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+                        systemPrint("Enter time zone minute offset (-59 <= offset <= 59): ");
+                        int value = getNumber(); // Returns EXIT, TIMEOUT, or long
+                        if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) && (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+                        {
+                            if (value < -59 || value > 59)
+                                systemPrintln("Error: -60 < minutes < 60");
+                            else
                             {
-                                if (value < -59 || value > 59)
-                                    systemPrintln("Error: -60 < seconds < 60");
-                                else
+                                settings.timeZoneMinutes = value;
+
+                                systemPrint("Enter time zone second offset (-59 <= offset <= 59): ");
+                                int value = getNumber(); // Returns EXIT, TIMEOUT, or long
+                                if ((value != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                                    (value != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
                                 {
-                                    settings.timeZoneSeconds = value;
-                                    online.rtc = false;
-                                    syncRTCInterval =
-                                        1000; // Reset syncRTCInterval to 1000ms (tpISR could have set it to 59000)
-                                    rtcSyncd = false;
-                                    updateRTC();
-                                } // Succesful seconds
-                            }
-                        } // Succesful minute
-                    }
-                } // Succesful hours
-            }
+                                    if (value < -59 || value > 59)
+                                        systemPrintln("Error: -60 < seconds < 60");
+                                    else
+                                    {
+                                        settings.timeZoneSeconds = value;
+                                        online.rtc = false;
+                                        syncRTCInterval =
+                                            1000; // Reset syncRTCInterval to 1000ms (tpISR could have set it to 59000)
+                                        rtcSyncd = false;
+                                        updateRTC();
+                                    } // Succesful seconds
+                                }
+                            } // Succesful minute
+                        }
+                    } // Succesful hours
+                }
+        }
+        else if (incoming == 'C')
+        {
+                systemPrint("Enter time in seconds to shutdown unit if not charging (0 to disable): ");
+                int shutdownNoChargeTimeout_s = getNumber(); // Returns EXIT, TIMEOUT, or long
+                if ((shutdownNoChargeTimeout_s != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                    (shutdownNoChargeTimeout_s != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+                {
+                    if (shutdownNoChargeTimeout_s < 0 ||
+                        shutdownNoChargeTimeout_s > 60 * 60 * 24 * 7) // Arbitrary 7 day limit
+                        systemPrintln("Error: Time out of range");
+                    else
+                        settings.shutdownNoChargeTimeout_s =
+                            shutdownNoChargeTimeout_s; // Recorded to NVM and file at main menu exit
+                }
+        }
+        else if (incoming == '~')
+        {
+                settings.disableSetupButton ^= 1;
         }
         else if (incoming == 'e')
         {
-            settings.echoUserInput ^= 1;
+                settings.echoUserInput ^= 1;
         }
         else if (incoming == 'b')
         {
-            // Restart Bluetooth
-            bluetoothStop();
-            if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
-                settings.bluetoothRadioType = BLUETOOTH_RADIO_BLE;
-            else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
-                settings.bluetoothRadioType = BLUETOOTH_RADIO_OFF;
-            else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
-                settings.bluetoothRadioType = BLUETOOTH_RADIO_SPP;
-            bluetoothStart();
+                // Restart Bluetooth
+                bluetoothStop();
+                if (settings.bluetoothRadioType == BLUETOOTH_RADIO_SPP)
+                    settings.bluetoothRadioType = BLUETOOTH_RADIO_BLE;
+                else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_BLE)
+                    settings.bluetoothRadioType = BLUETOOTH_RADIO_OFF;
+                else if (settings.bluetoothRadioType == BLUETOOTH_RADIO_OFF)
+                    settings.bluetoothRadioType = BLUETOOTH_RADIO_SPP;
+                bluetoothStart();
         }
         else if (incoming == 'r')
         {
-            systemPrintln("\r\nResetting to factory defaults. Press 'y' to confirm:");
-            byte bContinue = getCharacterNumber();
-            if (bContinue == 'y')
-            {
-                factoryReset(false); //We do not have the SD semaphore
-            }
-            else
-                systemPrintln("Reset aborted");
+                systemPrintln("\r\nResetting to factory defaults. Press 'y' to confirm:");
+                byte bContinue = getCharacterNumber();
+                if (bContinue == 'y')
+                {
+                    factoryReset(false); // We do not have the SD semaphore
+                }
+                else
+                    systemPrintln("Reset aborted");
         }
         else if ((incoming == 'f') && (settings.enableSD == true) && (online.microSD == true))
         {
-            printFileList();
+                printFileList();
         }
         // Support mode switching
         else if (incoming == 'B')
         {
-            forceSystemStateUpdate = true; // Imediately go to this new state
-            changeState(STATE_BASE_NOT_STARTED);
+                forceSystemStateUpdate = true; // Imediately go to this new state
+                changeState(STATE_BASE_NOT_STARTED);
         }
         else if ((incoming == 'N') && HAS_ETHERNET)
         {
@@ -265,19 +296,19 @@ void menuSystem()
         }
         else if (incoming == 'R')
         {
-            forceSystemStateUpdate = true; // Imediately go to this new state
-            changeState(STATE_ROVER_NOT_STARTED);
+                forceSystemStateUpdate = true; // Imediately go to this new state
+                changeState(STATE_ROVER_NOT_STARTED);
         }
         else if (incoming == 'W')
         {
-            forceSystemStateUpdate = true; // Imediately go to this new state
-            changeState(STATE_WIFI_CONFIG_NOT_STARTED);
+                forceSystemStateUpdate = true; // Imediately go to this new state
+                changeState(STATE_WIFI_CONFIG_NOT_STARTED);
         }
         else if (incoming == 'S')
         {
-            systemPrintln("Shutting down...");
-            forceDisplayUpdate = true;
-            powerDown(true);
+                systemPrintln("Shutting down...");
+                forceDisplayUpdate = true;
+                powerDown(true);
         }
         else if (incoming == 'x')
             break;
@@ -543,6 +574,9 @@ void menuDebug()
         systemPrint("77) Periodically print NTP server state: ");
         systemPrintf("%s\r\n", PERIODIC_SETTING(PD_NTP_SERVER_STATE) ? "Enabled" : "Disabled");
 
+        systemPrint("78) Power button filtering: ");
+        systemPrintf("%s\r\n", settings.powerButtonFiltering ? "Enabled" : "Disabled");
+
         systemPrintln("t) Enter Test Screen");
 
         systemPrintln("e) Erase LittleFS");
@@ -563,7 +597,7 @@ void menuDebug()
                 if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
                     theGNSS.enableDebugging(serialGNSS); // Output all debug messages over serialGNSS
                 else
-#endif  // REF_STN_GNSS_DEBUG
+#endif                                                     // REF_STN_GNSS_DEBUG
                     theGNSS.enableDebugging(Serial, true); // Enable only the critical debug messages over Serial
             }
             else
@@ -814,7 +848,8 @@ void menuDebug()
         {
             systemPrint("Enter BT Read Task Priority (0 to 3): ");
             int btReadTaskPriority = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((btReadTaskPriority != INPUT_RESPONSE_GETNUMBER_EXIT) && (btReadTaskPriority != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((btReadTaskPriority != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (btReadTaskPriority != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (btReadTaskPriority < 0 || btReadTaskPriority > 3)
                     systemPrintln("Error: Task priority out of range");
@@ -828,7 +863,8 @@ void menuDebug()
         {
             systemPrint("Enter GNSS Read Task Priority (0 to 3): ");
             int gnssReadTaskPriority = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((gnssReadTaskPriority != INPUT_RESPONSE_GETNUMBER_EXIT) && (gnssReadTaskPriority != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((gnssReadTaskPriority != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (gnssReadTaskPriority != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (gnssReadTaskPriority < 0 || gnssReadTaskPriority > 3)
                     systemPrintln("Error: Task priority out of range");
@@ -842,7 +878,8 @@ void menuDebug()
         {
             systemPrint("Enter GNSS Data Handle Task Priority (0 to 3): ");
             int handleGnssDataTaskPriority = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((handleGnssDataTaskPriority != INPUT_RESPONSE_GETNUMBER_EXIT) && (handleGnssDataTaskPriority != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((handleGnssDataTaskPriority != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (handleGnssDataTaskPriority != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (handleGnssDataTaskPriority < 0 || handleGnssDataTaskPriority > 3)
                     systemPrintln("Error: Task priority out of range");
@@ -856,7 +893,8 @@ void menuDebug()
         {
             systemPrint("Enter BT Read Task Core (0 or 1): ");
             int btReadTaskCore = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((btReadTaskCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (btReadTaskCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((btReadTaskCore != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (btReadTaskCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (btReadTaskCore < 0 || btReadTaskCore > 1)
                     systemPrintln("Error: Core out of range");
@@ -870,7 +908,8 @@ void menuDebug()
         {
             systemPrint("Enter GNSS Read Task Core (0 or 1): ");
             int gnssReadTaskCore = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((gnssReadTaskCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (gnssReadTaskCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((gnssReadTaskCore != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (gnssReadTaskCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (gnssReadTaskCore < 0 || gnssReadTaskCore > 1)
                     systemPrintln("Error: Core out of range");
@@ -884,7 +923,8 @@ void menuDebug()
         {
             systemPrint("Enter GNSS Data Handler Task Core (0 or 1): ");
             int handleGnssDataTaskCore = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((handleGnssDataTaskCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (handleGnssDataTaskCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((handleGnssDataTaskCore != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (handleGnssDataTaskCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (handleGnssDataTaskCore < 0 || handleGnssDataTaskCore > 1)
                     systemPrintln("Error: Core out of range");
@@ -898,7 +938,8 @@ void menuDebug()
         {
             systemPrint("Enter Serial GNSS RX Full Threshold (1 to 127): ");
             int serialGNSSRxFullThreshold = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((serialGNSSRxFullThreshold != INPUT_RESPONSE_GETNUMBER_EXIT) && (serialGNSSRxFullThreshold != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((serialGNSSRxFullThreshold != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (serialGNSSRxFullThreshold != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (serialGNSSRxFullThreshold < 1 || serialGNSSRxFullThreshold > 127)
                     systemPrintln("Error: Core out of range");
@@ -912,7 +953,8 @@ void menuDebug()
         {
             systemPrint("Enter Core used for GNSS UART Interrupts (0 or 1): ");
             int gnssUartInterruptsCore = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((gnssUartInterruptsCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (gnssUartInterruptsCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((gnssUartInterruptsCore != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (gnssUartInterruptsCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (gnssUartInterruptsCore < 0 || gnssUartInterruptsCore > 1)
                     systemPrintln("Error: Core out of range");
@@ -926,7 +968,8 @@ void menuDebug()
         {
             systemPrint("Not yet implemented! - Enter Core used for Bluetooth Interrupts (0 or 1): ");
             int bluetoothInterruptsCore = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((bluetoothInterruptsCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (bluetoothInterruptsCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((bluetoothInterruptsCore != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (bluetoothInterruptsCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (bluetoothInterruptsCore < 0 || bluetoothInterruptsCore > 1)
                     systemPrintln("Error: Core out of range");
@@ -940,7 +983,8 @@ void menuDebug()
         {
             systemPrint("Enter Core used for I2C Interrupts (0 or 1): ");
             int i2cInterruptsCore = getNumber(); // Returns EXIT, TIMEOUT, or long
-            if ((i2cInterruptsCore != INPUT_RESPONSE_GETNUMBER_EXIT) && (i2cInterruptsCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
+            if ((i2cInterruptsCore != INPUT_RESPONSE_GETNUMBER_EXIT) &&
+                (i2cInterruptsCore != INPUT_RESPONSE_GETNUMBER_TIMEOUT))
             {
                 if (i2cInterruptsCore < 0 || i2cInterruptsCore > 1)
                     systemPrintln("Error: Core out of range");
@@ -1061,6 +1105,10 @@ void menuDebug()
         else if (incoming == 77)
         {
             PERIODIC_TOGGLE(PD_NTP_SERVER_STATE);
+        }
+        else if (incoming == 78)
+        {
+            settings.powerButtonFiltering ^= 1;
         }
         else if (incoming == 'e')
         {
@@ -1265,7 +1313,7 @@ void printFileList()
                 if (fileCount == 0)
                     systemPrintln("No files found");
             }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
         }
         else
         {

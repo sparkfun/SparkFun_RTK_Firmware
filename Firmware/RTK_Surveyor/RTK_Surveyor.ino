@@ -666,6 +666,8 @@ unsigned long lbandLastReport = 0;
 
 volatile PeriodicDisplay_t periodicDisplay;
 
+unsigned long shutdownNoChargeTimer = 0;
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
                      +---------------------------------------+      +----------+

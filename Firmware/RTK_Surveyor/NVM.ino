@@ -362,6 +362,9 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "lbandFixTimeout_seconds", settings.lbandFixTimeout_seconds);
     settingsFile->printf("%s=%d\r\n", "minCNO_F9R", settings.minCNO_F9R);
     settingsFile->printf("%s=%d\r\n", "minCNO_F9P", settings.minCNO_F9P);
+    settingsFile->printf("%s=%d\r\n", "shutdownNoChargeTimeout_s", settings.shutdownNoChargeTimeout_s);
+    settingsFile->printf("%s=%d\r\n", "disableSetupButton", settings.disableSetupButton);
+    settingsFile->printf("%s=%d\r\n", "powerButtonFiltering", settings.powerButtonFiltering);
 
     // Record constellation settings
     for (int x = 0; x < MAX_CONSTELLATIONS; x++)
@@ -1303,6 +1306,12 @@ bool parseLine(char *str, Settings *settings)
         settings->bluetoothInterruptsCore = d;
     else if (strcmp(settingName, "i2cInterruptsCore") == 0)
         settings->i2cInterruptsCore = d;
+    else if (strcmp(settingName, "shutdownNoChargeTimeout_s") == 0)
+        settings->shutdownNoChargeTimeout_s = d;
+    else if (strcmp(settingName, "disableSetupButton") == 0)
+        settings->disableSetupButton = d;
+    else if (strcmp(settingName, "powerButtonFiltering") == 0)
+        settings->powerButtonFiltering = d;
 
     // Network layer
     else if (strcmp(settingName, "defaultNetworkType") == 0)
@@ -1445,7 +1454,7 @@ bool parseLine(char *str, Settings *settings)
         // Last catch
         if (knownSetting == false)
         {
-            systemPrintf("Unknown setting %s\r\n", settingName);
+            log_d("Unknown setting %s", settingName);
         }
     }
 

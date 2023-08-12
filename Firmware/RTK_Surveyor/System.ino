@@ -15,7 +15,7 @@ bool configureUbloxModule()
         if (ENABLE_DEVELOPER && productVariant == REFERENCE_STATION)
             theGNSS.enableDebugging(serialGNSS); // Output all debug messages over serialGNSS
         else
-#endif  // REF_STN_GNSS_DEBUG
+#endif                                             // REF_STN_GNSS_DEBUG
             theGNSS.enableDebugging(Serial, true); // Enable only the critical debug messages over Serial
     }
     else
@@ -333,21 +333,20 @@ void checkBatteryLevels()
         battChangeRate = 0;
     }
 
+    if (battChangeRate >= -0.01)
+        externalPowerConnected = true;
+    else
+        externalPowerConnected = false;
+
     if (settings.enablePrintBatteryMessages)
     {
-        systemPrintf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
-
         char tempStr[25];
-        if (battChangeRate >= -0.01)
-        {
+        if (externalPowerConnected)
             snprintf(tempStr, sizeof(tempStr), "C");
-            externalPowerConnected = true;
-        }
         else
-        {
             snprintf(tempStr, sizeof(tempStr), "Disc");
-            externalPowerConnected = false;
-        }
+
+        systemPrintf("Batt (%d%%): Voltage: %0.02fV", battLevel, battVoltage);
 
         systemPrintf(" %sharging: %0.02f%%/hr ", tempStr, battChangeRate);
 
@@ -361,6 +360,21 @@ void checkBatteryLevels()
             snprintf(tempStr, sizeof(tempStr), "No batt");
 
         systemPrintf("%s\r\n", tempStr);
+    }
+
+    // Check if we need to shutdown due to no charging
+    if (settings.shutdownNoChargeTimeout_s > 0)
+    {
+        if (externalPowerConnected == false)
+        {
+            int secondsSinceLastCharger = (millis() - shutdownNoChargeTimer) / 1000;
+            if (secondsSinceLastCharger > settings.shutdownNoChargeTimeout_s)
+                powerDown(true);
+        }
+        else
+        {
+            shutdownNoChargeTimer = millis(); // Reset timer because power is attached
+        }
     }
 
     if (productVariant == RTK_SURVEYOR)
@@ -430,7 +444,7 @@ bool createTestFile()
             SD_MMC.remove(testFileName);
         return (!SD_MMC.exists(testFileName));
     }
-#endif  // COMPILE_SD_MMC
+#endif // COMPILE_SD_MMC
 
     return (false);
 }
@@ -1153,7 +1167,7 @@ const char *coordinatePrintableInputType(CoordinateInputType coordinateInputType
 }
 
 // Print the error message every 15 seconds
-void reportFatalError(const char * errorMsg)
+void reportFatalError(const char *errorMsg)
 {
     while (1)
     {

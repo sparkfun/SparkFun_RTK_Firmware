@@ -50,7 +50,6 @@ void menuFirmware()
             }
             else
             {
-
                 bool previouslyConnected = wifiIsConnected();
 
                 bluetoothStop(); // Stop Bluetooth to allow for SSL on the heap
@@ -119,7 +118,7 @@ void menuFirmware()
 
                     bluetoothStart(); // Restart BT according to settings
                 }
-            }
+            } //End wifiNetworkCount() check
         }
         else if (incoming == 'c' && btPrintEcho == true)
         {

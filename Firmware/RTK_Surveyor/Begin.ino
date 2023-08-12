@@ -116,6 +116,10 @@ void beginBoard()
         }
     }
 
+    //We need some settings before we are completely powered on
+    //ie, disablePowerFiltering, enableResetDisplay, resetCount, etc
+    loadSettingsPartial(); // Loads settings from LFS
+
     // Setup hardware pins
     if (productVariant == RTK_SURVEYOR)
     {
@@ -244,7 +248,6 @@ void beginBoard()
     ethernetMACAddress[5] += 3; // Convert MAC address to Ethernet MAC (add 3)
 
     // For all boards, check reset reason. If reset was due to wdt or panic, append last log
-    loadSettingsPartial(); // Loads settings from LFS
     if ((esp_reset_reason() == ESP_RST_POWERON) || (esp_reset_reason() == ESP_RST_SW))
     {
         reuseLastLog = false; // Start new log

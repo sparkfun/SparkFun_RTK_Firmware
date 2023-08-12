@@ -574,6 +574,9 @@ void menuDebug()
         systemPrint("77) Periodically print NTP server state: ");
         systemPrintf("%s\r\n", PERIODIC_SETTING(PD_NTP_SERVER_STATE) ? "Enabled" : "Disabled");
 
+        systemPrint("78) Power button filtering: ");
+        systemPrintf("%s\r\n", settings.powerButtonFiltering ? "Enabled" : "Disabled");
+
         systemPrintln("t) Enter Test Screen");
 
         systemPrintln("e) Erase LittleFS");
@@ -1102,6 +1105,10 @@ void menuDebug()
         else if (incoming == 77)
         {
             PERIODIC_TOGGLE(PD_NTP_SERVER_STATE);
+        }
+        else if (incoming == 78)
+        {
+            settings.powerButtonFiltering ^= 1;
         }
         else if (incoming == 'e')
         {

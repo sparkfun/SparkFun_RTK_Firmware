@@ -159,7 +159,10 @@ bool pvtServerActive()
     pvtServer->stop();
 
     if (pvtServer != nullptr)
+    {
         delete pvtServer;
+        pvtServer = nullptr;
+    }
     return false;
 }
 

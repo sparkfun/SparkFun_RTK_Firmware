@@ -576,8 +576,7 @@ void otaUpdate()
         {
             systemPrintln("Installing new firmware");
             ota.SetCallback(otaPullCallback);
-            if (enableRCFirmware == false)
-                ota.CheckForOTAUpdate(url, versionString); // Install new firmware, no reset
+            ota.CheckForOTAUpdate(url, versionString); // Install new firmware, no reset
 
             if (apConfigFirmwareUpdateInProcess)
             {

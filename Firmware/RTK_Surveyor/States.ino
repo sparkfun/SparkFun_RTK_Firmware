@@ -123,18 +123,21 @@ void updateSystemState()
             bluetoothStart(); // Turn on Bluetooth with 'Rover' name
             radioStart();     // Start internal radio if enabled, otherwise disable
 
-            tasksStartUART2(); // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+            if (!tasksStartUART2()) // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+                displayRoverFail(1000);
+            else
+            {
+                settings.updateZEDSettings = false; // On the next boot, no need to update the ZED on this profile
+                settings.lastState = STATE_ROVER_NOT_STARTED;
+                recordSystemSettings(); // Record this state for next POR
 
-            settings.updateZEDSettings = false; // On the next boot, no need to update the ZED on this profile
-            settings.lastState = STATE_ROVER_NOT_STARTED;
-            recordSystemSettings(); // Record this state for next POR
+                displayRoverSuccess(500);
 
-            displayRoverSuccess(500);
+                ntripClientStart();
+                changeState(STATE_ROVER_NO_FIX);
 
-            ntripClientStart();
-            changeState(STATE_ROVER_NO_FIX);
-
-            firstRoverStart = false; // Do not allow entry into test menu again
+                firstRoverStart = false; // Do not allow entry into test menu again
+            }
         }
         break;
 
@@ -244,9 +247,8 @@ void updateSystemState()
             bluetoothStop();
             bluetoothStart(); // Restart Bluetooth with 'Base' identifier
 
-            tasksStartUART2(); // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
-
-            if (configureUbloxModuleBase() == true)
+            // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+            if (tasksStartUART2() && configureUbloxModuleBase())
             {
                 settings.updateZEDSettings = false; // On the next boot, no need to update the ZED on this profile
                 settings.lastState = STATE_BASE_NOT_STARTED; // Record this state for next POR
@@ -987,9 +989,8 @@ void updateSystemState()
 
             displayNtpStart(500); // Show 'NTP'
 
-            tasksStartUART2(); // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
-
-            if (configureUbloxModuleNTP() == true)
+            // Start monitoring the UART1 from ZED for NMEA and UBX data (enables logging)
+            if (tasksStartUART2() && configureUbloxModuleNTP())
             {
                 settings.updateZEDSettings = false; // On the next boot, no need to update the ZED on this profile
                 settings.lastState = STATE_NTPSERVER_NOT_STARTED; // Record this state for next POR

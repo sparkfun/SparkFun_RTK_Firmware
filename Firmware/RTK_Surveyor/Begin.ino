@@ -553,19 +553,21 @@ void resetSPI()
 void beginUART2()
 {
     ringBuffer = (uint8_t *)malloc(settings.gnssHandlerBufferSize);
+    if (!ringBuffer)
+    {
+        if (pinUART2TaskHandle == nullptr)
+            xTaskCreatePinnedToCore(
+                pinUART2Task,
+                "UARTStart", // Just for humans
+                2000,        // Stack Size
+                nullptr,     // Task input parameter
+                0,           // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
+                &pinUART2TaskHandle,              // Task handle
+                settings.gnssUartInterruptsCore); // Core where task should run, 0=core, 1=Arduino
 
-    if (pinUART2TaskHandle == nullptr)
-        xTaskCreatePinnedToCore(
-            pinUART2Task,
-            "UARTStart", // Just for humans
-            2000,        // Stack Size
-            nullptr,     // Task input parameter
-            0,           // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest
-            &pinUART2TaskHandle,              // Task handle
-            settings.gnssUartInterruptsCore); // Core where task should run, 0=core, 1=Arduino
-
-    while (uart2pinned == false) // Wait for task to run once
-        delay(1);
+        while (uart2pinned == false) // Wait for task to run once
+            delay(1);
+    }
 }
 
 // Assign UART2 interrupts to the core that started the task. See:

@@ -1929,6 +1929,27 @@ void displayRoverStart(uint16_t displayTime)
     }
 }
 
+void displayNoRingBuffer(uint16_t displayTime)
+{
+    if (online.display == true)
+    {
+        oled.erase();
+
+        uint8_t fontHeight = 8;
+        uint8_t yPos = oled.getHeight() / 3 - fontHeight;
+
+        printTextCenter("Fix GNSS", yPos, QW_FONT_5X7, 1, false);  // text, y, font type, kerning, inverted
+        yPos += fontHeight;
+        printTextCenter("Handler", yPos, QW_FONT_5X7, 1, false);   // text, y, font type, kerning, inverted
+        yPos += fontHeight;
+        printTextCenter("Buffer Sz", yPos, QW_FONT_5X7, 1, false); // text, y, font type, kerning, inverted
+
+        oled.display();
+
+        delay(displayTime);
+    }
+}
+
 void displayRoverSuccess(uint16_t displayTime)
 {
     if (online.display == true)

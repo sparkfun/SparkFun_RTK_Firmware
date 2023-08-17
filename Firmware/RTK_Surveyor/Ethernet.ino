@@ -268,7 +268,7 @@ void ethernetISR()
     // Don't check or clear the interrupt here -
     // it may clash with a GNSS SPI transaction and cause a wdt timeout.
     // Do it in updateEthernet
-    gettimeofday((timeval *)&ethernetNtpTv, NULL); // Record the time of the NTP interrupt
+    gettimeofday((timeval *)&ethernetNtpTv, nullptr); // Record the time of the NTP interrupt
 }
 
 // Restart the Ethernet controller

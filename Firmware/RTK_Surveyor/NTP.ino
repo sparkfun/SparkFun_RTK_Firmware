@@ -592,7 +592,7 @@ bool ntpProcessOneRequest(bool process, const timeval *recTv, const timeval *syn
 
         // Add the transmit time - i.e. now!
         timeval txTime;
-        gettimeofday(&txTime, NULL);
+        gettimeofday(&txTime, nullptr);
         uint32_t nowUnixSeconds = txTime.tv_sec;
         nowUnixSeconds -= settings.timeZoneSeconds; // Subtract the time zone offset to convert recTv to Unix time
         nowUnixSeconds -= settings.timeZoneMinutes * 60;

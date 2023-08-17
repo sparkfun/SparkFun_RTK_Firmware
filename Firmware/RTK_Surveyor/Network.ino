@@ -440,7 +440,7 @@ NETWORK_DATA * networkGet(uint8_t networkType, bool updateRequestedNetwork)
             break;
 
         // Network not available if another device is using it
-        network = NULL;
+        network = nullptr;
     } while (0);
 
     // Return the network
@@ -490,7 +490,7 @@ NETWORK_DATA * networkGetUserNetwork(NETWORK_USER user)
             return network;
     }
 
-    return NULL; //User is not active on any network
+    return nullptr; //User is not active on any network
 }
 
 //----------------------------------------

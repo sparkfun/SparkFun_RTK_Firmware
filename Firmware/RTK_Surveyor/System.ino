@@ -940,7 +940,7 @@ CoordinateInputType coordinateIdentifyInputType(char *userEntryOriginal, double 
 
         // Find '.'
         char *decimalPtr = strchr(userEntry, '.');
-        if (decimalPtr == NULL)
+        if (decimalPtr == nullptr)
             coordinateInputType = COORDINATE_INPUT_TYPE_DDMMSS_NO_DECIMAL;
 
         double seconds = atof(userEntry); // Get DDDMMSS.ssssss
@@ -991,7 +991,7 @@ CoordinateInputType coordinateIdentifyInputType(char *userEntryOriginal, double 
 
         // Find '.'
         char *decimalPtr = strchr(userEntry, '.');
-        if (decimalPtr == NULL)
+        if (decimalPtr == nullptr)
             coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_SS_DASH_NO_DECIMAL;
 
         double seconds = atof(token); // Get SS.ssssss
@@ -1032,7 +1032,7 @@ CoordinateInputType coordinateIdentifyInputType(char *userEntryOriginal, double 
 
         // Find '.'
         char *decimalPtr = strchr(token, '.');
-        if (decimalPtr == NULL)
+        if (decimalPtr == nullptr)
             coordinateInputType = COORDINATE_INPUT_TYPE_DD_MM_SS_NO_DECIMAL;
 
         double seconds = atof(token); // Get SS.ssssss

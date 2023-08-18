@@ -338,6 +338,8 @@ bool checkCertificates()
     keyContents = (char *)malloc(MQTT_CERT_SIZE);
     if ((!certificateContents) || (!keyContents))
     {
+        if (certificateContents)
+          free(certificateContents);
         systemPrintln("Failed to allocate content buffers!");
         return (false);
     }
@@ -428,6 +430,8 @@ bool pointperfectUpdateKeys()
         keyContents = (char *)malloc(MQTT_CERT_SIZE);
         if ((!certificateContents) || (!keyContents))
         {
+            if (certificateContents)
+              free(certificateContents);
             systemPrintln("Failed to allocate content buffers!");
             break;
         }

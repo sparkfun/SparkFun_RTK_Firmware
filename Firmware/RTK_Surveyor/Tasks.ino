@@ -1320,8 +1320,17 @@ void idleTask(void *e)
 
 // Serial Read/Write tasks for the F9P must be started after BT is up and running otherwise SerialBT->available will
 // cause reboot
-void tasksStartUART2()
+bool tasksStartUART2()
 {
+    // Verify that the ring buffer was successfully allocated
+    if (!ringBuffer)
+    {
+        systemPrintln("ERROR: Ring buffer allocation failure!");
+        systemPrintln("Decrease GNSS handler (ring) buffer size");
+        displayNoRingBuffer(5000);
+        return false;
+    }
+
     availableHandlerSpace = settings.gnssHandlerBufferSize;
 
     // Reads data from ZED and stores data into circular buffer
@@ -1353,6 +1362,7 @@ void tasksStartUART2()
                                 settings.btReadTaskPriority, // Priority
                                 &btReadTaskHandle,           // Task handle
                                 settings.btReadTaskCore);    // Core where task should run, 0=core, 1=Arduino
+    return true;
 }
 
 // Stop tasks - useful when running firmware update or WiFi AP is running

@@ -873,6 +873,11 @@ void recordLineToSD(const char *fileName, const char *lineData)
             gotSemaphore = true;
 
             FileSdFatMMC file;
+            if (!file)
+            {
+                systemPrintln("ERROR - Failed to allocate file");
+                break;
+            }
             if (file.open(fileName, O_CREAT | O_APPEND | O_WRITE) == false)
             {
                 log_d("File %s not found", fileName);

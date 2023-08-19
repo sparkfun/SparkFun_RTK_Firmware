@@ -74,6 +74,17 @@ void ntripServerValidateTables() {}
 
 #endif // COMPILE_NETWORK
 
+//----------------------------------------
+// Web Server
+//----------------------------------------
+
+#ifndef COMPILE_AP
+
+void startWebServer(bool startWiFi = true, int httpPort = 80) {}
+void stopWebServer() {}
+bool parseIncomingSettings() {return false;}
+
+#endif  // COMPILE_AP
 #ifndef COMPILE_WIFI
 
 //----------------------------------------

@@ -1124,6 +1124,44 @@ uint8_t waitForPreamble(PARSE_STATE *parse, uint8_t data)
     return SENTENCE_TYPE_NONE;
 }
 
+// Make size of files human readable
+void stringHumanReadableSize(String &returnText, uint64_t bytes)
+{
+    char suffix[5] = {'\0'};
+    char readableSize[50] = {'\0'};
+    float cardSize = 0.0;
+
+    if (bytes < 1024)
+        strcpy(suffix, "B");
+    else if (bytes < (1024 * 1024))
+        strcpy(suffix, "KB");
+    else if (bytes < (1024 * 1024 * 1024))
+        strcpy(suffix, "MB");
+    else
+        strcpy(suffix, "GB");
+
+    if (bytes < (1024))
+        cardSize = bytes; // B
+    else if (bytes < (1024 * 1024))
+        cardSize = bytes / 1024.0; // KB
+    else if (bytes < (1024 * 1024 * 1024))
+        cardSize = bytes / 1024.0 / 1024.0; // MB
+    else
+        cardSize = bytes / 1024.0 / 1024.0 / 1024.0; // GB
+
+    if (strcmp(suffix, "GB") == 0)
+        snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); // Print decimal portion
+    else if (strcmp(suffix, "MB") == 0)
+        snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); // Print decimal portion
+    else if (strcmp(suffix, "KB") == 0)
+        snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); // Print decimal portion
+    else
+        snprintf(readableSize, sizeof(readableSize), "%.0f %s", cardSize, suffix); // Don't print decimal portion
+
+    returnText = String(readableSize);
+}
+
+// Verify table sizes match enum definitions
 void verifyTables ()
 {
     // Verify the consistency of the internal tables

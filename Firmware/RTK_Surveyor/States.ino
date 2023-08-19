@@ -633,9 +633,10 @@ void updateSystemState()
             espnowStop();
 
             tasksStopUART2(); // Delete F9 serial tasks if running
-            startWebServer(); // Start in AP mode and show config html page
-
-            changeState(STATE_WIFI_CONFIG);
+            if (!startWebServer()) // Start in AP mode and show config html page
+				changeState(STATE_ROVER_NOT_STARTED);
+            else
+				changeState(STATE_WIFI_CONFIG);
         }
         break;
 
@@ -1073,9 +1074,10 @@ void updateSystemState()
 
             ethernetWebServerStartESP32W5500(); // Start Ethernet in dedicated configure-via-ethernet mode
 
-            startWebServer(false, settings.httpPort); // Start the async web server
-
-            changeState(STATE_CONFIG_VIA_ETH);
+            if (!startWebServer(false, settings.httpPort)) // Start the async web server
+				changeState(STATE_ROVER_NOT_STARTED);
+			else
+				changeState(STATE_CONFIG_VIA_ETH);
         }
         break;
 

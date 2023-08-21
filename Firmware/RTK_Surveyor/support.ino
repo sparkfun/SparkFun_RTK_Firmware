@@ -1171,5 +1171,6 @@ void verifyTables ()
     ntripClientValidateTables();
     ntripServerValidateTables();
     pvtClientValidateTables();
+    pvtServerValidateTables();
     tasksValidateTables();
 }

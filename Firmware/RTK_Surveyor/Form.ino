@@ -12,248 +12,256 @@ Form.ino
 bool websocketConnected = false;
 
 // Start webserver in AP mode
-void startWebServer(bool startWiFi = true, int httpPort = 80)
+bool startWebServer(bool startWiFi = true, int httpPort = 80)
 {
-    ntripClientStop(true); // Do not allocate new wifiClient
-    ntripServerStop(true); // Do not allocate new wifiClient
-
-    if (startWiFi)
-        if (wifiStartAP() == false) // Exits calling wifiConnect()
-            return;
-
-    if (settings.mdnsEnable == true)
+    do
     {
-        if (MDNS.begin("rtk") == false) // This should make the module findable from 'rtk.local' in browser
-            log_d("Error setting up MDNS responder!");
-        else
-            MDNS.addService("http", "tcp", 80); // Add service to MDNS-SD
-    }
+        ntripClientStop(true); // Do not allocate new wifiClient
+        ntripServerStop(true); // Do not allocate new wifiClient
 
-    incomingSettings = (char *)malloc(AP_CONFIG_SETTING_SIZE);
-    memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
+        if (startWiFi)
+            if (wifiStartAP() == false) // Exits calling wifiConnect()
+                break;
 
-    // Pre-load settings CSV
-    settingsCSV = (char *)malloc(AP_CONFIG_SETTING_SIZE);
-    createSettingsString(settingsCSV);
+        if (settings.mdnsEnable == true)
+        {
+            if (MDNS.begin("rtk") == false) // This should make the module findable from 'rtk.local' in browser
+                log_d("Error setting up MDNS responder!");
+            else
+                MDNS.addService("http", "tcp", 80); // Add service to MDNS-SD
+        }
 
-    webserver = new AsyncWebServer(httpPort);
-    websocket = new AsyncWebSocket("/ws");
+        incomingSettings = (char *)malloc(AP_CONFIG_SETTING_SIZE);
+        memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
 
-    websocket->onEvent(onWsEvent);
-    webserver->addHandler(websocket);
+        // Pre-load settings CSV
+        settingsCSV = (char *)malloc(AP_CONFIG_SETTING_SIZE);
+        createSettingsString(settingsCSV);
 
-    // * index.html (not gz'd)
-    // * favicon.ico
+        webserver = new AsyncWebServer(httpPort);
+        websocket = new AsyncWebSocket("/ws");
 
-    // * /src/bootstrap.bundle.min.js - Needed for popper
-    // * /src/bootstrap.min.css
-    // * /src/bootstrap.min.js
-    // * /src/jquery-3.6.0.min.js
-    // * /src/main.js (not gz'd)
-    // * /src/rtk-setup.png
-    // * /src/style.css
+        websocket->onEvent(onWsEvent);
+        webserver->addHandler(websocket);
 
-    // * /src/fonts/icomoon.eot
-    // * /src/fonts/icomoon.svg
-    // * /src/fonts/icomoon.ttf
-    // * /src/fonts/icomoon.woof
+        // * index.html (not gz'd)
+        // * favicon.ico
 
-    // * /listfiles responds with a CSV of files and sizes in root
-    // * /listMessages responds with a CSV of messages supported by this platform
-    // * /listMessagesBase responds with a CSV of RTCM Base messages supported by this platform
-    // * /file allows the download or deletion of a file
+        // * /src/bootstrap.bundle.min.js - Needed for popper
+        // * /src/bootstrap.min.css
+        // * /src/bootstrap.min.js
+        // * /src/jquery-3.6.0.min.js
+        // * /src/main.js (not gz'd)
+        // * /src/rtk-setup.png
+        // * /src/style.css
 
-    webserver->onNotFound(notFound);
+        // * /src/fonts/icomoon.eot
+        // * /src/fonts/icomoon.svg
+        // * /src/fonts/icomoon.ttf
+        // * /src/fonts/icomoon.woof
 
-    webserver->onFileUpload(
-        handleUpload); // Run handleUpload function when any file is uploaded. Must be before server.on() calls.
+        // * /listfiles responds with a CSV of files and sizes in root
+        // * /listMessages responds with a CSV of messages supported by this platform
+        // * /listMessagesBase responds with a CSV of RTCM Base messages supported by this platform
+        // * /file allows the download or deletion of a file
 
-    webserver->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html, sizeof(index_html));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->onNotFound(notFound);
 
-    webserver->on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/plain", favicon_ico, sizeof(favicon_ico));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->onFileUpload(
+            handleUpload); // Run handleUpload function when any file is uploaded. Must be before server.on() calls.
 
-    webserver->on("/src/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/javascript", bootstrap_bundle_min_js, sizeof(bootstrap_bundle_min_js));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html, sizeof(index_html));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    webserver->on("/src/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/css", bootstrap_min_css, sizeof(bootstrap_min_css));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/plain", favicon_ico, sizeof(favicon_ico));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    webserver->on("/src/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/javascript", bootstrap_min_js, sizeof(bootstrap_min_js));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/src/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/javascript", bootstrap_bundle_min_js, sizeof(bootstrap_bundle_min_js));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    webserver->on("/src/jquery-3.6.0.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/javascript", jquery_js, sizeof(jquery_js));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/src/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/css", bootstrap_min_css, sizeof(bootstrap_min_css));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    webserver->on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", main_js, sizeof(main_js));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/src/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/javascript", bootstrap_min_js, sizeof(bootstrap_min_js));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    webserver->on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response;
-        if (productVariant == REFERENCE_STATION)
-            response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
-        else
-            response = request->beginResponse_P(200, "image/png", rtkSetupWiFi_png, sizeof(rtkSetupWiFi_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/src/jquery-3.6.0.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/javascript", jquery_js, sizeof(jquery_js));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    // Battery icons
-    webserver->on("/src/BatteryBlank.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", batteryBlank_png, sizeof(batteryBlank_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery0.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery0_png, sizeof(battery0_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery1.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery1_png, sizeof(battery1_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery2.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery2_png, sizeof(battery2_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery3.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery3_png, sizeof(battery3_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/src/main.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", main_js, sizeof(main_js));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    webserver->on("/src/Battery0_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery0_Charging_png, sizeof(battery0_Charging_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery1_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery1_Charging_png, sizeof(battery1_Charging_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery2_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery2_Charging_png, sizeof(battery2_Charging_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
-    webserver->on("/src/Battery3_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "image/png", battery3_Charging_png, sizeof(battery3_Charging_png));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/src/rtk-setup.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response;
+            if (productVariant == REFERENCE_STATION)
+                response = request->beginResponse_P(200, "image/png", rtkSetup_png, sizeof(rtkSetup_png));
+            else
+                response = request->beginResponse_P(200, "image/png", rtkSetupWiFi_png, sizeof(rtkSetupWiFi_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    webserver->on("/src/style.css", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", style_css, sizeof(style_css));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        // Battery icons
+        webserver->on("/src/BatteryBlank.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", batteryBlank_png, sizeof(batteryBlank_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery0.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery0_png, sizeof(battery0_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery1.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery1_png, sizeof(battery1_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery2.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery2_png, sizeof(battery2_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery3.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery3_png, sizeof(battery3_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    webserver->on("/src/fonts/icomoon.eot", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/plain", icomoon_eot, sizeof(icomoon_eot));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/src/Battery0_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery0_Charging_png, sizeof(battery0_Charging_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery1_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery1_Charging_png, sizeof(battery1_Charging_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery2_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery2_Charging_png, sizeof(battery2_Charging_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+        webserver->on("/src/Battery3_Charging.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "image/png", battery3_Charging_png, sizeof(battery3_Charging_png));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    webserver->on("/src/fonts/icomoon.svg", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/plain", icomoon_svg, sizeof(icomoon_svg));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/src/style.css", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", style_css, sizeof(style_css));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    webserver->on("/src/fonts/icomoon.ttf", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/plain", icomoon_ttf, sizeof(icomoon_ttf));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/src/fonts/icomoon.eot", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/plain", icomoon_eot, sizeof(icomoon_eot));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    webserver->on("/src/fonts/icomoon.woof", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response =
-            request->beginResponse_P(200, "text/plain", icomoon_woof, sizeof(icomoon_woof));
-        response->addHeader("Content-Encoding", "gzip");
-        request->send(response);
-    });
+        webserver->on("/src/fonts/icomoon.svg", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/plain", icomoon_svg, sizeof(icomoon_svg));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    // Handler for the /upload form POST
-    webserver->on(
-        "/upload", HTTP_POST, [](AsyncWebServerRequest *request) { request->send(200); }, handleFirmwareFileUpload);
+        webserver->on("/src/fonts/icomoon.ttf", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/plain", icomoon_ttf, sizeof(icomoon_ttf));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    // Handler for file manager
-    webserver->on("/listfiles", HTTP_GET, [](AsyncWebServerRequest *request) {
-        String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
-        systemPrintln(logmessage);
-        String files;
-        getFileList(files);
-        request->send(200, "text/plain", files);
-    });
+        webserver->on("/src/fonts/icomoon.woof", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response =
+                request->beginResponse_P(200, "text/plain", icomoon_woof, sizeof(icomoon_woof));
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
 
-    // Handler for supported messages list
-    webserver->on("/listMessages", HTTP_GET, [](AsyncWebServerRequest *request) {
-        String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
-        systemPrintln(logmessage);
-        String messages;
-        createMessageList(messages);
-        request->send(200, "text/plain", messages);
-    });
+        // Handler for the /upload form POST
+        webserver->on(
+            "/upload", HTTP_POST, [](AsyncWebServerRequest *request) { request->send(200); }, handleFirmwareFileUpload);
 
-    // Handler for supported RTCM/Base messages list
-    webserver->on("/listMessagesBase", HTTP_GET, [](AsyncWebServerRequest *request) {
-        String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
-        systemPrintln(logmessage);
-        String messageList;
-        createMessageListBase(messageList);
-        request->send(200, "text/plain", messageList);
-    });
+        // Handler for file manager
+        webserver->on("/listfiles", HTTP_GET, [](AsyncWebServerRequest *request) {
+            String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+            systemPrintln(logmessage);
+            String files;
+            getFileList(files);
+            request->send(200, "text/plain", files);
+        });
 
-    // Handler for file manager
-    webserver->on("/file", HTTP_GET, [](AsyncWebServerRequest *request) { handleFileManager(request); });
+        // Handler for supported messages list
+        webserver->on("/listMessages", HTTP_GET, [](AsyncWebServerRequest *request) {
+            String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+            systemPrintln(logmessage);
+            String messages;
+            createMessageList(messages);
+            request->send(200, "text/plain", messages);
+        });
 
-    webserver->begin();
+        // Handler for supported RTCM/Base messages list
+        webserver->on("/listMessagesBase", HTTP_GET, [](AsyncWebServerRequest *request) {
+            String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+            systemPrintln(logmessage);
+            String messageList;
+            createMessageListBase(messageList);
+            request->send(200, "text/plain", messageList);
+        });
 
-    log_d("Web Server Started");
-    reportHeapNow(false);
+        // Handler for file manager
+        webserver->on("/file", HTTP_GET, [](AsyncWebServerRequest *request) { handleFileManager(request); });
+
+        webserver->begin();
+
+        log_d("Web Server Started");
+        reportHeapNow(false);
+        return true;
+    } while (0);
+
+    // Release the resources
+    stopWebServer();
+    return false;
 }
 
 void stopWebServer()
@@ -263,24 +271,24 @@ void stopWebServer()
         webserver->end();
         free(webserver);
         webserver = nullptr;
+    }
 
-        if (websocket != nullptr)
-        {
-            delete websocket;
-            websocket = nullptr;
-        }
+    if (websocket != nullptr)
+    {
+        delete websocket;
+        websocket = nullptr;
+    }
 
-        if (settingsCSV != nullptr)
-        {
-            free(settingsCSV);
-            settingsCSV = nullptr;
-        }
+    if (settingsCSV != nullptr)
+    {
+        free(settingsCSV);
+        settingsCSV = nullptr;
+    }
 
-        if (incomingSettings != nullptr)
-        {
-            free(incomingSettings);
-            incomingSettings = nullptr;
-        }
+    if (incomingSettings != nullptr)
+    {
+        free(incomingSettings);
+        incomingSettings = nullptr;
     }
 
     log_d("Web Server Stopped");

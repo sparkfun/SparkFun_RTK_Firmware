@@ -80,7 +80,7 @@ void ntripServerValidateTables() {}
 
 #ifndef COMPILE_AP
 
-void startWebServer(bool startWiFi = true, int httpPort = 80) {}
+bool startWebServer(bool startWiFi = true, int httpPort = 80) {return false;}
 void stopWebServer() {}
 bool parseIncomingSettings() {return false;}
 

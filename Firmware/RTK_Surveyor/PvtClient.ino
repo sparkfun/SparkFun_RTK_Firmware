@@ -226,7 +226,7 @@ int32_t pvtClientSendData(uint16_t dataHead)
     return bytesToSend;
 }
 
-// Update the state of the NTRIP client state machine
+// Update the state of the PVT client state machine
 void pvtClientSetState(uint8_t newState)
 {
     if ((settings.debugPvtClient || PERIODIC_DISPLAY(PD_PVT_CLIENT_STATE)) && (!inMainMenu))
@@ -351,7 +351,6 @@ void pvtClientUpdate()
     uint64_t milliseconds;
     byte minutes;
     byte seconds;
-
     static uint32_t timer;
 
     /*

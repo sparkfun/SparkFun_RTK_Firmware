@@ -1,15 +1,19 @@
+/*------------------------------------------------------------------------------
+Form.ino
+
+  Start and stop the web-server, provide the form and handle browser input.
+------------------------------------------------------------------------------*/
+
+#ifdef COMPILE_AP
+
 // Once connected to the access point for WiFi Config, the ESP32 sends current setting values in one long string to
 // websocket After user clicks 'save', data is validated via main.js and a long string of values is returned.
 
 bool websocketConnected = false;
 
 // Start webserver in AP mode
-void startWebServer(bool startWiFi = true, int httpPort = 80); // Header
-void startWebServer(bool startWiFi, int httpPort)
+void startWebServer(bool startWiFi = true, int httpPort = 80)
 {
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
-
     ntripClientStop(true); // Do not allocate new wifiClient
     ntripServerStop(true); // Do not allocate new wifiClient
 
@@ -250,16 +254,10 @@ void startWebServer(bool startWiFi, int httpPort)
 
     log_d("Web Server Started");
     reportHeapNow(false);
-
-#endif // COMPILE_AP
-#endif // COMPILE_WIFI
 }
 
 void stopWebServer()
 {
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
-
     if (webserver != nullptr)
     {
         webserver->end();
@@ -287,25 +285,16 @@ void stopWebServer()
 
     log_d("Web Server Stopped");
     reportHeapNow(false);
-
-#endif  // COMPILE_AP
-#endif  // COMPILE_WIFI
 }
 
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
 void notFound(AsyncWebServerRequest *request)
 {
     String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
     systemPrintln(logmessage);
     request->send(404, "text/plain", "Not found");
 }
-#endif  // COMPILE_AP
-#endif  // COMPILE_WIFI
 
 // Handler for firmware file downloads
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
 static void handleFileManager(AsyncWebServerRequest *request)
 {
     // This section does not tolerate semaphore transactions
@@ -426,12 +415,8 @@ static void handleFileManager(AsyncWebServerRequest *request)
         request->send(400, "text/plain", "ERROR: name and action params required");
     }
 }
-#endif  // COMPILE_AP
-#endif  // COMPILE_WIFI
 
 // Handler for firmware file upload
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
 static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String fileName, size_t index, uint8_t *data,
                                      size_t len, bool final)
 {
@@ -517,13 +502,8 @@ static void handleFirmwareFileUpload(AsyncWebServerRequest *request, String file
         }
     }
 }
-#endif  // COMPILE_AP
-#endif  // COMPILE_WIFI
 
 // Events triggered by web sockets
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
-
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data,
                size_t len)
 {
@@ -557,13 +537,9 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     else
         log_d("onWsEvent: unrecognised AwsEventType %d", type);
 }
-#endif  // COMPILE_AP
-#endif  // COMPILE_WIFI
-
 // Create a csv string with current settings
 void createSettingsString(char *newSettings)
 {
-#ifdef COMPILE_AP
     char tagText[32];
     char nameText[64];
 
@@ -963,13 +939,11 @@ void createSettingsString(char *newSettings)
     strcat(newSettings, "\0");
     systemPrintf("newSettings len: %d\r\n", strlen(newSettings));
     systemPrintf("newSettings: %s\r\n", newSettings);
-#endif  // COMPILE_AP
 }
 
 // Create a csv string with the dynamic data to update (current coordinates, battery level, etc)
 void createDynamicDataString(char *settingsCSV)
 {
-#ifdef COMPILE_AP
     settingsCSV[0] = '\0'; // Erase current settings string
 
     // Current coordinates come from HPPOSLLH call back
@@ -1024,13 +998,11 @@ void createDynamicDataString(char *settingsCSV)
     }
 
     strcat(settingsCSV, "\0");
-#endif  // COMPILE_AP
 }
 
 // Given a settingName, and string value, update a given setting
 void updateSettingWithValue(const char *settingName, const char *settingValueStr)
 {
-#ifdef COMPILE_AP
     char *ptr;
     double settingValue = strtod(settingValueStr, &ptr);
 
@@ -1578,7 +1550,6 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
             systemPrintf("Unknown '%s': %0.3lf\r\n", settingName, settingValue);
         }
     } // End last strcpy catch
-#endif  // COMPILE_AP
 }
 
 // Add record with int
@@ -1690,9 +1661,7 @@ bool parseIncomingSettings()
     {
         // Confirm receipt
         log_d("Sending receipt confirmation of settings");
-#ifdef COMPILE_AP
         websocket->textAll("confirmDataReceipt,1,");
-#endif  // COMPILE_AP
     }
 
     return (true);
@@ -1821,46 +1790,6 @@ void createMessageListBase(String &returnText)
     log_d("returnText (%d bytes): %s\r\n", returnText.length(), returnText.c_str());
 }
 
-// Make size of files human readable
-void stringHumanReadableSize(String &returnText, uint64_t bytes)
-{
-    char suffix[5] = {'\0'};
-    char readableSize[50] = {'\0'};
-    float cardSize = 0.0;
-
-    if (bytes < 1024)
-        strcpy(suffix, "B");
-    else if (bytes < (1024 * 1024))
-        strcpy(suffix, "KB");
-    else if (bytes < (1024 * 1024 * 1024))
-        strcpy(suffix, "MB");
-    else
-        strcpy(suffix, "GB");
-
-    if (bytes < (1024))
-        cardSize = bytes; // B
-    else if (bytes < (1024 * 1024))
-        cardSize = bytes / 1024.0; // KB
-    else if (bytes < (1024 * 1024 * 1024))
-        cardSize = bytes / 1024.0 / 1024.0; // MB
-    else
-        cardSize = bytes / 1024.0 / 1024.0 / 1024.0; // GB
-
-    if (strcmp(suffix, "GB") == 0)
-        snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); // Print decimal portion
-    else if (strcmp(suffix, "MB") == 0)
-        snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); // Print decimal portion
-    else if (strcmp(suffix, "KB") == 0)
-        snprintf(readableSize, sizeof(readableSize), "%0.1f %s", cardSize, suffix); // Print decimal portion
-    else
-        snprintf(readableSize, sizeof(readableSize), "%.0f %s", cardSize, suffix); // Don't print decimal portion
-
-    returnText = String(readableSize);
-}
-
-#ifdef COMPILE_WIFI
-#ifdef COMPILE_AP
-
 // Handles uploading of user files to SD
 void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
@@ -1933,4 +1862,3 @@ void handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
 }
 
 #endif  // COMPILE_AP
-#endif  // COMPILE_WIFI

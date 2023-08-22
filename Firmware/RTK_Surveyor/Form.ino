@@ -32,14 +32,34 @@ bool startWebServer(bool startWiFi = true, int httpPort = 80)
         }
 
         incomingSettings = (char *)malloc(AP_CONFIG_SETTING_SIZE);
+        if (!incomingSettings)
+        {
+            systemPrintln("ERROR: Failed to allocate incomingSettings");
+            break;
+        }
         memset(incomingSettings, 0, AP_CONFIG_SETTING_SIZE);
 
         // Pre-load settings CSV
         settingsCSV = (char *)malloc(AP_CONFIG_SETTING_SIZE);
+        if (!settingsCSV)
+        {
+            systemPrintln("ERROR: Failed to allocate settingsCSV");
+            break;
+        }
         createSettingsString(settingsCSV);
 
         webserver = new AsyncWebServer(httpPort);
+        if (!webserver)
+        {
+            systemPrintln("ERROR: Failed to allocate webserver");
+            break;
+        }
         websocket = new AsyncWebSocket("/ws");
+        if (!websocket)
+        {
+            systemPrintln("ERROR: Failed to allocate websocket");
+            break;
+        }
 
         websocket->onEvent(onWsEvent);
         webserver->addHandler(websocket);
@@ -1367,9 +1387,6 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         loadSettings();
 
         // Send new settings to browser. Re-use settingsCSV to avoid stack.
-        if (settingsCSV == nullptr)
-            settingsCSV = (char *)malloc(AP_CONFIG_SETTING_SIZE);
-
         memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); // Clear any garbage from settings array
 
         createSettingsString(settingsCSV);
@@ -1388,9 +1405,6 @@ void updateSettingWithValue(const char *settingName, const char *settingValueStr
         activeProfiles = loadProfileNames();
 
         // Send new settings to browser. Re-use settingsCSV to avoid stack.
-        if (settingsCSV == nullptr)
-            settingsCSV = (char *)malloc(AP_CONFIG_SETTING_SIZE);
-
         memset(settingsCSV, 0, AP_CONFIG_SETTING_SIZE); // Clear any garbage from settings array
 
         createSettingsString(settingsCSV);

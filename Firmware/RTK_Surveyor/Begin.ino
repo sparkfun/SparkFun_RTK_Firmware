@@ -1007,6 +1007,7 @@ void beginSystemState()
         systemState = STATE_ROVER_NOT_STARTED; // Assume Rover. ButtonCheckTask() will correct as needed.
 
         setupBtn = new Button(pin_setupButton); // Create the button in memory
+        // Allocation failure handled in ButtonCheckTask
     }
     else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS)
     {
@@ -1025,6 +1026,7 @@ void beginSystemState()
 
         setupBtn = new Button(pin_setupButton);          // Create the button in memory
         powerBtn = new Button(pin_powerSenseAndControl); // Create the button in memory
+        // Allocation failures handled in ButtonCheckTask
     }
     else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND)
     {
@@ -1046,6 +1048,7 @@ void beginSystemState()
             firstRoverStart = false;
 
         powerBtn = new Button(pin_powerSenseAndControl); // Create the button in memory
+        // Allocation failure handled in ButtonCheckTask
     }
     else if (productVariant == REFERENCE_STATION)
     {
@@ -1060,6 +1063,7 @@ void beginSystemState()
                 .lastState; // Return to either NTP, Base or Rover Not Started. The last state previous to power down.
 
         setupBtn = new Button(pin_setupButton); // Create the button in memory
+        // Allocation failure handled in ButtonCheckTask
     }
 
     // Starts task for monitoring button presses

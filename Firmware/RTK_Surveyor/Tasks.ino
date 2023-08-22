@@ -804,43 +804,43 @@ void ButtonCheckTask(void *e)
 
         if (productVariant == RTK_SURVEYOR)
         {
-            if (settings.disableSetupButton == false) // Allow check of the setup button if not overridden by settings
-            {
-                setupBtn->read();
+			if (setupBtn && (settings.disableSetupButton == false)) // Allow check of the setup button if not overridden by settings
+			{
+				setupBtn->read();
 
-                // When switch is set to '1' = BASE, pin will be shorted to ground
-                if (setupBtn->isPressed()) // Switch is set to base mode
-                {
-                    if (buttonPreviousState == BUTTON_ROVER)
-                    {
-                        lastRockerSwitchChange = millis(); // Record for WiFi AP access
-                        buttonPreviousState = BUTTON_BASE;
-                        requestChangeState(STATE_BASE_NOT_STARTED);
-                    }
-                }
-                else if (setupBtn->wasReleased()) // Switch is set to Rover
-                {
-                    if (buttonPreviousState == BUTTON_BASE)
-                    {
-                        buttonPreviousState = BUTTON_ROVER;
+				// When switch is set to '1' = BASE, pin will be shorted to ground
+				if (setupBtn->isPressed()) // Switch is set to base mode
+				{
+					if (buttonPreviousState == BUTTON_ROVER)
+					{
+						lastRockerSwitchChange = millis(); // Record for WiFi AP access
+						buttonPreviousState = BUTTON_BASE;
+						requestChangeState(STATE_BASE_NOT_STARTED);
+					}
+				}
+				else if (setupBtn->wasReleased()) // Switch is set to Rover
+				{
+					if (buttonPreviousState == BUTTON_BASE)
+					{
+						buttonPreviousState = BUTTON_ROVER;
 
-                        // If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
-                        if (millis() - lastRockerSwitchChange < 500)
-                        {
-                            if (systemState == STATE_ROVER_NOT_STARTED &&
-                                online.display == true)         // Catch during Power On
-                                requestChangeState(STATE_TEST); // If RTK Surveyor, with display attached, during Rover
-                                                                // not started, then enter test mode
-                            else
-                                requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
-                        }
-                        else
-                        {
-                            requestChangeState(STATE_ROVER_NOT_STARTED);
-                        }
-                    }
-                }
-            }
+						// If quick toggle is detected (less than 500ms), enter WiFi AP Config mode
+						if (millis() - lastRockerSwitchChange < 500)
+						{
+							if (systemState == STATE_ROVER_NOT_STARTED &&
+								online.display == true)         // Catch during Power On
+								requestChangeState(STATE_TEST); // If RTK Surveyor, with display attached, during Rover
+																// not started, then enter test mode
+							else
+								requestChangeState(STATE_WIFI_CONFIG_NOT_STARTED);
+						}
+						else
+						{
+							requestChangeState(STATE_ROVER_NOT_STARTED);
+						}
+					}
+				}
+			}
         }
         else if (productVariant == RTK_EXPRESS ||
                  productVariant == RTK_EXPRESS_PLUS) // Express: Check both of the momentary switches

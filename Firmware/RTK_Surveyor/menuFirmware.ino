@@ -336,6 +336,11 @@ void updateFromSD(const char *firmwareFileName)
 #endif // COMPILE_SD_MMC
 
     FileSdFatMMC firmwareFile;
+    if (!firmwareFile)
+    {
+        systemPrintln("ERROR - Failed to allocate firmwareFile");
+        return;
+    }
     firmwareFile.open(firmwareFileName, O_READ);
 
     size_t updateSize = firmwareFile.size();

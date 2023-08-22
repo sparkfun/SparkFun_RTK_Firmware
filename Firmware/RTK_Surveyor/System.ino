@@ -420,7 +420,7 @@ bool createTestFile()
     char testFileName[40] = "/testfile.txt";
 
     // Attempt to write to the file system
-    if (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true)
+    if ((!testFile) || (testFile.open(testFileName, O_CREAT | O_APPEND | O_WRITE) != true))
     {
         systemPrintln("createTestFile: failed to create (open) test file");
         return (false);

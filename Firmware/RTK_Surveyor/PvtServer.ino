@@ -85,16 +85,31 @@ int32_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
     length = pvtServerClient[index].write(data, length);
     if (length >= 0)
     {
-        if ((settings.debugPvtServer) && (!inMainMenu))
-            systemPrintf("PVT server wrote %d bytes\r\n", length);
+        if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_CLIENT_DATA)) && (!inMainMenu))
+        {
+            PERIODIC_CLEAR(PD_PVT_SERVER_CLIENT_DATA);
+            systemPrintf("PVT server wrote %d bytes to %d.%d.%d.%d\r\n",
+                         length,
+                         pvtServerClientIpAddress[index][0],
+                         pvtServerClientIpAddress[index][1],
+                         pvtServerClientIpAddress[index][2],
+                         pvtServerClientIpAddress[index][3]);
+        }
     }
+
     // Failed to write the data
     else
     {
         // Done with this client connection
-        if (!inMainMenu)
+        if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_CLIENT_DATA)) && (!inMainMenu))
         {
-            systemPrintf("PVT server breaking connection %d with client\r\n", index);
+            PERIODIC_CLEAR(PD_PVT_SERVER_CLIENT_DATA);
+            systemPrintf("PVT server breaking connection %d with client %d.%d.%d.%d\r\n",
+                         index,
+                         pvtServerClientIpAddress[index][0],
+                         pvtServerClientIpAddress[index][1],
+                         pvtServerClientIpAddress[index][2],
+                         pvtServerClientIpAddress[index][3]);
         }
 
         pvtServerClient[index].stop();
@@ -161,7 +176,7 @@ int32_t pvtServerSendData(uint16_t dataHead)
     if (settings.enablePvtServer || online.pvtServer)
         pvtServerActive();
 
-    // Return the amount of space that WiFi is using in the buffer
+    // Return the amount of space that PVT server client is using in the buffer
     return usedSpace;
 }
 
@@ -214,6 +229,7 @@ void pvtServerSetState(uint8_t newState)
 void pvtServerUpdate()
 {
     int index;
+    IPAddress ipAddress;
 
     if (settings.enablePvtServer == false)
         return; // Nothing to do
@@ -252,15 +268,8 @@ void pvtServerUpdate()
         // Determine if the PVT server should be running
         if (settings.enablePvtServer && (!wifiIsConnected()))
         {
-            // Verify PVT_SERVER_MAX_CLIENTS
-            if ((sizeof(pvtServerClientConnected) * 8) < PVT_SERVER_MAX_CLIENTS)
-            {
-                systemPrintf("Please set PVT_SERVER_MAX_CLIENTS <= %d or increase size of pvtServerClientConnected\r\n",
-                             sizeof(pvtServerClientConnected) * 8);
-                reportFatalError("Please adjust PVT_SERVER_MAX_CLIENTS  or increase size of pvtServerClientConnected");
-            }
-
-            log_d("PVT server starting WiFi");
+            if (settings.debugPvtServer && (!inMainMenu))
+                systemPrintln("PVT server starting the network");
             wifiStart();
             pvtServerSetState(PVT_SERVER_STATE_NETWORK_STARTED);
         }
@@ -270,12 +279,21 @@ void pvtServerUpdate()
     case PVT_SERVER_STATE_NETWORK_STARTED:
         if (wifiIsConnected())
         {
+            if (settings.debugPvtServer && (!inMainMenu))
+                systemPrintln("PVT server starting the server");
+
             // Start the PVT server if enabled
             pvtServer = new WiFiServer(settings.pvtServerPort);
             pvtServer->begin();
             online.pvtServer = true;
-            systemPrint("PVT server online, IP Address ");
-            systemPrintln(WiFi.localIP());
+            ipAddress = WiFi.localIP();
+            systemPrintf("PVT server online, IP Address %d.%d.%d.%d:%d\r\n",
+                         ipAddress[0],
+                         ipAddress[1],
+                         ipAddress[2],
+                         ipAddress[3],
+                         settings.pvtServerPort
+                         );
             pvtServerSetState(PVT_SERVER_STATE_RUNNING);
         }
         break;
@@ -284,6 +302,12 @@ void pvtServerUpdate()
     case PVT_SERVER_STATE_RUNNING:
         if ((!settings.enablePvtServer) || (!wifiIsConnected()))
         {
+            if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_DATA)) && (!inMainMenu))
+            {
+                PERIODIC_CLEAR(PD_PVT_SERVER_DATA);
+                systemPrintln("PVT server initiating shutdown");
+            }
+
             // Notify the rest of the system that the PVT server is shutting down
             online.pvtServer = false;
             pvtServerSetState(PVT_SERVER_STATE_WAIT_NO_CLIENTS);
@@ -301,10 +325,15 @@ void pvtServerUpdate()
                 if ((!pvtServerClient[index]) || (!pvtServerClient[index].connected()))
                 {
                     // Done with this client connection
-                    if (!inMainMenu)
+                    if (PERIODIC_DISPLAY(PD_PVT_SERVER_DATA) && (!inMainMenu))
                     {
-                        systemPrintf("PVT server client %d Disconnected from ", index);
-                        systemPrintln(pvtServerClientIpAddress[index]);
+                        PERIODIC_CLEAR(PD_PVT_SERVER_DATA);
+                        systemPrintf("PVT server client %d connected to %d.%d.%d.%d\r\n",
+                                     index,
+                                     pvtServerClientIpAddress[index][0],
+                                     pvtServerClientIpAddress[index][1],
+                                     pvtServerClientIpAddress[index][2],
+                                     pvtServerClientIpAddress[index][3]);
                     }
 
                     // Shutdown the PVT server if necessary
@@ -326,12 +355,24 @@ void pvtServerUpdate()
                 // Data structure not in use
                 // Check for another PVT server client
                 pvtServerClient[index] = pvtServer->available();
+
+                // Done if no PVT server client found
                 if (!pvtServerClient[index])
                     break;
+
+                // Start processing the new PVT server client connection
                 pvtServerClientIpAddress[index] = pvtServerClient[index].remoteIP();
-                systemPrintf("PVT server client %d connected to ", index);
-                systemPrintln(pvtServerClientIpAddress[index]);
                 pvtServerClientConnected |= 1 << index;
+                if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_DATA)) && (!inMainMenu))
+                {
+                    PERIODIC_CLEAR(PD_PVT_SERVER_DATA);
+                    systemPrintf("PVT server client %d connected to %d.%d.%d.%d\r\n",
+                                 index,
+                                 pvtServerClientIpAddress[index][0],
+                                 pvtServerClientIpAddress[index][1],
+                                 pvtServerClientIpAddress[index][2],
+                                 pvtServerClientIpAddress[index][3]);
+                }
             }
         }
         break;
@@ -340,7 +381,8 @@ void pvtServerUpdate()
     case PVT_SERVER_STATE_WAIT_NO_CLIENTS:
         if (!pvtServerClientConnected)
         {
-            log_d("Stopping WiFi PVT Server");
+            if (settings.debugPvtServer && (!inMainMenu))
+                systemPrintln("PVT server stopping");
 
             // Stop the PVT server
             pvtServer->stop();
@@ -350,11 +392,25 @@ void pvtServerUpdate()
         }
         break;
     }
+
+    // Periodically display the PVT state
+    if (PERIODIC_DISPLAY(PD_PVT_SERVER_STATE) && (!inMainMenu))
+        pvtServerSetState(pvtServerState);
 }
 
 // Verify the PVT server tables
 void pvtServerValidateTables()
 {
+    char line[128];
+
+    // Verify PVT_SERVER_MAX_CLIENTS
+    if ((sizeof(pvtServerClientConnected) * 8) < PVT_SERVER_MAX_CLIENTS)
+    {
+        snprintf(line, sizeof(line),
+                 "Please set PVT_SERVER_MAX_CLIENTS <= %d or increase size of pvtServerClientConnected",
+                 sizeof(pvtServerClientConnected) * 8);
+        reportFatalError(line);
+    }
     if (pvtServerStateNameEntries != PVT_SERVER_STATE_MAX)
         reportFatalError("Fix pvtServerStateNameEntries to match PvtServerStates");
 }

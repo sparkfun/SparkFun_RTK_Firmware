@@ -14,6 +14,10 @@ Press and hold the power button until the display illuminates to turn on the dev
 
 The device's firmware version is shown during the Power On display.
 
+### Force Power Off
+
+In the event that a device becomes unresponsive, the device can be completely powered off by holding the power button for ~10s. The force power off method is hardware based and is therefor independent of firmware.
+
 ## Rover Fix
 
 ![Rover with location fix](img/Displays/SparkFun_RTK_Facet_-_Main_Display_Icons.jpg)

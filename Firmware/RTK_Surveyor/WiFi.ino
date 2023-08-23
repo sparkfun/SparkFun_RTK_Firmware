@@ -296,6 +296,7 @@ void wifiUpdate()
         lastWifiState = millis();
     }
 
+    DMW_st(wifiSetState, wifiState);
     switch (wifiState)
     {
     default:

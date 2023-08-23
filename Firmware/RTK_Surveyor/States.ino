@@ -34,6 +34,7 @@ void updateSystemState()
         }
 
         // Move between states as needed
+        DMW_st(changeState, systemState);
         switch (systemState)
         {
         /*

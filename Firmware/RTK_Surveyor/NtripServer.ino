@@ -559,6 +559,7 @@ void ntripServerUpdate()
     }
 
     // Enable the network and the NTRIP server if requested
+    DMW_st(ntripServerSetState, ntripServerState);
     switch (ntripServerState)
     {
     case NTRIP_SERVER_OFF:

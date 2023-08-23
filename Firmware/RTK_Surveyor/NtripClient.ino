@@ -555,6 +555,7 @@ void ntripClientUpdate()
         return;
 
     // Enable the network and the NTRIP client if requested
+    DMW_st(ntripClientSetState, ntripClientState);
     switch (ntripClientState)
     {
     case NTRIP_CLIENT_OFF:

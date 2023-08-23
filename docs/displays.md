@@ -20,7 +20,7 @@ In the event that a device becomes unresponsive, the device can be completely po
 
 ![Multiple COM ports shown](img/Serial/SparkFun_RTK_Facet_-_Multiple_COM_Ports.jpg)
 
-If the power state of a device is not known (for example, because a display may be malfunctioning) the device can be connected to USB. If one or more COM ports enumerate, the device is ON (shown above). If no COM ports are seen, the device is fully powered off.
+If the power state of a device is not known (for example, because a display may be malfunctioning) the device can be connected to USB. If one or more COM ports enumerate, the device is on(shown above). If no COM ports are seen, the device is fully powered off.
 
 ## Rover Fix
 

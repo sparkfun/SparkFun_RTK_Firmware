@@ -1,6 +1,6 @@
 #ifdef COMPILE_BT
 
-//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issues: 
+//We use a local copy of the BluetoothSerial library so that we can increase the RX buffer. See issues:
 //https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/23
 //https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/469
 #include "src/BluetoothSerial/BluetoothSerial.h"

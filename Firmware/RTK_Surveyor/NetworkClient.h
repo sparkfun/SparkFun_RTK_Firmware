@@ -149,7 +149,7 @@ class NetworkClient : public Client
     // Get the remote IP address
     //------------------------------
 
-	IPAddress remoteIP()
+    IPAddress remoteIP()
     {
 #if defined(COMPILE_ETHERNET)
         if (_networkType == NETWORK_TYPE_ETHERNET)
@@ -166,7 +166,7 @@ class NetworkClient : public Client
     // Get the remote port number
     //------------------------------
 
-	uint16_t remotePort()
+    uint16_t remotePort()
     {
 #if defined(COMPILE_ETHERNET)
         if (_networkType == NETWORK_TYPE_ETHERNET)

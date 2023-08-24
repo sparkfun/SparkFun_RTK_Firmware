@@ -10,6 +10,7 @@
 
 EXECUTABLES  = Compare
 EXECUTABLES += NMEA_Client
+EXECUTABLES += Read_Map_File
 EXECUTABLES += RTK_Reset
 EXECUTABLES += Split_Messages
 

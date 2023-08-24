@@ -46,3 +46,13 @@ Icon
 # Files that might appear on external disk
 .Spotlight-V100
 .Trashes
+
+# =========================
+# Linux Files
+# =========================
+
+Compare
+NMEA_Client
+Read_Map_File
+RTK_Reset
+Split_Messages

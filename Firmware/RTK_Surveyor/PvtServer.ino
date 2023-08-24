@@ -100,16 +100,15 @@ int32_t pvtServerSendData(uint16_t dataHead)
     {
         tail = pvtServerClientTails[index];
 
-        // Determine the amount of TCP data in the buffer
-        bytesToSend = dataHead - tail;
-        if (bytesToSend < 0)
-            bytesToSend += settings.gnssHandlerBufferSize;
-
         // Determine if the client is connected
         if ((!connected) || ((pvtServerClientConnected & (1 << index)) == 0))
             tail = dataHead;
         else
         {
+            // Determine the amount of PVT data in the buffer
+            bytesToSend = dataHead - tail;
+            if (bytesToSend < 0)
+                bytesToSend += settings.gnssHandlerBufferSize;
             if (bytesToSend > 0)
             {
                 // Reduce bytes to send if we have more to send then the end of the buffer
@@ -155,11 +154,10 @@ bool pvtServerActive()
     // Shutdown the TCP server
     online.pvtServer = false;
 
-    // Stop the TCP server
-    pvtServer->stop();
-
     if (pvtServer != nullptr)
     {
+        // Stop the TCP server
+        pvtServer->stop();
         delete pvtServer;
         pvtServer = nullptr;
     }

@@ -1029,22 +1029,45 @@ void beginLBand()
     response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_USE_PRESCRAMBLING, 0);                 // Default 0
     response &= i2cLBand.addCfgValset(UBLOX_CFG_PMP_UNIQUE_WORD, 16238547128276412563ull);
     response &=
-        i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C, 1); // Ensure UBX-RXM-PMP is enabled on the I2C port
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 1); // Output UBX-RXM-PMP on UART1
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 1);         // Enable UBX output on UART2
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); // Output UBX-RXM-PMP on UART2
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_UART1_BAUDRATE, 38400);       // match baudrate with ZED default
-    response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2_BAUDRATE, 38400);       // match baudrate with ZED default
+        i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART1, 0); // Diasable UBX-RXM-PMP on UART1. Not used.
+
+    // Determine if we should use callback to harvest/sent encrypted messages over I2C
+    // If not, it is assumed the ZED UART2 is directly connected to NEO UART2
+    if (settings.useI2cForLbandCorrections == true)
+    {
+        // Enable PMP over I2C. Disable UARTs
+        response &= theGNSS.setVal32(UBLOX_CFG_UART2INPROT_UBX, settings.enableUART2UBXIn);
+
+        i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Enable PMP callback
+
+        response &=
+            i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C, 1); // Ensure UBX-RXM-PMP is enabled on I2C port
+
+        response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 0);         // Disable UBX output on UART2
+        response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 0); // Disable UBX-RXM-PMP on UART2
+        response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud); // match baudrate with ZED
+    }
+    else // Setup for ZED to NEO serial communication
+    {
+        response &= theGNSS.setVal32(UBLOX_CFG_UART2INPROT_UBX, true); // Configure ZED for UBX input on UART2
+
+        // Disable PMP callback over I2C. Enable UARTs.
+        i2cLBand.setRXMPMPmessageCallbackPtr(nullptr);                          // Enable PMP callback
+        response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_I2C, 0); // Disable UBX-RXM-PMP on I2C port
+
+        response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2OUTPROT_UBX, 1);         // Enable UBX output on UART2
+        response &= i2cLBand.addCfgValset(UBLOX_CFG_MSGOUT_UBX_RXM_PMP_UART2, 1); // Output UBX-RXM-PMP on UART2
+        response &= i2cLBand.addCfgValset(UBLOX_CFG_UART2_BAUDRATE, settings.radioPortBaud); // match baudrate with ZED
+    }
+
     response &= i2cLBand.sendCfgValset();
+
+    theGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Callback to check if the PMP data is being decrypted successfully
 
     if (response == false)
         systemPrintln("L-Band failed to configure");
 
     i2cLBand.softwareResetGNSSOnly(); // Do a restart
-
-    i2cLBand.setRXMPMPmessageCallbackPtr(&pushRXMPMP); // Call pushRXMPMP when new PMP data arrives. Push it to the GNSS
-
-    theGNSS.setRXMCORcallbackPtr(&checkRXMCOR); // Check if the PMP data is being decrypted successfully
 
     lbandStartTimer = millis();
 

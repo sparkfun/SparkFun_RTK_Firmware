@@ -200,10 +200,29 @@ bool pointperfectProvisionDevice()
                  whitelistID[2], whitelistID[3], whitelistID[4], whitelistID[5]);
 #endif // WHITELISTED_ID
 
+        // Given name must between 1 and 50 characters
         char givenName[100];
         char versionString[9];
         getFirmwareVersion(versionString, sizeof(versionString), false);
-        snprintf(givenName, sizeof(givenName), "SparkFun RTK %s %s - %s", platformPrefix, versionString, hardwareID); // Get ready for JSON
+        Serial.printf("versionString: %s\r\n", versionString);
+
+        if (productVariant == RTK_FACET_LBAND)
+        {
+            // Facet L-Band v3.12 AABBCCDD1122
+            snprintf(givenName, sizeof(givenName), "Facet LBand %s - %s", versionString,
+                     hardwareID); // Get ready for JSON
+        }
+        else if (productVariant == RTK_FACET_LBAND_DIRECT)
+        {
+            // Facet L-Band Direct v3.12 AABBCCDD1122
+            snprintf(givenName, sizeof(givenName), "Facet LBand Direct %s - %s", versionString,
+                     hardwareID); // Get ready for JSON
+        }
+
+        if (strlen(givenName) >= 50)
+        {
+            Serial.printf("Error: GivenName '%s' too long: %d bytes\r\n", givenName, strlen(givenName));
+        }
 
         StaticJsonDocument<256> pointPerfectAPIPost;
 
@@ -339,7 +358,7 @@ bool checkCertificates()
     if ((!certificateContents) || (!keyContents))
     {
         if (certificateContents)
-          free(certificateContents);
+            free(certificateContents);
         systemPrintln("Failed to allocate content buffers!");
         return (false);
     }
@@ -431,7 +450,7 @@ bool pointperfectUpdateKeys()
         if ((!certificateContents) || (!keyContents))
         {
             if (certificateContents)
-              free(certificateContents);
+                free(certificateContents);
             systemPrintln("Failed to allocate content buffers!");
             break;
         }

@@ -3,32 +3,55 @@
 void identifyBoard()
 {
     // Use ADC to check resistor divider
+    // Express: 10/3.3
+    // Express+: 3.3/10
+    // Facet: 10/10
+    // Facet L-Band: 10/20
+    // Reference Station: 20/10
+    // Facet L-Band Direct: 10/100
+    // Surveyor: ID resistors do not exist
+
+    const float rtkExpressID = 3.3 / (10 + 3.3);            // 0.248
+    const float rtkExressPlusID = 10.0 / (10 + 3.3);        // 0.752
+    const float rtkFacetID = 10.0 / (10 + 10);              // 0.500
+    const float rtkFacetLbandID = 20.0 / (20 + 10);         // 0.667
+    const float rtkReferenceStationID = 10.0 / (10 + 20);   // 0.333
+    const float rtkFacetLbandDirectID = 100.0 / (100 + 10); // 0.909
+
     int pin_adc_rtk_facet = 35;
     uint16_t idValue = analogReadMilliVolts(pin_adc_rtk_facet);
     log_d("Board ADC ID: %d", idValue);
 
-    if (idValue > (3300 / 2 * 0.9) && idValue < (3300 / 2 * 1.1))
+    if (idValue > (3300 * rtkFacetID * 0.9) && idValue < (3300 * rtkFacetID * 1.1))
     {
         productVariant = RTK_FACET;
     }
-    else if (idValue > (3300 * 2 / 3 * 0.9) && idValue < (3300 * 2 / 3 * 1.1))
+    else if (idValue > (3300 * rtkFacetLbandID * 0.9) && idValue < (3300 * rtkFacetLbandID * 1.1))
     {
         productVariant = RTK_FACET_LBAND;
     }
-    else if (idValue > (3300 * 3.3 / 13.3 * 0.9) && idValue < (3300 * 3.3 / 13.3 * 1.1))
+    else if (idValue > (3300 * rtkExpressID * 0.9) && idValue < (3300 * rtkExpressID * 1.1))
     {
+        Serial.printf("rtkExpressID: %f\r\n", rtkExpressID);
         productVariant = RTK_EXPRESS;
     }
-    else if (idValue > (3300 * 10 / 13.3 * 0.9) && idValue < (3300 * 10 / 13.3 * 1.1))
+    else if (idValue > (3300 * rtkExressPlusID * 0.9) && idValue < (3300 * rtkExressPlusID * 1.1))
     {
         productVariant = RTK_EXPRESS_PLUS;
     }
-    else if (idValue > (3300 * 1 / 3 * 0.9) && idValue < (3300 * 1 / 3 * 1.1))
+    else if (idValue > (3300 * rtkReferenceStationID * 0.9) && idValue < (3300 * rtkReferenceStationID * 1.1))
     {
         productVariant = REFERENCE_STATION;
         // We can't auto-detect the ZED version if the firmware is in configViaEthernet mode,
         // so fake it here - otherwise messageSupported always returns false
         zedFirmwareVersionInt = 112;
+    }
+
+    // Reduce to 5% window tolerance
+    // Testing shows the combined ADC+resistors is under a 1% window
+    else if (idValue > (3300 * rtkFacetLbandDirectID * 0.95) && idValue < (3300 * rtkFacetLbandDirectID * 1.05))
+    {
+        productVariant = RTK_FACET_LBAND_DIRECT;
     }
     else
     {

@@ -64,7 +64,7 @@ int32_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
     if (length >= 0)
     {
         if ((settings.debugPvtServer) && (!inMainMenu))
-            systemPrintf("%d bytes written over WiFi TCP\r\n", length);
+            systemPrintf("PVT server wrote %d bytes\r\n", length);
     }
     // Failed to write the data
     else
@@ -72,7 +72,7 @@ int32_t pvtServerClientSendData(int index, uint8_t *data, uint16_t length)
         // Done with this client connection
         if (!inMainMenu)
         {
-            systemPrintf("Breaking WiFi TCP client %d connection\r\n", index);
+            systemPrintf("PVT server breaking connection %d with client\r\n", index);
         }
 
         pvtServerClient[index].stop();
@@ -116,7 +116,7 @@ int32_t pvtServerSendData(uint16_t dataHead)
                 if ((tail + bytesToSend) > settings.gnssHandlerBufferSize)
                     bytesToSend = settings.gnssHandlerBufferSize - tail;
 
-                // Send the data to the TCP clients
+                // Send the data to the PVT server clients
                 bytesToSend = pvtServerClientSendData(index, &ringBuffer[tail], bytesToSend);
 
                 // Assume all data was sent, wrap the buffer pointer
@@ -135,7 +135,7 @@ int32_t pvtServerSendData(uint16_t dataHead)
         pvtServerClientTails[index] = tail;
     }
 
-    // Shutdown the TCP server if necessary
+    // Shutdown the PVT server if necessary
     if (settings.enablePvtServer || online.pvtServer)
         pvtServerActive();
 
@@ -143,20 +143,20 @@ int32_t pvtServerSendData(uint16_t dataHead)
     return usedSpace;
 }
 
-// Check for TCP server active
+// Check for PVT server active
 bool pvtServerActive()
 {
     if ((settings.enablePvtServer && online.pvtServer) || pvtServerClientConnected)
         return true;
 
-    log_d("Stopping WiFi TCP Server");
+    log_d("Stopping PVT Server");
 
-    // Shutdown the TCP server
+    // Shutdown the PVT server
     online.pvtServer = false;
 
     if (pvtServer != nullptr)
     {
-        // Stop the TCP server
+        // Stop the PVT server
         pvtServer->stop();
         delete pvtServer;
         pvtServer = nullptr;
@@ -172,7 +172,7 @@ void pvtServerUpdate()
     // Skip if in configure-via-ethernet mode
     if (configureViaEthernet)
     {
-        // log_d("configureViaEthernet: skipping tcpUpdate");
+        // log_d("configureViaEthernet: skipping pvtServerUpdate");
         return;
     }
 
@@ -180,9 +180,9 @@ void pvtServerUpdate()
         return; // Nothing to do
 
     if (wifiInConfigMode())
-        return; // Do not service TCP during WiFi config
+        return; // Do not service PVT server during WiFi config
 
-    // If TCP is enabled, but WiFi is not connected, start WiFi
+    // If PVT server is enabled, but WiFi is not connected, start WiFi
     if (settings.enablePvtServer && (wifiIsConnected() == false))
     {
         // Verify PVT_SERVER_MAX_CLIENTS
@@ -198,7 +198,7 @@ void pvtServerUpdate()
         wifiStart();
     }
 
-    // Start the TCP server if enabled
+    // Start the PVT server if enabled
     if (settings.enablePvtServer && (pvtServer == nullptr) && wifiIsConnected())
     {
         pvtServer = new WiFiServer(settings.pvtServerPort);
@@ -246,7 +246,7 @@ void pvtServerUpdate()
                 pvtServerClient[index].stop();
                 pvtServerClientConnected &= ~(1 << index);
 
-                // Shutdown the TCP server if necessary
+                // Shutdown the PVT server if necessary
                 if (settings.enablePvtServer || online.pvtServer)
                     pvtServerActive();
             }

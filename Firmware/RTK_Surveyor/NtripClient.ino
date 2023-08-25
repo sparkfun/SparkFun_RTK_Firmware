@@ -454,7 +454,7 @@ void ntripClientRestart()
     // Save the previous uptime value
     if (ntripClientState == NTRIP_CLIENT_CONNECTED)
         ntripClientStartTime = ntripClientTimer - ntripClientStartTime;
-    ntripClientStop(false);
+    ntripClientStop(!settings.enableNtripClient);
 }
 
 // Update the state of the NTRIP client state machine

@@ -448,7 +448,7 @@ void ntripServerRestart()
     // Save the previous uptime value
     if (ntripServerState == NTRIP_SERVER_CASTING)
         ntripServerStartTime = ntripServerTimer - ntripServerStartTime;
-    ntripServerStop(false);
+    ntripServerStop(!settings.enableNtripServer);
 }
 
 // Update the state of the NTRIP server state machine

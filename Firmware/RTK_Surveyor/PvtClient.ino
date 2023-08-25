@@ -475,12 +475,8 @@ void pvtClientUpdate()
 
         // Determine if the PVT client link is broken
         else if ((!*pvtClient) || (!pvtClient->connected()) || pvtClientWriteError)
-        {
             // Stop the PVT client
             pvtClientStop();
-            pvtClientSetState(PVT_CLIENT_STATE_OFF);
-            timer = millis();
-        }
         break;
     }
 

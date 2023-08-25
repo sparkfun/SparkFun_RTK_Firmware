@@ -22,7 +22,7 @@
                                     v                 Fail     |
                                   WIFI_CONNECTING------------->+
                                     |    ^                     ^
-                     wifiConnect()  |    |                     | wifiStop()
+                     wifiConnect()  |    |                     | wifiShutdown()
                                     |    | WL_CONNECTION_LOST  |
                                     |    | WL_DISCONNECTED     |
                                     v    |                     |
@@ -385,21 +385,16 @@ void wifiStart()
 }
 
 // Stop WiFi and release all resources
-// If ESP NOW is active, leave WiFi on enough for ESP NOW
 void wifiStop()
 {
+    // Stop the web server
     stopWebServer();
 
-    // Shutdown the PVT client
-    if (online.pvtClient)
-    {
-        // Tell the UART2 tasks that the TCP client is shutting down
-        online.pvtClient = false;
-        delay(5);
-        systemPrintln("PVT client offline");
-    }
+    // Stop the multicast domain name server
+    if (settings.mdnsEnable == true)
+        MDNS.end();
 
-    // Shutdown the TCP server connection
+    // Stop the PVT server
     if (online.pvtServer)
     {
         // Tell the UART2 tasks that the TCP server is shutting down
@@ -411,9 +406,14 @@ void wifiStop()
         systemPrintln("TCP Server offline");
     }
 
-    if (settings.mdnsEnable == true)
-        MDNS.end();
+    // Stop the other network clients and then WiFi
+    networkStop(NETWORK_TYPE_WIFI);
+}
 
+// Stop WiFi and release all resources
+// If ESP NOW is active, leave WiFi on enough for ESP NOW
+void wifiShutdown()
+{
     wifiSetState(WIFI_OFF);
 
     wifiConnectionAttempts = 0; // Reset the timeout

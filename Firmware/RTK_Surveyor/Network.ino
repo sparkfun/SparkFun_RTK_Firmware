@@ -174,7 +174,7 @@ const char * const networkState[] =
     "NETWORK_STATE_DELAY",
     "NETWORK_STATE_CONNECTING",
     "NETWORK_STATE_IN_USE",
-    "NETWORK_STATE_WAIT_UNTIL_CLOSED",
+    "NETWORK_STATE_WAIT_NO_USERS",
 };
 const int networkStateEntries = sizeof(networkState) / sizeof(networkState[0]);
 
@@ -737,7 +737,7 @@ void networkShutdownHardware(NETWORK_DATA * network)
     {
         if (settings.debugNetworkLayer)
             systemPrintln("Network stopping WiFi");
-        wifiStop();
+        wifiShutdown();
     }
 }
 
@@ -787,6 +787,8 @@ void networkStop(uint8_t networkType)
 {
     NETWORK_DATA * network;
     bool restart;
+    bool shutdown;
+    int user;
 
     do
     {
@@ -807,6 +809,52 @@ void networkStop(uint8_t networkType)
         if ((!network) || (networkType != network->type))
             // The network is already stopped
             break;
+
+        // Save the shutdown status
+        shutdown = network->shutdown;
+
+        // Stop the clients of this network
+        for (user = 0; user < (sizeof(network->activeUsers) * 8); user++)
+        {
+            // Determine if the network client is active
+            if (network->activeUsers & (1 << user))
+            {
+                // When user calls networkUserClose don't recursively
+                // call networkStop
+                network->shutdown = false;
+
+                // Stop the network client
+                switch(user)
+                {
+                case NETWORK_USER_NTP_SERVER:
+                    if (settings.debugNetworkLayer)
+                        systemPrintln("Network layer stopping NTP server");
+                    ntpServerStop();
+                    break;
+
+                case NETWORK_USER_NTRIP_CLIENT:
+                    if (settings.debugNetworkLayer)
+                        systemPrintln("Network layer stopping NTRIP client");
+                    ntripClientRestart();
+                    break;
+
+                case NETWORK_USER_NTRIP_SERVER:
+                    if (settings.debugNetworkLayer)
+                        systemPrintln("Network layer stopping NTRIP server");
+                    ntripServerRestart();
+                    break;
+
+                case NETWORK_USER_PVT_CLIENT:
+                    if (settings.debugNetworkLayer)
+                        systemPrintln("Network layer stopping PVT client");
+                    pvtClientStop();
+                    break;
+                }
+            }
+        }
+
+        // Restore the shutdown status
+        network->shutdown = shutdown;
 
         // Determine if the network can be stopped now
         if ((network->state < NETWORK_STATE_IN_USE) || (!network->activeUsers))
@@ -850,6 +898,8 @@ void networkStop(uint8_t networkType)
         if (network->state != NETWORK_STATE_WAIT_NO_USERS)
         {
             network->shutdown = true;
+            if (settings.debugNetworkLayer)
+                systemPrintln("Network layer waiting for users to stop!");
             networkSetState(network, NETWORK_STATE_WAIT_NO_USERS);
         }
     } while (0);

@@ -1045,7 +1045,7 @@ void ButtonCheckTask(void *e)
                 } // End disabdisableSetupButton check
             }
         }                                                                          // End Platform = RTK Express
-        else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND) // Check one momentary button
+        else if (productVariant == RTK_FACET || productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT) // Check one momentary button
         {
             if (powerBtn != nullptr)
                 powerBtn->read();

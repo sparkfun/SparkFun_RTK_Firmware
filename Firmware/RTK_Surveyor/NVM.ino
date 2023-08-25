@@ -200,7 +200,7 @@ void recordSystemSettingsToFile(File *settingsFile)
 
     settingsFile->printf("%s=%s\r\n", "zedUniqueId", zedUniqueId);
 
-    if (productVariant == RTK_FACET_LBAND)
+    if (productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
         settingsFile->printf("%s=%s\r\n", "neoFirmwareVersion", neoFirmwareVersion);
 
     settingsFile->printf("%s=%d\r\n", "printDebugMessages", settings.printDebugMessages);
@@ -366,6 +366,8 @@ void recordSystemSettingsToFile(File *settingsFile)
     settingsFile->printf("%s=%d\r\n", "shutdownNoChargeTimeout_s", settings.shutdownNoChargeTimeout_s);
     settingsFile->printf("%s=%d\r\n", "disableSetupButton", settings.disableSetupButton);
     settingsFile->printf("%s=%d\r\n", "powerButtonFiltering", settings.powerButtonFiltering);
+    settingsFile->printf("%s=%d\r\n", "useI2cForLbandCorrections", settings.useI2cForLbandCorrections);
+    settingsFile->printf("%s=%d\r\n", "useI2cForLbandCorrectionsConfigured", settings.useI2cForLbandCorrectionsConfigured);
 
     // Record constellation settings
     for (int x = 0; x < MAX_CONSTELLATIONS; x++)
@@ -1315,6 +1317,10 @@ bool parseLine(char *str, Settings *settings)
         settings->disableSetupButton = d;
     else if (strcmp(settingName, "powerButtonFiltering") == 0)
         settings->powerButtonFiltering = d;
+    else if (strcmp(settingName, "useI2cForLbandCorrections") == 0)
+        settings->useI2cForLbandCorrections = d;
+    else if (strcmp(settingName, "useI2cForLbandCorrectionsConfigured") == 0)
+        settings->useI2cForLbandCorrectionsConfigured = d;
 
     // Network layer
     else if (strcmp(settingName, "defaultNetworkType") == 0)

@@ -3,7 +3,7 @@ void menuPorts()
     if (productVariant == RTK_SURVEYOR || productVariant == REFERENCE_STATION)
         menuPortsSurveyor();
     else if (productVariant == RTK_EXPRESS || productVariant == RTK_EXPRESS_PLUS || productVariant == RTK_FACET ||
-             productVariant == RTK_FACET_LBAND)
+             productVariant == RTK_FACET_LBAND || productVariant == RTK_FACET_LBAND_DIRECT)
         menuPortsMultiplexed();
 }
 
@@ -134,6 +134,19 @@ void menuPortsMultiplexed()
         else
             systemPrintln("Disabled");
 
+        // The Facet L-Band Direct has ZED tied to NEO over serial. Attaching an external radio
+        // will cause the NEO to compete with the radio. If user wants to use external radio, we
+        // switch off the NEO and send PMP over I2C. By default, Facet L-Band v14 does not
+        // useI2cForLbandCorrections.
+        if (productVariant == RTK_FACET_LBAND_DIRECT)
+        {
+            systemPrint("5) Enable external radio: ");
+            if (settings.useI2cForLbandCorrections == true)
+                systemPrintln("Enabled");
+            else
+                systemPrintln("Disabled");
+        }
+
         systemPrintln("x) Exit");
 
         int incoming = getNumber(); // Returns EXIT, TIMEOUT, or long
@@ -205,7 +218,12 @@ void menuPortsMultiplexed()
         else if (incoming == 4)
         {
             settings.enableUART2UBXIn ^= 1;
-            systemPrintln("UART2 Protocol In updated. Changes will be applied at next restart");
+            systemPrintln("UART2 Protocol In updated. Changes will be applied at next restart.");
+        }
+        else if (productVariant == RTK_FACET_LBAND_DIRECT && incoming == 5)
+        {
+            settings.useI2cForLbandCorrections ^= 1;
+            systemPrintln("External radio port updated. Changes will be applied at next restart.");
         }
         else if (incoming == 'x')
             break;

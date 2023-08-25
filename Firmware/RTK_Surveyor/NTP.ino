@@ -831,6 +831,7 @@ void ntpServerUpdate()
         return;
 
     // Process the NTP state
+    DMW_st(ntpServerSetState, ntpServerState);
     switch (ntpServerState)
     {
     default:

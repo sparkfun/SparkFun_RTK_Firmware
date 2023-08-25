@@ -374,6 +374,7 @@ void pvtClientUpdate()
                 '--------------PVT_CLIENT_STATE_CONNECTED
     */
 
+    DMW_st(pvtClientSetState, pvtClientState);
     switch (pvtClientState)
     {
     default:

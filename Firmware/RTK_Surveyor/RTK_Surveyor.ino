@@ -669,6 +669,71 @@ volatile PeriodicDisplay_t periodicDisplay;
 unsigned long shutdownNoChargeTimer = 0;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+#define DEAD_MAN_WALKING_ENABLED    0
+
+#if DEAD_MAN_WALKING_ENABLED
+
+// Developer subsitutions enabled by changing DEAD_MAN_WALKING_ENABLED
+// from 0 to 1
+volatile bool deadManWalking;
+#define DMW_if                  if (deadManWalking)
+#define DMW_c(string)           DMW_if systemPrintf("%s called\r\n", string);
+#define DMW_m(string)           DMW_if systemPrintln(string);
+#define DMW_r(string)           DMW_if systemPrintf("%s returning\r\n",string);
+#define DMW_rs(string, status)  DMW_if systemPrintf("%s returning %d\r\n",string, (int32_t)status);
+#define DMW_st(routine, state)  DMW_if routine(state);
+
+#define START_DEAD_MAN_WALKING                          \
+{                                                       \
+    deadManWalking = true;                              \
+                                                        \
+    /* Output as much as possible to identify the location of the failure */    \
+    settings.printDebugMessages = true;                 \
+    settings.enableI2Cdebug = true;                     \
+    settings.enableHeapReport = true;                   \
+    settings.enableTaskReports = true;                  \
+    settings.enablePrintState = true;                   \
+    settings.enablePrintPosition = true;                \
+    settings.enablePrintIdleTime = true;                \
+    settings.enablePrintBatteryMessages = true;         \
+    settings.enablePrintRoverAccuracy = true;           \
+    settings.enablePrintBadMessages = true;             \
+    settings.enablePrintLogFileMessages = true;         \
+    settings.enablePrintLogFileStatus = true;           \
+    settings.enablePrintRingBufferOffsets = true;       \
+    settings.enablePrintStates = true;                  \
+    settings.enablePrintDuplicateStates = true;         \
+    settings.enablePrintRtcSync = true;                 \
+    settings.enablePrintBufferOverrun = true;           \
+    settings.enablePrintSDBuffers = true;               \
+    settings.periodicDisplay = (PeriodicDisplay_t)-1;   \
+    settings.enablePrintEthernetDiag = true;            \
+    settings.debugWifiState = true;                     \
+    settings.debugNetworkLayer = true;                  \
+    settings.printNetworkStatus = true;                 \
+    settings.debugNtripClientRtcm = true;               \
+    settings.debugNtripClientState = true;              \
+    settings.debugNtripServerRtcm = true;               \
+    settings.debugNtripServerState = true;              \
+    settings.debugPvtClient = true;                     \
+    settings.debugPvtServer = true;                     \
+}
+
+#else   // 0
+
+// Production substitutions
+#define deadManWalking              0
+#define DMW_if                      if (0)
+#define DMW_c(string)
+#define DMW_m(string)
+#define DMW_r(string)
+#define DMW_rs(string, status)
+#define DMW_st(routine, state)
+
+#endif  // 0
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 /*
                      +---------------------------------------+      +----------+
                      |                 ESP32                 |      |   GNSS   |  Antenna
@@ -759,62 +824,88 @@ void setup()
 
     Serial.begin(115200); // UART0 for programming and debugging
 
+    DMW_c("identifyBoard");
     identifyBoard(); // Determine what hardware platform we are running on
 
+    DMW_c("initializePowerPins");
     initializePowerPins(); // Initialize any essential power pins - e.g. enable power for the Display
 
+    DMW_c("beginMux");
     beginMux(); // Must come before I2C activity to avoid external devices from corrupting the bus. See issue #474:
                 // https://github.com/sparkfun/SparkFun_RTK_Firmware/issues/474
 
+    DMW_c("beginI2C");
     beginI2C();
 
+    DMW_c("beginDisplay");
     beginDisplay(); // Start display to be able to display any errors
 
+    DMW_c("beginFS");
     beginFS(); // Start LittleFS file system for settings
 
+    DMW_c("checkConfigureViaEthernet");
     configureViaEthernet =
         checkConfigureViaEthernet(); // Check if going into dedicated configureViaEthernet (STATE_CONFIG_VIA_ETH) mode
 
+    DMW_c("beginGNSS");
     beginGNSS(); // Connect to GNSS to get module type
 
+    DMW_c("beginBoard");
     beginBoard(); // Now finish setting up the board and check the on button
 
+    DMW_c("displaySplash");
     displaySplash(); // Display the RTK product name and firmware version
 
+    DMW_c("beginLEDs");
     beginLEDs(); // LED and PWM setup
 
+    DMW_c("verifyTables");
     verifyTables (); // Verify the consistency of the internal tables
 
+    DMW_c("beginSD");
     beginSD(); // Test if SD is present
 
+    DMW_c("loadSettings");
     loadSettings(); // Attempt to load settings after SD is started so we can read the settings file if available
 
+    DMW_c("beginIdleTasks");
     beginIdleTasks(); // Enable processor load calculations
 
+    DMW_c("beginUART2");
     beginUART2(); // Start UART2 on core 0, used to receive serial from ZED and pass out over SPP
 
+    DMW_c("beginFuelGauge");
     beginFuelGauge(); // Configure battery fuel guage monitor
 
+    DMW_c("configureGNSS");
     configureGNSS(); // Configure ZED module
 
+    DMW_c("ethernetBegin");
     ethernetBegin(); // Start-up the Ethernet connection
 
+    DMW_c("beginAccelerometer");
     beginAccelerometer();
 
+    DMW_c("beginLBand");
     beginLBand(); // Begin L-Band
 
+    DMW_c("beginExternalTriggers");
     beginExternalTriggers(); // Configure the time pulse output and TM2 input
 
+    DMW_c("beginInterrupts");
     beginInterrupts(); // Begin the TP and W5500 interrupts
 
+    DMW_c("beginSystemState");
     beginSystemState(); // Determine initial system state. Start task for button monitoring.
 
+    DMW_c("updateRTC");
     updateRTC(); // The GNSS likely has time/date. Update ESP32 RTC to match. Needed for PointPerfect key expiration.
 
     Serial.flush(); // Complete any previous prints
 
     log_d("Boot time: %d", millis());
 
+    DMW_c("danceLEDs");
     danceLEDs(); // Turn on LEDs like a car dashboard
 }
 
@@ -828,35 +919,51 @@ void loop()
         lastPeriodicDisplay = millis();
         periodicDisplay = settings.periodicDisplay;
     }
+    if (deadManWalking)
+        periodicDisplay = (PeriodicDisplay_t)-1;
 
     if (online.gnss == true)
     {
+        DMW_c("theGNSS.checkUblox");
         theGNSS.checkUblox();     // Regularly poll to get latest data and any RTCM
+        DMW_c("theGNSS.checkCallbacks");
         theGNSS.checkCallbacks(); // Process any callbacks: ie, eventTriggerReceived
     }
 
+    DMW_c("updateSystemState");
     updateSystemState();
 
+    DMW_c("updateBattery");
     updateBattery();
 
+    DMW_c("updateDisplay");
     updateDisplay();
 
+    DMW_c("updateRTC");
     updateRTC(); // Set system time to GNSS once we have fix
 
+    DMW_c("updateSD");
     updateSD(); // Check if SD needs to be started or is at max capacity
 
+    DMW_c("updateLogs");
     updateLogs(); // Record any new data. Create or close files as needed.
 
+    DMW_c("reportHeap");
     reportHeap(); // If debug enabled, report free heap
 
+    DMW_c("updateSerial");
     updateSerial(); // Menu system via ESP32 USB connection
 
+    DMW_c("networkUpdate");
     networkUpdate(); // Maintain the network connections
 
+    DMW_c("updateLBand");
     updateLBand(); // Check if we've recently received PointPerfect corrections or not
 
+    DMW_c("updateRadio");
     updateRadio(); // Check if we need to finish sending any RTCM over link radio
 
+    DMW_c("printPosition");
     printPosition(); // Periodically print GNSS coordinates if enabled
 
     // A small delay prevents panic if no other I2C or functions are called

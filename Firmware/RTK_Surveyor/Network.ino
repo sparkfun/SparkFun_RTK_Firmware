@@ -956,6 +956,8 @@ void networkTypeUpdate(uint8_t networkType)
         return;
 
     // Process the network state
+    DMW_if
+        networkSetState(network, network->state);
     switch (network->state)
     {
         default:

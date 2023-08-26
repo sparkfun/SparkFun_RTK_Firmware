@@ -395,9 +395,6 @@ void wifiStop()
     if (settings.mdnsEnable == true)
         MDNS.end();
 
-    // Stop the PVT server
-    pvtServerStop();
-
     // Stop the other network clients and then WiFi
     networkStop(NETWORK_TYPE_WIFI);
 }

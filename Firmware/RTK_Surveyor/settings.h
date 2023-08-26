@@ -178,10 +178,11 @@ enum NetworkStates
 // Define the network users
 enum NetworkUsers
 {
-    NETWORK_USER_NTRIP_CLIENT = 0, // NTRIP client
+    NETWORK_USER_NTP_SERVER = 0,   // NTP server
+    NETWORK_USER_NTRIP_CLIENT,     // NTRIP client
     NETWORK_USER_NTRIP_SERVER,     // NTRIP server
     NETWORK_USER_PVT_CLIENT,       // PVT client
-    NETWORK_USER_NTP_SERVER,       // NTP server
+    NETWORK_USER_PVT_SERVER,       // PVT server
     // Last network user
     NETWORK_USER_MAX
 };

@@ -45,7 +45,6 @@ enum PvtServerStates
     PVT_SERVER_STATE_OFF = 0,
     PVT_SERVER_STATE_NETWORK_STARTED,
     PVT_SERVER_STATE_RUNNING,
-    PVT_SERVER_STATE_WAIT_NO_CLIENTS,
     // Insert new states here
     PVT_SERVER_STATE_MAX            // Last entry in the state list
 };
@@ -55,7 +54,6 @@ const char * const pvtServerStateName[] =
     "PVT_SERVER_STATE_OFF",
     "PVT_SERVER_STATE_NETWORK_STARTED",
     "PVT_SERVER_STATE_RUNNING",
-    "PVT_SERVER_STATE_WAIT_NO_CLIENTS"
 };
 
 const int pvtServerStateNameEntries = sizeof(pvtServerStateName) / sizeof(pvtServerStateName[0]);
@@ -179,33 +177,6 @@ int32_t pvtServerSendData(uint16_t dataHead)
 // PVT Server Routines
 //----------------------------------------
 
-// Check for PVT server active
-bool pvtServerActive()
-{
-    // Determine if the PVT server is running
-    if ((settings.enablePvtServer && online.pvtServer) || pvtServerClientConnected)
-        return true;
-
-    if (settings.debugPvtServer && (!inMainMenu))
-        systemPrintln("PVT server stopping");
-
-    // Notify the UART2 tasks of the shutdown
-    online.pvtServer = false;
-    delay(5);
-
-    // Stop the PVT server
-    if (pvtServer != nullptr)
-    {
-        pvtServer->stop();
-        delete pvtServer;
-        pvtServer = nullptr;
-    }
-
-    // Turn off the PVT server
-    pvtServerSetState(PVT_SERVER_STATE_OFF);
-    return false;
-}
-
 // Update the state of the PVT server state machine
 void pvtServerSetState(uint8_t newState)
 {
@@ -227,6 +198,70 @@ void pvtServerSetState(uint8_t newState)
         }
         else
             systemPrintln(pvtServerStateName[pvtServerState]);
+    }
+}
+
+// Start the PVT server
+bool pvtServerStart()
+{
+    IPAddress localIp;
+
+    if (settings.debugPvtServer && (!inMainMenu))
+        systemPrintln("PVT server starting the server");
+
+    // Start the PVT server
+    pvtServer = new WiFiServer(settings.pvtServerPort);
+    if (!pvtServer)
+        return false;
+
+    pvtServer->begin();
+    online.pvtServer = true;
+    localIp = wifiGetIpAddress();
+    systemPrintf("PVT server online, IP address %d.%d.%d.%d:%d\r\n",
+                 localIp[0], localIp[1], localIp[2], localIp[3],
+                 settings.pvtServerPort);
+    return true;
+}
+
+// Stop the PVT server
+void pvtServerStop()
+{
+    int index;
+
+    // Notify the rest of the system that the PVT server is shutting down
+    if (online.pvtServer)
+    {
+        // Notify the UART2 tasks of the PVT server shutdown
+        online.pvtServer = false;
+        delay(5);
+    }
+
+    // Determine if PVT server clients are active
+    if (pvtServerClientConnected)
+    {
+        // Shutdown the PVT server client links
+        for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
+            pvtServerStopClient(index);
+    }
+
+    // Shutdown the PVT server
+    if (pvtServer != nullptr)
+    {
+        // Stop the PVT server
+        if (settings.debugPvtServer && (!inMainMenu))
+            systemPrintln("PVT server stopping");
+        pvtServer->stop();
+        delete pvtServer;
+        pvtServer = nullptr;
+    }
+
+    // Stop using the network
+    if (pvtServerState != PVT_SERVER_STATE_OFF)
+    {
+        wifiStop();
+
+        // The PVT server is now off
+        pvtServerSetState(PVT_SERVER_STATE_OFF);
     }
 }
 
@@ -306,29 +341,27 @@ void pvtServerUpdate()
 
     // Wait until the network is connected
     case PVT_SERVER_STATE_NETWORK_STARTED:
-        if (wifiIsConnected())
+        // Determine if the network has failed
+        // Determine if the PVT server was stopped or if the network has failed
+        if ((!settings.enablePvtServer) || (!wifiIsConnected()))
+            // Failed to connect to to the network, attempt to restart the network
+            pvtServerStop();
+
+        // Wait for the network to connect to the media
+        else if (wifiIsConnected())
         {
             if (settings.debugPvtServer && (!inMainMenu))
                 systemPrintln("PVT server starting the server");
 
-            // Start the PVT server if enabled
-            pvtServer = new WiFiServer(settings.pvtServerPort);
-            pvtServer->begin();
-            online.pvtServer = true;
-            ipAddress = WiFi.localIP();
-            systemPrintf("PVT server online, IP Address %d.%d.%d.%d:%d\r\n",
-                         ipAddress[0],
-                         ipAddress[1],
-                         ipAddress[2],
-                         ipAddress[3],
-                         settings.pvtServerPort
-                         );
-            pvtServerSetState(PVT_SERVER_STATE_RUNNING);
+            // Start the PVT server
+            if (pvtServerStart())
+                pvtServerSetState(PVT_SERVER_STATE_RUNNING);
         }
         break;
 
     // Handle client connections and link failures
     case PVT_SERVER_STATE_RUNNING:
+        // Determine if the PVT server was stopped or if the network has failed
         if ((!settings.enablePvtServer) || (!wifiIsConnected()))
         {
             if ((settings.debugPvtServer || PERIODIC_DISPLAY(PD_PVT_SERVER_DATA)) && (!inMainMenu))
@@ -337,9 +370,8 @@ void pvtServerUpdate()
                 systemPrintln("PVT server initiating shutdown");
             }
 
-            // Notify the rest of the system that the PVT server is shutting down
-            online.pvtServer = false;
-            pvtServerSetState(PVT_SERVER_STATE_WAIT_NO_CLIENTS);
+            // Network connection failed, attempt to restart the network
+            pvtServerStop();
             break;
         }
 
@@ -401,17 +433,6 @@ void pvtServerUpdate()
                 }
             }
         }
-        break;
-
-    // Wait until all the clients are closed
-    case PVT_SERVER_STATE_WAIT_NO_CLIENTS:
-        // Shutdown the PVT server client links
-        if (pvtServerClientConnected)
-            for (index = 0; index < PVT_SERVER_MAX_CLIENTS; index++)
-                pvtServerStopClient(index);
-
-        if (!pvtServerClientConnected)
-            pvtServerActive();
         break;
     }
 

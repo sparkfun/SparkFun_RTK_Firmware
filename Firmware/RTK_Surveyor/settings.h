@@ -443,32 +443,46 @@ typedef uint32_t PeriodicDisplay_t;
 
 enum PeriodDisplayValues
 {
-    PD_BLUETOOTH_DATA_RX = 0, // 0
-    PD_BLUETOOTH_DATA_TX,     // 1
-    PD_ETHERNET_IP_ADDRESS,   // 2
-    PD_ETHERNET_STATE,        // 3
-    PD_NETWORK_STATE,         // 4
-    PD_NTRIP_CLIENT_DATA,     // 5
-    PD_NTRIP_CLIENT_GGA,      // 6
-    PD_NTRIP_CLIENT_STATE,    // 7
-    PD_NTRIP_SERVER_DATA,     // 8
-    PD_NTRIP_SERVER_STATE,    // 9
-    PD_PVT_CLIENT_DATA,       // 10
-    PD_PVT_CLIENT_STATE,      // 11
+    PD_BLUETOOTH_DATA_RX = 0,   //  0
+    PD_BLUETOOTH_DATA_TX,       //  1
 
-    PD_PVT_SERVER_DATA,        // 12
-    PD_PVT_SERVER_STATE,       // 13
-    PD_PVT_SERVER_CLIENT_DATA, // 14
+    PD_ETHERNET_IP_ADDRESS,     //  2
+    PD_ETHERNET_STATE,          //  3
 
-    PD_SD_LOG_WRITE,            //15
-    PD_WIFI_IP_ADDRESS,         //16
-    PD_WIFI_STATE,              //17
-    PD_ZED_DATA_RX,             //18
-    PD_ZED_DATA_TX,             //19
+    PD_NETWORK_STATE,           //  4
 
-    PD_RING_BUFFER_MILLIS,      //20
-    PD_NTP_SERVER_DATA,         //21
-    PD_NTP_SERVER_STATE,        //22
+    PD_NTP_SERVER_DATA,         //  5
+    PD_NTP_SERVER_STATE,        //  6
+
+    PD_NTRIP_CLIENT_DATA,       //  7
+    PD_NTRIP_CLIENT_GGA,        //  8
+    PD_NTRIP_CLIENT_STATE,      //  9
+
+    PD_NTRIP_SERVER_DATA,       // 10
+    PD_NTRIP_SERVER_STATE,      // 11
+
+    PD_PVT_CLIENT_DATA,         // 12
+    PD_PVT_CLIENT_STATE,        // 13
+
+    PD_PVT_SERVER_DATA,         // 14
+    PD_PVT_SERVER_STATE,        // 15
+    PD_PVT_SERVER_CLIENT_DATA,  // 16
+
+    PD_RING_BUFFER_MILLIS,      // 17
+
+    PD_SD_LOG_WRITE,            // 18
+
+    PD_TASK_BLUETOOTH_READ,     // 19
+    PD_TASK_BUTTON_CHECK,       // 20
+    PD_TASK_GNSS_READ,          // 21
+    PD_TASK_HANDLE_GNSS_DATA,   // 22
+    PD_TASK_SD_SIZE_CHECK,      // 23
+
+    PD_WIFI_IP_ADDRESS,         // 24
+    PD_WIFI_STATE,              // 25
+
+    PD_ZED_DATA_RX,             // 26
+    PD_ZED_DATA_TX,             // 27
 };
 
 #define PERIODIC_MASK(x) (1 << x)
